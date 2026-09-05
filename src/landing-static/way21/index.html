@@ -656,10 +656,23 @@
     <!-- ============ ДО І ПІСЛЯ ============
          A rail that shows itself only once it holds cards (see
          `[data-proof-optional]` in shared/css/landing.css). Photographs go in
-         shared/img/feedback/ as `ba-<ім'я>-<yyyymm>-before.webp` and
-         `-after.webp`, 3:4, same framing and same light in both frames.
+         shared/img/feedback/ as `ba-<yyyy[-mm]>[-<сцена>]-before.webp` and
+         `-after.webp`, 3:4, same framing and same light in both frames. The
+         name slot the pattern used to have is deliberately gone: a filename is
+         a URL, it shows in the network tab and in a shared link, and it
+         survives every crop and mosaic applied to the picture itself. Add the
+         scene word only to break a tie between two pairs from the same month.
          Publish only with the participant's written consent, and keep the
-         interval honest — the caption states the number of days. -->
+         interval honest — the caption states the number of days.
+
+         FACES ARE MOSAICKED BEFORE PUBLISHING, and the mosaic is burned into
+         the file — `npm run img:face-mosaic`, whose manifest carries one box
+         per face. Consent to show a RESULT is not consent to be recognised by
+         a colleague scrolling past, and a CSS overlay would still ship the
+         face to anyone who opens the network tab. Add the new photograph's box
+         to scripts/img/face-mosaic.mjs in the same commit that adds the file.
+         Keep names out of the filename and the alt text for the same reason
+         the face is not in the picture. -->
     <div class="ba-rail" data-proof-optional>
       <h3 class="proof-subhead reveal">До і після <small>фото учасників</small></h3>
       <div class="car reveal" data-car>
@@ -667,13 +680,13 @@
         <div class="car-track">
           <figure class="ba-card">
             <div class="ba-pair ba-pair--single">
-              <span class="ba-shot"><img src="/shared/img/feedback/ba-2026-06-back.webp" width="1000" height="1000" loading="lazy" decoding="async" alt="Учасниця програми до і після — знімки зі спини поруч в одному кадрі"></span>
+              <span class="ba-shot"><img src="/shared/img/feedback/ba-2026-06-back.webp" width="1000" height="1000" loading="lazy" decoding="async" alt="Учасниця програми до і після — знімки зі спини поруч в одному кадрі"><span class="ba-halves" aria-hidden="true"><span class="ba-tag ba-tag--before">до</span><span class="ba-tag ba-tag--after">після</span></span></span>
             </div>
           </figure>
           <figure class="ba-card">
             <div class="ba-pair">
-              <span class="ba-shot"><img src="/shared/img/feedback/ba-lyuba-2021-before.webp" width="362" height="724" loading="lazy" decoding="async" alt="Люба до програми"><span class="ba-tag">до</span></span>
-              <span class="ba-shot"><img src="/shared/img/feedback/ba-lyuba-2021-after.webp" width="560" height="1120" loading="lazy" decoding="async" alt="Люба після програми"><span class="ba-tag">після</span></span>
+              <span class="ba-shot"><img src="/shared/img/feedback/ba-2021-before.webp" width="362" height="724" loading="lazy" decoding="async" alt="Учасниця до програми"><span class="ba-tag">до</span></span>
+              <span class="ba-shot"><img src="/shared/img/feedback/ba-2021-after.webp" width="560" height="1120" loading="lazy" decoding="async" alt="Учасниця після програми"><span class="ba-tag">після</span></span>
             </div>
           </figure>
           <figure class="ba-card">

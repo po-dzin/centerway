@@ -485,6 +485,55 @@ Fallbacks are expected in these sheets — `funnel-network.css` and `pages.css` 
 
 **Still not covered:** Short and IREM. Different authors, isolated themes — a separate product surface, not this system's coverage. They share `pages.css` and `tokens.css`, so the touch-target correction reaches them; nothing else does.
 
+### The rail control — one arrow for every carousel (2026-09-05)
+
+A carousel arrow is a button, and until now it was three of them.
+
+| | proof rails (`.car-nav`) | testimonial strip (`.testimonial-carousel__nav`) | offer rail (`.control`) |
+|---|---|---|---|
+| plate | 44px, `rgba(255,255,255,.94)` | 46px, `--surface` | 48px, contract `secondary` |
+| glyph | chevron, 18px | chevron, 18px | **arrow**, 20px |
+| hover | fill swap | **none at all** | contract lift |
+| focus | **none** | **none** | contract ring |
+| at the end of the track | gone | 38% opacity, still there | 45% opacity, still there |
+| position | 8px overhang | flush inside, track padded 2.7rem to clear it | inset 4px, on top of the card |
+| scrollbar under it | **visible** (`scrollbar-width: thin`) | hidden | hidden |
+| hidden below | 760px | never | 560px |
+
+Every column is the same control. Nothing above is a considered difference between two surfaces — it is three people answering the same eight questions on three different days, which is precisely the shape the button contract exists to prevent and had not been extended to cover.
+
+**The five decisions, made once.**
+
+1. **The plate is opaque.** A disc at 94% white picks up whatever is behind it, so the same control read warm over one photograph and grey over the next — and on the before/after rail it took a tint from the participant's skin. A control is an object in front of the picture, not a fog on it.
+2. **Hover is obvious**, because translucency is no longer doing that job. Ink stroke, deeper shadow, and the disc grows a step (`scale(1.07)`; `0.95` on press). A 48px disc floating over photography is read by its *size* before its fill, which is why the step is part of the state and not decoration. The testimonial arrows previously had no hover state at all — the one control on the page that did not answer the pointer.
+3. **At the end of the track the control leaves.** The contract's `:disabled` is 45% opacity, which is right for a form action that comes back when you fill something in. Nothing the reader can do brings back a card that does not exist, so a half-visible arrow there is round, present, inviting, and inert. It fades out and shrinks a step so the exit reads as an exit; `visibility` follows so it leaves the a11y tree too.
+4. **It overhangs the rail** by `--ds-rail-control-overhang`, into the page gutter, instead of sitting inside on top of the first and last card. Inset, the plate landed on a card's face — and on the author and before/after rails that face is a person. The overhang is a third of the plate and never more than the gutter's floor (`clamp(20px, 5vw, 40px)` → 20px), so it has room at every width the arrows are drawn at.
+5. **No scrollbar under the rail.** The rail already reports its position twice — the dots beneath it and the arrows at its ends — and the third readout was the one nobody drew. `.car-track` shipped `scrollbar-width: thin` and rendered a grey trench under the photographs on every platform with persistent bars; `.guideRail` on mobile did the same. Position stays reachable by keyboard and screen reader through the dots, which are real buttons.
+
+**Below 561px there is no arrow**, on any surface. A phone swipes, and the dots carry the position. One breakpoint, and it is the platform's tablet band start — not 760px on one surface and 560px on another.
+
+The axes:
+
+| axis | token | value |
+|---|---|---|
+| plate | `--ds-rail-control-size` | → `--ds-touch-target-min` (3rem). **The same number `square` already spends** — named so the landings can reference it instead of guessing (they guessed 44 and 46). |
+| glyph box | `--ds-rail-control-icon` | 1.25rem |
+| overhang | `--ds-rail-control-overhang` | 1rem |
+
+The glyph is **`chevron-right`, mirrored** for the backward step — one baked mark, not two, and not the `arrow-*` pair. An arrow points at a destination, which is what the rail's own `Увесь список` link is; a rail step points at the next card. The landings drew the chevron here from the start and the platform now draws the same mark.
+
+Colour is not in the table, for the same reason it is not in the button table: the platform takes `secondary` from the contract, the landings paint `--surface` / `--chip` / `--line-strong` from their own skin. Geometry travels, fill does not.
+
+**Where it lives.** Platform: `PlatformOfferCarousel.module.css`, composing `secondary square round`. Network: one block in `landing.css` headed `THE RAIL CONTROL`, whose selector list is both consumers — plain CSS cannot compose, so the shared object is a shared *rule*, not a copied one. The three tokens ride `NETWORK_BUTTON_TOKENS` into `cw-tokens.generated.css` and are bound to `--rail-h` / `--rail-ico` / `--rail-out` in `network-tokens.css`, exactly as the button geometry is.
+
+### A glued pair is still a pair, and it is still labelled (2026-09-05)
+
+The before/after rail carries two kinds of card: two photographs in two cells, and one photograph somebody already glued into a two-up. The two-cell card labelled its halves `до` / `після`; the glued one did not, on the argument that our pills would sit on someone else's composition.
+
+What that produced was a rail whose **first** card — the one that teaches the reader how to read the two beside it — omitted the labelling the rest depends on. That is not tact, it is a gap in the first thing the reader sees.
+
+Both kinds carry the pills now, at the same corner of each half. The label layer is its own 1:1 box rather than the cell, and that is load-bearing: `object-fit: contain` letterboxes the square source inside the 4:5 cell on a phone, so a pill anchored to the *cell* would float in the empty band under the photograph. Anchored to a box the shape of the picture, centred the way `contain` centres it, the pill lands on the image at every width.
+
 ## Vocabulary — the one table
 
 The word "semantic" covers **three different axes** in this codebase. They are consistent with each other (verified per-block 2026-07-03), but they answer different questions. Never use one axis's values in another's field.

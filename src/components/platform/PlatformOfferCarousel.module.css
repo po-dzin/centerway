@@ -12,12 +12,20 @@
 }
 
 /* Measuring overflow must not move the cards after hydration: the controls are
-   lifted out of flow, and only the buttons themselves take the pointer. */
+   lifted out of flow, and only the buttons themselves take the pointer.
+
+   The arrows OVERHANG the rail — `--ds-rail-control-overhang` past its own
+   edge, into the page gutter — instead of sitting inset on top of the first
+   and last card. Inset, the plate landed on the card's face; on an author rail
+   that face is a person's. The overhang is a third of the plate and never
+   exceeds the gutter's floor, so it has room at every width the arrows are
+   drawn at. Same value, same reason, on the landings' proof rails:
+   docs/design-system.md → "The rail control". */
 .controls {
   position: absolute;
   z-index: 1;
   inset-block-start: 50%;
-  inset-inline: var(--cw-space-2xs);
+  inset-inline: calc(var(--ds-rail-control-overhang) * -1);
   display: flex;
   justify-content: space-between;
   transform: translateY(-50%);
@@ -29,10 +37,72 @@
   pointer-events: none;
 }
 
-/* Labelled by aria-label; geometry is the shared quiet command contour. */
+/* Labelled by aria-label; geometry is the shared quiet command contour, which
+   is also the rail control's size — `--ds-rail-control-size` IS the touch
+   minimum `square` already spends, stated as its own name so the landings can
+   reference the same number instead of guessing at it (they guessed 44px and
+   46px). */
 .control {
   composes: secondary square round from "./PlatformButtons.module.css";
   pointer-events: auto;
+  /* The contract's own transition list covers transform, shadow and colour but
+     not opacity or visibility — the two axes the edge behaviour below rides. */
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    opacity 180ms ease,
+    visibility 0s linear 0s;
+}
+
+.control svg {
+  width: var(--ds-rail-control-icon);
+  height: var(--ds-rail-control-icon);
+}
+
+/* One chevron in the sprite, mirrored for the backward step — the landings'
+   `.ico-flip` by another name. A second baked glyph would be a second thing to
+   keep in sync with the hand the mark is drawn by. */
+.controlGlyphPrevious {
+  transform: scaleX(-1);
+}
+
+/* THE END OF THE RAIL: THE CONTROL LEAVES.
+   The contract's `:disabled` is 45% opacity — correct for a form action that
+   is temporarily unavailable and will come back when you fill something in.
+   It is wrong here: nothing the reader can do brings back a card that does not
+   exist, so a half-visible arrow at the end of the track is a control that is
+   still round, still there, still asking for the click, and inert. The rail
+   says "no more this way" by having no more cards; the arrow's job is to go.
+   It shrinks on the way out so the exit reads as an exit rather than a paint
+   glitch. `visibility` follows opacity so it leaves the a11y tree too. */
+.control.control:disabled {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.88);
+  transition-delay: 0s, 0s, 0s, 0s, 0s, 180ms;
+}
+
+/* Hover has to carry the affordance on its own now that the plate is opaque at
+   rest and gone at the ends — the two states between which it used to be told
+   apart by translucency. `secondary` lifts and lightens; the rail control also
+   grows a step, because a 48px disc floating over photography reads its size
+   before it reads its fill. */
+.control.control:hover:not(:disabled) {
+  transform: scale(1.07);
+}
+
+.control.control:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control.control:hover:not(:disabled),
+  .control.control:active:not(:disabled),
+  .control.control:disabled {
+    transform: none;
+  }
 }
 
 .viewport {

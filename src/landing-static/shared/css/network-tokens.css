@@ -119,6 +119,14 @@
   --btn-fs: var(--ds-button-font-size, 1rem);
   --btn-weight: var(--ds-button-font-weight, 700);
   --btn-lift: var(--ds-button-lift, -1px);
+
+  /* The rail control — the arrow that steps a carousel. Same reason as the
+     button geometry above: the network had three of these at three sizes, and
+     the axis with no token is the axis that drifts. docs/design-system.md →
+     "The rail control". */
+  --rail-h: var(--ds-rail-control-size, 3rem);
+  --rail-ico: var(--ds-rail-control-icon, 1.25rem);
+  --rail-out: var(--ds-rail-control-overhang, 1rem);
   --sp-sec: clamp(64px, 9vw, 132px);
   /* Depth is the platform's, not the network's own: these two feed every
      card, panel and hover state in landing.css. */

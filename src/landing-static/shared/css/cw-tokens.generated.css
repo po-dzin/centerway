@@ -90,6 +90,9 @@
   --ds-button-font-size: 1rem;
   --ds-button-gap: 0.5rem;
   --ds-button-lift: -1px;
+  --ds-rail-control-size: var(--ds-touch-target-min);
+  --ds-rail-control-icon: 1.25rem;
+  --ds-rail-control-overhang: 1rem;
   --cw-max-width: 1160px;
   --cw-page-gutter: clamp(20px, 5vw, 40px);
   --cw-bar-pad: 0.8rem;

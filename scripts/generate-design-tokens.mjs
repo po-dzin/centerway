@@ -108,6 +108,14 @@ const NETWORK_BUTTON_TOKENS = [
   "--ds-button-font-size",
   "--ds-button-gap",
   "--ds-button-lift",
+  /* The rail control (carousel arrow) is button geometry too — one plate, one
+     glyph box, one overhang, shared by the platform's offer rail and the
+     landings' proof rails. It travelled as three hand-tuned recipes (44px /
+     46px / 48px, two of them dimming at the edge instead of leaving) until
+     these three names existed. See docs/design-system.md → "The rail control". */
+  "--ds-rail-control-size",
+  "--ds-rail-control-icon",
+  "--ds-rail-control-overhang",
 ];
 
 /* The spatial contract: where a page's content column starts, and how the
