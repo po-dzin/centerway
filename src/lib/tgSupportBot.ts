@@ -20,6 +20,10 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { ProductCode } from "@/lib/products";
 import { callTelegramBotApi, sendTelegramMessage } from "@/lib/tg";
 import { verifyTelegramLinkToken } from "@/lib/platform/telegramLink";
+import { verifyDoshaResultToken } from "@/lib/platform/doshaTelegramLink";
+import { classifyDosha, type DoshaResultType } from "@/lib/doshaTest";
+import { buildDoshaResultMessage } from "@/lib/doshaResultCopy";
+import { DOSHA_PRIMARY_EXIT, doshaExitHref } from "@/lib/doshaRouting";
 import { captureQuestion } from "@/lib/agent/questions/store";
 import {
   botCopy,
@@ -583,6 +587,114 @@ async function handleBugMessage(db: Supabase, chatId: number, user: TelegramUser
   await sendMessage(chatId, botCopy.bugSent, backKeyboard());
 }
 
+
+/**
+ * Handles a `/start` payload issued by the dosha test's "send to Telegram".
+ *
+ * This is the cheap step the funnel was missing. It runs BEFORE the account
+ * link reader because both payloads are opaque strings of the same shape, and
+ * it answers for every verdict of its own tokens — an expired link is ours to
+ * explain, not something to greet as a stranger.
+ *
+ * The chat that receives a result becomes a reachable contact even when there
+ * is no account behind it: that, and not the finished test, is what a lead is.
+ */
+async function tryDeliverDoshaResult(
+  db: Supabase,
+  chatId: number,
+  user: TelegramUser,
+  payload: string
+): Promise<boolean> {
+  const verdict = verifyDoshaResultToken(payload);
+
+  if (!verdict.ok) {
+    if (verdict.reason === "malformed") return false;
+    await sendMessage(
+      chatId,
+      verdict.reason === "expired" ? botCopy.doshaResultExpired : botCopy.doshaResultBroken
+    );
+    return true;
+  }
+
+  const { data: attempt } = await db
+    .from("test_attempts")
+    .select("id, user_id, result_type, score_vata, score_pitta, score_kapha")
+    .eq("id", verdict.attemptId)
+    .maybeSingle();
+
+  const resultType = (attempt?.result_type ?? null) as DoshaResultType | null;
+  if (!attempt || !resultType) {
+    await sendMessage(chatId, botCopy.doshaResultMissing);
+    return true;
+  }
+
+  const scores = {
+    vata: attempt.score_vata ?? 0,
+    pitta: attempt.score_pitta ?? 0,
+    kapha: attempt.score_kapha ?? 0,
+  };
+  const profile = classifyDosha(scores.vata, scores.pitta, scores.kapha);
+
+  await sendMessage(
+    chatId,
+    buildDoshaResultMessage({
+      resultType,
+      scores,
+      intro: botCopy.doshaResultIntro,
+      outro: botCopy.doshaResultOutro,
+      nextHref: doshaExitHref(DOSHA_PRIMARY_EXIT, { resultType, confidence: profile.confidence }),
+    }),
+    backKeyboard()
+  );
+
+  await saveDoshaContact(db, user, { attemptUserId: attempt.user_id, resultType });
+  await logEventBestEffort(db, "dosha_result_sent_to_telegram", {
+    attempt_id: attempt.id,
+    result_type: resultType,
+    confidence: profile.confidence,
+    telegram_user_id: String(user.id),
+  }).catch(() => undefined);
+
+  return true;
+}
+
+/**
+ * Writes the chat down as a contact, and tags it with the result.
+ *
+ * An anonymous reader has no `auth_user_id` to hang a customer row on, so the
+ * chat id is the identity: it is a real address, which is more than the funnel
+ * had for them a moment ago. A reader who already has an account keeps that
+ * row and simply gains the address.
+ */
+async function saveDoshaContact(
+  db: Supabase,
+  user: TelegramUser,
+  params: { attemptUserId: string | null; resultType: DoshaResultType }
+): Promise<void> {
+  const tgId = String(user.id);
+  const tags = ["test_completed", `dosha_${params.resultType}`];
+
+  const { data: existing } = await db
+    .from("customers")
+    .select("id, tags")
+    .or(params.attemptUserId ? `auth_user_id.eq.${params.attemptUserId},tg_id.eq.${tgId}` : `tg_id.eq.${tgId}`)
+    .limit(1)
+    .maybeSingle();
+
+  if (existing?.id) {
+    const merged = Array.from(new Set([...(Array.isArray(existing.tags) ? existing.tags : []), ...tags]));
+    await db.from("customers").update({ tg_id: tgId, tags: merged }).eq("id", existing.id);
+    return;
+  }
+
+  await db.from("customers").insert({
+    auth_user_id: params.attemptUserId,
+    display_name: [user.first_name, user.last_name].filter(Boolean).join(" ") || user.username || null,
+    tg_id: tgId,
+    tags,
+  });
+}
+
 /**
  * Handles a `/start` payload issued by the cabinet's "connect Telegram" link.
  *
@@ -660,6 +772,7 @@ async function handleTextMessage(
     // greeting, so the sales path is untouched.
     const payload = text.slice("/start".length).trim();
     if (payload === "bug") { await saveSession(db, user, { state: "awaiting_bug_message", contact: null }); await sendMessage(chatId, botCopy.bugAskMessage); return; }
+    if (payload && (await tryDeliverDoshaResult(db, chatId, user, payload))) return;
     if (payload && (await tryLinkAccount(db, chatId, user, payload))) return;
 
     await saveSession(db, user, { state: "idle", contact: null });

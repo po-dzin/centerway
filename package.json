@@ -69,7 +69,7 @@
     "smoke:admin:ui": "node scripts/smoke-admin-ui.mjs",
     "smoke:landing:dynamic-offer": "node scripts/smoke-landing-dynamic-offer.mjs",
     "smoke:platform:browser": "npx playwright test tests/e2e/platform-unification.spec.ts --reporter=list",
-    "smoke:dosha:result": "node scripts/smoke-dosha-result-engine.mjs",
+    "smoke:dosha:result": "vitest run src/lib/doshaTest.test.ts",
     "smoke:dosha:api": "node scripts/smoke-dosha-api-flow.mjs",
     "smoke:dosha:userflows": "node scripts/smoke-dosha-userflows.mjs",
     "smoke:dosha:responsive": "node scripts/smoke-dosha-responsive.mjs",

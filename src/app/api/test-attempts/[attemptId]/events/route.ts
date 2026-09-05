@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
 import { emitDoshaTestEvent, loadTestAttempt } from "@/lib/doshaTestRepo";
+import { classifyDosha } from "@/lib/doshaTest";
 import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
@@ -76,6 +77,14 @@ export async function POST(
       return NextResponse.json({ error: "attempt_not_found" }, { status: 404 });
     }
 
+    /* Confidence is read off the stored scores rather than taken from the
+       request: the browser has no business asserting how firm its own result
+       is, and attempts completed before the field existed still report one. */
+    const profile =
+      attempt.result_type !== null
+        ? classifyDosha(attempt.score_vata ?? 0, attempt.score_pitta ?? 0, attempt.score_kapha ?? 0)
+        : null;
+
     await emitDoshaTestEvent(
       db,
       eventName as "dosha_result_viewed" | "dosha_followup_clicked",
@@ -83,6 +92,8 @@ export async function POST(
         attemptId: attempt.id,
         testId: attempt.test_id,
         resultType: attempt.result_type,
+        shares: profile?.shares ?? null,
+        confidence: profile?.confidence ?? null,
         target: target ?? null,
         screen: screen ?? null,
         step,

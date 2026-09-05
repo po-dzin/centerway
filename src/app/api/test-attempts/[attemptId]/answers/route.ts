@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
-import { calculateDoshaResult, isValidScoreInvariant, DOSHA_TEST_SLUG } from "@/lib/doshaTest";
+import { classifyDosha, isValidScoreInvariant, DOSHA_TEST_SLUG } from "@/lib/doshaTest";
 import { DOSHA_PRIMARY_EXIT } from "@/lib/doshaRouting";
 import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 import {
@@ -150,7 +150,8 @@ export async function POST(
       });
     }
 
-    const resultType = calculateDoshaResult(vata, pitta, kapha);
+    const profile = classifyDosha(vata, pitta, kapha);
+    const resultType = profile.type;
     const completedAt = new Date().toISOString();
 
     const { error: completeUpdateError } = await db
@@ -166,6 +167,11 @@ export async function POST(
         result_payload_json: {
           resultType,
           scores: { vata, pitta, kapha },
+          shares: profile.shares,
+          confidence: profile.confidence,
+          marginPp: profile.marginPp,
+          spreadPp: profile.spreadPp,
+          leaderSharePp: profile.leaderSharePp,
           completedAt,
         },
       })
@@ -189,6 +195,8 @@ export async function POST(
       testVersion: attempt.version,
       resultType,
       scores: { vata, pitta, kapha },
+      shares: profile.shares,
+      confidence: profile.confidence,
       completedAt,
     };
 
@@ -200,6 +208,8 @@ export async function POST(
       isCompleted: true,
       resultType,
       scores: { vata, pitta, kapha },
+      shares: profile.shares,
+      confidence: profile.confidence,
       completedAt,
       nextStep: DOSHA_PRIMARY_EXIT.nextStep,
       answeredCount,

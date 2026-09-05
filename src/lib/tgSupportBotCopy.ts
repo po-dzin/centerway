@@ -156,6 +156,17 @@ export const botCopy = {
   linkExpired: "Посилання застаріло. Відкрийте кабінет і натисніть «Підключити Telegram» ще раз.",
   linkBroken: "Не вдалося перевірити посилання. Спробуйте ще раз із кабінету.",
 
+  /* The dosha result arrives here from the test, for a reader who may have no
+     account at all — so the copy explains what this chat now is, rather than
+     assuming they know they linked something. */
+  doshaResultIntro: "Ваш результат тесту доші:",
+  doshaResultOutro:
+    "Зберегли — результат залишиться у цьому чаті. Якщо стан зміниться, пройдіть тест ще раз: він читає поточний ритм, а не мітку назавжди.",
+  doshaResultExpired:
+    "Посилання на результат застаріло. Відкрийте тест і натисніть «Надіслати в Telegram» ще раз.",
+  doshaResultBroken: "Не вдалося прочитати посилання на результат. Спробуйте ще раз зі сторінки тесту.",
+  doshaResultMissing: "Не знайшли цей результат. Можливо, тест не був завершений — пройдіть його ще раз.",
+
   fallback: "Не зрозуміли запит. Оберіть пункт нижче — або натисніть «Написати підтримці».",
 } as const;
 

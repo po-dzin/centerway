@@ -3,17 +3,24 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { PlatformAuthModal } from "@/components/platform/PlatformAuthModal";
 import { Icon } from "@/components/Icon";
 import styles from "@/components/platform/PlatformDiagnosticStyles";
-import type { DoshaResultType } from "@/lib/doshaTest";
+import { classifyDosha, type DoshaConfidence, type DoshaResultType } from "@/lib/doshaTest";
+import {
+  BOUNDARY_NOTE,
+  CONFIDENCE_COPY,
+  DOSHA_DISCLOSURE,
+  HOW_IT_WORKS_STEPS,
+  RESULT_COPY,
+} from "@/lib/doshaResultCopy";
 import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
 import { CW_THEME_QUERY_KEYS } from "@/lib/generator/theme";
-import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT } from "@/lib/doshaRouting";
+import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT, doshaExitHref } from "@/lib/doshaRouting";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { heroFraming } from "@/components/platform/heroFraming";
 import { platformPageArtwork } from "@/lib/platform/content";
 import { TESTS_HUB_ROUTE } from "@/lib/platform/tests";
+import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { supabaseClient } from "@/lib/supabaseClient";
 
 type TestOption = {
@@ -21,7 +28,6 @@ type TestOption = {
   order: number;
   code: string;
   text: string;
-  mappedDosha: "vata" | "pitta" | "kapha";
 };
 
 type TestQuestion = {
@@ -45,8 +51,18 @@ type CompleteResponse = {
   isCompleted: boolean;
   resultType?: DoshaResultType;
   scores: { vata: number; pitta: number; kapha: number };
+  shares?: { vata: number; pitta: number; kapha: number };
+  confidence?: DoshaConfidence;
   completedAt?: string;
   nextStep?: string;
+};
+
+type PendingSave = {
+  attemptId: string;
+  resultType: DoshaResultType;
+  scores: { vata: number; pitta: number; kapha: number };
+  completedAt: string | null;
+  nextStep: string | null;
 };
 
 type DraftState = {
@@ -81,81 +97,16 @@ type AttemptEventPayload = {
 const ATTEMPT_STORAGE_KEY = "centerway_dosha_test_attempt_id";
 const DRAFT_STORAGE_KEY = "centerway_dosha_test_draft_v1";
 const SESSION_STORAGE_KEY = "centerway_dosha_test_session_id";
-const PENDING_START_KEY = "centerway_dosha_test_pending_start";
+/* The result has to survive the round trip to Google and back: the page
+   reloads, state is gone, and the attempt it belongs to is anonymous until we
+   say otherwise. sessionStorage is the right shelf — same tab, one journey. */
+const PENDING_SAVE_KEY = "centerway_dosha_test_pending_save";
 const DEFAULT_UI_VARIANT = "dosha_test_calm_route_v1";
 
 type DoshaTestClientProps = {
   uiVariant?: string;
   generatorContext?: GeneratorAnalyticsContext;
 };
-
-const RESULT_COPY: Record<
-  DoshaResultType,
-  {
-    title: string;
-    summary: string;
-    recommendation: string;
-    weekVector: string;
-  }
-> = {
-  vata: {
-    title: "Вата домінує",
-    summary: "Ваш ритм швидкий і чутливий до змін, тому енергія може коливатися протягом дня.",
-    recommendation: "Опора на стабільність: тепла їжа, прогнозований графік і спокійний вечірній ритуал.",
-    weekVector: "7-денний вектор: тримайте однаковий час сну та 1 заземлюючу практику щодня.",
-  },
-  pitta: {
-    title: "Пітта домінує",
-    summary: "Ваш профіль про інтенсивність і фокус, але ресурс відновлення потребує свідомих пауз.",
-    recommendation: "Опора на баланс навантаження: охолоджувальні практики, короткі паузи, м'який темп у другій половині дня.",
-    weekVector: "7-денний вектор: щодня плануйте 1 відновлювальну паузу до того, як з'явиться перевтома.",
-  },
-  kapha: {
-    title: "Капха домінує",
-    summary: "Ваш профіль дає стійкість і витривалість, але важливо підтримувати динаміку ритму.",
-    recommendation: "Опора на активацію: ранній старт дня, динамічний рух і легкість у щоденному меню.",
-    weekVector: "7-денний вектор: починайте ранок з 10-15 хвилин активного руху.",
-  },
-  vata_pitta: {
-    title: "Вата + Пітта",
-    summary: "Поєднання швидкості та інтенсивності: ідей багато, але ресурс потребує структурного режиму.",
-    recommendation: "Опора на ритм і охолодження: чіткі блоки дня, паузи після піків навантаження.",
-    weekVector: "7-денний вектор: щовечора фіксуйте 1 дію на відновлення перед сном.",
-  },
-  pitta_kapha: {
-    title: "Пітта + Капха",
-    summary: "Поєднання сили реалізації та витривалості дає великий потенціал системних змін.",
-    recommendation: "Опора на гнучкість: чергуйте інтенсивні й легкі дні, щоб зберігати стабільний прогрес.",
-    weekVector: "7-денний вектор: використовуйте схему 2 дні активного фокусу + 1 день м'якого відновлення.",
-  },
-  vata_kapha: {
-    title: "Вата + Капха",
-    summary: "Поєднання чутливості та стійкості може змінювати ваш темп залежно від стану відновлення.",
-    recommendation: "Опора на послідовність: простий режим, регулярний рух, підтримка енергії малими кроками.",
-    weekVector: "7-денний вектор: оберіть 1 стабільну ранкову і 1 вечірню практику й тримайте їх щодня.",
-  },
-  tridosha: {
-    title: "Трідоша",
-    summary: "Профіль показує близький баланс трьох дош, який добре підтримується системним ритмом.",
-    recommendation: "Опора на адаптацію: коригуйте навантаження та відновлення відповідно до сезону і поточного стану.",
-    weekVector: "7-денний вектор: щодня перевіряйте енергію та гнучко коригуйте інтенсивність дня.",
-  },
-};
-
-/* One line each. They used to run two to three lines apiece, which put the
-   start button below the fold on a phone — the steps were reassurance, and
-   reassurance that costs the CTA its place stops reassuring anyone. */
-const HOW_IT_WORKS_STEPS = [
-  "12 коротких питань про ритм, енергію, травлення, сон і напругу.",
-  "Профіль доші як робоча гіпотеза про ваш поточний стан.",
-  "Наступний крок: консультація, програма або самостійний старт.",
-];
-
-const BOUNDARY_NOTE =
-  "Це оздоровчий орієнтир, а не медичний діагноз. Результат не є медичним діагнозом і не замінює лікаря: якщо симптоми стійкі або гострі, спочатку варто пройти обстеження.";
-
-const DOSHA_DISCLOSURE =
-  "У підході CenterWay доші описують природні патерни енергії, ритму й відновлення. Тест допомагає обрати доречні практики і матеріали в платформі.";
 
 function getCurrentQuestion(questions: TestQuestion[], currentQuestionIndex: number): TestQuestion | null {
   const idx = Math.max(1, currentQuestionIndex) - 1;
@@ -176,7 +127,12 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
   const [error, setError] = useState<string | null>(null);
   const [resultViewedSent, setResultViewedSent] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
-  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [savedToCabinet, setSavedToCabinet] = useState(false);
+  const [telegramLink, setTelegramLink] = useState<string | null>(null);
+  const [resumeDraft, setResumeDraft] = useState<DraftState | null>(null);
+  /* The cabinet lives on the personal host; only this resolver knows whether
+     that is a path or a full origin from where the reader currently stands. */
+  const surfaceHref = useSurfaceHref();
   const isAuthEnabled = useMemo(
     () => Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
     []
@@ -254,9 +210,9 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     }).catch(() => undefined);
   }, []);
 
-  const signInWithGoogle = useCallback(async () => {
-    if (typeof window !== "undefined") {
-      window.sessionStorage.setItem(PENDING_START_KEY, "1");
+  const signInWithGoogle = useCallback(async (pendingSave?: PendingSave) => {
+    if (typeof window !== "undefined" && pendingSave) {
+      window.sessionStorage.setItem(PENDING_SAVE_KEY, JSON.stringify(pendingSave));
     }
 
     const redirectTo =
@@ -281,7 +237,10 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
 
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
-        const res = await fetch("/api/tests/dosha-test", {
+        /* The session travels with the request: it seeds the order of the
+           answers, so the order holds for the whole attempt and differs
+           between readers. */
+        const res = await fetch(`/api/tests/dosha-test?sessionId=${encodeURIComponent(getOrCreateSessionId())}`, {
           cache: "no-store",
           headers: { "Cache-Control": "no-store" },
         });
@@ -402,15 +361,38 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     }
   }, [clearDraft, getOrCreateSessionId, loadDefinition, saveAttemptId, saveDraft]);
 
-  const resumePendingStartIfNeeded = useCallback(async (nextSession: Session | null) => {
+  /* Back from Google with a result in hand: hand the attempt its owner, then
+     put the reader back where they were, on their own result. */
+  const resumePendingSaveIfNeeded = useCallback(async (nextSession: Session | null) => {
     if (!nextSession?.access_token || typeof window === "undefined") return;
-    if (window.sessionStorage.getItem(PENDING_START_KEY) !== "1") return;
 
-    window.sessionStorage.removeItem(PENDING_START_KEY);
-    setShowAuthPrompt(false);
-    await syncPlatformUser(nextSession.access_token);
-    await runStartFlow();
-  }, [runStartFlow, syncPlatformUser]);
+    const raw = window.sessionStorage.getItem(PENDING_SAVE_KEY);
+    if (!raw) return;
+    window.sessionStorage.removeItem(PENDING_SAVE_KEY);
+
+    let pending: PendingSave | null = null;
+    try {
+      pending = JSON.parse(raw) as PendingSave;
+    } catch {
+      return;
+    }
+    if (!pending?.attemptId || !pending.resultType) return;
+
+    setAttemptId(pending.attemptId);
+    setResultType(pending.resultType);
+    setScores(pending.scores);
+    setCompletedAt(pending.completedAt);
+    setNextStep(pending.nextStep);
+    setResultViewedSent(true);
+    setPhase("result");
+
+    const res = await fetch(`/api/test-attempts/${pending.attemptId}/attach`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${nextSession.access_token}` },
+    }).catch(() => null);
+
+    setSavedToCabinet(Boolean(res?.ok));
+  }, []);
 
   useEffect(() => {
     const bootAuth = async () => {
@@ -418,7 +400,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
       setSession(data.session);
       if (data.session?.access_token) {
         await syncPlatformUser(data.session.access_token);
-        await resumePendingStartIfNeeded(data.session);
+        await resumePendingSaveIfNeeded(data.session);
       }
     };
     void bootAuth();
@@ -428,39 +410,101 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
 
-      if (!nextSession) {
-        setShowAuthPrompt(false);
-        return;
-      }
+      if (!nextSession) return;
 
       void (async () => {
         await syncPlatformUser(nextSession.access_token);
-        await resumePendingStartIfNeeded(nextSession);
+        await resumePendingSaveIfNeeded(nextSession);
       })();
     });
 
     return () => subscription.unsubscribe();
-  }, [resumePendingStartIfNeeded, syncPlatformUser]);
+  }, [resumePendingSaveIfNeeded, syncPlatformUser]);
 
+  /* AN UNFINISHED TEST IS PICKED UP, NOT THROWN AWAY.
+     This effect used to wipe the draft, the attempt id and the session id on
+     every mount — which meant the whole draft machinery below it (`saveDraft`
+     on every answer) wrote to a shelf nobody ever read, and eleven answers
+     died to a reload or a locked phone. The reminder cron, meanwhile, went on
+     chasing the abandoned attempts this created.
+
+     The session id is kept as well as the answers, because it seeds the order
+     of the options: restoring answers under a freshly shuffled question would
+     hand the reader someone else's choices. */
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    window.localStorage.removeItem(ATTEMPT_STORAGE_KEY);
-    window.localStorage.removeItem(DRAFT_STORAGE_KEY);
-    window.localStorage.removeItem(SESSION_STORAGE_KEY);
+    const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+    let draft: DraftState | null = null;
+    try {
+      draft = raw ? (JSON.parse(raw) as DraftState) : null;
+    } catch {
+      draft = null;
+    }
 
-    setAttemptId(null);
-    setQuestions([]);
-    setCurrentQuestionIndex(1);
-    setAnswers({});
-    setResultType(null);
-    setScores({ vata: 0, pitta: 0, kapha: 0 });
-    setCompletedAt(null);
-    setNextStep(null);
-    setError(null);
-    setShowAuthPrompt(false);
-    setPhase("intro");
+    const answered = draft?.answers ? Object.keys(draft.answers).length : 0;
+    if (!draft?.sessionId || answered === 0) {
+      // Nothing to resume: start clean, and do not leave a stale attempt id
+      // pointing at a run this page no longer has on screen.
+      window.localStorage.removeItem(ATTEMPT_STORAGE_KEY);
+      window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+      setPhase("intro");
+      return;
+    }
+
+    window.localStorage.setItem(SESSION_STORAGE_KEY, draft.sessionId);
+    setResumeDraft(draft);
   }, []);
+
+  /* The questions come from the server, so the resume is two steps: the effect
+     above decides there is something to return to, this one goes and gets the
+     material it needs. */
+  useEffect(() => {
+    if (!resumeDraft) return;
+    let cancelled = false;
+    setIsBusy(true);
+
+    void loadDefinition()
+      .then((data) => {
+        if (cancelled) return;
+        const loaded = data?.questions ?? [];
+        if (!loaded.length) {
+          setPhase("intro");
+          return;
+        }
+
+        // Only answers whose question is still in the definition survive: a
+        // test that changed under a draft must not resume half in the old one.
+        const valid: Record<string, string> = {};
+        for (const question of loaded) {
+          const chosen = resumeDraft.answers[question.id];
+          if (chosen && question.options.some((option) => option.id === chosen)) {
+            valid[question.id] = chosen;
+          }
+        }
+        if (!Object.keys(valid).length) {
+          clearDraft();
+          setPhase("intro");
+          return;
+        }
+
+        setQuestions(loaded);
+        setAnswers(valid);
+        setCurrentQuestionIndex(Math.min(Math.max(resumeDraft.currentQuestionIndex, 1), loaded.length));
+        setPhase("question");
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) {
+          setIsBusy(false);
+          setResumeDraft(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clearDraft, loadDefinition, resumeDraft]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -479,18 +523,25 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     window.history.replaceState(null, "", `${url.pathname}${search ? `?${search}` : ""}${url.hash}`);
   }, []);
 
+  /* Asked for as soon as there is a result, not on the tap: the link is issued
+     by the server, and a `window.open` after an awaited fetch is what popup
+     blockers exist to stop. By the time the reader reaches for it, it is a
+     plain link. */
   useEffect(() => {
-    if (!showAuthPrompt) return;
+    if (phase !== "result" || !attemptId) return;
+    let cancelled = false;
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setShowAuthPrompt(false);
-      }
+    void fetch(`/api/test-attempts/${attemptId}/telegram`, { method: "POST" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { linkUrl?: string | null } | null) => {
+        if (!cancelled) setTelegramLink(data?.linkUrl ?? null);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
     };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showAuthPrompt]);
+  }, [attemptId, phase]);
 
   useEffect(() => {
     if (phase === "result" && resultType && resultViewedSent === false) {
@@ -507,25 +558,16 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     }
   }, [completedAt, emitAttemptEvent, nextStep, phase, resultType, resultViewedSent, scores, totalQuestions, uiVariant]);
 
+  /* NOTHING IS ASKED BEFORE ANYTHING IS GIVEN.
+     Starting the test used to open a Google-only sign-in wall in front of
+     question one — the price was collected before the value was delivered, on
+     the page whose whole job is to be easy to begin. The account is worth
+     something only once there is a result to keep, so the offer to sign in now
+     lives on the result screen. The API has always accepted anonymous
+     attempts: `user_id` is nullable and the session id carries the attempt. */
   const requestStartTest = useCallback(async () => {
-    setShowAuthPrompt(false);
-
-    if (!isAuthEnabled) {
-      await runStartFlow();
-      return;
-    }
-
-    const authState = await supabaseClient.auth.getSession();
-    const activeSession = authState.data.session ?? session;
-    if (!activeSession?.access_token) {
-      setShowAuthPrompt(true);
-      return;
-    }
-
-    setSession(activeSession);
-    await syncPlatformUser(activeSession.access_token);
     await runStartFlow();
-  }, [isAuthEnabled, runStartFlow, session, syncPlatformUser]);
+  }, [runStartFlow]);
 
   /* Choosing and moving on are two acts, and they used to be one: tapping an
      option wrote the answer, advanced the question and locked the choice, so a
@@ -577,6 +619,17 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
      finished questions must not walk the bar backwards. */
   const progress = Math.min(100, Math.round((answeredCount / totalQuestions) * 100));
   const resultCopy = resultType ? RESULT_COPY[resultType] : null;
+
+  /* Derived from the same scores the server classified, by the same function —
+     so the screen can say how firm the reading is without a second round trip
+     and without a field that older stored attempts do not carry. */
+  const profile = useMemo(() => classifyDosha(scores.vata, scores.pitta, scores.kapha), [scores]);
+  const confidenceCopy = CONFIDENCE_COPY[profile.confidence];
+  const resultHeading = resultCopy
+    ? profile.confidence === "low"
+      ? resultCopy.softTitle
+      : resultCopy.title
+    : null;
   const testFontFamily = "var(--cw-font-ui), 'Manrope', 'Segoe UI', sans-serif";
   const topbarBadge = phase === "intro"
     ? "12 питань • 3-5 хв"
@@ -806,7 +859,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
 
                   <div className={styles.card} data-tone="support">
                     <p className={styles.label}>Ваш профіль</p>
-                    <h2>{resultCopy.title}</h2>
+                    <h2>{resultHeading}</h2>
                     <p>{resultCopy.summary}</p>
                     <p>{resultCopy.recommendation}</p>
                   </div>
@@ -814,14 +867,106 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                   <div className={styles.card} data-tone="proof">
                     <h2>Що це означає у практиці</h2>
                     <p>{resultCopy.weekVector}</p>
+                    {/* Percentages, because the verdict is drawn on percentages:
+                        the row used to show three near-equal counts under a
+                        headline that claimed one of them dominated. */}
                     <p className={styles.diagnosticScoreRow}>
-                      Рахунок: Вата {scores.vata} • Пітта {scores.pitta} • Капха {scores.kapha}
+                      Вата {profile.shares.vata}% • Пітта {profile.shares.pitta}% • Капха {profile.shares.kapha}%
+                      {" · "}
+                      {confidenceCopy.label}
                     </p>
+                    {confidenceCopy.note ? <p>{confidenceCopy.note}</p> : null}
                   </div>
 
                   <div className={styles.card} data-tone="policy">
                     <p className={styles.label}>Межі методу</p>
                     <p>{BOUNDARY_NOTE}</p>
+                  </div>
+
+                  {/* THE STEP THAT WAS MISSING. Between «I know my type» and
+                      «I pay» there was nothing at all: two heavy exits and no
+                      way to keep what you had just been given. Signing in here
+                      is the cheap step — it saves the result, and it is the
+                      first point in the journey where an account buys the
+                      reader something rather than costing them the test. */}
+                  <div className={styles.card} data-tone="support">
+                    <p className={styles.label}>Зберегти результат</p>
+                    {/* TELEGRAM FIRST, ACCOUNT SECOND. Both are the cheap step,
+                        but one of them costs a tap and the other costs a
+                        sign-in — and the chat works for a reader who has no
+                        account and does not want one yet. */}
+                    {telegramLink ? (
+                      <>
+                        <p>
+                          Надішлемо профіль у Telegram — щоб він залишився під рукою разом із коротким
+                          вектором на тиждень.
+                        </p>
+                        <a
+                          className={styles.secondaryButton}
+                          href={telegramLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => {
+                            void emitAttemptEvent("dosha_followup_clicked", {
+                              target: "save_result_telegram",
+                              ctaTarget: "save_result_telegram",
+                              screen: "result",
+                              step: totalQuestions,
+                              uiVariant,
+                              resultType,
+                              scores,
+                              completedAt,
+                              nextStep,
+                            });
+                          }}
+                        >
+                          Надіслати в Telegram
+                        </a>
+                      </>
+                    ) : null}
+
+                    {isAuthEnabled ? (
+                      savedToCabinet || session?.user ? (
+                        <>
+                          <p>Результат збережено у вашому кабінеті — його видно поруч із програмами і прогресом.</p>
+                          <Link className={styles.diagnosticTextButton} href={surfaceHref("/profile")}>
+                            Відкрити кабінет
+                          </Link>
+                        </>
+                      ) : (
+                        <>
+                          <p>
+                            У кабінеті профіль зберігається надовго: до нього можна повернутись і порівняти з
+                            наступним проходженням.
+                          </p>
+                          <button
+                            type="button"
+                            className={styles.diagnosticTextButton}
+                            disabled={isBusy}
+                            onClick={() => {
+                              void emitAttemptEvent("dosha_followup_clicked", {
+                                target: "save_result",
+                                ctaTarget: "save_result",
+                                screen: "result",
+                                step: totalQuestions,
+                                uiVariant,
+                                resultType,
+                                scores,
+                                completedAt,
+                                nextStep,
+                              });
+                              void signInWithGoogle(
+                                attemptId
+                                  ? { attemptId, resultType, scores, completedAt, nextStep }
+                                  : undefined
+                              );
+                            }}
+                          >
+                            Зберегти у кабінеті
+                          </button>
+                        </>
+                      )
+                    ) : null}
                   </div>
 
                   <div className={styles.panelIntro}>
@@ -830,7 +975,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
 
                   <div className={styles.diagnosticResultActions}>
                     <Link
-                      href={DOSHA_PRIMARY_EXIT.href}
+                      href={doshaExitHref(DOSHA_PRIMARY_EXIT, { resultType, confidence: profile.confidence })}
                       onClick={() => {
                         void emitAttemptEvent("dosha_followup_clicked", {
                           target: DOSHA_PRIMARY_EXIT.target,
@@ -849,7 +994,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                       Отримати персональні рекомендації
                     </Link>
                     <Link
-                      href={DOSHA_SECONDARY_EXIT.href}
+                      href={doshaExitHref(DOSHA_SECONDARY_EXIT, { resultType, confidence: profile.confidence })}
                       onClick={() => {
                         void emitAttemptEvent("dosha_followup_clicked", {
                           target: DOSHA_SECONDARY_EXIT.target,
@@ -868,6 +1013,15 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                       Переглянути програму
                     </Link>
                   </div>
+
+                  {/* ONE PROGRAM, NOT SEVEN. The type does not pick a different
+                      product — it is read inside the one program — so the screen
+                      says that plainly instead of implying a personalised
+                      catalogue it does not have. */}
+                  <p className={styles.diagnosticScoreRow}>
+                    Програма одна для всіх типів: доші враховані всередині неї, тож ваш профіль стане
+                    в пригоді з першого дня.
+                  </p>
 
                   <div className={styles.diagnosticFlowFoot}>
                     <button
@@ -893,14 +1047,6 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
           </div>
         </section>
       )}
-
-      <PlatformAuthModal
-        open={showAuthPrompt && !session?.user && isAuthEnabled}
-        onClose={() => setShowAuthPrompt(false)}
-        onSignIn={() => {
-          void signInWithGoogle();
-        }}
-      />
     </>
   );
 }

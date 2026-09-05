@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
-import { DOSHA_TEST_SLUG } from "@/lib/doshaTest";
+import { DOSHA_TEST_SLUG, presentQuestionsForSession } from "@/lib/doshaTest";
 import { ensureDoshaTestSeed, loadTestDefinitionBySlug } from "@/lib/doshaTestRepo";
 
 export const runtime = "nodejs";
 
 export async function GET(
-  _: Request,
+  req: Request,
   { params }: { params: Promise<{ testSlug: string }> }
 ) {
   const { testSlug } = await params;
@@ -22,11 +22,17 @@ export async function GET(
       return NextResponse.json({ error: "test_not_available" }, { status: 404 });
     }
 
+    /* The session decides the order of the answers. Without one the order is
+       still shuffled, just not reproducibly — a reader with no session has
+       nothing to walk back to. */
+    const sessionId = new URL(req.url).searchParams.get("sessionId")?.trim() || crypto.randomUUID();
+
     return NextResponse.json({
       testId: test.id,
       testVersion: test.version,
       totalQuestions: test.questions.length,
-      questions: test.questions,
+      questions: presentQuestionsForSession(test.questions, sessionId),
+      sessionId,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown_error";

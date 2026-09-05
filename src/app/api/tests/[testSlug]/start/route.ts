@@ -5,7 +5,7 @@ import {
   ensureDoshaTestSeed,
   loadTestDefinitionBySlug,
 } from "@/lib/doshaTestRepo";
-import { DOSHA_TEST_SLUG } from "@/lib/doshaTest";
+import { DOSHA_TEST_SLUG, presentQuestionsForSession } from "@/lib/doshaTest";
 import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
@@ -63,7 +63,7 @@ export async function POST(
       testVersion: test.version,
       currentQuestionIndex: 1,
       totalQuestions: test.questions.length,
-      questions: test.questions,
+      questions: presentQuestionsForSession(test.questions, sessionId),
       sessionId,
     });
   } catch (error) {

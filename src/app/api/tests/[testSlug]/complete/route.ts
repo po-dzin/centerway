@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
-import { calculateDoshaResult, DOSHA_TEST_SLUG, isValidScoreInvariant } from "@/lib/doshaTest";
+import { classifyDosha, DOSHA_TEST_SLUG, isValidScoreInvariant } from "@/lib/doshaTest";
 import { DOSHA_PRIMARY_EXIT } from "@/lib/doshaRouting";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
@@ -142,6 +142,9 @@ export async function POST(
       expectedAnswers: expectedByQuestion,
     });
     if (idempotent && idempotent.result_type) {
+      /* Re-read rather than re-stored: an attempt written before the profile
+         fields existed still answers with shares and confidence. */
+      const replay = classifyDosha(idempotent.score_vata, idempotent.score_pitta, idempotent.score_kapha);
       return NextResponse.json({
         attemptId: idempotent.id,
         isCompleted: true,
@@ -151,6 +154,8 @@ export async function POST(
           pitta: idempotent.score_pitta,
           kapha: idempotent.score_kapha,
         },
+        shares: replay.shares,
+        confidence: replay.confidence,
         completedAt: idempotent.completed_at,
         nextStep: (idempotent.result_payload_json?.nextStep as string | undefined) ?? DOSHA_PRIMARY_EXIT.nextStep,
       });
@@ -206,7 +211,8 @@ export async function POST(
       return NextResponse.json({ error: "score_invariant_failed" }, { status: 500 });
     }
 
-    const resultType = calculateDoshaResult(vata, pitta, kapha);
+    const profile = classifyDosha(vata, pitta, kapha);
+    const resultType = profile.type;
     const completedAt = new Date().toISOString();
     const nextStep = DOSHA_PRIMARY_EXIT.nextStep;
 
@@ -224,6 +230,11 @@ export async function POST(
         result_payload_json: {
           resultType,
           scores: { vata, pitta, kapha },
+          shares: profile.shares,
+          confidence: profile.confidence,
+          marginPp: profile.marginPp,
+          spreadPp: profile.spreadPp,
+          leaderSharePp: profile.leaderSharePp,
           completedAt,
           nextStep,
         },
@@ -250,6 +261,8 @@ export async function POST(
       sessionId,
       resultType,
       scores: { vata, pitta, kapha },
+      shares: profile.shares,
+      confidence: profile.confidence,
       completedAt,
       nextStep,
       userId,
@@ -258,14 +271,19 @@ export async function POST(
     await emitDoshaTestEvent(db, "dosha_test_completed", eventPayload);
     await emitDoshaTestEvent(db, "dosha_result_calculated", eventPayload);
 
+    /* A finished test is a lead only when it comes with someone to reach.
+       Anonymous completions are real signal but they are not contacts, so they
+       report as ViewContent and the Lead waits for the sign-in that claims the
+       attempt (see the attach route, which reuses this event_id). */
     const capiLeadPayload: CapiEventPayload = {
-      event_name: "Lead",
-      event_id: `dosha_lead_${attempt.id}`,
+      event_name: userId ? "Lead" : "ViewContent",
+      event_id: userId ? `dosha_lead_${attempt.id}` : `dosha_result_${attempt.id}`,
       event_time: Math.floor(Date.now() / 1000),
       action_source: "website",
-      content_name: "dosha_test",
-      content_type: "lead",
+      content_name: userId ? "dosha_test" : "dosha_test_result",
+      content_type: userId ? "lead" : "product",
       content_ids: [resultType],
+      email: user?.email ?? null,
       ip_address: req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? req.headers.get("x-real-ip") ?? null,
       user_agent: req.headers.get("user-agent"),
     };
@@ -280,6 +298,8 @@ export async function POST(
       isCompleted: true,
       resultType,
       scores: { vata, pitta, kapha },
+      shares: profile.shares,
+      confidence: profile.confidence,
       completedAt,
       nextStep,
     });
