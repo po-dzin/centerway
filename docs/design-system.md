@@ -1490,10 +1490,16 @@ Consequences that are easy to get wrong:
 - A surface with **no** inner structure (the shelf, the cabinet, a landing) has
   no sheet at all: the left control stays a plain link. A sheet holding one row
   is a menu apologising for existing.
-- The Control Panel is the single place where the left sheet also carries the
-  wordmark and the way out, because there the sheet **is** the desktop rail
-  folded up, and that rail carries the brand at its head on desktop too. The
-  logo belongs to the rail, not to the sheet.
+- The Control Panel already answers the left question **without** a sheet, and
+  it does so on a phone too: its rail is `hidden md:grid` in the markup, but
+  `.rail[data-cw-material="chrome"]` sets `display: grid` at a higher
+  specificity than Tailwind's `.hidden`, so the icon rail is on screen at
+  375px and has been all along. Read the computed style before calling a
+  surface unreachable — the class list said one thing and the cascade did
+  another. Should that rail ever fold into a sheet, that sheet is the one place
+  in the product whose head carries the wordmark and the way out, because the
+  desktop rail carries the brand at its head as well: the logo would belong to
+  the rail, not to the sheet.
 - Floating organs and `ReaderChrome` must share geometry and material from one
   place. Two circles of different sizes on adjacent screens is the same failure
   as the two glasses of 2026-08-29 — see "One internal workspace frame".
