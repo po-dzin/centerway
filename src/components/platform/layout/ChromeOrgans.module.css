@@ -34,7 +34,15 @@
      references would have been that mistake in miniature. `--platform-*`
      rather than `--cw-*`: the canon guard forbids defining a `--cw-` token in
      platform component CSS, and it is right to. */
-  --platform-island-radius: var(--cw-radius-pill);
+  /* SOFT RECT, NEVER PILL (2026-09-06) — the system's own words, and the
+     islands were the last place still arguing with them. `--cw-radius-md` is
+     the control step of the one radius scale (12 / 16 / 20 / 28 / pill, chosen
+     by the size of the object), and `pill` on that scale is reserved for
+     things that are genuinely round. A 48px square control is not; it was a
+     circle because a floating button is habitually a circle, which is the
+     borrowed default this system replaced everywhere else — see «Soft rect
+     everywhere, never pill» in docs/design-system.md. */
+  --platform-island-radius: var(--cw-radius-md);
   --platform-island-bg: var(--cw-mat-tint-chrome);
   --platform-island-filter: var(--cw-mat-filter);
   /* SHADOW, NOT CONTOUR. `--cw-mat-shadow-chrome` leads with `0 0 0 1px` — a
@@ -49,7 +57,13 @@
   top: max(var(--cw-page-gutter), env(safe-area-inset-top));
   inset-inline-start: max(var(--cw-page-gutter), env(safe-area-inset-left));
   inset-inline-end: max(var(--cw-page-gutter), env(safe-area-inset-right));
-  z-index: 4;
+  /* THE CHROME'S OWN RUNG (2026-09-06). A bare `4` said «above the page» and
+     nothing else, and it was wrong against one thing already: the workshop's
+     mode strip is sticky at `--ds-z-sticky - 1`, so 998 outranked these islands
+     by two orders. They are the same object as the bar — `.header` is
+     `--ds-z-sticky` — so they take the same rung, and the sheet above them
+     (+2) and its shield (+1) keep the order they were written against. */
+  z-index: var(--ds-z-sticky);
   inline-size: auto;
   max-inline-size: 46rem;
   margin-inline: auto;
@@ -173,6 +187,39 @@
   background-color: var(--platform-island-bg);
   backdrop-filter: var(--platform-island-filter);
   box-shadow: var(--platform-island-shadow);
+}
+
+/* TWO ISLANDS IN ONE CORNER (2026-09-06): the map and the account, adjacent
+   rather than grouped. `.cluster` was the other candidate and it is wrong here
+   — it puts its members under ONE plate, and these are not one control: one
+   opens where you can go, the other who you are, and the second is a
+   photograph that has to keep its own round edge. The gap is the smallest the
+   rhythm has, which is what says «next to», not «together».
+
+   A direct child of the row, so `.row > *` hands it back the pointer events
+   the row gives up; its own children inherit them. */
+.pair {
+  display: flex;
+  align-items: center;
+  /* ONE STEP UP FROM THE CLUSTER'S OWN (2026-09-06). At `2xs` the account sat
+     as close to the capsule as the capsule's members sit to each other, so the
+     eye read four buttons in a row with one of them wearing a face. `xs` is the
+     next step of the scale and it is the whole difference between «next to»
+     and «part of»: inside the capsule 0.1rem, between the objects 0.5rem,
+     between the two corners of the row `sm`. Three distances, three
+     relationships. */
+  gap: var(--cw-space-xs);
+}
+
+/* THE CLUSTER IS THE SURFACE, so its members stop carrying one of their own —
+   two materials one inside the other is the seam this layer exists to avoid.
+   The reader wrote this rule for its three reading tools; every cluster obeys
+   it now, so a control moved into one does not have to be re-dressed at the
+   call site. Hit area, glyph and focus ring are untouched. */
+.cluster > :is(button, a) {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
 }
 
 /* An absent side still has to hold its corner: `space-between` with one child

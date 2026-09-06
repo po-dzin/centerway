@@ -52,9 +52,19 @@ describe("reader / author preview chrome contract", () => {
 
   it("uses DS elevation, never foreground-coloured glow, for reader overlays", () => {
     const css = read("src/components/lms/Lms.module.css");
+    /* THE SHEET MOVED ONE HOP (2026-09-06), the same way the reader's chrome row
+       did below: the drawer and the note editor were two of four bottom sheets
+       in the product with two ceilings, two measures and one handle between
+       them, and the material they share is `BottomSheet.module.css` now. The
+       contract follows it and keeps both halves — that the reader still
+       composes the recipe, and that the recipe still carries the elevation this
+       assertion was written to protect. */
+    const sheet = read("src/components/platform/layout/BottomSheet.module.css");
     for (const name of ["drawer", "noteEditor"]) {
-      expect(rule(css, name)).toContain("box-shadow: var(--cw-mat-shadow-deep)");
+      expect(rule(css, name)).toContain('composes: sheet from "../platform/layout/BottomSheet.module.css"');
     }
+    expect(rule(sheet, "sheet")).toContain("box-shadow: var(--cw-mat-shadow-deep)");
+    expect(rule(sheet, "sheet")).toContain("border-radius: var(--cw-radius-xl) var(--cw-radius-xl) 0 0");
     for (const name of ["sizeMenu", "markToolbar"]) {
       expect(rule(css, name)).toContain("box-shadow: var(--cw-mat-shadow-raised)");
     }

@@ -24,10 +24,10 @@ import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
-import { authorAvatarCropStyle } from "@/lib/lms/authorPhoto";
 import { authorProfileCompletion, type Course } from "@/lms-core";
 import { loadCourseAuthorLink, setCourseAuthorLink, type CourseAuthorLinkDto } from "./builderClient";
 import { FieldInput } from "./BuilderFields";
+import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
 import styles from "./Builder.module.css";
 
 /**
@@ -120,21 +120,9 @@ export function BuilderCourseAuthor({
                  at its raw centre — so an author who had dragged their avatar
                  frame in the cabinet saw it applied on their own page and on
                  every course page, and undone here. */
-              /* The frame clips, the picture zooms — see `cropStyle` in
-                 src/lib/media/imageCrop.ts. */
-              <span className={styles.authorPreviewPhotoFrame}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  className={styles.authorPreviewPhoto}
-                  src={linked.photo.src}
-                  alt={linked.photo.alt}
-                  style={authorAvatarCropStyle(linked.photo)}
-                />
-              </span>
+              <AuthorPortrait photo={linked.photo} size="sm" />
             ) : (
-              <span className={`${styles.authorPreviewPhotoFrame} ${styles.authorPreviewPhotoEmpty}`} aria-hidden="true">
-                <Icon name="user" size={20} />
-              </span>
+              <AuthorPortrait photo={null} size="sm" fallback={<Icon name="user" size={20} />} />
             )}
             <div className={styles.authorPreviewBody}>
               <div className={styles.authorPreviewIdentity}>

@@ -1,0 +1,53 @@
+/* THE SHEET THAT RISES FROM THE BOTTOM EDGE.
+
+   Four of them existed, doing one thing: the reader's contents drawer, the
+   reader's note editor, the workshop's contents and the workshop's tool panel.
+   They agreed that a sheet is `--cw-mat-surface` with `--cw-mat-shadow-deep`
+   and rounded top corners, and on nothing else — two ceilings (82svh against a
+   `calc` off the topbar), two measures (34rem, 32rem), one with a grab handle
+   and one without, one that scrolled and one that could grow past the screen.
+
+   THE MATERIAL AND THE GEOMETRY LIVE HERE; the shield does not. A sheet is
+   opened two different ways in this product — by a panel that wraps it
+   (`.drawerBackdrop`) and by a state on a panel that is a rail at desktop
+   widths (`.aside[data-open]`, which cannot `composes` because it is an
+   attribute selector) — and those two shapes are three declarations each. What
+   diverged was never the shield; it was the sheet.
+
+   `--sheet-measure` and `--sheet-ceiling` are the two axes a caller may set.
+   Everything else is the same object every time.
+
+   THE WORKSHOP'S TOOL PANEL IS NOT ONE OF THESE, and the difference is not
+   drift. It rises from the same edge, but it opens over NOTHING — no shield,
+   and the author keeps typing in the document while it is up — so it is dressed
+   as part of the workspace frame (the frame's ground, its drawn border, the
+   raised shadow, the panel radius) rather than as a sheet laid over the page.
+   Making the two look alike would be telling an author that a panel they can
+   work behind is a modal. Three sheets here; the fourth is a different
+   object. */
+.sheet {
+  inline-size: min(100%, var(--sheet-measure, 34rem));
+  max-block-size: var(--sheet-ceiling, 82svh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--cw-space-md) var(--cw-space-md) max(var(--cw-space-lg), env(safe-area-inset-bottom));
+  border-radius: var(--cw-radius-xl) var(--cw-radius-xl) 0 0;
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-deep);
+}
+
+/* THE GRAB BAR IS PART OF THE SHEET, not a decoration two of the four
+   happened to draw. It is the one mark that says «this came up from the edge
+   and can go back», and a sheet without it reads as a panel that appeared. */
+.handle {
+  display: block;
+  inline-size: 2.5rem;
+  block-size: 0.25rem;
+  margin: 0 auto var(--cw-space-sm);
+  border-radius: var(--cw-radius-pill);
+  /* The drawn line, from whichever surface this sheet opened on: the workshop
+     has one line token of its own (`--builder-rule`, and a test that keeps the
+     platform's out of that module), so the ink is a variable and the geometry
+     is not. */
+  background: var(--sheet-rule, var(--cw-platform-border));
+}

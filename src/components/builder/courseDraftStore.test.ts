@@ -29,6 +29,28 @@ describe("classifyDurableDraft", () => {
   it("ignores an acknowledged copy equal to the server", () => {
     expect(classifyDurableDraft(draft(3, course), course, 4)).toEqual({ kind: "none" });
   });
+
+  /* THE DIFFERENCE THE SAVE ITSELF CREATES. The editors prune on the way out —
+     an empty paragraph, a blank «+ Ще один» row — so a successfully saved
+     course does not equal the working copy that produced it. Compared raw, that
+     made every entry open with «Відновити незбережені зміни?» over changes
+     nobody had lost. */
+  it("ignores a copy that differs only by what the save would prune", () => {
+    const withBlankRow = { ...course, results: [...(course.results ?? []), "  "] };
+    expect(classifyDurableDraft(draft(4, withBlankRow), course, 4)).toEqual({ kind: "none" });
+  });
+
+  it("does not offer another account's draft to this one", () => {
+    const theirs = { ...draft(4), ownerId: "author-1" };
+    expect(classifyDurableDraft(theirs, course, 4, "author-2")).toEqual({ kind: "none" });
+    expect(classifyDurableDraft(theirs, course, 4, "author-1")).toMatchObject({ kind: "recover" });
+  });
+
+  it("offers a draft while the session is still unknown, rather than losing it", () => {
+    expect(classifyDurableDraft({ ...draft(4), ownerId: "author-1" }, course, 4, null)).toMatchObject({
+      kind: "recover",
+    });
+  });
 });
 
 describe("acknowledgedDraftRecord", () => {

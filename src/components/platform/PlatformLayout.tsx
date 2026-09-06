@@ -5,8 +5,9 @@ import styles from "./PlatformShellStyles";
 import { PlatformFooter } from "./layout/PlatformFooter";
 import { PlatformHeader } from "./layout/PlatformHeader";
 import { PlatformAccountMenu } from "./layout/PlatformAccountMenu";
-import { PlatformMarkOrgan, PlatformOrgans } from "./layout/PlatformOrgans";
+import { PlatformBackOrgan, PlatformMarkOrgan, PlatformOrgans, chromeOrgans } from "./layout/PlatformOrgans";
 import { PlatformRouteRows } from "./layout/PlatformRouteRows";
+import { PlatformRouteMenu } from "./layout/PlatformRouteMenu";
 import { PwaRuntime } from "./pwa/PwaRuntime";
 import { useSurfaceHost } from "./layout/SurfaceHost";
 import { isPersonalHost } from "@/lib/platform/surfaceHref";
@@ -42,6 +43,7 @@ export function PlatformShell({
   headerMode = "default",
   surface = "auto",
   footer = true,
+  back,
   workspaceContent,
 }: {
   children: ReactNode;
@@ -49,6 +51,17 @@ export function PlatformShell({
   footer?: boolean;
   /** Route-local wayfinding for the shared internal workspace bar. */
   workspaceContent?: ReactNode;
+  /**
+   * The parent of this page, when it has one.
+   *
+   * «Ліворуч — вихід звідси»: the mark answers that at an application's root
+   * and nowhere else. A course inside the library is one level in, so its
+   * leading island is an arrow to the shelf — the same control the reader has
+   * carried since it lost its bar. Given it, the page also stops printing the
+   * breadcrumb in flow on a phone: two affordances for one move, and the text
+   * one was the wider of them.
+   */
+  back?: { href: string; label: string };
   /**
    * Route-owned application identity. Host detection remains the default for
    * public pages, but personal routes must also render correctly on localhost
@@ -95,22 +108,24 @@ export function PlatformShell({
           scope="mobile"
           reveal="gesture"
           label="Навігація"
-          left={<PlatformMarkOrgan />}
+          left={back ? <PlatformBackOrgan href={back.href} label={back.label} /> : <PlatformMarkOrgan />}
           right={
-            <PlatformAccountMenu
-              compact
-              /* `learn` has no top-level route map by design — the lesson tree
-                 is the page, not the chrome — so there is nothing to carry and
-                 the sheet stays the account's own. */
-              /* AND NOT ON THE PERSONAL HOST AT ALL (2026-09-06). `personalNav`
-                 is «Бібліотека» and «Майстерня» — the same two applications the
-                 account block below already lists and marks. Passed here they
-                 came out as four rows for two destinations, one pair above the
-                 rule and one below it, which reads as four places rather than
-                 as one map stated twice. The public map has no such twin: none
-                 of its five is an application of the account. */
-              routes={headerMode === "learn" || personalSurface ? undefined : <PlatformRouteRows />}
-            />
+            /* TWO CONTROLS IN THIS CORNER (2026-09-06): the map and the
+               account. They were one for a day — the route rows folded into
+               the account sheet — and one sheet holding both answered «where
+               can I go» and «who am I» in a single column, marking two rows as
+               current at once. The burger is the same glyph the bar carries
+               above 901px, so the control does not change identity with the
+               viewport. */
+            <span className={chromeOrgans.pair}>
+              {/* `learn` has no top-level route map by design — the lesson tree
+                  is the page, not the chrome — so the burger is not rendered
+                  there at all rather than opening an empty sheet. */}
+              {headerMode === "learn" ? null : (
+                <PlatformRouteMenu routes={(close) => <PlatformRouteRows onNavigate={close} />} />
+              )}
+              <PlatformAccountMenu compact />
+            </span>
           }
         />
       )}

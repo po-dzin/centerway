@@ -68,7 +68,7 @@ export function AuthorCard({
       {badges.length > 0 ? (
         <div className={styles.guideBadges}>
           {badges.map((badge) => (
-            <span key={badge}>{badge}</span>
+            <span className={styles.guideBadge} key={badge}>{badge}</span>
           ))}
         </div>
       ) : null}

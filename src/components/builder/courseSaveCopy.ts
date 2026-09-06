@@ -45,6 +45,15 @@ const MESSAGES: Record<string, string> = {
   lms_course_invalid_schedule_mode: "Не збережено: некоректний режим розкладу.",
   lms_course_invalid_reminder_hour: "Не збережено: година нагадувань поза межами.",
   lms_course_invalid_tagline: "Не збережено: рядок під назвою задовгий.",
+  /* Unreachable from the builder since `pruneEmptyEntries` started stripping
+     blank rows on the way out — and kept, because these three used to be the
+     most common refusal in the product and the one nobody could act on: an
+     empty row left in a storefront list refused every save from then on, under
+     the words «Не вдалося зберегти. Спробуйте ще раз.». If any path ever puts a
+     blank back into the payload, it says which list. */
+  lms_course_invalid_results: "Не збережено: у списку «Що людина отримає» є порожній рядок.",
+  lms_course_invalid_audience: "Не збережено: у списку «Для кого» є порожній рядок.",
+  lms_course_invalid_format: "Не збережено: у списку «З чого складається» є порожній рядок.",
 };
 
 export function courseSaveFailureCopy(detail: string | undefined, fallback: string): string {

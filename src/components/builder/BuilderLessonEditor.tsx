@@ -10,13 +10,12 @@ import {
   courseThemeAttributes,
   courseReadiness,
   buildInternalReferenceTargets,
-  flattenLessons,
   inlineToPlainText,
   moveItem,
   newLesson,
   newModule,
   PLACEHOLDER_MARKER,
-  pruneEmptyProse,
+  courseForSave,
   newBlock,
   renumber,
   newTableRow,
@@ -41,7 +40,7 @@ import { InkLabel } from "./BuilderInkLabel";
 import { importLessonFiles, loadCourse, saveCourse, type BuilderFailure } from "./builderClient";
 import { BuilderGrip } from "./BuilderGrip";
 import { BuilderHistory } from "./BuilderHistory";
-import { BuilderToolRail, type BuilderToolMode } from "./BuilderToolRail";
+import { BuilderToolRail, BuilderToolsOrgan, type BuilderToolMode } from "./BuilderToolRail";
 import { useCourseAutosave } from "./useCourseAutosave";
 import { rememberZenPreviewReturn, zenPreviewHref } from "@/components/lms/ZenPreviewShell";
 import { useCourseHistory } from "./useCourseHistory";
@@ -58,6 +57,7 @@ import {
 } from "./blockFields";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
+import { usePlatformSession } from "@/components/platform/layout/usePlatformSession";
 import { lessonDocumentFailureCopy } from "./lessonDocumentCopy";
 import {
   clearDurableCourseDraft,
@@ -164,6 +164,9 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     if (window.matchMedia("(max-width: 900px)").matches) setToolOpen(false);
   }, []);
   const [blockSearch, setBlockSearch] = useState("");
+  /* See the twin note on the course page: the device-local draft carries the
+     account it belongs to, or it is nobody's and is not offered. */
+  const ownerId = usePlatformSession()?.user?.id ?? null;
 
   useEffect(() => {
     // Guarded, and awaiting before the first setState: a synchronous setState in
@@ -175,7 +178,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       if (result.ok) {
         draftGeneration.current = result.data.draftGeneration;
         serverCourse.current = result.data.course;
-        const durable = await inspectDurableCourseDraft(result.data.course, result.data.draftGeneration);
+        const durable = await inspectDurableCourseDraft(result.data.course, result.data.draftGeneration, ownerId);
         if (cancelled) return;
         // The server version stands until the author answers the dialogue.
         history.reset(result.data.course);
@@ -300,7 +303,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     if (draftGeneration.current === null) {
       return { ok: false as const, message: "Курс ще завантажується. Спробуйте за мить." };
     }
-    const result = await saveCourse(slug, pruneEmptyProse(snapshot), draftGeneration.current);
+    const result = await saveCourse(slug, courseForSave(snapshot), draftGeneration.current);
     if (!result.ok) {
       if (result.failure === "conflict") {
         return { ok: false as const, message: "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку, щоб не втратити чужі зміни." };
@@ -332,6 +335,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const autosave = useCourseAutosave({
     course,
     dirty,
+    ownerId,
     paused: busy || exit.prompt !== null,
     suspended: draftDecision !== null,
     persist: persistCourse,
@@ -535,12 +539,12 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const holder = course.modules[located.moduleIndex];
   const lesson = holder.lessons[located.lessonIndex] as Lesson;
 
-  // The walk the author's own arrows follow: every lesson of the course in
-  // stored order, reference modules included. The learner's sequence excludes
-  // reference material; the AUTHOR's does not — a recipe list still has to be
-  // reachable with one press from the lesson before it.
-  const walk = flattenLessons(course);
-  const position = walk.findIndex((entry) => entry.lesson.slug === lesson.slug);
+  /* The author's walk through the course — every lesson in stored order,
+     reference modules included — used to be computed here for one thing only:
+     «2/7» beside the outline glyph. The count left the chrome on 2026-09-06
+     (see `.contentsCount` in Builder.module.css) and the walk left with it; the
+     outline itself is what answers «where am I», and it answers with the
+     lesson's name rather than with its index. */
   const selectedBlockIndex = lesson.blocks.findIndex((block) => block.id === selectedBlockId);
   const selectedBlock = selectedBlockIndex >= 0 ? lesson.blocks[selectedBlockIndex] : null;
   const readiness = courseReadiness(course);
@@ -643,6 +647,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
         />
       }
       asideOpen={contentsOpen}
+      onAsideClose={() => setContentsOpen(false)}
       asideCollapsed={structureCollapsed}
       onAsideToggle={() => setStructureCollapsed((collapsed) => !collapsed)}
       pageMode="document"
@@ -674,7 +679,11 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
           />
         </BuilderToolRail>
       }
-      tools={
+      /* THE DOCUMENT'S TWO OBJECTS, in the phone's capsule and in the desktop
+         topbar — see `organs` in BuilderShell. «Переглянути» and «Зміст» are
+         things you press; «Збережено», the blocker count and the lesson's
+         position are things you read, and they stay below in `tools`. */
+      organs={
         <>
           <button
             className={styles.workspacePreviewAction}
@@ -687,25 +696,39 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
             <Icon name="eye" size={20} />
             <span className={styles.workspaceActionLabel}>Переглянути</span>
           </button>
-          <span className={styles.workspaceSaveStatus} role="status" aria-live="polite">
-            <Icon name="check" size={18} /> {autosave.saving ? "Зберігаємо…" : dirty ? "Є зміни" : "Збережено"}
-          </span>
-          <button className={styles.workspaceBlockers} type="button" onClick={() => navigate(`/build/${slug}#course-release`)}>
-            <span aria-hidden="true">•</span> {readiness.blockers.length} блокери
-          </button>
-          {/* Hidden from 901px up, where the rail is simply there. A control
+          {/* THE BLOCK TOOLS, IN THE SAME CAPSULE (2026-09-06). They used to be
+              a floating strip at the bottom-right corner of the lesson — a
+              second toolbar for one document, at the opposite corner from this
+              one, sitting exactly where the thumb rests while typing. On the
+              wide screen they stay on their panel's edge, where the panel is.
+              */}
+          <BuilderToolsOrgan
+            open={toolOpen}
+            mode={toolMode}
+            onOpen={selectTool}
+            onClose={() => setToolOpen(false)}
+          />
+          {/* Hidden from 1660px up, where the rail is simply there. A control
               that toggles something already visible is a control that does
               nothing the first time it is pressed. */}
           <button
             className={styles.contentsAction}
             type="button"
             aria-expanded={contentsOpen}
+            aria-label="Зміст курсу"
             onClick={() => setContentsOpen((open) => !open)}
           >
             <Icon name="menu" size={18} />
-            <span className={styles.contentsCount}>
-              {position + 1}/{walk.length}
-            </span>
+          </button>
+        </>
+      }
+      tools={
+        <>
+          <span className={styles.workspaceSaveStatus} role="status" aria-live="polite">
+            <Icon name="check" size={18} /> {autosave.saving ? "Зберігаємо…" : dirty ? "Є зміни" : "Збережено"}
+          </span>
+          <button className={styles.workspaceBlockers} type="button" onClick={() => navigate(`/build/${slug}#course-release`)}>
+            <span aria-hidden="true">•</span> {readiness.blockers.length} блокери
           </button>
         </>
       }

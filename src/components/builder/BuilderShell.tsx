@@ -5,7 +5,7 @@ import type { MouseEvent, ReactNode } from "react";
 import { HandGraphic, Icon } from "@/components/Icon";
 import { PlatformAccountMenu } from "@/components/platform/layout/PlatformAccountMenu";
 import { PlatformHeader } from "@/components/platform/layout/PlatformHeader";
-import { PlatformMarkOrgan, PlatformOrgans } from "@/components/platform/layout/PlatformOrgans";
+import { PlatformBackOrgan, PlatformMarkOrgan, PlatformOrgans, chromeOrgans } from "@/components/platform/layout/PlatformOrgans";
 import { PlatformTrail, type TrailStep } from "@/components/platform/PlatformTrail";
 import { supabaseClient } from "@/lib/supabaseClient";
 import type { BuilderFailure } from "./builderClient";
@@ -38,11 +38,13 @@ import styles from "./Builder.module.css";
 export function BuilderShell({
   trail = [],
   tools,
+  organs,
   aside,
   asideOpen,
   asideCompact,
   asideCollapsed,
   onAsideToggle,
+  onAsideClose,
   toolLayer,
   pageMode = "workspace",
   onNavigate,
@@ -50,6 +52,17 @@ export function BuilderShell({
 }: {
   trail?: TrailStep[];
   tools?: ReactNode;
+  /**
+   * The icon controls of this document, for the phone's trailing capsule.
+   *
+   * SEPARATE FROM `tools` because a capsule is 48px tall and made of islands:
+   * «Збережено · 0 блокери» is a sentence and belongs in the document, an eye
+   * and an outline glyph are objects and belong in the chrome. Rendered in two
+   * places and visible in one — `PlatformOrgans` is mobile-only and
+   * `PlatformHeader` is desktop-only, so each viewport draws exactly one of
+   * them, and neither has to ask a media query in JavaScript what to mount.
+   */
+  organs?: ReactNode;
   /** The course outline. A rail on desktop, a drawer below 901px. */
   aside?: ReactNode;
   asideOpen?: boolean;
@@ -58,6 +71,8 @@ export function BuilderShell({
   /** Hides the desktop outline while leaving a stable reopen control. */
   asideCollapsed?: boolean;
   onAsideToggle?: () => void;
+  /** Closes the phone's contents sheet — its scrim and its own close control. */
+  onAsideClose?: () => void;
   /** Contextual right rail on desktop and bottom sheet on compact layouts. */
   toolLayer?: ReactNode;
   /** A lesson document uses the learner's readable measure. */
@@ -74,6 +89,23 @@ export function BuilderShell({
      The TRAIL still needs two steps, because a breadcrumb showing only its own
      root is not a path — it is the application's name written twice. */
   const showTrail = trail.length > 1;
+
+  /* «Ліворуч — вихід звідси». The trail already knows the parent, so the phone's
+     leading island is derived rather than configured: the workshop's root shows
+     the mark, a course shows the way back to the courses, a lesson shows the way
+     back to its course. A control that leaves the APPLICATION from inside an
+     unsaved lesson was the wrong answer to the only question that corner
+     answers.
+
+     THE NEAREST STEP THAT LEADS SOMEWHERE, not the one directly above. A
+     lesson's trail is «Курси / Курс / Модуль / Урок» and the MODULE is not a
+     place — it has no route, because there is no page for one. Reading
+     `length - 2` blindly found that dead step, fell through to the mark, and
+     the arrow never appeared on the one screen it matters most. */
+  const parent = trail
+    .slice(0, -1)
+    .reverse()
+    .find((step) => step.onNavigate || step.href) ?? null;
 
   /* Two ways to fold one panel, one thing the control has to say. `collapsed`
      empties the rail, `compact` narrows it to its icon column — but from the
@@ -117,11 +149,25 @@ export function BuilderShell({
         scope="mobile"
         reveal="always"
         label="Майстерня"
-        left={<PlatformMarkOrgan />}
+        left={parent?.onNavigate
+          ? <PlatformBackOrgan onNavigate={parent.onNavigate} label={`Назад: ${parent.label}`} />
+          : parent?.href
+            ? <PlatformBackOrgan href={parent.href} label={`Назад: ${parent.label}`} />
+            : <PlatformMarkOrgan />}
         /* No `routes`. The workshop is a focused mode: `PlatformHeader` gives
            it an empty `navSource` for the same reason, so a route map in the
            sheet would be a map the bar above 901px does not draw. */
-        right={<PlatformAccountMenu compact />}
+        right={(
+          /* THE DOCUMENT'S TOOLS, THEN THE ACCOUNT. The capsule is the reader's
+             own recipe (`chromeOrgans.cluster`): several controls travelling as
+             one object, so they read as this lesson's toolkit rather than as
+             loose discs over the text. The account stays its own island beside
+             it — it belongs to the person, not to the document. */
+          <span className={chromeOrgans.pair}>
+            {organs ? <span className={chromeOrgans.cluster}>{organs}</span> : null}
+            <PlatformAccountMenu compact />
+          </span>
+        )}
       />
       <PlatformHeader
         surface="personal"
@@ -130,7 +176,7 @@ export function BuilderShell({
         workspaceContent={(
           <div className={styles.workspaceTopbarContext}>
             {showTrail ? <PlatformTrail steps={trail} /> : <span />}
-            {tools ? <div className={styles.workspaceTopbarTools}>{tools}</div> : <span />}
+            {tools || organs ? <div className={styles.workspaceTopbarTools}>{organs}{tools}</div> : <span />}
           </div>
         )}
       />
@@ -148,7 +194,40 @@ export function BuilderShell({
             data-collapsed={asideCollapsed || undefined}
             aria-label="Навігація курсу"
           >
-            <div className={styles.asideContent}>{aside}</div>
+            {/* THE PHONE'S CONTENTS IS A SHEET, NOT A STACK (2026-09-06).
+                `.aside[data-open]` used to be `display: block` in normal flow,
+                so pressing «Зміст» inside a lesson pushed the whole outline —
+                seven lessons, «Додати урок», «Додати модуль» — ABOVE the
+                paragraph being edited, and the document the author was working
+                in left the screen. A panel that displaces its own subject is
+                not a panel.
+
+                It is the library's drawer now: the reader's contents sheet
+                (`.drawerBackdrop` / `.drawer` in Lms.module.css) rises from the
+                bottom over a shield, and the lesson stays where it was. ONE
+                DOM in both directions — the desktop rail and the phone sheet
+                are the same element with a media query between them, because
+                choosing what to MOUNT from a media query in JavaScript is
+                answered differently on the server and in the browser. */}
+            {onAsideClose ? (
+              <button
+                className={styles.asideScrim}
+                type="button"
+                tabIndex={-1}
+                aria-label="Закрити зміст"
+                onClick={onAsideClose}
+              />
+            ) : null}
+            {/* THE SHEET IS ITS OWN ELEMENT, and that is what lets it be the
+                platform's sheet rather than a copy of it. `.aside` is a rail
+                above 901px and a drawer below it, and `composes` cannot be
+                scoped to a media query — so the material goes on a wrapper that
+                is `display: contents` on the desktop, where it has no business
+                existing at all. */}
+            <div className={styles.asideSheet}>
+              <span className={styles.asideHandle} aria-hidden="true" />
+              <div className={styles.asideContent}>{aside}</div>
+            </div>
             {onAsideToggle ? (
               <button
                 className={styles.asideCollapseAction}
@@ -164,12 +243,16 @@ export function BuilderShell({
           </aside>
         ) : null}
         <main className={styles.page} data-mode={pageMode}>
-          {/* Trail and tools on one line: where am I, and the handful of
-              controls that act on this exact course or lesson. */}
-          {showTrail || tools ? (
+          {/* NO PATH IN THE DOCUMENT ANY MORE (2026-09-06). This row exists
+              only below 901px (`.pageTrail` is hidden above it), and there the
+              breadcrumb said in words the move the leading island now makes
+              with an arrow — «← Short-Перезавантаження» printed one line above
+              a title naming the same document, and it was the widest object in
+              a row that also has to carry the save state. What is left is what
+              the row is for: what this document is doing right now. */}
+          {tools ? (
             <div className={styles.pageTrail}>
-              {showTrail ? <PlatformTrail steps={trail} /> : null}
-              {tools ? <div className={styles.pageTools}>{tools}</div> : null}
+              <div className={styles.pageTools}>{tools}</div>
             </div>
           ) : null}
           {children}

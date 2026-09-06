@@ -90,7 +90,12 @@
   --platform-header-wordmark-image: var(--cw-brand-asset-wordmark-dark);
   --platform-header-shell-radius: var(--cw-radius-lg);
   --platform-utility-control-size: 3rem;
-  --platform-utility-control-radius: var(--cw-radius-pill);
+  /* SOFT RECT, NEVER PILL (2026-09-06). One token, three controls — the
+     account entry, the bar's menu button and the panel close — and all three
+     were circles because a utility control is habitually a circle. On the one
+     radius scale `pill` is for things that are genuinely round; a 3rem square
+     control is not. `md` is the control step. */
+  --platform-utility-control-radius: var(--cw-radius-md);
   --platform-utility-control-focus:
     0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
   border: 0;
@@ -690,7 +695,10 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  border-radius: 999px;
+  /* The face takes the corner of the control it sits in — see «Soft rect, not
+     circles» in docs/design-system.md. A round portrait beside a soft-rect
+     mark and a soft-rect menu button was the one circle left in the chrome. */
+  border-radius: var(--cw-radius-md);
   color: var(--cw-platform-text);
   background:
     radial-gradient(circle at 36% 24%, color-mix(in srgb, var(--cw-sem-warmth) 44%, transparent), transparent 46%),
@@ -699,6 +707,34 @@
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.04em;
+}
+
+/* INK MARKS TEXT; A BOX MARKS ITSELF (2026-09-06).
+
+   In the bar the account entry is transparent — no ground, no contour — so the
+   hand's ring is the only thing that can say «you are on this» or «this is
+   open», and it stays there. Floating, the same control wears the island's
+   plate and, once pressed, sits INSIDE the sheet it opened: the state is told
+   twice, by a plate under a face and by a scribbled loop over it. The loop is
+   the one that has to go — it is the mark for objects that have nothing else,
+   and this one has two things.
+
+   Not `display: none` on the graphic: the element stays in the tree with the
+   same geometry as the bar's, so the two contexts cannot drift apart in size.
+   It simply never paints. */
+[data-cw-chrome="organs"] .profileEntry .profileInkRing,
+[data-cw-chrome="organs"] .profileEntry:hover .profileInkRing,
+[data-cw-chrome="organs"] .profileEntry:focus-visible .profileInkRing,
+[data-cw-chrome="organs"] .profileEntry[aria-expanded="true"] .profileInkRing {
+  opacity: 0;
+}
+
+/* The same arithmetic in the bar, where the avatar is 2.25rem: its diagonal is
+   3.18rem and the ring is 3rem, so the corners crossed the stroke there too —
+   invisibly until hover, and then exactly as wrong. */
+.profileEntry .profileInkRing {
+  width: calc(var(--cw-ink-ring-size) * 1.2);
+  height: calc(var(--cw-ink-ring-size) * 1.2);
 }
 
 /* THE RING ENCIRCLES, IT DOES NOT CROSS (2026-09-06). `--cw-ink-ring-size` is
@@ -710,11 +746,18 @@
    The mark is not wrong, the ratio is. It used to circle a 2.25rem disc at
    3rem — a third larger than the thing it marks — so at 3rem the loop is 4rem.
    Nothing clips it: the row sets no overflow, and 8px of overhang on a 20px
-   gutter stays inside the viewport on the narrowest phone we ship to. */
+   gutter stays inside the viewport on the narrowest phone we ship to.
+
+   AND THE FACE IS A SOFT RECT NOW, which moves the number again: a circle that
+   clears a 3rem SQUARE has to clear its diagonal, 4.24rem, not its side. At
+   1.34 the loop passed exactly through the four corners — the same stroke
+   across the same face, in a new place. 1.5 puts it outside them with air to
+   spare, and the overhang is still inside the gutter. */
 [data-cw-chrome="organs"] .profileInkRing {
-  width: calc(var(--cw-ink-ring-size) * 1.34);
-  height: calc(var(--cw-ink-ring-size) * 1.34);
+  width: calc(var(--cw-ink-ring-size) * 1.5);
+  height: calc(var(--cw-ink-ring-size) * 1.5);
 }
+
 
 /* IN THE ISLANDS IT IS THE ISLAND (2026-09-06). In the bar the avatar is a
    2.25rem disc inside a 3rem hit box, which is right there: the box is invisible
@@ -757,27 +800,19 @@
   gap: 0.25rem;
   padding: 0.7rem;
   border: 0;
-  /* A BAR IS CHROME ON THE PAGE; A MENU IS A SHEET LAID ON IT.
-
-     This took the bar's exact material — `--cw-mat-tint-chrome`, which is the
-     surface at 30% — on the argument that the popover and the bar should read
-     as one plate extended downward. The tint is the half of that argument that
-     does not survive: a bar hangs on a known band at the top of the page, but
-     this panel opens over whatever happens to be under it. Seventy per cent of
-     the ground showing through is bounded on the night side, where everything
-     behind is near-black, and unbounded on the light one — over the hero
-     photograph it came out as taupe mud with six names floating in it, and the
-     text's contrast was a property of the page behind rather than of the menu.
-
-     So the floor is opaque paper and the grain, the radius and the chrome
-     shadow stay: it is still the same family, still not a second material, and
-     it is now legible over anything. `backdrop-filter` goes with the
-     transparency it existed to rescue — blurring a ground nobody can see is
-     a filter run for nothing on every frame the menu is open. */
+  /* ONE MATERIAL WITH THE BAR (2026-09-06). This used to fall back to opaque
+     paper here on the argument that a popover opens over arbitrary page
+     content rather than the bar's own bounded band, and the tint read as mud
+     over a hero photograph. The call now is that every chrome surface — bar,
+     drawer, island sheet and this popover — reads as one plate rather than
+     switching material by anchor form, so it takes the same chrome tint and
+     blur as the other two forms below. The grain, radius and chrome shadow are
+     unchanged: still the same family either way. */
   border-radius: var(--cw-radius-lg);
   color: var(--cw-platform-text);
-  background-color: var(--cw-mat-surface);
+  background-color: var(--cw-mat-tint-chrome);
   background-image: var(--cw-mat-grain-image);
+  backdrop-filter: var(--cw-mat-filter);
   box-shadow: var(--cw-mat-shadow-chrome);
   /* THE CEILING IS A SAFETY NET, NOT A LAYOUT (2026-08-28).
 
@@ -803,6 +838,12 @@
 .profileMenu::-webkit-scrollbar {
   width: 0;
   height: 0;
+}
+
+@supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
+  .profileMenu {
+    background-color: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
+  }
 }
 
 /* THE DRAWER FORM — see the note in PlatformAccountMenu on why there are two.

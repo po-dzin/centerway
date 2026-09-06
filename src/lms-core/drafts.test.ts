@@ -9,6 +9,7 @@ import {
   newModule,
   PLACEHOLDER_MARKER,
   nextDayIndex,
+  pruneEmptyEntries,
   pruneEmptyProse,
   renumber,
   slugify,
@@ -188,5 +189,25 @@ describe("pruneEmptyProse", () => {
   it("counts whitespace as nothing written", () => {
     const pruned = pruneEmptyProse(course([rich([{ kind: "p", text: "   " }, { kind: "p", text: "Є" }])]));
     expect(pruned.modules[0].lessons[0].blocks[0]).toMatchObject({ content: [{ kind: "p", text: "Є" }] });
+  });
+});
+
+describe("pruneEmptyEntries", () => {
+  const withLists = (lists: Partial<Pick<Course, "results" | "audience" | "format">>): Course => ({
+    ...newCourse(() => "id", { slug: "lists", title: "Курс", programSlug: "lists" }),
+    ...lists,
+  });
+
+  it("drops the blank row «+ Ще один» left behind", () => {
+    expect(pruneEmptyEntries(withLists({ results: ["Перший", "  ", ""] })).results).toEqual(["Перший"]);
+  });
+
+  it("removes a list emptied of everything, rather than storing []", () => {
+    expect(pruneEmptyEntries(withLists({ audience: ["", "   "] })).audience).toBeUndefined();
+  });
+
+  it("leaves a course with no lists alone", () => {
+    const course = withLists({});
+    expect(pruneEmptyEntries(course).format).toBeUndefined();
   });
 });

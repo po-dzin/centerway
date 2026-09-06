@@ -367,21 +367,37 @@
   composes: cluster from "../platform/layout/ChromeOrgans.module.css";
 }
 
+/* THE ONE ISLAND THAT KEEPS ITS WORD (2026-09-06).
+
+   Every other leading control in the product is a bare arrow: the destination
+   is the parent, and the page it returns to writes its own name. This one is
+   not that — the author is standing inside the LEARNER's skin, and the arrow
+   there means «back to the shelf» to everybody who has ever used the reader.
+   The word is the only thing that says it leaves the preview, so the word
+   stays.
+
+   What changes is the material: it wore `--cw-mat-shadow-chrome`, which leads
+   with a `0 0 0 1px` spread — an outline drawn around a floating object, while
+   the mark and the account beside it wear the soft shadow the islands settled
+   on. Same height, same pill, same ground, same shadow as `.organ`; only the
+   width differs, because only this one has something to say. */
 .readerPreviewBack {
   composes: base chrome hug from "../platform/PlatformButtons.module.css";
   flex: none;
+  min-height: var(--ds-touch-target-min);
   padding-inline: var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
   color: var(--cw-platform-text);
   background-color: var(--cw-mat-tint-chrome);
   backdrop-filter: var(--cw-mat-filter);
-  box-shadow: var(--cw-mat-shadow-chrome);
+  box-shadow: var(--cw-mat-shadow-soft);
   white-space: nowrap;
 }
 
 .readerPreviewBack:hover:not(:disabled),
 .readerPreviewBack:focus-visible {
   background-color: var(--cw-mat-tint-chrome);
-  box-shadow: var(--cw-mat-shadow-chrome);
+  box-shadow: var(--cw-mat-shadow-soft);
 }
 
 /* The cluster IS the surface, so its members stop carrying one of their own —
@@ -547,22 +563,14 @@
   justify-content: center;
 }
 
+/* The platform's bottom sheet — see the note over BottomSheet.module.css. This
+   one was the reference the other three drifted from. */
 .drawer {
-  width: min(100%, 34rem);
-  max-height: 82svh;
-  overflow-y: auto;
-  padding: var(--cw-space-md) var(--cw-space-md) max(var(--cw-space-lg), env(safe-area-inset-bottom));
-  border-radius: var(--cw-radius-xl) var(--cw-radius-xl) 0 0;
-  background: var(--cw-mat-surface);
-  box-shadow: var(--cw-mat-shadow-deep);
+  composes: sheet from "../platform/layout/BottomSheet.module.css";
 }
 
 .drawerHandle {
-  width: 2.5rem;
-  height: 0.25rem;
-  margin: 0 auto var(--cw-space-sm);
-  border-radius: var(--cw-radius-pill);
-  background: var(--cw-platform-border);
+  composes: handle from "../platform/layout/BottomSheet.module.css";
 }
 
 /* Sticky, because the panel now opens scrolled to the current lesson: a title
@@ -1276,12 +1284,13 @@
   background: var(--cw-overlay);
 }
 
+/* The same sheet, narrower: a note is a paragraph and the reader is writing it,
+   so the measure is the one a text field wants rather than the one a list of
+   lessons does. It also gains the ceiling and the scroll it never had — a long
+   note used to be able to grow past the top of the screen. */
 .noteEditor {
-  width: min(100%, 32rem);
-  padding: var(--cw-space-md) var(--cw-space-md) max(var(--cw-space-lg), env(safe-area-inset-bottom));
-  border-radius: var(--cw-radius-xl) var(--cw-radius-xl) 0 0;
-  background: var(--cw-mat-surface);
-  box-shadow: var(--cw-mat-shadow-deep);
+  composes: sheet from "../platform/layout/BottomSheet.module.css";
+  --sheet-measure: 32rem;
 }
 
 /* The passage, so the reader can see WHICH place they are writing about

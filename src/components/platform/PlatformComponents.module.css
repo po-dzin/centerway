@@ -39,73 +39,18 @@
   gap: 0.8rem;
 }
 
-.authModal {
-  width: min(100%, 32rem);
-  position: relative;
-  padding: clamp(1.3rem, 4vw, 1.75rem);
-}
+/* THE SIGN-IN DIALOGUE'S RULES LIVED HERE and went with it on 2026-09-06 —
+   `PlatformAuthModal` had no callers at all: no import, no dynamic mount, no
+   second consumer of these classes. It was found while auditing layers, because
+   it was the one overlay in the product painting its shield with Tailwind
+   utilities at `z-50`, a rung from a scale this product does not run. That bug
+   had never been seen for the plainest possible reason.
 
-.authModal .panelIntro {
-  padding-right: 3.35rem;
-}
+   The way into an account is `PlatformAccountMenu` (Google, from the control
+   that says whose session this is) and, in the cabinet, its own gate. A second
+   dialogue for the same act is what this file had, unmounted, for long enough
+   that nobody missed it. */
 
-.authModalTitle {
-  margin: 0;
-  color: var(--cw-platform-text);
-  font-family: var(--cw-font-editorial);
-  font-size: var(--ds-type-title-size);
-  font-weight: 700;
-  line-height: var(--ds-type-title-line-height);
-}
-
-.authModalActions {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.authModalActions > * {
-  width: 100%;
-}
-
-.authModalClose {
-  width: var(--platform-utility-control-size);
-  height: var(--platform-utility-control-size);
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 0;
-  border-radius: var(--platform-utility-control-radius);
-  color: var(--cw-platform-muted);
-  background: transparent;
-  box-shadow: none;
-  cursor: pointer;
-  transition:
-    color 180ms ease,
-    background-color 180ms ease,
-    box-shadow 180ms ease;
-}
-
-.authModalClose:hover {
-  color: var(--cw-platform-text);
-  background: var(--cw-mat-tint-hover);
-}
-
-.authModalClose:focus-visible {
-  outline: none;
-  color: var(--cw-platform-text);
-  background: var(--cw-mat-tint-hover);
-  box-shadow: var(--platform-utility-control-focus);
-}
-
-.authModalClose span {
-  line-height: 1;
-  font-size: 1.9rem;
-  font-weight: 300;
-}
 
 .diagnosticTextButton {
   composes: text from "./PlatformButtons.module.css";
@@ -347,26 +292,12 @@
   font-size: 0.92rem;
 }
 
-.diagnosticSpinner {
-  width: 3rem;
-  height: 3rem;
-  border: 4px solid var(--cw-platform-border);
-  border-top-color: var(--cw-status-success);
-  border-radius: 999px;
-  animation: diagnosticSpin 900ms linear infinite;
-}
-
-@keyframes diagnosticSpin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* The rotating ring that used to be here is `LogoMark animate="wait"` now —
+   see the note at its call site in DoshaTestClient. */
 
 @media (prefers-reduced-motion: reduce) {
-  .diagnosticSpinner {
-    animation: none;
-  }
-
+  /* The spinner's own reduced-motion rule went with it: `LogoMark` answers
+     that question for every one of its animations, in one place. */
   .diagnosticProgressBar {
     transition: none;
   }

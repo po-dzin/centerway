@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { LogoMark } from "@/components/brand/LogoMark";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Icon } from "@/components/Icon";
@@ -844,7 +845,14 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                   </div>
 
                   <div className={styles.diagnosticLoadingStack}>
-                    <div className={styles.diagnosticSpinner} aria-hidden="true" />
+                    {/* THE MARK WAITS, NOT A RING (2026-09-06). `LogoMark`'s
+                        `wait` — turns gaining density in turn — has been «the
+                        spinner replacement» in its own source since it was
+                        written; this screen and the admin panel were the two
+                        places still drawing a rotating circle, which is a
+                        borrowed glyph that says «something is happening» without
+                        saying what, next to a heading that says exactly what. */}
+                    <LogoMark size={36} animate="wait" aria-hidden="true" />
                     <h2 className={styles.title}>Аналізуємо ваш профіль...</h2>
                     <p className={styles.lead}>Формуємо практичний вектор і наступний крок у платформі.</p>
                   </div>

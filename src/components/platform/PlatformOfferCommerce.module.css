@@ -335,24 +335,11 @@
   gap: var(--cw-space-md);
 }
 
-/* The frame owns the circle and the clip; the photograph fills it and may
-   carry the author's zoom inside it (2026-09-06). Given to the `<img>` alone,
-   a magnified avatar grew past the circle it was supposed to be inside. */
-.authorPhotoFrame {
-  width: 5.5rem;
-  height: 5.5rem;
-  flex: none;
-  overflow: hidden;
-  border-radius: var(--cw-radius-pill);
-  box-shadow: var(--cw-mat-shadow-soft);
-}
-
-.authorPhoto {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
+/* The byline's face is `AuthorPortrait` now — see the note over its module.
+   Two things went with these rules: the last `--cw-radius-pill` on a portrait
+   (this frame was missed in the 2026-09-06 sweep and stayed a circle a day
+   longer than the rest), and a `--cw-mat-shadow-soft` no other portrait wore.
+   A face does not float above the panel it is printed on. */
 
 .authorBody {
   display: grid;

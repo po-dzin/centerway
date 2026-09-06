@@ -553,21 +553,14 @@
   gap: var(--cw-space-2xs);
 }
 
+/* The platform's chip — see the note over Chip.module.css. This one used to
+   run a literal `0.8rem` in muted ink on a padding nobody else used. */
 .chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.3rem 0.7rem;
-  border-radius: var(--cw-radius-pill);
-  background: var(--cw-mat-surface-sunk);
-  font-size: 0.8rem;
-  color: var(--cw-platform-muted);
+  composes: chip from "../Chip.module.css";
 }
 
 .chipDone {
-  composes: chip;
-  background: var(--cw-platform-accent);
-  color: var(--cw-platform-on-accent);
-  font-weight: 600;
+  composes: chip done from "../Chip.module.css";
 }
 
 .metaList {
@@ -1939,9 +1932,13 @@
   border-radius: var(--cw-radius-md);
 }
 
-/* The round avatar's own frame — the author's own page and a course's byline.
-   Square while dragging, so the focal point maps the same way as the card;
-   the circular crop is what the border-radius shows. */
+/* THE AVATAR'S OWN FRAME — the author's page and a course's byline. Square
+   while dragging, so the focal point maps the same way as the card; the
+   border-radius shows the shape the page will actually draw, and a face is
+   round: the controls of the chrome moved to the soft rect on 2026-09-06, the
+   portraits came back to the circle the same day. A crop editor previewing a
+   corner the product does not draw is the exact failure it exists to
+   prevent — the same argument the banner ratio note below makes. */
 .photoCropAvatar {
   width: 10rem;
   aspect-ratio: 1;

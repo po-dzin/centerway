@@ -21,9 +21,17 @@ describe("shared surface boundaries", () => {
   });
 
   it("uses one borderless media capsule in library and workshop", () => {
-    const recipe = read("src/components/platform/PlatformSurfaces.module.css");
-    expect(recipe).toContain("border-radius: var(--cw-radius-pill)");
-    expect(recipe).toContain("border: 0");
+    /* THE RECIPE MOVED UP A FLOOR (2026-09-06). `.mediaBadge` was one of five
+       chips in the product with five paddings, three weights and four grounds;
+       it is now the platform chip wearing its media ground, so the shape and
+       the borderlessness this test has always guarded live in `Chip.module.css`
+       and the media capsule's three consumers keep composing exactly as they
+       did. */
+    const chip = read("src/components/platform/Chip.module.css");
+    expect(chip).toContain("border-radius: var(--cw-radius-pill)");
+    expect(chip).toContain("border: 0");
+    expect(block(read("src/components/platform/PlatformSurfaces.module.css"), ".mediaBadge"))
+      .toContain("composes: chip onMedia");
     for (const [file, selector] of [
       ["src/components/platform/cabinet/Cabinet.module.css", ".draftBadgeChip"],
       ["src/components/builder/Builder.module.css", ".coverPill"],
