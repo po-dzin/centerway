@@ -15,11 +15,12 @@
  * points here. The profile is what it says on the tin — the account.
  */
 
-import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 import type { CourseCategory } from "@/lms-core";
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
+import { asOneMovement } from "@/components/platform/viewTransition";
 import { cabinetGate } from "./CabinetGate";
 import { CourseCard, CourseRow, ShelfEmptyCard, ShelfErrorCard } from "./CourseCard";
 import { LearnRoomView } from "./LearnRoomView";
@@ -80,6 +81,11 @@ function readShelfView(): ShelfView {
   return raw === "rows" ? raw : "cards";
 }
 
+/* The question the reader last asked of their shelf, kept for the life of the
+   tab. Module scope rather than storage on purpose — see the note at its only
+   reader below: it must survive a navigation and must not survive a reload. */
+let rememberedShelfQuery: ShelfQuery = EMPTY_SHELF_QUERY;
+
 export function LearnShelfClient() {
   const lang = useProfileLang();
   const { session, loading, signInWithGoogle } = useCabinetSession();
@@ -92,17 +98,39 @@ export function LearnShelfClient() {
      render agrees with the markup and a reader who chose rows sees them from
      the first frame after hydration rather than a card that jumps. */
   const view = useSyncExternalStore(subscribeToShelfView, readShelfView, () => "cards" as ShelfView);
+  /* ONE SHELF CHANGING SHAPE, NOT TWO SHELVES SWAPPED. The three views hold the
+     same courses in the same order; cutting between them made that look like a
+     page replacing another page. The store write is synchronous and the render
+     that follows it is the finished state, which is exactly the shape
+     `asOneMovement` is for — and on a browser without view transitions, or for
+     a reader who asked for less movement, it is the same instant swap it
+     always was. */
   const chooseView = (next: ShelfView) => {
-    window.localStorage.setItem(SHELF_VIEW_KEY, next);
-    window.dispatchEvent(new Event(SHELF_VIEW_EVENT));
+    asOneMovement(() => {
+      window.localStorage.setItem(SHELF_VIEW_KEY, next);
+      window.dispatchEvent(new Event(SHELF_VIEW_EVENT));
+    });
   };
 
   /* THE QUERY IS NOT REMEMBERED, and the view is — the difference is what each
      one is about. Which shape the shelf takes is a standing preference about
      this screen in this hand; a search is a question asked once, and a shelf
      that opens tomorrow already narrowed to «детокс» is a shelf that has lost
-     courses. */
-  const [query, setQuery] = useState<ShelfQuery>(EMPTY_SHELF_QUERY);
+     courses.
+
+     BUT COMING BACK FROM A COURSE IS NOT OPENING THE SHELF AGAIN (2026-09-06).
+     That rule was written about tomorrow, and it was being applied to the next
+     ten seconds: narrow to «Рух», open a course, press back, and the shelf had
+     forgotten — every course again, and in the room view the camera standing in
+     the middle of the hall rather than at the shelf you walked away from. The
+     reader did not ask a second question, they answered the phone. So the
+     question survives the trip, and only the trip: this lives for as long as the
+     tab does and dies with a reload, exactly like the library's memory of the
+     courses themselves. */
+  const [query, setQuery] = useState<ShelfQuery>(rememberedShelfQuery);
+  useEffect(() => {
+    rememberedShelfQuery = query;
+  }, [query]);
   const filtering = !isShelfQueryEmpty(query);
   const match = useCallback(
     (course: { title: string; categories: readonly CourseCategory[] }) =>

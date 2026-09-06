@@ -4,6 +4,7 @@ import { GoogleTagProvider } from "@/lib/tracking/GoogleTagProvider";
 import { PixelProvider } from "@/lib/tracking/PixelProvider";
 import { Suspense } from "react";
 import { headers } from "next/headers";
+import { RouteMotion } from "@/components/platform/RouteMotion";
 import { SurfaceHostProvider } from "@/components/platform/layout/SurfaceHost";
 import { ToastProvider } from "@/components/ToastProvider";
 import "../globals.css";
@@ -95,6 +96,13 @@ export default async function RootLayout({
             nodes and ~1 KB, and it is what makes a Course or a Product on any
             other page resolve to a provider instead of a bare name. */}
         <JsonLd data={graph(organizationLd(), websiteLd(), personLd())} />
+        {/* Ends a route transition the moment the next route is in the DOM.
+            In Suspense because it reads the search string, and renders nothing
+            either way — see the component for why it is a listener above the
+            tree rather than a wrapper around it. */}
+        <Suspense fallback={null}>
+          <RouteMotion />
+        </Suspense>
         <SurfaceHostProvider host={host}><ToastProvider>{children}</ToastProvider></SurfaceHostProvider>
         <Analytics />
       </body>
