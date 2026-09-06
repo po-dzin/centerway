@@ -8,7 +8,7 @@
  * about where "Продовжити" goes.
  */
 
-import Link from "next/link";
+import { MotionLink } from "@/components/platform/MotionLink";
 
 import { ProgressRail } from "@/components/platform/ProgressRail";
 import { ProgressRing } from "@/components/platform/ProgressRing";
@@ -168,16 +168,16 @@ export function CourseCard({
       </ul>
 
       <div className={styles.actions}>
-        <Link
+        <MotionLink
           className={action.primary ? styles.actionPrimary : styles.actionGhost}
           href={href(action.href)}
         >
           {action.label}
-        </Link>
+        </MotionLink>
         {course.access !== "locked" && action.href !== courseMapHref(course) ? (
-          <Link className={styles.actionGhost} href={href(courseMapHref(course))}>
+          <MotionLink className={styles.actionGhost} href={href(courseMapHref(course))}>
             {copy.openCourseMap}
-          </Link>
+          </MotionLink>
         ) : null}
       </div>
     </article>
@@ -253,12 +253,12 @@ export function CompactCourseCard({
         </>
       ) : null}
       <div className={styles.shelfCardAction}>
-        <Link
+        <MotionLink
           className={primary && action.primary ? styles.actionPrimary : styles.actionGhost}
           href={href(action.href)}
         >
           {action.label}
-        </Link>
+        </MotionLink>
       </div>
     </article>
   );
@@ -289,7 +289,7 @@ export function CourseRow({ course, copy }: { course: LearnerShelfCourseDto; cop
   const running = course.access === "enrolled" && total > 0 && !course.standing?.isFinished;
 
   return (
-    <Link className={styles.glance} href={href(action.href)} {...matte} data-cw-edge="none">
+    <MotionLink className={styles.glance} href={href(action.href)} {...matte} data-cw-edge="none">
       {running ? (
         <ProgressRing className={styles.glanceRing} value={done} total={total} label={course.title} size={48} />
       ) : (
@@ -307,7 +307,7 @@ export function CourseRow({ course, copy }: { course: LearnerShelfCourseDto; cop
                 : copy.courseNotStarted}
         </span>
       </span>
-    </Link>
+    </MotionLink>
   );
 }
 
@@ -331,9 +331,9 @@ export function ShelfEmptyCard({ copy, programsHref }: { copy: CabinetCopy; prog
       <h3 className={styles.cardTitle}>{copy.learningEmptyTitle}</h3>
       <p className={styles.cardText}>{copy.learningEmptyLead}</p>
       <div className={styles.actions}>
-        <Link className={styles.actionPrimary} href={programsHref}>
+        <MotionLink className={styles.actionPrimary} href={programsHref}>
           {copy.browsePrograms}
-        </Link>
+        </MotionLink>
       </div>
     </article>
   );

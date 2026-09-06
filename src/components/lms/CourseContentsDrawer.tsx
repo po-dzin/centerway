@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useRef } from "react";
-import Link from "next/link";
+import { MotionLink } from "@/components/platform/MotionLink";
 
 import type { CourseOutlineEntryDto } from "./lmsClient";
 import { Icon } from "@/components/Icon";
@@ -18,6 +18,100 @@ import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 
 const MODAL_FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/* HOW FAR THE SHEET HAS TO BE PULLED BEFORE IT LETS GO.
+   Far enough that resting a thumb on the grip while reading a title does not
+   dismiss the contents, and short enough that a deliberate pull never feels
+   like it is being resisted. A quick flick counts for more than a slow drag of
+   the same length — that is what `FLICK` is: pixels per millisecond, past which
+   the gesture is read as a throw rather than a move. */
+const DISMISS_PX = 96;
+const DISMISS_MIN_PX = 24;
+const FLICK = 0.5;
+
+/**
+ * Pull the sheet down to close it.
+ *
+ * The grip at the top of this panel has been drawing a promise since the sheet
+ * existed — every bottom sheet on a phone wears one, and on every one of them
+ * it means «you can drag this». Here it meant nothing: the only way out was the
+ * × or the backdrop. An affordance that does not do what it depicts is worse
+ * than no affordance, because the reader has to discover it is a lie.
+ *
+ * MOVEMENT IS WRITTEN STRAIGHT TO THE ELEMENT, not through state. A finger
+ * emits pointer moves at the screen's refresh rate, and re-rendering a
+ * twenty-one step contents list sixty times a second to move it two pixels is
+ * how a native-feeling gesture ends up feeling like a web page.
+ *
+ * THE LIST STILL SCROLLS. The drag only takes the gesture when the panel is
+ * already scrolled to its top and the finger is going DOWN — the same rule
+ * every sheet on a phone follows, and the reason `touchmove` is bound here by
+ * hand with `passive: false` rather than through React: refusing the scroll is
+ * the whole mechanism, and a passive listener is not allowed to refuse.
+ */
+function useSwipeToDismiss(panelRef: React.RefObject<HTMLDivElement | null>, onClose: () => void): void {
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    let startY = 0;
+    let startedAt = 0;
+    let pulled = 0;
+    let active = false;
+
+    const settle = (animate: boolean) => {
+      panel.style.transition = animate ? "transform 240ms cubic-bezier(0.16, 0.5, 0.2, 1)" : "";
+      panel.style.transform = "";
+    };
+
+    const onStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1 || panel.scrollTop > 0) return;
+      active = true;
+      pulled = 0;
+      startY = event.touches[0].clientY;
+      startedAt = performance.now();
+      panel.style.transition = "none";
+    };
+
+    const onMove = (event: TouchEvent) => {
+      if (!active) return;
+      const dy = event.touches[0].clientY - startY;
+      if (dy <= 0) {
+        /* Upward again — the reader is scrolling the list after all, so the
+           gesture goes back to the browser rather than being held hostage. */
+        pulled = 0;
+        panel.style.transform = "";
+        return;
+      }
+      if (event.cancelable) event.preventDefault();
+      pulled = dy;
+      panel.style.transform = `translateY(${dy.toFixed(1)}px)`;
+    };
+
+    const onEnd = () => {
+      if (!active) return;
+      active = false;
+      const flick = pulled / Math.max(1, performance.now() - startedAt);
+      if (pulled > DISMISS_PX || (pulled > DISMISS_MIN_PX && flick > FLICK)) {
+        onClose();
+        return;
+      }
+      settle(true);
+    };
+
+    panel.addEventListener("touchstart", onStart, { passive: true });
+    panel.addEventListener("touchmove", onMove, { passive: false });
+    panel.addEventListener("touchend", onEnd);
+    panel.addEventListener("touchcancel", onEnd);
+    return () => {
+      panel.removeEventListener("touchstart", onStart);
+      panel.removeEventListener("touchmove", onMove);
+      panel.removeEventListener("touchend", onEnd);
+      panel.removeEventListener("touchcancel", onEnd);
+      settle(false);
+    };
+  }, [panelRef, onClose]);
+}
 
 export function CourseContentsDrawer({
   courseSlug,
@@ -44,6 +138,8 @@ export function CourseContentsDrawer({
         ...(previewReturnTo ? { returnTo: previewReturnTo } : {}),
       }).toString()}`
     : "";
+
+  useSwipeToDismiss(panelRef, onClose);
 
   useEffect(() => {
     restoreFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -181,7 +277,7 @@ export function CourseContentsDrawer({
               }
 
               return (
-                <Link
+                <MotionLink
                   key={entry.lessonId}
                   className={isCurrent ? styles.drawerItemCurrent : styles.drawerItem}
                   href={surfaceHref(`/learn/${courseSlug}/${entry.slug}${previewQuery}`)}
@@ -198,7 +294,7 @@ export function CourseContentsDrawer({
                     {entry.title}
                     {meta ? <span className={styles.drawerMeta}>{meta}</span> : null}
                   </span>
-                </Link>
+                </MotionLink>
               );
             })}
           </div>
