@@ -757,27 +757,19 @@
   gap: 0.25rem;
   padding: 0.7rem;
   border: 0;
-  /* A BAR IS CHROME ON THE PAGE; A MENU IS A SHEET LAID ON IT.
-
-     This took the bar's exact material — `--cw-mat-tint-chrome`, which is the
-     surface at 30% — on the argument that the popover and the bar should read
-     as one plate extended downward. The tint is the half of that argument that
-     does not survive: a bar hangs on a known band at the top of the page, but
-     this panel opens over whatever happens to be under it. Seventy per cent of
-     the ground showing through is bounded on the night side, where everything
-     behind is near-black, and unbounded on the light one — over the hero
-     photograph it came out as taupe mud with six names floating in it, and the
-     text's contrast was a property of the page behind rather than of the menu.
-
-     So the floor is opaque paper and the grain, the radius and the chrome
-     shadow stay: it is still the same family, still not a second material, and
-     it is now legible over anything. `backdrop-filter` goes with the
-     transparency it existed to rescue — blurring a ground nobody can see is
-     a filter run for nothing on every frame the menu is open. */
+  /* ONE MATERIAL WITH THE BAR (2026-09-06). This used to fall back to opaque
+     paper here on the argument that a popover opens over arbitrary page
+     content rather than the bar's own bounded band, and the tint read as mud
+     over a hero photograph. The call now is that every chrome surface — bar,
+     drawer, island sheet and this popover — reads as one plate rather than
+     switching material by anchor form, so it takes the same chrome tint and
+     blur as the other two forms below. The grain, radius and chrome shadow are
+     unchanged: still the same family either way. */
   border-radius: var(--cw-radius-lg);
   color: var(--cw-platform-text);
-  background-color: var(--cw-mat-surface);
+  background-color: var(--cw-mat-tint-chrome);
   background-image: var(--cw-mat-grain-image);
+  backdrop-filter: var(--cw-mat-filter);
   box-shadow: var(--cw-mat-shadow-chrome);
   /* THE CEILING IS A SAFETY NET, NOT A LAYOUT (2026-08-28).
 
@@ -803,6 +795,12 @@
 .profileMenu::-webkit-scrollbar {
   width: 0;
   height: 0;
+}
+
+@supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
+  .profileMenu {
+    background-color: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
+  }
 }
 
 /* THE DRAWER FORM — see the note in PlatformAccountMenu on why there are two.

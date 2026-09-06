@@ -73,7 +73,11 @@ function subscribeToShelfView(onChange: () => void) {
 
 function readShelfView(): ShelfView {
   const raw = window.localStorage.getItem(SHELF_VIEW_KEY);
-  return raw === "rows" || raw === "room" ? raw : "cards";
+  /* "room" is not offered below (see the switch's options) while the space is
+     still a prototype — see LearnRoomView.tsx. Reading it back regardless
+     covers a value a device stored before the hide, so it falls to "cards"
+     rather than opening a view with no way back to it. */
+  return raw === "rows" ? raw : "cards";
 }
 
 export function LearnShelfClient() {
@@ -188,10 +192,12 @@ export function LearnShelfClient() {
                     label={cab.shelfViewLabel}
                     value={view}
                     onChange={chooseView}
+                    /* "room" hidden for now (2026-09-06) — the space stays in
+                       LearnRoomView.tsx, just not offered as a choice here
+                       while it is still a prototype. Two shapes only. */
                     options={[
                       { value: "cards", label: cab.shelfViewCards, icon: "view-cards" },
                       { value: "rows", label: cab.shelfViewRows, icon: "view-rows" },
-                      { value: "room", label: cab.shelfViewRoom, icon: "stone" },
                     ]}
                   />
                 ) : (

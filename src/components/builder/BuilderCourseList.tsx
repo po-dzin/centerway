@@ -96,21 +96,6 @@ function readView(): CourseView {
   return stored === "grid" ? "grid" : "rows";
 }
 
-/**
- * Whether there is room for the card grid at all.
- *
- * Below 561px there is not, and the switch does not appear. A grid of cards on
- * a 360px screen is one card per row — the same list, three times taller, with
- * a cover pushing the title and the blocker count off the first screen. The
- * grid is a desk affordance; offering it on a phone is offering a worse list.
- */
-const WIDE = "(min-width: 561px)";
-
-function subscribeToWidth(onChange: () => void) {
-  const query = window.matchMedia(WIDE);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
 
 /**
  * The builder's front door.
@@ -214,11 +199,7 @@ function useShelfReflow(resetKey: string, deps: unknown[]) {
 export function BuilderCourseList() {
   const router = useRouter();
   const [state, setState] = useState<State>({ status: "loading" });
-  const stored = useSyncExternalStore(subscribeToView, readView, () => "rows" as CourseView);
-  // Server-side and on a phone: rows. The card grid is only ever a choice where
-  // there is width for it.
-  const wide = useSyncExternalStore(subscribeToWidth, () => window.matchMedia(WIDE).matches, () => false);
-  const view: CourseView = wide ? stored : "rows";
+  const view = useSyncExternalStore(subscribeToView, readView, () => "rows" as CourseView);
   const [busy, setBusy] = useState(false);
   const toast = useToast();
   const [creating, setCreating] = useState(false);
@@ -618,23 +599,21 @@ export function BuilderCourseList() {
               categories={Array.from(new Set(state.courses.flatMap((course) => course.categories)))}
             />
           ) : null}
-          {wide ? (
-            <ShelfResultBar
-              label="Матеріали"
-              filtering={filtering}
-              /* Counted off `filtering`, not off whether the filter happened
-                 to keep everything: the library says «3 з 9» whenever a query
-                 is active, and a filter that matches all nine is still a
-                 narrowed shelf. Two sides of one shelf, one sentence. */
-              count={
-                filtering
-                  ? `${shown.length} з ${state.courses.length}`
-                  : SHELF_COPY.materialsCount(state.courses.length)
-              }
-            >
-              <ViewSwitch view={stored} onChange={chooseView} />
-            </ShelfResultBar>
-          ) : null}
+          <ShelfResultBar
+            label="Матеріали"
+            filtering={filtering}
+            /* Counted off `filtering`, not off whether the filter happened
+               to keep everything: the library says «3 з 9» whenever a query
+               is active, and a filter that matches all nine is still a
+               narrowed shelf. Two sides of one shelf, one sentence. */
+            count={
+              filtering
+                ? `${shown.length} з ${state.courses.length}`
+                : SHELF_COPY.materialsCount(state.courses.length)
+            }
+          >
+            <ViewSwitch view={view} onChange={chooseView} />
+          </ShelfResultBar>
           {shown.length === 0 ? (
             <p className={filterStyles.noMatch}>{SHELF_COPY.shelfNoMatch}</p>
           ) : view === "grid" ? (
