@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useRef } from "react";
-import Link from "next/link";
+import { MotionLink } from "@/components/platform/MotionLink";
 
 import type { CourseOutlineEntryDto } from "./lmsClient";
 import { Icon } from "@/components/Icon";
@@ -277,7 +277,7 @@ export function CourseContentsDrawer({
               }
 
               return (
-                <Link
+                <MotionLink
                   key={entry.lessonId}
                   className={isCurrent ? styles.drawerItemCurrent : styles.drawerItem}
                   href={surfaceHref(`/learn/${courseSlug}/${entry.slug}${previewQuery}`)}
@@ -294,7 +294,7 @@ export function CourseContentsDrawer({
                     {entry.title}
                     {meta ? <span className={styles.drawerMeta}>{meta}</span> : null}
                   </span>
-                </Link>
+                </MotionLink>
               );
             })}
           </div>

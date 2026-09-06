@@ -17,7 +17,7 @@ import {
   useSyncExternalStore,
   type CSSProperties,
 } from "react";
-import Link from "next/link";
+import { MotionLink } from "@/components/platform/MotionLink";
 
 import { courseThemeAttributes, inlineToPlainText } from "@/lms-core";
 import { Icon } from "@/components/Icon";
@@ -690,7 +690,7 @@ export function LessonView({
       {pager.mode !== "hidden" ? (
         <nav className={styles.pager} data-layout={pager.mode} aria-label="Навігація по уроках">
           {pager.showPrevious && nav.previous ? (
-            <Link
+            <MotionLink
               ref={previousLinkRef}
               className={styles.pagerLink}
               href={surfaceHref(`/learn/${courseSlug}/${nav.previous.slug}${previewQuery}`)}
@@ -699,11 +699,11 @@ export function LessonView({
             >
               <Icon name="arrow-left" size={16} className={styles.pagerArrow} />
               <span className={styles.pagerTitle}>{nav.previous.title}</span>
-            </Link>
+            </MotionLink>
           ) : null}
 
           {pager.showNext && nav.next ? (
-            <Link
+            <MotionLink
               ref={nextLinkRef}
               className={completed ? styles.pagerLinkNextAccent : styles.pagerLinkNext}
               href={surfaceHref(`/learn/${courseSlug}/${nav.next.slug}${previewQuery}`)}
@@ -712,7 +712,7 @@ export function LessonView({
             >
               <span className={styles.pagerTitle}>{nav.next.title}</span>
               <Icon name="arrow-right" size={16} className={styles.pagerArrow} />
-            </Link>
+            </MotionLink>
           ) : null}
         </nav>
       ) : null}

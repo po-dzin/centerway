@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import Link from "next/link";
+import { MotionLink } from "@/components/platform/MotionLink";
 
 import { courseThemeAttributes, inlineToPlainText } from "@/lms-core";
 import { Icon } from "@/components/Icon";
@@ -268,7 +268,7 @@ export function CourseView({
 
           return (
             <li key={entry.lessonId} className={styles.outlineItem} data-current={isCurrent || undefined}>
-              <Link className={styles.outlineLink} href={lessonHref}>
+              <MotionLink className={styles.outlineLink} href={lessonHref}>
                 <span className={entry.completed ? styles.dayBadgeDone : styles.dayBadge} aria-hidden="true">
                   {entry.completed ? <Icon name="check" size={18} /> : badgeLabel}
                 </span>
@@ -277,7 +277,7 @@ export function CourseView({
                   {meta ? <p className={styles.outlineMeta}>{meta}</p> : null}
                 </div>
                 <Icon name="chevron-right" size={20} className={styles.outlineGlyph} />
-              </Link>
+              </MotionLink>
             </li>
           );
         })}
@@ -292,7 +292,7 @@ export function CourseView({
           <ul className={styles.outline}>
             {reference.map((entry) => (
               <li key={entry.lessonId} className={styles.outlineItem}>
-                <Link className={styles.outlineLink} href={href(`/learn/${course.slug}/${entry.slug}${previewQuery}`)}>
+                <MotionLink className={styles.outlineLink} href={href(`/learn/${course.slug}/${entry.slug}${previewQuery}`)}>
                   <span className={styles.dayBadge} aria-hidden="true">
                     <Icon name="star" size={18} />
                   </span>
@@ -303,7 +303,7 @@ export function CourseView({
                     ) : null}
                   </div>
                   <Icon name="chevron-right" size={20} className={styles.outlineGlyph} />
-                </Link>
+                </MotionLink>
               </li>
             ))}
           </ul>
