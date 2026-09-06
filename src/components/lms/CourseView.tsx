@@ -8,8 +8,8 @@
  * планом: день 8" — because a learner has to see week three to prepare for it.
  */
 
-import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { MotionLink } from "@/components/platform/MotionLink";
 
 import { courseThemeAttributes, inlineToPlainText } from "@/lms-core";
 import { Icon } from "@/components/Icon";
@@ -23,6 +23,7 @@ import {
   type CourseViewDto,
   type LmsFailure,
 } from "./lmsClient";
+import { courseMemo, recall, remember, subscribeLibraryMemory } from "./libraryMemory";
 import { CourseNotes } from "./CourseNotes";
 import { useAnnotations } from "./useAnnotations";
 import { LmsNotice } from "./LmsNotice";
@@ -74,9 +75,24 @@ export function CourseView({
         ...(previewReturnTo ? { returnTo: previewReturnTo } : {}),
       }).toString()}`
     : "";
-  const [state, setState] = useState<
-    { status: "loading" } | { status: "ready"; data: CourseViewDto } | { status: "error"; error: LmsFailure }
-  >({ status: "loading" });
+  /* THE MAP THIS SCREEN ALREADY HAS. Read from the library's shared memory
+     rather than from this component's state, so arriving here from the shelf —
+     or coming back to it from a lesson — draws the course at once and lets the
+     re-read below correct it, instead of blanking to a loader first. See
+     `libraryMemory.ts` for why stale-then-true beats blank-then-true here. */
+  const memo = courseMemo(courseSlug, draftPreview);
+  const known = useSyncExternalStore(
+    subscribeLibraryMemory,
+    () => recall<CourseViewDto>(memo),
+    () => undefined
+  );
+  const [failure, setFailure] = useState<LmsFailure | null>(null);
+  const state: { status: "loading" } | { status: "ready"; data: CourseViewDto } | { status: "error"; error: LmsFailure } =
+    known
+      ? { status: "ready", data: known }
+      : failure
+        ? { status: "error", error: failure }
+        : { status: "loading" };
 
   const [restarting, setRestarting] = useState(false);
   /* The reader's own marks for this course — the map is where they are read
@@ -86,8 +102,13 @@ export function CourseView({
 
   const load = useCallback(async () => {
     const result = await fetchCourse(courseSlug, draftPreview);
-    setState(result.ok ? { status: "ready", data: result.data } : { status: "error", error: result.error });
-  }, [courseSlug, draftPreview]);
+    if (result.ok) {
+      remember(memo, result.data);
+      setFailure(null);
+    } else {
+      setFailure(result.error);
+    }
+  }, [courseSlug, draftPreview, memo]);
 
   /**
    * Takes a finished course back to step one.
@@ -130,12 +151,17 @@ export function CourseView({
       if (cancelled) return;
       const result = await fetchCourse(courseSlug, draftPreview);
       if (cancelled) return;
-      setState(result.ok ? { status: "ready", data: result.data } : { status: "error", error: result.error });
+      if (result.ok) {
+        remember(memo, result.data);
+        setFailure(null);
+      } else {
+        setFailure(result.error);
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [courseSlug, draftPreview]);
+  }, [courseSlug, draftPreview, memo]);
 
   if (state.status === "loading") {
     return (
@@ -242,7 +268,7 @@ export function CourseView({
 
           return (
             <li key={entry.lessonId} className={styles.outlineItem} data-current={isCurrent || undefined}>
-              <Link className={styles.outlineLink} href={lessonHref}>
+              <MotionLink className={styles.outlineLink} href={lessonHref}>
                 <span className={entry.completed ? styles.dayBadgeDone : styles.dayBadge} aria-hidden="true">
                   {entry.completed ? <Icon name="check" size={18} /> : badgeLabel}
                 </span>
@@ -251,7 +277,7 @@ export function CourseView({
                   {meta ? <p className={styles.outlineMeta}>{meta}</p> : null}
                 </div>
                 <Icon name="chevron-right" size={20} className={styles.outlineGlyph} />
-              </Link>
+              </MotionLink>
             </li>
           );
         })}
@@ -266,7 +292,7 @@ export function CourseView({
           <ul className={styles.outline}>
             {reference.map((entry) => (
               <li key={entry.lessonId} className={styles.outlineItem}>
-                <Link className={styles.outlineLink} href={href(`/learn/${course.slug}/${entry.slug}${previewQuery}`)}>
+                <MotionLink className={styles.outlineLink} href={href(`/learn/${course.slug}/${entry.slug}${previewQuery}`)}>
                   <span className={styles.dayBadge} aria-hidden="true">
                     <Icon name="star" size={18} />
                   </span>
@@ -277,7 +303,7 @@ export function CourseView({
                     ) : null}
                   </div>
                   <Icon name="chevron-right" size={20} className={styles.outlineGlyph} />
-                </Link>
+                </MotionLink>
               </li>
             ))}
           </ul>

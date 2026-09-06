@@ -12,11 +12,12 @@
  * blank the dashboard, so it surfaces as a card, not a page state.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Session } from "@supabase/supabase-js";
 
 import { supabaseClient } from "@/lib/supabaseClient";
 import { fetchMyCourses, type LearnerShelfCourseDto } from "@/components/lms/lmsClient";
+import { recall, remember, shelfMemo, subscribeLibraryMemory } from "@/components/lms/libraryMemory";
 import type { ProfileLang, ProfileResponse } from "@/components/platform/profile/types";
 import type { Author } from "@/lms-core";
 
@@ -229,12 +230,29 @@ export function useProfileData(session: Session | null) {
   return { profile, loading: Boolean(session) && !profile && !error, error, clear };
 }
 
+/**
+ * The learner's shelf — from memory first, from the network always.
+ *
+ * The courses no longer live in this hook's own state. They live in the
+ * library's memory (`libraryMemory.ts`), which every screen in the reading
+ * chain shares, so walking shelf → course → lesson → back to shelf draws the
+ * shelf it already knows instead of blanking to a loader and asking again. The
+ * read is still made on every mount; what changed is that its result corrects
+ * a drawn screen rather than replacing an empty one.
+ *
+ * That also removes the `userId` gate this hook used to carry: the store empties
+ * itself the moment the signed-in account changes, so there is no longer a
+ * previous account's shelf to guard against showing.
+ */
 export function useLearnerShelf(session: Session | null) {
   const userId = session?.user?.id ?? null;
-  const [state, setState] = useState<{ userId: string | null; courses: LearnerShelfCourseDto[] | null }>({
-    userId: null,
-    courses: null,
-  });
+  const shelf =
+    useSyncExternalStore(
+      subscribeLibraryMemory,
+      () => recall<LearnerShelfCourseDto[]>(shelfMemo()),
+      /* The server remembers nothing on anyone's behalf. */
+      () => undefined
+    ) ?? null;
   const [failed, setFailed] = useState(false);
   /* The retry button asks for a re-read by bumping this, rather than by calling
      the loader directly: the read belongs to the effect that owns the session,
@@ -251,7 +269,7 @@ export function useLearnerShelf(session: Session | null) {
       const result = await fetchMyCourses();
       if (cancelled) return;
       if (result.ok) {
-        setState({ userId: current.user?.id ?? null, courses: result.data.courses });
+        remember(shelfMemo(), result.data.courses);
         setFailed(false);
       } else {
         setFailed(true);
@@ -264,8 +282,12 @@ export function useLearnerShelf(session: Session | null) {
   }, [userId, attempt, sessionRef]);
 
   return {
-    shelf: state.userId === userId ? state.courses : null,
-    failed,
+    shelf,
+    /* A FAILED RE-READ OF A SHELF WE HAVE IS NOT AN ERROR SCREEN. Replacing a
+       working shelf with «could not load» because the refresh behind it lost
+       the network is the blanking this whole layer exists to stop. The notice
+       is for a reader who has nothing else to look at. */
+    failed: failed && !shelf,
     reload: useCallback(() => setAttempt((value) => value + 1), []),
   };
 }

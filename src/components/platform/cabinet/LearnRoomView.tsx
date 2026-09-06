@@ -38,7 +38,7 @@
  */
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { MotionLink } from "@/components/platform/MotionLink";
 
 import type { LearnerShelfCourseDto } from "@/components/lms/lmsClient";
 import type { CourseCategory } from "@/lms-core";
@@ -1095,7 +1095,7 @@ export function LearnRoomView({
                 const fits = b.title.trim().length * fs * 0.58 <= b.h * 0.76;
                 const named = open === n.ci && fits && fs * camera.s >= 7;
                 return (
-                <Link
+                <MotionLink
                   key={b.slug}
                   className={styles.book}
                   data-live={b.live}
@@ -1130,7 +1130,7 @@ export function LearnRoomView({
                       dangerouslySetInnerHTML={{ __html: codeInk(b.title, b.w, b.h) }}
                     />
                   )}
-                </Link>
+                </MotionLink>
                 );
               })}
             </div>
@@ -1182,7 +1182,7 @@ export function LearnRoomView({
             const live = course.access === "enrolled";
             return (
               <li key={course.slug}>
-                <Link
+                <MotionLink
                   className={styles.row}
                   href={courseAction(course, copy).href}
                   data-hot={hot === course.slug}
@@ -1215,7 +1215,7 @@ export function LearnRoomView({
                         ? copy.courseLocked
                         : copy.courseNotStarted}
                   </span>
-                </Link>
+                </MotionLink>
               </li>
             );
           })}

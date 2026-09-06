@@ -2119,3 +2119,33 @@ body {
   }
 
 }
+
+/* ── ONE NAVIGATION, DRAWN AS ONE MOVEMENT ──────────────────────────────
+   The browser's own cross-fade between two routes, tuned to the platform's
+   curve rather than left at the default quarter-second linear-ish fade. What
+   starts it is `routeTransition.ts`; this only says how long it takes and on
+   what easing — the same curve the room's camera and the shelf's shape change
+   already move on, so the product has one sense of how far away things are.
+
+   ONLY THE ROOT PAIR IS TOUCHED. Naming individual elements takes them out of
+   this group and gives them their own morph, which is the right way to make a
+   cover travel from a shelf card to a course page — and the wrong thing to do
+   blind, because a name that appears twice in one frame makes the browser drop
+   the transition entirely. That is a change to make with the page in front of
+   you, not from a list.
+
+   The JS refuses to start a transition at all under reduced motion, so this
+   block is the second lock on the same door: any movement started from
+   somewhere else stops here too. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.16, 0.5, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
