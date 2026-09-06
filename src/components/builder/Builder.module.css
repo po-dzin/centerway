@@ -267,14 +267,14 @@
 .inkRow:hover .inkMark,
 .inkRow:focus-visible .inkMark {
   opacity: var(--cw-ink-hover-opacity);
-  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
 }
 
 /* Full ink: this row IS the thing being edited. */
 .inkRow[aria-current="page"] .inkMark,
 .inkRow[data-selected] .inkMark {
   opacity: 1;
-  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
+  transform: scaleX(1) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
 }
 
 /* ── Bar ──────────────────────────────────────────── */
@@ -5351,7 +5351,7 @@
   /* The line uses the same 36px source grid as the circular selector, but is
      rendered in a 0.85rem-tall band. Scale its ink vertically so the selected
      nav item has the same perceived stroke weight as the selected icon. */
-  transform: scaleX(0.58) scaleY(3.4) rotate(-0.4deg);
+  transform: scaleX(0.58) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
   transform-origin: center;
   transition: opacity var(--builder-motion-ink) ease, transform var(--builder-motion-ink) ease;
 }
@@ -5365,12 +5365,12 @@
 .courseMobileNavItem:hover .inkMark,
 .courseMobileNavItem:focus-visible .inkMark {
   opacity: var(--cw-ink-hover-opacity);
-  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
 }
 
 .courseMobileNavItem[aria-current="page"] .inkMark {
   opacity: 1;
-  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
+  transform: scaleX(1) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
 }
 
 .courseRail {
@@ -5422,12 +5422,12 @@
 .courseRailLink:hover .inkMark,
 .courseRailLink:focus-visible .inkMark {
   opacity: var(--cw-ink-hover-opacity);
-  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
 }
 
 .courseRailLink[aria-current="page"] .inkMark {
   opacity: 1;
-  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
+  transform: scaleX(1) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
 }
 
 .courseRailStatus {

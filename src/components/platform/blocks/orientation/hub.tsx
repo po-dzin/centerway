@@ -1,7 +1,6 @@
 import type { CSSProperties } from "react";
+import { PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import Link from "next/link";
-import { Icon } from "@/components/Icon";
-import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "@/components/platform/PlatformHeroStyles";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
@@ -117,10 +116,15 @@ export function HubIntro() {
             {/* These two are entries in the diagnostics catalogue, not the
                 catalogue — the panel names the rest rather than leaving the
                 topbar as the only route to it. */}
-            <Link className={styles.videoDecisionMore} href="/tests" data-cw-ink-control>
-              <InteractionInkLabel>Усі тести</InteractionInkLabel>
-              <Icon className={styles.videoDecisionMoreArrow} name="arrow-right" size={18} />
-            </Link>
+            {/* `PlatformBlockLink`, not a fifth hand-assembled copy of it. This
+                one composed the right classes and still drifted, because the
+                SHAPE was rebuilt here: when the shared crossing moved to the
+                resting stroke this link kept the navigation strength and went
+                on being invisible until hovered. Composing the styles is not
+                the same as using the component. */}
+            <span className={styles.videoDecisionMore}>
+              <PlatformBlockLink href="/tests" label="Усі тести" />
+            </span>
           </div>
         </aside>
       </div>

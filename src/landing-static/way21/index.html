@@ -272,20 +272,19 @@
       <p class="lead">Детокс — це не лише їжа. Це режим, фітозбори, процедури й дихання, складені в єдиний ритм, який легко вбудувати в робочий графік.</p>
     </div>
     <div class="week">
-      <!-- The first stop carries the figure: see .rail-walker in landing.css.
-           He is the same walker the platform's progress rail stands on its
-           dashes — the reader, mid-stride — put at the head of the day rather
-           than at a lesson. Drawn inline, not pulled from the sprite, for the
-           reason ProgressRail gives: the sprite holds the STILL body, and a
-           walking pose that appears in two places is still a pose, not an
-           icon. Decorative: the seven stops are already named in text. -->
-      <div class="day reveal"><div class="d-lab">Ранок</div><div class="d-name">Дихання</div><div class="rail-node" style="--i:0.35"><svg class="rail-walker" viewBox="0 0 22 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="4.6" r="2.1"/><path d="M11 6.7v6.6"/><path d="M7.5 11.6 11 9.4l3.7 2.4"/><path d="m11 13.3 3.8 3.9.6 4.2"/><path d="M11 13.3 7.4 18.4 6.2 21.6"/></svg></div><div class="d-focus">Очисне дихання, насья, тепла вода. М'який старт обміну.</div></div>
-      <div class="day reveal"><div class="d-lab">+30 хв</div><div class="d-name">Фітозбір</div><div class="rail-node" style="--i:0.70"></div><div class="d-focus">Трав'яний збір дня за схемою: дренаж і виведення токсинів.</div></div>
-      <div class="day reveal"><div class="d-lab">Сніданок</div><div class="d-name">Легкий старт</div><div class="rail-node" style="--i:0.50"></div><div class="d-focus">Тепла їжа під вашу конституцію. Об'єм «скільки терпить око».</div></div>
-      <div class="day reveal"><div class="d-lab">Обід</div><div class="d-name">Головний прийом</div><div class="rail-node" style="--i:0.85"></div><div class="d-focus">Найбільший прийом їжі в пік травлення. Без переїдання.</div></div>
-      <div class="day reveal"><div class="d-lab">День</div><div class="d-name">Процедури</div><div class="rail-node" style="--i:0.65"></div><div class="d-focus">Олійний самомасаж, інгаляції, мінеральна ванна для релаксу.</div></div>
-      <div class="day reveal"><div class="d-lab">Вечеря</div><div class="d-name">М'який вихід</div><div class="rail-node" style="--i:0.45"></div><div class="d-focus">Ранній легкий вечерь. Розвантажуємо нічне травлення.</div></div>
-      <div class="day reveal"><div class="d-lab">Ніч</div><div class="d-name">Відновлення</div><div class="rail-node" style="--i:0.30"></div><div class="d-focus">Режим сну за аюрведою. Тіло чиститься, поки ви відпочиваєте.</div></div>
+      <!-- Each card carries a `ProgressRail`, not a segment of one line: seven
+           dashes, the ones behind this stage in gold, the walker on the seam.
+           The step is NOT written here — `.rail-node--steps` reads it off the
+           card's `:nth-child` in landing.css, so the row cannot be reordered
+           into a card that claims the wrong hour. Decorative throughout: every
+           stage is already named in the two lines above it. -->
+      <div class="day reveal"><div class="d-lab">Ранок</div><div class="d-name">Дихання</div><div class="rail-node rail-node--steps" aria-hidden="true"></div><div class="d-focus">Очисне дихання, насья, тепла вода. М'який старт обміну.</div></div>
+      <div class="day reveal"><div class="d-lab">+30 хв</div><div class="d-name">Фітозбір</div><div class="rail-node rail-node--steps" aria-hidden="true"></div><div class="d-focus">Трав'яний збір дня за схемою: дренаж і виведення токсинів.</div></div>
+      <div class="day reveal"><div class="d-lab">Сніданок</div><div class="d-name">Легкий старт</div><div class="rail-node rail-node--steps" aria-hidden="true"></div><div class="d-focus">Тепла їжа під вашу конституцію. Об'єм «скільки терпить око».</div></div>
+      <div class="day reveal"><div class="d-lab">Обід</div><div class="d-name">Головний прийом</div><div class="rail-node rail-node--steps" aria-hidden="true"></div><div class="d-focus">Найбільший прийом їжі в пік травлення. Без переїдання.</div></div>
+      <div class="day reveal"><div class="d-lab">День</div><div class="d-name">Процедури</div><div class="rail-node rail-node--steps" aria-hidden="true"></div><div class="d-focus">Олійний самомасаж, інгаляції, мінеральна ванна для релаксу.</div></div>
+      <div class="day reveal"><div class="d-lab">Вечеря</div><div class="d-name">М'який вихід</div><div class="rail-node rail-node--steps" aria-hidden="true"></div><div class="d-focus">Ранній легкий вечерь. Розвантажуємо нічне травлення.</div></div>
+      <div class="day reveal"><div class="d-lab">Ніч</div><div class="d-name">Відновлення</div><div class="rail-node rail-node--steps" aria-hidden="true"></div><div class="d-focus">Режим сну за аюрведою. Тіло чиститься, поки ви відпочиваєте.</div></div>
     </div>
     <div class="week-note reveal">
       <p>Схема <b>харчування → фітозбір → процедура → дихання</b> зберігається всі 21 день — змінюється лише глибина. Тому результат закріплюється, а не відкочується.</p>

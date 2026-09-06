@@ -763,13 +763,12 @@
 /* The diagnostics block's own way out, matching the showcase blocks' — see
    `.blockAction`. This panel offers the dosha test and a consultation, which are
    two of the tests catalogue's entries, not the catalogue. */
+/* Placement only — the crossing itself is `PlatformBlockLink`, which carries
+   the colour, the stroke, the arrow and its nudge for every surface at once.
+   `.videoDecisionMoreArrow` is gone with the hand-assembled markup. */
 .videoDecisionMore {
-  composes: blockAction from "./PlatformBlocksBase.module.css";
+  display: inline-flex;
   justify-content: flex-start;
-}
-
-.videoDecisionMoreArrow {
-  composes: blockActionArrow from "./PlatformBlocksBase.module.css";
 }
 
 @media (max-width: 900px) {

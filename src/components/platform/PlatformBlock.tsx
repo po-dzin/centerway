@@ -88,12 +88,21 @@ export function PlatformBlockLink({ href, label }: { href: string; label: string
   return (
     /* `data-cw-ink-control` is the opt-in, and it does two things at once: it
        turns off the `.text` role's browser underline and it is what the ink
-       rules key on. The stroke is a HOVER mark here, not a resting one: the
-       arrow already says this is a way out, so a permanent line under the words
-       would be a second announcement of the same thing. A resting stroke is for
-       a link with nothing else to mark it — one inside a sentence. */
+       rules key on.
+
+       THE STROKE RESTS VISIBLE (`variant="link"`), and it did not always. The
+       argument for a hover-only mark was that the arrow already says "this is a
+       way out", so a permanent line would announce the same thing twice. That
+       held while this was the only shape the crossing took — but the carousel
+       and the cabinet each grew their own, and a reader met three different
+       affordances for one act. Unifying them meant picking one, and the resting
+       stroke is the one that survives being LOOKED AT rather than hovered: on a
+       touch screen there is no hover, and the arrow alone is a 12px glyph.
+       `link` is exactly the variant `InteractionInkLabel` documents for this —
+       "a text link inside a paragraph or a block head", visible at rest, one
+       strength quieter than the selection mark. */
     <Link className={styles.blockAction} href={href} data-cw-ink-control>
-      <InteractionInkLabel>{label}</InteractionInkLabel>
+      <InteractionInkLabel variant="link">{label}</InteractionInkLabel>
       <Icon className={styles.blockActionArrow} name="arrow-right" size={18} />
     </Link>
   );

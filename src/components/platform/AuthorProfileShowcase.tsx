@@ -3,6 +3,7 @@ import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
 import { PlatformOfferCarousel } from "@/components/platform/PlatformOfferCarousel";
 import type { StorefrontCard } from "@/lib/platform/offers";
 import type { Author } from "@/lms-core";
+import { PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import styles from "./AuthorProfileShowcase.module.css";
 import { ConsultBoundary, ConsultFaq } from "@/components/platform/ConsultPageSections";
 import { consultationSteps } from "@/components/platform/consultPageContract";
@@ -141,13 +142,21 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
       {author.consultation?.enabled ? <><ConsultBoundary route="platform:/expert/[slug]" /><ConsultFaq route="platform:/expert/[slug]" /></> : null}
 
       <section className={styles.courses}>
+        {/* The crossing sits in the head, beside the title — the same place and
+            the same component every showcase block on the home page uses. It
+            used to ride in the carousel's own footer, under the rail, which is
+            both a second shape for one act and the wrong moment: a reader who
+            has scrolled to the end of the cards has already stopped asking
+            whether there are more. Printed only when there is a rail to be a
+            sample OF. */}
         <div className={styles.courseHeader}>
           <div>
             <h2 className={styles.courseTitle}>Курси автора</h2>
           </div>
+          {courses.length > 0 ? <PlatformBlockLink href="/programs" label="Усі курси" /> : null}
         </div>
         {courses.length > 0 ? (
-          <PlatformOfferCarousel label={`Курси автора ${author.name}`} viewAllHref="/programs" viewAllLabel="Усі курси">
+          <PlatformOfferCarousel label={`Курси автора ${author.name}`}>
             {courses.map((course) => (
               <PlatformOfferCard
                 key={course.slug}

@@ -8,8 +8,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import Link from "next/link";
-import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 
 import { Icon } from "@/components/Icon";
 import styles from "./PlatformOfferCarousel.module.css";
@@ -44,22 +42,28 @@ const MAX_VISIBLE_OFFERS = 10;
  * card plus the next edge. The cards stay ordinary server-rendered children;
  * this client boundary owns only viewport measurement and paging controls.
  */
+/*
+ * THE CAROUSEL DOES NOT CARRY THE WAY OUT ANY MORE.
+ *
+ * It used to take `viewAllHref`/`viewAllLabel` and print the crossing in its
+ * own footer, UNDER the rail — with a comment warning callers not to pass it
+ * when the surrounding block already had one, because then the same
+ * destination appeared twice in one section. That warning was the tell: the
+ * link never belonged to the rail. It belongs to the SECTION, which is the
+ * thing that holds a sample of a bigger set, and a section names its aggregate
+ * in its head — above the rail, beside the title, where `PlatformBlockLink`
+ * puts it on every home block. Under the rail it also arrived after a reader
+ * had already scrolled the cards, which is the one moment they have stopped
+ * asking "is there more".
+ *
+ * Callers that had no head of their own (the author profile) grew one instead.
+ */
 export function PlatformOfferCarousel({
   children,
   label = "Пропозиції CenterWay",
-  viewAllHref,
-  viewAllLabel = "Увесь список",
 }: {
   children: ReactNode;
   label?: string;
-  /**
-   * Aggregate route for the complete set — ONLY when the block around this
-   * carousel has no link of its own. The home blocks carry
-   * `PlatformBlockLink` in their head, and passing it here as well printed the
-   * same destination twice in one section, above and below the same rail.
-   */
-  viewAllHref?: string;
-  viewAllLabel?: string;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState<EdgeState>(INITIAL_EDGE_STATE);
@@ -225,19 +229,9 @@ export function PlatformOfferCarousel({
         <span className={styles.srOnly}>
           {queueStart === queueEnd ? `Картка ${queueStart}` : `Картки ${queueStart}–${queueEnd}`} із {visibleCount}
         </span>
-        {total > MAX_VISIBLE_OFFERS || viewAllHref ? (
+        {total > MAX_VISIBLE_OFFERS ? (
           <div className={styles.queueOverflow}>
-            {total > MAX_VISIBLE_OFFERS ? (
-              <span className={styles.queueRange}>Показано {visibleCount} із {total}</span>
-            ) : null}
-            <div className={styles.queueActions}>
-              {viewAllHref ? (
-                <Link className={styles.queueLink} href={viewAllHref} data-cw-ink-control>
-                  <InteractionInkLabel>{viewAllLabel}</InteractionInkLabel>
-                  <Icon name="arrow-right" size={18} />
-                </Link>
-              ) : null}
-            </div>
+            <span className={styles.queueRange}>Показано {visibleCount} із {total}</span>
           </div>
         ) : null}
       </footer>

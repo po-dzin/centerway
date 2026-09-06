@@ -237,40 +237,17 @@
 
 /* The last row of the column: same tile, no ring, no state — the list ends in
    a doorway rather than in a link floating over the composition. */
+/* PLACEMENT ONLY. The link inside is `PlatformBlockLink` — one component for
+   every crossing to an aggregate page — so everything this rule used to say
+   about colour, weight, the arrow and its nudge now lives once, in
+   `.blockAction`. What is left is where the crossing stands in this grid: the
+   last row of the glance column, left-aligned on it. */
 .glanceMore {
   display: inline-flex;
   align-items: center;
   align-self: center;
   justify-self: start;
-  gap: var(--cw-space-xs);
   min-height: var(--ds-touch-target-min);
-  padding: 0;
-  color: var(--cw-platform-text);
-  font-size: 0.92rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: color 180ms ease;
-}
-
-.glanceMore:hover {
-  color: var(--cw-sem-warmth-strong);
-}
-
-.glanceMore:focus-visible {
-  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: var(--ds-focus-ring-offset);
-}
-
-/* 2px, once — the gesture says "this goes somewhere", anything larger says
-   "this is animated". Same step as every other arrow in the platform. */
-.glanceMoreArrow {
-  color: var(--cw-sem-warmth-strong);
-  transition: transform 200ms ease;
-}
-
-.glanceMore:hover .glanceMoreArrow,
-.glanceMore:focus-visible .glanceMoreArrow {
-  transform: translateX(2px);
 }
 
 .glanceText {
@@ -365,22 +342,6 @@
      its own column at the card's width. */
   .shelfRow[data-shelf="single"] {
     grid-template-columns: minmax(0, 21rem) minmax(0, 15rem);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .glanceMore,
-  .glanceMoreArrow {
-    transition: none;
-  }
-
-  .glanceMore:hover {
-    color: var(--cw-sem-warmth-strong);
-  }
-
-  .glanceMore:hover .glanceMoreArrow,
-  .glanceMore:focus-visible .glanceMoreArrow {
-    transform: none;
   }
 }
 
@@ -1809,8 +1770,12 @@
    `clamp(9rem, 19vw, 14rem)` — about 6:1 on a laptop. Showing the author a
    squarer frame here would be showing them a crop the page never draws, which
    is the whole failure a crop editor exists to prevent. */
+/* THE SAME 5:1 THE PUBLIC BAND DRAWS, and it has to stay the same number.
+   This previewed 6:1 while the page rendered 5.18:1 on a desktop and 2.73:1 on
+   a phone, so the focal point an author aimed here was never the picture that
+   shipped. See `.bannerFrame` in AuthorProfileShowcase.module.css. */
 .photoCropBanner {
-  aspect-ratio: 6 / 1;
+  aspect-ratio: 5 / 1;
   border-radius: var(--cw-radius-md);
 }
 

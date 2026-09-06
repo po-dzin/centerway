@@ -23,7 +23,6 @@ import { useRouter } from "next/navigation";
 
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
-import { Icon } from "@/components/Icon";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { usePlatformIdentity } from "@/components/platform/layout/usePlatformIdentity";
 import { platformRoleLabel } from "@/lib/platform/identity";
@@ -56,6 +55,7 @@ import {
   useProfileLang,
   useTelegramReach,
 } from "./useCabinet";
+import { PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import styles from "./Cabinet.module.css";
 
 /**
@@ -276,10 +276,17 @@ export function CabinetClient() {
                 what it always was — one crossing, to the place the whole shelf
                 lives. */}
             {ownedCourses.length > 1 ? (
-              <Link className={styles.glanceMore} href={shelfHref}>
-                <span className={styles.glanceMoreText}>{cab.allCourses}</span>
-                <Icon className={styles.glanceMoreArrow} name="arrow-right" size={20} />
-              </Link>
+              /* `PlatformBlockLink`, not a local copy of it. This was hand-rolled
+                 — page ink for the label, a PERMANENTLY gold arrow beside it,
+                 no stroke — so the cabinet's way out looked like a different
+                 affordance from the identical act on every showcase block. The
+                 gold arrow was the loudest part of it: warmth is what this
+                 system spends on hover, and spending it at rest left nothing
+                 for the pointer to say. Position is unchanged — the last row of
+                 the column, where the list runs out. */
+              <span className={styles.glanceMore}>
+                <PlatformBlockLink href={shelfHref} label={cab.allCourses} />
+              </span>
             ) : null}
 
             {/* The dosha RESULT, not the tests catalogue. What the test is and

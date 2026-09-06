@@ -288,6 +288,40 @@ the avatar) so a profile nobody has touched renders exactly as it did before
 the editor existed. `src/lib/lms/authorPhoto.ts` holds the one function each
 consumer calls for its `object-position`.
 
+**The backdrop band is 5:1, and the crop editor says 5:1 too (2026-09-06).**
+`Author.background` was added after the photo contract above and never got one
+of its own, which is how it ended up meaning four different pictures. The band
+was sized by a fixed HEIGHT (`clamp(9rem, 19vw, 14rem)`) against a column that
+runs 1160px → 350px, so it rendered **5.18:1** on a desktop, **2.73:1** on a
+phone and **2.19:1** at 320 — while `AuthorProfileFold` previewed the crop at
+**6:1**. An author aimed a focal point in one window and none of the four
+shipped pictures was the one they saw. A height is not a shape: the band now
+carries `aspect-ratio: 5 / 1` and `.photoCropBanner` carries the same number, so
+the crop is one picture at every width. **These two values are one decision —
+change them together or not at all.**
+
+Two things this slot deliberately does NOT have, each because a survey of how
+fourteen other platforms handle a user-uploaded cover said so:
+
+- **No full-bleed.** Asked for and measured: edge-to-edge, the white plate takes
+  the top third, the tone-adaptive bar flips dark, and the page stops being this
+  product for its first 450px. Everyone who bleeds either owns the asset (Maven
+  generates the band from a hue token; MasterClass ships hand-cropped art per
+  breakpoint) or veils it (Domestika, a flat 40% over the whole plate). We do
+  neither — we accept an arbitrary upload and paint it clean. Four of the six
+  closest comparables (Teachable, Kajabi, Podia, Ghost's current default) have
+  dropped the creator cover entirely for a portrait beside the text.
+- **No fallback when unset.** Nothing renders and `.hero` opens the page
+  instead — the same answer Podia documents: "if no banner image is set, nothing
+  is displayed at the top of your home feed."
+
+Worth stating because it is an advantage that was being wasted: this slot has a
+real focal-point picker (`cropX/cropY/cropScale`), which none of the platforms
+surveyed has — Kajabi offers Top/Center/Bottom and the rest tell authors in
+prose to keep the subject centred. The picker is only worth having while the
+editor's frame and the rendered frame are the same shape, which is what the
+paragraph above protects.
+
 ### The hero carries the trail, and the author's way in (2026-08-27)
 
 `OfferTrail` used to render in a row **under** the hero, with a comment defending it: the hero is a photograph with a dark bar over it, and a quiet text control there is the first thing to disappear. True of ink on a photograph — but the fix for the wrong palette is the right palette, not a different position. "Where am I" printed below the thing it locates means a reader on a phone meets a full-height photograph, a headline, a price and two buttons before the page will say which section it belongs to.
