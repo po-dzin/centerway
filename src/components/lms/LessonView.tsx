@@ -53,6 +53,7 @@ import {
   type LessonViewDto,
   type LmsFailure,
 } from "./lmsClient";
+import { lessonMemo, recall, remember, subscribeLibraryMemory, warm } from "./libraryMemory";
 import styles from "./Lms.module.css";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 
@@ -60,6 +61,9 @@ type State =
   | { status: "loading" }
   | { status: "ready"; data: LessonViewDto }
   | { status: "error"; error: LmsFailure };
+
+/** One shared «nothing ticked», so an unread lesson is not a new object per render. */
+const NO_TICKS: Record<string, boolean> = Object.freeze({});
 
 export function LessonView({
   courseSlug,
@@ -79,9 +83,65 @@ export function LessonView({
         ...(previewReturnTo ? { returnTo: previewReturnTo } : {}),
       }).toString()}`
     : "";
-  const [state, setState] = useState<State>({ status: "loading" });
-  const [checklist, setChecklist] = useState<Record<string, boolean>>({});
-  const [completed, setCompleted] = useState(false);
+  /* THE LESSON THIS SCREEN ALREADY HAS. Read from the library's shared memory
+     rather than from this component's state, so a lesson the reader has opened
+     before — or the next one, warmed on idle by the pager below — is drawn on
+     the first frame and corrected by the re-read, instead of blanking to a
+     loader every time the pager is pressed. */
+  const memo = lessonMemo(courseSlug, lessonSlug, draftPreview);
+  const known = useSyncExternalStore(
+    subscribeLibraryMemory,
+    () => recall<LessonViewDto>(memo),
+    () => undefined
+  );
+  const [failure, setFailure] = useState<LmsFailure | null>(null);
+  const state: State = useMemo(
+    () =>
+      known
+        ? { status: "ready", data: known }
+        : failure
+          ? { status: "error", error: failure }
+          : { status: "loading" },
+    [known, failure]
+  );
+
+  /* WHAT THE READER HAS JUST DONE, BEFORE THE SERVER HAS AGREED.
+     Progress used to be copied out of the payload into two pieces of state and
+     re-copied on every load. Held against the payload it was drawn over
+     instead: the reader's own ticks win while that payload stands, and the
+     moment a re-read replaces it the server's answer wins — which is the rule
+     that used to be spelled out by hand in every branch that called `load()`.
+     It also means a remembered lesson arrives with its ticks already on, rather
+     than blank for the frame before the network confirms them. */
+  const [overlay, setOverlay] = useState<
+    { base: LessonViewDto; checklist: Record<string, boolean>; completed: boolean } | null
+  >(null);
+  const live = overlay && overlay.base === known ? overlay : null;
+  /* Memoised because the mark layer and the completion gate both key off its
+     identity — a fresh object every render would make every render a recount. */
+  const checklist = useMemo(
+    () => (live ? live.checklist : known?.progress.checklist ?? NO_TICKS),
+    [live, known]
+  );
+  const completed = live ? live.completed : known?.progress.status === "completed";
+
+  const editProgress = useCallback(
+    (change: (current: { checklist: Record<string, boolean>; completed: boolean }) => {
+      checklist: Record<string, boolean>;
+      completed: boolean;
+    }) => {
+      if (!known) return;
+      setOverlay((current) => {
+        const base =
+          current && current.base === known
+            ? { checklist: current.checklist, completed: current.completed }
+            : { checklist: known.progress.checklist, completed: known.progress.status === "completed" };
+        return { base: known, ...change(base) };
+      });
+    },
+    [known]
+  );
+
   const [pending, setPending] = useState(false);
   const [contentsOpen, setContentsOpen] = useState(false);
   const [readingRatio, setReadingRatio] = useState(0);
@@ -112,13 +172,12 @@ export function LessonView({
   const load = useCallback(async () => {
     const result = await fetchLesson(courseSlug, lessonSlug, draftPreview);
     if (!result.ok) {
-      setState({ status: "error", error: result.error });
+      setFailure(result.error);
       return;
     }
-    setState({ status: "ready", data: result.data });
-    setChecklist(result.data.progress.checklist);
-    setCompleted(result.data.progress.status === "completed");
-  }, [courseSlug, lessonSlug, draftPreview]);
+    remember(memo, result.data);
+    setFailure(null);
+  }, [courseSlug, lessonSlug, draftPreview, memo]);
 
   useEffect(() => {
     // Guarded so a fast navigation between lessons cannot land stale content.
@@ -130,17 +189,37 @@ export function LessonView({
       const result = await fetchLesson(courseSlug, lessonSlug, draftPreview);
       if (cancelled) return;
       if (!result.ok) {
-        setState({ status: "error", error: result.error });
+        setFailure(result.error);
         return;
       }
-      setState({ status: "ready", data: result.data });
-      setChecklist(result.data.progress.checklist);
-      setCompleted(result.data.progress.status === "completed");
+      remember(memo, result.data);
+      setFailure(null);
     })();
     return () => {
       cancelled = true;
     };
-  }, [courseSlug, lessonSlug, draftPreview]);
+  }, [courseSlug, lessonSlug, draftPreview, memo]);
+
+  /* THE NEXT STEP, FETCHED BEFORE IT IS ASKED FOR.
+     The pager is the most predictable navigation in the product — a reader who
+     finishes a lesson presses «next», and until now that press paid for a full
+     round trip with a blank screen on top of it. So while this lesson is being
+     read, the next one is quietly pulled into the same memory this screen draws
+     from, and the press becomes a paint.
+
+     Only the NEXT one: the previous lesson is already in memory by construction
+     (it is where the reader came from), and warming it again would spend a
+     request to learn something we know. Only an AVAILABLE one, too — a lesson
+     the schedule has not opened yet answers 403, and a prefetch has no business
+     discovering that on the reader's behalf. And never in a draft preview,
+     where nothing is remembered at all. */
+  const nextSlug = known?.nav.next?.available ? known.nav.next.slug : null;
+  useEffect(() => {
+    if (!nextSlug || draftPreview) return;
+    return warm(lessonMemo(courseSlug, nextSlug, draftPreview), () =>
+      fetchLesson(courseSlug, nextSlug, draftPreview)
+    );
+  }, [courseSlug, nextSlug, draftPreview]);
 
   // Reading position for the current lesson, driven by how far the body has
   // scrolled past the viewport — a progress bar for THIS step, distinct from
@@ -296,16 +375,16 @@ export function LessonView({
   const lesson = state.status === "ready" ? state.data.lesson : null;
 
   const checklistSatisfied = useMemo(() => {
-    const requiredIds = state.status === "ready" ? state.data.requiredChecklistItemIds : [];
+    const requiredIds = known?.requiredChecklistItemIds ?? [];
     return requiredIds.every((id) => checklist[id] === true);
-  }, [state, checklist]);
+  }, [known, checklist]);
 
   const toggleItem = useCallback(
     async (itemId: string, checked: boolean) => {
       if (!lesson) return;
 
       // Optimistic: the checkbox must respond to the thumb immediately.
-      setChecklist((current) => ({ ...current, [itemId]: checked }));
+      editProgress((current) => ({ ...current, checklist: { ...current.checklist, [itemId]: checked } }));
 
       // Preview is a read-only authoring perspective. It may simulate an
       // interaction locally, but it must not write learner progress.
@@ -329,10 +408,10 @@ export function LessonView({
 
       if (!result.ok) {
         // Server rejected or offline — roll back rather than show a false tick.
-        setChecklist((current) => ({ ...current, [itemId]: !checked }));
+        editProgress((current) => ({ ...current, checklist: { ...current.checklist, [itemId]: !checked } }));
       }
     },
-    [courseSlug, lesson, draftPreview]
+    [courseSlug, lesson, draftPreview, editProgress]
   );
 
   /**
@@ -347,7 +426,7 @@ export function LessonView({
     async (next: boolean) => {
       if (!lesson || pending) return;
       if (draftPreview) {
-        setCompleted(next);
+        editProgress((current) => ({ ...current, completed: next }));
         return;
       }
       setPending(true);
@@ -374,13 +453,13 @@ export function LessonView({
         return;
       }
 
-      setCompleted(next);
+      editProgress((current) => ({ ...current, completed: next }));
 
       // Refresh so the drawer, the pager and the outline reflect the new state —
       // completing a step can unlock the next one, and un-completing can close it.
       void load();
     },
-    [courseSlug, lesson, pending, load, draftPreview]
+    [courseSlug, lesson, pending, load, draftPreview, editProgress]
   );
 
   if (state.status === "loading") {

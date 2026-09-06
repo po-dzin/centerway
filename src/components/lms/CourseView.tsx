@@ -8,7 +8,7 @@
  * планом: день 8" — because a learner has to see week three to prepare for it.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 
 import { courseThemeAttributes, inlineToPlainText } from "@/lms-core";
@@ -23,6 +23,7 @@ import {
   type CourseViewDto,
   type LmsFailure,
 } from "./lmsClient";
+import { courseMemo, recall, remember, subscribeLibraryMemory } from "./libraryMemory";
 import { CourseNotes } from "./CourseNotes";
 import { useAnnotations } from "./useAnnotations";
 import { LmsNotice } from "./LmsNotice";
@@ -74,9 +75,24 @@ export function CourseView({
         ...(previewReturnTo ? { returnTo: previewReturnTo } : {}),
       }).toString()}`
     : "";
-  const [state, setState] = useState<
-    { status: "loading" } | { status: "ready"; data: CourseViewDto } | { status: "error"; error: LmsFailure }
-  >({ status: "loading" });
+  /* THE MAP THIS SCREEN ALREADY HAS. Read from the library's shared memory
+     rather than from this component's state, so arriving here from the shelf —
+     or coming back to it from a lesson — draws the course at once and lets the
+     re-read below correct it, instead of blanking to a loader first. See
+     `libraryMemory.ts` for why stale-then-true beats blank-then-true here. */
+  const memo = courseMemo(courseSlug, draftPreview);
+  const known = useSyncExternalStore(
+    subscribeLibraryMemory,
+    () => recall<CourseViewDto>(memo),
+    () => undefined
+  );
+  const [failure, setFailure] = useState<LmsFailure | null>(null);
+  const state: { status: "loading" } | { status: "ready"; data: CourseViewDto } | { status: "error"; error: LmsFailure } =
+    known
+      ? { status: "ready", data: known }
+      : failure
+        ? { status: "error", error: failure }
+        : { status: "loading" };
 
   const [restarting, setRestarting] = useState(false);
   /* The reader's own marks for this course — the map is where they are read
@@ -86,8 +102,13 @@ export function CourseView({
 
   const load = useCallback(async () => {
     const result = await fetchCourse(courseSlug, draftPreview);
-    setState(result.ok ? { status: "ready", data: result.data } : { status: "error", error: result.error });
-  }, [courseSlug, draftPreview]);
+    if (result.ok) {
+      remember(memo, result.data);
+      setFailure(null);
+    } else {
+      setFailure(result.error);
+    }
+  }, [courseSlug, draftPreview, memo]);
 
   /**
    * Takes a finished course back to step one.
@@ -130,12 +151,17 @@ export function CourseView({
       if (cancelled) return;
       const result = await fetchCourse(courseSlug, draftPreview);
       if (cancelled) return;
-      setState(result.ok ? { status: "ready", data: result.data } : { status: "error", error: result.error });
+      if (result.ok) {
+        remember(memo, result.data);
+        setFailure(null);
+      } else {
+        setFailure(result.error);
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [courseSlug, draftPreview]);
+  }, [courseSlug, draftPreview, memo]);
 
   if (state.status === "loading") {
     return (
