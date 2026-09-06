@@ -247,36 +247,10 @@
   line-height: var(--ds-type-label-line-height);
 }
 
-.queueActions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: var(--cw-space-xs);
-}
-
-.queueLink {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--ds-touch-target-min);
-  gap: var(--cw-space-xs);
-  color: var(--cw-platform-text);
-  /* No `text-decoration` here: this link carries `data-cw-ink-control` and the
-     ink stroke is its mark. The two were drawn at once — a browser underline
-     under a hand-drawn one — which is how the same affordance came to be
-     announced twice in slightly different geometry. */
-}
-
-.queueLink:hover,
-.queueLink:focus-visible {
-  color: var(--cw-sem-warmth);
-}
-
-.queueLink:focus-visible {
-  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: var(--ds-focus-ring-offset-tight);
-  border-radius: var(--cw-radius-sm);
-}
+/* `.queueActions` and `.queueLink` are gone with the footer crossing they
+   dressed — see the note at the top of PlatformOfferCarousel.tsx. The rail
+   reports its position (dots, range, arrows) and nothing else; the way out is
+   `PlatformBlockLink`, in the section's head. */
 
 .srOnly {
   position: absolute;

@@ -335,12 +335,23 @@
   gap: var(--cw-space-md);
 }
 
-.authorPhoto {
+/* The frame owns the circle and the clip; the photograph fills it and may
+   carry the author's zoom inside it (2026-09-06). Given to the `<img>` alone,
+   a magnified avatar grew past the circle it was supposed to be inside. */
+.authorPhotoFrame {
   width: 5.5rem;
   height: 5.5rem;
+  flex: none;
+  overflow: hidden;
   border-radius: var(--cw-radius-pill);
-  object-fit: cover;
   box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.authorPhoto {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 .authorBody {

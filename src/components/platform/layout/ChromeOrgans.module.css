@@ -79,6 +79,28 @@
   }
 }
 
+/* WHILE THE SHEET IS OPEN, THE ROW IS ABOVE IT (2026-09-06). The account sheet
+   unfolds from this row's top edge so the pair sits inside the panel rather
+   than over a hole in it — and a panel portalled to `document.body` lives far
+   above `z-index: 4`. Without this the sheet would paint over the two controls
+   that opened it. The attribute is set by `PlatformAccountMenu` for exactly as
+   long as its island form is on screen. */
+.row[data-cw-organs-sheet="open"] {
+  z-index: calc(var(--ds-z-sticky) + 3);
+}
+
+/* AND THEY DROP THEIR OWN PLATE THERE. An island is a tinted disc because it
+   floats over an article; landed on the sheet's own tint it would be that
+   material twice — a darker disc inside the panel, reading as a control stuck
+   on top of the menu rather than as part of it. On the sheet the pair is just
+   the mark and the face. */
+.row[data-cw-organs-sheet="open"] .organ,
+.row[data-cw-organs-sheet="open"] [data-auth-state] {
+  background-color: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
 .row[data-hidden="true"] {
   transform: translateY(calc(-100% - max(var(--cw-page-gutter), env(safe-area-inset-top))));
   opacity: 0;

@@ -2,9 +2,8 @@
 
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
-import { Icon } from "@/components/Icon";
 import { CropZoom, cropKeyZoom, cropWheelZoom } from "@/components/media/CropZoom";
-import { CROP_SCALE_MIN, cropStyle } from "@/lib/media/imageCrop";
+import { CROP_SCALE_MIN, cropPan, cropStyle } from "@/lib/media/imageCrop";
 import type { Course } from "@/lms-core";
 import { BuilderImageField, type ImageSpec } from "./BuilderImageField";
 import styles from "./Builder.module.css";
@@ -65,6 +64,10 @@ const clamp = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 
 function CropPreview({ src, alt, format, x, y, scale, onChange, onScaleChange, reset }: CropPreviewProps & { reset?: { label: string; onReset: () => void } }) {
   const activePointer = useRef<number | null>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  /* Where the hand and the crop both were when the drag began — deltas come
+     from here, so the stored integer cannot drift across a long drag. */
+  const origin = useRef({ pointerX: 0, pointerY: 0, x: 50, y: 50 });
   const [dragging, setDragging] = useState(false);
   const frame = FRAME[format];
   const horizontal = frame.axis === "both";
@@ -83,26 +86,33 @@ function CropPreview({ src, alt, format, x, y, scale, onChange, onScaleChange, r
     event.preventDefault();
   };
 
-  const placeFocus = (event: PointerEvent<HTMLDivElement>) => {
+  /* THE COVER FOLLOWS THE HAND, one pixel for one — `cropPan` in
+     src/lib/media/imageCrop.ts. The wide frame still moves on one axis only:
+     its horizontal crop is the landscape frame's, deliberately, so a drag
+     sideways here would be an edit to a number this frame does not own. */
+  const panTo = (event: PointerEvent<HTMLDivElement>) => {
     const bounds = event.currentTarget.getBoundingClientRect();
-    const nextY = clamp(((event.clientY - bounds.top) / Math.max(bounds.height, 1)) * 100);
-    if (!horizontal) {
-      onChange(x, nextY);
-      return;
-    }
-    onChange(clamp(((event.clientX - bounds.left) / Math.max(bounds.width, 1)) * 100), nextY);
+    const image = imageRef.current;
+    const next = cropPan(
+      { x: origin.current.x, y: origin.current.y },
+      { dx: event.clientX - origin.current.pointerX, dy: event.clientY - origin.current.pointerY },
+      { width: bounds.width, height: bounds.height },
+      { width: image?.naturalWidth ?? 0, height: image?.naturalHeight ?? 0 },
+      scale
+    );
+    onChange(horizontal ? next.x : x, next.y);
   };
 
   const beginDrag = (event: PointerEvent<HTMLDivElement>) => {
     event.currentTarget.setPointerCapture(event.pointerId);
     activePointer.current = event.pointerId;
+    origin.current = { pointerX: event.clientX, pointerY: event.clientY, x, y };
     setDragging(true);
-    placeFocus(event);
   };
 
   const drag = (event: PointerEvent<HTMLDivElement>) => {
     if (activePointer.current !== event.pointerId) return;
-    placeFocus(event);
+    panTo(event);
   };
 
   const endDrag = (event: PointerEvent<HTMLDivElement>) => {
@@ -117,7 +127,7 @@ function CropPreview({ src, alt, format, x, y, scale, onChange, onScaleChange, r
         className={styles[frame.className]}
         data-dragging={dragging || undefined}
         tabIndex={0}
-        aria-label={`${frame.label} кадр. Перетягуйте точку фокуса або використовуйте стрілки. Ctrl і колесо — масштаб.`}
+        aria-label={`${frame.label} кадр. Перетягуйте фото, щоб обрати кадр, або використовуйте стрілки. Ctrl і колесо — масштаб.`}
         onKeyDown={moveByKey}
         onWheel={(event) => cropWheelZoom(scale, event, onScaleChange)}
         onPointerDown={beginDrag}
@@ -126,26 +136,18 @@ function CropPreview({ src, alt, format, x, y, scale, onChange, onScaleChange, r
         onPointerCancel={endDrag}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- authored cover may use any public host */}
-        <img src={src} alt={alt} style={cropStyle({ x, y, scale }, { x: 50, y: 50 })} draggable={false} />
-        <span
-          className={styles.coverFocusHandle}
-          style={{ left: horizontal ? `${x}%` : "50%", top: `${y}%` }}
-          aria-hidden="true"
-        >
-          <Icon name="grip" size={20} />
-        </span>
+        <img ref={imageRef} src={src} alt={alt} style={cropStyle({ x, y, scale }, { x: 50, y: 50 })} draggable={false} />
+        {/* Thirds while the hand is down — the same guides the cabinet's crop
+            draws, and for the same reason: the grip badge that used to sit here
+            explained a gesture this frame no longer uses. */}
+        <span className={styles.coverCropGuides} aria-hidden="true" />
       </div>
       {/* THE ZOOM SITS UNDER ITS OWN FRAME, not once for the editor. A course
           reads through three shapes and an author zooms for a reason that
           belongs to one of them — pulling the wide hero in on a face does not
           mean pulling the card in on the same face. One slider governing all
           three would be a fourth answer none of the three asked for. */}
-      <CropZoom
-        value={scale}
-        onChange={onScaleChange}
-        label={`Масштаб — ${frame.label.toLowerCase()} кадр`}
-        classes={{ row: styles.coverZoomRow, input: styles.coverZoomInput, value: styles.coverZoomValue }}
-      />
+      <CropZoom value={scale} onChange={onScaleChange} label={`Масштаб — ${frame.label.toLowerCase()} кадр`} />
       <div className={styles.coverPreviewTools}>
         <span>{frame.note}</span>
         <button

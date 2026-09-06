@@ -1,18 +1,70 @@
 /* Public author showcase; structural ownership lives in the shared component. */
+
+/* THE HEADER'S INTERNAL INTERVAL — ONE KNOB, TWO CONSUMERS.
+   The band and the identity beneath it are one group: the page's header. So
+   the distance above the band and the distance below it are the SAME distance,
+   and they are declared once here rather than as two rules that happen to name
+   the same token today. They had already drifted — 96px above, 32px below on a
+   desktop; 177px above, 24px below on a phone — which is what a shared value
+   makes impossible rather than merely unlikely.
+
+   IT IS NOT A TOPBAR CLEARANCE, AND THAT WAS THE BUG. Both rules used to open
+   with `--platform-topbar-clearance`, which is the room the shell owes a
+   header that FLOATS over the page. This shell's bar is `position: sticky` and
+   sits in flow, so its own box already pushed the page down — and on a phone
+   `.shellOverlay > main` pays the clearance as padding on top of that. The page
+   was buying the bar's height a second time and, on mobile, a third. What is
+   left is an interval the design chose. */
+.bannerFrame,
+.hero {
+  --author-header-gap: var(--cw-space-xl);
+}
+
+/* Without a band the identity is what opens the page, so it takes the same
+   interval — and the same nudge, for the same reason the band does. */
 .hero {
   width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
   margin-inline: auto;
-  padding-block: calc(var(--platform-topbar-clearance, 5.8rem) + var(--cw-space-xl)) var(--cw-space-2xl);
+  padding-block: calc(var(--author-header-gap) + var(--platform-topbar-top, 0rem)) var(--cw-space-2xl);
 }
 
 /* The band itself: size, place and edge. It clips, because the photograph
    inside it may be zoomed and a transform does not respect a sibling's
-   boundary — see `cropBackgroundStyle`. */
+   boundary — see `cropBackgroundStyle`.
+
+   ONE RATIO, AND IT IS THE RATIO THE AUTHOR AIMED IN (2026-09-06).
+   This was `height: clamp(9rem, 19vw, 14rem)` — a fixed HEIGHT, which is not a
+   shape. Against a column that goes from 1160px to 350px it produced a
+   different crop at every width: 5.18:1 on a desktop, 2.73:1 on a phone,
+   2.19:1 at 320 — while `AuthorProfileFold`'s crop editor previewed 6:1. The
+   author aimed a focal point in one window and four different pictures
+   shipped, none of them the one they saw.
+
+   `aspect-ratio` fixes the SHAPE and lets the size follow the column, so the
+   crop is now literally the same picture everywhere, just larger or smaller.
+   THE EDITOR READS THE SAME TOKEN. `--ds-author-banner-ratio` is the whole
+   contract: the frame an author aims a focal point in and the frame that ships
+   are one number, so they cannot drift apart the way a height and a preview
+   already did once. `surfaceBoundaries.test.ts` fails if either side stops
+   reading it or re-types a ratio of its own — a comment asking two files to
+   agree is not a contract, a shared token that is asserted is.
+
+   5:1 and not wider: it holds the desktop band within 8px of what it drew
+   before, so the composition this header was just tuned for does not move,
+   and it is inside the band cluster the market uses for the same object
+   (Domestika 7:1, Podia 6.7:1, Circle 16:5). Not narrower: a taller band pushes
+   the name down the screen, which is the one thing this header keeps being
+   asked not to do. */
 .bannerFrame {
   position: relative;
   width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
-  height: clamp(9rem, 19vw, 14rem);
-  margin: var(--platform-topbar-clearance, 5.8rem) auto 0;
+  aspect-ratio: var(--ds-author-banner-ratio);
+  /* `+ --platform-topbar-top` is the bar's own nudge, added back. The bar
+     occupies its box in flow and is then pushed down by that much, so a plain
+     margin loses exactly that from the daylight underneath it: 2rem asked for,
+     1.25rem drawn. The shell names the number (it is 0 on mobile, where the
+     clearance already folds it in) — see PlatformShell.module.css. */
+  margin: calc(var(--author-header-gap) + var(--platform-topbar-top, 0rem)) auto 0;
   overflow: hidden;
   border-radius: var(--cw-radius-xl);
 }
@@ -26,8 +78,24 @@
   background-size: cover;
 }
 
+/* NO SCRIM ON THIS BAND, AND THAT IS A FINDING RATHER THAN AN OMISSION.
+   A bottom-weighted veil was tried here first, reasoning that an unknown upload
+   could be a bright plate ending on a hard edge above the name. On the one
+   cover this system actually has — ink on white paper — it had nothing to
+   darken and rendered as a grey smear across the lower half, cutting the
+   lettering it was meant to protect.
+   The survey says the same thing from the other side: of the platforms that
+   accept a user-uploaded cover, almost none scrims, and the one real scrim on
+   live user imagery (Spotify's bottom-weighted 60%) sits UNDER 96px of white
+   type. A scrim buys legibility for text set ON the picture. Nothing is set on
+   this band — the identity sits below it — so there is no legibility to buy,
+   and the shipped answer everywhere else is the one now in place above: lock
+   the aspect, centre-crop, and never put type on the image. */
+
+/* The band already opened the page, so this variant does not open it again —
+   it only pays the header's own interval, the same one the band sits under. */
 .heroWithBanner {
-  padding-block-start: var(--cw-space-xl);
+  padding-block-start: var(--author-header-gap);
 }
 
 .identity {
@@ -40,7 +108,14 @@
 .badges { grid-column: 2; display: flex; flex-wrap: wrap; gap: var(--cw-space-2xs); }
 .badges span { padding: var(--cw-space-2xs) var(--cw-space-xs); border-radius: var(--cw-radius-pill); background: var(--cw-mat-surface-sunk); color: var(--cw-platform-text); font-size: var(--ds-type-body-sm-size); font-weight: 700; }
 
-.portrait,
+/* THE CIRCLE IS THE FRAME'S, NOT THE PICTURE'S (2026-09-06). These two rules
+   used to size and round the image element itself, and the picture carries the
+   author's zoom as a transform — which an element cannot clip on itself. At
+   1.8× the portrait simply grew, circle and all, and painted over the name in
+   the column beside it. The frame holds the size, the edge and the clip; the
+   photograph fills it and may be magnified inside it. Same division as
+   `.bannerFrame` and `.banner` above. */
+.portraitFrame,
 .portraitFallback {
   width: clamp(5rem, 12vw, 8rem);
   aspect-ratio: 1;
@@ -49,7 +124,13 @@
   background: var(--cw-mat-surface-sunk);
 }
 
+.portraitFrame {
+  overflow: hidden;
+}
+
 .portrait {
+  width: 100%;
+  height: 100%;
   display: block;
   object-fit: cover;
 }
@@ -271,23 +352,72 @@
   line-height: 1.6;
 }
 
-@media (max-width: 560px) {
+/* 900px is the shell's own switch: below it the bar stops sitting in flow and
+   becomes a floating pill. Its own breakpoint, matching the shell's, rather
+   than folding into the 560px one below — the bar changes at 901 and the type
+   does not.
+
+   TWO CORRECTIONS, OPPOSITE IN SIGN, AND BOTH ABOUT THE SAME THING: what the
+   shell has already paid.
+
+   Above 901 the bar is in flow and then displaced downward by its own `top`,
+   so the page ADDS that nudge back or loses it from the daylight.
+
+   Here the bar is fixed and the shell pads `main` instead —
+   `max(gutter, safe-area) + touch-target + --cw-space-md` — which is the bar's
+   whole box PLUS `--cw-space-md` of daylight under it. So the page has already
+   been given part of its own interval and owes only the REMAINDER. Adding the
+   whole of it stacked two gaps: 40px over the band against 24px under it, which
+   is the "top piece still looks too big" this rule answers. `max(0px, …)`
+   because a header interval smaller than the shell's own daylight is not a
+   negative margin — it is simply nothing left to add. */
+@media (max-width: 900px) {
+  .bannerFrame,
   .hero {
-    padding-block-start: calc(var(--platform-topbar-block, 4.85rem) + var(--cw-space-lg));
+    --platform-topbar-top: 0rem;
+    --author-header-paid: var(--cw-space-md);
   }
 
-  .banner {
-    height: 8rem;
-    margin-top: var(--platform-topbar-block, 4.85rem);
+  .bannerFrame {
+    margin-top: max(0px, calc(var(--author-header-gap) - var(--author-header-paid)));
   }
 
-  .heroWithBanner {
-    padding-block-start: var(--cw-space-lg);
+  /* Only when the identity itself opens the page. With a band above it the
+     hero no longer touches the shell's padding — the band does — so it keeps
+     the full interval, which is what `.heroWithBanner` already sets. */
+  .hero:not(.heroWithBanner) {
+    padding-block-start: max(0px, calc(var(--author-header-gap) - var(--author-header-paid)));
   }
+}
+
+@media (max-width: 560px) {
+  /* One step down on a phone — still the same interval above and below the
+     band, because that is what makes them one group at any width. */
+  .bannerFrame,
+  .hero {
+    --author-header-gap: var(--cw-space-lg);
+  }
+
+  /* No height override here any more. It used to set `height: 8rem` — and set
+     it on `.banner`, which is `position: absolute; inset: 0`, so it never
+     applied at all and the phone silently wore the desktop band. Now the frame
+     carries one `aspect-ratio` and the phone gets the SAME picture at the
+     column's own width, which is the whole point of fixing the shape instead
+     of the height. */
 
   .identity {
     align-items: start;
     gap: var(--cw-space-md);
+  }
+
+  /* The badges leave the portrait's column here. They are pinned beside the
+     name on a desktop, where the portrait is still beside them; on a phone they
+     wrap to below it, and holding column 2 indented them past a portrait that
+     had already ended — the header's left edge stepped 40 → 232 → 40 down the
+     screen, with dead ground beside two chips. Full width puts them on the same
+     edge as the bio that follows, so the whole header reads down one line. */
+  .badges {
+    grid-column: 1 / -1;
   }
 
   .courseHeader {

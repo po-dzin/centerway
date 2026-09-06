@@ -16,7 +16,7 @@
  * only until one of them changes shape.
  */
 
-import { useEffect, useId, useRef, useState, type ChangeEvent, type CSSProperties, type FormEvent, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useId, useState, type ChangeEvent, type CSSProperties, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import Link from "next/link";
 
@@ -25,7 +25,7 @@ import { useToast } from "@/components/ToastProvider";
 import type { Author, AuthorProfileBlock } from "@/lms-core";
 import type { ProfileLang } from "@/components/platform/profile/types";
 import { AUTHOR_AVATAR_CROP_DEFAULT, AUTHOR_BANNER_CROP_DEFAULT, AUTHOR_CARD_CROP_DEFAULT } from "@/lib/lms/authorPhoto";
-import { CropZoom, cropKeyZoom, cropWheelZoom } from "@/components/media/CropZoom";
+import { CropEditor } from "@/components/media/CropEditor";
 import { CROP_SCALE_MIN, cropStyle } from "@/lib/media/imageCrop";
 import { shrinkForUpload } from "@/lib/media/shrinkForUpload";
 import type { AuthorProfileInput } from "./useCabinet";
@@ -59,8 +59,6 @@ const PHOTO_CROP_FRAME: Record<PhotoCropShape, { className: "photoCropCard" | "p
   banner: { className: "photoCropBanner" },
 };
 
-const clampCrop = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
-
 /**
  * HEIC AND HEIF ARE ON THE LIST NOW, and the upload route still does not take
  * them. That is not a contradiction: an iPhone left on "keep originals" hands
@@ -72,17 +70,19 @@ const clampCrop = (value: number) => Math.max(0, Math.min(100, Math.round(value)
 const PHOTO_ACCEPT = "image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif";
 
 /**
- * One focal point, dragged or nudged with the keyboard — the same interaction
- * the builder's cover editor uses for a course's own crop (`BuilderCoverEditor`).
- * Reimplemented here rather than shared: the two editors format their frames
- * differently (a course chooses among 16:9/21:9/9:16, an author's photo
- * between one card shape and one round avatar) and neither owns the other.
+ * THE RESTING FRAME — the picture as the page will print it, and the way in.
  *
- * The frame only. Recentring lives in the panel's heading beside the frame's
- * name, not on the picture: as a corner badge it had nowhere to sit that was
- * not wrong for one of the two shapes — inside the frame the round avatar's
- * clip ate it, outside the frame it floated in the empty corner of a
- * bounding box with no visible edge to belong to.
+ * It used to be the editor too: you dragged the photograph inside this box and
+ * a slider under it magnified. That made the one place an author chooses a crop
+ * the one place they could not see what the crop discards, and at scale 1 the
+ * `cover` fit is flush on one axis, so half the drags moved nothing at all.
+ *
+ * So it stopped editing and went back to being what it is best at: the exact
+ * frame `/expert/[slug]` and `AuthorCard` draw, in the composition they draw it
+ * in, so this fold still reads as a preview of the page it writes. Pressing it
+ * opens `CropEditor`, which shows the whole photograph with this frame over it.
+ * The frame hands its own `aspect-ratio` and `border-radius` to that editor, so
+ * the shape stays declared once — in CSS — for both.
  */
 function PhotoCropPreview({
   src,
@@ -91,12 +91,9 @@ function PhotoCropPreview({
   x,
   y,
   scale,
-  onChange,
-  onScaleChange,
   label,
-  zoomLabel,
-  position,
   busy,
+  onOpen,
 }: {
   src: string;
   alt: string;
@@ -105,107 +102,34 @@ function PhotoCropPreview({
   y: number;
   /** 1–4, the frame's magnification about its own focus point. */
   scale: number;
-  onChange: (x: number, y: number) => void;
-  onScaleChange: (scale: number) => void;
   label: string;
-  zoomLabel: string;
-  position: string;
   /** An upload is in flight for THIS frame's image. */
   busy?: boolean;
+  onOpen: (frame: HTMLElement) => void;
 }) {
-  const activePointer = useRef<number | null>(null);
-  const [dragging, setDragging] = useState(false);
   const frameClass = PHOTO_CROP_FRAME[shape].className;
-
-  const placeFocus = (event: PointerEvent<HTMLDivElement>) => {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    onChange(
-      clampCrop(((event.clientX - bounds.left) / Math.max(bounds.width, 1)) * 100),
-      clampCrop(((event.clientY - bounds.top) / Math.max(bounds.height, 1)) * 100)
-    );
-  };
-
-  const beginDrag = (event: PointerEvent<HTMLDivElement>) => {
-    event.currentTarget.setPointerCapture(event.pointerId);
-    activePointer.current = event.pointerId;
-    setDragging(true);
-    placeFocus(event);
-  };
-
-  const drag = (event: PointerEvent<HTMLDivElement>) => {
-    if (activePointer.current !== event.pointerId) return;
-    placeFocus(event);
-  };
-
-  const endDrag = (event: PointerEvent<HTMLDivElement>) => {
-    if (activePointer.current !== event.pointerId) return;
-    activePointer.current = null;
-    setDragging(false);
-  };
-
-  const moveByKey = (event: KeyboardEvent<HTMLDivElement>) => {
-    const step = event.shiftKey ? 5 : 2;
-    if (cropKeyZoom(scale, event.key, onScaleChange)) {
-      event.preventDefault();
-      return;
-    }
-    if (event.key === "ArrowLeft") onChange(clampCrop(x - step), y);
-    else if (event.key === "ArrowRight") onChange(clampCrop(x + step), y);
-    else if (event.key === "ArrowUp") onChange(x, clampCrop(y - step));
-    else if (event.key === "ArrowDown") onChange(x, clampCrop(y + step));
-    else return;
-    event.preventDefault();
-  };
-
   return (
-    /* `role="group"`, not a bare div: a `div` with `tabindex` maps to
-       `role="generic"`, and ARIA forbids naming a generic element — so the
-       label below was being dropped, and a keyboard user landed on a tab stop
-       that announced nothing. The label was also hardcoded Ukrainian inside a
-       component whose file carries a full `en` table. The live region reports
-       where the focus point moved to, which arrow keys otherwise change in
-       complete silence. */
-    <div className={styles.photoCropStack}>
-      <div
-        className={styles[frameClass]}
-        /* ON THE PICTURE, BECAUSE THAT IS WHERE THE EYE IS. The only sign an
-           upload was running used to be a line of text below the crop grid and
-           the alt field — on a phone, a screen and a half under the thumb that
-           just picked the file. Silence there is indistinguishable from
-           nothing happening, which is exactly how it was reported. */
-        data-busy={busy || undefined}
-        data-dragging={dragging || undefined}
-        tabIndex={0}
-        role="group"
-        aria-label={label}
-        aria-describedby={`${frameClass}-position`}
-        onKeyDown={moveByKey}
-        onWheel={(event) => cropWheelZoom(scale, event, onScaleChange)}
-        onPointerDown={beginDrag}
-        onPointerMove={drag}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element -- the cabinet's own upload, any public host */}
-        <img src={src} alt={alt} style={cropStyle({ x, y, scale }, { x: 50, y: 50 })} draggable={false} />
-        <span className={styles.photoCropHandle} style={{ left: `${x}%`, top: `${y}%` }} aria-hidden="true">
-          <Icon name="grip" size={20} />
-        </span>
-        <span className={styles.visuallyHidden} id={`${frameClass}-position`} role="status">
-          {position}
-        </span>
-      </div>
-      {/* ONE SLIDER PER FRAME. The card is a plate a whole person stands in and
-          the avatar is a circle that usually wants a face — an author zooming
-          the circle onto the face is not asking the card to do the same. Same
-          reason the two already keep separate focal points. */}
-      <CropZoom
-        value={scale}
-        onChange={onScaleChange}
-        label={zoomLabel}
-        classes={{ row: styles.photoZoomRow, input: styles.photoZoomInput, value: styles.photoZoomValue }}
-      />
-    </div>
+    <button
+      type="button"
+      className={styles[frameClass]}
+      /* ON THE PICTURE, BECAUSE THAT IS WHERE THE EYE IS. The only sign an
+         upload was running used to be a line of text below the crop grid and
+         the alt field — on a phone, a screen and a half under the thumb that
+         just picked the file. */
+      data-busy={busy || undefined}
+      disabled={busy}
+      aria-label={label}
+      onClick={(event) => onOpen(event.currentTarget)}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element -- the cabinet's own upload, any public host */}
+      <img src={src} alt={alt} style={cropStyle({ x, y, scale }, { x: 50, y: 50 })} draggable={false} />
+      {/* The affordance, in the one corner the replace/remove pair never takes.
+          A frame that opens an editor has to say so: without a mark it is a
+          photograph, and photographs are not usually buttons. */}
+      <span className={styles.photoCropOpen} aria-hidden="true">
+        <Icon name="edit" size={15} />
+      </span>
+    </button>
   );
 }
 
@@ -380,10 +304,114 @@ function draftFromAuthor(author: Author | null): Draft {
       points: author?.consultation?.points?.length ? author.consultation.points : [""],
       contactUrl: author?.consultation?.contactUrl ?? "",
     },
-    photo: author?.photo ?? null,
-    background: author?.background ?? null,
+    /* THE DRAFT OPENS ON WHAT IS STORED, AND SEEDS NOTHING. A zoom was briefly
+       seeded here so both axes had room to drag; it meant opening the cabinet
+       and pressing save re-cropped every photograph already published by 15% of
+       its edge. The editor shows the whole picture now, so a flush axis is
+       visible rather than felt as a dead gesture, and this stays a copy. */
+    photo: author?.photo ? { ...author.photo } : null,
+    background: author?.background
+      ? { ...author.background }
+      : null,
     listed: author?.listed ?? false,
     slug: author?.slug ?? "",
+  };
+}
+
+/**
+ * THE DRAFT AS AN `Author` — one normalisation, in one place.
+ *
+ * WHY IT IS ONE FUNCTION. The trimming, the slicing and the "row one of the
+ * credentials is the badge" rule used to live inside `handleSubmit`, which then
+ * listed the fields of its payload by hand — and a hand-written list is how
+ * both crop scales came to be edited, drawn on screen and then silently dropped
+ * on save (2026-09-06). The draft becomes the platform's own `Author` here, so
+ * a field that exists on the type reaches the row without anyone remembering to
+ * add a line.
+ *
+ * `base` carries the identifiers a draft has no opinion about — the row's id
+ * and the slug the server assigned.
+ */
+function authorFromDraft(draft: Draft, base: Author | null): Author {
+  const credentialLines = draft.credentials.map((line) => line.trim()).filter(Boolean);
+  /* Row one is the badge, the remainder is the list — sending row one in both
+     would print the same sentence twice on `/expert`, once in the hero badge
+     row and once in the starred list under it. */
+  const [achievementBadge, ...credentials] = credentialLines;
+  const alt = draft.photo?.alt.trim();
+  const photo = draft.photo?.src && alt
+    ? {
+        src: draft.photo.src,
+        alt,
+        ...(draft.photo.cropX !== undefined ? { cropX: draft.photo.cropX } : {}),
+        ...(draft.photo.cropY !== undefined ? { cropY: draft.photo.cropY } : {}),
+        ...(draft.photo.avatarCropX !== undefined ? { avatarCropX: draft.photo.avatarCropX } : {}),
+        ...(draft.photo.avatarCropY !== undefined ? { avatarCropY: draft.photo.avatarCropY } : {}),
+        /* `> CROP_SCALE_MIN`, not `!== undefined` — absent means "no zoom"
+           everywhere else in the crop model (src/lib/media/imageCrop.ts), and
+           writing a literal 1 would freeze today's default into the row. */
+        ...(draft.photo.cropScale !== undefined && draft.photo.cropScale > CROP_SCALE_MIN
+          ? { cropScale: draft.photo.cropScale }
+          : {}),
+        ...(draft.photo.avatarCropScale !== undefined && draft.photo.avatarCropScale > CROP_SCALE_MIN
+          ? { avatarCropScale: draft.photo.avatarCropScale }
+          : {}),
+      }
+    : undefined;
+
+  const background = draft.background?.src
+    ? {
+        src: draft.background.src,
+        ...(draft.background.cropX !== undefined ? { cropX: draft.background.cropX } : {}),
+        ...(draft.background.cropY !== undefined ? { cropY: draft.background.cropY } : {}),
+        ...(draft.background.cropScale !== undefined && draft.background.cropScale > CROP_SCALE_MIN
+          ? { cropScale: draft.background.cropScale }
+          : {}),
+      }
+    : undefined;
+
+  return {
+    id: base?.id ?? "draft",
+    slug: draft.slug.trim() || base?.slug || "",
+    name: draft.name.trim(),
+    ...(draft.role.trim() ? { role: draft.role.trim() } : {}),
+    ...(draft.bio.trim() ? { bio: draft.bio.trim() } : {}),
+    ...(draft.quote.trim() ? { quote: draft.quote.trim() } : {}),
+    ...(credentials.length > 0 ? { credentials } : {}),
+    facts: draft.facts.map((line) => line.trim()).filter(Boolean).slice(0, 6),
+    /* A block with a title and nothing under it is not a block — the page
+       would draw a heading over an empty panel. */
+    profileBlocks: draft.profileBlocks.flatMap((block) => {
+      const title = block.title.trim();
+      const body = block.body?.trim();
+      const items = block.items?.map((line) => line.trim()).filter(Boolean).slice(0, 30);
+      if (!title || (!body && !items?.length)) return [];
+      return [{
+        id: block.id,
+        kind: block.kind,
+        ...(block.label?.trim() ? { label: block.label.trim() } : {}),
+        title,
+        ...(body ? { body } : {}),
+        ...(items?.length ? { items } : {}),
+      }];
+    }),
+    ...(draft.experienceBadge.trim() ? { experienceBadge: draft.experienceBadge.trim() } : {}),
+    ...(achievementBadge ? { achievementBadge } : {}),
+    consultation: {
+      enabled: draft.consultation.enabled,
+      ...(draft.consultation.title.trim() ? { title: draft.consultation.title.trim() } : {}),
+      ...(draft.consultation.summary.trim() ? { summary: draft.consultation.summary.trim() } : {}),
+      points: draft.consultation.points.map((line) => line.trim()).filter(Boolean).slice(0, 3),
+      ...(draft.consultation.contactUrl.trim() ? { contactUrl: draft.consultation.contactUrl.trim() } : {}),
+    },
+    ...(photo ? { photo } : {}),
+    /* NORMALISED THE SAME WAY THE PHOTO IS, and it was not: this passed the
+       draft object through raw, so the band wrote `cropScale: 1` into the row —
+       the literal default the photo branch above exists to keep out. One frame
+       storing "no zoom" as absence and the other as 1 is two answers to one
+       question, and the reader of the row cannot tell which means what. */
+    ...(background ? { background } : {}),
+    listed: draft.listed,
   };
 }
 
@@ -447,7 +475,12 @@ const STRINGS = {
     consultationSummaryLabel: "Кому і з чим допомагаю",
     consultationContactLabel: "Посилання для домовленості",
     consultationRequired: "Потрібно, поки консультації увімкнено",
-    cropFocus: "Точка фокуса. Перетягуйте або використовуйте стрілки. Ctrl і колесо — масштаб.",
+    /* The stage, not the frame: what the hand moves here is the window over the
+       whole photograph, and telling someone to drag the photo would be telling
+       them to drag the one thing on this screen that stays still. */
+    cropFocus: "Ціла світлина. Перетягуйте рамку або використовуйте стрілки. Ctrl і колесо — масштаб.",
+    cropOpen: "Обрати кадр",
+    cropDone: "Готово",
     cropZoom: "Масштаб",
     cropFocusAt: "Фокус: {x}% по горизонталі, {y}% по вертикалі",
     nameRequired: "Ім'я потрібне завжди — воно стоїть під кожним курсом",
@@ -529,7 +562,9 @@ const STRINGS = {
     consultationSummaryLabel: "Who you help, and with what",
     consultationContactLabel: "Link for arranging it",
     consultationRequired: "Needed while consultations are on",
-    cropFocus: "Focal point. Drag, or use the arrow keys. Ctrl and the wheel zoom.",
+    cropFocus: "The whole photograph. Drag the frame, or use the arrow keys. Ctrl and the wheel zoom.",
+    cropOpen: "Choose the frame",
+    cropDone: "Done",
     cropZoom: "Zoom",
     cropFocusAt: "Focus: {x}% across, {y}% down",
     nameRequired: "Always needed — it prints under every course",
@@ -575,6 +610,89 @@ export function AuthorProfileFold({
   const cropPosition = (x: number, y: number) =>
     t.cropFocusAt.replace("{x}", String(Math.round(x))).replace("{y}", String(Math.round(y)));
   const [draft, setDraft] = useState<Draft>(() => draftFromAuthor(author));
+  /* WHICH FRAME IS BEING AIMED, and in what shape. The shape is snapshotted off
+     the frame that opened the editor — its computed `aspect-ratio` and
+     `border-radius` — so the window laid over the whole photograph is literally
+     the frame the page will draw, and no ratio is retyped in TypeScript. */
+  const [cropping, setCropping] = useState<{ shape: PhotoCropShape; ratio: string; radius: string } | null>(null);
+  const openCrop = (shape: PhotoCropShape) => (frame: HTMLElement) => {
+    const box = getComputedStyle(frame);
+    setCropping({ shape, ratio: box.aspectRatio, radius: box.borderRadius });
+  };
+
+  /* THE ONE FRAME UNDER THE EDITOR, resolved from the draft: where it reads,
+     where it writes, what to call it, and what "centre it again" means for that
+     particular shape. Written out here rather than inside the dialog, because
+     the dialog has no business knowing that a card and a round avatar keep two
+     focal points on one photograph while the band keeps its own picture. */
+  const cropTarget = (() => {
+    if (!cropping) return null;
+    const patchPhoto = (patch: Partial<NonNullable<Draft["photo"]>>) =>
+      setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, ...patch } } : prev));
+    const patchBackground = (patch: Partial<NonNullable<Draft["background"]>>) =>
+      setDraft((prev) => (prev.background ? { ...prev, background: { ...prev.background, ...patch } } : prev));
+
+    if (cropping.shape === "banner") {
+      const background = draft.background;
+      if (!background?.src) return null;
+      return {
+        ...cropping,
+        src: background.src,
+        title: t.background,
+        note: t.backgroundHint,
+        x: background.cropX ?? AUTHOR_BANNER_CROP_DEFAULT.x,
+        y: background.cropY ?? AUTHOR_BANNER_CROP_DEFAULT.y,
+        scale: background.cropScale ?? CROP_SCALE_MIN,
+        onChange: (x: number, y: number) => patchBackground({ cropX: x, cropY: y }),
+        onScaleChange: (scale: number) => patchBackground({ cropScale: scale }),
+        onReset: () =>
+          patchBackground({
+            cropX: AUTHOR_BANNER_CROP_DEFAULT.x,
+            cropY: AUTHOR_BANNER_CROP_DEFAULT.y,
+            cropScale: CROP_SCALE_MIN,
+          }),
+      };
+    }
+
+    const photo = draft.photo;
+    if (!photo?.src) return null;
+    if (cropping.shape === "avatar") {
+      return {
+        ...cropping,
+        src: photo.src,
+        title: t.photoCropAvatarTitle,
+        note: t.photoCropAvatarNote,
+        x: photo.avatarCropX ?? AUTHOR_AVATAR_CROP_DEFAULT.x,
+        y: photo.avatarCropY ?? AUTHOR_AVATAR_CROP_DEFAULT.y,
+        scale: photo.avatarCropScale ?? CROP_SCALE_MIN,
+        onChange: (x: number, y: number) => patchPhoto({ avatarCropX: x, avatarCropY: y }),
+        onScaleChange: (scale: number) => patchPhoto({ avatarCropScale: scale }),
+        onReset: () =>
+          patchPhoto({
+            avatarCropX: AUTHOR_AVATAR_CROP_DEFAULT.x,
+            avatarCropY: AUTHOR_AVATAR_CROP_DEFAULT.y,
+            avatarCropScale: CROP_SCALE_MIN,
+          }),
+      };
+    }
+    return {
+      ...cropping,
+      src: photo.src,
+      title: t.photoCropCardTitle,
+      note: t.photoCropCardNote,
+      x: photo.cropX ?? AUTHOR_CARD_CROP_DEFAULT.x,
+      y: photo.cropY ?? AUTHOR_CARD_CROP_DEFAULT.y,
+      scale: photo.cropScale ?? CROP_SCALE_MIN,
+      onChange: (x: number, y: number) => patchPhoto({ cropX: x, cropY: y }),
+      onScaleChange: (scale: number) => patchPhoto({ cropScale: scale }),
+      onReset: () =>
+        patchPhoto({
+          cropX: AUTHOR_CARD_CROP_DEFAULT.x,
+          cropY: AUTHOR_CARD_CROP_DEFAULT.y,
+          cropScale: CROP_SCALE_MIN,
+        }),
+    };
+  })();
   const toast = useToast();
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -643,69 +761,46 @@ export function AuthorProfileFold({
        swapping one portrait for another has not said anything about where the
        card should look; the recentre button beside each frame is one click
        away when they have. */
-    setDraft((prev) => ({ ...prev, photo: { ...prev.photo, src, alt: prev.photo?.alt ?? prev.name } }));
+    setDraft((prev) => ({
+      ...prev,
+      photo: {
+        ...prev.photo,
+        src,
+        alt: prev.photo?.alt ?? prev.name,
+      },
+    }));
   }
 
   async function handleBackground(file: File) {
     const src = await upload("background", file);
     if (!src) return;
-    setDraft((prev) => ({ ...prev, background: { ...prev.background, src } }));
+    setDraft((prev) => ({
+      ...prev,
+      background: { ...prev.background, src },
+    }));
   }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
 
-    /* Row one is the badge, the remainder is the list — sending row one in
-       both would print the same sentence twice on `/expert`, once in the hero
-       badge row and once in the starred list under it. */
-    const credentialLines = draft.credentials.map((line) => line.trim()).filter(Boolean);
-    const achievementBadge = credentialLines[0];
-    const credentials = credentialLines.slice(1);
-    const photo = draft.photo?.src && draft.photo.alt.trim()
-      ? {
-          src: draft.photo.src,
-          alt: draft.photo.alt.trim(),
-          ...(draft.photo.cropX !== undefined ? { cropX: draft.photo.cropX } : {}),
-          ...(draft.photo.cropY !== undefined ? { cropY: draft.photo.cropY } : {}),
-          ...(draft.photo.avatarCropX !== undefined ? { avatarCropX: draft.photo.avatarCropX } : {}),
-          ...(draft.photo.avatarCropY !== undefined ? { avatarCropY: draft.photo.avatarCropY } : {}),
-        }
-      : undefined;
+    /* One normalisation — see `authorFromDraft`. */
+    const next = authorFromDraft(draft, author);
 
     const ok = await save({
-      name: draft.name.trim(),
-      role: draft.role.trim() || undefined,
-      bio: draft.bio.trim() || undefined,
-      quote: draft.quote.trim() || undefined,
-      credentials: credentials.length > 0 ? credentials : undefined,
-      facts: draft.facts.map((line) => line.trim()).filter(Boolean).slice(0, 6),
-      profileBlocks: draft.profileBlocks.flatMap((block) => {
-        const title = block.title.trim();
-        const body = block.body?.trim();
-        const items = block.items?.map((line) => line.trim()).filter(Boolean).slice(0, 30);
-        if (!title || (!body && !items?.length)) return [];
-        return [{
-          id: block.id,
-          kind: block.kind,
-          ...(block.label?.trim() ? { label: block.label.trim() } : {}),
-          title,
-          ...(body ? { body } : {}),
-          ...(items?.length ? { items } : {}),
-        }];
-      }),
-      experienceBadge: draft.experienceBadge.trim() || undefined,
-      achievementBadge,
-      consultation: {
-        enabled: draft.consultation.enabled,
-        title: draft.consultation.title.trim() || undefined,
-        summary: draft.consultation.summary.trim() || undefined,
-        points: draft.consultation.points.map((line) => line.trim()).filter(Boolean).slice(0, 3),
-        contactUrl: draft.consultation.contactUrl.trim() || undefined,
-      },
-      photo,
-      background: draft.background?.src ? draft.background : undefined,
-      listed: draft.listed,
-      slug: draft.slug.trim() || undefined,
+      name: next.name,
+      role: next.role,
+      bio: next.bio,
+      quote: next.quote,
+      credentials: next.credentials,
+      facts: next.facts,
+      profileBlocks: next.profileBlocks,
+      experienceBadge: next.experienceBadge,
+      achievementBadge: next.achievementBadge,
+      consultation: next.consultation,
+      photo: next.photo,
+      background: next.background,
+      listed: next.listed,
+      slug: next.slug || undefined,
     });
     if (ok) toast.success(t.saved);
     else toast.error(t.error);
@@ -759,216 +854,28 @@ export function AuthorProfileFold({
               <Icon className={styles.authorSectionChevron} name="chevron-down" size={20} />
             </summary>
             <div className={styles.authorSectionBody}>
-              <div className={styles.authorIdentity}>
-                {/* ONE UPLOAD, SHOWN THROUGH ITS OWN TWO FRAMES. A separate full
-                    preview above the crop cards used to repeat the same photo a
-                    third time for no reason a crop card doesn't already serve —
-                    each one already shows the image, in the shape it is actually
-                    used in, and lets you drag to refocus it. So the plain preview
-                    only appears before there is anything to crop; once a photo
-                    lands, the crop cards are the photo. */}
-                {/* NO PRE-TITLE. «Фото» over «Картка» over its own note is
-                  three labels deep inside a section already called «Ви» —
-                  the frames name themselves, and the empty slot says
-                  «Завантажити фото» on its face. */}
-              <div className={styles.authorField}>
-                  {draft.photo?.src ? (
-                    <>
-                      <div className={styles.photoCropGrid}>
-                        <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-card-title">
-                          <div className={styles.photoCropHead}>
-                            <h4 id="author-photo-crop-card-title">{t.photoCropCardTitle}</h4>
-                            <p>{t.photoCropCardNote}</p>
-                          </div>
-                          <div className={styles.photoCropAside}>
-                            {/* ON THE PICTURE, because that is what they change.
-                                In the field's heading they were an inch of
-                                nothing away from the photograph, next to a
-                                label; here they are the same corner pair the
-                                background slot has carried all along
-                                (`.authorMediaActions`). `stopPropagation`
-                                because the frame under them owns the drag. */}
-                            <div className={styles.photoCropFrame}>
-                                <PhotoCropPreview
-                                  src={draft.photo.src}
-                                  alt=""
-                                  shape="card"
-                                label={t.cropFocus}
-                                position={cropPosition(draft.photo.cropX ?? AUTHOR_CARD_CROP_DEFAULT.x, draft.photo.cropY ?? AUTHOR_CARD_CROP_DEFAULT.y)}
-                                x={draft.photo.cropX ?? AUTHOR_CARD_CROP_DEFAULT.x}
-                                y={draft.photo.cropY ?? AUTHOR_CARD_CROP_DEFAULT.y}
-                                scale={draft.photo.cropScale ?? CROP_SCALE_MIN}
-                                busy={uploading && uploadTarget === "photo"}
-                                zoomLabel={`${t.cropZoom} — ${t.photoCropCardTitle}`}
-                                onChange={(x, y) =>
-                                  setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, cropX: x, cropY: y } } : prev))
-                                }
-                                onScaleChange={(scale) =>
-                                  setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, cropScale: scale } } : prev))
-                                }
-                              />
-                              <div className={styles.authorMediaActions}>
-                                <label className={styles.authorPhotoToolbarAction} aria-label={t.photoReplace} title={t.photoReplace}>
-                                  <input
-                                    className={styles.visuallyHidden}
-                                    type="file"
-                                    aria-label={t.photoReplace}
-                                    accept={PHOTO_ACCEPT}
-                                    disabled={uploading}
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0];
-                                      e.target.value = "";
-                                      if (file) void handlePhoto(file);
-                                    }}
-                                  />
-                                  <Icon name="edit" size={18} />
-                                </label>
-                                <button
-                                  type="button"
-                                  className={styles.authorPhotoToolbarAction}
-                                  aria-label={t.photoRemove}
-                                  title={t.photoRemove}
-                                  onClick={() => setDraft((prev) => ({ ...prev, photo: null }))}
-                                >
-                                  <Icon name="close" size={18} />
-                                </button>
-                              </div>
-                            </div>
-                            <button
-                                type="button"
-                                className={styles.authorIconAction}
-                                aria-label={`${t.photoCropCenter} — ${t.photoCropCardTitle}`}
-                                title={t.photoCropCenter}
-                                onClick={() =>
-                                  setDraft((prev) =>
-                                    prev.photo
-                                      ? {
-                                          ...prev,
-                                          photo: {
-                                            ...prev.photo,
-                                            cropX: AUTHOR_CARD_CROP_DEFAULT.x,
-                                            cropY: AUTHOR_CARD_CROP_DEFAULT.y,
-                                            /* Recentring undoes the whole crop, zoom
-                                               included — a frame recentred but still
-                                               at 2.4× is not the frame the button's
-                                               icon promises to give back. */
-                                            cropScale: CROP_SCALE_MIN,
-                                          },
-                                        }
-                                      : prev
-                                  )
-                                }
-                              >
-                                <Icon name="undo" size={20} />
-                              </button>
-                          </div>
-            
-                        </section>
-                        <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-avatar-title">
-                          <div className={styles.photoCropHead}>
-                            <h4 id="author-photo-crop-avatar-title">{t.photoCropAvatarTitle}</h4>
-                            <p>{t.photoCropAvatarNote}</p>
-                          </div>
-                          <div className={styles.photoCropAside}>
-                            <PhotoCropPreview
-                              src={draft.photo.src}
-                              alt=""
-                              shape="avatar"
-                              label={t.cropFocus}
-                              position={cropPosition(draft.photo.avatarCropX ?? AUTHOR_AVATAR_CROP_DEFAULT.x, draft.photo.avatarCropY ?? AUTHOR_AVATAR_CROP_DEFAULT.y)}
-                              x={draft.photo.avatarCropX ?? AUTHOR_AVATAR_CROP_DEFAULT.x}
-                              y={draft.photo.avatarCropY ?? AUTHOR_AVATAR_CROP_DEFAULT.y}
-                              scale={draft.photo.avatarCropScale ?? CROP_SCALE_MIN}
-                              busy={uploading && uploadTarget === "photo"}
-                              zoomLabel={`${t.cropZoom} — ${t.photoCropAvatarTitle}`}
-                              onChange={(x, y) =>
-                                setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, avatarCropX: x, avatarCropY: y } } : prev))
-                              }
-                              onScaleChange={(scale) =>
-                                setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, avatarCropScale: scale } } : prev))
-                              }
-                            />
-                            <button
-                                type="button"
-                                className={styles.authorIconAction}
-                                aria-label={`${t.photoCropCenter} — ${t.photoCropAvatarTitle}`}
-                                title={t.photoCropCenter}
-                                onClick={() =>
-                                  setDraft((prev) =>
-                                    prev.photo
-                                      ? {
-                                          ...prev,
-                                          photo: {
-                                            ...prev.photo,
-                                            avatarCropX: AUTHOR_AVATAR_CROP_DEFAULT.x,
-                                            avatarCropY: AUTHOR_AVATAR_CROP_DEFAULT.y,
-                                            avatarCropScale: CROP_SCALE_MIN,
-                                          },
-                                        }
-                                      : prev
-                                  )
-                                }
-                              >
-                                <Icon name="undo" size={20} />
-                              </button>
-                          </div>
-                        </section>
-                      </div>
-                      {/* A LABEL, NOT A PLACEHOLDER, AND REQUIRED — a placeholder
-                          is gone the moment you type into the field, and this
-                          particular field decides whether the photograph above
-                          it is kept at all. */}
-                      <label className={styles.authorField}>
-                        <span>
-                          {t.photoAlt}
-                          <RequiredMark tooltip={t.photoAltRequired} />
-                        </span>
-                        <input
-                          className={styles.authorInput}
-                          value={draft.photo.alt}
-                          required
-                          onChange={(e) =>
-                            setDraft((prev) => ({
-                              ...prev,
-                              photo: prev.photo ? { ...prev.photo, alt: e.target.value } : prev.photo,
-                            }))
-                          }
-                        />
-                      </label>
-                    </>
-                  ) : (
-                    <AuthorMediaSlot
-                      src={undefined}
-                      uploading={uploading}
-                      uploadLabel={t.photoUpload}
-                      replaceLabel={t.photoReplace}
-                      removeLabel={t.photoRemove}
-                      dropLabel={t.mediaDrop}
-                      previewClassName={styles.authorPhotoPreview}
-                      emptyClassName={styles.authorPhotoEmpty}
-                      onFile={(file) => void handlePhoto(file)}
-                      onRemove={() => setDraft((prev) => ({ ...prev, photo: null }))}
-                    />
-                  )}
-                  {uploading && uploadTarget === "photo" ? <span className={styles.authorNotice} role="status">{t.photoUploading}</span> : null}
-                {uploadError && uploadTarget === "photo" ? <span className={styles.authorNoticeError} role="alert">{uploadError}</span> : null}
-                </div>
-                {/* THE BACKGROUND STANDS WITH THE PHOTO (2026-09-05). It was
-                    two sections down, under «Сторінка», grouped by where it
-                    prints. That is true of the data and wrong for the eye: the
-                    two images are read together on the author's page — the
-                    portrait sits ON this backdrop — and choosing them a screen
-                    apart is choosing them blind. Where it prints is still said
-                    in its own hint, which is where someone filling it in is
-                    already looking. */}
+              {/* ── The section is the shape of the page it writes (2026-09-06) ──
+                  IT USED TO BE A LIST OF PICTURES: three frames in a row with a
+                  name field somewhere under them. Every control was present and
+                  the arrangement belonged to no surface — so the author could
+                  not tell from this form what their page would look like, and
+                  found out by saving it and opening the page in another tab.
+
+                  The band, the round portrait over its lower edge, and the name
+                  and role beside that portrait ARE the composition of
+                  `/expert/[slug]`'s own header (`AuthorProfileShowcase`). Laid
+                  out the same way here, each field sits where its text prints
+                  and each crop frame is the picture it will be — the form is
+                  the preview. Under it, kept apart because the page header does
+                  not hold it, is the other surface this photograph is read
+                  through: the card beneath every course. */}
+              <div className={styles.authorHero}>
+                {/* THE BAND FIRST, because it is first on the page and because
+                    the portrait is read against it — choosing the two a screen
+                    apart is choosing them blind. */}
                 <div className={`${styles.authorField} ${styles.authorBackgroundField}`}>
                   <span>{t.background}</span>
                   <p className={styles.authorNotice}>{t.backgroundHint}</p>
-                  {/* THE SAME TWO GESTURES THE PORTRAIT HAS. This was the one
-                      image in the profile a author could only upload and not
-                      aim, and it is the one with the most to lose: a 6:1 band
-                      keeps about a sixth of a photograph's height. Drag to
-                      choose the sixth, zoom to choose how much of the width. */}
                   {draft.background?.src ? (
                     <div className={styles.photoCropAside}>
                       <div className={styles.photoCropFrame}>
@@ -976,26 +883,12 @@ export function AuthorProfileFold({
                           src={draft.background.src}
                           alt=""
                           shape="banner"
-                          label={t.cropFocus}
-                          zoomLabel={`${t.cropZoom} — ${t.background}`}
-                          position={cropPosition(
-                            draft.background.cropX ?? AUTHOR_BANNER_CROP_DEFAULT.x,
-                            draft.background.cropY ?? AUTHOR_BANNER_CROP_DEFAULT.y
-                          )}
+                          label={`${t.cropOpen} — ${t.background}`}
                           x={draft.background.cropX ?? AUTHOR_BANNER_CROP_DEFAULT.x}
                           y={draft.background.cropY ?? AUTHOR_BANNER_CROP_DEFAULT.y}
                           scale={draft.background.cropScale ?? CROP_SCALE_MIN}
                           busy={uploading && uploadTarget === "background"}
-                          onChange={(x, y) =>
-                            setDraft((prev) =>
-                              prev.background ? { ...prev, background: { ...prev.background, cropX: x, cropY: y } } : prev
-                            )
-                          }
-                          onScaleChange={(scale) =>
-                            setDraft((prev) =>
-                              prev.background ? { ...prev, background: { ...prev.background, cropScale: scale } } : prev
-                            )
-                          }
+                          onOpen={openCrop("banner")}
                         />
                         <div className={styles.authorMediaActions}>
                           <label className={styles.authorPhotoToolbarAction} aria-label={t.backgroundReplace} title={t.backgroundReplace}>
@@ -1065,29 +958,204 @@ export function AuthorProfileFold({
                   {uploading && uploadTarget === "background" ? <span className={styles.authorNotice} role="status">{t.photoUploading}</span> : null}
                   {uploadError && uploadTarget === "background" ? <span className={styles.authorNoticeError} role="alert">{uploadError}</span> : null}
                 </div>
-                <div className={styles.authorIdentityFields}>
-                  <label className={styles.authorField}>
-                    <span>
-                      {t.name}
-                      <RequiredMark tooltip={t.nameRequired} />
-                    </span>
-                    <input
-                      className={styles.authorInput}
-                      value={draft.name}
-                      autoComplete="name"
-                      required
-                      onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
-                    />
-                  </label>
-                  <label className={styles.authorField}>
-                    <span>{t.role}</span>
-                    <input
-                      className={styles.authorInput}
-                      value={draft.role}
-                      onChange={(e) => setDraft((prev) => ({ ...prev, role: e.target.value }))}
-                    />
-                  </label>
+
+                <div className={styles.authorHeroIdentity}>
+                  {/* The portrait overlaps the band's lower edge, exactly as it
+                      does on the page. Same round frame — this one drags. */}
+                  <div className={styles.authorHeroAvatar}>
+                    {draft.photo?.src ? (
+                      <>
+                        <PhotoCropPreview
+                          src={draft.photo.src}
+                          alt=""
+                          shape="avatar"
+                          label={`${t.cropOpen} — ${t.photoCropAvatarTitle}`}
+                          x={draft.photo.avatarCropX ?? AUTHOR_AVATAR_CROP_DEFAULT.x}
+                          y={draft.photo.avatarCropY ?? AUTHOR_AVATAR_CROP_DEFAULT.y}
+                          scale={draft.photo.avatarCropScale ?? CROP_SCALE_MIN}
+                          busy={uploading && uploadTarget === "photo"}
+                          onOpen={openCrop("avatar")}
+                        />
+                        {/* The frame's name and its recentre on one line under
+                            the portrait: a heading above it would sit on the
+                            band the portrait is there to overlap. */}
+                        <div className={styles.authorHeroCaptionRow}>
+                          <p className={styles.authorHeroCaption}>{t.photoCropAvatarNote}</p>
+                          <button
+                              type="button"
+                              className={styles.authorIconAction}
+                              aria-label={`${t.photoCropCenter} — ${t.photoCropAvatarTitle}`}
+                              title={t.photoCropCenter}
+                              onClick={() =>
+                                setDraft((prev) =>
+                                  prev.photo
+                                    ? {
+                                        ...prev,
+                                        photo: {
+                                          ...prev.photo,
+                                          avatarCropX: AUTHOR_AVATAR_CROP_DEFAULT.x,
+                                          avatarCropY: AUTHOR_AVATAR_CROP_DEFAULT.y,
+                                          avatarCropScale: CROP_SCALE_MIN,
+                                        },
+                                      }
+                                    : prev
+                                )
+                              }
+                            >
+                              <Icon name="undo" size={20} />
+                            </button>
+                        </div>
+                      </>
+                    ) : null}
+                  </div>
+                  <div className={styles.authorHeroFields}>
+                    <label className={`${styles.authorField} ${styles.authorFieldPhrase}`}>
+                      <span>
+                        {t.name}
+                        <RequiredMark tooltip={t.nameRequired} />
+                      </span>
+                      <input
+                        className={styles.authorInput}
+                        value={draft.name}
+                        autoComplete="name"
+                        required
+                        onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
+                      />
+                    </label>
+                    <label className={`${styles.authorField} ${styles.authorFieldPhrase}`}>
+                      <span>{t.role}</span>
+                      <input
+                        className={styles.authorInput}
+                        value={draft.role}
+                        onChange={(e) => setDraft((prev) => ({ ...prev, role: e.target.value }))}
+                      />
+                    </label>
+                  </div>
                 </div>
+              </div>
+
+              <div className={styles.authorField}>
+                {draft.photo?.src ? (
+                  <div className={styles.authorCardRow}>
+                    <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-card-title">
+                      <div className={styles.photoCropHead}>
+                        <h4 id="author-photo-crop-card-title">{t.photoCropCardTitle}</h4>
+                        <p>{t.photoCropCardNote}</p>
+                      </div>
+                      <div className={styles.photoCropAside}>
+                        {/* ON THE PICTURE, because that is what they change.
+                            In the field's heading they were an inch of
+                            nothing away from the photograph, next to a
+                            label; here they are the same corner pair the
+                            background slot has carried all along
+                            (`.authorMediaActions`). `stopPropagation`
+                            because the frame under them owns the drag. */}
+                        <div className={styles.photoCropFrame}>
+                            <PhotoCropPreview
+                              src={draft.photo.src}
+                              alt=""
+                              shape="card"
+                            label={`${t.cropOpen} — ${t.photoCropCardTitle}`}
+                            x={draft.photo.cropX ?? AUTHOR_CARD_CROP_DEFAULT.x}
+                            y={draft.photo.cropY ?? AUTHOR_CARD_CROP_DEFAULT.y}
+                            scale={draft.photo.cropScale ?? CROP_SCALE_MIN}
+                            busy={uploading && uploadTarget === "photo"}
+                            onOpen={openCrop("card")}
+                          />
+                          <div className={styles.authorMediaActions}>
+                            <label className={styles.authorPhotoToolbarAction} aria-label={t.photoReplace} title={t.photoReplace}>
+                              <input
+                                className={styles.visuallyHidden}
+                                type="file"
+                                aria-label={t.photoReplace}
+                                accept={PHOTO_ACCEPT}
+                                disabled={uploading}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  e.target.value = "";
+                                  if (file) void handlePhoto(file);
+                                }}
+                              />
+                              <Icon name="edit" size={18} />
+                            </label>
+                            <button
+                              type="button"
+                              className={styles.authorPhotoToolbarAction}
+                              aria-label={t.photoRemove}
+                              title={t.photoRemove}
+                              onClick={() => setDraft((prev) => ({ ...prev, photo: null }))}
+                            >
+                              <Icon name="close" size={18} />
+                            </button>
+                          </div>
+                        </div>
+                        <button
+                            type="button"
+                            className={styles.authorIconAction}
+                            aria-label={`${t.photoCropCenter} — ${t.photoCropCardTitle}`}
+                            title={t.photoCropCenter}
+                            onClick={() =>
+                              setDraft((prev) =>
+                                prev.photo
+                                  ? {
+                                      ...prev,
+                                      photo: {
+                                        ...prev.photo,
+                                        cropX: AUTHOR_CARD_CROP_DEFAULT.x,
+                                        cropY: AUTHOR_CARD_CROP_DEFAULT.y,
+                                        /* Recentring undoes the whole crop, zoom
+                                           included — a frame recentred but still
+                                           at 2.4× is not the frame the button's
+                                           icon promises to give back. */
+                                        cropScale: CROP_SCALE_MIN,
+                                      },
+                                    }
+                                  : prev
+                              )
+                            }
+                          >
+                            <Icon name="undo" size={20} />
+                          </button>
+                      </div>
+                    </section>
+                    {/* A LABEL, NOT A PLACEHOLDER, AND REQUIRED — a placeholder
+                        is gone the moment you type into the field, and this
+                        particular field decides whether the photograph beside
+                        it is kept at all. */}
+                    <label className={styles.authorField}>
+                      <span>
+                        {t.photoAlt}
+                        <RequiredMark tooltip={t.photoAltRequired} />
+                      </span>
+                      <input
+                        className={styles.authorInput}
+                        value={draft.photo.alt}
+                        required
+                        onChange={(e) =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            photo: prev.photo ? { ...prev.photo, alt: e.target.value } : prev.photo,
+                          }))
+                        }
+                      />
+                    </label>
+                  </div>
+                ) : (
+                  <AuthorMediaSlot
+                    src={undefined}
+                    uploading={uploading}
+                    uploadLabel={t.photoUpload}
+                    replaceLabel={t.photoReplace}
+                    removeLabel={t.photoRemove}
+                    dropLabel={t.mediaDrop}
+                    previewClassName={styles.authorPhotoPreview}
+                    emptyClassName={styles.authorPhotoEmpty}
+                    onFile={(file) => void handlePhoto(file)}
+                    onRemove={() => setDraft((prev) => ({ ...prev, photo: null }))}
+                  />
+                )}
+                {uploading && uploadTarget === "photo" ? <span className={styles.authorNotice} role="status">{t.photoUploading}</span> : null}
+                {uploadError && uploadTarget === "photo" ? <span className={styles.authorNoticeError} role="alert">{uploadError}</span> : null}
               </div>
             </div>
           </details>
@@ -1212,7 +1280,11 @@ export function AuthorProfileFold({
                   </div>
                 ))}
               </div>
-              <label className={styles.authorField}>
+              {/* A BADGE IS A PHRASE — it prints as one line on a card, and a
+                  35rem input for «12 років практики» promises a paragraph the
+                  card has no room for. `--ds-field-md`, the same step the name
+                  and role take. */}
+              <label className={`${styles.authorField} ${styles.authorFieldPhrase}`}>
                 <span>
                   {t.experienceBadge}
                   {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
@@ -1246,7 +1318,7 @@ export function AuthorProfileFold({
                   <span className={styles.authorVisibilityNote}>{draft.listed ? t.listedOn : t.listedOff}</span>
                 </span>
               </label>
-              <label className={styles.authorField}>
+              <label className={`${styles.authorField} ${styles.authorFieldPhrase}`}>
                 <span>{t.slug}</span>
                 <input
                   className={styles.authorInput}
@@ -1460,6 +1532,35 @@ export function AuthorProfileFold({
             </div>
         </form>
       </div>
+      {/* OUTSIDE THE FORM'S FIELDS, INSIDE ITS STATE. One editor serves all three
+          frames: which shape it wears, where it reads and where it writes are
+          the only differences between them, and three copies of a dialog is how
+          two of them fall behind the third. It edits the DRAFT, like every other
+          control here — nothing is written until the author saves. */}
+      {cropTarget ? (
+        <CropEditor
+          src={cropTarget.src}
+          alt=""
+          title={cropTarget.title}
+          note={cropTarget.note}
+          ratio={cropTarget.ratio}
+          radius={cropTarget.radius}
+          x={cropTarget.x}
+          y={cropTarget.y}
+          scale={cropTarget.scale}
+          onChange={cropTarget.onChange}
+          onScaleChange={cropTarget.onScaleChange}
+          onReset={cropTarget.onReset}
+          onClose={() => setCropping(null)}
+          labels={{
+            stage: t.cropFocus,
+            zoom: t.cropZoom,
+            reset: t.photoCropCenter,
+            done: t.cropDone,
+            position: (x, y) => cropPosition(x, y),
+          }}
+        />
+      ) : null}
     </details>
   );
 }

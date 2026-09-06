@@ -145,6 +145,41 @@ In use on the course page and both cabinet course meters. The dosha score bars s
 
 **List gap 0.7rem, not 0.4rem.** Lesson list items are "term — definition" and most wrap to two or three lines at 1.6 line-height; at 0.4rem the space between items was smaller than the space between two lines of the same item, so the list read as one paragraph with bold words scattered through it.
 
+### A display title never breaks inside a word (2026-09-06)
+
+«ДІАГНОСТИКА» printed as «ДІАГНОСТИК / А» on a 390px phone. Three things had to
+be true at once for that: the size came from the viewport (`clamp(2.6rem,
+12.2vw, 4.25rem)`), the word's own width was in nobody's arithmetic, and
+`overflow-wrap: anywhere` stood ready to break whatever did not fit. The
+breakpoint had been tuned against «Програми» and «Продукти», which are two
+characters shorter.
+
+**The rule.** A hero title's size is bounded by the room its LONGEST WORD needs.
+CSS cannot count the characters in its own text, so the component that knows the
+string passes the one missing fact — `--hero-title-word`, via `heroTitleFit()`
+(`src/components/platform/heroTitleFit.ts`) — and the stylesheet does the rest:
+
+```css
+font-size: min(
+  var(--hero-title-size),
+  calc(var(--hero-title-room) / (var(--hero-title-word, 8) * 0.7))
+);
+```
+
+`0.7` is the average advance of one uppercase Manrope 900 character at this
+rule's tracking, measured across the platform's own titles (0.665–0.704), not
+assumed. `--hero-title-room` restates the hero's own width formula rather than
+opening a container query, so no size containment lands on a box other things
+are positioned against.
+
+**What changed shape.** Breakpoints now declare `--hero-title-size` — how big
+the title *wants* to be — and one rule decides how big it *may* be. That is the
+same split the button contract uses, one axis lower: the local rule states
+intent, the shared one states the limit. `overflow-wrap: anywhere` went with the
+bug it enabled, and `min-width: min-content` was added so a single word is not
+held under the 9.8ch measure meant for several. A word that fits needs no
+permission to break.
+
 ### The detail hero's title has a base, not just breakpoints (2026-08-22)
 
 `.detailHeroTitle` (program, product and diagnostic offer heroes) had **no base
@@ -287,6 +322,57 @@ meaning "the default that was always drawn" (`50/22` for the card, `50/50` for
 the avatar) so a profile nobody has touched renders exactly as it did before
 the editor existed. `src/lib/lms/authorPhoto.ts` holds the one function each
 consumer calls for its `object-position`.
+
+**The backdrop band is 5:1, and the crop editor says 5:1 too (2026-09-06).**
+`Author.background` was added after the photo contract above and never got one
+of its own, which is how it ended up meaning four different pictures. The band
+was sized by a fixed HEIGHT (`clamp(9rem, 19vw, 14rem)`) against a column that
+runs 1160px → 350px, so it rendered **5.18:1** on a desktop, **2.73:1** on a
+phone and **2.19:1** at 320 — while `AuthorProfileFold` previewed the crop at
+**6:1**. An author aimed a focal point in one window and none of the four
+shipped pictures was the one they saw. A height is not a shape: both frames
+carry `aspect-ratio: var(--ds-author-banner-ratio)` — **one token, 5 / 1** — so
+the crop is one picture at every width and the frame an author aims in is the
+frame that ships.
+
+**It is asserted, not asked for.** Two files agreeing because a comment told
+them to is the arrangement that already failed here once. `surfaceBoundaries.test.ts`
+reads every `.bannerFrame` and `.photoCropBanner` rule — each selector is
+declared twice, a base and a responsive one, and the shape only has to slip into
+one of them for the frames to part — and fails if any of them re-types a ratio,
+sets a height, or stops reading the token. 5:1 and not wider: it holds the
+desktop band within 8px of what it drew before, and sits inside the cluster the
+market uses for the same object (Domestika 7:1, Podia 6.7:1, Circle 16:5). Not
+narrower: a taller band pushes the name down the screen, which is the one thing
+this header keeps being asked not to do.
+
+Three things this slot deliberately does NOT have, each because the survey of
+how other platforms handle a user-uploaded cover said so:
+
+- **No scrim.** One was tried, bottom-weighted, on the argument that a bright
+  upload ends on a hard edge above the name. On the one cover this system has —
+  ink on white paper — it had nothing to darken and drew a grey smear across the
+  lower half. Of the platforms that accept an uploaded cover almost none scrims,
+  and the one real scrim on live user imagery (Spotify's) sits *under* white
+  type. Nothing is set on this band, so there is no legibility to buy. The
+  shipped answer everywhere else is the one here: lock the aspect, centre-crop,
+  and never put type on the image.
+- **No full-bleed.** Asked for and measured: edge-to-edge, the white plate takes
+  the top third, the tone-adaptive bar flips dark, and the page stops being this
+  product for its first 450px. Everyone who bleeds either owns the asset (Maven
+  generates the band from a hue token; MasterClass ships hand-cropped art per
+  breakpoint) or veils it (Domestika, 40% over the whole plate). We do neither.
+  What we already do — bleeding to the CONTENT COLUMN rather than the viewport —
+  is the treatment Spotify, Bluesky and Bandcamp all landed on.
+- **No fallback when unset.** Nothing renders, and `.hero` opens the page
+  instead. Same as Podia: "if no banner image is set, nothing is displayed."
+
+Worth stating because it is an advantage and it was being wasted: this slot has
+a real focal-point picker (`cropX/cropY/cropScale`), which none of the nine
+platforms surveyed has — Kajabi offers Top/Center/Bottom and Notion pans on one
+axis; the rest tell authors in prose to keep the subject centred. The picker is
+only worth having while the editor's frame and the rendered frame are the same
+shape, which is what the paragraph above is protecting.
 
 ### The hero carries the trail, and the author's way in (2026-08-27)
 
@@ -537,6 +623,77 @@ The before/after rail carries two kinds of card: two photographs in two cells, a
 What that produced was a rail whose **first** card — the one that teaches the reader how to read the two beside it — omitted the labelling the rest depends on. That is not tact, it is a gap in the first thing the reader sees.
 
 Both kinds carry the pills now, at the same corner of each half. The label layer is its own 1:1 box rather than the cell, and that is load-bearing: `object-fit: contain` letterboxes the square source inside the 4:5 cell on a phone, so a pill anchored to the *cell* would float in the empty band under the photograph. Anchored to a box the shape of the picture, centred the way `contain` centres it, the pill lands on the image at every width.
+
+## Fields — three steps and two zones (2026-09-06)
+
+Buttons got a contract in August because an axis with no token is an axis that
+diverges. Field width was the same axis, still untokened: measured across the
+platform's own stylesheets, field and column caps had been invented at 13, 16,
+20, 22, 27, 32, 34, 35, 38 and 42rem — ten answers to "how wide is a field",
+one per module.
+
+**The scale.** Three steps, in `--ds-` because they are the platform's and not
+one form's. Each step is named by what it holds, and each holds roughly twice
+the text of the one below it, so a field's width is a statement about its
+content rather than about what happened to be beside it:
+
+| Token | Width | What it holds |
+|---|---|---|
+| `--ds-field-sm` | 8rem | a code, a count, a date — about ten characters |
+| `--ds-field-md` | 18rem | a name, a slug, a badge — one short phrase |
+| `--ds-field-measure` | 35rem | a line of prose — 68ch of the UI face |
+
+`--ds-field-gap` is the interval between two fields on one line. A field that
+holds no text at all — a photograph, a composite editor — takes none of these:
+a typographic cap on a picture is a typographic law applied to something that
+is not type.
+
+**Two zones, not one cap.** The author profile capped every control at the
+measure while its media bands ran the full width of a 1160px card, so a section
+had two right edges and the space beside the fields was not restraint — it was
+nothing, and it read as a form that had failed to finish. The settlement is a
+grid rather than a cap: a **text zone** at the measure and a **media zone** that
+takes the rest (`.authorZones` in `Cabinet.module.css`). Text has a measure,
+media has a frame, and as columns of one grid the leftover width does work
+instead of sitting empty.
+
+Two rules travel with it. **Text leads, in the DOM and on the screen**, so the
+keyboard walks a section the way the eye does at every width. And **short fields
+share a line**: two 18rem phrases stacked down a 35rem column leave it half
+empty and read as two half-built rows, so the row's flex basis is the *small*
+step and the phrase step is only the ceiling.
+
+**The editor is shaped like the page (2026-09-06).** Two zones were the first
+answer to the empty desktop half, and they were only half of one: the controls
+were tidy and the arrangement still belonged to no surface, so the author found
+out what their entries produced by saving and opening the page in another tab. A
+preview rail beside the form was the second answer, and it was worse — the same
+person drawn twice on one screen, once to edit and once to look at.
+
+The arrangement is the page's instead. `/expert/[slug]` opens with a band, a
+round portrait at its lower edge, and the name and role beside that portrait; the
+cabinet's «Ви» is that lockup with the pictures made draggable and the two lines
+made inputs (`.authorHero` in `Cabinet.module.css`). Nothing is previewed twice,
+because the form is the preview. One difference is taken deliberately: the page
+overlaps the portrait onto the band and the editor does not, because the strip
+between them holds the band's own zoom — a composition copied to the point of
+hiding a control is a copy that costs the author a gesture. The course card is
+kept out of the lockup for the opposite reason: it is a different surface, and
+standing it inside the page's header would say it belongs there.
+
+**A zoomed picture needs a frame.** Laying the page's own shape into the editor
+surfaced the same bug in three places: `AuthorProfileShowcase`'s portrait, the
+offer page's byline and the builder's byline preview each put the crop's
+`transform: scale()` on a bare `<img>`. An element cannot clip its own
+transform, so a magnified avatar grew past its circle — on `/expert/[slug]` it
+printed over the author's own name. The rule `cropStyle` already states is now
+kept everywhere: the frame holds the size, the edge and the clip; the picture
+fills it and may be magnified inside.
+
+**Where it is applied.** The cabinet's author profile is the first consumer. The
+builder, the admin and the catalogue filters still carry their own numbers; the
+job is finished by a `guard:fields` in the shape of `guard:buttons` — a rule
+that a component stylesheet may not mint a field width, only take a step.
 
 ## Vocabulary — the one table
 
@@ -1576,51 +1733,6 @@ Consequences that are easy to get wrong:
   place. Two circles of different sizes on adjacent screens is the same failure
   as the two glasses of 2026-08-29 — see "One internal workspace frame".
 
-
-Chrome answers a **pair** of questions, and which pair depends on what the
-surface is for. There are two pairs and no third.
-
-**Where you navigate — the platform, the library, Builder, the Control Panel.**
-Left: *what is in this place* — sections, contents, structure. Right: *who am I
-and where else can I go* — `PlatformAccountMenu`, unchanged on every surface.
-Applications live only on the right; sections live only on the left. The moment
-one repeats the other, one of the two has stopped answering its own question.
-
-**Where you read — the lesson, and nothing else today.** Left: *out, one level
-up* — `ReaderChrome`'s `arrow-left` to the course, not the platform root; a
-reader leaving a lesson is going to the course, and routing them home instead
-walks the whole hierarchy for them. Right: *how to read* — bookmark, text size,
-contents. `Зміст` is a reading tool, not a route map, so it sits with the tools
-and opens as a bottom sheet already scrolled to the current lesson. There is no
-account control on a lesson: nobody checks whose session it is while reading.
-
-This was written down because the first attempt at the two-organ chrome
-proposed the opposite — mark-with-contents on the left, avatar on the right,
-uniformly — which would have removed three working controls to satisfy a rule
-the reading surface was never in. **The lesson is not an exception to be tidied
-away later.** It is the second mode, it is exactly one surface wide today, and
-any future surface whose job is reading rather than navigating joins it rather
-than the first mode.
-
-Consequences that are easy to get wrong:
-
-- A surface with **no** inner structure (the shelf, the cabinet, a landing) has
-  no sheet at all: the left control stays a plain link. A sheet holding one row
-  is a menu apologising for existing.
-- The Control Panel already answers the left question **without** a sheet, and
-  it does so on a phone too: its rail is `hidden md:grid` in the markup, but
-  `.rail[data-cw-material="chrome"]` sets `display: grid` at a higher
-  specificity than Tailwind's `.hidden`, so the icon rail is on screen at
-  375px and has been all along. Read the computed style before calling a
-  surface unreachable — the class list said one thing and the cascade did
-  another. Should that rail ever fold into a sheet, that sheet is the one place
-  in the product whose head carries the wordmark and the way out, because the
-  desktop rail carries the brand at its head as well: the logo would belong to
-  the rail, not to the sheet.
-- Floating organs and `ReaderChrome` must share geometry and material from one
-  place. Two circles of different sizes on adjacent screens is the same failure
-  as the two glasses of 2026-08-29 — see "One internal workspace frame".
-
 ### One nav-state contract (2026-08-23)
 
 Three surfaces answered "you are here" three ways: the topbar drew an ink underline, the cabinet's tab strip drew a gold one, and the account popover underlined its current row in gold via `text-decoration`. Two of them were on screen at once, so the reader had to learn that a black rule and a gold rule mean the same thing.
@@ -1669,7 +1781,6 @@ stayed at the invisible one, and the same gesture answered differently on
 adjacent controls. Hover is now exactly twice rest, the private rule is gone,
 and `full` means "you are here" alone. `--cw-nav-marker-hover-opacity` aliases
 the same token, so the topbar marker and a footer stroke move together.
-
 
 **Why a link rests visible and a nav row does not.** A nav item sits inside a bar
 that already says "these are the ways out"; a permanent mark under every item

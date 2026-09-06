@@ -1041,11 +1041,15 @@
     width: 100%;
   }
 
+  /* `--hero-title-size`, not `font-size`: how big it wants to be. What it may
+     be is decided once, by the one-word-one-line rule in
+     PlatformBlocksOrientation.module.css. `overflow-wrap: anywhere` went with
+     it — a word that fits needs no permission to break, and that permission is
+     what printed «ДІАГНОСТИК / А» on a phone. */
   .heroFeatureTitle.heroFeatureTitle {
     width: 100%;
     max-width: 100%;
-    font-size: clamp(2.6rem, 12.2vw, 4.25rem);
-    overflow-wrap: anywhere;
+    --hero-title-size: clamp(2.6rem, 12.2vw, 4.25rem);
   }
 
   .heroProofGrid {
@@ -1346,7 +1350,7 @@
 
   .heroFeatureTitle {
     max-width: 100%;
-    font-size: clamp(2.85rem, 15vw, 3.4rem);
+    --hero-title-size: clamp(2.85rem, 15vw, 3.4rem);
   }
 
   .heroFeatureLead {
@@ -1665,7 +1669,7 @@
   }
 
   .heroFeatureTitle {
-    font-size: 2.65rem;
+    --hero-title-size: 2.65rem;
   }
 
   .heroFeatureLead {

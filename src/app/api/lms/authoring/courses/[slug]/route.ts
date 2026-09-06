@@ -47,6 +47,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
           enabled: loaded.reviewEnabled,
         },
         slugEditable: await builderCourseSlugCanChange({ course: loaded.course, reviewStatus: loaded.reviewStatus }),
+        /* Whether this identity may move the access codes — the same question
+           the PUT above answers, asked before the author can press anything.
+           A control that accepts a value the write then discards is worse than
+           a control that says it is not yours. */
+        accessCodesEditable: grant.identity.isAdmin,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "unknown_error";
@@ -85,7 +90,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  return withCourseAccess(req, slug, async () => {
+  return withCourseAccess(req, slug, async (grant) => {
     const body = (await req.json().catch(() => null)) as { course?: unknown; expectedGeneration?: unknown } | null;
     if (!body?.course) return NextResponse.json({ error: "missing_course" }, { status: 400 });
     if (!isDraftGeneration(body.expectedGeneration)) {
@@ -98,7 +103,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
     const incoming = { ...(body.course as Record<string, unknown>), slug };
 
     try {
-      const result = await saveBuilderCourse(incoming, body.expectedGeneration);
+      /* The access codes travel with the course and are governed apart from it:
+         they decide which paid orders open this course, so only an owner may
+         move them. See `SaveGovernance` in builder.ts. */
+      const result = await saveBuilderCourse(incoming, body.expectedGeneration, {
+        mayGovernAccessCodes: grant.identity.isAdmin,
+      });
       // The learner reads this course through a tagged cache, so the write has to
       // drop the entry or a publish would sit behind the TTL. This is the line
       // that makes "опублікувати" mean it.

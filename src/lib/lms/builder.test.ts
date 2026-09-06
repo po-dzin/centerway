@@ -187,3 +187,50 @@ describe("published course draft persistence", () => {
     expect(reopened?.course.modules[0].lessons[0].title).toBe(editedTitle);
   });
 });
+
+/**
+ * THE ACCESS CODES ARE GOVERNED, NOT AUTHORED.
+ *
+ * `entitlementProductCodes` decides which paid orders open the course
+ * (`resolveEntitlement`), so an author who could write it could seat every
+ * buyer of somebody else's funnel in their own course. The payload carries the
+ * field either way — the client sends a whole Course — so the write is what
+ * has to hold the line, and it holds it by PRESERVING rather than refusing: a
+ * stale client must not start failing saves.
+ */
+describe("access code governance", () => {
+  async function saveWithCodes(codes: string[], governance?: { mayGovernAccessCodes: boolean }) {
+    const { adminClient } = await import("@/lib/auth/adminClient");
+    const { saveBuilderCourse } = await import("./builder");
+    const live = getSnapshotCourse("reset-day")!;
+    const rows = courseRows(live);
+    const db = new FakeSupabase({
+      lms_courses: [{
+        ...rows.course,
+        entitlement_product_codes: ["reset-day", "mini-detox"],
+        author_id: "author-1",
+        review_status: "approved",
+        review_note: null,
+        pending_content: null,
+        pending_review_status: null,
+        draft_generation: 0,
+        updated_at: "2026-08-24T00:00:00.000Z",
+      }],
+      lms_modules: rows.modules,
+      lms_lessons: rows.lessons,
+    });
+    vi.mocked(adminClient).mockImplementation(() => db as never);
+
+    await saveBuilderCourse({ ...live, entitlementProductCodes: codes }, 0, governance);
+    const stored = db.rows("lms_courses")[0];
+    return (stored.pending_content as { entitlementProductCodes: string[] }).entitlementProductCodes;
+  }
+
+  it("keeps the stored codes when the writer may not govern them", async () => {
+    expect(await saveWithCodes(["way21", "reset-day", "mini-detox"])).toEqual(["reset-day", "mini-detox"]);
+  });
+
+  it("lets an owner move them", async () => {
+    expect(await saveWithCodes(["reset-day"], { mayGovernAccessCodes: true })).toEqual(["reset-day"]);
+  });
+});

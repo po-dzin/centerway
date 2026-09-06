@@ -9,6 +9,7 @@ import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { heroFraming } from "@/components/platform/heroFraming";
 import { platformAggregateArtwork, platformPageArtwork, platformProductOffers } from "@/lib/platform/content";
 import { activePlatformTests, plannedPlatformTests, testsHubCopy } from "@/lib/platform/tests";
+import { heroTitleFit } from "@/components/platform/heroTitleFit";
 import { listStorefrontCourses, type StorefrontCard } from "@/lib/platform/offers";
 import { PlatformCatalogBrowser, type CatalogEntry } from "@/components/platform/PlatformCatalogBrowser";
 import { offerEyebrow } from "@/lib/platform/offerPreview";
@@ -109,7 +110,7 @@ export async function PlatformProgramsIndexPage() {
             <p className={heroStyles.heroBadge}>
               <span>Маршрути · Ритм · Глибина</span>
             </p>
-            <h1 className={heroStyles.heroFeatureTitle}>Програми</h1>
+            <h1 className={heroStyles.heroFeatureTitle} style={heroTitleFit("Програми")}>Програми</h1>
             <p className={heroStyles.heroFeatureLead}>
               Короткі входи, довші програми і різна глибина роботи з тілом, ритмом, харчуванням та увагою.
             </p>
@@ -185,7 +186,7 @@ export function PlatformTestsHubPage() {
             <p className={heroStyles.heroBadge}>
               <span>{testsHubCopy.badge}</span>
             </p>
-            <h1 className={heroStyles.heroFeatureTitle}>{testsHubCopy.title}</h1>
+            <h1 className={heroStyles.heroFeatureTitle} style={heroTitleFit(testsHubCopy.title)}>{testsHubCopy.title}</h1>
             <p className={heroStyles.heroFeatureLead}>{testsHubCopy.lead}</p>
             <div className={heroStyles.heroFeatureActions}>
               <Link className={heroStyles.heroPrimaryButton} href="#tests-available">
@@ -363,7 +364,7 @@ export async function PlatformProductsIndexPage() {
             <p className={heroStyles.heroBadge}>
               <span>Підтримка · Придатність · Контекст</span>
             </p>
-            <h1 className={heroStyles.heroFeatureTitle}>Продукти</h1>
+            <h1 className={heroStyles.heroFeatureTitle} style={heroTitleFit("Продукти")}>Продукти</h1>
             <p className={heroStyles.heroFeatureLead}>
               Окремий шар підтримки: трави й інші продуктові формати, які мають сенс тільки в контексті стану, режиму
               та того, що ви вже проходите.

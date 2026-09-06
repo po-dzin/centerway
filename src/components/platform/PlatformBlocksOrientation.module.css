@@ -328,7 +328,34 @@
    it onto open photo. A tight, low-alpha shadow buys that separation without
    darkening the image the way extending the scrim would — it reads as edge
    definition, not as an effect. */
+/* ── ONE WORD, ONE LINE (2026-09-06) ────────────────────────────────────────
+   «ДІАГНОСТИКА» came out as «ДІАГНОСТИК / А» on a 390px phone: the size was
+   picked from the viewport (`12.2vw`), the word's own width was never in the
+   arithmetic, and `overflow-wrap: anywhere` stood ready to break whatever did
+   not fit. Every part of that was a guess that happened to hold for «Програми»
+   and failed for the longest title on the platform.
+
+   The size is now bounded by the room ONE WORD needs. `--hero-title-word` is
+   the length of the longest word in this particular title, written by the
+   component that knows the string (`heroTitleFit.ts`); `0.7` is the average
+   advance of an uppercase Manrope 900 character with this rule's own tracking,
+   measured rather than assumed (0.665–0.704 across the platform's titles). The
+   room is not a container query but the hero's own width formula, restated:
+   `.heroFeatureContent` is `min(100% - 2 gutters, --cw-max-width)`, and reusing
+   the formula avoids putting size containment on a box that other things are
+   positioned against.
+
+   Breakpoints now say how big the title WANTS to be, in `--hero-title-size`;
+   this line is the one place that decides how big it may be. */
 .heroFeatureTitle {
+  --hero-title-size: var(--ds-type-hero-size);
+  --hero-title-room: min(100vw - 2 * var(--cw-page-gutter), var(--cw-max-width));
+  /* The cap is a MEASURE — where a title of several words should turn — and a
+     measure has no authority over one long word. `min-content` is that word's
+     own width, so the box grows to hold it instead of letting it hang past its
+     own right edge (at 1440 «ДІАГНОСТИКА» is 803px against a 9.8ch cap of
+     713). It still cannot exceed the column: the size rule below saw to that. */
+  min-width: min-content;
   max-width: min(9.8ch, 100%);
   margin: 0;
   /* The page's own paper tone, not the near-white on-dark contrast token —
@@ -338,7 +365,10 @@
   color: var(--cw-sem-calm-bg);
   text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 38%, transparent), 0 10px 30px color-mix(in srgb, var(--cw-mat-scrim-ink) 28%, transparent);
   font-family: var(--cw-font-ui);
-  font-size: var(--ds-type-hero-size);
+  font-size: min(
+    var(--hero-title-size),
+    calc(var(--hero-title-room) / (var(--hero-title-word, 8) * 0.7))
+  );
   font-weight: 900;
   line-height: var(--ds-type-hero-line-height);
   letter-spacing: 0.02em;
@@ -763,13 +793,12 @@
 /* The diagnostics block's own way out, matching the showcase blocks' — see
    `.blockAction`. This panel offers the dosha test and a consultation, which are
    two of the tests catalogue's entries, not the catalogue. */
+/* Placement only — the crossing itself is `PlatformBlockLink`, which carries
+   the colour, the stroke, the arrow and its nudge for every surface at once.
+   `.videoDecisionMoreArrow` is gone with the hand-assembled markup. */
 .videoDecisionMore {
-  composes: blockAction from "./PlatformBlocksBase.module.css";
+  display: inline-flex;
   justify-content: flex-start;
-}
-
-.videoDecisionMoreArrow {
-  composes: blockActionArrow from "./PlatformBlocksBase.module.css";
 }
 
 @media (max-width: 900px) {

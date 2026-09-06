@@ -444,7 +444,7 @@
 .sizeOption:hover .sizeInkMark,
 .sizeOption:focus-visible .sizeInkMark {
   opacity: var(--cw-nav-marker-hover-opacity);
-  transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+  transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
 }
 
 /* NAMES EVERY ANCESTOR, and that is not tidiness (2026-08-28).
@@ -466,7 +466,7 @@
 
 .sizeOptionCurrent .sizeInkMark {
   opacity: 1;
-  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
+  transform: scaleX(1) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
 }
 
 .sizeInkLabel {

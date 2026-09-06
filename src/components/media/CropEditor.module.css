@@ -1,0 +1,178 @@
+/* THE CROP EDITOR — a whole photograph with the frame laid over it.
+   Its geometry lives in src/lib/media/imageCrop.ts; this file only dresses it.
+   The window's SHAPE is not here either: the caller hands the window element
+   the same class the resting frame uses, so one declaration states the ratio
+   for the editor and for the page (see `--ds-author-banner-ratio`). */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: var(--cw-space-md);
+  background: var(--cw-mat-scrim);
+}
+
+.panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--cw-space-sm);
+  width: min(46rem, 100%);
+  max-height: 100%;
+  padding: var(--cw-space-md);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  color: var(--cw-platform-text);
+  box-shadow: var(--cw-shadow-strong);
+}
+
+.head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  min-width: 0;
+}
+
+.headText {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.note {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: 1.45;
+}
+
+/* THE STAGE IS PAPER, NOT A FRAME. Nothing is cropped here — the photograph is
+   drawn `contain` and whatever is left over is the editor's own ground, so the
+   picture's true edges are visible and the window can be seen reaching them. */
+.stage {
+  position: relative;
+  overflow: hidden;
+  min-height: 12rem;
+  aspect-ratio: 4 / 3;
+  max-height: 60vh;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.stage[data-dragging] {
+  cursor: grabbing;
+}
+
+.stage:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.stage img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* THE DIM IS THE WINDOW'S OWN SHADOW, cast outwards. A separate four-part
+   overlay would have to be recomputed on every drag frame and could not follow
+   the round avatar's radius; one spread shadow does both and moves with the
+   element it belongs to. */
+.window {
+  position: absolute;
+  /* `--cw-mat-scrim-ink` and not the scrim itself: the scrim is already tuned
+     for a page behind glass, and cast twice — once by the dialog and once by
+     this window — it left the discarded edges of the photograph reading almost
+     as bright as the kept part. This is the same ink at the weight a crop
+     needs, which is heavier. */
+  box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--cw-mat-scrim-ink) 66%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--cw-platform-accent-contrast) 88%, transparent);
+  outline-offset: -1px;
+  pointer-events: none;
+}
+
+/* The thirds, inside the window and only while the hand is down — the same
+   composition grid the resting frames drew, for the same reason. */
+.guides {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background-image:
+    linear-gradient(to right, currentColor 0 100%),
+    linear-gradient(to right, currentColor 0 100%),
+    linear-gradient(to bottom, currentColor 0 100%),
+    linear-gradient(to bottom, currentColor 0 100%);
+  background-size: 1px 100%, 1px 100%, 100% 1px, 100% 1px;
+  background-position: 33.33% 0, 66.66% 0, 0 33.33%, 0 66.66%;
+  background-repeat: no-repeat;
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 55%, transparent);
+  transition: opacity 120ms ease;
+  border-radius: inherit;
+}
+
+.stage[data-dragging] .guides,
+.stage:focus-visible .guides {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guides {
+    transition: none;
+  }
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  flex-wrap: wrap;
+}
+
+.zoom {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+/* The two glyph buttons this overlay owns — close and recentre. Not the button
+   contract's five roles: those are the product's own CTAs and this is chrome on
+   a picture, the same quiet square the cabinet's frames already carry. */
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid var(--cw-platform-border);
+  border-radius: var(--cw-radius-sm);
+  background: var(--cw-mat-surface-sunk);
+  color: inherit;
+  cursor: pointer;
+}
+
+.action:hover {
+  background: var(--cw-mat-surface);
+}
+
+.action:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}

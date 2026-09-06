@@ -42,12 +42,23 @@
      padding INSIDE it, so the same formula put the bar's labels a whole gutter
      (20–40px per side) outside the text they sit above — a top bar visibly
      wider than the page. The column is therefore derived the way `.wrap`
-     derives it, then pulled back out by the pill's own optical inset so that
-     the first label, not the pill's edge, sits on the page's left margin. */
+     derives it: `--maxw` minus the two gutters is the same content-box width
+     every section's own `.wrap` resolves to, so this pill's OUTER edge lands
+     exactly on the cards and rules beneath it — nothing added back for the
+     pill's own padding. (An earlier pass here added `+ 2 * var(--cw-bar-pad)`,
+     copying the platform's floating-OVERLAY header, which is allowed to sit
+     proud of the column because nothing else shares its edge. This bar sits
+     directly above card grids that DO share the edge, so the overhang read as
+     the exact bug this formula exists to fix — a topbar visibly wider than the
+     row of cards one section down.) The brand mark is pulled back to the true
+     margin by its own negative margin below (`.cwn__brand`) — the same
+     correction the platform's floating header applies to its glyph — because
+     that is about `.cwn__in`'s own padding sitting between the pill's edge and
+     the first thing inside it, not about the bar's outer edge, which now
+     matches the column exactly. */
   width: calc(
     min(100%, var(--maxw, 1160px))
     - 2 * max(var(--cw-page-gutter), env(safe-area-inset-left), env(safe-area-inset-right))
-    + 2 * var(--cw-bar-pad)
   );
   margin-inline: auto;
   border-radius: var(--cw-nav-radius);
@@ -292,6 +303,9 @@
   letter-spacing: -0.02em;
   color: var(--cw-nav-ink);
   text-decoration: none;
+  /* Cancels `.cwn__in`'s own inline padding so the mark's edge, not the pill's
+     padding box, lands on the page's left margin. See the width note above. */
+  margin-inline-start: calc(-1 * var(--cw-bar-pad));
 }
 
 .cwn__brand img {

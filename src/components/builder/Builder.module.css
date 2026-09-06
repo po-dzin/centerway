@@ -267,14 +267,14 @@
 .inkRow:hover .inkMark,
 .inkRow:focus-visible .inkMark {
   opacity: var(--cw-ink-hover-opacity);
-  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
 }
 
 /* Full ink: this row IS the thing being edited. */
 .inkRow[aria-current="page"] .inkMark,
 .inkRow[data-selected] .inkMark {
   opacity: 1;
-  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
+  transform: scaleX(1) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
 }
 
 /* ── Bar ──────────────────────────────────────────── */
@@ -1512,6 +1512,46 @@
   background: var(--cw-mat-tone-boundary, var(--cw-mat-surface-sunk));
   line-height: 1.5;
   overflow-wrap: anywhere;
+}
+
+/* THE VERSION NOTICE — see BuilderRevisionNotice.tsx.
+
+   Paper, not alarm. It reports which of two versions learners are holding,
+   which is a standing fact about a published course and not a failure: the
+   sunk tone the rest of the builder uses for a stated condition, a rule under
+   it because it sits above the document it is about, and no colour of its own.
+   Wraps on a phone so the action never squeezes the sentence to two words. */
+.revisionNotice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs) var(--cw-space-sm);
+  margin-block-end: var(--cw-space-md);
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-tone-boundary, var(--cw-mat-surface-sunk));
+}
+
+.revisionNoticeText {
+  flex: 1 1 16rem;
+  min-width: 0;
+  margin: 0;
+  color: var(--cw-platform-muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.revisionNoticeActions {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+}
+
+.revisionNoticeLink {
+  color: var(--cw-platform-text);
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .importPreview {
@@ -3510,9 +3550,11 @@
   margin-inline: auto;
 }
 
+/* Grabbing, not crosshair — these frames pan the picture now rather than
+   placing a point where you click. */
 .coverPreviewLandscape[data-dragging],
 .coverPreviewPortrait[data-dragging] {
-  cursor: crosshair;
+  cursor: grabbing;
 }
 
 .coverPreviewWide[data-dragging] {
@@ -3537,24 +3579,39 @@
   pointer-events: none;
 }
 
-/* The same material the cabinet's crop grip takes, and for the same reason —
-   see the note over `.photoCropHandle` in Cabinet.module.css. A cover is an
-   uploaded photograph; the theme has no opinion about what is under this grip. */
-.coverFocusHandle {
+/* Thirds while the hand is down, and nothing otherwise — the same guides
+   `.guides` draws in CropEditor.module.css, on a frame that likewise has
+   nothing to grab but the picture. */
+.coverCropGuides {
   position: absolute;
-  width: 2.25rem;
-  height: 2.25rem;
-  display: grid;
-  place-items: center;
-  translate: -50% -50%;
-  border: 1px solid color-mix(in srgb, var(--cw-platform-accent-contrast) 28%, transparent);
-  border-radius: var(--cw-radius-pill);
-  background-color: color-mix(in srgb, var(--cw-mat-surface-night) var(--cw-mat-tint-chrome-floor), transparent);
-  background-image: var(--cw-mat-grain-image);
-  color: var(--cw-platform-accent-contrast);
-  box-shadow: var(--cw-mat-shadow-raised);
-  backdrop-filter: var(--cw-mat-filter);
+  inset: 0;
+  opacity: 0;
+  background-image:
+    linear-gradient(to right, currentColor 0 100%),
+    linear-gradient(to right, currentColor 0 100%),
+    linear-gradient(to bottom, currentColor 0 100%),
+    linear-gradient(to bottom, currentColor 0 100%);
+  background-size: 1px 100%, 1px 100%, 100% 1px, 100% 1px;
+  background-position: 33.33% 0, 66.66% 0, 0 33.33%, 0 66.66%;
+  background-repeat: no-repeat;
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 55%, transparent);
+  transition: opacity 120ms ease;
   pointer-events: none;
+}
+
+.coverPreviewLandscape[data-dragging] .coverCropGuides,
+.coverPreviewWide[data-dragging] .coverCropGuides,
+.coverPreviewPortrait[data-dragging] .coverCropGuides,
+.coverPreviewLandscape:focus-visible .coverCropGuides,
+.coverPreviewWide:focus-visible .coverCropGuides,
+.coverPreviewPortrait:focus-visible .coverCropGuides {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coverCropGuides {
+    transition: none;
+  }
 }
 
 .coverWideBlock {
@@ -3583,44 +3640,10 @@
   color: var(--cw-platform-text);
 }
 
-/* ── The zoom, under its frame ───────────────────────────────────────────────
-   A LINE, NOT A PLATE. This sits directly under a picture, and a bordered
-   control box there reads as a second frame competing with the one above it.
-   The track is the same drawn line the rest of the builder uses for rules, and
-   `accent-color` hands the thumb to the browser's own control — which is the
-   only way to get a native range that stays legible in both themes without
-   rebuilding the thumb per engine.
-
-   The multiplier is `tabular-nums` so the row does not twitch on every step of
-   the drag: 1.05 and 1.10 are the same width, and a readout that changes width
-   while you drag makes the slider feel like it is fighting you. */
-.coverZoomRow {
-  display: flex;
-  align-items: center;
-  gap: var(--cw-space-2xs);
-}
-
-.coverZoomValue {
-  min-width: 2.6rem;
-  color: var(--cw-platform-muted);
-  font-size: 0.76rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.coverZoomInput {
-  flex: 1;
-  min-width: 0;
-  height: 1.25rem;
-  margin: 0;
-  accent-color: var(--cw-platform-accent);
-  cursor: ew-resize;
-}
-
-.coverZoomInput:focus-visible {
-  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: var(--ds-focus-ring-offset);
-  border-radius: var(--cw-radius-sm);
-}
+/* The zoom row brings its own skin now — src/components/media/CropZoom.module.css.
+   `.coverZoomRow`, `.coverZoomValue` and `.coverZoomInput` were this file's
+   copy of the cabinet's three, both dressing the browser's own range control
+   and already disagreeing on type size. One drawn control, one file. */
 
 @media (min-width: 901px) {
   .coverFormatGrid {
@@ -4290,12 +4313,22 @@
   background: var(--cw-mat-surface);
 }
 
-.authorPreviewPhoto {
+/* The frame clips, the picture zooms (2026-09-06) — an element cannot clip its
+   own transform, and the author's avatar carries one. */
+.authorPreviewPhotoFrame {
   width: 4.5rem;
   height: 4.5rem;
+  display: block;
+  overflow: hidden;
   border-radius: var(--cw-radius-md);
-  object-fit: cover;
   flex: none;
+}
+
+.authorPreviewPhoto {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 .authorPreviewPhotoEmpty {
@@ -5368,7 +5401,7 @@
   /* The line uses the same 36px source grid as the circular selector, but is
      rendered in a 0.85rem-tall band. Scale its ink vertically so the selected
      nav item has the same perceived stroke weight as the selected icon. */
-  transform: scaleX(0.58) scaleY(3.4) rotate(-0.4deg);
+  transform: scaleX(0.58) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
   transform-origin: center;
   transition: opacity var(--builder-motion-ink) ease, transform var(--builder-motion-ink) ease;
 }
@@ -5382,12 +5415,12 @@
 .courseMobileNavItem:hover .inkMark,
 .courseMobileNavItem:focus-visible .inkMark {
   opacity: var(--cw-ink-hover-opacity);
-  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
 }
 
 .courseMobileNavItem[aria-current="page"] .inkMark {
   opacity: 1;
-  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
+  transform: scaleX(1) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
 }
 
 .courseRail {
@@ -5439,12 +5472,12 @@
 .courseRailLink:hover .inkMark,
 .courseRailLink:focus-visible .inkMark {
   opacity: var(--cw-ink-hover-opacity);
-  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
 }
 
 .courseRailLink[aria-current="page"] .inkMark {
   opacity: 1;
-  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
+  transform: scaleX(1) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
 }
 
 .courseRailStatus {

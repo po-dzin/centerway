@@ -39,32 +39,46 @@ describe("platform interaction layers", () => {
     expect(css).toContain("user-select: text");
   });
 
-  it("keeps the resting stroke for links in running copy, and only for those", () => {
+  it("keeps the resting stroke to links in running copy and the one aggregate crossing", () => {
     /* The `link` variant draws its stroke before anyone touches it, which is
-       the affordance a link needs when it sits inside a sentence with nothing
-       else marking it out. A row of ways out — a footer, a block's link to its
-       own aggregate, a carousel's "see all" — is already marked out by being a
-       row, and a permanent line under each item read as decoration nobody
-       chose. Those consumers take the navigation strength: invisible at rest,
-       ink on hover. */
+       the affordance a link needs when nothing else marks it out — inside a
+       sentence, or standing alone beside a heading on a touch screen where
+       there is no hover to reveal anything.
+
+       `PlatformBlockLink` JOINED THIS LIST ON 2026-09-06, and the count below
+       is the point of the test rather than an exception to it. The crossing to
+       an aggregate page had grown three shapes — this component in block heads,
+       a hand-rolled copy in the carousel's footer, another in the cabinet — and
+       collapsing them onto one component meant choosing one resting state for
+       all three. It is the visible stroke: the arrow beside the label is a 12px
+       glyph, which is not an affordance on its own, and the hover that used to
+       carry the mark does not exist on a phone.
+
+       What the loop still guards is that the strength stays a DECISION. Every
+       other consumer of a row of ways out — the footer's link row, a nav, a set
+       of tabs — is already marked out by being a row, and takes the navigation
+       strength: invisible at rest, ink on hover. */
     expect(css).toContain('.cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark');
 
-    for (const rel of [
-      "src/components/platform/layout/PlatformFooter.tsx",
-      "src/components/platform/PlatformBlock.tsx",
-      "src/components/platform/PlatformOfferCarousel.tsx",
-      "src/components/platform/blocks/orientation/hub.tsx",
-    ]) {
+    for (const [rel, allowed] of [
+      // One survivor inside a sentence: «якщо ви знайшли помилку — …».
+      ["src/components/platform/layout/PlatformFooter.tsx", 1],
+      // The aggregate crossing — one component, every surface.
+      ["src/components/platform/PlatformBlock.tsx", 1],
+      ["src/components/platform/PlatformOfferCarousel.tsx", 0],
+      ["src/components/platform/blocks/orientation/hub.tsx", 0],
+    ] as const) {
       const source = read(rel);
       const restingLinks = source.match(/InteractionInkLabel variant="link"/g) ?? [];
-      // The one survivor is inside a sentence: «якщо ви знайшли помилку — …».
-      const allowed = rel.endsWith("PlatformFooter.tsx") ? 1 : 0;
       expect(restingLinks.length, `${rel} uses the resting stroke ${restingLinks.length} time(s)`).toBe(allowed);
     }
 
-    // And no consumer draws a browser underline under the hand-drawn one.
-    const carousel = read("src/components/platform/PlatformOfferCarousel.module.css");
-    expect(carousel).not.toMatch(/\.queueLink\s*\{[^}]*text-decoration:\s*underline/);
+    /* The rail reports its position and nothing else: the way out moved to the
+       section head, so the carousel must not grow a second one back. It has no
+       destination of its own, which is why it imports no link at all. */
+    const carousel = read("src/components/platform/PlatformOfferCarousel.tsx");
+    expect(carousel).not.toMatch(/from "next\/link"/);
+    expect(carousel).not.toMatch(/viewAllHref[?:]/);
   });
 
   it("moves every shared admin navigation consumer onto the ink primitives", () => {

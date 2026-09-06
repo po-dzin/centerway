@@ -9,6 +9,21 @@
   flex-direction: column;
   color: var(--cw-platform-text);
   --platform-topbar-clearance: clamp(5.8rem, 7.5vw, 7.35rem);
+  /* THE NUDGE A PAGE STILL OWES, NAMED (2026-09-06).
+     This bar sits in normal flow and is then pushed down by its own `top`, so
+     it renders that much lower than the box it occupies. A page that wants a
+     measured gap under it has to add the nudge back, or the offset eats it —
+     an author header asking for 2rem of daylight rendered 1.25rem. The number
+     lived only in the `top` declaration below, so nothing outside `.header`
+     could read it and every page guessed.
+     ONLY MEANINGFUL WHERE THE BAR IS IN FLOW. Below 901px the shell swaps to a
+     floating pill and pays `main` its own clearance instead, so a page must
+     zero this in its own mobile rule rather than adding it a second time. It is
+     not zeroed here because the shell's own ≤900px branch lives in a different
+     CSS module and currently loses the cascade to this one — a separate defect,
+     visible in `--platform-topbar-clearance` resolving to its desktop clamp on
+     a phone, and not one to paper over from this side. */
+  --platform-topbar-top: 0.75rem;
   background:
     radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--cw-platform-accent) 13%, transparent), transparent 26rem),
     /* The wash was mixed from `--cw-sem-calm-surface-muted`, which is the
@@ -33,7 +48,7 @@
 
 .header {
   position: sticky;
-  top: 0.75rem;
+  top: var(--platform-topbar-top, 0.75rem);
   z-index: var(--ds-z-sticky);
   width: min(100% - 2 * var(--cw-bar-inset), var(--cw-max-width));
   margin: 0 auto;
@@ -369,7 +384,11 @@
   width: var(--cw-brand-size-symbol-footer);
   height: var(--cw-brand-size-symbol-footer);
   /* The footer sits on the page ground, not under the tone sampler, so it names
-     the ink directly rather than reading --platform-header-symbol-color. */
+     the mark's own colour rather than reading --platform-header-symbol-color.
+     `--cw-brand-mark-color` is the ink on cream and the gold on graphite —
+     which is what the header has always done, and what this rule used to miss
+     by naming `--cw-platform-text` and getting a cream logotype on the night
+     ground. */
   background-color: color-mix(in srgb, var(--cw-brand-mark-color) 96%, transparent);
 }
 
@@ -480,17 +499,22 @@
   content: none;
 }
 
+/* Same reason as `.cw-ink-label` in globals.css: this box anchors the mark, so
+   it has to hug the glyphs rather than the bar's 22.5px line-height, or the
+   shared `--cw-ink-stroke-offset` lands 3px lower here than it does under a
+   block link. One number has to mean one distance. */
 .navText {
   position: relative;
   display: inline-flex;
   align-items: center;
   width: fit-content;
+  line-height: 1;
 }
 
 .navInkMark {
   position: absolute;
   inset-inline: -0.2rem;
-  inset-block-end: -0.62rem;
+  inset-block-end: var(--cw-ink-stroke-offset);
   width: calc(100% + 0.4rem);
   height: var(--cw-ink-stroke-height);
   overflow: visible;
@@ -498,8 +522,13 @@
   pointer-events: none;
   opacity: 0;
   /* The line and the circular selector share the same source stroke. This
-     narrow band needs a vertical scale to preserve that weight on screen. */
-  transform: scaleX(0.38) scaleY(3.4) rotate(-0.4deg);
+     narrow band needs a vertical scale to preserve that weight on screen —
+     which is now `--cw-ink-stroke-weight`, read by every ink mark in the
+     system rather than typed here and typed again, differently, elsewhere. */
+  transform:
+    scaleX(0.38)
+    scaleY(var(--cw-ink-stroke-weight))
+    rotate(var(--cw-ink-stroke-tilt));
   transform-origin: center;
   transition: opacity 160ms ease, transform 160ms ease;
 }
@@ -507,12 +536,18 @@
 .nav a:hover .navInkMark,
 .nav a:focus-visible .navInkMark {
   opacity: var(--cw-nav-marker-hover-opacity);
-  transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+  transform:
+    scaleX(var(--cw-nav-marker-hover-scale))
+    scaleY(var(--cw-ink-stroke-weight))
+    rotate(var(--cw-ink-stroke-tilt));
 }
 
 .nav a[aria-current="page"] .navInkMark {
   opacity: 1;
-  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
+  transform:
+    scaleX(1)
+    scaleY(var(--cw-ink-stroke-weight))
+    rotate(var(--cw-ink-stroke-tilt));
 }
 
 .iconInkRing,
@@ -578,7 +613,8 @@
    away entirely — the signed-out account control collapsed onto its own 26px
    glyph: under the 48px minimum, and visibly the smaller of two islands beside
    a 48px mark. The two tokens are the same 3rem, so nothing moves inside a bar;
-   outside one, the control is finally the size it always claimed to be. */
+   outside one, the control is finally the size it always claimed to be. Same
+   species as the ring's missing fallback a few rules up. */
 .profileEntry {
   position: relative;
   min-height: var(--platform-utility-control-size, var(--ds-touch-target-min));
@@ -669,8 +705,12 @@
    3rem because it was drawn around an 18px glyph sitting in a 3rem box — a
    loop with air inside it. Fill that box with a portrait and the same 3rem
    lands exactly on the photograph's edge: a hand-drawn stroke scribbled across
-   a face. The mark is not wrong, the ratio is — it used to circle a 2.25rem
-   disc at 3rem, so at 3rem the loop is 4rem. */
+   a face, which is what the open state looked like the moment the avatar grew.
+
+   The mark is not wrong, the ratio is. It used to circle a 2.25rem disc at
+   3rem — a third larger than the thing it marks — so at 3rem the loop is 4rem.
+   Nothing clips it: the row sets no overflow, and 8px of overhang on a 20px
+   gutter stays inside the viewport on the narrowest phone we ship to. */
 [data-cw-chrome="organs"] .profileInkRing {
   width: calc(var(--cw-ink-ring-size) * 1.34);
   height: calc(var(--cw-ink-ring-size) * 1.34);
@@ -680,7 +720,8 @@
    2.25rem disc inside a 3rem hit box, which is right there: the box is invisible
    and the disc is one object among several on a band. Floating, the hit box is
    the only thing holding the corner, so a 2.25rem disc beside a 3rem mark pill
-   read as the smaller of two islands. The disc fills its target. */
+   read as the smaller of two islands — the account looked like a lesser control
+   than the way home. The disc fills its target and the pair matches. */
 [data-cw-chrome="organs"] .profileAvatar {
   width: var(--ds-touch-target-min);
   height: var(--ds-touch-target-min);
@@ -795,7 +836,13 @@
    is daylight above it, so a square top edge would be a cut rather than a
    join. */
 .profileMenu[data-form="organs"] {
-  padding: 0.5rem;
+  /* THE PAIR RESTS ON THIS SHEET (2026-09-06). The panel is anchored at the
+     ROW'S OWN TOP rather than under it, so the mark and the avatar end up on
+     its material instead of floating above a gap that showed the article
+     through. `--platform-organs-inset` is the row's measured height, handed
+     over by the menu: the rows begin below the islands, and nothing is drawn
+     under them. */
+  padding: calc(var(--platform-organs-inset, 0px) + 0.6rem) 0.5rem 0.5rem;
   border-radius: var(--cw-radius-lg);
   background-color: var(--cw-mat-tint-chrome);
   backdrop-filter: var(--cw-mat-filter);

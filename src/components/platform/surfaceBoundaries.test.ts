@@ -64,4 +64,45 @@ describe("shared surface boundaries", () => {
     expect(block(catalogue, ".bandField")).not.toContain("--cw-mat-stroke-control");
     expect(block(catalogue, ".bandField:focus-within")).toContain("--ds-focus-ring-color");
   });
+
+  /* THE AUTHOR AIMS AT THE FRAME THAT SHIPS.
+     The band was once a fixed HEIGHT against a fluid column, so it drew 5.18:1
+     on a desktop, 2.73:1 on a phone and 2.19:1 at 320 — while the cabinet's
+     crop editor previewed 6:1. Four pictures, none of them the one the author
+     framed. Both frames read one token now, and this is what stops a future
+     hand-typed number from quietly reopening the gap: a comment asking two
+     files to agree is not a contract.
+
+     Every rule for each frame is checked, not just the first — both selectors
+     are declared twice (a base rule and a responsive one), and the ratio only
+     has to slip into one of them for the two frames to part again. */
+  it("crops the author banner to one ratio in the editor and on the page", () => {
+    const rules = (source: string, selector: string) => {
+      const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return [...source.matchAll(new RegExp(`${escaped}\\s*\\{([\\s\\S]*?)\\}`, "g"))].map((m) => m[1]);
+    };
+
+    expect(read("data/design-tokens/cw.tokens.json")).toContain('"--ds-author-banner-ratio": "5 / 1"');
+
+    const page = rules(read("src/components/platform/AuthorProfileShowcase.module.css"), ".bannerFrame");
+    const editor = rules(read("src/components/platform/cabinet/Cabinet.module.css"), ".photoCropBanner");
+    expect(page.length).toBeGreaterThan(0);
+    expect(editor.length).toBeGreaterThan(0);
+
+    for (const [side, frames] of [["page", page], ["editor", editor]] as const) {
+      const shaped = frames.filter((rule) => rule.includes("aspect-ratio"));
+      // Exactly one rule per side states the shape, and it states it as the token.
+      expect(shaped, `${side}: one rule should set the ratio`).toHaveLength(1);
+      expect(shaped[0]).toContain("aspect-ratio: var(--ds-author-banner-ratio)");
+
+      for (const rule of frames) {
+        // No frame may re-type a ratio of its own, in any notation …
+        expect(rule, `${side}: literal ratio`).not.toMatch(/aspect-ratio:\s*[\d.]/);
+        // … nor go back to sizing the band by height, which is what made the
+        // shape depend on the viewport in the first place. `min-height` and
+        // `line-height` are other properties and are left alone.
+        expect(rule, `${side}: fixed height`).not.toMatch(/[^-\w]height:/);
+      }
+    }
+  });
 });

@@ -437,14 +437,49 @@ async function claimDraftGeneration(
   return Number(data.draft_generation);
 }
 
-export async function saveBuilderCourse(input: unknown, expectedGeneration: unknown): Promise<SaveOutcome> {
+/**
+ * WHO MAY REWRITE THE ACCESS RULES, as opposed to the course.
+ *
+ * `entitlementProductCodes` is not storefront copy: it is the list of paid
+ * product codes that OPEN this course, and `resolveEntitlement` reads it to
+ * decide whether a stranger's order lets them in. Typing «reset-day» into it
+ * hands every buyer of another funnel a seat here — which is the same class of
+ * decision as the price, and the price is deliberately in a table the authoring
+ * routes hold no grant on (see `creator-contract-price-split`).
+ *
+ * So the codes stay on the course row, where entitlement already reads them,
+ * and the WRITE is gated instead: an author's payload cannot move them. The
+ * value is preserved rather than refused — same as `visibility` below — because
+ * a stale client that still sends the field must not start failing saves.
+ */
+export type SaveGovernance = {
+  /** True only for an owner (admin). Defaults to false: the safe answer. */
+  mayGovernAccessCodes?: boolean;
+};
+
+export async function saveBuilderCourse(
+  input: unknown,
+  expectedGeneration: unknown,
+  governance: SaveGovernance = {},
+): Promise<SaveOutcome> {
   validateCourse(input, "builder");
-  const incoming = input as Course;
+  const submitted = input as Course;
   if (!isDraftGeneration(expectedGeneration)) throw new Error("lms_builder_invalid_draft_generation");
 
-  const loaded = await loadBuilderCourse(incoming.slug);
-  const existing = await readCourseRow(incoming.slug);
+  const loaded = await loadBuilderCourse(submitted.slug);
+  const existing = await readCourseRow(submitted.slug);
   if (!existing) throw new Error("lms_builder_course_not_found");
+  /* Held to WHAT THE AUTHOR WAS SHOWN, not to the live row: while a revision is
+     open, `loaded.course` is that revision, and pinning the live row's codes
+     would silently revert a change an owner had already staged there. */
+  const incoming: Course = governance.mayGovernAccessCodes
+    ? submitted
+    : {
+        ...submitted,
+        entitlementProductCodes:
+          loaded?.course.entitlementProductCodes
+          ?? ((existing.entitlement_product_codes as string[] | null) ?? []),
+      };
   const nextVersion = existing ? Number(existing.version ?? 1) + 1 : incoming.version;
 
   // The id this write is authorized for: the existing row's own id when

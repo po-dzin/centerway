@@ -295,21 +295,41 @@
    there would outweigh the title it belongs to. The arrow is part of the label
    rather than an icon slot, because the label is the target — a 12px glyph is
    not one. */
+/* ONE CROSSING, ONE COLOUR PAIR — ink at rest, warmth on approach.
+   The `text` role rests at `--cw-platform-muted` and brightens to the page ink
+   on hover, which is the right ladder for a quiet control inside a form. It is
+   the wrong one here, and the row of crossings proved it: this link rested a
+   step BELOW the heading it sits beside, the carousel's copy rested at full
+   ink, and the cabinet's rested with a permanently gold arrow — three answers
+   to "how loud is a way out". The answer is one: the label and its arrow are
+   the page's own ink, at full strength, because a crossing is not a footnote to
+   the block it belongs to; and both turn to warmth together under the pointer
+   or the focus ring, because the gold IS the hover in this system.
+   The arrow takes `currentColor`, so it is not coloured separately — a rule
+   that sets the glyph on its own is the bug the cabinet had. */
 .blockAction {
   composes: text from "./PlatformButtons.module.css";
   gap: 0.4rem;
+  color: var(--cw-platform-text);
+}
+
+.blockAction:hover:not(:disabled),
+.blockAction:focus-visible {
+  color: var(--cw-sem-warmth-strong);
 }
 
 .blockActionArrow {
   transition: transform 160ms ease;
 }
 
-.blockAction:hover .blockActionArrow {
+.blockAction:hover .blockActionArrow,
+.blockAction:focus-visible .blockActionArrow {
   transform: translateX(0.18rem);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .blockAction:hover .blockActionArrow {
+  .blockAction:hover .blockActionArrow,
+  .blockAction:focus-visible .blockActionArrow {
     transform: none;
   }
 }

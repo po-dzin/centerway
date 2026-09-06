@@ -338,7 +338,12 @@ export type AuthorProfileInput = {
   achievementBadge?: string;
   consultation?: Author["consultation"];
   photo?: Author["photo"];
-  background?: { src: string };
+  /* The author's own type, not a narrowing of it — the same correction
+     `AuthorProfileInput` in src/lib/lms/authors.ts already carries. `{ src }`
+     here described a background with no crop while the editor was already
+     sending three crop numbers through it, and a variable (rather than an
+     object literal) slips past excess-property checking, so nothing said so. */
+  background?: Author["background"];
   listed?: boolean;
   slug?: string;
 };

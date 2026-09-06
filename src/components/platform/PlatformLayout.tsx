@@ -102,7 +102,14 @@ export function PlatformShell({
               /* `learn` has no top-level route map by design — the lesson tree
                  is the page, not the chrome — so there is nothing to carry and
                  the sheet stays the account's own. */
-              routes={headerMode === "learn" ? undefined : <PlatformRouteRows />}
+              /* AND NOT ON THE PERSONAL HOST AT ALL (2026-09-06). `personalNav`
+                 is «Бібліотека» and «Майстерня» — the same two applications the
+                 account block below already lists and marks. Passed here they
+                 came out as four rows for two destinations, one pair above the
+                 rule and one below it, which reads as four places rather than
+                 as one map stated twice. The public map has no such twin: none
+                 of its five is an application of the account. */
+              routes={headerMode === "learn" || personalSurface ? undefined : <PlatformRouteRows />}
             />
           }
         />

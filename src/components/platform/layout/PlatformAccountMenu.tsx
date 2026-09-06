@@ -328,18 +328,28 @@ export function PlatformAccountMenu({
     setForm(asOrgans ? "organs" : asSheet ? "sheet" : "popover");
     const edge = Math.max(rect.bottom, triggerRect.bottom);
     /* The drawer hangs OFF the bar — no gap, or the band and the sheet read as
-       two plates. The popover keeps its 8px of daylight, and so does the
-       island form: there the chrome is discrete objects, so a hairline of
-       ground between them and the sheet is what says the sheet is one more. */
+       two plates. The popover keeps its 8px of daylight. The island form uses
+       neither: it opens AT the row's own top and takes the pair inside itself,
+       so there is no edge to leave daylight against (see below). */
     const top = Math.round(edge + (asSheet && !asOrgans ? 0 : 8));
     const maxHeight = `${Math.max(192, Math.round(window.innerHeight - edge - 16))}px`;
+    /* THE ISLANDS SIT INSIDE THE SHEET (2026-09-06). Anchored below them, the
+       sheet left the pair floating over the page with the gap between them
+       showing the article through — a hole in the top of the menu, and two
+       controls that plainly did not belong to the thing they had opened. The
+       sheet starts at the ROW'S OWN TOP instead and reserves the row's height
+       as padding, so the mark and the avatar come to rest on the sheet's
+       material with the rows beginning under them. The row is raised over the
+       sheet for the same beat (`data-cw-organs-sheet`), because the sheet's
+       layer is far above the chrome's. */
     if (asOrgans) {
       setAnchor({
-        top: `${top}px`,
+        top: `${Math.round(rect.top)}px`,
         left: `${Math.round(rect.left)}px`,
         width: `${Math.round(rect.width)}px`,
-        maxHeight,
-      });
+        maxHeight: `${Math.max(192, Math.round(window.innerHeight - rect.top - 16))}px`,
+        ["--platform-organs-inset" as string]: `${Math.round(Math.max(rect.height, triggerRect.height))}px`,
+      } as CSSProperties);
       return;
     }
     setAnchor(
@@ -352,6 +362,22 @@ export function PlatformAccountMenu({
           },
     );
   }, []);
+
+  /* THE ROW IS RAISED WHILE ITS SHEET IS OPEN. The sheet unfolds from the
+     row's top edge and the row's own `z-index: 4` is nowhere near the portal's
+     layer, so without this the pair would be painted over by the panel they
+     opened — the sheet would look like it had swallowed them literally. The
+     attribute goes on the element the trigger already found; CSS in
+     ChromeOrgans.module.css does the lifting. */
+  useEffect(() => {
+    if (!open || form !== "organs") return;
+    const organs = triggerRef.current?.closest('[data-cw-chrome="organs"]') as HTMLElement | null;
+    if (!organs) return;
+    organs.dataset.cwOrgansSheet = "open";
+    return () => {
+      delete organs.dataset.cwOrgansSheet;
+    };
+  }, [open, form]);
 
   /* Escape and outside-click, both required: the popover sits over the bar on
      every surface, and on a phone in learning mode it is the only thing between

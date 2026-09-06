@@ -120,15 +120,19 @@ export function BuilderCourseAuthor({
                  at its raw centre — so an author who had dragged their avatar
                  frame in the cabinet saw it applied on their own page and on
                  every course page, and undone here. */
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                className={styles.authorPreviewPhoto}
-                src={linked.photo.src}
-                alt={linked.photo.alt}
-                style={authorAvatarCropStyle(linked.photo)}
-              />
+              /* The frame clips, the picture zooms — see `cropStyle` in
+                 src/lib/media/imageCrop.ts. */
+              <span className={styles.authorPreviewPhotoFrame}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  className={styles.authorPreviewPhoto}
+                  src={linked.photo.src}
+                  alt={linked.photo.alt}
+                  style={authorAvatarCropStyle(linked.photo)}
+                />
+              </span>
             ) : (
-              <span className={`${styles.authorPreviewPhoto} ${styles.authorPreviewPhotoEmpty}`} aria-hidden="true">
+              <span className={`${styles.authorPreviewPhotoFrame} ${styles.authorPreviewPhotoEmpty}`} aria-hidden="true">
                 <Icon name="user" size={20} />
               </span>
             )}
