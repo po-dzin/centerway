@@ -3580,7 +3580,7 @@
 }
 
 /* Thirds while the hand is down, and nothing otherwise — the same guides
-   `.photoCropGuides` draws in Cabinet.module.css, on a frame that likewise has
+   `.guides` draws in CropEditor.module.css, on a frame that likewise has
    nothing to grab but the picture. */
 .coverCropGuides {
   position: absolute;

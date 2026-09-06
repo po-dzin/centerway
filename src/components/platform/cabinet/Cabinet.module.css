@@ -1874,11 +1874,9 @@
    200% zoom (WCAG 1.4.4) it overflowed sideways. The card frame next to it
    was already `1 1 auto`; this is the asymmetry, not a second rule.
 
-   It is the STACK that is sized, not the circle: since the zoom joined the
-   crop, the flex item here is the frame-plus-slider box and the circle is a
-   grid child inside it. Sizing the circle alone would leave the box to claim
-   the whole row and hang the slider off the far side of the avatar. */
-.photoCropAside > .photoCropStack {
+   It is the circle again, not a box around it: the frame-plus-slider stack this
+   used to size stopped existing when the zoom moved into the crop editor. */
+.photoCropAside > .photoCropAvatar {
   flex: 0 1 auto;
   max-width: 100%;
 }
@@ -1912,9 +1910,19 @@
   position: relative;
   width: 100%;
   overflow: hidden;
+  /* A BUTTON THAT LOOKS LIKE A PHOTOGRAPH. These frames stopped being the
+     editor (see `PhotoCropPreview`) and became the way into it, so they are
+     `<button>` elements now and carry the reset a button needs — the browser's
+     own padding, border and font would otherwise inset the picture by 2px and
+     draw a chrome edge around a frame the page draws without one. */
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  appearance: none;
   background: var(--cw-mat-surface-sunk);
-  cursor: grab;
-  touch-action: none;
+  cursor: pointer;
   user-select: none;
 }
 
@@ -1954,15 +1962,6 @@
 .photoCropBanner {
   aspect-ratio: var(--ds-author-banner-ratio);
   border-radius: var(--cw-radius-md);
-}
-
-/* GRABBING, NOT CROSSHAIR. A crosshair is the cursor of a tool that places a
-   point where you click, which is what these frames used to do. They pan the
-   picture now, so the cursor is the one every panning surface uses. */
-.photoCropCard[data-dragging],
-.photoCropAvatar[data-dragging],
-.photoCropBanner[data-dragging] {
-  cursor: grabbing;
 }
 
 /* AN UPLOAD, SAID ON THE PICTURE. A dim plus a slow breath — no spinner glyph,
@@ -2017,60 +2016,27 @@
   pointer-events: none;
 }
 
-/* The focus grip, on the same footing as the toolbar pair above it: it is the
-   one mark on the picture that says where the crop is aimed, and it has to
-   read against whatever the picture happens to be there. */
-/* The frame and its zoom are one control in two parts, so they share a box:
-   the slider belongs to the picture above it, not to the panel around them. */
-.photoCropStack {
-  display: grid;
-  gap: var(--cw-space-2xs);
-  min-width: 0;
-  flex: 1 1 auto;
-}
+/* THE WAY IN, IN THE CORNER THE ACTIONS NEVER TAKE. The replace/remove pair
+   sits top-right on the card and the band; this is bottom-left, and it is the
+   only mark on the picture. Without it the frame is a photograph, and a
+   photograph is not usually a button.
 
-/* The zoom row brings its own skin now — src/components/media/CropZoom.module.css.
-   `.photoZoomRow`, `.photoZoomValue` and `.photoZoomInput` lived here and in
-   Builder.module.css as two copies of six declarations dressing the browser's
-   own range control; they are one drawn control in one file instead. */
-
-/* THE GUIDES, WHILE THE HAND IS DOWN. Two hairlines each way at the thirds —
-   the composition grid every camera and crop tool draws, and the only mark this
-   frame paints on a photograph. It is `pointer-events: none` and it fades: a
-   guide that outstayed the gesture would be a permanent grid on a portrait the
-   author is trying to judge. `currentColor` is `accent-contrast` here, the same
-   ink the corner controls take, because the theme knows nothing about the
-   picture underneath (see `.authorPhotoToolbarAction`). */
-.photoCropGuides {
+   The guides, the grip and the zoom row that used to live here left with the
+   gesture they explained — the aiming happens in `CropEditor` now, over the
+   whole photograph rather than inside the kept part of it. */
+.photoCropOpen {
   position: absolute;
-  inset: 0;
-  opacity: 0;
-  background-image:
-    linear-gradient(to right, currentColor 0 100%),
-    linear-gradient(to right, currentColor 0 100%),
-    linear-gradient(to bottom, currentColor 0 100%),
-    linear-gradient(to bottom, currentColor 0 100%);
-  background-size: 1px 100%, 1px 100%, 100% 1px, 100% 1px;
-  background-position: 33.33% 0, 66.66% 0, 0 33.33%, 0 66.66%;
-  background-repeat: no-repeat;
-  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 55%, transparent);
-  transition: opacity 120ms ease;
+  left: var(--cw-space-2xs);
+  bottom: var(--cw-space-2xs);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--cw-radius-sm);
+  background: color-mix(in srgb, var(--cw-mat-scrim-ink) 62%, transparent);
+  color: var(--cw-platform-accent-contrast);
   pointer-events: none;
-}
-
-.photoCropCard[data-dragging] .photoCropGuides,
-.photoCropAvatar[data-dragging] .photoCropGuides,
-.photoCropBanner[data-dragging] .photoCropGuides,
-.photoCropCard:focus-visible .photoCropGuides,
-.photoCropAvatar:focus-visible .photoCropGuides,
-.photoCropBanner:focus-visible .photoCropGuides {
-  opacity: 1;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .photoCropGuides {
-    transition: none;
-  }
 }
 
 /* 561px, the platform's tablet boundary — not 641px, which was a fourth
@@ -2097,7 +2063,6 @@
      because the 6:1 backdrop below uses the same three classes and must keep
      its whole row. */
   .photoCropGrid .photoCropFrame,
-  .photoCropGrid .photoCropStack,
   .photoCropGrid .photoCropCard {
     max-width: 16rem;
   }

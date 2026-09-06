@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { CROP_SCALE_MAX, clampCropScale, cropBackgroundStyle, cropIsZoomed, cropPan, cropStyle } from "./imageCrop";
+import {
+  CROP_SCALE_MAX,
+  clampCropScale,
+  containRect,
+  cropBackgroundStyle,
+  cropIsZoomed,
+  cropPan,
+  cropStyle,
+  cropWindowPan,
+  cropWindowRect,
+  parseCssRatio,
+} from "./imageCrop";
 import { shrinkForUpload } from "./shrinkForUpload";
 import { authorAvatarCropStyle, authorCardCropStyle } from "@/lib/lms/authorPhoto";
 import { coverArtworkFraming, coverCardStyle } from "@/lib/lms/courseCover";
@@ -151,5 +162,71 @@ describe("cropPan", () => {
       x: 25,
       y: 50,
     });
+  });
+});
+
+describe("the editor's window on a whole photograph", () => {
+  /* A 300×400 portrait drawn `contain` inside a 4:3 stage — the letterboxed
+     paper on either side belongs to neither the picture nor the crop. */
+  const stage = { width: 400, height: 300 };
+  const portrait = { width: 300, height: 400 };
+
+  it("draws the photograph where `contain` actually puts it", () => {
+    expect(containRect(stage, portrait)).toEqual({ left: 87.5, top: 0, width: 225, height: 300 });
+  });
+
+  it("gives the whole stage to an image that has not decoded yet", () => {
+    expect(containRect(stage, { width: 0, height: 0 })).toEqual({ left: 0, top: 0, width: 400, height: 300 });
+  });
+
+  /* THE POINT OF THE WHOLE REWRITE, as one assertion: the window at scale 1 is
+     the largest rectangle of that shape the photograph holds — which is exactly
+     what `cover` keeps. The two models are one geometry seen from either side,
+     so nothing already stored re-crops itself when the editor changes. */
+  it("opens on exactly what `cover` would have kept", () => {
+    const photo = { width: 225, height: 300 };
+    const square = cropWindowRect(photo, 1, 1, { x: 50, y: 50 });
+    expect(square.width).toBe(225);
+    expect(square.height).toBe(225);
+    // Flush across, half the slack down — and flush is VISIBLE here, where in
+    // the old frame it was a drag that moved nothing.
+    expect(square.left).toBe(0);
+    expect(square.top).toBe(37.5);
+  });
+
+  it("shrinks the window as the zoom rises, about the focus it was given", () => {
+    const photo = { width: 225, height: 300 };
+    const zoomed = cropWindowRect(photo, 1, 2, { x: 0, y: 100 });
+    expect(zoomed).toEqual({ left: 0, top: 187.5, width: 112.5, height: 112.5 });
+  });
+
+  it("takes a wide band out of the same portrait without leaving it", () => {
+    const photo = { width: 225, height: 300 };
+    const band = cropWindowRect(photo, 5, 1, { x: 50, y: 0 });
+    expect(band).toEqual({ left: 0, top: 0, width: 225, height: 45 });
+  });
+
+  it("moves the window WITH the hand — the photograph is the map and stays still", () => {
+    const photo = { width: 200, height: 400 };
+    const window = { width: 200, height: 200 };
+    // Half the vertical slack is 100px of hand, and the focus rises by half.
+    expect(cropWindowPan({ x: 50, y: 25 }, { dx: 0, dy: 100 }, photo, window)).toEqual({ x: 50, y: 75 });
+  });
+
+  it("cannot move an axis the window already fills, and clamps on the one it does not", () => {
+    const photo = { width: 200, height: 400 };
+    const window = { width: 200, height: 200 };
+    expect(cropWindowPan({ x: 50, y: 50 }, { dx: 80, dy: 0 }, photo, window).x).toBe(50);
+    expect(cropWindowPan({ x: 50, y: 90 }, { dx: 0, dy: 400 }, photo, window).y).toBe(100);
+  });
+
+  it("reads a frame's shape back off its own CSS rather than retyping it", () => {
+    expect(parseCssRatio("5 / 1")).toBe(5);
+    expect(parseCssRatio("1")).toBe(1);
+    expect(parseCssRatio("24 / 29")).toBeCloseTo(24 / 29);
+    // `auto` is what a frame that never stated a ratio computes to — the editor
+    // falls back to a square rather than dividing by nothing.
+    expect(parseCssRatio("auto")).toBeNull();
+    expect(parseCssRatio(null)).toBeNull();
   });
 });
