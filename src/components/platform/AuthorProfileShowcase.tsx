@@ -4,10 +4,11 @@ import { PlatformOfferCarousel } from "@/components/platform/PlatformOfferCarous
 import type { StorefrontCard } from "@/lib/platform/offers";
 import type { Author } from "@/lms-core";
 import { PlatformBlockLink } from "@/components/platform/PlatformBlock";
+import { AuthorPortrait } from "./AuthorPortrait";
 import styles from "./AuthorProfileShowcase.module.css";
 import { ConsultBoundary, ConsultFaq } from "@/components/platform/ConsultPageSections";
 import { consultationSteps } from "@/components/platform/consultPageContract";
-import { AUTHOR_BANNER_CROP_DEFAULT, authorAvatarCropStyle } from "@/lib/lms/authorPhoto";
+import { AUTHOR_BANNER_CROP_DEFAULT } from "@/lib/lms/authorPhoto";
 import { cropBackgroundStyle } from "@/lib/media/imageCrop";
 
 function courseCountLabel(count: number) {
@@ -20,6 +21,13 @@ function courseCountLabel(count: number) {
 
 /** Public author identity and course showcase. */
 export function AuthorProfileShowcase({ author, courses }: { author: Author; courses: StorefrontCard[] }) {
+  /* The header's small facts, in one list because they end up in one row. */
+  const meta = [
+    courseCountLabel(courses.length),
+    author.experienceBadge,
+    author.achievementBadge,
+  ].filter((fact): fact is string => Boolean(fact));
+
   return (
     <main>
       {author.background ? (
@@ -43,41 +51,35 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
       ) : null}
       <header className={author.background ? `${styles.hero} ${styles.heroWithBanner}` : styles.hero}>
         <div className={styles.identity}>
-          {author.photo ? (
-            /* A FRAME AND A PICTURE, not one <img> — the same rule the band
-               above already learned. A zoomed avatar is a transform on the
-               image, an element cannot clip its own transform, and at 1.8× the
-               portrait grew past its circle and printed over the name beside
-               it. `cropStyle` says it in one line: pair it with a frame that
-               clips (src/lib/media/imageCrop.ts). */
-            <div className={styles.portraitFrame}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                className={styles.portrait}
-                src={author.photo.src}
-                alt={author.photo.alt}
-                style={authorAvatarCropStyle(author.photo)}
-              />
-            </div>
-          ) : (
-            <span className={styles.portraitFallback} aria-hidden="true">
-              {author.name.trim().charAt(0).toUpperCase()}
-            </span>
-          )}
+          <AuthorPortrait
+            photo={author.photo}
+            size="lg"
+            fallback={author.name.trim().charAt(0).toUpperCase()}
+          />
           <div className={styles.identityCopy}>
             {/* No eyebrow. The portrait is beside it and the name is the H1:
                 a line reading «Профіль автора» over a face and a name told
                 the reader only what they were already looking at. */}
             <h1 className={styles.name}>{author.name}</h1>
-            <div className={styles.statusLine}>
-              {author.role ? <p className={styles.role}>{author.role}</p> : null}
-              <span className={styles.courseCount}>{courseCountLabel(courses.length)}</span>
-            </div>
+            {author.role ? <p className={styles.role}>{author.role}</p> : null}
+            {/* ONE META ROW, and it is the shape every profile header worth
+                copying uses: a face, a name, one line of who this is, then one
+                row of small facts. This page had the count inline after the
+                role and the two badges in a grid row of their own — three
+                tokens of the same kind on two lines with two left edges, and on
+                a phone the second row jumped to the header's outer edge while
+                the first stayed indented past the portrait.
+
+                Order is count first: it is the fact about THIS page (how much
+                is here), and the credentials are claims about the person. */}
+            {meta.length > 0 ? (
+              <div className={styles.meta}>
+                {meta.map((fact) => (
+                  <span className={styles.chip} key={fact}>{fact}</span>
+                ))}
+              </div>
+            ) : null}
           </div>
-          {(author.experienceBadge || author.achievementBadge) ? <div className={styles.badges}>
-            {author.experienceBadge ? <span>{author.experienceBadge}</span> : null}
-            {author.achievementBadge ? <span>{author.achievementBadge}</span> : null}
-          </div> : null}
         </div>
 
         <div className={styles.body}>

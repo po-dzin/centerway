@@ -27,7 +27,6 @@ import { CourseNotes } from "./CourseNotes";
 import { useAnnotations } from "./useAnnotations";
 import { LmsNotice } from "./LmsNotice";
 import { ReaderTopButton } from "./ReaderTopButton";
-import { CourseBodyTrail } from "./CourseTrail";
 import styles from "./Lms.module.css";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 
@@ -169,9 +168,12 @@ export function CourseView({
       // and no component here knows a palette changed (src/lms-core/theme.ts).
       {...courseThemeAttributes(state.data.course.theme ?? undefined)}
     >
-      {/* The desktop path lives in the workspace header. The compact mobile
-          bar keeps this short back path in the document instead. */}
-      {!draftPreview ? <CourseBodyTrail href={href} courseTitle={course.title} /> : null}
+      {/* NO IN-FLOW BREADCRUMB ON A PHONE (2026-09-06). «← Мої матеріали /
+          Назва курсу» printed the move the leading island now makes, one line
+          above a title that says the same name again — two affordances and
+          three occurrences of one fact, on the narrowest screen we ship. The
+          arrow is the affordance; the desktop keeps the real path in the
+          workspace bar. */}
       <p className={styles.eyebrow}>Мій курс</p>
       <h1 className={styles.title}>{course.title}</h1>
       {course.summary ? <p className={styles.lead}>{inlineToPlainText(course.summary)}</p> : null}

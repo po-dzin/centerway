@@ -105,68 +105,33 @@
   align-items: center;
   gap: var(--cw-space-lg);
 }
-.badges { grid-column: 2; display: flex; flex-wrap: wrap; gap: var(--cw-space-2xs); }
-.badges span { padding: var(--cw-space-2xs) var(--cw-space-xs); border-radius: var(--cw-radius-pill); background: var(--cw-mat-surface-sunk); color: var(--cw-platform-text); font-size: var(--ds-type-body-sm-size); font-weight: 700; }
-
-/* THE CIRCLE IS THE FRAME'S, NOT THE PICTURE'S (2026-09-06). These two rules
-   used to size and round the image element itself, and the picture carries the
-   author's zoom as a transform — which an element cannot clip on itself. At
-   1.8× the portrait simply grew, circle and all, and painted over the name in
-   the column beside it. The frame holds the size, the edge and the clip; the
-   photograph fills it and may be magnified inside it. Same division as
-   `.bannerFrame` and `.banner` above. */
-.portraitFrame,
-.portraitFallback {
-  width: clamp(5rem, 12vw, 8rem);
-  aspect-ratio: 1;
-  border-radius: var(--cw-radius-pill);
-  border: 1px solid var(--cw-platform-border);
-  background: var(--cw-mat-surface-sunk);
+/* THE META ROW lives inside the copy column, not in a grid row of its own —
+   see the note in the component. One row, one left edge, at every width. */
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  margin-block-start: var(--cw-space-2xs);
 }
 
-.portraitFrame {
-  overflow: hidden;
+.chip {
+  composes: chip from "./Chip.module.css";
 }
 
-.portrait {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
-
-.portraitFallback {
-  display: grid;
-  place-items: center;
-  color: var(--cw-platform-ink-strong);
-  font-family: var(--cw-font-editorial);
-  font-size: clamp(1.8rem, 5vw, 3rem);
-}
-
+/* The portrait itself is `AuthorPortrait` now — one frame for every face in
+   the product, sized by a step rather than by each page's own numbers, and it
+   carries the rule these rules were written for: the FRAME holds the size, the
+   edge and the clip, because the picture carries the author's zoom as a
+   transform and an element cannot clip that on itself. At 1.8× this portrait
+   used to grow, circle and all, over the name in the column beside it. */
 .identityCopy {
   display: grid;
   gap: var(--cw-space-2xs);
   min-width: 0;
 }
 
-.statusLine {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--cw-space-xs);
-}
 
-.courseCount {
-  display: inline-flex;
-  align-items: center;
-  min-height: 1.75rem;
-  padding-inline: var(--cw-space-xs);
-  border-radius: var(--cw-radius-pill);
-  background: var(--cw-mat-surface-sunk);
-  color: var(--cw-platform-text);
-  font-size: var(--ds-type-body-sm-size);
-  font-weight: 700;
-}
 
 .label {
   margin: 0;
@@ -405,19 +370,21 @@
      column's own width, which is the whole point of fixing the shape instead
      of the height. */
 
+  /* THE FACE GOES ABOVE THE NAME ON A PHONE, which is what every profile
+     header worth copying does at this width and for the same reason: beside a
+     5rem portrait the copy column is ~250px, so a name set at 2.2rem breaks
+     across three lines and the meta row wraps after every second chip. Stacked,
+     the name, the role and the facts all take the page's own measure and share
+     one left edge with the bio below.
+
+     `NOTHING TO MOVE` — the badges used to be a grid row of their own and this
+     block pulled them to the header's outer edge; they are part of the copy
+     column now, so they sit on the name's edge at every width, which is what
+     that rule was reaching for. */
   .identity {
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
     gap: var(--cw-space-md);
-  }
-
-  /* The badges leave the portrait's column here. They are pinned beside the
-     name on a desktop, where the portrait is still beside them; on a phone they
-     wrap to below it, and holding column 2 indented them past a portrait that
-     had already ended — the header's left edge stepped 40 → 232 → 40 down the
-     screen, with dead ground beside two chips. Full width puts them on the same
-     edge as the bio that follows, so the whole header reads down one line. */
-  .badges {
-    grid-column: 1 / -1;
   }
 
   .courseHeader {

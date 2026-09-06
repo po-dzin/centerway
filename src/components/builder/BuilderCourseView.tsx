@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { HandGraphic, Icon } from "@/components/Icon";
 import {
   newCourseFromTemplate,
-  pruneEmptyProse,
+  courseForSave,
   newLesson,
   newModule,
   nextDayIndex,
@@ -63,6 +63,7 @@ import {
 import { writePath } from "./blockFields";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
+import { usePlatformSession } from "@/components/platform/layout/usePlatformSession";
 import { courseSaveFailureCopy } from "./courseSaveCopy";
 import { lessonDocumentFailureCopy } from "./lessonDocumentCopy";
 import {
@@ -184,11 +185,16 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     return () => window.removeEventListener("hashchange", syncModeFromHash);
   }, [slug]);
 
+  /* WHOSE DEVICE-LOCAL DRAFT THIS IS. The recovery store is keyed by course and
+     lives in the browser profile, so it outlives a sign-out; the account is
+     stamped on the record and checked before the question is asked. */
+  const ownerId = usePlatformSession()?.user?.id ?? null;
+
   const load = useCallback(async () => {
     const result = await loadCourse(slug);
     if (result.ok) {
       draftGeneration.current = result.data.draftGeneration;
-      const durable = await inspectDurableCourseDraft(result.data.course, result.data.draftGeneration);
+      const durable = await inspectDurableCourseDraft(result.data.course, result.data.draftGeneration, ownerId);
       // The server version is what the editor holds until the author answers.
       history.reset(result.data.course);
       setDraftDecision(durable.kind === "none" ? null : { kind: durable.kind, draft: durable.draft });
@@ -198,7 +204,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         ? { status: "ready", data: result.data }
         : { status: "failed", failure: result.failure, detail: result.detail }
     );
-  }, [history, slug]);
+  }, [history, ownerId, slug]);
 
   useEffect(() => {
     // Guarded so switching courses cannot land a stale response, and awaiting
@@ -209,7 +215,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       if (cancelled) return;
       if (result.ok) {
         draftGeneration.current = result.data.draftGeneration;
-        const durable = await inspectDurableCourseDraft(result.data.course, result.data.draftGeneration);
+        const durable = await inspectDurableCourseDraft(result.data.course, result.data.draftGeneration, ownerId);
         if (cancelled) return;
         history.reset(result.data.course);
         setDraftDecision(durable.kind === "none" ? null : { kind: durable.kind, draft: durable.draft });
@@ -402,7 +408,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     if (draftGeneration.current === null) {
       return { ok: false as const, message: "Курс ще завантажується. Спробуйте за мить." };
     }
-    const result = await saveCourse(slug, pruneEmptyProse(snapshot), draftGeneration.current);
+    const result = await saveCourse(slug, courseForSave(snapshot), draftGeneration.current);
     if (!result.ok) {
       if (result.failure === "conflict") {
         return { ok: false as const, message: "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку, щоб не втратити чужі зміни." };
@@ -471,6 +477,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     dirty,
     // An unanswered exit question freezes the timer; an unanswered recovery
     // question also freezes the local mirror. See `useCourseAutosave`.
+    ownerId,
     paused: busy || exit.prompt !== null,
     suspended: draftDecision !== null,
     persist: persistCourse,
@@ -620,7 +627,11 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   return (
     <BuilderShell
       trail={[{ label: "Курси", onNavigate: () => route("/build") }, { label: trailTitle(course.title, "Курс без назви") }]}
-      tools={
+      /* Two objects for the phone's capsule: the version drawer and the learner
+         preview. The save button stays in `tools` — it is the workspace's
+         primary action, it carries a word, and the document already has one at
+         the foot of the page. */
+      organs={
         <>
           <button
             className={styles.menuTrigger}
@@ -648,6 +659,10 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             <Icon name="eye" size={20} />
             <span className={styles.workspaceActionLabel}>Переглянути</span>
           </button>
+        </>
+      }
+      tools={
+        <>
           <button
             className={`${styles.commitAction} ${styles.courseHeaderSave}`}
             type="button"

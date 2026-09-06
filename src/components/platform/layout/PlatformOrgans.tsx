@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRef, type ReactNode } from "react";
+import { Icon } from "@/components/Icon";
 import { platformHomeHref } from "@/lib/platform/content";
 import { useChromeReveal } from "./useChromeReveal";
 import { useSurfaceHref } from "./SurfaceHost";
@@ -120,9 +121,56 @@ export function PlatformMarkOrgan({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+/**
+ * THE WAY OUT OF ONE LEVEL, as the leading island.
+ *
+ * «Ліворуч — вихід звідси» is the whole rule, and the mark is only its answer
+ * at an application's ROOT. One level in — a course inside the library, a
+ * lesson inside the workshop — the honest answer is the parent, and the mark
+ * there is a control that leaves the app from inside a document. The reader has
+ * worked this way since 2026-08-29 (`ReaderChrome`); this is that arrow, in the
+ * shared island, so the course map and the editor speak it too.
+ *
+ * NO TITLE ON IT, and the reader's note says why: any course name longer than
+ * half a phone's width came back as a fragment with an ellipsis, and that
+ * fragment was then the widest object on the screen. The destination is the
+ * `aria-label`; the page it returns to writes its own name in full.
+ *
+ * A CALLBACK OR AN HREF. The workshop must be able to ASK before it leaves — an
+ * unsaved paragraph is not something a route change gets to discard quietly —
+ * so the editor passes `onNavigate` and everything else passes `href`.
+ */
+export function PlatformBackOrgan({
+  href,
+  onNavigate,
+  label,
+}: {
+  href?: string;
+  onNavigate?: () => void;
+  label: string;
+}) {
+  const glyph = <Icon name="arrow-left" size={18} />;
+
+  if (onNavigate) {
+    return (
+      <button className={styles.organ} type="button" onClick={onNavigate} aria-label={label} title={label}>
+        {glyph}
+      </button>
+    );
+  }
+
+  return (
+    <Link className={styles.organ} href={href ?? "/"} aria-label={label} title={label}>
+      {glyph}
+    </Link>
+  );
+}
+
 export const chromeOrgans = {
   /** One control on the chrome material. */
   organ: styles.organ,
   /** Several controls travelling as one object. */
   cluster: styles.cluster,
+  /** Two islands sharing a corner without sharing a plate. */
+  pair: styles.pair,
 } as const;

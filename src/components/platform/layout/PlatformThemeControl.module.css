@@ -79,7 +79,7 @@
   width: var(--cw-ink-ring-size);
   height: var(--cw-ink-ring-size);
   border: 0;
-  border-radius: var(--cw-radius-pill);
+  border-radius: var(--cw-radius-md);
   background: transparent;
   padding: 0;
   /* The sheet's ink, stepped back — not `--cw-platform-muted`, which is the

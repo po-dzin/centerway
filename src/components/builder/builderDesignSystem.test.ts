@@ -205,21 +205,36 @@ describe("spacing steps exist", () => {
   });
 });
 
-describe("the course tabs sit below the header, not under it", () => {
+describe("the course tabs sit below the chrome, not under it", () => {
   /**
-   * Below 901px the platform header (`mode="workspace"`) is itself sticky at
-   * `top: 0` — see PlatformResponsive.module.css's `.header.header[data-cw-
-   * header-mode="workspace"]`. `.courseMobileNav` used to pin to the same
-   * edge (`inset-block-start: 0`), so after any scroll two sticky layers sat
-   * at the same coordinate and the header's higher z-index won: the three
-   * mode tabs sat directly behind roughly 4rem of chrome instead of below it.
-   * `--builder-topbar-height` is that header's own measured box, already
-   * declared on `.shell` (this strip's ancestor) for exactly this number. It
-   * follows the compact header below 901px and returns to 4rem on desktop.
+   * THE OFFSET FOLLOWED A BAR THAT LEFT (2026-09-06). This used to assert
+   * `inset-block-start: var(--builder-topbar-height)` — the workspace header's
+   * own measured box — because that header was sticky at `top: 0` below 901px
+   * and two sticky layers at one coordinate put the tabs behind 4rem of chrome.
+   *
+   * Below 901px there is no such header any more: the chrome is two floating
+   * islands, which are `fixed` and reserve nothing, so an offset measured from
+   * a bar pinned the strip 4rem below nothing at all. The islands' own
+   * arithmetic replaces it — the row's inset plus one touch target, the same
+   * calc the document uses to hold their room open, stated in
+   * ChromeOrgans.module.css and mirrored here and in `.body`.
    */
-  it("pins the strip to --builder-topbar-height, not to the viewport edge", () => {
+  it("pins the strip to the islands' own extent, not to a bar or to the viewport edge", () => {
     const rule = /\.courseMobileNav\s*\{([\s\S]*?)\n\}/.exec(code)?.[1] ?? "";
-    expect(rule).toContain("inset-block-start: var(--builder-topbar-height)");
+    expect(rule).toContain("env(safe-area-inset-top)");
+    expect(rule).toContain("var(--ds-touch-target-min)");
+    expect(rule).not.toContain("inset-block-start: 0");
+  });
+
+  /**
+   * FIVE MODES IN A THREE-COLUMN GRID IS TWO ROWS, and two rows of links is not
+   * a tab strip — it is a paragraph, and it was the first thing under the
+   * chrome on every course. A strip is one line by definition and scrolls.
+   */
+  it("runs the modes along one scrolling line", () => {
+    const rule = /\.courseMobileNav\s*\{([\s\S]*?)\n\}/.exec(code)?.[1] ?? "";
+    expect(rule).toContain("overflow-x: auto");
+    expect(rule).not.toContain("grid-template-columns");
   });
 });
 

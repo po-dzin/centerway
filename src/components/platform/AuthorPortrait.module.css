@@ -1,0 +1,102 @@
+/* ONE FRAME FOR A FACE.
+
+   The same object was written five times — `.profileAvatar` in the shell,
+   `.authorPhotoFrame` on the offer, `.portraitFrame` on the author page,
+   `.authorPreviewPhotoFrame` in the workshop, `.photoCropAvatar` in the crop
+   editor — and each carried its own size, radius, clip and empty state. The
+   CROP MATH was already shared (`authorAvatarCropStyle`), which is the proof
+   the frame could be: the hard half was in one place and the easy half in five.
+   It showed the first time the shape changed: moving portraits off the circle
+   on 2026-09-06 meant four hand-edits, and the crop editor's caption still said
+   «Кругла аватарка» afterwards.
+
+   Two of the five stay out, on purpose. The crop editor's frame is an EDITING
+   surface — it carries a grip, a drag state and its own busy dim, and it is
+   sized by the shape being aimed rather than by the page. The account trigger's
+   avatar is the inner face of a control in the chrome, sized by the touch
+   target and falling back to initials on a tinted disc; it belongs to the
+   button, not to an author. */
+
+/* THE FRAME CLIPS, THE PICTURE ZOOMS. An element cannot clip its own
+   transform, so a magnified avatar spills past its own corner without a frame
+   around it — see `cropStyle` in src/lib/media/imageCrop.ts. */
+.frame {
+  flex: none;
+  display: block;
+  overflow: hidden;
+  inline-size: var(--portrait-size);
+  block-size: var(--portrait-size);
+  border-radius: var(--portrait-radius);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/* NO PICTURE YET, and it still has to hold its corner: an author without a
+   photograph must not shift the row the portrait sits in. The mark is the
+   caller's — an initial where a name is beside it, a glyph where one is not.
+
+   THE HAIRLINE IS THE EMPTY STATE'S, not the frame's. A photograph is its own
+   edge and needs no contour drawn around it; an empty box does, or it reads as
+   a gap in the layout rather than as a place a face belongs. The author page
+   carried this border on both, which is where the rule came from — it is kept
+   on the half that earns it. */
+.fallback {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--cw-platform-border);
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-ui);
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* A FACE IS ROUND; A CONTROL IS A SOFT RECT (2026-09-06, reverted the same
+   day). The radius sweep took the circle off everything at once, and the
+   portraits were the half that lost by it: a photograph of a person in a
+   rounded square reads as a card of a person, and the crop the cabinet aims —
+   a face centred in a square frame — was drawn for a round mask. The chrome's
+   controls keep the soft rect, because they are controls; the portraits come
+   back to the circle, which is the one shape on the scale reserved for things
+   that are genuinely round.
+
+   The radius still travels with the size step rather than being passed in: a
+   caller picks how big the face is, never what shape it is.
+
+   `sm` is a row's portrait (a preview beside a name), `md` a byline's, `lg` the
+   author's own page, where the picture is the second thing on the screen and
+   grows with the viewport. */
+.sm {
+  --portrait-size: 4.5rem;
+  --portrait-radius: var(--cw-radius-pill);
+  font-size: 1.1rem;
+}
+
+.md {
+  --portrait-size: 5.5rem;
+  --portrait-radius: var(--cw-radius-pill);
+  font-size: 1.4rem;
+}
+
+.lg {
+  --portrait-size: clamp(5rem, 12vw, 8rem);
+  --portrait-radius: var(--cw-radius-pill);
+  font-size: 2rem;
+}
+
+/* THE BIG INITIAL IS EDITORIAL, and it was before this component existed: on
+   the author's own page the letter stands where the face would, at the size of
+   a display glyph, and the UI face at that size reads as a placeholder from a
+   different product. The smaller steps keep the UI face — an initial beside a
+   name in a row is a label, not a display letter. */
+.fallback.lg {
+  color: var(--cw-platform-ink-strong);
+  font-family: var(--cw-font-editorial);
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  font-weight: 400;
+}

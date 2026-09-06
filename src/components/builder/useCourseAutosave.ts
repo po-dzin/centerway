@@ -27,6 +27,7 @@ export function useCourseAutosave({
   dirty,
   paused = false,
   suspended = false,
+  ownerId,
   persist,
   markSaved,
   getDraftGeneration,
@@ -45,6 +46,16 @@ export function useCourseAutosave({
    * the answer erased by the question.
    */
   suspended?: boolean;
+  /**
+   * The signed-in account, stamped on the durable copy.
+   *
+   * The store is keyed by course and lives in the browser profile, so a record
+   * outlives a sign-out: without this the next account to open the same course
+   * on this device was offered the previous one's unsaved text as its own. Null
+   * while the session resolves — a record written then belongs to nobody and is
+   * not offered to anyone.
+   */
+  ownerId?: string | null;
   persist: (course: Course) => Promise<AutosaveResult>;
   markSaved: (course: Course) => void;
   getDraftGeneration: () => number | null;
@@ -99,6 +110,7 @@ export function useCourseAutosave({
           baseGeneration: generation,
           snapshotId,
           writerId: writerId.current!,
+          ownerId: ownerId ?? null,
           updatedAt: Date.now(),
         })).catch(() => undefined);
     durableChain.current = write;
@@ -109,7 +121,7 @@ export function useCourseAutosave({
     };
     durableEntries.current.set(snapshot, entry);
     return entry;
-  }, [durableIdentity]);
+  }, [durableIdentity, ownerId]);
 
   useEffect(() => {
     // Strict Mode intentionally runs setup → cleanup → setup in development.

@@ -1,0 +1,47 @@
+/* ONE CHIP.
+
+   A short fact on its own ground — «20 років практики», «4 курси», «7 днів»,
+   «Пройдено». It was written five times, and the five agreed on nothing but the
+   pill: four paddings (`0.3rem 0.7rem`, `padding-inline: xs`, `2xs xs` twice),
+   two type scales (a literal `0.8rem` beside `--ds-type-body-sm-size`), three
+   weights (none / 600 / 700) and four grounds. Same object, same job, five
+   answers — so a row of chips from two components never lined up, and nothing
+   said which one was right.
+
+   TWO GROUNDS, BECAUSE THERE ARE TWO PLACES A CHIP LIVES: on paper, where it
+   takes the sunk tint and the page's ink; and on a PHOTOGRAPH, where it takes
+   the scrim and the inverse ink, because tinted paper over an image is not a
+   ground, it is a smudge. That distinction was already in the code — it is the
+   only one of the five differences that was carrying meaning.
+
+   STILL A PILL, deliberately. The radius scale keeps `pill` for what is
+   genuinely round, and the controls of the chrome left it on 2026-09-06 — but a
+   chip is not a control: it is a word with air around it, and the rounded ends
+   are what say «this is a token, not a button». */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border: 0;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Over a picture. */
+.onMedia {
+  background: var(--cw-mat-scrim-ink);
+  color: var(--cw-mat-inverse-text);
+}
+
+/* The one state a chip carries: this is finished. Accent as a GROUND rather
+   than as ink, because at this size a coloured word on paper is a link that
+   does not work. */
+.done {
+  background: var(--cw-platform-accent);
+  color: var(--cw-platform-on-accent);
+}

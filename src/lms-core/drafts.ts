@@ -266,6 +266,60 @@ export function pruneEmptyProse(course: Course): Course {
   };
 }
 
+/**
+ * THE EMPTY ROW THE AUTHOR LEFT BEHIND.
+ *
+ * «Що людина отримає», «Для кого» and «З чого складається» are lists a person
+ * builds by pressing «+ Ще один», which adds a blank row to type into. Leave
+ * one blank — because you added it and changed your mind, or added two and
+ * filled one — and the payload carries `""`, which `validateCourse` refuses
+ * outright (`lms_course_invalid_results` and its kin: a stored blank promise is
+ * a bullet with nothing after it).
+ *
+ * WHAT THAT COST, before this existed. The refusal is a 422 on every save from
+ * then on: autosave goes to `error`, the course stays dirty, the durable local
+ * copy is never acknowledged — so the editor puts up the browser's own
+ * «leave site?» dialogue on the way out and offers to recover unsaved changes
+ * on the way back in, forever, while the save bar says only «Не вдалося
+ * зберегти». An empty row three screens up, and nothing anywhere naming it.
+ *
+ * The field's own hint already promised this — «Порожні рядки не зберігаються»
+ * — so the fix is to make the promise true rather than to explain the refusal.
+ * Same rule as `pruneEmptyProse` and for the same reason: an empty entry is not
+ * content, it does not survive the save, and it is pruned on the way OUT so the
+ * row the caret is sitting in does not vanish from under it.
+ *
+ * A list emptied of every entry drops the field entirely, which is what the
+ * contract means by «say nothing by leaving it out».
+ */
+export function pruneEmptyEntries(course: Course): Course {
+  const next = { ...course };
+  for (const key of ["results", "audience", "format"] as const) {
+    const value = course[key];
+    if (value === undefined) continue;
+    const kept = value.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
+    if (kept.length > 0) next[key] = kept;
+    else delete next[key];
+  }
+  return next;
+}
+
+/**
+ * THE PAYLOAD, from the working copy — one function, because two places have to
+ * agree about it and they are not next to each other.
+ *
+ * The editors prune on the way out: an empty paragraph is not content, and
+ * neither is a blank row in a storefront list. That makes the SAVED course
+ * legitimately different from the one on screen, and anything comparing "what
+ * this device holds" with "what the server holds" has to compare them after the
+ * same pruning — otherwise the difference is permanent and unsaveable, and the
+ * recovery question fires on every entry for changes that were never lost. See
+ * `classifyDurableDraft`, which is where that bug lived.
+ */
+export function courseForSave(course: Course): Course {
+  return pruneEmptyEntries(pruneEmptyProse(course));
+}
+
 export function moveItem<T>(items: T[], from: number, to: number): T[] {
   if (from < 0 || from >= items.length) return items;
   const target = Math.min(Math.max(to, 0), items.length - 1);

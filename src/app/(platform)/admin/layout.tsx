@@ -9,7 +9,8 @@ import { I18nProvider, useI18n } from "@/components/I18nProvider";
 import { InteractionInkIcon, InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { PlatformAccountMenu } from "@/components/platform/layout/PlatformAccountMenu";
 import { PlatformHeader } from "@/components/platform/layout/PlatformHeader";
-import { PlatformMarkOrgan, PlatformOrgans } from "@/components/platform/layout/PlatformOrgans";
+import { PlatformRouteMenu } from "@/components/platform/layout/PlatformRouteMenu";
+import { PlatformMarkOrgan, PlatformOrgans, chromeOrgans } from "@/components/platform/layout/PlatformOrgans";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { ADMIN_ROLE_CACHE_KEY, ADMIN_ROLE_CACHE_TTL_MS, isAdminRole } from "@/lib/platform/adminRole";
 import styles from "./AdminLayout.module.css";
@@ -261,34 +262,44 @@ function AdminShell({ children }: { children: ReactNode }) {
                 label="Адмінка"
                 left={<PlatformMarkOrgan />}
                 right={(
-                    <PlatformAccountMenu
-                        compact
-                        routes={(
-                            <>
-                                {navItems.map(({ key, href, active }) => {
-                                    const current = Boolean(active && isSelectedNav(href));
-                                    if (!active) {
+                    /* TWO CONTROLS, NOT ONE (2026-09-06). These seven sections
+                       are the panel's RAIL, and for a day they were folded into
+                       the account sheet — so a menu hanging off a person's face
+                       opened onto «Аналітика · Замовлення · Клієнти …» with two
+                       rows marked current at once. A rail is not an account.
+                       The burger carries them, exactly as the bar's did. */
+                    <span className={chromeOrgans.pair}>
+                        <PlatformRouteMenu
+                            label="Розділи адмінки"
+                            routes={(close) => (
+                                <>
+                                    {navItems.map(({ key, href, active }) => {
+                                        const current = Boolean(active && isSelectedNav(href));
+                                        if (!active) {
+                                            return (
+                                                <span key={key} aria-disabled="true" data-disabled="true">
+                                                    <InteractionInkLabel variant="menu">{t(key)}</InteractionInkLabel>
+                                                </span>
+                                            );
+                                        }
                                         return (
-                                            <span key={key} aria-disabled="true" data-disabled="true">
-                                                <InteractionInkLabel variant="menu">{t(key)}</InteractionInkLabel>
-                                            </span>
+                                            <Link
+                                                key={key}
+                                                href={href}
+                                                prefetch={false}
+                                                onClick={close}
+                                                aria-current={current ? "page" : undefined}
+                                                data-current={current || undefined}
+                                            >
+                                                <InteractionInkLabel variant="menu" active={current}>{t(key)}</InteractionInkLabel>
+                                            </Link>
                                         );
-                                    }
-                                    return (
-                                        <Link
-                                            key={key}
-                                            href={href}
-                                            prefetch={false}
-                                            aria-current={current ? "page" : undefined}
-                                            data-current={current || undefined}
-                                        >
-                                            <InteractionInkLabel variant="menu" active={current}>{t(key)}</InteractionInkLabel>
-                                        </Link>
-                                    );
-                                })}
-                            </>
-                        )}
-                    />
+                                    })}
+                                </>
+                            )}
+                        />
+                        <PlatformAccountMenu compact />
+                    </span>
                 )}
             />
             <PlatformHeader

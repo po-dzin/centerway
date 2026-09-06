@@ -8,6 +8,7 @@ import { ZenPreviewShell } from "@/components/lms/ZenPreviewShell";
 import { getLiveCourse } from "@/lib/lms/liveCatalog";
 import { describe } from "@/lib/brand/identity";
 import { pageMetadata } from "@/lib/seo/metadata";
+import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
 
 export const metadata: Metadata = pageMetadata({
   title: "Мій курс",
@@ -49,6 +50,11 @@ export default async function LearnCoursePage({
       headerMode="learn"
       surface="personal"
       footer={false}
+      /* One level inside the library, so the phone's leading island is the way
+         back to the shelf rather than the mark — see `PlatformBackOrgan`. The
+         wide screen keeps the full path in the workspace bar, where a
+         breadcrumb has room to be a breadcrumb. */
+      back={{ href: LEARNING_SHELF_HREF, label: "До моїх матеріалів" }}
       workspaceContent={<CourseTopbarTrail courseTitle={liveCourse.title} />}
     >
       {view}

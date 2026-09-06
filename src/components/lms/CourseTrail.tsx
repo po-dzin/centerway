@@ -25,11 +25,8 @@ export function CourseTopbarTrail({ courseTitle }: CourseTrailProps) {
   );
 }
 
-/** The short mobile bar keeps only its own back affordance in the page. */
-export function CourseBodyTrail({ href, courseTitle }: { href: (path: string) => string; courseTitle: string }) {
-  return (
-    <div className={styles.courseTrailFallback}>
-      <PlatformTrail steps={[{ label: "Мої матеріали", href: href(LEARNING_SHELF_HREF) }, { label: courseTitle }]} />
-    </div>
-  );
-}
+/* THE MOBILE TRAIL IS GONE (2026-09-06). `CourseBodyTrail` printed «← Мої
+   матеріали / Назва курсу» in the document below 901px, which is the move the
+   leading island now makes with an arrow — and it printed the course's name a
+   line above the heading that carries it. One fact, one control. The wide
+   screen keeps `CourseTopbarTrail`, where a path has the room to be one. */

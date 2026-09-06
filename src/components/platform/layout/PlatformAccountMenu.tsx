@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, type MouseEvent } from "react";
 import { usePathname } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 
@@ -23,6 +22,7 @@ import { usePlatformIdentity } from "./usePlatformIdentity";
 import { isAuthConfigured, usePlatformSession } from "./usePlatformSession";
 import { useOwnsPersonalSurfaces, useSurfaceHost, useSurfaceHref } from "./SurfaceHost";
 import { PlatformThemeControl } from "@/components/platform/layout/PlatformThemeControl";
+import { ChromeSheetPanel, useChromeSheet } from "./ChromeSheet";
 
 /**
  * The account control: who am I, which applications may I enter, and how do I
@@ -176,21 +176,16 @@ export function PlatformAccountMenu({
   exclude,
   onNavigate,
   showIdentity = true,
-  routes,
 }: {
   variant?: "menu" | "inline";
   compact?: boolean;
-  /**
-   * The surface's own top-level destinations, above the account's applications.
-   *
-   * ONLY THE ISLANDS PASS THIS. Where the chrome is a bar, the route map is the
-   * bar — five links a reader can see without opening anything — and this menu
-   * deliberately does not repeat it. Where the chrome is two floating pills
-   * there is nowhere to show a map, so the one sheet those pills open has to
-   * carry it, in the register it belongs to: everywhere you can go, above the
-   * rule; this device, below it.
-   */
-  routes?: ReactNode;
+  /* NO `routes` SLOT ANY MORE (2026-09-06). For one day the islands folded the
+     surface's route map into this sheet, on the argument that two floating
+     pills have nowhere to show a map. The admin panel showed what that costs:
+     its seven rail sections arrived above «Вийти», with «Аналітика» and
+     «Адмінка» both marked current in one column — a rail inside an account
+     control. The map has its own island now (`PlatformRouteMenu`), which is
+     what the bar always did: burger for where, avatar for who. */
   /** False where the surrounding surface has hoisted the identity block itself. */
   showIdentity?: boolean;
   /**
@@ -205,35 +200,11 @@ export function PlatformAccountMenu({
   const session = usePlatformSession();
   const identity = usePlatformIdentity(session);
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-  const [anchor, setAnchor] = useState<CSSProperties | null>(null);
-  /* The popover is portalled to `document.body`, so it does NOT inherit the
-     bar's tone scope — and the bar has one: `headerTone` flips the topbar to
-     the night material whenever it floats over a dark hero. The menu was left
-     behind on the light side of that flip, which on a graded photo meant a
-     30% cream tint with near-black ink on it: a light-tone panel and no dark
-     one. It carries the bar's tone across the portal instead. */
-  /* `null` where there is NO BAR TO SAMPLE — the floating islands. Stamping a
-     tone there was not a harmless default: `[data-cw-header-tone="light"]`
-     re-declares `--cw-nav-marker` as the ink, so on the night theme the menu
-     carried a cream ring on the current row while the page around it marked
-     everything in gold. No bar, no verdict; the menu inherits the theme like
-     any other panel on the sheet. */
-  const [tone, setTone] = useState<"light" | "dark" | null>("light");
-  /* TWO FORMS, ONE MENU (2026-08-29). On a wide screen this is a popover: a
-     17rem sheet of paper anchored under the avatar, opaque because it opens
-     over whatever the page happens to have there. On a phone it is a DRAWER —
-     the bar's own band continued down the full width of the viewport, in the
-     bar's material, over a modal shield. That is what the platform's burger
-     already is, and the admin panel is the one surface that reaches this
-     control on a phone at all (every other bar hides the avatar there and
-     hands the account to the burger). Two forms rather than one squeezed
-     popover, because a 17rem card floating a centimetre in from the right edge
-     under a full-width bar is neither. */
-  const [form, setForm] = useState<"popover" | "sheet" | "organs">("popover");
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  /* THE SHEET IS SHARED (2026-09-06) — see `useChromeSheet`. The measuring,
+     the portal, the tone and the three forms used to live in this file, which
+     was fine while the account was the only control in the chrome that opened
+     anything. The phone has two now: this one, and the burger beside it. */
+  const { open, toggle, close, form, anchor, tone, attachWrap, attachTrigger, attachMenu } = useChromeSheet();
 
   const isAuthEnabled = isAuthConfigured();
   const signedIn = Boolean(session?.user);
@@ -286,152 +257,6 @@ export function PlatformAccountMenu({
      the storefront but the browser's back button. Every other surface (the
      cabinet, an offer page, the panel) is somewhere you can sensibly leave. */
   const onPublicHome = !inPersonalApp && pathname === "/";
-
-  const close = useCallback(() => setOpen(false), []);
-
-  /* THE POPOVER IS PORTALLED, and this is why: the header is `overflow: clip`
-     — it is a rounded frosted plate and the nav sheet slides inside it — so a
-     menu absolutely positioned against the avatar laid out correctly under the
-     bar and was then clipped away in full. Measured: 315px of menu, every pixel
-     of it past the header's bottom edge, nothing painted.
-
-     Anchoring by measured rect rather than by CSS, because a fixed element
-     inside the header would be clipped too: the bar's `backdrop-filter` makes
-     it a containing block for fixed descendants. */
-  const measure = useCallback(() => {
-    const trigger = triggerRef.current;
-    if (!trigger) return;
-    /* Anchored to the BAR, not to the avatar. The avatar sits inside the
-       header's own inline padding, so aligning to it hung the menu a centimetre
-       short of the plate above it — two right edges a few pixels apart, which
-       reads as a misplaced popover rather than as a panel belonging to the bar.
-       Falls back to the trigger where there is no bar to belong to. */
-    const bar = trigger.closest("header");
-    /* THE ISLANDS ARE AN ANCHOR TOO (2026-09-06). Where the chrome is two
-       floating pills rather than a band, `closest("header")` finds nothing and
-       this fell back to the trigger — which produced a sheet pinned to the
-       viewport's own edges, hanging below a 48px disc that stops two
-       centimetres short of them on both sides. Three different left edges in
-       one corner, and the menu read as a panel that had arrived from somewhere
-       else rather than as the thing those buttons opened.
-
-       It belongs to the ROW: the same gutters, the same centred 46rem ceiling,
-       so the sheet unfolds within the pair's own column. */
-    const organs = trigger.closest('[data-cw-chrome="organs"]');
-    const rect = (bar ?? organs ?? trigger).getBoundingClientRect();
-    const triggerRect = trigger.getBoundingClientRect();
-    /* The platform's own mobile line, not a new one — see
-       PlatformResponsive.module.css, where the bar becomes a phone bar at the
-       same width. */
-    const asSheet = window.innerWidth <= 900;
-    const asOrgans = Boolean(organs && !bar && asSheet);
-    setForm(asOrgans ? "organs" : asSheet ? "sheet" : "popover");
-    const edge = Math.max(rect.bottom, triggerRect.bottom);
-    /* The drawer hangs OFF the bar — no gap, or the band and the sheet read as
-       two plates. The popover keeps its 8px of daylight. The island form uses
-       neither: it opens AT the row's own top and takes the pair inside itself,
-       so there is no edge to leave daylight against (see below). */
-    const top = Math.round(edge + (asSheet && !asOrgans ? 0 : 8));
-    const maxHeight = `${Math.max(192, Math.round(window.innerHeight - edge - 16))}px`;
-    /* THE ISLANDS SIT INSIDE THE SHEET (2026-09-06). Anchored below them, the
-       sheet left the pair floating over the page with the gap between them
-       showing the article through — a hole in the top of the menu, and two
-       controls that plainly did not belong to the thing they had opened. The
-       sheet starts at the ROW'S OWN TOP instead and reserves the row's height
-       as padding, so the mark and the avatar come to rest on the sheet's
-       material with the rows beginning under them. The row is raised over the
-       sheet for the same beat (`data-cw-organs-sheet`), because the sheet's
-       layer is far above the chrome's. */
-    if (asOrgans) {
-      setAnchor({
-        top: `${Math.round(rect.top)}px`,
-        left: `${Math.round(rect.left)}px`,
-        width: `${Math.round(rect.width)}px`,
-        maxHeight: `${Math.max(192, Math.round(window.innerHeight - rect.top - 16))}px`,
-        ["--platform-organs-inset" as string]: `${Math.round(Math.max(rect.height, triggerRect.height))}px`,
-      } as CSSProperties);
-      return;
-    }
-    setAnchor(
-      asSheet
-        ? { top: `${top}px`, maxHeight }
-        : {
-            top: `${top}px`,
-            right: `${Math.round(Math.max(8, window.innerWidth - rect.right))}px`,
-            maxHeight,
-          },
-    );
-  }, []);
-
-  /* THE ROW IS RAISED WHILE ITS SHEET IS OPEN. The sheet unfolds from the
-     row's top edge and the row's own `z-index: 4` is nowhere near the portal's
-     layer, so without this the pair would be painted over by the panel they
-     opened — the sheet would look like it had swallowed them literally. The
-     attribute goes on the element the trigger already found; CSS in
-     ChromeOrgans.module.css does the lifting. */
-  useEffect(() => {
-    if (!open || form !== "organs") return;
-    const organs = triggerRef.current?.closest('[data-cw-chrome="organs"]') as HTMLElement | null;
-    if (!organs) return;
-    organs.dataset.cwOrgansSheet = "open";
-    return () => {
-      delete organs.dataset.cwOrgansSheet;
-    };
-  }, [open, form]);
-
-  /* Escape and outside-click, both required: the popover sits over the bar on
-     every surface, and on a phone in learning mode it is the only thing between
-     the reader and the lesson. */
-  useEffect(() => {
-    if (!open) return;
-
-    /* The bar is sticky, so scrolling usually does not move the trigger — but
-       a short page and a zoomed viewport both can, and a menu that drifts off
-       its avatar reads as a bug in the bar rather than in the popover. */
-    window.addEventListener("resize", measure);
-    window.addEventListener("scroll", measure, true);
-
-    /* WATCHED, not sampled once at open. The bar decides its tone from what it
-       measures behind it, and that verdict lands a frame or more after the
-       click that opened this menu — reading the attribute in `measure` alone
-       left the panel dark over a light page for the whole time it stayed open.
-       The observer keeps the two in step for as long as the menu exists. */
-    const bar = triggerRef.current?.closest("header") ?? null;
-    const syncTone = () => setTone(bar ? (bar.dataset.cwHeaderTone === "dark" ? "dark" : "light") : null);
-    const observer = bar ? new MutationObserver(syncTone) : null;
-    observer?.observe(bar as HTMLElement, { attributeFilter: ["data-cw-header-tone"] });
-    syncTone();
-    return () => {
-      observer?.disconnect();
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure, true);
-    };
-  }, [open, measure]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close();
-    };
-    const onPointer = (event: PointerEvent) => {
-      const wrap = wrapRef.current;
-      const menu = menuRef.current;
-      const target = event.target as Node;
-      /* Both, because the menu is no longer a descendant of the wrapper: it
-         lives on `document.body`. Testing the wrapper alone would close the
-         menu on the first click INSIDE it. */
-      if (wrap?.contains(target) || menu?.contains(target)) return;
-      close();
-    };
-
-    document.addEventListener("keydown", onKey);
-    document.addEventListener("pointerdown", onPointer);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("pointerdown", onPointer);
-    };
-  }, [open, close]);
 
   /* No close-on-pathname effect. Every row in the menu closes it in its own
      handler, and anything outside the menu is an outside pointerdown, which the
@@ -504,18 +329,14 @@ export function PlatformAccountMenu({
           {accountEmail ? <p className={styles.menuIdentityMail}>{accountEmail}</p> : null}
         </div>
       ) : null}
-      {/* First, above the account's own applications — the same place the panel
-          puts it. Rendered only inside the shelf or the builder: on the public
-          site it would point at the family of pages the reader is already in.
+      {/* THE WAY BACK TO THE PUBLIC SITE, first — the same place the panel puts
+          it. Wrong in exactly one place, the public home page itself, where it
+          would offer the page being read.
 
           A plain anchor, like every other crossing in this menu: `next/link`
           would prefetch a route this origin does not own and still full-load on
           click. */}
-      {routes ? <div className={styles.menuRoutes}>{routes}</div> : null}
-      {/* «На головну» IS the first of those routes when they are given — the
-          public map opens with it — so the shortcut would be the same
-          destination twice under two different names. */}
-      {onPublicHome || routes ? null : (
+      {onPublicHome ? null : (
         <a
           href={platformHref}
           onClick={() => {
@@ -590,15 +411,12 @@ export function PlatformAccountMenu({
   }
 
   return (
-    <div className={styles.profileWrap} ref={wrapRef}>
+    <div className={styles.profileWrap} ref={attachWrap}>
       <button
-        ref={triggerRef}
+        ref={attachTrigger}
         className={`${styles.profileEntry} ${compact ? styles.profileEntryCompact : ""}`}
         type="button"
-        onClick={() => {
-          measure();
-          setOpen((value) => !value);
-        }}
+        onClick={toggle}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Обліковий запис"
@@ -615,39 +433,17 @@ export function PlatformAccountMenu({
         <HandGraphic className={styles.profileInkRing} name="ink-ring" size={48} />
         {compact ? null : <span className={styles.profileLabel}>Кабінет</span>}
       </button>
-      {open && anchor && typeof document !== "undefined"
-        ? createPortal(
-            <>
-              {/* The drawer form is modal, and says so: the same shield the
-                  burger lays over the page — the bar's tint and blur, not a
-                  black dim. The popover form needs none; it is small, anchored
-                  and dismissed by the outside-click handler above. */}
-              {form === "sheet" || form === "organs" ? (
-                <button
-                  type="button"
-                  className={styles.profileMenuScrim}
-                  data-cw-scrim="chrome"
-                  style={{ top: anchor.top }}
-                  tabIndex={-1}
-                  aria-label="Закрити меню акаунта"
-                  onClick={close}
-                />
-              ) : null}
-              <div
-                className={styles.profileMenu}
-                style={anchor}
-                role="menu"
-                ref={menuRef}
-                data-cw-glass="shell"
-                data-cw-header-tone={tone ?? undefined}
-                data-form={form}
-              >
-                {rows}
-              </div>
-            </>,
-            document.body,
-          )
-        : null}
+      <ChromeSheetPanel
+        open={open}
+        anchor={anchor}
+        form={form}
+        tone={tone}
+        close={close}
+        attachMenu={attachMenu}
+        label="меню акаунта"
+      >
+        {rows}
+      </ChromeSheetPanel>
     </div>
   );
 }

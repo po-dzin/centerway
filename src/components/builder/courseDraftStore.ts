@@ -1,6 +1,6 @@
 "use client";
 
-import type { Course } from "@/lms-core";
+import { courseForSave, type Course } from "@/lms-core";
 
 const DB_NAME = "cw-builder";
 const STORE_NAME = "course-drafts";
@@ -13,6 +13,15 @@ export type DurableCourseDraft = {
   snapshotId: string;
   writerId: string;
   updatedAt: number;
+  /**
+   * WHOSE WORK THIS IS. The store is keyed by course and lives in the browser
+   * profile, so without this a record survives a sign-out: the next account to
+   * open the same course on this device was offered the previous one's unsaved
+   * text as «your changes». Written since 2026-09-06; a record from before then
+   * carries none and is discarded rather than offered, because «somebody's, we
+   * do not know whose» is not something to hand a person under that question.
+   */
+  ownerId?: string | null;
 };
 
 export type DurableDraftDecision =
@@ -20,18 +29,37 @@ export type DurableDraftDecision =
   | { kind: "recover"; draft: DurableCourseDraft }
   | { kind: "conflict"; draft: DurableCourseDraft };
 
+/**
+ * AS THE SERVER WOULD HOLD THEM, not as they sit in the editor.
+ *
+ * The editors prune on the way out — an empty paragraph is not content, and
+ * neither is the blank row «+ Ще один» leaves behind — so a saved course is
+ * legitimately different from the working copy that produced it. Comparing the
+ * raw values made that difference permanent: press Enter once, save
+ * successfully, and this device's copy would never again equal the server's, so
+ * every entry opened with «Відновити незбережені зміни?» over changes that were
+ * never lost. It is the same `courseForSave` the save itself calls, so the two
+ * cannot drift.
+ */
 function sameCourse(left: Course, right: Course): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
+  return JSON.stringify(courseForSave(left)) === JSON.stringify(courseForSave(right));
 }
 
 export function classifyDurableDraft(
   draft: DurableCourseDraft | null,
   serverCourse: Course,
   serverGeneration: number,
+  /** The signed-in account, or null while the session is still resolving. */
+  ownerId?: string | null,
 ): DurableDraftDecision {
   if (!draft || draft.courseId !== serverCourse.id || sameCourse(draft.course, serverCourse)) {
     return { kind: "none" };
   }
+  /* NOT THIS ACCOUNT'S DRAFT, so not this account's question. Only asked once
+     the session has answered (`ownerId` non-null): during the first render it
+     is unknown, and refusing a legitimate recovery because the session had not
+     arrived yet would lose the very work this store exists to keep. */
+  if (ownerId && draft.ownerId !== ownerId) return { kind: "none" };
   if (draft.baseGeneration === serverGeneration) return { kind: "recover", draft };
   return { kind: "conflict", draft };
 }
@@ -128,9 +156,10 @@ export async function acknowledgeDurableCourseDraft(input: {
 export async function inspectDurableCourseDraft(
   serverCourse: Course,
   serverGeneration: number,
+  ownerId?: string | null,
 ): Promise<DurableDraftDecision> {
   const draft = await readDurableCourseDraft(serverCourse.id).catch(() => null);
-  const decision = classifyDurableDraft(draft, serverCourse, serverGeneration);
+  const decision = classifyDurableDraft(draft, serverCourse, serverGeneration, ownerId);
   if (draft && decision.kind === "none") await clearDurableCourseDraft(serverCourse.id).catch(() => undefined);
   return decision;
 }

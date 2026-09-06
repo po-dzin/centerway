@@ -347,9 +347,31 @@
   gap: var(--cw-space-sm);
 }
 
+/* THE SAVE STATE IS SAID ONCE ON A PHONE (2026-09-06). This chip and the save
+   bar at the foot of the document both report it, and on a wide screen that is
+   not a repetition — the bar sits beside the text, this sits in the topbar, and
+   only one of them is in view at a time. On a phone they land on the same
+   screen: «✓ Збережено» in a row of its own under the chrome, and «Усі зміни
+   збережено» in the bar over the thumb, ~90px of the first viewport spent
+   saying one thing twice. The bar wins: it is the one that also holds the
+   button.
+
+   The BLOCKER COUNT stays. It is not a repetition — nothing else on this screen
+   says how many holes are left, and pressing it is the only way into
+   «Публікація» from inside a lesson. */
+.workspaceSaveStatus {
+  display: none;
+}
+
+@media (min-width: 901px) {
+  .workspaceSaveStatus {
+    display: inline-flex;
+  }
+}
+
 .workspaceSaveStatus,
 .workspaceBlockers {
-  display: inline-flex;
+  align-items: center;
   align-items: center;
   gap: var(--cw-space-2xs);
   min-height: var(--ds-touch-target-min);
@@ -424,14 +446,67 @@
   }
 }
 
+/* THE CONTENTS, AS THE LIBRARY OPENS IT (2026-09-06).
+
+   This was `display: block` in normal flow: pressing «Зміст» inside a lesson
+   put the whole outline — seven rows, «Додати урок», «Додати модуль» — ABOVE
+   the paragraph being edited and pushed the document off the screen. The panel
+   displaced its own subject.
+
+   It is the reader's drawer now, to the value: the same `--cw-overlay` shield,
+   the same `--cw-mat-surface` sheet with `--cw-radius-xl` on the two top
+   corners, the same 82svh ceiling and the same grab handle as `.drawer` in
+   Lms.module.css. Written in tokens rather than composed from that module
+   because `composes` cannot be scoped to a media query, and above 901px this
+   same element is a rail rather than a sheet — see the desktop block below,
+   which resets every property this one sets. */
 .aside {
   display: none;
   min-width: 0;
-  padding: var(--cw-space-md);
+  padding: 0;
 }
 
 .aside[data-open] {
-  display: block;
+  position: fixed;
+  inset: 0;
+  /* Above the tool sheet and the save bar, which are this file's other two
+     floating layers — the builder states every layer against the same rung
+     rather than reaching for a second scale. */
+  z-index: calc(var(--ds-z-sticky) + 2);
+  display: grid;
+  align-content: end;
+  background: var(--cw-overlay);
+}
+
+/* The shield is a control, not a backdrop-coloured div: the sheet is modal, and
+   the way out of a modal has to be reachable by the thing every phone user
+   reaches for first — the page behind it. It sits under the sheet in the same
+   grid cell. */
+.asideScrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: default;
+}
+
+.asideHandle {
+  composes: handle from "../platform/layout/BottomSheet.module.css";
+  /* The builder's one drawn line — see the file header. The recipe takes the
+     ink from `--sheet-rule` for exactly this reason. */
+  --sheet-rule: var(--builder-rule);
+}
+
+/* The platform's bottom sheet, the same object the reader's contents and its
+   note editor are — see BottomSheet.module.css. The wrapper exists so that
+   material has an element of its own: `.aside` is a rail above 901px and a
+   drawer below it, and `composes` cannot be scoped to a media query. */
+.asideSheet {
+  composes: sheet from "../platform/layout/BottomSheet.module.css";
+  position: relative;
 }
 
 @media (min-width: 901px) {
@@ -497,10 +572,34 @@
     box-shadow: none;
   }
 
-  /* The mobile drawer's `display: block` out-specifies the column rule, and a
-     block panel has no row 2 for the foot to sit in. */
+  /* THE OPEN STATE IS MOBILE-ONLY, AND IT OUT-SPECIFIES THE COLUMN RULE.
+     `.aside[data-open]` is a class plus an attribute, so every property the
+     phone's sheet sets on it — fixed to the viewport, over a shield, pinned to
+     the bottom edge — would otherwise beat `.aside` here and turn the desktop
+     rail into a modal. Undone one property at a time, in the same order the
+     sheet sets them. */
   .aside[data-open] {
+    position: relative;
+    inset: auto;
+    z-index: auto;
     display: grid;
+    align-content: stretch;
+    background: transparent;
+  }
+
+  /* The sheet's own dress, undone: above this line the element is a rail in a
+     column, and a rail with a drawer's rounded top and deep shadow would be a
+     second material inside the frame. */
+  /* The wrapper stops being a box at all, so the sheet's padding, ceiling,
+     radius, ground and shadow go with it — one declaration where this used to
+     need five resets. */
+  .asideSheet {
+    display: contents;
+  }
+
+  .asideScrim,
+  .asideHandle {
+    display: none;
   }
 
   .asideContent {
@@ -643,25 +742,29 @@
   display: contents;
 }
 
+/* THE STRIP IS A DESKTOP OBJECT NOW (2026-09-06). On a phone it was a plate
+   floating at the bottom-right of the lesson — a second toolbar for one
+   document, at the opposite corner from the chrome that holds the rest of its
+   controls, and sitting exactly where the thumb rests while typing. The same
+   three buttons ride in the chrome capsule instead (`BuilderToolTabs`), and
+   above 901px this comes back as the tab strip on its panel's edge. */
 .toolModeRail {
+  display: none;
   position: relative;
   justify-self: end;
   margin-inline-end: var(--cw-space-xs);
-  display: flex;
   align-items: center;
   pointer-events: auto;
 }
 
+/* Bare in the capsule: the cluster is the surface, and the plate this strip
+   wore belonged to the panel edge it used to hang on. The desktop block
+   restores it. */
 .toolTabs {
   position: static;
   display: flex;
   align-items: center;
   gap: var(--cw-space-2xs);
-  padding: var(--cw-space-2xs);
-  border: 1px solid var(--builder-rule);
-  border-block-end: 0;
-  border-radius: var(--cw-radius-md) var(--cw-radius-md) 0 0;
-  background: var(--cw-platform-bg);
   pointer-events: auto;
 }
 
@@ -750,8 +853,41 @@
   border-image: var(--cw-rule-fade-x);
 }
 
+/* The head says which mode this is; below 901px its tabs say it instead — see
+   `BuilderToolRail`. */
 .toolDrawerTitle {
+  display: none;
   font-weight: 600;
+}
+
+.toolDrawerTabs {
+  display: flex;
+  min-width: 0;
+}
+
+@media (min-width: 901px) {
+  .toolDrawerTitle {
+    display: block;
+  }
+
+  .toolDrawerTabs {
+    display: none;
+  }
+}
+
+/* The panel's opener, in the chrome capsule. Bare like every cluster member —
+   the capsule is the surface — and sized by the touch target rather than by
+   its glyph. */
+.toolsOrgan {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: square from "../platform/PlatformButtons.module.css";
+  color: var(--cw-platform-muted);
+}
+
+.toolsOrgan[aria-expanded="true"],
+.toolsOrgan:hover,
+.toolsOrgan:focus-visible {
+  color: var(--cw-platform-text);
 }
 
 /* The layer's ceiling governs the height now, so the body takes what is left of
@@ -964,6 +1100,7 @@
   }
 
   .toolModeRail {
+    display: block;
     position: absolute;
     justify-self: stretch;
     margin-inline-end: 0;
@@ -990,6 +1127,8 @@
     background: transparent;
   }
 
+  /* The plate is the RAIL's on this side — see `.toolModeRail` above — so the
+     strip itself stays bare here exactly as it does in the phone's capsule. */
   .toolTabs {
     flex-direction: column;
     align-items: center;
@@ -1169,11 +1308,12 @@
   }
 }
 
-.contentsCount {
-  font-family: var(--cw-font-data);
-  font-size: 0.75rem;
-  color: var(--cw-platform-muted);
-}
+/* NO COUNT ON THE GLYPH (2026-09-06). «2/7» rode beside the outline icon and
+   made the one control in the capsule that is not a 48px square — a number in
+   a row of objects, and the only place in the chrome where a control reports
+   data. Where the reader IS in the course is the outline's own job, and the
+   sheet says it properly: the current lesson is marked in a list that also
+   names it. */
 
 /* ── Contents drawer ──────────────────────────────── */
 
@@ -4315,29 +4455,8 @@
 
 /* The frame clips, the picture zooms (2026-09-06) — an element cannot clip its
    own transform, and the author's avatar carries one. */
-.authorPreviewPhotoFrame {
-  width: 4.5rem;
-  height: 4.5rem;
-  display: block;
-  overflow: hidden;
-  border-radius: var(--cw-radius-md);
-  flex: none;
-}
-
-.authorPreviewPhoto {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
-
-.authorPreviewPhotoEmpty {
-  display: grid;
-  place-items: center;
-  background: var(--cw-mat-surface-sunk);
-  color: var(--cw-platform-muted);
-}
-
+/* The preview's face is `AuthorPortrait`, the platform's own frame — the
+   workshop was the fourth place declaring one. */
 .authorPreviewBody {
   display: grid;
   gap: var(--cw-space-2xs);
@@ -5325,22 +5444,27 @@
    the module/lesson hierarchy. Detail remains available in the release sheet,
    but each workspace mode stays quiet enough to scan like a manuscript. */
 
-/* STUCK BELOW THE HEADER, NOT UNDER IT.
-   Below 901px the platform header (`mode="workspace"`) is itself sticky at
-   `top: 0` — see PlatformResponsive.module.css's `.header.header[data-cw-
-   header-mode="workspace"]` — so pinning this strip to the same edge put two
-   sticky layers at the same coordinate and let the header's higher z-index
-   win: after any scroll the three mode tabs sat directly behind roughly 4rem
-   of chrome instead of below it. `--builder-topbar-height` is that header's
-   own measured box (`calc(4rem + 1px)`, declared on `.shell`, which this strip
-   is a descendant of) — the token that already existed for exactly this
-   number, used until now only for a min-height calc on the document. */
+/* ONE ROW, NOT A BLOCK OF THEM (2026-09-06).
+
+   Five modes in a three-column grid is two rows — «Обкладинка Зміст Сторінка»
+   over «Автор Публікація» — which is not a tab strip, it is a paragraph of
+   links, and it was the first thing under the chrome on every course. A tab
+   strip is one line by definition: the modes run along it and the row scrolls,
+   the way every phone tab bar in the world does, so the shape says «these are
+   siblings, there are more to the right» instead of «here is a menu».
+
+   STUCK BELOW THE CHROME, NOT UNDER IT. The offset used to be
+   `--builder-topbar-height`, the workspace bar's own box — and below 901px
+   that bar does not exist any more: the chrome is two floating islands, which
+   are `fixed` and reserve nothing. Left as it was, the strip pinned itself
+   4rem down from a bar that was not there. The islands' own arithmetic
+   instead — the row's inset plus one touch target — the same calc the document
+   above uses to hold their room open. */
 .courseMobileNav {
   position: sticky;
   z-index: calc(var(--ds-z-sticky) - 1);
-  inset-block-start: var(--builder-topbar-height);
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  inset-block-start: calc(max(var(--cw-page-gutter), env(safe-area-inset-top)) + var(--ds-touch-target-min));
+  display: flex;
   align-items: center;
   gap: var(--cw-space-xs);
   width: 100%;
@@ -5351,6 +5475,18 @@
   border-image: var(--cw-rule-fade-x);
   background: var(--cw-platform-bg);
   white-space: nowrap;
+  scroll-snap-type: x proximity;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  /* The track is chrome inside chrome on a 48px strip — see the same
+     suppression on the account sheet. The row scrolls by touch, wheel and
+     keyboard without painting a bar across the modes. */
+  scrollbar-width: none;
+}
+
+.courseMobileNav::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .courseMobileNavItem,
@@ -5368,9 +5504,15 @@
 .courseMobileNavItem {
   display: grid;
   place-items: center;
-  min-width: 0;
+  /* `flex: none` and no shrinking: a scrolling strip's items keep their own
+     width, and a label squeezed to an ellipsis is the failure the two-row grid
+     was avoiding by wrapping. */
+  flex: none;
   min-height: var(--ds-touch-target-min);
   padding: 0 var(--cw-space-2xs);
+  /* The pressed mode comes to rest at the leading edge rather than half off
+     it — the strip is scrolled by the browser, and this is what it scrolls to. */
+  scroll-snap-align: start;
 }
 
 .inkLabel {

@@ -213,13 +213,11 @@
   gap: var(--cw-space-2xs);
 }
 
-.guideBadges span {
-  padding: var(--cw-space-2xs) var(--cw-space-xs);
-  border-radius: var(--cw-radius-pill);
-  background: var(--cw-mat-scrim-ink);
-  color: var(--cw-mat-inverse-text);
-  font-size: var(--ds-type-body-sm-size);
-  font-weight: 700;
+/* The platform's chip on its media ground — see the note over Chip.module.css.
+   An element selector cannot `composes`, so the span carries the class now;
+   that is the whole reason this rule was a stranger to the other four. */
+.guideBadge {
+  composes: chip onMedia from "./Chip.module.css";
 }
 
 .guidePortrait {

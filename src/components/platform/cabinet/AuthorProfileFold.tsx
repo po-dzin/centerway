@@ -489,7 +489,10 @@ const STRINGS = {
     mediaDrop: "Відпустіть, щоб завантажити",
     photoCropCardTitle: "Картка",
     photoCropCardNote: "Головна · консультації · директорія авторів",
-    photoCropAvatarTitle: "Кругла аватарка",
+    /* Named by its job, not by its shape (2026-09-06): portraits left the
+       circle, and a caption that says «кругла» over a soft-rect preview teaches
+       the author a shape the product no longer draws. */
+    photoCropAvatarTitle: "Аватарка",
     photoCropAvatarNote: "Сторінка автора · автор курсу",
     photoCropCenter: "По центру",
     background: "Фон публічної сторінки",
@@ -573,7 +576,7 @@ const STRINGS = {
     mediaDrop: "Drop to upload",
     photoCropCardTitle: "Card",
     photoCropCardNote: "Home · consultations · author directory",
-    photoCropAvatarTitle: "Round avatar",
+    photoCropAvatarTitle: "Avatar",
     photoCropAvatarNote: "Author's own page · course byline",
     photoCropCenter: "Centre",
     background: "Public page background",

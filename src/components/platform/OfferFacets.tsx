@@ -6,12 +6,11 @@
  * the hero and the outline; it does not change who the course is for.
  */
 
-import Image from "next/image";
 import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
+import { AuthorPortrait } from "./AuthorPortrait";
 import type { CwIconName } from "@/components/iconNames";
-import { authorAvatarCropStyle } from "@/lib/lms/authorPhoto";
 import type { Author } from "@/lms-core";
 import styles from "./PlatformOfferCommerce.module.css";
 import offerStyles from "./PlatformOfferStyles";
@@ -111,21 +110,10 @@ export function OfferAuthor({ author, note }: { author: Author | null; note?: st
             look; only the outline changes. */}
         <h2 className={offerStyles.label}>Автор</h2>
         <div className={styles.author}>
-          {author?.photo ? (
-            /* The frame clips, the picture zooms — an element cannot clip its
-               own transform, so a magnified avatar spills past this circle
-               without one. See `cropStyle` in src/lib/media/imageCrop.ts. */
-            <div className={styles.authorPhotoFrame}>
-              <Image
-                className={styles.authorPhoto}
-                src={author.photo.src}
-                alt={author.photo.alt}
-                width={88}
-                height={88}
-                style={authorAvatarCropStyle(author.photo)}
-              />
-            </div>
-          ) : null}
+          {/* No fallback: a byline with no photograph is a name and a role,
+              which is a complete thing to read. An empty box beside it would
+              only announce the absence. */}
+          <AuthorPortrait photo={author?.photo} size="md" />
           <div className={styles.authorBody}>
             {author ? <p className={styles.authorName}>{author.name}</p> : null}
             {author?.role ? <p className={styles.authorRole}>{author.role}</p> : null}
