@@ -370,7 +370,7 @@
   height: var(--cw-brand-size-symbol-footer);
   /* The footer sits on the page ground, not under the tone sampler, so it names
      the ink directly rather than reading --platform-header-symbol-color. */
-  background-color: color-mix(in srgb, var(--cw-platform-text) 96%, transparent);
+  background-color: color-mix(in srgb, var(--cw-brand-mark-color) 96%, transparent);
 }
 
 .brand[data-surface="footer"] .brandWordmark {
@@ -523,7 +523,14 @@
   width: var(--cw-ink-ring-size);
   height: var(--cw-ink-ring-size);
   overflow: visible;
-  color: var(--platform-header-nav-marker);
+  /* THE FALLBACK IS NOT DECORATION (2026-09-06). `--platform-header-nav-marker`
+     is declared inside `.header` and nowhere else, so once the avatar moved
+     into a floating island there was no bar to declare it: the property came
+     back invalid, `color` fell through to inherit, and the ring was drawn in
+     the label ink — a cream loop on the night ground, next to a gold stroke and
+     a gold mark. `PlatformThemeControl`'s ring has carried this exact fallback
+     since it was written; this is the same ring and it owes the same one. */
+  color: var(--platform-header-nav-marker, var(--cw-nav-marker));
   pointer-events: none;
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.72) rotate(-4deg);
@@ -565,9 +572,16 @@
   justify-content: flex-end;
 }
 
+/* THE FALLBACK CARRIES THE TOUCH TARGET (2026-09-06). `--platform-utility-control-size`
+   is declared inside `.header` and nowhere else. In a floating island there is
+   no header, so the property came back invalid and `min-height` / `width` fell
+   away entirely — the signed-out account control collapsed onto its own 26px
+   glyph: under the 48px minimum, and visibly the smaller of two islands beside
+   a 48px mark. The two tokens are the same 3rem, so nothing moves inside a bar;
+   outside one, the control is finally the size it always claimed to be. */
 .profileEntry {
   position: relative;
-  min-height: var(--platform-utility-control-size);
+  min-height: var(--platform-utility-control-size, var(--ds-touch-target-min));
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -592,8 +606,8 @@
 }
 
 .profileEntryCompact {
-  width: var(--platform-utility-control-size);
-  min-width: var(--platform-utility-control-size);
+  width: var(--platform-utility-control-size, var(--ds-touch-target-min));
+  min-width: var(--platform-utility-control-size, var(--ds-touch-target-min));
   padding: 0;
   gap: 0;
 }
@@ -649,6 +663,28 @@
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.04em;
+}
+
+/* THE RING ENCIRCLES, IT DOES NOT CROSS (2026-09-06). `--cw-ink-ring-size` is
+   3rem because it was drawn around an 18px glyph sitting in a 3rem box — a
+   loop with air inside it. Fill that box with a portrait and the same 3rem
+   lands exactly on the photograph's edge: a hand-drawn stroke scribbled across
+   a face. The mark is not wrong, the ratio is — it used to circle a 2.25rem
+   disc at 3rem, so at 3rem the loop is 4rem. */
+[data-cw-chrome="organs"] .profileInkRing {
+  width: calc(var(--cw-ink-ring-size) * 1.34);
+  height: calc(var(--cw-ink-ring-size) * 1.34);
+}
+
+/* IN THE ISLANDS IT IS THE ISLAND (2026-09-06). In the bar the avatar is a
+   2.25rem disc inside a 3rem hit box, which is right there: the box is invisible
+   and the disc is one object among several on a band. Floating, the hit box is
+   the only thing holding the corner, so a 2.25rem disc beside a 3rem mark pill
+   read as the smaller of two islands. The disc fills its target. */
+[data-cw-chrome="organs"] .profileAvatar {
+  width: var(--ds-touch-target-min);
+  height: var(--ds-touch-target-min);
+  font-size: 0.92rem;
 }
 
 .profileAvatar img {
@@ -746,6 +782,31 @@
   backdrop-filter: var(--cw-mat-filter);
 }
 
+/* THE ISLAND FORM (2026-09-06) — what the two floating pills open.
+
+   Not the drawer: a drawer is a band continued, and there is no band here. Not
+   the popover either, which is a 17rem card anchored to one corner. This is the
+   pair's own column unfolding — the row's gutters, the row's centred ceiling,
+   the row's material — so the sheet reads as the third object in a set of three
+   rather than as a full-bleed plate that happens to start below two discs.
+
+   Rounded on ALL FOUR corners, unlike the drawer. The drawer is square where it
+   leaves the bar because it is still the bar; this one leaves nothing — there
+   is daylight above it, so a square top edge would be a cut rather than a
+   join. */
+.profileMenu[data-form="organs"] {
+  padding: 0.5rem;
+  border-radius: var(--cw-radius-lg);
+  background-color: var(--cw-mat-tint-chrome);
+  backdrop-filter: var(--cw-mat-filter);
+}
+
+@supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
+  .profileMenu[data-form="organs"] {
+    background-color: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
+  }
+}
+
 /* Geometry only — the material comes from `data-cw-scrim="chrome"` in
    globals.css, which every drawer in the product shares. */
 .profileMenuScrim {
@@ -824,8 +885,16 @@
    address a letter per line. The popover has no such problem — it is a 17rem
    column with nothing beside it — but it inherited the hide anyway, so the one
    menu that carries «Вийти» never said whose session was about to end. */
+/* AND IT IS RULED OFF (2026-09-06). Hoisted into the burger sheet this block
+   already carried the system's fading hairline under it; inside the menu panel
+   it did not, so a name and an address sat directly on top of the first
+   destination and read as a third row of the list — a caption you could try to
+   press. Same rule, same reason, both places. */
 .profileMenu .menuIdentity {
   display: grid;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
 }
 
 /* Under a tone flip the muted global ink is a different colour, not a quieter
@@ -878,6 +947,24 @@
 
 .profileWrapMobile .menuIdentityMail {
   color: color-mix(in srgb, var(--platform-header-fg) 72%, transparent);
+}
+
+/* THE ROUTE MAP INSIDE THE SHEET (2026-09-06).
+
+   A group, not a loose run of rows: the five public destinations are the
+   SURFACE's map and the rows under them are the ACCOUNT's applications, and a
+   reader who cannot see the seam reads nine equal places to go. The same fading
+   hairline the menu already uses between its registers, so this is one more
+   register and not a new kind of divider.
+
+   No heading over it. A label would name a thing every row already announces by
+   being a place, and the sheet is four lines tall on a phone before it gets
+   one. */
+.menuRoutes {
+  display: grid;
+  padding-bottom: var(--ds-space-1);
+  border-bottom: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
 }
 
 /* The one rule in this menu, and it separates the two registers: everywhere

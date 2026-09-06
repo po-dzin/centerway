@@ -382,6 +382,23 @@
   min-height: 0;
 }
 
+/* THE BAR WAS HOLDING THE ROOM OPEN (2026-09-06) — the same debt the platform
+   shell paid when its own bar became desktop-only. The workspace topbar is in
+   flow, so hiding it below 901px hands its height back to the document and the
+   trail rides up under the islands, which are `fixed` and take no space at all.
+   Re-stated in the islands' own terms: the row's inset, one touch target, and
+   air under it. Identical arithmetic to
+   `PlatformResponsive.module.css → .shell[data-cw-organs="mobile"] > main`;
+   if one moves, both move. */
+@media (max-width: 900px) {
+  .shell[data-cw-organs="mobile"] > .body,
+  .shell[data-cw-organs="mobile"] > .bodyWithAside {
+    padding-block-start: calc(
+      max(var(--cw-page-gutter), env(safe-area-inset-top)) + var(--ds-touch-target-min) + var(--cw-space-md)
+    );
+  }
+}
+
 /* One column on a phone: the rail is a drawer there, in flow above the page,
    because an overlay would need a scrim, a focus trap and an escape key to be
    honest — three things for a list the author can also reach by pressing the

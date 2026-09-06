@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
@@ -142,7 +142,7 @@ function getUserInitial(session: Session | null) {
   return typeof name === "string" && name.length > 0 ? name.charAt(0).toUpperCase() : "?";
 }
 
-function InkMenuLabel({ children, active = false }: { children: string; active?: boolean }) {
+export function InkMenuLabel({ children, active = false }: { children: string; active?: boolean }) {
   return <InteractionInkLabel variant="menu" active={active}>{children}</InteractionInkLabel>;
 }
 
@@ -176,9 +176,21 @@ export function PlatformAccountMenu({
   exclude,
   onNavigate,
   showIdentity = true,
+  routes,
 }: {
   variant?: "menu" | "inline";
   compact?: boolean;
+  /**
+   * The surface's own top-level destinations, above the account's applications.
+   *
+   * ONLY THE ISLANDS PASS THIS. Where the chrome is a bar, the route map is the
+   * bar — five links a reader can see without opening anything — and this menu
+   * deliberately does not repeat it. Where the chrome is two floating pills
+   * there is nowhere to show a map, so the one sheet those pills open has to
+   * carry it, in the register it belongs to: everywhere you can go, above the
+   * rule; this device, below it.
+   */
+  routes?: ReactNode;
   /** False where the surrounding surface has hoisted the identity block itself. */
   showIdentity?: boolean;
   /**
@@ -201,7 +213,13 @@ export function PlatformAccountMenu({
      behind on the light side of that flip, which on a graded photo meant a
      30% cream tint with near-black ink on it: a light-tone panel and no dark
      one. It carries the bar's tone across the portal instead. */
-  const [tone, setTone] = useState<"light" | "dark">("light");
+  /* `null` where there is NO BAR TO SAMPLE — the floating islands. Stamping a
+     tone there was not a harmless default: `[data-cw-header-tone="light"]`
+     re-declares `--cw-nav-marker` as the ink, so on the night theme the menu
+     carried a cream ring on the current row while the page around it marked
+     everything in gold. No bar, no verdict; the menu inherits the theme like
+     any other panel on the sheet. */
+  const [tone, setTone] = useState<"light" | "dark" | null>("light");
   /* TWO FORMS, ONE MENU (2026-08-29). On a wide screen this is a popover: a
      17rem sheet of paper anchored under the avatar, opaque because it opens
      over whatever the page happens to have there. On a phone it is a DRAWER —
@@ -212,7 +230,7 @@ export function PlatformAccountMenu({
      hands the account to the burger). Two forms rather than one squeezed
      popover, because a 17rem card floating a centimetre in from the right edge
      under a full-width bar is neither. */
-  const [form, setForm] = useState<"popover" | "sheet">("popover");
+  const [form, setForm] = useState<"popover" | "sheet" | "organs">("popover");
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -289,18 +307,41 @@ export function PlatformAccountMenu({
        reads as a misplaced popover rather than as a panel belonging to the bar.
        Falls back to the trigger where there is no bar to belong to. */
     const bar = trigger.closest("header");
-    const rect = (bar ?? trigger).getBoundingClientRect();
+    /* THE ISLANDS ARE AN ANCHOR TOO (2026-09-06). Where the chrome is two
+       floating pills rather than a band, `closest("header")` finds nothing and
+       this fell back to the trigger — which produced a sheet pinned to the
+       viewport's own edges, hanging below a 48px disc that stops two
+       centimetres short of them on both sides. Three different left edges in
+       one corner, and the menu read as a panel that had arrived from somewhere
+       else rather than as the thing those buttons opened.
+
+       It belongs to the ROW: the same gutters, the same centred 46rem ceiling,
+       so the sheet unfolds within the pair's own column. */
+    const organs = trigger.closest('[data-cw-chrome="organs"]');
+    const rect = (bar ?? organs ?? trigger).getBoundingClientRect();
     const triggerRect = trigger.getBoundingClientRect();
     /* The platform's own mobile line, not a new one — see
        PlatformResponsive.module.css, where the bar becomes a phone bar at the
        same width. */
     const asSheet = window.innerWidth <= 900;
-    setForm(asSheet ? "sheet" : "popover");
+    const asOrgans = Boolean(organs && !bar && asSheet);
+    setForm(asOrgans ? "organs" : asSheet ? "sheet" : "popover");
     const edge = Math.max(rect.bottom, triggerRect.bottom);
     /* The drawer hangs OFF the bar — no gap, or the band and the sheet read as
-       two plates. The popover keeps its 8px of daylight. */
-    const top = Math.round(edge + (asSheet ? 0 : 8));
-    const maxHeight = `${Math.max(192, Math.round(window.innerHeight - edge - (asSheet ? 8 : 16)))}px`;
+       two plates. The popover keeps its 8px of daylight, and so does the
+       island form: there the chrome is discrete objects, so a hairline of
+       ground between them and the sheet is what says the sheet is one more. */
+    const top = Math.round(edge + (asSheet && !asOrgans ? 0 : 8));
+    const maxHeight = `${Math.max(192, Math.round(window.innerHeight - edge - 16))}px`;
+    if (asOrgans) {
+      setAnchor({
+        top: `${top}px`,
+        left: `${Math.round(rect.left)}px`,
+        width: `${Math.round(rect.width)}px`,
+        maxHeight,
+      });
+      return;
+    }
     setAnchor(
       asSheet
         ? { top: `${top}px`, maxHeight }
@@ -330,7 +371,7 @@ export function PlatformAccountMenu({
        left the panel dark over a light page for the whole time it stayed open.
        The observer keeps the two in step for as long as the menu exists. */
     const bar = triggerRef.current?.closest("header") ?? null;
-    const syncTone = () => setTone(bar?.dataset.cwHeaderTone === "dark" ? "dark" : "light");
+    const syncTone = () => setTone(bar ? (bar.dataset.cwHeaderTone === "dark" ? "dark" : "light") : null);
     const observer = bar ? new MutationObserver(syncTone) : null;
     observer?.observe(bar as HTMLElement, { attributeFilter: ["data-cw-header-tone"] });
     syncTone();
@@ -444,7 +485,11 @@ export function PlatformAccountMenu({
           A plain anchor, like every other crossing in this menu: `next/link`
           would prefetch a route this origin does not own and still full-load on
           click. */}
-      {onPublicHome ? null : (
+      {routes ? <div className={styles.menuRoutes}>{routes}</div> : null}
+      {/* «На головну» IS the first of those routes when they are given — the
+          public map opens with it — so the shortcut would be the same
+          destination twice under two different names. */}
+      {onPublicHome || routes ? null : (
         <a
           href={platformHref}
           onClick={() => {
@@ -551,7 +596,7 @@ export function PlatformAccountMenu({
                   burger lays over the page — the bar's tint and blur, not a
                   black dim. The popover form needs none; it is small, anchored
                   and dismissed by the outside-click handler above. */}
-              {form === "sheet" ? (
+              {form === "sheet" || form === "organs" ? (
                 <button
                   type="button"
                   className={styles.profileMenuScrim}
@@ -568,7 +613,7 @@ export function PlatformAccountMenu({
                 role="menu"
                 ref={menuRef}
                 data-cw-glass="shell"
-                data-cw-header-tone={tone}
+                data-cw-header-tone={tone ?? undefined}
                 data-form={form}
               >
                 {rows}

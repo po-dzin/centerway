@@ -3,7 +3,9 @@
 import type { MouseEvent, ReactNode } from "react";
 
 import { HandGraphic, Icon } from "@/components/Icon";
+import { PlatformAccountMenu } from "@/components/platform/layout/PlatformAccountMenu";
 import { PlatformHeader } from "@/components/platform/layout/PlatformHeader";
+import { PlatformMarkOrgan, PlatformOrgans } from "@/components/platform/layout/PlatformOrgans";
 import { PlatformTrail, type TrailStep } from "@/components/platform/PlatformTrail";
 import { supabaseClient } from "@/lib/supabaseClient";
 import type { BuilderFailure } from "./builderClient";
@@ -95,13 +97,36 @@ export function BuilderShell({
   };
 
   return (
-    <div className={styles.shell} onClickCapture={interceptNavigation}>
+    <div className={styles.shell} data-cw-organs="mobile" onClickCapture={interceptNavigation}>
       {/* Explicitly personal: localhost and previews host the storefront and
           authoring app together, so hostname inference alone picks the public
           navigation there. The route, not the transport, owns this identity. */}
+      {/* THE PHONE'S CHROME HERE TOO (2026-09-06). The workshop was the last
+          surface still opening a bar on a phone, and the bar had nothing left
+          to put in it: `.workspaceTopbarContext` is `display: none` below
+          901px and the trail and the tools already render in flow as
+          `.pageTrail`. What was left was a mark, an avatar, and a full-width
+          band of nothing between them — the same degenerate bar the storefront
+          had, holding open ~52px of an editor's vertical space.
+
+          `reveal="always"`, and that is the whole reason `reveal` is a choice.
+          Scrolling up in an editor is working with the text, not leaving it, so
+          chrome that steps aside on the way down would be hiding from the
+          gesture its user makes most. See PlatformOrgans. */}
+      <PlatformOrgans
+        scope="mobile"
+        reveal="always"
+        label="Майстерня"
+        left={<PlatformMarkOrgan />}
+        /* No `routes`. The workshop is a focused mode: `PlatformHeader` gives
+           it an empty `navSource` for the same reason, so a route map in the
+           sheet would be a map the bar above 901px does not draw. */
+        right={<PlatformAccountMenu compact />}
+      />
       <PlatformHeader
         surface="personal"
         mode="workspace"
+        scope="desktop"
         workspaceContent={(
           <div className={styles.workspaceTopbarContext}>
             {showTrail ? <PlatformTrail steps={trail} /> : <span />}

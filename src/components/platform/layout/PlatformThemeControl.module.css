@@ -50,13 +50,21 @@
    foreground steps the same amount whichever tone the plate is currently
    wearing, and it is the tint the rest of the chrome already uses for a
    resting surface. */
+/* NO PLATE UNDER THE THREE (2026-09-06). The recess was here to group the
+   seats so a full ring read as one being occupied rather than as a stray
+   circle. The sheet around it does that job now — it is a bounded window with
+   one row per line, and the three glyphs are plainly one row — while the tint
+   was a second surface floating inside a panel that is already a surface. That
+   is the plate this system does not draw: hover and selection are INK here, and
+   a control that answers with a background is answering in the wrong language.
+   What marks the current seat is the gold ring, which is the mark for an
+   icon-only choice everywhere else too. */
 .control {
   display: flex;
   align-items: center;
   gap: 0.1rem;
-  padding: 0.15rem;
-  border-radius: var(--cw-radius-pill);
-  background: color-mix(in srgb, var(--platform-header-fg, var(--cw-platform-text)) 10%, transparent);
+  padding: 0;
+  background: none;
 }
 
 .control .option {
@@ -124,8 +132,10 @@
    It used to also take the glyph to full foreground, on the argument that a
    ring alone is what the hovered glyph wears at 42% and the two would be
    confusable. Two things have since removed that argument: hover is now gated
-   to pointer devices, and the recess groups the three seats so the full ring
-   reads as a seat being occupied rather than as a stray circle. What is left
+   to pointer devices, and the row itself groups the three seats so the full
+   ring reads as a seat being occupied rather than as a stray circle — it was
+   the recess that did that grouping until the recess went; see `.control`.
+   What is left
    is a doubled mark — and on the LIGHT side it was the loud one, because a
    closed ring in near-black ink carries several times the ink of the short
    rule the current menu row is marked with, and the glyph darkening under it

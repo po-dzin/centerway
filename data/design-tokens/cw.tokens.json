@@ -161,7 +161,7 @@
       "--cw-contour-empty": "color-mix(in srgb, var(--cw-platform-text) 22%, transparent)",
       "--cw-ink-rest-opacity": "0.34",
       "--cw-ink-rest-scale": "0.9",
-      "--cw-ink-hover-opacity": "0.42",
+      "--cw-ink-hover-opacity": "0.68",
       "--cw-ink-hover-scale": "0.74",
       "--cw-ink-ring-optical-ratio": "0.82",
       "--cw-ink-hover-paint-size": "calc(var(--cw-ink-ring-size) * var(--cw-ink-hover-scale) * var(--cw-ink-ring-optical-ratio))",
