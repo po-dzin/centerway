@@ -1513,6 +1513,70 @@ conditionally removed. Rail edges and the footer rule use the system's
 
 ### Two chrome modes, and the reader is the second one (2026-09-05)
 
+**The phone has one chrome now (2026-09-06).** The islands shipped a day earlier on `learn` alone, and the note excluding the storefront said its bar carries five public destinations that are the product's map and not its chrome. That sentence is about the **desktop** bar, where the five are a visible band. It was recorded as the reason for a **mobile** exclusion, and it never applied there: on a phone the bar showed a mark and a burger, and the five were already one tap inside the burger's sheet. Moving them into the island sheet moves them between two sheets — it does not take a visible map away, because there was none to take. So below 901px every surface `PlatformLayout` wraps now renders `PlatformOrgans` and `PlatformHeader` is `scope="desktop"` throughout, and the five destinations ride in the island sheet as `PlatformRouteRows` — same `platformNav` / `personalNav` source as the bar, so the two cannot drift, ruled off from the account's own applications because a surface map and an account's apps are two registers. `learn` passes none: its route map is empty by design. What went away is the burger and its sheet — two menus opening from the same corner with overlapping lists. The reader keeps `ReaderChrome`: its leading island is a section list rather than a mark, which is the second mode, not a variant of the first.
+
+**And the workspaces followed the same day.** The workshop and the admin panel were the last two surfaces opening a bar on a phone, and neither bar had anything left in it. Builder's `.workspaceTopbarContext` is `display: none` below 901px — the trail and the save/preview/blockers tools already render in flow as `.pageTrail` — and the panel's bar never carried `workspaceContent` at all, because its seven sections live in the rail. Both were a mark, an avatar and a band of nothing, holding ~52px of an editor's height open. Both take `reveal="always"`, which is what that prop exists for: scrolling up in an editor is working with the text, not leaving it.
+
+The panel takes the **trailing island only**. Its rail is permanently on screen at 375px (68px, pinned compact), so a mark at the 20px gutter would land on the first nav row — and the rail already answers what a leading island is for, so a second control there would be a second route to the same seven. `PlatformOrgans` holds the corner with `.absent` when `left` is omitted; that spacer is now `pointer-events: none`, because `.row > *` hands events back to every child and an invisible 48×1px strip lying over a live rail swallows taps nobody would ever trace.
+
+One number for the room the hidden bar gave back, on all three shells: `max(--cw-page-gutter, safe-area-top) + --ds-touch-target-min + --cw-space-md` — 84px on a phone. Measured identical in `PlatformResponsive`, `Builder.module.css` and the panel's Tailwind `pt-[5.25rem]`. If one moves they all move.
+
+**Both corners are islands, with or without a session (2026-09-06).** The trailing control is a photograph filling its 48px box when someone is signed in — its own object, needing no plate. Signed out it was a 26px outline glyph on nothing, opposite a mark sitting in a visible pill: one corner an object, the other a smudge, and over a hero photograph it simply vanished. The guest control (`[data-auth-state]`, an attribute the signed-out branch already carried) now wears the island material and the mark's own colour, so the pair reads as a way home and a way in rather than as two controls from different systems. The material itself is named once as `--platform-island-*` on `.row` and consumed by the mark, the guest control and the reader's cluster alike, because two places drawing the same island is the exact mistake `ChromeOrgans.module.css` exists to prevent.
+
+**Shadow, not contour.** Those islands used to take `--cw-mat-shadow-chrome`, whose first layer is `0 0 0 1px` — a spread ring rather than a shadow. On a large translucent plate that hairline is an edge and earns its place; on a 48px disc it is an outline drawn around a control, and nothing else in the product outlines a floating object. The islands take `--cw-mat-shadow-soft`, the same shadow every other material object takes, and let the blur do the lifting. The bar and the menu sheet keep the chrome shadow: at their size the 1px is still an edge.
+
+That measurement also turned up a live defect: `.profileEntryCompact` sizes from `--platform-utility-control-size`, which is declared inside `.header` and nowhere else. In a floating island the property is invalid, `width` and `min-height` fall away, and the control collapses onto its glyph — 26px, under the touch-target minimum, on every signed-out phone. Both now carry `var(--platform-utility-control-size, var(--ds-touch-target-min))`; the tokens are the same 3rem, so nothing moves inside a bar. This is the second bug of its exact species after the ink ring's colour, and the rule generalises: **a `--platform-header-*` or `--platform-utility-*` property read outside `.header` needs a fallback or it silently disappears.**
+
+**The theme control lost its recess.** The tint under the three seats grouped them so a full ring read as an occupied seat; the sheet does that now — a bounded window, one row per line — while the tint was a second surface floating inside a panel that is already a surface. That is the plate this system does not draw: hover and selection are ink here, and the gold ring already marks the seat.
+
+Three things the island sheet owes that the drawer did not. It is anchored to the **row**, not the viewport — same gutters, same centred 46rem ceiling — because a full-bleed plate under two inset pills puts three left edges in one corner and reads as a panel that arrived from somewhere else. It is rounded on all four corners: the drawer is square where it leaves the bar because it is still the bar, and this one leaves nothing. And it stamps **no** `data-cw-header-tone`: there is no bar to sample, and stamping `light` by default re-declared `--cw-nav-marker` as the ink, so the current row wore a cream ring on the night ground while everything around it was marked in gold. No bar, no verdict — the menu inherits the theme.
+
+
+Chrome answers a **pair** of questions, and which pair depends on what the
+surface is for. There are two pairs and no third.
+
+**Where you navigate — the platform, the library, Builder, the Control Panel.**
+Left: *what is in this place* — sections, contents, structure. Right: *who am I
+and where else can I go* — `PlatformAccountMenu`, unchanged on every surface.
+Applications live only on the right; sections live only on the left. The moment
+one repeats the other, one of the two has stopped answering its own question.
+
+**Where you read — the lesson, and nothing else today.** Left: *out, one level
+up* — `ReaderChrome`'s `arrow-left` to the course, not the platform root; a
+reader leaving a lesson is going to the course, and routing them home instead
+walks the whole hierarchy for them. Right: *how to read* — bookmark, text size,
+contents. `Зміст` is a reading tool, not a route map, so it sits with the tools
+and opens as a bottom sheet already scrolled to the current lesson. There is no
+account control on a lesson: nobody checks whose session it is while reading.
+
+This was written down because the first attempt at the two-organ chrome
+proposed the opposite — mark-with-contents on the left, avatar on the right,
+uniformly — which would have removed three working controls to satisfy a rule
+the reading surface was never in. **The lesson is not an exception to be tidied
+away later.** It is the second mode, it is exactly one surface wide today, and
+any future surface whose job is reading rather than navigating joins it rather
+than the first mode.
+
+Consequences that are easy to get wrong:
+
+- A surface with **no** inner structure (the shelf, the cabinet, a landing) has
+  no sheet at all: the left control stays a plain link. A sheet holding one row
+  is a menu apologising for existing.
+- The Control Panel already answers the left question **without** a sheet, and
+  it does so on a phone too: its rail is `hidden md:grid` in the markup, but
+  `.rail[data-cw-material="chrome"]` sets `display: grid` at a higher
+  specificity than Tailwind's `.hidden`, so the icon rail is on screen at
+  375px and has been all along. Read the computed style before calling a
+  surface unreachable — the class list said one thing and the cascade did
+  another. Should that rail ever fold into a sheet, that sheet is the one place
+  in the product whose head carries the wordmark and the way out, because the
+  desktop rail carries the brand at its head as well: the logo would belong to
+  the rail, not to the sheet.
+- Floating organs and `ReaderChrome` must share geometry and material from one
+  place. Two circles of different sizes on adjacent screens is the same failure
+  as the two glasses of 2026-08-29 — see "One internal workspace frame".
+
+
 Chrome answers a **pair** of questions, and which pair depends on what the
 surface is for. There are two pairs and no third.
 
@@ -1565,7 +1629,9 @@ Three surfaces answered "you are here" three ways: the topbar drew an ink underl
 
 **The mark is always the second signal.** The active label also runs at full foreground and a heavier weight. That is what keeps the gold mark inside 1.4.11 — it is redundant decoration, not the sole carrier of state — which matters because gold on the dark chrome tint measures 2.34 against the 3.0 a load-bearing indicator would owe. Gold is still not a label colour and nothing here asks it to be one.
 
-**Hover is the same mark, half-drawn.** A fill was the other candidate and loses on the rule this document already writes down for tab strips: these rows sit straight on the page ground, and filling one turns a quiet strip into a row of objects. Rest is muted with no plate; hover and focus grow the mark to `--cw-nav-marker-hover-scale` (0.74) at `--cw-nav-marker-hover-opacity` (0.42) and bring the label to full foreground; active runs it to full. Consumers read those tokens rather than restating the numbers — restating them is how the three marks drifted apart the first time.
+**The mark on the page ground is toned the same way (2026-09-06).** `--cw-brand-mark-color` — ink on cream, `--cw-platform-accent` on graphite — is the colour of the CenterWay symbol and logotype wherever it sits on the sheet rather than under the topbar's tone sampler. Three surfaces carry the mark and only the header knew this: it samples its backdrop and already paints the symbol gold on a dark tone. The footer symbol, the footer's set `CENTERWAY`, and the mark island the shelf and cabinet carry all named `--cw-platform-text`, so on the night theme the logotype came out the same cream as the paragraph beside it — the brand rendered as body copy, and the header disagreeing with the footer about what colour CenterWay is. The token follows the **theme**, not a sampled backdrop, because a footer on the sheet is a different question from a bar floating over a photograph; both resolve to the same gold. Icon-only accent glyphs on the night ground follow it in spirit — the footer's four networks run gold there (6.3 at rest, 8.8 on hover) and stay muted ink on cream, for the reason the nav marker does.
+
+**Hover is the same mark, half-drawn.** A fill was the other candidate and loses on the rule this document already writes down for tab strips: these rows sit straight on the page ground, and filling one turns a quiet strip into a row of objects. Rest is muted with no plate; hover and focus grow the mark to `--cw-nav-marker-hover-scale` (0.74) at `--cw-nav-marker-hover-opacity` (0.68, aliased to the ink ladder's hover) and bring the label to full foreground; active runs it to full. Consumers read those tokens rather than restating the numbers — restating them is how the three marks drifted apart the first time.
 
 **Icon-only hover follows the same restraint.** A utility icon must not acquire a pale material pill on hover. Its consumer places the baked `ink-ring` around the glyph; hover/focus use `--cw-ink-hover-scale` and `--cw-ink-hover-opacity`, while `aria-pressed` / `aria-expanded` may resolve the ring fully. This keeps the physical ink gesture as the signal instead of recreating the browser's white selection plate.
 
@@ -1591,9 +1657,19 @@ never restate the numbers.
 
 | strength | token | drawn when |
 | --- | --- | --- |
-| rest | `--cw-ink-rest-opacity` (0.34) at `--cw-ink-rest-scale` | only for `variant="link"` |
-| hover / focus | `--cw-ink-hover-opacity` (0.42), or full for a link | pointer or keyboard is on the control |
-| current | full | `aria-current`, `aria-pressed`, `.cw-*-active`, `data-cw-ink-active` |
+| rest | `--cw-ink-rest-opacity` (0.34) at `--cw-ink-rest-scale` (0.90) | only for `variant="link"` |
+| hover / focus | `--cw-ink-hover-opacity` (0.68) at 0.96 | pointer or keyboard is on the control |
+| current | full (1) at 1 | `aria-current`, `aria-pressed`, `.cw-*-active`, `data-cw-ink-active` |
+
+**One hover, and every consumer takes it (2026-09-05).** Hover used to sit at
+0.42 against a rest of 0.34 — a delta no reader can see — so `variant="link"`
+was given a private rule that ran it to *full* on hover instead. The system then
+had two hovers: a link went to the current-state strength, everything else
+stayed at the invisible one, and the same gesture answered differently on
+adjacent controls. Hover is now exactly twice rest, the private rule is gone,
+and `full` means "you are here" alone. `--cw-nav-marker-hover-opacity` aliases
+the same token, so the topbar marker and a footer stroke move together.
+
 
 **Why a link rests visible and a nav row does not.** A nav item sits inside a bar
 that already says "these are the ways out"; a permanent mark under every item
@@ -1655,7 +1731,8 @@ does not depend on hover or colour alone to announce itself. Since 2026-09-02
 that mark is the ink stroke at rest strength, not the browser underline — see
 "Ink and contour: the interaction primitives" above, which supersedes this
 paragraph's `text-decoration` recipe. On hover and keyboard focus the foreground
-moves to the warm guide accent and the stroke runs to full. Do not apply this
+moves to the warm guide accent and the stroke runs to the shared hover
+strength — not to full, which belongs to the current state. Do not apply this
 treatment to icon-only links or plated route actions.
 
 Every interaction must declare one `selection_family` before code review. The

@@ -7,7 +7,9 @@ import { Icon } from "@/components/Icon";
 import type { CwIconName } from "@/components/iconNames";
 import { I18nProvider, useI18n } from "@/components/I18nProvider";
 import { InteractionInkIcon, InteractionInkLabel } from "@/components/platform/InteractionInk";
+import { PlatformAccountMenu } from "@/components/platform/layout/PlatformAccountMenu";
 import { PlatformHeader } from "@/components/platform/layout/PlatformHeader";
+import { PlatformMarkOrgan, PlatformOrgans } from "@/components/platform/layout/PlatformOrgans";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { ADMIN_ROLE_CACHE_KEY, ADMIN_ROLE_CACHE_TTL_MS, isAdminRole } from "@/lib/platform/adminRole";
 import styles from "./AdminLayout.module.css";
@@ -235,9 +237,64 @@ function AdminShell({ children }: { children: ReactNode }) {
                 account behave exactly as they do in the library and Builder.
                 The admin rail begins BELOW it, so there is no false seam where
                 two top layers used to meet. */}
+            {/* THE PHONE'S CHROME HERE TOO (2026-09-06). The panel's bar was
+                already only a mark and an account below 901px — the seven
+                sections live in the rail, not in the band — so the band was
+                holding ~52px of an `h-dvh` frame open to say nothing.
+
+                THE RAIL IS NOT CHROME ON A PHONE. It was permanently on screen
+                at 375px — 68px of icon column beside a 307px document, a fifth
+                of the width spent on a control strip — and that is the whole
+                reason this surface first shipped with no leading island: a mark
+                at the 20px gutter would have landed on the rail's first row.
+                Two permanent chromes competing for one corner is the problem,
+                not the mark. The rail folds away below 901px and its seven
+                sections ride in the ONE sheet this surface opens, above the
+                account's own rows, exactly as the storefront's five do. The
+                panel then reads like every other mobile surface: a mark, an
+                avatar, and the page.
+
+                `reveal="always"`: a panel is operated, not read. */}
+            <PlatformOrgans
+                scope="mobile"
+                reveal="always"
+                label="Адмінка"
+                left={<PlatformMarkOrgan />}
+                right={(
+                    <PlatformAccountMenu
+                        compact
+                        routes={(
+                            <>
+                                {navItems.map(({ key, href, active }) => {
+                                    const current = Boolean(active && isSelectedNav(href));
+                                    if (!active) {
+                                        return (
+                                            <span key={key} aria-disabled="true" data-disabled="true">
+                                                <InteractionInkLabel variant="menu">{t(key)}</InteractionInkLabel>
+                                            </span>
+                                        );
+                                    }
+                                    return (
+                                        <Link
+                                            key={key}
+                                            href={href}
+                                            prefetch={false}
+                                            aria-current={current ? "page" : undefined}
+                                            data-current={current || undefined}
+                                        >
+                                            <InteractionInkLabel variant="menu" active={current}>{t(key)}</InteractionInkLabel>
+                                        </Link>
+                                    );
+                                })}
+                            </>
+                        )}
+                    />
+                )}
+            />
             <PlatformHeader
                 surface="personal"
                 mode="workspace"
+                scope="desktop"
             />
 
             <div className="flex flex-1 min-h-0">
@@ -311,7 +368,14 @@ function AdminShell({ children }: { children: ReactNode }) {
 
             {/* Main */}
             <main className="flex-1 flex flex-col min-w-0 min-h-0">
-                <div data-admin-scroll className="custom-scrollbar flex-1 px-3 py-3 sm:px-4 sm:py-4 md:p-8 overflow-y-auto overflow-x-hidden w-full min-h-0 pb-4 md:pb-8">
+                {/* `pt-[5.25rem]` re-states the room the hidden bar used to hold
+                    open, in the islands' own terms — the row's inset plus one
+                    touch target plus air, 20 + 48 + 16 — the same arithmetic as
+                    the platform shell and the workshop, written in Tailwind
+                    because this frame is — and `md:pt-8` hands it back at the
+                    width where the bar returns. The scroll pane is what needs
+                    it: the island floats over this column's top-right corner. */}
+                <div data-admin-scroll className="custom-scrollbar flex-1 px-3 pt-[5.25rem] pb-4 sm:px-4 md:p-8 md:pt-8 overflow-y-auto overflow-x-hidden w-full min-h-0">
                     {/* One content column for every tab, on the platform's own
                         guide — see `.cw-admin-content`. The scroll viewport stays
                         the outer element: AdminPagination scrolls it by
