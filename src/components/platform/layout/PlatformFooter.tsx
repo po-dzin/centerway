@@ -115,7 +115,14 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
           </a>
           <div className={styles.footerSocialsRow}>
             {socialLinks.map((item) => (
-              <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer" aria-label={item.label}>
+              <a
+                key={item.label}
+                className={styles.footerSocialLink}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={item.label}
+              >
                 <span className={styles.footerSocialIcon} data-network={item.network} aria-hidden="true" />
                 <span className={styles.srOnly}>{item.label}</span>
               </a>

@@ -33,9 +33,18 @@
   white-space: nowrap;
 }
 
+/* THE GAP IS STILL THERE WHEN THE LABEL IS NOT (2026-09-06). Both collapsed
+   forms keep `.railLabel` as a flex item — `max-width: 0` rather than
+   `display: none`, because the width is what animates — so the row's content is
+   icon + `--cw-space-sm` + nothing. `justify-content: center` centres all three
+   of those, which puts the icon half a gap (6px) to the LEFT of the rail's
+   centre line, on every row, in both the compact desktop rail and the phone's.
+   It reads as a rail whose icons are not quite centred, which is what it is.
+   Collapsing the label has to collapse the space beside it too. */
 .railCompact .railLink {
   width: 100%;
   padding-inline: 0;
+  gap: 0;
   justify-content: center;
 }
 
@@ -87,6 +96,24 @@
    position. The compact rules are restated here rather than reached for
    through `.railCompact`, because the React state that applies that class is
    a desktop decision and must not decide the phone. */
+/* THE RAIL FOLDS AWAY WHERE THE CHROME FLOATS (2026-09-06). It used to be
+   permanently on screen at 375px — 68px of icon column against a 307px
+   document, a fifth of the width spent on a control strip, and a second
+   permanent chrome competing with the islands for the leading corner. Its
+   seven sections are in the island sheet now (see `routes` in layout.tsx), so
+   this is a fold rather than a removal: nothing here is the only way to
+   anything.
+
+   901px, not the 768 below — the same seam every other surface uses to decide
+   between a bar and two islands, so the panel does not acquire a breakpoint of
+   its own for the same question. Between 768 and 900 the rail was EXPANDED to
+   244px with no bar above it, which is the worst of the three states. */
+@media (max-width: 900px) {
+  .rail[data-cw-material="chrome"] {
+    display: none;
+  }
+}
+
 @media (max-width: 767.98px) {
   .rail[data-cw-material="chrome"] {
     width: var(--cw-workspace-mode-rail-width);
@@ -96,9 +123,12 @@
     padding-inline: 0;
   }
 
+  /* Same gap, same collapse, same correction — see the note at
+     `.railCompact .railLink`. */
   .rail .railLink {
     width: 100%;
     padding-inline: 0;
+    gap: 0;
     justify-content: center;
   }
 

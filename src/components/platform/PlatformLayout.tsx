@@ -6,6 +6,7 @@ import { PlatformFooter } from "./layout/PlatformFooter";
 import { PlatformHeader } from "./layout/PlatformHeader";
 import { PlatformAccountMenu } from "./layout/PlatformAccountMenu";
 import { PlatformMarkOrgan, PlatformOrgans } from "./layout/PlatformOrgans";
+import { PlatformRouteRows } from "./layout/PlatformRouteRows";
 import { PwaRuntime } from "./pwa/PwaRuntime";
 import { useSurfaceHost } from "./layout/SurfaceHost";
 import { isPersonalHost } from "@/lib/platform/surfaceHref";
@@ -65,36 +66,59 @@ export function PlatformShell({
   const bare = headerMode === "reading";
 
   return (
-    <div className={`${styles.shell} ${floats ? styles.shellOverlay : ""}`} data-cw-chrome={bare ? "none" : undefined}
+    <div className={`${styles.shell} ${floats ? styles.shellOverlay : ""}`} data-cw-chrome={bare ? "none" : undefined} data-cw-shell-mode={headerMode}
       /* Read by the shell's own stylesheet to re-state the room the hidden bar
          used to hold open below 901px. */
-      data-cw-organs={headerMode === "learn" ? "mobile" : undefined}>
-      {/* THE PHONE'S CHROME ON THE LEARNER SURFACES (2026-09-05).
+      data-cw-organs={bare ? undefined : "mobile"}>
+      {/* THE PHONE'S CHROME, ON EVERY SURFACE THIS SHELL WRAPS (2026-09-06).
 
-          `learn` is where the bar has the least to say: its route map is
-          deliberately empty, so below 901px it is a mark, an avatar and a
-          band of nothing between them over a page whose subject is the shelf.
-          Two islands answer the same two questions and give the band back.
-
-          Only `learn`. `overlay` looks like the same case and is not — it is
-          also the storefront's catalogue mode, where the bar carries five
+          It shipped on `learn` alone a day earlier, and the note here said why
+          `overlay` was not the same case: the storefront's bar carries five
           public destinations that are the product's map and not its chrome.
+          That was true and it was not a reason to keep two chromes — it was a
+          reason to move the map. A phone never showed those five anyway; the
+          bar showed a mark and a burger and kept the map one tap inside. The
+          islands show a mark and an account and keep it one tap inside THAT,
+          which is one sheet on the phone where there were two, both opening
+          from the same corner with overlapping lists.
 
-          The mark is a plain link here: a shelf has no sections to open, and a
-          sheet holding one row is a menu apologising for existing. See
+          What is left below 901px is one answer to the two questions every
+          surface has: what is this place, and who am I here. See
           docs/design-system.md → "Two chrome modes, and the reader is the
-          second one". */}
-      {headerMode === "learn" ? (
+          second one".
+
+          The mark stays a plain link. A surface with sections builds its own
+          leading control (the reader does); everything here has none, and a
+          sheet holding one row is a menu apologising for existing. */}
+      {bare ? null : (
         <PlatformOrgans
           scope="mobile"
           reveal="gesture"
           label="Навігація"
           left={<PlatformMarkOrgan />}
-          right={<PlatformAccountMenu compact />}
+          right={
+            <PlatformAccountMenu
+              compact
+              /* `learn` has no top-level route map by design — the lesson tree
+                 is the page, not the chrome — so there is nothing to carry and
+                 the sheet stays the account's own. */
+              /* AND NOT ON THE PERSONAL HOST AT ALL (2026-09-06). `personalNav`
+                 is «Бібліотека» and «Майстерня» — the same two applications the
+                 account block below already lists and marks. Passed here they
+                 came out as four rows for two destinations, one pair above the
+                 rule and one below it, which reads as four places rather than
+                 as one map stated twice. The public map has no such twin: none
+                 of its five is an application of the account. */
+              routes={headerMode === "learn" || personalSurface ? undefined : <PlatformRouteRows />}
+            />
+          }
         />
-      ) : null}
+      )}
       {bare ? null : <PlatformHeader
-        scope={headerMode === "learn" ? "desktop" : "all"}
+        /* Desktop-only on every mode now, not just `learn`: below 901px the
+           islands above are the chrome, and two of them rendering at once was
+           the state this shell was in for exactly one day. */
+        scope="desktop"
         initialTone={headerMode === "overlay" ? "dark" : "light"}
         mode={headerMode === "learn" ? "workspace" : headerMode}
         surface={surface}

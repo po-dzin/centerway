@@ -44,13 +44,21 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
       <header className={author.background ? `${styles.hero} ${styles.heroWithBanner}` : styles.hero}>
         <div className={styles.identity}>
           {author.photo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              className={styles.portrait}
-              src={author.photo.src}
-              alt={author.photo.alt}
-              style={authorAvatarCropStyle(author.photo)}
-            />
+            /* A FRAME AND A PICTURE, not one <img> — the same rule the band
+               above already learned. A zoomed avatar is a transform on the
+               image, an element cannot clip its own transform, and at 1.8× the
+               portrait grew past its circle and printed over the name beside
+               it. `cropStyle` says it in one line: pair it with a frame that
+               clips (src/lib/media/imageCrop.ts). */
+            <div className={styles.portraitFrame}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                className={styles.portrait}
+                src={author.photo.src}
+                alt={author.photo.alt}
+                style={authorAvatarCropStyle(author.photo)}
+              />
+            </div>
           ) : (
             <span className={styles.portraitFallback} aria-hidden="true">
               {author.name.trim().charAt(0).toUpperCase()}

@@ -148,7 +148,7 @@
     --cw-contour-empty: color-mix(in srgb, var(--cw-platform-text) 22%, transparent);
     --cw-ink-rest-opacity: 0.34;
     --cw-ink-rest-scale: 0.9;
-    --cw-ink-hover-opacity: 0.42;
+    --cw-ink-hover-opacity: 0.68;
     --cw-ink-hover-scale: 0.74;
     --cw-ink-ring-optical-ratio: 0.82;
     --cw-ink-hover-paint-size: calc(var(--cw-ink-ring-size) * var(--cw-ink-hover-scale) * var(--cw-ink-ring-optical-ratio));
@@ -281,9 +281,14 @@
     --ds-button-font-size: 1rem;
     --ds-button-gap: 0.5rem;
     --ds-button-lift: -1px;
+    --ds-field-sm: 8rem;
+    --ds-field-md: 18rem;
+    --ds-field-measure: 35rem;
+    --ds-field-gap: var(--ds-space-4);
     --ds-rail-control-size: var(--ds-touch-target-min);
     --ds-rail-control-icon: 1.25rem;
     --ds-rail-control-overhang: 1rem;
+    --ds-author-banner-ratio: 5 / 1;
     --ds-offer-card-height-desktop: 29rem;
     --ds-offer-card-min-height-tablet: 26rem;
     --ds-offer-card-min-height-mobile: 22rem;
@@ -477,20 +482,48 @@
      loses on the rule the design doc already writes down for the tab strip:
      these rows sit straight on the page ground, and filling one turns a quiet
      strip into a row of objects. So: rest is muted with no plate, hover grows
-     the mark to three-quarters at 42% and brings the label to full foreground,
+     the mark to three-quarters at 68% and brings the label to full foreground,
      active runs the mark to full. Consumers read the three numbers below rather
-     than restating them — that is what stopped them drifting the first time. */
+     than restating them — that is what stopped them drifting the first time.
+
+     THE HOVER NUMBER IS THE INK LADDER'S, deliberately: a marker under a nav
+     row and a stroke under a footer link are the same gesture on two surfaces,
+     and they were never allowed to answer at two strengths. It moved from 42%
+     to 68% with the ladder — see the stroke's own note further down. */
+  /* ── The mark on the page ground ────────────────────
+
+     THE HEADER ALREADY KNEW THIS AND NOTHING ELSE DID. `.header` samples what
+     is behind it and, on a dark tone, paints the symbol in the accent and
+     swaps to the light wordmark — the rule written three paragraphs up, that
+     gold is the brand's mark on a dark ground and ink is its mark on a pale
+     one. Every mark OUTSIDE the sampler was hardcoded to `--cw-platform-text`:
+     the footer symbol and its wordmark, and the mark island the shelf and the
+     cabinet carry. On cream that is correct and identical to this token. On the
+     night ground it made the logotype the same cream as the paragraph beside
+     it — the brand rendered as body copy, gold nowhere on the page, and the
+     header disagreeing with the footer about what colour CenterWay is.
+
+     Consumers name this instead of the ink. It is the mark's colour, so it
+     follows the THEME rather than a sampled backdrop; the header keeps its own
+     tone-driven variable because a bar floating over a photograph is a
+     different question from a footer sitting on the sheet. Both resolve to the
+     same gold. */
   :root,
   [data-cw-header-tone="light"] {
     --cw-nav-marker: var(--cw-platform-text);
     --cw-nav-marker-size: 2px;
     --cw-nav-marker-hover-opacity: var(--cw-ink-hover-opacity);
     --cw-nav-marker-hover-scale: var(--cw-ink-hover-scale);
+    --cw-brand-mark-color: var(--cw-platform-text);
   }
 
   [data-cw-theme="dark"],
   [data-cw-header-tone="dark"] {
     --cw-nav-marker: var(--cw-platform-accent);
+  }
+
+  [data-cw-theme="dark"] {
+    --cw-brand-mark-color: var(--cw-platform-accent);
   }
 
   /* Mineral pack — the earlier warm-mineral gamma, kept for individual programs
@@ -1691,10 +1724,12 @@ body {
      host's line-height — 16.5px under a block link, 22.5px in the topbar. Half
      that difference is leading BELOW the baseline, so the identical
      `--cw-ink-stroke-offset` put the stroke 3px further from the word in the
-     bar than under the link: one number, two distances.
+     bar than under the link: one number, two distances, which is exactly what
+     "the stroke sits at a different height in different places" was.
      `line-height: 1` makes the box the em box everywhere, so the offset is
      measured from the letters rather than from whatever leading the host
-     happened to set. Safe to pin: `.cw-ink-label-text` is `nowrap`. */
+     happened to set. Safe to pin: `.cw-ink-label-text` is `nowrap`, so this box
+     never holds more than one line. */
   .cw-ink-label {
     position: relative;
     display: inline-flex;
@@ -1721,8 +1756,9 @@ body {
        -0.38rem here, -0.52rem on the account menu, -0.62rem on the topbar's
        own mark — which is why the same stroke read as two different marks:
        under a block link it clipped the descenders of «продукти», and under a
-       nav label it floated far enough down to belong to nothing. One token,
-       set to clear a descender and no further. */
+       nav label it floated far enough down to belong to nothing. One token, set
+       to clear a descender and no further, so the stroke still reads as part of
+       the word it underlines. */
     bottom: var(--cw-ink-stroke-offset);
     width: calc(100% + 0.4rem);
     height: var(--cw-ink-stroke-height);
@@ -1733,14 +1769,18 @@ body {
        `ink-stroke` is a 36-unit hand graphic squeezed into a 0.85rem band, so
        without a vertical scale it renders at roughly a THIRD of the weight it
        was drawn at. The topbar has always known this — `.navInkMark` carries
-       the scale with the comment "this narrow band needs a vertical scale to
-       preserve that weight on screen" — and so does the account menu's `menu`
-       variant. Every other state did not, so the system shipped two different
-       marks from one source file: a proper drawn stroke in the bar and a pale
-       scratch under a link.
-       Weight and tilt are tokens every state shares now. What still varies is
-       what was always supposed to: how far the stroke is drawn, how firmly. */
-    transform: scaleX(0.72) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
+       `scaleY(3.4)` with the comment "this narrow band needs a vertical scale
+       to preserve that weight on screen" — and so does the account menu's
+       `menu` variant. Every other state did not, so the system shipped two
+       different marks: a proper drawn stroke in the bar and a pale scratch
+       under a link, from one source file.
+       The weight and the tilt are now tokens every state shares. What still
+       varies between rest, hover and current is what was always supposed to
+       vary: how far the stroke has been drawn, and how firmly. */
+    transform:
+      scaleX(0.72)
+      scaleY(var(--cw-ink-stroke-weight))
+      rotate(var(--cw-ink-stroke-tilt));
     transform-origin: left center;
     pointer-events: none;
     transition: opacity 0.16s ease, transform 0.18s ease;
@@ -1755,10 +1795,13 @@ body {
     width: fit-content;
   }
 
-  /* The account menu's mark starts shorter. Depth, weight and tilt come from
-     the base now, which is what makes it the same stroke. */
+  /* The account menu's mark sits a little lower and starts shorter. Weight and
+     tilt come from the base now, which is what makes it the same stroke. */
   .cw-ink-label[data-cw-ink-variant="menu"] .cw-ink-label-mark {
-    transform: scaleX(0.38) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
+    transform:
+      scaleX(0.38)
+      scaleY(var(--cw-ink-stroke-weight))
+      rotate(var(--cw-ink-stroke-tilt));
     transform-origin: left center;
   }
 
@@ -1790,11 +1833,26 @@ body {
 
   /* THE STROKE HAS THREE STRENGTHS, and every consumer reads them from here.
 
-     rest    — only the `link` variant draws one. See the variant note in
-               InteractionInk.tsx: a link in running copy has no bar around it
-               to say it is a way out, so it carries the mark itself.
-     hover   — the same stroke, brought up and out to nearly full width.
-     current — full.
+     rest    — 0.34 at 0.90 width. Only the `link` variant draws one. See the
+               variant note in InteractionInk.tsx: a link in running copy has
+               no bar around it to say it is a way out, so it carries the mark
+               itself.
+     hover   — 0.68 at 0.96 width. Exactly twice the resting ink, and it is
+               the SAME NUMBER for every consumer: a footer link, a nav row, a
+               tab, a carousel's way out, an icon ring.
+     current — 1 at full width.
+
+     ONE HOVER, NOT TWO. Hover used to sit at 0.42 against a rest of 0.34 —
+     eight hundredths of opacity and four of scale apart, which is not a state
+     change, it is the same mark redrawn. So a second rule was added to rescue
+     the `link` variant by jumping IT straight to 1 on hover, and the system
+     ended up with two different hovers: a link went to full ink, everything
+     else stayed at the invisible 0.42. The reader met the strong mark on one
+     link and the weak one on the next and could not learn either.
+
+     The ladder is now a real one — half, then whole — so hover needs no rescue
+     and no consumer borrows the `current` strength to be seen. `current` means
+     "you are here" again, rather than "you are here, or your cursor is."
 
      `[data-cw-ink-control]` BELONGS IN THE LABEL LIST, and its absence was a
      real bug rather than a decision: the attribute already lit the ICON ring
@@ -1805,7 +1863,10 @@ body {
      is exactly the "I still don't see the ink underline" report. */
   .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark {
     opacity: var(--cw-ink-rest-opacity);
-    transform: scaleX(var(--cw-ink-rest-scale)) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
+    transform:
+      scaleX(var(--cw-ink-rest-scale))
+      scaleY(var(--cw-ink-stroke-weight))
+      rotate(var(--cw-ink-stroke-tilt));
   }
 
   :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover .cw-ink-label-mark,
@@ -1814,20 +1875,27 @@ body {
     /* Restating the weight here is not redundancy — it is the fix for a real
        bug. This selector and the `menu` variant's carry equal specificity, and
        this one comes later, so a menu label losing `scaleY` on hover meant the
-       account menu's stroke went thin exactly while it was pointed at. */
-    transform: scaleX(0.92) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
+       account menu's stroke went thin exactly while it was being pointed at. */
+    transform:
+      scaleX(0.96)
+      scaleY(var(--cw-ink-stroke-weight))
+      rotate(var(--cw-ink-stroke-tilt));
   }
 
-  :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]) .cw-ink-label-mark,
-  [data-cw-ink-control]:hover .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark,
-  [data-cw-ink-control]:focus-visible .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark {
+  :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]) .cw-ink-label-mark {
     opacity: 1;
-    transform: scaleX(1) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
+    transform:
+      scaleX(1)
+      scaleY(var(--cw-ink-stroke-weight))
+      rotate(var(--cw-ink-stroke-tilt));
   }
 
   .cw-ink-label[data-cw-ink-active="true"] .cw-ink-label-mark {
     opacity: 1;
-    transform: scaleX(1) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
+    transform:
+      scaleX(1)
+      scaleY(var(--cw-ink-stroke-weight))
+      rotate(var(--cw-ink-stroke-tilt));
   }
 
   :is(.cw-icon-btn, .cw-page-btn, .cw-nav-link, [data-cw-ink-control]):hover .cw-ink-icon-mark,

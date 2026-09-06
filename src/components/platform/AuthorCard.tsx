@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import styles from "@/components/platform/PlatformTrustStyles";
-import { authorHref } from "@/lib/lms/authors";
+import { authorHref } from "@/lib/lms/authorRoutes";
 import { authorCardCropStyle } from "@/lib/lms/authorPhoto";
 import type { Author } from "@/lms-core";
 

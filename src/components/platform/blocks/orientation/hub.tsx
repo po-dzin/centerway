@@ -5,6 +5,7 @@ import styles from "@/components/platform/PlatformHeroStyles";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 import { HubIntroVideo } from "./IntroVideo";
+import { heroTitleFit } from "@/components/platform/heroTitleFit";
 
 /* Focus for the threshold plate (1312×816, ratio 1.608), read through the
    shared hero framing contract in PlatformResponsive.module.css. Measured off
@@ -65,7 +66,7 @@ export function HubHero() {
         <p className={styles.heroBadge}>
           <span>Тіло · Ритм · Опора</span>
         </p>
-        <h1 className={styles.heroFeatureTitle}>CenterWay</h1>
+        <h1 className={styles.heroFeatureTitle} style={heroTitleFit("CenterWay")}>CenterWay</h1>
         <p className={styles.heroFeatureLead}>
           Шлях до себе - не пошук нової особистості, а повернення до своєї істинної природи через тіло, увагу і практику.
         </p>

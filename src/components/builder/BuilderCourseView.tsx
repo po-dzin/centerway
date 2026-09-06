@@ -45,6 +45,8 @@ import { BuilderGrip } from "./BuilderGrip";
 import { BuilderHistory } from "./BuilderHistory";
 import { BuilderEditableTitle } from "./BuilderEditableTitle";
 import { BuilderRecordField } from "./BuilderRecordField";
+import { BuilderRevisionNotice } from "./BuilderRevisionNotice";
+import { FieldInput } from "./BuilderFields";
 import { useCourseHistory } from "./useCourseHistory";
 import { useCourseAutosave } from "./useCourseAutosave";
 import { rememberZenPreviewReturn, zenPreviewHref } from "@/components/lms/ZenPreviewShell";
@@ -431,10 +433,21 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           : current.data.review,
       },
     } : current);
+    /* A STAGED SAVE SAYS SO (2026-09-06). On a published course this write does
+       not touch what learners read: `saveBuilderCourse` puts it in
+       `pending_content` as the next version and only three presentational
+       fields patch the live release (see publishedEditPolicy.ts). The bar
+       answered «Збережено. Блокерів немає.» either way, so an author who
+       rewrote «Що людина отримає» watched it save, opened the offer page, and
+       found the old copy — with nothing on this screen having mentioned a
+       version, a review, or a queue. The save was true; the sentence was not
+       the whole of it. */
     return {
       ok: true as const,
       generation: result.data.draftGeneration,
-      message: result.data.blockers.length === 0
+      message: result.data.staged
+        ? "Збережено як наступну версію — учні бачать поточну."
+        : result.data.blockers.length === 0
         ? "Збережено. Блокерів немає."
         : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`,
     };
@@ -690,6 +703,21 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         <a className={styles.courseMobileNavItem} href="#course-release" aria-current={workspaceMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("release"); }}><BuilderInkLabel>Публікація</BuilderInkLabel></a>
       </nav>
 
+      {/* THE ONE FACT EVERY EDITING TAB WAS MISSING — see BuilderRevisionNotice.
+          Not on «Публікація», which says all of it at length and owns the same
+          button. */}
+      {state.data.hasPendingRevision && workspaceMode !== "release" ? (
+        <BuilderRevisionNotice
+          review={state.data.review}
+          ready={readiness.ready}
+          dirty={dirty}
+          busy={working}
+          blockerCount={readiness.blockers.length}
+          onSubmit={() => void submitReview()}
+          onOpenRelease={() => selectWorkspaceMode("release")}
+        />
+      ) : null}
+
       <section className={styles.courseWorkspacePanel} id="course-overview" hidden={workspaceMode !== "course"} aria-labelledby="course-overview-title">
       <div className={styles.docHead}>
         <div className={styles.courseTitleRow}>
@@ -939,6 +967,46 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           </div>
         </header>
         <BuilderBlockers course={course} blockers={readiness.blockers} onNavigate={navigate} />
+        {/* THE ACCESS RULE, WHERE THE RELEASE DECISIONS ARE (2026-09-06).
+
+            It used to be the only control inside a fold called «Додатково» on
+            the «Сторінка» tab — a governed field dressed as a setting, on the
+            one tab that is otherwise entirely the author's sales copy. What it
+            actually does is decide WHOSE PAID ORDER OPENS THIS COURSE: every
+            code here is accepted by `resolveEntitlement`, so «reset-day» typed
+            in this box seats every buyer of that funnel.
+
+            The course's own `course:<slug>` is always accepted and is never
+            listed — the list exists for the legacy funnel names («mini-detox»,
+            «reboot»), which is why an author almost never needs it and why it
+            is read-only for them: the write is gated too, so a control that
+            accepted keystrokes the server discards would be the worse half of
+            the same lie. */}
+        <section className={styles.releaseSection}>
+          <h3 className={styles.panelTitle}>Доступ за кодами продуктів</h3>
+          <p className={styles.panelText}>
+            Оплати з цими кодами відкривають курс. Власний код курсу приймається завжди — тут лише старі назви лійок.
+          </p>
+          {state.data.accessCodesEditable ? (
+            <FieldInput
+              field={{ path: [], label: "Коди продуктів", kind: "text", hint: "Через кому. Порожньо — приймається лише власний код курсу." }}
+              value={course.entitlementProductCodes.join(", ")}
+              onChange={(_path, value) =>
+                editCourse(
+                  ["entitlementProductCodes"],
+                  typeof value === "string" ? value.split(",").map((code) => code.trim()).filter(Boolean) : [],
+                )
+              }
+            />
+          ) : (
+            <p className={styles.noticeLine}>
+              {course.entitlementProductCodes.length > 0
+                ? `Коди: ${course.entitlementProductCodes.join(", ")}. Змінює власник платформи.`
+                : "Додаткових кодів немає. Змінює власник платформи."}
+            </p>
+          )}
+        </section>
+
         <section className={styles.releaseSection}>
           <h3 className={styles.panelTitle}>Дія публікації</h3>
           <p className={styles.panelText}>
@@ -984,7 +1052,16 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         <span className={styles.saveState} role="status" aria-live="polite">
           {pendingHref
             ? "Зберігаємо зміни перед переходом…"
-            : autosave.message ?? (dirty ? "Зміни збережуться автоматично" : "Усі зміни збережено")}
+            : autosave.message
+              ?? (dirty
+                ? "Зміни збережуться автоматично"
+                /* «Усі зміни збережено» is true and, on a course with a staged
+                   revision, answers the wrong question: saved WHERE. The line
+                   the author needs at rest is which of the two versions the
+                   learners are reading. */
+                : state.data.hasPendingRevision
+                  ? "Наступна версія збережена — учні бачать поточну"
+                  : "Усі зміни збережено")}
         </span>
         {/* The label never changes. It names what the button DOES, and the line
             beside it already says what is happening — a button that relabels

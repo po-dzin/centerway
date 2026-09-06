@@ -98,3 +98,44 @@ export function cropBackgroundStyle(crop: ImageCrop | undefined, fallback: { x: 
   if (!cropIsZoomed(scale)) return { backgroundPosition: position };
   return { backgroundPosition: position, transformOrigin: position, transform: `scale(${scale})` };
 }
+
+/**
+ * WHERE A DRAG PUTS THE FOCAL POINT — the picture follows the hand, one pixel
+ * for one pixel.
+ *
+ * THE EDITORS USED TO TELEPORT. Pointer-down placed the focal point wherever
+ * the cursor happened to land, so touching a photograph jumped it, and the only
+ * way to understand the control was to read the grip badge painted on top of
+ * the picture. Every crop tool a person has used since 2010 works the other way:
+ * you grab the image and move it. Same stored model, opposite gesture.
+ *
+ * THE CONVERSION IS THE OVERFLOW, NOT THE FRAME. Under `object-fit: cover`,
+ * moving `object-position` by one per cent moves the picture by one per cent OF
+ * WHAT IS HIDDEN, not of the frame — so a 6:1 band and a square avatar convert
+ * the same drag differently, and a photo with nothing hidden on an axis cannot
+ * move on it at all. Dividing by the frame's own width instead would make the
+ * picture race the hand on a tall crop and crawl on a wide one.
+ *
+ * `natural` at zero (an image still decoding) falls back to the frame, which is
+ * the old behaviour's gain and never divides by nothing.
+ */
+export function cropPan(
+  start: { x: number; y: number },
+  delta: { dx: number; dy: number },
+  frame: { width: number; height: number },
+  natural: { width: number; height: number },
+  scale: number
+): { x: number; y: number } {
+  const usable = natural.width > 0 && natural.height > 0;
+  const cover = usable
+    ? Math.max(frame.width / natural.width, frame.height / natural.height) * scale
+    : 0;
+  const overflowX = usable ? natural.width * cover - frame.width : frame.width;
+  const overflowY = usable ? natural.height * cover - frame.height : frame.height;
+  /* Half a pixel of overflow is no overflow: dividing by it would send the
+     focal point to a clamp on the first twitch of the hand. */
+  return {
+    x: overflowX > 0.5 ? clampCropAxis(start.x - (delta.dx / overflowX) * 100) : clampCropAxis(start.x),
+    y: overflowY > 0.5 ? clampCropAxis(start.y - (delta.dy / overflowY) * 100) : clampCropAxis(start.y),
+  };
+}

@@ -574,16 +574,19 @@
    It cannot become padding instead: the rule IS this element's top border, and
    padding falls under a border rather than above it.
 
-   And the gap above the rule is now a step wider than the gap below it, on
-   purpose — the rule separates the footer's three columns from a footnote
-   about the whole product, and an even gap read as a fourth row of the same
-   block. */
+   THE RULE SITS IN THE MIDDLE OF ITS OWN AIR. The gap above it used to be a
+   step wider than the gap below, meant to weight the note away from the three
+   columns; what it actually did was hang the line off the note rather than
+   place it between two things, and on a phone — where the columns stack and the
+   note is the only thing under it — the lopsided air was the most visible
+   spacing in the footer. A divider is symmetric or it is a top border on the
+   paragraph. One step, `lg`, on both sides. */
 .footerBugNote.footerBugNote {
-  margin-block: var(--cw-space-xl) 0;
+  margin-block: var(--cw-space-lg) 0;
 }
 
 .footerBugNote {
-  padding-block-start: var(--cw-space-md);
+  padding-block-start: var(--cw-space-lg);
   border-top: 1px solid transparent;
   border-image: var(--cw-rule-fade-x);
   color: var(--cw-platform-muted);
@@ -655,11 +658,16 @@
   color: var(--cw-platform-accent);
 }
 
+/* THE WORDMARK IS SET, NOT DRAWN — this footer spells CENTERWAY in the data
+   face rather than placing the wordmark asset — but it is still the logotype,
+   so it takes the mark's colour and not the paragraph's. On cream the two are
+   the same value; on graphite the symbol went gold and a cream word beside it
+   read as a caption that had wandered into the logo. */
 .footerBrandText {
   display: inline-flex;
   align-items: center;
   padding-left: 0.72rem;
-  color: var(--cw-platform-text);
+  color: var(--cw-brand-mark-color);
   font-family: var(--cw-font-data);
   font-size: 1rem;
   font-weight: 680;
@@ -678,7 +686,10 @@
   justify-self: end;
   justify-items: start;
   align-content: start;
-  gap: 0.85rem;
+  /* The social row now carries its own touch padding, so the column gap holds
+     the air the boxes do not: 0.85rem of gap plus 0.6rem of box read as a break
+     between the phone number and the networks rather than a pairing. */
+  gap: 0.3rem;
   padding-right: clamp(0.35rem, 1.4vw, 1rem);
   text-align: left;
 }
@@ -687,22 +698,66 @@
   min-height: 1.5rem;
 }
 
+/* THE GLYPH IS NOT THE TARGET. These four anchors were sized to their own
+   artwork — an 18px mask with 18px of anchor around it — so the thing a finger
+   had to find was smaller than the finger, on the one surface where every other
+   control in the system is held to `--ds-touch-target-min`. The mask keeps its
+   optical size; the box around it grows to a real square, and the row's gap
+   shrinks by what the boxes gained so the rhythm between glyphs stays where it
+   was drawn.
+
+   The first box is pulled back by half its own padding. Without that, giving
+   the icons a target would move the footer's left edge for this one row and
+   nothing else — the same two-left-edges defect the phone grid was fixed for a
+   commit ago. The glyph aligns with the text above it; the box hangs into the
+   gutter, where nothing is. */
 .footerSocialsRow {
+  --platform-footer-social-target: 2.35rem;
+  --platform-footer-social-glyph: 1.15rem;
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 0.95rem;
+  gap: 0.05rem;
   justify-content: flex-start;
 }
 
-.footerSocialsRow a {
-  min-width: 1.15rem;
+.footerSocialsRow a.footerSocialLink {
+  inline-size: var(--platform-footer-social-target);
+  block-size: var(--platform-footer-social-target);
+  min-width: 0;
+  gap: 0;
   justify-content: center;
+  border-radius: var(--cw-radius-sm);
+}
+
+.footerSocialsRow a.footerSocialLink:first-child {
+  margin-inline-start: calc((var(--platform-footer-social-target) - var(--platform-footer-social-glyph)) / -2);
+}
+
+.footerSocialsRow a.footerSocialLink:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset-tight);
+}
+
+/* GOLD IS THE ACCENT ON THE NIGHT GROUND, and these four glyphs are the only
+   accent-role marks in the footer that were still ink. On cream they stay
+   muted: the accent there is a mid-luminance warm that would read as a fifth
+   colour in a column of quiet links, which is the same reason the nav marker
+   is ink on light and gold on dark. Held back a step at rest so hover is still
+   a state — 6.3 and 8.8 against the sheet, both clear of the 3:1 a glyph
+   owes. */
+:root[data-cw-theme="dark"] .footerSocialsRow a.footerSocialLink {
+  color: color-mix(in srgb, var(--cw-platform-accent) 82%, var(--cw-platform-bg) 18%);
+}
+
+:root[data-cw-theme="dark"] .footerSocialsRow a.footerSocialLink:hover,
+:root[data-cw-theme="dark"] .footerSocialsRow a.footerSocialLink:focus-visible {
+  color: var(--cw-platform-accent);
 }
 
 .footerSocialIcon {
-  width: 1.15rem;
-  height: 1.15rem;
+  width: var(--platform-footer-social-glyph);
+  height: var(--platform-footer-social-glyph);
   display: inline-block;
   background: currentColor;
 }

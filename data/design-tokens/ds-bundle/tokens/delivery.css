@@ -51,6 +51,10 @@
   --ds-button-font-size: 1rem;
   --ds-button-gap: 0.5rem;
   --ds-button-lift: -1px;
+  --ds-field-sm: 8rem;
+  --ds-field-md: 18rem;
+  --ds-field-measure: 35rem;
+  --ds-field-gap: var(--ds-space-4);
   --ds-rail-control-size: var(--ds-touch-target-min);
   --ds-rail-control-icon: 1.25rem;
   --ds-rail-control-overhang: 1rem;

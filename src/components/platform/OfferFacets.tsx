@@ -112,14 +112,19 @@ export function OfferAuthor({ author, note }: { author: Author | null; note?: st
         <h2 className={offerStyles.label}>Автор</h2>
         <div className={styles.author}>
           {author?.photo ? (
-            <Image
-              className={styles.authorPhoto}
-              src={author.photo.src}
-              alt={author.photo.alt}
-              width={88}
-              height={88}
-              style={authorAvatarCropStyle(author.photo)}
-            />
+            /* The frame clips, the picture zooms — an element cannot clip its
+               own transform, so a magnified avatar spills past this circle
+               without one. See `cropStyle` in src/lib/media/imageCrop.ts. */
+            <div className={styles.authorPhotoFrame}>
+              <Image
+                className={styles.authorPhoto}
+                src={author.photo.src}
+                alt={author.photo.alt}
+                width={88}
+                height={88}
+                style={authorAvatarCropStyle(author.photo)}
+              />
+            </div>
           ) : null}
           <div className={styles.authorBody}>
             {author ? <p className={styles.authorName}>{author.name}</p> : null}

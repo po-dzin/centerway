@@ -47,6 +47,8 @@ export type BuilderCourseDto = {
   readiness: { ready: boolean; blockers: ReadinessBlocker[] };
   review: { status: "draft" | "in_review" | "changes_requested" | "approved"; note: string | null; enabled: boolean };
   slugEditable: boolean;
+  /** True only for an owner: the access codes are governed, not authored. */
+  accessCodesEditable: boolean;
 };
 
 export type CourseImportPreview = {

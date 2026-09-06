@@ -42,8 +42,12 @@
 
    `aspect-ratio` fixes the SHAPE and lets the size follow the column, so the
    crop is now literally the same picture everywhere, just larger or smaller.
-   The editor's frame is the same 5:1 — the two numbers must never diverge
-   again, which is why the doc entry names them together.
+   THE EDITOR READS THE SAME TOKEN. `--ds-author-banner-ratio` is the whole
+   contract: the frame an author aims a focal point in and the frame that ships
+   are one number, so they cannot drift apart the way a height and a preview
+   already did once. `surfaceBoundaries.test.ts` fails if either side stops
+   reading it or re-types a ratio of its own — a comment asking two files to
+   agree is not a contract, a shared token that is asserted is.
 
    5:1 and not wider: it holds the desktop band within 8px of what it drew
    before, so the composition this header was just tuned for does not move,
@@ -54,7 +58,7 @@
 .bannerFrame {
   position: relative;
   width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
-  aspect-ratio: 5 / 1;
+  aspect-ratio: var(--ds-author-banner-ratio);
   /* `+ --platform-topbar-top` is the bar's own nudge, added back. The bar
      occupies its box in flow and is then pushed down by that much, so a plain
      margin loses exactly that from the daylight underneath it: 2rem asked for,
@@ -104,7 +108,14 @@
 .badges { grid-column: 2; display: flex; flex-wrap: wrap; gap: var(--cw-space-2xs); }
 .badges span { padding: var(--cw-space-2xs) var(--cw-space-xs); border-radius: var(--cw-radius-pill); background: var(--cw-mat-surface-sunk); color: var(--cw-platform-text); font-size: var(--ds-type-body-sm-size); font-weight: 700; }
 
-.portrait,
+/* THE CIRCLE IS THE FRAME'S, NOT THE PICTURE'S (2026-09-06). These two rules
+   used to size and round the image element itself, and the picture carries the
+   author's zoom as a transform — which an element cannot clip on itself. At
+   1.8× the portrait simply grew, circle and all, and painted over the name in
+   the column beside it. The frame holds the size, the edge and the clip; the
+   photograph fills it and may be magnified inside it. Same division as
+   `.bannerFrame` and `.banner` above. */
+.portraitFrame,
 .portraitFallback {
   width: clamp(5rem, 12vw, 8rem);
   aspect-ratio: 1;
@@ -113,7 +124,13 @@
   background: var(--cw-mat-surface-sunk);
 }
 
+.portraitFrame {
+  overflow: hidden;
+}
+
 .portrait {
+  width: 100%;
+  height: 100%;
   display: block;
   object-fit: cover;
 }

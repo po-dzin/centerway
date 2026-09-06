@@ -151,42 +151,14 @@ async function readListedAuthors(): Promise<Author[]> {
   }
 }
 
-/**
- * The founder's public address is `/consult`, not `/expert/<slug>` — see the
- * `/expert` merge (2026-08-23): the consultation is what someone arrives
- * wanting, and the founder's credentials are evidence on that page rather than
- * a page of their own. Every other author gets the address their profile has.
- *
- * BOTH TRANSLITERATIONS, because the product persists both and the link must be
- * right whichever row is live: the static showcase card in
- * `src/lib/platform/content.ts` is `evgeniy-koryakin`, while the seeding
- * migrations under `docs/migration/sql` write `yevhenii-koriakin`. Matching one
- * of them is how this exception silently stopped firing — the card linked to a
- * profile page instead of the consultation.
- *
- * It lives HERE, beside the data, rather than in a block: `/experts` derived
- * the same destination independently and got it wrong in its own way, which is
- * what a rule copied into two call sites does.
- */
-const FOUNDER_SLUGS: readonly string[] = ["evgeniy-koryakin", "yevhenii-koriakin"];
-
-/**
- * Whether this slug is the founder's, under either transliteration.
- *
- * The PAGE needs this as well as the link: publishing his profile so the home
- * page can print it would otherwise also mint `/expert/<slug>`, which is the
- * second page about him that the 2026-08-23 merge existed to remove. The route
- * redirects on this predicate, so the link and the page cannot disagree about
- * who the exception is.
- */
-export function isFounderAuthorSlug(slug: string): boolean {
-  return FOUNDER_SLUGS.includes(slug);
-}
-
-/** Where an author's card should point. */
-export function authorHref(author: Pick<Author, "slug">): string {
-  return `/expert/${author.slug}`;
-}
+/* The founder exception and the author's own address moved to
+   `./authorRoutes` (2026-09-06): they are pure string rules with no data
+   behind them, and this module cannot be imported from a client component —
+   it pulls `next/cache` and the admin client with it. `AuthorCard` is
+   rendered by the cabinet's editor now, which is a client component, and the
+   import chain broke the build. Re-exported here so every existing caller
+   keeps its import. */
+export { authorHref, isFounderAuthorSlug } from "./authorRoutes";
 
 /** Every author with a public page, for the directory. */
 export async function listListedAuthors(): Promise<Author[]> {

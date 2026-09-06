@@ -321,28 +321,17 @@ export function BuilderCourseSettings({
             byline has a tab of its own to sit in. */}
       </section>
 
-      <details className={styles.courseSettingsAdvanced}>
-        {/* THE GLYPH IS FROM THE SPRITE, like every other icon in this shell.
-            It used to be a typed "+" and "−" in CSS `content` — the plus of the
-            UI font at 1.1rem beside a set of baked hand-drawn icons, which is
-            the one mark on this screen that came from somewhere else. The
-            chevron also says the true thing: this opens, it does not add. */}
-        <summary>
-          Додатково
-          <Icon className={styles.courseSettingsAdvancedGlyph} name="chevron-down" size={18} />
-        </summary>
-        {/* NO «Стартова структура» HERE ANY MORE. It moved to «Зміст», beside
-            the modules and lessons it writes — see `BuilderStructureStart`. It
-            was the one control able to rewrite the whole structure, and it sat
-            on a different tab, folded away from everything it acts on. */}
-        <div className={styles.courseSettingsAdvancedBody}>
-          <FieldInput
-            field={{ path: [], label: "Коди продуктів, що відкривають курс", kind: "text", hint: "Технічне поле. Коди вказуються через кому." }}
-            value={course.entitlementProductCodes.join(", ")}
-            onChange={(_path, value) => onChange(["entitlementProductCodes"], typeof value === "string" ? value.split(",").map((code) => code.trim()).filter(Boolean) : [])}
-          />
-        </div>
-      </details>
+      {/* NO «Додатково» FOLD HERE ANY MORE (2026-09-06). It held one control —
+          «Коди продуктів, що відкривають курс» — and that control is not part
+          of the storefront this tab is about. It is an ACCESS RULE: the list of
+          paid product codes `resolveEntitlement` accepts as a seat in this
+          course, which is the same class of decision as the price, and the
+          price is deliberately not in the builder at all.
+
+          It moved to «Публікація», beside the other release decisions, and the
+          write is gated to the owner (`SaveGovernance` in lib/lms/builder.ts).
+          Folded away under a sales form it was a governed field wearing the
+          costume of a setting. */}
       </div>
     );
   }

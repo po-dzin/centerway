@@ -20,9 +20,33 @@
 /* The row is empty hit space. It spans the reading measure rather than the
    viewport corners, so the islands belong to the column they float over, and
    only the islands themselves take pointer events. */
+/* ONE INSET, ON ALL THREE SIDES (2026-09-06). The top was `--cw-space-sm` and
+   the sides were `--cw-page-gutter` — two different numbers on one floating
+   object, so the pair sat visibly tighter to the status bar than to the edges
+   it was already clear of. Nothing argued for the difference; the row is a
+   thing floating in a margin, and a margin that changes by side is a mistake
+   rather than a rhythm. */
 .row {
+  /* THE ISLAND MATERIAL, NAMED ONCE. Two things in this row wear it — the mark
+     and, when there is no session, the account glyph — and this module's whole
+     reason for existing is that two places drawing the same island is how the
+     topbar ended up with two different glasses. Restating four token
+     references would have been that mistake in miniature. `--platform-*`
+     rather than `--cw-*`: the canon guard forbids defining a `--cw-` token in
+     platform component CSS, and it is right to. */
+  --platform-island-radius: var(--cw-radius-pill);
+  --platform-island-bg: var(--cw-mat-tint-chrome);
+  --platform-island-filter: var(--cw-mat-filter);
+  /* SHADOW, NOT CONTOUR. `--cw-mat-shadow-chrome` leads with `0 0 0 1px` — a
+     spread ring, not a shadow — and on a 48px disc that hairline is not an
+     edge, it is an outline drawn around the control. It earns its place on the
+     bar and on the sheet, where the same 1px reads as the boundary of a large
+     translucent plate; at this size it reads as a stroke, and nothing else in
+     the product outlines a floating object. The islands take the material
+     shadow every other object takes and let the blur do the lifting. */
+  --platform-island-shadow: var(--cw-mat-shadow-soft);
   position: fixed;
-  top: max(var(--cw-space-sm), env(safe-area-inset-top));
+  top: max(var(--cw-page-gutter), env(safe-area-inset-top));
   inset-inline-start: max(var(--cw-page-gutter), env(safe-area-inset-left));
   inset-inline-end: max(var(--cw-page-gutter), env(safe-area-inset-right));
   z-index: 4;
@@ -55,8 +79,30 @@
   }
 }
 
+/* WHILE THE SHEET IS OPEN, THE ROW IS ABOVE IT (2026-09-06). The account sheet
+   unfolds from this row's top edge so the pair sits inside the panel rather
+   than over a hole in it — and a panel portalled to `document.body` lives far
+   above `z-index: 4`. Without this the sheet would paint over the two controls
+   that opened it. The attribute is set by `PlatformAccountMenu` for exactly as
+   long as its island form is on screen. */
+.row[data-cw-organs-sheet="open"] {
+  z-index: calc(var(--ds-z-sticky) + 3);
+}
+
+/* AND THEY DROP THEIR OWN PLATE THERE. An island is a tinted disc because it
+   floats over an article; landed on the sheet's own tint it would be that
+   material twice — a darker disc inside the panel, reading as a control stuck
+   on top of the menu rather than as part of it. On the sheet the pair is just
+   the mark and the face. */
+.row[data-cw-organs-sheet="open"] .organ,
+.row[data-cw-organs-sheet="open"] [data-auth-state] {
+  background-color: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
 .row[data-hidden="true"] {
-  transform: translateY(calc(-100% - max(var(--cw-space-sm), env(safe-area-inset-top))));
+  transform: translateY(calc(-100% - max(var(--cw-page-gutter), env(safe-area-inset-top))));
   opacity: 0;
 }
 
@@ -76,12 +122,37 @@
   width: var(--ds-touch-target-min);
   height: var(--ds-touch-target-min);
   border: 0;
-  border-radius: var(--cw-radius-pill);
+  border-radius: var(--platform-island-radius);
   color: var(--cw-platform-text);
-  background-color: var(--cw-mat-tint-chrome);
-  backdrop-filter: var(--cw-mat-filter);
-  box-shadow: var(--cw-mat-shadow-chrome);
+  background-color: var(--platform-island-bg);
+  backdrop-filter: var(--platform-island-filter);
+  box-shadow: var(--platform-island-shadow);
   text-decoration: none;
+}
+
+/* THE EMPTY ACCOUNT IS AN ISLAND TOO (2026-09-06).
+
+   With a session the trailing control is a photograph filling its 48px box: it
+   is its own object and needs no plate under it. Signed out it is a 26px
+   outline glyph on nothing at all — and «nothing at all» over a hero photograph
+   or a dark sheet is where it disappeared, while the mark opposite it sat in a
+   visible pill. One corner an object, the other a smudge.
+
+   `[data-auth-state]` is exactly and only the guest control — the signed-out
+   branch of `PlatformAccountMenu` already carried the attribute, so this needs
+   no new hook and cannot accidentally plate an avatar. */
+.row [data-auth-state] {
+  border-radius: var(--platform-island-radius);
+  background-color: var(--platform-island-bg);
+  backdrop-filter: var(--platform-island-filter);
+  box-shadow: var(--platform-island-shadow);
+  /* And the glyph is the mark's colour, not the paragraph's. The two islands
+     are a matched pair — a way home and a way in — so a cream figure opposite a
+     gold mark read as two controls from different systems. `--cw-brand-mark-color`
+     is the ink on cream and the gold on graphite, the same token the mark
+     itself takes; with a session this rule does not apply and the photograph
+     is its own colour. */
+  color: var(--cw-brand-mark-color);
 }
 
 /* Several controls travelling as one object, so they read as a set rather than
@@ -98,10 +169,10 @@
   flex: 0 0 auto;
   min-height: var(--ds-touch-target-min);
   padding-inline: 0.25rem;
-  border-radius: var(--cw-radius-pill);
-  background-color: var(--cw-mat-tint-chrome);
-  backdrop-filter: var(--cw-mat-filter);
-  box-shadow: var(--cw-mat-shadow-chrome);
+  border-radius: var(--platform-island-radius);
+  background-color: var(--platform-island-bg);
+  backdrop-filter: var(--platform-island-filter);
+  box-shadow: var(--platform-island-shadow);
 }
 
 /* An absent side still has to hold its corner: `space-between` with one child
@@ -110,6 +181,12 @@
   flex: none;
   inline-size: var(--ds-touch-target-min);
   block-size: 1px;
+  /* `.row > *` hands pointer events back to every child, which is right for the
+     islands and wrong for a spacer: this one is invisible, and in the admin
+     panel it lies directly over the top of a permanently-visible 68px rail.
+     A 48×1px strip that swallows a tap on the first nav row is a bug nobody
+     would ever find by looking. */
+  pointer-events: none;
 }
 
 /* THE MARK INSIDE AN ISLAND. The same baked shape the bar masks, and masked for
@@ -118,14 +195,16 @@
 
    It cannot read `--platform-header-symbol-color`, which exists only inside
    `.header` and tracks a dark hero the bar may be floating over. An island has
-   no such problem — it is on chrome material at all times — so the island's own
-   ink is the honest source. */
+   no such problem — it is on chrome material at all times — so it names the
+   mark's own colour, which is the theme's: ink on cream, gold on graphite. It
+   used to name `--cw-platform-text`, which is the paragraph's colour, and on
+   the night theme that rendered the logotype as body copy. */
 .mark {
   display: block;
   flex: 0 0 auto;
   width: var(--cw-brand-size-symbol-header);
   height: var(--cw-brand-size-symbol-header);
-  background-color: var(--cw-platform-text);
+  background-color: var(--cw-brand-mark-color);
   -webkit-mask: var(--cw-brand-asset-logo-symbol-header) center / contain no-repeat;
   mask: var(--cw-brand-asset-logo-symbol-header) center / contain no-repeat;
 }

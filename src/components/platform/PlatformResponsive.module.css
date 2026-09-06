@@ -209,10 +209,18 @@
      occupies flow, so hiding it hands its height back to the page and the first
      line rides up under the islands — which are `fixed` and take no space at
      all. The room is re-stated in the same terms the reader already uses for
-     the same two islands: the safe area, one touch target, and air under it. */
-  .shell[data-cw-organs="mobile"] > main {
+     the same two islands: the safe area, one touch target, and air under it.
+     The first term is the row's own top inset and has to stay it — see
+     ChromeOrgans.module.css, where all three sides are one number.
+
+     NOT IN `overlay`. There the bar never held any room to begin with: it
+     floats over a full-bleed hero whose subject runs to the top of the
+     viewport, and handing that page a topbar's worth of padding would push the
+     photograph down to make space for chrome that is not in the flow. The
+     islands float over it exactly as the bar did. */
+  .shell[data-cw-organs="mobile"]:not([data-cw-shell-mode="overlay"]) > main {
     padding-block-start: calc(
-      max(var(--cw-space-sm), env(safe-area-inset-top)) + var(--ds-touch-target-min) + var(--cw-space-md)
+      max(var(--cw-page-gutter), env(safe-area-inset-top)) + var(--ds-touch-target-min) + var(--cw-space-md)
     );
   }
 
@@ -1033,11 +1041,15 @@
     width: 100%;
   }
 
+  /* `--hero-title-size`, not `font-size`: how big it wants to be. What it may
+     be is decided once, by the one-word-one-line rule in
+     PlatformBlocksOrientation.module.css. `overflow-wrap: anywhere` went with
+     it — a word that fits needs no permission to break, and that permission is
+     what printed «ДІАГНОСТИК / А» on a phone. */
   .heroFeatureTitle.heroFeatureTitle {
     width: 100%;
     max-width: 100%;
-    font-size: clamp(2.6rem, 12.2vw, 4.25rem);
-    overflow-wrap: anywhere;
+    --hero-title-size: clamp(2.6rem, 12.2vw, 4.25rem);
   }
 
   .heroProofGrid {
@@ -1338,7 +1350,7 @@
 
   .heroFeatureTitle {
     max-width: 100%;
-    font-size: clamp(2.85rem, 15vw, 3.4rem);
+    --hero-title-size: clamp(2.85rem, 15vw, 3.4rem);
   }
 
   .heroFeatureLead {
@@ -1546,12 +1558,19 @@
 
   .footerSocials {
     justify-content: flex-start;
-    gap: 1rem;
+    gap: 0.2rem;
     padding-right: 0;
     text-align: left;
   }
 
+  /* A FINGER, NOT A CURSOR. The pointer band can hold the glyph in a 2.35rem
+     box; a phone owes every control `--ds-touch-target-min`, and these four
+     were the last things in the footer still sized to their own artwork. The
+     glyph grows with the box so a 48px target does not read as an 18px icon
+     lost in a plate. */
   .footerSocialsRow {
+    --platform-footer-social-target: var(--ds-touch-target-min);
+    --platform-footer-social-glyph: 1.45rem;
     flex-wrap: wrap;
     justify-content: flex-start;
   }
@@ -1624,6 +1643,8 @@
   }
 
   .footerSocialsRow {
+    --platform-footer-social-target: var(--ds-touch-target-min);
+    --platform-footer-social-glyph: 1.45rem;
     flex-wrap: wrap;
     justify-content: flex-start;
   }
@@ -1648,7 +1669,7 @@
   }
 
   .heroFeatureTitle {
-    font-size: 2.65rem;
+    --hero-title-size: 2.65rem;
   }
 
   .heroFeatureLead {

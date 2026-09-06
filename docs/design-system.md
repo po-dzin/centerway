@@ -145,6 +145,41 @@ In use on the course page and both cabinet course meters. The dosha score bars s
 
 **List gap 0.7rem, not 0.4rem.** Lesson list items are "term — definition" and most wrap to two or three lines at 1.6 line-height; at 0.4rem the space between items was smaller than the space between two lines of the same item, so the list read as one paragraph with bold words scattered through it.
 
+### A display title never breaks inside a word (2026-09-06)
+
+«ДІАГНОСТИКА» printed as «ДІАГНОСТИК / А» on a 390px phone. Three things had to
+be true at once for that: the size came from the viewport (`clamp(2.6rem,
+12.2vw, 4.25rem)`), the word's own width was in nobody's arithmetic, and
+`overflow-wrap: anywhere` stood ready to break whatever did not fit. The
+breakpoint had been tuned against «Програми» and «Продукти», which are two
+characters shorter.
+
+**The rule.** A hero title's size is bounded by the room its LONGEST WORD needs.
+CSS cannot count the characters in its own text, so the component that knows the
+string passes the one missing fact — `--hero-title-word`, via `heroTitleFit()`
+(`src/components/platform/heroTitleFit.ts`) — and the stylesheet does the rest:
+
+```css
+font-size: min(
+  var(--hero-title-size),
+  calc(var(--hero-title-room) / (var(--hero-title-word, 8) * 0.7))
+);
+```
+
+`0.7` is the average advance of one uppercase Manrope 900 character at this
+rule's tracking, measured across the platform's own titles (0.665–0.704), not
+assumed. `--hero-title-room` restates the hero's own width formula rather than
+opening a container query, so no size containment lands on a box other things
+are positioned against.
+
+**What changed shape.** Breakpoints now declare `--hero-title-size` — how big
+the title *wants* to be — and one rule decides how big it *may* be. That is the
+same split the button contract uses, one axis lower: the local rule states
+intent, the shared one states the limit. `overflow-wrap: anywhere` went with the
+bug it enabled, and `min-width: min-content` was added so a single word is not
+held under the 9.8ch measure meant for several. A word that fits needs no
+permission to break.
+
 ### The detail hero's title has a base, not just breakpoints (2026-08-22)
 
 `.detailHeroTitle` (program, product and diagnostic offer heroes) had **no base
@@ -295,32 +330,49 @@ was sized by a fixed HEIGHT (`clamp(9rem, 19vw, 14rem)`) against a column that
 runs 1160px → 350px, so it rendered **5.18:1** on a desktop, **2.73:1** on a
 phone and **2.19:1** at 320 — while `AuthorProfileFold` previewed the crop at
 **6:1**. An author aimed a focal point in one window and none of the four
-shipped pictures was the one they saw. A height is not a shape: the band now
-carries `aspect-ratio: 5 / 1` and `.photoCropBanner` carries the same number, so
-the crop is one picture at every width. **These two values are one decision —
-change them together or not at all.**
+shipped pictures was the one they saw. A height is not a shape: both frames
+carry `aspect-ratio: var(--ds-author-banner-ratio)` — **one token, 5 / 1** — so
+the crop is one picture at every width and the frame an author aims in is the
+frame that ships.
 
-Two things this slot deliberately does NOT have, each because a survey of how
-fourteen other platforms handle a user-uploaded cover said so:
+**It is asserted, not asked for.** Two files agreeing because a comment told
+them to is the arrangement that already failed here once. `surfaceBoundaries.test.ts`
+reads every `.bannerFrame` and `.photoCropBanner` rule — each selector is
+declared twice, a base and a responsive one, and the shape only has to slip into
+one of them for the frames to part — and fails if any of them re-types a ratio,
+sets a height, or stops reading the token. 5:1 and not wider: it holds the
+desktop band within 8px of what it drew before, and sits inside the cluster the
+market uses for the same object (Domestika 7:1, Podia 6.7:1, Circle 16:5). Not
+narrower: a taller band pushes the name down the screen, which is the one thing
+this header keeps being asked not to do.
 
+Three things this slot deliberately does NOT have, each because the survey of
+how other platforms handle a user-uploaded cover said so:
+
+- **No scrim.** One was tried, bottom-weighted, on the argument that a bright
+  upload ends on a hard edge above the name. On the one cover this system has —
+  ink on white paper — it had nothing to darken and drew a grey smear across the
+  lower half. Of the platforms that accept an uploaded cover almost none scrims,
+  and the one real scrim on live user imagery (Spotify's) sits *under* white
+  type. Nothing is set on this band, so there is no legibility to buy. The
+  shipped answer everywhere else is the one here: lock the aspect, centre-crop,
+  and never put type on the image.
 - **No full-bleed.** Asked for and measured: edge-to-edge, the white plate takes
   the top third, the tone-adaptive bar flips dark, and the page stops being this
   product for its first 450px. Everyone who bleeds either owns the asset (Maven
   generates the band from a hue token; MasterClass ships hand-cropped art per
-  breakpoint) or veils it (Domestika, a flat 40% over the whole plate). We do
-  neither — we accept an arbitrary upload and paint it clean. Four of the six
-  closest comparables (Teachable, Kajabi, Podia, Ghost's current default) have
-  dropped the creator cover entirely for a portrait beside the text.
-- **No fallback when unset.** Nothing renders and `.hero` opens the page
-  instead — the same answer Podia documents: "if no banner image is set, nothing
-  is displayed at the top of your home feed."
+  breakpoint) or veils it (Domestika, 40% over the whole plate). We do neither.
+  What we already do — bleeding to the CONTENT COLUMN rather than the viewport —
+  is the treatment Spotify, Bluesky and Bandcamp all landed on.
+- **No fallback when unset.** Nothing renders, and `.hero` opens the page
+  instead. Same as Podia: "if no banner image is set, nothing is displayed."
 
-Worth stating because it is an advantage that was being wasted: this slot has a
-real focal-point picker (`cropX/cropY/cropScale`), which none of the platforms
-surveyed has — Kajabi offers Top/Center/Bottom and the rest tell authors in
-prose to keep the subject centred. The picker is only worth having while the
-editor's frame and the rendered frame are the same shape, which is what the
-paragraph above protects.
+Worth stating because it is an advantage and it was being wasted: this slot has
+a real focal-point picker (`cropX/cropY/cropScale`), which none of the nine
+platforms surveyed has — Kajabi offers Top/Center/Bottom and Notion pans on one
+axis; the rest tell authors in prose to keep the subject centred. The picker is
+only worth having while the editor's frame and the rendered frame are the same
+shape, which is what the paragraph above is protecting.
 
 ### The hero carries the trail, and the author's way in (2026-08-27)
 
@@ -571,6 +623,77 @@ The before/after rail carries two kinds of card: two photographs in two cells, a
 What that produced was a rail whose **first** card — the one that teaches the reader how to read the two beside it — omitted the labelling the rest depends on. That is not tact, it is a gap in the first thing the reader sees.
 
 Both kinds carry the pills now, at the same corner of each half. The label layer is its own 1:1 box rather than the cell, and that is load-bearing: `object-fit: contain` letterboxes the square source inside the 4:5 cell on a phone, so a pill anchored to the *cell* would float in the empty band under the photograph. Anchored to a box the shape of the picture, centred the way `contain` centres it, the pill lands on the image at every width.
+
+## Fields — three steps and two zones (2026-09-06)
+
+Buttons got a contract in August because an axis with no token is an axis that
+diverges. Field width was the same axis, still untokened: measured across the
+platform's own stylesheets, field and column caps had been invented at 13, 16,
+20, 22, 27, 32, 34, 35, 38 and 42rem — ten answers to "how wide is a field",
+one per module.
+
+**The scale.** Three steps, in `--ds-` because they are the platform's and not
+one form's. Each step is named by what it holds, and each holds roughly twice
+the text of the one below it, so a field's width is a statement about its
+content rather than about what happened to be beside it:
+
+| Token | Width | What it holds |
+|---|---|---|
+| `--ds-field-sm` | 8rem | a code, a count, a date — about ten characters |
+| `--ds-field-md` | 18rem | a name, a slug, a badge — one short phrase |
+| `--ds-field-measure` | 35rem | a line of prose — 68ch of the UI face |
+
+`--ds-field-gap` is the interval between two fields on one line. A field that
+holds no text at all — a photograph, a composite editor — takes none of these:
+a typographic cap on a picture is a typographic law applied to something that
+is not type.
+
+**Two zones, not one cap.** The author profile capped every control at the
+measure while its media bands ran the full width of a 1160px card, so a section
+had two right edges and the space beside the fields was not restraint — it was
+nothing, and it read as a form that had failed to finish. The settlement is a
+grid rather than a cap: a **text zone** at the measure and a **media zone** that
+takes the rest (`.authorZones` in `Cabinet.module.css`). Text has a measure,
+media has a frame, and as columns of one grid the leftover width does work
+instead of sitting empty.
+
+Two rules travel with it. **Text leads, in the DOM and on the screen**, so the
+keyboard walks a section the way the eye does at every width. And **short fields
+share a line**: two 18rem phrases stacked down a 35rem column leave it half
+empty and read as two half-built rows, so the row's flex basis is the *small*
+step and the phrase step is only the ceiling.
+
+**The editor is shaped like the page (2026-09-06).** Two zones were the first
+answer to the empty desktop half, and they were only half of one: the controls
+were tidy and the arrangement still belonged to no surface, so the author found
+out what their entries produced by saving and opening the page in another tab. A
+preview rail beside the form was the second answer, and it was worse — the same
+person drawn twice on one screen, once to edit and once to look at.
+
+The arrangement is the page's instead. `/expert/[slug]` opens with a band, a
+round portrait at its lower edge, and the name and role beside that portrait; the
+cabinet's «Ви» is that lockup with the pictures made draggable and the two lines
+made inputs (`.authorHero` in `Cabinet.module.css`). Nothing is previewed twice,
+because the form is the preview. One difference is taken deliberately: the page
+overlaps the portrait onto the band and the editor does not, because the strip
+between them holds the band's own zoom — a composition copied to the point of
+hiding a control is a copy that costs the author a gesture. The course card is
+kept out of the lockup for the opposite reason: it is a different surface, and
+standing it inside the page's header would say it belongs there.
+
+**A zoomed picture needs a frame.** Laying the page's own shape into the editor
+surfaced the same bug in three places: `AuthorProfileShowcase`'s portrait, the
+offer page's byline and the builder's byline preview each put the crop's
+`transform: scale()` on a bare `<img>`. An element cannot clip its own
+transform, so a magnified avatar grew past its circle — on `/expert/[slug]` it
+printed over the author's own name. The rule `cropStyle` already states is now
+kept everywhere: the frame holds the size, the edge and the clip; the picture
+fills it and may be magnified inside.
+
+**Where it is applied.** The cabinet's author profile is the first consumer. The
+builder, the admin and the catalogue filters still carry their own numbers; the
+job is finished by a `guard:fields` in the shape of `guard:buttons` — a rule
+that a component stylesheet may not mint a field width, only take a step.
 
 ## Vocabulary — the one table
 
@@ -1547,6 +1670,25 @@ conditionally removed. Rail edges and the footer rule use the system's
 
 ### Two chrome modes, and the reader is the second one (2026-09-05)
 
+**The phone has one chrome now (2026-09-06).** The islands shipped a day earlier on `learn` alone, and the note excluding the storefront said its bar carries five public destinations that are the product's map and not its chrome. That sentence is about the **desktop** bar, where the five are a visible band. It was recorded as the reason for a **mobile** exclusion, and it never applied there: on a phone the bar showed a mark and a burger, and the five were already one tap inside the burger's sheet. Moving them into the island sheet moves them between two sheets — it does not take a visible map away, because there was none to take. So below 901px every surface `PlatformLayout` wraps now renders `PlatformOrgans` and `PlatformHeader` is `scope="desktop"` throughout, and the five destinations ride in the island sheet as `PlatformRouteRows` — same `platformNav` / `personalNav` source as the bar, so the two cannot drift, ruled off from the account's own applications because a surface map and an account's apps are two registers. `learn` passes none: its route map is empty by design. What went away is the burger and its sheet — two menus opening from the same corner with overlapping lists. The reader keeps `ReaderChrome`: its leading island is a section list rather than a mark, which is the second mode, not a variant of the first.
+
+**And the workspaces followed the same day.** The workshop and the admin panel were the last two surfaces opening a bar on a phone, and neither bar had anything left in it. Builder's `.workspaceTopbarContext` is `display: none` below 901px — the trail and the save/preview/blockers tools already render in flow as `.pageTrail` — and the panel's bar never carried `workspaceContent` at all, because its seven sections live in the rail. Both were a mark, an avatar and a band of nothing, holding ~52px of an editor's height open. Both take `reveal="always"`, which is what that prop exists for: scrolling up in an editor is working with the text, not leaving it.
+
+The panel takes the **trailing island only**. Its rail is permanently on screen at 375px (68px, pinned compact), so a mark at the 20px gutter would land on the first nav row — and the rail already answers what a leading island is for, so a second control there would be a second route to the same seven. `PlatformOrgans` holds the corner with `.absent` when `left` is omitted; that spacer is now `pointer-events: none`, because `.row > *` hands events back to every child and an invisible 48×1px strip lying over a live rail swallows taps nobody would ever trace.
+
+One number for the room the hidden bar gave back, on all three shells: `max(--cw-page-gutter, safe-area-top) + --ds-touch-target-min + --cw-space-md` — 84px on a phone. Measured identical in `PlatformResponsive`, `Builder.module.css` and the panel's Tailwind `pt-[5.25rem]`. If one moves they all move.
+
+**Both corners are islands, with or without a session (2026-09-06).** The trailing control is a photograph filling its 48px box when someone is signed in — its own object, needing no plate. Signed out it was a 26px outline glyph on nothing, opposite a mark sitting in a visible pill: one corner an object, the other a smudge, and over a hero photograph it simply vanished. The guest control (`[data-auth-state]`, an attribute the signed-out branch already carried) now wears the island material and the mark's own colour, so the pair reads as a way home and a way in rather than as two controls from different systems. The material itself is named once as `--platform-island-*` on `.row` and consumed by the mark, the guest control and the reader's cluster alike, because two places drawing the same island is the exact mistake `ChromeOrgans.module.css` exists to prevent.
+
+**Shadow, not contour.** Those islands used to take `--cw-mat-shadow-chrome`, whose first layer is `0 0 0 1px` — a spread ring rather than a shadow. On a large translucent plate that hairline is an edge and earns its place; on a 48px disc it is an outline drawn around a control, and nothing else in the product outlines a floating object. The islands take `--cw-mat-shadow-soft`, the same shadow every other material object takes, and let the blur do the lifting. The bar and the menu sheet keep the chrome shadow: at their size the 1px is still an edge.
+
+That measurement also turned up a live defect: `.profileEntryCompact` sizes from `--platform-utility-control-size`, which is declared inside `.header` and nowhere else. In a floating island the property is invalid, `width` and `min-height` fall away, and the control collapses onto its glyph — 26px, under the touch-target minimum, on every signed-out phone. Both now carry `var(--platform-utility-control-size, var(--ds-touch-target-min))`; the tokens are the same 3rem, so nothing moves inside a bar. This is the second bug of its exact species after the ink ring's colour, and the rule generalises: **a `--platform-header-*` or `--platform-utility-*` property read outside `.header` needs a fallback or it silently disappears.**
+
+**The theme control lost its recess.** The tint under the three seats grouped them so a full ring read as an occupied seat; the sheet does that now — a bounded window, one row per line — while the tint was a second surface floating inside a panel that is already a surface. That is the plate this system does not draw: hover and selection are ink here, and the gold ring already marks the seat.
+
+Three things the island sheet owes that the drawer did not. It is anchored to the **row**, not the viewport — same gutters, same centred 46rem ceiling — because a full-bleed plate under two inset pills puts three left edges in one corner and reads as a panel that arrived from somewhere else. It is rounded on all four corners: the drawer is square where it leaves the bar because it is still the bar, and this one leaves nothing. And it stamps **no** `data-cw-header-tone`: there is no bar to sample, and stamping `light` by default re-declared `--cw-nav-marker` as the ink, so the current row wore a cream ring on the night ground while everything around it was marked in gold. No bar, no verdict — the menu inherits the theme.
+
+
 Chrome answers a **pair** of questions, and which pair depends on what the
 surface is for. There are two pairs and no third.
 
@@ -1599,7 +1741,9 @@ Three surfaces answered "you are here" three ways: the topbar drew an ink underl
 
 **The mark is always the second signal.** The active label also runs at full foreground and a heavier weight. That is what keeps the gold mark inside 1.4.11 — it is redundant decoration, not the sole carrier of state — which matters because gold on the dark chrome tint measures 2.34 against the 3.0 a load-bearing indicator would owe. Gold is still not a label colour and nothing here asks it to be one.
 
-**Hover is the same mark, half-drawn.** A fill was the other candidate and loses on the rule this document already writes down for tab strips: these rows sit straight on the page ground, and filling one turns a quiet strip into a row of objects. Rest is muted with no plate; hover and focus grow the mark to `--cw-nav-marker-hover-scale` (0.74) at `--cw-nav-marker-hover-opacity` (0.42) and bring the label to full foreground; active runs it to full. Consumers read those tokens rather than restating the numbers — restating them is how the three marks drifted apart the first time.
+**The mark on the page ground is toned the same way (2026-09-06).** `--cw-brand-mark-color` — ink on cream, `--cw-platform-accent` on graphite — is the colour of the CenterWay symbol and logotype wherever it sits on the sheet rather than under the topbar's tone sampler. Three surfaces carry the mark and only the header knew this: it samples its backdrop and already paints the symbol gold on a dark tone. The footer symbol, the footer's set `CENTERWAY`, and the mark island the shelf and cabinet carry all named `--cw-platform-text`, so on the night theme the logotype came out the same cream as the paragraph beside it — the brand rendered as body copy, and the header disagreeing with the footer about what colour CenterWay is. The token follows the **theme**, not a sampled backdrop, because a footer on the sheet is a different question from a bar floating over a photograph; both resolve to the same gold. Icon-only accent glyphs on the night ground follow it in spirit — the footer's four networks run gold there (6.3 at rest, 8.8 on hover) and stay muted ink on cream, for the reason the nav marker does.
+
+**Hover is the same mark, half-drawn.** A fill was the other candidate and loses on the rule this document already writes down for tab strips: these rows sit straight on the page ground, and filling one turns a quiet strip into a row of objects. Rest is muted with no plate; hover and focus grow the mark to `--cw-nav-marker-hover-scale` (0.74) at `--cw-nav-marker-hover-opacity` (0.68, aliased to the ink ladder's hover) and bring the label to full foreground; active runs it to full. Consumers read those tokens rather than restating the numbers — restating them is how the three marks drifted apart the first time.
 
 **Icon-only hover follows the same restraint.** A utility icon must not acquire a pale material pill on hover. Its consumer places the baked `ink-ring` around the glyph; hover/focus use `--cw-ink-hover-scale` and `--cw-ink-hover-opacity`, while `aria-pressed` / `aria-expanded` may resolve the ring fully. This keeps the physical ink gesture as the signal instead of recreating the browser's white selection plate.
 
@@ -1625,9 +1769,18 @@ never restate the numbers.
 
 | strength | token | drawn when |
 | --- | --- | --- |
-| rest | `--cw-ink-rest-opacity` (0.34) at `--cw-ink-rest-scale` | only for `variant="link"` |
-| hover / focus | `--cw-ink-hover-opacity` (0.42), or full for a link | pointer or keyboard is on the control |
-| current | full | `aria-current`, `aria-pressed`, `.cw-*-active`, `data-cw-ink-active` |
+| rest | `--cw-ink-rest-opacity` (0.34) at `--cw-ink-rest-scale` (0.90) | only for `variant="link"` |
+| hover / focus | `--cw-ink-hover-opacity` (0.68) at 0.96 | pointer or keyboard is on the control |
+| current | full (1) at 1 | `aria-current`, `aria-pressed`, `.cw-*-active`, `data-cw-ink-active` |
+
+**One hover, and every consumer takes it (2026-09-05).** Hover used to sit at
+0.42 against a rest of 0.34 — a delta no reader can see — so `variant="link"`
+was given a private rule that ran it to *full* on hover instead. The system then
+had two hovers: a link went to the current-state strength, everything else
+stayed at the invisible one, and the same gesture answered differently on
+adjacent controls. Hover is now exactly twice rest, the private rule is gone,
+and `full` means "you are here" alone. `--cw-nav-marker-hover-opacity` aliases
+the same token, so the topbar marker and a footer stroke move together.
 
 **Why a link rests visible and a nav row does not.** A nav item sits inside a bar
 that already says "these are the ways out"; a permanent mark under every item
@@ -1689,7 +1842,8 @@ does not depend on hover or colour alone to announce itself. Since 2026-09-02
 that mark is the ink stroke at rest strength, not the browser underline — see
 "Ink and contour: the interaction primitives" above, which supersedes this
 paragraph's `text-decoration` recipe. On hover and keyboard focus the foreground
-moves to the warm guide accent and the stroke runs to full. Do not apply this
+moves to the warm guide accent and the stroke runs to the shared hover
+strength — not to full, which belongs to the current state. Do not apply this
 treatment to icon-only links or plated route actions.
 
 Every interaction must declare one `selection_family` before code review. The
