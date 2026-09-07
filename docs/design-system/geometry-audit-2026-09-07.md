@@ -279,3 +279,33 @@ network and should not be: radius and spacing are structure — the same grid se
 on two grounds — while type here is voice. The landings run their own display
 faces and per-page scales, which is what a landing is for. 368 literals stay,
 counted but not converted, and the ratchet keeps them from growing.
+
+## A clamp's floor is what a phone gets (2026-09-07)
+
+The last thing the network alignment turned up is not a value, it is a habit.
+Every card on these landings pads itself with a `clamp()`, and almost every one
+of those clamps had a **desktop number as its floor**: `clamp(40px, 6vw, 76px)`
+on the section card, `clamp(28px, 4vw, 52px)` on the author card, and so on. At
+375px the middle term computes to 22px — and never runs, because the floor is
+40. The adaptive term was decoration; the phone got the widest inset in the
+formula.
+
+Stacked, that is what makes a nested card unreadable. Measured on way21: the
+page gutter (20) plus the section card (40) plus the card inside it (24) put the
+first letter at 85px and left a 205px column — 45% of the screen spent on
+margins, about 26 characters to a line.
+
+Two rules, and they are both about the horizontal, because the horizontal is
+what squeezes a line — block padding is a rhythm and was left alone:
+
+1. **A card's inline floor is the page gutter's own** (20px). The `vw` term and
+   the ceiling are untouched, so nothing above a phone moves: `.shift` still
+   measures 76px inline at 1280px, to the pixel. 31 paddings across the shared
+   sheet and the three theme copies.
+2. **A card inside a card steps down one.** The padding of a nested surface
+   answers a smaller question than the padding of the surface it sits in.
+
+Result on the same measurement: first letter at 60px, column 256px — 68% of the
+screen rather than 55%, a 25% longer line, with the desktop composition
+unchanged.
+

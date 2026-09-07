@@ -499,7 +499,7 @@ img {
 }
 
 .cw-offer {
-  padding: clamp(1.7rem, 4vw, 2.6rem);
+  padding: clamp(1.7rem, 4vw, 2.6rem) clamp(20px, 4vw, 2.6rem);
   border-radius: var(--cw-radius-xl);
   background:
     radial-gradient(520px 340px at 85% -10%, rgb(219 165 79 / 0.22), transparent 56%),
