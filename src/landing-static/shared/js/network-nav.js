@@ -37,11 +37,20 @@
   // drawer measures 0, which parks the sheet back at the bar's own edge.
   var sheetMq = window.matchMedia("(max-width: 759px)");
   function syncSheet() {
-    // Gated on the open class as well as the width: a height left behind by a
-    // rotation or a window drag would hang the sheet 400px below a topbar that
-    // has no drawer at all.
+    // MEASURED, NOT GATED ON THE OPEN CLASS (2026-09-07). This used to read
+    // `is-open && menu.offsetHeight`, and the class is removed the instant the
+    // burger is pressed while the drawer takes 280ms to collapse — so the glass
+    // snapped back to the bar's own edge in 40ms and left the links hanging
+    // over the page for a quarter of a second, unbacked. Over a dark section
+    // that reads exactly like rows of a menu that refuse to close.
+    //
+    // The measurement is self-correcting and needs no gate: a closed drawer is
+    // `max-height: 0` with `overflow: hidden`, so it measures 0 on its own, and
+    // the observer follows the collapse frame by frame. The WIDTH gate stays —
+    // above 760px the same element is a visible flex row with a real height,
+    // and the sheet must not grow to cover it.
     var mobile = sheetMq.matches && window.innerWidth < 760;
-    var h = mobile && nav.classList.contains("is-open") ? menu.offsetHeight : 0;
+    var h = mobile ? menu.offsetHeight : 0;
     nav.style.setProperty("--cwn-sheet-h", h + "px");
   }
   // Held in a variable on purpose: an observer with no live reference is
