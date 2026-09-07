@@ -4,7 +4,7 @@
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.72fr);
-  gap: 1rem;
+  gap: var(--cw-space-md);
   align-items: stretch;
   padding-top: clamp(1.2rem, 3vw, 2.5rem);
 }
@@ -42,7 +42,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 2rem;
+  gap: var(--cw-space-xl);
   padding: clamp(1.3rem, 4vw, 2.5rem);
 }
 
@@ -246,7 +246,7 @@
   position: relative;
   z-index: 2;
   display: grid;
-  gap: 1rem;
+  gap: var(--cw-space-md);
   margin-inline: auto;
   padding: clamp(5.75rem, 10vw, 8rem) 0 clamp(6.4rem, 10vw, 8.5rem);
   color: var(--cw-platform-accent-contrast);
@@ -270,7 +270,7 @@
 
 .heroUtilityLink {
   composes: text from "./PlatformButtons.module.css";
-  gap: 0.4rem;
+  gap: var(--cw-space-xs);
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
 }
 
@@ -284,7 +284,7 @@
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  padding: 0.48rem 0.74rem;
+  padding: var(--cw-space-xs) var(--cw-space-sm);
   border: 0;
   border-radius: var(--cw-radius-pill);
   /* The topbar's material, night side — the same tint token at the same chrome
@@ -451,7 +451,7 @@
 .heroMetaList {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: var(--cw-space-xs);
   margin: 0.1rem 0 0;
   padding: 0;
   list-style: none;
@@ -463,8 +463,8 @@
 .heroMetaItem {
   display: inline-flex;
   align-items: center;
-  gap: 0.34rem;
-  padding: 0.34rem 0.62rem;
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
   border-radius: var(--cw-radius-pill);
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 88%, transparent);
   background-color: color-mix(in srgb, var(--cw-mat-surface-night) var(--cw-mat-tint-chrome-floor), transparent);
@@ -485,8 +485,8 @@
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 0.3rem 0 0;
+  gap: var(--cw-space-xs);
+  margin: var(--cw-space-2xs) 0 0;
   color: var(--cw-platform-accent-contrast);
   text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent);
 }
@@ -524,15 +524,15 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 0.3rem 0 0;
+  gap: var(--cw-space-xs);
+  margin: var(--cw-space-2xs) 0 0;
 }
 
 .heroStatusBadge {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.7rem;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-xs) var(--cw-space-sm);
   border-radius: var(--cw-radius-pill);
   color: var(--cw-platform-accent-contrast);
   background-color: color-mix(in srgb, var(--cw-mat-surface-night) var(--cw-mat-tint-chrome-floor), transparent);
@@ -561,7 +561,7 @@
 .heroProgressTrack {
   width: min(100%, 19.5rem);
   height: 0.28rem;
-  margin-top: 0.55rem;
+  margin-top: var(--cw-space-xs);
   border-radius: var(--cw-radius-pill);
   overflow: hidden;
   background-color: color-mix(in srgb, var(--cw-platform-accent-contrast) 24%, transparent);
@@ -581,8 +581,8 @@
   width: min(100%, var(--ds-button-max-width));
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.7rem;
-  margin-top: 0.2rem;
+  gap: var(--cw-space-sm);
+  margin-top: var(--cw-space-2xs);
 }
 
 /* Both hero buttons are the contract; the hero only adds full-bleed width,
@@ -741,14 +741,14 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--cw-space-md);
   padding: clamp(0.85rem, 2vw, 1.05rem);
   background: var(--cw-mat-surface);
 }
 
 .videoActionGrid {
   display: grid;
-  gap: 0.72rem;
+  gap: var(--cw-space-sm);
   align-content: end;
   width: 100%;
 }
@@ -762,13 +762,13 @@
 
 .videoDecisionRail {
   display: grid;
-  gap: 0.72rem;
+  gap: var(--cw-space-sm);
   height: 100%;
 }
 
 .videoDecisionIntro {
   display: grid;
-  gap: 0.35rem;
+  gap: var(--cw-space-2xs);
 }
 
 /* The decision beside the 16:9 video is a compact orientation, not the
@@ -813,7 +813,7 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
-    padding: 1rem;
+    padding: var(--cw-space-md);
     border-radius: var(--cw-radius-xl);
   }
 
@@ -832,19 +832,19 @@
 
   .videoAside {
     border-radius: 0 0 var(--cw-radius-lg) var(--cw-radius-lg);
-    gap: 0.95rem;
-    padding: 1rem 0 0;
+    gap: var(--cw-space-md);
+    padding: var(--cw-space-md) 0 0;
   }
 
   .videoDecisionRail {
     margin-top: 0;
     padding: 0;
-    gap: 0.72rem;
+    gap: var(--cw-space-sm);
     height: auto;
   }
 
   .videoActionGrid {
-    gap: 0.72rem;
+    gap: var(--cw-space-sm);
     height: auto;
   }
 
@@ -876,7 +876,7 @@
 
 .mediaCaption {
   display: grid;
-  gap: 0.65rem;
+  gap: var(--cw-space-sm);
   padding: 1.25rem;
   color: var(--cw-platform-accent-contrast);
   background: var(--cw-platform-accent-strong);

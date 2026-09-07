@@ -457,7 +457,7 @@
         "--ds-type-label-line-height": "1rem",
         "--ds-type-body-size": "1rem",
         "--ds-type-body-line-height": "1.6",
-        "--ds-type-body-sm-size": "0.9375rem",
+        "--ds-type-body-sm-size": "0.9rem",
         "--ds-type-body-sm-line-height": "1.5",
         "--ds-type-lead-size": "clamp(1rem, 1.5vw, 1.125rem)",
         "--ds-type-lead-line-height": "1.6",

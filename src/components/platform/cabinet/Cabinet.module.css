@@ -53,7 +53,7 @@
    the data face) two inches above this one; there is now only this. */
 .sectionLabel {
   margin: 0;
-  font-size: 0.76rem;
+  font-size: var(--ds-type-label-size);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--cw-platform-muted);
@@ -252,7 +252,7 @@
 
 .glanceText {
   display: grid;
-  gap: 0.15rem;
+  gap: var(--cw-space-2xs);
   min-width: 0;
 }
 
@@ -268,7 +268,7 @@
 
 .glanceTitle {
   overflow: hidden;
-  font-size: 0.92rem;
+  font-size: var(--ds-type-body-sm-size);
   font-weight: 600;
   line-height: 1.3;
   text-overflow: ellipsis;
@@ -282,7 +282,7 @@
 .glanceNote {
   color: var(--cw-platform-muted);
   font-family: var(--cw-font-data);
-  font-size: 0.72rem;
+  font-size: var(--ds-type-label-size);
   letter-spacing: 0.04em;
   line-height: 1.35;
 }
@@ -371,14 +371,14 @@
 .shelfCard {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: var(--cw-space-xs);
   padding: var(--cw-space-md);
   border-radius: var(--cw-radius-lg);
 }
 
 .shelfCardTitle {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--ds-type-body-size);
   font-weight: 600;
   line-height: 1.3;
 }
@@ -410,7 +410,7 @@
 .shelfCardMeta {
   margin: 0;
   color: var(--cw-platform-muted);
-  font-size: 0.85rem;
+  font-size: var(--ds-type-body-sm-size);
 }
 
 /* The action pins to the card's own bottom, so four cards with three different
@@ -531,7 +531,7 @@
 .shelfAside {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: var(--cw-space-xs);
   padding: var(--cw-space-md);
   border-radius: var(--cw-radius-lg);
 }
@@ -574,7 +574,7 @@
 
 .metaList {
   display: grid;
-  gap: 0.35rem;
+  gap: var(--cw-space-2xs);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -633,7 +633,7 @@
 .wheel {
   display: grid;
   justify-items: center;
-  gap: 0.35rem;
+  gap: var(--cw-space-2xs);
   padding-block: var(--cw-space-2xs);
 }
 
@@ -677,7 +677,7 @@
    discover is a result the dashboard did not give you. */
 .wheelLegend {
   display: grid;
-  gap: 0.15rem;
+  gap: var(--cw-space-2xs);
   width: 100%;
   margin: 0;
 }
@@ -686,7 +686,7 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: var(--cw-space-xs);
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-body-sm-size);
 }
@@ -694,7 +694,7 @@
 .wheelLegendRow dt {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--cw-space-xs);
 }
 
 .wheelLegendRow dd {
@@ -770,7 +770,7 @@
 
 .foldText {
   display: grid;
-  gap: 0.15rem;
+  gap: var(--cw-space-2xs);
   min-width: 0;
 }
 
@@ -780,7 +780,7 @@
   flex: none;
   width: var(--ds-touch-target-min);
   height: var(--ds-touch-target-min);
-  padding: 0.6rem;
+  padding: var(--cw-space-xs);
   color: var(--cw-platform-muted);
   transition: transform 200ms ease;
 }
@@ -872,7 +872,7 @@
 
 .draftBadgeChip {
   composes: mediaBadge from "../PlatformSurfaces.module.css";
-  font-size: 0.8rem;
+  font-size: var(--ds-type-label-size);
 }
 
 .coverFallback {

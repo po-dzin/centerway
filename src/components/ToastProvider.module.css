@@ -41,7 +41,7 @@
   flex: 1;
   min-inline-size: 0;
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--ds-type-body-sm-size);
   line-height: var(--ds-line-height-body);
   overflow-wrap: anywhere;
 }

@@ -269,7 +269,7 @@
 .chrome {
   composes: base;
   min-width: var(--ds-touch-target-min);
-  font-size: 0.9rem;
+  font-size: var(--ds-type-body-sm-size);
   color: var(--cw-platform-text);
   background: transparent;
   box-shadow: none;

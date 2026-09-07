@@ -259,6 +259,21 @@ for (const file of cssFiles()) {
   if (count) offScale[rel(file)] = count;
 }
 
+/* 6. The type ratchet, on the same terms as the spacing one. 181 literal
+   font-sizes in 36 distinct values was not a scale, it was a cloud: eleven
+   values between 0.6 and 0.82rem all orbiting `label`, seven between 0.84 and
+   0.95 orbiting `body-sm`. The mass sat BELOW `body-sm`, which is how the token
+   came to be re-centred (0.9375 → 0.9) rather than the 143 near-misses dragged
+   up to it. 26 literals are left and they are display sizes with no step to
+   land on; the ratchet is what stops the 27th. */
+const typeLiteral = /font-size:\s*([0-9.]+)(rem|px)\s*;/g;
+const literalType = {};
+for (const file of cssFiles()) {
+  const source = strip(fs.readFileSync(file, "utf8"));
+  const count = [...source.matchAll(typeLiteral)].length;
+  if (count) literalType[rel(file)] = count;
+}
+
 if (rewriteBaseline) {
   fs.writeFileSync(
     baselineFile,
@@ -266,13 +281,16 @@ if (rewriteBaseline) {
       {
         radiusMismatch: Object.fromEntries(mismatches.map((m) => [m.key, m.detail])),
         offScaleSpacing: offScale,
+        literalFontSize: literalType,
       },
       null,
       2,
     )}\n`,
   );
   console.log(
-    `[WRITE] baseline → ${rel(baselineFile)} (${mismatches.length} radius mismatches, ${Object.keys(offScale).length} files with off-scale spacing)`,
+    `[WRITE] baseline → ${rel(baselineFile)} (${mismatches.length} radius mismatches, ` +
+      `${Object.keys(offScale).length} files with off-scale spacing, ` +
+      `${Object.values(literalType).reduce((a, b) => a + b, 0)} literal font-sizes)`,
   );
   process.exit(0);
 }
@@ -280,6 +298,7 @@ if (rewriteBaseline) {
 const baselineJson = fs.existsSync(baselineFile) ? JSON.parse(fs.readFileSync(baselineFile, "utf8")) : {};
 const knownMismatch = baselineJson.radiusMismatch ?? {};
 const baseline = baselineJson.offScaleSpacing ?? {};
+const typeBaseline = baselineJson.literalFontSize ?? {};
 
 /* THE SECOND RATCHET, and it is not a softer rule — it is an honest one. Of the
    27 disagreements this check found on its first run, four were the guard's own
@@ -308,6 +327,18 @@ for (const [file, count] of Object.entries(offScale)) {
   }
 }
 
+for (const [file, count] of Object.entries(literalType)) {
+  const was = typeBaseline[file] ?? 0;
+  if (count > was) {
+    failures.push({
+      kind: "literal font-size grew",
+      file,
+      selector: "—",
+      detail: `${was} → ${count} font sizes written as numbers. The scale is --ds-type-{label,body-sm,body,lead,display,title,hero}-size.`,
+    });
+  }
+}
+
 if (report) {
   console.log("\nRadius by box size (rules that declare both):\n");
   for (const row of seen.sort((a, b) => a.size - b.size)) {
@@ -318,6 +349,8 @@ if (report) {
   }
   const total = Object.values(offScale).reduce((a, b) => a + b, 0);
   console.log(`\nOff-scale spacing: ${total} values across ${Object.keys(offScale).length} files.`);
+  const typeTotal = Object.values(literalType).reduce((a, b) => a + b, 0);
+  console.log(`Literal font-sizes: ${typeTotal} across ${Object.keys(literalType).length} files.`);
   console.log(`\nRadius burn-down (${mismatches.length} accepted in the baseline):\n`);
   for (const m of mismatches) console.log(`  ${m.selector.padEnd(40)} ${m.detail}`);
 }
@@ -335,5 +368,5 @@ if (failures.length) {
 
 console.log(
   `[PASS] Geometry guard — ${seen.length} sized rules checked, one radius vocabulary, ` +
-    `${mismatches.length} known radius mismatches held at baseline, spacing held at baseline.`,
+    `${mismatches.length} known radius mismatches held at baseline, spacing and type held at baseline.`,
 );

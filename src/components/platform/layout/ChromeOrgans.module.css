@@ -240,7 +240,7 @@
   gap: 0.1rem;
   flex: 0 0 auto;
   min-height: var(--ds-touch-target-min);
-  padding-inline: 0.25rem;
+  padding-inline: var(--cw-space-2xs);
   border-radius: var(--platform-island-radius);
   background-color: var(--platform-island-bg);
   backdrop-filter: var(--platform-island-filter);

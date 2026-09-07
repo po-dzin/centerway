@@ -1,11 +1,23 @@
 # Geometry audit: radius, spacing, heights (2026-09-07)
 
-> **Status: steps 1–4 done the same day.** The law below is enforced by
+> **Status: all six steps done the same day.** The law below is enforced by
 > `npm run guard:geometry`, which runs inside `ds:qa`. What the audit found is
 > kept in the past tense where it has been fixed, and the burn-down that
 > remains is named in `data/design-tokens/geometry-baseline.json` — 23 radius
-> mismatches and 22 files with off-scale spacing, each one visible to `grep`
-> rather than dissolved into a "we should tidy this up sometime".
+> mismatches, 66 off-scale spacing values, 26 literal font sizes — each one
+> visible to `grep` rather than dissolved into a "we should tidy this up
+> sometime". The counts in the body of this document are the ones the audit
+> started from; the table below says where each landed.
+>
+> | | before | after |
+> | --- | --- | --- |
+> | radius vocabularies | 5 | 1 |
+> | un-named radius values | 9 | 0 |
+> | spacing: token references | 619 | 959 |
+> | spacing: literals that had a token | 103 | 0 |
+> | spacing: off-scale values | 279 | 66 |
+> | type: token references | 101 | 260 |
+> | type: literal sizes (distinct) | 181 (36) | 26 (15) |
 
 A count, not an opinion. Every number below was read out of the CSS as it
 stands on `feat/full-photo-crop`, and the two live measurements were taken in a
@@ -90,9 +102,14 @@ stated numerically: there is no rhythm below 1rem, there is a continuum.
 Worst files: `PlatformResponsive` (60 off-scale), `PlatformShell` (41),
 `Builder` (26), `PlatformBlocksOrientation` (24), `PlatformComponents` (22).
 
-There is also a **duplicate scale**: `--ds-space-1…7` (0.25 · 0.5 · 0.75 · 1 ·
-1.5 · 2 · 3) is `--cw-space-2xs…2xl` under different names. It has 4 usages
-against 640; it is dead weight that can only cause drift.
+There is also a **second scale** holding the same numbers: `--ds-space-1…7`
+(0.25 · 0.5 · 0.75 · 1 · 1.5 · 2 · 3) against `--cw-space-2xs…2xl`. The audit
+first called it dead weight; that was wrong. `--ds-*` is the contract the five
+static landings read — they cannot compose a CSS Module, so tokens are the only
+way they can reference the platform's spacing at all — and `guard-ds-contract`
+asserts it. Two names, two consumers, one set of numbers. What WAS drift is
+platform CSS reaching for the landings' names: three declarations did, and now
+none do.
 
 ## 5. Type has the same shape of problem
 
@@ -165,8 +182,10 @@ note.
 2. ~~Settle the two carve-outs.~~ **Done** — see above. Chips keep `pill` as a named clause; a face is round everywhere, and the portrait contract now covers all four call sites.
 3. ~~The `.nav a` duplicate and the nine literal radius declarations.~~ **Done.** The duplicate block is merged into one rule at `md` (the dead block also carried a `font-weight: 700` that had been losing to `680` for longer still; `680` is what was on screen, so `680` stayed). The three off-scale literals took the step their box asks for; the six retyped ones took the name of the value they already had, which is a rename with no visual change. Platform CSS now has no un-named radius: only tokens, `0`, and `50%`.
 4. ~~`guard:geometry`.~~ **Done**, and wired into `ds:qa`. It enforces: radius is named; radius matches the box's band; the three carve-outs; one vocabulary in `tailwind.config.js`. Two ratchets, both baselined in `data/design-tokens/geometry-baseline.json` — 23 radius mismatches and the off-scale spacing count per file — so the build fails on the 24th, not on the 23 that are already there.
-5. **Next.** Spacing: retire `--ds-space-*` (4 usages against 640), convert the 103 retyped literals mechanically, and take the 279 off-scale ones file by file behind the ratchet.
-6. **After that.** Type scale — same method, separate pass. 49 literal sizes is its own project.
+5. ~~Spacing.~~ **Done.** The three platform rules reaching for `--ds-space-*` are on `--cw-space-*`; the 101 literals that already had a token were renamed with no change in value; and 213 off-scale values were snapped to the 4px grid. The grid was a decision with data behind it: on the current scale only 49 of 260 values sat within 0.8px of a step, while a 2px grid below 16px would have fitted 171 — the product had been drawing on a finer grid than the scale offered. **The scale won anyway**, deliberately: a finer scale is a weaker scale, and the movement is at most 2px per value. What moves more than 2px was left alone (47 values, 15 distinct) — those are their own sizes and need eyes, not arithmetic.
+6. ~~Type.~~ **Done, and the token moved rather than the product.** 143 of 181 literals sat within 1.6px of a token, which is not carelessness — it is people re-typing a token by eye. But the mass under `body-sm` sat at 0.85–0.92 while the token stood at 0.9375, above almost all of it: the drift was in the token. `--ds-type-body-sm-size` is 0.9rem now, and 155 literals took the name of the size they were already approximating. 26 are left, all of them display sizes with no step to land on.
+
+Both are held by ratchets of their own in `guard:geometry`, on the same terms as the radius one: the build fails on the next new literal, not on the ones already counted.
 
 ### On the 23 mismatches the ratchet accepts
 

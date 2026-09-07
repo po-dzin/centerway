@@ -265,7 +265,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.65rem;
+  gap: var(--cw-space-sm);
   padding: 0 var(--cw-bar-pad);
 }
 
@@ -335,7 +335,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.7rem;
+  gap: var(--cw-space-sm);
   flex: 0 0 auto;
   color: var(--platform-header-fg);
   text-decoration: none;
@@ -344,7 +344,7 @@
 
 .brand:not([data-surface="footer"]) {
   min-width: 3rem;
-  padding: 0 0.35rem 0 0;
+  padding: 0 var(--cw-space-2xs) 0 0;
   min-height: 3rem;
   border-radius: 0;
   background: transparent;
@@ -409,7 +409,7 @@
   align-items: center;
   justify-content: center;
   flex-wrap: nowrap;
-  gap: 0.2rem;
+  gap: var(--cw-space-2xs);
 }
 
 .navLayer {
@@ -424,7 +424,7 @@
 
 .nav {
   min-height: var(--ds-touch-target-min);
-  padding: 0 0.2rem;
+  padding: 0 var(--cw-space-2xs);
   border-radius: 0;
   background: transparent;
   box-shadow: none;
@@ -472,7 +472,7 @@
   justify-content: center;
   text-decoration: none;
   min-height: var(--ds-touch-target-min);
-  padding: 0 1rem;
+  padding: 0 var(--cw-space-md);
   color: var(--platform-header-nav-muted-fg);
   border-radius: var(--cw-radius-md);
   font-size: var(--ds-type-body-sm-size);
@@ -603,7 +603,7 @@
 .actions {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--cw-space-xs);
 }
 
 .profileSlot {
@@ -635,8 +635,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.55rem;
-  padding: 0.24rem 0.84rem;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-2xs) var(--cw-space-sm);
   border: 0;
   border-radius: var(--platform-utility-control-radius);
   color: var(--platform-header-fg);
@@ -678,7 +678,7 @@
 }
 
 .profileEntry:has(.profileAvatar) {
-  padding-left: 0.28rem;
+  padding-left: var(--cw-space-2xs);
 }
 
 .profileEntryCompact:has(.profileAvatar) {
@@ -745,7 +745,7 @@
     radial-gradient(circle at 36% 24%, color-mix(in srgb, var(--cw-sem-warmth) 44%, transparent), transparent 46%),
     color-mix(in srgb, var(--cw-platform-accent-contrast) 86%, transparent);
   font-family: var(--cw-font-data);
-  font-size: 0.76rem;
+  font-size: var(--ds-type-label-size);
   font-weight: 800;
   letter-spacing: 0.04em;
 }
@@ -820,7 +820,7 @@
   /* The token, not `50%`: same shape on a square box, one vocabulary in the
      file. The size above is what makes the island's plate visible around it. */
   border-radius: var(--cw-radius-pill);
-  font-size: 0.82rem;
+  font-size: var(--ds-type-label-size);
 }
 
 .profileAvatar img {
@@ -851,8 +851,8 @@
   z-index: calc(var(--ds-z-sticky) + 2);
   width: min(17rem, calc(100vw - 2rem));
   display: grid;
-  gap: 0.25rem;
-  padding: 0.7rem;
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-sm);
   border: 0;
   /* ONE MATERIAL WITH THE BAR (2026-09-06). This used to fall back to opaque
      paper here on the argument that a popover opens over arbitrary page
@@ -906,7 +906,7 @@
   right: 0;
   left: 0;
   width: auto;
-  padding: 0.5rem;
+  padding: var(--cw-space-xs);
   border-radius: 0 0 var(--cw-radius-lg) var(--cw-radius-lg);
   background-color: var(--cw-mat-tint-chrome);
   backdrop-filter: var(--cw-mat-filter);
@@ -1007,7 +1007,7 @@
 
 .profileMenu p {
   margin: 0;
-  padding: 0.45rem 0.55rem 0.6rem;
+  padding: var(--cw-space-xs) var(--cw-space-xs) var(--cw-space-xs);
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-label-size);
   line-height: var(--ds-type-label-line-height);
@@ -1031,7 +1031,7 @@
 .menuIdentity {
   display: none;
   gap: 0.1rem;
-  padding: 0.35rem 0.65rem 0.7rem;
+  padding: var(--cw-space-2xs) var(--cw-space-sm) var(--cw-space-sm);
 }
 
 .menuIdentity p {
@@ -1063,7 +1063,7 @@
    press. Same rule, same reason, both places. */
 .profileMenu .menuIdentity {
   display: grid;
-  padding-bottom: 0.7rem;
+  padding-bottom: var(--cw-space-sm);
   border-bottom: 1px solid transparent;
   border-image: var(--cw-rule-fade-x);
 }
@@ -1086,8 +1086,8 @@
    plate's, like every other word in this sheet, and the rule under it is the
    same fading hairline the menu already uses between registers. */
 .menuIdentity[data-placement="hoisted"] {
-  gap: 0.15rem;
-  padding: 0.15rem 0.9rem 0.85rem;
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-2xs) var(--cw-space-md) var(--cw-space-sm);
   /* The system's rule — `--cw-rule-fade-x`, with the ink re-pointed to the
      sheet's own hairline. Never a gradient written out here: one shape, one
      place, or the fades drift apart a percent at a time. */
@@ -1097,19 +1097,19 @@
 
 .menuIdentity[data-placement="hoisted"] .menuIdentityName {
   color: var(--platform-header-fg);
-  font-size: 1.02rem;
+  font-size: var(--ds-type-body-size);
   line-height: 1.2;
 }
 
 .menuIdentity[data-placement="hoisted"] .menuIdentityMail {
   color: color-mix(in srgb, var(--platform-header-fg) 76%, transparent);
-  font-size: 0.86rem;
+  font-size: var(--ds-type-body-sm-size);
 }
 
 /* In the burger sheet the ground is the header plate, so the ink is the
    header's. */
 .profileWrapMobile .menuIdentity {
-  padding-inline: 0.9rem;
+  padding-inline: var(--cw-space-md);
 }
 
 .profileWrapMobile .menuIdentityName {
@@ -1133,7 +1133,12 @@
    one. */
 .menuRoutes {
   display: grid;
-  padding-bottom: var(--ds-space-1);
+  /* `--cw-space-*` here, not `--ds-space-*`. The two scales hold the same
+     numbers and are not duplicates: `--ds-*` is the contract the static
+     landings read, because they cannot compose a CSS Module and need the
+     spacing as tokens. Platform CSS is on the platform's own names, and these
+     two rules were the only place that mixed them. */
+  padding-bottom: var(--cw-space-2xs);
   border-bottom: 1px solid transparent;
   border-image: var(--cw-rule-fade-x);
 }
@@ -1144,7 +1149,7 @@
    draws a cell edge, and a stack of names under one reads as a table. */
 .profileMenuDivider {
   height: 1px;
-  margin: var(--ds-space-1) var(--ds-space-2);
+  margin: var(--cw-space-2xs) var(--cw-space-xs);
   background: linear-gradient(
     90deg,
     transparent 0,
@@ -1188,7 +1193,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--cw-space-sm);
-  padding: 0 0.65rem;
+  padding: 0 var(--cw-space-sm);
 }
 
 /* THE SAME TEXT AS THE ROWS, which is what "the same upright" above was
@@ -1211,7 +1216,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 0 0.65rem;
+  padding: 0 var(--cw-space-sm);
   border: 0;
   border-radius: var(--cw-radius-sm);
   color: var(--cw-platform-muted);
@@ -1253,7 +1258,7 @@
   min-height: var(--ds-touch-target-min);
   display: flex;
   align-items: center;
-  padding: 0 0.65rem;
+  padding: 0 var(--cw-space-sm);
   border-radius: var(--cw-radius-sm);
   color: var(--cw-platform-muted);
   font-weight: 720;
@@ -1281,20 +1286,20 @@
 }
 
 .menuFoldLead {
-  padding: 0.35rem 0.65rem 0.25rem;
+  padding: 0.35rem 0.65rem var(--cw-space-2xs);
 }
 
 .menuFoldSteps {
-  padding: 0 0.65rem 0.5rem 1.6rem;
+  padding: 0 0.65rem var(--cw-space-xs) 1.6rem;
   display: grid;
-  gap: 0.2rem;
+  gap: var(--cw-space-2xs);
 }
 
 /* Inside the burger sheet the ground is the dark plate, so the ink is the
    header's, not the global one — the same swap `.profileWrapMobile` makes for
    its own rows, and at the sheet's left edge rather than the popover's. */
 .profileWrapMobile .menuFold summary {
-  padding: 0 0.9rem;
+  padding: 0 var(--cw-space-md);
   color: var(--platform-header-fg);
 }
 
@@ -1304,11 +1309,11 @@
 }
 
 .profileWrapMobile .menuFoldLead {
-  padding-inline: 0.9rem;
+  padding-inline: var(--cw-space-md);
 }
 
 .profileWrapMobile .menuFoldSteps {
-  padding-inline: 1.85rem 0.9rem;
+  padding-inline: 1.85rem var(--cw-space-md);
 }
 
 @media (hover: hover) {
@@ -1396,7 +1401,7 @@
    the ground is the dark plate and `--platform-header-fg` is the ink for it. */
 .profileWrapMobile {
   display: grid;
-  gap: 0.15rem;
+  gap: var(--cw-space-2xs);
   width: 100%;
 }
 
@@ -1411,7 +1416,7 @@
    a different level of the same menu. */
 .profileWrapMobile p {
   margin: 0;
-  padding: 0.55rem 0.9rem 0;
+  padding: var(--cw-space-xs) var(--cw-space-md) 0;
   color: color-mix(in srgb, var(--platform-header-fg) 72%, transparent);
   font-size: var(--ds-type-label-size);
   line-height: var(--ds-type-label-line-height);
@@ -1424,7 +1429,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 0 0.9rem;
+  padding: 0 var(--cw-space-md);
   border: 0;
   border-radius: var(--cw-radius-sm);
   color: var(--platform-header-fg);
@@ -1452,7 +1457,7 @@
    listed with. Same inset, same brightness, same weight — a setting is
    distinguished by what sits at the end of its row, not by being quieter. */
 .profileWrapMobile .menuSetting {
-  padding-inline: 0.9rem;
+  padding-inline: var(--cw-space-md);
 }
 
 .profileWrapMobile .menuSettingLabel {

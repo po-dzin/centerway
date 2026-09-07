@@ -15,12 +15,12 @@
   align-items: baseline;
   gap: var(--cw-space-xs);
   color: var(--cw-platform-text);
-  font-size: 0.85rem;
+  font-size: var(--ds-type-body-sm-size);
 }
 
 .resultLabel {
   color: var(--cw-platform-muted);
-  font-size: 0.76rem;
+  font-size: var(--ds-type-label-size);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
