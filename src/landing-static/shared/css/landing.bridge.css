@@ -693,7 +693,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--cw-space-md);
   padding: 10px clamp(16px, 4vw, 32px);
   background: rgba(255, 253, 247, 0.82);
   backdrop-filter: saturate(1.4) blur(12px);
@@ -710,7 +710,7 @@
 .cw-nav__brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--cw-space-xs);
   font-weight: 700;
   font-size: 17px;
   line-height: 1;
@@ -737,7 +737,7 @@
 .cw-nav__desktop a {
   display: inline-flex;
   align-items: center;
-  padding: 8px 14px;
+  padding: var(--cw-space-xs) var(--cw-space-sm);
   font-size: 15px;
   font-weight: 600;
   color: var(--ds-color-text, #111);
@@ -808,7 +808,7 @@ body.cw-nav-open .cw-nav__drawer { visibility: visible; pointer-events: auto; }
   flex-direction: column;
   width: min(86vw, 360px);
   height: 100%;
-  padding: 84px 24px 28px;
+  padding: 84px var(--cw-space-lg) 28px;
   background: var(--ds-color-bg-canvas, #fffdf7);
   box-shadow: var(--ds-shadow-md, 0 6px 16px rgba(17, 17, 17, 0.12));
   transform: translateX(100%);
@@ -828,7 +828,7 @@ body.cw-nav-open .cw-nav__drawer { visibility: visible; pointer-events: auto; }
   justify-content: center;
   width: 44px;
   height: 44px;
-  /* Reset the global `button { padding: 17px 90px 17px 32px }` on short, which
+  /* Reset the global `button { padding: var(--cw-space-md) 90px var(--cw-space-md) var(--cw-space-xl)}` on short, which
      with border-box otherwise inflates this to ~122px and shoves the glyph left. */
   padding: 0;
   margin: 0;
@@ -849,7 +849,7 @@ body.cw-nav-open .cw-nav__drawer { visibility: visible; pointer-events: auto; }
 }
 .cw-nav__list a {
   display: block;
-  padding: 14px 8px;
+  padding: var(--cw-space-sm) var(--cw-space-xs);
   font-size: 18px;
   font-weight: 600;
   color: var(--ds-color-text, #111);
@@ -857,7 +857,7 @@ body.cw-nav-open .cw-nav__drawer { visibility: visible; pointer-events: auto; }
   border-bottom: 1px solid var(--ds-color-border-soft, #e7eaf0);
 }
 .cw-nav__list a:active { opacity: 0.6; }
-.cw-nav__cta { margin-top: 22px; }
+.cw-nav__cta { margin-top: var(--cw-space-lg); }
 .cw-nav__cta .openModal,
 .cw-nav__cta .btn { width: 100%; }
 /* Short's base .openModal is coral/uppercase/arrowed (the generic `button` rule);
@@ -895,14 +895,14 @@ main[id] { scroll-margin-top: 72px; }
   [data-cw-landing="irem"] .cw-nav { padding-inline: calc(max(0px, (100% - 1160px) / 2) + 40px); }
   .cw-nav__burger { display: none; }
   .cw-nav__drawer { display: none; }
-  .cw-nav__desktop { display: flex; align-items: center; gap: 4px; }
+  .cw-nav__desktop { display: flex; align-items: center; gap: var(--cw-space-2xs); }
   body.cw-nav-open { overflow: visible; }
 }
 
 /* Narrow desktops: six links + brand need tighter cells to stay on one row. */
 @media (min-width: 900px) and (max-width: 1180px) {
   .cw-nav__desktop { gap: 0; }
-  .cw-nav__desktop a { padding: 8px 9px; font-size: 14px; white-space: nowrap; }
+  .cw-nav__desktop a { padding: var(--cw-space-xs) var(--cw-space-xs); font-size: 14px; white-space: nowrap; }
 }
 
 @media (prefers-reduced-motion: reduce) {

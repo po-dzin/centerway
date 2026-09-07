@@ -75,7 +75,7 @@
    clips (overflow:hidden + radius), and the 4px phase stripe (.phase::after)
    paints over the image, so the accent colour survives. */
 [data-cw-landing="way21"] .phase .ph-shot{
-  margin:-2rem -1.7rem 1.4rem;background:var(--chip-soft);
+  margin: calc(var(--cw-space-xl) * -1) -1.7rem var(--cw-space-lg);background:var(--chip-soft);
 }
 [data-cw-landing="way21"] .phase .ph-shot img{
   width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;display:block;
@@ -92,7 +92,7 @@
 @media(min-width:601px){
   [data-cw-landing="way21"] .ai-card--phyto .ai-lab{max-width:21ch}
 }
-[data-cw-landing="way21"] .ai-cta{margin-top:1rem}
+[data-cw-landing="way21"] .ai-cta{margin-top: var(--cw-space-md)}
 /* Shared default is rgba(255,255,255,.45) = 3.36:1 on the panel — under AA even
    before the photo ground. Scoped bump to .62 (4.91:1); other brands unchanged. */
 [data-cw-landing="way21"] .ai-disclaim{color:color-mix(in srgb, #fff 62%, transparent)}

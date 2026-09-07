@@ -149,7 +149,28 @@ const NETWORK_BUTTON_TOKENS = [
    content, so the bar floats exactly one bar-pad wider than the column and its
    contents land on the column's line. Listed explicitly, same as the button
    set, so widening a scale does not silently enlarge the network payload. */
-const NETWORK_SPACE_TOKENS = ["--cw-max-width", "--cw-page-gutter", "--cw-bar-pad", "--cw-bar-inset"];
+const NETWORK_SPACE_TOKENS = [
+  "--cw-max-width",
+  "--cw-page-gutter",
+  "--cw-bar-pad",
+  "--cw-bar-inset",
+  /* THE SPACING SCALE ITSELF (2026-09-07), for the same reason the radius scale
+     joined it: the landings were found running 758 numeric spacing values, of
+     which 226 were already a step of this scale typed as a literal and another
+     392 sat within 2px of one. That is not a network rhythm; it is this rhythm,
+     retyped. The steps have to travel before a landing can name them — a
+     `var(--cw-space-md)` on a page that never received the token is an invalid
+     declaration, which collapses the gap to nothing rather than falling back to
+     anything. */
+  "--cw-space-2xs",
+  "--cw-space-xs",
+  "--cw-space-sm",
+  "--cw-space-md",
+  "--cw-space-lg",
+  "--cw-space-xl",
+  "--cw-space-2xl",
+  "--cw-space-3xl",
+];
 
 function pickListedTokens(names, label, ...maps) {
   const merged = Object.assign({}, ...maps.map((m) => m ?? {}));

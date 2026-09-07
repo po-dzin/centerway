@@ -248,12 +248,34 @@ grounds, its typography — and geometry was never part of the skin.
 - `irem.theme.css` and `short-b.theme.css` re-declared the same four values locally. Deleted — the shared file's own header already said these landings no longer carry per-page radius.
 - `guard:geometry` now counts the landings too, at **their own baseline**: literal radius (38) and off-scale spacing (119), each ratcheted per file. The box↔band law is deliberately *not* asked of them — a landing is a composed page, not a set of contracted controls, and its sections size themselves.
 
-## What was deliberately left
+## The burn-down, done the same day
 
-The 573 off-scale spacing values and the 368 literal font sizes. Both are real
-drift and neither is urgent: the landings are stable, rarely edited, and their
-rhythm is a composition rather than a system. The ratchet holds the count where
-it is, so the next edit cannot make it worse, and the burn-down is available
-whenever a landing is being worked on anyway. Fixing 941 values blind, on five
-pages that convert traffic, with no way to verify most of them, is the kind of
-sweep this audit exists to argue against.
+The first draft of this section left the 573 off-scale spacings and the 368
+literal type sizes on the ratchet, on the argument that sweeping them blind
+across five pages that convert traffic is the thing this audit exists to warn
+against. The traffic is not there yet, which removes the risk rather than the
+argument — so the sweep ran, in the order that lets each step be checked.
+
+**Spacing: 621 values named or snapped**, leaving 46 off-scale (from 573). 226
+were already a step typed as a literal; the rest moved by at most 2px. What
+moves more than that is left alone: 141 values, mostly `1.2rem` (43×) and
+`1.8rem` (22×), which sit 3.2px from a step and are somebody's composition
+rather than a mistyped token.
+
+**And it broke the pages first, which is the finding worth keeping.** Every one
+of the 621 substitutions resolved to nothing: `--cw-space-*` was never delivered
+to the network, so `var(--cw-space-md)` on a landing is not a fallback, it is an
+invalid declaration — the gap collapses to zero. The whole rhythm of reset-day
+went flat on the first reload. A token that is not delivered is not a token, and
+naming a value against a vocabulary the target does not have is worse than
+leaving the literal. The spacing scale now travels in the generated bundle
+beside the radius scale, for exactly the reason the radius scale does.
+
+**Radius: 34 of 38 literals named**, the four survivors being 2px line caps,
+which are round ends rather than a corner step.
+
+**Type is deliberately NOT part of this.** `--ds-type-*` is not delivered to the
+network and should not be: radius and spacing are structure — the same grid seen
+on two grounds — while type here is voice. The landings run their own display
+faces and per-page scales, which is what a landing is for. 368 literals stay,
+counted but not converted, and the ratchet keeps them from growing.
