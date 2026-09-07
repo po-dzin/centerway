@@ -228,7 +228,7 @@
   .hero--photo-stripe .hero-actions{
     position:relative;
     z-index:2;
-    margin-top:1.2rem;
+    margin-top: var(--cw-space-md);
     padding-inline:clamp(20px,5vw,24px);
     padding-bottom:clamp(24px,6vw,32px);
   }
@@ -246,7 +246,7 @@
     grid-template-columns:minmax(0,1fr) minmax(0,1fr);
     grid-template-rows:auto auto;
     column-gap:var(--reset-hero-col-gap);
-    row-gap:1.2rem;
+    row-gap: var(--cw-space-md);
     align-content:center;
     min-height:0;
   }
@@ -411,7 +411,7 @@
    crops from the lower two thirds rather than the centre. Third photo block
    after the hero portrait and the author portrait: the base budget. */
 [data-cw-landing="reset-day"] .day-shot{
-  margin:2.4rem 0 0;border-radius:var(--r-lg);overflow:hidden;background:var(--chip-soft);
+  margin: var(--cw-space-xl) 0 0;border-radius:var(--r-lg);overflow:hidden;background:var(--chip-soft);
   box-shadow:var(--shadow-soft);
 }
 [data-cw-landing="reset-day"] .day-shot img{

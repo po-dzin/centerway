@@ -224,7 +224,7 @@ body.utility-page {
 .utility-status-actions {
   justify-content: center;
   gap: var(--cw-space-sm);
-  margin-top: 1.75rem;
+  margin-top: var(--cw-space-lg);
 }
 
 .utility-status-actions a.btn,
@@ -319,7 +319,7 @@ body.utility-page {
   }
 
   .utility-status-meta {
-    margin-top: 1.25rem;
+    margin-top: var(--cw-space-md);
   }
 
   .utility-status-meta .muted {
@@ -332,7 +332,7 @@ body.utility-page {
   .utility-status-actions {
     flex-direction: column;
     gap: var(--cw-space-sm);
-    margin-top: 1.35rem;
+    margin-top: var(--cw-space-lg);
   }
 
   .utility-status-actions a.btn,
