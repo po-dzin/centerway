@@ -373,6 +373,12 @@ export function getMainDomainSitemapRoutes(): string[] {
     // sold a product — the one hand-written offer no crawler was told about.
     "/programs/reset-day",
     "/programs/way21",
+    // The funnel landings themselves. Until 2026-09-05 both carried
+    // `noindex` and only their /programs twins were listed; the landing is
+    // what an ad sends people to, and it declares its own canonical, so a
+    // crawler is told about it here rather than left to find it via the ad.
+    "/way21",
+    "/reset-day",
     "/products/herbs",
     "/programs/natural-body",
     "/programs/irem",
