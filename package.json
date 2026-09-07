@@ -41,6 +41,7 @@
     "lms:pull": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/lms-pull.mjs",
     "lms:snapshot:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/lms-snapshot-check.mjs",
     "lms:grant": "node scripts/lms-grant.mjs",
+    "wfp:refund": "node scripts/wfp-refund.mjs",
     "media:sweep": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/media-sweep.mjs",
     "media:sweep:apply": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/media-sweep.mjs --apply",
     "admin:role": "node scripts/admin-role.mjs",
