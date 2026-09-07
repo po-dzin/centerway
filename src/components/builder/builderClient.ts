@@ -12,7 +12,7 @@
 import { supabaseClient } from "@/lib/supabaseClient";
 import type { Author, Course, CourseCategory, CourseDiff, CourseTheme, Lesson, ReadinessBlocker } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
-import type { CourseRevisionSummary } from "@/lib/lms/revisions";
+import type { CourseRevisionSummary, LessonRevisionEntry } from "@/lib/lms/revisions";
 
 export type BuilderFailure = "unauthenticated" | "forbidden" | "not_found" | "invalid" | "conflict" | "network";
 
@@ -250,6 +250,16 @@ export function listCourseRevisions(
   slug: string,
 ): Promise<BuilderResult<{ revisions: CourseRevisionSummary[] }>> {
   return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions`);
+}
+
+/** История курса, суженная до одного урока. Фильтр, а не вторая история. */
+export function listLessonRevisions(
+  slug: string,
+  lessonId: string,
+): Promise<BuilderResult<{ lessonRevisions: LessonRevisionEntry[] }>> {
+  return request(
+    `/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions?lesson=${encodeURIComponent(lessonId)}`
+  );
 }
 
 export function createCourseRevision(

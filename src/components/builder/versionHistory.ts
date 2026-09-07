@@ -1,4 +1,4 @@
-import type { Course, CourseDiff } from "@/lms-core";
+import type { Course, CourseDiff, LessonChange } from "@/lms-core";
 import type { CourseRevisionKind } from "@/lib/lms/revisions";
 
 export const REVISION_KIND_LABELS: Record<CourseRevisionKind, string> = {
@@ -57,3 +57,17 @@ export function summarizeDiff(diff: CourseDiff): string {
  * проходження перевірки це те, заради виявлення чого журнал і заводили.
  */
 export const BOUNDARY_WARNING = "Зачеплено блок «межі та застереження»";
+
+/** Что случилось с уроком в одной записи — одной строкой. */
+export function describeLessonChange(change: LessonChange): string {
+  if (change.kind === "added") return "Урок додано";
+  if (change.kind === "removed") return "Урок вилучено";
+
+  const parts: string[] = [];
+  if (change.renamed) parts.push("перейменовано");
+  if (change.moved) parts.push("переміщено");
+  if (change.blocks.added > 0) parts.push(`+${change.blocks.added} блоків`);
+  if (change.blocks.removed > 0) parts.push(`−${change.blocks.removed} блоків`);
+  if (change.blocks.edited > 0) parts.push(`${change.blocks.edited} блоків змінено`);
+  return parts.length > 0 ? parts.join(" · ") : "Змінено";
+}
