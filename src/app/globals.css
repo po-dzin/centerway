@@ -272,6 +272,8 @@
     --ds-breakpoint-desktop-min: 56.3125rem;
     --ds-container-max: var(--cw-max-width);
     --ds-touch-target-min: 3rem;
+    --ds-icon-control-ratio: 0.53;
+    --ds-icon-in-control: calc(var(--ds-touch-target-min) * var(--ds-icon-control-ratio));
     --ds-button-min-height: var(--ds-touch-target-min);
     --ds-button-padding-inline: 1.15rem;
     --ds-button-min-width: 10.5rem;
@@ -286,7 +288,7 @@
     --ds-field-measure: 35rem;
     --ds-field-gap: var(--ds-space-4);
     --ds-rail-control-size: var(--ds-touch-target-min);
-    --ds-rail-control-icon: 1.25rem;
+    --ds-rail-control-icon: var(--ds-icon-in-control);
     --ds-rail-control-overhang: 1rem;
     --ds-author-banner-ratio: 5 / 1;
     --ds-offer-card-height-desktop: 29rem;
@@ -1287,7 +1289,7 @@ body {
   .cw-panel {
     background-color: var(--cw-surface);
     border: 1px solid var(--cw-border);
-    border-radius: 1rem;
+    border-radius: var(--cw-radius-md);
     box-shadow: var(--cw-shadow);
   }
 
@@ -1301,7 +1303,7 @@ body {
      track on their own; a standalone one asks for `w-full`. */
   .cw-input {
     border: 1px solid var(--cw-border);
-    border-radius: 0.75rem;
+    border-radius: var(--cw-radius-sm);
     background-color: var(--cw-surface);
     color: var(--cw-text);
     outline: 2px solid transparent;

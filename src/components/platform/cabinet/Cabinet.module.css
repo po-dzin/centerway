@@ -313,9 +313,18 @@
      LEFT, ON THE CONTENT'S OWN EDGE. Centred, the group floated free of the
      name and the three facts standing above it — two blocks of one composition
      on two different verticals. `justify-content: start` puts its left edge on
-     the same line as the avatar. */
+     the same line as the avatar — WHICH `width: 100%` HAD QUIETLY UNDONE
+     (2026-09-07). This rule and `.room, .shelf > *`'s `min(100% - 2 *
+     --cw-page-gutter, --cw-max-width)` are two different files, same
+     specificity, and the later one in the build wins regardless of which
+     makes more sense — the exact trap the shared rule's own comment names two
+     files owning one look. `width: 100%` was measured against `.shelfRow`'s
+     OWN box, so on a wide screen the row's 100% was the full viewport, not the
+     gutter-inset column, and the cards packed themselves flush to the browser
+     edge while the avatar three lines above sat on the gutter. Dropping the
+     redeclaration lets the shared rule's width stand, which is what puts the
+     row back on the avatar's own line. */
   .shelfRow {
-    width: 100%;
     grid-template-columns: repeat(2, minmax(0, 15rem));
     justify-content: start;
     align-items: stretch;

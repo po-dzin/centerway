@@ -60,6 +60,27 @@ describe("author portrait", () => {
     }
   });
 
+  /* AND THE CHROME'S FACES OBEY THE SAME RULE (2026-09-07). The claim above —
+     «a face is round» — was true of this component and of nothing else: the
+     bar's avatar had been rewritten to the control step on the reading that a
+     portrait inside a control takes the control's corner, and the cabinet's
+     hero face stayed round beside it. One object, three answers, and no test
+     that could see more than one of them. The decision is product-wide now, so
+     the contract is too: the PLATE a face sits in is a soft rect and takes its
+     box's step; the face inside it is round. */
+  it("draws every chrome face round too, not just the component's", () => {
+    const shell = read("src/components/platform/PlatformShell.module.css");
+    const bar = shell.slice(shell.indexOf("\n.profileAvatar {"), shell.indexOf("}", shell.indexOf("\n.profileAvatar {")));
+    expect(bar).toContain("border-radius: var(--cw-radius-pill)");
+
+    const island = shell.slice(shell.indexOf('[data-cw-chrome="organs"] .profileAvatar {'));
+    expect(island.slice(0, island.indexOf("}"))).toContain("border-radius: var(--cw-radius-pill)");
+
+    const hero = read("src/components/platform/cabinet/CabinetHero.module.css");
+    const face = hero.slice(hero.indexOf("\n.avatar {"), hero.indexOf("}", hero.indexOf("\n.avatar {")));
+    expect(face).toContain("border-radius: var(--cw-radius-pill)");
+  });
+
   it("previews that same shape in the crop editor", () => {
     const css = read("src/components/platform/cabinet/Cabinet.module.css");
     // The bare selector, not `.photoCropAside > .photoCropAvatar` which sits

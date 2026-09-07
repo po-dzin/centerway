@@ -1132,7 +1132,9 @@
   place-items: center;
   width: 1.35rem;
   height: 1.35rem;
-  border-radius: 0.45rem;
+  /* 21.6px box → the `inset` step: a detail inside something else. It was
+     `0.45rem`, 7.2px, a value with no name. */
+  border-radius: var(--cw-radius-inset);
   /* Unticked: an empty box. The glyph is transparent rather than absent so the
      mark never resizes when it fills in. */
   background: transparent;

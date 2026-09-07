@@ -645,7 +645,7 @@
   background:
     radial-gradient(circle at 50% 14%, color-mix(in srgb, var(--cw-platform-accent) 62%, transparent) 0 0.08rem, transparent 0.1rem),
     linear-gradient(180deg, color-mix(in srgb, var(--cw-sem-embodied) 34%, transparent), color-mix(in srgb, var(--cw-sem-guide-strong) 48%, transparent));
-  border-radius: 999px 999px 60% 60%;
+  border-radius: var(--cw-radius-pill) var(--cw-radius-pill) 60% 60%;
   box-shadow: 0 10px 18px color-mix(in srgb, var(--cw-mat-scrim-ink) 10%, transparent);
   transform-origin: bottom center;
 }

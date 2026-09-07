@@ -4944,7 +4944,9 @@
   position: absolute;
   inset-inline: 0;
   height: 2px;
-  border-radius: 2px;
+  /* A 2px line with round ends, which is what `pill` is for — the literal `2px`
+     said the same thing in a number that belongs to no scale. */
+  border-radius: var(--cw-radius-pill);
   background: var(--cw-platform-accent);
   pointer-events: none;
 }

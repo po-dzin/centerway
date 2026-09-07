@@ -61,7 +61,7 @@
 .diagnosticProgressTrack {
   height: 0.5rem;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--cw-radius-pill);
   background: var(--cw-mat-meter-track);
 }
 
@@ -72,7 +72,7 @@
    guide-strong keeps the gradient and clears it at 4.92 / 11.26. */
 .diagnosticProgressBar {
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--cw-radius-pill);
   /* One meter fill for the system, and it changes with the theme. The green
      ramp clears its track at 4.92 / 11.26 on cream and disappears on graphite —
      a deep green on a near-black ground is not a low-contrast bar, it is no bar
@@ -125,7 +125,7 @@
   align-items: center;
   padding: 0 1rem;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--cw-radius-pill);
   color: var(--cw-platform-text);
   background-color: var(--cw-mat-tint);
   background-image: var(--cw-mat-grain-image);

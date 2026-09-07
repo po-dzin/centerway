@@ -797,11 +797,16 @@
   }
 
   .navLayer .nav a {
+    /* THE SAME LINK AS THE BAR'S, so the same step (2026-09-07). It was `sm`
+       here and `pill` there until the duplicate was merged; one object cannot
+       change shape with the viewport. `3rem` is `--ds-touch-target-min` written
+       out — left as it was found, and named in the spacing pass rather than
+       silently here. */
     min-height: 3rem;
     justify-content: flex-start;
     padding: 0.7rem 0.9rem;
     border: 0;
-    border-radius: var(--cw-radius-sm);
+    border-radius: var(--cw-radius-md);
     background: transparent;
     color: var(--platform-header-muted-fg);
     font-size: 1rem;

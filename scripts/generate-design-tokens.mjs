@@ -101,6 +101,11 @@ const NETWORK_BUTTON_TOKENS = [
   "--cw-radius-md",
   "--cw-radius-btn",
   "--ds-touch-target-min",
+  /* The glyph-to-box ratio travels with the target it is a ratio OF: the
+     landings' rail arrow reads `--ds-rail-control-icon`, which points here, and
+     a name whose chain does not close inside this file resolves to nothing. */
+  "--ds-icon-control-ratio",
+  "--ds-icon-in-control",
   "--ds-button-min-height",
   "--ds-button-padding-inline",
   "--ds-button-radius",

@@ -166,6 +166,17 @@
   aspect-ratio: 1;
 }
 
+/* AND THE GLYPH INSIDE IT, which this role used to leave to the call site. The
+   box was contracted and the thing in it was a number someone passed — 18, 20,
+   24 — so two icon-only controls standing next to each other came out at two
+   sizes. `--ds-icon-in-control` is the one ratio (see globals.css); the `size`
+   prop on `Icon` stays as the intrinsic default for anything rendered outside a
+   contracted box, and CSS wins over the presentational attribute here. */
+.square :is(svg, img) {
+  width: var(--ds-icon-in-control);
+  height: var(--ds-icon-in-control);
+}
+
 /* ── row: a group of buttons ──────────────────────────
 
    One line when they fit, one full-width line each when they do not — and the

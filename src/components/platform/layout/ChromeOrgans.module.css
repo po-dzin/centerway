@@ -125,11 +125,31 @@
    material twice — a darker disc inside the panel, reading as a control stuck
    on top of the menu rather than as part of it. On the sheet the pair is just
    the mark and the face. */
+/* AND WITH THE PLATE GOES THE PLATE'S INK (2026-09-07). The tone answers «what
+   is behind me», and on the sheet the answer is the sheet — the row's measured
+   verdict about the article underneath is stale the moment the panel covers it.
+   Left standing, a pair that had gone gold-on-graphite over a hero kept that
+   ink after landing on a cream menu. Everything here returns to the sheet's own
+   material, which is the theme's. */
 .row[data-cw-organs-sheet="open"] .organ,
 .row[data-cw-organs-sheet="open"] [data-auth-state] {
   background-color: transparent;
   backdrop-filter: none;
   box-shadow: none;
+}
+
+.row[data-cw-organs-sheet="open"],
+.row[data-cw-organs-sheet="open"] .organ {
+  color: var(--cw-platform-text);
+}
+
+.row[data-cw-organs-sheet="open"] .mark,
+.row[data-cw-organs-sheet="open"] [data-auth-state] {
+  color: var(--cw-brand-mark-color);
+}
+
+.row[data-cw-organs-sheet="open"] .mark {
+  background-color: var(--cw-brand-mark-color);
 }
 
 .row[data-hidden="true"] {
@@ -159,6 +179,24 @@
   backdrop-filter: var(--platform-island-filter);
   box-shadow: var(--platform-island-shadow);
   text-decoration: none;
+}
+
+/* THE GLYPH IS THE MARK'S OWN SIZE, OPTICALLY (2026-09-07).
+
+   Every island is a 3rem plate, and until now every island held a differently
+   sized figure: the mark at 2rem, the account glyph at 1.6rem, the burger at
+   20px and the back arrow at 18px — four ratios in a row of two objects, which
+   is what made the burger read as a smaller control than the mark opposite it.
+   One token now (`--ds-icon-in-control`, the same one the button contract's
+   `square` role takes), so the chrome and the buttons cannot drift apart.
+
+   The solid mark keeps its 2rem: that is the OTHER half of the same rule — a
+   filled logotype and a line drawing are not the same weight at the same box,
+   and 0.53 is the corrected number for the drawing. */
+.organ :is(svg, img),
+.cluster :is(svg, img) {
+  width: var(--ds-icon-in-control);
+  height: var(--ds-icon-in-control);
 }
 
 /* THE EMPTY ACCOUNT IS AN ISLAND TOO (2026-09-06).
@@ -274,4 +312,46 @@
   background-color: var(--cw-brand-mark-color);
   -webkit-mask: var(--cw-brand-asset-logo-symbol-header) center / contain no-repeat;
   mask: var(--cw-brand-asset-logo-symbol-header) center / contain no-repeat;
+}
+
+/* THE INK FOLLOWS THE PLATE (2026-09-07).
+
+   The material half of this is free: `[data-cw-header-tone="dark"]` in
+   globals.css re-declares the whole `--cw-mat-*` family to the night side, so
+   the moment the row stamps the attribute its tint, blur and shadow are the
+   graphite ones. What is NOT free is what is drawn ON that plate — the mark and
+   the two glyphs name theme colours (`--cw-brand-mark-color`,
+   `--cw-platform-text`), and a theme colour on a tone-flipped plate is the
+   exact failure this sampler exists to prevent: near-black ink on graphite.
+
+   The bar has carried both halves since it was written (`--platform-header-fg`
+   and `--platform-header-symbol-color`, restated per tone in
+   PlatformShell.module.css); this is the same pair, on the same two tokens, for
+   the chrome that replaces it below 901px. Cream for the glyphs, gold for the
+   mark — «ink on a pale ground, gold on a dark one», the rule the brand mark
+   has always followed.
+
+   Only the DARK side needs stating. A light stamp is «what I stand on is pale»,
+   and the defaults are already correct there in both gammas: `--cw-platform-text`
+   and `--cw-brand-mark-color` are theme tokens, so on the night theme they are
+   already the cream and the gold. */
+.row[data-cw-header-tone="dark"] .organ {
+  color: var(--cw-platform-accent-contrast);
+}
+
+.row[data-cw-header-tone="dark"] .mark {
+  background-color: var(--cw-platform-accent);
+}
+
+.row[data-cw-header-tone="dark"] [data-auth-state] {
+  color: var(--cw-platform-accent);
+}
+
+/* The burger and the account entry read `--platform-header-fg`, which exists
+   only inside `.header` — outside one the declaration is invalid and the
+   property falls back to inheritance. So the row states the ink for everything
+   it holds, and the two controls pick it up without either module reaching
+   into the other. */
+.row[data-cw-header-tone="dark"] {
+  color: var(--cw-platform-accent-contrast);
 }

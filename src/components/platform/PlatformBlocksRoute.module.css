@@ -161,8 +161,11 @@
     0 10px 24px color-mix(in srgb, var(--cw-platform-text) 7%, transparent);
 }
 
+/* The one variant that is a soft rect rather than the base circle. 2.7rem is
+   43px — the control band — so it takes `md`, not the nameless 0.8rem (12.8px)
+   it carried, which was between two steps and equal to neither. */
 .lineIcon[data-icon="path"] {
-  border-radius: 0.8rem;
+  border-radius: var(--cw-radius-md);
   background:
     radial-gradient(circle at 22% 70%, var(--cw-platform-accent) 0 0.1rem, transparent 0.11rem),
     radial-gradient(circle at 76% 25%, var(--cw-platform-accent) 0 0.1rem, transparent 0.11rem),
