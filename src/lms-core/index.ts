@@ -21,6 +21,7 @@ export * from "./course";
 export * from "./title";
 export * from "./author";
 export * from "./readiness";
+export * from "./diff";
 export * from "./time";
 export * from "./progress";
 export * from "./schedule";

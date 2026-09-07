@@ -4,11 +4,11 @@ import { useToast } from "@/components/ToastProvider";
 
 import { useCallback, useEffect, useState } from "react";
 
-import type { Course } from "@/lms-core";
+import type { Course, CourseDiff } from "@/lms-core";
 import type { CourseRevisionSummary } from "@/lib/lms/revisions";
 import { createCourseRevision, listCourseRevisions, loadCourseRevision, restoreCourseRevision } from "./builderClient";
 import { BuilderSheet } from "./BuilderSheet";
-import { courseShape, REVISION_KIND_LABELS } from "./versionHistory";
+import { BOUNDARY_WARNING, courseShape, REVISION_KIND_LABELS, summarizeDiff } from "./versionHistory";
 import styles from "./Builder.module.css";
 
 const dateTime = new Intl.DateTimeFormat("uk-UA", {
@@ -34,6 +34,7 @@ export function BuilderVersionHistory({
 }) {
   const [revisions, setRevisions] = useState<CourseRevisionSummary[]>([]);
   const [selected, setSelected] = useState<(CourseRevisionSummary & { content: Course }) | null>(null);
+  const [diff, setDiff] = useState<CourseDiff | null>(null);
   const [label, setLabel] = useState("");
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -94,6 +95,7 @@ export function BuilderVersionHistory({
       return;
     }
     setSelected(result.data.revision);
+    setDiff(result.data.diff ?? null);
     setConfirmRestore(false);
   };
 
@@ -154,13 +156,21 @@ export function BuilderVersionHistory({
 
         {selected && shape ? (
           <section className={styles.versionDetail} aria-labelledby="version-detail-title">
-            <button className={styles.quietAction} type="button" onClick={() => setSelected(null)}>До списку</button>
+            <button className={styles.quietAction} type="button" onClick={() => { setSelected(null); setDiff(null); }}>До списку</button>
             <div>
               <span className={styles.courseMeta}>{REVISION_KIND_LABELS[selected.kind]} · версія №{selected.revisionNumber}</span>
               <h3 className={styles.subTitle} id="version-detail-title">{selected.label || selected.content.title}</h3>
               <time className={styles.fieldHint} dateTime={selected.createdAt}>{dateTime.format(new Date(selected.createdAt))}</time>
             </div>
             <p className={styles.panelText}>{shape.modules} модулів · {shape.lessons} уроків · {shape.blocks} блоків</p>
+            {/* Чим ця версія відрізняється від того, що зараз у редакторі —
+                питання перед відновленням саме таке. */}
+            {diff ? (
+              <>
+                <p className={styles.fieldHint}>Порівняно з поточною версією: {summarizeDiff(diff)}</p>
+                {diff.boundaryTouched ? <p className={styles.panelText}><strong>{BOUNDARY_WARNING}</strong></p> : null}
+              </>
+            ) : null}
             <ol className={styles.versionOutline}>
               {selected.content.modules.map((module) => (
                 <li key={module.id}>

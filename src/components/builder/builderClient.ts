@@ -10,7 +10,7 @@
  */
 
 import { supabaseClient } from "@/lib/supabaseClient";
-import type { Author, Course, CourseCategory, CourseTheme, Lesson, ReadinessBlocker } from "@/lms-core";
+import type { Author, Course, CourseCategory, CourseDiff, CourseTheme, Lesson, ReadinessBlocker } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
 import type { CourseRevisionSummary } from "@/lib/lms/revisions";
 
@@ -265,7 +265,7 @@ export function createCourseRevision(
 export function loadCourseRevision(
   slug: string,
   revisionId: string,
-): Promise<BuilderResult<{ revision: CourseRevisionSummary & { content: Course } }>> {
+): Promise<BuilderResult<{ revision: CourseRevisionSummary & { content: Course }; diff: CourseDiff | null }>> {
   return request(
     `/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions/${encodeURIComponent(revisionId)}`,
   );

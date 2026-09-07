@@ -330,6 +330,39 @@ function StateChips({ row }: { row: CatalogRow }) {
     );
 }
 
+/**
+ * ЧТО ПРИНЕСЛИ НА ПРОВЕРКУ, до того как рецензент нажмёт «одобрить».
+ *
+ * Раньше он видел «оновлення · in_review» и ничего о содержании: одобрение было
+ * вслепую, и подмена обязательного блока «межі» после прохождения проверки
+ * ничем себя не выдавала. Числа отвечают на «во что смотреть», подробности —
+ * в самом курсе; разница считается по запросу и нигде не хранится.
+ */
+function PendingChanges({ row }: { row: CatalogRow }) {
+    const { t } = useI18n();
+    const diff = row.pendingDiff;
+    if (!row.hasPendingRevision || !diff) return null;
+
+    const parts = [
+        [diff.fields, t("catalog_changes_fields")],
+        [diff.modules, t("catalog_changes_modules")],
+        [diff.lessonsAdded, t("catalog_changes_lessons_added")],
+        [diff.lessonsRemoved, t("catalog_changes_lessons_removed")],
+        [diff.lessonsChanged, t("catalog_changes_lessons_changed")],
+    ].filter(([count]) => (count as number) > 0).map(([count, label]) => `${count} ${label}`);
+
+    return (
+        <div className="text-xs space-y-0.5">
+            <p className="cw-muted">
+                {t("catalog_changes_vs_live")}: {parts.length > 0 ? parts.join(" · ") : t("catalog_changes_none")}
+            </p>
+            {diff.boundaryTouched ? (
+                <p className="cw-status-failed-text font-medium">{t("catalog_changes_boundary")}</p>
+            ) : null}
+        </div>
+    );
+}
+
 /** What is missing, in the order it should be fixed. */
 function Blockers({ row }: { row: CatalogRow }) {
     const { t } = useI18n();
@@ -396,6 +429,7 @@ function PublicationRow({
                         <span>{new Date(row.updatedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}</span>
                     </div>
                     <Blockers row={row} />
+                    <PendingChanges row={row} />
                     <CourseLinks row={row} />
                 </div>
             </div>
@@ -583,6 +617,7 @@ function PricingRow({
                         )}
                     </div>
                     <Blockers row={row} />
+                    <PendingChanges row={row} />
                     <CourseLinks row={row} />
                 </div>
             </div>
