@@ -80,7 +80,7 @@
   margin: 0;
   padding: var(--cw-space-2xs) var(--ds-button-padding-inline) 0;
   color: var(--cw-platform-muted);
-  font-size: 0.72rem;
+  font-size: var(--ds-type-label-size);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -135,7 +135,7 @@
   color: var(--cw-platform-text);
   font: inherit;
   font-family: var(--cw-font-data);
-  font-size: 0.9rem;
+  font-size: var(--ds-type-body-sm-size);
 }
 
 .bandInput::-webkit-outer-spin-button,
@@ -162,7 +162,7 @@
   gap: var(--cw-space-2xs) var(--cw-space-sm);
   margin: 0;
   color: var(--cw-platform-muted);
-  font-size: 0.9rem;
+  font-size: var(--ds-type-body-sm-size);
 }
 
 .summaryReset {
@@ -170,7 +170,7 @@
   min-height: auto;
   padding: 0.1rem var(--cw-space-2xs);
   color: var(--cw-platform-text);
-  font-size: 0.9rem;
+  font-size: var(--ds-type-body-sm-size);
   letter-spacing: normal;
   text-transform: none;
 }

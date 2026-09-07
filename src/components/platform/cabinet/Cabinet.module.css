@@ -53,7 +53,7 @@
    the data face) two inches above this one; there is now only this. */
 .sectionLabel {
   margin: 0;
-  font-size: 0.76rem;
+  font-size: var(--ds-type-label-size);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--cw-platform-muted);
@@ -252,7 +252,7 @@
 
 .glanceText {
   display: grid;
-  gap: 0.15rem;
+  gap: var(--cw-space-2xs);
   min-width: 0;
 }
 
@@ -268,7 +268,7 @@
 
 .glanceTitle {
   overflow: hidden;
-  font-size: 0.92rem;
+  font-size: var(--ds-type-body-sm-size);
   font-weight: 600;
   line-height: 1.3;
   text-overflow: ellipsis;
@@ -282,7 +282,7 @@
 .glanceNote {
   color: var(--cw-platform-muted);
   font-family: var(--cw-font-data);
-  font-size: 0.72rem;
+  font-size: var(--ds-type-label-size);
   letter-spacing: 0.04em;
   line-height: 1.35;
 }
@@ -313,9 +313,18 @@
      LEFT, ON THE CONTENT'S OWN EDGE. Centred, the group floated free of the
      name and the three facts standing above it — two blocks of one composition
      on two different verticals. `justify-content: start` puts its left edge on
-     the same line as the avatar. */
+     the same line as the avatar — WHICH `width: 100%` HAD QUIETLY UNDONE
+     (2026-09-07). This rule and `.room, .shelf > *`'s `min(100% - 2 *
+     --cw-page-gutter, --cw-max-width)` are two different files, same
+     specificity, and the later one in the build wins regardless of which
+     makes more sense — the exact trap the shared rule's own comment names two
+     files owning one look. `width: 100%` was measured against `.shelfRow`'s
+     OWN box, so on a wide screen the row's 100% was the full viewport, not the
+     gutter-inset column, and the cards packed themselves flush to the browser
+     edge while the avatar three lines above sat on the gutter. Dropping the
+     redeclaration lets the shared rule's width stand, which is what puts the
+     row back on the avatar's own line. */
   .shelfRow {
-    width: 100%;
     grid-template-columns: repeat(2, minmax(0, 15rem));
     justify-content: start;
     align-items: stretch;
@@ -362,14 +371,14 @@
 .shelfCard {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: var(--cw-space-xs);
   padding: var(--cw-space-md);
   border-radius: var(--cw-radius-lg);
 }
 
 .shelfCardTitle {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--ds-type-body-size);
   font-weight: 600;
   line-height: 1.3;
 }
@@ -401,7 +410,7 @@
 .shelfCardMeta {
   margin: 0;
   color: var(--cw-platform-muted);
-  font-size: 0.85rem;
+  font-size: var(--ds-type-body-sm-size);
 }
 
 /* The action pins to the card's own bottom, so four cards with three different
@@ -522,7 +531,7 @@
 .shelfAside {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: var(--cw-space-xs);
   padding: var(--cw-space-md);
   border-radius: var(--cw-radius-lg);
 }
@@ -565,7 +574,7 @@
 
 .metaList {
   display: grid;
-  gap: 0.35rem;
+  gap: var(--cw-space-2xs);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -624,7 +633,7 @@
 .wheel {
   display: grid;
   justify-items: center;
-  gap: 0.35rem;
+  gap: var(--cw-space-2xs);
   padding-block: var(--cw-space-2xs);
 }
 
@@ -668,7 +677,7 @@
    discover is a result the dashboard did not give you. */
 .wheelLegend {
   display: grid;
-  gap: 0.15rem;
+  gap: var(--cw-space-2xs);
   width: 100%;
   margin: 0;
 }
@@ -677,7 +686,7 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: var(--cw-space-xs);
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-body-sm-size);
 }
@@ -685,7 +694,7 @@
 .wheelLegendRow dt {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--cw-space-xs);
 }
 
 .wheelLegendRow dd {
@@ -761,7 +770,7 @@
 
 .foldText {
   display: grid;
-  gap: 0.15rem;
+  gap: var(--cw-space-2xs);
   min-width: 0;
 }
 
@@ -771,7 +780,7 @@
   flex: none;
   width: var(--ds-touch-target-min);
   height: var(--ds-touch-target-min);
-  padding: 0.6rem;
+  padding: var(--cw-space-xs);
   color: var(--cw-platform-muted);
   transition: transform 200ms ease;
 }
@@ -863,7 +872,7 @@
 
 .draftBadgeChip {
   composes: mediaBadge from "../PlatformSurfaces.module.css";
-  font-size: 0.8rem;
+  font-size: var(--ds-type-label-size);
 }
 
 .coverFallback {

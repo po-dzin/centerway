@@ -228,7 +228,7 @@
    one rule is how two files end up owning one look. */
 .sectionLabel {
   margin: 0;
-  font-size: 0.76rem;
+  font-size: var(--ds-type-label-size);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: color-mix(in srgb, var(--cw-mat-inverse-text) 68%, transparent);
@@ -267,7 +267,7 @@
 
 .identityText {
   display: grid;
-  gap: 0.15rem;
+  gap: var(--cw-space-2xs);
   min-width: 0;
 }
 
@@ -287,7 +287,7 @@
   display: block;
   width: 2.5rem;
   height: 2px;
-  margin-top: 0.55rem;
+  margin-top: var(--cw-space-xs);
   border-radius: var(--cw-radius-pill);
   background: var(--cw-sem-warmth-strong);
   content: "";
@@ -296,7 +296,7 @@
 .identityEmail {
   margin: 0;
   color: color-mix(in srgb, var(--cw-mat-inverse-text) 76%, transparent);
-  font-size: 0.92rem;
+  font-size: var(--ds-type-body-sm-size);
   overflow-wrap: anywhere;
 }
 
@@ -304,7 +304,7 @@
 .identityRole {
   margin: 0.1rem 0 0;
   color: color-mix(in srgb, var(--cw-mat-inverse-text) 64%, transparent);
-  font-size: 0.74rem;
+  font-size: var(--ds-type-label-size);
   font-weight: 600;
   letter-spacing: 0.07em;
   line-height: 1.3;
@@ -333,14 +333,14 @@
 
 .stat {
   display: grid;
-  gap: 0.2rem;
+  gap: var(--cw-space-2xs);
   min-width: 0;
 }
 
 .stat dd {
   margin: 0;
   min-height: 2.5em;
-  font-size: 1rem;
+  font-size: var(--ds-type-body-size);
   font-weight: 600;
   line-height: 1.25;
   overflow-wrap: normal;

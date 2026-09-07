@@ -272,6 +272,8 @@
     --ds-breakpoint-desktop-min: 56.3125rem;
     --ds-container-max: var(--cw-max-width);
     --ds-touch-target-min: 3rem;
+    --ds-icon-control-ratio: 0.53;
+    --ds-icon-in-control: calc(var(--ds-touch-target-min) * var(--ds-icon-control-ratio));
     --ds-button-min-height: var(--ds-touch-target-min);
     --ds-button-padding-inline: 1.15rem;
     --ds-button-min-width: 10.5rem;
@@ -286,7 +288,7 @@
     --ds-field-measure: 35rem;
     --ds-field-gap: var(--ds-space-4);
     --ds-rail-control-size: var(--ds-touch-target-min);
-    --ds-rail-control-icon: 1.25rem;
+    --ds-rail-control-icon: var(--ds-icon-in-control);
     --ds-rail-control-overhang: 1rem;
     --ds-author-banner-ratio: 5 / 1;
     --ds-offer-card-height-desktop: 29rem;
@@ -308,7 +310,7 @@
     --ds-type-label-line-height: 1rem;
     --ds-type-body-size: 1rem;
     --ds-type-body-line-height: 1.6;
-    --ds-type-body-sm-size: 0.9375rem;
+    --ds-type-body-sm-size: 0.9rem;
     --ds-type-body-sm-line-height: 1.5;
     --ds-type-lead-size: clamp(1rem, 1.5vw, 1.125rem);
     --ds-type-lead-line-height: 1.6;
@@ -1287,7 +1289,7 @@ body {
   .cw-panel {
     background-color: var(--cw-surface);
     border: 1px solid var(--cw-border);
-    border-radius: 1rem;
+    border-radius: var(--cw-radius-md);
     box-shadow: var(--cw-shadow);
   }
 
@@ -1301,7 +1303,7 @@ body {
      track on their own; a standalone one asks for `w-full`. */
   .cw-input {
     border: 1px solid var(--cw-border);
-    border-radius: 0.75rem;
+    border-radius: var(--cw-radius-sm);
     background-color: var(--cw-surface);
     color: var(--cw-text);
     outline: 2px solid transparent;
@@ -1345,7 +1347,7 @@ body {
   .cw-select {
     appearance: none;
     -webkit-appearance: none;
-    padding-right: 2rem;
+    padding-right: var(--cw-space-xl);
     background-image:
       linear-gradient(45deg, transparent 42%, var(--cw-muted) 42% 58%, transparent 58%),
       linear-gradient(135deg, transparent 42%, var(--cw-muted) 42% 58%, transparent 58%);
@@ -1384,7 +1386,7 @@ body {
   }
 
   .cw-btn-sm {
-    padding: 0.25rem 0.5rem;
+    padding: var(--cw-space-2xs) var(--cw-space-xs);
     border-radius: var(--cw-radius-sm);
     font-size: var(--ds-type-label-size);
     line-height: var(--ds-type-label-line-height);
@@ -1632,7 +1634,7 @@ body {
 
   .cw-icon-btn {
     position: relative;
-    padding: 0.5rem;
+    padding: var(--cw-space-xs);
     border-radius: var(--cw-radius-sm);
     border: 1px solid transparent;
     color: var(--cw-muted);
@@ -1684,7 +1686,7 @@ body {
   .cw-tabbar {
     display: flex;
     align-items: flex-end;
-    gap: 0.25rem;
+    gap: var(--cw-space-2xs);
     padding-top: 0;
     border-bottom: 1px solid var(--cw-border);
     overflow-y: hidden;
@@ -1697,10 +1699,10 @@ body {
     flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
-    padding: 0.5rem 1rem;
+    padding: var(--cw-space-xs) var(--cw-space-md);
     margin-bottom: -1px;
     border: 0;
-    font-size: 0.875rem;
+    font-size: var(--ds-type-body-sm-size);
     line-height: 1.25rem;
     font-weight: 500;
     white-space: nowrap;
@@ -1973,14 +1975,14 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
-    padding-top: 1rem;
+    gap: var(--cw-space-md);
+    padding-top: var(--cw-space-md);
     border-top: 1px solid var(--cw-border);
   }
 
   .cw-page-btn {
     position: relative;
-    padding: 0.5rem;
+    padding: var(--cw-space-xs);
     border-radius: var(--cw-radius-sm);
     color: var(--cw-muted);
     transition: color 0.2s ease, opacity 0.2s ease;

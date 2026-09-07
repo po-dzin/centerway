@@ -5,6 +5,7 @@ import { useRef, type ReactNode } from "react";
 import { Icon } from "@/components/Icon";
 import { platformHomeHref } from "@/lib/platform/content";
 import { useChromeReveal } from "./useChromeReveal";
+import { useHeaderTone } from "./headerTone";
 import { useSurfaceHref } from "./SurfaceHost";
 import styles from "./ChromeOrgans.module.css";
 
@@ -64,12 +65,25 @@ export function PlatformOrgans({
 }) {
   const rowRef = useRef<HTMLDivElement>(null);
   const { hidden } = useChromeReveal(reveal === "gesture", rowRef, { locked });
+  /* THE ISLANDS SAMPLE WHAT THEY FLOAT OVER (2026-09-07), exactly as the bar
+     has since it was written. This is not a theme question — a translucent
+     plate over a graded photograph comes out as a grey smear with near-black
+     ink on it whichever gamma is running, and the bar's answer (flip the
+     material and the ink to the night side) is the product's baseline for
+     chrome that floats. Below 901px the islands ARE the chrome, and they were
+     the only floating surface still standing on the page's own palette.
+
+     Frozen while a sheet this row opened is on screen: the sheet is above the
+     islands and portalled over the page, so sampling would read the panel
+     rather than the article, and the row drops its plate there anyway. */
+  const tone = useHeaderTone("light", undefined, locked);
 
   return (
     <div
       className={styles.row}
       ref={rowRef}
       data-cw-chrome="organs"
+      data-cw-header-tone={tone}
       data-cw-organs-scope={scope === "mobile" ? "mobile" : undefined}
       data-hidden={hidden ? "true" : undefined}
       role="group"
