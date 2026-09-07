@@ -58,6 +58,7 @@
   --ds-rail-control-size: var(--ds-touch-target-min);
   --ds-rail-control-icon: 1.25rem;
   --ds-rail-control-overhang: 1rem;
+  --ds-author-banner-ratio: 5 / 1;
   --ds-offer-card-height-desktop: 29rem;
   --ds-offer-card-min-height-tablet: 26rem;
   --ds-offer-card-min-height-mobile: 22rem;
