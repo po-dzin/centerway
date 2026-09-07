@@ -131,6 +131,64 @@ describe("writeRequiresPublishApproval", () => {
   });
 });
 
+describe("autosave checkpoints", () => {
+  /* Автосохранение пишет рабочую копию раз в полторы секунды. Журнал так писать
+     нельзя: история из тысячи записей за вечер ничем не отличается от её
+     отсутствия. Поэтому точка восстановления редкая и дедуплицированная — и
+     решает это база, а не экран. */
+  it("не плодит точку на каждое сохранение и не дублирует неизменившийся документ", async () => {
+    const { adminClient } = await import("@/lib/auth/adminClient");
+    const { saveBuilderCourse } = await import("./builder");
+    const live = getSnapshotCourse("reset-day")!;
+    const rows = courseRows(live);
+    const db = new FakeSupabase({
+      lms_courses: [{ ...rows.course, status: "draft", author_id: "author-1", review_status: "draft", draft_generation: 0 }],
+      lms_modules: rows.modules,
+      lms_lessons: rows.lessons,
+    });
+    vi.mocked(adminClient).mockImplementation(() => db as never);
+
+    const retitled = (title: string) => ({ ...live, status: "draft" as const, title });
+
+    await saveBuilderCourse(retitled("Перша правка"), 0, { actorId: "author-1" });
+    expect(db.rows("lms_course_revisions")).toHaveLength(1);
+    expect(db.rows("lms_course_revisions")[0]).toMatchObject({ kind: "autosave_checkpoint", created_by: "author-1" });
+
+    // Друге збереження через секунду — інтервал не минув.
+    await saveBuilderCourse(retitled("Друга правка"), 1, { actorId: "author-1" });
+    expect(db.rows("lms_course_revisions")).toHaveLength(1);
+
+    // Інтервал минув, але документ той самий, що вже в журналі: нічого фіксувати.
+    db.autosaveCheckpointIntervalMs = 0;
+    await saveBuilderCourse(retitled("Перша правка"), 2, { actorId: "author-1" });
+    expect(db.rows("lms_course_revisions")).toHaveLength(1);
+
+    // Інтервал минув і документ інший — ось тепер точка.
+    await saveBuilderCourse(retitled("Третя правка"), 3, { actorId: "author-1" });
+    expect(db.rows("lms_course_revisions")).toHaveLength(2);
+  });
+
+  /* Миграция применяется руками, поэтому «код есть, SQL ещё нет» — рабочее
+     состояние. Автор в нём просто сохраняет, как вчера. */
+  it("сохраняет как обычно, когда миграции журнала ещё нет", async () => {
+    const { adminClient } = await import("@/lib/auth/adminClient");
+    const { saveBuilderCourse } = await import("./builder");
+    const live = getSnapshotCourse("reset-day")!;
+    const rows = courseRows(live);
+    const db = new FakeSupabase({
+      lms_courses: [{ ...rows.course, status: "draft", author_id: "author-1", review_status: "draft", draft_generation: 0 }],
+      lms_modules: rows.modules,
+      lms_lessons: rows.lessons,
+    });
+    db.journalMigrationApplied = false;
+    vi.mocked(adminClient).mockImplementation(() => db as never);
+
+    await expect(saveBuilderCourse({ ...live, status: "draft", title: "Без журналу" }, 0, { actorId: "author-1" }))
+      .resolves.toMatchObject({ status: "draft" });
+    expect(db.rows("lms_course_revisions")).toHaveLength(0);
+  });
+});
+
 describe("published course draft persistence", () => {
   it("survives a save and reload without changing the learner release", async () => {
     const { adminClient } = await import("@/lib/auth/adminClient");

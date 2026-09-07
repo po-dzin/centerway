@@ -33,8 +33,7 @@ Three kinds now write, and each answers a question that previously had no answer
 | `published` | the exact document projected to learner rows |
 | `restored` | that a rollback happened, and which revision it came from |
 
-`autosave_checkpoint` remains unwritten; autosave is the next item in the
-research order and has no journal semantics until it exists.
+`autosave_checkpoint` writes too, in a second pass the same day — see below.
 
 ## The transaction, and why the mapping is not in SQL
 
@@ -75,8 +74,11 @@ reloads instead of saving over a version it never saw.
 
 ## Migration posture
 
-`docs/migration/sql/2026-09-07_lms_course_release_journal.sql` **must be applied
-by hand in the Supabase SQL editor.** The MCP connector points at a different
+Two files, both of which **must be applied by hand in the Supabase SQL editor**,
+in this order:
+
+1. `docs/migration/sql/2026-09-07_lms_course_release_journal.sql`
+2. `docs/migration/sql/2026-09-07_lms_autosave_checkpoint.sql` The MCP connector points at a different
 project and cannot run this DDL.
 
 Until it is applied, every path feature-detects (PostgREST answers an unknown
@@ -94,9 +96,55 @@ ceiling tightened after a revision was written would have made the oldest histor
 unreadable — the same class of failure that dropped a course from the shelf on
 2026-09-01. Revisions are now read in `stored` mode, like `courseFromRows`.
 
+## Точка восстановления автосохранения
+
+Автосохранение в билдере уже существовало: `useCourseAutosave` пишет рабочую
+копию примерно раз в полторы секунды и держит durable-копию в браузере. Не
+хватало серверной точки восстановления — пятого вида чекпоинта.
+
+Журнал нельзя вести с частотой автосейва: история из тысячи записей за вечер
+ничем не отличается от её отсутствия. Поэтому точка редкая и дедуплицированная,
+а решение «писать или не писать» целиком внутри
+`checkpoint_lms_course_autosave`, а не в коде: дедупликация по хешу и интервал —
+свойства данных, и две открытые вкладки одного автора не должны получать разные
+ответы на один вопрос (иначе обе прочитают «последняя была минуту назад» и обе
+запишут).
+
+Два отказа, оба относительно последней записи журнала **любого** вида:
+совпадение `content_hash` (дублировать только что сохранённую вручную версию
+незачем) и слишком малый интервал (по умолчанию 10 минут).
+
+В отличие от трёх доказывающих видов, эта запись **best-effort** и намеренно не
+входит в транзакцию сохранения. Запрет на save-then-log защищает записи, которые
+что-то доказывают; автоматическая точка ничего не доказывает. Не записавшаяся
+точка — это одна пропущенная точка, а упавшее из-за неё сохранение — потерянный
+абзац у автора, который просто печатал.
+
+### Что при этом пришлось починить в хеше
+
+`courseRevisionHash` считал отпечаток по всему документу, включая `version`.
+Каждое сохранение инкрементирует `version` — значит документ, к которому автор
+не притронулся, приходил бы с новым хешем, и дедупликация не сработала бы
+**ни разу**: точка писалась бы на каждом интервале, включая пустые. Найдено
+тестом, а не в продакшене.
+
+`version` из отпечатка исключён. Основание не в удобстве: это «learner
+cache/release invalidation and must not be treated as a human-visible revision
+number» — служебный счётчик, а не содержание. Сам документ в `content`
+сохраняется целиком, вместе с версией.
+
+### Удержание
+
+Ничего не удаляется. Так решено в документе 2026-08-23: автоматические точки
+«may later be compacted by policy; the first implementation does not delete
+them». Уплотнение — отдельное решение с отдельным сторожем; таблица append-only
+даже для `service_role`, и любая чистка потребует собственного гранта, которого
+сейчас намеренно нет.
+
 ## Not done here
 
-Autosave, the release batch (Sanity's Content Releases) and scheduled publish
-remain in the order `docs/showcase-lms-builder-research-2026-08-22.md` §7 sets.
+The release batch (Sanity's Content Releases) and scheduled publish remain in
+the order `docs/showcase-lms-builder-research-2026-08-22.md` §7 sets. Autosave
+itself already existed; only its journal checkpoint was missing.
 The journal was the precondition for admitting the H3 agent to writes; that
 admission is a separate decision and is not taken by this change.

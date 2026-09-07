@@ -160,3 +160,44 @@ export async function journalCourseState(input: {
   if (!row) throw new Error("lms_release_failed:empty_result");
   return { id: row.id as string, revisionNumber: Number(row.revision_number), createdAt: row.created_at as string };
 }
+
+/**
+ * Редкая точка восстановления поверх частого автосохранения.
+ *
+ * BEST-EFFORT, И ЭТО НЕ ПРОТИВОРЕЧИТ ЗАПРЕТУ НА save-then-log. Запрет защищает
+ * записи, которые что-то ДОКАЗЫВАЮТ: `review_submitted`, `published` и
+ * `restored` обязаны попасть в журнал вместе с изменением документа, иначе
+ * журнал врёт о том, что произошло. Автоматическая точка ничего не
+ * доказывает — это удобство восстановления. Не записавшаяся точка означает
+ * лишь одну пропущенную точку, а вот упавшее из-за неё сохранение означает
+ * потерянный абзац у автора, который просто печатал.
+ *
+ * Решение «писать или не писать» целиком внутри функции базы: дедупликация по
+ * хешу и интервал — свойства данных, и две вкладки одного автора не должны
+ * получать разные ответы на один вопрос.
+ */
+export async function checkpointAutosave(input: {
+  courseId: string;
+  course: Course;
+  actorId: string | null;
+}): Promise<CourseRevisionRef | null> {
+  const { data, error } = await adminClient().rpc("checkpoint_lms_course_autosave", {
+    p_course_id: input.courseId,
+    p_content: input.course,
+    p_content_hash: courseRevisionHash(input.course),
+    p_created_by: input.actorId,
+  });
+
+  if (error) {
+    if (!isMissingFunction(error)) {
+      console.warn(`lms: autosave checkpoint failed for ${input.course.slug} — ${error.message}`);
+    }
+    return null;
+  }
+
+  // Пустой результат — это отказ по интервалу или по совпадению хеша, то есть
+  // штатная работа функции, а не сбой.
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+  return { id: row.id as string, revisionNumber: Number(row.revision_number), createdAt: row.created_at as string };
+}

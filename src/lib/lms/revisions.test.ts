@@ -10,6 +10,15 @@ describe("course revision hash", () => {
     expect(courseRevisionHash(left)).toBe(courseRevisionHash(right));
   });
 
+  /* Иначе дедупликация точек восстановления не сработала бы ни разу: каждое
+     сохранение двигает `version`, и документ без единой правки приходил бы с
+     новым отпечатком. */
+  it("ignores the version counter, which every save increments", () => {
+    const before = { id: "course", title: "Курс", version: 12 } as unknown as Course;
+    const after = { id: "course", title: "Курс", version: 13 } as unknown as Course;
+    expect(courseRevisionHash(before)).toBe(courseRevisionHash(after));
+  });
+
   it("changes when ordered content changes", () => {
     const first = { id: "course", modules: ["a", "b"] } as unknown as Course;
     const second = { id: "course", modules: ["b", "a"] } as unknown as Course;

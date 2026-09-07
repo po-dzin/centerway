@@ -270,6 +270,9 @@ export class FakeSupabase {
      */
     journalMigrationApplied = true;
 
+    /** Совпадает с DEFAULT p_min_interval функции: 10 минут. */
+    autosaveCheckpointIntervalMs = 10 * 60 * 1000;
+
     /**
      * The two transactional functions the release path calls.
      *
@@ -300,13 +303,13 @@ export class FakeSupabase {
             this.tables[table] = existing;
         };
 
-        const journal = () => {
+        const journal = (kind: unknown = args.p_kind) => {
             const rows = this.rows("lms_course_revisions");
             const entry: Row = {
                 id: this.nextId("revision"),
                 course_id: args.p_course_id,
                 revision_number: rows.filter((row) => row.course_id === args.p_course_id).length + 1,
-                kind: args.p_kind,
+                kind,
                 content: args.p_content,
                 content_hash: args.p_content_hash,
                 label: args.p_label ?? null,
@@ -340,6 +343,19 @@ export class FakeSupabase {
             }
             patch(courseId, args.p_final_values as Row | undefined);
             return { data: journal(), error: null };
+        }
+
+        if (name === "checkpoint_lms_course_autosave") {
+            /* Те же два отказа, что в SQL: совпадение хеша с последней записью
+               журнала любого вида, и слишком малый интервал с момента этой
+               записи. Пустой результат — штатный отказ, а не сбой. */
+            const mine = this.rows("lms_course_revisions").filter((row) => row.course_id === courseId);
+            const last = mine[mine.length - 1];
+            if (last && last.content_hash === args.p_content_hash) return { data: [], error: null };
+            if (last && Date.parse(last.created_at as string) > Date.now() - this.autosaveCheckpointIntervalMs) {
+                return { data: [], error: null };
+            }
+            return { data: journal("autosave_checkpoint"), error: null };
         }
 
         return { data: null, error: { code: "PGRST202", message: `Could not find the function public.${name} in the schema cache` } };

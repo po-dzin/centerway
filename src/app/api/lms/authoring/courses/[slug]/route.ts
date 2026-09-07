@@ -108,6 +108,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
          move them. See `SaveGovernance` in builder.ts. */
       const result = await saveBuilderCourse(incoming, body.expectedGeneration, {
         mayGovernAccessCodes: grant.identity.isAdmin,
+        actorId: grant.identity.authUserId,
       });
       // The learner reads this course through a tagged cache, so the write has to
       // drop the entry or a publish would sit behind the TTL. This is the line

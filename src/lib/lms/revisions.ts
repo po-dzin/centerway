@@ -26,8 +26,25 @@ function canonical(value: unknown): unknown {
   return value;
 }
 
+/**
+ * Хеш СОДЕРЖАНИЯ курса — того, что автор написал.
+ *
+ * `version` из него исключён намеренно, и это не мелочь. Каждое сохранение
+ * инкрементирует `version`, поэтому документ, к которому автор не притронулся,
+ * всё равно приходил бы сюда с новым числом — и дедупликация по хешу, ради
+ * которой хеш существует, не срабатывала бы НИКОГДА. Точка восстановления
+ * писалась бы на каждом интервале, включая те, где ничего не менялось.
+ *
+ * Основание не в удобстве: `version` — «learner cache/release invalidation and
+ * must not be treated as a human-visible revision number»
+ * (docs/lms-course-version-history-2026-08-23.md). Это служебный счётчик, а не
+ * содержание, и в отпечатке содержания ему нечего делать. Сам документ в
+ * `content` сохраняется целиком, вместе с версией.
+ */
 export function courseRevisionHash(course: Course): string {
-  return createHash("sha256").update(JSON.stringify(canonical(course))).digest("hex");
+  const { version: _version, ...content } = course;
+  void _version;
+  return createHash("sha256").update(JSON.stringify(canonical(content))).digest("hex");
 }
 
 export async function listCourseRevisions(courseId: string): Promise<CourseRevisionSummary[]> {

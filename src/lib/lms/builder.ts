@@ -31,7 +31,7 @@ import { adminClient } from "@/lib/auth/adminClient";
 import { courseFromRows, writeCourseStructure } from "./authoring";
 import { getSnapshotCourse } from "./catalog";
 import { immediatePublishedPatch } from "./publishedEditPolicy";
-import { JOURNAL_MIGRATION_REQUIRED, journalCourseState, writeCourseRelease } from "./release";
+import { JOURNAL_MIGRATION_REQUIRED, checkpointAutosave, journalCourseState, writeCourseRelease } from "./release";
 import { loadCourseRevision } from "./revisions";
 import {
   DEFAULT_DRAFT_TITLE,
@@ -457,6 +457,8 @@ async function claimDraftGeneration(
 export type SaveGovernance = {
   /** True only for an owner (admin). Defaults to false: the safe answer. */
   mayGovernAccessCodes?: boolean;
+  /** Кто сохраняет — попадает в автоматическую точку восстановления. */
+  actorId?: string | null;
 };
 
 export async function saveBuilderCourse(
@@ -546,6 +548,7 @@ export async function saveBuilderCourse(
       pending_updated_at: new Date().toISOString(),
     }).eq("id", ownerCourseId);
     if (error) throw new Error(`lms_builder_revision_write_failed:${error.message}`);
+    await checkpointAutosave({ courseId: ownerCourseId, course: revision, actorId: governance.actorId ?? null });
     return { slug: revision.slug, status: "draft", blockers: courseReadiness(revision).blockers, staged: true, draftGeneration };
   }
 
@@ -579,6 +582,14 @@ export async function saveBuilderCourse(
     }).eq("id", ownerCourseId);
     if (error) throw new Error(`lms_builder_review_reset_failed:${error.message}`);
   }
+  /* Точка восстановления берётся ПОСЛЕ успешной записи и намеренно не входит в
+     её транзакцию: см. `checkpointAutosave`. Документ тот же, что лёг в базу,
+     а не тот, что пришёл в запросе. */
+  await checkpointAutosave({
+    courseId: ownerCourseId,
+    course: { ...incoming, id: ownerCourseId, version: nextVersion },
+    actorId: governance.actorId ?? null,
+  });
   return { slug: result.slug, status: result.status, blockers: result.blockers, draftGeneration };
 }
 
