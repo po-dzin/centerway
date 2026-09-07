@@ -796,6 +796,29 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 /* One <use> into /shared/img/cw-icons.svg. The glyph inherits currentColor;
    accent dots read --cw-icon-accent and fall back to currentColor when unset. */
 .ico{flex:0 0 auto;display:block;color:inherit}
+
+/* THE ARROW IS DRAWN, NOT TYPED (2026-09-07). Every affordance arrow on the
+   five network landings was the character `→`: a CTA's arrow, a lead link's,
+   the triad flow between three words. A typed arrow is whatever the reader's
+   font happens to draw — a different weight, a different terminal and a
+   different optical size on every device — next to a mark, a burger and a
+   connector that are all the same baked hand. These are that hand now
+   (`cw-arrow-right` / `cw-arrow-down` from the shared sprite, stroked in
+   `currentColor`, so each one keeps the colour and the hover nudge its own rule
+   already gave it).
+
+   WHAT STAYS TYPED is the arrow inside a sentence — «стрес → їжа → провина»,
+   «харчування → фітозбір → процедура → дихання». There it is a word, set in the
+   line with the words around it; an icon dropped into running text would break
+   the line's rhythm and stop being readable as prose. The rule is the same one
+   the rest of this system uses: an icon is a control's business, a character is
+   the copy's.
+
+   Sized in `em` so it tracks whatever type it sits beside, and only in this
+   sheet — irem and short run their own themes and are deliberately untouched. */
+.ico-arr{width:1.15em;height:1.15em}
+.arr,.ar,.lead-link__arr{display:inline-flex;align-items:center;justify-content:center}
+
 .ico-flip{transform:scaleX(-1)}
 .gfx{flex:0 0 auto;display:block;color:var(--indigo);opacity:.5}
 
