@@ -1507,6 +1507,10 @@ One thing the gates cannot do is push: `DesignSync` writes to the project as the
 
 `_sync.json` carries a sha256 per file plus a hash of the token source. Reading that single small file from the project tells you whether the mirror is current — no need to download and diff every file. If `tokensSource` there differs from the one `ds:export` writes locally, the project is behind.
 
+**Pushed 2026-09-07**, and the state it was found in is the argument for the gate above: the project was at `sourceCommit 2c9dfa3d`, **271 commits behind**, with four of the six generated token files stale. `ds:sync:check` had been failing locally for long enough to read as background noise, which is exactly how a mirror stops being one.
+
+The hand-authored layer needed one correction the export cannot make: `guidelines/radius-touch.card.html` labelled the scale `12 / 18 / 28` — numbers the product has not carried for some time — and showed four steps of six. Its swatches read the tokens live, so the SHAPES were right and only the words were wrong, which is the most durable kind of stale: nothing looks broken. It now names all six steps, the band each belongs to, and the three carve-outs. `spacing-scale.card.html` was checked against the same source and is accurate; `type-ui.card.html` specimens weights rather than the size scale, so re-centring `body-sm` left it true.
+
 **What is *not* machine-owned:** components, `ui_kits`, guideline cards, templates and the readme are hand-authored in the project. They are synced by hand when the behaviour they describe changes — the export deliberately does not overwrite them.
 
 **Specimens belong in the project, not in one-off pages.** A comparison, a palette study, a state matrix: author it as a `@dsCard` guideline card in the project so it lives beside the system it argues about, instead of as a standalone HTML that nobody finds again.
