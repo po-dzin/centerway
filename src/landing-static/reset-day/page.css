@@ -168,12 +168,17 @@
     justify-content:flex-start;
     background:transparent;
   }
+  /* MARGIN ONLY (2026-09-07) — the same correction the sibling rule further
+     down this file already carries, for the same reason. This one also drew a
+     light mint pill with a 6px blur, from a layout where the badge sat on
+     cream. The photo hero's night rule outranks it on background and border,
+     so the tint was already correct — but it does not touch `backdrop-filter`,
+     and that one line survived: the badge kept a 6px blur while every chip
+     beside it wore the network material (20px + saturate). Same tint, different
+     glass, and the badge read as the one light object in a column of dark ones.
+     One object, one material. */
   .hero--photo-stripe .hero-badge{
     margin-bottom: var(--cw-space-md);
-    background:rgba(242,248,243,.72);
-    border-color:rgba(197,214,198,.72);
-    backdrop-filter:blur(6px);
-    -webkit-backdrop-filter:blur(6px);
   }
   .hero--photo-stripe .hero-copy{
     display:flex;
@@ -223,7 +228,7 @@
   .hero--photo-stripe .hero-actions{
     position:relative;
     z-index:2;
-    margin-top:1.2rem;
+    margin-top: var(--cw-space-md);
     padding-inline:clamp(20px,5vw,24px);
     padding-bottom:clamp(24px,6vw,32px);
   }
@@ -241,7 +246,7 @@
     grid-template-columns:minmax(0,1fr) minmax(0,1fr);
     grid-template-rows:auto auto;
     column-gap:var(--reset-hero-col-gap);
-    row-gap:1.2rem;
+    row-gap: var(--cw-space-md);
     align-content:center;
     min-height:0;
   }
@@ -406,7 +411,7 @@
    crops from the lower two thirds rather than the centre. Third photo block
    after the hero portrait and the author portrait: the base budget. */
 [data-cw-landing="reset-day"] .day-shot{
-  margin:2.4rem 0 0;border-radius:var(--r-lg);overflow:hidden;background:var(--chip-soft);
+  margin: var(--cw-space-xl) 0 0;border-radius:var(--r-lg);overflow:hidden;background:var(--chip-soft);
   box-shadow:var(--shadow-soft);
 }
 [data-cw-landing="reset-day"] .day-shot img{

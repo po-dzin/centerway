@@ -118,7 +118,7 @@
    the deep-dive disclosure — after the claim, before the proof of it. Third and
    last photo block on the page (hero, phases, method): the base budget. */
 [data-cw-landing="way21"] .sci-shot{
-  margin:2.4rem 0 0;border-radius:var(--r-lg);overflow:hidden;background:var(--chip-soft);
+  margin: var(--cw-space-xl) 0 0;border-radius:var(--r-lg);overflow:hidden;background:var(--chip-soft);
   box-shadow:var(--shadow-soft);
 }
 [data-cw-landing="way21"] .sci-shot img{

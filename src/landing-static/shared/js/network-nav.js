@@ -26,7 +26,37 @@
   function setOpen(open) {
     nav.classList.toggle("is-open", open);
     toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    scheduleSync();
+  }
+
+  /* THE ENDPOINTS DO NOT DEPEND ON AN OBSERVER (2026-09-07).
+   *
+   * `syncSheet()` called straight after the class flip measures the drawer
+   * BEFORE its transition starts, so it always reports the state we just left:
+   * 0 on the way open, the full height on the way closed. Traced on reset-day —
+   * `--cwn-sheet-h` was 0px while the drawer stood open and 376px after it had
+   * collapsed, one event behind at every step.
+   *
+   * That was survivable while something else corrected it a frame later, and
+   * two things are supposed to: the ResizeObserver and `transitionend`. Neither
+   * is guaranteed — an observer is skipped in a background tab, and
+   * `transitionend` never fires if the transition is interrupted (a second tap
+   * mid-animation) or suppressed (`prefers-reduced-motion`). When both miss,
+   * the glass is left at the previous state's height: rows of an open menu with
+   * no sheet under them, or a sheet still covering the page under a menu that
+   * has closed. Both were reported.
+   *
+   * So the endpoints are scheduled rather than assumed: the immediate call
+   * keeps the common case snappy, the frame catches the transition's start, and
+   * the timeout lands after the 280ms it takes to finish. The observer still
+   * does the smooth following in between — it is now an improvement rather than
+   * the mechanism. */
+  function scheduleSync() {
     syncSheet();
+    if (typeof window.requestAnimationFrame === "function") {
+      window.requestAnimationFrame(syncSheet);
+    }
+    window.setTimeout(syncSheet, 300);
   }
 
   // The open drawer is not its own glass — the bar's ::before grows down over it

@@ -10,6 +10,17 @@ export type LandingRouteConfig = {
 };
 
 const SHARED_STYLES = [
+  /* THE GENERATED TOKENS COME FIRST (2026-09-07), and they were missing.
+     `short` and `irem` are served through this route, which builds their head
+     from this list rather than from the file's own <link> tags — so the five
+     newer landings, which link the bundle themselves, had the platform's radius
+     and spacing steps while these two did not. Nothing noticed while their CSS
+     spelled every corner and gap as a number. The moment those numbers were
+     named, `var(--cw-radius-md)` and `var(--cw-space-md)` resolved to nothing
+     here and the pages came out square-cornered with the rhythm collapsed. A
+     token that is not delivered is not a token; this is where these two are
+     delivered. */
+  "/shared/css/cw-tokens.generated.css",
   "/shared/css/tokens.css",
   "/shared/css/foundation.css",
   "/shared/css/pages.css",

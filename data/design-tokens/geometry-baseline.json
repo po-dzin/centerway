@@ -63,14 +63,13 @@
     "src/landing-static/short-b/css/short-b.theme.css": 2
   },
   "landingOffScaleSpacing": {
-    "src/landing-static/reset-day/page.css": 3,
-    "src/landing-static/shared/css/funnel-network.css": 13,
+    "src/landing-static/shared/css/funnel-network.css": 1,
     "src/landing-static/shared/css/landing.bridge.css": 4,
     "src/landing-static/shared/css/landing.css": 1,
     "src/landing-static/shared/css/network-nav.css": 1,
-    "src/landing-static/shared/css/pages.css": 4,
+    "src/landing-static/shared/css/pages.css": 1,
     "src/landing-static/short/css/short.product.css": 14,
     "src/landing-static/short/css/short.product.responsive.css": 4,
-    "src/landing-static/way21/page.css": 2
+    "src/landing-static/way21/page.css": 1
   }
 }
