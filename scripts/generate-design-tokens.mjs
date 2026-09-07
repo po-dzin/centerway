@@ -98,7 +98,19 @@ function pickNetworkTokens(map) {
    payload. The chain has to close inside this file, hence --cw-radius-btn/md
    travel with the --ds-button-* that point at them. */
 const NETWORK_BUTTON_TOKENS = [
+  /* THE WHOLE RADIUS SCALE, NOT THE BUTTON'S STEP ALONE (2026-09-07). Only
+     `md` and `btn` used to travel, so the network could match the platform's
+     button and had to invent everything else: `--r-sm/md/lg` in
+     network-tokens.css came out as 11.2 / 16 / 22.4px — the same scale, drawn
+     twice, with two of its three steps mistyped by 0.8 and 2.4px. The steps are
+     delivered now and the network reads them, which is what makes «one radius
+     vocabulary» true across the whole product rather than inside it. */
+  "--cw-radius-inset",
+  "--cw-radius-sm",
   "--cw-radius-md",
+  "--cw-radius-lg",
+  "--cw-radius-xl",
+  "--cw-radius-pill",
   "--cw-radius-btn",
   "--ds-touch-target-min",
   /* The glyph-to-box ratio travels with the target it is a ratio OF: the

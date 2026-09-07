@@ -45,10 +45,10 @@
   --irem-on-dark-label:#a9aede;
   --irem-indigo-soft:#7c83bd;
   --maxw:1160px;
-  --r-sm:.7rem;
-  --r-md:1rem;
-  --r-lg:1.4rem;
-  --r-pill:999px;
+  /* Radius comes from the network scale, which comes from the platform's — see
+     network-tokens.css. This block re-declared 11.2 / 16 / 22.4px locally, which
+     is the per-page radius the shared file's own header says these landings no
+     longer carry. */
   --sp-sec:clamp(64px,9vw,132px);
   --shadow-soft:0 1px 2px rgba(35,38,74,.05),0 8px 24px rgba(35,38,74,.06);
   --shadow-med:0 2px 6px rgba(35,38,74,.08),0 20px 48px rgba(35,38,74,.12);

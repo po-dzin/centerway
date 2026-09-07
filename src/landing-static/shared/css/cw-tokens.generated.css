@@ -80,7 +80,12 @@
   --cw-mat-inverse-stroke: color-mix(in srgb, #ffffff 18%, transparent);
   --cw-mat-inverse-text: #faefe0;
   --cw-mat-inverse-text-muted: color-mix(in srgb, #faefe0 78%, transparent);
+  --cw-radius-inset: 6px;
+  --cw-radius-sm: 12px;
   --cw-radius-md: 16px;
+  --cw-radius-lg: 20px;
+  --cw-radius-xl: 28px;
+  --cw-radius-pill: 999px;
   --cw-radius-btn: var(--cw-radius-md);
   --ds-touch-target-min: 3rem;
   --ds-icon-control-ratio: 0.53;

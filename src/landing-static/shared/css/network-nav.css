@@ -165,11 +165,42 @@
 }
 
 /* The bar is fixed, so anchor jumps would land the section heading underneath
-   it; and the hero needs the same clearance since the bar no longer waits for a
-   scroll-up to appear. 4.85rem is the bar's own footprint (0.95rem offset +
-   3.9rem inner) — the rest is breathing room. */
+   it. `--cwn-anchor-clearance` is that offset, named once: the bar's own box
+   (0.95rem top + a 3.9rem row) plus air. */
+/* On `:root`, not on `.cwn`: the rules that read it are the bar's SIBLINGS, and
+   a custom property inherits down the tree rather than across one. Declared on
+   the bar it would have resolved to nothing on every target it was written
+   for. */
+:root {
+  --cwn-anchor-clearance: 5.5rem;
+}
+
 .cwn--anchored ~ [id] {
-  scroll-margin-top: 5.5rem;
+  scroll-margin-top: var(--cwn-anchor-clearance);
+}
+
+/* THE JUMP LANDS ON THE CONTENT, NOT ON THE SECTION'S PADDING (2026-09-07).
+
+   Every in-page anchor on these landings points at a `<section class="sec">`,
+   and `.sec` carries `padding-block: var(--sp-sec)` — 64px on a phone, up to
+   132px on a wide screen. So the clearance above put the section's TOP EDGE
+   under the bar and the section's own padding then pushed the thing you came to
+   see a further 64–132px down: measured on reset-day at 375px, pressing
+   «Формат» left the offer card at y=178 with 100px of empty page between it and
+   the bar, and its price row hanging off the bottom of the screen. The jump was
+   correct and useless — it delivered the padding.
+
+   Subtracting the section's own top padding cancels exactly that, and it does so
+   at every width because the number it subtracts is the same clamp that put it
+   there. The remainder is a real gap under the bar rather than an accident of
+   the viewport: measured landing is stable at ~36px of air on a phone and on a
+   desktop, where before it was 100px on one and 168px on the other.
+
+   Scoped to `.sec[id]` — the shape every one of the five anchored landings
+   actually uses (35 sections between them) — so a bare `<a id>` target like
+   `#top`, which has no padding to cancel, keeps the plain clearance above. */
+.cwn--anchored ~ .sec[id] {
+  scroll-margin-top: calc(var(--cwn-anchor-clearance) - var(--sp-sec, 0px));
 }
 
 .cwn--anchored ~ .hero {

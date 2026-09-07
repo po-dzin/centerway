@@ -57,5 +57,29 @@
     "src/components/platform/cabinet/CabinetHero.module.css": 1,
     "src/components/platform/cabinet/LearnRoomView.module.css": 4,
     "src/app/globals.css": 1
+  },
+  "landingLiteralRadius": {
+    "src/landing-static/irem/css/irem.theme.css": 7,
+    "src/landing-static/irem/js/themes/simple.css": 1,
+    "src/landing-static/shared/css/funnel-network.css": 5,
+    "src/landing-static/shared/css/landing.css": 9,
+    "src/landing-static/shared/css/network-nav.css": 3,
+    "src/landing-static/shared/css/pages.css": 3,
+    "src/landing-static/short/js/themes/simple.css": 1,
+    "src/landing-static/short-b/css/short-b.theme.css": 9
+  },
+  "landingOffScaleSpacing": {
+    "src/landing-static/irem/css/irem.theme.css": 2,
+    "src/landing-static/reset-day/page.css": 12,
+    "src/landing-static/shared/css/funnel-network.css": 37,
+    "src/landing-static/shared/css/landing.bridge.css": 9,
+    "src/landing-static/shared/css/landing.css": 6,
+    "src/landing-static/shared/css/legal-pages.css": 1,
+    "src/landing-static/shared/css/network-nav.css": 9,
+    "src/landing-static/shared/css/pages.css": 19,
+    "src/landing-static/short/css/short.product.css": 15,
+    "src/landing-static/short/css/short.product.responsive.css": 4,
+    "src/landing-static/short-b/css/short-b.theme.css": 2,
+    "src/landing-static/way21/page.css": 3
   }
 }

@@ -101,7 +101,20 @@
   --cw-net-brand-mark: 2.25rem;
 
   --maxw: 1160px;
-  --r-sm: .7rem; --r-md: 1rem; --r-lg: 1.4rem; --r-pill: 999px;
+  /* ONE RADIUS SCALE, PRODUCT AND NETWORK (2026-09-07). These were `.7rem /
+     1rem / 1.4rem / 999px` — 11.2 / 16 / 22.4 / pill — against the platform's
+     12 / 16 / 20 / pill. Not a different scale with its own reasoning: the same
+     scale, drawn a second time, with `md` landing exactly and the other two
+     mistyped by 0.8 and 2.4px. Nothing in the network ever asked for 11.2px.
+     The steps travel in the generated bundle now (see NETWORK_BUTTON_TOKENS in
+     scripts/generate-design-tokens.mjs) and these are aliases onto them, so the
+     names the landings already use — 133 references to `--r-*` — keep working
+     and move with the product. The fallbacks are for a stale cached generated
+     file only, and they are the platform's numbers, not the old ones. */
+  --r-sm: var(--cw-radius-sm, 12px);
+  --r-md: var(--cw-radius-md, 16px);
+  --r-lg: var(--cw-radius-lg, 20px);
+  --r-pill: var(--cw-radius-pill, 999px);
   /* Single button shape across platform and network: soft rect, never pill.
      No longer a mirrored literal — cw-tokens.generated.css now carries the
      button contract's geometry, so this resolves to the platform's own corner
