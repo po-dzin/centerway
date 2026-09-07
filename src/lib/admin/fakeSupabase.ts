@@ -261,6 +261,90 @@ export class FakeSupabase {
         },
     };
 
+    /**
+     * Set false to model a database where
+     * docs/migration/sql/2026-09-07_lms_course_release_journal.sql has NOT been
+     * applied — which is a real state, because migrations here are applied by
+     * hand. PostgREST answers an unknown function with PGRST202 rather than a
+     * SQL error, so that is what this returns.
+     */
+    journalMigrationApplied = true;
+
+    /**
+     * The two transactional functions the release path calls.
+     *
+     * Modelled as all-or-nothing the only way an in-memory fake can be: the
+     * mutations are computed against copies and committed at the end, so a
+     * test that makes one step fail sees no half-applied course.
+     */
+    rpc = async (name: string, args: Row): Promise<{ data: Row[] | null; error: { code?: string; message: string } | null }> => {
+        if (!this.journalMigrationApplied) {
+            return { data: null, error: { code: "PGRST202", message: `Could not find the function public.${name} in the schema cache` } };
+        }
+
+        const patch = (courseId: string, values: Row | undefined) => {
+            if (!values) return;
+            const row = this.rows("lms_courses").find((item) => item.id === courseId);
+            if (row) Object.assign(row, values);
+            else this.tables.lms_courses = [...this.rows("lms_courses"), { ...values, id: courseId }];
+        };
+
+        const upsert = (table: string, rows: unknown) => {
+            if (!Array.isArray(rows)) return;
+            const existing = this.rows(table);
+            for (const incoming of rows as Row[]) {
+                const found = existing.find((item) => item.id === incoming.id);
+                if (found) Object.assign(found, incoming);
+                else existing.push({ ...incoming });
+            }
+            this.tables[table] = existing;
+        };
+
+        const journal = () => {
+            const rows = this.rows("lms_course_revisions");
+            const entry: Row = {
+                id: this.nextId("revision"),
+                course_id: args.p_course_id,
+                revision_number: rows.filter((row) => row.course_id === args.p_course_id).length + 1,
+                kind: args.p_kind,
+                content: args.p_content,
+                content_hash: args.p_content_hash,
+                label: args.p_label ?? null,
+                created_by: args.p_created_by ?? null,
+                source_revision_id: args.p_source_revision_id ?? null,
+                created_at: new Date().toISOString(),
+            };
+            rows.push(entry);
+            this.tables.lms_course_revisions = rows;
+            return [{ id: entry.id, revision_number: entry.revision_number, created_at: entry.created_at }];
+        };
+
+        const courseId = args.p_course_id as string;
+
+        if (name === "journal_lms_course_state") {
+            patch(courseId, args.p_values as Row | undefined);
+            return { data: journal(), error: null };
+        }
+
+        if (name === "apply_lms_course_release") {
+            patch(courseId, args.p_course as Row | undefined);
+            upsert("lms_modules", args.p_modules);
+            upsert("lms_lessons", args.p_lessons);
+            const removedLessons = new Set((args.p_remove_lesson_ids as string[] | null) ?? []);
+            const removedModules = new Set((args.p_remove_module_ids as string[] | null) ?? []);
+            if (removedLessons.size > 0) {
+                this.tables.lms_lessons = this.rows("lms_lessons").filter((row) => !removedLessons.has(row.id as string));
+            }
+            if (removedModules.size > 0) {
+                this.tables.lms_modules = this.rows("lms_modules").filter((row) => !removedModules.has(row.id as string));
+            }
+            patch(courseId, args.p_final_values as Row | undefined);
+            return { data: journal(), error: null };
+        }
+
+        return { data: null, error: { code: "PGRST202", message: `Could not find the function public.${name} in the schema cache` } };
+    };
+
     from(table: string) {
         return new FakeQuery(this, table);
     }

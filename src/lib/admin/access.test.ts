@@ -104,6 +104,9 @@ const auditRows = () => db.rows("audit_log");
 
 beforeEach(() => {
     seed();
+    // Otherwise a test that models an unmigrated database leaves every test
+    // after it running against one.
+    db.journalMigrationApplied = true;
     sendPurchaseEmail.mockClear();
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
@@ -824,6 +827,51 @@ describe("course moderation and admin deletion", () => {
         });
         expect(after.title).toBe("Розвантажувальний день — практикум з умовного голодування");
         expect(Number(after.version)).toBe(13);
+    });
+
+    /* THE ARTIFACT THE REVIEW GATE NEVER LEFT. `pending_content` is nulled the
+       moment an approval lands, so before the journal existed the only trace was
+       an audit row saying an approval happened — with no way to answer WHAT was
+       approved. "The author passed review and then rewrote the boundary block"
+       could be neither shown nor ruled out. */
+    it("journals the exact document it publishes, so an approval can be proved after the fact", async () => {
+        db.tables.lms_lessons = [];
+        db.tables.lms_progress_events = [];
+
+        const snapshot = getSnapshotCourse("reset-day")!;
+        const revision = { ...snapshot, id: "course-reset", slug: "reset-day", title: "Точний перевірений документ", status: "draft" };
+        const row = db.rows("lms_courses").find((item) => item.id === "course-reset")!;
+        Object.assign(row, { review_status: "approved", visibility: "listed", version: 12, pending_content: revision, pending_review_status: "in_review" });
+
+        await moderateCourse({ courseId: "course-reset", actorId: ADMIN, action: "approve" });
+
+        const journaled = db.rows("lms_course_revisions").filter((entry) => entry.course_id === "course-reset");
+        expect(journaled).toHaveLength(1);
+        expect(journaled[0]).toMatchObject({ kind: "published", created_by: ADMIN });
+        // The document itself, not a pointer to a row that has since moved on.
+        expect((journaled[0].content as { title: string }).title).toBe("Точний перевірений документ");
+        expect(db.rows("lms_courses").find((item) => item.id === "course-reset")!.pending_content).toBeNull();
+    });
+
+    /* Migrations here are applied by hand, so "code shipped, SQL not yet run" is
+       a state that must not break moderation. It approves the way it did
+       yesterday — without the artifact, which did not exist yesterday either. */
+    it("still approves when the journal migration has not been applied", async () => {
+        db.tables.lms_lessons = [];
+        db.tables.lms_progress_events = [];
+        db.journalMigrationApplied = false;
+
+        const snapshot = getSnapshotCourse("reset-day")!;
+        const revision = { ...snapshot, id: "course-reset", slug: "reset-day", title: "Без журналу", status: "draft" };
+        const row = db.rows("lms_courses").find((item) => item.id === "course-reset")!;
+        Object.assign(row, { review_status: "approved", visibility: "listed", version: 12, pending_content: revision, pending_review_status: "in_review" });
+
+        await moderateCourse({ courseId: "course-reset", actorId: ADMIN, action: "approve" });
+
+        const after = db.rows("lms_courses").find((item) => item.id === "course-reset")!;
+        expect(after).toMatchObject({ status: "published", review_status: "approved", pending_content: null });
+        expect(after.title).toBe("Без журналу");
+        expect(db.rows("lms_course_revisions")).toHaveLength(0);
     });
 
     it("lists an approved live version while its next revision is still in review", async () => {

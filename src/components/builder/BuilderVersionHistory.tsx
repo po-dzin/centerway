@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { Course } from "@/lms-core";
 import type { CourseRevisionSummary } from "@/lib/lms/revisions";
-import { createCourseRevision, listCourseRevisions, loadCourseRevision } from "./builderClient";
+import { createCourseRevision, listCourseRevisions, loadCourseRevision, restoreCourseRevision } from "./builderClient";
 import { BuilderSheet } from "./BuilderSheet";
 import { courseShape, REVISION_KIND_LABELS } from "./versionHistory";
 import styles from "./Builder.module.css";
@@ -21,11 +21,16 @@ export function BuilderVersionHistory({
   open,
   checkpointDisabled,
   onClose,
+  onRestored,
 }: {
   slug: string;
   open: boolean;
   checkpointDisabled: boolean;
   onClose: () => void;
+  /* Restoring advances `draft_generation`, so the document this builder is
+     holding is stale the moment it succeeds. The parent must reload rather than
+     let the author keep typing into a version the server will refuse. */
+  onRestored: () => void;
 }) {
   const [revisions, setRevisions] = useState<CourseRevisionSummary[]>([]);
   const [selected, setSelected] = useState<(CourseRevisionSummary & { content: Course }) | null>(null);
@@ -33,6 +38,8 @@ export function BuilderVersionHistory({
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [openingId, setOpeningId] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(false);
+  const [confirmRestore, setConfirmRestore] = useState(false);
   const toast = useToast();
 
   const refresh = useCallback(async () => {
@@ -87,6 +94,29 @@ export function BuilderVersionHistory({
       return;
     }
     setSelected(result.data.revision);
+    setConfirmRestore(false);
+  };
+
+  const restore = async (revision: CourseRevisionSummary) => {
+    if (restoring) return;
+    setRestoring(true);
+    const result = await restoreCourseRevision(slug, revision.id);
+    setRestoring(false);
+    if (!result.ok) {
+      toast.error(
+        result.detail === "lms_release_journal_migration_required"
+          ? "Відновлення недоступне: журнал версій ще не увімкнено на сервері."
+          : "Не вдалося відновити цю версію.",
+      );
+      return;
+    }
+    setConfirmRestore(false);
+    toast.success(
+      result.data.restored.staged
+        ? `Версію №${revision.revisionNumber} відновлено як чернетку. Опублікований курс не змінився.`
+        : `Версію №${revision.revisionNumber} відновлено.`,
+    );
+    onRestored();
   };
 
   const shape = selected ? courseShape(selected.content) : null;
@@ -139,7 +169,29 @@ export function BuilderVersionHistory({
                 </li>
               ))}
             </ol>
-            <p className={styles.fieldHint}>Відновлення з історії з’явиться після атомарного серверного restore: стара версія ніколи не підмінятиме чинний курс частково.</p>
+            {confirmRestore ? (
+              <>
+                <p className={styles.fieldHint}>
+                  Відновлення створює нову чернетку з цієї версії. Чинний курс залишається таким, яким його зараз бачать учні,
+                  доки оновлення не пройде перевірку. Незбережені зміни в редакторі буде втрачено.
+                </p>
+                <button
+                  className={styles.commitAction}
+                  type="button"
+                  disabled={restoring}
+                  onClick={() => void restore(selected)}
+                >
+                  {restoring ? "Відновлюємо…" : `Так, відновити версію №${selected.revisionNumber}`}
+                </button>
+                <button className={styles.quietAction} type="button" disabled={restoring} onClick={() => setConfirmRestore(false)}>
+                  Скасувати
+                </button>
+              </>
+            ) : (
+              <button className={styles.quietAction} type="button" onClick={() => setConfirmRestore(true)}>
+                Відновити цю версію
+              </button>
+            )}
           </section>
         ) : (
           <section aria-labelledby="version-list-title">

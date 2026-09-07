@@ -1,0 +1,102 @@
+# Change journal: the three kinds that make history evidence
+
+## What was already true
+
+`lms_course_revisions` has existed since 2026-08-23, with an append-only grant
+(`service_role` holds `SELECT, INSERT` and nothing else) and five declared
+checkpoint kinds. Exactly one of them — `manual` — was ever written.
+
+That is not an oversight; it is the operational order
+`docs/lms-course-version-history-2026-08-23.md` set out on purpose:
+
+> Restore, review and publish checkpoints stay disabled until their document
+> mutation and journal insert share one transaction. A two-request or
+> save-then-log implementation is forbidden because it can report failure after
+> the document has already changed.
+
+The transaction did not exist, so the kinds stayed off. What shipped was an
+author convenience — snapshots an author chose to keep — and not a journal.
+
+## The gap this closes
+
+The review gate left **no artifact**. `pending_content` holds the document under
+review and is nulled the moment an admin approves; `audit_log` records the ACT
+of approving without the thing approved. So "the author passed review and then
+rewrote the boundary block" could be neither demonstrated nor ruled out — the
+question had no evidence on either side.
+
+Three kinds now write, and each answers a question that previously had no answer:
+
+| Kind | Pins |
+| --- | --- |
+| `review_submitted` | the exact document sent to moderation |
+| `published` | the exact document projected to learner rows |
+| `restored` | that a rollback happened, and which revision it came from |
+
+`autosave_checkpoint` remains unwritten; autosave is the next item in the
+research order and has no journal semantics until it exists.
+
+## The transaction, and why the mapping is not in SQL
+
+`apply_lms_course_release` commits the relational projection and the revision
+insert together. It is a **dumb transactional applier**: TypeScript still owns
+the JSON ⇄ row mapping (`courseRows`), the readiness gate and the preserve/
+authoritative decision (`prepareCourseWrite`), and the deletion guards
+(`planRemovedRows`). Re-stating the column list in PL/pgSQL would create a second
+owner of that mapping which drifts silently the first time a course column is
+added — so the function derives its column lists from the catalog at run time
+and never names them.
+
+This also closes an older gap `authoring.ts` had documented and could not fix:
+on the approval path a module or lesson upsert failing partway used to leave the
+course half-written with the approval already recorded.
+
+`writeCourseStructure` is unchanged in behaviour and remains the shared write
+path for the builder, `lms:seed` and `lms:import`. The invariant that the builder
+cannot publish what the seed would reject is untouched: the release path runs the
+same preparation rather than a copy of it.
+
+## Restore is not a rewind
+
+Per the 2026-08-23 decision, restoring creates a new draft and never rewinds the
+learner-facing release in place. A published course restores into
+`pending_content` and waits for review like any other update to live material;
+only an unpublished course restores onto its own rows.
+
+Six fields are pinned from the CURRENT course rather than taken from the
+snapshot — `id`, `slug`, `programSlug`, `status`, `visibility` and
+`entitlementProductCodes`. A revision records CONTENT and must not become a way
+to travel back to an earlier set of PERMISSIONS: restoring a snapshot from before
+an entitlement code was removed would otherwise re-open the course to everyone it
+used to admit.
+
+Restore also advances `draft_generation`, so a tab holding the previous document
+reloads instead of saving over a version it never saw.
+
+## Migration posture
+
+`docs/migration/sql/2026-09-07_lms_course_release_journal.sql` **must be applied
+by hand in the Supabase SQL editor.** The MCP connector points at a different
+project and cannot run this DDL.
+
+Until it is applied, every path feature-detects (PostgREST answers an unknown
+function with `PGRST202`) and behaves as it did before:
+
+- review submission and approval still work, unjournaled, and warn to the server log;
+- **restore refuses** with `lms_release_journal_migration_required`. It is new
+  capability rather than a flow that already works, and an unjournaled restore is
+  the exact shape the version-history doc forbids.
+
+## One read-path fix carried in
+
+`loadCourseRevision` validated stored snapshots in `write` mode. A presentation
+ceiling tightened after a revision was written would have made the oldest history
+unreadable — the same class of failure that dropped a course from the shelf on
+2026-09-01. Revisions are now read in `stored` mode, like `courseFromRows`.
+
+## Not done here
+
+Autosave, the release batch (Sanity's Content Releases) and scheduled publish
+remain in the order `docs/showcase-lms-builder-research-2026-08-22.md` §7 sets.
+The journal was the precondition for admitting the H3 agent to writes; that
+admission is a separate decision and is not taken by this change.

@@ -694,6 +694,10 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         open={versionHistoryOpen}
         checkpointDisabled={working || dirty}
         onClose={() => setVersionHistoryOpen(false)}
+        onRestored={() => {
+          setVersionHistoryOpen(false);
+          window.location.reload();
+        }}
       />
       <BuilderDraftRecovery
         open={draftDecision !== null}

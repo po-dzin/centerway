@@ -271,6 +271,16 @@ export function loadCourseRevision(
   );
 }
 
+export function restoreCourseRevision(
+  slug: string,
+  revisionId: string,
+): Promise<BuilderResult<{ restored: { slug: string; status: string; staged: boolean; draftGeneration: number; restoredFrom: number } }>> {
+  return request(
+    `/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions/${encodeURIComponent(revisionId)}/restore`,
+    { method: "POST" },
+  );
+}
+
 export function renameCourseSlug(slug: string, nextSlug: string): Promise<BuilderResult<{ slug: string }>> {
   return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}`, {
     method: "PATCH",

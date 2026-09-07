@@ -56,7 +56,12 @@ export async function loadCourseRevision(courseId: string, revisionId: string): 
     .maybeSingle();
   if (error) throw new Error(`lms_revision_read_failed:${error.message}`);
   if (!data) return null;
-  validateCourse(data.content, "course_revision");
+  /* READ, so the contract ceiling does not apply — the same rule as
+     `courseFromRows`. A revision is by definition an OLD document, and a
+     presentation limit tightened after it was written must not make history
+     unreadable: the one artifact that exists to prove what a course used to say
+     would start refusing to open precisely for the oldest entries. */
+  validateCourse(data.content, "course_revision", "stored");
   return {
     id: data.id as string,
     revisionNumber: Number(data.revision_number),
