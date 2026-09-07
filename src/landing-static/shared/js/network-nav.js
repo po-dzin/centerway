@@ -162,14 +162,34 @@
     applyBackdrop();
   }
 
-  // Anchored bars (way21 / reset-day) carry in-page section links, so they stay
-  // visible from the first screen and skip the show/hide logic entirely. The
-  // burger, focus and escape handling above still apply.
-  if (nav.classList.contains("cwn--anchored")) return;
+  // THE GESTURE IS THE SAME ON BOTH BAR MODES (2026-09-07); only the resting
+  // state differs, so only the class does.
+  //
+  //   floating  — the bar does not exist on the first screen and ARRIVES on the
+  //               first upward flick. Adding the class is what shows it.
+  //   anchored  — the bar is there from the first screen, because it carries the
+  //               page's section links, and TUCKS on the way down. Adding the
+  //               class is what hides it.
+  //
+  // Anchored bars used to return here outright — "they stay visible and skip the
+  // show/hide logic entirely" — which read as a decision about section links and
+  // was really a decision about scrolling: on four of the five landings the bar
+  // simply sat on the reader for the whole page. The links are one flick up,
+  // which is where the platform keeps its own chrome (`useChromeReveal`) and
+  // where the reader keeps its way out.
+  var anchored = nav.classList.contains("cwn--anchored");
+  var gestureClass = anchored ? "cwn--tucked" : "cwn--floating";
+  var showsOnScrollUp = !anchored;
+  var reveal = function () {
+    if (showsOnScrollUp) nav.classList.add(gestureClass);
+    else nav.classList.remove(gestureClass);
+  };
+  var conceal = function () {
+    if (showsOnScrollUp) nav.classList.remove(gestureClass);
+    else nav.classList.add(gestureClass);
+    setOpen(false);
+  };
 
-  // The header does not take space on the initial hero. As soon as the visitor
-  // reverses upward — including within that hero — it returns as a fixed layer,
-  // then hides again while reading down.
   var frame = null;
   var lastScrollY = window.scrollY;
   var directionThreshold = 8;
@@ -178,14 +198,15 @@
     var currentScrollY = window.scrollY;
     var distance = currentScrollY - lastScrollY;
 
+    // At the top of the page both modes are in their resting state: the
+    // floating bar is absent, the anchored one is present.
     if (currentScrollY <= 0) {
-      nav.classList.remove("cwn--floating");
+      nav.classList.remove(gestureClass);
       setOpen(false);
     } else if (distance <= -directionThreshold) {
-      nav.classList.add("cwn--floating");
+      reveal();
     } else if (distance >= directionThreshold) {
-      nav.classList.remove("cwn--floating");
-      setOpen(false);
+      conceal();
     }
 
     lastScrollY = currentScrollY;
