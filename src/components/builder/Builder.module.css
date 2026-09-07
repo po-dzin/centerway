@@ -1723,9 +1723,19 @@
   gap: var(--cw-space-sm);
 }
 
+/* ON THE CONTRACT, NOT BESIDE IT (2026-09-07). This is a link that opens the
+   release panel, standing in `.revisionNoticeActions` next to a real button —
+   a control in a row of controls, and it was declaring its own `font-weight:
+   600` against the contract's 700. `guard:buttons` had been calling it for a
+   while and it was the one thing keeping the design gates out of CI, which is
+   how a known violation becomes a permanent one.
+
+   `text` is the role for an action that is a sentence rather than a plate; the
+   colour stays local, which the guard allows and the row needs — this link is
+   the notice's ink, not the muted grey a standalone text button takes. */
 .revisionNoticeLink {
+  composes: base text hug from "../platform/PlatformButtons.module.css";
   color: var(--cw-platform-text);
-  font-weight: 600;
   text-decoration: none;
 }
 

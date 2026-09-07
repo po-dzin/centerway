@@ -1499,6 +1499,12 @@ The token layer is machine-owned, so it can no longer drift by hand:
 | gate | `npm run ds:sync:check` | re-derives and fails if the committed bundle is stale or was hand-edited. Runs inside `ds:qa` |
 | push | agent, via the `DesignSync` tool | `finalize_plan` → `write_files` with the bundle's files at the project's own paths |
 
+**The gates run themselves now (2026-09-07).** Every check in this file existed and was green on the day it was written, and none of them ran unless somebody typed the command — CI held one workflow, `admin-smoke`, which needs deploy secrets and never touched design. `.github/workflows/design-gates.yml` runs the twelve that need nothing but the repo, on every pull request and every push to `main`: `tokens:check`, `ds:sync:check`, `ds:drift:gate`, `canon:guard`, `guard:assets`, `brand:check`, `guard:ds-contract`, `guard:contrast`, `guard:buttons`, `guard:geometry`, `generator:validate`, `semantic:audit`. It is separate from `admin-smoke` deliberately: a missing secret there must not make these look green, and design work should not queue behind a browser suite.
+
+`ds:drift:gate` joined `ds:qa` at the same time. It had been written, wired to a `--gate` flag and never run by anything — which is the exact shape of failure the geometry audit found four times over.
+
+One thing the gates cannot do is push: `DesignSync` writes to the project as the signed-in user, so the mirror is only ever updated from an interactive session (`/design-login` once per machine). CI can prove the bundle is current; a person still has to hand it over.
+
 `_sync.json` carries a sha256 per file plus a hash of the token source. Reading that single small file from the project tells you whether the mirror is current — no need to download and diff every file. If `tokensSource` there differs from the one `ds:export` writes locally, the project is behind.
 
 **What is *not* machine-owned:** components, `ui_kits`, guideline cards, templates and the readme are hand-authored in the project. They are synced by hand when the behaviour they describe changes — the export deliberately does not overwrite them.
