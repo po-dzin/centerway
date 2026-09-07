@@ -189,6 +189,55 @@ describe("autosave checkpoints", () => {
   });
 });
 
+describe("journal links", () => {
+  const seedDb = async () => {
+    const { adminClient } = await import("@/lib/auth/adminClient");
+    const { getSnapshotCourse } = await import("./catalog");
+    const live = getSnapshotCourse("reset-day")!;
+    const rows = courseRows(live);
+    const db = new FakeSupabase({
+      lms_courses: [{ ...rows.course, status: "draft", author_id: "author-1", review_status: "draft", draft_generation: 0 }],
+      lms_modules: rows.modules,
+      lms_lessons: rows.lessons,
+    });
+    vi.mocked(adminClient).mockImplementation(() => db as never);
+    return { db, live };
+  };
+
+  /* Контракт 2026-08-23 требовал дедуплицированного чекпоинта, а создавался он
+     всегда: два нажатия подряд клали в историю две одинаковые версии. */
+  it("ручной чекпоинт не дублирует то же самое состояние", async () => {
+    const { db, live } = await seedDb();
+    const { createCourseCheckpointOnce } = await import("./revisions");
+
+    const first = await createCourseCheckpointOnce({ course: live, actorId: "author-1", label: "Перша" });
+    expect(first.created).toBe(true);
+
+    const second = await createCourseCheckpointOnce({ course: live, actorId: "author-1", label: "Друга" });
+    expect(second.created).toBe(false);
+    expect(second.revisionNumber).toBe(first.revisionNumber);
+    expect(db.rows("lms_course_revisions")).toHaveLength(1);
+
+    const changed = await createCourseCheckpointOnce({ course: { ...live, title: "Інша назва" }, actorId: "author-1" });
+    expect(changed.created).toBe(true);
+    expect(db.rows("lms_course_revisions")).toHaveLength(2);
+  });
+
+  /* Родитель принимался и всегда приходил null — цепочка «что было до этого»
+     не строилась ни разу. */
+  it("связывает записи в цепочку", async () => {
+    const { db, live } = await seedDb();
+    const { createCourseCheckpointOnce } = await import("./revisions");
+
+    const first = await createCourseCheckpointOnce({ course: live, actorId: "author-1" });
+    await createCourseCheckpointOnce({ course: { ...live, title: "Друга" }, actorId: "author-1" });
+
+    const entries = db.rows("lms_course_revisions");
+    expect(entries[0].parent_revision_id).toBeNull();
+    expect(entries[1].parent_revision_id).toBe(first.id);
+  });
+});
+
 describe("published course draft persistence", () => {
   it("survives a save and reload without changing the learner release", async () => {
     const { adminClient } = await import("@/lib/auth/adminClient");

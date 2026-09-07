@@ -144,10 +144,35 @@ export async function listCatalog(): Promise<CatalogRow[]> {
     const diffByCourse = new Map<string, PendingDiff>();
     if (pending.length > 0) {
         const ids = pending.map((row) => row.id as string);
-        const [{ data: moduleRows }, { data: lessonRows }] = await Promise.all([
+        const [{ data: moduleRows }, { data: lessonRows }, { data: submissionRows }] = await Promise.all([
             db.from("lms_modules").select("*").in("course_id", ids),
             db.from("lms_lessons").select("*").in("course_id", ids),
+            /* КТО подал — из журнала, а не из колонки: `pending_submitted_at`
+               хранит КОГДА и никогда не хранило кто. С 2026-09-07 отправка
+               оставляет запись `review_submitted` с автором, и это
+               единственное место, где подпись под отправкой существует. */
+            db.from("lms_course_revisions")
+                .select("course_id, created_by, created_at")
+                .in("course_id", ids)
+                .eq("kind", "review_submitted")
+                .order("created_at", { ascending: false }),
         ]);
+
+        const submitterIds = [...new Set((submissionRows ?? []).map((row) => row.created_by as string | null).filter(Boolean))] as string[];
+        const { data: submitterRows } = submitterIds.length
+            ? await db.from("platform_users").select("auth_user_id, email, full_name").in("auth_user_id", submitterIds)
+            : { data: [] };
+        const nameByUser = new Map((submitterRows ?? []).map((row) => [
+            row.auth_user_id as string,
+            ((row.full_name as string | null) || (row.email as string | null) || null),
+        ]));
+        // Отсортировано по убыванию времени, поэтому первая встреченная запись
+        // курса и есть последняя отправка.
+        const submitterByCourse = new Map<string, string | null>();
+        for (const row of submissionRows ?? []) {
+            const key = row.course_id as string;
+            if (!submitterByCourse.has(key)) submitterByCourse.set(key, nameByUser.get(row.created_by as string) ?? null);
+        }
         for (const row of pending) {
             const id = row.id as string;
             try {
@@ -162,6 +187,7 @@ export async function listCatalog(): Promise<CatalogRow[]> {
                 validateCourse(row.pending_content, "pending_revision", "stored");
                 const diff = diffCourses(live, row.pending_content as Course);
                 diffByCourse.set(id, {
+                    submittedBy: submitterByCourse.get(id) ?? null,
                     boundaryTouched: diff.boundaryTouched,
                     fields: diff.fields.length,
                     modules: diff.modules.length,

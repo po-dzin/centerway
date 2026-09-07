@@ -355,6 +355,9 @@ function PendingChanges({ row }: { row: CatalogRow }) {
         <div className="text-xs space-y-0.5">
             <p className="cw-muted">
                 {t("catalog_changes_vs_live")}: {parts.length > 0 ? parts.join(" · ") : t("catalog_changes_none")}
+                {/* Підпис під відправкою — з журналу: колонка зберігала коли,
+                    але ніколи не зберігала хто. */}
+                {diff.submittedBy ? ` · ${t("catalog_submitted_by")}: ${diff.submittedBy}` : ""}
             </p>
             {diff.boundaryTouched ? (
                 <p className="cw-status-failed-text font-medium">{t("catalog_changes_boundary")}</p>

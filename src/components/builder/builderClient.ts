@@ -255,7 +255,7 @@ export function listCourseRevisions(
 export function createCourseRevision(
   slug: string,
   label: string,
-): Promise<BuilderResult<{ revision: { id: string; revisionNumber: number; createdAt: string } }>> {
+): Promise<BuilderResult<{ revision: { id: string; revisionNumber: number; createdAt: string; created: boolean } }>> {
   return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions`, {
     method: "POST",
     body: JSON.stringify({ label }),

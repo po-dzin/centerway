@@ -82,7 +82,9 @@ export function BuilderVersionHistory({
     }
     setLabel("");
     await refresh();
-    toast.success(`Версію №${result.data.revision.revisionNumber} збережено.`);
+    toast.success(result.data.revision.created
+      ? `Версію №${result.data.revision.revisionNumber} збережено.`
+      : `Ця версія вже збережена — №${result.data.revision.revisionNumber}.`);
   };
 
   const openRevision = async (revisionId: string) => {
@@ -158,7 +160,10 @@ export function BuilderVersionHistory({
           <section className={styles.versionDetail} aria-labelledby="version-detail-title">
             <button className={styles.quietAction} type="button" onClick={() => { setSelected(null); setDiff(null); }}>До списку</button>
             <div>
-              <span className={styles.courseMeta}>{REVISION_KIND_LABELS[selected.kind]} · версія №{selected.revisionNumber}</span>
+              <span className={styles.courseMeta}>
+                {REVISION_KIND_LABELS[selected.kind]} · версія №{selected.revisionNumber}
+                {selected.actor ? ` · ${selected.actor}` : ""}
+              </span>
               <h3 className={styles.subTitle} id="version-detail-title">{selected.label || selected.content.title}</h3>
               <time className={styles.fieldHint} dateTime={selected.createdAt}>{dateTime.format(new Date(selected.createdAt))}</time>
             </div>
@@ -220,7 +225,12 @@ export function BuilderVersionHistory({
                     >
                       <span className={styles.versionItemMain}>
                         <strong>{revision.label || REVISION_KIND_LABELS[revision.kind]}</strong>
-                        <span>{REVISION_KIND_LABELS[revision.kind]} · №{revision.revisionNumber}</span>
+                        {/* Хто це зробив. Для перевірки «документ такий-то» без
+                            «від кого» доводить половину. */}
+                        <span>
+                          {REVISION_KIND_LABELS[revision.kind]} · №{revision.revisionNumber}
+                          {revision.actor ? ` · ${revision.actor}` : ""}
+                        </span>
                       </span>
                       <time dateTime={revision.createdAt}>
                         {openingId === revision.id ? "Відкриваємо…" : dateTime.format(new Date(revision.createdAt))}

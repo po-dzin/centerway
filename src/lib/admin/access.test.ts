@@ -853,6 +853,26 @@ describe("course moderation and admin deletion", () => {
         expect(db.rows("lms_courses").find((item) => item.id === "course-reset")!.pending_content).toBeNull();
     });
 
+    /* The column and its foreign key existed from 2026-08-23 and were never
+       once filled. Without this the course row cannot answer which revision is
+       the release — only a guess by timestamp, which is the very method the
+       journal exists to replace. */
+    it("names the published revision on the course row", async () => {
+        db.tables.lms_lessons = [];
+        db.tables.lms_progress_events = [];
+
+        const snapshot = getSnapshotCourse("reset-day")!;
+        const revision = { ...snapshot, id: "course-reset", slug: "reset-day", title: "Реліз", status: "draft" };
+        const row = db.rows("lms_courses").find((item) => item.id === "course-reset")!;
+        Object.assign(row, { review_status: "approved", visibility: "listed", version: 12, pending_content: revision, pending_review_status: "in_review" });
+
+        await moderateCourse({ courseId: "course-reset", actorId: ADMIN, action: "approve" });
+
+        const journaled = db.rows("lms_course_revisions").find((entry) => entry.kind === "published")!;
+        const after = db.rows("lms_courses").find((item) => item.id === "course-reset")!;
+        expect(after.published_revision_id).toBe(journaled.id);
+    });
+
     /* Migrations here are applied by hand, so "code shipped, SQL not yet run" is
        a state that must not break moderation. It approves the way it did
        yesterday — without the artifact, which did not exist yesterday either. */

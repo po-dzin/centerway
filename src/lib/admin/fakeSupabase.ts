@@ -305,6 +305,10 @@ export class FakeSupabase {
 
         const journal = (kind: unknown = args.p_kind) => {
             const rows = this.rows("lms_course_revisions");
+            const mine = rows.filter((row) => row.course_id === args.p_course_id);
+            // Родителем становится предыдущая запись журнала этого курса —
+            // так же, как это делает сама функция в базе.
+            const parent = mine.length > 0 ? mine[mine.length - 1].id : null;
             const entry: Row = {
                 id: this.nextId("revision"),
                 course_id: args.p_course_id,
@@ -314,6 +318,7 @@ export class FakeSupabase {
                 content_hash: args.p_content_hash,
                 label: args.p_label ?? null,
                 created_by: args.p_created_by ?? null,
+                parent_revision_id: args.p_parent_revision_id ?? parent,
                 source_revision_id: args.p_source_revision_id ?? null,
                 created_at: new Date().toISOString(),
             };
@@ -342,7 +347,20 @@ export class FakeSupabase {
                 this.tables.lms_modules = this.rows("lms_modules").filter((row) => !removedModules.has(row.id as string));
             }
             patch(courseId, args.p_final_values as Row | undefined);
-            return { data: journal(), error: null };
+            const written = journal();
+            // Релиз назван по имени в той же транзакции, что и проекция.
+            if (args.p_kind === "published") patch(courseId, { published_revision_id: written[0].id });
+            return { data: written, error: null };
+        }
+
+        if (name === "create_lms_course_revision_once") {
+            const mine = this.rows("lms_course_revisions").filter((row) => row.course_id === courseId);
+            const last = mine[mine.length - 1];
+            if (last && last.content_hash === args.p_content_hash) {
+                return { data: [{ id: last.id, revision_number: last.revision_number, created_at: last.created_at, created: false }], error: null };
+            }
+            const [entry] = journal("manual");
+            return { data: [{ ...entry, created: true }], error: null };
         }
 
         if (name === "checkpoint_lms_course_autosave") {
