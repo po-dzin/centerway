@@ -80,7 +80,12 @@
   --cw-mat-inverse-stroke: color-mix(in srgb, #ffffff 18%, transparent);
   --cw-mat-inverse-text: #faefe0;
   --cw-mat-inverse-text-muted: color-mix(in srgb, #faefe0 78%, transparent);
+  --cw-radius-inset: 6px;
+  --cw-radius-sm: 12px;
   --cw-radius-md: 16px;
+  --cw-radius-lg: 20px;
+  --cw-radius-xl: 28px;
+  --cw-radius-pill: 999px;
   --cw-radius-btn: var(--cw-radius-md);
   --ds-touch-target-min: 3rem;
   --ds-icon-control-ratio: 0.53;
@@ -99,6 +104,14 @@
   --cw-page-gutter: clamp(20px, 5vw, 40px);
   --cw-bar-pad: 0.8rem;
   --cw-bar-inset: var(--cw-page-gutter);
+  --cw-space-2xs: 0.25rem;
+  --cw-space-xs: 0.5rem;
+  --cw-space-sm: 0.75rem;
+  --cw-space-md: 1rem;
+  --cw-space-lg: 1.5rem;
+  --cw-space-xl: 2rem;
+  --cw-space-2xl: 3rem;
+  --cw-space-3xl: 4.5rem;
 }
 
 [data-cw-theme="dark"] {

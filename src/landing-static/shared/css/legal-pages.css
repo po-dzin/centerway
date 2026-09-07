@@ -34,13 +34,13 @@ body[data-cw-page="public-offer"]{
 
 [data-cw-landing] .public-offer h1{
   font-size:clamp(1.75rem,4.2vw,2.75rem);
-  margin:0 0 1rem;
+  margin: 0 0 var(--cw-space-md);
 }
 
 [data-cw-landing] .public-offer h1~h1,
 [data-cw-landing] .public-offer h2{
   font-size:clamp(1.2rem,2.5vw,1.55rem);
-  margin:2rem 0 .7rem;
+  margin: var(--cw-space-xl) 0 var(--cw-space-sm);
 }
 
 [data-cw-landing] .public-offer p,

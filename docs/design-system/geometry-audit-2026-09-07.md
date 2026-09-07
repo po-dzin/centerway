@@ -200,3 +200,82 @@ law to grow a clause about nesting, and that clause needs a decision about
 whether the step-down is one rung or the parent minus its own padding.
 
 Until then: the burn-down is named, and nothing new joins it.
+
+---
+
+# The network, same method (2026-09-07)
+
+The five static landings were out of scope for everything above, and the reason
+was real: they never load `globals.css`, they paint their own `--cw-net-*` skin,
+and both `guard:buttons` and `guard:geometry` excluded them by path. So the
+question this pass had to answer first was not "how do we fix them" but **one
+scale for the product and the network, or two?**
+
+## Inventory
+
+Measured over the 47 shipped landing files (`legacy/` excluded):
+
+| | landings | platform (after the pass above) |
+| --- | --- | --- |
+| radius: literals vs token refs | 78 vs 176 | 0 vs ~200 |
+| spacing: off-scale literals | 573 (+297 that had a token) vs 284 token refs | 66 vs 959 |
+| font-size: literals | 368 (+77 clamps) vs 89 token refs | 26 vs 260 |
+
+Roughly three times the drift the whole platform carried that morning.
+
+## The finding that answered the question
+
+The network's own radius scale — `--r-sm / --r-md / --r-lg / --r-pill` in
+`network-tokens.css`, 133 references, the dominant vocabulary on every landing —
+was **11.2 / 16 / 22.4 / 999px** against the platform's **12 / 16 / 20 / 999**.
+
+That is not a second scale with its own reasoning. It is the same scale drawn a
+second time, with `md` landing exactly and the other two mistyped by 0.8 and
+2.4px. Nothing in the network ever asked for 11.2px.
+
+The literals said the same thing from the other side. Of 43 hand-typed radius
+values, **17 are exactly a platform step** and **16 more are within 2px of one**
+(13→12, 14→12, 12.8→12, 27.2→28, 18→16). Only ten are genuinely their own, and
+those are line caps (`2px`) and `pill` spelled out as `999px`.
+
+So: **one scale.** The skin is where the network differs — its colours, its
+grounds, its typography — and geometry was never part of the skin.
+
+## What changed
+
+- `scripts/generate-design-tokens.mjs` delivers the **whole radius scale** to the network, not just the button's step. Before, only `--cw-radius-md` and `--cw-radius-btn` travelled, which is exactly why the network had to invent the rest.
+- `--r-sm/md/lg/pill` are **aliases onto those steps**. The 133 references keep working and move with the product; `sm` gains 0.8px, `lg` loses 2.4px, `md` and `pill` do not move at all.
+- `irem.theme.css` and `short-b.theme.css` re-declared the same four values locally. Deleted — the shared file's own header already said these landings no longer carry per-page radius.
+- `guard:geometry` now counts the landings too, at **their own baseline**: literal radius (38) and off-scale spacing (119), each ratcheted per file. The box↔band law is deliberately *not* asked of them — a landing is a composed page, not a set of contracted controls, and its sections size themselves.
+
+## The burn-down, done the same day
+
+The first draft of this section left the 573 off-scale spacings and the 368
+literal type sizes on the ratchet, on the argument that sweeping them blind
+across five pages that convert traffic is the thing this audit exists to warn
+against. The traffic is not there yet, which removes the risk rather than the
+argument — so the sweep ran, in the order that lets each step be checked.
+
+**Spacing: 621 values named or snapped**, leaving 46 off-scale (from 573). 226
+were already a step typed as a literal; the rest moved by at most 2px. What
+moves more than that is left alone: 141 values, mostly `1.2rem` (43×) and
+`1.8rem` (22×), which sit 3.2px from a step and are somebody's composition
+rather than a mistyped token.
+
+**And it broke the pages first, which is the finding worth keeping.** Every one
+of the 621 substitutions resolved to nothing: `--cw-space-*` was never delivered
+to the network, so `var(--cw-space-md)` on a landing is not a fallback, it is an
+invalid declaration — the gap collapses to zero. The whole rhythm of reset-day
+went flat on the first reload. A token that is not delivered is not a token, and
+naming a value against a vocabulary the target does not have is worse than
+leaving the literal. The spacing scale now travels in the generated bundle
+beside the radius scale, for exactly the reason the radius scale does.
+
+**Radius: 34 of 38 literals named**, the four survivors being 2px line caps,
+which are round ends rather than a corner step.
+
+**Type is deliberately NOT part of this.** `--ds-type-*` is not delivered to the
+network and should not be: radius and spacing are structure — the same grid seen
+on two grounds — while type here is voice. The landings run their own display
+faces and per-page scales, which is what a landing is for. 368 literals stay,
+counted but not converted, and the ratchet keeps them from growing.

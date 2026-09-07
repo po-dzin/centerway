@@ -129,6 +129,41 @@ function cssFiles() {
   return out;
 }
 
+/* THE NETWORK IS CHECKED, AT ITS OWN COUNTER (2026-09-07).
+ *
+ * The landings were out of scope here for a reason that was true and is no
+ * longer the whole truth: they never load globals.css and they paint their own
+ * `--cw-net-*` skin, so a rule written against platform tokens could not be
+ * asked of them. But radius was never a skin question — the audit found the
+ * network running `--r-sm/md/lg` at 11.2 / 16 / 22.4px against the platform's
+ * 12 / 16 / 20, which is not a second scale with its own reasoning: it is the
+ * same scale drawn twice, one step landing exactly and two mistyped. Those
+ * names are aliases onto the platform's steps now.
+ *
+ * What is NOT asked of them is the box↔band law: a landing is a composed page,
+ * not a set of contracted controls, and its sections size themselves. They get
+ * the two counters — literal radius and off-scale spacing — each ratcheted
+ * against its own baseline, which is what stops the next hand-typed 13px
+ * without demanding 43 of them be fixed in one pass. `legacy/` is excluded:
+ * it is kept for reference and is not shipped.
+ */
+function landingCssFiles() {
+  const out = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === "legacy") continue;
+        walk(full);
+      } else if (entry.name.endsWith(".css")) {
+        out.push(full);
+      }
+    }
+  };
+  walk(path.join(repoRoot, "src/landing-static"));
+  return out.filter((f) => !f.endsWith("cw-tokens.generated.css") && !f.endsWith("output.css"));
+}
+
 const strip = (css) => css.replace(/\/\*[\s\S]*?\*\//g, "");
 const rel = (file) => path.relative(repoRoot, file);
 
@@ -259,6 +294,33 @@ for (const file of cssFiles()) {
   if (count) offScale[rel(file)] = count;
 }
 
+/* 7. The network's two counters. Same shape as the platform's ratchets, kept
+   apart because the baselines are: one product, two grounds. */
+const landingLiteralRadius = {};
+const landingOffScaleSpacing = {};
+for (const file of landingCssFiles()) {
+  const source = strip(fs.readFileSync(file, "utf8"));
+  let radiusCount = 0;
+  for (const [, value] of source.matchAll(/border-radius:\s*([^;}]+)/g)) {
+    for (const part of value.trim().split(/\s+/)) {
+      if (part.includes("var(") || part === "0" || part === "0px" || part.endsWith("%")) continue;
+      if (/^-?[0-9.]+(rem|px)$/.test(part)) radiusCount += 1;
+    }
+  }
+  if (radiusCount) landingLiteralRadius[rel(file)] = radiusCount;
+
+  let spaceCount = 0;
+  for (const [, value] of source.matchAll(spacingProps)) {
+    for (const part of value.trim().split(/\s+/)) {
+      if (part.includes("var(") || part.includes("(")) continue;
+      const px = toPx(part.replace(/^-/, ""));
+      if (px === null || px === 0) continue;
+      if (!SPACE_SCALE.has(Number((px / 16).toFixed(4)))) spaceCount += 1;
+    }
+  }
+  if (spaceCount) landingOffScaleSpacing[rel(file)] = spaceCount;
+}
+
 /* 6. The type ratchet, on the same terms as the spacing one. 181 literal
    font-sizes in 36 distinct values was not a scale, it was a cloud: eleven
    values between 0.6 and 0.82rem all orbiting `label`, seven between 0.84 and
@@ -282,6 +344,8 @@ if (rewriteBaseline) {
         radiusMismatch: Object.fromEntries(mismatches.map((m) => [m.key, m.detail])),
         offScaleSpacing: offScale,
         literalFontSize: literalType,
+        landingLiteralRadius,
+        landingOffScaleSpacing,
       },
       null,
       2,
@@ -299,6 +363,8 @@ const baselineJson = fs.existsSync(baselineFile) ? JSON.parse(fs.readFileSync(ba
 const knownMismatch = baselineJson.radiusMismatch ?? {};
 const baseline = baselineJson.offScaleSpacing ?? {};
 const typeBaseline = baselineJson.literalFontSize ?? {};
+const landingRadiusBaseline = baselineJson.landingLiteralRadius ?? {};
+const landingSpacingBaseline = baselineJson.landingOffScaleSpacing ?? {};
 
 /* THE SECOND RATCHET, and it is not a softer rule — it is an honest one. Of the
    27 disagreements this check found on its first run, four were the guard's own
@@ -339,6 +405,30 @@ for (const [file, count] of Object.entries(literalType)) {
   }
 }
 
+for (const [file, count] of Object.entries(landingLiteralRadius)) {
+  const was = landingRadiusBaseline[file] ?? 0;
+  if (count > was) {
+    failures.push({
+      kind: "landing literal radius grew",
+      file,
+      selector: "—",
+      detail: `${was} → ${count} radius values written as numbers. The network reads the platform's steps through --r-sm/md/lg/pill (network-tokens.css).`,
+    });
+  }
+}
+
+for (const [file, count] of Object.entries(landingOffScaleSpacing)) {
+  const was = landingSpacingBaseline[file] ?? 0;
+  if (count > was) {
+    failures.push({
+      kind: "landing off-scale spacing grew",
+      file,
+      selector: "—",
+      detail: `${was} → ${count} values off the 4px grid.`,
+    });
+  }
+}
+
 if (report) {
   console.log("\nRadius by box size (rules that declare both):\n");
   for (const row of seen.sort((a, b) => a.size - b.size)) {
@@ -351,6 +441,9 @@ if (report) {
   console.log(`\nOff-scale spacing: ${total} values across ${Object.keys(offScale).length} files.`);
   const typeTotal = Object.values(literalType).reduce((a, b) => a + b, 0);
   console.log(`Literal font-sizes: ${typeTotal} across ${Object.keys(literalType).length} files.`);
+  const lr = Object.values(landingLiteralRadius).reduce((a, b) => a + b, 0);
+  const ls = Object.values(landingOffScaleSpacing).reduce((a, b) => a + b, 0);
+  console.log(`Landings — literal radius: ${lr}, off-scale spacing: ${ls}.`);
   console.log(`\nRadius burn-down (${mismatches.length} accepted in the baseline):\n`);
   for (const m of mismatches) console.log(`  ${m.selector.padEnd(40)} ${m.detail}`);
 }
@@ -368,5 +461,6 @@ if (failures.length) {
 
 console.log(
   `[PASS] Geometry guard — ${seen.length} sized rules checked, one radius vocabulary, ` +
-    `${mismatches.length} known radius mismatches held at baseline, spacing and type held at baseline.`,
+    `${mismatches.length} known radius mismatches held at baseline, spacing and type held at baseline, ` +
+    `network held at its own.`,
 );

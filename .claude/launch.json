@@ -147,6 +147,17 @@
       "port": 8123,
       "autoPort": false,
       "url": "http://localhost:8123/"
+    },
+    {
+      "name": "hero-atmosphere-8140",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/G/Documents/Projects/cw-hero-atmosphere && npx next dev -p 8140"
+      ],
+      "port": 8140,
+      "autoPort": false,
+      "url": "http://localhost:8140/"
     }
   ]
 }
