@@ -759,16 +759,25 @@
 }
 
 
-/* IN THE ISLANDS IT IS THE ISLAND (2026-09-06). In the bar the avatar is a
-   2.25rem disc inside a 3rem hit box, which is right there: the box is invisible
-   and the disc is one object among several on a band. Floating, the hit box is
-   the only thing holding the corner, so a 2.25rem disc beside a 3rem mark pill
-   read as the smaller of two islands — the account looked like a lesser control
-   than the way home. The disc fills its target and the pair matches. */
+/* THE FACE SITS IN THE ISLAND, IT IS NOT THE ISLAND (2026-09-07).
+
+   It was written the other way a day earlier: the photograph filled its 3rem
+   hit box so that the account would not read as the smaller of two islands
+   beside a 3rem mark pill. That fixed the box and broke the pair — the two
+   corners were a 2rem mark inside a plate and a 3rem photograph with no plate,
+   so the objects still did not match, they only stopped differing in the same
+   direction. Both islands are now the same 3rem plate with the same 2rem
+   figure centred in it: the mark on one side, the face on the other.
+
+   AND THE FACE IS ROUND. «Soft rect, not circles» is about the BOX a control
+   occupies — the island is the box here and it takes `--cw-radius-md` like
+   every other one. What is inside it is a portrait, and a portrait cropped
+   square inside a square plate is the same corner drawn twice, 8px apart. */
 [data-cw-chrome="organs"] .profileAvatar {
-  width: var(--ds-touch-target-min);
-  height: var(--ds-touch-target-min);
-  font-size: 0.92rem;
+  width: var(--cw-brand-size-symbol-header);
+  height: var(--cw-brand-size-symbol-header);
+  border-radius: 50%;
+  font-size: 0.82rem;
 }
 
 .profileAvatar img {
@@ -793,6 +802,8 @@
    anyway: it should read as the material sheet with ordinary ink on it whether
    the bar above it is in its light or dark tone. */
 .profileMenu {
+  /* No bar: the one recipe in globals.css — see «THE SCROLLBAR, IN ONE PLACE». */
+  composes: cw-scroll-none from global;
   position: fixed;
   z-index: calc(var(--ds-z-sticky) + 2);
   width: min(17rem, calc(100vw - 2rem));
@@ -832,12 +843,6 @@
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  scrollbar-width: none;
-}
-
-.profileMenu::-webkit-scrollbar {
-  width: 0;
-  height: 0;
 }
 
 @supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
@@ -883,10 +888,33 @@
      through. `--platform-organs-inset` is the row's measured height, handed
      over by the menu: the rows begin below the islands, and nothing is drawn
      under them. */
-  padding: calc(var(--platform-organs-inset, 0px) + 0.6rem) 0.5rem 0.5rem;
+  /* ONE LEFT EDGE FOR THE MARK AND THE WORDS (2026-09-07). The islands are
+     positioned by the fixed row, which is the sheet's BORDER box — so the
+     panel's own 0.5rem of inline padding pushed every row that much further in
+     than the pair resting on top of them, and the mark's optical inset (half
+     the difference between a 3rem island and a 2rem figure — also 0.5rem) then
+     landed a full 0.65rem short of the first letter of «Кабінет». Two left
+     edges in one column, and the eye reads the shallower one as a mistake.
+
+     The panel gives its inline padding up and the rows carry it instead, at
+     exactly the mark's own inset, so the figure and the text sit on one line.
+     The block padding is untouched: the top still clears the islands. */
+  padding: calc(var(--platform-organs-inset, 0px) + 0.6rem) 0 0.5rem;
   border-radius: var(--cw-radius-lg);
   background-color: var(--cw-mat-tint-chrome);
   backdrop-filter: var(--cw-mat-filter);
+}
+
+/* The inset the panel gave up, restated on what it holds. Direct children
+   only: the theme control's three seats are buttons too, and they are inside a
+   row rather than being one. */
+.profileMenu[data-form="organs"] > :is(a, button, .menuIdentity, .menuSetting),
+.profileMenu[data-form="organs"] .menuFold summary {
+  padding-inline: calc((var(--ds-touch-target-min) - var(--cw-brand-size-symbol-header)) / 2);
+}
+
+.profileMenu[data-form="organs"] > .profileMenuDivider {
+  margin-inline: calc((var(--ds-touch-target-min) - var(--cw-brand-size-symbol-header)) / 2);
 }
 
 @supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {

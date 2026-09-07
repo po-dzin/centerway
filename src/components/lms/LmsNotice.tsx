@@ -59,7 +59,7 @@ const COPY: Record<LmsFailure, { title: string; text: string; href?: string; cta
      would not. Both send the reader to support rather than to checkout. */
   revoked: {
     title: "Доступ до курсу закрито",
-    text: "Доступ до цього курсу відкликано. Ваш поступ збережено — напишіть нам, і ми розберемось.",
+    text: "Доступ до цього курсу відкликано. Ваш прогрес збережено — напишіть нам, і ми розберемось.",
     href: "/profile",
     cta: "Мій кабінет",
   },

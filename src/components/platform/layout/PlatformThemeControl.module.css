@@ -50,21 +50,55 @@
    foreground steps the same amount whichever tone the plate is currently
    wearing, and it is the tint the rest of the chrome already uses for a
    resting surface. */
-/* NO PLATE UNDER THE THREE (2026-09-06). The recess was here to group the
-   seats so a full ring read as one being occupied rather than as a stray
-   circle. The sheet around it does that job now — it is a bounded window with
-   one row per line, and the three glyphs are plainly one row — while the tint
-   was a second surface floating inside a panel that is already a surface. That
-   is the plate this system does not draw: hover and selection are INK here, and
-   a control that answers with a background is answering in the wrong language.
-   What marks the current seat is the gold ring, which is the mark for an
-   icon-only choice everywhere else too. */
+/* THE RECESS COMES BACK, MEASURED BY THE WORD (2026-09-07).
+
+   It was removed a day earlier on the argument that the sheet already groups
+   the three seats and a tint is a second surface inside a panel that is one.
+   The first half held; the second did not survive contact with the row. Three
+   loose glyphs at the end of a line still read as three items until something
+   binds them, and the thing that binds them is the only shape in the menu that
+   says «one control with positions inside it».
+
+   WHAT CHANGED IS THE WEIGHT, and that is the whole of the earlier complaint.
+   The old recess was the seats' own box — a 3rem-tall pill wrapping three 3rem
+   hit boxes, so a setting was the tallest and heaviest object in a menu of
+   words. This one is measured by the LINE OF TEXT it shares the row with
+   (`--ds-type-body-size` × its line height), centred on it, and drawn at 6% of
+   the sheet's own ink rather than 10%: at that size and that step it is a seat
+   rail behind the glyphs, not a plate under them. The hit boxes are untouched —
+   a finger still lands on 3rem; only the drawn shape shrank to the text.
+
+   A pseudo-element, so nothing about the flex row moves: the tint cannot
+   change where the three seats sit, or the rail would be laying out the
+   control it is only supposed to describe.
+
+   THE TINT IS THE SHEET'S OWN FOREGROUND, not `--cw-mat-surface-sunk`. That
+   token answers «one step under the page», and this control is not on the
+   page — in the drawer it rides the header plate, which flips to the night
+   material over a dark hero, and a global sunk ground put a near-black pill on
+   a cream-inked menu. A tint of the plate's own ink steps the same amount
+   whichever tone it is wearing. */
 .control {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.1rem;
-  padding: 0;
+  padding-inline: 0.25rem;
   background: none;
+}
+
+.control::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: calc(var(--ds-type-body-size) * var(--ds-type-body-line-height));
+  transform: translateY(-50%);
+  /* `sm` is the step for something this size — 12px on a 26px rail keeps the
+     corners soft without the pill this control used to be. */
+  border-radius: var(--cw-radius-sm);
+  background: color-mix(in srgb, var(--platform-header-fg, var(--cw-platform-text)) 6%, transparent);
+  pointer-events: none;
 }
 
 .control .option {

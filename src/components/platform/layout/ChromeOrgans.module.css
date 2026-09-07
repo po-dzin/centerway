@@ -25,7 +25,24 @@
    object, so the pair sat visibly tighter to the status bar than to the edges
    it was already clear of. Nothing argued for the difference; the row is a
    thing floating in a margin, and a margin that changes by side is a mistake
-   rather than a rhythm. */
+   rather than a rhythm.
+
+   AND THE NUMBER IS THE PAGE'S (2026-09-07). It spent an afternoon at
+   `--cw-space-sm`, one step tighter, on the argument that chrome standing on
+   the article's own left edge reads as the article's first row rather than as
+   something floating over it. What removed that argument was fixing the thing
+   underneath: the workshop and the panel were on 16 and 12px while the
+   platform was on 20, and once all four surfaces took `--cw-page-gutter` there
+   was one margin in the product to align to. A floating object one step inside
+   a margin nobody else uses is not «clearly chrome», it is a fourth number.
+   The islands stand on the page's guide; what says they float is the plate,
+   the shadow and the scroll behaviour, which is what those are for.
+
+   THE ROOM UNDER THEM MOVES WITH IT. Three shells re-state the height this
+   floating row occupies — `PlatformResponsive`, `Builder.module.css`, and the
+   panel's Tailwind `pt-[5.25rem]` — plus the course tab strip's sticky offset,
+   and the first term of all four is this inset. If it changes here it changes
+   there, or the first line of the page drifts under the islands. */
 .row {
   /* THE ISLAND MATERIAL, NAMED ONCE. Two things in this row wear it — the mark
      and, when there is no session, the account glyph — and this module's whole
@@ -152,9 +169,12 @@
    or a dark sheet is where it disappeared, while the mark opposite it sat in a
    visible pill. One corner an object, the other a smudge.
 
-   `[data-auth-state]` is exactly and only the guest control — the signed-out
-   branch of `PlatformAccountMenu` already carried the attribute, so this needs
-   no new hook and cannot accidentally plate an avatar. */
+   `[data-auth-state]` is on BOTH branches of `PlatformAccountMenu` — `guest`
+   and `user` — and since 2026-09-07 that is deliberate rather than tolerated:
+   the signed-in control wears the same plate, with the portrait centred in it
+   at the mark's own 2rem instead of filling the box. Two corners, one plate,
+   one figure size. See `[data-cw-chrome="organs"] .profileAvatar` in
+   PlatformShell.module.css for why the face stops at 2rem. */
 .row [data-auth-state] {
   border-radius: var(--platform-island-radius);
   background-color: var(--platform-island-bg);

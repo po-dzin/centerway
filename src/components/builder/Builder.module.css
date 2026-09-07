@@ -132,17 +132,45 @@
    Thumb strength is the drawn rule's own ink, so a bar and a panel edge are the
    same value — which is the point: a scrollbar is a line on the page, not a
    widget on top of it. */
-.page,
-.asideContent,
-.toolDrawerBody,
-.pickerBody,
-.sheetScroll,
-.slashList,
-.previewTableWrap,
-.previewCode,
+/* One bar, nine scrollers. The thumb used to be written out here by hand — the
+   same 22% wash of the page's ink that `--cw-mat-scroll-*` already names — so
+   the editor kept its own copy of a recipe the rest of the product shares. It
+   composes the DS one now; `composes` takes a single class per rule, which is
+   why there are nine lines instead of one group. */
+.page {
+  composes: cw-scroll from global;
+}
+
+.asideContent {
+  composes: cw-scroll from global;
+}
+
+.toolDrawerBody {
+  composes: cw-scroll from global;
+}
+
+.pickerBody {
+  composes: cw-scroll from global;
+}
+
+.sheetScroll {
+  composes: cw-scroll from global;
+}
+
+.slashList {
+  composes: cw-scroll from global;
+}
+
+.previewTableWrap {
+  composes: cw-scroll from global;
+}
+
+.previewCode {
+  composes: cw-scroll from global;
+}
+
 .formatBar {
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--cw-platform-text) 22%, transparent) transparent;
+  composes: cw-scroll from global;
 }
 
 @media (min-width: 901px) {
@@ -1502,7 +1530,14 @@
      settings and structure surfaces need the same usable line as the learner
      shelf and shared chrome; individual text fields still own their readable
      measure. */
-  width: min(calc(100% - 2rem), var(--cw-max-width));
+  /* ONE GUTTER FOR THE PRODUCT (2026-09-07). This was a bare `2rem` — 16px a
+     side on a phone against the platform's own 20px, so a course card in the
+     workshop sat a hair wider than the same card on the shelf and the two
+     surfaces disagreed about where the page begins. `--cw-page-gutter` is the
+     token that answers this, it is what the shelf, the library and every
+     public page already use, and it is the same formula the desktop rules
+     below extend rather than replace. */
+  width: min(calc(100% - 2 * var(--cw-page-gutter)), var(--cw-max-width));
   margin: 0 auto;
   padding-block: var(--cw-space-lg) var(--cw-space-3xl);
   display: grid;
@@ -5455,6 +5490,8 @@
    instead — the row's inset plus one touch target — the same calc the document
    above uses to hold their room open. */
 .courseMobileNav {
+  /* No bar: the one recipe in globals.css — see «THE SCROLLBAR, IN ONE PLACE». */
+  composes: cw-scroll-none from global;
   position: sticky;
   z-index: calc(var(--ds-z-sticky) - 1);
   inset-block-start: calc(max(var(--cw-page-gutter), env(safe-area-inset-top)) + var(--ds-touch-target-min));
@@ -5475,12 +5512,6 @@
   /* The track is chrome inside chrome on a 48px strip — see the same
      suppression on the account sheet. The row scrolls by touch, wheel and
      keyboard without painting a bar across the modes. */
-  scrollbar-width: none;
-}
-
-.courseMobileNav::-webkit-scrollbar {
-  width: 0;
-  height: 0;
 }
 
 .courseMobileNavItem,

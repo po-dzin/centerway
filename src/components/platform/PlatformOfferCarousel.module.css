@@ -119,18 +119,15 @@
    against ITSELF, and the rail control — the one thing outside this box —
    is unconditionally above it. */
 .viewport {
+  /* No bar: the one recipe in globals.css — see «THE SCROLLBAR, IN ONE PLACE». */
+  composes: cw-scroll-none from global;
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
-  scrollbar-width: none;
   isolation: isolate;
-}
-
-.viewport::-webkit-scrollbar {
-  display: none;
 }
 
 .viewport:focus-visible {

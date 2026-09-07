@@ -28,8 +28,13 @@ describe("reader / author preview chrome contract", () => {
       backHref: "/learn/example?preview=draft",
       tools: createElement("button", null, "Зміст курсу"),
     })));
-    expect(html.match(/До редагування/g)).toHaveLength(1);
-    expect(html).toContain("До редагування</span></button>");
+    /* THE ARROW CARRIES THE WORD, IT DOES NOT PRINT IT (2026-09-07): the label
+       is on the control twice, for the screen reader and for the tooltip, and
+       nowhere in the row — an empty loading screen with one captioned pill on
+       it made the chrome the subject of the page. */
+    expect(html.match(/До редагування/g)).toHaveLength(2);
+    expect(html).toContain('aria-label="До редагування"');
+    expect(html).not.toContain("До редагування</span>");
     expect(html).not.toContain("Чернетка");
     expect(html).not.toContain("збережено");
     expect(html).toContain("Зміст курсу");
@@ -87,7 +92,10 @@ describe("reader / author preview chrome contract", () => {
        redraw of this material is most likely to lose. */
     expect(rule(organs, "organ")).toContain("var(--ds-touch-target-min)");
     expect(rule(organs, "cluster")).toContain("min-height: var(--ds-touch-target-min)");
-    expect(rule(css, "readerPreviewBack")).toContain("base chrome hug");
+    /* The author's way out of the preview is the SAME island as the reader's
+       way out of a lesson since 2026-09-07 — it used to compose a button role
+       because it carried a word, and it no longer carries one. */
+    expect(rule(css, "readerPreviewBack")).toContain('composes: organ from "../platform/layout/ChromeOrgans.module.css"');
   });
 
   it("gives sidebar append commands the shared themed button recipe", () => {

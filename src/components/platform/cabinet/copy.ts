@@ -250,9 +250,9 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     roomEnter: (label) => `Відкрити полицю «${label}»`,
     roomBack: "До всіх матеріалів",
     learningLoadingTitle: "Завантажуємо ваші матеріали…",
-    learningLoadingLead: "Відновлюємо доступ, поступ і ваш наступний урок.",
+    learningLoadingLead: "Відновлюємо доступ, прогрес і ваш наступний урок.",
     learningEmptyTitle: "У кабінеті ще немає матеріалів",
-    learningEmptyLead: "Після придбання програма відкривається тут — з уроками, поступом і наступним уроком.",
+    learningEmptyLead: "Після придбання програма відкривається тут — з уроками, прогресом і наступним уроком.",
     browsePrograms: "Подивитися програми",
     browseProducts: "Подивитися продукти",
 

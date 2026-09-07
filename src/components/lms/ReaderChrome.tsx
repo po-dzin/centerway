@@ -23,9 +23,14 @@ export function ReaderChrome({ backHref, backLabel = "До курсу", tools, l
   return (
     <div className={styles.readerChrome} ref={chromeRef} data-hidden={hidden ? "true" : undefined}>
       {preview ? (
-        <button className={styles.readerPreviewBack} type="button" onClick={preview.returnToBuilder}>
+        <button
+          className={styles.readerPreviewBack}
+          type="button"
+          onClick={preview.returnToBuilder}
+          aria-label="До редагування"
+          title="До редагування"
+        >
           <Icon name="arrow-left" size={18} />
-          <span>До редагування</span>
         </button>
       ) : backHref ? (
         <Link className={styles.readerBack} href={backHref} aria-label={backLabel}>
