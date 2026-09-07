@@ -243,7 +243,15 @@ export function ChromeSheetPanel({
           type="button"
           className={styles.profileMenuScrim}
           data-cw-scrim="chrome"
-          style={{ top: anchor.top }}
+          /* THE SHIELD STARTS WHERE THE CHROME ENDS, AND FOR THE ISLANDS THAT IS
+             THE TOP OF THE VIEWPORT (2026-09-07). A drawer shields the page and
+             never the bar it hangs off — which is why `top` is the measured
+             edge for the two anchored forms. The island sheet has no bar above
+             it: it BEGINS at the row and takes the pair inside itself, so the
+             strip between the status bar and the sheet's top edge is page, and
+             leaving it unshielded drew a hard unblurred band across the top of
+             an otherwise frosted screen. */
+          style={{ top: form === "organs" ? 0 : anchor.top }}
           tabIndex={-1}
           aria-label={`Закрити ${label}`}
           onClick={close}

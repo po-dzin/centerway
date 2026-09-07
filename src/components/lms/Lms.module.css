@@ -22,7 +22,7 @@
 
      The gap under the controls is `lg`, not `sm`: at 12px the caption sat in
      the arrow's shadow and the screen opened tight. */
-  margin: calc(max(var(--cw-space-sm), env(safe-area-inset-top)) + var(--ds-touch-target-min) + var(--cw-space-lg)) auto 0;
+  margin: calc(max(var(--cw-page-gutter), env(safe-area-inset-top)) + var(--ds-touch-target-min) + var(--cw-space-lg)) auto 0;
   padding-block: 0 var(--cw-space-3xl);
   /* Short states (loading, "курс ще готується") would otherwise let the footer
      ride up under the header. */
@@ -367,37 +367,22 @@
   composes: cluster from "../platform/layout/ChromeOrgans.module.css";
 }
 
-/* THE ONE ISLAND THAT KEEPS ITS WORD (2026-09-06).
+/* THE ISLAND STOPPED ARGUING (2026-09-07).
 
-   Every other leading control in the product is a bare arrow: the destination
-   is the parent, and the page it returns to writes its own name. This one is
-   not that — the author is standing inside the LEARNER's skin, and the arrow
-   there means «back to the shelf» to everybody who has ever used the reader.
-   The word is the only thing that says it leaves the preview, so the word
-   stays.
+   It was the one leading control in the product that kept a word, and the note
+   here made the case: the author is standing inside the LEARNER's skin, where a
+   bare arrow means «back to the shelf», so the word was the only thing saying
+   it leaves the preview. What settled it was the loading screen — an empty
+   sheet with one pill on it reading «До редагування», which is the widest
+   object on the phone and the only thing drawn, before the course the author
+   asked to see has arrived. The word was buying a distinction at the cost of
+   making the chrome the subject of the page.
 
-   What changes is the material: it wore `--cw-mat-shadow-chrome`, which leads
-   with a `0 0 0 1px` spread — an outline drawn around a floating object, while
-   the mark and the account beside it wear the soft shadow the islands settled
-   on. Same height, same pill, same ground, same shadow as `.organ`; only the
-   width differs, because only this one has something to say. */
+   Same as every other island now: 3rem, the arrow, and the destination in the
+   `aria-label` and the tooltip, which is where the reader's own back control
+   has always kept it. */
 .readerPreviewBack {
-  composes: base chrome hug from "../platform/PlatformButtons.module.css";
-  flex: none;
-  min-height: var(--ds-touch-target-min);
-  padding-inline: var(--cw-space-sm);
-  border-radius: var(--cw-radius-md);
-  color: var(--cw-platform-text);
-  background-color: var(--cw-mat-tint-chrome);
-  backdrop-filter: var(--cw-mat-filter);
-  box-shadow: var(--cw-mat-shadow-soft);
-  white-space: nowrap;
-}
-
-.readerPreviewBack:hover:not(:disabled),
-.readerPreviewBack:focus-visible {
-  background-color: var(--cw-mat-tint-chrome);
-  box-shadow: var(--cw-mat-shadow-soft);
+  composes: organ from "../platform/layout/ChromeOrgans.module.css";
 }
 
 /* The cluster IS the surface, so its members stop carrying one of their own —
@@ -1451,7 +1436,7 @@
      `.wrap` rules used to sit here setting `margin-top` and `margin-block-start`
      to different values three lines apart; the second silently won. */
   .wrap {
-    margin-block-start: calc(max(var(--cw-space-sm), env(safe-area-inset-top)) + var(--ds-touch-target-min) + var(--cw-space-2xl));
+    margin-block-start: calc(max(var(--cw-page-gutter), env(safe-area-inset-top)) + var(--ds-touch-target-min) + var(--cw-space-2xl));
   }
 
 

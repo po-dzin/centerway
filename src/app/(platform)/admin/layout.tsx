@@ -385,8 +385,17 @@ function AdminShell({ children }: { children: ReactNode }) {
                     the platform shell and the workshop, written in Tailwind
                     because this frame is — and `md:pt-8` hands it back at the
                     width where the bar returns. The scroll pane is what needs
-                    it: the island floats over this column's top-right corner. */}
-                <div data-admin-scroll className="custom-scrollbar flex-1 px-3 pt-[5.25rem] pb-4 sm:px-4 md:p-8 md:pt-8 overflow-y-auto overflow-x-hidden w-full min-h-0">
+                    it: the island floats over this column's top-right corner.
+
+                    THE SIDES ARE THE PRODUCT'S GUTTER (2026-09-07), not this
+                    panel's own guess at one. They were `px-3` / `sm:px-4` — 12
+                    then 16px, against the platform's 20 — so the admin was the
+                    narrowest margin in the product and the one place a card
+                    reached closer to the edge than the same card anywhere else.
+                    `--cw-page-gutter` is the token every public page and the
+                    shelf already read; `md:p-8` still takes over at the width
+                    where this frame becomes a desktop panel. */}
+                <div data-admin-scroll className="custom-scrollbar flex-1 px-[var(--cw-page-gutter)] pt-[5.25rem] pb-4 md:p-8 md:pt-8 overflow-y-auto overflow-x-hidden w-full min-h-0">
                     {/* One content column for every tab, on the platform's own
                         guide — see `.cw-admin-content`. The scroll viewport stays
                         the outer element: AdminPagination scrolls it by

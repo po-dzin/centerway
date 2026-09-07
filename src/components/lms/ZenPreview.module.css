@@ -9,5 +9,5 @@
 
 /* A course preview has no platform topbar; reserve the shared floating row. */
 .shell[data-reader="course"] {
-  padding-block-start: calc(max(var(--cw-space-sm), env(safe-area-inset-top)) + var(--ds-touch-target-min));
+  padding-block-start: calc(max(var(--cw-page-gutter), env(safe-area-inset-top)) + var(--ds-touch-target-min));
 }

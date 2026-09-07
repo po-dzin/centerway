@@ -508,8 +508,39 @@
      tone-driven variable because a bar floating over a photograph is a
      different question from a footer sitting on the sheet. Both resolve to the
      same gold. */
-  :root,
-  [data-cw-header-tone="light"] {
+  /* THE INK FOLLOWS THE THEME AND NOTHING ELSE (2026-09-07).
+
+     Two things used to move this token: the theme, and what the header
+     measured behind itself — a bar floating over a dark photograph re-declared
+     the marker as gold even on the day gamma, and a `tone="light"` stamp
+     re-declared it as ink even on the night one. So the same product marked
+     «you are here» in two different colours on one screen: gold in the bar
+     over a hero, black in the page under it, and the reverse on a portalled
+     menu that had inherited the other stamp. A reader cannot learn a mark that
+     changes colour by backdrop.
+
+     One rule now, and it is the one the brand mark already followed: INK ON
+     THE DAY GAMMA, GOLD ON THE NIGHT ONE. The tone flip keeps everything else
+     it does — the plate's material, the foreground, the wordmark — because
+     those answer «what is behind me», which is a real question. What colour
+     the hand's mark is is not one of them.
+
+     ONE EXCEPTION, AND IT IS THE RULE RESTATED RATHER THAN BROKEN: a bar
+     WEARING the night material — `[data-cw-header-tone="dark"]`, the
+     storefront's overlay bar floating over a dark hero — keeps the gold. Its
+     plate is graphite and its text is cream; near-black ink on it is not a
+     quieter mark, it is an invisible one, and the current nav row (which takes
+     the marker as its own colour) simply disappeared. «Ink on a pale ground,
+     gold on a dark one» is the rule the brand mark has always followed, and
+     that bar is a dark ground by measurement.
+
+     WHAT DOES NOT COME BACK is the other half: `[data-cw-header-tone="light"]`
+     no longer re-declares the ink. A light stamp on the night theme was how a
+     portalled menu ended up marking its current row in cream while the page
+     under it marked everything in gold — a light-tone stamp says «the thing
+     behind me is pale», which on the night gamma is not a reason to change the
+     mark. */
+  :root {
     --cw-nav-marker: var(--cw-platform-text);
     --cw-nav-marker-size: 2px;
     --cw-nav-marker-hover-opacity: var(--cw-ink-hover-opacity);
@@ -1658,21 +1689,8 @@ body {
     border-bottom: 1px solid var(--cw-border);
     overflow-y: hidden;
     min-height: var(--ds-touch-target-min);
-    scrollbar-width: thin;
-    scrollbar-color: var(--cw-mat-scroll-thumb) var(--cw-mat-scroll-track);
-  }
-
-  .cw-tabbar::-webkit-scrollbar {
-    height: 4px;
-  }
-
-  .cw-tabbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .cw-tabbar::-webkit-scrollbar-thumb {
-    background-color: var(--cw-mat-scroll-thumb);
-    border-radius: var(--cw-radius-pill);
+    /* The bar itself comes from the one scrollbar recipe further down this
+       file, where `.cw-tabbar` is named as the rail form. */
   }
 
   .cw-tab {
@@ -2007,44 +2025,98 @@ body {
     background-color: color-mix(in srgb, var(--cw-muted) 68%, transparent);
   }
 
-  /* THE ONE SCROLLBAR RECIPE (2026-08-28). It came out of the admin, where a
-     dense table has to be scrollable and cannot afford a native bar sitting on
-     the panel, and it is DS-owned now because the same question comes up
-     wherever a surface clamps: the account popover suppresses its gutter
-     entirely (`.profileMenu`), the tab strip runs a 4px one, this is the
-     full-size one for a scroll viewport.
+  /* THE SCROLLBAR, IN ONE PLACE (2026-08-28, made general 2026-09-07).
 
-     Two rules keep it honest. The thumb is INK, not a colour of its own — a
-     translucent wash of the page's own text, so it darkens the surface it lies
-     on instead of introducing a grey nobody chose; and the track is nothing.
-     The night half needs no override any more: `--cw-mat-scroll-*` are written
-     against `--cw-platform-text`, which flips with the theme. */
-  .custom-scrollbar {
+     It came out of the admin, where a dense table has to be scrollable and
+     cannot afford a native bar sitting on the panel. It was DS-owned from the
+     start and it was still not the only one: a tab strip carried its own 4px
+     copy, the builder wrote the thumb's ink out by hand instead of naming the
+     token, seven modules each spelled the two lines that hide a rail, and
+     three admin tables asked for a `no-scrollbar` class that WAS NEVER
+     DEFINED — the bar they meant to hide had been on screen the whole time.
+
+     Three answers, and every scroller in the product takes one of them:
+
+       · `cw-scroll` — a viewport with its own bar. The full-size one.
+       · `cw-scroll-rail` — a 4px bar for a strip, where a 10px one is the
+         tallest thing in a 48px row.
+       · `cw-scroll-none` — no bar at all. For a SNAP RAIL, and only there: a
+         rail reports its position with its cut edge and its dots, so the bar is
+         a grey trench under content that already says where it is.
+
+     Two rules keep them honest. The thumb is INK — a translucent wash of the
+     page's own text, so it darkens the surface it lies on instead of
+     introducing a grey nobody chose — and the track is nothing. The night half
+     needs no override: `--cw-mat-scroll-*` are written against
+     `--cw-platform-text`, which flips with the theme.
+
+     THE OLD NAMES ARE KEPT AS ALIASES, not as second recipes: `custom-scrollbar`
+     is on a dozen admin elements and `cw-tabbar` is the tab strip's own class.
+     They are extra selectors on the one rule, so there is nothing left that can
+     drift. CSS modules reach these with `composes: cw-scroll-none from global`,
+     which is why they are classes and not attributes. */
+  .cw-scroll,
+  .custom-scrollbar,
+  .cw-scroll-rail,
+  .cw-tabbar {
     scrollbar-width: thin;
     scrollbar-color: var(--cw-mat-scroll-thumb) var(--cw-mat-scroll-track);
   }
 
+  .cw-scroll::-webkit-scrollbar,
   .custom-scrollbar::-webkit-scrollbar {
     width: 10px;
     height: 10px;
   }
 
-  .custom-scrollbar::-webkit-scrollbar-track {
+  .cw-scroll-rail::-webkit-scrollbar,
+  .cw-tabbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .cw-scroll::-webkit-scrollbar-track,
+  .custom-scrollbar::-webkit-scrollbar-track,
+  .cw-scroll-rail::-webkit-scrollbar-track,
+  .cw-tabbar::-webkit-scrollbar-track {
     background: var(--cw-mat-scroll-track);
   }
 
-  .custom-scrollbar::-webkit-scrollbar-thumb {
+  .cw-scroll::-webkit-scrollbar-thumb,
+  .custom-scrollbar::-webkit-scrollbar-thumb,
+  .cw-scroll-rail::-webkit-scrollbar-thumb,
+  .cw-tabbar::-webkit-scrollbar-thumb {
     background-color: var(--cw-mat-scroll-thumb);
     /* The inset is what makes a 10px bar read as a 6px hairline: the thumb is
        clipped to its padding box, so the border is transparent margin rather
-       than a second colour. */
-    border: 2px solid transparent;
-    background-clip: padding-box;
+       than a second colour. On the 4px rail there is nothing to inset, and a
+       2px border on a 4px bar would erase it. */
     border-radius: var(--cw-radius-pill);
   }
 
-  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  .cw-scroll::-webkit-scrollbar-thumb,
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .cw-scroll:hover::-webkit-scrollbar-thumb,
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb,
+  .cw-scroll-rail:hover::-webkit-scrollbar-thumb,
+  .cw-tabbar:hover::-webkit-scrollbar-thumb {
     background-color: var(--cw-mat-scroll-thumb-hover);
+  }
+
+  .cw-scroll-none,
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .cw-scroll-none::-webkit-scrollbar,
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
 }
 

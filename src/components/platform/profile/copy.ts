@@ -126,7 +126,7 @@ export function getProfileCopy(
     completedProgramLabel: "Завершена програма",
     routeStarted: "Старт програми",
     purchasedAt: "Дата покупки",
-    programProgressNote: "Тут уже видно доступ і стан програми, а детальний поступ уроків збирається в цю ж карту проходження.",
+    programProgressNote: "Тут уже видно доступ і стан програми, а детальний прогрес уроків збирається в цю ж карту проходження.",
     programAccessManual: "Доступ підтверджено окремо",
     programAccessNoToken: "Програма була оформлена без окремого токена доступу",
     noProgramsLead: "Поки немає програм, прив’язаних до цього кабінету.",

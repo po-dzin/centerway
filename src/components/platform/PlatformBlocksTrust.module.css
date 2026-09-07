@@ -146,11 +146,13 @@
   padding: 0.1rem 0.35rem 0.35rem 0.05rem;
   scroll-snap-type: x proximity;
   overscroll-behavior-x: contain;
-  scrollbar-width: none;
 }
 
-.consultantRail::-webkit-scrollbar {
-  display: none;
+/* Its own rule because the one above is a group with an attribute selector, and
+   `composes` takes simple classes only. */
+.consultantRail {
+  /* No bar: the one recipe in globals.css — see «THE SCROLLBAR, IN ONE PLACE». */
+  composes: cw-scroll-none from global;
 }
 
 .consultantRail > .guideCard,
@@ -356,11 +358,6 @@
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
     padding-bottom: var(--cw-space-2xs);
-    scrollbar-width: none;
-  }
-
-  .guideRail::-webkit-scrollbar {
-    display: none;
   }
 
   .guideCard {
