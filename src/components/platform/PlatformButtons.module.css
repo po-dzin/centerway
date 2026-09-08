@@ -171,8 +171,19 @@
    24 — so two icon-only controls standing next to each other came out at two
    sizes. `--ds-icon-in-control` is the one ratio (see globals.css); the `size`
    prop on `Icon` stays as the intrinsic default for anything rendered outside a
-   contracted box, and CSS wins over the presentational attribute here. */
-.square :is(svg, img) {
+   contracted box, and CSS wins over the presentational attribute here.
+
+   THE INK RING IS NOT A GLYPH (2026-09-08), and this rule was swallowing it.
+   `InteractionInkIcon` draws the ring as a sibling of the glyph inside the
+   button, so «every svg in a square control is 0.53 of the box» collapsed a
+   3rem loop to the same 1.6rem as the mark it is supposed to encircle: at rest
+   invisible, on hover 0.74 of that — smaller than the glyph — and on
+   `aria-pressed` exactly the size the hover ring used to be. That is the whole
+   of the report «the ink circle got smaller, the hover one is now micro».
+   The ring reads `--cw-ink-ring-size` and nothing else, and it is excluded
+   here by name for the same reason `.profileEntryCompact` excludes it in
+   PlatformShell.module.css — one control, two kinds of drawing in it. */
+.square :is(svg, img):not(:global(.cw-ink-icon-mark)) {
   width: var(--ds-icon-in-control);
   height: var(--ds-icon-in-control);
 }

@@ -1782,7 +1782,15 @@ body {
     bottom: var(--cw-ink-stroke-offset);
     width: calc(100% + 0.4rem);
     height: var(--cw-ink-stroke-height);
-    color: var(--cw-platform-accent);
+    /* THE MARK IS INK ON A LIGHT GROUND AND BRASS ON A DARK ONE (2026-09-08),
+       which is exactly what `--cw-nav-marker` says — and it is the only place
+       that says it. Written as the accent outright, this stroke came out gold
+       in BOTH themes, so the account menu marked its current row in brass on
+       cream while the topbar three rows above it marked the same row in ink,
+       from the same design system. The topbar was never wrong: `.navInkMark`
+       has read the marker token since it was written. This is the same mark
+       and it reads the same token. */
+    color: var(--cw-nav-marker);
     opacity: 0;
     /* ONE STROKE, THREE FORCES — AND THE FORCE IS OPACITY AND LENGTH, NEVER
        WEIGHT (2026-09-06).
@@ -1844,7 +1852,10 @@ body {
     z-index: 0;
     width: var(--cw-ink-ring-size);
     height: var(--cw-ink-ring-size);
-    color: var(--cw-platform-accent);
+    /* Same token as the stroke above, and for the same reason: the ring around
+       a glyph and the stroke under a word are one mark in two shapes. The
+       header's own ring (`.iconInkRing`) already read the marker. */
+    color: var(--cw-nav-marker);
     opacity: 0;
     transform: scale(0.82) rotate(-7deg);
     pointer-events: none;

@@ -770,35 +770,23 @@
   opacity: 0;
 }
 
-/* The same arithmetic in the bar, where the avatar is 2.25rem: its diagonal is
-   3.18rem and the ring is 3rem, so the corners crossed the stroke there too —
-   invisibly until hover, and then exactly as wrong. */
-.profileEntry .profileInkRing {
-  width: calc(var(--cw-ink-ring-size) * 1.2);
-  height: calc(var(--cw-ink-ring-size) * 1.2);
-}
+/* THE RING CIRCLES A FACE, AND A FACE IS ROUND (2026-09-08).
 
-/* THE RING ENCIRCLES, IT DOES NOT CROSS (2026-09-06). `--cw-ink-ring-size` is
-   3rem because it was drawn around an 18px glyph sitting in a 3rem box — a
-   loop with air inside it. Fill that box with a portrait and the same 3rem
-   lands exactly on the photograph's edge: a hand-drawn stroke scribbled across
-   a face, which is what the open state looked like the moment the avatar grew.
+   What stood here was two overrides — 1.2 of the token in the bar, 1.5 in the
+   island — worked out against the avatar's DIAGONAL, because for one day the
+   portrait was cropped square and a circle that clears a square has to clear
+   its corners. The square was reverted the next day (see `.profileAvatar`: a
+   face is round wherever it appears) and the arithmetic was not, so the bar
+   kept drawing a 3.6rem loop around a 2.25rem disc — half again as wide as the
+   thing it marks, and read exactly that way: «a huge circle on the profile
+   when it is open».
 
-   The mark is not wrong, the ratio is. It used to circle a 2.25rem disc at
-   3rem — a third larger than the thing it marks — so at 3rem the loop is 4rem.
-   Nothing clips it: the row sets no overflow, and 8px of overhang on a 20px
-   gutter stays inside the viewport on the narrowest phone we ship to.
-
-   AND THE FACE IS A SOFT RECT NOW, which moves the number again: a circle that
-   clears a 3rem SQUARE has to clear its diagonal, 4.24rem, not its side. At
-   1.34 the loop passed exactly through the four corners — the same stroke
-   across the same face, in a new place. 1.5 puts it outside them with air to
-   spare, and the overhang is still inside the gutter. */
-[data-cw-chrome="organs"] .profileInkRing {
-  width: calc(var(--cw-ink-ring-size) * 1.5);
-  height: calc(var(--cw-ink-ring-size) * 1.5);
-}
-
+   A circle around a circle only has to clear the diameter, which is what
+   `--cw-ink-ring-size` has always done: 3rem around the 2.25rem face is the
+   third of air this mark was drawn with, and the same 3rem loop the icon
+   controls draw around their own boxes. One ring size in the product, no
+   per-surface multipliers — so the two chromes cannot drift apart in it
+   either, which is the whole reason the island keeps the element at all. */
 
 /* THE FACE SITS IN THE ISLAND, IT IS NOT THE ISLAND (2026-09-07).
 
