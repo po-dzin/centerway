@@ -108,6 +108,27 @@ export async function ensureDoshaTestSeed(db: SupabaseAdmin): Promise<TestDefini
     return test;
   }
 
+  /* A RESEED THAT LEAVES THE VERSION BEHIND IS A RESEED THAT LIES.
+     The version is stamped on every attempt (`startAttempt` reads it off this
+     row), and it was written once, at insert. So a forced reseed used to
+     rewrite all twelve questions while every attempt afterwards still claimed
+     to be the wording that came before them — the one field whose whole job is
+     to tell two cohorts apart could not tell them apart. */
+  if (test && test.version !== DOSHA_TEST_VERSION) {
+    const { data: revised, error: versionError } = await db
+      .from("test_definitions")
+      .update({ version: DOSHA_TEST_VERSION })
+      .eq("id", test.id)
+      .select("id, slug, title, version, status")
+      .single();
+
+    if (versionError || !revised) {
+      throw new Error(`test_definition_version_update_failed: ${versionError?.message ?? "unknown"}`);
+    }
+
+    test = revised as TestDefinitionRow;
+  }
+
   if (!test) {
     const { data: inserted, error: insertError } = await db
       .from("test_definitions")
