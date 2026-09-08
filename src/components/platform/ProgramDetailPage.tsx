@@ -162,37 +162,56 @@ export function ProgramDetailPage({
     "проходити можна з телефона і з компʼютера",
   ];
 
-  /* Duration is deliberately NOT in here any more. It is the panel's own title
-     and, since the facts moved up, a hero pill as well — printing it a third
-     time inside the panel it titles read as a stutter. */
+  /* ONE FACT, ONE PLACE (2026-09-08).
+     Neither the duration nor the access promise is in here. Every fact this
+     page states now has exactly one home, and repetition is reserved for the
+     price, which is quoted again beside its own button because that is where
+     it is acted on:
+
+       рід · тривалість   → the hero's badge
+       ціна · доступ      → the commitment under it
+       кількість уроків   → this list
+       ритм               → this panel's title
+       що входить в оплату → the checkout panel
+
+     Before this the hero printed a pill row that repeated all three facts of
+     the panel below it, so «7 днів» appeared in the badge and again as a pill,
+     and «доступ назавжди» sat twice within one screen — once as a pill and
+     once under the price. */
+  const lessonLabel = `${lessonCount} ${plural(lessonCount, "урок", "уроки", "уроків")}`;
   const formatMeta = [
-    course ? `${lessonCount} ${plural(lessonCount, "урок", "уроки", "уроків")}` : program.tag,
-    ...(program.accessNote ? [program.accessNote] : []),
+    /* AND THE COUNT IS SKIPPED WHEN THE BADGE IS ALREADY PRINTING IT. With no
+       `durationDays` set, `program.duration` IS the lesson count — see
+       courseOffer.ts — so the badge above reads «ЧЕК-ЛИСТ · 6 УРОКІВ» and this
+       line would repeat it word for word. Comparing the strings rather than
+       re-deriving the condition keeps this true even if that fallback changes. */
+    ...(course && lessonLabel !== program.duration ? [lessonLabel] : []),
+    ...(course ? [] : [program.tag]),
     isCheckout ? "оплата просто тут, без переходу на лендинг" : isFree ? "доступ без оплати" : "участь узгоджуємо в розмові",
   ];
 
-  /* THE FACTS, MOVED INTO THE HERO. These three used to be reachable only by
-     scrolling to the «Формат» panel, which meant the questions a reader stops
-     to look for — how long, how much of it, for how long is it mine — were
-     answered below the thing they were deciding about.
+  /* WHAT THE PANEL IS TITLED, now that the duration is the badge's.
+     A course is either walked a day at a time or read at the reader's own
+     speed, and that is the one thing about its shape the page never said —
+     `schedule.mode` has been in the data since the LMS shipped and only the
+     lesson player ever read it. With no course to ask (a page whose offer is
+     not delivered here), the duration is still the honest title. */
+  const rhythmTitle = course
+    ? course.schedule.mode === "daily"
+      ? "День за днем"
+      : "У своєму темпі"
+    : program.duration;
 
-     Filtered rather than padded: a course whose author has not written an
-     access promise shows two pills, not three and a blank.
+  /* THE PILL ROW IS GONE (2026-09-08), and the note it replaces is worth
+     keeping as the reason it existed: the three facts used to be reachable only
+     by scrolling past the thing a reader was deciding about, so they were
+     lifted into the hero. They were never removed from where they came from,
+     which is how the page ended up saying «7 днів» in the badge and again a
+     line below it, and the access promise twice within one screen.
 
-     THE LESSON PILL IS SKIPPED WHEN IT WOULD REPEAT THE FIRST ONE. `program.
-     duration` already falls back to a lesson count — "6 уроків" — for any
-     course with no `durationDays` and no daily schedule (see the `duration`
-     field in courseOffer.ts), which is most checklists and mini-courses. Adding
-     a second pill for the same count then printed «6 уроків · 6 уроків»: two
-     pills, one fact. Comparing the strings, not re-deriving the condition,
-     keeps this in agreement with courseOffer.ts even if its fallback rule
-     changes. */
-  const lessonLabel = `${lessonCount} ${plural(lessonCount, "урок", "уроки", "уроків")}`;
-  const heroMeta = [
-    { label: program.duration, icon: "clock" as const },
-    ...(course && lessonLabel !== program.duration ? [{ label: lessonLabel, icon: "day" as const }] : []),
-    ...(program.accessNote ? [{ label: program.accessNote, icon: "shield-check" as const }] : []),
-  ];
+     The facts stayed lifted; the duplicates went. See `formatMeta` above for
+     where each one now lives — including the guard this row was carrying,
+     which moved there with the count it protects. */
 
   const buyHref = isCheckout ? commerce.checkoutHref : isFree ? commerce.accessHref : "#program-enroll";
   const buyLabel = isCheckout ? "Придбати доступ" : isFree ? "Почати безкоштовно" : "Записатися на програму";
@@ -218,7 +237,6 @@ export function ProgramDetailPage({
           /* The author's own way in, on the hero's utility line. Renders for
              nobody else, including the buyer looking at the same page. */
           ...(course ? { utility: <CourseAuthorLink courseSlug={course.slug} tone="media" /> } : {}),
-          meta: heroMeta,
           commitment: (
             <OfferHeroCommitment
               commerce={{
@@ -281,7 +299,6 @@ export function ProgramDetailPage({
                 them. The hero says it now, in the place the contradiction was,
                 and a second announcement below would be the platform saying the
                 same thing twice in two voices. */}
-            <OfferBento audience={program.audience} results={program.results} format={program.format} />
           </>
         }
         detailSectionId="program-results"
@@ -301,11 +318,27 @@ export function ProgramDetailPage({
         }}
         detailRight={{
           label: "Формат",
-          title: program.duration,
+          title: rhythmTitle,
           body: <PlatformOfferMetaList items={formatMeta} />,
         }}
         beforeSupport={
           <>
+            {/* THE PROSE COMES FIRST, THE CARDS ANSWER IT (2026-09-08).
+                The three cards used to sit directly under the hero, above the
+                split — so the page opened with three columns of bullet lists
+                and only then said what the method is. That is an index before
+                the thing it indexes: a reader who has just read a one-line
+                tagline is asked to scan «для кого / що зміниться / що входить»
+                without yet knowing what the work IS.
+
+                The order is now: what this method is and what shape it takes
+                (the split, «Про метод» + «Формат»), then the three answers to
+                the questions that follow from it, then the outline of the
+                actual lessons. Each block narrows the one above it instead of
+                repeating it — and «Формат» is said once, by the panel that
+                means the commitment (see `OfferBento`'s own note on the
+                rename). */}
+            <OfferBento audience={program.audience} results={program.results} format={program.format} />
             {course ? <OfferCurriculum course={course} landingHref={offerLandingUrl(program.slug)} /> : null}
             <OfferAuthor author={author} note={program.authorNote} />
           </>

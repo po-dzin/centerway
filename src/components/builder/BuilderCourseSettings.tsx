@@ -33,7 +33,7 @@ import {
   type CourseVisibility,
 } from "@/lms-core";
 import { BuilderCoverEditor } from "./BuilderCoverEditor";
-import { ChoiceRow, ChoiceSet, FieldInput } from "./BuilderFields";
+import { ChoiceRow, ChoiceSet, FieldInput, RequiredMark } from "./BuilderFields";
 import { PALETTE_LABELS } from "./coursePalettes";
 import styles from "./Builder.module.css";
 
@@ -122,6 +122,7 @@ function StringListField({
   itemLabel,
   hint,
   items,
+  required,
   onChange,
 }: {
   path: string;
@@ -130,6 +131,14 @@ function StringListField({
   itemLabel: string;
   hint: string;
   items: string[];
+  /**
+   * Star the label, the way `FieldInput` does for the fields the publish gate
+   * holds. Passed the same `showcase` flag the cover tab's stars read, so «this
+   * is required» means the same sentence on both tabs — and it is read from
+   * `courseReadiness`, never decided here (see the blockers this pairs with:
+   * `lms_ready_missing_audience` / `_results` / `_format` / `_access_note`).
+   */
+  required?: true;
   onChange: (path: (string | number)[], value: unknown) => void;
 }) {
   // Empty is ABSENT, as everywhere else: the validator rejects `[]` because a
@@ -138,7 +147,10 @@ function StringListField({
 
   return (
     <div className={styles.field}>
-      <span className={styles.fieldLabel}>{label}</span>
+      <span className={styles.fieldLabel}>
+        {label}
+        {required ? <RequiredMark /> : null}
+      </span>
       {items.map((item, index) => (
         <div className={styles.itemRow} key={index}>
           <input
@@ -281,6 +293,7 @@ export function BuilderCourseSettings({
           itemLabel="Результат"
           hint="Короткі твердження, не абзаци. Порожні рядки не зберігаються."
           items={course.results ?? []}
+          required={showcase}
           onChange={onChange}
         />
         <StringListField
@@ -289,6 +302,7 @@ export function BuilderCourseSettings({
           itemLabel="Аудиторія"
           hint="Друга половина обіцянки: «що зміниться» вже сказано вище, тут — з ким."
           items={course.audience ?? []}
+          required={showcase}
           onChange={onChange}
         />
         {/* RENAMED, NOT MOVED. The key is still `format` and the data is
@@ -298,12 +312,19 @@ export function BuilderCourseSettings({
             the wrong one — and both values look right afterwards, so nobody
             finds it. This one always meant the MEDIUM, and its own hint already
             read that way. */}
+        {/* «Що входить», the same words the card on the page prints (2026-09-08).
+            The label said «З чого складається» while the page's third card said
+            «Формат та інструменти», so an author filling one thing was looking
+            at two names for it and could not tell which block on the storefront
+            they were writing. Both say «Що входить» now; the key is still
+            `format` and no data moved. */}
         <StringListField
           path="format"
-          label="З чого складається"
+          label="Що входить"
           itemLabel="Складова"
           hint="Носій, не структура: відео, аудіо, чек-листи, рецепти. Рід курсу — на вкладці «Обкладинка»."
           items={course.format ?? []}
+          required={showcase}
           onChange={onChange}
         />
         {/* Prose, not policy. What actually cuts access off is the expiry on the
@@ -311,7 +332,7 @@ export function BuilderCourseSettings({
             beside the price. They are free to differ on purpose — «доступ
             назавжди» is still compatible with revoking a refunded seat. */}
         <FieldInput
-          field={{ path: ["accessNote"], label: "Термін доступу", kind: "text", hint: "Що обіцяємо покупцю: «доступ назавжди», «30 днів після покупки»." }}
+          field={{ path: ["accessNote"], label: "Термін доступу", kind: "text", required: showcase, hint: "Що обіцяємо покупцю: «доступ назавжди», «30 днів після покупки»." }}
           value={course.accessNote}
           onChange={onChange}
         />
@@ -486,7 +507,10 @@ export function BuilderCourseSettings({
             path: ["durationDays"],
             label: "Тривалість, днів",
             kind: "number",
-            required: showcase,
+            /* NO STAR (2026-09-08). The hint below already says what happens
+               when it is empty — the shelf prints the lesson count — and a
+               field with an honest fallback is not a field the gate holds.
+               See `courseReadiness`: the blocker was removed with it. */
             min: 1,
             max: COURSE_DURATION_DAYS_MAX,
             hint: "Скільки днів курс займає в людини. Число — «дні/днів» допише сама вітрина. Порожньо — покажемо кількість уроків.",
