@@ -43,7 +43,13 @@ export function OfferBento({
     [
       { title: "Для кого", icon: "user", items: audience ?? [] },
       { title: "Що зміниться", icon: "rhythm", items: results ?? [] },
-      { title: "Формат та інструменти", icon: "play", items: format ?? [] },
+      /* «Що входить», not «Формат та інструменти» (2026-09-08). The panel two
+         sections above is titled «Формат» and answers the SHAPE of the
+         commitment — how long, how many lessons, for how long it is yours. This
+         card answers what is in the box. While both carried the word «формат» a
+         reader met it twice on one page with two different meanings, and the
+         second one read as the first one repeated. */
+      { title: "Що входить", icon: "play", items: format ?? [] },
     ] satisfies Facet[]
   ).filter((facet) => facet.items.length > 0);
 

@@ -249,6 +249,29 @@ export function courseReadiness(course: Course): CourseReadiness {
     if (!course.tagline?.trim()) add("lms_ready_missing_tagline", course.slug);
     if (course.durationDays === undefined) add("lms_ready_missing_duration", course.slug);
     if (!course.categories?.length) add("lms_ready_missing_category", course.slug);
+
+    /* THE STOREFRONT'S OWN FOUR (2026-09-08).
+     *
+     * Everything above is what a CARD owes a stranger. These are what the PAGE
+     * owes the same stranger once they have clicked it: who it is for, what
+     * changes, what is in the box, and how long it stays theirs. They were
+     * optional, and the catalogue shows what optional produced — two of the
+     * five published courses answered one of the three questions and the page
+     * printed a single lonely card where a reader expected the offer.
+     *
+     * A page that prints only what it has is still the right rule for the
+     * RENDER — `OfferBento` drops an empty card rather than heading nothing.
+     * That rule is about not lying; it was never a reason to ship an offer with
+     * nothing in it. The gate is where "we always answer these" belongs, and it
+     * is conditional on visibility exactly like the five above: a hidden course
+     * is material for people who already own it and owes a storefront nothing.
+     *
+     * Same order as the page reads them, so the release panel's list walks the
+     * page from top to bottom. */
+    if (!course.audience?.length) add("lms_ready_missing_audience", course.slug);
+    if (!course.results?.length) add("lms_ready_missing_results", course.slug);
+    if (!course.format?.length) add("lms_ready_missing_format", course.slug);
+    if (!course.accessNote?.trim()) add("lms_ready_missing_access_note", course.slug);
   }
 
   return { ready: blockers.length === 0, blockers };

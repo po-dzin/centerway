@@ -281,7 +281,6 @@ export function ProgramDetailPage({
                 them. The hero says it now, in the place the contradiction was,
                 and a second announcement below would be the platform saying the
                 same thing twice in two voices. */}
-            <OfferBento audience={program.audience} results={program.results} format={program.format} />
           </>
         }
         detailSectionId="program-results"
@@ -306,6 +305,22 @@ export function ProgramDetailPage({
         }}
         beforeSupport={
           <>
+            {/* THE PROSE COMES FIRST, THE CARDS ANSWER IT (2026-09-08).
+                The three cards used to sit directly under the hero, above the
+                split — so the page opened with three columns of bullet lists
+                and only then said what the method is. That is an index before
+                the thing it indexes: a reader who has just read a one-line
+                tagline is asked to scan «для кого / що зміниться / що входить»
+                without yet knowing what the work IS.
+
+                The order is now: what this method is and what shape it takes
+                (the split, «Про метод» + «Формат»), then the three answers to
+                the questions that follow from it, then the outline of the
+                actual lessons. Each block narrows the one above it instead of
+                repeating it — and «Формат» is said once, by the panel that
+                means the commitment (see `OfferBento`'s own note on the
+                rename). */}
+            <OfferBento audience={program.audience} results={program.results} format={program.format} />
             {course ? <OfferCurriculum course={course} landingHref={offerLandingUrl(program.slug)} /> : null}
             <OfferAuthor author={author} note={program.authorNote} />
           </>

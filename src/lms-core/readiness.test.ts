@@ -188,8 +188,12 @@ function tableCourse(rows: string[][]): Course {
 
 /**
  * The showcase gate. Its whole design is that it is CONDITIONAL — none of these
- * five blockers exist for a course nobody can find — so the tests are as much
- * about what does NOT fire as about what does.
+ * blockers exist for a course nobody can find — so the tests are as much about
+ * what does NOT fire as about what does.
+ *
+ * Five of them are what a CARD owes a stranger, four are what the PAGE behind
+ * it owes the same person (2026-09-08). `complete` answers all nine, so every
+ * test below that expects a green readiness is asserting the whole gate.
  */
 describe("what a card owes a stranger", () => {
   const complete: Partial<Course> = {
@@ -197,6 +201,10 @@ describe("what a card owes a stranger", () => {
     tagline: "Навіщо це людині",
     durationDays: 3,
     categories: ["nutrition"],
+    audience: ["Кому це"],
+    results: ["Що зміниться"],
+    format: ["Що входить"],
+    accessNote: "доступ назавжди",
   };
 
   it("asks a hidden course for nothing", () => {
@@ -216,6 +224,23 @@ describe("what a card owes a stranger", () => {
 
   it("lets a listed course through once the five are answered", () => {
     expect(courseReadiness(course({ visibility: "listed", ...complete })).ready).toBe(true);
+  });
+
+  it("asks a listed course what its page will say, not only its card", () => {
+    const codes = courseReadiness(course({ visibility: "listed", ...complete, audience: undefined, results: [], format: undefined, accessNote: "  " }))
+      .blockers.map((one) => one.code);
+    expect(codes).toContain("lms_ready_missing_audience");
+    // An empty list is silence, not an answer: the page drops a card with
+    // nothing in it, so `[]` and absent produce the same blank storefront.
+    expect(codes).toContain("lms_ready_missing_results");
+    expect(codes).toContain("lms_ready_missing_format");
+    expect(codes).toContain("lms_ready_missing_access_note");
+  });
+
+  it("asks a hidden course for none of the storefront four", () => {
+    const codes = courseReadiness(course({ visibility: "hidden" })).blockers.map((one) => one.code);
+    expect(codes).not.toContain("lms_ready_missing_audience");
+    expect(codes).not.toContain("lms_ready_missing_format");
   });
 
   it("never asks for a kind — the catalogue can still count lessons", () => {
