@@ -181,7 +181,14 @@
      lighter (reset-day's #23463a) would drop the hero labels under AA. It is
      one fixed depth for the whole network, and it is the value the contrast
      gate asserts — a skin that overrides it owes the gate a new pair. */
-  --cw-net-hero-scrim: #182a20;
+  /* WARMED, NOT INVENTED (2026-09-06). It was the brand's green-black, and with
+     the 2026-09 hero masters that put a warm room above it, the band read as a
+     second, colder light source under the photograph. It is now the material's
+     own scrim ink — the same neutral dark `--cw-net-photo-scrim` uses — warmed
+     by the brand's gold at 6%, the same low mix the network derives its soft
+     tints with. Resolves to #221f19; the four contrast pairs in
+     scripts/guard-contrast.mjs assert that value and its composite. */
+  --cw-net-hero-scrim: color-mix(in srgb, var(--cw-mat-scrim-ink, #171817) 94%, var(--cw-net-gold-strong) 6%);
   /* What darkens the photograph itself, as opposed to the band the copy sits
      on. Those are two jobs and they were sharing one green-black value: at the
      strengths this scrim runs, a green-black repaints a warm photo instead of
