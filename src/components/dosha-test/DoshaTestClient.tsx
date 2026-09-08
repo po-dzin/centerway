@@ -868,7 +868,13 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                   <div className={styles.card} data-tone="support">
                     <p className={styles.label}>Ваш профіль</p>
                     <h2>{resultHeading}</h2>
-                    <p>{resultCopy.summary}</p>
+                    {/* The summary is paragraphs, not one string: what the type
+                        IS, then what it looks like out of balance. Rendered as
+                        one <p> the break between them collapsed into a space
+                        and the two halves read as one run-on claim. */}
+                    {resultCopy.summary.map((paragraph) => (
+                      <p key={paragraph.slice(0, 32)}>{paragraph}</p>
+                    ))}
                     <p>{resultCopy.recommendation}</p>
                   </div>
 
