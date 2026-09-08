@@ -95,12 +95,22 @@ const ENTER_LIGHT = 0.26;
 
 type PointReading = { tone: HeaderTone } | { luminance: number } | null;
 
+/* WHAT THE CHROME IS, wherever it is. Above 901px it is the bar; below, the
+   same two questions are answered by the floating islands, and both have to be
+   able to ask "what am I standing on". One selector, so a surface cannot end up
+   with a sampler that only knows one of its two forms. */
+const CHROME_SELECTOR = 'header[data-cw-header-tone], [data-cw-chrome="organs"]';
+
 function resolveReadingFromPoint(x: number, y: number): PointReading {
   const elements = document.elementsFromPoint(x, y);
 
   for (const node of elements) {
     if (!(node instanceof HTMLElement)) continue;
-    if (node.closest("header[data-cw-header-tone]")) continue;
+    /* The chrome cannot be its own backdrop. This skipped the bar from the
+       start; the islands were added on 2026-09-07, and without them the row
+       sampled its own plate — a tinted surface reading its own tint, which
+       settles wherever it happens to start. */
+    if (node.closest(CHROME_SELECTOR)) continue;
 
     const explicitTone = node.closest<HTMLElement>("[data-cw-topbar-tone]")?.dataset.cwTopbarTone;
     if (explicitTone === "light" || explicitTone === "dark") return { tone: explicitTone };
@@ -200,9 +210,25 @@ export function useHeaderTone(
 
     const updateTone = () => {
       frame = 0;
-      const headerEl = document.querySelector<HTMLElement>("header[data-cw-header-tone]");
+      /* THE VISIBLE CHROME, NOT THE BAR (2026-09-07). Both forms are in the DOM
+         at all times and CSS picks — so below 901px this used to find a bar
+         with `display: none`, measure it at 0, and sample the page at y=16,
+         sixteen pixels above the islands that were asking. A hidden box has no
+         backdrop; the one on screen does. */
+      const barEl = document.querySelector<HTMLElement>("header[data-cw-header-tone]");
+      const headerEl = barEl?.offsetHeight
+        ? barEl
+        : document.querySelector<HTMLElement>('[data-cw-chrome="organs"]') ?? barEl;
       const headerHeight = headerEl?.offsetHeight ?? 72;
-      const sampleY = Math.max(16, Math.min(window.innerHeight - 16, Math.round(headerHeight * 0.72)));
+      /* MEASURED FROM ITS OWN TOP EDGE, because the two forms do not start in
+         the same place: the bar is pinned at 0, the islands float a gutter
+         down. `height * 0.72` alone answers for the first and points above the
+         second. */
+      const headerTop = headerEl ? Math.max(0, Math.round(headerEl.getBoundingClientRect().top)) : 0;
+      const sampleY = Math.max(
+        16,
+        Math.min(window.innerHeight - 16, headerTop + Math.round(headerHeight * 0.72)),
+      );
 
       /* The open sheet is 320px of backdrop, not the bar's 64px, so it is
          sampled down its own height and the tone follows what the sheet actually

@@ -12,7 +12,7 @@
 .programShowcase {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
+  gap: var(--cw-space-md);
 }
 
 .programShowcase[data-layout="mini"] {
@@ -22,7 +22,7 @@
 .aggregateRail {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
+  gap: var(--cw-space-md);
 }
 
 .aggregateRail[data-layout="single"] {
@@ -118,7 +118,7 @@
     grid-auto-flow: row;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-auto-columns: auto;
-    gap: 1rem;
+    gap: var(--cw-space-md);
     overflow: visible;
     /* Undo the phone rail's edge bleed — a grid has no cut edge to show. */
     margin: 0;
@@ -200,12 +200,12 @@
   inset-inline-start: var(--cw-space-sm);
   z-index: 1;
   margin: 0;
-  padding: 0.3rem 0.6rem;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
   border-radius: var(--cw-radius-sm);
   background-color: color-mix(in srgb, var(--cw-platform-accent-strong) 88%, transparent);
   background-image: var(--cw-mat-grain-image);
   color: var(--cw-platform-accent-contrast);
-  font-size: 0.72rem;
+  font-size: var(--ds-type-label-size);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -228,16 +228,16 @@
 .programTileCategories {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
+  gap: var(--cw-space-2xs);
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 0.72rem;
+  font-size: var(--ds-type-label-size);
   color: var(--program-tile-copy);
 }
 
 .programTileCategories li {
-  padding: 0.15rem 0.45rem;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
   border: 1px solid color-mix(in srgb, var(--cw-platform-accent-contrast) 30%, transparent);
   border-radius: var(--cw-radius-sm);
   background: color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent);
@@ -308,7 +308,7 @@
   position: relative;
   z-index: 1;
   display: grid;
-  gap: 0.55rem;
+  gap: var(--cw-space-xs);
   width: 100%;
   padding: 1.25rem;
 }
@@ -334,7 +334,7 @@
   z-index: 1;
   width: min(100%, 43rem);
   display: grid;
-  gap: 1rem;
+  gap: var(--cw-space-md);
   align-self: flex-end;
   padding: clamp(1.3rem, 4vw, 2rem);
 }
@@ -715,7 +715,7 @@
   z-index: 1;
   display: grid;
   grid-template-rows: auto auto 1fr auto;
-  gap: 0.55rem;
+  gap: var(--cw-space-xs);
   padding: 1.25rem;
 }
 
@@ -733,7 +733,7 @@
 .programTileHeadline {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: var(--cw-space-2xs);
 }
 
 /* ── The preview format ───────────────────────────────
@@ -869,7 +869,7 @@
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 0.3rem 0.55rem;
+  gap: var(--cw-space-2xs) var(--cw-space-xs);
   color: var(--program-tile-fg);
   font-family: var(--cw-font-data);
   line-height: 1.15;
@@ -898,7 +898,7 @@
    photograph. */
 .programTilePoints {
   display: grid;
-  gap: 0.35rem;
+  gap: var(--cw-space-2xs);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -908,7 +908,7 @@
 
 .programTilePoints li {
   position: relative;
-  padding-inline-start: 0.95rem;
+  padding-inline-start: var(--cw-space-md);
   color: color-mix(in srgb, var(--program-tile-fg) 88%, transparent);
 }
 
@@ -957,7 +957,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 1rem;
+  padding: 0 var(--cw-space-md);
   border: 1px dashed color-mix(in srgb, var(--program-tile-fg) 44%, transparent);
   border-radius: var(--cw-radius-btn);
   color: var(--program-tile-fg);
@@ -992,7 +992,7 @@
    same five-cards-in-a-card shape, mirrored in the second column. Only the top
    step is local: this list follows a paragraph rather than a heading. */
 .programMetaList {
-  margin-top: 1rem;
+  margin-top: var(--cw-space-md);
   font-size: var(--ds-type-body-sm-size);
   line-height: var(--ds-type-body-sm-line-height);
 }

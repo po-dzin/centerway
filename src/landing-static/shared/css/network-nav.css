@@ -114,6 +114,21 @@
   transition: bottom 40ms linear;
 }
 
+/* AND THE SHEET GETS ITS FOOT BACK (2026-09-07). `.cwn.is-open` squares its own
+   bottom corners so that nothing belonging to the bar's box draws a line across
+   the middle of the open sheet — correct, and it had one casualty nobody
+   restated: this layer takes `border-radius: inherit`, so it inherited the
+   squared bottom too. Since it is the layer that grows down over the drawer,
+   the drawer's foot came out with two hard 90° corners sitting on the page.
+   The mobile block's own note claims «the sheet keeps its rounded bottom
+   corners» — it says so and nothing made it true.
+
+   Named in full rather than inherited: the whole point is that this box no
+   longer wants the bar's open-state radius. */
+.cwn.is-open::before {
+  border-radius: var(--cw-nav-radius);
+}
+
 /* Without a working backdrop-filter the tint is all there is, and at chrome
    density the page's own text reads straight through the bar and the drawer.
    Blur is missing in more places than old browsers — Firefox with the feature
@@ -150,11 +165,42 @@
 }
 
 /* The bar is fixed, so anchor jumps would land the section heading underneath
-   it; and the hero needs the same clearance since the bar no longer waits for a
-   scroll-up to appear. 4.85rem is the bar's own footprint (0.95rem offset +
-   3.9rem inner) — the rest is breathing room. */
+   it. `--cwn-anchor-clearance` is that offset, named once: the bar's own box
+   (0.95rem top + a 3.9rem row) plus air. */
+/* On `:root`, not on `.cwn`: the rules that read it are the bar's SIBLINGS, and
+   a custom property inherits down the tree rather than across one. Declared on
+   the bar it would have resolved to nothing on every target it was written
+   for. */
+:root {
+  --cwn-anchor-clearance: 5.5rem;
+}
+
 .cwn--anchored ~ [id] {
-  scroll-margin-top: 5.5rem;
+  scroll-margin-top: var(--cwn-anchor-clearance);
+}
+
+/* THE JUMP LANDS ON THE CONTENT, NOT ON THE SECTION'S PADDING (2026-09-07).
+
+   Every in-page anchor on these landings points at a `<section class="sec">`,
+   and `.sec` carries `padding-block: var(--sp-sec)` — 64px on a phone, up to
+   132px on a wide screen. So the clearance above put the section's TOP EDGE
+   under the bar and the section's own padding then pushed the thing you came to
+   see a further 64–132px down: measured on reset-day at 375px, pressing
+   «Формат» left the offer card at y=178 with 100px of empty page between it and
+   the bar, and its price row hanging off the bottom of the screen. The jump was
+   correct and useless — it delivered the padding.
+
+   Subtracting the section's own top padding cancels exactly that, and it does so
+   at every width because the number it subtracts is the same clamp that put it
+   there. The remainder is a real gap under the bar rather than an accident of
+   the viewport: measured landing is stable at ~36px of air on a phone and on a
+   desktop, where before it was 100px on one and 168px on the other.
+
+   Scoped to `.sec[id]` — the shape every one of the five anchored landings
+   actually uses (35 sections between them) — so a bare `<a id>` target like
+   `#top`, which has no padding to cancel, keeps the plain clearance above. */
+.cwn--anchored ~ .sec[id] {
+  scroll-margin-top: calc(var(--cwn-anchor-clearance) - var(--sp-sec, 0px));
 }
 
 .cwn--anchored ~ .hero {
@@ -207,18 +253,31 @@
   --cw-nav-shadow: var(--shadow-med, 0 18px 48px rgb(23 48 39 / 0.14));
 }
 
-/* The anchored bar never moves, so it carries `transition: none`. On a photo
-   hero it does move — hidden over the hero, back afterwards — so the motion is
-   handed back to it there. */
-[data-cw-hero="photo"] .cwn.cwn--anchored {
+/* The anchored bar used to never move, so it carried `transition: none`. It
+   moves in two cases now — over a photo hero, and on the reading-down gesture
+   (`cwn--tucked`, 2026-09-07) — so the motion is handed back to it for both
+   rather than for the hero alone. */
+[data-cw-hero="photo"] .cwn.cwn--anchored,
+.cwn.cwn--anchored.cwn--tucked {
   transition: transform 220ms ease-out, opacity 180ms ease-out, visibility 0s;
 }
 
-/* Over a photo hero the bar steps aside (see network-nav.js). It overrides the
-   anchored mode's always-visible state, so it has to come after it in source
-   order — which it does. */
+/* THE BAR STEPS ASIDE, in the two situations that ask for it. Over a photo hero
+   it is gone outright (the first screen is the offer's whole atmosphere); on
+   the way DOWN any page it tucks and returns on the first flick up.
+
+   One recipe for both, because they are one state — a bar that is not there —
+   and two copies of it would drift the moment either transition is retuned.
+   `cwn--tucked` is the landings' name for the gesture `useChromeReveal` gives
+   the platform; the threshold and the direction logic in network-nav.js are the
+   same shape.
+
+   These override the anchored mode's always-visible state, so they have to come
+   after it in source order — which they do. */
 .cwn.cwn--hero-hidden,
-.cwn.cwn--anchored.cwn--hero-hidden {
+.cwn.cwn--tucked,
+.cwn.cwn--anchored.cwn--hero-hidden,
+.cwn.cwn--anchored.cwn--tucked {
   opacity: 0;
   pointer-events: none;
   transform: translateY(-12px);
@@ -228,7 +287,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .cwn.cwn--hero-hidden,
-  .cwn.cwn--anchored.cwn--hero-hidden { transition: none; }
+  .cwn.cwn--tucked,
+  .cwn.cwn--anchored.cwn--hero-hidden,
+  .cwn.cwn--anchored.cwn--tucked { transition: none; }
 }
 
 /* Dark tone — the landing counterpart of the platform's [data-cw-header-tone].
@@ -290,7 +351,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--cw-space-md);
   min-height: 3.9rem;
   padding: 0.5rem var(--cw-bar-pad);
 }
@@ -298,14 +359,25 @@
 .cwn__brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--cw-space-xs);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--cw-nav-ink);
   text-decoration: none;
-  /* Cancels `.cwn__in`'s own inline padding so the mark's edge, not the pill's
-     padding box, lands on the page's left margin. See the width note above. */
-  margin-inline-start: calc(-1 * var(--cw-bar-pad));
+  /* THE MARK KEEPS THE BAR'S OWN PADDING (2026-09-07).
+
+     It used to cancel it — `margin-inline-start: calc(-1 * var(--cw-bar-pad))`
+     — so that the mark's edge, rather than the pill's padding box, landed on
+     the page's left margin. That is the right instinct for a bar that runs to
+     the edge of the screen and the wrong one for a pill: this bar has a
+     `--cw-nav-radius` of 1.6rem, and pulling a 2.25rem square to x=0 puts its
+     top-left corner outside the rounded corner entirely. Measured: with the
+     negative margin the corner sat 28px beyond the curve and the glyph was
+     visibly bitten off; at the bar's own 0.8rem it clears with room to spare.
+
+     The same correction the platform's island sheet needed on the same day, and
+     for the same reason: what aligns to the page's column is the PLATE's edge,
+     which it already does. A figure inside a plate keeps the plate's inset. */
 }
 
 .cwn__brand img {
@@ -318,16 +390,16 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 0.4rem;
+  gap: var(--cw-space-xs);
 }
 
 .cwn__menu a {
   display: inline-flex;
   align-items: center;
   min-height: 2.75rem;
-  padding: 0.5rem 0.9rem;
+  padding: var(--cw-space-xs) var(--cw-space-md);
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--cw-radius-pill);
   color: var(--cw-nav-text);
   text-decoration: none;
   transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
@@ -363,7 +435,7 @@
      top of a control. The 44px hit area stays, and focus-visible still draws a
      ring — the affordance that actually matters for keyboard users. */
   border: 0;
-  border-radius: 0.8rem;
+  border-radius: var(--cw-radius-sm);
   background: transparent;
   cursor: pointer;
 }
@@ -400,8 +472,8 @@
 
 @media (max-width: 979px) and (min-width: 760px) {
   /* Tablet topbar: tighter link rhythm so all five hold one row. */
-  .cwn__menu { gap: 0.25rem; }
-  .cwn__menu a { padding: 0.45rem 0.65rem; font-size: 0.88rem; }
+  .cwn__menu { gap: var(--cw-space-2xs); }
+  .cwn__menu a { padding: var(--cw-space-xs) var(--cw-space-sm); font-size: 0.88rem; }
 }
 
 @media (max-width: 759px) {
@@ -421,8 +493,8 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 0.15rem;
-    padding: 0 0.5rem;
+    gap: var(--cw-space-2xs);
+    padding: 0 var(--cw-space-xs);
     /* The drawer paints nothing. Two adjacent backdrop-filter layers can never
        meet cleanly at their shared edge — each blurs its own slice of the page,
        so the join shows up as a step in Chrome and a hairline in Safari, and the
@@ -452,7 +524,7 @@
   .cwn.is-open .cwn__menu {
     max-height: min(72svh, 34rem);
     overflow-y: auto;
-    padding: 0.5rem;
+    padding: var(--cw-space-xs);
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
@@ -479,8 +551,8 @@
 
   .cwn__menu a {
     min-height: 3rem;
-    padding: 0.7rem 0.9rem;
-    border-radius: 0.75rem;
+    padding: var(--cw-space-sm) var(--cw-space-md);
+    border-radius: var(--cw-radius-sm);
     font-size: 1rem;
   }
 }

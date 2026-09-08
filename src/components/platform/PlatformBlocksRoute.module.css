@@ -3,16 +3,16 @@
 
 .entryMap {
   display: grid;
-  gap: 1rem;
+  gap: var(--cw-space-md);
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-top: 1rem;
+  margin-top: var(--cw-space-md);
 }
 
 .routeChoiceGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: stretch;
-  gap: 1rem;
+  gap: var(--cw-space-md);
 }
 
 .routeChoiceCard {
@@ -21,7 +21,7 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
-  gap: 1rem;
+  gap: var(--cw-space-md);
   padding: clamp(0.95rem, 2.6vw, 1.2rem);
   border-radius: var(--cw-card-radius);
   color: var(--cw-platform-text);
@@ -42,7 +42,7 @@
 }
 
 .routeChoiceCard strong {
-  margin-bottom: 0.32rem;
+  margin-bottom: var(--cw-space-2xs);
   font-family: var(--cw-font-editorial);
   font-size: clamp(1.55rem, 3.6vw, 2.15rem);
   line-height: 1.04;
@@ -59,8 +59,8 @@
   position: relative;
   overflow: hidden;
   display: grid;
-  gap: 1rem;
-  padding: 1rem;
+  gap: var(--cw-space-md);
+  padding: var(--cw-space-md);
   border-radius: var(--cw-card-radius);
   text-decoration: none;
   background: var(--cw-mat-surface);
@@ -161,8 +161,11 @@
     0 10px 24px color-mix(in srgb, var(--cw-platform-text) 7%, transparent);
 }
 
+/* The one variant that is a soft rect rather than the base circle. 2.7rem is
+   43px — the control band — so it takes `md`, not the nameless 0.8rem (12.8px)
+   it carried, which was between two steps and equal to neither. */
 .lineIcon[data-icon="path"] {
-  border-radius: 0.8rem;
+  border-radius: var(--cw-radius-md);
   background:
     radial-gradient(circle at 22% 70%, var(--cw-platform-accent) 0 0.1rem, transparent 0.11rem),
     radial-gradient(circle at 76% 25%, var(--cw-platform-accent) 0 0.1rem, transparent 0.11rem),

@@ -4,7 +4,7 @@
 .card {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--cw-space-md);
   padding: 1.15rem;
   position: relative;
   overflow: hidden;
@@ -56,15 +56,15 @@
 
 .card ul {
   display: grid;
-  gap: 0.5rem;
-  padding-left: 1rem;
+  gap: var(--cw-space-xs);
+  padding-left: var(--cw-space-md);
 }
 
 .authorGrid,
 .consultGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.72fr);
-  gap: 1rem;
+  gap: var(--cw-space-md);
   align-items: stretch;
 }
 
@@ -143,7 +143,7 @@
   gap: var(--cw-space-md);
   overflow-x: auto;
   overflow-y: visible;
-  padding: 0.1rem 0.35rem 0.35rem 0.05rem;
+  padding: 0.1rem var(--cw-space-2xs) var(--cw-space-2xs) 0.05rem;
   scroll-snap-type: x proximity;
   overscroll-behavior-x: contain;
 }
@@ -268,7 +268,7 @@
 
 .guideIdentity {
   display: grid;
-  gap: 0.15rem;
+  gap: var(--cw-space-2xs);
 }
 
 .guideName {
@@ -309,7 +309,7 @@
    Three facts still leave the photograph the top third of the card. */
 .guideFacts {
   display: grid;
-  gap: 0.35rem;
+  gap: var(--cw-space-2xs);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -320,7 +320,7 @@
 
 .guideFacts li {
   position: relative;
-  padding-left: 1.05rem;
+  padding-left: var(--cw-space-md);
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -344,7 +344,7 @@
 .guideLink {
   composes: secondary from "./PlatformButtons.module.css";
   composes: fill from "./PlatformButtons.module.css";
-  margin-top: 0.25rem;
+  margin-top: var(--cw-space-2xs);
 }
 
 @media (max-width: 900px) {
@@ -369,7 +369,7 @@
 
 .copyStack {
   display: grid;
-  gap: 0.85rem;
+  gap: var(--cw-space-sm);
 }
 
 .copyStack p {
@@ -394,7 +394,7 @@
    full width of the plate at every size. */
 .copyNote {
   margin: 0;
-  padding: 1rem;
+  padding: var(--cw-space-md);
   border-radius: var(--cw-radius-sm);
   color: color-mix(in srgb, var(--cw-platform-text) 76%, var(--cw-platform-muted) 24%);
   background: var(--cw-mat-tone-support);
@@ -414,7 +414,7 @@
 .factGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.7rem;
+  gap: var(--cw-space-sm);
 }
 
 .factGrid span {
@@ -422,8 +422,8 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
-  gap: 0.75rem;
-  padding: 0.85rem;
+  gap: var(--cw-space-sm);
+  padding: var(--cw-space-sm);
   border-radius: var(--cw-radius-sm);
   color: var(--cw-platform-text);
   background: var(--cw-mat-tone-proof);
@@ -439,7 +439,7 @@
   flex: none;
   width: 1.5rem;
   height: 1.5rem;
-  padding: 0.22rem;
+  padding: var(--cw-space-2xs);
   border-radius: var(--cw-radius-sm);
   color: var(--cw-sem-guide-primary);
   background-color: var(--cw-mat-tone-icon);
@@ -463,7 +463,7 @@
 
   .authorPanelStacked {
     grid-template-columns: minmax(0, 1fr);
-    gap: 0.85rem;
+    gap: var(--cw-space-sm);
   }
 
   .authorPanelStacked > * {
@@ -487,7 +487,7 @@
   .authorGrid,
   .consultGrid,
   .supportPanelLayout {
-    gap: 0.75rem;
+    gap: var(--cw-space-sm);
   }
 }
 
@@ -499,9 +499,9 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
-  gap: 0.8rem;
+  gap: var(--cw-space-sm);
   margin: 0;
-  padding: 1rem;
+  padding: var(--cw-space-md);
   border-radius: var(--cw-radius-sm);
   color: color-mix(in srgb, var(--cw-platform-text) 76%, var(--cw-platform-muted) 24%);
   background: var(--cw-mat-tone-support);
@@ -532,14 +532,14 @@
 }
 
 .timelineCompact {
-  gap: 0.55rem;
+  gap: var(--cw-space-xs);
   font-size: var(--ds-type-body-sm-size);
   line-height: var(--ds-type-body-sm-line-height);
 }
 
 .collapsibleBlock {
   display: grid;
-  gap: 0.7rem;
+  gap: var(--cw-space-sm);
 }
 
 /* Full width, not fit-content: a disclosure is a row you open, and a row that
@@ -551,8 +551,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0 0.95rem;
+  gap: var(--cw-space-sm);
+  padding: 0 var(--cw-space-md);
   border-radius: var(--cw-radius-btn);
   color: var(--cw-platform-text);
   background: var(--cw-platform-surface);
@@ -592,7 +592,7 @@
 }
 
 .relaxedGrid {
-  margin-top: 0.15rem;
+  margin-top: var(--cw-space-2xs);
 }
 
 .supportPanelLayout {
@@ -645,7 +645,7 @@
   background:
     radial-gradient(circle at 50% 14%, color-mix(in srgb, var(--cw-platform-accent) 62%, transparent) 0 0.08rem, transparent 0.1rem),
     linear-gradient(180deg, color-mix(in srgb, var(--cw-sem-embodied) 34%, transparent), color-mix(in srgb, var(--cw-sem-guide-strong) 48%, transparent));
-  border-radius: 999px 999px 60% 60%;
+  border-radius: var(--cw-radius-pill) var(--cw-radius-pill) 60% 60%;
   box-shadow: 0 10px 18px color-mix(in srgb, var(--cw-mat-scrim-ink) 10%, transparent);
   transform-origin: bottom center;
 }

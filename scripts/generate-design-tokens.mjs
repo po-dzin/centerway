@@ -98,9 +98,26 @@ function pickNetworkTokens(map) {
    payload. The chain has to close inside this file, hence --cw-radius-btn/md
    travel with the --ds-button-* that point at them. */
 const NETWORK_BUTTON_TOKENS = [
+  /* THE WHOLE RADIUS SCALE, NOT THE BUTTON'S STEP ALONE (2026-09-07). Only
+     `md` and `btn` used to travel, so the network could match the platform's
+     button and had to invent everything else: `--r-sm/md/lg` in
+     network-tokens.css came out as 11.2 / 16 / 22.4px — the same scale, drawn
+     twice, with two of its three steps mistyped by 0.8 and 2.4px. The steps are
+     delivered now and the network reads them, which is what makes «one radius
+     vocabulary» true across the whole product rather than inside it. */
+  "--cw-radius-inset",
+  "--cw-radius-sm",
   "--cw-radius-md",
+  "--cw-radius-lg",
+  "--cw-radius-xl",
+  "--cw-radius-pill",
   "--cw-radius-btn",
   "--ds-touch-target-min",
+  /* The glyph-to-box ratio travels with the target it is a ratio OF: the
+     landings' rail arrow reads `--ds-rail-control-icon`, which points here, and
+     a name whose chain does not close inside this file resolves to nothing. */
+  "--ds-icon-control-ratio",
+  "--ds-icon-in-control",
   "--ds-button-min-height",
   "--ds-button-padding-inline",
   "--ds-button-radius",
@@ -132,7 +149,28 @@ const NETWORK_BUTTON_TOKENS = [
    content, so the bar floats exactly one bar-pad wider than the column and its
    contents land on the column's line. Listed explicitly, same as the button
    set, so widening a scale does not silently enlarge the network payload. */
-const NETWORK_SPACE_TOKENS = ["--cw-max-width", "--cw-page-gutter", "--cw-bar-pad", "--cw-bar-inset"];
+const NETWORK_SPACE_TOKENS = [
+  "--cw-max-width",
+  "--cw-page-gutter",
+  "--cw-bar-pad",
+  "--cw-bar-inset",
+  /* THE SPACING SCALE ITSELF (2026-09-07), for the same reason the radius scale
+     joined it: the landings were found running 758 numeric spacing values, of
+     which 226 were already a step of this scale typed as a literal and another
+     392 sat within 2px of one. That is not a network rhythm; it is this rhythm,
+     retyped. The steps have to travel before a landing can name them — a
+     `var(--cw-space-md)` on a page that never received the token is an invalid
+     declaration, which collapses the gap to nothing rather than falling back to
+     anything. */
+  "--cw-space-2xs",
+  "--cw-space-xs",
+  "--cw-space-sm",
+  "--cw-space-md",
+  "--cw-space-lg",
+  "--cw-space-xl",
+  "--cw-space-2xl",
+  "--cw-space-3xl",
+];
 
 function pickListedTokens(names, label, ...maps) {
   const merged = Object.assign({}, ...maps.map((m) => m ?? {}));

@@ -698,7 +698,7 @@
   align-items: center;
   gap: 0.4em;
   border: 0;
-  padding: 0.35rem 0;
+  padding: var(--cw-space-2xs) 0;
   background: transparent;
   font: inherit;
   letter-spacing: inherit;
@@ -791,7 +791,7 @@
 .row:focus-visible,
 .row[data-hot="true"] {
   color: var(--room-ink);
-  padding-inline-start: 0.7rem;
+  padding-inline-start: var(--cw-space-sm);
 }
 
 .row:focus-visible {
@@ -801,7 +801,7 @@
 
 .rowIndex {
   font-family: var(--cw-font-data, ui-monospace, monospace);
-  font-size: 0.7rem;
+  font-size: var(--ds-type-label-size);
   color: var(--room-ink-faint);
   font-variant-numeric: tabular-nums;
 }
@@ -823,8 +823,8 @@
    being led down it. */
 .rowNote {
   display: block;
-  margin-block-start: 0.2rem;
-  font-size: 0.85rem;
+  margin-block-start: var(--cw-space-2xs);
+  font-size: var(--ds-type-body-sm-size);
   line-height: 1.6;
   color: var(--room-ink-faint);
   white-space: nowrap;
@@ -879,7 +879,7 @@
 
 .rowState {
   font-family: var(--cw-font-data, ui-monospace, monospace);
-  font-size: 0.7rem;
+  font-size: var(--ds-type-label-size);
   color: var(--room-ink-faint);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -965,10 +965,10 @@
   }
 
   .rowTitle {
-    font-size: 1.05rem;
+    font-size: var(--ds-type-body-size);
   }
 
   .rowState {
-    font-size: 0.65rem;
+    font-size: var(--ds-type-label-size);
   }
 }

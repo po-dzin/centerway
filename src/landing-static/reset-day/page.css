@@ -67,19 +67,19 @@
 [data-cw-landing="reset-day"] .offer h2{max-width:26ch}
 [data-cw-landing="reset-day"] .offer-price,
 [data-cw-landing="reset-day"] .offer-pay{text-align:center}
-[data-cw-landing="reset-day"] .offer-price__amount{display:flex;align-items:baseline;justify-content:center;gap:.55rem}
+[data-cw-landing="reset-day"] .offer-price__amount{display:flex;align-items:baseline;justify-content:center;gap: var(--cw-space-xs)}
 [data-cw-landing="reset-day"] .offer-price__amount s{font-family:var(--f-display);font-size:clamp(1.35rem,5vw,1.7rem);font-weight:400;color:var(--irem-on-dark-muted)}
 
 /* ============ HERO EXPERIMENT — portrait stripe ============ */
 .hero--photo-stripe .hero-grid{
   display:flex;
   flex-direction:column;
-  gap:1rem;
+  gap: var(--cw-space-md);
 }
 .hero--photo-stripe .hero-top{
   display:grid;
   grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-  gap:.85rem;
+  gap: var(--cw-space-sm);
   align-items:stretch;
 }
 .hero--photo-stripe .hero-main{
@@ -89,7 +89,7 @@
 }
 .hero--photo-stripe .hero-badge{
   margin-top:0;
-  margin-bottom:.55rem;
+  margin-bottom: var(--cw-space-xs);
   align-self:flex-start;
   white-space:normal;
 }
@@ -104,8 +104,8 @@
 .hero--photo-stripe .hero-actions{margin-top:0;align-self:stretch}
 .hero--photo-stripe h1{font-size:clamp(1.75rem,8.1vw,3.1rem);line-height:1.03}
 .hero--photo-stripe .hero-sub{max-width:none;margin-bottom:0;line-height:1.48}
-.hero--photo-stripe .hero-chips{gap:.5rem}
-.hero--photo-stripe .hero-price{flex-wrap:wrap;row-gap:.2rem}
+.hero--photo-stripe .hero-chips{gap: var(--cw-space-xs)}
+.hero--photo-stripe .hero-price{flex-wrap:wrap;row-gap: var(--cw-space-2xs)}
 .hero--photo-stripe .hv-stage{
   width:100%;
   height:100%;
@@ -168,17 +168,22 @@
     justify-content:flex-start;
     background:transparent;
   }
+  /* MARGIN ONLY (2026-09-07) — the same correction the sibling rule further
+     down this file already carries, for the same reason. This one also drew a
+     light mint pill with a 6px blur, from a layout where the badge sat on
+     cream. The photo hero's night rule outranks it on background and border,
+     so the tint was already correct — but it does not touch `backdrop-filter`,
+     and that one line survived: the badge kept a 6px blur while every chip
+     beside it wore the network material (20px + saturate). Same tint, different
+     glass, and the badge read as the one light object in a column of dark ones.
+     One object, one material. */
   .hero--photo-stripe .hero-badge{
-    margin-bottom:.9rem;
-    background:rgba(242,248,243,.72);
-    border-color:rgba(197,214,198,.72);
-    backdrop-filter:blur(6px);
-    -webkit-backdrop-filter:blur(6px);
+    margin-bottom: var(--cw-space-md);
   }
   .hero--photo-stripe .hero-copy{
     display:flex;
     flex-direction:column;
-    gap:.35rem;
+    gap: var(--cw-space-2xs);
   }
   .hero--photo-stripe .hv-stage{
     min-height:100%;
@@ -223,7 +228,7 @@
   .hero--photo-stripe .hero-actions{
     position:relative;
     z-index:2;
-    margin-top:1.2rem;
+    margin-top: var(--cw-space-md);
     padding-inline:clamp(20px,5vw,24px);
     padding-bottom:clamp(24px,6vw,32px);
   }
@@ -241,7 +246,7 @@
     grid-template-columns:minmax(0,1fr) minmax(0,1fr);
     grid-template-rows:auto auto;
     column-gap:var(--reset-hero-col-gap);
-    row-gap:1.2rem;
+    row-gap: var(--cw-space-md);
     align-content:center;
     min-height:0;
   }
@@ -269,7 +274,7 @@
     min-height:0;
     padding-top:0;
   }
-  .hero--photo-stripe .hero-badge{margin-bottom:.8rem}
+  .hero--photo-stripe .hero-badge{margin-bottom: var(--cw-space-sm)}
   .hero--photo-stripe .hero-copy{margin-bottom:0;padding-right:0}
   .hero--photo-stripe .hero-actions{
     grid-column:2;
@@ -279,11 +284,11 @@
     margin-top:0;
     padding-inline:0;
     align-self:start;
-    gap:.95rem;
+    gap: var(--cw-space-md);
   }
   .hero--photo-stripe h1{font-size:clamp(2.15rem,4.4vw,3.3rem);line-height:1.06}
   .hero--photo-stripe .hero-sub{max-width:34ch;line-height:1.54}
-  .hero--photo-stripe .hero-price{row-gap:.35rem}
+  .hero--photo-stripe .hero-price{row-gap: var(--cw-space-2xs)}
   .hero--photo-stripe .hv-stage{
     aspect-ratio:4 / 5.15;
     min-height:640px;
@@ -306,7 +311,7 @@
 @media(min-width:768px) and (max-width:1199px){
   .hero--photo-stripe .hero-grid{
     --reset-hero-col-gap:clamp(24px,3.5vw,40px);
-    row-gap:1rem;
+    row-gap: var(--cw-space-md);
   }
   .hero--photo-stripe h1{font-size:clamp(1.92rem,3.5vw,2.65rem);line-height:1.08}
   .hero--photo-stripe .hero-sub{max-width:30ch;line-height:1.48}
@@ -318,7 +323,7 @@
   .hero--photo-stripe .hero-main{
     width:min(53%, 236px);
     min-height:clamp(500px,128vw,700px);
-    padding:18px 14px 22px;
+    padding: var(--cw-space-md) var(--cw-space-sm) var(--cw-space-lg);
   }
   .hero--photo-stripe h1{font-size:clamp(1.66rem,7.3vw,2.2rem)}
   .hero--photo-stripe .hero-sub{font-size:.96rem}
@@ -358,12 +363,16 @@
     margin-left:0;
     padding:0;
   }
+  /* PLACEMENT ONLY (2026-09-07). This used to hand the badge back the LIGHT
+     media material — tint, stroke and blur — inside the photo-hero block, three
+     rules away from the shared treatment that puts every other chip on the dark
+     hero glass. It out-specified that treatment, so on a phone the badge sat on
+     a graded photograph wearing cream at 82% while the chips under it wore
+     white at 8%: one object from the light system in a column of dark ones.
+     Whatever layout it was written for is gone; the margin is the part that
+     still describes this one. */
   [data-cw-hero="photo"] .hero--photo-stripe .hero-badge{
-    margin-bottom:.85rem;
-    background:var(--cw-net-mat-tint-media);
-    border-color:var(--cw-net-mat-stroke);
-    backdrop-filter:var(--cw-net-mat-filter);
-    -webkit-backdrop-filter:var(--cw-net-mat-filter);
+    margin-bottom: var(--cw-space-sm);
   }
   [data-cw-hero="photo"] .hero--photo-stripe .hv-stage{
     min-height:0;
@@ -390,7 +399,7 @@
     line-height:1.06;
   }
   [data-cw-hero="photo"] .hero--photo-stripe .hero-actions{
-    margin-top:1rem;
+    margin-top: var(--cw-space-md);
     padding-inline:0;
     padding-bottom:0;
   }
@@ -402,7 +411,7 @@
    crops from the lower two thirds rather than the centre. Third photo block
    after the hero portrait and the author portrait: the base budget. */
 [data-cw-landing="reset-day"] .day-shot{
-  margin:2.4rem 0 0;border-radius:var(--r-lg);overflow:hidden;background:var(--chip-soft);
+  margin: var(--cw-space-xl) 0 0;border-radius:var(--r-lg);overflow:hidden;background:var(--chip-soft);
   box-shadow:var(--shadow-soft);
 }
 [data-cw-landing="reset-day"] .day-shot img{

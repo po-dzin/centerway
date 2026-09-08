@@ -26,7 +26,37 @@
   function setOpen(open) {
     nav.classList.toggle("is-open", open);
     toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    scheduleSync();
+  }
+
+  /* THE ENDPOINTS DO NOT DEPEND ON AN OBSERVER (2026-09-07).
+   *
+   * `syncSheet()` called straight after the class flip measures the drawer
+   * BEFORE its transition starts, so it always reports the state we just left:
+   * 0 on the way open, the full height on the way closed. Traced on reset-day —
+   * `--cwn-sheet-h` was 0px while the drawer stood open and 376px after it had
+   * collapsed, one event behind at every step.
+   *
+   * That was survivable while something else corrected it a frame later, and
+   * two things are supposed to: the ResizeObserver and `transitionend`. Neither
+   * is guaranteed — an observer is skipped in a background tab, and
+   * `transitionend` never fires if the transition is interrupted (a second tap
+   * mid-animation) or suppressed (`prefers-reduced-motion`). When both miss,
+   * the glass is left at the previous state's height: rows of an open menu with
+   * no sheet under them, or a sheet still covering the page under a menu that
+   * has closed. Both were reported.
+   *
+   * So the endpoints are scheduled rather than assumed: the immediate call
+   * keeps the common case snappy, the frame catches the transition's start, and
+   * the timeout lands after the 280ms it takes to finish. The observer still
+   * does the smooth following in between — it is now an improvement rather than
+   * the mechanism. */
+  function scheduleSync() {
     syncSheet();
+    if (typeof window.requestAnimationFrame === "function") {
+      window.requestAnimationFrame(syncSheet);
+    }
+    window.setTimeout(syncSheet, 300);
   }
 
   // The open drawer is not its own glass — the bar's ::before grows down over it
@@ -37,11 +67,20 @@
   // drawer measures 0, which parks the sheet back at the bar's own edge.
   var sheetMq = window.matchMedia("(max-width: 759px)");
   function syncSheet() {
-    // Gated on the open class as well as the width: a height left behind by a
-    // rotation or a window drag would hang the sheet 400px below a topbar that
-    // has no drawer at all.
+    // MEASURED, NOT GATED ON THE OPEN CLASS (2026-09-07). This used to read
+    // `is-open && menu.offsetHeight`, and the class is removed the instant the
+    // burger is pressed while the drawer takes 280ms to collapse — so the glass
+    // snapped back to the bar's own edge in 40ms and left the links hanging
+    // over the page for a quarter of a second, unbacked. Over a dark section
+    // that reads exactly like rows of a menu that refuse to close.
+    //
+    // The measurement is self-correcting and needs no gate: a closed drawer is
+    // `max-height: 0` with `overflow: hidden`, so it measures 0 on its own, and
+    // the observer follows the collapse frame by frame. The WIDTH gate stays —
+    // above 760px the same element is a visible flex row with a real height,
+    // and the sheet must not grow to cover it.
     var mobile = sheetMq.matches && window.innerWidth < 760;
-    var h = mobile && nav.classList.contains("is-open") ? menu.offsetHeight : 0;
+    var h = mobile ? menu.offsetHeight : 0;
     nav.style.setProperty("--cwn-sheet-h", h + "px");
   }
   // Held in a variable on purpose: an observer with no live reference is
@@ -162,14 +201,34 @@
     applyBackdrop();
   }
 
-  // Anchored bars (way21 / reset-day) carry in-page section links, so they stay
-  // visible from the first screen and skip the show/hide logic entirely. The
-  // burger, focus and escape handling above still apply.
-  if (nav.classList.contains("cwn--anchored")) return;
+  // THE GESTURE IS THE SAME ON BOTH BAR MODES (2026-09-07); only the resting
+  // state differs, so only the class does.
+  //
+  //   floating  — the bar does not exist on the first screen and ARRIVES on the
+  //               first upward flick. Adding the class is what shows it.
+  //   anchored  — the bar is there from the first screen, because it carries the
+  //               page's section links, and TUCKS on the way down. Adding the
+  //               class is what hides it.
+  //
+  // Anchored bars used to return here outright — "they stay visible and skip the
+  // show/hide logic entirely" — which read as a decision about section links and
+  // was really a decision about scrolling: on four of the five landings the bar
+  // simply sat on the reader for the whole page. The links are one flick up,
+  // which is where the platform keeps its own chrome (`useChromeReveal`) and
+  // where the reader keeps its way out.
+  var anchored = nav.classList.contains("cwn--anchored");
+  var gestureClass = anchored ? "cwn--tucked" : "cwn--floating";
+  var showsOnScrollUp = !anchored;
+  var reveal = function () {
+    if (showsOnScrollUp) nav.classList.add(gestureClass);
+    else nav.classList.remove(gestureClass);
+  };
+  var conceal = function () {
+    if (showsOnScrollUp) nav.classList.remove(gestureClass);
+    else nav.classList.add(gestureClass);
+    setOpen(false);
+  };
 
-  // The header does not take space on the initial hero. As soon as the visitor
-  // reverses upward — including within that hero — it returns as a fixed layer,
-  // then hides again while reading down.
   var frame = null;
   var lastScrollY = window.scrollY;
   var directionThreshold = 8;
@@ -178,14 +237,15 @@
     var currentScrollY = window.scrollY;
     var distance = currentScrollY - lastScrollY;
 
+    // At the top of the page both modes are in their resting state: the
+    // floating bar is absent, the anchored one is present.
     if (currentScrollY <= 0) {
-      nav.classList.remove("cwn--floating");
+      nav.classList.remove(gestureClass);
       setOpen(false);
     } else if (distance <= -directionThreshold) {
-      nav.classList.add("cwn--floating");
+      reveal();
     } else if (distance >= directionThreshold) {
-      nav.classList.remove("cwn--floating");
-      setOpen(false);
+      conceal();
     }
 
     lastScrollY = currentScrollY;

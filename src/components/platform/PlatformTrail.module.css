@@ -121,7 +121,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--cw-platform-text);
-  font-size: 0.9rem;
+  font-size: var(--ds-type-body-sm-size);
   font-weight: 600;
   background: transparent;
 }

@@ -136,7 +136,7 @@
 .label {
   margin: 0;
   color: var(--cw-platform-muted);
-  font-size: 0.76rem;
+  font-size: var(--ds-type-label-size);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }

@@ -36,7 +36,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.8rem;
+  gap: var(--cw-space-sm);
 }
 
 /* THE SIGN-IN DIALOGUE'S RULES LIVED HERE and went with it on 2026-09-06 —
@@ -61,7 +61,7 @@
 .diagnosticProgressTrack {
   height: 0.5rem;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--cw-radius-pill);
   background: var(--cw-mat-meter-track);
 }
 
@@ -72,7 +72,7 @@
    guide-strong keeps the gradient and clears it at 4.92 / 11.26. */
 .diagnosticProgressBar {
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--cw-radius-pill);
   /* One meter fill for the system, and it changes with the theme. The green
      ramp clears its track at 4.92 / 11.26 on cream and disappears on graphite —
      a deep green on a near-black ground is not a low-contrast bar, it is no bar
@@ -83,7 +83,7 @@
 }
 
 .diagnosticHeroCard #what-is-dosha {
-  gap: 0.5rem;
+  gap: var(--cw-space-xs);
 }
 
 .diagnosticHeroCard #what-is-dosha h2 {
@@ -111,7 +111,7 @@
   align-items: center;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: var(--cw-space-sm);
 }
 
 /* Chips are glass, cards are matte — this one was on the matte proof tone and
@@ -123,9 +123,9 @@
   overflow: hidden;
   display: inline-flex;
   align-items: center;
-  padding: 0 1rem;
+  padding: 0 var(--cw-space-md);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--cw-radius-pill);
   color: var(--cw-platform-text);
   background-color: var(--cw-mat-tint);
   background-image: var(--cw-mat-grain-image);
@@ -140,14 +140,14 @@
 
 .diagnosticProgressRow {
   display: grid;
-  gap: 0.5rem;
+  gap: var(--cw-space-xs);
 }
 
 .diagnosticProgressMeta {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: var(--cw-space-sm);
   color: var(--cw-platform-muted);
   font-family: var(--cw-font-data);
   font-size: var(--ds-type-label-size);
@@ -159,18 +159,18 @@
 
 .diagnosticQuestionIntro {
   display: grid;
-  gap: 0.45rem;
+  gap: var(--cw-space-xs);
 }
 
 .diagnosticOptionList {
   display: grid;
-  gap: 0.75rem;
+  gap: var(--cw-space-sm);
 }
 
 .diagnosticOption {
   width: 100%;
   min-height: var(--ds-touch-target-min);
-  padding: 0.75rem 1rem;
+  padding: var(--cw-space-sm) var(--cw-space-md);
   color: var(--cw-platform-text);
   font-size: var(--ds-type-body-size);
   font-weight: 600;
@@ -183,7 +183,7 @@
    else carries one. */
 .diagnosticBackLink {
   composes: text from "./PlatformButtons.module.css";
-  gap: 0.4rem;
+  gap: var(--cw-space-xs);
   text-decoration: none;
 }
 
@@ -210,7 +210,7 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--cw-space-xs);
 }
 
 .diagnosticStepActions button:disabled {
@@ -223,7 +223,7 @@
   align-items: center;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: var(--cw-space-sm);
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-body-sm-size);
 }
@@ -231,8 +231,8 @@
 .diagnosticLoadingStack {
   display: grid;
   justify-items: start;
-  gap: 1rem;
-  padding: 1.5rem 0;
+  gap: var(--cw-space-md);
+  padding: var(--cw-space-lg) 0;
 }
 
 /* ── Shared platform loading state ──────────────────
@@ -253,7 +253,7 @@
 .platformLoadingLabel {
   margin: 0;
   color: var(--cw-platform-muted);
-  font-size: 0.76rem;
+  font-size: var(--ds-type-label-size);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -289,7 +289,7 @@
 
 .platformLoadingDetail {
   color: var(--cw-platform-muted);
-  font-size: 0.92rem;
+  font-size: var(--ds-type-body-sm-size);
 }
 
 /* The rotating ring that used to be here is `LogoMark animate="wait"` now —
@@ -306,7 +306,7 @@
 .diagnosticResultActions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: var(--cw-space-sm);
 }
 
 .diagnosticResultActions > * {
@@ -320,7 +320,7 @@
 
 .diagnosticErrorNote {
   margin: 0;
-  padding: 0.75rem 1rem;
+  padding: var(--cw-space-sm) var(--cw-space-md);
   border-radius: var(--cw-radius-sm);
   color: var(--cw-danger);
   background: color-mix(in srgb, var(--cw-danger) 8%, var(--cw-platform-surface) 92%);
@@ -338,7 +338,7 @@
   margin: 0;
   padding-left: 1.35rem;
   display: grid;
-  gap: 0.7rem;
+  gap: var(--cw-space-sm);
   list-style: decimal;
 }
 
@@ -354,12 +354,12 @@
 
 .form {
   display: grid;
-  gap: 0.85rem;
+  gap: var(--cw-space-sm);
 }
 
 .field {
   display: grid;
-  gap: 0.35rem;
+  gap: var(--cw-space-2xs);
 }
 
 .field label {
@@ -386,7 +386,7 @@
   font-size: var(--ds-type-body-size);
   border: 1px solid var(--cw-platform-border);
   border-radius: var(--cw-radius-sm);
-  padding: 0.8rem 0.9rem;
+  padding: var(--cw-space-sm) var(--cw-space-md);
   color: var(--cw-platform-text);
   background: var(--cw-platform-surface);
   line-height: var(--ds-type-body-line-height);
@@ -450,7 +450,7 @@
 
 .footerBrandBlock {
   display: grid;
-  gap: 0.7rem;
+  gap: var(--cw-space-sm);
 }
 
 /* THE PERSONAL ENDING IS A LINE, NOT A GRID.
@@ -485,9 +485,7 @@
 }
 /* THE CLOSING LINE OF THE WHOLE FOOTER, and it has to read as one.
    It used to be a paragraph dropped under the grid with nothing but a top
-   margin: on desktop it landed directly beneath «Тут тихо.» in the brand
-   column's own measure, so it read as a fourth line of the brand block that had
-   wandered out of the column; on a phone it sat under the social icons with the
+   margin: on desktop it landed directly beneath «Тут тихо.» in the brand column's own measure, so it read as a fourth line of the brand block that had wandered out of the column; on a phone it sat under the social icons with the
    same ambiguity. It belongs to the footer, not to the first column — so it
    gets the footer's full width, the system's own fading rule above it, and a
    caption's size, which is what a note about imperfection should be set in. */
@@ -539,7 +537,7 @@
 }
 
 .footerLinks {
-  gap: 0.7rem;
+  gap: var(--cw-space-sm);
   align-content: start;
 }
 
@@ -552,7 +550,7 @@
   width: fit-content;
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: var(--cw-space-sm);
   padding: 0;
   border: 0;
   background: none;
@@ -597,10 +595,10 @@
 .footerBrandText {
   display: inline-flex;
   align-items: center;
-  padding-left: 0.72rem;
+  padding-left: var(--cw-space-sm);
   color: var(--cw-brand-mark-color);
   font-family: var(--cw-font-data);
-  font-size: 1rem;
+  font-size: var(--ds-type-body-size);
   font-weight: 680;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -620,7 +618,7 @@
   /* The social row now carries its own touch padding, so the column gap holds
      the air the boxes do not: 0.85rem of gap plus 0.6rem of box read as a break
      between the phone number and the networks rather than a pairing. */
-  gap: 0.3rem;
+  gap: var(--cw-space-2xs);
   padding-right: clamp(0.35rem, 1.4vw, 1rem);
   text-align: left;
 }
@@ -753,7 +751,7 @@
 
 .profileEmptyActions {
   align-items: stretch;
-  margin-top: 0.15rem;
+  margin-top: var(--cw-space-2xs);
 }
 
 .profileEmptyActions > * {
@@ -797,7 +795,7 @@
 
 .pageHeadNaming {
   display: grid;
-  gap: 0.15rem;
+  gap: var(--cw-space-2xs);
   min-width: 0;
   flex: 1 1 auto;
 }
@@ -807,7 +805,7 @@
 .pageHeadLabel {
   margin: 0;
   color: var(--cw-platform-muted);
-  font-size: 0.76rem;
+  font-size: var(--ds-type-label-size);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }

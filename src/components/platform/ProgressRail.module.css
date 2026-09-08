@@ -12,7 +12,7 @@
      roughly three times the gap below them. Half the padding is taken back out
      of the flow, so the rail sits in the card's rhythm and the figure borrows
      the air over it rather than adding its own. */
-  margin-top: -0.55rem;
+  margin-top: calc(var(--cw-space-xs) * -1);
 }
 
 /* `--cw-walk` is `done / total`, set inline: 0 puts him at the left edge before
@@ -39,7 +39,7 @@
 .rail {
   display: flex;
   align-items: center;
-  gap: 0.24rem;
+  gap: var(--cw-space-2xs);
   /* Taller than the dashes so the tilt has somewhere to go without clipping. */
   height: 0.75rem;
 }
@@ -73,7 +73,7 @@
   display: block;
   position: relative;
   height: 0.19rem;
-  margin-block: 0.28rem;
+  margin-block: var(--cw-space-2xs);
   border-radius: var(--cw-radius-pill);
   background: repeating-linear-gradient(
     90deg,

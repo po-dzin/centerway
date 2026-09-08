@@ -7,7 +7,14 @@ import { ReaderChrome } from "./ReaderChrome";
 import { ZenPreviewContext } from "./ZenPreviewContext";
 
 const read = (file: string) => fs.readFileSync(path.resolve(__dirname, "../../..", file), "utf8");
-const rule = (source: string, name: string) => new RegExp(`\\.${name}\\s*\\{([^}]+)}`).exec(source)?.[1] ?? "";
+/* ANCHORED TO THE DEFINITION, not to the first mention (2026-09-07). Unanchored,
+   `.organ` matched inside `.row[data-cw-organs-sheet="open"] .organ` — a
+   variant rule that happens to sit earlier in the file — so adding any variant
+   above a definition silently pointed these assertions at the wrong block. The
+   definitions are written one selector per line at column zero; the variants
+   never are. */
+const rule = (source: string, name: string) =>
+  new RegExp(`^\\.${name}\\s*\\{([^}]+)}`, "m").exec(source)?.[1] ?? "";
 
 describe("reader / author preview chrome contract", () => {
   it("keeps the learner's back route and reading tools in one row", () => {
