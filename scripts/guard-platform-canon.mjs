@@ -41,6 +41,8 @@ const hexAllowlist = new Set([
 ]);
 
 const failures = [];
+/** Things deliberately not checked here, reported so a green run cannot hide them. */
+const notes = [];
 
 function relativePath(absolutePath) {
   return path.relative(repoRoot, absolutePath).split(path.sep).join("/");
@@ -139,11 +141,33 @@ function readJson(relativePath) {
   return JSON.parse(readFileSync(path.join(repoRoot, relativePath), "utf8"));
 }
 
-for (const file of requiredExternalCanon) {
-  const absolute = path.join(externalCanonRoot, file);
-  if (!existsSync(absolute)) {
-    failures.push(`Missing external canon file: ${absolute}`);
+/*
+ * THE CANON IS OUTSIDE THE REPO, AND CI IS OUTSIDE THE CANON.
+ *
+ * `externalCanonRoot` is an absolute path on the author's machine. A GitHub
+ * runner has no such directory and never will, so on every CI run this section
+ * reported nine missing files, the guard exited 1, and the eight gates after it
+ * in design-gates.yml — contrast, buttons, geometry, generated screens, the
+ * semantic audit — were skipped. They had never once run there. The workflow's
+ * own header says this job "needs nothing but the repo"; this is the line that
+ * made that untrue.
+ *
+ * So the root's absence is now a SKIP, not a failure: where the canon cannot be
+ * reached, it cannot be checked, and everything that lives in the repo still is.
+ * The check keeps its teeth exactly where it has any — on a machine that has the
+ * canon, a missing or renamed file inside it still fails.
+ */
+if (existsSync(externalCanonRoot)) {
+  for (const file of requiredExternalCanon) {
+    const absolute = path.join(externalCanonRoot, file);
+    if (!existsSync(absolute)) {
+      failures.push(`Missing external canon file: ${absolute}`);
+    }
   }
+} else {
+  notes.push(
+    `External canon not reachable from this environment (${externalCanonRoot}) — skipped ${requiredExternalCanon.length} files.`,
+  );
 }
 
 for (const file of requiredLocalCanon) {
@@ -384,4 +408,7 @@ if (failures.length) {
   process.exit(1);
 }
 
+for (const note of notes) {
+  console.log(`[SKIP] ${note}`);
+}
 console.log("[PASS] Platform canon guard");
