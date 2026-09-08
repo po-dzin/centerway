@@ -247,7 +247,15 @@ export function courseReadiness(course: Course): CourseReadiness {
     // on a page strangers reach, not a draft-time nicety.
     else if (!course.cover.alt.trim()) add("lms_ready_missing_cover_alt", course.slug);
     if (!course.tagline?.trim()) add("lms_ready_missing_tagline", course.slug);
-    if (course.durationDays === undefined) add("lms_ready_missing_duration", course.slug);
+    /* DURATION IS NOT ASKED FOR (2026-09-08). It was a blocker on the reading
+       that a card with no length is a card that cannot be compared — but the
+       catalogue has never actually been silent without it: `toOfferSurface`
+       falls back to the course's own lesson count, so an unset `durationDays`
+       degrades to «7 уроків» rather than to a hole. That is the same rule the
+       kind field is exempt under, two comments up, and it applies here for the
+       same reason: a blocker is for what nothing downstream can substitute for.
+       A checklist that is a standing daily ritual has no honest number of days
+       to give, and the gate was making its author invent one. */
     if (!course.categories?.length) add("lms_ready_missing_category", course.slug);
 
     /* THE STOREFRONT'S OWN FOUR (2026-09-08).

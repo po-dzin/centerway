@@ -507,7 +507,10 @@ export function BuilderCourseSettings({
             path: ["durationDays"],
             label: "Тривалість, днів",
             kind: "number",
-            required: showcase,
+            /* NO STAR (2026-09-08). The hint below already says what happens
+               when it is empty — the shelf prints the lesson count — and a
+               field with an honest fallback is not a field the gate holds.
+               See `courseReadiness`: the blocker was removed with it. */
             min: 1,
             max: COURSE_DURATION_DAYS_MAX,
             hint: "Скільки днів курс займає в людини. Число — «дні/днів» допише сама вітрина. Порожньо — покажемо кількість уроків.",

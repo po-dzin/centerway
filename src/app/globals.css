@@ -2076,6 +2076,28 @@ body {
     scrollbar-color: var(--cw-mat-scroll-thumb) var(--cw-mat-scroll-track);
   }
 
+  /* AND THE PANE RESERVES IT, exactly as `html` does (2026-09-08).
+     See the note beside `html { scrollbar-gutter: stable }`: that rule was
+     added because a scrollbar that comes and goes changes what a percentage
+     resolves against. This is the same bug one level in, and the reason it was
+     NOT invisible on a Mac is three rules below — styling `::-webkit-scrollbar`
+     opts a scroller out of the platform's overlay bar, so these 10px are real
+     layout width in Chrome even where the OS would have drawn nothing.
+
+     What that looked like: switching the workshop's shelf from rows to cards
+     makes the page taller than its own pane, the bar appears, and the whole
+     column — the result strip and every card under it — narrows by 10px and
+     jumps. A pane whose content is allowed to change shape must not change
+     width when it does.
+
+     `stable` only on the full-size viewports. A rail is 4px, scrolls the
+     inline axis, and reserving a gutter under a 48px strip would take the room
+     the strip is made of. */
+  .cw-scroll,
+  .custom-scrollbar {
+    scrollbar-gutter: stable;
+  }
+
   .cw-scroll::-webkit-scrollbar,
   .custom-scrollbar::-webkit-scrollbar {
     width: 10px;
