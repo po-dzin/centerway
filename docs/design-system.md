@@ -1258,6 +1258,42 @@ Photo roles, as wired:
 |---|---|
 | `practice-group-2026-08.webp` (16:10) | platform hub hero, dosha hero — the shared hero plate |
 | `author-evgeniy-2026-08.webp` (13:16) | consult hero, platform "Про автора", author block on consult / way21 / reset-day |
+| `way21-hero-apothecary-2026-09-portrait.webp` (2:3) | way21 hero, both widths |
+| `resetday-hero-threshold-2026-09-portrait.webp` (2:3) | reset-day hero, both widths |
+| `way21-hero-apothecary-2026-09.jpg` / `resetday-hero-threshold-2026-09.jpg` (16:10) | og:image for those two landings — the only frame that is actually wide |
+
+**A funnel hero is a room, not a face (2026-09-06).** way21 and reset-day opened on
+tight daylight portraits of the author while the copy band beneath them is the
+platform's warm night — two worlds stacked at the seam, and the author's own
+reading of it was that the entrance felt like a photo of a person rather than a
+place. The 2026-09 masters put him back in the room the platform's home page
+already stands in: same sage plaster, same raking light, subject small and high
+in the frame, the lower third quiet where the headline lands. His face still
+answers "who is this", one screen down, in the author block — which is the
+question a face is for.
+
+**The band under the copy is warm, and it is derived (2026-09-06).**
+`--cw-net-hero-scrim` was `#182a20`, the brand's green-black. Under a warm room
+it read as a second, colder light source, and the seam between photograph and
+copy came back in a new form. It is now
+`color-mix(in srgb, var(--cw-mat-scrim-ink) 94%, var(--cw-net-gold-strong) 6%)`
+— the material's own neutral scrim ink, warmed by the brand's gold at the same
+low mix the network derives its soft tints with. It resolves to `#221f19`, which
+is the literal `scripts/guard-contrast.mjs` asserts, along with its composite
+over a white photo pixel (`#34312b`). One depth for the whole network still: the
+nav bar's dark tone reads the same token.
+
+**And nothing tints the photograph.** A full-frame scrim was tried the same day
+and reverted: the copy never sits on the picture — it sits on the band — so the
+tint bought no contrast and cost the frame its light. What remains over the
+photo is the narrow top scrim the floating nav needs, plus grain.
+
+These two were generated through `img:generate`'s model with the author's own
+photograph as the identity reference and the platform's threshold plate as the
+atmosphere reference, then finished with `img:grade --profile practice`. The
+portrait master serves BOTH widths: the hero's photo box is tall in each layout
+(full-bleed phone screen, stretched column card), so a 16:10 plate was cropped
+to its middle on desktop and lost the window and the jars.
 
 Note for the asset pipeline: `sharp.withIccProfile('srgb')` does **not** survive WebP encoding — a final `webpmux -set icc` is required, or the untagged file renders a different white on P3 displays (the iOS seam bug). The shipped files carry ICC; verify with `sharp(...).metadata().icc` after any re-encode.
 

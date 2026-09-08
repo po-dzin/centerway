@@ -245,10 +245,18 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
     transform:translateY(var(--cw-hero-photo-shift-y,0)) scale(var(--cw-hero-photo-scale,1));
     transform-origin:center top;
   }
+  /* NOTHING TINTS THE PHOTOGRAPH. Only what the nav needs to stay legible: a
+     narrow scrim at the very top, gone by a quarter of the way down. Darkening
+     the whole frame was tried and reverted on 2026-09-06 — it bought no
+     contrast (the copy sits on its own band, never on the picture) and cost the
+     frame its light: the window stopped glowing and the ochre went grey. The
+     grain stays, because that is material, not shade. */
   [data-cw-hero="photo"] .hero .hv-stage::after{
-    background:linear-gradient(to bottom,
-      color-mix(in srgb, var(--cw-net-photo-scrim) 34%, transparent) 0%,
-      color-mix(in srgb, var(--cw-net-photo-scrim) 0%, transparent) 30%);
+    background:
+      var(--cw-net-mat-grain),
+      linear-gradient(to bottom,
+        color-mix(in srgb, var(--cw-net-photo-scrim) 30%, transparent) 0%,
+        color-mix(in srgb, var(--cw-net-photo-scrim) 0%, transparent) 26%);
   }
   [data-cw-hero="photo"] .hero .hero-badge{margin-top:0}
   /* Badge and chips on the night tone — the same material as the nav bar, the
@@ -287,6 +295,12 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
      the hero badge two rules up: a treatment that changes ink has to change the
      ground it sits on, or it has changed nothing. */
   [data-cw-hero="photo"] .hero .btn-ghost{
+    /* The FILL had to come too, and for a while it did not: `secondary` became
+       a stroked plate on `--cw-mat-surface-sunk` (2026-08-27) while this rule
+       still only swapped the label to hero ink — so the second action on
+       consult, dosha and herbs was white text on a cream pill, about 1.1:1.
+       On the copy band the plate has no work to do: the band IS the surface. */
+    background:transparent;
     color:var(--cw-net-hero-ink);
     background:transparent;
     border-color:color-mix(in srgb, var(--cw-net-hero-ink) 42%, transparent)}
@@ -326,8 +340,16 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
      If a skin ever gets its own mobile master, revisit its line rather than
      stacking a second knob on top. */
   [data-cw-landing="herbs"] .hero{--cw-hero-photo-height:50svh}
-  [data-cw-landing="consult"] .hero{--cw-hero-photo-height:72svh}
+  [data-cw-landing="consult"] .hero{--cw-hero-photo-height:62svh}
   [data-cw-landing="dosha"] .hero{--cw-hero-photo-height:50svh}
+  /* way21 and reset-day keep the full-height default, and now for a different
+     reason than before: their 2026-09 masters are composed for this box — the
+     subject in the upper half, the lower third quiet and dark where the copy
+     band lands. Shortening the box would crop away the air the frame was made
+     to give. Their object-position moves up accordingly: `top`, not the 22%
+     default that was chasing a face out of the band. */
+  [data-cw-landing="way21"] .hero{--cw-hero-photo-height:78svh;--cw-hero-photo-y:center}
+  [data-cw-landing="reset-day"] .hero{--cw-hero-photo-height:78svh;--cw-hero-photo-y:center}
 
   /* Short viewports get one more step down. The price and CTA stay put. */
   @media(max-height:700px){

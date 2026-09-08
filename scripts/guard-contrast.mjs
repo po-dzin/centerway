@@ -421,34 +421,34 @@ const glassPairs = [
   // / -accent). Thin the 92% scrim and this is what catches it.
   {
     theme: "light", fg: "#ffffff",
-    glass: { tint: "#182a20", alpha: 0.92, over: "#ffffff" },
+    glass: { tint: "#221f19", alpha: 0.92, over: "#ffffff" },
     min: AA_BODY, context: "photo hero title on the copy-band scrim over a white photo pixel",
   },
   {
     theme: "light", fg: "#d7e0d2",
-    glass: { tint: "#182a20", alpha: 0.92, over: "#ffffff" },
+    glass: { tint: "#221f19", alpha: 0.92, over: "#ffffff" },
     min: AA_BODY, context: "photo hero lead/trust text on the copy-band scrim",
   },
   {
     theme: "light", fg: "#aec0a9",
-    glass: { tint: "#182a20", alpha: 0.92, over: "#ffffff" },
+    glass: { tint: "#221f19", alpha: 0.92, over: "#ffffff" },
     min: AA_BODY, context: "photo hero mono price label on the copy-band scrim",
   },
   {
     theme: "light", fg: "#e5ae65",
-    glass: { tint: "#182a20", alpha: 0.92, over: "#ffffff" },
+    glass: { tint: "#221f19", alpha: 0.92, over: "#ffffff" },
     min: AA_BODY, context: "photo hero accent (title emphasis, trust tick) on the copy-band scrim",
   },
   // The badge and chips on that band run the material's night tone: a white
   // lift (--cw-net-hero-glass, 8%) rather than a tint, because the band is
   // already darker than any tint would take it. Two composites deep, and the
   // glass helper only does one — so the backdrop here is the band already
-  // resolved over a white photo pixel (#182a20 at 92% over #ffffff = #2a4138),
+  // resolved over a white photo pixel (#221f19 at 92% over #ffffff = #34312b),
   // which is the same worst case the four pairs above assert. Raise the lift
   // and the pill goes pale against the band; this is what holds it honest.
   {
     theme: "light", fg: "#d7e0d2",
-    glass: { tint: "#ffffff", alpha: 0.08, over: "#2a4138" },
+    glass: { tint: "#ffffff", alpha: 0.08, over: "#34312b" },
     min: AA_BODY, context: "photo hero badge/chip label on the night-tone glass over the copy band",
   },
   // --- network nav ----------------------------------------------------------
@@ -481,17 +481,17 @@ const glassPairs = [
   // it is the same sheet at the same density, so these pairs cover both.
   {
     theme: "light", fg: "#ffffff",
-    glass: { tint: "#182a20", alpha: 0.30, over: "#3a5c48" },
+    glass: { tint: "#221f19", alpha: 0.30, over: "#3a5c48" },
     min: AA_BODY, context: "nav brand/ink on the dark-tone sheet over the lightest dark-section stop",
   },
   {
     theme: "light", fg: "#d7e0d2",
-    glass: { tint: "#182a20", alpha: 0.30, over: "#3a5c48" },
+    glass: { tint: "#221f19", alpha: 0.30, over: "#3a5c48" },
     min: AA_BODY, context: "nav link label on the dark-tone sheet",
   },
   {
     theme: "light", fg: "#ffffff",
-    glass: { tint: "#182a20", alpha: 0.30, over: "#3a5c48" },
+    glass: { tint: "#221f19", alpha: 0.30, over: "#3a5c48" },
     min: AA_BODY, context: "nav active/hover label (--cw-nav-active-ink) on the dark-tone sheet",
   },
   // The focus ring is a non-text indicator, so it is held to the 3:1 UI bound,
@@ -502,7 +502,7 @@ const glassPairs = [
   // and the mark image; thin the material any further and the ring goes too.
   {
     theme: "light", fg: "#e5ae65",
-    glass: { tint: "#182a20", alpha: 0.30, over: "#3a5c48" },
+    glass: { tint: "#221f19", alpha: 0.30, over: "#3a5c48" },
     min: AA_LARGE, context: "nav accent focus ring on the dark-tone sheet (UI bound, not text)",
   },
   // The footer lockup now runs the same gold word the dark-tone bar does. Not
