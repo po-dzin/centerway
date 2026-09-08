@@ -77,6 +77,12 @@ Apply `2026-08-23_lms_course_version_history.sql` before enabling revision API
 routes. The current safe API slice is list, create checkpoint and load one
 revision for preview. Restore, review and publish checkpoints stay disabled
 until their document mutation and journal insert share one transaction.
+
+**Superseded 2026-09-07.** That transaction now exists
+(`apply_lms_course_release` / `journal_lms_course_state`, in
+`docs/migration/sql/2026-09-07_lms_course_release_journal.sql`), and
+`review_submitted`, `published` and `restored` are written through it. See
+`docs/lms-change-journal-2026-09-07.md`. `autosave_checkpoint` is still unwritten.
 Backfill published snapshots only after every live relational course can be
 reconstructed and validated; an absent historical row is safer than a
 fabricated release.

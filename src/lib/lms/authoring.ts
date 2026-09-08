@@ -339,7 +339,19 @@ export type WriteCourseResult = {
  * when it is not. A soft-delete/archive column is the real fix and belongs
  * with a schema change, not this pass.
  */
-async function reconcileRemovedRows(db: StructureWriter, course: Course): Promise<void> {
+/**
+ * WHAT THIS STRUCTURE NO LONGER CONTAINS, and whether it is allowed to go.
+ *
+ * Split out from the delete step so the transactional release path
+ * (`src/lib/lms/release.ts`) can run exactly these guards and then hand the
+ * approved id lists to the RPC. Two copies of "may this lesson be deleted"
+ * would be two copies of the rule that protects a learner's progress, and the
+ * second one drifts.
+ */
+export async function planRemovedRows(
+  db: StructureWriter,
+  course: Course
+): Promise<{ removedLessonIds: string[]; deletableModuleIds: string[] }> {
   const keptModuleIds = new Set(course.modules.map((module) => module.id));
   const keptLessonIds = new Set(course.modules.flatMap((module) => module.lessons.map((lesson) => lesson.id)));
 
@@ -371,12 +383,9 @@ async function reconcileRemovedRows(db: StructureWriter, course: Course): Promis
         `lms_authoring_reconcile_lesson_has_learners:${[...touchedLessonIds].join(",")}`
       );
     }
-
-    const { error } = await db.from("lms_lessons").delete().in("id", removedLessonIds);
-    if (error) throw new Error(`lms_authoring_reconcile_delete_failed:lms_lessons:${error.message}`);
   }
 
-  if (removedModuleIds.length === 0) return;
+  if (removedModuleIds.length === 0) return { removedLessonIds, deletableModuleIds: [] };
 
   // A removed module may only go if nothing still points at it. By this line
   // every removed lesson with progress has already thrown, so what is left to
@@ -392,7 +401,20 @@ async function reconcileRemovedRows(db: StructureWriter, course: Course): Promis
     throw new Error(`lms_authoring_reconcile_read_failed:lms_lessons:${survivorError.message}`);
   }
   const stillReferenced = new Set(((survivors ?? []) as { module_id: string }[]).map((row) => row.module_id));
-  const deletableModuleIds = removedModuleIds.filter((id) => !stillReferenced.has(id));
+
+  return {
+    removedLessonIds,
+    deletableModuleIds: removedModuleIds.filter((id) => !stillReferenced.has(id)),
+  };
+}
+
+async function reconcileRemovedRows(db: StructureWriter, course: Course): Promise<void> {
+  const { removedLessonIds, deletableModuleIds } = await planRemovedRows(db, course);
+
+  if (removedLessonIds.length > 0) {
+    const { error } = await db.from("lms_lessons").delete().in("id", removedLessonIds);
+    if (error) throw new Error(`lms_authoring_reconcile_delete_failed:lms_lessons:${error.message}`);
+  }
 
   if (deletableModuleIds.length > 0) {
     const { error } = await db.from("lms_modules").delete().in("id", deletableModuleIds);
@@ -400,11 +422,27 @@ async function reconcileRemovedRows(db: StructureWriter, course: Course): Promis
   }
 }
 
-export async function writeCourseStructure(
-  db: StructureWriter,
+/**
+ * Everything that must happen to a course document BEFORE any row is touched:
+ * validation, the publish-readiness gate, the JSON -> row mapping, and the
+ * decision about which optional columns this payload speaks for.
+ *
+ * Exported because the transactional release path in `src/lib/lms/release.ts`
+ * needs exactly this preparation and must not restate it. The readiness gate in
+ * particular is the invariant that the builder cannot publish what `lms:seed`
+ * would reject — a second copy of it is a second answer to that question.
+ */
+export function prepareCourseWrite(
   input: unknown,
   options: WriteCourseOptions = {}
-): Promise<WriteCourseResult> {
+): {
+  course: Course;
+  courseWithoutStatus: Row;
+  modules: Row[];
+  lessons: Row[];
+  finalValues: Row;
+  blockers: ReturnType<typeof courseReadiness>["blockers"];
+} {
   validateCourse(input, "authoring");
   const course = input as Course;
 
@@ -414,6 +452,41 @@ export async function writeCourseStructure(
   }
 
   const rows = courseRows(course);
+
+  // `status`/`version` are held back into their own write so the flip that
+  // makes a publish live happens last, after the structure behind it landed.
+  const courseWithoutStatus = { ...rows.course };
+  delete courseWithoutStatus.status;
+  delete courseWithoutStatus.version;
+
+  // A column the payload does not carry is dropped from the write rather than
+  // written as null, unless the caller claims authority over it. The upsert then
+  // leaves the stored value alone on an existing row, and lets the table default
+  // apply on a new one (`visibility` is NOT NULL DEFAULT 'hidden').
+  if ((options.optionalColumns ?? "preserve") === "preserve") {
+    const carried = course as unknown as Record<string, unknown>;
+    for (const [column, field] of OPTIONAL_COURSE_COLUMNS) {
+      if (carried[field] === undefined) delete courseWithoutStatus[column];
+    }
+  }
+
+  return {
+    course,
+    courseWithoutStatus,
+    modules: rows.modules,
+    lessons: rows.lessons,
+    finalValues: { status: rows.course.status, version: rows.course.version },
+    blockers: readiness.blockers,
+  };
+}
+
+export async function writeCourseStructure(
+  db: StructureWriter,
+  input: unknown,
+  options: WriteCourseOptions = {}
+): Promise<WriteCourseResult> {
+  const prepared = prepareCourseWrite(input, options);
+  const { course } = prepared;
 
   const write = async (table: string, payload: Row[]) => {
     if (payload.length === 0) return;
@@ -437,8 +510,8 @@ export async function writeCourseStructure(
     if (error) throw new Error(`lms_authoring_write_failed:${table}:${error.message}`);
   };
 
-  // No cross-table transaction exists here — three independent requests, no
-  // Postgres RPC — so this cannot be made fully atomic without one. What
+  // No cross-table transaction exists on THIS path — three independent
+  // requests, no Postgres RPC — so it cannot be made fully atomic. What
   // ordering CAN bound is the one harm that actually matters: a publish that
   // reports success while the structure behind it is broken. `status` and
   // `version` are held back into their own write, last, so:
@@ -457,29 +530,13 @@ export async function writeCourseStructure(
   //     not first.
   //
   // A module or lesson upsert can still fail after leaving earlier rows
-  // written — that half is a real gap this does not close, and would need an
-  // RPC to.
-  const courseWithoutStatus = { ...rows.course };
-  delete courseWithoutStatus.status;
-  delete courseWithoutStatus.version;
-
-  // A column the payload does not carry is dropped from the write rather than
-  // written as null, unless the caller claims authority over it. The upsert then
-  // leaves the stored value alone on an existing row, and lets the table default
-  // apply on a new one (`visibility` is NOT NULL DEFAULT 'hidden').
-  if ((options.optionalColumns ?? "preserve") === "preserve") {
-    const carried = course as unknown as Record<string, unknown>;
-    for (const [column, field] of OPTIONAL_COURSE_COLUMNS) {
-      if (carried[field] === undefined) delete courseWithoutStatus[column];
-    }
-  }
-  await write("lms_courses", [courseWithoutStatus]);
-  await write("lms_modules", rows.modules);
-  await write("lms_lessons", rows.lessons);
-  await updateById("lms_courses", rows.course.id as string, {
-    status: rows.course.status,
-    version: rows.course.version,
-  });
+  // written — that half is the real gap, and `writeCourseRelease` in
+  // release.ts is the path that closes it by doing all of this inside
+  // `apply_lms_course_release`.
+  await write("lms_courses", [prepared.courseWithoutStatus]);
+  await write("lms_modules", prepared.modules);
+  await write("lms_lessons", prepared.lessons);
+  await updateById("lms_courses", course.id, prepared.finalValues);
 
   // Reconciliation only after every upsert above has succeeded: it deletes by
   // diffing the database against the payload, and running it first — or
@@ -490,8 +547,8 @@ export async function writeCourseStructure(
   return {
     slug: course.slug,
     status: course.status,
-    moduleCount: rows.modules.length,
-    lessonCount: rows.lessons.length,
-    blockers: readiness.blockers,
+    moduleCount: prepared.modules.length,
+    lessonCount: prepared.lessons.length,
+    blockers: prepared.blockers,
   };
 }

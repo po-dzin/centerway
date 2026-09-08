@@ -1736,6 +1736,12 @@
 .revisionNoticeLink {
   composes: base text hug from "../platform/PlatformButtons.module.css";
   color: var(--cw-platform-text);
+  /* Действие в одном ряду с `quietAction`, а не текстовая ссылка в абзаце, —
+     поэтому вес берётся из контракта кнопок, а не назначается здесь. Своё
+     значение (600) было ровно тем дрейфом, который guard:buttons и ловит:
+     «почти как кнопка» рядом с настоящей кнопкой. Ссылка остаётся чернильной
+     (InkLabel) — контракт даёт ей вес, а не всю роль. */
+  font-weight: var(--ds-button-font-weight);
   text-decoration: none;
 }
 

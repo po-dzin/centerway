@@ -30,6 +30,7 @@ import {
   type RichTextNode,
 } from "@/lms-core";
 import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShell";
+import { BuilderVersionHistory } from "./BuilderVersionHistory";
 import { BuilderContents } from "./BuilderContents";
 import { BuilderMenu, type MenuItem } from "./BuilderMenu";
 import { FieldInput } from "./BuilderFields";
@@ -102,6 +103,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const [busy, setBusy] = useState(false);
   const toast = useToast();
   const [contentsOpen, setContentsOpen] = useState(false);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const [structureCollapsed, setStructureCollapsed] = useState(false);
   /**
    * WHICH LESSON IS ON SCREEN — state, not the route.
@@ -708,6 +710,21 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
             onOpen={selectTool}
             onClose={() => setToolOpen(false)}
           />
+          {/* ИСТОРИЯ ЭТОГО УРОКА — та же панель, что на уровне курса, суженная
+              до одного урока. Не вторая история: снимок остаётся курсовым,
+              отдельной таблицы версий урока нет. Часы стоят и здесь, потому что
+              вопрос «что происходило с этим уроком» задают, глядя на урок, а не
+              на список курсов. */}
+          <button
+            className={styles.menuTrigger}
+            type="button"
+            aria-label="Історія цього уроку"
+            title="Історія цього уроку"
+            aria-expanded={versionHistoryOpen}
+            onClick={() => setVersionHistoryOpen(true)}
+          >
+            <Icon name="clock" size={18} />
+          </button>
           {/* Hidden from 1660px up, where the rail is simply there. A control
               that toggles something already visible is a control that does
               nothing the first time it is pressed. */}
@@ -747,6 +764,18 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
         onSave={exit.saveAndLeave}
         onLeave={exit.leaveWithoutSaving}
         onStay={exit.stay}
+      />
+      <BuilderVersionHistory
+        slug={slug}
+        lessonId={lesson.id}
+        lessonTitle={lesson.title}
+        open={versionHistoryOpen}
+        checkpointDisabled={working || dirty}
+        onClose={() => setVersionHistoryOpen(false)}
+        onRestored={() => {
+          setVersionHistoryOpen(false);
+          window.location.reload();
+        }}
       />
       {/* THE DOCUMENT HEAD, and it is the document. The title used to be an
           `<h1>` echoing a «Назва» field in a panel below it: the same words

@@ -261,6 +261,124 @@ export class FakeSupabase {
         },
     };
 
+    /**
+     * Set false to model a database where
+     * docs/migration/sql/2026-09-07_lms_course_release_journal.sql has NOT been
+     * applied — which is a real state, because migrations here are applied by
+     * hand. PostgREST answers an unknown function with PGRST202 rather than a
+     * SQL error, so that is what this returns.
+     */
+    journalMigrationApplied = true;
+
+    /** Совпадает с DEFAULT p_min_interval функции: 10 минут. */
+    autosaveCheckpointIntervalMs = 10 * 60 * 1000;
+
+    /**
+     * The two transactional functions the release path calls.
+     *
+     * Modelled as all-or-nothing the only way an in-memory fake can be: the
+     * mutations are computed against copies and committed at the end, so a
+     * test that makes one step fail sees no half-applied course.
+     */
+    rpc = async (name: string, args: Row): Promise<{ data: Row[] | null; error: { code?: string; message: string } | null }> => {
+        if (!this.journalMigrationApplied) {
+            return { data: null, error: { code: "PGRST202", message: `Could not find the function public.${name} in the schema cache` } };
+        }
+
+        const patch = (courseId: string, values: Row | undefined) => {
+            if (!values) return;
+            const row = this.rows("lms_courses").find((item) => item.id === courseId);
+            if (row) Object.assign(row, values);
+            else this.tables.lms_courses = [...this.rows("lms_courses"), { ...values, id: courseId }];
+        };
+
+        const upsert = (table: string, rows: unknown) => {
+            if (!Array.isArray(rows)) return;
+            const existing = this.rows(table);
+            for (const incoming of rows as Row[]) {
+                const found = existing.find((item) => item.id === incoming.id);
+                if (found) Object.assign(found, incoming);
+                else existing.push({ ...incoming });
+            }
+            this.tables[table] = existing;
+        };
+
+        const journal = (kind: unknown = args.p_kind) => {
+            const rows = this.rows("lms_course_revisions");
+            const mine = rows.filter((row) => row.course_id === args.p_course_id);
+            // Родителем становится предыдущая запись журнала этого курса —
+            // так же, как это делает сама функция в базе.
+            const parent = mine.length > 0 ? mine[mine.length - 1].id : null;
+            const entry: Row = {
+                id: this.nextId("revision"),
+                course_id: args.p_course_id,
+                revision_number: rows.filter((row) => row.course_id === args.p_course_id).length + 1,
+                kind,
+                content: args.p_content,
+                content_hash: args.p_content_hash,
+                label: args.p_label ?? null,
+                created_by: args.p_created_by ?? null,
+                parent_revision_id: args.p_parent_revision_id ?? parent,
+                source_revision_id: args.p_source_revision_id ?? null,
+                created_at: new Date().toISOString(),
+            };
+            rows.push(entry);
+            this.tables.lms_course_revisions = rows;
+            return [{ id: entry.id, revision_number: entry.revision_number, created_at: entry.created_at }];
+        };
+
+        const courseId = args.p_course_id as string;
+
+        if (name === "journal_lms_course_state") {
+            patch(courseId, args.p_values as Row | undefined);
+            return { data: journal(), error: null };
+        }
+
+        if (name === "apply_lms_course_release") {
+            patch(courseId, args.p_course as Row | undefined);
+            upsert("lms_modules", args.p_modules);
+            upsert("lms_lessons", args.p_lessons);
+            const removedLessons = new Set((args.p_remove_lesson_ids as string[] | null) ?? []);
+            const removedModules = new Set((args.p_remove_module_ids as string[] | null) ?? []);
+            if (removedLessons.size > 0) {
+                this.tables.lms_lessons = this.rows("lms_lessons").filter((row) => !removedLessons.has(row.id as string));
+            }
+            if (removedModules.size > 0) {
+                this.tables.lms_modules = this.rows("lms_modules").filter((row) => !removedModules.has(row.id as string));
+            }
+            patch(courseId, args.p_final_values as Row | undefined);
+            const written = journal();
+            // Релиз назван по имени в той же транзакции, что и проекция.
+            if (args.p_kind === "published") patch(courseId, { published_revision_id: written[0].id });
+            return { data: written, error: null };
+        }
+
+        if (name === "create_lms_course_revision_once") {
+            const mine = this.rows("lms_course_revisions").filter((row) => row.course_id === courseId);
+            const last = mine[mine.length - 1];
+            if (last && last.content_hash === args.p_content_hash) {
+                return { data: [{ id: last.id, revision_number: last.revision_number, created_at: last.created_at, created: false }], error: null };
+            }
+            const [entry] = journal("manual");
+            return { data: [{ ...entry, created: true }], error: null };
+        }
+
+        if (name === "checkpoint_lms_course_autosave") {
+            /* Те же два отказа, что в SQL: совпадение хеша с последней записью
+               журнала любого вида, и слишком малый интервал с момента этой
+               записи. Пустой результат — штатный отказ, а не сбой. */
+            const mine = this.rows("lms_course_revisions").filter((row) => row.course_id === courseId);
+            const last = mine[mine.length - 1];
+            if (last && last.content_hash === args.p_content_hash) return { data: [], error: null };
+            if (last && Date.parse(last.created_at as string) > Date.now() - this.autosaveCheckpointIntervalMs) {
+                return { data: [], error: null };
+            }
+            return { data: journal("autosave_checkpoint"), error: null };
+        }
+
+        return { data: null, error: { code: "PGRST202", message: `Could not find the function public.${name} in the schema cache` } };
+    };
+
     from(table: string) {
         return new FakeQuery(this, table);
     }

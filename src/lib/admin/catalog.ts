@@ -18,9 +18,10 @@
 
 import { adminClient } from "@/lib/auth/adminClient";
 import { AccessError, writeAudit } from "@/lib/admin/access";
-import { courseOfferCode } from "@/lms-core";
+import { courseFromRows } from "@/lib/lms/authoring";
+import { courseOfferCode, diffCourses, validateCourse, type Course } from "@/lms-core";
 import { listLiveCourses } from "@/lib/lms/liveCatalog";
-import type { CatalogOffer, CatalogRow, SaleBlocker } from "@/lib/admin/catalogTypes";
+import type { CatalogOffer, CatalogRow, PendingDiff, SaleBlocker } from "@/lib/admin/catalogTypes";
 
 /* The shapes live in catalogTypes.ts so the screen can name them without
    importing this module's service-role client. Re-exported because this is
@@ -130,6 +131,78 @@ export async function listCatalog(): Promise<CatalogRow[]> {
         learners.set(key, (learners.get(key) ?? 0) + 1);
     }
 
+    /* ЧТО ИМЕННО ПРИНЕСЛИ НА ПРОВЕРКУ.
+       Рецензент видел «оновлення · in_review» и не видел, чем это обновление
+       отличается от того, что уже стоит на полке. Одобрение вслепую — это и
+       есть дыра, ради которой заводили журнал: подменить обязательный блок
+       «межі» можно было незаметно.
+
+       Считается только для курсов с ожидающей ревизией (обычно их ноль или
+       один), двумя запросами на все такие курсы сразу, а не по одному на
+       курс. Разница нигде не хранится — источник истины остаётся один. */
+    const pending = courses.filter((row) => row.pending_content);
+    const diffByCourse = new Map<string, PendingDiff>();
+    if (pending.length > 0) {
+        const ids = pending.map((row) => row.id as string);
+        const [{ data: moduleRows }, { data: lessonRows }, { data: submissionRows }] = await Promise.all([
+            db.from("lms_modules").select("*").in("course_id", ids),
+            db.from("lms_lessons").select("*").in("course_id", ids),
+            /* КТО подал — из журнала, а не из колонки: `pending_submitted_at`
+               хранит КОГДА и никогда не хранило кто. С 2026-09-07 отправка
+               оставляет запись `review_submitted` с автором, и это
+               единственное место, где подпись под отправкой существует. */
+            db.from("lms_course_revisions")
+                .select("course_id, created_by, created_at")
+                .in("course_id", ids)
+                .eq("kind", "review_submitted")
+                .order("created_at", { ascending: false }),
+        ]);
+
+        const submitterIds = [...new Set((submissionRows ?? []).map((row) => row.created_by as string | null).filter(Boolean))] as string[];
+        const { data: submitterRows } = submitterIds.length
+            ? await db.from("platform_users").select("auth_user_id, email, full_name").in("auth_user_id", submitterIds)
+            : { data: [] };
+        const nameByUser = new Map((submitterRows ?? []).map((row) => [
+            row.auth_user_id as string,
+            ((row.full_name as string | null) || (row.email as string | null) || null),
+        ]));
+        // Отсортировано по убыванию времени, поэтому первая встреченная запись
+        // курса и есть последняя отправка.
+        const submitterByCourse = new Map<string, string | null>();
+        for (const row of submissionRows ?? []) {
+            const key = row.course_id as string;
+            if (!submitterByCourse.has(key)) submitterByCourse.set(key, nameByUser.get(row.created_by as string) ?? null);
+        }
+        for (const row of pending) {
+            const id = row.id as string;
+            try {
+                const live = courseFromRows(
+                    row as Record<string, unknown>,
+                    (moduleRows ?? []).filter((entry) => entry.course_id === id) as Record<string, unknown>[],
+                    (lessonRows ?? []).filter((entry) => entry.course_id === id) as Record<string, unknown>[],
+                );
+                // Читаем чужой сохранённый документ — потолок контракта только
+                // на записи, иначе курс пропал бы из очереди из-за правила,
+                // которого не было, когда его сохраняли.
+                validateCourse(row.pending_content, "pending_revision", "stored");
+                const diff = diffCourses(live, row.pending_content as Course);
+                diffByCourse.set(id, {
+                    submittedBy: submitterByCourse.get(id) ?? null,
+                    boundaryTouched: diff.boundaryTouched,
+                    fields: diff.fields.length,
+                    modules: diff.modules.length,
+                    lessonsAdded: diff.lessons.filter((entry) => entry.kind === "added").length,
+                    lessonsRemoved: diff.lessons.filter((entry) => entry.kind === "removed").length,
+                    lessonsChanged: diff.lessons.filter((entry) => entry.kind === "changed").length,
+                });
+            } catch (error) {
+                // Непрочитанная разница не должна убирать курс из очереди:
+                // рецензент просто не получает подсказку.
+                console.warn(`catalog: pending diff unavailable for ${row.slug}`, error);
+            }
+        }
+    }
+
     return courses.map((row) => {
         const offer = offerByCourse.get(row.id as string) ?? null;
         // The same fallback `listCourses` uses: a course published before the
@@ -150,6 +223,7 @@ export async function listCatalog(): Promise<CatalogRow[]> {
             visibility,
             hasPendingRevision: Boolean(row.pending_content),
             pendingReviewStatus: (row.pending_review_status as string | null) ?? null,
+            pendingDiff: diffByCourse.get(row.id as string) ?? null,
             authorEmail: emailByAuthor.get(row.author_id as string) ?? null,
             learners: learners.get(row.id as string) ?? 0,
             updatedAt: row.updated_at as string,

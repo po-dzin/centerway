@@ -31,6 +31,8 @@ import { adminClient } from "@/lib/auth/adminClient";
 import { courseFromRows, writeCourseStructure } from "./authoring";
 import { getSnapshotCourse } from "./catalog";
 import { immediatePublishedPatch } from "./publishedEditPolicy";
+import { JOURNAL_MIGRATION_REQUIRED, checkpointAutosave, journalCourseState, writeCourseRelease } from "./release";
+import { loadCourseRevision } from "./revisions";
 import {
   DEFAULT_DRAFT_TITLE,
   courseReadiness,
@@ -455,6 +457,8 @@ async function claimDraftGeneration(
 export type SaveGovernance = {
   /** True only for an owner (admin). Defaults to false: the safe answer. */
   mayGovernAccessCodes?: boolean;
+  /** Кто сохраняет — попадает в автоматическую точку восстановления. */
+  actorId?: string | null;
 };
 
 export async function saveBuilderCourse(
@@ -544,6 +548,7 @@ export async function saveBuilderCourse(
       pending_updated_at: new Date().toISOString(),
     }).eq("id", ownerCourseId);
     if (error) throw new Error(`lms_builder_revision_write_failed:${error.message}`);
+    await checkpointAutosave({ courseId: ownerCourseId, course: revision, actorId: governance.actorId ?? null });
     return { slug: revision.slug, status: "draft", blockers: courseReadiness(revision).blockers, staged: true, draftGeneration };
   }
 
@@ -577,32 +582,78 @@ export async function saveBuilderCourse(
     }).eq("id", ownerCourseId);
     if (error) throw new Error(`lms_builder_review_reset_failed:${error.message}`);
   }
+  /* Точка восстановления берётся ПОСЛЕ успешной записи и намеренно не входит в
+     её транзакцию: см. `checkpointAutosave`. Документ тот же, что лёг в базу,
+     а не тот, что пришёл в запросе. */
+  await checkpointAutosave({
+    courseId: ownerCourseId,
+    course: { ...incoming, id: ownerCourseId, version: nextVersion },
+    actorId: governance.actorId ?? null,
+  });
   return { slug: result.slug, status: result.status, blockers: result.blockers, draftGeneration };
 }
 
-export async function submitBuilderCourseForReview(slug: string): Promise<void> {
+/**
+ * Submitting pins the EXACT DOCUMENT that was sent to moderation.
+ *
+ * Without this the review gate leaves no artifact at all: `pending_content` is
+ * nulled the moment an admin approves, and `audit_log` records the act of
+ * approving without the thing that was approved. "The author passed review and
+ * then changed the material" then has no answer, in either direction — it can
+ * neither be shown nor ruled out.
+ *
+ * The status change and the journal entry share one transaction
+ * (`journal_lms_course_state`), because a submission recorded as sent that was
+ * not, or sent-but-not-recorded, is worse than either alone.
+ */
+export async function submitBuilderCourseForReview(slug: string, actorId: string | null = null): Promise<void> {
   const loaded = await loadBuilderCourse(slug);
   if (!loaded) throw new Error("lms_builder_course_not_found");
   if (!courseReadiness(loaded.course).ready) throw new Error("lms_builder_not_ready_for_review");
+
+  const courseRow = await readCourseRow(slug);
+  const courseId = courseRow?.id as string | undefined;
+
+  const values = loaded.hasPendingRevision
+    ? {
+        pending_review_status: "in_review",
+        pending_review_note: null,
+        pending_submitted_at: new Date().toISOString(),
+      }
+    : {
+        review_status: "in_review",
+        review_note: null,
+        submitted_at: new Date().toISOString(),
+        approved_at: null,
+        approved_by: null,
+      };
+
   if (loaded.hasPendingRevision) {
     if (loaded.reviewStatus === "in_review") throw new Error("lms_builder_review_already_submitted");
-    const { error } = await adminClient().from("lms_courses").update({
-      pending_review_status: "in_review",
-      pending_review_note: null,
-      pending_submitted_at: new Date().toISOString(),
-    }).eq("slug", slug);
-    if (error) throw new Error(`lms_builder_review_submit_failed:${error.message}`);
-    return;
+  } else if (loaded.course.status !== "draft") {
+    throw new Error("lms_builder_review_published");
   }
-  if (loaded.course.status !== "draft") throw new Error("lms_builder_review_published");
-  const db = adminClient();
-  const { error } = await db.from("lms_courses").update({
-    review_status: "in_review",
-    review_note: null,
-    submitted_at: new Date().toISOString(),
-    approved_at: null,
-    approved_by: null,
-  }).eq("slug", slug);
+
+  if (courseId) {
+    try {
+      await journalCourseState({
+        courseId,
+        course: loaded.course,
+        values,
+        journal: { kind: "review_submitted", actorId },
+      });
+      return;
+    } catch (error) {
+      // The journal migration is applied by hand, so "shipped but not yet
+      // applied" is a real state. Refusing the submission would break a flow
+      // that works today over an artifact that does not exist yet either way;
+      // every other outcome is a genuine failure and must surface.
+      if (!(error instanceof Error) || error.message !== JOURNAL_MIGRATION_REQUIRED) throw error;
+      console.warn(`lms: review submission for ${slug} not journaled — ${JOURNAL_MIGRATION_REQUIRED}`);
+    }
+  }
+
+  const { error } = await adminClient().from("lms_courses").update(values).eq("slug", slug);
   if (error) throw new Error(`lms_builder_review_submit_failed:${error.message}`);
 }
 
@@ -622,6 +673,94 @@ export async function submitBuilderCourseForReview(slug: string): Promise<void> 
  * course" nobody can see but an admin, which is the state both shipped
  * courses are in and precisely the thing that needed an UPDATE by hand.
  */
+/**
+ * RESTORE IS NOT A REWIND.
+ *
+ * "Restoring an old revision creates a new draft; it never rewinds the
+ * learner-facing release in place" — docs/lms-course-version-history-2026-08-23.md.
+ * A published course therefore restores into `pending_content`, where it waits
+ * for review exactly like any other update to live material; only an unpublished
+ * course restores straight onto its own rows. Neither path can hand a learner a
+ * different lesson than the one they were reading a second ago.
+ *
+ * Four fields are pinned from the CURRENT course rather than taken from the
+ * snapshot, because a revision is a record of content and must not be a way to
+ * travel back to an earlier set of PERMISSIONS: identity (`id`, `slug`,
+ * `programSlug`), release state (`status`, `visibility`), and access
+ * (`entitlementProductCodes`) — restoring a snapshot from before a code was
+ * removed would otherwise re-open the course to everyone it used to admit.
+ *
+ * Unlike review submission and approval, this one REFUSES when the journal
+ * migration is absent: an unjournaled restore is the exact shape the version
+ * history doc forbids, and unlike the other two it is new capability rather
+ * than a flow that already works.
+ */
+export async function restoreBuilderCourseRevision(input: {
+  slug: string;
+  revisionId: string;
+  actorId: string | null;
+}): Promise<{ slug: string; status: Course["status"]; staged: boolean; draftGeneration: number; restoredFrom: number }> {
+  const loaded = await loadBuilderCourse(input.slug);
+  if (!loaded) throw new Error("lms_builder_course_not_found");
+  const courseRow = await readCourseRow(input.slug);
+  if (!courseRow) throw new Error("lms_builder_course_not_found");
+  const courseId = courseRow.id as string;
+
+  const snapshot = await loadCourseRevision(courseId, input.revisionId);
+  if (!snapshot) throw new Error("lms_builder_revision_not_found");
+
+  const restored: Course = {
+    ...snapshot.content,
+    id: courseId,
+    slug: loaded.liveCourse.slug,
+    programSlug: loaded.liveCourse.programSlug,
+    status: "draft",
+    visibility: loaded.liveCourse.visibility,
+    entitlementProductCodes: loaded.liveCourse.entitlementProductCodes,
+    version: Number(courseRow.version ?? loaded.liveCourse.version) + 1,
+  };
+
+  const db = adminClient();
+  await assertNestedIdsAreOwned(db, restored, courseId);
+
+  // Any tab holding the previous generation must reload rather than save over
+  // a document it never saw.
+  const draftGeneration = Number(courseRow.draft_generation ?? 0) + 1;
+  const journal = {
+    kind: "restored" as const,
+    actorId: input.actorId,
+    sourceRevisionId: snapshot.id,
+    label: `Відновлено з версії №${snapshot.revisionNumber}`,
+  };
+
+  if (loaded.liveStatus === "published") {
+    if (!loaded.revisionEnabled) throw new Error("lms_builder_revision_migration_required");
+    await journalCourseState({
+      courseId,
+      course: restored,
+      values: {
+        pending_content: restored,
+        pending_review_status: "draft",
+        pending_review_note: null,
+        pending_submitted_at: null,
+        pending_updated_at: new Date().toISOString(),
+        draft_generation: draftGeneration,
+      },
+      journal,
+    });
+    return { slug: restored.slug, status: "draft", staged: true, draftGeneration, restoredFrom: snapshot.revisionNumber };
+  }
+
+  await writeCourseRelease({
+    courseId,
+    course: restored,
+    finalValues: { draft_generation: draftGeneration },
+    optionalColumns: "authoritative",
+    journal,
+  });
+  return { slug: restored.slug, status: "draft", staged: false, draftGeneration, restoredFrom: snapshot.revisionNumber };
+}
+
 export async function createBuilderCourse(input: {
   title?: string;
   authorId: string;

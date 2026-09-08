@@ -54,6 +54,14 @@ export type CatalogRow = {
     visibility: "hidden" | "unlisted" | "listed";
     hasPendingRevision: boolean;
     pendingReviewStatus?: string | null;
+    /**
+     * Чем ожидающая ревизия отличается от того, что уже стоит на полке.
+     *
+     * Числами, а не текстом: рецензенту нужен ответ на «во что смотреть», а
+     * подробности он видит в самом курсе. `null` — разницу не удалось
+     * посчитать; это не повод убирать курс из очереди.
+     */
+    pendingDiff?: PendingDiff | null;
     authorEmail: string | null;
     learners: number;
     updatedAt: string;
@@ -70,3 +78,27 @@ export type CatalogRow = {
  * an unstated term cannot be spelled as an empty box.
  */
 export const ACCESS_TERM_PRESETS = [7, 14, 30, 60, 90, 180, 365] as const;
+
+/** Сводка изменений ожидающей ревизии. Считается по запросу и не хранится. */
+export type PendingDiff = {
+    /**
+     * Кто отправил обновление на проверку.
+     *
+     * Из журнала (`review_submitted`), а не из колонки: `pending_submitted_at`
+     * хранит когда и никогда не хранило кто. `null` — отправка была до того,
+     * как журнал начали вести, либо аккаунт исчез.
+     */
+    submittedBy: string | null;
+    /**
+     * Тронут ли обязательный блок «межі та застереження».
+     *
+     * Отдельным флагом, а не строкой в общем счёте: правка именно его после
+     * одобрения — то единственное, ради обнаружения чего журнал заводили.
+     */
+    boundaryTouched: boolean;
+    fields: number;
+    modules: number;
+    lessonsAdded: number;
+    lessonsRemoved: number;
+    lessonsChanged: number;
+};

@@ -7,9 +7,9 @@ import { LMS_COURSE_WRITE } from "@/lib/lms/rateRules";
 export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  return withCourseAccess(req, slug, async () => {
+  return withCourseAccess(req, slug, async (grant) => {
     try {
-      await submitBuilderCourseForReview(slug);
+      await submitBuilderCourseForReview(slug, grant.identity.authUserId);
       return NextResponse.json({ status: "in_review" });
     } catch (error) {
       const message = error instanceof Error ? error.message : "unknown_error";

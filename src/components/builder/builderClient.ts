@@ -10,9 +10,9 @@
  */
 
 import { supabaseClient } from "@/lib/supabaseClient";
-import type { Author, Course, CourseCategory, CourseTheme, Lesson, ReadinessBlocker } from "@/lms-core";
+import type { Author, Course, CourseCategory, CourseDiff, CourseTheme, Lesson, ReadinessBlocker } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
-import type { CourseRevisionSummary } from "@/lib/lms/revisions";
+import type { CourseRevisionSummary, LessonRevisionEntry } from "@/lib/lms/revisions";
 
 export type BuilderFailure = "unauthenticated" | "forbidden" | "not_found" | "invalid" | "conflict" | "network";
 
@@ -252,10 +252,20 @@ export function listCourseRevisions(
   return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions`);
 }
 
+/** История курса, суженная до одного урока. Фильтр, а не вторая история. */
+export function listLessonRevisions(
+  slug: string,
+  lessonId: string,
+): Promise<BuilderResult<{ lessonRevisions: LessonRevisionEntry[] }>> {
+  return request(
+    `/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions?lesson=${encodeURIComponent(lessonId)}`
+  );
+}
+
 export function createCourseRevision(
   slug: string,
   label: string,
-): Promise<BuilderResult<{ revision: { id: string; revisionNumber: number; createdAt: string } }>> {
+): Promise<BuilderResult<{ revision: { id: string; revisionNumber: number; createdAt: string; created: boolean } }>> {
   return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions`, {
     method: "POST",
     body: JSON.stringify({ label }),
@@ -265,9 +275,19 @@ export function createCourseRevision(
 export function loadCourseRevision(
   slug: string,
   revisionId: string,
-): Promise<BuilderResult<{ revision: CourseRevisionSummary & { content: Course } }>> {
+): Promise<BuilderResult<{ revision: CourseRevisionSummary & { content: Course }; diff: CourseDiff | null }>> {
   return request(
     `/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions/${encodeURIComponent(revisionId)}`,
+  );
+}
+
+export function restoreCourseRevision(
+  slug: string,
+  revisionId: string,
+): Promise<BuilderResult<{ restored: { slug: string; status: string; staged: boolean; draftGeneration: number; restoredFrom: number } }>> {
+  return request(
+    `/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions/${encodeURIComponent(revisionId)}/restore`,
+    { method: "POST" },
   );
 }
 
