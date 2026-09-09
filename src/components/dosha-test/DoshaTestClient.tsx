@@ -944,8 +944,8 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                       savedToCabinet || session?.user ? (
                         <>
                           <p>Результат збережено у вашому кабінеті — його видно поруч із програмами і прогресом.</p>
-                          <Link className={styles.diagnosticTextButton} href={surfaceHref("/profile")}>
-                            Відкрити кабінет
+                          <Link className={styles.diagnosticTextButton} href={surfaceHref("/profile")} data-cw-ink-control>
+                            <InteractionInkLabel variant="link">Відкрити кабінет</InteractionInkLabel>
                           </Link>
                         </>
                       ) : (

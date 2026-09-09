@@ -77,6 +77,7 @@ export const CW_ICON_NAMES = [
 
 export const CW_GRAPHIC_NAMES = [
   "ink-stroke",
+  "ink-rule",
   "ink-ring",
   "dot",
   "orbit",

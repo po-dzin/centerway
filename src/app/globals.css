@@ -138,7 +138,8 @@
     --cw-brand-size-wordmark-header-height: 1.93rem;
     --cw-ink-stroke-height: 0.85rem;
     --cw-ink-stroke-weight: 3.4;
-    --cw-ink-stroke-tilt: -0.4deg;
+    --cw-ink-link-weight: 1.7;
+    --cw-ink-stroke-tilt: 0deg;
     --cw-ink-stroke-offset: -0.7rem;
     --cw-ink-ring-size: 3rem;
     --cw-contour-width: 1px;
@@ -147,7 +148,7 @@
     --cw-contour-selected: color-mix(in srgb, var(--cw-nav-marker) 62%, transparent);
     --cw-contour-empty: color-mix(in srgb, var(--cw-platform-text) 22%, transparent);
     --cw-ink-rest-opacity: 0.34;
-    --cw-ink-rest-scale: 0.9;
+    --cw-ink-link-rest-opacity: 0.62;
     --cw-ink-hover-opacity: 0.68;
     --cw-ink-hover-scale: 0.74;
     --cw-ink-ring-optical-ratio: 0.82;
@@ -1805,13 +1806,20 @@ body {
        The weight and the tilt are now tokens every state shares. What still
        varies between rest, hover and current is what was always supposed to
        vary: how far the stroke has been drawn, and how firmly. */
+    /* FULL LENGTH IN EVERY STATE (2026-09-09). The mark used to grow — 0.72 at
+       rest, 0.9 for a link, 0.96 on hover, 1 when current — so the same word
+       carried four different underlines depending on where the cursor was, and
+       none of them reached its last letter. A rule is the width of what it
+       underlines: the element is already `100% + 0.4rem`, which is the word
+       plus the small overhang a drawn line has, and the states now differ in
+       opacity, weight and colour rather than in how much of the word has been
+       covered. */
     transform:
-      scaleX(0.72)
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
     transform-origin: left center;
     pointer-events: none;
-    transition: opacity 0.16s ease, transform 0.18s ease;
+    transition: opacity 0.16s ease, transform 0.18s ease, color 0.16s ease;
   }
 
   /* The account menu is the reference text-selection gesture. It is a baked
@@ -1823,15 +1831,12 @@ body {
     width: fit-content;
   }
 
-  /* The account menu's mark sits a little lower and starts shorter. Weight and
-     tilt come from the base now, which is what makes it the same stroke. */
-  .cw-ink-label[data-cw-ink-variant="menu"] .cw-ink-label-mark {
-    transform:
-      scaleX(0.38)
-      scaleY(var(--cw-ink-stroke-weight))
-      rotate(var(--cw-ink-stroke-tilt));
-    transform-origin: left center;
-  }
+  /* `menu` IS THE SELECTION STROKE, and no longer a third geometry: it used to
+     start at 0.38 of the word and grow, which is what made the account menu's
+     mark read as a different object from the same mark in the bar above it.
+     The name stays because call sites and `interactionLayering.test.ts` read
+     it; what it selects is a weight and a colour, both of which it now shares
+     with `navigation`. */
 
   .cw-ink-icon {
     position: relative;
@@ -1892,23 +1897,56 @@ body {
      baked stroke that could never reach an opacity above zero. The reader saw
      the browser's own `text-decoration` underneath it and nothing else, which
      is exactly the "I still don't see the ink underline" report. */
+  /* ── the link rule ──────────────────────────────────
+     THIN, AND THE TEXT'S OWN COLOUR. A gold line under ink-coloured words was
+     the loudest thing in a paragraph and read as a highlight someone had left
+     on; worse, on the cabinet's own row the word went brass on hover while the
+     line stayed ink, so the two halves of one control changed state
+     separately. The rule is `currentColor` at rest — it belongs to the
+     sentence — and the label as a whole goes brass when pointed at, which
+     carries the word and the rule together because the mark reads the same
+     colour the text does. */
   .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark {
-    opacity: var(--cw-ink-rest-opacity);
+    color: currentColor;
+    opacity: var(--cw-ink-link-rest-opacity);
     transform:
-      scaleX(var(--cw-ink-rest-scale))
-      scaleY(var(--cw-ink-stroke-weight))
+      scaleY(var(--cw-ink-link-weight))
       rotate(var(--cw-ink-stroke-tilt));
   }
 
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover
+    .cw-ink-label[data-cw-ink-variant="link"],
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible
+    .cw-ink-label[data-cw-ink-variant="link"],
+  .cw-ink-label[data-cw-ink-variant="link"][data-cw-ink-active="true"] {
+    color: var(--cw-nav-marker);
+  }
+
+  /* The weight is restated, not inherited. The selection stroke's hover rule
+     below also matches this mark and carries `scaleY(3.4)`; without the thin
+     weight here a link would thicken into a selection stroke under the
+     cursor, which is the one thing these two marks must never do to each
+     other. This selector is the more specific of the two, so it holds. */
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover
+    .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark,
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible
+    .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark,
+  .cw-ink-label[data-cw-ink-variant="link"][data-cw-ink-active="true"] .cw-ink-label-mark {
+    opacity: 1;
+    transform:
+      scaleY(var(--cw-ink-link-weight))
+      rotate(var(--cw-ink-stroke-tilt));
+  }
+
+  /* ── the selection stroke ───────────────────────────
+     Thick and brass, absent until it means something. The weight is restated
+     here rather than inherited: this selector and the variants' carry equal
+     specificity and this one comes later, so leaving `scaleY` out made a
+     pointed-at row go thin exactly while it was being pointed at. */
   :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover .cw-ink-label-mark,
   :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible .cw-ink-label-mark {
     opacity: var(--cw-ink-hover-opacity);
-    /* Restating the weight here is not redundancy — it is the fix for a real
-       bug. This selector and the `menu` variant's carry equal specificity, and
-       this one comes later, so a menu label losing `scaleY` on hover meant the
-       account menu's stroke went thin exactly while it was being pointed at. */
     transform:
-      scaleX(0.96)
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
   }
@@ -1916,7 +1954,6 @@ body {
   :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]) .cw-ink-label-mark {
     opacity: 1;
     transform:
-      scaleX(1)
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
   }
@@ -1924,7 +1961,6 @@ body {
   .cw-ink-label[data-cw-ink-active="true"] .cw-ink-label-mark {
     opacity: 1;
     transform:
-      scaleX(1)
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
   }
