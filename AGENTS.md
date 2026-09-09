@@ -100,6 +100,33 @@ Use only:
 
 Do not use forms like `/Users/.../project/file.ts:42` in ordinary agent-facing output unless the user explicitly asks for the absolute path.
 
+## Publish Rhythm Rule
+
+A deployment is not a way of looking at a change. The local stack is.
+
+Agents do not open pull requests and do not deploy on their own initiative. Both
+are the user's calls, made in words. "Show me", "check this", "does it work" mean
+run it locally and report; they never mean push.
+
+The rhythm of one work cycle:
+
+1. **Look locally.** `npm run db:local:reset` builds a database with production's
+   schema and content, `npm run db:local:env` points `npm run dev` at it, and
+   port 8000 is where the change gets judged. Nothing there can reach a customer.
+2. **Commit early and often, locally.** Small commits on the working branch cost
+   nothing and are the only protection against a parallel session resetting the
+   tree (see `docs/local-stack-2026-09-10.md`).
+3. **Publish once, when the cycle is done.** One branch, one PR, one merge — not
+   a PR per commit and not a preview deployment per idea. Both Vercel and the
+   review queue are shared, finite, and paid for.
+4. **Rehearse a migration before pushing it.** A schema change goes through
+   `npm run db:stage` and `npm run db:local:reset` first, so it runs against
+   populated tables locally before `npm run db:push` sends it to production.
+
+If a change genuinely cannot be judged locally — a payment callback, a Telegram
+webhook, a phone-sized check on a real URL — say so and name the reason. A tunnel
+to port 8000 answers most of them; a deployment is the last resort, not the first.
+
 ## Safe Push Rule
 
 When the user asks to "push this block", "commit and push this part", or otherwise requests a scoped publish, treat that as a request for a safe, self-contained change set rather than a narrow file-only slice.
