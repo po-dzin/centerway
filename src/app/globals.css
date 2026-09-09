@@ -910,6 +910,28 @@ body {
   --cw-rule-ink: var(--cw-mat-stroke-inner);
 }
 
+/* THE CHROME SCOPE, WHEN THE CHROME IS PORTALLED (2026-09-10).
+   `chrome` reads `--platform-header-fg`, which is the bar's own ink — correct
+   for a rule drawn INSIDE the bar, and unavailable to the account popover,
+   which is portalled to `document.body` precisely because the header is
+   `overflow: clip`. Out of that scope the variable falls back to
+   `--cw-platform-text`, so the menu's top rule came out as the THEME's ink on
+   a plate whose tone had already flipped away from the theme: a bright white
+   line across the top of the menu on the light theme over a dark hero, with a
+   properly receding `.profileMenuDivider` four rows below it drawn from the
+   same design system.
+
+   The tone is the one thing a portalled plate knows about its ground, so the
+   tone supplies the ink — and it supplies the same white 16% the divider
+   already uses, which is what makes the menu's two separators one separator
+   again. Here rather than in the module because a token re-pointed in a
+   component stylesheet is a token defined in fifteen files, which is what
+   `canon:guard` refuses and why these scopes live together. */
+[data-cw-header-tone="dark"] [data-cw-rule="chrome"],
+[data-cw-rule="chrome"][data-cw-header-tone="dark"] {
+  --cw-rule-ink: color-mix(in srgb, white 16%, transparent);
+}
+
 /* ── Material (M0 matte / M1 glass) ───────────────────────────────────────────
    The tactile surface layer. Values come from cw.tokens.json → layers.material
    (light in :root, dark in the theme scope); this recipe is the hand-maintained shape of

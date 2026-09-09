@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type CSSProperties, type ReactNode } 
 import { createPortal } from "react-dom";
 
 import styles from "@/components/platform/PlatformShellStyles";
+import { markChromeSheetOpen } from "./chromeSheetStore";
 
 /**
  * WHAT A CONTROL IN THE CHROME OPENS.
@@ -165,6 +166,19 @@ export function useChromeSheet(): ChromeSheet {
       window.removeEventListener("scroll", measure, true);
     };
   }, [open, measure, trigger]);
+
+  /* THE BAR STAYS WHILE THIS IS ON SCREEN. The panel is portalled and
+     positioned by a measured `top`, so it is not carried by the header's
+     hide-on-scroll transform — left to itself it either freezes at the pixel
+     it opened at or tracks the bar off the top of the viewport, half-clipped
+     and still open. `useChromeReveal` already refuses to hide the bar while
+     the burger sheet is open, for exactly this reason; the account popover
+     could not reach that rule because its state lives here. See
+     `chromeSheetStore`. */
+  useEffect(() => {
+    if (!open) return;
+    return markChromeSheetOpen();
+  }, [open]);
 
   /* THE ROW IS RAISED WHILE ITS SHEET IS OPEN. The sheet unfolds from the row's
      top edge and the row's own `z-index: 4` is nowhere near the portal's layer,

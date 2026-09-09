@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useState, useSyncExternalStore, type RefObject } from "react";
+
+import {
+  chromeSheetClosedOnServer,
+  isChromeSheetOpen,
+  subscribeChromeSheet,
+} from "./chromeSheetStore";
 
 /**
  * ONE GESTURE REVEALS THE CHROME.
@@ -29,8 +35,13 @@ import { useEffect, useState, type RefObject } from "react";
  *
  * - Hide near the top. The first screen has no reading behind it yet, and a bar
  *   that vanishes on the opening scroll reads as a glitch.
- * - Hide while its own menu is open — the burger sheet IS the header, so hiding
- *   it would take the open dialog with it.
+ * - Hide while ANY sheet it opened is on screen. The burger drawer IS the
+ *   header, so hiding it would take the open dialog with it; the account
+ *   popover is portalled to the body and positioned by a measured `top`, so
+ *   hiding the bar leaves it behind instead — frozen where it opened, or
+ *   tracking the bar off the top of the viewport. The burger's state arrives
+ *   through `locked`; every other chrome sheet publishes to `chromeSheetStore`
+ *   (2026-09-10).
  * - Hide while focus is inside it. Tabbing into an invisible control is the
  *   classic keyboard failure of this pattern.
  * - React to a jitter. A trackpad and a thumb both emit tiny opposite-signed
@@ -64,6 +75,15 @@ export function useChromeReveal(
   { locked = false }: { locked?: boolean } = {},
 ): ChromeReveal {
   const [state, setState] = useState<ChromeReveal>({ hidden: false, deep: false });
+  /* Subscribed rather than read: a sheet opens on a click this hook never
+     sees, and the bar has to stop hiding from that moment, not from the next
+     scroll frame. */
+  const sheetOpen = useSyncExternalStore(
+    subscribeChromeSheet,
+    isChromeSheetOpen,
+    chromeSheetClosedOnServer,
+  );
+  const held = locked || sheetOpen;
 
   useEffect(() => {
     /* No reset on the way out, and none is needed: the return below DERIVES the
@@ -71,7 +91,7 @@ export function useChromeReveal(
        write was also the one thing in here React's lint is right to refuse — a
        setState in an effect body is a cascading render, and this one bought
        nothing the derivation was not already doing. */
-    if (!enabled || locked) return;
+    if (!enabled || held) return;
 
     let last = window.scrollY;
     /* Focus is tracked rather than queried per frame: `:focus-within` cannot
@@ -117,8 +137,8 @@ export function useChromeReveal(
       node?.removeEventListener("focusin", onFocusIn);
       node?.removeEventListener("focusout", onFocusOut);
     };
-  }, [enabled, locked, ref]);
+  }, [enabled, held, ref]);
 
-  if (!enabled || locked) return { hidden: false, deep: state.deep };
+  if (!enabled || held) return { hidden: false, deep: state.deep };
   return state;
 }
