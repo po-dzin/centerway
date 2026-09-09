@@ -192,10 +192,13 @@
   color: var(--cw-platform-text);
 }
 
-.diagnosticBackLink span {
-  text-decoration: underline;
-  text-underline-offset: 0.22em;
-}
+/* NO SECOND UNDERLINE HERE. The `.text` role it composes already documents the
+   one answer — a link's mark is the ink stroke, and `[data-cw-ink-control]`
+   turns the browser's line off for controls that carry one. This rule reached
+   past both: it drew `text-decoration` on the inner span, where neither the
+   role's fallback nor the opt-out could see it, so the arrow row wore the one
+   graphic nobody in this product draws. The label is an `InteractionInkLabel`
+   now and the stroke comes with it. */
 
 .diagnosticBackIcon {
   flex: none;
