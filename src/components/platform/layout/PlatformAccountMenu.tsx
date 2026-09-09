@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, type MouseEvent } from "react";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 
@@ -263,11 +263,6 @@ export function PlatformAccountMenu({
      listener above already catches — a synchronous setState in an effect would
      buy a cascading render for a case that cannot arise. */
 
-  const signInWithGoogle = async () => {
-    const redirectTo = typeof window !== "undefined" ? window.location.href : undefined;
-    await supabaseClient.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
-  };
-
   const signOut = async () => {
     await supabaseClient.auth.signOut();
     /* A hard navigation, not a router push. Sign-out invalidates data every
@@ -277,33 +272,78 @@ export function PlatformAccountMenu({
     if (typeof window !== "undefined") window.location.assign("/");
   };
 
-  /* SIGNED OUT: unchanged from the link this replaced. There is no account, so
-     there is nothing to switch between, and the control is the way in. */
+  /* SIGNED OUT: a link to the door, not a shortcut past it (2026-09-09).
+     `/profile` already resolves `cabinetGate()`, which offers email-first —
+     Google below it — for exactly the reason `SignInOptions`' own comment
+     gives: entitlement is linked by VERIFIED email, so a buyer who paid with
+     anything but a Google address needs the code form, not a redirect that
+     skips straight past it. This control used to `preventDefault()` and call
+     Google directly, from before that form existed — the two-door pattern
+     reached every other gate in the app (`RouteAuthGate`, `CabinetGate`,
+     `BuilderShell`) and missed the one in the header, so the fastest way in
+     was quietly the one door that did not fit everyone.
+
+     THE CONTROL IS NOW A POPOVER, LIKE THE SIGNED-IN ONE — not a bare link,
+     and not only on desktop. Below 901px this same component is the mobile
+     chrome (`PlatformOrgans` in `PlatformLayout`/`BuilderShell`/the admin
+     layout all mount `<PlatformAccountMenu compact />`, `variant="menu"`);
+     the phone never reaches the `inline` branch this file used to carry the
+     setting in alone, so a bare link left a signed-out phone with no way to
+     `Вигляд` at all short of scrolling to the footer. One shape now serves
+     both auth states: the trigger opens a sheet, the sheet's first row is the
+     setting, and what sits below it is either the account or the door in. */
   if (!signedIn) {
     const label = isAuthEnabled ? "Увійти" : "Кабінет";
-    const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
-      if (!isAuthEnabled) {
-        onNavigate?.();
-        return;
-      }
-      event.preventDefault();
-      onNavigate?.();
-      void signInWithGoogle();
-    };
+
+    const guestRows = (
+      <>
+        <div className={styles.menuSetting} role="none">
+          <span className={styles.menuSettingLabel}>Вигляд</span>
+          <PlatformThemeControl />
+        </div>
+        <Link
+          href={cabinetHref}
+          onClick={() => {
+            close();
+            onNavigate?.();
+          }}
+        >
+          <InkMenuLabel>{label}</InkMenuLabel>
+        </Link>
+      </>
+    );
+
+    if (variant === "inline") {
+      return <div className={styles.profileWrapMobile}>{guestRows}</div>;
+    }
 
     return (
-      <Link
-        className={`${styles.profileEntry} ${variant === "inline" ? styles.profileEntryMobile : ""} ${
-          compact ? styles.profileEntryCompact : ""
-        }`}
-        href={cabinetHref}
-        onClick={handleClick}
-        aria-label={label}
-        data-auth-state={isAuthEnabled ? "guest" : "fallback"}
-      >
-        {compact ? <span className={styles.profileGlyph} aria-hidden="true" /> : null}
-        {compact ? null : <span className={styles.profileLabel}>{label}</span>}
-      </Link>
+      <div className={styles.profileWrap} ref={attachWrap}>
+        <button
+          ref={attachTrigger}
+          className={`${styles.profileEntry} ${compact ? styles.profileEntryCompact : ""}`}
+          type="button"
+          onClick={toggle}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-label={label}
+          data-auth-state={isAuthEnabled ? "guest" : "fallback"}
+        >
+          {compact ? <span className={styles.profileGlyph} aria-hidden="true" /> : null}
+          {compact ? null : <span className={styles.profileLabel}>{label}</span>}
+        </button>
+        <ChromeSheetPanel
+          open={open}
+          anchor={anchor}
+          form={form}
+          tone={tone}
+          close={close}
+          attachMenu={attachMenu}
+          label="увійти"
+        >
+          {guestRows}
+        </ChromeSheetPanel>
+      </div>
     );
   }
 
