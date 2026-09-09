@@ -80,6 +80,17 @@ const IOS_INSTALL_STEPS = [
  * sheet — renders nothing, because a row that leads nowhere is worse than no
  * row.
  */
+/* THE ATTRIBUTE IS THE OPT-IN, AND ITS ABSENCE WAS THE BUG (2026-09-10).
+   `InkMenuLabel` renders the selection stroke, but the stroke's hover and
+   focus rules key on `:is(.cw-tab, .cw-nav-link, [data-cw-ink-control])` —
+   and these rows are bare `<a>`/`<button>` with no class of their own. So the
+   mark could only ever be painted by `data-cw-ink-active`, the current row,
+   and pointing at any other row drew nothing at all. The menu used to hide
+   that: it carried its own `::after` underline, retired to `content: none`
+   when the ink label took over — the retirement landed, the opt-in did not.
+   One constant, spread onto every row, so a row added later cannot forget it. */
+const INK_ROW = { "data-cw-ink-control": "" } as const;
+
 function InstallEntry({ onSelect }: { onSelect: () => void }) {
   const install = usePwaInstall();
   const ownsInstall = useOwnsPersonalSurfaces();
@@ -101,6 +112,7 @@ function InstallEntry({ onSelect }: { onSelect: () => void }) {
     return (
       <button
         type="button"
+        {...INK_ROW}
         onClick={() => {
           onSelect();
           void install.install();
@@ -114,7 +126,7 @@ function InstallEntry({ onSelect }: { onSelect: () => void }) {
   if (install.needsIosInstructions) {
     return (
       <details className={styles.menuFold}>
-        <summary>
+        <summary {...INK_ROW}>
           <InkMenuLabel>{INSTALL_LABEL}</InkMenuLabel>
         </summary>
         <p className={styles.menuFoldLead}>{IOS_INSTALL_LEAD}</p>
@@ -303,6 +315,7 @@ export function PlatformAccountMenu({
         </div>
         <Link
           href={cabinetHref}
+          {...INK_ROW}
           onClick={() => {
             close();
             onNavigate?.();
@@ -363,8 +376,16 @@ export function PlatformAccountMenu({
 
           A caption block, not two rows: neither line is a place to go, so
           neither takes the row's height, weight or mark. */}
+      {/* `data-cw-rule="chrome"` — THE SAME DECLARATION THE HOISTED TWIN HAS
+          CARRIED SINCE IT WAS WRITTEN (2026-09-10). `.menuIdentity` is ruled
+          off with `--cw-rule-fade-x`, and without naming its surface the ink
+          defaults to `--cw-platform-border`: the page's hairline, drawn on a
+          plate whose tone flips independently of the theme. On the light theme
+          over a dark hero that is a bright white line across the top of the
+          menu, while the divider below it recedes correctly. The scope is
+          tone-aware in globals.css for exactly this portalled case. */}
       {showIdentity && (accountName || accountEmail) ? (
-        <div className={styles.menuIdentity}>
+        <div className={styles.menuIdentity} data-cw-rule="chrome">
           {accountName ? <p className={styles.menuIdentityName}>{accountName}</p> : null}
           {accountEmail ? <p className={styles.menuIdentityMail}>{accountEmail}</p> : null}
         </div>
@@ -379,6 +400,7 @@ export function PlatformAccountMenu({
       {onPublicHome ? null : (
         <a
           href={platformHref}
+          {...INK_ROW}
           onClick={() => {
             close();
             onNavigate?.();
@@ -392,6 +414,7 @@ export function PlatformAccountMenu({
         const offOrigin = appIsOffOrigin(app, host);
         const current = app.key === here;
         const shared = {
+          ...INK_ROW,
           onClick: () => {
             close();
             onNavigate?.();
@@ -440,7 +463,7 @@ export function PlatformAccountMenu({
         <span className={styles.menuSettingLabel}>Вигляд</span>
         <PlatformThemeControl />
       </div>
-      <button type="button" onClick={() => void signOut()}>
+      <button type="button" {...INK_ROW} onClick={() => void signOut()}>
         <InkMenuLabel>Вийти</InkMenuLabel>
       </button>
     </>
