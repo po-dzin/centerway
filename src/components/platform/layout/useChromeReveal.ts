@@ -72,7 +72,7 @@ export type ChromeReveal = {
 export function useChromeReveal(
   enabled: boolean,
   ref?: RefObject<HTMLElement | null>,
-  { locked = false }: { locked?: boolean } = {},
+  { locked = false, anchorsSheets = true }: { locked?: boolean; anchorsSheets?: boolean } = {},
 ): ChromeReveal {
   const [state, setState] = useState<ChromeReveal>({ hidden: false, deep: false });
   /* Subscribed rather than read: a sheet opens on a click this hook never
@@ -83,7 +83,12 @@ export function useChromeReveal(
     isChromeSheetOpen,
     chromeSheetClosedOnServer,
   );
-  const held = locked || sheetOpen;
+  /* ONLY FOR CHROME A SHEET CAN HANG FROM. A sheet is portalled and anchored
+     to the bar or the island row that opened it, so those must stay put while
+     it is on screen. The reader's back-to-top button anchors nothing — holding
+     it would mean opening the account menu made an unrelated floating control
+     appear, which is a second bug rather than a fix for this one. */
+  const held = locked || (anchorsSheets && sheetOpen);
 
   useEffect(() => {
     /* No reset on the way out, and none is needed: the return below DERIVES the

@@ -400,6 +400,7 @@ export function PlatformAccountMenu({
       {onPublicHome ? null : (
         <a
           href={platformHref}
+          {...INK_ROW}
           onClick={() => {
             close();
             onNavigate?.();

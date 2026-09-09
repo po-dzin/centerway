@@ -31,7 +31,11 @@ export function ReaderTopButton({
 }: {
   clearsCompletion?: boolean;
 }) {
-  const { hidden, deep } = useChromeReveal(true);
+  /* `anchorsSheets: false` — nothing is portalled against this button, so it
+     keeps answering the scroll gesture alone. Without it, opening the account
+     sheet from the islands would pop the way-back-to-top into view alongside
+     it, for no reason a reader could connect to what they just pressed. */
+  const { hidden, deep } = useChromeReveal(true, undefined, { anchorsSheets: false });
   const shown = deep && !hidden;
 
   return (
