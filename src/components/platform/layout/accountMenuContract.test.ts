@@ -187,3 +187,58 @@ describe("chrome sheets hold the chrome they hang from", () => {
     expect(topButton).toMatch(/useChromeReveal\(true, undefined, \{ anchorsSheets: false \}\)/);
   });
 });
+
+describe("a portalled sheet supplies the focus order the document cannot", () => {
+  /**
+   * THE BUG THIS PINS. `createPortal` puts the panel at the end of
+   * `document.body`, so sequential focus — which follows DOM order — steps
+   * over it. Measured on /programs: one Tab from the avatar trigger landed on
+   * the hero's call to action, not on the first row of the open menu.
+   */
+  it("moves focus into the sheet when it opens", () => {
+    expect(sheetSource).toMatch(/focusStopsIn\(menu\)\[0\]\?\.focus\(\);/);
+  });
+
+  it("circles Tab inside the sheet instead of letting it walk into the page", () => {
+    expect(sheetSource).toContain('if (event.key !== "Tab") return;');
+    expect(sheetSource).toContain("event.preventDefault();");
+    expect(sheetSource).toMatch(/nextStop\(stops\.length, stops\.indexOf/);
+    expect(sheetSource).toMatch(/event\.shiftKey \? -1 : 1/);
+  });
+
+  it("recomputes the ring per keystroke, because the install row is a disclosure", () => {
+    /* Caching the stops when the sheet opens strands focus on whatever the
+       fold added after it. */
+    expect(sheetSource).toMatch(/const stops = focusStopsIn\(menu\);/);
+  });
+
+  it("returns focus to the trigger only when the sheet was holding it", () => {
+    /* Escape and a chosen row leave focus inside; an outside click does not,
+       and pulling focus back to the avatar then would take something the
+       reader did not give. */
+    expect(sheetSource).toMatch(/let held = menu\.contains\(document\.activeElement\);/);
+    expect(sheetSource).toContain('document.addEventListener("focusin", onFocusIn);');
+    expect(sheetSource).toMatch(/if \(held\) trigger\?\.focus\(\);/);
+  });
+
+  it("keeps Escape and the outside click as the ways out", () => {
+    /* The focus ring must not have replaced dismissal. */
+    expect(sheetSource).toMatch(/if \(event\.key === "Escape"\) close\(\);/);
+    expect(sheetSource).toContain('document.addEventListener("pointerdown", onPointer);');
+  });
+
+  it("leaves the shield out of the order", () => {
+    expect(sheetSource).toContain("tabIndex={-1}");
+  });
+
+  it("defers to a sibling sheet that is holding the focus", () => {
+    /* The burger and the avatar are separate sheets. A pointer keeps them
+       exclusive only by accident — opening one lands a `pointerdown` outside
+       the other — and from the keyboard nothing does, so both can stand open
+       with both rings listening on `document`. Each has to recognise focus
+       that belongs to the other, or Tab stops meaning "next". */
+    expect(sheetSource).toContain('data-cw-chrome-sheet=""');
+    expect(sheetSource).toMatch(/\.closest\?\.\("\[data-cw-chrome-sheet\]"\)/);
+    expect(sheetSource).toMatch(/if \(owner && owner !== menu\) return;/);
+  });
+});

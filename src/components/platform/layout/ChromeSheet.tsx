@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type CSSProperties, type ReactNode } 
 import { createPortal } from "react-dom";
 
 import styles from "@/components/platform/PlatformShellStyles";
+import { focusStopsIn, nextStop } from "./focusRing";
 import { markChromeSheetOpen } from "./chromeSheetStore";
 
 /**
@@ -194,6 +195,76 @@ export function useChromeSheet(): ChromeSheet {
     };
   }, [open, form, trigger]);
 
+  /* THE SHEET SUPPLIES ITS OWN FOCUS ORDER, because the document's cannot
+     reach it. `createPortal` puts this panel at the end of `document.body` —
+     the price of escaping the bar's `overflow: clip`, documented over
+     `measure` — and sequential focus follows DOM order, not what is on screen.
+     So Tab from the trigger stepped over the open panel and into the page
+     behind it: measured on /programs, one Tab from the avatar landed on the
+     hero's own call to action. Every row of the account menu — the cabinet,
+     the library, the workshop, the way out — was reachable only by tabbing
+     through the entire document first.
+
+     Three effects, and each is one sentence of the same behaviour: focus
+     enters when the sheet opens, Tab circles inside it while it is open, and
+     focus returns to the trigger when it closes. */
+  useEffect(() => {
+    if (!open || !menu) return;
+    /* The first stop, not the panel itself. A container with `tabindex="-1"`
+       would announce the sheet and then require a second Tab to reach anything
+       in it, which is the same complaint one step smaller. */
+    focusStopsIn(menu)[0]?.focus();
+  }, [open, menu]);
+
+  useEffect(() => {
+    if (!open || !menu) return;
+    const onTab = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      /* Recomputed per keystroke, never cached: the install row is a
+         disclosure, and opening it adds stops to the ring while the sheet is
+         still open. */
+      const stops = focusStopsIn(menu);
+      if (stops.length === 0) return;
+      /* A SIBLING SHEET IS READING, so this one keeps its hands off. Without
+         it, two open sheets answer the same Tab and each drags focus back into
+         itself — the key stops meaning "next" and starts meaning "whichever
+         listener ran last". Focus outside every sheet still belongs to this
+         ring: that is the case this whole effect exists for. */
+      const owner = (document.activeElement as HTMLElement | null)?.closest?.("[data-cw-chrome-sheet]");
+      if (owner && owner !== menu) return;
+      const target = stops[nextStop(stops.length, stops.indexOf(document.activeElement as HTMLElement), event.shiftKey ? -1 : 1)];
+      if (!target) return;
+      event.preventDefault();
+      target.focus();
+    };
+    document.addEventListener("keydown", onTab);
+    return () => document.removeEventListener("keydown", onTab);
+  }, [open, menu]);
+
+  useEffect(() => {
+    if (!open || !menu) return;
+    /* WHETHER THE SHEET WAS HOLDING THE FOCUS WHEN IT CLOSED, tracked while it
+       is open rather than read at cleanup: by then React has already detached
+       the panel and the browser has dropped focus to `<body>`, so the question
+       can no longer be asked of the DOM.
+
+       It has to be asked at all, because the sheet closes three ways. Escape
+       and a chosen row leave focus inside it, and the reader must be put back
+       on the control they opened — otherwise Tab resumes from the top of the
+       document. An outside click does not: focus is already wherever the
+       reader just pressed, and pulling it back to the avatar would be the
+       panel taking something it was not given. */
+    let held = menu.contains(document.activeElement);
+    const onFocusIn = () => {
+      held = menu.contains(document.activeElement);
+    };
+    document.addEventListener("focusin", onFocusIn);
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+      if (held) trigger?.focus();
+    };
+  }, [open, menu, trigger]);
+
   /* Escape and outside-click, both required: the sheet sits over the page on
      every surface, and on a phone in learning mode it is the only thing between
      the reader and the lesson. */
@@ -276,6 +347,13 @@ export function ChromeSheetPanel({
         style={anchor}
         role="menu"
         ref={attachMenu}
+        /* WHOSE RING THIS IS. The burger and the avatar are separate sheets
+           with separate state, and a pointer keeps them exclusive only by
+           accident — opening one lands a `pointerdown` outside the other. From
+           the keyboard nothing does, so both can stand open, and then both Tab
+           rings are listening on `document` at once. The marker is how each
+           one recognises focus that belongs to the other. */
+        data-cw-chrome-sheet=""
         data-cw-glass="shell"
         data-cw-header-tone={tone ?? undefined}
         data-form={form}
