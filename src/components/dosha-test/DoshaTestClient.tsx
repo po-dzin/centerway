@@ -5,6 +5,7 @@ import { LogoMark } from "@/components/brand/LogoMark";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Icon } from "@/components/Icon";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "@/components/platform/PlatformDiagnosticStyles";
 import { classifyDosha, type DoshaConfidence, type DoshaResultType } from "@/lib/doshaTest";
 import {
@@ -732,9 +733,9 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                   </div>
                 </details>
 
-                <Link className={styles.diagnosticBackLink} href={TESTS_HUB_ROUTE}>
+                <Link className={styles.diagnosticBackLink} href={TESTS_HUB_ROUTE} data-cw-ink-control>
                   <Icon name="arrow-left" size={16} className={styles.diagnosticBackIcon} />
-                  <span>Усі тести</span>
+                  <InteractionInkLabel variant="link">Усі тести</InteractionInkLabel>
                 </Link>
               </div>
             </article>
@@ -764,9 +765,9 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                         the buttons use — so it read as something you could
                         press, and nothing happened when you did. */}
                     <p className={styles.label}>Тест доші</p>
-                    <Link className={styles.diagnosticBackLink} href={TESTS_HUB_ROUTE}>
+                    <Link className={styles.diagnosticBackLink} href={TESTS_HUB_ROUTE} data-cw-ink-control>
                       <Icon name="arrow-left" size={16} className={styles.diagnosticBackIcon} />
-                      <span>Усі тести</span>
+                      <InteractionInkLabel variant="link">Усі тести</InteractionInkLabel>
                     </Link>
                   </div>
 
@@ -1050,9 +1051,9 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                     >
                       Пройти тест ще раз
                     </button>
-                    <Link className={styles.diagnosticBackLink} href={TESTS_HUB_ROUTE}>
+                    <Link className={styles.diagnosticBackLink} href={TESTS_HUB_ROUTE} data-cw-ink-control>
                       <Icon name="arrow-left" size={16} className={styles.diagnosticBackIcon} />
-                      <span>Усі тести</span>
+                      <InteractionInkLabel variant="link">Усі тести</InteractionInkLabel>
                     </Link>
                   </div>
                 </div>

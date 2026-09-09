@@ -511,11 +511,13 @@
   line-height: var(--ds-type-body-sm-line-height);
 }
 
+/* The stroke, not the browser's line — see the note on the `.text` role in
+   PlatformButtons.module.css. The warmth stays: it is what marks this as the
+   one action in a notice, and the ink says "link" underneath it. */
 .avatarNoticeLink {
   justify-self: start;
   color: var(--cw-sem-warmth);
-  text-decoration: underline;
-  text-underline-offset: 0.18em;
+  text-decoration: none;
 }
 
 .avatarNoticeLink:focus-visible {

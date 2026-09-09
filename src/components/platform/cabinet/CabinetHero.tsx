@@ -26,6 +26,7 @@
 import type { ReactNode } from "react";
 
 import { HandGraphic } from "@/components/Icon";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "./CabinetHero.module.css";
 // The reach notice is a CabinetClient concern wearing the avatar as a
 // mounting point — the badge, its colour and its text all come from
@@ -168,8 +169,9 @@ export function CabinetHero({
                       href={notice.href}
                       target="_blank"
                       rel="noopener noreferrer"
+                      data-cw-ink-control
                     >
-                      {notice.action}
+                      <InteractionInkLabel variant="link">{notice.action}</InteractionInkLabel>
                     </a>
                   </span>
                 </span>

@@ -194,26 +194,19 @@
   color: var(--cw-platform-text);
 }
 
-/* The open row. Ink, not a highlight: the underline is a drawn stroke that
-   thickens under the cursor, which is how every other selectable thing on this
-   platform behaves. */
+/* The open row. Ink, not a highlight — and now literally so: the note below
+   has always said "a drawn stroke that thickens under the cursor", which is a
+   description of `InteractionInkLabel`, while what stood here was
+   `text-decoration` with a colour and a thickness hand-set to imitate it. The
+   label wears the real stroke now; what stays is the colour that separates an
+   open lesson from a locked one. */
 /* WEIGHT IS NOT HOW THIS SPEAKS. An open lesson used to be bolder than a locked
    one, which the button contract rightly refused — font-weight belongs to the
    button roles, and this is prose. Colour does the work instead, which is also
    the platform's own idiom: states are said in ink, not in weight. */
 .outlineLessonLink {
   color: var(--cw-platform-text);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--cw-platform-text) 28%, transparent);
-  text-underline-offset: 0.22em;
-  text-decoration-thickness: 1px;
-  transition: text-decoration-color 140ms ease, text-decoration-thickness 140ms ease;
-}
-
-.outlineLessonLink:hover,
-.outlineLessonLink:focus-visible {
-  text-decoration-color: var(--cw-platform-text);
-  text-decoration-thickness: 2px;
+  text-decoration: none;
 }
 
 /* A finished lesson keeps its link — repeating a protocol is the normal way to
