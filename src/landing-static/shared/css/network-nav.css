@@ -470,10 +470,38 @@
   .cwn__brand span { display: none; }
 }
 
-@media (max-width: 979px) and (min-width: 760px) {
-  /* Tablet topbar: tighter link rhythm so all five hold one row. */
+/* THE BAR IS ONE ROW, AND THE ROW ENDS AT THE WIDEST MENU, NOT THE NARROWEST.
+   This rhythm was written for the tablet band alone — "so all five hold one
+   row" — back when five was the longest menu in the network. way21 carries
+   eight and herbs seven, and between 980px and this ceiling nothing tightened
+   at all: the bar silently ran onto a second row and doubled its height, on
+   herbs from 1100px down and on way21 at every width it had. `flex-wrap` is
+   what let it happen quietly rather than overflowing where somebody would see
+   it. The band now runs from the burger up to the width where the longest menu
+   fits at the loose rhythm, measured rather than guessed. */
+@media (max-width: 1199px) and (min-width: 760px) {
   .cwn__menu { gap: var(--cw-space-2xs); }
   .cwn__menu a { padding: var(--cw-space-xs) var(--cw-space-sm); font-size: 0.88rem; }
+}
+
+/* WHAT LEAVES THE BAR FIRST IS THE ONE ITEM THAT IS NOT THIS PAGE. Under about
+   a thousand pixels even the tight rhythm cannot hold eight items, and the
+   choice is which one goes. `.cwn__sibling` is the cross-sell — a link to a
+   neighbouring product, while every other item is an anchor to a section of the
+   page the reader is on. It is also the only one the page repeats in its own
+   body (way21 carries the whole `#reset-day` block), so dropping it here costs
+   the reader nothing and keeps the bar the single row it is drawn as. */
+@media (max-width: 1023px) and (min-width: 760px) {
+  .cwn__menu .cwn__sibling { display: none; }
+}
+
+/* The last 30px of the topbar's range. At 760 — the first width that draws a
+   bar rather than a burger — way21's seven remaining anchors came to 622px in
+   a 607px slot: fifteen short, one step of the spacing scale. The step down is
+   horizontal only; the 2.75rem touch target the whole network is held to comes
+   from min-height and is untouched. */
+@media (max-width: 839px) and (min-width: 760px) {
+  .cwn__menu a { padding-inline: var(--cw-space-xs); }
 }
 
 @media (max-width: 759px) {
