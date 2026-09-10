@@ -728,13 +728,13 @@ Target architecture is three layers (see roadmap stage 3). Current state, prefix
 
 | Prefix | Layer | Source of truth | Consumers | Guarded by |
 |---|---|---|---|---|
-| `--cw-bg/text/accent/status-*` etc. | app-chrome **alias** over platform + material (one half, no dark twin) | `cw.tokens.json` → `base.light` (codegen-owned since 2026-07-03; `base.dark` deleted 2026-08-28) | app/admin components, DS delivery refs | tokens:check (drift), canon:guard (hex allowlist), guard:contrast (`dark` theme) |
-| `--cw-sem-*` | semantic (visual roles) | `cw.tokens.json` → `layers.semanticAliases` | platform component CSS | canon:guard (hex allowlist only) |
-| `--cw-platform-*` | mode alias over semantic (`visual-*` gradients stay hand-maintained in `globals.css`) | `cw.tokens.json` → `layers.modeOverrides.platform` | platform shell/blocks | canon:guard (hex allowlist only) |
-| `--cw-mat-*` | **material** (tactile surface layer; light + dark halves) | `cw.tokens.json` → `layers.material.{light,dark}` (codegen-owned: `CW_RUNTIME_TOKENS` / `CW_MATERIAL_DARK`) | `[data-cw-material]` recipe in `globals.css`; platform shell (topbar, mobile menu, profile card, hero controls) | guard:contrast (glass pairs), canon:guard |
+| `--cw-bg/text/accent/status-*` etc. | app-chrome **alias** over platform + material (one half, no dark twin) | `cw.tokens.json` → `base.light` (codegen-owned since 2026-07-03; `base.dark` deleted 2026-08-28) | app/admin components, DS delivery refs | tokens:check (drift), guard:canon (hex allowlist), guard:contrast (`dark` theme) |
+| `--cw-sem-*` | semantic (visual roles) | `cw.tokens.json` → `layers.semanticAliases` | platform component CSS | guard:canon (hex allowlist only) |
+| `--cw-platform-*` | mode alias over semantic (`visual-*` gradients stay hand-maintained in `globals.css`) | `cw.tokens.json` → `layers.modeOverrides.platform` | platform shell/blocks | guard:canon (hex allowlist only) |
+| `--cw-mat-*` | **material** (tactile surface layer; light + dark halves) | `cw.tokens.json` → `layers.material.{light,dark}` (codegen-owned: `CW_RUNTIME_TOKENS` / `CW_MATERIAL_DARK`) | `[data-cw-material]` recipe in `globals.css`; platform shell (topbar, mobile menu, profile card, hero controls) | guard:contrast (glass pairs), guard:canon |
 | `--cw-platform-*` dark half | public dark palette | `cw.tokens.json` → `layers.modeOverrides.platformDark` (codegen-owned: `CW_PLATFORM_DARK`) | `[data-cw-theme="dark"]` — authored, no switch wired | guard:contrast (`platform-dark` theme) |
 | `--ds-*` | delivery alias | `cw.tokens.json` → `delivery.dsAlias` (full contract incl. type/button/offer-card scales; codegen-owned since 2026-07-03) | platform + landing bridge | guard:ds-contract (required-token list), tokens:check |
-| `--cw-sem-*` pack override | program/author pack | `cw.tokens.json` → `layers.packs.mineral` (codegen-owned: `CW_PACK_MINERAL`) | `.cw-pack-mineral` scopes | canon:guard (hex allowlist) |
+| `--cw-sem-*` pack override | program/author pack | `cw.tokens.json` → `layers.packs.mineral` (codegen-owned: `CW_PACK_MINERAL`) | `.cw-pack-mineral` scopes | guard:canon (hex allowlist) |
 | `--cw-role-*`, `--cw-cta-*` | generator theme packs | `token_packs.json` | **none yet** — wired into `themeCatalog.ts`, zero CSS consumers; designated per-author theming mechanism, activation deferred until a second real theme exists | generator:validate |
 | `--cw-net-*` | platform-author network skin | `shared/css/network-tokens.css` — **references** `--cw-sem-*` / `--cw-mat-*`, no longer copies their values | the five landings | tokens:check (drift of the generated source) |
 | `--landing-*`, `--product-*`, irem `--color-*` | isolated landing themes | `src/landing-static/**` (hand-maintained) | Short/IREM landings only | guard:ds-contract (cross-layer consumption bans) |
@@ -805,7 +805,7 @@ The three added 2026-08-21 exist so a **course** can pick its look (`src/lms-cor
 
 Rules that hold today:
 
-- No raw hex in platform component CSS outside the allowlist derived from token sources (canon:guard).
+- No raw hex in platform component CSS outside the allowlist derived from token sources (guard:canon).
 - Landing CSS must not consume `--ds-color-*`, `--product-*`, `--legacy-color-*` cross-layer (guard:ds-contract).
 - `tokens:build` must be a no-op on a clean tree (`tokens:check` in `ds:qa`); edit `cw.tokens.json`, never the generated blocks in `globals.css`.
 - Landing isolation (Short/IREM own their theme files) is an **author boundary**, not tech debt — do not "unify" it.
@@ -821,7 +821,7 @@ Platform components legitimately consume **three** tiers, and that is by design 
 | `--ds-*` | it needs a delivery-level primitive shared with landings (type scale, spacing, radius, touch target). |
 | `--cw-*` chrome (`--cw-bg/text/accent/…`) | admin/dark surfaces only — the base theme layer. |
 
-Forbidden from components regardless of tier: `layers.primitives.*` (raw brand/mineral colors), raw hex, and any locally-defined `--cw-*` token (canon:guard enforces the last two on platform CSS). The rule of thumb: reach for the **highest** tier that already answers the need; drop a tier only when the one above doesn't expose the role.
+Forbidden from components regardless of tier: `layers.primitives.*` (raw brand/mineral colors), raw hex, and any locally-defined `--cw-*` token (guard:canon enforces the last two on platform CSS). The rule of thumb: reach for the **highest** tier that already answers the need; drop a tier only when the one above doesn't expose the role.
 
 ## Block frame (2026-08-21)
 
@@ -1535,7 +1535,7 @@ The token layer is machine-owned, so it can no longer drift by hand:
 | gate | `npm run ds:sync:check` | re-derives and fails if the committed bundle is stale or was hand-edited. Runs inside `ds:qa` |
 | push | agent, via the `DesignSync` tool | `finalize_plan` → `write_files` with the bundle's files at the project's own paths |
 
-**The gates run themselves now (2026-09-07).** Every check in this file existed and was green on the day it was written, and none of them ran unless somebody typed the command — CI held one workflow, `admin-smoke`, which needs deploy secrets and never touched design. `.github/workflows/design-gates.yml` runs the twelve that need nothing but the repo, on every pull request and every push to `main`: `tokens:check`, `ds:sync:check`, `ds:drift:gate`, `canon:guard`, `guard:assets`, `brand:check`, `guard:ds-contract`, `guard:contrast`, `guard:buttons`, `guard:geometry`, `generator:validate`, `semantic:audit`. It is separate from `admin-smoke` deliberately: a missing secret there must not make these look green, and design work should not queue behind a browser suite.
+**The gates run themselves now (2026-09-07).** Every check in this file existed and was green on the day it was written, and none of them ran unless somebody typed the command — CI held one workflow, `admin-smoke`, which needs deploy secrets and never touched design. `.github/workflows/design-gates.yml` runs every check that needs nothing but the repo, on every pull request and every push to `main`. Since 2026-09-11 it does that through one step, `npm run verify:guards`, and the list of eighteen gates lives in `scripts/verify-guards.mjs` — so the same set runs in CI and on a laptop before the push, instead of existing only in a workflow file. It is separate from `admin-smoke` deliberately: a missing secret there must not make these look green, and design work should not queue behind a browser suite.
 
 `ds:drift:gate` joined `ds:qa` at the same time. It had been written, wired to a `--gate` flag and never run by anything — which is the exact shape of failure the geometry audit found four times over.
 
@@ -1656,17 +1656,17 @@ of its sides is prose.
 
 ## Validation Stack
 
-`npm run ds:qa` = canon:guard → tokens:check → guard:ds-contract → guard:contrast → generator:validate → semantic:audit → lint → build.
+`npm run verify:ds` = the design-system gates in order — guard:canon, guard:assets, tokens:check, ds:sync:check, brand:check, guard:ds-contract, guard:contrast, guard:buttons, guard:geometry, ds:drift:gate, generator:validate, guard:semantic — then lint and build. For the gates alone, without the build, `npm run verify:guards`.
 
 | Gate | What it actually covers |
 |---|---|
-| `canon:guard` | canon files exist, preflight sentinels, raw-hex allowlist + no local `--cw-*` defs over platform CSS, manifest cross-references |
+| `guard:canon` | canon files exist, preflight sentinels, raw-hex allowlist + no local `--cw-*` defs over platform CSS, manifest cross-references |
 | `tokens:check` | codegen JSON→CSS is a no-op on a clean tree (drift gate) |
 | `guard:ds-contract` | `--ds-*` delivery + landing token contracts, required `--cw-sem-*`/`--cw-platform-*` floor, cross-layer consumption bans, no `--cw-color-*` reintroduction, hero content parity |
 | `guard:contrast` | WCAG contrast of rendered text/CTA pairs resolved from `cw.tokens.json`, both themes — platform light + admin dark (body ≥ 4.5, large/CTA fills ≥ 3.0). Since 2026-08-15 also composites the translucent material: 10 glass/inverse pairs checked against the worst backdrop each context allows |
 | `generator:validate` + snapshot/determinism/language/rhythm | generator layer |
 | `guard:buttons` | The button contract: no component stylesheet may declare button geometry, type or the gold ramp — it composes a role from `PlatformButtons.module.css`. 42 rules checked; named exemptions carry their reason in the source |
-| `semantic:audit` | route-family contracts, block order, route invariants (alias redirects exist + redirect correctly) |
+| `guard:semantic` | route-family contracts, block order, route invariants (alias redirects exist + redirect correctly) |
 
 Contrast watch (`guard:contrast`): two light CTA fills sit in the large-text tier below body AA — `accent-contrast` on `guide-primary` (4.34) and on `boundary` (4.17). They pass at 3.0 as large/semibold labels but are the first candidates if the palette is retuned for a stricter bar. All `.cw-btn-primary` states and every dark admin text pair pass body AA.
 

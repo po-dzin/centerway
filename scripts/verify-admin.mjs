@@ -89,7 +89,7 @@ async function isServerRunning() {
 }
 
 async function main() {
-  console.log("Admin smoke CI started");
+  console.log("Admin verification started");
   const serverUp = await isServerRunning();
   if (!serverUp) console.warn("WARNING: Server at localhost:8000 is unreachable. Network tests may fail.");
   console.log(`SMOKE_ADMIN_BEARER: ${hasAdminBearer ? "set" : "missing"}`);

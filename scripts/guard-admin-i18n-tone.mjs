@@ -103,13 +103,13 @@ function checkTone(translations) {
 }
 
 async function main() {
-  console.log("Admin i18n/tone smoke started");
+  console.log("Admin i18n/tone guard started");
   const source = await readFile("src/lib/i18n.ts", "utf8");
   const translations = parseTranslations(source);
   checkKeyParity(translations);
   checkTone(translations);
   if (process.exitCode) process.exit(process.exitCode);
-  console.log("Admin i18n/tone smoke passed");
+  console.log("Admin i18n/tone guard passed");
 }
 
 main().catch((error) => {

@@ -18,7 +18,7 @@
  * SKIP and exits clean. A job that genuinely has the keys passes `--require-db`
  * and turns a missing key into a failure of its own.
  *
- * NOT IN `lms:qa` YET, and deliberately. The snapshots are already adrift the
+ * NOT IN `verify:lms` YET, and deliberately. The snapshots are already adrift the
  * day this lands, so wiring it into the shared gate would fail every run for
  * everyone until someone pulls. Clear the drift first, then add it — the check
  * is worth nothing as a step people learn to ignore.

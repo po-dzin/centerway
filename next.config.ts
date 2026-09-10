@@ -16,7 +16,8 @@ import type { NextConfig } from "next";
  * because the account shell is the first thing that fails to render. The two
  * processes also race for `.next/lock`, so one of them simply hangs instead.
  *
- * It is more likely here than in most repos: `ds:qa` and `lms:qa` both end in
+ * It is more likely here than in most repos: `verify`, `verify:ds` and
+ * `verify:lms` all end in
  * `npm run build`, and running a gate while a preview is open is the normal way
  * to work. One agent verifying a change should not be able to break another
  * one's browser.

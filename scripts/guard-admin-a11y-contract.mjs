@@ -96,12 +96,12 @@ async function checkReducedMotionRule() {
 }
 
 async function main() {
-  console.log("Admin a11y contract smoke started");
+  console.log("Admin a11y contract guard started");
   await checkNoClickableDivs();
   await checkDialogSemantics();
   await checkReducedMotionRule();
   if (process.exitCode) process.exit(process.exitCode);
-  console.log("Admin a11y contract smoke passed");
+  console.log("Admin a11y contract guard passed");
 }
 
 main().catch((error) => {

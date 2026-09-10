@@ -20,10 +20,16 @@ authority unless local evidence shows it is out of date.
 
 ## Validation
 
-`npm run ds:qa` is the design-system gate: canon:guard, tokens:check,
-ds:sync:check, brand:check, guard:ds-contract, guard:contrast, guard:buttons,
-generator:validate, semantic:audit, lint, build. Run it before pushing anything
-that touches tokens, the mark, buttons, or generated screens.
+`npm run verify` is the everyday gate: lint, typecheck, unit tests, build.
+`npm run verify:guards` runs everything that reads the repository and decides —
+tokens, contrast, buttons, geometry, the canon, the admin gates, the ESLint
+architecture rules — with no server and no secret. `npm run verify:ds` is the
+design-system form and adds lint and build; run it before pushing anything that
+touches tokens, the mark, buttons, or generated screens.
+
+A script name carries its kind: `guard:*` reads the repository, `smoke:*` needs
+a running app, `verify:*` is an aggregate of those, and everything else is a
+tool you invoke on purpose.
 
 Tokens are edited in `data/design-tokens/cw.tokens.json` and built with
 `npm run tokens:build`. The marker blocks in `src/app/globals.css` are codegen

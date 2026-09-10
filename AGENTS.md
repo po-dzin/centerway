@@ -115,7 +115,7 @@ relied on by server code. A route that needs a check writes it in TypeScript.
 
 Four kinds of test exist, and a fifth deliberately does not.
 
-- **Unit tests** (`npm run test:unit`, vitest, `src/**/*.test.{ts,tsx}`) next
+- **Unit tests** (`npm run test`, vitest, `src/**/*.test.{ts,tsx}`) next
   to the code they cover. Server modules run against `src/lib/admin/fakeSupabase.ts`,
   an in-memory client that answers the query chains the code uses; a chain it
   does not know throws, and the fix is to teach the fake, not to loosen the test.
@@ -162,6 +162,37 @@ reads files is called a smoke.
 file for each rule and requires the complaint, and writes the clean cases the
 old line-regex guards used to reject. A rule that cannot be shown to fail is
 not a rule, and config is easy to break in silence.
+
+## Script Rule
+
+A script's prefix says what kind of thing it is, and there are four kinds:
+
+- `guard:*` reads the repository and decides. No server, no secret, no network.
+- `smoke:*` needs a running app, a browser, or credentials.
+- `verify:*` is an aggregate of the two, for one area or for the whole repo.
+- everything else is a tool you invoke on purpose: `db:`, `lms:`, `tg:`, `img:`,
+  `wfp:`, `media:`, `admin:`, `docs:`, `icons:`, `tokens:`, `brand:`, `ds:`.
+
+This is not tidiness. `smoke:admin:authz-coverage` was named a smoke, listed
+among the steps that need the app, and therefore skipped itself whenever the
+server was down — while reading nothing but two files on disk. A name that
+misstates the kind eventually gets believed.
+
+The entry points, and there are about a dozen:
+
+| | |
+|---|---|
+| `dev`, `build`, `start` | run it |
+| `lint`, `typecheck`, `test`, `test:coverage` | check one dimension |
+| `verify` | lint + typecheck + test + build — before any push |
+| `verify:guards` | every static gate, ~10s, no server. Takes a filter: `npm run verify:guards -- guard:admin` |
+| `verify:ds` | the design-system gate, plus lint and build |
+| `verify:lms`, `verify:landing`, `verify:admin`, `verify:dosha`, `verify:generator` | one area, end to end |
+| `format`, `clean` | housekeeping |
+
+Everything else sits behind those and is listed in `package.json`. Add a new
+check to the list inside `scripts/verify-guards.mjs`, not to a workflow file:
+CI calls that script, so a gate added there runs everywhere at once.
 
 ## Agent Output Path Rule
 

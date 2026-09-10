@@ -145,7 +145,7 @@ function main() {
     }
   }
 
-  console.log(`Admin authz coverage smoke base path: ${path.relative(repoRoot, apiRoot) || "."}`);
+  console.log(`Admin authz coverage guard base path: ${path.relative(repoRoot, apiRoot) || "."}`);
   console.log(`Route files found: ${routeFiles.length}`);
   console.log(`Matrix entries: ${matrix.length}`);
 
