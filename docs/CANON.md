@@ -43,7 +43,7 @@ Preferred form:
 
 Avoid full absolute filesystem paths in normal handoff notes, progress updates, and review comments unless the user explicitly asks for them.
 
-`docs/legacy/**` is a read-only legacy reservoir. It exists for provenance, audits, and reference recovery, not as active guidance for new work.
+`docs/archive/**` is a read-only reservoir of superseded notes. It exists for provenance, audits, and reference recovery, not as active guidance for new work.
 
 ## When To Update RAverse
 
@@ -132,7 +132,7 @@ For public UI, platform pages, product funnels, tokens, or visual system work, t
 
 - `docs/platform_agent_preflight.md`
 
-Agents should not read or edit `docs/legacy/**` by default. Use it only when:
+Agents should not read or edit `docs/archive/**` by default. Use it only when:
 
 - provenance needs to be checked;
 - an old decision must be traced;

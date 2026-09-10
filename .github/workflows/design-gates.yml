@@ -84,3 +84,8 @@ jobs:
 
       - name: Semantic architecture
         run: npm run -s semantic:audit
+
+      # docs/README.md is generated from the files' own headings; a note added
+      # without regenerating it is the drift this catches.
+      - name: Docs index is current
+        run: npm run -s docs:index:check

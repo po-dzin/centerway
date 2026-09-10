@@ -13,6 +13,8 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "docs:index": "node scripts/docs-index.mjs",
+    "docs:index:check": "node scripts/docs-index.mjs --check",
     "tokens:build": "node scripts/generate-design-tokens.mjs",
     "tokens:check": "node scripts/generate-design-tokens.mjs && git diff --exit-code -- src/app/globals.css src/landing-static/shared/css/cw-tokens.generated.css",
     "brand:build": "node scripts/brand-mark-bake.mjs",
