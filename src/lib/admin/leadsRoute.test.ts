@@ -25,6 +25,7 @@ vi.mock("@/lib/auth/adminClient", () => ({
 }));
 
 const leads = await import("@/app/api/admin/leads/route");
+const { LEAD_STAGES, LEAD_OPEN_STAGES } = await import("@/lib/platform/leadStage");
 
 const ADMIN = { user: { id: "auth-admin" }, role: "admin" };
 
@@ -83,8 +84,11 @@ describe("the open/closed split", () => {
     it("names exactly the two stages a follow-up sequence may speak to", async () => {
         // If this ever disagrees with the CHECK constraint in
         // docs/migration/sql/2026-09-10_lead_stage.sql, one of them is wrong.
-        expect(leads.LEAD_STAGES).toEqual(["new", "in_progress", "won", "lost"]);
-        expect(leads.LEAD_OPEN_STAGES).toEqual(["new", "in_progress"]);
+        /* Read from the lib, not from the route: a Next route may not export
+           them at all — `next build` rejects it, which is how this was found
+           after tsc, lint and every test had passed. */
+        expect(LEAD_STAGES).toEqual(["new", "in_progress", "won", "lost"]);
+        expect(LEAD_OPEN_STAGES).toEqual(["new", "in_progress"]);
     });
 });
 
@@ -162,7 +166,7 @@ describe("GET against a hostile query string", () => {
     });
 
     it("accepts every stage in the vocabulary and nothing beside it", async () => {
-        for (const stage of leads.LEAD_STAGES) {
+        for (const stage of LEAD_STAGES) {
             const res = await leads.GET(get(`http://localhost/api/admin/leads?stage=${stage}`));
             expect(res.status).toBe(200);
         }

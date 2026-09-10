@@ -25,6 +25,26 @@
  */
 
 import { canonicalProductKey } from "@/lib/reporting/productIdentity";
+
+/**
+ * THE STAGE VOCABULARY, and why it is not in the route that reads it.
+ *
+ * It lived in `app/api/admin/leads/route.ts` as an ordinary named export, which
+ * typechecks and lints and tests clean and then fails `next build`: a route file
+ * may only export the handful of fields Next recognises, and anything else is a
+ * hard error («"LEAD_STAGES" is not a valid Route export field»). It belongs
+ * here anyway — this is the module that acts on the stages, and one file naming
+ * them is the whole point of `LEAD_OPEN_STAGES`.
+ */
+export const LEAD_STAGES = ["new", "in_progress", "won", "lost"] as const;
+export type LeadStage = (typeof LEAD_STAGES)[number];
+
+/** The two a follow-up sequence may speak to. The other two are closed. */
+export const LEAD_OPEN_STAGES: readonly LeadStage[] = ["new", "in_progress"];
+
+export function isLeadStage(value: unknown): value is LeadStage {
+  return typeof value === "string" && (LEAD_STAGES as readonly string[]).includes(value);
+}
 import { normalizeCustomerEmail, normalizeCustomerPhone } from "@/lib/platform/customerIdentity";
 
 type SupabaseLike = { from: (table: string) => any };
@@ -71,7 +91,7 @@ export async function closeWonLeadsForPurchase(
 
        Equality filters carry their values out of band, so nothing the caller
        was given can change the SHAPE of the query. */
-    const openStages = ["new", "in_progress"];
+    const openStages = [...LEAD_OPEN_STAGES];
     const found = new Map<string, { id: string; product_code: string | null }>();
 
     for (const [column, value] of [

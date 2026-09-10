@@ -8,6 +8,7 @@ import {
     unauthorizedResponse,
 } from "@/lib/api/adminRoute";
 import { canonicalProductKey, resolveProductTitles } from "@/lib/reporting/productIdentity";
+import { LEAD_STAGES, isLeadStage } from "@/lib/platform/leadStage";
 import { orIlikeFilter } from "@/lib/api/searchFilter";
 
 /**
@@ -18,19 +19,10 @@ import { orIlikeFilter } from "@/lib/api/searchFilter";
  * rows in it. A form submission was therefore something you learned about from
  * Telegram and then held in your head.
  *
- * WHY THE STAGES SPLIT TWO AND TWO. `new` and `in_progress` are open; `won` and
- * `lost` are closed. That line is the whole point of the column: a follow-up
- * sequence may speak to an open lead and must never speak to a closed one. Any
- * code deciding whether to contact somebody should ask `LEAD_OPEN_STAGES`
- * rather than listing stages again and getting it subtly wrong later.
+ * The stage vocabulary lives in `@/lib/platform/leadStage`, not here: a Next
+ * route file may only export the fields Next recognises, and `next build`
+ * rejects anything else outright even though tsc, lint and the tests are happy.
  */
-export const LEAD_STAGES = ["new", "in_progress", "won", "lost"] as const;
-export type LeadStage = (typeof LEAD_STAGES)[number];
-export const LEAD_OPEN_STAGES: readonly LeadStage[] = ["new", "in_progress"];
-
-function isLeadStage(value: unknown): value is LeadStage {
-    return typeof value === "string" && (LEAD_STAGES as readonly string[]).includes(value);
-}
 
 // GET /api/admin/leads?stage=&q=&limit=&offset=
 export async function GET(req: NextRequest) {
