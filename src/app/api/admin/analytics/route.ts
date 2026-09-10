@@ -164,11 +164,9 @@ type MetaBreakdownInputRow = {
 type FunnelDailyRow = {
     date: string;
     leads_count: number;
-    unique_lead_phones: number;
     orders_created: number;
     orders_paid: number;
     total_revenue: number;
-    conversion_rate_percent: string;
 };
 
 type PixelTotals = {
@@ -458,23 +456,35 @@ function toFunnelDailyRow(raw: unknown): FunnelDailyRow | null {
     return {
         date,
         leads_count: asFiniteNumber(row.leads_count),
-        unique_lead_phones: asFiniteNumber(row.unique_lead_phones),
         orders_created: asFiniteNumber(row.orders_created),
         orders_paid: asFiniteNumber(row.orders_paid),
         total_revenue: asFiniteNumber(row.total_revenue),
-        conversion_rate_percent:
-            typeof row.conversion_rate_percent === "string"
-                ? row.conversion_rate_percent
-                : String(asFiniteNumber(row.conversion_rate_percent).toFixed(2)),
     };
 }
 
-function buildFunnelSeries(range: DateRange, rows: unknown[]): FunnelDailyRow[] {
+function buildFunnelSeries(
+    range: DateRange,
+    rows: unknown[],
+    leadsByDay?: Map<string, number>
+): FunnelDailyRow[] {
     const byDate = new Map<string, FunnelDailyRow>();
     for (const raw of rows) {
         const row = toFunnelDailyRow(raw);
         if (!row) continue;
         byDate.set(row.date, row);
+    }
+    for (const [day, count] of leadsByDay ?? []) {
+        const existing = byDate.get(day);
+        byDate.set(day, {
+            ...(existing ?? {
+                date: day,
+                leads_count: 0,
+                orders_created: 0,
+                orders_paid: 0,
+                total_revenue: 0,
+            }),
+            leads_count: count,
+        });
     }
 
     const from = new Date(`${range.from}T00:00:00.000Z`);
@@ -494,11 +504,9 @@ function buildFunnelSeries(range: DateRange, rows: unknown[]): FunnelDailyRow[] 
         result.push({
             date: day,
             leads_count: 0,
-            unique_lead_phones: 0,
             orders_created: 0,
             orders_paid: 0,
             total_revenue: 0,
-            conversion_rate_percent: "0.00",
         });
     }
 
@@ -789,20 +797,51 @@ async function getCapiEventStatsMap(
 async function computeAnalyticsPayload(range: DateRange, campaignLevel: CampaignBreakdownLevel) {
     const db = adminClient();
 
-    // 1. Fetch Funnel
-    const { data: funnelDataRaw, error: funnelErr } = await db
-        .from("mv_funnel_daily")
-        .select("*")
-        .gte("date", range.from)
-        .lte("date", range.to)
-        .order("date", { ascending: true })
-        .limit(366);
+    /* 1. The daily series.
+       THIS USED TO READ `mv_funnel_daily`, AND ALMOST NOTHING OF WHAT IT
+       RETURNED SURVIVED. Every numeric column that view supplied except
+       `leads_count` was overwritten a hundred lines below with figures
+       recomputed from `orders` on Kyiv-local days, and the three it supplied
+       that were not overwritten — `unique_lead_phones`,
+       `conversion_rate_percent`, and the `avgConversionRate` derived from them
+       — were carried through the payload, typed on the client, and never
+       rendered anywhere. A whole materialized view, and a cron refresh to keep
+       it warm, existed to deliver one number.
 
-    if (funnelErr) {
-        console.error("Analytics Funnel error:", funnelErr);
-        throw new Error(funnelErr.message);
+       And that number counted rows in a table nothing wrote to: `leads` held
+       two rows, both smoke tests, while the form that should have filled it
+       ended at its own table until the spine was wired up earlier today.
+
+       The view carries a trap worth recording on the way out, even though it
+       was not firing: its date series is generated from
+       `min(created_at) FROM leads` (2026-04-24 in production), while the first
+       order is 2026-02-03. Any consumer trusting its order columns would have
+       silently lost two and a half months. This route did not, because it
+       rebuilt every order column itself — the bug was masked by the same
+       redundancy that made the view pointless.
+
+       Read `leads` directly instead: a small table, and a meaningful one now
+       that the form writes to it and every stage transition is recorded. */
+    const { data: leadRowsRaw, error: leadsErr } = await db
+        .from("leads")
+        .select("id, stage, stage_changed_at, created_at")
+        .gte("created_at", `${range.from}T00:00:00.000Z`)
+        .lte("created_at", `${range.to}T23:59:59.999Z`);
+
+    if (leadsErr) {
+        console.error("Analytics leads error:", leadsErr);
+        throw new Error(leadsErr.message);
     }
-    let funnelData = buildFunnelSeries(range, funnelDataRaw ?? []);
+
+    const leadRows = leadRowsRaw ?? [];
+    const leadsByDay = new Map<string, number>();
+    for (const row of leadRows) {
+        const createdAt = typeof row.created_at === "string" ? row.created_at : null;
+        const day = createdAt ? getIsoDateInTimeZone(new Date(createdAt), ADMIN_ANALYTICS_TZ) : null;
+        if (day) leadsByDay.set(day, (leadsByDay.get(day) ?? 0) + 1);
+    }
+
+    let funnelData = buildFunnelSeries(range, [], leadsByDay);
 
     // 2. Fetch Revenue source breakdown in the selected period
     const { data: revenueOrders, error: revErr } = await db
@@ -1923,6 +1962,31 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
         };
     })();
 
+    /* The lead figures the dashboard can actually stand behind: how many
+       requests arrived in this window, how many of them are still waiting on
+       somebody, and how many turned into money. `open_total` deliberately
+       ignores the period — a request nobody has answered is a fact about now,
+       like an expiring access, and hiding it behind a date filter is how a
+       queue stops being worked. */
+    const openStages = new Set(["new", "in_progress"]);
+    const leadsSummary = {
+        new_in_period: leadRows.length,
+        won_in_period: leadRows.filter((row) => row.stage === "won").length,
+        lost_in_period: leadRows.filter((row) => row.stage === "lost").length,
+        open_total: 0,
+        conversion_percent: 0,
+    };
+    leadsSummary.conversion_percent = Number(
+        safeDivide(leadsSummary.won_in_period * 100, leadRows.length).toFixed(1)
+    );
+    {
+        const { count } = await db
+            .from("leads")
+            .select("id", { count: "exact", head: true })
+            .in("stage", [...openStages]);
+        leadsSummary.open_total = count ?? 0;
+    }
+
     return {
         period: {
             from: range.from,
@@ -1930,6 +1994,7 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
         },
         campaigns_level: campaignLevel,
         learning,
+        leads: leadsSummary,
         funnel: funnelData,
         campaigns: revenueData,
         products: productData,
@@ -1938,7 +2003,12 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
             totalOrders: ordersCreatedCount,
             totalPaidOrders,
             totalRevenue,
-            avgConversionRate: totalLeads > 0 ? ((totalPaidOrders / totalLeads) * 100).toFixed(2) : 0
+            /* `avgConversionRate` lived here as paid orders ÷ leads, which with
+               276 paid orders against 2 recorded leads read 13800%. It was never
+               rendered, so nobody ever saw it say so. The honest lead
+               conversion is `leads.conversion_percent` — won leads out of leads
+               received — and it lives with the other lead figures. */
+            avgConversionRate: leadsSummary.conversion_percent.toFixed(2)
         },
         capi_events: [viewContentStats, initiateCheckoutStats, purchaseStats],
         capi_overview: {

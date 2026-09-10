@@ -16,11 +16,9 @@ import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 type FunnelData = {
   date: string;
   leads_count: number;
-  unique_lead_phones: number;
   orders_created: number;
   orders_paid: number;
   total_revenue: number;
-  conversion_rate_percent: string;
 };
 
 type CampaignData = {
@@ -177,6 +175,14 @@ type DoshaAnalytics = {
   daily: Array<{ date: string; completions: number }>;
 };
 
+type LeadsSummary = {
+  new_in_period: number;
+  won_in_period: number;
+  lost_in_period: number;
+  open_total: number;
+  conversion_percent: number;
+};
+
 type LearningSummary = {
   granted_in_period: number;
   started_in_period: number;
@@ -193,6 +199,7 @@ type AnalyticsResponse = {
   };
   campaigns_level?: "adset" | "ad";
   learning?: LearningSummary;
+  leads?: LeadsSummary;
   funnel: FunnelData[];
   campaigns: CampaignData[];
   products: ProductData[];
@@ -756,6 +763,7 @@ export default function AnalyticsPage() {
   const [kpis, setKpis] = useState<UnifiedKpis | null>(null);
   const [scrollDepth50, setScrollDepth50] = useState<number>(0);
   const [learning, setLearning] = useState<LearningSummary | null>(null);
+  const [leads, setLeads] = useState<LeadsSummary | null>(null);
   const [engagementInitiateAligned, setEngagementInitiateAligned] = useState<number>(0);
   const [scroll50ToCheckoutPercent, setScroll50ToCheckoutPercent] = useState<number>(0);
   const [engagementAlignedFrom, setEngagementAlignedFrom] = useState<string | null>(null);
@@ -900,8 +908,11 @@ export default function AnalyticsPage() {
         }
         const apiError = data?.error || `Failed to load analytics (${res.status})`;
         const lower = apiError.toLowerCase();
+        /* The names this list matches must be the ones the route actually
+           reads, or it classifies a failure by a table nobody queries any more
+           and misses the one that broke. `mv_funnel_daily` left the route when
+           the lead figures started coming from `leads` directly. */
         if (
-          lower.includes("mv_funnel_daily") ||
           lower.includes("mv_revenue_by_campaign") ||
           lower.includes("analytics_marketing_inputs") ||
           lower.includes("analytics_meta_daily") ||
@@ -927,6 +938,7 @@ export default function AnalyticsPage() {
       setKpis(data.kpis ?? null);
       setScrollDepth50(data.engagement?.scroll_depth_50 ?? 0);
       setLearning(data.learning ?? null);
+      setLeads(data.leads ?? null);
       setEngagementInitiateAligned(data.engagement?.initiate_checkout_aligned ?? 0);
       setScroll50ToCheckoutPercent(data.engagement?.scroll50_to_checkout_percent ?? 0);
       setEngagementAlignedFrom(data.engagement?.aligned_from ?? null);
@@ -1716,10 +1728,30 @@ export default function AnalyticsPage() {
 
       {analyticsSection === "overview" && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        {/* This card showed one number — `count(*)` over a table that, until the
+            form was wired to it, held two smoke-test rows — and it showed it
+            with no way to tell a request nobody has answered from one that
+            closed months ago. The count is still the headline, because that is
+            what arrived in the period; underneath it now says how many of them
+            became money and how many people are still waiting, which is the
+            only part anybody can act on. `open_total` ignores the date filter
+            on purpose. */}
         {funnelUiSettings.showLeadsCard ? (
           <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
             <div className="text-sm font-medium cw-muted">{t("analytics_leads")}</div>
-            <div className="text-3xl font-bold mt-2 cw-text">{summary.totalLeads}</div>
+            <div className="text-3xl font-bold mt-2 cw-text">{leads?.new_in_period ?? summary.totalLeads}</div>
+            {leads ? (
+              <div className="text-xs cw-muted mt-2 space-y-0.5">
+                <div>
+                  {t("analytics_leads_won")}: <span className="cw-text">{leads.won_in_period}</span>
+                  {leads.new_in_period > 0 ? ` · ${leads.conversion_percent}%` : ""}
+                </div>
+                <div>
+                  {t("analytics_leads_open")}:{" "}
+                  <span className={leads.open_total > 0 ? "cw-text" : ""}>{leads.open_total}</span>
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
         <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
