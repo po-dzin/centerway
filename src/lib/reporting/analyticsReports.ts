@@ -1,4 +1,5 @@
 import { adminClient } from "@/lib/auth/adminClient";
+import { asFiniteNumber, safeDivide, isoDateFromParts, shiftIsoDate, getIsoDateInTimeZone, localMidnightUtcIso } from "@/lib/analytics/helpers";
 import { sendTelegramMessageWithToken } from "@/lib/telegram/tg";
 
 const REPORTS_TIME_ZONE = process.env.ANALYTICS_REPORTS_TIMEZONE || "Europe/Kyiv";
@@ -47,16 +48,6 @@ function parseOptionalThreadId(raw: string | undefined): number | null {
 
 const REPORTS_THREAD_ID = parseOptionalThreadId(REPORTS_THREAD_ID_RAW);
 
-function asFiniteNumber(value: unknown): number {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function safeDivide(numerator: number, denominator: number): number {
-  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) return 0;
-  return numerator / denominator;
-}
-
 function formatCurrency(amount: number, currency = "UAH"): string {
   return new Intl.NumberFormat("uk-UA", {
     style: "currency",
@@ -103,65 +94,6 @@ function reportPeriodLabel(window: ReportWindow): string {
 
 function toPercent(numerator: number, denominator: number): string {
   return `${formatNumber(safeDivide(numerator * 100, denominator))}%`;
-}
-
-function isoDateFromParts(parts: { year: number; month: number; day: number }): string {
-  const y = String(parts.year).padStart(4, "0");
-  const m = String(parts.month).padStart(2, "0");
-  const d = String(parts.day).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-function getIsoDateInTimeZone(date: Date, timeZone: string): string {
-  const dtf = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  const parts = dtf.formatToParts(date);
-  const year = Number(parts.find((p) => p.type === "year")?.value ?? "0");
-  const month = Number(parts.find((p) => p.type === "month")?.value ?? "0");
-  const day = Number(parts.find((p) => p.type === "day")?.value ?? "0");
-  return isoDateFromParts({ year, month, day });
-}
-
-function shiftIsoDate(isoDate: string, days: number): string {
-  const [y, m, d] = isoDate.split("-").map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  dt.setUTCDate(dt.getUTCDate() + days);
-  return dt.toISOString().slice(0, 10);
-}
-
-function parseShortOffsetToMs(raw: string): number | null {
-  const m = raw.match(/([+-])(\d{1,2})(?::?(\d{2}))?$/);
-  if (!m) return null;
-  const sign = m[1] === "-" ? -1 : 1;
-  const hh = Number(m[2] ?? "0");
-  const mm = Number(m[3] ?? "0");
-  return sign * (hh * 60 + mm) * 60 * 1000;
-}
-
-function getTimeZoneOffsetMs(date: Date, timeZone: string): number {
-  const dtf = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    timeZoneName: "shortOffset",
-    year: "numeric",
-  });
-  const tzName = dtf.formatToParts(date).find((p) => p.type === "timeZoneName")?.value ?? "";
-  return parseShortOffsetToMs(tzName) ?? 0;
-}
-
-function localMidnightUtcIso(isoDate: string, timeZone: string): string {
-  const [y, m, d] = isoDate.split("-").map(Number);
-  let ts = Date.UTC(y, m - 1, d, 0, 0, 0, 0);
-  for (let i = 0; i < 3; i += 1) {
-    const offsetMs = getTimeZoneOffsetMs(new Date(ts), timeZone);
-    const next = Date.UTC(y, m - 1, d, 0, 0, 0, 0) - offsetMs;
-    if (next === ts) break;
-    ts = next;
-  }
-  return new Date(ts).toISOString();
 }
 
 function productLabel(productCode: string | null | undefined): string {

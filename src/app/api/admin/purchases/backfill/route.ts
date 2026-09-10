@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { toIsoDate } from "@/lib/analytics/helpers";
 import {
   badRequestResponse,
   requireAdminSession,
@@ -133,10 +134,6 @@ function asLimit(value: unknown, defaultValue: number, maxValue: number): number
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed <= 0) return defaultValue;
   return Math.min(Math.floor(parsed), maxValue);
-}
-
-function toIsoDate(input: Date): string {
-  return input.toISOString().slice(0, 10);
 }
 
 function shiftIsoDate(isoDate: string, days: number): string {

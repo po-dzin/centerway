@@ -1,4 +1,5 @@
 import { adminClient } from "@/lib/auth/adminClient";
+import { toIsoDate } from "@/lib/analytics/helpers";
 import { asJson, type Insert } from "@/lib/db/types";
 
 type MetaInsightsAction = {
@@ -106,10 +107,6 @@ function extractEventCounts(actions: MetaInsightsAction[] | undefined) {
       "purchase",
     ]),
   };
-}
-
-function toIsoDate(input: Date): string {
-  return input.toISOString().slice(0, 10);
 }
 
 function normalizePixelEventName(raw: string): "view_content" | "initiate_checkout" | "purchase" | null {
