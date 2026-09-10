@@ -69,6 +69,20 @@ function extractExportedMethods(fileText) {
     methods.add(match[1]);
   }
 
+  /*
+   * `export const POST = withRoute(...)` — the shape wave 1 gave the routes.
+   * Until 2026-09-11 only the `function` form above was recognised, so a route
+   * written the new way was invisible here: it could not appear in `missing`,
+   * and this guard exists precisely to fail CI when an admin route has no
+   * authorization entry. One route had already crossed over
+   * (api/admin/access/roles) and was being reported as an EXTRA matrix line —
+   * the guard telling us the route was gone while it was in front of it.
+   */
+  const constExportRegex = /\bexport\s+const\s+(GET|POST|PATCH|PUT|DELETE|OPTIONS)\s*[:=]/g;
+  for (const match of fileText.matchAll(constExportRegex)) {
+    methods.add(match[1]);
+  }
+
   const namedExportRegex = /\bexport\s*\{\s*([^}]+)\s*\}/g;
   for (const match of fileText.matchAll(namedExportRegex)) {
     const names = match[1]

@@ -23,7 +23,6 @@ const requiredLocalCanon = [
 ];
 
 const platformCssRoot = "src/components/platform";
-const publicPlatformRoutesRoot = "src/app/(platform)";
 const tokenSourceFiles = ["src/app/globals.css", "data/design-tokens/cw.tokens.json"];
 const semanticRuntimeFiles = [
   "data/generator/route_family_contracts.json",
@@ -296,41 +295,17 @@ for (const absolute of platformCssFiles) {
   }
 }
 
-const publicPlatformRouteFiles = listFiles(publicPlatformRoutesRoot, (file) => {
-  const normalized = relativePath(file);
-  return normalized.endsWith("/page.tsx") && !normalized.includes("/admin/");
-});
-
-for (const absolute of publicPlatformRouteFiles) {
-  const file = relativePath(absolute);
-  const source = readFileSync(absolute, "utf8");
-
-  for (const match of collectMatches(source, /from\s+["']([^"']+\.css)["']/g)) {
-    addFailure(
-      `Public platform route files must not import CSS directly: ${match.value}. Route files must delegate to shared platform components/templates.`,
-      absolute,
-      match,
-    );
-  }
-
-  for (const match of collectMatches(source, /from\s+["']([^"']*PlatformContentStyles[^"']*)["']/g)) {
-    addFailure(
-      `Public platform route files must not import PlatformContentStyles directly: ${match.value}. Use approved shared platform components/templates instead.`,
-      absolute,
-      match,
-    );
-  }
-
-  if (file !== "src/app/(platform)/funnel-entry/[product]/page.tsx" && file !== "src/app/(platform)/lesson/pilot/page.tsx") {
-    for (const match of collectMatches(source, /<(main|section|aside|nav|header)\b/g)) {
-      addFailure(
-        `Public platform route files must not author structural layout tags directly: <${match.value}>. Move layout composition into shared platform components/templates.`,
-        absolute,
-        match,
-      );
-    }
-  }
-}
+/*
+ * The three rules that used to live here — no CSS import, no
+ * PlatformContentStyles, no structural layout tag in a public route file — are
+ * ESLint rules as of 2026-09-11 (`eslint.config.mjs`, "PUBLIC ROUTE FILES
+ * COMPOSE"). They were the only checks in this guard that read TypeScript, and
+ * a regex over lines cannot tell `<section>` in JSX from the same five letters
+ * in a string. `npm run guard:eslint` proves they still bite.
+ *
+ * What is left in this file is what ESLint cannot see: the canon documents, the
+ * platform CSS token discipline, and the generator manifests.
+ */
 
 if (semanticRuntimeFiles.every((file) => existsSync(path.join(repoRoot, file)))) {
   const routeContracts = readJson("data/generator/route_family_contracts.json");

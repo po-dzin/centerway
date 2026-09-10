@@ -55,6 +55,12 @@ jobs:
       - name: Code and mirror agree on every shared token
         run: npm run -s ds:drift:gate
 
+      # The architectural rules that live in eslint.config.mjs, checked against
+      # violations they must catch. `npm run lint` proves the code is clean;
+      # this proves the rules would have said so.
+      - name: ESLint guard rules still bite
+        run: npm run -s guard:eslint
+
       - name: Platform canon
         run: npm run -s canon:guard
 

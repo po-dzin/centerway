@@ -140,6 +140,29 @@ Coverage is a ratchet (`npm run test:coverage`, thresholds in `vitest.config.ts`
 the figures are the day's baseline rounded down, CI fails below them, and a
 change that raises them moves them up. Nobody chases the number.
 
+## Guard Rule
+
+An architectural rule lives in `eslint.config.mjs` if ESLint can see it, and in
+`scripts/guard-*.mjs` if it cannot. That line is the whole policy.
+
+ESLint holds what is expressed in TypeScript: the layer boundaries, the
+`src/lms-core` portability contract (zero dependencies, no host globals, no
+JSX), the composition rule for public route files under `(platform)` (no CSS
+import, no `PlatformContentStyles`, no structural layout tag), and the admin's
+grey palette. These are checked against the syntax tree, so they are exact and
+they underline in the editor. Add the next such rule there, not to a script.
+
+The scripts hold what has no syntax tree: CSS tokens and contrast, the brand
+mark, generated screens and manifests, the canon documents, assets that must
+exist, and files that must not. A script named `guard-*` reads the repository
+and decides; a script named `smoke-*` calls a running app. Nothing that only
+reads files is called a smoke.
+
+`npm run guard:eslint` is the test of the ESLint half: it writes a violating
+file for each rule and requires the complaint, and writes the clean cases the
+old line-regex guards used to reject. A rule that cannot be shown to fail is
+not a rule, and config is easy to break in silence.
+
 ## Agent Output Path Rule
 
 When agents report changed files, references, handoff notes, or review comments, do not print full absolute filesystem paths by default.

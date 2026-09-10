@@ -50,16 +50,16 @@ jobs:
         run: npm run -s build
 
       - name: Admin Governance
-        run: npm run -s smoke:admin:governance
+        run: npm run -s guard:admin:governance
 
       - name: Admin i18n / tone
-        run: npm run -s smoke:admin:i18n-tone
+        run: npm run -s guard:admin:i18n-tone
 
       - name: Admin a11y contract
-        run: npm run -s smoke:admin:a11y-contract
+        run: npm run -s guard:admin:a11y-contract
 
       - name: Admin authz coverage
-        run: npm run -s smoke:admin:authz-coverage
+        run: npm run -s guard:admin:authz-coverage
 
       # No secret needed: playwright.config.ts starts `next start` on the build
       # above, and the thanks pages are static landings served from disk. This

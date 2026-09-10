@@ -4,13 +4,15 @@ import { readFile } from "node:fs/promises";
 
 const execFileAsync = promisify(execFile);
 
-const SEARCH_SCOPE = ["src/app/(platform)/admin", "src/components"];
-const FORBIDDEN_CLASS_PATTERN =
-  "(text|bg|border|from|to|ring|divide|hover:bg|hover:text)-(blue|indigo|emerald|purple|green|yellow|red|gray)-|bg-gradient|text-transparent";
-
 const HEX_SCOPE = ["src/app/(platform)/admin", "src/components/admin"];
 const HEX_ALLOWLIST = [
-  "src/app/(platform)/admin/page.tsx", // Google brand icon in auth button
+  // The Google brand mark in the sign-in button: four brand hexes that are not
+  // ours to tokenise. It moved out of admin/page.tsx when the admin went to
+  // server components (2026-09-10), and this line kept naming the old file —
+  // so the guard had been red ever since. An allowlist keyed by path outlives
+  // the thing it was granted for; if this happens again, move to the inline
+  // `ds-allow-raw-hex` marker that guard-ds-contract.mjs uses instead.
+  "src/app/(platform)/admin/AdminGate.tsx",
 ];
 
 function fail(message) {
@@ -47,15 +49,13 @@ async function runRg(args) {
   }
 }
 
-async function checkForbiddenTailwindClasses() {
-  const matches = await runRg(["-n", FORBIDDEN_CLASS_PATTERN, ...SEARCH_SCOPE]);
-  if (!matches) {
-    pass("no forbidden Tailwind color/gradient classes in admin scope");
-    return;
-  }
-  fail("forbidden Tailwind color/gradient classes detected:");
-  console.log(matches);
-}
+/*
+ * The forbidden Tailwind colour and gradient utilities moved into
+ * `eslint.config.mjs` ("THE ADMIN IS GREY") on 2026-09-11: they are string
+ * literals in TypeScript, so ESLint matches them exactly and underlines them
+ * as they are typed. The two checks below stay because neither is JavaScript —
+ * hex literals live mostly in CSS modules, and the last one reads globals.css.
+ */
 
 async function checkHexHardcodes() {
   const matches = await runRg(["-n", "#[0-9A-Fa-f]{3,8}", ...HEX_SCOPE]);
@@ -97,13 +97,12 @@ async function checkGlobalMotionAndFocusRules() {
 }
 
 async function main() {
-  console.log("Admin governance smoke started");
-  await checkForbiddenTailwindClasses();
+  console.log("Admin governance guard started");
   await checkHexHardcodes();
   await checkGlobalMotionAndFocusRules();
 
   if (process.exitCode) process.exit(process.exitCode);
-  console.log("Admin governance smoke passed");
+  console.log("Admin governance guard passed");
 }
 
 main().catch((error) => {
