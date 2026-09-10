@@ -198,7 +198,7 @@ type AnalyticsResponse = {
       | "capi_fallback";
     initiate_checkout: "orders_created";
     purchase: "paid_orders";
-    access_granted: "token_consumed";
+    access_granted: "access_delivered";
   };
   business_events: {
     view_content: number;
@@ -453,7 +453,7 @@ function funnelSourceLabel(
     | "manual_input"
     | "orders_created"
     | "paid_orders"
-    | "token_consumed"
+    | "access_delivered"
 ): string {
   if (source === "local_events") return t("analytics_source_local_events" as never);
   if (source === "local_events_floored") return t("analytics_source_local_events_floored" as never);
@@ -465,7 +465,7 @@ function funnelSourceLabel(
   if (source === "manual_input") return t("analytics_source_manual_input" as never);
   if (source === "orders_created") return t("analytics_source_orders_created" as never);
   if (source === "paid_orders") return t("analytics_source_paid_orders" as never);
-  return t("analytics_source_token_consumed" as never);
+  return t("analytics_source_access_delivered" as never);
 }
 
 function isoToDate(value: string): Date | null {
@@ -1769,7 +1769,7 @@ export default function AnalyticsPage() {
                 { key: "initiate_checkout", label: t("analytics_event_initiate_checkout"), value: funnelSources.initiate_checkout },
                 { key: "purchase", label: t("analytics_event_purchase"), value: funnelSources.purchase },
                 ...(funnelUiSettings.mode === "access" || funnelUiSettings.showAccessGrantedCard
-                  ? [{ key: "access_granted", label: t("analytics_event_access_granted"), value: funnelSources.access_granted as "token_consumed" }]
+                  ? [{ key: "access_granted", label: t("analytics_event_access_granted"), value: funnelSources.access_granted as "access_delivered" }]
                   : []),
               ].map((item) => (
                 <span

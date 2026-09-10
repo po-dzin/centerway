@@ -1277,16 +1277,68 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
     const initiateCheckoutStats = capiEventStats.get("InitiateCheckout")!;
     const purchaseStats = capiEventStats.get("Purchase")!;
 
-    // 7. Access granted proxy (token consumed)
-    const { count: accessGrantedCount, error: accessErr } = await db
-        .from("events")
-        .select("id", { count: "exact", head: true })
+    // 7. Access granted — the buyer actually received it, not merely paid for it.
+    //
+    // This used to count `events.type = 'token_consumed'`, a signal from the
+    // retired magic-link delivery model. Nothing has written that event type
+    // since the account+enrollment model replaced it, so this metric read
+    // ZERO by construction — regardless of how many buyers actually got their
+    // course — on every dashboard load since that migration. First noticed
+    // 2026-09-10, on the funnel screen itself, showing "Access Granted: 0"
+    // beside "Purchase: 2" for a period with at least one confirmed, working
+    // delivery.
+    //
+    // Real access today has two independent witnesses, either of which counts:
+    //   - `lms_enrollments.order_ref` — the buyer signed in and the entitlement
+    //     materialized into a real enrollment. This is "зайшов на платформу".
+    //   - `events.type = 'purchase_email_sent'` for the order — we delivered
+    //     the receipt with the access link, whether or not they have opened it
+    //     yet. This is "отримав лист із лінком".
+    // A paid order counts as delivered if EITHER fired; an order can show one
+    // without the other (a buyer who has the email but has not signed in yet;
+    // an enrollment granted before the receipt path existed).
+    const { data: paidOrderRefRows, error: paidOrderRefsErr } = await db
+        .from("orders")
+        .select("order_ref")
         .gte("created_at", range.fromTs)
         .lt("created_at", range.toExclusiveTs)
-        .eq("type", "token_consumed");
-    if (accessErr) {
-        console.error("Analytics access count error:", accessErr);
-        throw new Error(accessErr.message);
+        .in("status", ["paid", "completed"])
+        .limit(20000);
+    if (paidOrderRefsErr) {
+        console.error("Analytics paid order refs error:", paidOrderRefsErr);
+        throw new Error(paidOrderRefsErr.message);
+    }
+    const paidOrderRefsInRange = (paidOrderRefRows ?? [])
+        .map((row) => row.order_ref as string | null)
+        .filter((ref): ref is string => Boolean(ref));
+
+    let accessGrantedCount = 0;
+    if (paidOrderRefsInRange.length > 0) {
+        const [{ data: enrolledOrderRows, error: enrolledErr }, { data: emailedOrderRows, error: emailedErr }] =
+            await Promise.all([
+                db.from("lms_enrollments").select("order_ref").in("order_ref", paidOrderRefsInRange),
+                db
+                    .from("events")
+                    .select("order_ref")
+                    .eq("type", "purchase_email_sent")
+                    .in("order_ref", paidOrderRefsInRange),
+            ]);
+        if (enrolledErr) {
+            console.error("Analytics access-granted enrollment error:", enrolledErr);
+            throw new Error(enrolledErr.message);
+        }
+        if (emailedErr) {
+            console.error("Analytics access-granted email error:", emailedErr);
+            throw new Error(emailedErr.message);
+        }
+        const reachedOrderRefs = new Set<string>();
+        for (const row of enrolledOrderRows ?? []) {
+            if (row.order_ref) reachedOrderRefs.add(row.order_ref as string);
+        }
+        for (const row of emailedOrderRows ?? []) {
+            if (row.order_ref) reachedOrderRefs.add(row.order_ref as string);
+        }
+        accessGrantedCount = reachedOrderRefs.size;
     }
 
     // 7.5 Business-fact totals stay exact and must not inherit the 50k row cap
@@ -1815,7 +1867,7 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
             view_content: viewContentSource,
             initiate_checkout: "orders_created",
             purchase: "paid_orders",
-            access_granted: "token_consumed",
+            access_granted: "access_delivered",
         },
         engagement,
         marketing_inputs: marketingInputs,
