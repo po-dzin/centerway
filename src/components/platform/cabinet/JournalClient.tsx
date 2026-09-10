@@ -24,7 +24,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { Icon } from "@/components/Icon";
-import { groupJournalByDay } from "@/lms-core";
+import { groupJournalByDay, localCalendarDate } from "@/lms-core";
 import { fetchMyJournal, type LearnerJournalDto } from "@/components/lms/lmsClient";
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
@@ -46,17 +46,28 @@ import styles from "./Journal.module.css";
  * upstream, and handing it to the browser's own zone would move the heading a
  * day for anyone west of UTC — the one bug this whole date path exists to
  * avoid.
+ *
+ * THE YEAR IS ONLY WRITTEN WHEN IT IS NOT THIS ONE. Asking `Intl` for a year in
+ * Ukrainian also buys the era marker — «5 вересня 2026 р.» — which the caption
+ * idiom then sets in capitals as «5 ВЕРЕСНЯ 2026 Р.», an abbreviation shouting
+ * at the reader from every second heading. Composing the year ourselves drops
+ * it, and for the year the reader is living in the number was noise anyway.
  */
-function formatDayKey(key: string, locale: string): string {
+function formatDayKey(key: string, locale: string, timeZone: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
   if (!match) return "";
-  const at = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
-  return new Intl.DateTimeFormat(locale, {
+
+  const year = Number(match[1]);
+  const at = new Date(Date.UTC(year, Number(match[2]) - 1, Number(match[3])));
+  const day = new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "long",
-    year: "numeric",
     timeZone: "UTC",
   }).format(at);
+
+  // "This year" in the reader's own zone, for the same reason the day key was
+  // cut there: on 1 January the browser's zone and the reader's disagree.
+  return year === localCalendarDate(new Date(), timeZone).year ? day : `${day} ${year}`;
 }
 
 export function JournalClient() {
@@ -169,7 +180,7 @@ export function JournalClient() {
           ) : (
             days.map((day) => (
               <section className={styles.day} key={day.date || "undated"}>
-                <h2 className={styles.dayHeading}>{formatDayKey(day.date, locale) || cab.journalUndated}</h2>
+                <h2 className={styles.dayHeading}>{formatDayKey(day.date, locale, journal?.timeZone ?? "") || cab.journalUndated}</h2>
 
                 <ul className={styles.entries}>
                   {day.entries.map((entry) => {
@@ -189,7 +200,11 @@ export function JournalClient() {
                           {entry.quote ? (
                             <p className={styles.quote}>{entry.quote}</p>
                           ) : entry.kind === "bookmark" ? (
-                            <p className={styles.quote}>{cab.journalBookmark}</p>
+                            /* Not `.quote`: that class carries the margin rule
+                               that says «these are the lesson's words», and a
+                               bookmark quotes nothing. It marks a lesson, so
+                               its row says so in the platform's own voice. */
+                            <p className={styles.kind}>{cab.journalBookmark}</p>
                           ) : null}
 
                           <p className={styles.place}>

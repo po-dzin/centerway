@@ -97,6 +97,16 @@
   line-height: 1.5;
 }
 
+/* A bookmark marks the LESSON, so it has nothing to quote. It says what it is,
+   in the platform's own voice — without the margin rule above, which is the
+   mark that means "these words are the lesson's". */
+.kind {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+}
+
 /* ── Where it came from ───────────────────────────── */
 
 .place {
