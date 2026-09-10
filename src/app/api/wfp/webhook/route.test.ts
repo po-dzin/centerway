@@ -100,8 +100,8 @@ class FakeDb {
 // ---- collaborators ---------------------------------------------------------------
 
 const db = new FakeDb();
-const sendPurchaseEmail = vi.fn(async () => ({ sent: true }));
-const sendConfirmedSaleTelegramReport = vi.fn(async () => ({ sent: true }));
+const sendPurchaseEmail = vi.fn<(input: Record<string, unknown>) => Promise<{ sent: boolean }>>(async () => ({ sent: true }));
+const sendConfirmedSaleTelegramReport = vi.fn<(orderRef: string) => Promise<{ sent: boolean }>>(async () => ({ sent: true }));
 const dispatchCapiEventInline = vi.fn();
 const isStaffOrder = vi.fn(async () => false);
 const loadPayableOffer = vi.fn(async () => ({ pixelContentName: "Way21 Detox", fulfilment: { kind: "course", courseSlug: "way21", programSlug: "way21" } }));
