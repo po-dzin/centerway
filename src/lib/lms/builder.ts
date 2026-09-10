@@ -28,6 +28,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import type { TablesUpdate } from "@/lib/db/database.types";
 import { courseFromRows, writeCourseStructure } from "./authoring";
 import { getSnapshotCourse } from "./catalog";
 import { immediatePublishedPatch } from "./publishedEditPolicy";
@@ -514,7 +515,7 @@ export async function saveBuilderCourse(
 
     const direct = !loaded.hasPendingRevision ? immediatePublishedPatch(loaded.liveCourse ?? loaded.course, incoming) : null;
     if (direct) {
-      const values: Record<string, unknown> = {
+      const values: TablesUpdate<"lms_courses"> = {
         cover: direct.cover,
         sort_order: direct.sortOrder,
         status: direct.status,

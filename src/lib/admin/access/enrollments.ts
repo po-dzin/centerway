@@ -6,6 +6,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import type { TablesUpdate } from "@/lib/db/database.types";
 import type { GrantSource } from "@/lib/admin/accessTypes";
 import { resolveAccountByEmail } from "./accounts";
 import { AccessError, type Db, writeAudit } from "./shared";
@@ -297,7 +298,7 @@ export async function reactivateCourse(input: {
     const { enrollment, courseSlug, email } = await enrollmentContext(db, input.enrollmentId);
     if (enrollment.blocked_at) throw new AccessError("enrollment_blocked", 409);
 
-    const patch: Record<string, unknown> = {
+    const patch: TablesUpdate<"lms_enrollments"> = {
         status: "active",
         revoked_at: null,
         updated_at: new Date().toISOString(),

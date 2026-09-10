@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
+import type { TablesUpdate } from "@/lib/db/database.types";
 import { requireAdminSession, serverErrorResponse, unauthorizedResponse } from "@/lib/api/adminRoute";
 
 // GET /api/admin/customers/[id]
@@ -79,9 +80,11 @@ export async function PATCH(
     const { id } = await params;
     const body = await req.json();
     const allowed = ["display_name", "tags", "notes", "avatar_url", "tg_id", "email", "phone"];
+    // The client's Update type rejects unknown columns since supabase-js
+    // 2.116; the allow-list above is what makes the cast honest.
     const patch = Object.fromEntries(
         Object.entries(body).filter(([k]) => allowed.includes(k))
-    );
+    ) as TablesUpdate<"customers">;
 
     const db = adminClient();
     const { data, error } = await db

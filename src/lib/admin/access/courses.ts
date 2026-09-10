@@ -6,6 +6,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import type { TablesUpdate } from "@/lib/db/database.types";
 import { writeCourseStructure } from "@/lib/lms/authoring";
 import { JOURNAL_MIGRATION_REQUIRED, writeCourseRelease } from "@/lib/lms/release";
 import { validateCourse, type Course } from "@/lms-core";
@@ -116,7 +117,7 @@ export async function moderateCourse(input: {
     if (readError) throw new AccessError(readError.message, 500);
     if (!course) throw new AccessError("course_not_found", 404);
 
-    let values: Record<string, unknown>;
+    let values: TablesUpdate<"lms_courses">;
     // Set when the approval below already wrote `values` inside the release
     // transaction, so the trailing UPDATE does not repeat them.
     let releaseApplied = false;
