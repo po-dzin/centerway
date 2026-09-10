@@ -91,8 +91,27 @@ describe("createPaymentInvoice", () => {
   beforeEach(() => {
     process.env.WFP_MERCHANT_ACCOUNT = "test_merchant";
     process.env.WFP_SECRET_KEY = "test_secret";
-    process.env.APP_BASE_URL = "https://www.centerway.net.ua";
     process.env.WFP_MERCHANT_DOMAIN = "www.centerway.net.ua";
+    delete process.env.APP_BASE_URL;
+  });
+
+  /* The test that was missing on 2026-09-10, when `APP_BASE_URL` in production
+     named a Vercel alias that had stopped resolving. Both addresses below went
+     out inside the invoice pointing at a 404: the approval never came back and
+     the buyer never came back either. Neither is derived from an environment
+     variable any more, and `delete process.env.APP_BASE_URL` above is part of
+     the assertion — the addresses must hold with no such variable set at all. */
+  it("tells WayForPay where we actually live, from code and not from the environment", async () => {
+    const { deps, fetchFn } = stubDeps();
+
+    await createPaymentInvoiceWithDeps(
+      { offer: courseOffer, locale: "uk", source: "pay_start", staff: true },
+      deps
+    );
+
+    const body = wfpBody(fetchFn);
+    expect(body.serviceUrl).toBe("https://www.centerway.net.ua/api/wfp/webhook");
+    expect(body.returnUrl).toContain("https://www.centerway.net.ua/pay/return");
   });
 
   it("charges the amount of the offer it was handed, not a code's constant", async () => {
