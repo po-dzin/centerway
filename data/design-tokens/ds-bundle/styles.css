@@ -6,5 +6,6 @@
 @import "./tokens/material.css";
 @import "./tokens/typography.css";
 @import "./tokens/geometry.css";
+@import "./tokens/motion.css";
 @import "./tokens/delivery.css";
 @import "./tokens/brand.css";

@@ -112,6 +112,19 @@
   --cw-space-xl: 2rem;
   --cw-space-2xl: 3rem;
   --cw-space-3xl: 4.5rem;
+  --cw-motion-tap: 120ms;
+  --cw-motion-state: 160ms;
+  --cw-motion-surface: 180ms;
+  --cw-motion-enter: 400ms;
+  --cw-motion-tone: 320ms;
+  --cw-press-settle: 1px;
+  --cw-haptic-tap: 12ms;
+  --cw-ink-stroke-length: 29.46;
+  --cw-ink-drawn-rest: 0;
+  --cw-ink-drawn-hover: 0.8;
+  --cw-ease-state: cubic-bezier(0.22, 0.61, 0.24, 1);
+  --cw-ease-surface: cubic-bezier(0.16, 1, 0.3, 1);
+  --cw-ease-network: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 [data-cw-theme="dark"] {
@@ -163,4 +176,14 @@
   --cw-mat-inverse-stroke: color-mix(in srgb, #ffffff 22%, transparent);
   --cw-mat-inverse-text: #faefe0;
   --cw-mat-inverse-text-muted: color-mix(in srgb, #faefe0 78%, transparent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --ds-touch-target-min: 2.25rem;
+    --ds-button-min-height: 2.5rem;
+    --ds-button-min-width: 9rem;
+    --ds-button-padding-inline: 1rem;
+    --ds-button-font-size: var(--ds-type-body-sm-size);
+  }
 }
