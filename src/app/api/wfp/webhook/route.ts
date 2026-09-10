@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { errorMessage } from "@/lib/errors";
-import { sendConfirmedSaleTelegramReport } from "@/lib/reporting/analyticsReports";
+import { sendConfirmedSaleTelegramReport } from "@/lib/analytics/telegramReports";
 import { sendPurchaseEmail } from "@/lib/email/purchaseEmail";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";

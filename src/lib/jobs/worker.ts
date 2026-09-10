@@ -1,5 +1,5 @@
 import { adminClient } from "@/lib/auth/adminClient";
-import { sendConfirmedSaleTelegramReport } from "@/lib/reporting/analyticsReports";
+import { sendConfirmedSaleTelegramReport } from "@/lib/analytics/telegramReports";
 import { sendCapiEvent } from "@/lib/tracking/capi";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { normalizeTrackingString } from "@/lib/tracking/metaClickIds";

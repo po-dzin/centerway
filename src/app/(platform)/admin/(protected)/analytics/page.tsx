@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { AnalyticsPayload } from "@/lib/analytics/dashboard";
+import type { DoshaAnalyticsPayload } from "@/lib/analytics/dosha";
 import { useRouter } from "next/navigation";
 import { flushSync } from "react-dom";
 import { useI18n } from "@/components/I18nProvider";
@@ -42,13 +44,9 @@ type ProductData = {
   share_revenue_percent: number;
 };
 
-type AnalyticsSummary = {
-  totalLeads: number;
-  totalOrders: number;
-  totalPaidOrders: number;
-  totalRevenue: number;
-  avgConversionRate: string;
-};
+/* Derived from the engine: the route sends totalOrders as number | null and
+   avgConversionRate as string | number, which the hand-written copy narrowed. */
+type AnalyticsSummary = AnalyticsPayload["summary"];
 
 type CapiEventName = "ViewContent" | "InitiateCheckout" | "Purchase";
 
@@ -150,75 +148,11 @@ type PurchaseTransport = {
 
 type DiagnosticsPanelKey = "freshness" | "quality" | "purchase_transport";
 
-type DoshaCompletionByType = {
-  result_type: string;
-  count: number;
-  share_percent: number;
-};
+type DoshaAnalytics = DoshaAnalyticsPayload;
 
-type DoshaCtaByType = {
-  result_type: string;
-  primary_clicks: number;
-  secondary_clicks: number;
-  total_clicks: number;
-  click_through_percent: number;
-};
-
-type DoshaAnalytics = {
-  period: { from: string; to: string };
-  total_completions: number;
-  total_cta_clicks: number;
-  cta_click_through_percent: number;
-  top_type: string | null;
-  completions_by_type: DoshaCompletionByType[];
-  cta_by_type: DoshaCtaByType[];
-  daily: Array<{ date: string; completions: number }>;
-};
-
-type AnalyticsResponse = {
-  period?: {
-    from: string;
-    to: string;
-  };
-  campaigns_level?: "adset" | "ad";
-  funnel: FunnelData[];
-  campaigns: CampaignData[];
-  products: ProductData[];
-  summary: AnalyticsSummary;
-  capi_events: CapiEventStats[];
-  capi_overview: CapiOverview;
-  funnel_chain: FunnelChain;
-  funnel_sources?: {
-    view_content:
-      | "local_events"
-      | "local_events_floored"
-      | "pixel_daily_stats"
-      | "pixel_stats_reference"
-      | "pixel_fallback"
-      | "capi_fallback";
-    initiate_checkout: "orders_created";
-    purchase: "paid_orders";
-    access_granted: "token_consumed";
-  };
-  business_events: {
-    view_content: number;
-    initiate_checkout: number;
-    purchase: number;
-    access_granted: number;
-  };
-  engagement?: {
-    scroll_depth_50: number;
-    initiate_checkout_aligned: number;
-    scroll50_to_checkout_percent: number;
-    aligned_from: string | null;
-  };
-  marketing_inputs: MarketingInputs;
-  quality_gaps?: QualityGaps | null;
-  quality_series?: QualitySeriesRow[];
-  purchase_transport?: PurchaseTransport | null;
-  freshness?: AnalyticsFreshness | null;
-  kpis: UnifiedKpis;
-};
+/* The engine's own payload type, not a copy of it: a field the route stops
+   sending fails here at compile time instead of rendering as undefined. */
+type AnalyticsResponse = AnalyticsPayload;
 
 type DateRange = {
   from: string;
@@ -2129,7 +2063,7 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
           <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
             <div className="text-sm font-medium cw-muted">{t("analytics_col_orders")}</div>
-            <div className="text-3xl font-bold mt-2 cw-text">{summary.totalOrders.toLocaleString()}</div>
+            <div className="text-3xl font-bold mt-2 cw-text">{(summary.totalOrders ?? 0).toLocaleString()}</div>
           </div>
           <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
             <div className="text-sm font-medium cw-muted">{t("analytics_col_paid")}</div>
@@ -2140,7 +2074,6 @@ export default function AnalyticsPage() {
             <div className="text-3xl font-bold mt-2 cw-text">{summary.totalRevenue.toLocaleString()} ₴</div>
           </div>
         </div>
-
 
         <div className="cw-surface rounded-2xl border cw-border cw-shadow overflow-hidden">
           <div className="px-4 sm:px-5 md:px-6 py-4 md:py-5 border-b cw-border">

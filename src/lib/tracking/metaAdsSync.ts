@@ -1,4 +1,5 @@
 import { adminClient } from "@/lib/auth/adminClient";
+import { normalizePixelEventNameStrict } from "@/lib/analytics/pixelEvents";
 import { toIsoDate } from "@/lib/analytics/helpers";
 import { asJson, type Insert } from "@/lib/db/types";
 
@@ -109,21 +110,6 @@ function extractEventCounts(actions: MetaInsightsAction[] | undefined) {
   };
 }
 
-function normalizePixelEventName(raw: string): "view_content" | "initiate_checkout" | "purchase" | null {
-  const value = raw.trim().toLowerCase();
-  if (!value) return null;
-  if (value === "viewcontent" || value === "view_content" || value.includes("fb_pixel_view_content")) {
-    return "view_content";
-  }
-  if (value === "initiatecheckout" || value === "initiate_checkout" || value.includes("fb_pixel_initiate_checkout")) {
-    return "initiate_checkout";
-  }
-  if (value === "purchase" || value.includes("fb_pixel_purchase")) {
-    return "purchase";
-  }
-  return null;
-}
-
 type PixelDayTotals = {
   view_content: number;
   initiate_checkout: number;
@@ -142,7 +128,7 @@ function parsePixelRowTotals(row: unknown): PixelDayTotals {
     (typeof r.action_type === "string" && r.action_type) ||
     null;
   if (rawName) {
-    const key = normalizePixelEventName(rawName);
+    const key = normalizePixelEventNameStrict(rawName);
     if (key) {
       const valueCandidates = [r.total_count, r.total, r.value, r.count];
       const value =
@@ -159,7 +145,7 @@ function parsePixelRowTotals(row: unknown): PixelDayTotals {
     if (!item || typeof item !== "object") continue;
     const entry = item as Record<string, unknown>;
     const nestedName = typeof entry.value === "string" ? entry.value : "";
-    const key = normalizePixelEventName(nestedName);
+    const key = normalizePixelEventNameStrict(nestedName);
     if (!key) continue;
     const count = toNumber(entry.count);
     totals[key] += Math.max(0, Math.round(count));
