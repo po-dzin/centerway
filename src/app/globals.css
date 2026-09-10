@@ -1340,9 +1340,18 @@ body {
        was already under the floor. A control that is comfortable to hit is not
        a luxury the internal surface gets to skip.
 
-       `py-*` utilities stay harmless — they pad inside the minimum. */
+       `py-*` utilities stay harmless — they pad inside the minimum.
+
+       AND THE CORNER FOLLOWS THE BOX, which is why this line changed too.
+       Radius is a function of the box (docs/design-system/geometry-audit-
+       2026-09-07.md): 25–56px is «a control» and takes `md` 16. Buttons have
+       always resolved there — `--cw-radius-btn: var(--cw-radius-md)`. Fields
+       said `sm` 12, so the pair disagreed on the corner as well as the height,
+       and `guard:geometry` could not see it: with no declared height there was
+       no box to judge the radius against. Declaring one made the guard speak
+       up immediately, which is the whole reason it exists. */
     min-height: var(--ds-touch-target-min);
-    border-radius: var(--cw-radius-sm);
+    border-radius: var(--cw-radius-md);
     background-color: var(--cw-surface);
     color: var(--cw-text);
     outline: 2px solid transparent;

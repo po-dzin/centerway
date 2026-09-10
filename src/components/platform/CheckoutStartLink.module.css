@@ -23,7 +23,7 @@
   gap: inherit;
 }
 
-[data-pending="true"] .rest {
+.control[data-pending="true"] .rest {
   visibility: hidden;
 }
 
@@ -40,13 +40,13 @@
   color: inherit;
 }
 
-[data-pending="true"] .wait {
+.control[data-pending="true"] .wait {
   display: flex;
 }
 
 /* The control is in flight; a hover state on it would be answering the reader's
    next question while still working on their last one. */
-[data-pending="true"] {
+.control[data-pending="true"] {
   cursor: progress;
 }
 
