@@ -41,22 +41,13 @@
 import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 
-const WFP_API = "https://api.wayforpay.com/api";
+/* The one field list, imported: this script runs under scripts/lib/register-ts.mjs
+   (see the npm script), so it reads the same source the webhook verifies with.
+   The copy that lived here said a smoke test kept the two in step; no such test
+   existed. */
+import { WFP_CALLBACK_SIGNATURE_FIELDS as CALLBACK_SIGNATURE_FIELDS } from "@/lib/payments/wfp";
 
-/* The callback signature's field list, repeated here rather than imported:
-   this script is plain Node and `src/lib/wfp.ts` is TypeScript behind the Next
-   build. Both are transcriptions of WayForPay's spec, and a smoke test
-   (`smoke-wfp-reconcile.mjs`) asserts they still agree. */
-const CALLBACK_SIGNATURE_FIELDS = [
-  "merchantAccount",
-  "orderReference",
-  "amount",
-  "currency",
-  "authCode",
-  "cardPan",
-  "transactionStatus",
-  "reasonCode",
-];
+const WFP_API = "https://api.wayforpay.com/api";
 
 function loadDotEnv(path = ".env.local") {
   try {

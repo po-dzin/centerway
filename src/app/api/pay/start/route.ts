@@ -7,7 +7,7 @@ import { loadPayableOffer } from "@/lib/platform/offers";
 import {
   createPaymentInvoice,
   resolveLocaleFromRequest,
-} from "@/lib/paymentStart";
+} from "@/lib/payments/paymentStart";
 
 export const runtime = "nodejs";
 

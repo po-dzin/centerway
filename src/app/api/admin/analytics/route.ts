@@ -407,31 +407,26 @@ async function fetchLatestPurchaseJobsByOrderRefs(
     const result = new Map<string, { status: string; created_at: string | null }>();
     if (orderRefs.length === 0) return result;
 
-    const chunkSize = 25;
+    // One query per 200 refs, not one per ref: the old shape issued a
+    // point-lookup against a JSON column for every paid order in the range,
+    // 25 at a time. Newest first, so the first row seen per ref is the latest.
+    const chunkSize = 200;
 
     for (let i = 0; i < orderRefs.length; i += chunkSize) {
         const chunk = orderRefs.slice(i, i + chunkSize);
-        const rows = await Promise.all(
-            chunk.map(async (orderRef) => {
-                const { data, error } = await db
-                    .from("jobs")
-                    .select("status, created_at")
-                    .eq("type", "meta:capi")
-                    .contains("payload", { event_name: "Purchase", order_ref: orderRef })
-                    .order("created_at", { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
-                if (error) throw new Error(error.message);
-                return { orderRef, row: data as { status?: string; created_at?: string | null } | null };
-            })
-        );
+        const { data, error } = await db
+            .from("jobs")
+            .select("status, created_at, payload")
+            .eq("type", "meta:capi")
+            .eq("payload->>event_name", "Purchase")
+            .in("payload->>order_ref", chunk)
+            .order("created_at", { ascending: false });
+        if (error) throw new Error(error.message);
 
-        for (const item of rows) {
-            if (!item.row?.status) continue;
-            result.set(item.orderRef, {
-                status: item.row.status,
-                created_at: item.row.created_at ?? null,
-            });
+        for (const row of data ?? []) {
+            const orderRef = (row.payload as { order_ref?: unknown } | null)?.order_ref;
+            if (typeof orderRef !== "string" || !row.status || result.has(orderRef)) continue;
+            result.set(orderRef, { status: row.status, created_at: row.created_at ?? null });
         }
     }
 
@@ -1277,64 +1272,81 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
     const initiateCheckoutStats = capiEventStats.get("InitiateCheckout")!;
     const purchaseStats = capiEventStats.get("Purchase")!;
 
-    // 7. Access granted proxy (token consumed)
-    const { count: accessGrantedCount, error: accessErr } = await db
-        .from("events")
-        .select("id", { count: "exact", head: true })
-        .gte("created_at", range.fromTs)
-        .lt("created_at", range.toExclusiveTs)
-        .eq("type", "token_consumed");
+    // 7. Six independent totals, one round trip. They were awaited one after
+    // another — each a head-only count — for no reason but the order they were
+    // written in. Business-fact totals stay exact and must not inherit the 50k
+    // row cap used for breakdown/detail datasets.
+    const [
+        { count: accessGrantedCount, error: accessErr },
+        { count: ordersCreatedCount, error: ordersCreatedErr },
+        { count: paidOrdersCount, error: paidErr },
+        { count: scrollDepth50Count, error: scrollErr },
+        { data: firstScrollDepthRow, error: firstScrollErr },
+        { count: localViewContentCount, error: localViewErr },
+    ] = await Promise.all([
+        // Access granted proxy (token consumed)
+        db
+            .from("events")
+            .select("id", { count: "exact", head: true })
+            .gte("created_at", range.fromTs)
+            .lt("created_at", range.toExclusiveTs)
+            .eq("type", "token_consumed"),
+        db
+            .from("orders")
+            .select("id", { count: "exact", head: true })
+            .gte("created_at", range.fromTs)
+            .lt("created_at", range.toExclusiveTs),
+        db
+            .from("orders")
+            .select("id", { count: "exact", head: true })
+            .gte("created_at", range.fromTs)
+            .lt("created_at", range.toExclusiveTs)
+            .in("status", ["paid", "completed"]),
+        db
+            .from("events")
+            .select("id", { count: "exact", head: true })
+            .eq("type", "scroll_depth_50")
+            .gte("created_at", range.fromTs)
+            .lt("created_at", range.toExclusiveTs),
+        db
+            .from("events")
+            .select("created_at")
+            .eq("type", "scroll_depth_50")
+            .order("created_at", { ascending: true })
+            .limit(1)
+            .maybeSingle(),
+        db
+            .from("events")
+            .select("id", { count: "exact", head: true })
+            .eq("type", "view_content")
+            .gte("created_at", range.fromTs)
+            .lt("created_at", range.toExclusiveTs),
+    ]);
     if (accessErr) {
         console.error("Analytics access count error:", accessErr);
         throw new Error(accessErr.message);
     }
-
-    // 7.5 Business-fact totals stay exact and must not inherit the 50k row cap
-    // used for breakdown/detail datasets.
-    const { count: ordersCreatedCount, error: ordersCreatedErr } = await db
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .gte("created_at", range.fromTs)
-        .lt("created_at", range.toExclusiveTs);
     if (ordersCreatedErr) {
         console.error("Analytics orders created count error:", ordersCreatedErr);
         throw new Error(ordersCreatedErr.message);
     }
-
-    const { count: paidOrdersCount, error: paidErr } = await db
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .gte("created_at", range.fromTs)
-        .lt("created_at", range.toExclusiveTs)
-        .in("status", ["paid", "completed"]);
     if (paidErr) {
         console.error("Analytics paid count error:", paidErr);
         throw new Error(paidErr.message);
     }
-    const ordersCreatedTotal = ordersCreatedCount ?? 0;
-    const paidOrdersTotal = paidOrdersCount ?? 0;
-
-    const { count: scrollDepth50Count, error: scrollErr } = await db
-        .from("events")
-        .select("id", { count: "exact", head: true })
-        .eq("type", "scroll_depth_50")
-        .gte("created_at", range.fromTs)
-        .lt("created_at", range.toExclusiveTs);
     if (scrollErr) {
         console.error("Analytics scroll depth count error:", scrollErr);
         throw new Error(scrollErr.message);
     }
-
-    const { data: firstScrollDepthRow, error: firstScrollErr } = await db
-        .from("events")
-        .select("created_at")
-        .eq("type", "scroll_depth_50")
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
     if (firstScrollErr) {
         console.warn("Analytics first scroll depth warning:", firstScrollErr.message);
     }
+    if (localViewErr) {
+        console.error("Analytics local view content count error:", localViewErr);
+        throw new Error(localViewErr.message);
+    }
+    const ordersCreatedTotal = ordersCreatedCount ?? 0;
+    const paidOrdersTotal = paidOrdersCount ?? 0;
     const firstScrollDepthAt = (firstScrollDepthRow as { created_at?: string } | null)?.created_at ?? null;
     const alignedFromTs =
         firstScrollDepthAt && firstScrollDepthAt > range.fromTs ? firstScrollDepthAt : range.fromTs;
@@ -1358,17 +1370,6 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
         ),
         aligned_from: alignedFromTs,
     };
-
-    const { count: localViewContentCount, error: localViewErr } = await db
-        .from("events")
-        .select("id", { count: "exact", head: true })
-        .eq("type", "view_content")
-        .gte("created_at", range.fromTs)
-        .lt("created_at", range.toExclusiveTs);
-    if (localViewErr) {
-        console.error("Analytics local view content count error:", localViewErr);
-        throw new Error(localViewErr.message);
-    }
 
     const pixelResult: PixelTotalsResult = await fetchPixelTotals(range).catch((err: unknown): PixelTotalsResult => {
         console.warn("Analytics Pixel stats warning:", err instanceof Error ? err.message : String(err));

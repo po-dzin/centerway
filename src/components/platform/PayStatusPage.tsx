@@ -8,7 +8,7 @@ import styles from "@/components/platform/PlatformOfferCommerce.module.css";
 import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
 import { PROFILE_PATH_PREFIX, surfaceUrl } from "@/lib/surfaces/catalog";
 import { loadPayableOffer } from "@/lib/platform/offers";
-import type { ReturnStatus } from "@/lib/payReturn";
+import type { ReturnStatus } from "@/lib/payments/payReturn";
 import {
   formatPrice,
   type ProductFulfilment,

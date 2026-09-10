@@ -4,7 +4,7 @@ import { sendConfirmedSaleTelegramReport } from "@/lib/reporting/analyticsReport
 import { sendPurchaseEmail } from "@/lib/email/purchaseEmail";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { extractPaymentMeta } from "@/lib/paymentMeta";
+import { extractPaymentMeta } from "@/lib/payments/paymentMeta";
 import {
   buildWfpAcceptResponse,
   nextOrderStatus,
@@ -15,7 +15,7 @@ import {
   wfpEventTypeFromStatus,
   type WfpCallbackOutcome,
   type WfpSignatureCheck,
-} from "@/lib/wfp";
+} from "@/lib/payments/wfp";
 import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
 import { isStaffOrder } from "@/lib/tracking/staffOrders";
 import {

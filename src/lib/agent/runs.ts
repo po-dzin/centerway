@@ -13,6 +13,7 @@
  */
 
 import { createHash } from "node:crypto";
+import { asJson } from "@/lib/db/types";
 
 import { adminClient } from "@/lib/auth/adminClient";
 import { budgetDayStart, budgetVerdict, type BudgetSubject, type BudgetVerdict } from "./budget";
@@ -90,7 +91,7 @@ export async function recordAgentMessage(input: AgentMessageInput): Promise<void
     role: input.role,
     content: input.content ?? null,
     tool_name: input.toolName ?? null,
-    tool_args: input.toolArgs === undefined ? null : input.toolArgs,
+    tool_args: input.toolArgs === undefined ? null : asJson(input.toolArgs),
     tool_result: input.toolResult ?? null,
   });
   if (error) console.error("[agent] message log failed:", error.message);

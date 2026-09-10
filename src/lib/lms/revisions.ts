@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { asJson } from "@/lib/db/types";
 
 import { adminClient } from "@/lib/auth/adminClient";
 import { diffCourses, validateCourse, type Course, type LessonChange } from "@/lms-core";
@@ -144,12 +145,13 @@ export async function createCourseRevision(input: {
   const { data, error } = await adminClient().rpc("create_lms_course_revision", {
     p_course_id: input.course.id,
     p_kind: input.kind,
-    p_content: input.course,
+    p_content: asJson(input.course),
     p_content_hash: courseRevisionHash(input.course),
-    p_created_by: input.actorId,
-    p_label: input.label?.trim() || null,
-    p_parent_revision_id: input.parentRevisionId ?? null,
-    p_source_revision_id: input.sourceRevisionId ?? null,
+    p_created_by: input.actorId ?? undefined,
+    // The rpc's optional args default to NULL; omitting one is the same call.
+    p_label: input.label?.trim() || undefined,
+    p_parent_revision_id: input.parentRevisionId ?? undefined,
+    p_source_revision_id: input.sourceRevisionId ?? undefined,
   });
   if (error) throw new Error(`lms_revision_write_failed:${error.message}`);
   const row = Array.isArray(data) ? data[0] : data;
@@ -179,10 +181,10 @@ export async function createCourseCheckpointOnce(input: {
   const { data, error } = await adminClient().rpc("create_lms_course_revision_once", {
     p_course_id: input.course.id,
     p_kind: "manual",
-    p_content: input.course,
+    p_content: asJson(input.course),
     p_content_hash: courseRevisionHash(input.course),
-    p_created_by: input.actorId,
-    p_label: input.label?.trim() || null,
+    p_created_by: input.actorId ?? undefined,
+    p_label: input.label?.trim() || undefined,
   });
   if (error) {
     // Функция появилась миграцией 2026-09-07_lms_journal_links.sql. Пока её нет,

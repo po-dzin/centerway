@@ -4,7 +4,7 @@ import {
   productReturnUrls,
   type PayableProductCode,
 } from "@/lib/products";
-import { wfpCallbackOutcome } from "@/lib/wfp";
+import { wfpCallbackOutcome } from "@/lib/payments/wfp";
 
 /**
  * `pending` is the state this flow was missing, and its absence was a lie told

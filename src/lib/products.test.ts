@@ -12,7 +12,7 @@ import {
   type CatalogProductCode,
 } from "@/lib/products";
 import { getSnapshotCourse, getSnapshotCourseByProgram } from "@/lib/lms/catalog";
-import { buildReturnDestination } from "@/lib/payReturn";
+import { buildReturnDestination } from "@/lib/payments/payReturn";
 
 const payableCodes = Object.keys(PRODUCTS) as CatalogProductCode[];
 

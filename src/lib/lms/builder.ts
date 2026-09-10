@@ -937,8 +937,12 @@ export async function reorderBuilderCourses(slugs: string[], allowed: (slug: str
   if (unauthorized.length > 0) throw new Error(`lms_builder_reorder_forbidden:${unauthorized[0]}`);
 
   const db = adminClient();
-  for (let index = 0; index < slugs.length; index += 1) {
-    const { error } = await db.from("lms_courses").update({ sort_order: index + 1 }).eq("slug", slugs[index]);
-    if (error) throw new Error(`lms_builder_reorder_failed:${error.message}`);
-  }
+  // The updates are independent rows; issue them together rather than one
+  // round trip after another. Not a transaction — it never was — and a partial
+  // failure still surfaces as the first error.
+  const results = await Promise.all(
+    slugs.map((slug, index) => db.from("lms_courses").update({ sort_order: index + 1 }).eq("slug", slug))
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw new Error(`lms_builder_reorder_failed:${failed.error.message}`);
 }

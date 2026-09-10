@@ -4,7 +4,13 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     // Mirrors the `@/*` path alias from tsconfig.json.
-    alias: { "@": path.resolve(__dirname, "src") },
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+      // `import "server-only"` throws outside Next's react-server condition;
+      // vitest is Node, and the tests ARE server code. Same stub the scripts'
+      // loader uses (scripts/lib/ts-hooks.mjs).
+      "server-only": path.resolve(__dirname, "src/lib/db/server-only.stub.ts"),
+    },
   },
   test: {
     // Unit tests live next to the code they cover.

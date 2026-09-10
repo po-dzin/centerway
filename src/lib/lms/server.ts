@@ -147,19 +147,26 @@ export async function getLearnerSettings(authUserId: string): Promise<LearnerSet
 
 async function findCustomerIds(identity: LearnerIdentity): Promise<string[]> {
   const db = adminClient();
-  const ids = new Set<string>();
-
-  const byAuth = await db.from("customers").select("id").eq("auth_user_id", identity.authUserId);
-  for (const row of byAuth.data ?? []) ids.add(row.id);
 
   // Purchases made before the account existed carry no auth_user_id, so they are
   // matched by email — but ONLY when the provider verified that email, otherwise
   // claiming a stranger's courses would be as easy as typing their address.
-  if (identity.email && identity.emailVerified) {
-    const byEmail = await db.from("customers").select("id").ilike("email", identity.email.trim().toLowerCase());
-    for (const row of byEmail.data ?? []) ids.add(row.id);
-  }
+  //
+  // Both lookups at once, not one after the other: this runs on every lesson
+  // open and every shelf render, and the second round trip was waiting on the
+  // first for no reason — neither filter depends on the other's result.
+  const byEmail =
+    identity.email && identity.emailVerified
+      ? db.from("customers").select("id").ilike("email", identity.email.trim().toLowerCase())
+      : Promise.resolve({ data: [] as { id: string }[] });
+  const [byAuth, byEmailResult] = await Promise.all([
+    db.from("customers").select("id").eq("auth_user_id", identity.authUserId),
+    byEmail,
+  ]);
 
+  const ids = new Set<string>();
+  for (const row of byAuth.data ?? []) ids.add(row.id);
+  for (const row of byEmailResult.data ?? []) ids.add(row.id);
   return [...ids];
 }
 

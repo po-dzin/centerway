@@ -1,4 +1,4 @@
-import { PayableProductCode } from "./products";
+import { PayableProductCode } from "@/lib/products";
 
 export function buildReturnUrl(appBaseUrl: string, product: PayableProductCode, orderRef: string): string {
   const base = appBaseUrl.replace(/\/+$/, "");

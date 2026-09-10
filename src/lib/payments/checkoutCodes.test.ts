@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildReturnDestination } from "@/lib/payReturn";
+import { buildReturnDestination } from "@/lib/payments/payReturn";
 import {
   PLATFORM_FAILED_URL,
   PLATFORM_THANKS_URL,

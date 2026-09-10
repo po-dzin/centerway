@@ -257,7 +257,7 @@ export async function processPendingJobs(limit = 10) {
                     console.error(`Job [${job.id}] failed:`, err);
 
                     // Calculate next attempt (exponential backoff)
-                    const attempts = job.attempts + 1;
+                    const attempts = (job.attempts ?? 0) + 1;
                     const nextRunAt = new Date();
                     nextRunAt.setMinutes(nextRunAt.getMinutes() + Math.pow(5, attempts)); // wait 5m, 25m, 125m
 

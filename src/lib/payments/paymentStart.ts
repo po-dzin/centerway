@@ -8,7 +8,7 @@ import {
   offerDescription,
   offerHeading,
 } from "@/lib/products";
-import { buildReturnUrl, buildWfpProductName } from "@/lib/pay";
+import { buildReturnUrl, buildWfpProductName } from "@/lib/payments/pay";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";

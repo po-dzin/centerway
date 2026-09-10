@@ -6,7 +6,7 @@ import {
   unauthorizedResponse,
 } from "@/lib/api/adminRoute";
 import { adminClient } from "@/lib/auth/adminClient";
-import { extractPaymentMeta } from "@/lib/paymentMeta";
+import { extractPaymentMeta } from "@/lib/payments/paymentMeta";
 import { sendCapiEvent, type CapiEventPayload } from "@/lib/tracking/capi";
 import { normalizeTrackingString } from "@/lib/tracking/metaClickIds";
 import { getErrorMessage } from "@/lib/errors";

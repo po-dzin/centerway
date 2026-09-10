@@ -1,38 +1,36 @@
-import { NextRequest } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { adminClient } from "./adminClient";
+import type { NextRequest } from "next/server";
 
-export async function requireAdmin(req: NextRequest) {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-        console.error("requireAdmin: No auth header");
-        return null;
-    }
-    const token = authHeader.replace("Bearer ", "");
+import { serviceClient, verifyBearer } from "@/lib/db/server";
+import { log } from "@/lib/logger";
 
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        { auth: { persistSession: false } }
-    );
+export type AdminSession = {
+  user: NonNullable<Awaited<ReturnType<typeof verifyBearer>>>;
+  role: "admin" | "support";
+};
 
-    const { data: { user }, error: sessionError } = await supabase.auth.getUser(token);
-    if (!user) {
-        console.error("requireAdmin: Invalid token", sessionError);
-        return null;
-    }
+/**
+ * The caller as a member of staff, or null.
+ *
+ * Roles live in `user_roles` only (platform_users.role was removed 2026-08-21
+ * as a self-promotion hole). The value is compared lowercased because rows
+ * written by hand carried "Admin" beside "admin"; the returned role is the
+ * normalized form, so callers compare against two strings, not four.
+ */
+export async function requireAdmin(req: NextRequest): Promise<AdminSession | null> {
+  const user = await verifyBearer(req.headers.get("Authorization"));
+  if (!user) return null;
 
-    const db = adminClient();
-    const { data, error: roleError } = await db.from("user_roles").select("role").eq("user_id", user.id).single();
+  const { data, error } = await serviceClient()
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-    if (roleError) {
-        console.error("requireAdmin: Role fetch error", roleError);
-        return null;
-    }
-    if (!data || !["admin", "support", "Admin", "Support"].includes(data.role)) {
-        console.error("requireAdmin: Invalid role or missing data", data);
-        return null;
-    }
-    const normalizedRole = String(data.role).toLowerCase();
-    return { user, role: normalizedRole };
+  if (error) {
+    log.error("auth.role_fetch_failed", { userId: user.id, message: error.message });
+    return null;
+  }
+  const role = String(data?.role ?? "").toLowerCase();
+  if (role !== "admin" && role !== "support") return null;
+  return { user, role };
 }

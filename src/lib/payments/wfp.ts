@@ -8,7 +8,7 @@ function norm(v: unknown): string | null {
 
 // WayForPay service-callback signature: HMAC-MD5 over these fields joined by ";",
 // keyed with the merchant secret. Order is fixed by WayForPay's spec.
-const WFP_CALLBACK_SIGNATURE_FIELDS = [
+export const WFP_CALLBACK_SIGNATURE_FIELDS = [
   "merchantAccount",
   "orderReference",
   "amount",

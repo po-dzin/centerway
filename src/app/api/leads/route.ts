@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { persistLeadBestEffort, type LeadRecord } from "@/lib/checkoutFlow";
+import { persistLeadBestEffort, type LeadRecord } from "@/lib/payments/checkoutFlow";
 import { normalizeProduct, type ProductCode } from "@/lib/products";
 import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";

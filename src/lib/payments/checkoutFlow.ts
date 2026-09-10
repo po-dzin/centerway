@@ -1,5 +1,6 @@
 import { ProductCode } from "@/lib/products";
-import { CheckoutStartRequest, buildCheckoutEventPayload } from "@/lib/checkout";
+import { asJson } from "@/lib/db/types";
+import { CheckoutStartRequest, buildCheckoutEventPayload } from "@/lib/payments/checkout";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export type LeadRecord = {
@@ -94,14 +95,14 @@ export async function persistLeadBestEffort(
   }
 
   // Primary storage: separate leads list.
-  const { error } = await sb.from("leads").insert(lead);
+  const { error } = await sb.from("leads").insert({ ...lead, payload: asJson(lead.payload) });
   if (!error) return "leads";
 
   // Non-fatal fallback: preserve lead as event if leads table/columns mismatch.
   const { error: eventErr } = await sb.from("events").insert({
     type: "lead_captured",
     order_ref: lead.order_ref,
-    payload: lead,
+    payload: asJson(lead),
   });
 
   if (!eventErr) return "events_fallback";

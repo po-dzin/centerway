@@ -24,6 +24,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import { asJson } from "@/lib/db/types";
 import type { Course } from "@/lms-core";
 
 import { planRemovedRows, prepareCourseWrite, type WriteCourseOptions, type WriteCourseResult } from "./authoring";
@@ -87,18 +88,18 @@ export async function writeCourseRelease(input: {
 
   const { data, error } = await db.rpc("apply_lms_course_release", {
     p_course_id: input.courseId,
-    p_course: prepared.courseWithoutStatus,
-    p_modules: prepared.modules,
-    p_lessons: prepared.lessons,
+    p_course: asJson(prepared.courseWithoutStatus),
+    p_modules: asJson(prepared.modules),
+    p_lessons: asJson(prepared.lessons),
     p_remove_lesson_ids: removedLessonIds,
     p_remove_module_ids: deletableModuleIds,
-    p_final_values: { ...prepared.finalValues, ...(input.finalValues ?? {}) },
+    p_final_values: asJson({ ...prepared.finalValues, ...(input.finalValues ?? {}) }),
     p_kind: input.journal.kind,
-    p_content: course,
+    p_content: asJson(course),
     p_content_hash: courseRevisionHash(course),
-    p_created_by: input.journal.actorId,
-    p_label: input.journal.label?.trim() || null,
-    p_source_revision_id: input.journal.sourceRevisionId ?? null,
+    p_created_by: input.journal.actorId ?? undefined,
+    p_label: input.journal.label?.trim() || undefined,
+    p_source_revision_id: input.journal.sourceRevisionId ?? undefined,
   });
 
   if (error) {
@@ -142,13 +143,13 @@ export async function journalCourseState(input: {
 }): Promise<CourseRevisionRef> {
   const { data, error } = await adminClient().rpc("journal_lms_course_state", {
     p_course_id: input.courseId,
-    p_values: input.values ?? {},
+    p_values: asJson(input.values ?? {}),
     p_kind: input.journal.kind,
-    p_content: input.course,
+    p_content: asJson(input.course),
     p_content_hash: courseRevisionHash(input.course),
-    p_created_by: input.journal.actorId,
-    p_label: input.journal.label?.trim() || null,
-    p_source_revision_id: input.journal.sourceRevisionId ?? null,
+    p_created_by: input.journal.actorId ?? undefined,
+    p_label: input.journal.label?.trim() || undefined,
+    p_source_revision_id: input.journal.sourceRevisionId ?? undefined,
   });
 
   if (error) {
@@ -183,9 +184,9 @@ export async function checkpointAutosave(input: {
 }): Promise<CourseRevisionRef | null> {
   const { data, error } = await adminClient().rpc("checkpoint_lms_course_autosave", {
     p_course_id: input.courseId,
-    p_content: input.course,
+    p_content: asJson(input.course),
     p_content_hash: courseRevisionHash(input.course),
-    p_created_by: input.actorId,
+    p_created_by: input.actorId ?? undefined,
   });
 
   if (error) {

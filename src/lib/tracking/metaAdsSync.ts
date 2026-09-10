@@ -1,4 +1,5 @@
 import { adminClient } from "@/lib/auth/adminClient";
+import { asJson, type Insert } from "@/lib/db/types";
 
 type MetaInsightsAction = {
   action_type?: string;
@@ -217,14 +218,14 @@ async function syncPixelDailyStats(
     view_content: payload.totals.view_content,
     initiate_checkout: payload.totals.initiate_checkout,
     purchase: payload.totals.purchase,
-    raw: { rows: payload.rawRows },
+    raw: asJson({ rows: payload.rawRows }),
     synced_at: new Date().toISOString(),
   }));
 
   if (upsertRows.length > 0) {
     const { error } = await db
       .from("analytics_pixel_daily")
-      .upsert(upsertRows, { onConflict: "day,pixel_id" });
+      .upsert(upsertRows as Insert<"analytics_pixel_daily">[], { onConflict: "day,pixel_id" });
     if (error) {
       throw new Error(error.message);
     }
@@ -334,7 +335,7 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
   if (upsertRows.length > 0) {
     const { error } = await db
       .from("analytics_meta_daily")
-      .upsert(upsertRows, { onConflict: "day,account_id" });
+      .upsert(upsertRows as Insert<"analytics_meta_daily">[], { onConflict: "day,account_id" });
     if (error) {
       throw new Error(error.message);
     }
@@ -395,7 +396,7 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
   if (campaignUpsertRows.length > 0) {
     const { error } = await db
       .from("analytics_meta_campaign_daily")
-      .upsert(campaignUpsertRows, { onConflict: "day,account_id,campaign_id" });
+      .upsert(campaignUpsertRows as Insert<"analytics_meta_campaign_daily">[], { onConflict: "day,account_id,campaign_id" });
     if (error) {
       const message = error.message.toLowerCase();
       const isMissingTable =
@@ -469,7 +470,7 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
   if (adsetUpsertRows.length > 0) {
     const { error } = await db
       .from("analytics_meta_adset_daily")
-      .upsert(adsetUpsertRows, { onConflict: "day,account_id,adset_id" });
+      .upsert(adsetUpsertRows as Insert<"analytics_meta_adset_daily">[], { onConflict: "day,account_id,adset_id" });
     if (error) {
       const message = error.message.toLowerCase();
       const isMissingTable =
@@ -547,7 +548,7 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
   if (adUpsertRows.length > 0) {
     const { error } = await db
       .from("analytics_meta_ad_daily")
-      .upsert(adUpsertRows, { onConflict: "day,account_id,ad_id" });
+      .upsert(adUpsertRows as Insert<"analytics_meta_ad_daily">[], { onConflict: "day,account_id,ad_id" });
     if (error) {
       const message = error.message.toLowerCase();
       const isMissingTable =

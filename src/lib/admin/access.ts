@@ -33,6 +33,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import { asJson } from "@/lib/db/types";
 import { sendPurchaseEmail } from "@/lib/email/purchaseEmail";
 import { writeCourseStructure } from "@/lib/lms/authoring";
 import { JOURNAL_MIGRATION_REQUIRED, writeCourseRelease } from "@/lib/lms/release";
@@ -98,7 +99,7 @@ export async function writeAudit(
         action: entry.action,
         entity_type: entry.entityType,
         entity_id: entry.entityId,
-        metadata: entry.metadata,
+        metadata: asJson(entry.metadata),
     });
     if (error) console.error(`access: audit write failed for ${entry.action}`, error.message);
 }

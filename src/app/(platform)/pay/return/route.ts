@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildReturnDestination, resolveReturnStatus } from "@/lib/payReturn";
+import { buildReturnDestination, resolveReturnStatus } from "@/lib/payments/payReturn";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { normalizePayableProduct, productReturnUrls, type PayableProductCode } from "@/lib/products";
 

@@ -17,6 +17,7 @@
  */
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { asJson } from "@/lib/db/types";
 import type { ProductCode } from "@/lib/products";
 import { callTelegramBotApi, sendTelegramMessage } from "@/lib/tg";
 import { verifyTelegramLinkToken } from "@/lib/platform/telegramLink";
@@ -337,7 +338,7 @@ async function logEventBestEffort(
   type: string,
   payload: Record<string, unknown>
 ): Promise<void> {
-  await db.from("events").insert({ type, order_ref: null, payload });
+  await db.from("events").insert({ type, order_ref: null, payload: asJson(payload) });
 }
 
 async function findPaidOrder(

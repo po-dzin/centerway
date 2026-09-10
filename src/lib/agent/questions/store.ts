@@ -12,6 +12,18 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+/**
+ * NOT IN THE GENERATED TYPES, AND NOT IN PRODUCTION. The table comes from
+ * docs/migration/sql/2026-09-01_agent_questions.sql, which was written and
+ * never applied: `npm run db:types` (2026-09-10) has no `agent_questions`, so
+ * every `captureQuestion` call in production has been failing quietly with
+ * "[questions] capture failed". Until the migration is applied and the types
+ * regenerated, this module talks to the table through an untyped client — the
+ * type error was the first signal anyone had that the table is missing.
+ */
+const untypedDb = () => adminClient() as unknown as SupabaseClient;
 import { isStorableQuestion, redactPersonal } from "./redact";
 
 export type QuestionSource = "bot_fallback" | "bot_support" | "assistant";
@@ -42,7 +54,7 @@ export async function captureQuestion(input: { text: string; source: QuestionSou
   if (!isStorableQuestion(text)) return false;
 
   try {
-    const { error } = await adminClient()
+    const { error } = await untypedDb()
       .from("agent_questions")
       .insert({ text, source: input.source, redacted: removed });
     if (error) {
@@ -77,7 +89,7 @@ function toQuestion(row: Record<string, unknown>): CapturedQuestion {
 export async function listQuestions(
   options: { limit?: number; labelled?: boolean; source?: QuestionSource } = {}
 ): Promise<CapturedQuestion[]> {
-  let query = adminClient()
+  let query = untypedDb()
     .from("agent_questions")
     .select("id, text, source, expected_doc_id, topic, created_at")
     .order("created_at", { ascending: false })

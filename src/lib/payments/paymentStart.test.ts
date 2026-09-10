@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createPaymentInvoiceWithDeps } from "@/lib/paymentStart";
+import { createPaymentInvoiceWithDeps } from "@/lib/payments/paymentStart";
 import { catalogOffer, type PayableOffer } from "@/lib/products";
 
 /**

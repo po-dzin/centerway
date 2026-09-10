@@ -18,7 +18,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
-import { fulfilmentDestination } from "@/lib/fulfilmentDestination";
+import { fulfilmentDestination } from "@/lib/payments/fulfilmentDestination";
 import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
 import type { ProductFulfilment } from "@/lib/products";
 import { sendEmail } from "./resend";

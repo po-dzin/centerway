@@ -1,4 +1,5 @@
 import { adminClient } from "@/lib/auth/adminClient";
+import { asJson } from "@/lib/db/types";
 import {
   DOSHA_TEST_QUESTIONS,
   DOSHA_TEST_SLUG,
@@ -148,42 +149,45 @@ export async function ensureDoshaTestSeed(db: SupabaseAdmin): Promise<TestDefini
     test = inserted as TestDefinitionRow;
   }
 
-  for (const question of DOSHA_TEST_QUESTIONS) {
-    const { data: qRow, error: qErr } = await db
-      .from("test_questions")
-      .upsert(
-        {
-          test_id: test.id,
-          order_index: question.order,
-          question_code: question.code,
-          question_text: question.text,
-          status: "active",
-        },
-        { onConflict: "test_id,question_code" }
-      )
-      .select("id, test_id, order_index, question_code, question_text, status")
-      .single();
+  // Two writes, not one per question and one per option: the seed is a few
+  // dozen questions with a handful of options each, and the sequential version
+  // was well over a hundred round trips for a fixture that never changes.
+  const { data: questionRows, error: qErr } = await db
+    .from("test_questions")
+    .upsert(
+      DOSHA_TEST_QUESTIONS.map((question) => ({
+        test_id: test.id,
+        order_index: question.order,
+        question_code: question.code,
+        question_text: question.text,
+        status: "active",
+      })),
+      { onConflict: "test_id,question_code" }
+    )
+    .select("id, question_code");
 
-    if (qErr || !qRow) {
-      throw new Error(`test_question_upsert_failed:${question.code}:${qErr?.message ?? "unknown"}`);
-    }
+  if (qErr || !questionRows) {
+    throw new Error(`test_question_upsert_failed:${qErr?.message ?? "unknown"}`);
+  }
+  const questionIdByCode = new Map(questionRows.map((row) => [row.question_code, row.id] as const));
 
-    for (const option of question.options) {
-      const { error: oErr } = await db.from("test_options").upsert(
-        {
-          question_id: qRow.id,
-          option_order: option.order,
-          option_code: option.code,
-          option_text: option.text,
-          mapped_dosha: option.mappedDosha,
-        },
-        { onConflict: "question_id,option_code" }
-      );
+  const optionRows = DOSHA_TEST_QUESTIONS.flatMap((question) => {
+    const questionId = questionIdByCode.get(question.code);
+    if (!questionId) throw new Error(`test_question_upsert_failed:${question.code}:missing_id`);
+    return question.options.map((option) => ({
+      question_id: questionId,
+      option_order: option.order,
+      option_code: option.code,
+      option_text: option.text,
+      mapped_dosha: option.mappedDosha,
+    }));
+  });
 
-      if (oErr) {
-        throw new Error(`test_option_upsert_failed:${option.code}:${oErr.message}`);
-      }
-    }
+  const { error: oErr } = await db
+    .from("test_options")
+    .upsert(optionRows, { onConflict: "question_id,option_code" });
+  if (oErr) {
+    throw new Error(`test_option_upsert_failed:${oErr.message}`);
   }
 
   return test;
@@ -329,7 +333,7 @@ export async function emitDoshaTestEvent(
     type: eventType,
     order_ref: null,
     customer_id: customerId,
-    payload,
+    payload: asJson(payload),
   });
 
   if (error) {

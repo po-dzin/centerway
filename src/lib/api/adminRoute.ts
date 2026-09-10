@@ -25,7 +25,13 @@ export function parseLimitOffset(
     searchParams: URLSearchParams,
     { defaultLimit, maxLimit }: { defaultLimit: number; maxLimit: number }
 ) {
-    const limit = Math.min(Number(searchParams.get("limit") ?? defaultLimit), maxLimit);
-    const offset = Number(searchParams.get("offset") ?? 0);
+    // `Number("abc")` is NaN, and `.range(NaN, NaN)` is a PostgREST 400 that
+    // reads as a broken page. A value that is not a whole number falls back.
+    const wholeOr = (raw: string | null, fallback: number) => {
+        const n = Number(raw);
+        return raw !== null && Number.isInteger(n) && n >= 0 ? n : fallback;
+    };
+    const limit = Math.min(wholeOr(searchParams.get("limit"), defaultLimit), maxLimit);
+    const offset = wholeOr(searchParams.get("offset"), 0);
     return { limit, offset };
 }

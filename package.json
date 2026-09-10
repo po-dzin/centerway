@@ -46,7 +46,7 @@
     "lms:pull": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/lms-pull.mjs",
     "lms:snapshot:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/lms-snapshot-check.mjs",
     "lms:grant": "node scripts/lms-grant.mjs",
-    "wfp:reconcile": "node scripts/wfp-reconcile.mjs",
+    "wfp:reconcile": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/wfp-reconcile.mjs",
     "wfp:refund": "node scripts/wfp-refund.mjs",
     "media:sweep": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/media-sweep.mjs",
     "media:sweep:apply": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/media-sweep.mjs --apply",
@@ -111,7 +111,9 @@
     "next": "16.1.5",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "sharp": "^0.34.5"
+    "server-only": "^0.0.1",
+    "sharp": "^0.34.5",
+    "zod": "^4.6.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.51.1",
