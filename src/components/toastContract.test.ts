@@ -17,7 +17,7 @@ describe("one notification contract for four application surfaces", () => {
       expect(source).toContain("useToast()");
       expect(source).not.toMatch(/\[note, setNote\]|\[message, setMessage\]|\{note \? <p/);
     }
-    expect(read("src/components/builder/BuilderCourseList.tsx")).toContain('className={styles.noticeLine} role="alert"');
+    expect(["src/components/builder/BuilderCourseList.tsx", "src/components/builder/BuilderCourseEntry.tsx", "src/components/builder/BuilderImportPanel.tsx"].map(read).join("\n")).toContain('className={styles.noticeLine} role="alert"');
   });
   it("uses fixed token-based geometry, semantic announcements and the shared close glyph", () => {
     const css = read("src/components/ToastProvider.module.css");
@@ -32,7 +32,7 @@ describe("one notification contract for four application surfaces", () => {
     expect(source).not.toContain("<path");
   });
   it("ships menu icons in both deterministic sprites and the typed registry", () => {
-    const menu = read("src/components/builder/BuilderCourseList.tsx");
+    const menu = ["src/components/builder/BuilderCourseList.tsx", "src/components/builder/BuilderCourseEntry.tsx", "src/components/builder/BuilderImportPanel.tsx"].map(read).join("\n");
     for (const name of ["export", "unpublish"]) {
       expect(menu).toContain(`icon: "${name}"`);
       expect(read("src/lib/brand/iconNames.ts")).toContain(`"${name}"`);

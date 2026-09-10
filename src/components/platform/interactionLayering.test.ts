@@ -125,7 +125,7 @@ describe("platform interaction layers", () => {
 
   it("keeps both shelves on the same post-filter and presentation primitives", () => {
     const library = read("src/components/platform/cabinet/LearnShelfClient.tsx");
-    const workshop = read("src/components/builder/BuilderCourseList.tsx");
+    const workshop = ["src/components/builder/BuilderCourseList.tsx", "src/components/builder/BuilderCourseEntry.tsx", "src/components/builder/BuilderImportPanel.tsx"].map(read).join("\n");
     const presentation = read("src/components/platform/cabinet/ShelfPresentation.tsx");
     const presentationCss = read("src/components/platform/cabinet/ShelfPresentation.module.css");
     const filterCss = read("src/components/platform/cabinet/ShelfFilter.module.css");
