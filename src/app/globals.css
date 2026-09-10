@@ -1823,10 +1823,16 @@ body {
   }
 
   .cw-tabbar {
-    /* WHAT THE BAR'S LINE IS DRAWN ON, so the current tab can erase it.
-       The bar itself is transparent and its rule sits on whatever ground is
-       behind it — measured as `--cw-bg` on the admin's pages. A bar placed on
-       a plate overrides this one token rather than restating the notch. */
+    /* THE TAB'S OWN CLEARANCE FROM THE WORD (2026-09-10). The shared token is
+       tuned for a nav row, where nothing else sits this close to the mark; on
+       the tab bar the mark and the bar's rule are the SAME line, and that
+       merged line read as sitting on the letters. Scoped here rather than on
+       `--cw-ink-stroke-offset` itself, which every nav link, crumb and menu
+       row also reads — moving it would have pushed the mark away from the
+       word everywhere to fix a distance that was only close on tabs. Set on
+       the bar so it inherits down to both the mark (below) and the bar's own
+       rule, which is why the two stay locked together after this. */
+    --cw-tabbar-stroke-offset: calc(var(--cw-ink-stroke-offset) - 0.15rem);
     display: flex;
     align-items: flex-end;
     gap: var(--cw-space-2xs);
@@ -1845,7 +1851,7 @@ body {
        `scroll`, so the rule holds still while the tabs scroll under it.
 
        THE OFFSET IS DERIVED, NOT MEASURED. The stroke's own two tokens say
-       where its ink lands: `--cw-ink-stroke-offset` is where the mark's box
+       where its ink lands: `--cw-tabbar-stroke-offset` is where the mark's box
        hangs below the label and `--cw-ink-stroke-height` is that box's height,
        so the ink sits half a height up from the box's bottom edge. Subtracting
        that from the tab's own bottom padding is the distance between the two
@@ -1855,7 +1861,7 @@ body {
     background-repeat: no-repeat;
     background-size: 100% 1px;
     background-position: left
-      calc(100% - (var(--cw-space-xs) + var(--cw-ink-stroke-offset) + var(--cw-ink-stroke-height) / 2));
+      calc(100% - (var(--cw-space-xs) + var(--cw-tabbar-stroke-offset) + var(--cw-ink-stroke-height) / 2));
     /* Content box, not padding box: a scroll container's scrollbar gutter is
        carved out of the padding box's bottom, which is where a `bottom`-ish
        background would otherwise land. */
@@ -1864,6 +1870,12 @@ body {
     min-height: var(--ds-touch-target-min);
     /* The bar itself comes from the one scrollbar recipe further down this
        file, where `.cw-tabbar` is named as the rail form. */
+  }
+
+  /* Reads the bar's own clearance, inherited down from `.cw-tabbar` above —
+     the one place this differs from every other consumer of the shared mark. */
+  .cw-tabbar .cw-ink-label-mark {
+    bottom: var(--cw-tabbar-stroke-offset);
   }
 
   .cw-tab {
@@ -2489,9 +2501,27 @@ body {
      which is why they are classes and not attributes. */
   .cw-scroll,
   .custom-scrollbar,
-  .cw-scroll-rail,
+  .cw-scroll-rail {
+    scrollbar-width: thin;
+    scrollbar-color: var(--cw-mat-scroll-thumb) var(--cw-mat-scroll-track);
+  }
+
+  /* THE TAB STRIP'S RAIL IS INVISIBLE UNTIL IT MOVES (2026-09-10).
+     Every other scroller here reads a colour permanently — that is right on
+     a pane, where the bar's own presence tells you there is more to see. On
+     the 36px tab strip a permanent 4px hairline sat directly under the ink
+     line this session just spent two passes aligning, reading as a second,
+     unwanted rule. `AdminTabs` marks the bar `data-scrolling="true"` for as
+     long as a scroll is actually happening (plus a short hold so a flick
+     doesn't flash on and off); this rule and the ::-webkit ones below key off
+     that attribute instead of `:hover`, because a permanently-hovered desktop
+     pointer would otherwise defeat the point. */
   .cw-tabbar {
     scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+
+  .cw-tabbar[data-scrolling="true"] {
     scrollbar-color: var(--cw-mat-scroll-thumb) var(--cw-mat-scroll-track);
   }
 
@@ -2531,21 +2561,39 @@ body {
 
   .cw-scroll::-webkit-scrollbar-track,
   .custom-scrollbar::-webkit-scrollbar-track,
-  .cw-scroll-rail::-webkit-scrollbar-track,
+  .cw-scroll-rail::-webkit-scrollbar-track {
+    background: var(--cw-mat-scroll-track);
+  }
+
+  /* Transparent, not absent: the track still reserves its 4px so the strip's
+     height does not shift the instant a scroll starts. */
   .cw-tabbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .cw-tabbar[data-scrolling="true"]::-webkit-scrollbar-track {
     background: var(--cw-mat-scroll-track);
   }
 
   .cw-scroll::-webkit-scrollbar-thumb,
   .custom-scrollbar::-webkit-scrollbar-thumb,
-  .cw-scroll-rail::-webkit-scrollbar-thumb,
-  .cw-tabbar::-webkit-scrollbar-thumb {
+  .cw-scroll-rail::-webkit-scrollbar-thumb {
     background-color: var(--cw-mat-scroll-thumb);
     /* The inset is what makes a 10px bar read as a 6px hairline: the thumb is
        clipped to its padding box, so the border is transparent margin rather
        than a second colour. On the 4px rail there is nothing to inset, and a
        2px border on a 4px bar would erase it. */
     border-radius: var(--cw-radius-pill);
+  }
+
+  .cw-tabbar::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: var(--cw-radius-pill);
+    transition: background-color 200ms ease;
+  }
+
+  .cw-tabbar[data-scrolling="true"]::-webkit-scrollbar-thumb {
+    background-color: var(--cw-mat-scroll-thumb);
   }
 
   .cw-scroll::-webkit-scrollbar-thumb,
@@ -2557,8 +2605,11 @@ body {
   @media (hover: hover) {
     .cw-scroll:hover::-webkit-scrollbar-thumb,
   .custom-scrollbar:hover::-webkit-scrollbar-thumb,
-  .cw-scroll-rail:hover::-webkit-scrollbar-thumb,
-  .cw-tabbar:hover::-webkit-scrollbar-thumb {
+  .cw-scroll-rail:hover::-webkit-scrollbar-thumb {
+      background-color: var(--cw-mat-scroll-thumb-hover);
+    }
+
+    .cw-tabbar[data-scrolling="true"]:hover::-webkit-scrollbar-thumb {
       background-color: var(--cw-mat-scroll-thumb-hover);
     }
   }
