@@ -175,6 +175,7 @@
     --cw-platform-on-accent: var(--cw-sem-on-warmth);
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-mark: var(--cw-sem-guide-strong);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
     --cw-status-success: var(--cw-sem-state-success);
     --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
@@ -446,6 +447,7 @@
     --cw-platform-on-accent: #191918;
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-platform-text);
+    --cw-platform-mark: var(--cw-sem-warmth);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-warmth) 0%, var(--cw-sem-warmth-strong) 100%);
     --cw-status-success: color-mix(in srgb, var(--cw-sem-state-success) 42%, #faefe0 58%);
     --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 22%, transparent);
@@ -615,6 +617,7 @@
     --cw-platform-on-accent: var(--cw-sem-on-warmth);
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-mark: var(--cw-sem-guide-strong);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
     --cw-status-success: var(--cw-sem-state-success);
     --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
@@ -671,6 +674,7 @@
     --cw-platform-on-accent: var(--cw-sem-on-warmth);
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-mark: var(--cw-sem-guide-strong);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
     --cw-status-success: var(--cw-sem-state-success);
     --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
@@ -711,6 +715,7 @@
     --cw-platform-on-accent: var(--cw-sem-on-warmth);
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-mark: var(--cw-sem-guide-strong);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
     --cw-status-success: var(--cw-sem-state-success);
     --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
@@ -752,6 +757,7 @@
     --cw-platform-on-accent: var(--cw-sem-on-warmth);
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-mark: var(--cw-sem-guide-strong);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
     --cw-status-success: var(--cw-sem-state-success);
     --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
