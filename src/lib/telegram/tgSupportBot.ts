@@ -17,6 +17,7 @@
  */
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { PRODUCTS } from "@/lib/products";
 import { normalizeEmail } from "@/lib/strings";
 import { asJson } from "@/lib/db/types";
 import type { ProductCode } from "@/lib/products";
@@ -122,13 +123,17 @@ type Delivery = { kind: "platform"; courseSlug: string };
 
 export type FaqKey = keyof typeof botCopy.faq;
 
-export const PRODUCT_DELIVERY: Record<BotProductCode, Delivery> = {
-  short: { kind: "platform", courseSlug: "short" },
-  // The ROW name, which is not the name it is sold under: /programs/irem.
-  irem: { kind: "platform", courseSlug: "irem-gymnastics" },
-  way21: { kind: "platform", courseSlug: "way21" },
-  "reset-day": { kind: "platform", courseSlug: "reset-day" },
-};
+/* DERIVED, NOT KEPT. This was a second hand-written map of where each
+   course lives, beside `PRODUCTS[code].fulfilment`, and a test held the two
+   in step. The catalogue's fulfilment IS the answer — the row slug it names
+   is the row the cabinet opens — so the bot reads it and cannot drift. */
+export const PRODUCT_DELIVERY: Record<BotProductCode, Delivery> = Object.fromEntries(
+  (Object.keys(PRODUCT_LABELS) as BotProductCode[]).map((code) => {
+    const fulfilment = PRODUCTS[code].fulfilment;
+    if (fulfilment.kind !== "course") throw new Error(`support bot: ${code} is not delivered as a course`);
+    return [code, { kind: "platform", courseSlug: fulfilment.courseSlug }];
+  })
+) as Record<BotProductCode, Delivery>;
 
 
 export function assertProduct(value: string | null | undefined): BotProductCode | null {
