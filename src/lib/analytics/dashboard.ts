@@ -10,7 +10,7 @@
 
 import { asFiniteNumber, safeDivide, getIsoDateInTimeZone } from "@/lib/analytics/helpers";
 import { ANALYTICS_TZ, isIsoDate, type DateRange } from "@/lib/analytics/range";
-import { normalizePixelEventNameLoose } from "@/lib/analytics/pixelEvents";
+import { normalizePixelEventNameStrict } from "@/lib/analytics/pixelEvents";
 import { unstable_cache } from "next/cache";
 import { adminClient } from "@/lib/auth/adminClient";
 import { normalizeTrackingString, resolveFbc } from "@/lib/tracking/metaClickIds";
@@ -451,7 +451,7 @@ function parsePixelTotals(payload: unknown, range: DateRange): PixelTotals | nul
             (typeof r.action_type === "string" && r.action_type) ||
             null;
         if (rawName) {
-            const key = normalizePixelEventNameLoose(rawName);
+            const key = normalizePixelEventNameStrict(rawName);
             if (key) {
                 const valueCandidates = [r.total_count, r.total, r.value, r.count];
                 const value = valueCandidates
@@ -468,7 +468,7 @@ function parsePixelTotals(payload: unknown, range: DateRange): PixelTotals | nul
             const entry = item as Record<string, unknown>;
             const eventName = typeof entry.value === "string" ? entry.value : null;
             if (!eventName) continue;
-            const key = normalizePixelEventNameLoose(eventName);
+            const key = normalizePixelEventNameStrict(eventName);
             if (!key) continue;
             const count = Number(entry.count);
             if (!Number.isFinite(count) || count < 0) continue;
