@@ -161,3 +161,122 @@ describe("closeWonLeadsForPurchase", () => {
     expect(result.closed).toBe(1);
   });
 });
+
+describe("closing the wrong person's leads", () => {
+  it("matches the contact exactly and never by prefix or substring", () => {
+    // `.eq`, not `.ilike`: `ann@example.com` must not reach
+    // `ann@example.com.attacker.tld`, which is a domain anybody can register.
+    const db = fakeDb([
+      { id: "victim", email: "ann@example.com", product_code: "consult", stage: "new" },
+    ]);
+    return closeWonLeadsForPurchase(db as never, {
+      email: "ann@example.com.attacker.tld",
+      productCode: "consult",
+      scope: "all_open",
+    }).then((result) => {
+      expect(result.closed).toBe(0);
+      expect(db.rows[0].stage).toBe("new");
+    });
+  });
+
+  it("closes only the contact's own leads when several people are waiting", async () => {
+    const db = fakeDb([
+      { id: "mine", email: "ann@example.com", product_code: "consult", stage: "new" },
+      { id: "theirs", email: "bob@example.com", product_code: "consult", stage: "new" },
+      { id: "also-theirs", phone: "+380509998877", product_code: "consult", stage: "in_progress" },
+    ]);
+    const result = await closeWonLeadsForPurchase(db as never, {
+      email: "ann@example.com",
+      productCode: "consult",
+      scope: "all_open",
+    });
+    expect(result.closed).toBe(1);
+    expect(db.rows.map((row) => row.stage)).toEqual(["won", "new", "in_progress"]);
+  });
+
+  it("counts a person found by both email and phone once, not twice", async () => {
+    // Two lookups feed one map keyed by id; a duplicate would inflate the count
+    // and, worse, suggest two leads closed where there was one.
+    const db = fakeDb([
+      { id: "l1", email: "ann@example.com", phone: "+380501112233", product_code: "consult", stage: "new" },
+    ]);
+    const result = await closeWonLeadsForPurchase(db as never, {
+      email: "ann@example.com",
+      phone: "+380501112233",
+      productCode: "consult",
+      scope: "all_open",
+    });
+    expect(result.closed).toBe(1);
+  });
+
+  it("closes nothing on a purchase with no recognisable product under same_product scope", async () => {
+    // An empty canonical key must not become a wildcard that matches every lead.
+    const db = fakeDb([{ id: "l1", email: "ann@example.com", product_code: "consult", stage: "new" }]);
+    const result = await closeWonLeadsForPurchase(db as never, {
+      email: "ann@example.com",
+      productCode: null,
+      scope: "same_product",
+    });
+    expect(result.closed).toBe(0);
+    expect(db.rows[0].stage).toBe("new");
+  });
+
+  it("treats a whitespace-only contact as no contact at all", async () => {
+    const db = fakeDb([{ id: "l1", email: "ann@example.com", product_code: "consult", stage: "new" }]);
+    const result = await closeWonLeadsForPurchase(db as never, {
+      email: "   ",
+      phone: "  ",
+      productCode: "consult",
+      scope: "all_open",
+    });
+    expect(result).toEqual({ closed: 0, reason: "no_contact" });
+  });
+
+  it("normalises the buyer's email the way the form stored it", async () => {
+    // A gateway that quotes ANN@Example.COM must still find the lead the form
+    // wrote as ann@example.com, or the stage never moves for anybody who typed
+    // their address with a capital letter.
+    const db = fakeDb([{ id: "l1", email: "ann@example.com", product_code: "consult", stage: "new" }]);
+    const result = await closeWonLeadsForPurchase(db as never, {
+      email: "  ANN@Example.COM ",
+      productCode: "consult",
+      scope: "all_open",
+    });
+    expect(result.closed).toBe(1);
+  });
+});
+
+describe("failing safe", () => {
+  it("reports nothing_open rather than throwing when the read fails", async () => {
+    // Every caller is past the point where money moved. A missing column or a
+    // permissions change must degrade to "the stage did not move".
+    const db = {
+      from: () => ({
+        select: () => ({
+          in: () => ({ eq: async () => ({ data: null, error: { message: "column does not exist" } }) }),
+        }),
+      }),
+    };
+    const result = await closeWonLeadsForPurchase(db as never, {
+      email: "ann@example.com",
+      productCode: "consult",
+      scope: "all_open",
+    });
+    expect(result).toEqual({ closed: 0, reason: "nothing_open" });
+  });
+
+  it("never throws even when the client itself blows up", async () => {
+    const db = {
+      from: () => {
+        throw new Error("connection refused");
+      },
+    };
+    await expect(
+      closeWonLeadsForPurchase(db as never, {
+        email: "ann@example.com",
+        productCode: "consult",
+        scope: "all_open",
+      })
+    ).resolves.toEqual({ closed: 0, reason: "nothing_open" });
+  });
+});

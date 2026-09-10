@@ -8,6 +8,7 @@ import {
     unauthorizedResponse,
 } from "@/lib/api/adminRoute";
 import { canonicalProductKey, resolveProductTitles } from "@/lib/reporting/productIdentity";
+import { orIlikeFilter } from "@/lib/api/searchFilter";
 
 /**
  * The lead queue.
@@ -53,8 +54,11 @@ export async function GET(req: NextRequest) {
         if (!isLeadStage(stage)) return badRequestResponse("stage_invalid");
         query = query.eq("stage", stage);
     }
-    if (q) {
-        query = query.or(`name.ilike.%${q}%,email.ilike.%${q}%,phone.ilike.%${q}%,order_ref.ilike.%${q}%`);
+    /* Quoted, not interpolated: a `)` typed into this box used to return every
+       lead in the table and a comma used to 400 the request. See searchFilter.ts. */
+    const search = orIlikeFilter(["name", "email", "phone", "order_ref"], q);
+    if (search) {
+        query = query.or(search);
     }
 
     const { data, error, count } = await query

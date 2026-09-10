@@ -240,19 +240,23 @@ export async function POST(req: NextRequest) {
      going to be told. A spine write that fails must not turn a captured lead
      into a 500 for the person who filled the form. */
   try {
-    const customerId = await upsertCustomerByContact(db, { email, phone });
-    if (customerId) {
+    const { id: customerId, created } = await upsertCustomerByContact(db, { email, phone });
+    if (customerId && created) {
+      /* PROFILE FIELDS ONLY ON A ROW THIS SUBMISSION CREATED.
+         This endpoint is public, unauthenticated and CORS-open, and it upserts
+         on whatever contact was typed. Submitting a stranger's email resolves —
+         correctly — to that stranger's existing customer row, and writing a name
+         or a dosha tag from the same request would be an unauthenticated edit of
+         somebody else's record. So an existing customer keeps their profile
+         exactly as it was; the claim still reaches us, in the lead row, which is
+         where an unverified claim belongs.
+
+         A person we have never seen has no history to corrupt, so their name and
+         their test result go straight on. */
       if (doshaResultType) {
         await applyDoshaTagsToCustomer(db, { customerId, resultType: doshaResultType });
       }
-      /* A name is the one thing a form knows that a payment callback often does
-         not. Never overwrite one we already have. */
-      const { data: existing } = await db
-        .from("customers")
-        .select("display_name")
-        .eq("id", customerId)
-        .maybeSingle();
-      if (existing && !asString(existing.display_name)) {
+      if (name) {
         await db.from("customers").update({ display_name: name }).eq("id", customerId);
       }
     }

@@ -44,3 +44,50 @@ describe("canonicalProductKey", () => {
     expect(canonicalProductKey("   ")).toBe("unknown");
   });
 });
+
+describe("hostile and malformed product codes", () => {
+  it("does not walk the prototype chain looking for a course", () => {
+    // `PRODUCTS[code]` is an index by a string that reaches here from a query
+    // parameter on the payment route. `__proto__` and `constructor` resolve to
+    // real objects on any plain object literal, and had this read `.fulfilment`
+    // off one of them without checking `kind`, a crafted code could have
+    // steered fulfilment. It checks, so they resolve to no course at all.
+    for (const key of ["__proto__", "constructor", "toString", "hasOwnProperty", "valueOf"]) {
+      expect(productCourseSlug(key)).toBeNull();
+      expect(canonicalProductKey(key)).toBe(key);
+    }
+  });
+
+  it("rejects a course code whose slug is not slug-shaped", () => {
+    // `parseCourseOfferCode` shape-checks because the slug becomes a database
+    // lookup; a code that merely starts with the prefix is not a course.
+    expect(productCourseSlug("course:")).toBeNull();
+    expect(productCourseSlug("course:Not-A-Slug")).toBeNull();
+    expect(productCourseSlug("course:has spaces")).toBeNull();
+    expect(productCourseSlug("course:trailing-")).toBeNull();
+    expect(productCourseSlug("course:../etc/passwd")).toBeNull();
+    expect(productCourseSlug("course:a%27--")).toBeNull();
+  });
+
+  it("keeps an unparseable code as itself instead of folding it somewhere", () => {
+    // Folding a code we do not understand into another product's row would
+    // report one product's money under another's name.
+    expect(canonicalProductKey("course:Not-A-Slug")).toBe("course:Not-A-Slug");
+  });
+
+  it("trims, because a stored code with whitespace is the same product", () => {
+    expect(productCourseSlug("  short  ")).toBe("short");
+    expect(canonicalProductKey("  course:short  ")).toBe("course:short");
+  });
+
+  it("is case-sensitive, because slugs are", () => {
+    // `SHORT` is not `short`: quietly accepting it would let two spellings
+    // resolve to one course through a rule nothing else in the system follows.
+    expect(productCourseSlug("SHORT")).toBeNull();
+  });
+
+  it("takes a caller-chosen fallback for an empty code", () => {
+    expect(canonicalProductKey(undefined, "")).toBe("");
+    expect(canonicalProductKey(null, "n/a")).toBe("n/a");
+  });
+});

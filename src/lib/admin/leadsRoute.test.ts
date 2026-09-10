@@ -87,3 +87,97 @@ describe("the open/closed split", () => {
         expect(leads.LEAD_OPEN_STAGES).toEqual(["new", "in_progress"]);
     });
 });
+
+describe("PATCH against a hostile body", () => {
+    beforeEach(() => {
+        session.value = ADMIN;
+    });
+
+    it("refuses a stage that is not a string at all", async () => {
+        // The body is JSON, not a form: `stage` can arrive as an array, an
+        // object or a number, and `Array.includes` on a non-string simply says
+        // no — this asserts that it is actually reached, not bypassed.
+        for (const stage of [["won"], { toString: () => "won" }, 1, null, true]) {
+            const res = await leads.PATCH(patch({ id: "l1", stage }));
+            expect(res.status).toBe(400);
+            expect(await res.json()).toEqual({ error: "stage_invalid" });
+        }
+    });
+
+    it("refuses an id that is not a string", async () => {
+        for (const id of [{ }, ["l1"], 7, true]) {
+            const res = await leads.PATCH(patch({ id, stage: "won" }));
+            expect(res.status).toBe(400);
+            expect(await res.json()).toEqual({ error: "id_required" });
+        }
+    });
+
+    it("refuses a whitespace-only id rather than filtering on nothing", async () => {
+        // An `.eq("id", "")` would be a filter that matches no row, which is
+        // harmless — but a blank id is a malformed request and should say so.
+        const res = await leads.PATCH(patch({ id: "   ", stage: "won" }));
+        expect(res.status).toBe(400);
+        expect(await res.json()).toEqual({ error: "id_required" });
+    });
+
+    it("refuses a stage smuggled in with different casing", async () => {
+        // The vocabulary is exact; the CHECK constraint in the database is too,
+        // and a route that accepted `WON` would turn a typo into a 500.
+        const res = await leads.PATCH(patch({ id: "l1", stage: "WON" }));
+        expect(res.status).toBe(400);
+    });
+
+    it("survives a body that is not JSON at all", async () => {
+        const req = new NextRequest("http://localhost/api/admin/leads", {
+            method: "PATCH",
+            body: "not json",
+            headers: { "Content-Type": "application/json" },
+        });
+        const res = await leads.PATCH(req);
+        expect(res.status).toBe(400);
+    });
+
+    it("checks authorisation BEFORE it reads the body", async () => {
+        // Order matters: an unauthenticated caller must not be able to reach the
+        // parser, however malformed their payload.
+        session.value = null;
+        const req = new NextRequest("http://localhost/api/admin/leads", {
+            method: "PATCH",
+            body: "not json",
+            headers: { "Content-Type": "application/json" },
+        });
+        expect((await leads.PATCH(req)).status).toBe(401);
+    });
+});
+
+describe("GET against a hostile query string", () => {
+    beforeEach(() => {
+        session.value = ADMIN;
+    });
+
+    it("checks authorisation before it validates anything else", async () => {
+        session.value = null;
+        const res = await leads.GET(get("http://localhost/api/admin/leads?stage=bogus"));
+        expect(res.status).toBe(401);
+    });
+
+    it("accepts every stage in the vocabulary and nothing beside it", async () => {
+        for (const stage of leads.LEAD_STAGES) {
+            const res = await leads.GET(get(`http://localhost/api/admin/leads?stage=${stage}`));
+            expect(res.status).toBe(200);
+        }
+        // An empty stage means "all stages". A stage with surrounding whitespace
+        // is the same stage — the route trims before it validates, which is what
+        // makes a hand-edited URL or a copied link work.
+        for (const stage of ["", " won ", "\twon"]) {
+            const res = await leads.GET(get(`http://localhost/api/admin/leads?stage=${encodeURIComponent(stage)}`));
+            expect(res.status).toBe(200);
+        }
+        // Everything else is refused, including a comma that would otherwise
+        // have reached the `.in()` filter as two values.
+        for (const stage of ["Won", "won,lost", "*", "won'--", "new)"]) {
+            const res = await leads.GET(get(`http://localhost/api/admin/leads?stage=${encodeURIComponent(stage)}`));
+            expect(res.status).toBe(400);
+        }
+    });
+});

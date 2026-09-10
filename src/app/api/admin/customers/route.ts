@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
 import { parseLimitOffset, requireAdminSession, serverErrorResponse, unauthorizedResponse } from "@/lib/api/adminRoute";
+import { orIlikeFilter } from "@/lib/api/searchFilter";
 
 // GET /api/admin/customers?q=...&limit=...&offset=...
 export async function GET(req: NextRequest) {
@@ -18,7 +19,9 @@ export async function GET(req: NextRequest) {
         const { data: direct, count: directCount, error } = await db
             .from("customers")
             .select("id, email, phone, display_name, avatar_url, tags, created_at, tg_id, google_id", { count: "exact" })
-            .or(`email.ilike.%${q}%,phone.ilike.%${q}%,display_name.ilike.%${q}%,tg_id.ilike.%${q}%,google_id.ilike.%${q}%`)
+            /* Same grammar hole as the lead queue had: a `)` typed here
+               returned every customer, a comma 400'd the search. */
+            .or(orIlikeFilter(["email", "phone", "display_name", "tg_id", "google_id"], q) ?? "")
             .range(offset, offset + limit - 1)
             .order("created_at", { ascending: false });
 

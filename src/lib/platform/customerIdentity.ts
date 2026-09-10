@@ -58,9 +58,28 @@ async function findCustomerIdBy(
   };
 }
 
+export type UpsertCustomerResult = {
+  id: string | null;
+  /**
+   * Whether this call CREATED the row, as opposed to finding one that already
+   * existed.
+   *
+   * This is not bookkeeping — it is a trust boundary. The lead form is public,
+   * unauthenticated and CORS-open, and it upserts on whatever contact the
+   * submitter typed. If they type somebody else's address, this resolver
+   * correctly returns that person's existing customer row, and any profile
+   * field written from the same submission would be an unauthenticated write to
+   * a stranger's record. So callers who want to write a name or a tag ask this
+   * first and only do it for a row they themselves brought into being; a row
+   * that already existed is somebody with a history, and unverified input does
+   * not get to edit it.
+   */
+  created: boolean;
+};
+
 /**
  * The customer id for a contact, creating the row if this is the first time we
- * have seen them. Returns null when there is nothing to key on.
+ * have seen them. Returns a null id when there is nothing to key on.
  *
  * Prefers the EARLIEST matching row, so a person who bought before they filled
  * in a form keeps the history they already have rather than growing a second
@@ -69,10 +88,10 @@ async function findCustomerIdBy(
 export async function upsertCustomerByContact(
   sb: SupabaseLike,
   contact: CustomerContact
-): Promise<string | null> {
+): Promise<UpsertCustomerResult> {
   const email = normalizeCustomerEmail(contact.email);
   const phone = normalizeCustomerPhone(contact.phone);
-  if (!email && !phone) return null;
+  if (!email && !phone) return { id: null, created: false };
 
   const candidates: Array<{ id: string; created_at: string | null }> = [];
   if (email) {
@@ -103,24 +122,30 @@ export async function upsertCustomerByContact(
       const { error } = await sb.from("customers").update(patch).eq("id", foundId);
       if (error) throw error;
     }
-    return foundId;
+    return { id: foundId, created: false };
   }
 
+  let raced = false;
   const { error } = await sb.from("customers").insert({ email, phone });
   if (error) {
     // A concurrent request may have created the same customer first; the unique
     // index rejecting us is the correct outcome, not a failure.
     const code = (error as { code?: string }).code;
     if (code !== "23505") throw error;
+    /* Another request created this customer between our lookup and our insert.
+       The row exists but WE did not make it, and treating a lost race as a
+       creation would hand unverified input the write access the flag exists to
+       deny. */
+    raced = true;
   }
 
   if (email) {
     const hit = await findCustomerIdBy(sb, "email", email);
-    if (hit) return hit.id;
+    if (hit) return { id: hit.id, created: !raced };
   }
   if (phone) {
     const hit = await findCustomerIdBy(sb, "phone", phone);
-    if (hit) return hit.id;
+    if (hit) return { id: hit.id, created: !raced };
   }
-  return null;
+  return { id: null, created: false };
 }
