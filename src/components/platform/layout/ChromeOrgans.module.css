@@ -148,20 +148,6 @@
   box-shadow: none;
 }
 
-.row[data-cw-organs-sheet="open"],
-.row[data-cw-organs-sheet="open"] .organ {
-  color: var(--cw-platform-text);
-}
-
-.row[data-cw-organs-sheet="open"] .mark,
-.row[data-cw-organs-sheet="open"] [data-auth-state] {
-  color: var(--cw-brand-mark-color);
-}
-
-.row[data-cw-organs-sheet="open"] .mark {
-  background-color: var(--cw-brand-mark-color);
-}
-
 .row[data-hidden="true"] {
   transform: translateY(calc(-100% - max(var(--cw-page-gutter), env(safe-area-inset-top))));
   opacity: 0;
@@ -364,4 +350,34 @@
    into the other. */
 .row[data-cw-header-tone="dark"] {
   color: var(--cw-platform-accent-contrast);
+}
+
+/* AND HERE, BELOW THE TONE, IS WHERE THAT LAST PARAGRAPH ACTUALLY HAPPENS
+   (2026-09-10). The rules under it were written on 2026-09-07 with the note
+   quoted above — «left standing, a pair that had gone gold-on-graphite over a
+   hero kept that ink after landing on a cream menu» — and they sat ABOVE the
+   three tone rules, at the same specificity: `.row` plus one attribute plus one
+   class, both sides. The later declaration wins that tie, so the tone won every
+   time and the override was dead the day it was written. Measured on a light
+   gamma over the home hero: the island reported `tone="dark"`, the sheet it had
+   opened was a cream plate, and its glyphs came out `rgb(255,248,239)` on
+   `rgb(253,244,231)` — a contrast of 1.04, which is not a faint control but an
+   absent one.
+
+   THE ORDER IS THE FIX AND IT IS LOAD-BEARING. `[data-cw-organs-sheet="open"]`
+   is the narrower claim — it says «I am no longer over the article, I am on the
+   panel» — so it has to be able to answer after the tone has spoken. Keep these
+   last. */
+.row[data-cw-organs-sheet="open"],
+.row[data-cw-organs-sheet="open"] .organ {
+  color: var(--cw-platform-text);
+}
+
+.row[data-cw-organs-sheet="open"] .mark,
+.row[data-cw-organs-sheet="open"] [data-auth-state] {
+  color: var(--cw-brand-mark-color);
+}
+
+.row[data-cw-organs-sheet="open"] .mark {
+  background-color: var(--cw-brand-mark-color);
 }

@@ -242,3 +242,58 @@ describe("a portalled sheet supplies the focus order the document cannot", () =>
     expect(sheetSource).toMatch(/if \(owner && owner !== menu\) return;/);
   });
 });
+
+describe("the island stops reading the page once it lands on the sheet", () => {
+  const organsCss = read("src/components/platform/layout/ChromeOrgans.module.css");
+
+  /**
+   * THE OVERRIDE THAT WAS DEAD THE DAY IT WAS WRITTEN. Both scopes carry the
+   * same specificity — `.row` plus one attribute plus one class — so the later
+   * declaration wins. The sheet-open rules sat ABOVE the three tone rules, and
+   * the tone won every time: on a light gamma over the home hero the island
+   * reported `tone="dark"`, the sheet it had opened was a cream plate, and its
+   * glyphs came out `rgb(255,248,239)` on `rgb(253,244,231)` — 1.04:1, an
+   * absent control rather than a faint one. After the move: 14.42:1.
+   */
+  it("declares the sheet-open ink after the tone it has to overrule", () => {
+    const lastTone = organsCss.lastIndexOf('.row[data-cw-header-tone="dark"]');
+    const sheetInk = organsCss.lastIndexOf('.row[data-cw-organs-sheet="open"] .mark');
+    expect(lastTone).toBeGreaterThan(-1);
+    expect(sheetInk).toBeGreaterThan(lastTone);
+  });
+
+  it("returns the mark and the glyphs to the plate's own tokens", () => {
+    const at = organsCss.lastIndexOf('.row[data-cw-organs-sheet="open"] .mark {');
+    expect(organsCss.slice(at, organsCss.indexOf("}", at))).toContain("var(--cw-brand-mark-color)");
+    const organAt = organsCss.lastIndexOf('.row[data-cw-organs-sheet="open"] .organ {');
+    expect(organsCss.slice(organAt, organsCss.indexOf("}", organAt))).toContain("var(--cw-platform-text)");
+  });
+});
+
+describe("the install offer is a crossing, not a fold", () => {
+  const menu = read("src/components/platform/layout/PlatformAccountMenu.tsx");
+
+  it("sends the reader to the cabinet's install row instead of unfolding prose", () => {
+    /* A lead sentence and a numbered list inside a column of two-word
+       destinations turned the menu into a place rather than a list of them —
+       and the fold's caption ink made it the one row quieter than its
+       neighbours. */
+    expect(menu).toContain("#app-install");
+    expect(menu).not.toContain("<details");
+    expect(menu).not.toContain("IOS_INSTALL_STEPS");
+  });
+
+  it("keeps the real prompt where a real prompt exists", () => {
+    /* Only Safari has nothing to fire; Chrome's row must still install. */
+    expect(menu).toContain("if (install.canPrompt)");
+    expect(menu).toContain("void install.install()");
+  });
+
+  it("leaves no dead fold recipe behind in the shell", () => {
+    expect(read("src/components/platform/PlatformShell.module.css")).not.toContain("menuFold");
+  });
+
+  it("still points at an anchor the cabinet actually renders", () => {
+    expect(read("src/components/platform/cabinet/PwaInstallCard.tsx")).toContain('id="app-install"');
+  });
+});

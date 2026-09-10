@@ -47,11 +47,6 @@ import { ChromeSheetPanel, useChromeSheet } from "./ChromeSheet";
    cabinet's full sentence would be the one item that wraps. */
 const INSTALL_LABEL = "Додати на екран";
 
-/* Ukrainian and inline, like every other string in this bar. The cabinet ships
-   two languages and reads its own copy table; the shell ships one. */
-const IOS_INSTALL_LEAD = "На iPhone та iPad застосунок додає сам браузер, у два кроки:";
-const IOS_INSTALL_STEPS = ["Натисніть «Поділитися» на панелі Safari.", "Оберіть «На початковий екран»."];
-
 /**
  * INSTALL, AS A ROW OF THIS MENU. It used to be a line pinned under the shelf's
  * last course, on a tree that renders no footer — a full-width sentence and a
@@ -82,7 +77,7 @@ const IOS_INSTALL_STEPS = ["Натисніть «Поділитися» на п�
    One constant, spread onto every row, so a row added later cannot forget it. */
 const INK_ROW = { "data-cw-ink-control": "" } as const;
 
-function InstallEntry({ onSelect }: { onSelect: () => void }) {
+function InstallEntry({ onSelect, cabinetHref }: { onSelect: () => void; cabinetHref: string }) {
   const install = usePwaInstall();
   const ownsInstall = useOwnsPersonalSurfaces();
 
@@ -115,18 +110,28 @@ function InstallEntry({ onSelect }: { onSelect: () => void }) {
   }
 
   if (install.needsIosInstructions) {
+    /* A ROW THAT LEADS, NOT A ROW THAT GROWS (2026-09-10). Safari fires no
+       prompt, so the only honest offer is the two taps that do it by hand — and
+       this used to unfold them right here, which put a lead sentence and a
+       numbered list inside a column of two-word destinations. The menu stopped
+       being a list of places and became a place itself, on the smallest screen
+       the product has; and the fold's own prose is caption ink, so the one row
+       that had grown was also the one row reading quieter than its neighbours.
+
+       The instructions already exist, written out properly, in the cabinet's
+       install row — `#app-install`. So this is a crossing like every other row
+       around it: same weight, same ink, same stroke, and the explaining happens
+       on a page with room for it. */
     return (
-      <details className={styles.menuFold}>
-        <summary {...INK_ROW}>
-          <InkMenuLabel>{INSTALL_LABEL}</InkMenuLabel>
-        </summary>
-        <p className={styles.menuFoldLead}>{IOS_INSTALL_LEAD}</p>
-        <ol className={styles.menuFoldSteps}>
-          {IOS_INSTALL_STEPS.map((step) => (
-            <li key={step}>{step}</li>
-          ))}
-        </ol>
-      </details>
+      <Link
+        href={`${cabinetHref}#app-install`}
+        {...INK_ROW}
+        onClick={() => {
+          onSelect();
+        }}
+      >
+        <InkMenuLabel>{INSTALL_LABEL}</InkMenuLabel>
+      </Link>
     );
   }
 
@@ -451,6 +456,7 @@ export function PlatformAccountMenu({
           menu that cannot be arrowed through. */}
       <div className={styles.profileMenuDivider} role="none" />
       <InstallEntry
+        cabinetHref={cabinetHref}
         onSelect={() => {
           close();
           onNavigate?.();
