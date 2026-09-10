@@ -16,7 +16,7 @@ import { getCabinetCopy } from "@/components/platform/cabinet/copy";
 import { EMPTY_SHELF_QUERY, ShelfFilter, isShelfQueryEmpty, matchesShelfQuery, type ShelfQuery } from "@/components/platform/cabinet/ShelfFilter";
 import filterStyles from "@/components/platform/cabinet/ShelfFilter.module.css";
 import { ShelfResultBar } from "@/components/platform/cabinet/ShelfPresentation";
-import { CourseCard, CourseRow, EntryControls, ViewSwitch, deleteFailureCopy, unpublishFailureCopy } from "./BuilderCourseEntry";
+import { CourseCard, CourseRow, ViewSwitch, deleteFailureCopy, unpublishFailureCopy } from "./BuilderCourseEntry";
 import { ImportPanel } from "./BuilderImportPanel";
 import { REMOVE_MS, VIEW_EVENT, VIEW_KEY, readView, subscribeToView, type CourseView, useShelfReflow } from "./builderShelfView";
 

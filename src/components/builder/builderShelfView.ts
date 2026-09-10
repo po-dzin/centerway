@@ -4,7 +4,7 @@
  * Split out of BuilderCourseList.tsx (1,115 lines) on 2026-09-11; nothing inside any declaration changed.
  */
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 
 export type CourseView = "rows" | "grid";
 

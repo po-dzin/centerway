@@ -8,7 +8,7 @@
 
 import { useRef, useState } from "react";
 import { HandGraphic, Icon } from "@/components/Icon";
-import { newLesson, nextDayIndex, renumber, uniqueSlug, type Course, type CourseModule, type Lesson } from "@/lms-core";
+import { newLesson, nextDayIndex, uniqueSlug, type Course, type CourseModule, type Lesson } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
 import { plural } from "@/lib/plural";
 import { BuilderMenu } from "./BuilderMenu";
