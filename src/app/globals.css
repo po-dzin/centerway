@@ -360,16 +360,28 @@
      whole file exists to prevent, introduced by the fix for it.
 
      Written by scripts/generate-design-tokens.mjs from
-     `delivery.dsAliasPointerFine`. The five landings receive the same half, so
-     a CTA does not come out 48px there and 40px here. */
+     `delivery.dsAliasPointerFine`, and carried into the Claude Design mirror by
+     ds-export.mjs. It was NOT, when it first shipped: the five values lived in
+     this file alone, between markers that claim codegen, which is why
+     `mirror -> code` drifted and `design-gates` went red on main (2026-09-10).
+
+     THE FIVE LANDINGS DO NOT RECEIVE THIS HALF YET. This comment used to say
+     they did — "so a CTA does not come out 48px there and 40px here" — and
+     cw-tokens.generated.css shows otherwise: the network still takes
+     `--ds-touch-target-min: 3rem` at its root and has no pointer-fine block at
+     all. So on a mouse a landing's CTA IS 48px while the platform's is 40px.
+     Giving the network the same half is a one-line change in buildNetworkCss
+     now that the values are in the token source — but it moves five shipped
+     landing pages, so it is a call to make on purpose, not a side effect of
+     closing a drift. */
   @media (hover: hover) and (pointer: fine) {
     :root {
       /* DS_ALIAS_POINTER_FINE_START */
-    --ds-touch-target-min: 2.25rem;
-    --ds-button-min-height: 2.5rem;
-    --ds-button-min-width: 9rem;
-    --ds-button-padding-inline: 1rem;
-    --ds-button-font-size: var(--ds-type-body-sm-size);
+      --ds-touch-target-min: 2.25rem;
+      --ds-button-min-height: 2.5rem;
+      --ds-button-min-width: 9rem;
+      --ds-button-padding-inline: 1rem;
+      --ds-button-font-size: var(--ds-type-body-sm-size);
     /* DS_ALIAS_POINTER_FINE_END */
     }
   }

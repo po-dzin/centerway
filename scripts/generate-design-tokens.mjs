@@ -18,6 +18,15 @@ const NETWORK_CSS_PATH = path.join(
 
 const LIGHT_START = "/* DS_ALIAS_LIGHT_START */";
 const LIGHT_END = "/* DS_ALIAS_LIGHT_END */";
+/* The mouse's half of the --ds-* contract, inside globals.css's own
+   `(hover: hover) and (pointer: fine)` block. It shipped hand-written between
+   these markers on 2026-09-10 (#254) while nothing generated it: the five
+   values lived in CSS alone, so `cw.tokens.json` could not describe them and
+   `ds-export.mjs` could not put them in the mirror — which is precisely the
+   `mirror -> code` drift that turned `design-gates` red on main. The values are
+   unchanged; only their source moved to where the marker always claimed it was. */
+const POINTER_FINE_START = "/* DS_ALIAS_POINTER_FINE_START */";
+const POINTER_FINE_END = "/* DS_ALIAS_POINTER_FINE_END */";
 const BASE_LIGHT_START = "/* CW_BASE_LIGHT_START */";
 const BASE_LIGHT_END = "/* CW_BASE_LIGHT_END */";
 const RUNTIME_START = "/* CW_RUNTIME_TOKENS_START */";
@@ -234,6 +243,7 @@ async function main() {
   const globals = await readFile(GLOBALS_CSS_PATH, "utf8");
   const dsAlias = tokens.delivery?.dsAlias ?? {};
   const lightDecls = toDecls(dsAlias.light ?? {}, "    ");
+  const pointerFineDecls = toDecls(tokens.delivery?.dsAliasPointerFine?.light ?? {}, "      ");
   const runtimeDecls = toDecls(flattenRuntimeLayers(tokens.layers), "    ");
   const materialDarkDecls = toDecls(tokens.layers?.material?.dark ?? {}, "    ");
   const platformDarkDecls = toDecls(tokens.layers?.modeOverrides?.platformDark ?? {}, "    ");
@@ -333,6 +343,7 @@ async function main() {
   nextGlobals = upsertBefore(nextGlobals, PLATFORM_DARK_START, PLATFORM_DARK_END, "/* Public platform dark palette", platformDarkDecls);
   nextGlobals = replaceBetween(nextGlobals, PACK_MINERAL_START, PACK_MINERAL_END, packMineralDecls);
   nextGlobals = replaceBetween(nextGlobals, COURSE_PACKS_START, COURSE_PACKS_END, coursePackDecls);
+  nextGlobals = replaceBetween(nextGlobals, POINTER_FINE_START, POINTER_FINE_END, pointerFineDecls);
 
   await writeFile(GLOBALS_CSS_PATH, nextGlobals, "utf8");
   await writeFile(NETWORK_CSS_PATH, buildNetworkCss(tokens), "utf8");

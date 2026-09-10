@@ -90,9 +90,20 @@ function buildFiles(tokens) {
     `[data-cw-theme="dark"],\n[data-cw-header-tone="dark"] {\n${decls(layers.material?.dark ?? {})}\n}\n\n` +
     MATERIAL_RECIPE + LEGACY_SHIM;
 
+  /* TWO HALVES, AND THE SECOND ONE IS WHY THIS FILE HAD TO LEARN A MEDIA QUERY.
+     The `--ds-*` contract carries a touch floor at the root and a mouse's
+     numbers behind `(hover: hover) and (pointer: fine)` — a finger needs one
+     size for everything it can hit, a pointer does not. The mirror used to
+     export only the first half, so `globals.css` and the bundle disagreed about
+     five tokens and `ds:drift:gate` failed on every branch until this was
+     written. `ds:sync:check` could not see it: it compares the bundle with what
+     this script produces, and both sides were missing the same half. */
   files["tokens/delivery.css"] =
     banner("DELIVERY — the --ds-* alias contract shared with the landings.", "") +
-    `:root {\n${decls(delivery.dsAlias?.light ?? {})}\n}\n`;
+    `:root {\n${decls(delivery.dsAlias?.light ?? {})}\n}\n` +
+    (Object.keys(delivery.dsAliasPointerFine?.light ?? {}).length
+      ? `\n@media (hover: hover) and (pointer: fine) {\n  :root {\n${decls(delivery.dsAliasPointerFine.light, "    ")}\n  }\n}\n`
+      : "");
 
   files["styles.css"] =
     "/* CenterWay Design System — entry point. @import lines only.\n" +

@@ -473,6 +473,15 @@
         "--ds-type-hero-subtitle-size": "clamp(1.2rem, 1.7vw, 1.6rem)",
         "--ds-type-hero-subtitle-line-height": "1.25"
       }
+    },
+    "dsAliasPointerFine": {
+      "light": {
+        "--ds-touch-target-min": "2.25rem",
+        "--ds-button-min-height": "2.5rem",
+        "--ds-button-min-width": "9rem",
+        "--ds-button-padding-inline": "1rem",
+        "--ds-button-font-size": "var(--ds-type-body-sm-size)"
+      }
     }
   }
 }
