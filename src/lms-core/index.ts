@@ -35,3 +35,4 @@ export * from "./templates";
 export * from "./portable";
 export * from "./references";
 export * from "./annotations";
+export * from "./journal";

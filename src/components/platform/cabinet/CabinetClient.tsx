@@ -28,7 +28,7 @@ import { usePlatformIdentity } from "@/components/platform/layout/usePlatformIde
 import { platformRoleLabel } from "@/lib/platform/identity";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
-import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
+import { JOURNAL_HREF, LEARNING_SHELF_HREF } from "@/lib/platform/content";
 import { PwaInstallCard } from "./PwaInstallCard";
 import { cabinetGate } from "./CabinetGate";
 import { CabinetFold } from "./CabinetFold";
@@ -146,6 +146,7 @@ export function CabinetClient() {
   const programsHref = href("/programs");
   const productsHref = href("/products");
   const shelfHref = href(LEARNING_SHELF_HREF);
+  const journalHref = href(JOURNAL_HREF);
   const homeHref = href("/");
 
   const ownedCourses = useMemo(
@@ -327,6 +328,23 @@ export function CabinetClient() {
         </CabinetHero>
 
       <div className={styles.shell}>
+
+        {/* THE JOURNAL, AS ONE CROSSING AND NOTHING MORE.
+            Below the hero on purpose. The first screen answers «what do I open
+            now», and it took two passes to get it down to one course and one
+            way onward — a second destination up there would undo that. Here it
+            answers the question a reader arrives with second: not «what do I
+            read» but «what did I write». No count beside it: the number would
+            cost this page a read of the whole journal to say something the
+            journal itself says on arrival. */}
+        {ownedCourses.length > 0 ? (
+          <section className={styles.section}>
+            <p className={styles.shelfCardNote}>{cab.journalEntryLead}</p>
+            <span className={styles.glanceMore}>
+              <PlatformBlockLink href={journalHref} label={cab.journalEntry} />
+            </span>
+          </section>
+        ) : null}
 
         {/* A receipt is reference, not the answer the dashboard exists to give.
             It remains folded until the reader asks for it at every viewport. */}

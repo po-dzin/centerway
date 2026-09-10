@@ -1365,6 +1365,24 @@
   color: var(--cw-platform-text);
 }
 
+/* The way out to the journal, inside the lead sentence rather than beside it as
+   a control: it is a crossing, and the sentence is where the reader already is.
+   One ink stroke at two strengths — the underline is the mark, and the pointer
+   only makes it full (docs/design-system.md, "State is a stroke, not a plate").
+   No warmth at rest: gold is what this system spends on being acted on. */
+.notesJournalLink {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--cw-rule-ink);
+  text-underline-offset: 0.2em;
+}
+
+.notesJournalLink:hover,
+.notesJournalLink:focus-visible {
+  color: var(--cw-platform-text);
+  text-decoration-color: currentColor;
+}
+
 .notesList {
   display: grid;
   gap: var(--cw-space-2xs);

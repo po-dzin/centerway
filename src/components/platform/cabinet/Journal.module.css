@@ -1,0 +1,160 @@
+/* The journal — the reader's own writing, gathered.
+ *
+ * LEVEL 2, so the rules of level 2 apply and nothing else does: ink and line,
+ * no card, no radius, no cast shadow, no glass (docs/design-system.md, "State
+ * is a stroke, not a plate" and the depth table). An entry is a row on paper,
+ * not a tile — the moment these get a tint and a corner they read as a stack of
+ * objects, which is exactly what the library prototype had to unlearn.
+ *
+ * There is no button styling in this file on purpose. The two state panels
+ * borrow `actionPrimary` from the cabinet, which composes the one button
+ * contract — a local control here would be the sixth copy of a button the
+ * system already owns, and `guard:buttons` would be right to fail it.
+ */
+
+/* ── A day ────────────────────────────────────────── */
+
+.day {
+  margin-top: var(--cw-space-lg);
+}
+
+.day:first-of-type {
+  margin-top: 0;
+}
+
+/* The date, in the caption idiom the rest of the personal surfaces use for
+   "where am I". The rule under it fades at both ends: it separates days, it is
+   not the edge of a box (docs/design-system.md — a divider is not a cell). */
+.dayHeading {
+  margin: 0 0 var(--cw-space-sm);
+  padding-bottom: var(--cw-space-2xs);
+  border-bottom: 1px solid var(--cw-platform-border);
+  border-image: var(--cw-rule-fade-x);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── One entry ────────────────────────────────────── */
+
+.entries {
+  display: grid;
+  gap: var(--cw-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  gap: var(--cw-space-xs);
+  align-items: start;
+  min-width: 0;
+}
+
+.glyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.2em;
+  color: var(--cw-platform-accent);
+}
+
+.body {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+/* THE READER'S OWN WORDS CARRY THE ROW, at reading weight and full length.
+   Not clamped: on the course map a note is an aid to finding a passage and two
+   lines are enough, but this page IS the notes, and a journal that truncates
+   what you wrote is a journal you cannot read. */
+.note {
+  margin: 0;
+  font-size: var(--ds-type-body-size);
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+/* The passage it was made from — the source, so it sits under the note behind a
+   margin rule and steps back in tone. Three lines: enough to recognise where
+   you were, never enough to be a second copy of the lesson. */
+.quote {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  margin: 0;
+  padding-left: var(--cw-space-xs);
+  border-left: 1px solid var(--cw-rule-ink);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+}
+
+/* ── Where it came from ───────────────────────────── */
+
+.place {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--cw-space-2xs) var(--cw-space-xs);
+  margin: 0;
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.placeLink {
+  color: var(--cw-platform-muted);
+  text-decoration: none;
+}
+
+/* Hover is one ink stroke, at the strength the rest of the product uses for a
+   pointer at rest on a row. No plate, no colour change to the accent — warmth
+   is what this system spends when something is being acted on. */
+.placeLink:hover,
+.placeLink:focus-visible {
+  color: var(--cw-platform-text);
+}
+
+/* An entry whose lesson can no longer be named. It keeps its place in the day
+   and loses only its link — never its text. */
+.placeGone {
+  color: var(--cw-platform-muted);
+}
+
+/* The window on this course has closed. Said, not enforced: the entry stays,
+   the link stays, and the door decides what happens on arrival. */
+.closed {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Empty and failed ─────────────────────────────── */
+
+.state {
+  display: grid;
+  justify-items: start;
+  gap: var(--cw-space-xs);
+  max-width: 34rem;
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--ds-type-body-size);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.stateNote {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+}
