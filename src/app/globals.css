@@ -77,19 +77,6 @@
     --cw-radius-pill: 999px;
     --cw-shadow-soft: var(--cw-mat-shadow-soft);
     --cw-shadow-strong: var(--cw-mat-shadow-raised);
-    --cw-motion-tap: 120ms;
-    --cw-motion-state: 160ms;
-    --cw-motion-surface: 180ms;
-    --cw-motion-enter: 400ms;
-    --cw-motion-tone: 320ms;
-    --cw-press-settle: 1px;
-    --cw-haptic-tap: 12ms;
-    --cw-ink-stroke-length: 29.46;
-    --cw-ink-drawn-rest: 0;
-    --cw-ink-drawn-hover: 0.8;
-    --cw-ease-state: cubic-bezier(0.22, 0.61, 0.24, 1);
-    --cw-ease-surface: cubic-bezier(0.16, 1, 0.3, 1);
-    --cw-ease-network: cubic-bezier(0.2, 0.8, 0.2, 1);
     --cw-card-padding: clamp(1.1rem, 1.8vw, 1.45rem);
     --cw-card-radius: var(--cw-radius-lg);
     --cw-card-border: 1px solid var(--cw-mat-stroke);
@@ -2052,13 +2039,20 @@ body {
        underlines: the element is already `100% + 0.4rem`, which is the word
        plus the small overhang a drawn line has, and the states now differ in
        opacity, weight and colour rather than in how much of the word has been
-       covered. */
+       covered. 
+
+       AND THE MECHANISM NOW AGREES WITH THE SENTENCE. `stroke-dasharray` /
+       `stroke-dashoffset` clipped this mark to `--cw-ink-drawn-*` — 0 at rest,
+       0.8 on hover — which is a stroke that stops four fifths of the way
+       through the word, the exact thing the paragraph above removes. The
+       progressive draw is a real idea and a good one; it is a MOTION pass, not
+       the resting grammar, and it stays where it was written
+       (`114dde36` and docs/design-system/prototypes/ink-draw-2026-09-10.html)
+       until it is applied as motion on top of a mark that is already whole. */
     transform:
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
     transform-origin: left center;
-    stroke-dasharray: var(--cw-ink-stroke-length);
-    stroke-dashoffset: calc(var(--cw-ink-stroke-length) * (1 - var(--cw-ink-drawn-rest)));
     pointer-events: none;
     transition: opacity 0.16s ease, transform 0.18s ease, color 0.16s ease;
   }
@@ -2200,7 +2194,6 @@ body {
     transform:
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
-    stroke-dashoffset: calc(var(--cw-ink-stroke-length) * (1 - var(--cw-ink-drawn-hover)));
   }
 
   @media (hover: hover) {
@@ -2213,7 +2206,6 @@ body {
       transform:
         scaleY(var(--cw-ink-stroke-weight))
         rotate(var(--cw-ink-stroke-tilt));
-      stroke-dashoffset: calc(var(--cw-ink-stroke-length) * (1 - var(--cw-ink-drawn-hover)));
     }
   }
 
@@ -2243,7 +2235,6 @@ body {
     transform:
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
-    stroke-dashoffset: 0;
   }
 
   :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]) .cw-ink-label-mark {
@@ -2251,7 +2242,6 @@ body {
     transform:
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
-    stroke-dashoffset: 0;
   }
 
   /* `:is(...):hover .mark` carries one more compound step than the plain
@@ -2270,7 +2260,6 @@ body {
       transform:
         scaleY(var(--cw-ink-stroke-weight))
         rotate(var(--cw-ink-stroke-tilt));
-      stroke-dashoffset: 0;
     }
   }
 
@@ -2279,7 +2268,6 @@ body {
     transform:
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
-    stroke-dashoffset: 0;
   }
 
   /* Pinned last on purpose. Every state rule above carries the same (0,3,0)
@@ -2288,7 +2276,6 @@ body {
      moment it is pointed at, which is the ladder running backwards. Length is
      not a variable for this variant; only opacity is. */
   .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark {
-    stroke-dashoffset: 0;
   }
 
   :is(.cw-icon-btn, .cw-page-btn, .cw-nav-link, [data-cw-ink-control]):focus-visible .cw-ink-icon-mark {
