@@ -338,6 +338,37 @@ export async function emitDoshaTestEvent(
   }
 }
 
+/**
+ * Writes the test's two tags onto a customer we already have the id of.
+ *
+ * Split out from `syncCustomerDoshaTestTags` because the sign-in claim is no
+ * longer the only way a result reaches a person: the lead form now resolves a
+ * customer from the contact it was given and attaches the attempt taken in the
+ * same visit. Both paths write the SAME two tags through this one function, so
+ * a customer tagged by a form and a customer tagged by a sign-in are the same
+ * kind of row to every query that reads them.
+ */
+export async function applyDoshaTagsToCustomer(
+  db: SupabaseAdmin,
+  params: {
+    customerId: string;
+    resultType: DoshaResultType;
+  }
+): Promise<void> {
+  const { data: customer, error } = await db
+    .from("customers")
+    .select("id, tags")
+    .eq("id", params.customerId)
+    .maybeSingle();
+
+  if (error || !customer) return;
+
+  const existingTags: string[] = Array.isArray(customer.tags) ? customer.tags : [];
+  const merged = Array.from(new Set([...existingTags, "test_completed", doshaTagFromResult(params.resultType)]));
+
+  await db.from("customers").update({ tags: merged }).eq("id", customer.id);
+}
+
 export async function syncCustomerDoshaTestTags(
   db: SupabaseAdmin,
   params: {
@@ -347,16 +378,13 @@ export async function syncCustomerDoshaTestTags(
 ): Promise<void> {
   const { data: customer, error } = await db
     .from("customers")
-    .select("id, tags")
+    .select("id")
     .eq("auth_user_id", params.userId)
     .maybeSingle();
 
   if (error || !customer) return;
 
-  const existingTags: string[] = Array.isArray(customer.tags) ? customer.tags : [];
-  const merged = Array.from(new Set([...existingTags, "test_completed", doshaTagFromResult(params.resultType)]));
-
-  await db.from("customers").update({ tags: merged }).eq("id", customer.id);
+  await applyDoshaTagsToCustomer(db, { customerId: customer.id as string, resultType: params.resultType });
 }
 
 export async function findTestQuestionById(

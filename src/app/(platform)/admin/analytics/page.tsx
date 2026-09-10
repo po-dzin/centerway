@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { flushSync } from "react-dom";
 import { supabaseClient } from "@/lib/supabaseClient";
@@ -12,15 +13,25 @@ import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import surfaces from "@/components/admin/AdminSurfaces.module.css";
+/* The mode's rules live outside this file because they are the part that can
+   actually be wrong, and the admin is behind a Google sign-in — it cannot be
+   verified by opening it, only by testing it. See dashboardMode.ts. */
+import {
+  DASHBOARD_MODES,
+  DEFAULT_DASHBOARD_MODE,
+  MODE_SECTIONS,
+  isDashboardMode,
+  sectionForMode,
+  type AnalyticsSection,
+  type DashboardMode,
+} from "@/lib/admin/dashboardMode";
 
 type FunnelData = {
   date: string;
   leads_count: number;
-  unique_lead_phones: number;
   orders_created: number;
   orders_paid: number;
   total_revenue: number;
-  conversion_rate_percent: string;
 };
 
 type CampaignData = {
@@ -37,6 +48,7 @@ type CampaignData = {
 
 type ProductData = {
   product_code: string;
+  product_title: string | null;
   total_orders: number;
   paid_orders: number;
   total_revenue: number;
@@ -176,12 +188,31 @@ type DoshaAnalytics = {
   daily: Array<{ date: string; completions: number }>;
 };
 
+type LeadsSummary = {
+  new_in_period: number;
+  won_in_period: number;
+  lost_in_period: number;
+  open_total: number;
+  conversion_percent: number;
+};
+
+type LearningSummary = {
+  granted_in_period: number;
+  started_in_period: number;
+  started_percent: number;
+  active_total: number;
+  expiring_14d: number;
+  expired_total: number;
+};
+
 type AnalyticsResponse = {
   period?: {
     from: string;
     to: string;
   };
   campaigns_level?: "adset" | "ad";
+  learning?: LearningSummary;
+  leads?: LeadsSummary;
   funnel: FunnelData[];
   campaigns: CampaignData[];
   products: ProductData[];
@@ -199,7 +230,7 @@ type AnalyticsResponse = {
       | "capi_fallback";
     initiate_checkout: "orders_created";
     purchase: "paid_orders";
-    access_granted: "token_consumed";
+    access_granted: "access_delivered";
   };
   business_events: {
     view_content: number;
@@ -230,7 +261,6 @@ type FunnelMode = "payment" | "access";
 
 type FunnelUiSettings = {
   mode: FunnelMode;
-  showLeadsCard: boolean;
   showAccessGrantedCard: boolean;
 };
 
@@ -271,6 +301,7 @@ const METRIC_FIELDS: MetricDef[] = [...PRIMARY_METRIC_FIELDS, ...OPTIONAL_METRIC
 
 const METRIC_VISIBILITY_KEY = "cw_analytics_visible_metrics";
 const FUNNEL_UI_SETTINGS_KEY = "cw_analytics_funnel_ui_settings";
+const DASHBOARD_MODE_KEY = "cw_analytics_dashboard_mode";
 
 function metricEventLabelKey(eventName: CapiEventName): string {
   if (eventName === "ViewContent") return "analytics_event_view_content";
@@ -360,12 +391,23 @@ function formatCompactTick(value: number, locale: string): string {
   }).format(value);
 }
 
-function formatProductName(productCode: string, unknownLabel: string): string {
-  const normalized = productCode.trim().toLowerCase();
+/**
+ * THE SERVER NAMES THE PRODUCT NOW (see `productIdentity.ts`).
+ *
+ * This used to be a three-name switch — `short`/`reboot` → "Short Reboot",
+ * `irem` → "IREM Gymnastics", everything else raw — written before the builder
+ * sold anything. Every course that shipped after 2026-08-26 fell through it and
+ * rendered as its own product code, and a course renamed by its author kept the
+ * old name here until someone edited this file.
+ *
+ * `product_title` arrives resolved from `lms_courses`, so the only judgement
+ * left on this side is what to print when a code delivers no course at all.
+ */
+function formatProductName(product: ProductData, unknownLabel: string): string {
+  if (product.product_title) return product.product_title;
+  const normalized = product.product_code.trim().toLowerCase();
   if (!normalized || normalized === "unknown") return unknownLabel;
-  if (normalized === "short" || normalized === "reboot") return "Short Reboot";
-  if (normalized === "irem") return "IREM Gymnastics";
-  return productCode;
+  return product.product_code;
 }
 
 function buildNiceScale(maxValue: number, tickCount = 5): { scaleMax: number; ticks: number[] } {
@@ -454,7 +496,7 @@ function funnelSourceLabel(
     | "manual_input"
     | "orders_created"
     | "paid_orders"
-    | "token_consumed"
+    | "access_delivered"
 ): string {
   if (source === "local_events") return t("analytics_source_local_events" as never);
   if (source === "local_events_floored") return t("analytics_source_local_events_floored" as never);
@@ -466,7 +508,7 @@ function funnelSourceLabel(
   if (source === "manual_input") return t("analytics_source_manual_input" as never);
   if (source === "orders_created") return t("analytics_source_orders_created" as never);
   if (source === "paid_orders") return t("analytics_source_paid_orders" as never);
-  return t("analytics_source_token_consumed" as never);
+  return t("analytics_source_access_delivered" as never);
 }
 
 function isoToDate(value: string): Date | null {
@@ -733,6 +775,8 @@ export default function AnalyticsPage() {
   const [funnelChain, setFunnelChain] = useState<FunnelChain | null>(null);
   const [kpis, setKpis] = useState<UnifiedKpis | null>(null);
   const [scrollDepth50, setScrollDepth50] = useState<number>(0);
+  const [learning, setLearning] = useState<LearningSummary | null>(null);
+  const [leads, setLeads] = useState<LeadsSummary | null>(null);
   const [engagementInitiateAligned, setEngagementInitiateAligned] = useState<number>(0);
   const [scroll50ToCheckoutPercent, setScroll50ToCheckoutPercent] = useState<number>(0);
   const [engagementAlignedFrom, setEngagementAlignedFrom] = useState<string | null>(null);
@@ -750,12 +794,10 @@ export default function AnalyticsPage() {
   );
   const [funnelUiSettings, setFunnelUiSettings] = useState<FunnelUiSettings>({
     mode: "payment",
-    showLeadsCard: false,
     showAccessGrantedCard: false,
   });
-  const [analyticsSection, setAnalyticsSection] = useState<
-    "overview" | "funnel" | "products" | "campaigns" | "capi" | "dosha" | "inputs_quality"
-  >("overview");
+  const [analyticsSection, setAnalyticsSection] = useState<AnalyticsSection>("overview");
+  const [dashboardMode, setDashboardMode] = useState<DashboardMode>(DEFAULT_DASHBOARD_MODE);
 
   const [doshaData, setDoshaData] = useState<DoshaAnalytics | null>(null);
   const [doshaLoading, setDoshaLoading] = useState(false);
@@ -815,7 +857,6 @@ export default function AnalyticsPage() {
       const mode: FunnelMode = parsed.mode === "access" ? "access" : "payment";
       setFunnelUiSettings({
         mode,
-        showLeadsCard: Boolean(parsed.showLeadsCard),
         showAccessGrantedCard: Boolean(parsed.showAccessGrantedCard),
       });
     } catch {
@@ -830,6 +871,19 @@ export default function AnalyticsPage() {
       // ignore storage write failures
     }
   }, [funnelUiSettings]);
+
+  /* Which mode this operator last used is a per-viewer convenience, exactly
+     like the metric visibility beside it — never shared, never read back by
+     anything but this page, and a browser that refuses storage simply opens on
+     the default. */
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DASHBOARD_MODE_KEY);
+      if (isDashboardMode(raw)) setDashboardMode(raw);
+    } catch {
+      // ignore storage read errors
+    }
+  }, []);
 
   const fetchAnalytics = async (period?: { from: string; to: string }) => {
     const requestSeq = ++analyticsRequestSeqRef.current;
@@ -877,8 +931,11 @@ export default function AnalyticsPage() {
         }
         const apiError = data?.error || `Failed to load analytics (${res.status})`;
         const lower = apiError.toLowerCase();
+        /* The names this list matches must be the ones the route actually
+           reads, or it classifies a failure by a table nobody queries any more
+           and misses the one that broke. `mv_funnel_daily` left the route when
+           the lead figures started coming from `leads` directly. */
         if (
-          lower.includes("mv_funnel_daily") ||
           lower.includes("mv_revenue_by_campaign") ||
           lower.includes("analytics_marketing_inputs") ||
           lower.includes("analytics_meta_daily") ||
@@ -903,6 +960,8 @@ export default function AnalyticsPage() {
       setFunnelChain(data.funnel_chain ?? null);
       setKpis(data.kpis ?? null);
       setScrollDepth50(data.engagement?.scroll_depth_50 ?? 0);
+      setLearning(data.learning ?? null);
+      setLeads(data.leads ?? null);
       setEngagementInitiateAligned(data.engagement?.initiate_checkout_aligned ?? 0);
       setScroll50ToCheckoutPercent(data.engagement?.scroll50_to_checkout_percent ?? 0);
       setEngagementAlignedFrom(data.engagement?.aligned_from ?? null);
@@ -1187,15 +1246,19 @@ export default function AnalyticsPage() {
     uniqueImpressions > 0
       ? Number((((funnelChain?.view_content ?? 0) * 100) / uniqueImpressions).toFixed(2))
       : 0;
-  const analyticsTabs = [
-    { key: "overview", label: t("analytics_subtab_overview") },
-    { key: "funnel", label: t("analytics_subtab_funnel") },
-    { key: "products", label: t("analytics_subtab_products") },
-    { key: "campaigns", label: t("analytics_subtab_campaigns") },
-    { key: "capi", label: t("analytics_subtab_capi") },
-    { key: "dosha", label: "Доша" },
-    { key: "inputs_quality", label: t("analytics_subtab_inputs_quality") },
-  ] as const;
+  const SECTION_LABEL: Record<AnalyticsSection, string> = {
+    overview: t("analytics_subtab_overview"),
+    funnel: t("analytics_subtab_funnel"),
+    products: t("analytics_subtab_products"),
+    campaigns: t("analytics_subtab_campaigns"),
+    capi: t("analytics_subtab_capi"),
+    dosha: t("analytics_dosha_tab"),
+    inputs_quality: t("analytics_subtab_inputs_quality"),
+  };
+  const analyticsTabs = MODE_SECTIONS[dashboardMode].map((key) => ({
+    key,
+    label: SECTION_LABEL[key],
+  }));
   const fetchDoshaAnalytics = async (period?: { from: string; to: string }) => {
     setDoshaLoading(true);
     try {
@@ -1217,11 +1280,23 @@ export default function AnalyticsPage() {
     }
   };
 
+  const handleDashboardModeChange = (mode: DashboardMode) => {
+    setDashboardMode(mode);
+    try {
+      localStorage.setItem(DASHBOARD_MODE_KEY, mode);
+    } catch {
+      // ignore storage write errors
+    }
+    /* The tab you were on may not exist in the mode you just chose. Landing on
+       a blank page because the section is still set to `campaigns` while the
+       strip no longer offers it is the obvious way to get this wrong. */
+    const next = sectionForMode(mode, analyticsSection);
+    if (next !== analyticsSection) handleAnalyticsSectionChange(next);
+  };
+
   const handleAnalyticsSectionChange = (key: string) => {
     flushSync(() => {
-      setAnalyticsSection(
-        key as "overview" | "funnel" | "products" | "campaigns" | "capi" | "dosha" | "inputs_quality"
-      );
+      setAnalyticsSection(key as AnalyticsSection);
     });
     if (key === "dosha" && !doshaData) {
       void fetchDoshaAnalytics({ from: fromDate, to: toDate });
@@ -1259,7 +1334,9 @@ export default function AnalyticsPage() {
           <DateRangePicker
             value={{ from: fromDate, to: toDate }}
             onApply={applyPeriod}
-            applyLabel={lang === "en" ? "Apply" : "Применить"}
+            /* This read "Применить" — Russian, in a product that speaks Ukrainian
+               on «ви», hardcoded past the dictionary that would have caught it. */
+            applyLabel={t("common_apply")}
             locale={dateLocale}
           />
           {isRefreshing ? (
@@ -1268,9 +1345,32 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <div className="pt-1">
+      {/* The mode sits ABOVE the tab strip and looks unlike it on purpose: it
+          does not select a view, it selects which views exist. Two controls of
+          the same shape stacked on each other would read as one nested strip
+          and nobody would know which row they were on. */}
+      <div className="pt-1 flex flex-col gap-3">
+        <div
+          className="inline-flex self-start rounded-lg border cw-border overflow-hidden"
+          role="group"
+          aria-label={t("analytics_mode_label")}
+        >
+          {DASHBOARD_MODES.map((mode, index) => (
+            <button
+              key={mode}
+              type="button"
+              aria-pressed={dashboardMode === mode}
+              onClick={() => handleDashboardModeChange(mode)}
+              className={`px-3 py-1.5 text-sm ${index > 0 ? "border-l cw-border" : ""} ${
+                dashboardMode === mode ? "cw-surface-2 cw-text" : "cw-btn-muted cw-muted"
+              }`}
+            >
+              {mode === "courses" ? t("analytics_mode_courses") : t("analytics_mode_traffic")}
+            </button>
+          ))}
+        </div>
         <AdminTabs
-          items={[...analyticsTabs]}
+          items={analyticsTabs}
           activeKey={analyticsSection}
           onChange={handleAnalyticsSectionChange}
         />
@@ -1361,19 +1461,6 @@ export default function AnalyticsPage() {
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <label className="flex items-center gap-2 text-sm cw-text">
-                  <input
-                    type="checkbox"
-                    checked={funnelUiSettings.showLeadsCard}
-                    onChange={() =>
-                      setFunnelUiSettings((prev) => ({
-                        ...prev,
-                        showLeadsCard: !prev.showLeadsCard,
-                      }))
-                    }
-                  />
-                  {t("analytics_toggle_leads_card")}
-                </label>
                 <label className="flex items-center gap-2 text-sm cw-text">
                   <input
                     type="checkbox"
@@ -1688,14 +1775,46 @@ export default function AnalyticsPage() {
         </AnalyticsCollapsePanel>
       )}
 
-      {analyticsSection === "overview" && (
+      {/* Requests, purchases, conversion: the business row, nothing to do with
+          which channel they arrived through. */}
+      {analyticsSection === "overview" && dashboardMode === "courses" && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        {funnelUiSettings.showLeadsCard ? (
-          <div className={surfaces.plate}>
+        {/* This card showed one number — `count(*)` over a table that, until the
+            form was wired to it, held two smoke-test rows — and it showed it
+            with no way to tell a request nobody has answered from one that
+            closed months ago. The count is still the headline, because that is
+            what arrived in the period; underneath it now says how many of them
+            became money and how many people are still waiting, which is the
+            only part anybody can act on. `open_total` ignores the date filter
+            on purpose. */}
+        {/* NO LONGER BEHIND A SWITCH. The switch existed to suppress a metric
+            that was meaningless — a count over a table nothing wrote to — and
+            it defaulted to off, so this card has been invisible for as long as
+            it has been wrong. Now that it says how many requests arrived, how
+            many became money and how many people are still waiting, hiding it
+            by default is the wrong answer.
+
+            The split into Courses/Traffic also broke the switch outright: it
+            lived in «Вхідні дані та якість», which is a TRAFFIC tab, while the
+            card it controlled is a COURSES one. A control you can only reach
+            from the mode where its subject does not exist is not a setting.
+            Found by opening the page — no test would have seen it. */}
+        <div className={surfaces.plate}>
             <div className="text-sm font-medium cw-muted">{t("analytics_leads")}</div>
-            <div className="text-3xl font-bold mt-2 cw-text">{summary.totalLeads}</div>
-          </div>
-        ) : null}
+            <div className="text-3xl font-bold mt-2 cw-text">{leads?.new_in_period ?? summary.totalLeads}</div>
+            {leads ? (
+              <div className="text-xs cw-muted mt-2 space-y-0.5">
+                <div>
+                  {t("analytics_leads_won")}: <span className="cw-text">{leads.won_in_period}</span>
+                  {leads.new_in_period > 0 ? ` · ${leads.conversion_percent}%` : ""}
+                </div>
+                <div>
+                  {t("analytics_leads_open")}:{" "}
+                  <span className={leads.open_total > 0 ? "cw-text" : ""}>{leads.open_total}</span>
+                </div>
+              </div>
+            ) : null}
+        </div>
         <div className={surfaces.plate}>
           <div className="text-sm font-medium cw-muted">{t("analytics_purchases")}</div>
           <div className="text-3xl font-bold mt-2 cw-text">{summary.totalPaidOrders}</div>
@@ -1711,7 +1830,8 @@ export default function AnalyticsPage() {
       </div>
       )}
 
-      {analyticsSection === "overview" && (
+      {/* Spend, ROAS, CPA, CPC, CTR — the ad ledger. */}
+      {analyticsSection === "overview" && dashboardMode === "traffic" && (
       <div className={`${surfaces.plate} space-y-4 md:space-y-5`}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
           <div>
@@ -1736,7 +1856,58 @@ export default function AnalyticsPage() {
       </div>
       )}
 
-      {analyticsSection === "overview" && (
+      {/* WHAT HAPPENED AFTER THE MONEY.
+          One row, directly under the money row, because this dashboard has
+          always stopped at the purchase — five Meta tables and not one `lms_*`
+          — while the product it reports on became a school. It answers «все ли
+          в порядке» and nothing more: which course, which learner, why stalled
+          is `/admin/access`, and the link goes there rather than growing a
+          second answer here. */}
+      {analyticsSection === "overview" && dashboardMode === "courses" && learning && (
+      <div className={`${surfaces.plate} space-y-4`}>
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-semibold cw-text">{t("analytics_learning_title")}</h2>
+            <p className="text-sm cw-muted">{t("analytics_learning_subtitle")}</p>
+          </div>
+          <Link href="/admin/access" prefetch={false} className="text-xs cw-link-hover shrink-0">
+            {t("analytics_learning_open_access")}
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className={surfaces.tile}>
+            <div className="text-xs cw-muted">{t("analytics_learning_granted")}</div>
+            <div className="text-2xl font-bold cw-text mt-1">{learning.granted_in_period.toLocaleString()}</div>
+          </div>
+          <div className={surfaces.tile}>
+            <div className="text-xs cw-muted">{t("analytics_learning_started")}</div>
+            <div className="text-2xl font-bold cw-text mt-1">{learning.started_in_period.toLocaleString()}</div>
+            <div className="text-xs cw-muted mt-1">{learning.started_percent}%</div>
+          </div>
+          <div className={surfaces.tile}>
+            <div className="text-xs cw-muted">{t("analytics_learning_active")}</div>
+            <div className="text-2xl font-bold cw-text mt-1">{learning.active_total.toLocaleString()}</div>
+          </div>
+          {/* A deadline is a fact about now, not about the picker's window —
+              so this one card deliberately ignores the period. */}
+          <div className={surfaces.tile}>
+            <div className="text-xs cw-muted">{t("analytics_learning_expiring")}</div>
+            <div className={`text-2xl font-bold mt-1 ${learning.expiring_14d > 0 ? "cw-text" : "cw-muted"}`}>
+              {learning.expiring_14d.toLocaleString()}
+            </div>
+            {learning.expired_total > 0 && (
+              <div className="text-xs cw-muted mt-1">
+                {t("analytics_learning_expired")}: {learning.expired_total}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      )}
+
+      {/* Scroll depth and scroll-to-checkout describe how a PAGE performs, which
+          is a traffic question. */}
+      {analyticsSection === "overview" && dashboardMode === "traffic" && (
       <div className={`${surfaces.plate} space-y-4`}>
         <div>
           <h2 className="text-lg font-semibold cw-text">{t("analytics_engagement_title")}</h2>
@@ -1770,7 +1941,7 @@ export default function AnalyticsPage() {
                 { key: "initiate_checkout", label: t("analytics_event_initiate_checkout"), value: funnelSources.initiate_checkout },
                 { key: "purchase", label: t("analytics_event_purchase"), value: funnelSources.purchase },
                 ...(funnelUiSettings.mode === "access" || funnelUiSettings.showAccessGrantedCard
-                  ? [{ key: "access_granted", label: t("analytics_event_access_granted"), value: funnelSources.access_granted as "token_consumed" }]
+                  ? [{ key: "access_granted", label: t("analytics_event_access_granted"), value: funnelSources.access_granted as "access_delivered" }]
                   : []),
               ].map((item) => (
                 <span
@@ -1906,6 +2077,8 @@ export default function AnalyticsPage() {
         </div>
       )}
 
+      {/* The one time series both questions are judged against, so it belongs to
+          both modes rather than to whichever felt more natural. */}
       {analyticsSection === "overview" && (
       <div className={surfaces.plate}>
         <h2 className="text-lg font-medium mb-4 md:mb-6 cw-text">{t("analytics_daily_revenue")}</h2>
@@ -2197,7 +2370,7 @@ export default function AnalyticsPage() {
                   products.map((product) => (
                     <tr key={product.product_code} className="border-t cw-border cw-row-hover">
                       <td className="px-4 md:px-6 py-4 text-sm font-medium cw-text">
-                        {formatProductName(product.product_code, t("analytics_product_unknown"))}
+                        {formatProductName(product, t("analytics_product_unknown"))}
                       </td>
                       <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
                         {product.total_orders.toLocaleString()}
@@ -2224,39 +2397,39 @@ export default function AnalyticsPage() {
       {analyticsSection === "dosha" && (
         <div className="space-y-4 md:space-y-5">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold cw-text">Доша-тест: аналітика</h2>
+            <h2 className="text-lg font-semibold cw-text">{t("analytics_dosha_title")}</h2>
             <button
               type="button"
               onClick={() => { void fetchDoshaAnalytics({ from: fromDate, to: toDate }); }}
               disabled={doshaLoading}
               className="px-4 py-2 text-sm font-medium cw-btn disabled:opacity-50"
             >
-              {doshaLoading ? "Завантаження..." : t("analytics_refresh")}
+              {doshaLoading ? t("common_loading_short") : t("analytics_refresh")}
             </button>
           </div>
 
           {doshaLoading && !doshaData ? (
-            <div className={`${surfaces.plate} text-center text-sm cw-muted`}>Завантаження...</div>
+            <AdminLoadingState variant="spinner" text={t("common_loading_short")} className={surfaces.plate} />
           ) : doshaData ? (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
                 <div className={surfaces.plate}>
-                  <div className="text-sm font-medium cw-muted">Завершено тестів</div>
+                  <div className="text-sm font-medium cw-muted">{t("analytics_dosha_completed")}</div>
                   <div className="text-3xl font-bold mt-2 cw-text">{doshaData.total_completions}</div>
                 </div>
                 <div className={surfaces.plate}>
-                  <div className="text-sm font-medium cw-muted">CTA-кліки</div>
+                  <div className="text-sm font-medium cw-muted">{t("analytics_dosha_cta_clicks")}</div>
                   <div className="text-3xl font-bold mt-2 cw-text">{doshaData.total_cta_clicks}</div>
-                  <div className="text-xs cw-muted mt-1">Click-through: {doshaData.cta_click_through_percent}%</div>
+                  <div className="text-xs cw-muted mt-1">{t("analytics_dosha_click_through")}: {doshaData.cta_click_through_percent}%</div>
                 </div>
                 <div className={surfaces.plate}>
-                  <div className="text-sm font-medium cw-muted">Домінуючий тип</div>
+                  <div className="text-sm font-medium cw-muted">{t("analytics_dosha_top_type")}</div>
                   <div className="text-3xl font-bold mt-2 cw-text capitalize">{doshaData.top_type?.replace("_", " + ") ?? "—"}</div>
                 </div>
               </div>
 
               <div className={`${surfaces.plate} space-y-4`}>
-                <h3 className="text-sm font-semibold cw-text">Розподіл по типу доші</h3>
+                <h3 className="text-sm font-semibold cw-text">{t("analytics_dosha_by_type")}</h3>
                 <div className="space-y-2">
                   {doshaData.completions_by_type.map((row) => (
                     <div key={row.result_type} className="flex items-center gap-3">
@@ -2278,15 +2451,15 @@ export default function AnalyticsPage() {
 
               <div className={surfaces.plateFlush}>
                 <div className="px-4 sm:px-5 md:px-6 py-4 border-b cw-border">
-                  <h3 className="text-sm font-semibold cw-text">CTA-кліки по типу доші</h3>
-                  <p className="text-xs cw-muted mt-1">Primary = консультація, Secondary = програма</p>
+                  <h3 className="text-sm font-semibold cw-text">{t("analytics_dosha_cta_by_type")}</h3>
+                  <p className="text-xs cw-muted mt-1">{t("analytics_dosha_cta_legend")}</p>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead className="cw-surface-2 border-b cw-border">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">Тип</th>
-                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">Тестів</th>
+                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">{t("analytics_dosha_col_type")}</th>
+                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">{t("analytics_dosha_col_tests")}</th>
                         <th className="px-4 py-2 text-left text-xs cw-muted uppercase">Primary</th>
                         <th className="px-4 py-2 text-left text-xs cw-muted uppercase">Secondary</th>
                         <th className="px-4 py-2 text-left text-xs cw-muted uppercase">CTR</th>
@@ -2312,13 +2485,13 @@ export default function AnalyticsPage() {
 
               {doshaData.daily.some((row) => row.completions > 0) && (
                 <div className={`${surfaces.plate} space-y-3`}>
-                  <h3 className="text-sm font-semibold cw-text">Завершення по днях</h3>
-                  <div className={surfaces.subPlate}>
+                  <h3 className="text-sm font-semibold cw-text">{t("analytics_dosha_daily")}</h3>
+                  <div className="cw-surface rounded-xl border cw-border overflow-x-auto">
                     <table className="min-w-full text-xs">
                       <thead className="cw-surface-2 border-b cw-border">
                         <tr>
                           <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_col_date")}</th>
-                          <th className="px-3 py-2 text-left cw-muted uppercase">Тестів завершено</th>
+                          <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_dosha_col_completed")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2331,16 +2504,12 @@ export default function AnalyticsPage() {
                       </tbody>
                     </table>
                   </div>
-                  <p className="text-xs cw-muted">
-                    CAC по сегменту доші потребує зв&apos;язки test_attempts → orders через user_id (буде з LMS/auth).
-                  </p>
+                  <p className="text-xs cw-muted">{t("analytics_dosha_cac_note")}</p>
                 </div>
               )}
             </>
           ) : (
-            <div className={`${surfaces.plate} text-center text-sm cw-muted`}>
-              Натисніть &laquo;Оновити&raquo; для завантаження даних
-            </div>
+            <div className={`${surfaces.plate} text-center text-sm cw-muted`}>{t("analytics_dosha_press_refresh")}</div>
           )}
         </div>
       )}
