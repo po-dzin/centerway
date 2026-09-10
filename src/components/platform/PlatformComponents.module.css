@@ -269,6 +269,44 @@
   color: var(--cw-platform-muted);
 }
 
+/* THE MARK IS AS TALL AS THE WORDS BESIDE IT.
+   It was a 30px box against a three-line block — a label, a title and a line
+   of detail, 72px of text measured on the built page — so the one animated
+   thing on the card read as a speck and the brand arrived as punctuation.
+
+   4.5rem IS that 72px, and it is a number rather than a measurement on
+   purpose. The first version derived it: `align-items: stretch` on the row
+   plus `aspect-ratio: 1` here, so the mark took whatever height the copy
+   happened to have. That is the nicer rule and it misbehaves at 375px — the
+   detail line wraps to two, the block grows to 93px, the square grows with it,
+   the wider square takes width from the copy, and the copy wraps further. A
+   square sized from a block whose width it competes for is a feedback loop.
+
+   The copy on this card is fixed product copy, not user content, so its height
+   is a known quantity and stating it directly costs nothing that measuring it
+   would have earned. `flex: none` is what keeps the loop shut for good. */
+.platformLoadingMark {
+  flex: none;
+  inline-size: 4.5rem;
+  block-size: 4.5rem;
+}
+
+/* ONE STEP DOWN ON A PHONE, and the step is measured rather than guessed.
+   At 375px the mark and the copy compete for one row's width. Built page,
+   real copy: a 72px mark leaves the text 250px and the detail wraps to a
+   block 117px tall; at 56px the block is 93px — and 56 is the LARGEST mark
+   that costs the copy no extra line (48 and 30 measure the same 93). So the
+   phone gets the biggest mark the sentence can afford, which is 3.5rem.
+
+   560px is the platform's own narrow bound (`PlatformResponsive.module.css`),
+   not a number chosen here. */
+@media (max-width: 560px) {
+  .platformLoadingMark {
+    inline-size: 3.5rem;
+    block-size: 3.5rem;
+  }
+}
+
 .platformLoadingCopy {
   display: grid;
   gap: calc(var(--cw-space-2xs) / 2);
