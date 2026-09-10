@@ -1217,7 +1217,7 @@ export default function AnalyticsPage() {
     { key: "products", label: t("analytics_subtab_products") },
     { key: "campaigns", label: t("analytics_subtab_campaigns") },
     { key: "capi", label: t("analytics_subtab_capi") },
-    { key: "dosha", label: "Доша" },
+    { key: "dosha", label: t("analytics_dosha_tab") },
     { key: "inputs_quality", label: t("analytics_subtab_inputs_quality") },
   ] as const;
   const fetchDoshaAnalytics = async (period?: { from: string; to: string }) => {
@@ -1283,7 +1283,9 @@ export default function AnalyticsPage() {
           <DateRangePicker
             value={{ from: fromDate, to: toDate }}
             onApply={applyPeriod}
-            applyLabel={lang === "en" ? "Apply" : "Применить"}
+            /* This read "Применить" — Russian, in a product that speaks Ukrainian
+               on «ви», hardcoded past the dictionary that would have caught it. */
+            applyLabel={t("common_apply")}
             locale={dateLocale}
           />
           {isRefreshing ? (
@@ -2297,39 +2299,39 @@ export default function AnalyticsPage() {
       {analyticsSection === "dosha" && (
         <div className="space-y-4 md:space-y-5">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold cw-text">Доша-тест: аналітика</h2>
+            <h2 className="text-lg font-semibold cw-text">{t("analytics_dosha_title")}</h2>
             <button
               type="button"
               onClick={() => { void fetchDoshaAnalytics({ from: fromDate, to: toDate }); }}
               disabled={doshaLoading}
               className="px-4 py-2 text-sm font-medium cw-btn disabled:opacity-50"
             >
-              {doshaLoading ? "Завантаження..." : t("analytics_refresh")}
+              {doshaLoading ? t("common_loading_short") : t("analytics_refresh")}
             </button>
           </div>
 
           {doshaLoading && !doshaData ? (
-            <div className="cw-panel p-6 text-center text-sm cw-muted">Завантаження...</div>
+            <div className="cw-panel p-6 text-center text-sm cw-muted">{t("common_loading_short")}</div>
           ) : doshaData ? (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
                 <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
-                  <div className="text-sm font-medium cw-muted">Завершено тестів</div>
+                  <div className="text-sm font-medium cw-muted">{t("analytics_dosha_completed")}</div>
                   <div className="text-3xl font-bold mt-2 cw-text">{doshaData.total_completions}</div>
                 </div>
                 <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
-                  <div className="text-sm font-medium cw-muted">CTA-кліки</div>
+                  <div className="text-sm font-medium cw-muted">{t("analytics_dosha_cta_clicks")}</div>
                   <div className="text-3xl font-bold mt-2 cw-text">{doshaData.total_cta_clicks}</div>
-                  <div className="text-xs cw-muted mt-1">Click-through: {doshaData.cta_click_through_percent}%</div>
+                  <div className="text-xs cw-muted mt-1">{t("analytics_dosha_click_through")}: {doshaData.cta_click_through_percent}%</div>
                 </div>
                 <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
-                  <div className="text-sm font-medium cw-muted">Домінуючий тип</div>
+                  <div className="text-sm font-medium cw-muted">{t("analytics_dosha_top_type")}</div>
                   <div className="text-3xl font-bold mt-2 cw-text capitalize">{doshaData.top_type?.replace("_", " + ") ?? "—"}</div>
                 </div>
               </div>
 
               <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4">
-                <h3 className="text-sm font-semibold cw-text">Розподіл по типу доші</h3>
+                <h3 className="text-sm font-semibold cw-text">{t("analytics_dosha_by_type")}</h3>
                 <div className="space-y-2">
                   {doshaData.completions_by_type.map((row) => (
                     <div key={row.result_type} className="flex items-center gap-3">
@@ -2351,15 +2353,15 @@ export default function AnalyticsPage() {
 
               <div className="cw-surface rounded-2xl border cw-border cw-shadow overflow-hidden">
                 <div className="px-4 sm:px-5 md:px-6 py-4 border-b cw-border">
-                  <h3 className="text-sm font-semibold cw-text">CTA-кліки по типу доші</h3>
-                  <p className="text-xs cw-muted mt-1">Primary = консультація, Secondary = програма</p>
+                  <h3 className="text-sm font-semibold cw-text">{t("analytics_dosha_cta_by_type")}</h3>
+                  <p className="text-xs cw-muted mt-1">{t("analytics_dosha_cta_legend")}</p>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead className="cw-surface-2 border-b cw-border">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">Тип</th>
-                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">Тестів</th>
+                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">{t("analytics_dosha_col_type")}</th>
+                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">{t("analytics_dosha_col_tests")}</th>
                         <th className="px-4 py-2 text-left text-xs cw-muted uppercase">Primary</th>
                         <th className="px-4 py-2 text-left text-xs cw-muted uppercase">Secondary</th>
                         <th className="px-4 py-2 text-left text-xs cw-muted uppercase">CTR</th>
@@ -2385,13 +2387,13 @@ export default function AnalyticsPage() {
 
               {doshaData.daily.some((row) => row.completions > 0) && (
                 <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-3">
-                  <h3 className="text-sm font-semibold cw-text">Завершення по днях</h3>
+                  <h3 className="text-sm font-semibold cw-text">{t("analytics_dosha_daily")}</h3>
                   <div className="cw-surface rounded-xl border cw-border overflow-x-auto">
                     <table className="min-w-full text-xs">
                       <thead className="cw-surface-2 border-b cw-border">
                         <tr>
                           <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_col_date")}</th>
-                          <th className="px-3 py-2 text-left cw-muted uppercase">Тестів завершено</th>
+                          <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_dosha_col_completed")}</th>
                         </tr>
                       </thead>
                       <tbody>

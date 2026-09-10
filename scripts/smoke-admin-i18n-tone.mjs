@@ -1,5 +1,11 @@
 import { readFile } from "node:fs/promises";
+import { readdirSync, statSync } from "node:fs";
+import path from "node:path";
 
+/* Every prefix an admin string can carry. A key whose prefix is missing here is
+   not checked for UK/EN parity at all — `leads_` was, for a day, exactly that:
+   thirteen new keys nobody was comparing. If you add a family of admin strings,
+   add its prefix. */
 const ADMIN_KEY_PREFIXES = [
   "sidebar_",
   "nav_",
@@ -14,7 +20,19 @@ const ADMIN_KEY_PREFIXES = [
   "orders_",
   "jobs_",
   "customers_",
+  "leads_",
+  "catalog_",
+  "access_",
 ];
+
+/* WHERE ADMIN STRINGS ARE WRITTEN. The parity check above reads the dictionary,
+   so it can only ever see strings that reached it. An entire tab — the dosha
+   analytics — was hardcoded in the page for months while this smoke reported
+   PASS, because a string that never became a key is invisible to a check that
+   starts from keys. This scan starts from the SOURCE instead. */
+const ADMIN_SOURCE_DIRS = ["src/app/(platform)/admin", "src/components/admin"];
+
+const CYRILLIC = /[\u0400-\u04FF]/;
 
 const FORBIDDEN_UK = [
   /останн(ій|я)\s+шанс/i,
@@ -32,6 +50,62 @@ const FORBIDDEN_EN = [
   /don't\s+miss/i,
   /limited\s+time/i,
 ];
+
+/* Consumes strings BEFORE comment markers, so a `//` inside a string literal is
+   not mistaken for a comment and — more importantly here — the many Cyrillic
+   prose comments in this codebase are removed without taking real strings with
+   them. Comments are blanked rather than deleted so line numbers survive. */
+const JS_TOKENS = /("(?:\\.|[^"\\])*")|('(?:\\.|[^'\\])*')|(`(?:\\.|[^`\\])*`)|(\/\*[\s\S]*?\*\/)|(\/\/[^\n]*)/g;
+
+function stripComments(source) {
+  return source.replace(JS_TOKENS, (match, _dq, _sq, _tq, block, line) =>
+    block || line ? match.replace(/[^\n]/g, " ") : match
+  );
+}
+
+function collectSourceFiles(dir, out = []) {
+  let entries;
+  try {
+    entries = readdirSync(dir);
+  } catch {
+    return out;
+  }
+  for (const entry of entries) {
+    const full = path.join(dir, entry);
+    if (statSync(full).isDirectory()) collectSourceFiles(full, out);
+    else if (full.endsWith(".tsx") || full.endsWith(".ts")) out.push(full);
+  }
+  return out;
+}
+
+async function checkNoHardcodedStrings() {
+  const offenders = [];
+
+  for (const dir of ADMIN_SOURCE_DIRS) {
+    for (const file of collectSourceFiles(dir)) {
+      if (file.endsWith(".test.ts") || file.endsWith(".test.tsx")) continue;
+      const source = stripComments(await readFile(file, "utf8"));
+      source.split("\n").forEach((line, index) => {
+        const literals = line.match(/"[^"\n]*"|'[^'\n]*'|`[^`\n]*`/g) ?? [];
+        const jsxText = line.match(/>[^<>{}]*</g) ?? [];
+        for (const candidate of [...literals, ...jsxText]) {
+          if (CYRILLIC.test(candidate)) {
+            offenders.push(`${file}:${index + 1} ${candidate.trim().slice(0, 60)}`);
+          }
+        }
+      });
+    }
+  }
+
+  if (offenders.length === 0) {
+    pass("admin surfaces carry no hardcoded display strings");
+    return;
+  }
+  fail(
+    `admin display strings written in source instead of src/lib/i18n.ts (${offenders.length}):\n  ` +
+      offenders.join("\n  ")
+  );
+}
 
 function fail(message) {
   console.log(`FAIL ${message}`);
@@ -108,6 +182,7 @@ async function main() {
   const translations = parseTranslations(source);
   checkKeyParity(translations);
   checkTone(translations);
+  await checkNoHardcodedStrings();
   if (process.exitCode) process.exit(process.exitCode);
   console.log("Admin i18n/tone smoke passed");
 }

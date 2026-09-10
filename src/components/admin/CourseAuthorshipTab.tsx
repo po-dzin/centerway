@@ -90,7 +90,7 @@ export function CourseAuthorshipTab({
         setSavingId(course.id);
         try {
             await authFetch("/api/admin/access/courses", { method: "PATCH", body: JSON.stringify({ courseId: course.id, action, visibility, note: reviewNotes[course.id] }) });
-            toast.success(action === "approve" ? "Курс схвалено" : action === "request_changes" ? "Курс повернено автору" : "Видимість оновлено");
+            toast.success(action === "approve" ? t("catalog_authorship_approved") : action === "request_changes" ? t("catalog_authorship_returned") : t("catalog_authorship_visibility_updated"));
             onChanged();
         } catch (e) { toast.error(errorText(getErrorMessage(e))); }
         finally { setSavingId(null); }
@@ -134,7 +134,7 @@ export function CourseAuthorshipTab({
                                     <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">
                                         {course.status}
                                     </span>
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">{course.hasPendingRevision ? `оновлення · ${course.reviewStatus}` : course.reviewStatus}</span>
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">{course.hasPendingRevision ? `${t("catalog_authorship_updated_at")} · ${course.reviewStatus}` : course.reviewStatus}</span>
                                 </div>
                                 <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
                                     <span className="font-mono">{course.slug}</span>
@@ -153,15 +153,15 @@ export function CourseAuthorshipTab({
                             <div className="flex flex-col sm:flex-row gap-2">
                                 {course.reviewStatus === "in_review" ? (
                                     <>
-                                        <input className="cw-input px-3 py-2 text-sm flex-1" value={reviewNotes[course.id] ?? ""} onChange={(e) => setReviewNotes((prev) => ({ ...prev, [course.id]: e.target.value }))} placeholder="Коментар автору, якщо потрібні зміни" />
-                                        <button className="px-4 py-2 cw-btn cw-surface-2 text-sm" disabled={savingId === course.id} onClick={() => void moderate(course, "approve")}>Схвалити</button>
-                                        <button className="px-4 py-2 cw-btn cw-btn-muted text-sm" disabled={savingId === course.id} onClick={() => void moderate(course, "request_changes")}>Повернути</button>
+                                        <input className="cw-input px-3 py-2 text-sm flex-1" value={reviewNotes[course.id] ?? ""} onChange={(e) => setReviewNotes((prev) => ({ ...prev, [course.id]: e.target.value }))} placeholder={t("catalog_authorship_comment_placeholder")} />
+                                        <button className="px-4 py-2 cw-btn cw-surface-2 text-sm" disabled={savingId === course.id} onClick={() => void moderate(course, "approve")}>{t("catalog_authorship_approve")}</button>
+                                        <button className="px-4 py-2 cw-btn cw-btn-muted text-sm" disabled={savingId === course.id} onClick={() => void moderate(course, "request_changes")}>{t("catalog_authorship_return")}</button>
                                     </>
                                 ) : course.status === "published" && course.reviewStatus === "approved" ? (
                                     <select className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-48" value={course.visibility} disabled={savingId === course.id} onChange={(e) => void moderate(course, "set_visibility", e.target.value as CourseRow["visibility"])}>
-                                        <option value="hidden">Приховано</option><option value="unlisted">За посиланням</option><option value="listed">У каталозі</option>
+                                        <option value="hidden">{t("catalog_authorship_hidden")}</option><option value="unlisted">{t("catalog_authorship_unlisted")}</option><option value="listed">{t("catalog_authorship_listed")}</option>
                                     </select>
-                                ) : <p className="text-xs cw-muted">Каталог стане доступним після схвалення й публікації.</p>}
+                                ) : <p className="text-xs cw-muted">{t("catalog_authorship_listed_hint")}</p>}
                             </div>
                         ) : null}
 
