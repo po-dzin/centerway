@@ -36,6 +36,7 @@ type CampaignData = {
 
 type ProductData = {
   product_code: string;
+  product_title: string | null;
   total_orders: number;
   paid_orders: number;
   total_revenue: number;
@@ -359,12 +360,23 @@ function formatCompactTick(value: number, locale: string): string {
   }).format(value);
 }
 
-function formatProductName(productCode: string, unknownLabel: string): string {
-  const normalized = productCode.trim().toLowerCase();
+/**
+ * THE SERVER NAMES THE PRODUCT NOW (see `productIdentity.ts`).
+ *
+ * This used to be a three-name switch — `short`/`reboot` → "Short Reboot",
+ * `irem` → "IREM Gymnastics", everything else raw — written before the builder
+ * sold anything. Every course that shipped after 2026-08-26 fell through it and
+ * rendered as its own product code, and a course renamed by its author kept the
+ * old name here until someone edited this file.
+ *
+ * `product_title` arrives resolved from `lms_courses`, so the only judgement
+ * left on this side is what to print when a code delivers no course at all.
+ */
+function formatProductName(product: ProductData, unknownLabel: string): string {
+  if (product.product_title) return product.product_title;
+  const normalized = product.product_code.trim().toLowerCase();
   if (!normalized || normalized === "unknown") return unknownLabel;
-  if (normalized === "short" || normalized === "reboot") return "Short Reboot";
-  if (normalized === "irem") return "IREM Gymnastics";
-  return productCode;
+  return product.product_code;
 }
 
 function buildNiceScale(maxValue: number, tickCount = 5): { scaleMax: number; ticks: number[] } {
@@ -2196,7 +2208,7 @@ export default function AnalyticsPage() {
                   products.map((product) => (
                     <tr key={product.product_code} className="border-t cw-border cw-row-hover">
                       <td className="px-4 md:px-6 py-4 text-sm font-medium cw-text">
-                        {formatProductName(product.product_code, t("analytics_product_unknown"))}
+                        {formatProductName(product, t("analytics_product_unknown"))}
                       </td>
                       <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
                         {product.total_orders.toLocaleString()}

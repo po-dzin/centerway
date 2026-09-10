@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 import { adminClient } from "@/lib/auth/adminClient";
 import { requireAdminSession, serverErrorResponse, unauthorizedResponse } from "@/lib/api/adminRoute";
 import { normalizeTrackingString, resolveFbc } from "@/lib/tracking/metaClickIds";
+import { canonicalProductKey, resolveProductTitles } from "@/lib/reporting/productIdentity";
 
 type CapiEventName = "ViewContent" | "InitiateCheckout" | "Purchase";
 
@@ -137,8 +138,13 @@ type CampaignBreakdownRow = {
     currency: string;
 };
 
+/* `product_code` is the CANONICAL key (see `canonicalProductKey`), not the
+   raw `orders.product_code` — one row per course rather than one per
+   historical spelling of it. `product_title` is the course's own title out
+   of `lms_courses`, null for a code that delivers no course. */
 type ProductBreakdownRow = {
     product_code: string;
+    product_title: string | null;
     total_orders: number;
     paid_orders: number;
     total_revenue: number;
@@ -971,7 +977,7 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
             knownMetaIds,
         });
         const source = resolveMetaCanonicalName(rawSource) ?? rawSource;
-        const productCode = normalizeCampaignSource(row.product_code, "unknown");
+        const productCode = canonicalProductKey(row.product_code);
         const existing = resolveRowByAliases([source]) ?? {
             source_campaign: source,
             total_orders: 0,
@@ -985,6 +991,7 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
         };
         const productExisting = productMap.get(productCode) ?? {
             product_code: productCode,
+            product_title: null,
             total_orders: 0,
             paid_orders: 0,
             total_revenue: 0,
@@ -1061,9 +1068,14 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
             return b.total_orders - a.total_orders;
         })
         .slice(0, 20);
+    /* Titles last, in one query for the whole breakdown: the rows are already
+       folded onto canonical keys by now, so this asks `lms_courses` for each
+       course once rather than once per order. */
+    const productTitles = await resolveProductTitles(db, productMap.keys());
     const productData = Array.from(productMap.values())
         .map((row) => ({
             ...row,
+            product_title: productTitles.get(row.product_code) ?? null,
             share_revenue_percent: Number(safeDivide(row.total_revenue * 100, paidRevenueFact).toFixed(2)),
         }))
         .sort((a, b) => {

@@ -1,5 +1,5 @@
 import { adminClient } from "@/lib/auth/adminClient";
-import { parseCourseOfferCode } from "@/lms-core/offerCode";
+import { canonicalProductKey, resolveProductTitles } from "@/lib/reporting/productIdentity";
 import { sendTelegramMessageWithToken } from "@/lib/tg";
 
 const REPORTS_TIME_ZONE = process.env.ANALYTICS_REPORTS_TIMEZONE || "Europe/Kyiv";
@@ -166,34 +166,6 @@ function localMidnightUtcIso(isoDate: string, timeZone: string): string {
 }
 
 /**
- * Course titles for the `course:<slug>` codes in a batch of orders, one query
- * for the whole report rather than one per row.
- *
- * `parseCourseOfferCode` is the same parser `loadPayableOffer` and the checkout
- * itself use — not a second regex reinvented here, which is exactly how the
- * bug this function fixes got in: this file's own product-code vocabulary
- * predates the builder's `course:<slug>` convention and never learned it.
- */
-async function courseTitlesByCode(
-  db: ReturnType<typeof adminClient>,
-  productCodes: Iterable<string | null | undefined>
-): Promise<Map<string, string>> {
-  const slugs = new Set<string>();
-  for (const code of productCodes) {
-    const slug = parseCourseOfferCode(code ?? null);
-    if (slug) slugs.add(slug);
-  }
-  const byCode = new Map<string, string>();
-  if (slugs.size === 0) return byCode;
-
-  const { data } = await db.from("lms_courses").select("slug, title").in("slug", [...slugs]);
-  for (const row of data ?? []) {
-    byCode.set(`course:${row.slug as string}`, (row.title as string | null) ?? (row.slug as string));
-  }
-  return byCode;
-}
-
-/**
  * The reader-facing label for a product code.
  *
  * WHY THIS WAS WRONG FOR EVERY COURSE SOLD OUT OF THE BUILDER. The switch
@@ -206,9 +178,13 @@ async function courseTitlesByCode(
  * live, in the operator's own Telegram group, on the very order this session
  * was already reconciling.
  *
- * `courseTitles` is the batch lookup from `courseTitlesByCode`; a caller with
- * one order (the sale notification) passes a one-entry map rather than
- * threading a whole batch through for a single row.
+ * `courseTitles` is the batch lookup from `resolveProductTitles`, the shared
+ * vocabulary in `productIdentity.ts`; a caller with one order (the sale
+ * notification) passes a one-entry map rather than threading a whole batch
+ * through for a single row. Lookups go through `canonicalProductKey`, so the
+ * two spellings of one course — the landing's `short` and the platform's
+ * `course:short` — both land on that course's title instead of on two
+ * different labels, which is what split the digest's product totals.
  *
  * The fallback is the raw code, not "Невідомий продукт" — an actually unknown
  * code is now visibly itself instead of indistinguishable from a real course
@@ -216,14 +192,12 @@ async function courseTitlesByCode(
  */
 function productLabel(productCode: string | null | undefined, courseTitles: Map<string, string>): string {
   const code = (productCode ?? "").trim();
-  const courseTitle = courseTitles.get(code);
+  /* Canonical first: `short` and `course:short` are one course, so the legacy
+     landing code finds the title the platform code stored. */
+  const courseTitle = courseTitles.get(canonicalProductKey(code));
   if (courseTitle) return courseTitle;
 
   switch (code) {
-    case "short":
-      return "Short Reboot";
-    case "irem":
-      return "IREM";
     case "consult":
       return "Consult";
     case "natural-body":
@@ -708,7 +682,7 @@ export async function sendConfirmedSaleTelegramReport(orderRef: string): Promise
       }).format(new Date(order.created_at))
     : "невідомо";
 
-  const courseTitles = await courseTitlesByCode(db, [order.product_code]);
+  const courseTitles = await resolveProductTitles(db, [order.product_code]);
 
   const text = [
     "Підтверджено продаж",
@@ -809,7 +783,7 @@ async function buildPeriodicReport(window: ReportWindow): Promise<PeriodicReport
   let totalRevenue = 0;
   let currency = "UAH";
 
-  const courseTitles = await courseTitlesByCode(
+  const courseTitles = await resolveProductTitles(
     db,
     (ordersResult.data ?? []).map((row) => (typeof row.product_code === "string" ? row.product_code : null))
   );
