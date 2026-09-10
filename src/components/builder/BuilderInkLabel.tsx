@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 
-import { HandGraphic } from "@/components/Icon";
 import styles from "./Builder.module.css";
 
 /**
@@ -18,10 +17,19 @@ import styles from "./Builder.module.css";
  * drawn around a row is a CONTOUR: it makes a list of names look like a list of
  * buttons.
  *
- * The stroke is one object at two strengths instead — faint under the pointer,
- * full when the row is current — so the states cannot collapse into each other,
- * and it is the hand's own ink rather than a frame. The trail and the course
- * rail already spoke this way; this is the rest of the builder joining them.
+ * The mark is one object at two strengths instead — faint under the pointer,
+ * full when the row is current — so the states cannot collapse into each other.
+ *
+ * IT IS A ROUNDED EDGE AROUND THE LABEL, NOT A PLATE BEHIND IT (2026-09-10).
+ * The paragraph above used to end by rejecting contours outright, on the
+ * grounds that a rectangle around a row makes a list of names look like a list
+ * of buttons. That objection was about the PLATE — a filled rect the width of
+ * the row. This edge is drawn around the label's own width and carries no
+ * fill, which is why it reads as the hand marking a word rather than as a
+ * button appearing under the pointer. Decided across the product, not here:
+ * the bar, the trail, the tabs and the menus all mark «this is the one» this
+ * way now, and a builder that kept the underline would be the one surface
+ * disagreeing.
  */
 export function InkLabel({
   children,
@@ -37,7 +45,7 @@ export function InkLabel({
   return (
     <span className={className ? `${styles.inkLabel} ${className}` : styles.inkLabel}>
       <Text className={styles.inkText}>{children}</Text>
-      <HandGraphic className={styles.inkMark} name="ink-stroke" size={36} />
+      <span className={styles.inkMark} aria-hidden="true" />
     </span>
   );
 }

@@ -34,8 +34,19 @@ export function InteractionInkLabel({
    *   than a gold line hanging under it. Pointing at it turns the rule AND the
    *   word brass together. This is what makes an ink link safe to use wherever
    *   `text-decoration` used to be.
+   * `tab` — KEPT AS A NAME, not as a shape. It briefly drew a rounded-rect
+   *   edge around the label, on the reasoning that a segmented control chooses
+   *   one of several rather than pointing at a way out. On screen that read as
+   *   a second, unrelated "selected" idiom sitting on top of the stroke — a
+   *   ring around the row you last touched — and the product already answers
+   *   "where am I" one way. So it resolves to the selection stroke, exactly as
+   *   `menu` does, and for the same reason: call sites across the topbar,
+   *   account and apps menus, the admin rail and route menu, breadcrumbs, the
+   *   reader's text-size control and the Builder's rows all pass it, and a
+   *   name that no longer varies the geometry is cheaper than editing them to
+   *   say `navigation`.
    */
-  variant?: "navigation" | "link" | "menu";
+  variant?: "navigation" | "link" | "menu" | "tab";
   /** For selected text inside a compound control such as a checkbox list. */
   active?: boolean;
 }) {

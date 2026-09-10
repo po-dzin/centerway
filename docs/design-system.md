@@ -958,6 +958,31 @@ One object, two strengths, three places: under a row's name in the builder,
 under a section's name in the library list, and around an opening on the
 library wall.
 
+### Selection is a stroke, never an edge (2026-09-10)
+
+A rounded ink **edge** around the label briefly replaced the stroke on every
+menu row, tab, nav item and crumb — on the reasoning that a segmented control
+chooses one of several rather than pointing at a way out, and that a fixed-length
+sprite cannot stretch to fit an arbitrary word. On screen it read as a ring
+around whichever row was last touched, sitting on top of the stroke that already
+answers «where am I»: one state said twice, which is the defect the split was
+reaching for in the first place.
+
+So there is one mark and it is a stroke, at **two weights**: the selection
+stroke (thick, brass, absent until it means something) and the link rule (thin,
+the text's own colour at rest). `variant="tab"` survives as a NAME that resolves
+to the selection stroke, exactly as `menu` does — the call sites across the
+topbar, the account and apps menus, the admin rail and route menu, breadcrumbs,
+the reader's text-size control and the Builder's rows keep working unedited.
+
+**The stroke is full length in every state.** States differ in opacity, weight
+and colour, never in how much of the word is covered. A progressive draw —
+`stroke-dasharray`/`stroke-dashoffset` over a measured path length — is a
+MOTION pass and does not belong in the resting grammar; applied there it stops
+the mark four fifths of the way through the word, which is the thing full length
+exists to prevent. It is kept for motion, on top of a mark that is already
+whole.
+
 **Open, and deliberately not closed here:** level 0 has not been audited against
 this table. The showcase carries several things this ladder forbids at level 1
 and permits at level 0, and the boundary between them — the moment of crossing —

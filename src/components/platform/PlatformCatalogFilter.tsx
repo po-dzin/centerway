@@ -158,25 +158,34 @@ export function PlatformCatalogFilter({
 
           {open ? (
             <div className={styles.filterPopover} role="group" aria-label={catalogFilterCopy.title}>
+              {/* Named only for `role="group"` now — a printed heading here
+                  restated the disclosure button's own «Фільтри» a few pixels
+                  above it. The row itself is never unmounted: unmounting it
+                  when nothing was selected made checking the FIRST facet push
+                  every group below it down by the row's height, a choice
+                  reading as a relayout. `.filterClear[data-empty]` in
+                  ShelfFilter.module.css keeps the row's height constant across
+                  every state instead — the same rule the count badge on the
+                  disclosure button already follows. */}
               <div className={styles.filterPopoverHead}>
-                <span>{catalogFilterCopy.title}</span>
-                {narrowing > 0 ? (
-                  <button
-                    className={styles.filterClear}
-                    type="button"
-                    onClick={() =>
-                      onChange({
-                        ...query,
-                        kinds: [],
-                        categories: [],
-                        price: { min: null, max: null },
-                        freeOnly: false,
-                      })
-                    }
-                  >
-                    {catalogFilterCopy.clear}
-                  </button>
-                ) : null}
+                <button
+                  className={styles.filterClear}
+                  type="button"
+                  data-empty={narrowing === 0 || undefined}
+                  aria-hidden={narrowing === 0 || undefined}
+                  tabIndex={narrowing === 0 ? -1 : undefined}
+                  onClick={() =>
+                    onChange({
+                      ...query,
+                      kinds: [],
+                      categories: [],
+                      price: { min: null, max: null },
+                      freeOnly: false,
+                    })
+                  }
+                >
+                  {catalogFilterCopy.clear}
+                </button>
               </div>
 
               {offersKinds ? (

@@ -276,12 +276,18 @@
   cursor: pointer;
 }
 
-.inkRow:hover,
 .inkRow:focus-visible,
 .inkRow[aria-current="page"],
 .inkRow[data-selected] {
   background: transparent;
   color: var(--cw-platform-text);
+}
+
+@media (hover: hover) {
+  .inkRow:hover {
+    background: transparent;
+    color: var(--cw-platform-text);
+  }
 }
 
 /* Keyboard focus keeps its ring. The ink says WHERE YOU ARE POINTING and WHICH
@@ -292,17 +298,23 @@
   outline-offset: var(--ds-focus-ring-offset);
 }
 
-.inkRow:hover .inkMark,
 .inkRow:focus-visible .inkMark {
   opacity: var(--cw-ink-hover-opacity);
-  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
+  transform: scale(0.98);
+}
+
+@media (hover: hover) {
+  .inkRow:hover .inkMark {
+    opacity: var(--cw-ink-hover-opacity);
+    transform: scale(0.98);
+  }
 }
 
 /* Full ink: this row IS the thing being edited. */
 .inkRow[aria-current="page"] .inkMark,
 .inkRow[data-selected] .inkMark {
   opacity: 1;
-  transform: scaleX(1) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
+  transform: scale(1);
 }
 
 /* ── Bar ──────────────────────────────────────────── */
@@ -841,11 +853,16 @@
 }
 
 .toolTab[aria-pressed="true"],
-.toolTab:hover,
 .toolTab:focus-visible,
-.toolClose:hover,
 .toolClose:focus-visible {
   color: var(--cw-platform-text);
+}
+
+@media (hover: hover) {
+  .toolTab:hover,
+.toolClose:hover {
+    color: var(--cw-platform-text);
+  }
 }
 
 .toolDrawer {
@@ -913,9 +930,14 @@
 }
 
 .toolsOrgan[aria-expanded="true"],
-.toolsOrgan:hover,
 .toolsOrgan:focus-visible {
   color: var(--cw-platform-text);
+}
+
+@media (hover: hover) {
+  .toolsOrgan:hover {
+    color: var(--cw-platform-text);
+  }
 }
 
 /* The layer's ceiling governs the height now, so the body takes what is left of
@@ -1282,7 +1304,12 @@
   pointer-events: none;
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.6) rotate(-4deg);
-  transition: opacity var(--builder-motion-ink) ease, transform var(--builder-motion-ink) ease;
+  /* The dash draws the stroke now, so it has to be in here: without it the
+     line jumps to its new length instead of being drawn to it. */
+  transition:
+    opacity var(--builder-motion-ink) ease,
+    stroke-dashoffset var(--builder-motion-ink) ease,
+    transform var(--builder-motion-ink) ease;
 }
 
 /* The tool rail's tab draws the same mark; `composes` resolves only against a
@@ -1295,22 +1322,27 @@
    and the two "this one is current" states (a pressed toggle, an open menu).
    The selected states hold the ring at full strength; hover and focus show it
    at the token's hover weight. */
-.stepAction:hover:not(:disabled) .inkRing,
 .stepAction:focus-visible .inkRing,
-.moduleImportAction:hover:not(:disabled) .inkRing,
 .moduleImportAction:focus-visible .inkRing,
-.toolTab:hover .inkRing,
 .toolTab:focus-visible .inkRing,
-.toolClose:hover .inkRing,
 .toolClose:focus-visible .inkRing,
-.menuTrigger:hover .inkRing,
 .menuTrigger:focus-visible .inkRing,
-.slugEditAction:hover .inkRing,
 .slugEditAction:focus-visible .inkRing,
-.titleEditAction:hover .inkRing,
 .titleEditAction:focus-visible .inkRing {
   opacity: var(--cw-ink-hover-opacity);
   transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
+}
+@media (hover: hover) {
+  .stepAction:hover:not(:disabled) .inkRing,
+.moduleImportAction:hover:not(:disabled) .inkRing,
+.toolTab:hover .inkRing,
+.toolClose:hover .inkRing,
+.menuTrigger:hover .inkRing,
+.slugEditAction:hover .inkRing,
+.titleEditAction:hover .inkRing {
+    opacity: var(--cw-ink-hover-opacity);
+    transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
+  }
 }
 
 .toolTab[aria-pressed="true"] .inkRing,
@@ -1468,13 +1500,18 @@
   transition: opacity var(--builder-motion-reveal) ease;
 }
 
-.contentsRow:hover > .menuTrigger,
 .contentsRow:focus-within > .menuTrigger,
 .contentsRow > .menuTrigger[aria-expanded="true"],
-.contentsModuleRow:hover > .menuTrigger,
 .contentsModuleRow:focus-within > .menuTrigger,
 .contentsModuleRow > .menuTrigger[aria-expanded="true"] {
   opacity: 1;
+}
+
+@media (hover: hover) {
+  .contentsRow:hover > .menuTrigger,
+.contentsModuleRow:hover > .menuTrigger {
+    opacity: 1;
+  }
 }
 
 @media (pointer: coarse) {
@@ -1802,10 +1839,16 @@
   color: var(--cw-platform-text);
 }
 
-.workspacePreviewAction:hover:not(:disabled),
 .workspacePreviewAction:focus-visible {
   border-color: color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
   background: var(--cw-mat-surface-sunk);
+}
+
+@media (hover: hover) {
+  .workspacePreviewAction:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+    background: var(--cw-mat-surface-sunk);
+  }
 }
 
 /* The word next to the eye, on the surfaces that have room for it.
@@ -1839,8 +1882,10 @@
   color: var(--cw-sem-boundary);
 }
 
-.dangerAction:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--cw-sem-boundary) 26%, var(--cw-mat-surface));
+@media (hover: hover) {
+  .dangerAction:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--cw-sem-boundary) 26%, var(--cw-mat-surface));
+  }
 }
 
 /* Up, down, remove — the three controls that repeat on every row of the
@@ -1852,8 +1897,10 @@
   color: var(--cw-platform-muted);
 }
 
-.iconAction:hover:not(:disabled) {
-  color: var(--cw-platform-text);
+@media (hover: hover) {
+  .iconAction:hover:not(:disabled) {
+    color: var(--cw-platform-text);
+  }
 }
 
 .confirmRow {
@@ -1933,9 +1980,14 @@
   color: var(--cw-platform-muted);
 }
 
-.moduleImportAction:hover:not(:disabled),
 .moduleImportAction:focus-visible {
   color: var(--cw-platform-text);
+}
+
+@media (hover: hover) {
+  .moduleImportAction:hover:not(:disabled) {
+    color: var(--cw-platform-text);
+  }
 }
 
 /* "Add" is a tertiary action inside a card, which is what `quiet` is for. */
@@ -2191,12 +2243,19 @@
   position: relative;
 }
 
-.courseCard > .menuRoot > .menuTrigger:hover:not(:disabled),
 .courseCard > .menuRoot > .menuTrigger:focus-visible,
 .courseCard > .menuRoot > .menuTrigger[aria-expanded="true"] {
   color: var(--cw-mat-inverse-text);
   background-color: transparent;
   box-shadow: none;
+}
+
+@media (hover: hover) {
+  .courseCard > .menuRoot > .menuTrigger:hover:not(:disabled) {
+    color: var(--cw-mat-inverse-text);
+    background-color: transparent;
+    box-shadow: none;
+  }
 }
 
 /* HOVER AND SELECT ARE INK — DRAWN IN THE SHAPE OF THE THING THEY MARK.
@@ -2227,9 +2286,14 @@
   transition: opacity var(--builder-motion-tool) ease;
 }
 
-.courseCard:hover::after,
 .courseCard:focus-within::after {
   opacity: var(--cw-ink-hover-opacity);
+}
+
+@media (hover: hover) {
+  .courseCard:hover::after {
+    opacity: var(--cw-ink-hover-opacity);
+  }
 }
 
 .courseCard:has(.menuTrigger[aria-expanded="true"])::after {
@@ -2419,10 +2483,16 @@
   display: inline-grid;
 }
 
-.slugEditAction:hover .iconInkRing,
 .slugEditAction:focus-visible .iconInkRing {
   opacity: var(--cw-ink-hover-opacity);
   transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
+}
+
+@media (hover: hover) {
+  .slugEditAction:hover .iconInkRing {
+    opacity: var(--cw-ink-hover-opacity);
+    transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
+  }
 }
 
 .slugLockState {
@@ -2561,8 +2631,10 @@
   cursor: pointer;
 }
 
-.courseStatusItemButton:hover {
-  background: var(--cw-mat-surface-sunk);
+@media (hover: hover) {
+  .courseStatusItemButton:hover {
+    background: var(--cw-mat-surface-sunk);
+  }
 }
 
 .courseStatusItemButton:focus-visible {
@@ -2835,8 +2907,10 @@
   font-weight: 600;
 }
 
-.moduleTitleInput:hover {
-  border-color: var(--builder-rule);
+@media (hover: hover) {
+  .moduleTitleInput:hover {
+    border-color: var(--builder-rule);
+  }
 }
 
 .moduleTitleInput:focus-visible {
@@ -2904,9 +2978,11 @@
    the card layout it read as a selection the row did not have. What is left is
    the ink coming up to full: the same answer the outline, the trail and the
    course rail give. */
-.lessonRow:hover {
-  background: transparent;
-  color: var(--cw-platform-text);
+@media (hover: hover) {
+  .lessonRow:hover {
+    background: transparent;
+    color: var(--cw-platform-text);
+  }
 }
 
 .lessonRow:focus-visible {
@@ -3023,11 +3099,16 @@
   transition: opacity var(--builder-motion-reveal) ease;
 }
 
-.blockInsert:hover::before,
 .blockInsert:focus-within::before,
 .blockInsert[data-open]::before,
 .blockInsert[data-drop]::before {
   opacity: 1;
+}
+
+@media (hover: hover) {
+  .blockInsert:hover::before {
+    opacity: 1;
+  }
 }
 
 /* The ring SITS ON the rule and breaks it — one line divided by a circle,
@@ -3059,11 +3140,16 @@
   transition: opacity var(--builder-motion-reveal) ease, color var(--builder-motion-reveal) ease;
 }
 
-.blockInsert:hover .blockInsertAction,
 .blockInsert:focus-within .blockInsertAction,
 .blockInsert[data-open] .blockInsertAction,
 .blockInsert[data-drop] .blockInsertAction {
   opacity: 1;
+}
+
+@media (hover: hover) {
+  .blockInsert:hover .blockInsertAction {
+    opacity: 1;
+  }
 }
 
 /* ON A FINGER, THE LAST GAP KEEPS ITS RING.
@@ -3127,10 +3213,15 @@
    `.chromeBare:hover:not(:disabled)`, which outweighs a bare
    `.blockInsertAction:hover`. The parent adds the one point that decides it,
    which is cheaper to read than `!important` and does not leak. */
-.blockInsert .blockInsertAction:hover:not(:disabled),
 .blockInsert .blockInsertAction:focus-visible {
   background: var(--cw-platform-bg);
   color: var(--cw-platform-text);
+}
+@media (hover: hover) {
+  .blockInsert .blockInsertAction:hover:not(:disabled) {
+    background: var(--cw-platform-bg);
+    color: var(--cw-platform-text);
+  }
 }
 
 /* The one ring that is always on: it marks WHERE a block will be inserted, so
@@ -3360,11 +3451,16 @@
   opacity: 1;
 }
 
-.blockCard:hover > .blockRail,
 .blockCard:focus-within > .blockRail,
 .blockCard[data-selected] > .blockRail,
 .blockRail:focus-within {
   opacity: 1;
+}
+
+@media (hover: hover) {
+  .blockCard:hover > .blockRail {
+    opacity: 1;
+  }
 }
 
 /* No gutter to hang in below the desktop measure: the rail comes inside, at
@@ -3442,10 +3538,15 @@
   transition: opacity var(--builder-motion-reveal) ease;
 }
 
-.nodeCard:hover .nodeHead,
 .nodeCard:focus-within .nodeHead,
 .nodeHead:has([aria-expanded="true"]) {
   opacity: 1;
+}
+
+@media (hover: hover) {
+  .nodeCard:hover .nodeHead {
+    opacity: 1;
+  }
 }
 
 /* The desktop form — `.blockRail`'s own construction, one level deeper. Lands
@@ -3821,8 +3922,10 @@
   composes: hug from "../platform/PlatformButtons.module.css";
 }
 
-.coverResetAction:hover {
-  color: var(--cw-platform-text);
+@media (hover: hover) {
+  .coverResetAction:hover {
+    color: var(--cw-platform-text);
+  }
 }
 
 /* The zoom row brings its own skin now — src/components/media/CropZoom.module.css.
@@ -4014,10 +4117,16 @@
   color: var(--cw-platform-muted);
 }
 
-.blockerOpen:hover,
 .blockerOpen:focus-visible {
   color: var(--cw-platform-text);
   background: var(--cw-mat-surface);
+}
+
+@media (hover: hover) {
+  .blockerOpen:hover {
+    color: var(--cw-platform-text);
+    background: var(--cw-mat-surface);
+  }
 }
 
 .blockerPath {
@@ -4161,10 +4270,15 @@
    surface behind it was the second answer to the same question, which is the
    thing the ink language exists to stop. Colour still moves, because the mark
    alone is not enough contrast for a 16px glyph. */
-.menuTrigger:hover:not(:disabled),
 .menuTrigger[aria-expanded="true"] {
   color: var(--cw-platform-text);
   background: transparent;
+}
+@media (hover: hover) {
+  .menuTrigger:hover:not(:disabled) {
+    color: var(--cw-platform-text);
+    background: transparent;
+  }
 }
 
 /* FIXED and portalled — see BuilderMenu. Absolutely positioned inside the row,
@@ -4227,8 +4341,10 @@
   cursor: pointer;
 }
 
-.menuItem:hover:not(:disabled) {
-  background: var(--cw-mat-surface-sunk);
+@media (hover: hover) {
+  .menuItem:hover:not(:disabled) {
+    background: var(--cw-mat-surface-sunk);
+  }
 }
 
 .menuItem:focus-visible {
@@ -4573,10 +4689,16 @@
   color: var(--cw-platform-muted);
 }
 
-.courseSettingEdit:hover:not(:disabled),
 .courseSettingEdit[aria-expanded="true"] {
   color: var(--cw-platform-text);
   background: var(--cw-mat-surface-sunk);
+}
+
+@media (hover: hover) {
+  .courseSettingEdit:hover:not(:disabled) {
+    color: var(--cw-platform-text);
+    background: var(--cw-mat-surface-sunk);
+  }
 }
 
 .courseSettingEditor {
@@ -4595,10 +4717,16 @@
   background: transparent;
 }
 
-.courseSettingEditor .choiceOption:hover:not(:disabled),
 .courseSettingEditor .choiceOption[aria-pressed="true"] {
   border-block-end-color: var(--cw-platform-text);
   background: transparent;
+}
+
+@media (hover: hover) {
+  .courseSettingEditor .choiceOption:hover:not(:disabled) {
+    border-block-end-color: var(--cw-platform-text);
+    background: transparent;
+  }
 }
 
 .courseSettingsAdvanced {
@@ -4640,12 +4768,16 @@
   transform: rotate(180deg);
 }
 
-.courseSettingsAdvanced > summary:hover .courseSettingsAdvancedGlyph {
-  color: var(--cw-platform-text);
+@media (hover: hover) {
+  .courseSettingsAdvanced > summary:hover .courseSettingsAdvancedGlyph {
+    color: var(--cw-platform-text);
+  }
 }
 
-.courseSettingsAdvanced > summary:hover {
-  color: var(--cw-platform-text);
+@media (hover: hover) {
+  .courseSettingsAdvanced > summary:hover {
+    color: var(--cw-platform-text);
+  }
 }
 
 .courseSettingsAdvancedBody {
@@ -4818,9 +4950,11 @@
   color: var(--cw-platform-muted);
 }
 
-.historyButton:hover:not(:disabled) {
-  color: var(--cw-platform-text);
-  background: var(--cw-mat-surface-sunk);
+@media (hover: hover) {
+  .historyButton:hover:not(:disabled) {
+    color: var(--cw-platform-text);
+    background: var(--cw-mat-surface-sunk);
+  }
 }
 
 /* Dimmed rather than hidden. "Nothing left to take back" is information; a
@@ -4924,10 +5058,15 @@
 
   /* Revealed by its own row, not by itself: a grip that only appears once the
      pointer is already on it is a control you have to know is there. */
-  .gripRow:hover > .rowGrip,
   .gripRow:focus-within > .rowGrip,
   .rowGrip:active {
     opacity: 1;
+  }
+
+  @media (hover: hover) {
+    .gripRow:hover > .rowGrip {
+      opacity: 1;
+    }
   }
 
   .rowGrip:active {
@@ -5103,8 +5242,10 @@
    stopped. `--cw-sem-guide-primary` means something in this system (the guide
    voice, links on a reading surface, accents); a row borrowing it under the
    pointer says «this one is special», not «the pointer is here». */
-.editableTitleLink:hover {
-  color: var(--cw-platform-text);
+@media (hover: hover) {
+  .editableTitleLink:hover {
+    color: var(--cw-platform-text);
+  }
 }
 
 .editableTitleLink:focus-visible {
@@ -5123,9 +5264,11 @@
   color: var(--cw-platform-muted);
 }
 
-.titleEditAction:hover:not(:disabled) {
-  color: var(--cw-platform-text);
-  background: transparent;
+@media (hover: hover) {
+  .titleEditAction:hover:not(:disabled) {
+    color: var(--cw-platform-text);
+    background: transparent;
+  }
 }
 
 /* A field with the heading's shape and none of a field's furniture. The plate,
@@ -5365,8 +5508,10 @@
   white-space: nowrap;
 }
 
-.formatAction:hover:not(:disabled) {
-  background: var(--cw-mat-surface-sunk);
+@media (hover: hover) {
+  .formatAction:hover:not(:disabled) {
+    background: var(--cw-mat-surface-sunk);
+  }
 }
 
 /* SIX WORDS BECOME SIX GLYPHS, AT THE PRICE OF A TOOLTIP.
@@ -5387,10 +5532,16 @@
   color: var(--cw-platform-muted);
 }
 
-.formatIconAction:hover:not(:disabled),
 .formatIconAction:focus-visible {
   color: var(--cw-platform-text);
   background: var(--cw-mat-surface-sunk);
+}
+
+@media (hover: hover) {
+  .formatIconAction:hover:not(:disabled) {
+    color: var(--cw-platform-text);
+    background: var(--cw-mat-surface-sunk);
+  }
 }
 
 /* The paragraph-shape actions and the overflow that replaces them below
@@ -5573,39 +5724,53 @@
   text-overflow: ellipsis;
 }
 
+/* THE BUILDER'S MARK IS A ROUNDED EDGE NOW (2026-09-10).
+   It was the stroke recipe copied into this module — offset, weight, tilt,
+   dasharray, the lot. The whole product moved to marking «this is the one»
+   with a rounded ink edge around the label rather than a line under it, so
+   this follows, and drops the stroke's five geometry values for a border and
+   a radius. The DOM did not move: the mark is still `.inkLabel > .inkMark`,
+   so every layout rule in this file that reaches for either still lands.
+   Strengths and timing stay on the shared tokens they were already on. */
 .inkMark {
   position: absolute;
-  inset-inline: -0.2rem;
-  inset-block-end: -0.56rem;
-  width: calc(100% + 0.4rem);
-  height: var(--cw-ink-stroke-height);
-  overflow: visible;
-  color: var(--cw-nav-marker);
+  inset: calc(-1 * var(--cw-space-2xs)) calc(-1 * var(--cw-space-xs));
+  border: 1.5px solid var(--cw-nav-marker);
+  border-radius: var(--cw-radius-pill);
   pointer-events: none;
   opacity: 0;
-  /* The line uses the same 36px source grid as the circular selector, but is
-     rendered in a 0.85rem-tall band. Scale its ink vertically so the selected
-     nav item has the same perceived stroke weight as the selected icon. */
-  transform: scaleX(0.58) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
-  transform-origin: center;
-  transition: opacity var(--builder-motion-ink) ease, transform var(--builder-motion-ink) ease;
+  transform: scale(0.94);
+  transition:
+    opacity var(--builder-motion-ink) ease,
+    transform var(--builder-motion-ink) ease;
 }
 
-.courseMobileNavItem:hover,
 .courseMobileNavItem:focus-visible,
 .courseMobileNavItem[aria-current="page"] {
   color: var(--cw-platform-text);
 }
 
-.courseMobileNavItem:hover .inkMark,
+@media (hover: hover) {
+  .courseMobileNavItem:hover {
+    color: var(--cw-platform-text);
+  }
+}
+
 .courseMobileNavItem:focus-visible .inkMark {
   opacity: var(--cw-ink-hover-opacity);
-  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
+  transform: scale(0.98);
+}
+
+@media (hover: hover) {
+  .courseMobileNavItem:hover .inkMark {
+    opacity: var(--cw-ink-hover-opacity);
+    transform: scale(0.98);
+  }
 }
 
 .courseMobileNavItem[aria-current="page"] .inkMark {
   opacity: 1;
-  transform: scaleX(1) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
+  transform: scale(1);
 }
 
 .courseRail {
@@ -5648,21 +5813,32 @@
   height: 1.5rem;
 }
 
-.courseRailLink:hover,
 .courseRailLink:focus-visible,
 .courseRailLink[aria-current="page"] {
   color: var(--cw-platform-text);
 }
 
-.courseRailLink:hover .inkMark,
+@media (hover: hover) {
+  .courseRailLink:hover {
+    color: var(--cw-platform-text);
+  }
+}
+
 .courseRailLink:focus-visible .inkMark {
   opacity: var(--cw-ink-hover-opacity);
-  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
+  transform: scale(0.98);
+}
+
+@media (hover: hover) {
+  .courseRailLink:hover .inkMark {
+    opacity: var(--cw-ink-hover-opacity);
+    transform: scale(0.98);
+  }
 }
 
 .courseRailLink[aria-current="page"] .inkMark {
   opacity: 1;
-  transform: scaleX(1) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
+  transform: scale(1);
 }
 
 .courseRailStatus {
@@ -5905,9 +6081,11 @@
    one is special" rather than "the pointer is on this one". Hover is the ink at
    full strength; the green stays the property of things that are actually
    guide-coloured. */
-.structure:not(.structureCards) .lessonRow:hover {
-  background: transparent;
-  color: var(--cw-platform-text);
+@media (hover: hover) {
+  .structure:not(.structureCards) .lessonRow:hover {
+    background: transparent;
+    color: var(--cw-platform-text);
+  }
 }
 
 /* ON THE SAME COLUMNS AS THE ROWS ABOVE IT. The list is two tracks — the
@@ -5963,11 +6141,16 @@
   color: var(--cw-platform-muted);
 }
 
-.structure:not(.structureCards) .addAction:hover:not(:disabled),
 .structure:not(.structureCards) .addAction:focus-visible,
-.structure:not(.structureCards) .addRow .quietAction:hover:not(:disabled),
 .structure:not(.structureCards) .addRow .quietAction:focus-visible {
   color: var(--cw-platform-text);
+}
+
+@media (hover: hover) {
+  .structure:not(.structureCards) .addAction:hover:not(:disabled),
+.structure:not(.structureCards) .addRow .quietAction:hover:not(:disabled) {
+    color: var(--cw-platform-text);
+  }
 }
 
 .structure:not(.structureCards) > .addAction {
@@ -6221,10 +6404,16 @@
   line-height: 1.4;
 }
 
-.structureStartOption:hover,
 .structureStartOption:focus-visible {
   border-color: color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
   outline: none;
+}
+
+@media (hover: hover) {
+  .structureStartOption:hover {
+    border-color: color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+    outline: none;
+  }
 }
 
 .structureStartOption[aria-checked="true"] {
@@ -6260,8 +6449,10 @@
   display: none;
 }
 
-.structureReplace > summary:hover {
-  color: var(--cw-platform-text);
+@media (hover: hover) {
+  .structureReplace > summary:hover {
+    color: var(--cw-platform-text);
+  }
 }
 
 .structureReplace[open] > summary .courseSettingsAdvancedGlyph {

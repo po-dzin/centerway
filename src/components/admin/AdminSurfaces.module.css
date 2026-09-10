@@ -1,0 +1,87 @@
+/*
+ * THE CONTROL PANEL'S BOXES, NAMED ONCE (2026-09-10).
+ *
+ * Every card in the admin was a hand-typed utility string, and the same string
+ * was typed 46 times across one file. Nothing kept the copies in agreement, so
+ * they stopped agreeing: the tile that holds a label and a number existed at
+ * two radii — `rounded-lg` in the funnel and freshness sections, `rounded-xl`
+ * in the fields and KPI ones — which is what «different roundness on the
+ * card-blocks» was. Normalising the 19 stragglers fixed the symptom; a string
+ * with no single source would simply drift again on the next section someone
+ * added, because there was nowhere to look up what a card is.
+ *
+ * So the roles are named here, and the geometry is declared once per role.
+ *
+ * WHY A MODULE AND NOT MORE UTILITIES. Two reasons, and neither is taste.
+ * Utilities put the radius at the CALL SITE, where it is a decision every
+ * author has to make again and can only make by reading a neighbour. And
+ * `guard:geometry` reads `src/app/globals.css` and `src/components/**` — page
+ * files are outside it, which is precisely why 97 admin radius declarations
+ * were never once checked by the guard that exists to check them. Moving the
+ * boxes here puts them inside the law's reach.
+ *
+ * THE LADDER, from docs/design-system/geometry-audit-2026-09-07.md: radius is
+ * a function of the box, not of the role's name.
+ *
+ *   plate      a surface, a sheet   > 200px    xl 28
+ *   subPlate   a nested sub-plate   57–200px   lg 20
+ *   tile       a card, a tile       57–200px   lg 20
+ *
+ * A plate carries the shadow because it floats on the page. A sub-plate and a
+ * tile sit INSIDE one and carry none: a shadow inside a shadow reads as two
+ * floating objects at the same height, which is the thing the boundary rules
+ * exist to prevent.
+ *
+ * Material — the ground, the border colour, the shadow — is composed from the
+ * global classes rather than restated, so a surface that later gains a texture
+ * or a backdrop gains it here too. Only geometry is local.
+ */
+
+.plate {
+  composes: cw-surface cw-border cw-shadow from global;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-xl);
+  /* Was `p-4 sm:p-5 md:p-6` — 1rem, 1.25rem, 1.5rem. The middle step is not on
+     the spacing scale (0.25 · 0.5 · 0.75 · 1 · 1.5 · 2 · 3 · 4.5rem), so the
+     ramp is the two steps that are. */
+  padding: var(--cw-space-md);
+}
+
+@media (min-width: 768px) {
+  .plate {
+    padding: var(--cw-space-lg);
+  }
+}
+
+/* A plate whose content reaches its edge — a table, a chart, a row list. It
+   keeps the plate's radius, so `overflow: hidden` is what makes the content
+   take the corner instead of squaring it off. */
+.plateFlush {
+  composes: cw-surface cw-border cw-shadow from global;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-xl);
+  overflow: hidden;
+}
+
+/* Nested inside a plate, and therefore one step below it. No shadow: it is not
+   a second floating object, it is a region of the first. */
+.subPlate {
+  composes: cw-surface cw-border from global;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-lg);
+  overflow-x: auto;
+}
+
+/* The unit the panel is actually made of: a label and a number, in a grid of
+   its siblings. `cw-surface-2` because it sits on a plate and has to be
+   legible against it without a shadow to lift it. */
+.tile {
+  composes: cw-surface-2 cw-border from global;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-lg);
+  padding: var(--cw-space-sm);
+}

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
+import surfaces from "@/components/admin/AdminSurfaces.module.css";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
@@ -84,7 +85,7 @@ export default function AuditLogPage() {
             </div>
 
             {loading ? (
-                <AdminLoadingState variant="spinner" text={t("audit_loading")} className="cw-panel" />
+                <AdminLoadingState variant="spinner" text={t("audit_loading")} className={surfaces.plate} />
             ) : error ? (
                 <AdminErrorState
                     title={t("common_error")}
@@ -101,7 +102,7 @@ export default function AuditLogPage() {
                 />
             ) : logs.length === 0 ? (
                 <AdminEmptyState
-                    className="py-16 cw-panel"
+                    className={`${surfaces.plateFlush} py-16`}
                     icon={(
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="cw-muted">
                             <path d="M8 6h13" />
@@ -115,7 +116,7 @@ export default function AuditLogPage() {
                     description={t("audit_empty")}
                 />
             ) : (
-                <div className="cw-panel overflow-hidden transition-colors duration-300">
+                <div className={`${surfaces.plateFlush} transition-colors duration-300`}>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left cw-muted">
                             <thead className="text-xs uppercase cw-surface-2 cw-muted border-b cw-border transition-colors duration-300">

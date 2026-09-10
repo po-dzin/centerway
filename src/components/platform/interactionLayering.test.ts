@@ -94,15 +94,59 @@ describe("platform interaction layers", () => {
     expect(pagination).toContain("InteractionInkIcon");
   });
 
-  it("uses the account-menu ink variant for selected labels in compound controls", () => {
+  it("marks selection with one stroke at two weights, and never with an edge", () => {
     const accountMenu = read("src/components/platform/layout/PlatformAccountMenu.tsx");
     const shelfFilter = read("src/components/platform/cabinet/ShelfFilter.tsx");
     const shelfCss = read("src/components/platform/cabinet/ShelfFilter.module.css");
 
+    /* ONE MARK, FULL LENGTH, AT TWO WEIGHTS (decided 2026-09-10).
+       This test previously asserted the opposite — that a menu row, a tab, a
+       nav item and a crumb each took a rounded ink EDGE (`variant="tab"`)
+       while only a checkbox row kept the stroke. On screen that edge became a
+       ring around whichever row you had last touched, sitting on top of the
+       stroke that already answers «where am I»: one state said twice, which is
+       the very defect the split was reaching for.
+
+       So the edge is gone. Selection is the stroke, drawn to the FULL width of
+       the word in every state — the states differ in opacity, weight and
+       colour, never in how much of the word is covered. `variant="tab"`
+       survives as a NAME that resolves to that stroke, the same way `menu`
+       does, so the call sites the rollout touched need no edits.
+
+       The progressive draw that made a partial stroke look honest is a MOTION
+       pass, not the resting grammar: it stays in `114dde36` and its specimen,
+       to be applied on top of a mark that is already whole. Nothing in the
+       resting CSS may clip it. */
     expect(css).toContain('[data-cw-ink-variant="menu"]');
-    expect(accountMenu).toContain('InteractionInkLabel variant="menu"');
+    expect(css).not.toContain(".cw-ink-label-box");
+    expect(css).not.toContain("stroke-dasharray:");
+    expect(css).not.toContain("stroke-dashoffset:");
+    expect(accountMenu).toContain("InteractionInkLabel variant=");
     expect(shelfFilter).toContain('InteractionInkLabel variant="menu" active={query.categories.includes(one)}');
     expect(shelfCss).not.toContain("cw-ink-label-mark");
+  });
+
+  it("leaves no module holding its own copy of a state mark", () => {
+    /* Four modules each carried a hand-copy of the stroke recipe — offset,
+       weight, tilt, dasharray — and the dasharray note in globals.css is the
+       post-mortem of one fix having to land in four places and landing
+       correctly in none. The topbar and the trail now ask the primitive for
+       the mark; nothing in either module draws one. */
+    for (const rel of [
+      "src/components/platform/PlatformShell.module.css",
+      "src/components/platform/PlatformTrail.module.css",
+    ]) {
+      const sheet = read(rel);
+      expect(sheet, `${rel} still declares a mark`).not.toMatch(/^\.\w*[Ii]nkMark\s*\{/m);
+      expect(sheet, `${rel} still draws a stroke`).not.toContain("stroke-dasharray");
+    }
+
+    /* The builder keeps its own mark element, because local layout rules reach
+       for `.inkLabel > .inkMark` directly — but it is a border and a radius
+       now, not a second copy of the stroke's geometry. */
+    const builder = read("src/components/builder/Builder.module.css");
+    expect(builder).not.toMatch(/\.inkMark[\s\S]{0,400}?stroke-dasharray/);
+    expect(builder).toMatch(/\.inkMark\s*\{[\s\S]*?border-radius: var\(--cw-radius-pill\)/);
   });
 
   it("holds the public catalogue filter to the shelf's recipe rather than a second copy", () => {

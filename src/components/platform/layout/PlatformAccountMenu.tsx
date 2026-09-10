@@ -155,7 +155,11 @@ function getUserInitial(session: Session | null) {
 }
 
 export function InkMenuLabel({ children, active = false }: { children: string; active?: boolean }) {
-  return <InteractionInkLabel variant="menu" active={active}>{children}</InteractionInkLabel>;
+  // `tab`, not `menu`, since 2026-09-10: a menu row is chosen one-at-a-time and
+  // the mark is the only thing saying which one, so it takes the rounded ink
+  // edge the tabs took. The stroke stays where a box would be wrong — a link
+  // inside running copy, and a checkbox row whose box already says «chosen».
+  return <InteractionInkLabel variant="tab" active={active}>{children}</InteractionInkLabel>;
 }
 
 /**

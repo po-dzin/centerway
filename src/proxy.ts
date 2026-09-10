@@ -113,6 +113,30 @@ export function proxy(req: NextRequest) {
   return NextResponse.next();
 }
 
+/**
+ * WHAT THE PROXY IS ALLOWED TO SEE, and the cheapest request is the one that
+ * never reaches it.
+ *
+ * Every path this matcher admits invokes a function — including the ones whose
+ * only outcome is `isInfraBypassPath` returning true and the proxy answering
+ * `NextResponse.next()`. That is a billed invocation and a cold-path CPU slice
+ * spent to decide to do nothing, and it was being spent on static bytes:
+ * measured 2026-09-10, a platform page pulls ~26 assets that the old matcher
+ * admitted (11 woff2, the `/cw/` icon sprite, brand mark and hero art, the
+ * worker and the manifest), against ~4 that actually need routing.
+ *
+ * So the file roots under `public/` are excluded here as well as bypassed in
+ * `isInfraBypassPath`. THE TWO ARE NOT REDUNDANT: this list decides whether the
+ * function runs, the bypass decides what it does once it has. Keeping both means
+ * narrowing one can never turn a static asset into a brand-resolution 404 again
+ * — which is the failure `/fonts/` was living in until today.
+ *
+ * `_next/static` and `_next/image` were already here and stay. `/shared/` is
+ * deliberately NOT here: it is a landing-bundle path, not a `public/` root, and
+ * its first segment is also a brand name.
+ */
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|sitemap.xml|robots.txt|v1/).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|sitemap\\.xml|robots\\.txt|v1/|fonts/|cw/|sw\\.js|offline\\.html|favicon\\.ico|manifest\\.webmanifest|icon\\.svg|apple-icon\\.png).*)",
+  ],
 };
