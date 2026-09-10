@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorMessage } from "@/lib/errorMessage";
 import { adminClient } from "@/lib/auth/adminClient";
 import { requireCronAuth } from "@/lib/cron/auth";
 
@@ -20,10 +21,10 @@ export async function GET(req: Request) {
         }
 
         return NextResponse.json({ success: true });
-    } catch (e: any) {
+    } catch (e) {
         console.error("Analytics refresh cron crashed:", e);
         return NextResponse.json(
-            { success: false, error: e?.message ?? String(e) },
+            { success: false, error: errorMessage(e) },
             { status: 500 }
         );
     }

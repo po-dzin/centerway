@@ -40,8 +40,10 @@ export async function GET(
         .limit(50);
 
     // Build unified timeline
+    type OrderRow = { id: string; order_ref: string; status: string; amount: number | null; currency: string | null; created_at: string };
+    type EventRow = { id: string; type: string; order_ref: string | null; created_at: string };
     const timeline = [
-        ...(orders ?? []).map((o: any) => ({
+        ...((orders ?? []) as OrderRow[]).map((o) => ({
             ts: o.created_at,
             type: "order" as const,
             label: `Заказ ${o.order_ref} — ${o.status}`,
@@ -49,7 +51,7 @@ export async function GET(
             id: o.id,
             ref: o.order_ref,
         })),
-        ...(events ?? []).map((e: any) => ({
+        ...((events ?? []) as EventRow[]).map((e) => ({
             ts: e.created_at,
             type: "event" as const,
             label: e.type,

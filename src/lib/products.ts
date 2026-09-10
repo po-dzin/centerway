@@ -32,24 +32,24 @@ export const PLATFORM_FAILED_URL = "https://www.centerway.net.ua/pay/failed";
 export const PLATFORM_PENDING_URL = "https://www.centerway.net.ua/pay/pending";
 
 /**
- * TEST PRICE — 1 UAH. Short-lived: put in on 2026-08-21 for a couple of days of
- * QA, so walking the purchase chain end to end does not move real money through
- * WayForPay.
+ * WHAT `amount` STILL MEANS HERE, since 2026-09-03: a fallback, and for most
+ * entries not even that.
  *
- * THIS FILE IS THE ONLY PLACE IT LIVES. The landings still show their real
- * prices, on purpose — the charged sum is always read from PRODUCTS[...].amount,
- * never from the page. `data-cw-price-value` and `PRICE_VALUE` in the landings'
- * js/common.js are pixel values only and cannot mischarge; `amountOverride` in
- * /api/pay/start is reachable only through irem's personal offers.
+ * The charged sum is read from the database — `lms_course_offers` for a
+ * product that names a course, `product_offers` for one that does not — by
+ * `loadPayableOffer` in src/lib/platform/offers.ts, and that is the only entry
+ * the checkout has. A course code with no row REFUSES the sale rather than
+ * falling back here (offerAlias.test.ts asserts it), and a non-course code
+ * falls back only when `listAmount` names a price. So the figures below are
+ * charged in exactly one case: `way21-support` with its row missing.
  *
- * The cost of that split, stated plainly: while this is in, a buyer is quoted
- * 4100 and charged 1. That is fine for a closed QA window on noindex landings
- * and NOT fine once traffic arrives.
- *
- * TO REVERT: grep for CW_TEST_PRICE_1UAH — the real amount sits next to each
- * line. Nothing outside this file needs touching.
+ * A 1 ₴ QA placeholder lived in these fields from 2026-08-21 to 2026-09-10,
+ * with a comment promising it was safe because "the charged sum is always read
+ * from PRODUCTS[...].amount". That stopped being true on 09-03 and the
+ * placeholder outlived its own reason. Each `amount` now equals the price the
+ * product was last sold for, so the constant never quotes one figure and
+ * carries another.
  */
-const TEST_PRICE_UAH = 1;
 
 /**
  * Where a paid product is actually delivered, and what Meta should call it.
@@ -129,7 +129,7 @@ export const PRODUCTS = {
       en:
         "Detox program payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
     },
-    amount: TEST_PRICE_UAH, // CW_TEST_PRICE_1UAH — charged
+    amount: 4100,
     listAmount: 4100,
     currency: "UAH",
     pixelContentName: "Way21 Detox",
@@ -170,7 +170,7 @@ export const PRODUCTS = {
       en:
         "Mini course payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
     },
-    amount: TEST_PRICE_UAH, // CW_TEST_PRICE_1UAH — charged
+    amount: 795,
     listAmount: 795,
     currency: "UAH",
     pixelContentName: "Reset Day",
@@ -189,10 +189,11 @@ export const PRODUCTS = {
       en:
         "Individual herbal blend payment by Centerway. After successful payment, a confirmation page opens with a button to the product in the cabinet and next steps. Support: if you have questions, message us and we will help quickly.",
     },
-    // CW_TEST_PRICE_1UAH. Unlike the others this has no real price to go back
-    // to — herbs was never sold self-serve before. Agree one before launch,
-    // and put it in the landing CTA label at the same time.
-    amount: TEST_PRICE_UAH,
+    // Unreachable: `productOffer` refuses the fallback when `listAmount` is
+    // null, so nothing charges this. Zero rather than a placeholder figure, so
+    // a future path that does read it cannot sell a blend for a hryvnia. The
+    // real price is set in the admin and lives in `product_offers`.
+    amount: 0,
     // Null, not a number: there is no agreed price to quote, and a surface that
     // must show one is required to say so rather than invent it.
     listAmount: null,
@@ -353,9 +354,10 @@ export function productFulfilment(product: CatalogProductCode): ProductFulfilmen
  * the RESOLVED facts and no longer care which of the two places they came from
  * — see `loadPayableOffer` in src/lib/platform/offers.ts.
  *
- * `listAmount` is what a page may PRINT and `amount` is what is charged; they
- * diverge while the 1 ₴ QA window is open (CW_TEST_PRICE_1UAH). `null` means
- * no agreed price, and a surface that must show one has to say so.
+ * `listAmount` is what a page may PRINT and `amount` is what is charged. They
+ * are separate fields so a QA price can be set on one without the page
+ * advertising it. `null` means no agreed price, and a surface that must show
+ * one has to say so.
  */
 export type PayableOffer = {
   code: PayableProductCode;
@@ -454,8 +456,8 @@ export function productProgramPath(code: string): string | null {
  *
  * Two numbers, on purpose. `amount` is what WayForPay is asked to take and is
  * read only by the server; `listAmount` is what a page is allowed to print.
- * They diverge exactly while the 1 ₴ QA window is open (CW_TEST_PRICE_1UAH),
- * and a page that read `amount` would quietly advertise a hryvnia.
+ * Keeping them apart is what let a 1 ₴ QA price sit in `amount` for weeks
+ * without any page advertising a hryvnia.
  *
  * `null` means "no agreed price": the caller must render the offer without a
  * figure rather than pick one.

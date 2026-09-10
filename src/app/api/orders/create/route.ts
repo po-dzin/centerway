@@ -1,6 +1,7 @@
 // src/app/api/orders/create/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import { errorMessage } from "@/lib/errorMessage";
 import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { loadPayableOffer } from "@/lib/platform/offers";
@@ -178,10 +179,10 @@ export async function POST(req: NextRequest) {
       }),
       origin
     );
-  } catch (e: any) {
+  } catch (e) {
     return cors(
       NextResponse.json(
-        { ok: false, error: "bad_request", details: String(e?.message ?? e) },
+        { ok: false, error: "bad_request", details: errorMessage(e) },
         { status: 400 }
       ),
       origin

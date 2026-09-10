@@ -2,11 +2,15 @@
   "name": "centerway-platform",
   "version": "0.2.0",
   "private": true,
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "next dev -p 8000",
     "build": "next build --webpack",
     "start": "next start -p 8000",
     "lint": "eslint src next.config.ts eslint.config.mjs",
+    "typecheck": "tsc --noEmit",
     "tokens:build": "node scripts/generate-design-tokens.mjs",
     "tokens:check": "node scripts/generate-design-tokens.mjs && git diff --exit-code -- src/app/globals.css src/landing-static/shared/css/cw-tokens.generated.css",
     "brand:build": "node scripts/brand-mark-bake.mjs",
@@ -73,6 +77,7 @@
     "smoke:admin:ui": "node scripts/smoke-admin-ui.mjs",
     "smoke:landing:dynamic-offer": "node scripts/smoke-landing-dynamic-offer.mjs",
     "smoke:platform:browser": "npx playwright test tests/e2e/platform-unification.spec.ts --reporter=list",
+    "smoke:thanks:browser": "npx playwright test tests/e2e/thanks-redirect-order.spec.ts --reporter=list",
     "smoke:dosha:result": "vitest run src/lib/doshaTest.test.ts",
     "smoke:dosha:api": "node scripts/smoke-dosha-api-flow.mjs",
     "smoke:dosha:userflows": "node scripts/smoke-dosha-userflows.mjs",
@@ -94,13 +99,13 @@
     "ds:drift": "node scripts/design/ds-drift.mjs",
     "ds:drift:report": "node scripts/design/ds-drift.mjs --write",
     "ds:drift:gate": "node scripts/design/ds-drift.mjs --gate",
-    "dev:alt": "next dev -p 8021"
+    "dev:alt": "next dev -p 8021",
+    "clean": "rm -rf .next .next-dev output artifacts test-results playwright-report tsconfig.tsbuildinfo && find . -name .DS_Store -not -path './node_modules/*' -delete"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.93.1",
     "@vercel/analytics": "^2.0.1",
-    "ai": "^6.0.256",
     "docx": "^9.7.1",
     "mammoth": "^1.12.1",
     "next": "16.1.5",
@@ -110,7 +115,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.51.1",
-    "@types/node": "^20",
+    "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.27",

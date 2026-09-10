@@ -15,9 +15,8 @@ const baseUrl = (process.env.SMOKE_UI_BASE_URL || "http://127.0.2.2:8002").repla
 // Absent on purpose: consult and way21-support. Both sell through the landing's
 // lead form, so they have no checkout and no thanks page to assert on.
 //
-// Amounts here are the CW_TEST_PRICE_1UAH values. They are display/analytics
-// data on this page, so they do not need to move back when the real prices are
-// restored — but keeping them in step avoids a confusing fixture.
+// Amounts here are display/analytics fixtures for the thanks page; nothing on
+// it charges, so they need not match the live offer rows.
 const thanksCases = [
   {
     name: "way21",

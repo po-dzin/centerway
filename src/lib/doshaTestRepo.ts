@@ -213,7 +213,7 @@ export async function loadTestDefinitionBySlug(db: SupabaseAdmin, slug: string):
     throw new Error(`test_questions_load_failed:${questionsError.message}`);
   }
 
-  const questionIds = (questions ?? []).map((q: any) => q.id);
+  const questionIds = ((questions ?? []) as Array<{ id: string }>).map((q) => q.id);
   const { data: options, error: optionsError } = await db
     .from("test_options")
     .select("id, question_id, option_order, option_code, option_text, mapped_dosha")

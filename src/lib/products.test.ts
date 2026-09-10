@@ -35,10 +35,20 @@ describe("payable product chain", () => {
     }
   });
 
-  it("charges a positive amount in a known currency", () => {
+  it("charges a positive amount in a known currency, or none where no price was agreed", () => {
     for (const code of payableCodes) {
       const product = PRODUCTS[code];
-      expect(product.amount, `${code} amount`).toBeGreaterThan(0);
+      if (product.listAmount === null) {
+        // No agreed price: the fallback refuses the sale (offerAlias.test.ts),
+        // so the constant must not carry a figure anyone could be charged.
+        expect(product.amount, `${code} amount`).toBe(0);
+      } else {
+        expect(product.amount, `${code} amount`).toBeGreaterThan(0);
+        // The charged figure and the quoted one are the same number. A 1 ₴ QA
+        // placeholder sat in `amount` under a 4100 `listAmount` for three
+        // weeks; this is the line that would have caught it.
+        expect(product.amount, `${code} amount must equal its list price`).toBe(product.listAmount);
+      }
       expect(Number.isInteger(product.amount), `${code} amount must be whole`).toBe(true);
       expect(product.currency, `${code} currency`).toBe("UAH");
     }

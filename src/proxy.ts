@@ -114,5 +114,5 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|sitemap.xml|robots.txt|v1/).*)"],
+  matcher: ["/((?!_next/static|_next/image|sitemap.xml|robots.txt).*)"],
 };

@@ -14,7 +14,7 @@
  * surfaces cannot drift into disagreeing about what is buyable.
  *
  * The quoted figure comes from `productListPrice`, never from the charged
- * amount — see the CW_TEST_PRICE_1UAH note in src/lib/products.ts.
+ * amount — see the note above `PRODUCTS` in src/lib/products.ts.
  */
 
 import {

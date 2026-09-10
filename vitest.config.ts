@@ -9,7 +9,7 @@ export default defineConfig({
   test: {
     // Unit tests live next to the code they cover.
     // tests/e2e/**.spec.ts belongs to Playwright and must stay out of vitest.
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.{ts,tsx}"],
     environment: "node",
     /* 15s, not the 5s default, and not because any test is slow.
        These suites `await import()` the module under test INSIDE the first

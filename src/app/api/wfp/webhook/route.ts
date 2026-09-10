@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { errorMessage } from "@/lib/errorMessage";
 import { sendConfirmedSaleTelegramReport } from "@/lib/reporting/analyticsReports";
 import { sendPurchaseEmail } from "@/lib/email/purchaseEmail";
 import { loadPayableOffer } from "@/lib/platform/offers";
@@ -431,8 +432,8 @@ export async function POST(req: NextRequest) {
           if (eErr) errors.push(`events: ${eErr.message ?? "unknown"}`);
         }
       }
-    } catch (e: any) {
-      errors.push(`customers: ${String(e?.message || e)}`);
+    } catch (e) {
+      errors.push(`customers: ${errorMessage(e)}`);
     }
 
     if (errors.length) {
@@ -584,7 +585,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "missing_secret" }, { status: 500 });
     }
     return NextResponse.json(accept);
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, error: "webhook_failed", details: String(e?.message || e) }, { status: 500 });
+  } catch (e) {
+    return NextResponse.json({ ok: false, error: "webhook_failed", details: errorMessage(e) }, { status: 500 });
   }
 }

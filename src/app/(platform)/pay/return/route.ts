@@ -52,7 +52,7 @@ async function productFromOrder(orderRef: string): Promise<ProductCode | null> {
 async function readBody(req: NextRequest): Promise<Record<string, string>> {
   // JSON
   try {
-    const j = (await req.json()) as any;
+    const j = (await req.json()) as unknown;
     if (j && typeof j === "object") {
       const out: Record<string, string> = {};
       for (const [k, v] of Object.entries(j)) {
@@ -90,20 +90,21 @@ function statusFromParams(p: Record<string, string>, sp: URLSearchParams): "paid
   return null;
 }
 
-function extractMeta(raw: any): { rrn?: string; amount?: string; currency?: string } {
+function extractMeta(raw: unknown): { rrn?: string; amount?: string; currency?: string } {
   if (!raw || typeof raw !== "object") return {};
-  const rrn = typeof raw.rrn === "string" ? raw.rrn : typeof raw.RRN === "string" ? raw.RRN : undefined;
+  const r = raw as Record<string, unknown>;
+  const rrn = typeof r.rrn === "string" ? r.rrn : typeof r.RRN === "string" ? r.RRN : undefined;
 
   const amount =
-    typeof raw.amount === "string" ? raw.amount :
-    typeof raw.amount === "number" ? String(raw.amount) :
-    typeof raw.orderAmount === "string" ? raw.orderAmount :
-    typeof raw.orderAmount === "number" ? String(raw.orderAmount) :
+    typeof r.amount === "string" ? r.amount :
+    typeof r.amount === "number" ? String(r.amount) :
+    typeof r.orderAmount === "string" ? r.orderAmount :
+    typeof r.orderAmount === "number" ? String(r.orderAmount) :
     undefined;
 
   const currency =
-    typeof raw.currency === "string" ? raw.currency :
-    typeof raw.orderCurrency === "string" ? raw.orderCurrency :
+    typeof r.currency === "string" ? r.currency :
+    typeof r.orderCurrency === "string" ? r.orderCurrency :
     undefined;
 
   return { rrn, amount, currency };
