@@ -242,3 +242,37 @@ describe("platform interaction layers", () => {
     expect(missing).toEqual([]);
   });
 });
+
+describe("the footer's interactive ink follows the gamma, not a fixed brass", () => {
+  /* Comments stripped: these rules are discussed in prose right above
+     themselves, and a plain `indexOf` finds the sentence, not the rule. */
+  const componentsCss = read("src/components/platform/PlatformComponents.module.css").replace(
+    /\/\*[\s\S]*?\*\//g,
+    "",
+  );
+
+  it("keeps the text links out of the quiet-button hover", () => {
+    /* `.footer a:hover` is one element more specific than `.footerTextLink:hover`,
+       so without the exclusion it wins the cascade whatever the order — and
+       lights every footer link to the page ink, which on the night ground is
+       cream. Pointing at a link turned it white while the same gesture
+       elsewhere turned it brass. */
+    expect(componentsCss).toContain(".footer a:not(.footerTextLink):hover");
+    expect(componentsCss).not.toMatch(/^\.footer a:hover,$/m);
+  });
+
+  it("lights a footer link with the marker, which is ink on cream and brass on graphite", () => {
+    const at = componentsCss.indexOf(".footerTextLink:hover");
+    const declarations = componentsCss.slice(at, componentsCss.indexOf("}", at));
+    expect(declarations).toContain("var(--cw-nav-marker)");
+    /* The accent is the same brass in both gammas; using it here put a gold
+       hover on a cream page, against the one rule the marker exists to state. */
+    expect(declarations).not.toContain("--cw-platform-accent");
+  });
+
+  it("keeps the marker itself as the two-sided token it claims to be", () => {
+    const globalsCss = read("src/app/globals.css").replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(globalsCss).toMatch(/:root\s*\{[\s\S]*?--cw-nav-marker: var\(--cw-platform-text\);/);
+    expect(globalsCss).toMatch(/\[data-cw-theme="dark"\],\s*\n\s*\[data-cw-header-tone="dark"\]\s*\{\s*\n\s*--cw-nav-marker: var\(--cw-platform-accent\);/);
+  });
+});
