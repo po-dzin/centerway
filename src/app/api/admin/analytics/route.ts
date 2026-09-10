@@ -1835,12 +1835,101 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
 
     const toFixed2 = (value: number) => Number(value.toFixed(2));
 
+    /* 9. WHAT HAPPENED AFTER THE MONEY.
+       Everything above this line is about reaching a purchase; nothing above it
+       knows whether the thing bought was ever opened. The dashboard has read
+       `orders`, `events` and five Meta tables since it was built for a business
+       running on paid traffic, and not one `lms_*` table — so the product the
+       company now actually is has been invisible on its own front page.
+
+       This is deliberately ONE ROW, not a section. The question here is «все ли
+       в порядке»: how many people hold access, how many of them ever opened the
+       course, and whose access runs out soon. Anything more specific — which
+       course, which learner, why stalled — is `/admin/access`, which already
+       computes exactly that and must stay the one place that does.
+
+       GRANTS ARE PERIOD-SCOPED, EXPIRIES ARE NOT. A deadline is a fact about
+       now, not about the window someone happens to be looking at: an access
+       ending on Friday matters whether or not the picker says "last 7 days". */
+    const learning = await (async () => {
+        const emptyLearning = {
+            granted_in_period: 0,
+            started_in_period: 0,
+            started_percent: 0,
+            active_total: 0,
+            expiring_14d: 0,
+            expired_total: 0,
+        };
+
+        const { data: enrollmentRows, error: enrollmentError } = await db
+            .from("lms_enrollments")
+            .select("id, status, expires_at, created_at");
+        if (enrollmentError || !enrollmentRows) return emptyLearning;
+
+        const nowMs = Date.now();
+        const horizonMs = nowMs + 14 * 24 * 60 * 60 * 1000;
+        const fromMs = Date.parse(`${range.from}T00:00:00Z`);
+        const toMs = Date.parse(`${range.to}T23:59:59Z`);
+
+        const isActive = (row: { status?: string | null }) =>
+            (row.status ?? "active") === "active";
+
+        const inPeriod = enrollmentRows.filter((row: any) => {
+            const ts = Date.parse(String(row.created_at ?? ""));
+            return Number.isFinite(ts) && ts >= fromMs && ts <= toMs;
+        });
+
+        /* "Started" is the same signal `/admin/access` uses to tell
+           `not_started` from `in_progress`: at least one progress event under
+           that enrollment. Read by enrollment id, because that is the only key
+           `lms_progress_events` has. */
+        const periodIds = inPeriod.map((row: any) => row.id).filter(Boolean);
+        let startedIds = new Set<string>();
+        if (periodIds.length > 0) {
+            const { data: progressRows } = await db
+                .from("lms_progress_events")
+                .select("enrollment_id")
+                .in("enrollment_id", periodIds);
+            startedIds = new Set((progressRows ?? []).map((row: any) => String(row.enrollment_id)));
+        }
+
+        const expiryMs = (row: any) => {
+            const raw = typeof row.expires_at === "string" ? Date.parse(row.expires_at) : NaN;
+            return Number.isFinite(raw) ? raw : null;
+        };
+
+        const activeRows = enrollmentRows.filter((row: any) => {
+            if (!isActive(row)) return false;
+            const ends = expiryMs(row);
+            return ends === null || ends > nowMs;
+        });
+
+        const startedCount = periodIds.filter((id: string) => startedIds.has(String(id))).length;
+
+        return {
+            granted_in_period: inPeriod.length,
+            started_in_period: startedCount,
+            started_percent: Number(safeDivide(startedCount * 100, inPeriod.length).toFixed(1)),
+            active_total: activeRows.length,
+            expiring_14d: activeRows.filter((row: any) => {
+                const ends = expiryMs(row);
+                return ends !== null && ends > nowMs && ends <= horizonMs;
+            }).length,
+            expired_total: enrollmentRows.filter((row: any) => {
+                if (!isActive(row)) return false;
+                const ends = expiryMs(row);
+                return ends !== null && ends <= nowMs;
+            }).length,
+        };
+    })();
+
     return {
         period: {
             from: range.from,
             to: range.to,
         },
         campaigns_level: campaignLevel,
+        learning,
         funnel: funnelData,
         campaigns: revenueData,
         products: productData,

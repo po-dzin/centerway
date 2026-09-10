@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { flushSync } from "react-dom";
 import { supabaseClient } from "@/lib/supabaseClient";
@@ -176,12 +177,22 @@ type DoshaAnalytics = {
   daily: Array<{ date: string; completions: number }>;
 };
 
+type LearningSummary = {
+  granted_in_period: number;
+  started_in_period: number;
+  started_percent: number;
+  active_total: number;
+  expiring_14d: number;
+  expired_total: number;
+};
+
 type AnalyticsResponse = {
   period?: {
     from: string;
     to: string;
   };
   campaigns_level?: "adset" | "ad";
+  learning?: LearningSummary;
   funnel: FunnelData[];
   campaigns: CampaignData[];
   products: ProductData[];
@@ -744,6 +755,7 @@ export default function AnalyticsPage() {
   const [funnelChain, setFunnelChain] = useState<FunnelChain | null>(null);
   const [kpis, setKpis] = useState<UnifiedKpis | null>(null);
   const [scrollDepth50, setScrollDepth50] = useState<number>(0);
+  const [learning, setLearning] = useState<LearningSummary | null>(null);
   const [engagementInitiateAligned, setEngagementInitiateAligned] = useState<number>(0);
   const [scroll50ToCheckoutPercent, setScroll50ToCheckoutPercent] = useState<number>(0);
   const [engagementAlignedFrom, setEngagementAlignedFrom] = useState<string | null>(null);
@@ -914,6 +926,7 @@ export default function AnalyticsPage() {
       setFunnelChain(data.funnel_chain ?? null);
       setKpis(data.kpis ?? null);
       setScrollDepth50(data.engagement?.scroll_depth_50 ?? 0);
+      setLearning(data.learning ?? null);
       setEngagementInitiateAligned(data.engagement?.initiate_checkout_aligned ?? 0);
       setScroll50ToCheckoutPercent(data.engagement?.scroll50_to_checkout_percent ?? 0);
       setEngagementAlignedFrom(data.engagement?.aligned_from ?? null);
@@ -1743,6 +1756,55 @@ export default function AnalyticsPage() {
               <div className="text-lg font-semibold cw-text mt-1">{renderMetricValue(field.key)}</div>
             </div>
           ))}
+        </div>
+      </div>
+      )}
+
+      {/* WHAT HAPPENED AFTER THE MONEY.
+          One row, directly under the money row, because this dashboard has
+          always stopped at the purchase — five Meta tables and not one `lms_*`
+          — while the product it reports on became a school. It answers «все ли
+          в порядке» and nothing more: which course, which learner, why stalled
+          is `/admin/access`, and the link goes there rather than growing a
+          second answer here. */}
+      {analyticsSection === "overview" && learning && (
+      <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-semibold cw-text">{t("analytics_learning_title")}</h2>
+            <p className="text-sm cw-muted">{t("analytics_learning_subtitle")}</p>
+          </div>
+          <Link href="/admin/access" prefetch={false} className="text-xs cw-link-hover shrink-0">
+            {t("analytics_learning_open_access")}
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="cw-surface-2 border cw-border rounded-xl p-4">
+            <div className="text-xs cw-muted">{t("analytics_learning_granted")}</div>
+            <div className="text-2xl font-bold cw-text mt-1">{learning.granted_in_period.toLocaleString()}</div>
+          </div>
+          <div className="cw-surface-2 border cw-border rounded-xl p-4">
+            <div className="text-xs cw-muted">{t("analytics_learning_started")}</div>
+            <div className="text-2xl font-bold cw-text mt-1">{learning.started_in_period.toLocaleString()}</div>
+            <div className="text-xs cw-muted mt-1">{learning.started_percent}%</div>
+          </div>
+          <div className="cw-surface-2 border cw-border rounded-xl p-4">
+            <div className="text-xs cw-muted">{t("analytics_learning_active")}</div>
+            <div className="text-2xl font-bold cw-text mt-1">{learning.active_total.toLocaleString()}</div>
+          </div>
+          {/* A deadline is a fact about now, not about the picker's window —
+              so this one card deliberately ignores the period. */}
+          <div className="cw-surface-2 border cw-border rounded-xl p-4">
+            <div className="text-xs cw-muted">{t("analytics_learning_expiring")}</div>
+            <div className={`text-2xl font-bold mt-1 ${learning.expiring_14d > 0 ? "cw-text" : "cw-muted"}`}>
+              {learning.expiring_14d.toLocaleString()}
+            </div>
+            {learning.expired_total > 0 && (
+              <div className="text-xs cw-muted mt-1">
+                {t("analytics_learning_expired")}: {learning.expired_total}
+              </div>
+            )}
+          </div>
         </div>
       </div>
       )}
