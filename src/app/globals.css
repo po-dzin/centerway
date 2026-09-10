@@ -2101,6 +2101,36 @@ body {
     box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
   }
 
+  /* THE WAITING MARK, AT ONE SIZE FOR THE WHOLE PRODUCT.
+     `LogoMark animate="wait"` is the product's only spinner, and every surface
+     that mounted it picked its own number: 30 on the platform card, 32 in the
+     admin, 36 in the dosha test. The platform learned the lesson first and
+     wrote it down in `PlatformComponents.module.css` — at 30px against a
+     three-line block «the one animated thing on the card read as a speck and
+     the brand arrived as punctuation» — but the number stayed inside that
+     module, so the panel and the test kept their specks. It lives here now,
+     once, and the surfaces read it.
+
+     4.5rem is the 72px that copy block measures on the built page. The phone
+     step is measured, not guessed: at 375px a 72px mark leaves the text 250px
+     and the detail wraps to 117px, while at 56px the block is 93px — and 56 is
+     the LARGEST mark that costs the copy no extra line (48 and 30 measure the
+     same 93). So the phone gets the biggest mark the sentence can afford.
+     560px is the platform's own narrow bound (`PlatformResponsive.module.css`),
+     not a number chosen here. */
+  .cw-wait-mark {
+    flex: none;
+    inline-size: 4.5rem;
+    block-size: 4.5rem;
+  }
+
+  @media (max-width: 560px) {
+    .cw-wait-mark {
+      inline-size: 3.5rem;
+      block-size: 3.5rem;
+    }
+  }
+
   .cw-skeleton-row {
     border-radius: var(--cw-radius-sm);
     background-color: var(--cw-surface-2);

@@ -2408,7 +2408,7 @@ export default function AnalyticsPage() {
           </div>
 
           {doshaLoading && !doshaData ? (
-            <div className="cw-panel p-6 text-center text-sm cw-muted">{t("common_loading_short")}</div>
+            <AdminLoadingState variant="spinner" text={t("common_loading_short")} className="cw-panel" />
           ) : doshaData ? (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">

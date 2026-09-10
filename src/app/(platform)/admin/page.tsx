@@ -6,6 +6,7 @@ import { Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { isAdminRole } from "@/lib/platform/adminRole";
 import { useI18n } from "@/components/I18nProvider";
+import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 
 
 export default function AdminRootPage() {
@@ -126,11 +127,11 @@ export default function AdminRootPage() {
     };
 
     if (loading || (session && roleLoading)) {
-        return <div className="p-8 cw-muted animate-pulse">{t("loading")}</div>;
+        return <AdminLoadingState variant="spinner" text={t("loading")} />;
     }
 
     if (session && isAdminRole(role)) {
-        return <div className="p-8 cw-muted animate-pulse">{t("loading")}</div>;
+        return <AdminLoadingState variant="spinner" text={t("loading")} />;
     }
 
     if (session && !isAdminRole(role)) {

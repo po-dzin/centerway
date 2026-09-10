@@ -5,6 +5,7 @@ import type { Session } from "@supabase/supabase-js";
 import type { ScreenRouteKey } from "@/lib/generator/types";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { SignInOptions } from "./SignInOptions";
+import { LogoMark } from "@/components/brand/LogoMark";
 
 type RouteAuthGateProps = PropsWithChildren<{
   routeKey: ScreenRouteKey;
@@ -73,9 +74,17 @@ export function RouteAuthGate({ routeKey, children }: RouteAuthGateProps) {
     return (
       <main className="min-h-dvh px-6 py-10 md:flex md:items-center md:justify-center">
         <div className="mx-auto w-full max-w-lg rounded-3xl border p-6 sm:p-8" style={{ borderColor: "var(--cw-border)", background: "var(--cw-surface)" }}>
-          <p className="text-sm animate-pulse" style={{ color: "var(--cw-muted)" }}>
-            Перевіряємо сесію...
-          </p>
+          {/* The house mark waits here too. This was a pulsing line of text
+              with nothing animated on it but its own opacity — the one gate a
+              person meets before every private route, and the only waiting
+              state in the product that did not show the brand. `.cw-wait-mark`
+              is the single size, shared with the platform card and the panel. */}
+          <div className="flex items-center gap-3">
+            <LogoMark className="cw-wait-mark" size={30} animate="wait" tone="brand" aria-hidden="true" />
+            <p className="text-sm" style={{ color: "var(--cw-muted)" }}>
+              Перевіряємо сесію...
+            </p>
+          </div>
         </div>
       </main>
     );
