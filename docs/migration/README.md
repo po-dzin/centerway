@@ -23,17 +23,22 @@ and effects against production, then journaling what was there.
 4. `npm run db:types` (needs Docker) and commit the regenerated types with the
    migration.
 
-## `pending/`
+## `declined/`
 
-Migrations that exist and were never applied. Each is a decision, not a queue:
+Migrations that were written and never applied, and on 2026-09-11 were
+decided against rather than left as a queue:
 
 - `2026-04-07_parametric_experiments_foundation.sql` — four tables no code
-  reads. The experiments the proxy runs come from a registry in
-  `src/lib/generator`, not from the database. Probably to delete.
-- `2026-08-31_reset_day_title_dedup.sql` — trims the reset-day title that still
-  carries its own posttitle. Its `WHERE` matches production exactly as of
-  2026-09-10, so applying it would take effect. Content change on a live
-  course: the owner's call.
+  reads; the experiments the proxy runs come from the registry in
+  `src/lib/generator`. Not needed.
+- `2026-08-31_reset_day_title_dedup.sql` — trims the reset-day title that
+  still carries its own posttitle. Since 2026-08-26 the offer surface derives
+  the subtitle itself (`offerSubtitle`, `posttitle` first), so nothing on
+  the storefront shows the duplicate; the long title in the row is cosmetic.
+  Applying it is harmless and buys nothing, so it was not applied.
+
+Kept as files rather than deleted so the next person who wonders finds the
+answer here instead of rewriting the migration.
 
 ## Local stack
 
