@@ -59,7 +59,17 @@
      circle because a floating button is habitually a circle, which is the
      borrowed default this system replaced everywhere else — see «Soft rect
      everywhere, never pill» in docs/design-system.md. */
-  --platform-island-radius: var(--cw-radius-md);
+  /* AND THE STEP FOLLOWS THE BOX, WHICH IS 36px (2026-09-10). The paragraph
+     above argues its case against a 48px control, and that was the size when
+     it was written. These islands take `--ds-touch-target-min`, which is
+     2.25rem — 36px — so `md` 16 was landing at 89% of a full circle and the
+     decision above was being defeated by its own token: the bar drew discs
+     again, exactly what «soft rect, never pill» exists to stop. `sm` 12 on 36px
+     is 67%, the same roundness `md` gives a 48px control, so the LOOK the rule
+     asks for survives the box changing size. Measured in the browser, not
+     inferred. Precedent: three chrome controls already take `sm` in the
+     geometry baseline. */
+  --platform-island-radius: var(--cw-radius-sm);
   --platform-island-bg: var(--cw-mat-tint-chrome);
   --platform-island-filter: var(--cw-mat-filter);
   /* SHADOW, NOT CONTOUR. `--cw-mat-shadow-chrome` leads with `0 0 0 1px` — a

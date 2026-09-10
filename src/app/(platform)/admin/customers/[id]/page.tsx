@@ -7,6 +7,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
+import surfaces from "@/components/admin/AdminSurfaces.module.css";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/adminLocale";
 
@@ -97,13 +98,13 @@ function Avatar({ name, url, size = 12 }: { name?: string | null; url?: string |
             width={pixelSize}
             height={pixelSize}
             unoptimized
-            className="rounded-2xl object-cover shrink-0"
+            className="rounded-full object-cover shrink-0"
             style={{ width: pixelSize, height: pixelSize }}
             referrerPolicy="no-referrer"
         />
     ) : (
         <div
-            className="rounded-2xl cw-surface-2 flex items-center justify-center text-xl font-bold cw-muted shrink-0"
+            className="rounded-full cw-surface-2 flex items-center justify-center text-xl font-bold cw-muted shrink-0"
             style={{ width: pixelSize, height: pixelSize }}
         >
             {initial}
@@ -120,7 +121,7 @@ const orderStatusColor: Record<string, string> = {
 
 function ContactRow({ label, value, badge }: { label: string; value: string; badge?: boolean }) {
     return (
-        <div className="flex items-center gap-3 p-3 rounded-xl cw-panel">
+        <div className={`${surfaces.tile} flex items-center gap-3`}>
             <span className="text-[10px] font-medium px-1.5 py-0.5 rounded cw-surface-2 cw-muted uppercase tracking-wide shrink-0">
                 {label}
             </span>
@@ -168,8 +169,11 @@ export default function CustomerProfilePage() {
         return (
             <div className="space-y-4 animate-pulse">
                 <div className="h-5 w-36 cw-skeleton-row" />
-                <div className="h-32 rounded-2xl cw-skeleton-row" />
-                <div className="h-72 rounded-2xl cw-skeleton-row" />
+                {/* The radius a card LOADS INTO, not one of its own: these
+                    stand in for `cw-panel` cards at `rounded-xl`, and at 28px
+                    they made every load end with the corners stepping in. */}
+                <div className="h-32 rounded-xl cw-skeleton-row" />
+                <div className="h-72 rounded-xl cw-skeleton-row" />
             </div>
         );
     }
@@ -212,7 +216,7 @@ export default function CustomerProfilePage() {
             </nav>
 
             {/* Profile card */}
-            <div className="p-6 cw-panel">
+            <div className={surfaces.plate}>
                 <div className="flex items-start gap-5">
                     <Avatar name={displayName} url={customer.avatar_url} size={14} />
                     <div className="flex-1 min-w-0">
@@ -309,7 +313,7 @@ export default function CustomerProfilePage() {
                         <div className="space-y-2">
                             <h3 className="text-sm font-semibold cw-text">{t("orders_title")}</h3>
                             {orders.map((o) => (
-                                <div key={o.id} className="p-3 rounded-xl cw-panel">
+                                <div key={o.id} className={surfaces.tile}>
                                     <div className="flex items-center justify-between gap-2">
                                         <span className="text-xs font-mono cw-muted truncate">{o.order_ref}</span>
                                         <span className={`text-xs font-semibold ${orderStatusColor[o.status] ?? "cw-muted"}`}>

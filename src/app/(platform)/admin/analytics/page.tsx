@@ -12,6 +12,7 @@ import { AdminTabs } from "@/components/admin/AdminTabs";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
+import surfaces from "@/components/admin/AdminSurfaces.module.css";
 /* The mode's rules live outside this file because they are the part that can
    actually be wrong, and the admin is behind a Google sign-in — it cannot be
    verified by opening it, only by testing it. See dashboardMode.ts. */
@@ -319,7 +320,7 @@ function AnalyticsCollapsePanel(props: {
 }) {
   const { title, note, open, onToggle, expandLabel, collapseLabel, children } = props;
   return (
-    <div className="cw-panel p-4">
+    <div className={surfaces.plate}>
       <button
         type="button"
         onClick={onToggle}
@@ -1206,7 +1207,7 @@ export default function AnalyticsPage() {
   }
 
   if (loading || !summary) {
-    return <AdminLoadingState variant="spinner" text={t("analytics_loading")} className="cw-panel" />;
+    return <AdminLoadingState variant="spinner" text={t("analytics_loading")} className={surfaces.plate} />;
   }
 
   const chartHeight = 150;
@@ -1314,7 +1315,7 @@ export default function AnalyticsPage() {
   const activeBar = hovered ?? selectedBar;
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-3 md:gap-4 cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+      <div className={`flex flex-col xl:flex-row xl:items-start xl:justify-between gap-3 md:gap-4 ${surfaces.plate}`}>
         <div className="xl:max-w-sm">
           <h1 className="text-xl sm:text-2xl font-bold cw-text">{t("analytics_title")}</h1>
           <p className="text-xs cw-muted mt-2">
@@ -1390,7 +1391,7 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "inputs_quality" && (
-        <div className="cw-panel p-4">
+        <div className={surfaces.plate}>
           <p className="text-sm font-medium cw-text mb-3">{t("analytics_edit_fields_hint")}</p>
           <div className="space-y-4">
             <div>
@@ -1480,7 +1481,7 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "inputs_quality" && (
-        <div className="cw-panel p-4 space-y-4">
+        <div className={`${surfaces.plate} space-y-4`}>
           <p className="text-sm font-medium cw-text">{t("analytics_edit_inputs_hint")}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
             <label className="text-xs cw-muted flex flex-col gap-1">
@@ -1569,7 +1570,7 @@ export default function AnalyticsPage() {
               ].map((item) => {
                 const status = freshnessStatus(item.value, item.staleHours);
                 return (
-                  <div key={item.key} className="cw-surface-2 border cw-border rounded-lg p-3">
+                  <div key={item.key} className={surfaces.tile}>
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-xs cw-muted">{item.label}</p>
                       <span
@@ -1595,7 +1596,7 @@ export default function AnalyticsPage() {
                 );
               })}
 
-              <div className="cw-surface-2 border cw-border rounded-lg p-3 md:col-span-2 lg:col-span-3">
+              <div className={`${surfaces.tile} md:col-span-2 lg:col-span-3`}>
                 <p className="text-xs cw-muted">{t("analytics_freshness_quality_snapshot")}</p>
                 <p className="text-sm cw-text mt-2">{freshness.quality_snapshot_date ?? "—"}</p>
               </div>
@@ -1617,35 +1618,35 @@ export default function AnalyticsPage() {
         >
           {qualityGaps ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-2">
-              <div className="cw-surface-2 border cw-border rounded-lg p-3">
+              <div className={surfaces.tile}>
                 <p className="text-xs cw-muted">{t("analytics_quality_missing_fbc_raw")}</p>
                 <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_missing_fbc_raw ?? 0}</p>
               </div>
-              <div className="cw-surface-2 border cw-border rounded-lg p-3">
+              <div className={surfaces.tile}>
                 <p className="text-xs cw-muted">{t("analytics_quality_recoverable_fbc")}</p>
                 <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_recoverable_fbc_from_fbclid ?? 0}</p>
               </div>
-              <div className="cw-surface-2 border cw-border rounded-lg p-3">
+              <div className={surfaces.tile}>
                 <p className="text-xs cw-muted">{t("analytics_quality_truly_missing_fbc")}</p>
                 <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_truly_missing_fbc ?? 0}</p>
               </div>
-              <div className="cw-surface-2 border cw-border rounded-lg p-3">
+              <div className={surfaces.tile}>
                 <p className="text-xs cw-muted">{t("analytics_quality_missing_fbclid")}</p>
                 <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_missing_fbclid ?? 0}</p>
               </div>
-              <div className="cw-surface-2 border cw-border rounded-lg p-3">
+              <div className={surfaces.tile}>
                 <p className="text-xs cw-muted">{t("analytics_quality_missing_fbp")}</p>
                 <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_missing_fbp ?? 0}</p>
               </div>
-              <div className="cw-surface-2 border cw-border rounded-lg p-3">
+              <div className={surfaces.tile}>
                 <p className="text-xs cw-muted">{t("analytics_quality_missing_page_url")}</p>
                 <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_missing_page_url ?? 0}</p>
               </div>
-              <div className="cw-surface-2 border cw-border rounded-lg p-3">
+              <div className={surfaces.tile}>
                 <p className="text-xs cw-muted">{t("analytics_quality_missing_client_ip")}</p>
                 <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_missing_client_ip ?? 0}</p>
               </div>
-              <div className="cw-surface-2 border cw-border rounded-lg p-3">
+              <div className={surfaces.tile}>
                 <p className="text-xs cw-muted">{t("analytics_quality_missing_client_ua")}</p>
                 <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_missing_client_ua ?? 0}</p>
               </div>
@@ -1659,7 +1660,7 @@ export default function AnalyticsPage() {
               {t("analytics_quality_trend_title")}
             </h4>
             {qualitySeries.length > 0 ? (
-              <div className="cw-surface rounded-xl border cw-border overflow-x-auto">
+              <div className={surfaces.subPlate}>
                 <table className="min-w-full text-xs md:text-sm">
                   <thead className="cw-surface-2 border-b cw-border">
                     <tr>
@@ -1712,39 +1713,39 @@ export default function AnalyticsPage() {
           {purchaseTransport ? (
             <div className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-9 gap-2">
-                <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                <div className={surfaces.tile}>
                   <p className="text-xs cw-muted">{t("analytics_purchase_transport_paid_total")}</p>
                   <p className="text-lg font-semibold cw-text mt-1">{purchaseTransport.total_paid_orders}</p>
                 </div>
-                <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                <div className={surfaces.tile}>
                   <p className="text-xs cw-muted">{t("analytics_purchase_transport_success")}</p>
                   <p className="text-lg font-semibold cw-status-success-text mt-1">{purchaseTransport.success}</p>
                 </div>
-                <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                <div className={surfaces.tile}>
                   <p className="text-xs cw-muted">{t("analytics_purchase_transport_pending")}</p>
                   <p className="text-lg font-semibold cw-status-pending-text mt-1">{purchaseTransport.pending + purchaseTransport.running}</p>
                 </div>
-                <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                <div className={surfaces.tile}>
                   <p className="text-xs cw-muted">{t("analytics_purchase_transport_failed")}</p>
                   <p className="text-lg font-semibold cw-status-failed-text mt-1">{purchaseTransport.failed}</p>
                 </div>
-                <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                <div className={surfaces.tile}>
                   <p className="text-xs cw-muted">{t("analytics_purchase_transport_missing_job")}</p>
                   <p className="text-lg font-semibold cw-text mt-1">{purchaseTransport.missing_job}</p>
                 </div>
-                <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                <div className={surfaces.tile}>
                   <p className="text-xs cw-muted">{t("analytics_purchase_transport_stale_pending")}</p>
                   <p className="text-lg font-semibold cw-text mt-1">{purchaseTransport.stale_pending}</p>
                 </div>
-                <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                <div className={surfaces.tile}>
                   <p className="text-xs cw-muted">{t("analytics_purchase_transport_client_signal")}</p>
                   <p className="text-lg font-semibold cw-text mt-1">{purchaseTransport.client_signal}</p>
                 </div>
-                <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                <div className={surfaces.tile}>
                   <p className="text-xs cw-muted">{t("analytics_purchase_transport_missing_client_signal")}</p>
                   <p className="text-lg font-semibold cw-text mt-1">{purchaseTransport.missing_client_signal}</p>
                 </div>
-                <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                <div className={surfaces.tile}>
                   <p className="text-xs cw-muted">{t("analytics_purchase_transport_last_success")}</p>
                   <p className="text-sm font-semibold cw-text mt-1">
                     {purchaseTransport.last_success_at ? new Date(purchaseTransport.last_success_at).toLocaleString() : "—"}
@@ -1798,7 +1799,7 @@ export default function AnalyticsPage() {
             card it controlled is a COURSES one. A control you can only reach
             from the mode where its subject does not exist is not a setting.
             Found by opening the page — no test would have seen it. */}
-        <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+        <div className={surfaces.plate}>
             <div className="text-sm font-medium cw-muted">{t("analytics_leads")}</div>
             <div className="text-3xl font-bold mt-2 cw-text">{leads?.new_in_period ?? summary.totalLeads}</div>
             {leads ? (
@@ -1814,15 +1815,15 @@ export default function AnalyticsPage() {
               </div>
             ) : null}
         </div>
-        <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+        <div className={surfaces.plate}>
           <div className="text-sm font-medium cw-muted">{t("analytics_purchases")}</div>
           <div className="text-3xl font-bold mt-2 cw-text">{summary.totalPaidOrders}</div>
         </div>
-        <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+        <div className={surfaces.plate}>
           <div className="text-sm font-medium cw-muted">{primaryConversionLabel}</div>
           <div className="text-3xl font-bold mt-2 cw-text">{primaryConversion}%</div>
         </div>
-        <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+        <div className={surfaces.plate}>
           <div className="text-sm font-medium cw-muted">{t("analytics_revenue_period")}</div>
           <div className="text-3xl font-bold mt-2 cw-text">{summary.totalRevenue.toLocaleString()} ₴</div>
         </div>
@@ -1831,7 +1832,7 @@ export default function AnalyticsPage() {
 
       {/* Spend, ROAS, CPA, CPC, CTR — the ad ledger. */}
       {analyticsSection === "overview" && dashboardMode === "traffic" && (
-      <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4 md:space-y-5">
+      <div className={`${surfaces.plate} space-y-4 md:space-y-5`}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
           <div>
             <h2 className="text-lg font-semibold cw-text">{t("analytics_unified_kpi_title")}</h2>
@@ -1846,7 +1847,7 @@ export default function AnalyticsPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {METRIC_FIELDS.filter((field) => visibleFields.includes(field.key)).map((field) => (
-            <div key={field.key} className="cw-surface-2 border cw-border rounded-xl p-3">
+            <div key={field.key} className={surfaces.tile}>
               <div className="text-xs cw-muted">{t(field.labelKey as never)}</div>
               <div className="text-lg font-semibold cw-text mt-1">{renderMetricValue(field.key)}</div>
             </div>
@@ -1863,7 +1864,7 @@ export default function AnalyticsPage() {
           is `/admin/access`, and the link goes there rather than growing a
           second answer here. */}
       {analyticsSection === "overview" && dashboardMode === "courses" && learning && (
-      <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4">
+      <div className={`${surfaces.plate} space-y-4`}>
         <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
           <div>
             <h2 className="text-lg font-semibold cw-text">{t("analytics_learning_title")}</h2>
@@ -1874,22 +1875,22 @@ export default function AnalyticsPage() {
           </Link>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="cw-surface-2 border cw-border rounded-xl p-4">
+          <div className={surfaces.tile}>
             <div className="text-xs cw-muted">{t("analytics_learning_granted")}</div>
             <div className="text-2xl font-bold cw-text mt-1">{learning.granted_in_period.toLocaleString()}</div>
           </div>
-          <div className="cw-surface-2 border cw-border rounded-xl p-4">
+          <div className={surfaces.tile}>
             <div className="text-xs cw-muted">{t("analytics_learning_started")}</div>
             <div className="text-2xl font-bold cw-text mt-1">{learning.started_in_period.toLocaleString()}</div>
             <div className="text-xs cw-muted mt-1">{learning.started_percent}%</div>
           </div>
-          <div className="cw-surface-2 border cw-border rounded-xl p-4">
+          <div className={surfaces.tile}>
             <div className="text-xs cw-muted">{t("analytics_learning_active")}</div>
             <div className="text-2xl font-bold cw-text mt-1">{learning.active_total.toLocaleString()}</div>
           </div>
           {/* A deadline is a fact about now, not about the picker's window —
               so this one card deliberately ignores the period. */}
-          <div className="cw-surface-2 border cw-border rounded-xl p-4">
+          <div className={surfaces.tile}>
             <div className="text-xs cw-muted">{t("analytics_learning_expiring")}</div>
             <div className={`text-2xl font-bold mt-1 ${learning.expiring_14d > 0 ? "cw-text" : "cw-muted"}`}>
               {learning.expiring_14d.toLocaleString()}
@@ -1907,17 +1908,17 @@ export default function AnalyticsPage() {
       {/* Scroll depth and scroll-to-checkout describe how a PAGE performs, which
           is a traffic question. */}
       {analyticsSection === "overview" && dashboardMode === "traffic" && (
-      <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4">
+      <div className={`${surfaces.plate} space-y-4`}>
         <div>
           <h2 className="text-lg font-semibold cw-text">{t("analytics_engagement_title")}</h2>
           <p className="text-sm cw-muted">{t("analytics_engagement_subtitle")}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="cw-surface-2 border cw-border rounded-xl p-4">
+          <div className={surfaces.tile}>
             <div className="text-xs cw-muted">{t("analytics_metric_scroll_depth_50")}</div>
             <div className="text-2xl font-bold cw-text mt-1">{scrollDepth50.toLocaleString()}</div>
           </div>
-          <div className="cw-surface-2 border cw-border rounded-xl p-4">
+          <div className={surfaces.tile}>
             <div className="text-xs cw-muted">{t("analytics_scroll50_to_checkout_percent")}</div>
             <div className="text-2xl font-bold cw-text mt-1">{scroll50ToCheckoutPercent}%</div>
             <div className="text-xs cw-muted mt-1">
@@ -1930,7 +1931,7 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "funnel" && (
-        <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4">
+        <div className={`${surfaces.plate} space-y-4`}>
           <h2 className="text-lg font-semibold cw-text">{t("analytics_chain_title")}</h2>
           {funnelSources ? (
             <div className="flex flex-wrap gap-2">
@@ -1954,28 +1955,28 @@ export default function AnalyticsPage() {
           ) : null}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="cw-surface-2 border cw-border rounded-xl p-4">
+            <div className={surfaces.tile}>
               <div className="text-xs cw-muted">{t("analytics_event_unique_impressions")}</div>
               <div className="text-2xl font-bold cw-text mt-1">{uniqueImpressions.toLocaleString()}</div>
               <div className="text-xs cw-muted mt-1">
                 {t("analytics_chain_from_prev")}: —
               </div>
             </div>
-            <div className="cw-surface-2 border cw-border rounded-xl p-4">
+            <div className={surfaces.tile}>
               <div className="text-xs cw-muted">{t("analytics_event_view_content")}</div>
               <div className="text-2xl font-bold cw-text mt-1">{funnelChain?.view_content ?? 0}</div>
               <div className="text-xs cw-muted mt-1">
                 {t("analytics_chain_from_prev")}: {viewContentFromReachPercent}%
               </div>
             </div>
-            <div className="cw-surface-2 border cw-border rounded-xl p-4">
+            <div className={surfaces.tile}>
               <div className="text-xs cw-muted">{t("analytics_event_initiate_checkout")}</div>
               <div className="text-2xl font-bold cw-text mt-1">{funnelChain?.initiate_checkout ?? 0}</div>
               <div className="text-xs cw-muted mt-1">
                 {t("analytics_chain_from_prev")}: {funnelChain?.view_to_checkout_percent ?? 0}%
               </div>
             </div>
-            <div className="cw-surface-2 border cw-border rounded-xl p-4">
+            <div className={surfaces.tile}>
               <div className="text-xs cw-muted">{t("analytics_event_purchase")}</div>
               <div className="text-2xl font-bold cw-text mt-1">{funnelChain?.purchase ?? 0}</div>
               <div className="text-xs cw-muted mt-1">
@@ -1983,7 +1984,7 @@ export default function AnalyticsPage() {
               </div>
             </div>
             {funnelUiSettings.showAccessGrantedCard || funnelUiSettings.mode === "access" ? (
-              <div className="cw-surface-2 border cw-border rounded-xl p-4">
+              <div className={surfaces.tile}>
                 <div className="text-xs cw-muted">{t("analytics_event_access_granted")}</div>
                 <div className="text-2xl font-bold cw-text mt-1">{funnelChain?.access_granted ?? 0}</div>
                 <div className="text-xs cw-muted mt-1">
@@ -1993,7 +1994,7 @@ export default function AnalyticsPage() {
             ) : null}
           </div>
 
-          <div className="cw-surface rounded-xl border cw-border overflow-x-auto">
+          <div className={surfaces.subPlate}>
             <table className="min-w-full text-sm">
               <thead className="cw-surface-2 border-b cw-border">
                 <tr>
@@ -2037,9 +2038,9 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "capi" && (
-        <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4">
+        <div className={`${surfaces.plate} space-y-4`}>
           <h2 className="text-lg font-semibold cw-text">{t("analytics_tab_capi")}</h2>
-          <div className="cw-surface rounded-xl border cw-border overflow-x-auto">
+          <div className={surfaces.subPlate}>
             <table className="min-w-full text-sm">
               <thead className="cw-surface-2 border-b cw-border">
                 <tr>
@@ -2079,7 +2080,7 @@ export default function AnalyticsPage() {
       {/* The one time series both questions are judged against, so it belongs to
           both modes rather than to whichever felt more natural. */}
       {analyticsSection === "overview" && (
-      <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+      <div className={surfaces.plate}>
         <h2 className="text-lg font-medium mb-4 md:mb-6 cw-text">{t("analytics_daily_revenue")}</h2>
         {funnel.length === 0 ? (
           <div className="text-center text-sm cw-muted py-10">{t("analytics_no_chart_data")}</div>
@@ -2203,7 +2204,7 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "campaigns" && (
-      <div className="cw-surface rounded-2xl border cw-border cw-shadow overflow-hidden">
+      <div className={surfaces.plateFlush}>
         <div className="px-4 sm:px-5 md:px-6 py-4 md:py-5 border-b cw-border">
           <h2 className="text-lg font-medium cw-text">{t("analytics_campaign_breakdown")}</h2>
           <p className="text-sm cw-muted mt-1">{t("analytics_campaign_breakdown_subtitle")}</p>
@@ -2317,22 +2318,22 @@ export default function AnalyticsPage() {
       {analyticsSection === "products" && (
       <div className="space-y-4 md:space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-          <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+          <div className={surfaces.plate}>
             <div className="text-sm font-medium cw-muted">{t("analytics_col_orders")}</div>
             <div className="text-3xl font-bold mt-2 cw-text">{summary.totalOrders.toLocaleString()}</div>
           </div>
-          <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+          <div className={surfaces.plate}>
             <div className="text-sm font-medium cw-muted">{t("analytics_col_paid")}</div>
             <div className="text-3xl font-bold mt-2 cw-text">{summary.totalPaidOrders.toLocaleString()}</div>
           </div>
-          <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+          <div className={surfaces.plate}>
             <div className="text-sm font-medium cw-muted">{t("analytics_revenue_period")}</div>
             <div className="text-3xl font-bold mt-2 cw-text">{summary.totalRevenue.toLocaleString()} ₴</div>
           </div>
         </div>
 
 
-        <div className="cw-surface rounded-2xl border cw-border cw-shadow overflow-hidden">
+        <div className={surfaces.plateFlush}>
           <div className="px-4 sm:px-5 md:px-6 py-4 md:py-5 border-b cw-border">
             <h2 className="text-lg font-medium cw-text">{t("analytics_products_breakdown")}</h2>
             <p className="text-sm cw-muted mt-1">{t("analytics_products_breakdown_subtitle")}</p>
@@ -2408,26 +2409,26 @@ export default function AnalyticsPage() {
           </div>
 
           {doshaLoading && !doshaData ? (
-            <AdminLoadingState variant="spinner" text={t("common_loading_short")} className="cw-panel" />
+            <AdminLoadingState variant="spinner" text={t("common_loading_short")} className={surfaces.plate} />
           ) : doshaData ? (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-                <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+                <div className={surfaces.plate}>
                   <div className="text-sm font-medium cw-muted">{t("analytics_dosha_completed")}</div>
                   <div className="text-3xl font-bold mt-2 cw-text">{doshaData.total_completions}</div>
                 </div>
-                <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+                <div className={surfaces.plate}>
                   <div className="text-sm font-medium cw-muted">{t("analytics_dosha_cta_clicks")}</div>
                   <div className="text-3xl font-bold mt-2 cw-text">{doshaData.total_cta_clicks}</div>
                   <div className="text-xs cw-muted mt-1">{t("analytics_dosha_click_through")}: {doshaData.cta_click_through_percent}%</div>
                 </div>
-                <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+                <div className={surfaces.plate}>
                   <div className="text-sm font-medium cw-muted">{t("analytics_dosha_top_type")}</div>
                   <div className="text-3xl font-bold mt-2 cw-text capitalize">{doshaData.top_type?.replace("_", " + ") ?? "—"}</div>
                 </div>
               </div>
 
-              <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4">
+              <div className={`${surfaces.plate} space-y-4`}>
                 <h3 className="text-sm font-semibold cw-text">{t("analytics_dosha_by_type")}</h3>
                 <div className="space-y-2">
                   {doshaData.completions_by_type.map((row) => (
@@ -2448,7 +2449,7 @@ export default function AnalyticsPage() {
                 </div>
               </div>
 
-              <div className="cw-surface rounded-2xl border cw-border cw-shadow overflow-hidden">
+              <div className={surfaces.plateFlush}>
                 <div className="px-4 sm:px-5 md:px-6 py-4 border-b cw-border">
                   <h3 className="text-sm font-semibold cw-text">{t("analytics_dosha_cta_by_type")}</h3>
                   <p className="text-xs cw-muted mt-1">{t("analytics_dosha_cta_legend")}</p>
@@ -2483,7 +2484,7 @@ export default function AnalyticsPage() {
               </div>
 
               {doshaData.daily.some((row) => row.completions > 0) && (
-                <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-3">
+                <div className={`${surfaces.plate} space-y-3`}>
                   <h3 className="text-sm font-semibold cw-text">{t("analytics_dosha_daily")}</h3>
                   <div className="cw-surface rounded-xl border cw-border overflow-x-auto">
                     <table className="min-w-full text-xs">
@@ -2508,7 +2509,7 @@ export default function AnalyticsPage() {
               )}
             </>
           ) : (
-            <div className="cw-panel p-6 text-center text-sm cw-muted">{t("analytics_dosha_press_refresh")}</div>
+            <div className={`${surfaces.plate} text-center text-sm cw-muted`}>{t("analytics_dosha_press_refresh")}</div>
           )}
         </div>
       )}
