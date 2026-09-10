@@ -89,6 +89,28 @@ Use local docs for implementation notes, audits, route-specific decisions, runti
 
 Update RAverse only when a local decision becomes a durable project rule that should guide future work beyond one immediate task, route, script, component, or migration.
 
+## Database Rule
+
+The schema record is `supabase/migrations/`, and the journal of what
+production has is `supabase_migrations.schema_migrations`. They agree since
+2026-09-10 and must keep agreeing: a change goes in as a file there and is
+applied with `npm run db:push` (through the session pooler — the direct host is
+IPv6-only from this machine), or with `psql` followed by a journal row written
+by hand. Never as a statement typed into the SQL editor and nowhere else; that
+is how 47 migrations went unregistered. `docs/migration/README.md` has the
+procedure and the two unapplied files awaiting a decision.
+
+Regenerate `src/lib/db/database.types.ts` (`npm run db:types`, needs Docker)
+in the same change as the migration, and commit it with it.
+
+**Row Level Security is not the application's guard.** Decided 2026-09-10: the
+server reads and writes through the service role, which bypasses RLS, and
+authorization is the JavaScript in `src/lib/auth/` and `src/lib/admin/access.ts`
+— `requireAdmin`, `verifyBearer`, the entitlement check. The policies in the
+schema stay as defence in depth for anything that reaches the database with a
+user token (the browser client, a future native app), and no policy is to be
+relied on by server code. A route that needs a check writes it in TypeScript.
+
 ## Agent Output Path Rule
 
 When agents report changed files, references, handoff notes, or review comments, do not print full absolute filesystem paths by default.

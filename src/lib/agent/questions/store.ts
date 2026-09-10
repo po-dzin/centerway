@@ -15,13 +15,13 @@ import { adminClient } from "@/lib/auth/adminClient";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * NOT IN THE GENERATED TYPES, AND NOT IN PRODUCTION. The table comes from
- * docs/migration/sql/2026-09-01_agent_questions.sql, which was written and
- * never applied: `npm run db:types` (2026-09-10) has no `agent_questions`, so
- * every `captureQuestion` call in production has been failing quietly with
- * "[questions] capture failed". Until the migration is applied and the types
- * regenerated, this module talks to the table through an untyped client — the
- * type error was the first signal anyone had that the table is missing.
+ * NOT YET IN THE GENERATED TYPES. The table's migration (agent_questions,
+ * 2026-09-01) was written and sat unapplied until 2026-09-10 — every
+ * `captureQuestion` call in production failed quietly with "[questions]
+ * capture failed" for nine days, and the type error when the client became
+ * typed was the first signal. Applied and journaled on 2026-09-10; the types
+ * regenerate with `npm run db:types` (needs Docker), and this untyped view of
+ * the client goes with that regeneration.
  */
 const untypedDb = () => adminClient() as unknown as SupabaseClient;
 import { isStorableQuestion, redactPersonal } from "./redact";
