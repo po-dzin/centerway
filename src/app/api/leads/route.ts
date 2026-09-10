@@ -4,6 +4,9 @@ import { persistLeadBestEffort, type LeadRecord } from "@/lib/checkoutFlow";
 import { normalizeProduct, type ProductCode } from "@/lib/products";
 import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { upsertCustomerByContact } from "@/lib/platform/customerIdentity";
+import { applyDoshaTagsToCustomer, loadTestAttempt } from "@/lib/doshaTestRepo";
+import { isDoshaResultType, type DoshaResultType } from "@/lib/doshaTest";
 import { sendTelegramMessage } from "@/lib/tg";
 
 export const runtime = "nodejs";
@@ -28,6 +31,7 @@ async function notifyLeadToGroup(lead: LeadRecord): Promise<void> {
     line("Тел", lead.phone),
     line("Email", lead.email),
     line("Джерело", lead.source),
+    line("Доша", payload.dosha_result_type),
     line("Сторінка", payload.page_url),
     line("UTM", [payload.utm_source, payload.utm_campaign].filter(Boolean).join(" / ")),
     payload.message ? `\n${String(payload.message).slice(0, 800)}` : null,
@@ -66,6 +70,8 @@ type LeadRequestBody = {
   fbc?: unknown;
   fbclid?: unknown;
   event_id?: unknown;
+  attempt_id?: unknown;
+  dosha?: unknown;
 };
 
 function asString(v: unknown): string | null {
@@ -152,6 +158,39 @@ export async function POST(req: NextRequest) {
   };
 
   const db = supabaseAdmin();
+
+  /* THE TEST THE PERSON JUST TOOK, CARRIED INTO THE FORM.
+     The consultation door already receives `?dosha=X` from the result screen,
+     but that only ever reached `utm_content` — a string in an analytics field,
+     attached to nobody. The attempt id is what makes it an identity: it names a
+     row we can verify rather than a label the page can claim. An id that does
+     not resolve, or resolves to an unfinished run, is simply not used — the
+     form still submits, because a lead is never worth losing over a decoration. */
+  const attemptId = asString(body.attempt_id);
+  let doshaResultType: DoshaResultType | null = null;
+  if (attemptId) {
+    try {
+      const attempt = await loadTestAttempt(db, attemptId);
+      const resultType = attempt?.result_type ?? null;
+      if (attempt?.status === "completed" && isDoshaResultType(resultType)) {
+        doshaResultType = resultType;
+      }
+    } catch {
+      // a lead is never lost over a test lookup
+    }
+  }
+  /* The screen's own `?dosha=` is a fallback only, and only when it agrees with
+     the vocabulary — it is reader-supplied, so it labels the lead but never
+     tags the customer. */
+  const claimedDosha = asString(body.dosha);
+  if (!doshaResultType && isDoshaResultType(claimedDosha)) {
+    lead.payload.dosha_claimed = claimedDosha;
+  }
+  if (doshaResultType) {
+    lead.payload.dosha_result_type = doshaResultType;
+    lead.payload.dosha_attempt_id = attemptId;
+  }
+
   const mode = await persistLeadBestEffort(db, lead);
 
   if (mode === "skipped") {
@@ -185,6 +224,40 @@ export async function POST(req: NextRequest) {
         user_agent: req.headers.get("user-agent"),
       },
     });
+  }
+
+  /* ON THE SPINE, NOT BESIDE IT (journey map, P1: «Лид пишет в customers тем
+     же upsertCustomer, что и вебхук»).
+     A form submission used to end at the `leads` table, so a person who asked
+     for a consultation existed nowhere the rest of the product looks: not in
+     the admin's customer list, not reachable by the notification layer, not
+     joinable to the test they had just taken. The same resolver the payment
+     webhook uses now runs here, which also means a lead from someone who has
+     bought before lands on their EXISTING row instead of starting a second
+     identity beside it.
+
+     Best-effort on purpose: the lead is already stored and the group is already
+     going to be told. A spine write that fails must not turn a captured lead
+     into a 500 for the person who filled the form. */
+  try {
+    const customerId = await upsertCustomerByContact(db, { email, phone });
+    if (customerId) {
+      if (doshaResultType) {
+        await applyDoshaTagsToCustomer(db, { customerId, resultType: doshaResultType });
+      }
+      /* A name is the one thing a form knows that a payment callback often does
+         not. Never overwrite one we already have. */
+      const { data: existing } = await db
+        .from("customers")
+        .select("display_name")
+        .eq("id", customerId)
+        .maybeSingle();
+      if (existing && !asString(existing.display_name)) {
+        await db.from("customers").update({ display_name: name }).eq("id", customerId);
+      }
+    }
+  } catch {
+    // fire-and-forget: the lead itself is already persisted
   }
 
   await notifyLeadToGroup(lead);
