@@ -12,6 +12,18 @@ import { AdminTabs } from "@/components/admin/AdminTabs";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
+/* The mode's rules live outside this file because they are the part that can
+   actually be wrong, and the admin is behind a Google sign-in — it cannot be
+   verified by opening it, only by testing it. See dashboardMode.ts. */
+import {
+  DASHBOARD_MODES,
+  DEFAULT_DASHBOARD_MODE,
+  MODE_SECTIONS,
+  isDashboardMode,
+  sectionForMode,
+  type AnalyticsSection,
+  type DashboardMode,
+} from "@/lib/admin/dashboardMode";
 
 type FunnelData = {
   date: string;
@@ -289,6 +301,7 @@ const METRIC_FIELDS: MetricDef[] = [...PRIMARY_METRIC_FIELDS, ...OPTIONAL_METRIC
 
 const METRIC_VISIBILITY_KEY = "cw_analytics_visible_metrics";
 const FUNNEL_UI_SETTINGS_KEY = "cw_analytics_funnel_ui_settings";
+const DASHBOARD_MODE_KEY = "cw_analytics_dashboard_mode";
 
 function metricEventLabelKey(eventName: CapiEventName): string {
   if (eventName === "ViewContent") return "analytics_event_view_content";
@@ -784,9 +797,8 @@ export default function AnalyticsPage() {
     showLeadsCard: false,
     showAccessGrantedCard: false,
   });
-  const [analyticsSection, setAnalyticsSection] = useState<
-    "overview" | "funnel" | "products" | "campaigns" | "capi" | "dosha" | "inputs_quality"
-  >("overview");
+  const [analyticsSection, setAnalyticsSection] = useState<AnalyticsSection>("overview");
+  const [dashboardMode, setDashboardMode] = useState<DashboardMode>(DEFAULT_DASHBOARD_MODE);
 
   const [doshaData, setDoshaData] = useState<DoshaAnalytics | null>(null);
   const [doshaLoading, setDoshaLoading] = useState(false);
@@ -861,6 +873,19 @@ export default function AnalyticsPage() {
       // ignore storage write failures
     }
   }, [funnelUiSettings]);
+
+  /* Which mode this operator last used is a per-viewer convenience, exactly
+     like the metric visibility beside it — never shared, never read back by
+     anything but this page, and a browser that refuses storage simply opens on
+     the default. */
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DASHBOARD_MODE_KEY);
+      if (isDashboardMode(raw)) setDashboardMode(raw);
+    } catch {
+      // ignore storage read errors
+    }
+  }, []);
 
   const fetchAnalytics = async (period?: { from: string; to: string }) => {
     const requestSeq = ++analyticsRequestSeqRef.current;
@@ -1223,15 +1248,19 @@ export default function AnalyticsPage() {
     uniqueImpressions > 0
       ? Number((((funnelChain?.view_content ?? 0) * 100) / uniqueImpressions).toFixed(2))
       : 0;
-  const analyticsTabs = [
-    { key: "overview", label: t("analytics_subtab_overview") },
-    { key: "funnel", label: t("analytics_subtab_funnel") },
-    { key: "products", label: t("analytics_subtab_products") },
-    { key: "campaigns", label: t("analytics_subtab_campaigns") },
-    { key: "capi", label: t("analytics_subtab_capi") },
-    { key: "dosha", label: t("analytics_dosha_tab") },
-    { key: "inputs_quality", label: t("analytics_subtab_inputs_quality") },
-  ] as const;
+  const SECTION_LABEL: Record<AnalyticsSection, string> = {
+    overview: t("analytics_subtab_overview"),
+    funnel: t("analytics_subtab_funnel"),
+    products: t("analytics_subtab_products"),
+    campaigns: t("analytics_subtab_campaigns"),
+    capi: t("analytics_subtab_capi"),
+    dosha: t("analytics_dosha_tab"),
+    inputs_quality: t("analytics_subtab_inputs_quality"),
+  };
+  const analyticsTabs = MODE_SECTIONS[dashboardMode].map((key) => ({
+    key,
+    label: SECTION_LABEL[key],
+  }));
   const fetchDoshaAnalytics = async (period?: { from: string; to: string }) => {
     setDoshaLoading(true);
     try {
@@ -1253,11 +1282,23 @@ export default function AnalyticsPage() {
     }
   };
 
+  const handleDashboardModeChange = (mode: DashboardMode) => {
+    setDashboardMode(mode);
+    try {
+      localStorage.setItem(DASHBOARD_MODE_KEY, mode);
+    } catch {
+      // ignore storage write errors
+    }
+    /* The tab you were on may not exist in the mode you just chose. Landing on
+       a blank page because the section is still set to `campaigns` while the
+       strip no longer offers it is the obvious way to get this wrong. */
+    const next = sectionForMode(mode, analyticsSection);
+    if (next !== analyticsSection) handleAnalyticsSectionChange(next);
+  };
+
   const handleAnalyticsSectionChange = (key: string) => {
     flushSync(() => {
-      setAnalyticsSection(
-        key as "overview" | "funnel" | "products" | "campaigns" | "capi" | "dosha" | "inputs_quality"
-      );
+      setAnalyticsSection(key as AnalyticsSection);
     });
     if (key === "dosha" && !doshaData) {
       void fetchDoshaAnalytics({ from: fromDate, to: toDate });
@@ -1306,9 +1347,32 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <div className="pt-1">
+      {/* The mode sits ABOVE the tab strip and looks unlike it on purpose: it
+          does not select a view, it selects which views exist. Two controls of
+          the same shape stacked on each other would read as one nested strip
+          and nobody would know which row they were on. */}
+      <div className="pt-1 flex flex-col gap-3">
+        <div
+          className="inline-flex self-start rounded-lg border cw-border overflow-hidden"
+          role="group"
+          aria-label={t("analytics_mode_label")}
+        >
+          {DASHBOARD_MODES.map((mode, index) => (
+            <button
+              key={mode}
+              type="button"
+              aria-pressed={dashboardMode === mode}
+              onClick={() => handleDashboardModeChange(mode)}
+              className={`px-3 py-1.5 text-sm ${index > 0 ? "border-l cw-border" : ""} ${
+                dashboardMode === mode ? "cw-surface-2 cw-text" : "cw-btn-muted cw-muted"
+              }`}
+            >
+              {mode === "courses" ? t("analytics_mode_courses") : t("analytics_mode_traffic")}
+            </button>
+          ))}
+        </div>
         <AdminTabs
-          items={[...analyticsTabs]}
+          items={analyticsTabs}
           activeKey={analyticsSection}
           onChange={handleAnalyticsSectionChange}
         />
@@ -1726,7 +1790,9 @@ export default function AnalyticsPage() {
         </AnalyticsCollapsePanel>
       )}
 
-      {analyticsSection === "overview" && (
+      {/* Requests, purchases, conversion: the business row, nothing to do with
+          which channel they arrived through. */}
+      {analyticsSection === "overview" && dashboardMode === "courses" && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {/* This card showed one number — `count(*)` over a table that, until the
             form was wired to it, held two smoke-test rows — and it showed it
@@ -1769,7 +1835,8 @@ export default function AnalyticsPage() {
       </div>
       )}
 
-      {analyticsSection === "overview" && (
+      {/* Spend, ROAS, CPA, CPC, CTR — the ad ledger. */}
+      {analyticsSection === "overview" && dashboardMode === "traffic" && (
       <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4 md:space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
           <div>
@@ -1801,7 +1868,7 @@ export default function AnalyticsPage() {
           в порядке» and nothing more: which course, which learner, why stalled
           is `/admin/access`, and the link goes there rather than growing a
           second answer here. */}
-      {analyticsSection === "overview" && learning && (
+      {analyticsSection === "overview" && dashboardMode === "courses" && learning && (
       <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
           <div>
@@ -1843,7 +1910,9 @@ export default function AnalyticsPage() {
       </div>
       )}
 
-      {analyticsSection === "overview" && (
+      {/* Scroll depth and scroll-to-checkout describe how a PAGE performs, which
+          is a traffic question. */}
+      {analyticsSection === "overview" && dashboardMode === "traffic" && (
       <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4">
         <div>
           <h2 className="text-lg font-semibold cw-text">{t("analytics_engagement_title")}</h2>
@@ -2013,6 +2082,8 @@ export default function AnalyticsPage() {
         </div>
       )}
 
+      {/* The one time series both questions are judged against, so it belongs to
+          both modes rather than to whichever felt more natural. */}
       {analyticsSection === "overview" && (
       <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
         <h2 className="text-lg font-medium mb-4 md:mb-6 cw-text">{t("analytics_daily_revenue")}</h2>
