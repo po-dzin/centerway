@@ -609,7 +609,20 @@
    was visible, and it was the one nobody designed. The stroke is the mark now
    — at rest, on hover and when current — so this rule keeps the colour change
    and hands the line back. */
+/* A LINK IN A SENTENCE HAS TO ANNOUNCE ITSELF (2026-09-10). The mark is drawn
+   in `currentColor` — that is the link rule's whole idea, so the line belongs
+   to the sentence and moves with the word — and this link rested in the same
+   muted grey as the prose around it. On graphite that put a 62% grey line
+   under grey text: measured `rgb(163,163,161)` at 0.62 over `rgb(25,25,24)`
+   composites to about `rgb(111,111,110)`, DIMMER than the text it underlines,
+   which is why the stroke read as missing rather than as quiet.
+
+   The rest colour is the marker, not the paragraph's: ink on a pale ground,
+   brass on a dark one. The word and its line take it together, and the state
+   that follows is the line running to full — which is the link rule's own
+   model, states differing in strength rather than in colour. */
 .footer a.footerTextLink {
+  color: var(--cw-nav-marker);
   text-decoration: none;
   transition: color 0.16s ease;
 }

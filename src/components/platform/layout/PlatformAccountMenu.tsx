@@ -271,7 +271,14 @@ export function PlatformAccountMenu({
      account surface most likely to be a dead end — was left with no way out to
      the storefront but the browser's back button. Every other surface (the
      cabinet, an offer page, the panel) is somewhere you can sensibly leave. */
-  const onPublicHome = !inPersonalApp && pathname === "/";
+  /* NARROWED TO THE STOREFRONT AS A WHOLE (2026-09-10). Gating on the home
+     PAGE meant every other www page — diagnostics, a program, the cabinet —
+     carried a «На головну» row while the bar three centimetres above it
+     already had «Головна» in the main navigation. Two ways to the same page,
+     one of them hidden behind an avatar. The row answers «how do I get back to
+     the public site», which is a question only the personal apps and the panel
+     can ask. */
+  const onPublicSite = !inPersonalApp;
 
   /* No close-on-pathname effect. Every row in the menu closes it in its own
      handler, and anything outside the menu is an outside pointerdown, which the
@@ -393,13 +400,13 @@ export function PlatformAccountMenu({
         </div>
       ) : null}
       {/* THE WAY BACK TO THE PUBLIC SITE, first — the same place the panel puts
-          it. Wrong in exactly one place, the public home page itself, where it
-          would offer the page being read.
+          it. Absent on the storefront itself, where the main navigation already
+          carries «Головна» and this would be the second door to one room.
 
           A plain anchor, like every other crossing in this menu: `next/link`
           would prefetch a route this origin does not own and still full-load on
           click. */}
-      {onPublicHome ? null : (
+      {onPublicSite ? null : (
         <a
           href={platformHref}
           {...INK_ROW}

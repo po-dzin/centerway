@@ -276,3 +276,38 @@ describe("the footer's interactive ink follows the gamma, not a fixed brass", ()
     expect(globalsCss).toMatch(/\[data-cw-theme="dark"\],\s*\n\s*\[data-cw-header-tone="dark"\]\s*\{\s*\n\s*--cw-nav-marker: var\(--cw-platform-accent\);/);
   });
 });
+
+describe("the footer's own addresses", () => {
+  it("sends the Telegram row to the support bot, not to a person's inbox", () => {
+    /* It sat beside three channels and read as a fourth, but it was a direct
+       message to the founder — no queue, no history, no second reader. */
+    const content = read("src/lib/platform/content.ts");
+    expect(content).not.toContain("telegram.me/E_Koriakin");
+    expect(content).toContain('network: "telegram", href: SUPPORT_BOT_URL');
+  });
+
+  it("keeps the bot's address in a leaf module, out of the import cycle", () => {
+    /* `tgSupportBotCopy` reads LEARNING_SHELF_HREF from `platform/content`, so
+       importing the URL back from it closed a cycle: at module evaluation
+       CABINET_URL reached for a constant that had not initialised and the
+       platform layout threw on the first request. `tsc` does not see this. */
+    const leaf = read("src/lib/supportBotUrl.ts");
+    expect(leaf).toContain('export const SUPPORT_BOT_URL = "https://telegram.me/centerway_support_bot"');
+    /* No import STATEMENT — the prose above it explains the cycle and names
+       the word, which a bare substring check would trip over. */
+    expect(leaf).not.toMatch(/^\s*import\s/m);
+    expect(read("src/lib/platform/content.ts")).toContain('from "@/lib/supportBotUrl"');
+    expect(read("src/lib/tgSupportBotCopy.ts")).toContain("export { SUPPORT_BOT_URL }");
+  });
+});
+
+describe("the account menu does not offer a door the bar already carries", () => {
+  it("hides the way back to the storefront while on the storefront", () => {
+    /* Gated on the home PAGE, every other www route carried «На головну» while
+       the navigation three centimetres above it already read «Головна». */
+    const menu = read("src/components/platform/layout/PlatformAccountMenu.tsx");
+    expect(menu).toContain("const onPublicSite = !inPersonalApp;");
+    expect(menu).toContain("{onPublicSite ? null : (");
+    expect(menu).not.toContain("onPublicHome");
+  });
+});
