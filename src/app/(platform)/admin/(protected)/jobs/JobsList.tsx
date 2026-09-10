@@ -13,20 +13,11 @@ import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/admin/adminLocale";
 import { JOB_STATUS_BADGE_CLASS } from "@/lib/admin/adminStatusStyles";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
+import type { JobListItem as Job, JobsPage } from "@/lib/admin/jobs";
 
-interface Job {
-    id: string;
-    type: string;
-    payload: unknown;
-    status: "pending" | "running" | "success" | "failed";
-    error_text: string | null;
-    attempts: number;
-    run_at: string;
-    created_at: string;
-    updated_at: string;
-}
 
-export default function JobsPage() {
+/** Same shape as CustomersList: the first page arrives as a prop, the rest via the API. */
+export function JobsList({ initial }: { initial: JobsPage }) {
     const { lang, t } = useI18n();
     const locale = getAdminLocale(lang);
     const statusLabels: Record<Job["status"], string> = {
@@ -57,12 +48,12 @@ export default function JobsPage() {
     const [q, setQ] = useState("");
     const [debouncedQ, setDQ] = useState("");
     const [activeStatus, setStatus] = useState("");
-    const [data, setData] = useState<Job[]>([]);
-    const [count, setCount] = useState(0);
+    const [data, setData] = useState<Job[]>(initial.data);
+    const [count, setCount] = useState(initial.count);
     const [page, setPage] = useState(0);
     const LIMIT = 50;
 
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [selectedJob, setSelectedJob] = useState<Job | null>(null);
     const requestSeq = useRef(0);
@@ -110,7 +101,12 @@ export default function JobsPage() {
         }
     }, []);
 
+    const firstRun = useRef(true);
     useEffect(() => {
+        if (firstRun.current) {
+            firstRun.current = false;
+            return;
+        }
         fetchJobs(debouncedQ, activeStatus, page);
     }, [debouncedQ, activeStatus, page, fetchJobs]);
 

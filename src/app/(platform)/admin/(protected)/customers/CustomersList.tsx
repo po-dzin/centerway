@@ -12,17 +12,8 @@ import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/admin/adminLocale";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
+import type { CustomerListItem as Identity, CustomersPage } from "@/lib/admin/customers";
 
-interface Identity {
-    id: string;
-    display_name: string | null;
-    email: string | null;
-    phone: string | null;
-    avatar_url: string | null;
-    tags: string[];
-    created_at: string;
-    matched_link?: { type: string; value: string };
-}
 
 function Avatar({ name, url }: { name?: string | null; url?: string | null }) {
     const initial = name?.charAt(0)?.toUpperCase() ?? "?";
@@ -43,18 +34,24 @@ function Avatar({ name, url }: { name?: string | null; url?: string | null }) {
     );
 }
 
-export default function CustomersPage() {
+/**
+ * The list, with its first page already in hand: the server page read it and
+ * passed it down, so the first paint is the data and not a skeleton. Every
+ * later page and every search still goes through the API route; the list
+ * skips only the fetch that would have repeated what it was given.
+ */
+export function CustomersList({ initial }: { initial: CustomersPage }) {
     const { lang, t } = useI18n();
     const isUk = lang === "uk";
     const locale = getAdminLocale(lang);
     const [q, setQ] = useState("");
     const [debouncedQ, setDebouncedQ] = useState("");
-    const [data, setData] = useState<Identity[]>([]);
-    const [count, setCount] = useState(0);
+    const [data, setData] = useState<Identity[]>(initial.data);
+    const [count, setCount] = useState(initial.count);
     const [page, setPage] = useState(0);
     const LIMIT = 50;
 
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const requestSeq = useRef(0);
     const abortRef = useRef<AbortController | null>(null);
@@ -101,7 +98,13 @@ export default function CustomersPage() {
         }
     }, [LIMIT]);
 
+    const firstRun = useRef(true);
     useEffect(() => {
+        // The mount's own values are the ones the server already answered.
+        if (firstRun.current) {
+            firstRun.current = false;
+            return;
+        }
         fetchCustomers(debouncedQ, page);
     }, [debouncedQ, page, fetchCustomers]);
 

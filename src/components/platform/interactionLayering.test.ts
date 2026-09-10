@@ -83,7 +83,7 @@ describe("platform interaction layers", () => {
 
   it("moves every shared admin navigation consumer onto the ink primitives", () => {
     const tabs = read("src/components/admin/AdminTabs.tsx");
-    const layout = read("src/app/(platform)/admin/layout.tsx");
+    const layout = read("src/app/(platform)/admin/AdminShell.tsx");
     const pagination = read("src/components/admin/AdminPagination.tsx");
 
     expect(tabs).toContain("InteractionInkLabel");
@@ -158,7 +158,7 @@ describe("platform interaction layers", () => {
   });
 
   it("shares the workspace header with the Builder while keeping admin navigation route-local", () => {
-    const layout = read("src/app/(platform)/admin/layout.tsx");
+    const layout = read("src/app/(platform)/admin/AdminShell.tsx");
     const rail = read("src/app/(platform)/admin/AdminLayout.module.css");
     const workspaceTokens = read("src/app/globals.css");
 
