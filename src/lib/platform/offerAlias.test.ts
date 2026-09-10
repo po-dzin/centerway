@@ -68,6 +68,12 @@ const offerRow = {
   error: null,
 };
 
+/* Warm the transform once, outside any test's clock; `vi.resetModules()`
+   below clears the registry, not the transform cache, so each test still gets
+   a fresh module without paying the cold import that timed out under load. */
+await import("./offers");
+await import("@/lib/products");
+
 beforeEach(() => {
   vi.resetModules();
   getLiveCourse.mockReset();

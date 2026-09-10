@@ -3,6 +3,8 @@
  *
  * The access module is mostly query-shaping and bookkeeping — which row it
  * writes, what it puts in `audit_log`, how it folds an event log into a status.
+ * The route handlers under src/app/api are the same kind of code with an HTTP
+ * envelope around it, and since 2026-09-11 they run against this fake too.
  * None of that is testable against the real client without a database, and all
  * of it is exactly what breaks silently. So the tests run against a fake that
  * implements the handful of PostgREST verbs this module actually uses.
@@ -20,12 +22,18 @@ export type Tables = Record<string, Row[]>;
 
 type Filter = (row: Row) => boolean;
 
+function jsonContains(haystack: unknown, needle: unknown): boolean {
+    if (needle === null || typeof needle !== "object") return haystack === needle;
+    if (!haystack || typeof haystack !== "object") return false;
+    return Object.entries(needle as Row).every(([key, value]) => jsonContains((haystack as Row)[key], value));
+}
+
 function ilikeToRegExp(pattern: string): RegExp {
     const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*");
     return new RegExp(`^${escaped}$`, "i");
 }
 
-class FakeQuery implements PromiseLike<{ data: Row[] | Row | null; error: { message: string } | null; count?: number }> {
+class FakeQuery implements PromiseLike<{ data: Row[] | Row | null; error: { message: string; code?: string } | null; count?: number }> {
     private filters: Filter[] = [];
     private orders: { column: string; ascending: boolean }[] = [];
     private rangeBounds: { from: number; to: number } | null = null;
@@ -102,8 +110,23 @@ class FakeQuery implements PromiseLike<{ data: Row[] | Row | null; error: { mess
     }
 
     not(column: string, operator: string, value: unknown) {
-        if (operator !== "is" || value !== null) throw new Error(`fake: unsupported not(${operator})`);
-        this.filters.push((row) => row[column] !== null && row[column] !== undefined);
+        if (operator === "is" && value === null) {
+            this.filters.push((row) => row[column] !== null && row[column] !== undefined);
+            return this;
+        }
+        // `not("status", "in", "(paid,refunded)")` — the guard the payment
+        // webhook puts on its forward-only status update.
+        if (operator === "in" && typeof value === "string") {
+            const set = new Set(value.replace(/^\(|\)$/g, "").split(",").map((item) => item.trim()));
+            this.filters.push((row) => !set.has(String(row[column])));
+            return this;
+        }
+        throw new Error(`fake: unsupported not(${operator})`);
+    }
+
+    /** `contains("payload", { event_name: "Purchase", order_ref })` — the jsonb `@>` the job dedupes use. */
+    contains(column: string, value: unknown) {
+        this.filters.push((row) => jsonContains(row[column], value));
         return this;
     }
 
@@ -145,7 +168,7 @@ class FakeQuery implements PromiseLike<{ data: Row[] | Row | null; error: { mess
     }
 
     then<TResult1 = unknown, TResult2 = never>(
-        onfulfilled?: ((value: { data: never; error: { message: string } | null; count?: number }) => TResult1 | PromiseLike<TResult1>) | null,
+        onfulfilled?: ((value: { data: never; error: { message: string; code?: string } | null; count?: number }) => TResult1 | PromiseLike<TResult1>) | null,
         onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
     ): PromiseLike<TResult1 | TResult2> {
         return Promise.resolve(this.run()).then(onfulfilled as never, onrejected);
@@ -164,6 +187,17 @@ class FakeQuery implements PromiseLike<{ data: Row[] | Row | null; error: { mess
         if (failure) return { data: null, error: { message: failure } };
 
         if (this.mode === "insert") {
+            // A unique constraint the fake knows about answers the way Postgres
+            // does — 23505 — so a handler's "already there, reconcile instead"
+            // branch can be exercised.
+            for (const columns of this.db.uniqueKeys[this.table] ?? []) {
+                for (const row of this.payload) {
+                    const clash = this.rows().find((candidate) => columns.every((column) => candidate[column] === row[column]));
+                    if (clash) {
+                        return { data: null, error: { code: "23505", message: `duplicate key value violates unique constraint on ${this.table}(${columns.join(", ")})` } };
+                    }
+                }
+            }
             const inserted = this.payload.map((row) => {
                 const key = this.db.conflictKey;
                 const existing = key ? this.rows().find((candidate) => candidate[key] === row[key]) : undefined;
@@ -228,6 +262,8 @@ export class FakeSupabase {
     conflictKey: string | null = null;
     /** `${table}:${mode}` → error message, for the error branches. */
     failures: Record<string, string> = {};
+    /** table → column sets an insert must not repeat; a repeat is a 23505. */
+    uniqueKeys: Record<string, string[][]> = {};
     /** Accounts minted through `auth.admin.createUser`, so a test can inspect them. */
     authUsers: Array<{ id: string; email: string; emailConfirmed: boolean; metadata: Row }> = [];
     /** Set to make the next `createUser` fail, the way a duplicate address does. */

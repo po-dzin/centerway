@@ -9,6 +9,12 @@ vi.mock("next/cache", () => ({
 }));
 vi.mock("@/lib/platform/offers", () => ({ listStorefrontCourses: vi.fn(async () => []) }));
 
+/* The first `await import("./authors")` inside a test pays the cold transform
+   of its whole import graph, and under a loaded machine that alone has crossed
+   the 15s test timeout. Import once here, outside any test's clock: the module
+   registry the tests use is the same, only the transform is warm. */
+await import("./authors");
+
 async function withDatabase(rows: Record<string, unknown[]> = {}) {
   const { adminClient } = await import("@/lib/auth/adminClient");
   const db = new FakeSupabase({ lms_authors: [], lms_courses: [], ...rows });

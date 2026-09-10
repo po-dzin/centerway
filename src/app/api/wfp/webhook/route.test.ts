@@ -15,91 +15,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 import { computeWfpCallbackSignature } from "@/lib/payments/wfp";
-
-// ---- an in-memory Supabase, shaped by what the handler asks of it ---------------
-
-type Row = Record<string, unknown>;
-type Filter = (row: Row) => boolean;
-
-function subset(haystack: unknown, needle: unknown): boolean {
-  if (needle === null || typeof needle !== "object") return haystack === needle;
-  if (!haystack || typeof haystack !== "object") return false;
-  return Object.entries(needle as Row).every(([k, v]) => subset((haystack as Row)[k], v));
-}
-
-class FakeDb {
-  tables: Record<string, Row[]> = { orders: [], payments: [], customers: [], events: [], jobs: [] };
-  failNextUpdate: { table: string; message: string } | null = null;
-  private seq = 1;
-
-  from(table: string) {
-    const rows = () => (this.tables[table] ??= []);
-    const filters: Filter[] = [];
-    let limitN: number | null = null;
-    let single = false;
-    let pending: (() => { data: unknown; error: unknown }) | null = null;
-
-    const matching = () => rows().filter((r) => filters.every((f) => f(r)));
-
-    const builder: Record<string, unknown> = {
-      select() { return builder; },
-      eq(col: string, val: unknown) { filters.push((r) => r[col] === val); return builder; },
-      is(col: string, val: unknown) { filters.push((r) => (val === null ? r[col] == null : r[col] === val)); return builder; },
-      not(col: string, op: string, val: string) {
-        if (op !== "in") throw new Error(`fake: unsupported not(${op})`);
-        const set = val.replace(/^\(|\)$/g, "").split(",").map((s) => s.trim());
-        filters.push((r) => !set.includes(String(r[col])));
-        return builder;
-      },
-      contains(col: string, val: unknown) { filters.push((r) => subset(r[col], val)); return builder; },
-      order() { return builder; },
-      limit(n: number) { limitN = n; return builder; },
-      maybeSingle() { single = true; return builder; },
-      insert: (row: Row) => {
-        pending = () => {
-          if (table === "payments" && rows().some((r) => r.provider === row.provider && r.order_ref === row.order_ref)) {
-            return { data: null, error: { code: "23505", message: "duplicate key value violates unique constraint" } };
-          }
-          const stored = { id: `${table}_${this.seq++}`, created_at: new Date().toISOString(), ...row };
-          rows().push(stored);
-          return { data: stored, error: null };
-        };
-        return builder;
-      },
-      update: (patch: Row) => {
-        pending = () => {
-          if (this.failNextUpdate && this.failNextUpdate.table === table) {
-            const { message } = this.failNextUpdate; this.failNextUpdate = null;
-            return { data: null, error: { message } };
-          }
-          const hit = matching();
-          for (const r of hit) Object.assign(r, patch);
-          return { data: hit, error: null };
-        };
-        return builder;
-      },
-      then(resolve: (v: unknown) => void, reject: (e: unknown) => void) {
-        try {
-          let result: { data: unknown; error: unknown };
-          if (pending) result = pending();
-          else {
-            let data: unknown = matching();
-            if (limitN !== null) data = (data as Row[]).slice(0, limitN);
-            if (single) data = (data as Row[])[0] ?? null;
-            result = { data, error: null };
-          }
-          if (single && pending && result.data && Array.isArray(result.data)) result.data = result.data[0] ?? null;
-          resolve(result);
-        } catch (e) { reject(e); }
-      },
-    };
-    return builder;
-  }
-}
+import { FakeSupabase } from "@/lib/admin/fakeSupabase";
 
 // ---- collaborators ---------------------------------------------------------------
 
-const db = new FakeDb();
+const db = new FakeSupabase();
+db.uniqueKeys = { payments: [["provider", "order_ref"]] };
 const sendPurchaseEmail = vi.fn<(input: Record<string, unknown>) => Promise<{ sent: boolean }>>(async () => ({ sent: true }));
 const sendConfirmedSaleTelegramReport = vi.fn<(orderRef: string) => Promise<{ sent: boolean }>>(async () => ({ sent: true }));
 const dispatchCapiEventInline = vi.fn();
@@ -152,7 +73,7 @@ beforeEach(() => {
   process.env.WFP_SECRET_KEY = SECRET;
   process.env.WFP_MERCHANT_ACCOUNT = MERCHANT;
   db.tables = { orders: [{ id: "o1", order_ref: ORDER, status: "created", product_code: "way21", customer_id: null }], payments: [], customers: [], events: [], jobs: [] };
-  db.failNextUpdate = null;
+  db.failures = {};
   for (const m of [sendPurchaseEmail, sendConfirmedSaleTelegramReport, dispatchCapiEventInline, isStaffOrder, loadPayableOffer]) m.mockClear();
   isStaffOrder.mockResolvedValue(false);
   vi.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -256,7 +177,7 @@ describe("POST /api/wfp/webhook", () => {
   });
 
   it("withholds the acceptance when a write fails, so the gateway redelivers", async () => {
-    db.failNextUpdate = { table: "orders", message: "connection reset" };
+    db.failures = { "orders:update": "connection reset" };
     const res = await post(callback());
     expect(res.status).toBe(500);
     await expect(res.json()).resolves.toMatchObject({ ok: false, error: "db_write_failed" });
