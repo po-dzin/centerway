@@ -94,26 +94,34 @@ describe("platform interaction layers", () => {
     expect(pagination).toContain("InteractionInkIcon");
   });
 
-  it("splits the two selection marks by what the control already draws", () => {
+  it("marks selection with one stroke at two weights, and never with an edge", () => {
     const accountMenu = read("src/components/platform/layout/PlatformAccountMenu.tsx");
     const shelfFilter = read("src/components/platform/cabinet/ShelfFilter.tsx");
     const shelfCss = read("src/components/platform/cabinet/ShelfFilter.module.css");
 
-    /* A MENU ROW TAKES THE EDGE; A CHECKBOX ROW KEEPS THE STROKE (2026-09-10).
-       Both used to ask for `menu`. They are not the same case, and the
-       difference is whether the row already has a box of its own:
+    /* ONE MARK, FULL LENGTH, AT TWO WEIGHTS (decided 2026-09-10).
+       This test previously asserted the opposite — that a menu row, a tab, a
+       nav item and a crumb each took a rounded ink EDGE (`variant="tab"`)
+       while only a checkbox row kept the stroke. On screen that edge became a
+       ring around whichever row you had last touched, sitting on top of the
+       stroke that already answers «where am I»: one state said twice, which is
+       the very defect the split was reaching for.
 
-       - A menu row, a tab, a nav item, a crumb — the mark is the ONLY thing
-         saying which one you are on, so it takes the rounded ink edge
-         (`variant="tab"`) the whole product now marks «this is the one» with.
-       - A filter option already carries a checkbox, and a checkbox IS a box.
-         Drawing an edge around its label too is one state said twice, which
-         is the defect the selection grammar in docs/design-system.md exists
-         to prevent — so these keep the stroke under the label. */
+       So the edge is gone. Selection is the stroke, drawn to the FULL width of
+       the word in every state — the states differ in opacity, weight and
+       colour, never in how much of the word is covered. `variant="tab"`
+       survives as a NAME that resolves to that stroke, the same way `menu`
+       does, so the call sites the rollout touched need no edits.
+
+       The progressive draw that made a partial stroke look honest is a MOTION
+       pass, not the resting grammar: it stays in `114dde36` and its specimen,
+       to be applied on top of a mark that is already whole. Nothing in the
+       resting CSS may clip it. */
     expect(css).toContain('[data-cw-ink-variant="menu"]');
-    expect(css).toContain('[data-cw-ink-variant="tab"]');
-    expect(accountMenu).toContain('InteractionInkLabel variant="tab"');
-    expect(accountMenu).not.toContain('InteractionInkLabel variant="menu"');
+    expect(css).not.toContain(".cw-ink-label-box");
+    expect(css).not.toContain("stroke-dasharray:");
+    expect(css).not.toContain("stroke-dashoffset:");
+    expect(accountMenu).toContain("InteractionInkLabel variant=");
     expect(shelfFilter).toContain('InteractionInkLabel variant="menu" active={query.categories.includes(one)}');
     expect(shelfCss).not.toContain("cw-ink-label-mark");
   });

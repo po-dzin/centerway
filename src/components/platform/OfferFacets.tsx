@@ -9,6 +9,7 @@
 import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { AuthorPortrait } from "./AuthorPortrait";
 import type { CwIconName } from "@/components/iconNames";
 import type { Author } from "@/lms-core";
@@ -127,8 +128,16 @@ export function OfferAuthor({ author, note }: { author: Author | null; note?: st
             {/* Only when the profile is published. An author who has not asked
                 for a page does not get one linked from every course they wrote. */}
             {author?.listed ? (
-              <Link className={styles.authorLink} href={`/expert/${author.slug}`}>
-                Про автора <Icon name="arrow-right" size={20} />
+              /* `data-cw-ink-control` + the ink label, which is what the
+                 `.text` role it composes documents: the browser's underline is
+                 that role's FALLBACK "for a control that has no ink label yet",
+                 and this was one of the last that did not. It was also the
+                 whole of the row's interaction — no rest mark of its own, and
+                 a hover that only shifted the ink a shade — so on a dark card
+                 it read as a caption rather than as the way to the author. */
+              <Link className={styles.authorLink} href={`/expert/${author.slug}`} data-cw-ink-control>
+                <InteractionInkLabel variant="link">Про автора</InteractionInkLabel>
+                <Icon name="arrow-right" size={20} />
               </Link>
             ) : null}
           </div>

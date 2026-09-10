@@ -24,6 +24,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { CheckoutStartLink } from "@/components/platform/CheckoutStartLink";
 import { useOfferAccess } from "@/components/platform/OfferAccess";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import styles from "./PlatformOfferCommerce.module.css";
@@ -103,9 +104,15 @@ export function OfferStickyBar({
           /api/pay/start creates an order on GET, and a prefetched next/link
           would open an invoice for everyone who scrolled past. */}
       {buyHref.startsWith("/api/") ? (
-        <a className={styles.stickyAction} href={buyHref} rel="nofollow">
-          {buyLabel}
-        </a>
+        /* `isPageCta={false}`: the bar hides while any marked CTA is in view,
+           and its own button is always in view when the bar is up. */
+        <CheckoutStartLink
+          className={styles.stickyAction}
+          href={buyHref}
+          label={buyLabel}
+          pendingLabel="Відкриваємо…"
+          isPageCta={false}
+        />
       ) : (
         <Link className={styles.stickyAction} href={buyHref}>
           {buyLabel}

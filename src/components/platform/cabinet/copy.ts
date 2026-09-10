@@ -112,6 +112,8 @@ export type CabinetCopy = {
   connectTelegram: string;
   notificationsUnavailable: string;
 
+  /** The card's own heading, stable across every state — see `notificationsTitle` for the same idiom. */
+  installCardTitle: string;
   installTitle: string;
   installLead: string;
   /** Shown where this origin is the storefront: installing here would add the shop. */
@@ -120,6 +122,8 @@ export type CabinetCopy = {
   installBrowserLead: string;
   installInstalledTitle: string;
   installAction: string;
+  /** The disclosure's own label — the card's heading no longer sits inside it. */
+  installIosToggle: string;
   installIosLead: string;
   installIosSteps: string[];
 
@@ -205,6 +209,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       connectTelegram: "Connect Telegram",
       notificationsUnavailable: "Reminder delivery is temporarily unavailable. Nothing is lost — try again later.",
 
+      installCardTitle: "The app on your screen",
       installTitle: "Add CenterWay to your home screen",
       installLead:
         "It opens as an app — full screen, with its own icon, and your courses stay one tap away.",
@@ -214,6 +219,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       installBrowserLead: "Open your browser menu and choose \"Install app\" or \"Add to Home Screen\".",
       installInstalledTitle: "CenterWay is already added to your home screen.",
       installAction: "Add",
+      installIosToggle: "Show the two steps",
       installIosLead: "On iPhone and iPad the browser adds it, in two steps:",
       installIosSteps: ["Tap Share in the Safari toolbar.", "Choose “Add to Home Screen”."],
 
@@ -288,6 +294,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     connectTelegram: "Підключити Telegram",
     notificationsUnavailable: "Доставка нагадувань тимчасово недоступна. Нічого не втрачено — спробуйте пізніше.",
 
+    installCardTitle: "Застосунок на екрані",
     installTitle: "Додати CenterWay на екран телефона",
     installLead:
       "Відкриватиметься як застосунок — на весь екран, з власною іконкою, і шлях лишається за один дотик.",
@@ -297,6 +304,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     installBrowserLead: "Відкрийте меню браузера та оберіть «Встановити застосунок» або «На початковий екран».",
     installInstalledTitle: "CenterWay уже додано на ваш екран.",
     installAction: "Додати",
+    installIosToggle: "Показати два кроки",
     installIosLead: "На iPhone та iPad застосунок додає сам браузер, у два кроки:",
     installIosSteps: ["Натисніть «Поділитися» на панелі Safari.", "Оберіть «На початковий екран»."],
 

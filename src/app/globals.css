@@ -77,19 +77,6 @@
     --cw-radius-pill: 999px;
     --cw-shadow-soft: var(--cw-mat-shadow-soft);
     --cw-shadow-strong: var(--cw-mat-shadow-raised);
-    --cw-motion-tap: 120ms;
-    --cw-motion-state: 160ms;
-    --cw-motion-surface: 180ms;
-    --cw-motion-enter: 400ms;
-    --cw-motion-tone: 320ms;
-    --cw-press-settle: 1px;
-    --cw-haptic-tap: 12ms;
-    --cw-ink-stroke-length: 29.46;
-    --cw-ink-drawn-rest: 0;
-    --cw-ink-drawn-hover: 0.8;
-    --cw-ease-state: cubic-bezier(0.22, 0.61, 0.24, 1);
-    --cw-ease-surface: cubic-bezier(0.16, 1, 0.3, 1);
-    --cw-ease-network: cubic-bezier(0.2, 0.8, 0.2, 1);
     --cw-card-padding: clamp(1.1rem, 1.8vw, 1.45rem);
     --cw-card-radius: var(--cw-radius-lg);
     --cw-card-border: 1px solid var(--cw-mat-stroke);
@@ -151,7 +138,8 @@
     --cw-brand-size-wordmark-header-height: 1.93rem;
     --cw-ink-stroke-height: 0.85rem;
     --cw-ink-stroke-weight: 3.4;
-    --cw-ink-stroke-tilt: -0.4deg;
+    --cw-ink-link-weight: 1.7;
+    --cw-ink-stroke-tilt: 0deg;
     --cw-ink-stroke-offset: -0.7rem;
     --cw-ink-ring-size: 3rem;
     --cw-contour-width: 1px;
@@ -160,7 +148,7 @@
     --cw-contour-selected: color-mix(in srgb, var(--cw-nav-marker) 62%, transparent);
     --cw-contour-empty: color-mix(in srgb, var(--cw-platform-text) 22%, transparent);
     --cw-ink-rest-opacity: 0.34;
-    --cw-ink-rest-scale: 0.9;
+    --cw-ink-link-rest-opacity: 0.62;
     --cw-ink-hover-opacity: 0.68;
     --cw-ink-hover-scale: 0.74;
     --cw-ink-ring-optical-ratio: 0.82;
@@ -187,6 +175,7 @@
     --cw-platform-on-accent: var(--cw-sem-on-warmth);
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-mark: var(--cw-sem-guide-strong);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
     --cw-status-success: var(--cw-sem-state-success);
     --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
@@ -505,6 +494,7 @@
     --cw-platform-on-accent: #191918;
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-platform-text);
+    --cw-platform-mark: var(--cw-sem-warmth);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-warmth) 0%, var(--cw-sem-warmth-strong) 100%);
     --cw-status-success: color-mix(in srgb, var(--cw-sem-state-success) 42%, #faefe0 58%);
     --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 22%, transparent);
@@ -674,6 +664,7 @@
     --cw-platform-on-accent: var(--cw-sem-on-warmth);
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-mark: var(--cw-sem-guide-strong);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
     --cw-status-success: var(--cw-sem-state-success);
     --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
@@ -730,6 +721,7 @@
     --cw-platform-on-accent: var(--cw-sem-on-warmth);
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-mark: var(--cw-sem-guide-strong);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
     --cw-status-success: var(--cw-sem-state-success);
     --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
@@ -770,6 +762,7 @@
     --cw-platform-on-accent: var(--cw-sem-on-warmth);
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-mark: var(--cw-sem-guide-strong);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
     --cw-status-success: var(--cw-sem-state-success);
     --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
@@ -811,6 +804,7 @@
     --cw-platform-on-accent: var(--cw-sem-on-warmth);
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-mark: var(--cw-sem-guide-strong);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
     --cw-status-success: var(--cw-sem-state-success);
     --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
@@ -1020,6 +1014,28 @@ body {
 
 [data-cw-rule="inner"] {
   --cw-rule-ink: var(--cw-mat-stroke-inner);
+}
+
+/* THE CHROME SCOPE, WHEN THE CHROME IS PORTALLED (2026-09-10).
+   `chrome` reads `--platform-header-fg`, which is the bar's own ink — correct
+   for a rule drawn INSIDE the bar, and unavailable to the account popover,
+   which is portalled to `document.body` precisely because the header is
+   `overflow: clip`. Out of that scope the variable falls back to
+   `--cw-platform-text`, so the menu's top rule came out as the THEME's ink on
+   a plate whose tone had already flipped away from the theme: a bright white
+   line across the top of the menu on the light theme over a dark hero, with a
+   properly receding `.profileMenuDivider` four rows below it drawn from the
+   same design system.
+
+   The tone is the one thing a portalled plate knows about its ground, so the
+   tone supplies the ink — and it supplies the same white 16% the divider
+   already uses, which is what makes the menu's two separators one separator
+   again. Here rather than in the module because a token re-pointed in a
+   component stylesheet is a token defined in fifteen files, which is what
+   `canon:guard` refuses and why these scopes live together. */
+[data-cw-header-tone="dark"] [data-cw-rule="chrome"],
+[data-cw-rule="chrome"][data-cw-header-tone="dark"] {
+  --cw-rule-ink: color-mix(in srgb, white 16%, transparent);
 }
 
 /* ── Material (M0 matte / M1 glass) ───────────────────────────────────────────
@@ -1418,7 +1434,32 @@ body {
      track on their own; a standalone one asks for `w-full`. */
   .cw-input {
     border: 1px solid var(--cw-border);
-    border-radius: var(--cw-radius-sm);
+    /* ONE HEIGHT FOR A FIELD AND THE BUTTON BESIDE IT.
+       `.cw-btn` has carried `min-height: var(--ds-touch-target-min)` since it
+       was written; this had nothing, so a field's height was whatever Tailwind
+       `py-*` the calling surface happened to type. Every field/button pair in
+       the control panel was therefore mismatched — 28px of select against 48px
+       of button in the same row — and the mismatch was invisible in the source,
+       because both sides read `py-1.5`.
+
+       It is raised to the button rather than the button lowered to it, which is
+       the opposite of what a dense admin row wants and is still correct: 3rem
+       is the touch target, the panel is now used on a phone, and a 28px select
+       was already under the floor. A control that is comfortable to hit is not
+       a luxury the internal surface gets to skip.
+
+       `py-*` utilities stay harmless — they pad inside the minimum.
+
+       AND THE CORNER FOLLOWS THE BOX, which is why this line changed too.
+       Radius is a function of the box (docs/design-system/geometry-audit-
+       2026-09-07.md): 25–56px is «a control» and takes `md` 16. Buttons have
+       always resolved there — `--cw-radius-btn: var(--cw-radius-md)`. Fields
+       said `sm` 12, so the pair disagreed on the corner as well as the height,
+       and `guard:geometry` could not see it: with no declared height there was
+       no box to judge the radius against. Declaring one made the guard speak
+       up immediately, which is the whole reason it exists. */
+    min-height: var(--ds-touch-target-min);
+    border-radius: var(--cw-radius-md);
     background-color: var(--cw-surface);
     color: var(--cw-text);
     outline: 2px solid transparent;
@@ -1991,57 +2032,29 @@ body {
        The weight and the tilt are now tokens every state shares. What still
        varies between rest, hover and current is what was always supposed to
        vary: how far the stroke has been drawn, and how firmly. */
+    /* FULL LENGTH IN EVERY STATE (2026-09-09). The mark used to grow — 0.72 at
+       rest, 0.9 for a link, 0.96 on hover, 1 when current — so the same word
+       carried four different underlines depending on where the cursor was, and
+       none of them reached its last letter. A rule is the width of what it
+       underlines: the element is already `100% + 0.4rem`, which is the word
+       plus the small overhang a drawn line has, and the states now differ in
+       opacity, weight and colour rather than in how much of the word has been
+       covered. 
 
-    /* AND IT IS NOW ACTUALLY DRAWN, NOT SQUASHED (2026-09-10). The sentence
-       above says «how far the stroke has been drawn» and the mechanism said
-       something else: `scaleX` compressed the WHOLE pen stroke — both end
-       drops included — into a fraction of the box, so the three strengths came
-       out as three differently-sized marks rather than one line at three
-       moments. Held beside each other in
-       docs/design-system/prototypes/ink-draw-2026-09-10.html the difference is
-       not subtle: squashed at 38% reads as a short thick dash under the first
-       two letters; drawn at 38% reads as a line that has been drawn that far.
-
-       `ink-stroke` is ONE stroked cubic (`icon-glyphs.mjs`), not a
-       variable-width filled outline — which is why a dash works here and does
-       not work for `LogoMark`, whose own comment says so. `stroke-linecap` is
-       already `round` in the baked sprite, so the cut end IS a pen tip. And
-       `stroke-dasharray`/`stroke-dashoffset` are INHERITED SVG properties, so
-       they cross into the external `<use>` shadow tree that host CSS cannot
-       otherwise reach — the only two properties available to us here, and they
-       happen to be exactly the right two.
-
-       `--cw-ink-stroke-length` is 29.46, the path's measured `getTotalLength()`
-       and not an estimate; the specimen prints it. The leaving drop is a fill
-       and a dash cannot clip it, so it stays painted ahead of the tip — at the
-       horizontal stretch this box runs it is crushed to about 1.5px of height
-       and reads as nothing. That was checked before this shipped, not assumed.
-
-       ONE LADDER FOR EVERY SURFACE, which is the part `scaleX` made impossible.
-       A fraction of `scaleX` is a fraction of the BOX, so every surface whose
-       mark box differed from its label had to hand-tune its own rest value —
-       0.38, 0.58, 0.72 and 0.9 were all live at once for one stroke. A fraction
-       of the dash is a fraction of the STROKE, identical everywhere, so the two
-       tokens below are the whole ladder.
-
-       AND THE LADDER STARTS AT NOTHING (2026-09-10). Rest is 0 — an undrawn
-       line — because a stroke that is already 38% drawn at rest spends the
-       gesture before the gesture happens: pointing at a nav item then extended
-       something that was already there, which is a nudge, not a stroke. Nothing
-       → 80% → full is the pen arriving, and it is what the topbar has always
-       expressed with `opacity: 0` at rest anyway. The `link` variant is the one
-       exception and it is below, with its reason. */
+       AND THE MECHANISM NOW AGREES WITH THE SENTENCE. `stroke-dasharray` /
+       `stroke-dashoffset` clipped this mark to `--cw-ink-drawn-*` — 0 at rest,
+       0.8 on hover — which is a stroke that stops four fifths of the way
+       through the word, the exact thing the paragraph above removes. The
+       progressive draw is a real idea and a good one; it is a MOTION pass, not
+       the resting grammar, and it stays where it was written
+       (`114dde36` and docs/design-system/prototypes/ink-draw-2026-09-10.html)
+       until it is applied as motion on top of a mark that is already whole. */
     transform:
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
     transform-origin: left center;
-    stroke-dasharray: var(--cw-ink-stroke-length);
-    stroke-dashoffset: calc(var(--cw-ink-stroke-length) * (1 - var(--cw-ink-drawn-rest)));
     pointer-events: none;
-    transition:
-      opacity var(--cw-motion-state) var(--cw-ease-state),
-      stroke-dashoffset var(--cw-motion-state) var(--cw-ease-state),
-      transform var(--cw-motion-surface) var(--cw-ease-state);
+    transition: opacity 0.16s ease, transform 0.18s ease, color 0.16s ease;
   }
 
   /* The account menu is the reference text-selection gesture. It is a baked
@@ -2053,103 +2066,21 @@ body {
     width: fit-content;
   }
 
-  /* The account menu's mark sits a little lower and starts shorter. Weight and
-     tilt come from the base now, which is what makes it the same stroke. */
-  .cw-ink-label[data-cw-ink-variant="menu"] .cw-ink-label-mark {
-    transform:
-      scaleY(var(--cw-ink-stroke-weight))
-      rotate(var(--cw-ink-stroke-tilt));
-    transform-origin: left center;
-  }
+  /* `menu` IS THE SELECTION STROKE, and no longer a third geometry: it used to
+     start at 0.38 of the word and grow, which is what made the account menu's
+     mark read as a different object from the same mark in the bar above it.
+     The name stays because call sites and `interactionLayering.test.ts` read
+     it; what it selects is a weight and a colour, both of which it now shares
+     with `navigation`. */
 
-  /* TAB: A ROUNDED EDGE AROUND THE WORD, NOT A STROKE UNDER IT (2026-09-10).
-     A segmented control picks one of several — the checkbox row's grammar,
-     not the nav row's — and the stroke sprite above is a fixed-length glyph
-     that cannot stretch to fit whatever word a tab happens to hold. `.cw-ink-
-     label-box` is a distinct element and class from `.cw-ink-label-mark` on
-     purpose: the fifteen rules above give that mark a weight, a tilt and a
-     dash-offset tuned for a 36px sprite, and reusing the class here would
-     have inherited a `scaleY(3.4)` written for a hairline, stretching a
-     rounded rect to four times its height the moment a tab went current. */
-  .cw-ink-label[data-cw-ink-variant="tab"] {
-    width: fit-content;
-    /* The room the edge needs, taken from the spacing scale rather than
-       eyeballed — `guard:geometry` ratchets on values that are not steps of
-       `--cw-space-*`, and it caught 0.3rem here. `xs` and not `2xs`: at 4px
-       the mark was tight to the ascenders on every consumer, not only tabs. */
-    padding-block: var(--cw-space-xs);
-  }
+  /* THE ROUNDED TAB CONTOUR IS GONE, and `variant="tab"` now resolves to the
+     selection stroke (see InteractionInk.tsx). It drew a rounded-rect edge
+     around a menu row or a tab, which on screen became a ring around whatever
+     you last touched — a second "selected" idiom stacked on the stroke that
+     already answers «where am I». The class, its six state rules and the
+     `[data-cw-ink-variant="tab"]` padding went with it; nothing renders
+     `.cw-ink-label-box` any more. */
 
-  .cw-ink-label-box {
-    position: absolute;
-    z-index: 0;
-    inset: 0 calc(-1 * var(--cw-space-sm));
-    border-radius: var(--cw-radius-pill);
-    border: 1px solid var(--cw-nav-marker);
-    opacity: 0;
-    transform: scale(0.94);
-    pointer-events: none;
-    transition: opacity var(--cw-motion-state) var(--cw-ease-state), transform var(--cw-motion-state) var(--cw-ease-state);
-  }
-
-  /* The box reads the SAME selector families as the stroke above — a consumer
-     opts in by asking `InteractionInkLabel` for `variant="tab"` and marking
-     its control `data-cw-ink-control`, and gets all four states with no local
-     CSS at all. That is the point of moving the topbar, the trail, the builder
-     rows and the room onto this: each of those had copied the stroke recipe
-     into its own module, and the copies drifted (the dasharray note on
-     `.cw-ink-label-mark` above is the post-mortem of one such drift landing on
-     four modules at once). */
-  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible .cw-ink-label-box {
-    opacity: var(--cw-ink-hover-opacity);
-    transform: scale(0.98);
-  }
-
-  @media (hover: hover) {
-    :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover .cw-ink-label-box {
-      opacity: var(--cw-ink-hover-opacity);
-      transform: scale(0.98);
-    }
-  }
-
-  /* Press is full strength and outside the hover query, same as every other
-     ink mark's press state (see the 2026-09-10 note above). */
-  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):active .cw-ink-label-box {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]) .cw-ink-label-box {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  /* Hover/focus repeated against the current one, and declared after the plain
-     hover/focus rules above: those carry the same three-step specificity
-     (family + pseudo + `.cw-ink-label-box`), so without this compound a
-     pointer resting on the SELECTED item would win the tie and dim its edge
-     back to the hover half — the exact bug already fixed once this session for
-     the underline mark, written correctly here from the start instead of
-     rediscovered on this shape too. */
-  :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]):focus-visible .cw-ink-label-box {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  @media (hover: hover) {
-    :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]):hover .cw-ink-label-box {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  /* Last of the box rules, for the same reason the link variant's is last
-     among the stroke's: this ties with the hover family on specificity, so
-     order is what keeps a selected label at full strength under a pointer. */
-  .cw-ink-label[data-cw-ink-active="true"] .cw-ink-label-box {
-    opacity: 1;
-    transform: scale(1);
-  }
 
 
   .cw-ink-icon {
@@ -2211,38 +2142,58 @@ body {
      baked stroke that could never reach an opacity above zero. The reader saw
      the browser's own `text-decoration` underneath it and nothing else, which
      is exactly the "I still don't see the ink underline" report. */
-  /* A LINK IS DRAWN FULL AT EVERY STRENGTH, AND ONLY ITS FORCE VARIES.
-
-     The ladder above starts at nothing, which is right everywhere a pointer can
-     announce something and wrong here. This stroke REPLACED the browser's
-     underline (see the 2026-08-31 note): it is the whole of how a link says it
-     is a link, and the canon requires that without hover and without colour. At
-     rest 0 a footer link would be indistinguishable from the sentence around it
-     until pointed at — and a phone cannot point, so on a handheld no link in
-     the product would ever announce itself at all.
-
-     So a link keeps the full length and takes the FAINT force instead: thin, not
-     short. That is the existing force axis doing exactly its job — «one stroke,
-     three forces, and the force is opacity and length, NEVER weight», stated on
-     the base rule above. Drawing a thinner line here would have meant a second
-     `scaleY`, which is the defect that comment exists to prevent. */
+  /* ── the link rule ──────────────────────────────────
+     THIN, AND THE TEXT'S OWN COLOUR. A gold line under ink-coloured words was
+     the loudest thing in a paragraph and read as a highlight someone had left
+     on; worse, on the cabinet's own row the word went brass on hover while the
+     line stayed ink, so the two halves of one control changed state
+     separately. The rule is `currentColor` at rest — it belongs to the
+     sentence — and the label as a whole goes brass when pointed at, which
+     carries the word and the rule together because the mark reads the same
+     colour the text does. */
   .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark {
-    opacity: var(--cw-ink-rest-opacity);
+    color: currentColor;
+    opacity: var(--cw-ink-link-rest-opacity);
     transform:
-      scaleY(var(--cw-ink-stroke-weight))
+      scaleY(var(--cw-ink-link-weight))
       rotate(var(--cw-ink-stroke-tilt));
   }
 
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover
+    .cw-ink-label[data-cw-ink-variant="link"],
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible
+    .cw-ink-label[data-cw-ink-variant="link"],
+  .cw-ink-label[data-cw-ink-variant="link"][data-cw-ink-active="true"] {
+    color: var(--cw-nav-marker);
+  }
+
+  /* The weight is restated, not inherited. The selection stroke's hover rule
+     below also matches this mark and carries `scaleY(3.4)`; without the thin
+     weight here a link would thicken into a selection stroke under the
+     cursor, which is the one thing these two marks must never do to each
+     other. This selector is the more specific of the two, so it holds. */
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover
+    .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark,
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible
+    .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark,
+  .cw-ink-label[data-cw-ink-variant="link"][data-cw-ink-active="true"] .cw-ink-label-mark {
+    opacity: 1;
+    transform:
+      scaleY(var(--cw-ink-link-weight))
+      rotate(var(--cw-ink-stroke-tilt));
+  }
+
+  /* ── the selection stroke ───────────────────────────
+     Thick and brass, absent until it means something. The weight is restated
+     here rather than inherited: this selector and the variants' carry equal
+     specificity and this one comes later, so leaving `scaleY` out made a
+     pointed-at row go thin exactly while it was being pointed at. */
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover .cw-ink-label-mark,
   :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible .cw-ink-label-mark {
     opacity: var(--cw-ink-hover-opacity);
-    /* Restating the weight here is not redundancy — it is the fix for a real
-       bug. This selector and the `menu` variant's carry equal specificity, and
-       this one comes later, so a menu label losing `scaleY` on hover meant the
-       account menu's stroke went thin exactly while it was being pointed at. */
     transform:
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
-    stroke-dashoffset: calc(var(--cw-ink-stroke-length) * (1 - var(--cw-ink-drawn-hover)));
   }
 
   @media (hover: hover) {
@@ -2255,7 +2206,6 @@ body {
       transform:
         scaleY(var(--cw-ink-stroke-weight))
         rotate(var(--cw-ink-stroke-tilt));
-      stroke-dashoffset: calc(var(--cw-ink-stroke-length) * (1 - var(--cw-ink-drawn-hover)));
     }
   }
 
@@ -2285,7 +2235,6 @@ body {
     transform:
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
-    stroke-dashoffset: 0;
   }
 
   :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]) .cw-ink-label-mark {
@@ -2293,7 +2242,6 @@ body {
     transform:
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
-    stroke-dashoffset: 0;
   }
 
   /* `:is(...):hover .mark` carries one more compound step than the plain
@@ -2312,7 +2260,6 @@ body {
       transform:
         scaleY(var(--cw-ink-stroke-weight))
         rotate(var(--cw-ink-stroke-tilt));
-      stroke-dashoffset: 0;
     }
   }
 
@@ -2321,7 +2268,6 @@ body {
     transform:
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
-    stroke-dashoffset: 0;
   }
 
   /* Pinned last on purpose. Every state rule above carries the same (0,3,0)
@@ -2330,7 +2276,6 @@ body {
      moment it is pointed at, which is the ladder running backwards. Length is
      not a variable for this variant; only opacity is. */
   .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark {
-    stroke-dashoffset: 0;
   }
 
   :is(.cw-icon-btn, .cw-page-btn, .cw-nav-link, [data-cw-ink-control]):focus-visible .cw-ink-icon-mark {

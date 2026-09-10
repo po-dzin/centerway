@@ -20,6 +20,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 
 import { Icon } from "@/components/Icon";
 import { BUILDER_PATH_PREFIX } from "@/lib/surfaces/catalog";
@@ -114,9 +115,10 @@ export function CourseAuthorLink({
     <a
       className={tone === "media" ? heroStyles.heroUtilityLink : styles.backLink}
       href={builderHref(`/${courseSlug}`)}
+      data-cw-ink-control
     >
       <Icon name="settings" size={20} />
-      <span>Редагувати</span>
+      <InteractionInkLabel variant="link">Редагувати</InteractionInkLabel>
     </a>
   );
 
