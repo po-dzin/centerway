@@ -4,6 +4,7 @@ import { sendPurchaseEmail } from "@/lib/email/purchaseEmail";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { normalizeCustomerEmail, upsertCustomerByContact } from "@/lib/platform/customerIdentity";
+import { closeWonLeadsForPurchase } from "@/lib/platform/leadStage";
 import { extractPaymentMeta } from "@/lib/paymentMeta";
 import {
   buildWfpAcceptResponse,
@@ -365,6 +366,28 @@ export async function POST(req: NextRequest) {
     // Paid webhook work stays on the queue.
     // The request path only persists the payment signal and enqueues follow-up delivery.
     if (paid && !staffOrder) {
+      /* A lead this person is still waiting on is now answered by the money.
+         `same_product` scope on purpose: a self-serve checkout says only that
+         they bought THIS thing, so a consultation request they are still owed
+         an answer to stays open. A staff QA order never gets here, which is
+         correct — a fake purchase must not close a real request.
+
+         Fully wrapped and never awaited for its result: money has already
+         moved by this line, and no bookkeeping write may endanger that. */
+      try {
+        const closed = await closeWonLeadsForPurchase(sb, {
+          email: meta.email ?? null,
+          phone: meta.phone ?? null,
+          productCode: order?.product_code ?? null,
+          scope: "same_product",
+        });
+        if (closed.closed > 0) {
+          console.log("[wfp webhook] leads closed as won", { orderRef, closed: closed.closed });
+        }
+      } catch (e: any) {
+        console.warn("[wfp webhook] lead close failed", { orderRef, error: String(e?.message || e) });
+      }
+
       try {
         const { data: existingPurchaseJob } = await sb
           .from("jobs")
