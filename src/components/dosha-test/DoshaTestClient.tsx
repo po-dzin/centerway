@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { LogoMark } from "@/components/brand/LogoMark";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Session } from "@supabase/supabase-js";
 import { Icon } from "@/components/Icon";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "@/components/platform/PlatformDiagnosticStyles";
@@ -24,29 +23,18 @@ import { platformPageArtwork } from "@/lib/platform/content";
 import { TESTS_HUB_ROUTE } from "@/lib/platform/tests";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { supabaseClient } from "@/lib/supabaseClient";
+import { useSession } from "@/components/auth/SessionProvider";
+import {
+  attachAttempt,
+  completeAttempt,
+  loadDefinition as fetchDefinition,
+  postAttemptEvent,
+  requestTelegramLink,
+  syncPlatformUser,
+  type TestDefinitionResponse,
+  type TestQuestion,
+} from "./doshaTestApi";
 
-type TestOption = {
-  id: string;
-  order: number;
-  code: string;
-  text: string;
-};
-
-type TestQuestion = {
-  id: string;
-  orderIndex: number;
-  code: string;
-  text: string;
-  options: TestOption[];
-};
-
-type TestDefinitionResponse = {
-  testId: string;
-  testVersion: string;
-  totalQuestions: number;
-  questions: TestQuestion[];
-  sessionId?: string;
-};
 
 type CompleteResponse = {
   attemptId: string;
@@ -128,7 +116,8 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultViewedSent, setResultViewedSent] = useState(false);
-  const [session, setSession] = useState<Session | null>(null);
+  const { session, status } = useSession();
+  const accessToken = session?.access_token ?? null;
   const [savedToCabinet, setSavedToCabinet] = useState(false);
   const [telegramLink, setTelegramLink] = useState<string | null>(null);
   const [resumeDraft, setResumeDraft] = useState<DraftState | null>(null);
@@ -175,10 +164,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
   const emitAttemptEvent = useCallback(async (eventName: AttemptEventName, payload: AttemptEventPayload = {}) => {
     if (!attemptId) return;
 
-    await fetch(`/api/test-attempts/${attemptId}/events`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    await postAttemptEvent(attemptId, {
         eventName,
         target: payload.target ?? null,
         screen: payload.screen ?? phase,
@@ -199,18 +185,8 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
         mode: payload.mode ?? generatorContext?.mode ?? null,
         branch: payload.branch ?? generatorContext?.branch ?? null,
         assignmentSource: payload.assignmentSource ?? generatorContext?.assignment_source ?? null,
-      }),
-    }).catch(() => undefined);
+    });
   }, [attemptId, generatorContext?.assignment_source, generatorContext?.branch, generatorContext?.experiment_key, generatorContext?.manifest_id, generatorContext?.manifest_version, generatorContext?.mode, generatorContext?.recipe_version, generatorContext?.variant_key, phase, uiVariant]);
-
-  const syncPlatformUser = useCallback(async (accessToken: string) => {
-    await fetch("/api/platform/users/sync", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }).catch(() => undefined);
-  }, []);
 
   const signInWithGoogle = useCallback(async (pendingSave?: PendingSave) => {
     if (typeof window !== "undefined" && pendingSave) {
@@ -228,45 +204,10 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     });
   }, []);
 
-  const loadDefinition = useCallback(async (): Promise<TestDefinitionResponse | null> => {
-    const readJson = async (response: Response) => {
-      const data = (await response.json().catch(() => ({ error: "invalid_json" }))) as
-        | TestDefinitionResponse
-        | { error: string };
-      if (!response.ok || "error" in data) return null;
-      return data;
-    };
-
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        /* The session travels with the request: it seeds the order of the
-           answers, so the order holds for the whole attempt and differs
-           between readers. */
-        const res = await fetch(`/api/tests/dosha-test?sessionId=${encodeURIComponent(getOrCreateSessionId())}`, {
-          cache: "no-store",
-          headers: { "Cache-Control": "no-store" },
-        });
-        const data = await readJson(res);
-        if (data) return data;
-      } catch {
-        // Retry once before fallback.
-      }
-    }
-
-    try {
-      const res = await fetch("/api/tests/dosha-test/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          source: "dosha_test_route_fallback_start",
-          sessionId: getOrCreateSessionId(),
-        }),
-      });
-      return await readJson(res);
-    } catch {
-      return null;
-    }
-  }, [getOrCreateSessionId]);
+  const loadDefinition = useCallback(
+    (): Promise<TestDefinitionResponse | null> => fetchDefinition(getOrCreateSessionId()),
+    [getOrCreateSessionId]
+  );
 
   const completeTest = useCallback(async (finalAnswers: Record<string, string>) => {
     if (questions.length === 0) return;
@@ -286,20 +227,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     setPhase("loading");
 
     try {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (session?.access_token) {
-        headers.Authorization = `Bearer ${session.access_token}`;
-      }
-
-      const res = await fetch("/api/tests/dosha-test/complete", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          source: "dosha_test_route",
-          sessionId: getOrCreateSessionId(),
-          answers: orderedAnswers,
-        }),
-      });
+      const res = await completeAttempt({ sessionId: getOrCreateSessionId(), answers: orderedAnswers });
 
       const data = (await res.json()) as CompleteResponse | { error: string };
       if (!res.ok || "error" in data || !data.isCompleted || !data.resultType) {
@@ -324,7 +252,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     } finally {
       setIsBusy(false);
     }
-  }, [clearDraft, getOrCreateSessionId, questions, saveAttemptId, session?.access_token]);
+  }, [clearDraft, getOrCreateSessionId, questions, saveAttemptId]);
 
   const runStartFlow = useCallback(async () => {
     setIsBusy(true);
@@ -365,8 +293,8 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
 
   /* Back from Google with a result in hand: hand the attempt its owner, then
      put the reader back where they were, on their own result. */
-  const resumePendingSaveIfNeeded = useCallback(async (nextSession: Session | null) => {
-    if (!nextSession?.access_token || typeof window === "undefined") return;
+  const resumePendingSaveIfNeeded = useCallback(async () => {
+    if (typeof window === "undefined") return;
 
     const raw = window.sessionStorage.getItem(PENDING_SAVE_KEY);
     if (!raw) return;
@@ -388,40 +316,22 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     setResultViewedSent(true);
     setPhase("result");
 
-    const res = await fetch(`/api/test-attempts/${pending.attemptId}/attach`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${nextSession.access_token}` },
-    }).catch(() => null);
+    const res = await attachAttempt(pending.attemptId);
 
     setSavedToCabinet(Boolean(res?.ok));
   }, []);
 
+  /* One subscription for the whole tree lives in the root layout's
+     SessionProvider; this component used to hold its own. Whenever a signed-in
+     session appears or its token changes, the account is mirrored and a save
+     left pending across a Google round trip is picked up. */
   useEffect(() => {
-    const bootAuth = async () => {
-      const { data } = await supabaseClient.auth.getSession();
-      setSession(data.session);
-      if (data.session?.access_token) {
-        await syncPlatformUser(data.session.access_token);
-        await resumePendingSaveIfNeeded(data.session);
-      }
-    };
-    void bootAuth();
-
-    const {
-      data: { subscription },
-    } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-
-      if (!nextSession) return;
-
-      void (async () => {
-        await syncPlatformUser(nextSession.access_token);
-        await resumePendingSaveIfNeeded(nextSession);
-      })();
-    });
-
-    return () => subscription.unsubscribe();
-  }, [resumePendingSaveIfNeeded, syncPlatformUser]);
+    if (status !== "signed-in") return;
+    void (async () => {
+      await syncPlatformUser();
+      await resumePendingSaveIfNeeded();
+    })();
+  }, [status, accessToken, resumePendingSaveIfNeeded]);
 
   /* AN UNFINISHED TEST IS PICKED UP, NOT THROWN AWAY.
      This effect used to wipe the draft, the attempt id and the session id on
@@ -533,12 +443,9 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     if (phase !== "result" || !attemptId) return;
     let cancelled = false;
 
-    void fetch(`/api/test-attempts/${attemptId}/telegram`, { method: "POST" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { linkUrl?: string | null } | null) => {
-        if (!cancelled) setTelegramLink(data?.linkUrl ?? null);
-      })
-      .catch(() => undefined);
+    void requestTelegramLink(attemptId).then((link) => {
+      if (!cancelled) setTelegramLink(link);
+    });
 
     return () => {
       cancelled = true;
