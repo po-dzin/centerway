@@ -10,6 +10,16 @@ import { staffFromCookies } from "@/lib/auth/serverSession";
  * Bearer check; this is the page-level one, and it runs before hydration
  * rather than after it.
  */
+/**
+ * NEVER PRERENDERED. Without this, a build with no Supabase env (CI, a clean
+ * clone) sees `userFromCookies` return before it touches `cookies()`, decides
+ * the pages under here are static, and prerenders /admin/jobs — which then
+ * calls the database at build time and fails the export. An admin page is
+ * per-person by definition; saying so here is what keeps the build honest
+ * whether or not the env is present.
+ */
+export const dynamic = "force-dynamic";
+
 export default async function ProtectedAdminLayout({ children }: { children: ReactNode }) {
   const staff = await staffFromCookies();
   if (!staff) redirect("/admin");

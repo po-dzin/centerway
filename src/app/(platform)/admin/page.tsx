@@ -10,6 +10,9 @@ import { AdminGate } from "./AdminGate";
  * without a staff role, the refusal. Decided here, on the server, from the
  * session cookie; the client island only reacts to the sign-in completing.
  */
+// Same reason as (protected)/layout.tsx: this reads the session cookie.
+export const dynamic = "force-dynamic";
+
 export default async function AdminRootPage() {
   const staff = await staffFromCookies();
   if (staff) redirect("/admin/analytics");
