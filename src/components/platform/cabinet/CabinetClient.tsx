@@ -29,7 +29,7 @@ import { platformRoleLabel } from "@/lib/platform/identity";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
-import { PwaInstallRow } from "./PwaInstallCard";
+import { PwaInstallCard } from "./PwaInstallCard";
 import { cabinetGate } from "./CabinetGate";
 import { CabinetFold } from "./CabinetFold";
 import { CabinetHero } from "./CabinetHero";
@@ -387,6 +387,12 @@ export function CabinetClient() {
 
         <CabinetFold label={cab.accountLabel} title={cab.accountTitle} lead={cab.accountLead}>
           <div className={styles.cardGrid}>
+            {/* THE THIRD CARD IN THIS GRID, not a row beneath it (2026-09-10).
+                See PwaInstallCard.tsx: it used to demote itself to a bare
+                line here, reasoning that held for the shelf's footer and not
+                for this grid — this card is a fact about the account exactly
+                like the two beside it, and the auto-fit columns below already
+                know how to hold three. */}
             <article className={styles.card} {...matte}>
               <h3 className={styles.cardTitle}>{copy.contactsTitle}</h3>
               <ul className={styles.metaList}>
@@ -441,13 +447,9 @@ export function CabinetClient() {
                 ) : null}
               </article>
             ) : null}
-          </div>
 
-          {/* A line, not a fourth card. Installing is a once-per-device act;
-              it lives in the footer now, and what stays here is the fact that
-              it is available to this account's device. Hides itself on `www`,
-              where an install would put the SHOP on the home screen. */}
-          <PwaInstallRow copy={cab} />
+            <PwaInstallCard copy={cab} />
+          </div>
         </CabinetFold>
       </div>
     </main>
