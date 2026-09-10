@@ -5,7 +5,6 @@ import { normalizeProduct, type ProductCode } from "@/lib/products";
 import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendTelegramMessage } from "@/lib/tg";
-import { isMetaTestModeEnabled } from "@/lib/tracking/mode";
 
 export const runtime = "nodejs";
 
@@ -188,9 +187,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  if (!isMetaTestModeEnabled()) {
-    await notifyLeadToGroup(lead);
-  }
+  await notifyLeadToGroup(lead);
 
   return cors(NextResponse.json({ ok: true, mode, order_ref: lead.order_ref }));
 }

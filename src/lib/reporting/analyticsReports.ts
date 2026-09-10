@@ -1,6 +1,5 @@
 import { adminClient } from "@/lib/auth/adminClient";
 import { sendTelegramMessageWithToken } from "@/lib/tg";
-import { isMetaTestModeEnabled } from "@/lib/tracking/mode";
 
 const REPORTS_TIME_ZONE = process.env.ANALYTICS_REPORTS_TIMEZONE || "Europe/Kyiv";
 const REPORTS_CHAT_ID = process.env.ANALYTICS_REPORTS_CHAT_ID;
@@ -609,9 +608,6 @@ export async function sendConfirmedSaleTelegramReport(orderRef: string): Promise
   sent: boolean;
   reason?: string;
 }> {
-  if (isMetaTestModeEnabled()) {
-    return { sent: false, reason: "test_mode_disabled" };
-  }
   if (!REPORTS_CHAT_ID) {
     return { sent: false, reason: "missing_reports_chat_id" };
   }
@@ -675,7 +671,18 @@ export async function sendConfirmedSaleTelegramReport(orderRef: string): Promise
   return { sent: true };
 }
 
-async function buildPeriodicReport(window: ReportWindow): Promise<string> {
+/**
+ * The report's text, and whether the window it covers held anything.
+ *
+ * `hasActivity` exists so a DAILY report with nothing in it can be withheld.
+ * A digest that reads «0 замовлень, 0 ₴, 0 витрат» every morning teaches the
+ * reader to stop opening it, and the one morning it is not zeros looks exactly
+ * like the others in the notification list. The weekly is always sent — a week
+ * with nothing in it IS the news, and there is only one of them per week.
+ */
+type PeriodicReport = { text: string; hasActivity: boolean };
+
+async function buildPeriodicReport(window: ReportWindow): Promise<PeriodicReport> {
   const db = adminClient();
 
   const [
@@ -918,9 +925,19 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
     bulletLine("ROAS", formatNumber(roas)),
   ];
 
+  /* Anything at all: an order (paid or not), money taken, or money spent on
+     ads. Orders count even when none of them was paid — a day with attempts
+     and no sales is exactly the day worth reading about. */
+  const hasActivity =
+    totalOrders > 0 ||
+    totalRevenue > 0 ||
+    metaTotals.spend > 0 ||
+    metaTotals.impressions > 0 ||
+    metaTotals.clicks > 0;
+
   if (window.kind === "daily") {
     lines.push("", boldHeading("Висновок"), `• ${escapeTelegramText(conclusionLine)}`);
-    return lines.join("\n");
+    return { text: lines.join("\n"), hasActivity };
   }
 
   if (topProducts.length > 1) {
@@ -939,7 +956,7 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
 
   lines.push("", boldHeading("Висновок"), `• ${escapeTelegramText(conclusionLine)}`);
 
-  return lines.join("\n");
+  return { text: lines.join("\n"), hasActivity };
 }
 
 export async function dispatchDueTelegramPeriodicReports(now = new Date()): Promise<{
@@ -947,9 +964,6 @@ export async function dispatchDueTelegramPeriodicReports(now = new Date()): Prom
   sent: Array<{ kind: ReportKind; label: string }>;
   skipped: Array<{ kind: ReportKind; reason: string }>;
 }> {
-  if (isMetaTestModeEnabled()) {
-    return { checked: 0, sent: [], skipped: [{ kind: "daily", reason: "test_mode_disabled" }] };
-  }
   if (!REPORTS_CHAT_ID) {
     return {
       checked: 0,
@@ -976,8 +990,20 @@ export async function dispatchDueTelegramPeriodicReports(now = new Date()): Prom
       continue;
     }
 
-    const text = await buildPeriodicReport(window);
-    await sendTelegramMessageWithToken(REPORTS_BOT_TOKEN, REPORTS_CHAT_ID, text, {
+    const report = await buildPeriodicReport(window);
+
+    /* A DAILY WITH NOTHING IN IT IS NOT SENT, and is not marked sent either —
+       recording a delivery that did not happen would put a lie in the event
+       log that the `already_sent` check then trusts. The window is bound to a
+       date, so it simply does not come up again.
+
+       Only the daily. A weekly with nothing in it is the news. */
+    if (window.kind === "daily" && !report.hasActivity) {
+      skipped.push({ kind: window.kind, reason: "nothing_happened" });
+      continue;
+    }
+
+    await sendTelegramMessageWithToken(REPORTS_BOT_TOKEN, REPORTS_CHAT_ID, report.text, {
       messageThreadId: REPORTS_THREAD_ID,
       parseMode: "HTML",
     });
