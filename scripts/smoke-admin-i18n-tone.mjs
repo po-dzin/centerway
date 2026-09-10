@@ -85,15 +85,26 @@ async function checkNoHardcodedStrings() {
     for (const file of collectSourceFiles(dir)) {
       if (file.endsWith(".test.ts") || file.endsWith(".test.tsx")) continue;
       const source = stripComments(await readFile(file, "utf8"));
-      source.split("\n").forEach((line, index) => {
-        const literals = line.match(/"[^"\n]*"|'[^'\n]*'|`[^`\n]*`/g) ?? [];
-        const jsxText = line.match(/>[^<>{}]*</g) ?? [];
-        for (const candidate of [...literals, ...jsxText]) {
-          if (CYRILLIC.test(candidate)) {
-            offenders.push(`${file}:${index + 1} ${candidate.trim().slice(0, 60)}`);
-          }
+      const lineOf = (index) => source.slice(0, index).split("\n").length;
+
+      /* WHOLE FILE, NOT LINE BY LINE. The first version of this scan matched
+         `>text<` within a single line, and JSX puts long text on its own line
+         between a tag that ends the line above and one that starts the line
+         below — so every multi-line paragraph in the admin was invisible to
+         the check written to find exactly those. Caught by opening the dosha
+         tab and reading a sentence the gate had just called clean.
+         `[^<>{}]` matches newlines already; the scan simply must not be
+         chopped into lines before it runs. */
+      for (const pattern of [
+        /"[^"\n]*"|'[^'\n]*'|`[^`]*`/g,
+        />[^<>{}]*</g,
+      ]) {
+        for (const match of source.matchAll(pattern)) {
+          if (!CYRILLIC.test(match[0])) continue;
+          const text = match[0].replace(/\s+/g, " ").trim().slice(0, 70);
+          offenders.push(`${file}:${lineOf(match.index)} ${text}`);
         }
-      });
+      }
     }
   }
 

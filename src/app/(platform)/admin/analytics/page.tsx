@@ -260,7 +260,6 @@ type FunnelMode = "payment" | "access";
 
 type FunnelUiSettings = {
   mode: FunnelMode;
-  showLeadsCard: boolean;
   showAccessGrantedCard: boolean;
 };
 
@@ -794,7 +793,6 @@ export default function AnalyticsPage() {
   );
   const [funnelUiSettings, setFunnelUiSettings] = useState<FunnelUiSettings>({
     mode: "payment",
-    showLeadsCard: false,
     showAccessGrantedCard: false,
   });
   const [analyticsSection, setAnalyticsSection] = useState<AnalyticsSection>("overview");
@@ -858,7 +856,6 @@ export default function AnalyticsPage() {
       const mode: FunnelMode = parsed.mode === "access" ? "access" : "payment";
       setFunnelUiSettings({
         mode,
-        showLeadsCard: Boolean(parsed.showLeadsCard),
         showAccessGrantedCard: Boolean(parsed.showAccessGrantedCard),
       });
     } catch {
@@ -1466,19 +1463,6 @@ export default function AnalyticsPage() {
                 <label className="flex items-center gap-2 text-sm cw-text">
                   <input
                     type="checkbox"
-                    checked={funnelUiSettings.showLeadsCard}
-                    onChange={() =>
-                      setFunnelUiSettings((prev) => ({
-                        ...prev,
-                        showLeadsCard: !prev.showLeadsCard,
-                      }))
-                    }
-                  />
-                  {t("analytics_toggle_leads_card")}
-                </label>
-                <label className="flex items-center gap-2 text-sm cw-text">
-                  <input
-                    type="checkbox"
                     checked={funnelUiSettings.showAccessGrantedCard}
                     onChange={() =>
                       setFunnelUiSettings((prev) => ({
@@ -1802,8 +1786,19 @@ export default function AnalyticsPage() {
             became money and how many people are still waiting, which is the
             only part anybody can act on. `open_total` ignores the date filter
             on purpose. */}
-        {funnelUiSettings.showLeadsCard ? (
-          <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+        {/* NO LONGER BEHIND A SWITCH. The switch existed to suppress a metric
+            that was meaningless — a count over a table nothing wrote to — and
+            it defaulted to off, so this card has been invisible for as long as
+            it has been wrong. Now that it says how many requests arrived, how
+            many became money and how many people are still waiting, hiding it
+            by default is the wrong answer.
+
+            The split into Courses/Traffic also broke the switch outright: it
+            lived in «Вхідні дані та якість», which is a TRAFFIC tab, while the
+            card it controlled is a COURSES one. A control you can only reach
+            from the mode where its subject does not exist is not a setting.
+            Found by opening the page — no test would have seen it. */}
+        <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
             <div className="text-sm font-medium cw-muted">{t("analytics_leads")}</div>
             <div className="text-3xl font-bold mt-2 cw-text">{leads?.new_in_period ?? summary.totalLeads}</div>
             {leads ? (
@@ -1818,8 +1813,7 @@ export default function AnalyticsPage() {
                 </div>
               </div>
             ) : null}
-          </div>
-        ) : null}
+        </div>
         <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
           <div className="text-sm font-medium cw-muted">{t("analytics_purchases")}</div>
           <div className="text-3xl font-bold mt-2 cw-text">{summary.totalPaidOrders}</div>
@@ -2509,16 +2503,12 @@ export default function AnalyticsPage() {
                       </tbody>
                     </table>
                   </div>
-                  <p className="text-xs cw-muted">
-                    CAC по сегменту доші потребує зв&apos;язки test_attempts → orders через user_id (буде з LMS/auth).
-                  </p>
+                  <p className="text-xs cw-muted">{t("analytics_dosha_cac_note")}</p>
                 </div>
               )}
             </>
           ) : (
-            <div className="cw-panel p-6 text-center text-sm cw-muted">
-              Натисніть &laquo;Оновити&raquo; для завантаження даних
-            </div>
+            <div className="cw-panel p-6 text-center text-sm cw-muted">{t("analytics_dosha_press_refresh")}</div>
           )}
         </div>
       )}
