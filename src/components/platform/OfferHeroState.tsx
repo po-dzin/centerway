@@ -23,6 +23,7 @@ import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
 import { useOfferAccess } from "@/components/platform/OfferAccess";
+import { CheckoutStartLink } from "@/components/platform/CheckoutStartLink";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import styles from "@/components/platform/PlatformHeroStyles";
 
@@ -118,9 +119,23 @@ export function OfferHeroActions({
     // the page asking twice.
     return (
       <div className={styles.heroFeatureActions} data-cw-offer-cta>
-        <Link className={styles.heroPrimaryButton} href={buyHref}>
-          {buyLabel}
-        </Link>
+        {/* A CHECKOUT IS NEVER A next/link, and this button was the last place
+            that had not heard. `next/link` PREFETCHES on hover, so hovering the
+            page's main buy button fired a GET at `/api/pay/start` — the route
+            handler that raises an invoice. It has been harmless only by
+            accident: Next drops the query string and appends `_rsc`, so the
+            request arrives with no product and the route 404s. The day anybody
+            gives that route a default product, every hover becomes an order.
+
+            `CheckoutStartLink` is a plain anchor, and it also carries the
+            waiting state this button never had. */}
+        {buyHref.startsWith("/api/") ? (
+          <CheckoutStartLink className={styles.heroPrimaryButton} href={buyHref} label={buyLabel} isPageCta={false} />
+        ) : (
+          <Link className={styles.heroPrimaryButton} href={buyHref}>
+            {buyLabel}
+          </Link>
+        )}
         <Link className={styles.heroSecondaryButton} href={PLAN_ANCHOR}>
           <span>{secondaryLabel}</span>
         </Link>
