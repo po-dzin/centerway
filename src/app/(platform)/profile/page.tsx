@@ -17,7 +17,7 @@ export const metadata: Metadata = pageMetadata({
 
 export default function PlatformProfilePage() {
   return (
-    <PlatformShell headerMode="overlay">
+    <PlatformShell headerMode="overlay" surface="personal">
       <CabinetClient />
     </PlatformShell>
   );

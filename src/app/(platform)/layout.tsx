@@ -3,10 +3,9 @@ import { Analytics } from "@vercel/analytics/next";
 import { GoogleTagProvider } from "@/lib/tracking/GoogleTagProvider";
 import { PixelProvider } from "@/lib/tracking/PixelProvider";
 import { Suspense } from "react";
-import { headers } from "next/headers";
+import { preload } from "react-dom";
 import { RouteMotion } from "@/components/platform/RouteMotion";
 import { BfcacheRestore } from "@/components/platform/BfcacheRestore";
-import { SurfaceHostProvider } from "@/components/platform/layout/SurfaceHost";
 import { ToastProvider } from "@/components/ToastProvider";
 import "../globals.css";
 import { PLATFORM_GROUND } from "@/lib/platform/chrome";
@@ -58,20 +57,45 @@ export const viewport: Viewport = {
 };
 
 /**
- * The host is read HERE, once, and handed to the client tree.
+ * STATIC BY DEFAULT, since 2026-09-10. This layout used to read the Host header
+ * so the client tree could resolve links across `www` and `my`, and that one
+ * `headers()` call made every page under it dynamic — the whole showcase
+ * rendered per request for one string. The shell now provides the host from
+ * the page's own `surface` declaration (see components/platform/layout/
+ * SurfaceHost.tsx), so a page here is as static as its own data allows.
  *
- * Two origins serve this app — `www` (public) and `my` (personal) — and which
- * one owns a given path is the question every link asks. Answering it from
- * `window` would mean the server renders one `href` and the browser hydrates
- * another; answering it here means the markup is right when it is sent.
+ * The data behind the showcase is tag-cached and purged on write, and a tag
+ * purge also drops the routes that read it. `revalidate` below is the safety
+ * net under that: nothing here is ever more than an hour stale even if a
+ * write path forgets its tag.
  */
-export default async function RootLayout({
+export const revalidate = 3600;
+
+/**
+ * The faces the first paint needs, told to the browser before the stylesheet
+ * asks. The `@font-face` rules sit inside globals.css, so without this the
+ * fetch starts only after the CSS has parsed and the text has laid out — and
+ * with `font-display: swap` that is a visible re-render of every heading.
+ *
+ * Both families are variable fonts, one file per subset, so this is four
+ * files (104 KB): the Cyrillic and Latin subsets of the editorial serif and of
+ * the UI sans. The mono face and the extended subsets stay lazy.
+ */
+const FIRST_PAINT_FONTS = [
+  "/fonts/platform/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYrXtKky2F7i6C.woff2", // Cormorant Garamond, cyrillic
+  "/fonts/platform/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYqXtKky2F7g.woff2", // Cormorant Garamond, latin
+  "/fonts/platform/xn7gYHE41ni1AdIRggOxSvfedN62Zw.woff2", // Manrope, cyrillic
+  "/fonts/platform/xn7gYHE41ni1AdIRggexSvfedN4.woff2", // Manrope, latin
+];
+
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const requestHeaders = await headers();
-  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  for (const href of FIRST_PAINT_FONTS) {
+    preload(href, { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
+  }
 
   return (
     <html lang="uk" suppressHydrationWarning>
@@ -108,7 +132,7 @@ export default async function RootLayout({
             bfcache after a trip to a funnel landing — see the component for
             why that trip is the one that breaks here. */}
         <BfcacheRestore />
-        <SurfaceHostProvider host={host}><ToastProvider>{children}</ToastProvider></SurfaceHostProvider>
+        <ToastProvider>{children}</ToastProvider>
         <Analytics />
       </body>
     </html>

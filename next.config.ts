@@ -71,6 +71,24 @@ const supabaseImageHost = (() => {
 const nextConfig: NextConfig = {
   reactCompiler: true,
 
+  /**
+   * ONE HOST OR TWO, decided at build time.
+   *
+   * In production the app answers on two origins — `www` (public) and `my`
+   * (personal) — and a link that crosses between them must be absolute. On
+   * localhost and on a preview deployment there is one origin serving every
+   * path, and an absolute link would send the developer to the live site.
+   *
+   * This used to be decided per REQUEST by reading the Host header in the root
+   * layout, which made every page under (platform) dynamic — 39 pages rendered
+   * on each hit for one string. It is a property of the deployment, so it is
+   * inlined here; which SURFACE a page is on is a property of the path, and the
+   * shell answers that from the page's own declaration (PlatformLayout `surface`).
+   */
+  env: {
+    NEXT_PUBLIC_CW_SINGLE_HOST: process.env.VERCEL_ENV === "production" ? "0" : "1",
+  },
+
   images: {
     remotePatterns: supabaseImageHost,
   },

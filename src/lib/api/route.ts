@@ -53,13 +53,13 @@ function isPostgrestError(e: unknown): e is { message: string; code: string; det
  * not the response. Everything else is `internal`.
  */
 export function withRoute<P = Record<string, string | string[]>>(name: string, handler: Handler<P>) {
-  // `ctx` is optional so a test may call `POST(req)` the way the old handlers
-  // allowed; Next always passes it.
-  return async (req: NextRequest, ctx?: RouteContext<P>): Promise<Response> => {
+  // The context is REQUIRED, not optional: `next build` type-checks every
+  // route export against its own `RouteContext` and rejects `| undefined`. A
+  // test calls the handler the way Next does — with a context.
+  return async (req: NextRequest, ctx: RouteContext<P>): Promise<Response> => {
     const requestId = req.headers.get("x-request-id") ?? newRequestId();
-    const params = ctx?.params ?? Promise.resolve({} as P);
     try {
-      const res = await handler(req, { params, requestId });
+      const res = await handler(req, { params: ctx.params, requestId });
       if (!res.headers.has("x-request-id")) res.headers.set("x-request-id", requestId);
       return res;
     } catch (e) {

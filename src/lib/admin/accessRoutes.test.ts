@@ -48,6 +48,9 @@ vi.mock("@/lib/admin/access", async () => {
 
 const learners = await import("@/app/api/admin/access/learners/route");
 const roles = await import("@/app/api/admin/access/roles/route");
+/* The roles route is wrapped in `withRoute`, whose handler takes the context
+   Next always passes; the other routes here are not wrapped yet. */
+const rolesPost = (req: NextRequest) => roles.POST(req, { params: Promise.resolve({}) });
 const courses = await import("@/app/api/admin/access/courses/route");
 
 const ADMIN = { user: { id: "auth-admin" }, role: "admin" };
@@ -82,7 +85,7 @@ describe("authentication", () => {
             learners.DELETE(send("http://x/api/admin/access/learners?enrollmentId=e1", "DELETE")),
             learners.PATCH(send("http://x/api/admin/access/learners", "PATCH", { enrollmentId: "e1", expiresAt: "2026-09-30" })),
             learners.GET(get("http://x/api/admin/access/learners")),
-            roles.POST(send("http://x/api/admin/access/roles", "POST", { email: "a@b.c", role: "admin" })),
+            rolesPost(send("http://x/api/admin/access/roles", "POST", { email: "a@b.c", role: "admin" })),
             courses.GET(get("http://x/api/admin/access/courses")),
             courses.PATCH(send("http://x/api/admin/access/courses", "PATCH", { courseId: "c1" })),
         ]);
@@ -452,14 +455,14 @@ describe("roles", () => {
 
     it("refuses a role change from support — reading is not granting", async () => {
         session.value = SUPPORT;
-        const res = await roles.POST(send("http://x/api/admin/access/roles", "POST", { email: "a@b.c", role: "admin" }));
+        const res = await rolesPost(send("http://x/api/admin/access/roles", "POST", { email: "a@b.c", role: "admin" }));
         expect(res.status).toBe(403);
         expect(access.setRole).not.toHaveBeenCalled();
     });
 
     it("refuses a role the role store would not accept", async () => {
         for (const role of ["owner", "Admin", "", undefined]) {
-            const res = await roles.POST(send("http://x/api/admin/access/roles", "POST", { email: "a@b.c", role }));
+            const res = await rolesPost(send("http://x/api/admin/access/roles", "POST", { email: "a@b.c", role }));
             expect(res.status).toBe(400);
         }
         expect(access.setRole).not.toHaveBeenCalled();
@@ -467,14 +470,14 @@ describe("roles", () => {
 
     it("assigns a valid role as the acting admin", async () => {
         access.setRole.mockResolvedValue({ account: { email: "a@b.c" }, previous: "user", role: "coach" });
-        const res = await roles.POST(send("http://x/api/admin/access/roles", "POST", { email: "a@b.c", role: "coach" }));
+        const res = await rolesPost(send("http://x/api/admin/access/roles", "POST", { email: "a@b.c", role: "coach" }));
         expect(res.status).toBe(200);
         expect(access.setRole).toHaveBeenCalledWith({ email: "a@b.c", role: "coach", actorId: "auth-admin" });
     });
 
     it("passes the self-demotion refusal through as a 409", async () => {
         access.setRole.mockRejectedValue(new AccessError("cannot_change_own_role", 409));
-        const res = await roles.POST(send("http://x/api/admin/access/roles", "POST", { email: "admin@b.c", role: "user" }));
+        const res = await rolesPost(send("http://x/api/admin/access/roles", "POST", { email: "admin@b.c", role: "user" }));
         expect(res.status).toBe(409);
     });
 });

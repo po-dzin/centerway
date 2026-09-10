@@ -9,8 +9,7 @@ import { PlatformBackOrgan, PlatformMarkOrgan, PlatformOrgans, chromeOrgans } fr
 import { PlatformRouteRows } from "./layout/PlatformRouteRows";
 import { PlatformRouteMenu } from "./layout/PlatformRouteMenu";
 import { PwaRuntime } from "./pwa/PwaRuntime";
-import { useSurfaceHost } from "./layout/SurfaceHost";
-import { isPersonalHost } from "@/lib/platform/surfaceHref";
+import { SurfaceHostProvider, syntheticHost } from "./layout/SurfaceHost";
 
 /**
  * Four modes, and two of them are not cosmetic.
@@ -74,11 +73,14 @@ export function PlatformShell({
   // from the first pixel, and starting dark would flash an inverted bar before
   // the tone sampler corrects it on the first frame.
   const floats = headerMode === "overlay";
-  const onPersonalHost = isPersonalHost(useSurfaceHost());
-  const personalSurface = surface === "personal" || onPersonalHost;
+  const personalSurface = surface === "personal";
+  /* The page said which surface it is on; that is what its links resolve
+     against. See SurfaceHost.tsx for why this replaced the request's Host. */
+  const host = syntheticHost(personalSurface ? "personal" : "public");
   const bare = headerMode === "reading";
 
   return (
+    <SurfaceHostProvider host={host}>
     <div className={`${styles.shell} ${floats ? styles.shellOverlay : ""}`} data-cw-chrome={bare ? "none" : undefined} data-cw-shell-mode={headerMode}
       /* Read by the shell's own stylesheet to re-state the room the hidden bar
          used to hold open below 901px. */
@@ -163,5 +165,6 @@ export function PlatformShell({
       {footer ? <PlatformFooter variant={headerMode === "learn" || bare || personalSurface ? "personal" : "full"} /> : null}
       <PwaRuntime />
     </div>
+    </SurfaceHostProvider>
   );
 }
