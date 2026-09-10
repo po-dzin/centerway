@@ -38,7 +38,6 @@ import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
 import { getAdminLocale } from "@/lib/admin/adminLocale";
 import { getErrorMessage } from "@/lib/errors";
-import { supabaseClient } from "@/lib/supabaseClient";
 import type { CatalogRow, SaleBlocker } from "@/lib/admin/catalogTypes";
 import type { AuthorProfileRow, CourseRow } from "@/lib/admin/accessTypes";
 import { CourseAuthorshipTab } from "@/components/admin/CourseAuthorshipTab";
@@ -46,21 +45,7 @@ import { ProductPricingTab } from "@/components/admin/ProductPricingTab";
 import type { ProductOfferRow } from "@/lib/admin/productOfferTypes";
 import { ACCESS_TERM_PRESETS } from "@/lib/admin/catalogTypes";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
-
-async function authFetch(input: string, init: RequestInit = {}) {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    const res = await fetch(input, {
-        ...init,
-        headers: {
-            ...(init.headers ?? {}),
-            ...(init.body ? { "Content-Type": "application/json" } : {}),
-            ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
-        },
-    });
-    const payload = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(String((payload as { error?: string }).error ?? res.status));
-    return payload;
-}
+import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
 
 const BLOCKER_KEY: Record<SaleBlocker, string> = {
     not_renderable: "catalog_blocker_not_renderable",

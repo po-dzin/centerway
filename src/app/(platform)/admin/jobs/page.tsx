@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { AdminPagination } from "@/components/admin/AdminPagination";
@@ -13,6 +12,7 @@ import { JobDetailsModal } from "@/components/admin/modals/JobDetailsModal";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/admin/adminLocale";
 import { JOB_STATUS_BADGE_CLASS } from "@/lib/admin/adminStatusStyles";
+import { authorizedFetch } from "@/components/auth/authorizedFetch";
 
 interface Job {
     id: string;
@@ -93,11 +93,7 @@ export default function JobsPage() {
             params.set("limit", String(LIMIT));
             params.set("offset", String(pageIndex * LIMIT));
 
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            const res = await fetch(`/api/admin/jobs?${params}`, {
-                signal: ctrl.signal,
-                headers: session ? { "Authorization": `Bearer ${session.access_token}` } : {}
-            });
+            const res = await authorizedFetch(`/api/admin/jobs?${params}`, { signal: ctrl.signal });
             if (!res.ok) throw new Error(`${res.status}`);
             const json = await res.json();
             if (reqId !== requestSeq.current) return;

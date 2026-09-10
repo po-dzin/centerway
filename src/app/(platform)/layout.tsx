@@ -7,6 +7,7 @@ import { preload } from "react-dom";
 import { RouteMotion } from "@/components/platform/RouteMotion";
 import { BfcacheRestore } from "@/components/platform/BfcacheRestore";
 import { ToastProvider } from "@/components/ToastProvider";
+import { SessionProvider } from "@/components/auth/SessionProvider";
 import "../globals.css";
 import { PLATFORM_GROUND } from "@/lib/platform/chrome";
 import { THEME_BOOT_SCRIPT } from "@/lib/platform/theme";
@@ -132,7 +133,7 @@ export default function RootLayout({
             bfcache after a trip to a funnel landing — see the component for
             why that trip is the one that breaks here. */}
         <BfcacheRestore />
-        <ToastProvider>{children}</ToastProvider>
+        <SessionProvider><ToastProvider>{children}</ToastProvider></SessionProvider>
         <Analytics />
       </body>
     </html>

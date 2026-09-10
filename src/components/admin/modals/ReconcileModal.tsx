@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { supabaseClient } from "@/lib/supabaseClient";
 import { getErrorMessage } from "@/lib/errors";
 import { ORDER_STATUS_BADGE_CLASS } from "@/lib/admin/adminStatusStyles";
+import { authorizedFetch } from "@/components/auth/authorizedFetch";
 
 interface Order {
     order_ref: string;
@@ -44,15 +44,8 @@ export function ReconcileModal({
         setLoading(true);
         setError(null);
         try {
-            const {
-                data: { session },
-            } = await supabaseClient.auth.getSession();
-            const res = await fetch("/api/admin/orders", {
+            const res = await authorizedFetch("/api/admin/orders", {
                 method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
-                },
                 body: JSON.stringify({ order_ref: order.order_ref, status: newStatus, note }),
             });
             if (!res.ok) throw new Error((await res.json()).error);

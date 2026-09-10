@@ -9,7 +9,6 @@
  * a second implementation (docs/lms-research-2026-08-15.md §5A).
  */
 
-import { supabaseClient } from "@/lib/supabaseClient";
 import type {
   Annotation,
   AnnotationAnchor,
@@ -23,6 +22,7 @@ import type {
   InlineText,
   ProgressEventType,
 } from "@/lms-core";
+import { accessToken, authorizedFetch } from "@/components/auth/authorizedFetch";
 
 export type LmsFailure =
   | "unauthenticated"
@@ -141,25 +141,13 @@ export type ProgressAck = {
 
 export type LmsResult<T> = { ok: true; data: T } | { ok: false; error: LmsFailure; detail?: unknown };
 
-async function accessToken(): Promise<string | null> {
-  const { data } = await supabaseClient.auth.getSession();
-  return data.session?.access_token ?? null;
-}
-
 async function request<T>(path: string, init?: RequestInit): Promise<LmsResult<T>> {
   const token = await accessToken();
   if (!token) return { ok: false, error: "unauthenticated" };
 
   let response: Response;
   try {
-    response = await fetch(path, {
-      ...init,
-      headers: {
-        ...(init?.headers ?? {}),
-        Authorization: `Bearer ${token}`,
-        ...(init?.body ? { "Content-Type": "application/json" } : {}),
-      },
-    });
+    response = await authorizedFetch(path, init);
   } catch {
     return { ok: false, error: "network" };
   }

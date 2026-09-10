@@ -5,10 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
-import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/admin/adminLocale";
+import { authorizedFetch } from "@/components/auth/authorizedFetch";
 
 interface Customer {
     id: string;
@@ -131,10 +131,7 @@ export default function CustomerProfilePage() {
         (async () => {
             setLoading(true);
             try {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                const res = await fetch(`/api/admin/customers/${id}`, {
-                    headers: session ? { "Authorization": `Bearer ${session.access_token}` } : {}
-                });
+                const res = await authorizedFetch(`/api/admin/customers/${id}`);
                 if (res.status === 404) { router.replace("/admin/customers"); return; }
                 if (!res.ok) throw new Error(`${res.status}`);
                 setProfile(await res.json());

@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
+import { authorizedFetch } from "@/components/auth/authorizedFetch";
 
 interface AuditLogEntry {
     id: string;
@@ -41,14 +41,7 @@ export default function AuditLogPage() {
         setLogs([]);
 
         try {
-            const {
-                data: { session },
-            } = await supabaseClient.auth.getSession();
-
-            const token = session?.access_token;
-            const response = await fetch(`/api/admin/audit?limit=${LIMIT}&offset=${pageIndex * LIMIT}`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-            });
+            const response = await authorizedFetch(`/api/admin/audit?limit=${LIMIT}&offset=${pageIndex * LIMIT}`);
 
             if (reqId !== requestSeq.current) return;
 

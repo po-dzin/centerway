@@ -21,23 +21,8 @@ import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { useI18n } from "@/components/I18nProvider";
 import { useToast } from "@/components/ToastProvider";
 import { getErrorMessage } from "@/lib/errors";
-import { supabaseClient } from "@/lib/supabaseClient";
 import type { AuthorProfileRow, CourseRow } from "@/lib/admin/accessTypes";
-
-async function authFetch(input: string, init: RequestInit = {}) {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    const res = await fetch(input, {
-        ...init,
-        headers: {
-            ...(init.headers ?? {}),
-            ...(init.body ? { "Content-Type": "application/json" } : {}),
-            ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
-        },
-    });
-    const payload = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(String((payload as { error?: string }).error ?? res.status));
-    return payload;
-}
+import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
 
 function EmptyIcon() {
     return (

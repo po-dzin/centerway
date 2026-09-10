@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 
 import { ADMIN_ROLE_CACHE_KEY, ADMIN_ROLE_CACHE_TTL_MS } from "@/lib/platform/adminRole";
+import { authorizedFetch } from "@/components/auth/authorizedFetch";
 
 /**
  * Who the signed-in account is, beyond what the session carries.
@@ -73,10 +74,7 @@ function bootstrapIdentity(token: string): Promise<PlatformIdentity | null> {
 
   const read = (async (): Promise<PlatformIdentity | null> => {
     try {
-      const res = await fetch("/api/admin/bootstrap-role", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authorizedFetch("/api/admin/bootstrap-role", { method: "POST" });
       if (!res.ok) return null;
       const payload = (await res.json().catch(() => ({}))) as {
         role?: string;

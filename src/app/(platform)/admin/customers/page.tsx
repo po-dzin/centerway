@@ -9,9 +9,9 @@ import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
-import { supabaseClient } from "@/lib/supabaseClient";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/admin/adminLocale";
+import { authorizedFetch } from "@/components/auth/authorizedFetch";
 
 interface Identity {
     id: string;
@@ -85,11 +85,7 @@ export default function CustomersPage() {
             params.set("offset", String(pageIndex * LIMIT));
 
             const url = `/api/admin/customers?${params}`;
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            const res = await fetch(url, {
-                signal: ctrl.signal,
-                headers: session ? { "Authorization": `Bearer ${session.access_token}` } : {}
-            });
+            const res = await authorizedFetch(url, { signal: ctrl.signal });
             if (!res.ok) throw new Error(`${res.status}`);
             const json = await res.json();
             if (reqId !== requestSeq.current) return;

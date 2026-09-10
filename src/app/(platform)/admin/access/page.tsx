@@ -27,11 +27,11 @@ import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
-import { supabaseClient } from "@/lib/supabaseClient";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/admin/adminLocale";
 import type { CourseRow, LearnerAccountRow, LearnerRow, LearnerStatus, PersonRow } from "@/lib/admin/accessTypes";
 import { deadlineInputValue, ELEVATED_ROLES, grantDeadlineValue, GRANTABLE_ROLES, PAYMENT_CURRENCIES } from "@/lib/admin/accessTypes";
+import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
 
 const LIMIT = 50;
 
@@ -50,21 +50,6 @@ const STATUS_DOT: Record<LearnerStatus, string> = {
     stalled: "cw-status-failed-dot",
     completed: "cw-status-success-dot",
 };
-
-async function authFetch(input: string, init: RequestInit = {}) {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    const res = await fetch(input, {
-        ...init,
-        headers: {
-            ...(init.headers ?? {}),
-            ...(init.body ? { "Content-Type": "application/json" } : {}),
-            ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
-        },
-    });
-    const payload = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(String((payload as { error?: string }).error ?? res.status));
-    return payload;
-}
 
 async function fetchCourses(): Promise<{ items: CourseRow[]; canGrant: boolean }> {
     const payload = await authFetch("/api/admin/access/courses") as { items?: CourseRow[]; canGrant?: boolean };

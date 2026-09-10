@@ -25,9 +25,9 @@ import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { Icon } from "@/components/Icon";
 import { BUILDER_PATH_PREFIX } from "@/lib/surfaces/catalog";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
-import { supabaseClient } from "@/lib/supabaseClient";
 import heroStyles from "./PlatformHeroStyles";
 import styles from "./PlatformOfferCommerce.module.css";
+import { accessToken, authorizedFetch } from "@/components/auth/authorizedFetch";
 
 type AuthoringAccess = { isAdmin: boolean; editableCourseSlugs: string[] };
 
@@ -52,13 +52,9 @@ let cached: Promise<AuthoringAccess> | null = null;
 async function readAccess(): Promise<AuthoringAccess> {
   const empty: AuthoringAccess = { isAdmin: false, editableCourseSlugs: [] };
   try {
-    const { data } = await supabaseClient.auth.getSession();
-    const token = data.session?.access_token;
-    if (!token) return empty;
+    if (!(await accessToken())) return empty;
 
-    const response = await fetch("/api/platform/authoring", {
-      headers: { authorization: `Bearer ${token}` },
-    });
+    const response = await authorizedFetch("/api/platform/authoring");
     if (!response.ok) return empty;
 
     const body = (await response.json()) as Partial<AuthoringAccess>;

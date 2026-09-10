@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef, type ChangeEvent } from "react";
 import Link from "next/link";
-import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { AdminPagination } from "@/components/admin/AdminPagination";
@@ -16,6 +15,7 @@ import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/admin/adminLocale";
 import { ORDER_STATUS_BADGE_CLASS } from "@/lib/admin/adminStatusStyles";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
+import { authorizedFetch } from "@/components/auth/authorizedFetch";
 
 interface Order {
     id: string;
@@ -141,13 +141,8 @@ function ResendAccessButton({ orderRef, labels }: {
         if (loading) return;
         setLoading(true);
         try {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            const res = await fetch("/api/admin/orders/access-link", {
+            const res = await authorizedFetch("/api/admin/orders/access-link", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
-                },
                 body: JSON.stringify({ order_ref: orderRef }),
             });
             const data = await res.json();
@@ -426,13 +421,8 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
 
         setLoading(true);
         try {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            const res = await fetch("/api/admin/landing-offers", {
+            const res = await authorizedFetch("/api/admin/landing-offers", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
-                },
                 body: JSON.stringify({
                     product: "irem",
                     entries: previewEntries.map((entry) => ({
@@ -844,11 +834,7 @@ export default function OrdersPage() {
             params.set("limit", String(LIMIT));
             params.set("offset", String(pageIndex * LIMIT));
 
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            const res = await fetch(`/api/admin/orders?${params}`, {
-                signal: ctrl.signal,
-                headers: session ? { "Authorization": `Bearer ${session.access_token}` } : {}
-            });
+            const res = await authorizedFetch(`/api/admin/orders?${params}`, { signal: ctrl.signal });
             if (!res.ok) throw new Error(`${res.status}`);
             const json = await res.json();
             if (reqId !== requestSeq.current) return;

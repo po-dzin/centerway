@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { supabaseClient } from "@/lib/supabaseClient";
 import { JOB_STATUS_BADGE_CLASS } from "@/lib/admin/adminStatusStyles";
 import { useToast } from "@/components/ToastProvider";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
+import { authorizedFetch } from "@/components/auth/authorizedFetch";
 
 interface Job {
     id: string;
@@ -44,13 +44,7 @@ export function JobDetailsModal({
     const handleRetry = async () => {
         setRetrying(true);
         try {
-            const {
-                data: { session },
-            } = await supabaseClient.auth.getSession();
-            const res = await fetch(`/api/admin/jobs/${job.id}/retry`, {
-                method: "POST",
-                headers: session ? { Authorization: `Bearer ${session.access_token}` } : {},
-            });
+            const res = await authorizedFetch(`/api/admin/jobs/${job.id}/retry`, { method: "POST" });
             if (!res.ok) throw new Error(labels.retryError);
             toast.success(labels.retrySuccess);
             onRetry();

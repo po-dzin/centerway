@@ -9,10 +9,10 @@
  * renderer instead of a second implementation.
  */
 
-import { supabaseClient } from "@/lib/supabaseClient";
 import type { Author, Course, CourseCategory, CourseDiff, CourseTheme, Lesson, ReadinessBlocker } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
 import type { CourseRevisionSummary, LessonRevisionEntry } from "@/lib/lms/revisions";
+import { accessToken, authorizedFetch } from "@/components/auth/authorizedFetch";
 
 export type BuilderFailure = "unauthenticated" | "forbidden" | "not_found" | "invalid" | "conflict" | "network";
 
@@ -66,28 +66,15 @@ export type CourseImportPreview = {
 
 export type BuilderResult<T> = { ok: true; data: T } | { ok: false; failure: BuilderFailure; detail?: string };
 
-async function accessToken(): Promise<string | null> {
-  const { data } = await supabaseClient.auth.getSession();
-  return data.session?.access_token ?? null;
-}
-
 async function request<T>(path: string, init?: RequestInit): Promise<BuilderResult<T>> {
   const token = await accessToken();
   if (!token) return { ok: false, failure: "unauthenticated" };
 
   let response: Response;
   try {
-    response = await fetch(path, {
-      ...init,
-      headers: {
-        // Only for a JSON body. A FormData body must carry the browser's own
-        // multipart boundary, and naming a content-type here overwrites it —
-        // the server then cannot find where one part ends and the next begins.
-        ...(typeof init?.body === "string" ? { "content-type": "application/json" } : {}),
-        authorization: `Bearer ${token}`,
-        ...(init?.headers ?? {}),
-      },
-    });
+    // The token and, for a JSON body, the content-type are authorizedFetch's;
+    // a FormData body keeps the browser's own multipart boundary.
+    response = await authorizedFetch(path, init);
   } catch {
     return { ok: false, failure: "network" };
   }

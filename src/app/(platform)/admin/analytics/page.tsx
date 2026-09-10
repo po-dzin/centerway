@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { flushSync } from "react-dom";
-import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
 import { getErrorMessage } from "@/lib/errors";
 import { useToast } from "@/components/ToastProvider";
@@ -11,6 +10,7 @@ import { AdminTabs } from "@/components/admin/AdminTabs";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
+import { accessToken, authorizedFetch } from "@/components/auth/authorizedFetch";
 
 type FunnelData = {
   date: string;
@@ -841,10 +841,6 @@ export default function AnalyticsPage() {
     setError(null);
     setErrorType("generic");
     try {
-      const {
-        data: { session },
-      } = await supabaseClient.auth.getSession();
-
       const query = new URLSearchParams();
       const activeFrom = period?.from ?? fromDate;
       const activeTo = period?.to ?? toDate;
@@ -852,9 +848,7 @@ export default function AnalyticsPage() {
       if (activeTo) query.set("to", activeTo);
       query.set("campaign_level", campaignsLevel);
 
-      const res = await fetch(`/api/admin/analytics?${query.toString()}`, {
-        headers: session ? { Authorization: `Bearer ${session.access_token}` } : {},
-      });
+      const res = await authorizedFetch(`/api/admin/analytics?${query.toString()}`);
 
       const data = (await res.json().catch(() => ({}))) as Partial<AnalyticsResponse> & {
         error?: string;
@@ -1054,20 +1048,12 @@ export default function AnalyticsPage() {
   const saveMarketingInputs = async () => {
     try {
       setSavingMarketing(true);
-      const {
-        data: { session },
-      } = await supabaseClient.auth.getSession();
-
-      if (!session?.access_token) {
+      if (!(await accessToken())) {
         throw new Error("No admin session");
       }
 
-      const res = await fetch("/api/admin/analytics/marketing", {
+      const res = await authorizedFetch("/api/admin/analytics/marketing", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
         body: JSON.stringify({
           reach: toNumberInput(draftReach),
           impressions: toNumberInput(draftImpressions),
@@ -1198,13 +1184,10 @@ export default function AnalyticsPage() {
   const fetchDoshaAnalytics = async (period?: { from: string; to: string }) => {
     setDoshaLoading(true);
     try {
-      const { data: { session } } = await supabaseClient.auth.getSession();
       const query = new URLSearchParams();
       if (period?.from) query.set("from", period.from);
       if (period?.to) query.set("to", period.to);
-      const res = await fetch(`/api/admin/analytics/dosha?${query.toString()}`, {
-        headers: session ? { Authorization: `Bearer ${session.access_token}` } : {},
-      });
+      const res = await authorizedFetch(`/api/admin/analytics/dosha?${query.toString()}`);
       if (res.ok) {
         const data = (await res.json()) as DoshaAnalytics;
         setDoshaData(data);

@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { SurfaceHostProvider } from "@/components/platform/layout/SurfaceHost";
 import { BfcacheRestore } from "@/components/platform/BfcacheRestore";
 import { ToastProvider } from "@/components/ToastProvider";
+import { SessionProvider } from "@/components/auth/SessionProvider";
 
 import "../globals.css";
 import { PLATFORM_GROUND } from "@/lib/platform/chrome";
@@ -55,7 +56,7 @@ export default async function BuilderRootLayout({ children }: Readonly<{ childre
         {/* Same dynamic-render, no-store shape as the platform root — see the
             component for why that makes Chrome's bfcache the one that misbehaves. */}
         <BfcacheRestore />
-        <SurfaceHostProvider host={host}><ToastProvider>{children}</ToastProvider></SurfaceHostProvider>
+        <SurfaceHostProvider host={host}><SessionProvider><ToastProvider>{children}</ToastProvider></SessionProvider></SurfaceHostProvider>
       </body>
     </html>
   );
