@@ -904,65 +904,43 @@
   opacity: 0.5;
 }
 
-/* ── Install, as one line ─────────────────────────── */
+/* ── Install, as a card (2026-09-10) ──────────────────
 
-/* Not a card. See PwaInstallCard.tsx: the offer lives in the footer now, and
-   what is left here is a fact about this account's device, sitting in the
-   account section at the weight of a row. */
-.installRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--cw-space-sm);
-  min-height: var(--ds-touch-target-min);
-  list-style: none;
-}
+   It was a bare text row before this — see PwaInstallCard.tsx for why that
+   demotion no longer holds now that the card sits in the account's own grid,
+   beside two cards about the same kind of thing. The card needs nothing of
+   its own beyond what `.card`/`.cardTitle`/`.cardText`/`.actions` already
+   give every card on this page; only the iOS disclosure below is local to
+   this one. */
 
-.installRow::-webkit-details-marker {
-  display: none;
-}
-
-/* THE SAME LEFT EDGE AS THE CARDS IT SITS AMONG. This is deliberately a
-   line and not a fourth card — but a line with no inset started at the
-   section's own edge while every card beside it indents its text by `lg`,
-   so it read as a caption that had fallen out of the layout. The inset is
-   the card's; the plate is still absent. Font size off the type scale
-   rather than a literal 0.95rem. */
-.installRow {
-  padding-inline: var(--cw-space-lg);
-}
-
-.installRowText {
-  margin: 0;
-  color: var(--cw-platform-muted);
-  font-size: var(--ds-type-body-sm-size);
-}
-
-/* The iOS branch has no control to press, so the row becomes a disclosure and
-   the two taps live under it rather than in a panel nobody asked to open. */
-.installFold {
+/* The steps stay collapsed until asked for. `gap` rather than margins so the
+   revealed paragraph and list read as one group, at the same rhythm the rest
+   of the card keeps. */
+.cardDetails {
   display: grid;
-  gap: var(--cw-space-xs);
+  gap: var(--cw-space-sm);
 }
 
-.installFold > summary {
+/* The disclosure's own control wears the card's secondary-button skin
+   (`.actionGhost`, composed at the call site) so it reads as this card's
+   action rather than as a caption — the same visual weight "Додати" or
+   "Підключити Telegram" carry on the cards beside it. `list-style` and the
+   WebKit marker rule together are what a `<summary>` needs to lose BOTH
+   browsers' own disclosure triangle; the contract's focus ring already
+   covers keyboard focus, nothing added here. */
+.cardDetailsToggle {
   cursor: pointer;
+  list-style: none;
+  /* `.cardDetails` is a grid, and a grid's items STRETCH along the inline axis
+     by default — `align-self` only reaches the block axis and left this
+     spanning the full card width, looking like a filled block instead of a
+     button sized to its own label. `justify-self` is the one that matters
+     here. */
+  justify-self: start;
 }
 
-.installFold > summary:focus-visible {
-  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: var(--ds-focus-ring-offset);
-  border-radius: var(--cw-radius-md);
-}
-
-/* One control in a row of its own is not a card footer: the flex `auto` margin
-   that pins actions to a card's bottom would push this one across the line. */
-.installRow .actionGhost {
-  flex: 0 1 auto;
-  margin-top: 0;
-  padding-top: 0;
-  min-width: var(--ds-button-min-width);
+.cardDetailsToggle::-webkit-details-marker {
+  display: none;
 }
 
 /* ── Locked / muted states ────────────────────────── */
