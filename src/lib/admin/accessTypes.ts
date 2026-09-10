@@ -238,6 +238,31 @@ export type PersonRow = LearnerAccountRow & {
     purchases: number;
     /** Courses this person authors (`lms_courses.author_id`). */
     ownedCourses: number;
+    /**
+     * PAID FOR, NEVER OPENED — and therefore invisible until now.
+     *
+     * `courses` above is enrollments, and an enrollment is created lazily, the
+     * first time somebody opens a course. So a buyer who paid and has not been
+     * back read as «Покупок: 1 · Курси: 0», which is indistinguishable from a
+     * payment that failed to deliver. On 2026-09-10, hours after a checkout bug
+     * had in fact failed to deliver, that was the worst possible ambiguity: the
+     * panel showed a zero where everything was fine.
+     *
+     * NOT folded into `courses`. Every per-course control in the panel —
+     * revoke, block, deadline — acts on an `enrollmentId`, and these have none.
+     * A synthetic row would be a button that cannot work; a separate field is
+     * the fact, stated as the fact.
+     */
+    entitledNotEnrolled: EntitledCourse[];
+};
+
+/** A course this person has paid for and not yet opened. */
+export type EntitledCourse = {
+    slug: string;
+    title: string;
+    /** The order that bought it, so the operator can find the payment. */
+    orderRef: string;
+    paidAt: string | null;
 };
 
 /** Which people a listing wants: everybody, only those holding a course, or only those with none. */
