@@ -1196,10 +1196,33 @@
    setting, not a place" is the control at the far end and the absence of a
    mark, not a shrunken word. */
 .menuSettingLabel {
-  color: var(--cw-platform-muted);
+  /* "It takes the row's own type now, at the row's resting colour" — which is
+     the full ink as of 2026-09-10. Left on the muted token this line would be
+     the one word in the column that stayed washed. */
+  color: var(--cw-platform-text);
   font-weight: 720;
 }
 
+/* FULL INK, NOT A MUTED STEP (2026-09-10). The rows rested at
+   `--cw-platform-muted`, which measures 7.3:1 against this plate when the
+   plate is opaque — and it never is. The popover is a 30% tint with a blur
+   behind it, floating over whatever the page happens to have there: a course
+   card, a photograph, a gradient. A dark-grey ink over a see-through light
+   tint has no ground to be measured against, and on the light theme it came
+   out washed — the reported "not enough darkness for contrast".
+
+   This is the trade the DARK tone already made two hundred lines down, in as
+   many words: "Ink is `accent-contrast` at FULL strength, not a translucent
+   step — the same trade the bar documents for a see-through tint, where 90%
+   measured 4.31 against a required 4.5 at the tone bound." The light side
+   simply never got it. Full ink here reads 14.5:1 on the plate's own colour
+   and holds up over the range of things the plate can float above.
+
+   Nothing is lost by giving up the muted rest: what separates a row you are
+   pointing at from a row you are not is the ink mark, and what separates the
+   row you are ON is the mark at full plus the weight below. The colour was
+   never carrying either distinction — it was carrying the fact that the mark
+   was missing, which is the bug fixed alongside this one. */
 .profileMenu a,
 .profileMenu button {
   position: relative;
@@ -1210,7 +1233,7 @@
   padding: 0 var(--cw-space-sm);
   border: 0;
   border-radius: var(--cw-radius-sm);
-  color: var(--cw-platform-muted);
+  color: var(--cw-platform-text);
   background: transparent;
   font: inherit;
   font-weight: 720;

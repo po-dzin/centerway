@@ -2,6 +2,7 @@ import { PERSONAL_ORIGIN } from "@/lib/surfaces/catalog";
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { SurfaceHostProvider } from "@/components/platform/layout/SurfaceHost";
+import { BfcacheRestore } from "@/components/platform/BfcacheRestore";
 import { ToastProvider } from "@/components/ToastProvider";
 
 import "../globals.css";
@@ -51,6 +52,9 @@ export default async function BuilderRootLayout({ children }: Readonly<{ childre
             src/lib/platform/theme.ts for why one script rather than a
             `prefers-color-scheme` rule in the stylesheet. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        {/* Same dynamic-render, no-store shape as the platform root — see the
+            component for why that makes Chrome's bfcache the one that misbehaves. */}
+        <BfcacheRestore />
         <SurfaceHostProvider host={host}><ToastProvider>{children}</ToastProvider></SurfaceHostProvider>
       </body>
     </html>

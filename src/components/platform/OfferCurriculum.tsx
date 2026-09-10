@@ -26,6 +26,7 @@
 import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import type { CwIconName } from "@/components/iconNames";
 import { useOfferAccess } from "@/components/platform/OfferAccess";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
@@ -152,8 +153,9 @@ export function OfferCurriculum({
                           <Link
                             className={styles.outlineLessonLink}
                             href={surfaceHref(`/learn/${course.slug}/${lesson.slug}`)}
+                            data-cw-ink-control
                           >
-                            {lesson.title}
+                            <InteractionInkLabel variant="link">{lesson.title}</InteractionInkLabel>
                           </Link>
                         )}
                         {state.note ? <span className={styles.outlineLessonNote}>{state.note}</span> : null}

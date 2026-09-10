@@ -199,6 +199,12 @@
     }, { passive: true });
     window.addEventListener("resize", applyBackdrop, { passive: true });
     applyBackdrop();
+    /* MEASURED ONCE, AND THE STYLESHEET STANDS DOWN. Until this attribute
+       exists, network-nav.css hides an anchored bar over a photo hero below
+       881px — the state this first call would have set anyway, stated in CSS so
+       the FIRST PAINT has it rather than the first frame after a deferred
+       script. From here the class is the only thing that decides. */
+    nav.setAttribute("data-cw-nav-settled", "");
   }
 
   // THE GESTURE IS THE SAME ON BOTH BAR MODES (2026-09-07); only the resting

@@ -61,5 +61,5 @@ export function HandGraphic({
   size = 72,
   ...rest
 }: IconBaseProps & { name: CwGraphicName }) {
-  return <Glyph id={`cw-${name}`} size={size} viewBox="0 0 36 36" stretch={name === "ink-stroke"} {...rest} />;
+  return <Glyph id={`cw-${name}`} size={size} viewBox="0 0 36 36" stretch={name === "ink-stroke" || name === "ink-rule"} {...rest} />;
 }

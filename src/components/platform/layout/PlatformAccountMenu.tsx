@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, type MouseEvent } from "react";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 
@@ -80,6 +80,17 @@ const IOS_INSTALL_STEPS = [
  * sheet — renders nothing, because a row that leads nowhere is worse than no
  * row.
  */
+/* THE ATTRIBUTE IS THE OPT-IN, AND ITS ABSENCE WAS THE BUG (2026-09-10).
+   `InkMenuLabel` renders the selection stroke, but the stroke's hover and
+   focus rules key on `:is(.cw-tab, .cw-nav-link, [data-cw-ink-control])` —
+   and these rows are bare `<a>`/`<button>` with no class of their own. So the
+   mark could only ever be painted by `data-cw-ink-active`, the current row,
+   and pointing at any other row drew nothing at all. The menu used to hide
+   that: it carried its own `::after` underline, retired to `content: none`
+   when the ink label took over — the retirement landed, the opt-in did not.
+   One constant, spread onto every row, so a row added later cannot forget it. */
+const INK_ROW = { "data-cw-ink-control": "" } as const;
+
 function InstallEntry({ onSelect }: { onSelect: () => void }) {
   const install = usePwaInstall();
   const ownsInstall = useOwnsPersonalSurfaces();
@@ -101,6 +112,7 @@ function InstallEntry({ onSelect }: { onSelect: () => void }) {
     return (
       <button
         type="button"
+        {...INK_ROW}
         onClick={() => {
           onSelect();
           void install.install();
@@ -114,7 +126,7 @@ function InstallEntry({ onSelect }: { onSelect: () => void }) {
   if (install.needsIosInstructions) {
     return (
       <details className={styles.menuFold}>
-        <summary>
+        <summary {...INK_ROW}>
           <InkMenuLabel>{INSTALL_LABEL}</InkMenuLabel>
         </summary>
         <p className={styles.menuFoldLead}>{IOS_INSTALL_LEAD}</p>
@@ -267,11 +279,6 @@ export function PlatformAccountMenu({
      listener above already catches — a synchronous setState in an effect would
      buy a cascading render for a case that cannot arise. */
 
-  const signInWithGoogle = async () => {
-    const redirectTo = typeof window !== "undefined" ? window.location.href : undefined;
-    await supabaseClient.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
-  };
-
   const signOut = async () => {
     await supabaseClient.auth.signOut();
     /* A hard navigation, not a router push. Sign-out invalidates data every
@@ -281,33 +288,79 @@ export function PlatformAccountMenu({
     if (typeof window !== "undefined") window.location.assign("/");
   };
 
-  /* SIGNED OUT: unchanged from the link this replaced. There is no account, so
-     there is nothing to switch between, and the control is the way in. */
+  /* SIGNED OUT: a link to the door, not a shortcut past it (2026-09-09).
+     `/profile` already resolves `cabinetGate()`, which offers email-first —
+     Google below it — for exactly the reason `SignInOptions`' own comment
+     gives: entitlement is linked by VERIFIED email, so a buyer who paid with
+     anything but a Google address needs the code form, not a redirect that
+     skips straight past it. This control used to `preventDefault()` and call
+     Google directly, from before that form existed — the two-door pattern
+     reached every other gate in the app (`RouteAuthGate`, `CabinetGate`,
+     `BuilderShell`) and missed the one in the header, so the fastest way in
+     was quietly the one door that did not fit everyone.
+
+     THE CONTROL IS NOW A POPOVER, LIKE THE SIGNED-IN ONE — not a bare link,
+     and not only on desktop. Below 901px this same component is the mobile
+     chrome (`PlatformOrgans` in `PlatformLayout`/`BuilderShell`/the admin
+     layout all mount `<PlatformAccountMenu compact />`, `variant="menu"`);
+     the phone never reaches the `inline` branch this file used to carry the
+     setting in alone, so a bare link left a signed-out phone with no way to
+     `Вигляд` at all short of scrolling to the footer. One shape now serves
+     both auth states: the trigger opens a sheet, the sheet's first row is the
+     setting, and what sits below it is either the account or the door in. */
   if (!signedIn) {
     const label = isAuthEnabled ? "Увійти" : "Кабінет";
-    const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
-      if (!isAuthEnabled) {
-        onNavigate?.();
-        return;
-      }
-      event.preventDefault();
-      onNavigate?.();
-      void signInWithGoogle();
-    };
+
+    const guestRows = (
+      <>
+        <div className={styles.menuSetting} role="none">
+          <span className={styles.menuSettingLabel}>Вигляд</span>
+          <PlatformThemeControl />
+        </div>
+        <Link
+          href={cabinetHref}
+          {...INK_ROW}
+          onClick={() => {
+            close();
+            onNavigate?.();
+          }}
+        >
+          <InkMenuLabel>{label}</InkMenuLabel>
+        </Link>
+      </>
+    );
+
+    if (variant === "inline") {
+      return <div className={styles.profileWrapMobile}>{guestRows}</div>;
+    }
 
     return (
-      <Link
-        className={`${styles.profileEntry} ${variant === "inline" ? styles.profileEntryMobile : ""} ${
-          compact ? styles.profileEntryCompact : ""
-        }`}
-        href={cabinetHref}
-        onClick={handleClick}
-        aria-label={label}
-        data-auth-state={isAuthEnabled ? "guest" : "fallback"}
-      >
-        {compact ? <span className={styles.profileGlyph} aria-hidden="true" /> : null}
-        {compact ? null : <span className={styles.profileLabel}>{label}</span>}
-      </Link>
+      <div className={styles.profileWrap} ref={attachWrap}>
+        <button
+          ref={attachTrigger}
+          className={`${styles.profileEntry} ${compact ? styles.profileEntryCompact : ""}`}
+          type="button"
+          onClick={toggle}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-label={label}
+          data-auth-state={isAuthEnabled ? "guest" : "fallback"}
+        >
+          {compact ? <span className={styles.profileGlyph} aria-hidden="true" /> : null}
+          {compact ? null : <span className={styles.profileLabel}>{label}</span>}
+        </button>
+        <ChromeSheetPanel
+          open={open}
+          anchor={anchor}
+          form={form}
+          tone={tone}
+          close={close}
+          attachMenu={attachMenu}
+          label="увійти"
+        >
+          {guestRows}
+        </ChromeSheetPanel>
+      </div>
     );
   }
 
@@ -327,8 +380,16 @@ export function PlatformAccountMenu({
 
           A caption block, not two rows: neither line is a place to go, so
           neither takes the row's height, weight or mark. */}
+      {/* `data-cw-rule="chrome"` — THE SAME DECLARATION THE HOISTED TWIN HAS
+          CARRIED SINCE IT WAS WRITTEN (2026-09-10). `.menuIdentity` is ruled
+          off with `--cw-rule-fade-x`, and without naming its surface the ink
+          defaults to `--cw-platform-border`: the page's hairline, drawn on a
+          plate whose tone flips independently of the theme. On the light theme
+          over a dark hero that is a bright white line across the top of the
+          menu, while the divider below it recedes correctly. The scope is
+          tone-aware in globals.css for exactly this portalled case. */}
       {showIdentity && (accountName || accountEmail) ? (
-        <div className={styles.menuIdentity}>
+        <div className={styles.menuIdentity} data-cw-rule="chrome">
           {accountName ? <p className={styles.menuIdentityName}>{accountName}</p> : null}
           {accountEmail ? <p className={styles.menuIdentityMail}>{accountEmail}</p> : null}
         </div>
@@ -343,6 +404,7 @@ export function PlatformAccountMenu({
       {onPublicHome ? null : (
         <a
           href={platformHref}
+          {...INK_ROW}
           onClick={() => {
             close();
             onNavigate?.();
@@ -356,6 +418,7 @@ export function PlatformAccountMenu({
         const offOrigin = appIsOffOrigin(app, host);
         const current = app.key === here;
         const shared = {
+          ...INK_ROW,
           onClick: () => {
             close();
             onNavigate?.();
@@ -404,7 +467,7 @@ export function PlatformAccountMenu({
         <span className={styles.menuSettingLabel}>Вигляд</span>
         <PlatformThemeControl />
       </div>
-      <button type="button" onClick={() => void signOut()}>
+      <button type="button" {...INK_ROW} onClick={() => void signOut()}>
         <InkMenuLabel>Вийти</InkMenuLabel>
       </button>
     </>

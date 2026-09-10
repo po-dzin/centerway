@@ -18,7 +18,7 @@ import styles from "./LogoMark.module.css";
  * not the colour the mark should be.
  */
 
-export type LogoMarkTone = "ink" | "gold" | "current";
+export type LogoMarkTone = "ink" | "gold" | "brand" | "current";
 
 /**
  * none   → resting mark
@@ -45,6 +45,17 @@ const TONE_COLOUR: Record<LogoMarkTone, string | undefined> = {
   // Same value as before in the light theme.
   ink: "var(--cw-platform-ink-strong)",
   gold: "var(--cw-sem-warmth)",
+  /* THE MARK'S OWN COLOUR — ink on the day ground, gold on the night one.
+     It is the one thing on a waiting card that does not follow the text.
+
+     Every live call site was `current`, so the mark took whatever colour the
+     copy beside it had — on the library card that is `--cw-platform-muted`,
+     and the brand arrived as a dim grey smudge. `ink` is not the answer
+     either: its night value is the cream, which is the text colour again.
+
+     So the pair is named once, as `--cw-platform-mark`, and the token flips
+     with the theme instead of the caller choosing per surface. */
+  brand: "var(--cw-platform-mark)",
   current: undefined,
 };
 

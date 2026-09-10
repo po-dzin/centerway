@@ -33,7 +33,7 @@ export function AdminLoadingState({
                     React components cross that line all day — this file's
                     neighbours already mount the platform's account menu, its
                     chrome and its ink labels. */}
-                <LogoMark size={32} animate="wait" aria-hidden="true" />
+                <LogoMark size={32} animate="wait" tone="brand" aria-hidden="true" />
                 {text ? <span className="text-sm font-medium cw-muted">{text}</span> : null}
             </div>
         );

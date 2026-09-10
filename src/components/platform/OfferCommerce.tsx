@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
+import { CheckoutStartLink } from "./CheckoutStartLink";
 import type { OfferCommerce } from "@/lib/platform/offerCommerce";
 import styles from "./PlatformOfferCommerce.module.css";
 import offerStyles from "./PlatformOfferStyles";
@@ -54,9 +55,7 @@ export function OfferCheckoutPanel({
         ))}
       </ul>
 
-      <a className={styles.buyAction} href={commerce.checkoutHref} rel="nofollow" data-cw-offer-cta>
-        {ctaLabel}
-      </a>
+      <CheckoutStartLink className={styles.buyAction} href={commerce.checkoutHref} label={ctaLabel} />
 
       <p className={styles.fineprint}>
         Оплата карткою через WayForPay. Натискаючи кнопку, ви приймаєте{" "}

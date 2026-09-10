@@ -5,6 +5,7 @@ import { PixelProvider } from "@/lib/tracking/PixelProvider";
 import { Suspense } from "react";
 import { headers } from "next/headers";
 import { RouteMotion } from "@/components/platform/RouteMotion";
+import { BfcacheRestore } from "@/components/platform/BfcacheRestore";
 import { SurfaceHostProvider } from "@/components/platform/layout/SurfaceHost";
 import { ToastProvider } from "@/components/ToastProvider";
 import "../globals.css";
@@ -103,6 +104,10 @@ export default async function RootLayout({
         <Suspense fallback={null}>
           <RouteMotion />
         </Suspense>
+        {/* Forces a fresh navigation when Chrome thaws this exact page from
+            bfcache after a trip to a funnel landing — see the component for
+            why that trip is the one that breaks here. */}
+        <BfcacheRestore />
         <SurfaceHostProvider host={host}><ToastProvider>{children}</ToastProvider></SurfaceHostProvider>
         <Analytics />
       </body>

@@ -395,7 +395,58 @@ export async function listPeople(input: ListPeopleInput): Promise<{
         ownedByAuthor.set(key, (ownedByAuthor.get(key) ?? 0) + 1);
     }
 
-    const paidByCustomer = await paidOrderCounts(db, [...new Set([...customerIdByAccount.values()].flat())]);
+    const paidByCustomer = await paidOrdersByCustomer(db, [...new Set([...customerIdByAccount.values()].flat())]);
+
+    /* THE TITLES FOR COURSES THAT WERE PAID FOR AND NEVER OPENED.
+       One query for the whole page rather than one per person: the slugs come
+       out of the orders above, and there are at most a handful of distinct ones
+       on a page of accounts. */
+    const paidCourseSlugs = new Set<string>();
+    for (const orders of paidByCustomer.values()) {
+        for (const order of orders) {
+            const slug = courseSlugFromProductCode(order.productCode);
+            if (slug) paidCourseSlugs.add(slug);
+        }
+    }
+    const courseTitleBySlug = new Map<string, string>();
+    if (paidCourseSlugs.size > 0) {
+        const { data: paidCourses } = await db
+            .from("lms_courses")
+            .select("slug, title")
+            .in("slug", [...paidCourseSlugs]);
+        for (const row of paidCourses ?? []) {
+            courseTitleBySlug.set(row.slug as string, (row.title as string | null) ?? (row.slug as string));
+        }
+    }
+
+    /* What they paid for, minus what they have actually opened.
+       A course they are already enrolled in is NOT reported here — the
+       enrollment row is the answer then, and saying it twice would read as two
+       courses. A product that is not a course (`consult`, a physical item) has
+       no enrollment to be missing and is skipped by `courseSlugFromProductCode`.
+       A `course:` code with no matching row in `lms_courses` is skipped too:
+       that is a stale product code, and inventing a title for it would put a
+       course in the panel that does not exist. */
+    const entitledNotEnrolledFor = (
+        customerIds: string[],
+        enrolled: readonly { courseSlug: string }[]
+    ): PersonRow["entitledNotEnrolled"] => {
+        const enrolledSlugs = new Set(enrolled.map((course) => course.courseSlug));
+        const seen = new Set<string>();
+        const out: PersonRow["entitledNotEnrolled"] = [];
+
+        for (const customerId of customerIds) {
+            for (const order of paidByCustomer.get(customerId) ?? []) {
+                const slug = courseSlugFromProductCode(order.productCode);
+                if (!slug || enrolledSlugs.has(slug) || seen.has(slug)) continue;
+                const title = courseTitleBySlug.get(slug);
+                if (!title) continue;
+                seen.add(slug);
+                out.push({ slug, title, orderRef: order.orderRef, paidAt: order.paidAt });
+            }
+        }
+        return out;
+    };
 
     const people: PersonRow[] = bounded.map((row) => {
         const authUserId = row.auth_user_id as string;
@@ -416,8 +467,9 @@ export async function listPeople(input: ListPeopleInput): Promise<{
             lastSignInAt: (row.last_sign_in_at as string | null) ?? null,
             role: roleById.get(authUserId) ?? null,
             roleUpdatedAt: roleUpdatedById.get(authUserId) ?? null,
-            purchases: customers.reduce((sum, id) => sum + (paidByCustomer.get(id) ?? 0), 0),
+            purchases: customers.reduce((sum, id) => sum + (paidByCustomer.get(id)?.length ?? 0), 0),
             ownedCourses: ownedByAuthor.get(authUserId) ?? 0,
+            entitledNotEnrolled: entitledNotEnrolledFor(customers, held?.courses ?? []),
         };
     });
 
@@ -1244,17 +1296,46 @@ async function customersByAccount(
     return byAccount;
 }
 
-async function paidOrderCounts(db: Db, customerIds: string[]): Promise<Map<string, number>> {
-    const counts = new Map<string, number>();
-    if (customerIds.length === 0) return counts;
+type PaidOrder = { productCode: string | null; orderRef: string; paidAt: string | null };
 
-    const { data } = await db.from("orders").select("customer_id, status").in("customer_id", customerIds);
+/**
+ * The paid orders behind each customer — how many, and what they bought.
+ *
+ * It used to select only `status` and return a count, which is why the panel
+ * could say «Покупок: 1» and nothing about which course that was. The product
+ * code was one column away the whole time.
+ */
+async function paidOrdersByCustomer(db: Db, customerIds: string[]): Promise<Map<string, PaidOrder[]>> {
+    const byCustomer = new Map<string, PaidOrder[]>();
+    if (customerIds.length === 0) return byCustomer;
+
+    const { data } = await db
+        .from("orders")
+        .select("customer_id, status, product_code, order_ref, created_at")
+        .in("customer_id", customerIds);
+
     for (const row of data ?? []) {
         if (String(row.status ?? "").toLowerCase() !== "paid") continue;
         const key = row.customer_id as string;
-        counts.set(key, (counts.get(key) ?? 0) + 1);
+        const list = byCustomer.get(key) ?? [];
+        list.push({
+            productCode: (row.product_code as string | null) ?? null,
+            orderRef: (row.order_ref as string | null) ?? "",
+            paidAt: (row.created_at as string | null) ?? null,
+        });
+        byCustomer.set(key, list);
     }
-    return counts;
+    return byCustomer;
+}
+
+/**
+ * `course:natural-body` -> `natural-body`. Anything that is not a course sale
+ * — a consult, a product — has no course to be enrolled in and is skipped.
+ */
+function courseSlugFromProductCode(productCode: string | null): string | null {
+    if (!productCode) return null;
+    const match = /^course:(.+)$/.exec(productCode.trim());
+    return match ? match[1] : null;
 }
 
 export async function setRole(input: { email: string; role: GrantableRole; actorId: string }) {
