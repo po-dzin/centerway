@@ -6,7 +6,8 @@ declare global {
   }
 }
 
-const baseUrl = (process.env.SMOKE_UI_BASE_URL || "http://127.0.2.2:8002").replace(/\/+$/, "");
+// 127.0.2.2 on purpose — see playwright.config.ts: 127.0.0.1 disables the redirect under test.
+const baseUrl = (process.env.SMOKE_UI_BASE_URL || "http://127.0.2.2:8000").replace(/\/+$/, "");
 
 // Every funnel that takes money hands the buyer to the platform cabinet, not to
 // Telegram. For the two courses that means /learn/<slug>; for herbs, which owns

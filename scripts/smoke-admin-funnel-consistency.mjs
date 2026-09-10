@@ -83,7 +83,7 @@ async function main() {
     process.exit(process.exitCode || 1);
   }
 
-  const requiredKeysOk = checkRequiredKeys(json, ["summary", "funnel_chain", "capi_overview", "freshness"]);
+  checkRequiredKeys(json, ["summary", "funnel_chain", "capi_overview", "freshness"]);
 
   const summary = json.summary;
   if (!summary || typeof summary !== "object" || Array.isArray(summary)) {

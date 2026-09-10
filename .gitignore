@@ -24,3 +24,4 @@ public/cw/img/_candidates/
 __pycache__/
 *.pyc
 dist-library-depth.html
+coverage/

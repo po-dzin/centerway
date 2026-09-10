@@ -27,5 +27,24 @@ export default defineConfig({
        removes a false red without hiding a slow test, which the per-test
        durations in the reporter still show. */
     testTimeout: 15_000,
+    /* Coverage is a ratchet, not a target. The thresholds below are the
+       figures on the day coverage was switched on (2026-09-11), rounded down;
+       a change that drops below them fails, and a change that raises them
+       should move them up. Nobody is asked to chase a number — only not to
+       hand back what is already covered. Run: npm run test:coverage. */
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: [
+        "src/**/*.test.{ts,tsx}",
+        "src/**/*.d.ts",
+        "src/landing-static/**",
+        "src/lib/admin/fakeSupabase.ts",
+        "src/lib/db/database.types.ts",
+      ],
+      reporter: ["text-summary"],
+      reportsDirectory: "coverage",
+      thresholds: { statements: 23, branches: 21, functions: 21, lines: 23 },
+    },
   },
 });

@@ -38,8 +38,10 @@ jobs:
       - name: Typecheck
         run: npm run -s typecheck
 
+      # With coverage: the thresholds in vitest.config.ts are a ratchet, and a
+      # change that uncovers code fails here rather than in a report nobody reads.
       - name: Unit tests
-        run: npm run -s test:unit
+        run: npm run -s test:coverage
 
       - name: LMS contract
         run: npm run -s lms:validate
@@ -59,13 +61,18 @@ jobs:
       - name: Admin authz coverage
         run: npm run -s smoke:admin:authz-coverage
 
+      # No secret needed: playwright.config.ts starts `next start` on the build
+      # above, and the thanks pages are static landings served from disk. This
+      # is the browser coverage the job always has, whatever the secrets say.
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Thanks-page browser smoke (no secrets)
+        run: npm run -s smoke:thanks:browser
+
       - name: Admin API Smoke Suite (optional)
         if: ${{ env.SMOKE_BASE_URL != '' }}
         run: npm run -s smoke:admin:ci
-
-      - name: Install Playwright Chromium (optional)
-        if: ${{ env.SMOKE_UI_BASE_URL != '' }}
-        run: npx playwright install --with-deps chromium
 
       - name: Platform Browser Smoke (optional)
         if: ${{ env.SMOKE_UI_BASE_URL != '' }}

@@ -1,0 +1,30 @@
+# Dependency updates, weekly, grouped so the branch does not fill with one PR
+# per package. Each group is one PR; the CI on it is the same admin-smoke and
+# design-gates every other PR gets. Vercel builds are rate-limited on Hobby, so
+# fewer, larger PRs is deliberate — see docs on the build limit.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Kyiv
+    open-pull-requests-limit: 2
+    groups:
+      next-react:
+        patterns: ["next", "react", "react-dom", "@types/react", "@types/react-dom", "eslint-config-next"]
+      supabase:
+        patterns: ["@supabase/*"]
+      tooling:
+        dependency-type: development
+        exclude-patterns: ["@types/react", "@types/react-dom", "eslint-config-next"]
+    ignore:
+      # Majors are a decision, not an update: they land by hand with a smoke run.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

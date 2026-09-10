@@ -123,10 +123,10 @@ ${body}
 `;
 }
 
-const use = (name, size, cls = "ico") =>
+const svgUse = (name, size, cls = "ico") =>
   `<svg class="${cls}" width="${size}" height="${size}" aria-hidden="true"><use href="#cw-${name}"/></svg>`;
 
-const cell = (name, size = 40) => `<div class="cell">${use(name, size)}<small>${name}</small></div>`;
+const cell = (name, size = 40) => `<div class="cell">${svgUse(name, size)}<small>${name}</small></div>`;
 
 // ── page: the whole set, grouped, light and dark ─────────────────────────────
 function overviewPage(sprite) {
@@ -230,7 +230,7 @@ ${rows}`,
 // ── page: dot / path / orbit ─────────────────────────────────────────────────
 function graphicsPage(sprite) {
   const primitives = Object.keys(GRAPHICS)
-    .map((n) => `<div class="cell">${use(n, 76)}<small>${n}</small></div>`)
+    .map((n) => `<div class="cell">${svgUse(n, 76)}<small>${n}</small></div>`)
     .join("");
 
   const stepOrbit = (steps, active) => {
@@ -340,7 +340,7 @@ ${swatch("accent · --cw-sem-warmth", TOKENS.light.accent, "#dba54f")}
 
 <h2>Sizes in the wild</h2>
 <div class="row">
-${[20, 24, 32, 40, 56].map((s) => `<div class="cell">${use("leaf", s)}<small>${s}px</small></div>`).join("")}
+${[20, 24, 32, 40, 56].map((s) => `<div class="cell">${svgUse("leaf", s)}<small>${s}px</small></div>`).join("")}
 </div>`,
   });
 }

@@ -111,6 +111,35 @@ schema stay as defence in depth for anything that reaches the database with a
 user token (the browser client, a future native app), and no policy is to be
 relied on by server code. A route that needs a check writes it in TypeScript.
 
+## Test Rule
+
+Four kinds of test exist, and a fifth deliberately does not.
+
+- **Unit tests** (`npm run test:unit`, vitest, `src/**/*.test.{ts,tsx}`) next
+  to the code they cover. Server modules run against `src/lib/admin/fakeSupabase.ts`,
+  an in-memory client that answers the query chains the code uses; a chain it
+  does not know throws, and the fix is to teach the fake, not to loosen the test.
+- **Route tests** are unit tests that call a handler's `POST`/`GET` with a
+  `NextRequest` and mocked collaborators (`src/app/api/wfp/webhook/route.test.ts`
+  is the pattern). The routes money passes through have them; a new route that
+  writes to the database gets one.
+- **Contract tests** grep sources for a rule that must hold (`*.contract.test.ts`
+  and the `guard:*` scripts). They prove a text invariant, not behaviour.
+- **Browser smoke** (Playwright, `tests/e2e`). `smoke:thanks:browser` needs no
+  secrets — `playwright.config.ts` starts `next start` on the build — and runs
+  on every CI job. `smoke:platform:browser` needs a deployment with a database
+  and runs only when `SMOKE_UI_BASE_URL` is set.
+- **Component tests: none, on purpose.** There is no jsdom and no Testing
+  Library. The components are thin over server data and CSS modules, and what
+  goes wrong in them is visual, which the browser smoke and the design gates
+  catch. `vitest` collects `.test.tsx` all the same, so the day a component
+  earns a test, nothing stands in the way. Do not add a rendering harness to
+  test a single component; write the browser smoke instead.
+
+Coverage is a ratchet (`npm run test:coverage`, thresholds in `vitest.config.ts`):
+the figures are the day's baseline rounded down, CI fails below them, and a
+change that raises them moves them up. Nobody chases the number.
+
 ## Agent Output Path Rule
 
 When agents report changed files, references, handoff notes, or review comments, do not print full absolute filesystem paths by default.

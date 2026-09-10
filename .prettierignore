@@ -1,0 +1,16 @@
+node_modules
+.next
+.next-dev
+output
+artifacts
+coverage
+test-results
+playwright-report
+public
+src/landing-static
+src/app/globals.css
+data/design-tokens/ds-bundle
+supabase/local
+docs/**/*.html
+*.md
+package-lock.json
