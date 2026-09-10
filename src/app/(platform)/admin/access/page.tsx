@@ -892,6 +892,20 @@ function PeopleTab({
                                             {account.purchases > 0 ? (
                                                 <span>{t("access_accounts_purchases")}: {account.purchases}</span>
                                             ) : null}
+                                            {/* PAID FOR, NEVER OPENED — named, not
+                                                counted. «Покупок: 1 · Курси: 0» was
+                                                the true reading of a lazy enrollment
+                                                and the false reading of a delivery
+                                                failure, and only one of those needs
+                                                the operator. So this says which course
+                                                it is, which settles the question
+                                                without opening the row. */}
+                                            {account.entitledNotEnrolled.length > 0 ? (
+                                                <span title={account.entitledNotEnrolled.map((course) => course.orderRef).join(", ")}>
+                                                    {t("access_paid_not_opened")}:{" "}
+                                                    {account.entitledNotEnrolled.map((course) => course.title).join(", ")}
+                                                </span>
+                                            ) : null}
                                             {/* Activity when there is any, otherwise
                                                 when they last signed in — an account
                                                 that holds no course has no activity to

@@ -125,6 +125,13 @@ export function CheckoutStartLink({
         {label}
       </span>
       <span className={styles.wait} aria-hidden={!pending}>
+        {/* NO `tone` HERE, deliberately — the mark follows the button's own
+            label colour. `tone="brand"` is ink on the day ground and GOLD on
+            the night one, which is right on a page and wrong inside a filled
+            button: this button IS gold, so a gold mark would vanish into it
+            after dark. Same rule the canon states as «ink marks text; a box
+            marks itself» — a filled control speaks with what it is, and what
+            sits inside it speaks with the control. */}
         <LogoMark size={markSize} animate="wait" aria-hidden />
         <span>{pendingLabel}</span>
       </span>
