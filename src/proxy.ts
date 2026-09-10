@@ -113,6 +113,15 @@ export function proxy(req: NextRequest) {
   return NextResponse.next();
 }
 
+/**
+ * What the proxy never sees. `isInfraBypassPath` already passed `/cw/`,
+ * `/shared/`, `/_next/` and `/_vercel/` straight through, and `/fonts/`
+ * is nothing but woff2 — so every font, icon and image request was a
+ * middleware invocation whose whole work was to say "not mine". Naming them
+ * here means the invocation never happens. Not `/api/`: that path is bypassed
+ * too, but only AFTER the canonical-host redirect, and taking it out of the
+ * matcher would serve API calls on the apex instead of forwarding them.
+ */
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|sitemap.xml|robots.txt).*)"],
+  matcher: ["/((?!_next/|_vercel/|fonts/|cw/|shared/|sitemap.xml|robots.txt).*)"],
 };

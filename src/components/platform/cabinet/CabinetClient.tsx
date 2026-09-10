@@ -33,7 +33,13 @@ import { PwaInstallCard } from "./PwaInstallCard";
 import { cabinetGate } from "./CabinetGate";
 import { CabinetFold } from "./CabinetFold";
 import { CabinetHero } from "./CabinetHero";
-import { AuthorProfileFold } from "./AuthorProfileFold";
+import dynamic from "next/dynamic";
+
+/* Loaded when an author opens the cabinet, not shipped to every learner who
+   opens theirs: the fold is 1,500 lines with the crop editor behind it, and it
+   renders only for accounts that author a course. No server render — the
+   cabinet is client-fetched, so the fold never appears in the first HTML. */
+const AuthorProfileFold = dynamic(() => import("./AuthorProfileFold").then((m) => m.AuthorProfileFold), { ssr: false });
 import { DoshaWheel } from "./DoshaWheel";
 import { CompactCourseCard, ShelfErrorCard, glassMedia, matte } from "./CourseCard";
 import {

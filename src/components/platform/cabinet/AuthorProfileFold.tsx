@@ -25,7 +25,11 @@ import { useToast } from "@/components/ToastProvider";
 import type { Author, AuthorProfileBlock } from "@/lms-core";
 import type { ProfileLang } from "@/components/platform/profile/types";
 import { AUTHOR_AVATAR_CROP_DEFAULT, AUTHOR_BANNER_CROP_DEFAULT, AUTHOR_CARD_CROP_DEFAULT } from "@/lib/lms/authorPhoto";
-import { CropEditor } from "@/components/media/CropEditor";
+import dynamic from "next/dynamic";
+
+/* Opens on a click, so it loads on that click: the editor is its own chunk
+   and nothing on the profile fold waits for it. */
+const CropEditor = dynamic(() => import("@/components/media/CropEditor").then((m) => m.CropEditor), { ssr: false });
 import { CROP_SCALE_MIN, cropStyle } from "@/lib/media/imageCrop";
 import { shrinkForUpload } from "@/lib/media/shrinkForUpload";
 import type { AuthorProfileInput } from "./useCabinet";
