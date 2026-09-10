@@ -95,7 +95,10 @@
      were circles because a utility control is habitually a circle. On the one
      radius scale `pill` is for things that are genuinely round; a 3rem square
      control is not. `md` is the control step. */
-  --platform-utility-control-radius: var(--cw-radius-md);
+  /* `sm`, not `md`: this control is 36px on screen, where `md` 16 is 89% of a
+     circle. See the note on `--platform-island-radius` in
+     ChromeOrgans.module.css — same box, same reasoning, one pair of values. */
+  --platform-utility-control-radius: var(--cw-radius-sm);
   --platform-utility-control-focus:
     0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
   border: 0;
@@ -148,7 +151,7 @@
   /* headerTone still flips at real boundaries — hysteresis only stops the ones
      that were noise. The flips that remain read as the bar changing its mind
      rather than as a strobe, which is what the transition buys. */
-  transition: background-color 0.32s ease;
+  transition: background-color var(--cw-motion-tone) ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -224,11 +227,13 @@
 .shellOverlay .brand,
 .shellOverlay .nav a {
   color: var(--platform-header-fg);
-  transition: color 0.32s ease;
+  transition: color var(--cw-motion-tone) ease;
 }
 
-.shellOverlay .nav a:hover {
-  background: transparent;
+@media (hover: hover) {
+  .shellOverlay .nav a:hover {
+    background: transparent;
+  }
 }
 
 .shellOverlay .nav a[aria-current="page"] {
@@ -366,15 +371,32 @@
   background-color: var(--platform-header-symbol-color);
   -webkit-mask: var(--cw-brand-asset-logo-symbol-header) center / contain no-repeat;
   mask: var(--cw-brand-asset-logo-symbol-header) center / contain no-repeat;
-  transition: background-color 0.32s ease;
+  transition: background-color var(--cw-motion-tone) ease;
 }
 
-.brandWordmark {
-  width: var(--cw-brand-size-wordmark-header-width);
-  height: var(--cw-brand-size-wordmark-header-height);
-  display: block;
+/* THE WORDMARK IS SET, NOT DRAWN, AND NOW ON BOTH SURFACES. The footer had
+   already stopped placing the wordmark asset and started spelling CENTERWAY in
+   the data face; the header kept the SVG and the two halves of the same brand
+   drifted apart — different colour mechanisms (token-driven mask beside a file
+   with #E5AE65 baked in), a tagline nobody could read at 4.7px, and a lockup
+   that could not be localised or reflowed because it was one fixed rectangle.
+   One treatment, one place, both surfaces.
+
+   It is the logotype and not a caption, so it takes the mark's colour rather
+   than the paragraph's: on cream the two are the same value, on graphite the
+   symbol goes gold and a cream word beside it reads as a stray caption. */
+.brandText {
+  display: inline-flex;
+  align-items: center;
   flex: 0 0 auto;
-  background: var(--platform-header-wordmark-image) center / contain no-repeat;
+  padding-left: var(--cw-space-sm);
+  color: var(--cw-brand-mark-color);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-size);
+  font-weight: 680;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .brand[data-surface="footer"] {
@@ -383,6 +405,18 @@
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
+}
+
+/* The bar samples what is behind it and flips tone; the footer never does. So
+   the logotype takes its colour from the SAME variable as the symbol beside it
+   — otherwise a bar floating over a light photo in a dark theme paints the mark
+   in ink and leaves the word gold, which is the two-colour-mechanism defect the
+   drawn wordmark had, reintroduced from the other side. On the page ground the
+   footer keeps naming the mark's own colour, which is what the tone variable
+   resolves to there anyway. */
+.header .brandText {
+  color: var(--platform-header-symbol-color);
+  transition: color var(--cw-motion-tone) ease;
 }
 
 .brand[data-surface="footer"] .brandSymbol {
@@ -395,13 +429,6 @@
      by naming `--cw-platform-text` and getting a cream logotype on the night
      ground. */
   background-color: color-mix(in srgb, var(--cw-brand-mark-color) 96%, transparent);
-}
-
-.brand[data-surface="footer"] .brandWordmark {
-  width: var(--cw-brand-size-wordmark-footer-width);
-  height: var(--cw-brand-size-wordmark-footer-height);
-  background-image: var(--cw-brand-asset-wordmark-dark);
-  filter: none;
 }
 
 .nav {
@@ -485,9 +512,11 @@
     transform 160ms ease;
 }
 
-.nav a:hover {
-  color: var(--platform-header-nav-active-fg);
-  background: transparent;
+@media (hover: hover) {
+  .nav a:hover {
+    color: var(--platform-header-nav-active-fg);
+    background: transparent;
+  }
 }
 
 .nav a:focus-visible {
@@ -504,65 +533,27 @@
   font-weight: 780;
 }
 
-.nav a[aria-current="page"]:hover {
-  color: var(--platform-header-nav-active-fg);
-  background: transparent;
+@media (hover: hover) {
+  .nav a[aria-current="page"]:hover {
+    color: var(--platform-header-nav-active-fg);
+    background: transparent;
+  }
 }
 
 .nav a::after {
   content: none;
 }
 
-/* Same reason as `.cw-ink-label` in globals.css: this box anchors the mark, so
-   it has to hug the glyphs rather than the bar's 22.5px line-height, or the
-   shared `--cw-ink-stroke-offset` lands 3px lower here than it does under a
-   block link. One number has to mean one distance. */
-.navText {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-  line-height: 1;
-}
-
-.navInkMark {
-  position: absolute;
-  inset-inline: -0.2rem;
-  inset-block-end: var(--cw-ink-stroke-offset);
-  width: calc(100% + 0.4rem);
-  height: var(--cw-ink-stroke-height);
-  overflow: visible;
-  color: var(--platform-header-nav-marker);
-  pointer-events: none;
-  opacity: 0;
-  /* The line and the circular selector share the same source stroke. This
-     narrow band needs a vertical scale to preserve that weight on screen —
-     which is now `--cw-ink-stroke-weight`, read by every ink mark in the
-     system rather than typed here and typed again, differently, elsewhere. */
-  transform:
-    scaleX(0.38)
-    scaleY(var(--cw-ink-stroke-weight))
-    rotate(var(--cw-ink-stroke-tilt));
-  transform-origin: center;
-  transition: opacity 160ms ease, transform 160ms ease;
-}
-
-.nav a:hover .navInkMark,
-.nav a:focus-visible .navInkMark {
-  opacity: var(--cw-nav-marker-hover-opacity);
-  transform:
-    scaleX(var(--cw-nav-marker-hover-scale))
-    scaleY(var(--cw-ink-stroke-weight))
-    rotate(var(--cw-ink-stroke-tilt));
-}
-
-.nav a[aria-current="page"] .navInkMark {
-  opacity: 1;
-  transform:
-    scaleX(1)
-    scaleY(var(--cw-ink-stroke-weight))
-    rotate(var(--cw-ink-stroke-tilt));
-}
+/* THE BAR'S NAV MARK IS THE SHARED ONE NOW (2026-09-10).
+   `.navText` and `.navInkMark` used to restate the whole stroke recipe here —
+   box, offset, weight, tilt, dasharray, three state rules — and that copy is
+   exactly what the dasharray post-mortem in globals.css is about: one fix had
+   to land in four modules and landed in none of them correctly. The bar's
+   links now ask `InteractionInkLabel` for `variant="tab"` and carry
+   `data-cw-ink-control`, so the mark, its three strengths and its press state
+   all come from `.cw-ink-label-box` in globals.css. Nothing about the bar's
+   own material moved: the marker colour is still `--cw-nav-marker`, which is
+   what `--platform-header-nav-marker` resolved to in every scope anyway. */
 
 .iconInkRing,
 .profileInkRing {
@@ -586,12 +577,18 @@
   transition: opacity 160ms ease, transform 160ms ease;
 }
 
-.menuButton:hover .iconInkRing,
 .menuButton:focus-visible .iconInkRing,
-.profileEntry:hover .profileInkRing,
 .profileEntry:focus-visible .profileInkRing {
   opacity: var(--cw-ink-hover-opacity);
   transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
+}
+
+@media (hover: hover) {
+  .menuButton:hover .iconInkRing,
+.profileEntry:hover .profileInkRing {
+    opacity: var(--cw-ink-hover-opacity);
+    transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
+  }
 }
 
 .menuButton[aria-expanded="true"] .iconInkRing,
@@ -685,8 +682,10 @@
   padding-left: 0;
 }
 
-.profileEntry:hover {
-  background: transparent;
+@media (hover: hover) {
+  .profileEntry:hover {
+    background: transparent;
+  }
 }
 
 .profileEntry:focus-visible {
@@ -764,10 +763,14 @@
    same geometry as the bar's, so the two contexts cannot drift apart in size.
    It simply never paints. */
 [data-cw-chrome="organs"] .profileEntry .profileInkRing,
-[data-cw-chrome="organs"] .profileEntry:hover .profileInkRing,
 [data-cw-chrome="organs"] .profileEntry:focus-visible .profileInkRing,
 [data-cw-chrome="organs"] .profileEntry[aria-expanded="true"] .profileInkRing {
   opacity: 0;
+}
+@media (hover: hover) {
+  [data-cw-chrome="organs"] .profileEntry:hover .profileInkRing {
+    opacity: 0;
+  }
 }
 
 /* THE RING CIRCLES A FACE, AND A FACE IS ROUND (2026-09-08).
@@ -1259,10 +1262,16 @@
   display: none;
 }
 
-.menuFold summary:hover,
 .menuFold summary:focus-visible {
   color: var(--cw-platform-text);
   outline: none;
+}
+
+@media (hover: hover) {
+  .menuFold summary:hover {
+    color: var(--cw-platform-text);
+    outline: none;
+  }
 }
 
 .menuFoldLead,
@@ -1361,12 +1370,17 @@
 }
 
 .profileMenu[data-cw-header-tone="dark"] p,
-.profileMenu[data-cw-header-tone="dark"] a:hover,
-.profileMenu[data-cw-header-tone="dark"] button:hover,
 .profileMenu[data-cw-header-tone="dark"] a:focus-visible,
 .profileMenu[data-cw-header-tone="dark"] button:focus-visible,
 .profileMenu[data-cw-header-tone="dark"] a[data-current] {
   color: var(--cw-platform-accent-contrast);
+}
+
+@media (hover: hover) {
+  .profileMenu[data-cw-header-tone="dark"] a:hover,
+.profileMenu[data-cw-header-tone="dark"] button:hover {
+    color: var(--cw-platform-accent-contrast);
+  }
 }
 
 /* The resting rows step back from that full-strength cream rather than sitting
@@ -1481,8 +1495,10 @@
     box-shadow 180ms ease;
 }
 
-.menuButton:hover {
-  background: transparent;
+@media (hover: hover) {
+  .menuButton:hover {
+    background: transparent;
+  }
 }
 
 .menuButton:focus-visible {

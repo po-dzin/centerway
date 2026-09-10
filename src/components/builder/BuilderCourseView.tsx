@@ -1152,7 +1152,7 @@ function BuilderInkLabel({ children }: { children: string }) {
   return (
     <span className={styles.inkLabel}>
       {children}
-      <HandGraphic className={styles.inkMark} name="ink-stroke" size={36} />
+      <span className={styles.inkMark} aria-hidden="true" />
     </span>
   );
 }

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, type ChangeEvent } from "reac
 import Link from "next/link";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
+import surfaces from "@/components/admin/AdminSurfaces.module.css";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
@@ -476,7 +477,7 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
     };
 
     return (
-        <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4">
+        <div className={`${surfaces.plate} space-y-4`}>
             <div className="flex flex-col gap-1">
                 <h3 className="text-sm font-semibold cw-text">{labels.title}</h3>
                 <p className="text-sm cw-muted">{labels.subtitle}</p>

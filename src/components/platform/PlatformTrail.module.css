@@ -93,10 +93,12 @@
   color: var(--cw-platform-muted);
 }
 
-.crumbLink:hover:not(:disabled) {
-  color: var(--cw-platform-text);
-  background: transparent;
-  box-shadow: none;
+@media (hover: hover) {
+  .crumbLink:hover:not(:disabled) {
+    color: var(--cw-platform-text);
+    background: transparent;
+    box-shadow: none;
+  }
 }
 
 .crumbLink:focus-visible {
@@ -126,51 +128,13 @@
   background: transparent;
 }
 
-.inkLabel {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.inkText {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.inkMark {
-  position: absolute;
-  inset-inline: -0.22rem;
-  inset-block-end: -0.5rem;
-  width: calc(100% + 0.44rem);
-  height: var(--cw-ink-stroke-height);
-  overflow: visible;
-  color: var(--cw-platform-accent);
-  pointer-events: none;
-  opacity: 0;
-  transform: scaleX(0.58) rotate(-1.2deg);
-  transform-origin: center;
-  transition: opacity 160ms ease, transform 160ms ease;
-}
-
-.crumbLink:hover .inkMark,
-.crumbLink:focus-visible .inkMark {
-  opacity: var(--cw-nav-marker-hover-opacity);
-  transform: scaleX(var(--cw-nav-marker-hover-scale)) rotate(-1.2deg);
-}
-
-.inkLabel[data-current] .inkMark {
-  opacity: 1;
-  transform: scaleX(1) rotate(-1.2deg);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .inkMark {
-    transition: none;
-  }
-}
+/* THE TRAIL'S MARK IS THE SHARED ONE NOW (2026-09-10).
+   `.inkLabel`, `.inkText`, `.inkMark` and their three state rules were a copy
+   of the stroke recipe in globals.css, with their own offset and their own
+   tilt — one of the four copies the dasharray post-mortem there is about. The
+   crumbs carry `data-cw-ink-control` and ask `InteractionInkLabel` for
+   `variant="tab"`, so the mark, its strengths and its press state come from
+   `.cw-ink-label-box`. */
 
 /* ── On a hero photograph ─────────────────────────────
 
@@ -192,8 +156,10 @@
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 92%, transparent);
 }
 
-.trail[data-tone="media"] .crumbLink:hover:not(:disabled) {
-  color: var(--cw-platform-accent-contrast);
+@media (hover: hover) {
+  .trail[data-tone="media"] .crumbLink:hover:not(:disabled) {
+    color: var(--cw-platform-accent-contrast);
+  }
 }
 
 .trail[data-tone="media"] .here {

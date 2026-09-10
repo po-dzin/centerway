@@ -77,6 +77,19 @@
     --cw-radius-pill: 999px;
     --cw-shadow-soft: var(--cw-mat-shadow-soft);
     --cw-shadow-strong: var(--cw-mat-shadow-raised);
+    --cw-motion-tap: 120ms;
+    --cw-motion-state: 160ms;
+    --cw-motion-surface: 180ms;
+    --cw-motion-enter: 400ms;
+    --cw-motion-tone: 320ms;
+    --cw-press-settle: 1px;
+    --cw-haptic-tap: 12ms;
+    --cw-ink-stroke-length: 29.46;
+    --cw-ink-drawn-rest: 0;
+    --cw-ink-drawn-hover: 0.8;
+    --cw-ease-state: cubic-bezier(0.22, 0.61, 0.24, 1);
+    --cw-ease-surface: cubic-bezier(0.16, 1, 0.3, 1);
+    --cw-ease-network: cubic-bezier(0.2, 0.8, 0.2, 1);
     --cw-card-padding: clamp(1.1rem, 1.8vw, 1.45rem);
     --cw-card-radius: var(--cw-radius-lg);
     --cw-card-border: 1px solid var(--cw-mat-stroke);
@@ -325,6 +338,53 @@
     /* DS_ALIAS_LIGHT_END */
 
   }
+
+  /* ONE CONTROL, TWO POINTERS (2026-09-10).
+
+     Every size below was a single number applied to both a thumb and a mouse.
+     48px tall, 168px of minimum width and a 1rem label are what a FINGER
+     needs — 48px is the touch floor this product has always honoured — and
+     the desktop was simply given the same numbers because nobody had split
+     them. The result reads as an interface designed for a phone and opened on
+     a laptop: correct, and a size too large everywhere.
+
+     The query is the pointer, not the viewport, for the reason the button
+     contract's `fill` gives in full: a touchscreen laptop at 1440px needs the
+     finger's numbers, and a mouse at 900px does not. Width cannot tell those
+     apart; `(hover: hover) and (pointer: fine)` can, and it is the same query
+     the hover rules take.
+
+     TARGET AND BUTTON DECOUPLE HERE, and that is the point of doing it in the
+     token layer. On touch they are the same 3rem because a finger needs one
+     floor for everything it can hit. On a mouse an icon control is a TARGET
+     (2.25rem — comfortably above the 24px WCAG 2.2 minimum, and what desktop
+     applications actually use) while a labelled button is a BUTTON (2.5rem —
+     below that a plate with a word in it starts reading as a chip). One number
+     could not say both.
+
+     THE LABEL SIZE COMES FROM THE TYPE SCALE, not from a number here, and
+     guard:geometry is what insisted: this block first shipped a literal
+     `0.9375rem` and the guard reported globals.css growing from one hand-typed
+     font size to two. It was right — the scale already had the step
+     (`--ds-type-body-sm-size`, 0.9rem, which `chrome` and `text` have taken all
+     along), so a second near-identical number would have been the drift this
+     whole file exists to prevent, introduced by the fix for it.
+
+     Written by scripts/generate-design-tokens.mjs from
+     `delivery.dsAliasPointerFine`. The five landings receive the same half, so
+     a CTA does not come out 48px there and 40px here. */
+  @media (hover: hover) and (pointer: fine) {
+    :root {
+      /* DS_ALIAS_POINTER_FINE_START */
+    --ds-touch-target-min: 2.25rem;
+    --ds-button-min-height: 2.5rem;
+    --ds-button-min-width: 9rem;
+    --ds-button-padding-inline: 1rem;
+    --ds-button-font-size: var(--ds-type-body-sm-size);
+    /* DS_ALIAS_POINTER_FINE_END */
+    }
+  }
+
 
 
   /* Dark scopes — one theme, and one local context.
@@ -876,12 +936,65 @@ body {
   --cw-workspace-mode-rail-width: 4.25rem;
   --cw-workspace-panel-pad-inline: var(--cw-space-lg);
   --cw-workspace-panel-pad-block: var(--cw-space-lg);
-  --cw-workspace-panel-motion: 180ms;
-  --cw-workspace-panel-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  /* These two were the product's only named motion for months, and they are
+     now aliases: the surface step and its curve are the design system's, not
+     the workspace's. Same values, so nothing moves differently — the source
+     changed, not the timing. */
+  --cw-workspace-panel-motion: var(--cw-motion-surface);
+  --cw-workspace-panel-ease: var(--cw-ease-surface);
   --cw-rule-ink: var(--cw-platform-border);
   --cw-rule-fade-x: linear-gradient(90deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
   --cw-rule-fade-y: linear-gradient(180deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
 }
+
+/* Top level, OUTSIDE every `@layer`, and that is load-bearing. Tailwind
+   purges anything inside `@layer` whose class name it cannot find in the
+   content scan — and `composes: cw-role-primary from global` injects the
+   name at build time, so it appears in no TSX file and never survived the
+   scan. The rule was on disk, absent from the served sheet, and the
+   property resolved to the empty string with the class sitting right
+   there in `classList`. Unlayered rules are not purged. */
+/* THE ROLE, READABLE FROM OUTSIDE CSS (2026-09-10).
+
+   `haptics.ts` fires a tick on the press of a `primary` control and on
+   nothing else — «the one action that advances money or progress», which is
+   that role's definition rather than a list of call sites someone maintains.
+   It needs a handle in the DOM to recognise one, and the three obvious
+   handles are all worse: a hashed CSS-module class name is not stable across
+   a build, a `data-` attribute has to be added and kept at every call site,
+   and a hardcoded list in the listener is the drift this design system exists
+   to prevent.
+
+   So the role composes this, the property is declared here where token
+   definitions belong (canon:guard forbids them in component CSS, and it was
+   right to — see the two lines it rejected on the way to this), and the
+   property INHERITS, which is what lets the listener read it from whatever
+   child the finger actually landed on. The class travels into the markup
+   literally, so `classList` works too.
+
+   One role has a consumer today. The others are declared for the same reason
+   the button contract names all six: a set with a hole in it is a set someone
+   will complete wrongly. */
+.cw-role-primary {
+  --cw-control-role: primary;
+}
+
+.cw-role-secondary {
+  --cw-control-role: secondary;
+}
+
+.cw-role-chrome {
+  --cw-control-role: chrome;
+}
+
+.cw-role-on-media {
+  --cw-control-role: on-media;
+}
+
+.cw-role-text {
+  --cw-control-role: text;
+}
+
 
 /* WHICH INK, DECLARED AS A SCOPE (2026-08-28).
    `--cw-rule-ink` defaults to the page's border, which is right for a rule
@@ -1034,9 +1147,14 @@ body {
   }
 }
 
-[data-cw-material="glass"]:where(a, button):hover,
 [data-cw-material="glass"]:where(a, button):focus-visible {
   background-color: var(--cw-mat-tint-hover);
+}
+
+@media (hover: hover) {
+  [data-cw-material="glass"]:where(a, button):hover {
+    background-color: var(--cw-mat-tint-hover);
+  }
 }
 
 [data-cw-material="inverse"] {
@@ -1258,8 +1376,10 @@ body {
     border: 1px solid color-mix(in srgb, var(--cw-status-success) 30%, transparent);
   }
 
-  .cw-btn-status-success:hover {
-    background-color: color-mix(in srgb, var(--cw-status-success-soft) 82%, var(--cw-status-success) 18%);
+  @media (hover: hover) {
+    .cw-btn-status-success:hover {
+      background-color: color-mix(in srgb, var(--cw-status-success-soft) 82%, var(--cw-status-success) 18%);
+    }
   }
 
   .cw-btn-status-running {
@@ -1268,8 +1388,10 @@ body {
     border: 1px solid color-mix(in srgb, var(--cw-status-running) 30%, transparent);
   }
 
-  .cw-btn-status-running:hover {
-    background-color: color-mix(in srgb, var(--cw-status-running-soft) 82%, var(--cw-status-running) 18%);
+  @media (hover: hover) {
+    .cw-btn-status-running:hover {
+      background-color: color-mix(in srgb, var(--cw-status-running-soft) 82%, var(--cw-status-running) 18%);
+    }
   }
 
   .cw-page-title {
@@ -1284,13 +1406,6 @@ body {
     font-size: var(--ds-type-body-sm-size);
     line-height: var(--ds-type-body-sm-line-height);
     color: var(--cw-muted);
-  }
-
-  .cw-panel {
-    background-color: var(--cw-surface);
-    border: 1px solid var(--cw-border);
-    border-radius: var(--cw-radius-md);
-    box-shadow: var(--cw-shadow);
   }
 
   /* Field skin only — never a width.
@@ -1360,10 +1475,12 @@ body {
   /* The field answers the way every other row in the system answers: one ink
      wash, no second colour. `background-color` needs the specificity bump
      because the admin scope sets it with `!important` on every field. */
-  .cw-admin-theme .cw-select:hover,
+  @media (hover: hover) {
+    .cw-admin-theme .cw-select:hover,
   .cw-admin-theme .cw-input:hover {
-    background-color: var(--cw-mat-hover-bg) !important;
-    border-color: var(--cw-mat-hover-stroke) !important;
+      background-color: var(--cw-mat-hover-bg) !important;
+      border-color: var(--cw-mat-hover-stroke) !important;
+    }
   }
 
   .cw-btn {
@@ -1375,9 +1492,11 @@ body {
     transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
   }
 
-  .cw-btn:hover {
-    background-color: var(--cw-interactive-hover-bg);
-    border-color: var(--cw-interactive-hover-border);
+  @media (hover: hover) {
+    .cw-btn:hover {
+      background-color: var(--cw-interactive-hover-bg);
+      border-color: var(--cw-interactive-hover-border);
+    }
   }
 
   .cw-btn:focus-visible {
@@ -1401,9 +1520,11 @@ body {
     cursor: pointer;
   }
 
-  .cw-interactive-outline:hover {
-    border-color: var(--cw-interactive-hover-border);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--cw-interactive-hover-border) 75%, transparent);
+  @media (hover: hover) {
+    .cw-interactive-outline:hover {
+      border-color: var(--cw-interactive-hover-border);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--cw-interactive-hover-border) 75%, transparent);
+    }
   }
 
   .cw-interactive-outline:active {
@@ -1422,9 +1543,11 @@ body {
     cursor: pointer;
   }
 
-  .cw-interactive-solid:hover {
-    border-color: var(--cw-interactive-hover-border);
-    box-shadow: 0 10px 22px color-mix(in srgb, var(--cw-text) 26%, transparent);
+  @media (hover: hover) {
+    .cw-interactive-solid:hover {
+      border-color: var(--cw-interactive-hover-border);
+      box-shadow: 0 10px 22px color-mix(in srgb, var(--cw-text) 26%, transparent);
+    }
   }
 
   .cw-interactive-solid:active {
@@ -1451,10 +1574,12 @@ body {
     cursor: pointer;
   }
 
-  .cw-choice-btn:hover:not(:disabled) {
-    border-color: var(--cw-brand-hover-border);
-    background-color: var(--cw-choice-bg-hover);
-    box-shadow: none;
+  @media (hover: hover) {
+    .cw-choice-btn:hover:not(:disabled) {
+      border-color: var(--cw-brand-hover-border);
+      background-color: var(--cw-choice-bg-hover);
+      box-shadow: none;
+    }
   }
 
   .cw-choice-btn:focus-visible {
@@ -1487,11 +1612,13 @@ body {
     box-shadow: 0 8px 20px color-mix(in srgb, var(--cw-text) 22%, transparent);
   }
 
-  .cw-btn-primary:hover:not(:disabled) {
-    background-color: var(--cw-btn-primary-bg-hover);
-    color: var(--cw-btn-primary-text-hover);
-    border-color: var(--cw-btn-primary-border-hover);
-    box-shadow: 0 8px 18px color-mix(in srgb, var(--cw-text) 16%, transparent);
+  @media (hover: hover) {
+    .cw-btn-primary:hover:not(:disabled) {
+      background-color: var(--cw-btn-primary-bg-hover);
+      color: var(--cw-btn-primary-text-hover);
+      border-color: var(--cw-btn-primary-border-hover);
+      box-shadow: 0 8px 18px color-mix(in srgb, var(--cw-text) 16%, transparent);
+    }
   }
 
   .cw-btn-primary:active:not(:disabled) {
@@ -1520,10 +1647,12 @@ body {
     cursor: pointer;
   }
 
-  .cw-btn-outline:hover:not(:disabled) {
-    border-color: var(--cw-brand-hover-border);
-    background-color: var(--cw-btn-outline-bg-hover);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--cw-status-success) 32%, transparent);
+  @media (hover: hover) {
+    .cw-btn-outline:hover:not(:disabled) {
+      border-color: var(--cw-brand-hover-border);
+      background-color: var(--cw-btn-outline-bg-hover);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--cw-status-success) 32%, transparent);
+    }
   }
 
   .cw-btn-outline:active:not(:disabled) {
@@ -1551,11 +1680,13 @@ body {
     cursor: pointer;
   }
 
-  .cw-btn-ghost:hover:not(:disabled) {
-    color: var(--cw-text);
-    border-color: var(--cw-brand-hover-border);
-    background-color: var(--cw-btn-ghost-bg-hover);
-    box-shadow: none;
+  @media (hover: hover) {
+    .cw-btn-ghost:hover:not(:disabled) {
+      color: var(--cw-text);
+      border-color: var(--cw-brand-hover-border);
+      background-color: var(--cw-btn-ghost-bg-hover);
+      box-shadow: none;
+    }
   }
 
   .cw-btn-ghost:active:not(:disabled) {
@@ -1641,13 +1772,15 @@ body {
     transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, opacity 0.2s ease;
   }
 
-  .cw-icon-btn:hover {
-    color: var(--cw-text);
-    /* Icon-only controls should not acquire a pale material tile on hover.
+  @media (hover: hover) {
+    .cw-icon-btn:hover {
+      color: var(--cw-text);
+      /* Icon-only controls should not acquire a pale material tile on hover.
        Platform controls with an ink-ring supply that quieter affordance
        locally; legacy utility controls retain just the colour change. */
-    background-color: transparent;
-    border-color: transparent;
+      background-color: transparent;
+      border-color: transparent;
+    }
   }
 
   .cw-icon-btn:focus-visible {
@@ -1662,16 +1795,20 @@ body {
     transition: background-color 0.2s ease;
   }
 
-  .cw-list-item:hover {
-    background-color: var(--cw-mat-hover-bg);
+  @media (hover: hover) {
+    .cw-list-item:hover {
+      background-color: var(--cw-mat-hover-bg);
+    }
   }
 
   .cw-row-hover {
     transition: background-color 0.16s ease;
   }
 
-  .cw-row-hover:hover {
-    background-color: var(--cw-mat-hover-bg);
+  @media (hover: hover) {
+    .cw-row-hover:hover {
+      background-color: var(--cw-mat-hover-bg);
+    }
   }
 
   .cw-link-hover {
@@ -1679,16 +1816,50 @@ body {
     transition: color 0.16s ease;
   }
 
-  .cw-link-hover:hover {
-    color: var(--cw-text);
+  @media (hover: hover) {
+    .cw-link-hover:hover {
+      color: var(--cw-text);
+    }
   }
 
   .cw-tabbar {
+    /* WHAT THE BAR'S LINE IS DRAWN ON, so the current tab can erase it.
+       The bar itself is transparent and its rule sits on whatever ground is
+       behind it — measured as `--cw-bg` on the admin's pages. A bar placed on
+       a plate overrides this one token rather than restating the notch. */
     display: flex;
     align-items: flex-end;
     gap: var(--cw-space-2xs);
     padding-top: 0;
-    border-bottom: 1px solid var(--cw-border);
+    /* THE RULE AND THE CURRENT TAB'S STROKE ARE ONE LINE (2026-09-10).
+       They used to be two: the stroke under the label, and the bar's rule a
+       few pixels below it, close enough to read as a mistake rather than as
+       two marks. So the rule rises to meet the stroke, and the ink under the
+       current tab now IS the bar's line, inked.
+
+       A BACKGROUND, NOT A BORDER, because it has to be raised at all: a
+       `border-bottom` is drawn at the border box's edge and cannot move
+       without moving the tabs with it (they are pinned to the content box by
+       `align-items: flex-end`, so padding shifts both and closes no gap). A
+       background can be positioned on its own. `background-attachment` stays
+       `scroll`, so the rule holds still while the tabs scroll under it.
+
+       THE OFFSET IS DERIVED, NOT MEASURED. The stroke's own two tokens say
+       where its ink lands: `--cw-ink-stroke-offset` is where the mark's box
+       hangs below the label and `--cw-ink-stroke-height` is that box's height,
+       so the ink sits half a height up from the box's bottom edge. Subtracting
+       that from the tab's own bottom padding is the distance between the two
+       lines. Written as arithmetic so that changing any of the three keeps
+       them collinear — a number typed here would have been correct once. */
+    background-image: linear-gradient(var(--cw-border), var(--cw-border));
+    background-repeat: no-repeat;
+    background-size: 100% 1px;
+    background-position: left
+      calc(100% - (var(--cw-space-xs) + var(--cw-ink-stroke-offset) + var(--cw-ink-stroke-height) / 2));
+    /* Content box, not padding box: a scroll container's scrollbar gutter is
+       carved out of the padding box's bottom, which is where a `bottom`-ish
+       background would otherwise land. */
+    background-origin: content-box;
     overflow-y: hidden;
     min-height: var(--ds-touch-target-min);
     /* The bar itself comes from the one scrollbar recipe further down this
@@ -1700,7 +1871,6 @@ body {
     display: inline-flex;
     align-items: center;
     padding: var(--cw-space-xs) var(--cw-space-md);
-    margin-bottom: -1px;
     border: 0;
     font-size: var(--ds-type-body-sm-size);
     line-height: 1.25rem;
@@ -1711,8 +1881,10 @@ body {
     transition: color 0.16s ease;
   }
 
-  .cw-tab:hover {
-    color: var(--cw-text);
+  @media (hover: hover) {
+    .cw-tab:hover {
+      color: var(--cw-text);
+    }
   }
 
   .cw-tab-active {
@@ -1727,8 +1899,10 @@ body {
     transition: color 0.16s ease;
   }
 
-  .cw-nav-link:hover {
-    color: var(--cw-text);
+  @media (hover: hover) {
+    .cw-nav-link:hover {
+      color: var(--cw-text);
+    }
   }
 
   .cw-nav-link-active {
@@ -1805,13 +1979,57 @@ body {
        The weight and the tilt are now tokens every state shares. What still
        varies between rest, hover and current is what was always supposed to
        vary: how far the stroke has been drawn, and how firmly. */
+
+    /* AND IT IS NOW ACTUALLY DRAWN, NOT SQUASHED (2026-09-10). The sentence
+       above says «how far the stroke has been drawn» and the mechanism said
+       something else: `scaleX` compressed the WHOLE pen stroke — both end
+       drops included — into a fraction of the box, so the three strengths came
+       out as three differently-sized marks rather than one line at three
+       moments. Held beside each other in
+       docs/design-system/prototypes/ink-draw-2026-09-10.html the difference is
+       not subtle: squashed at 38% reads as a short thick dash under the first
+       two letters; drawn at 38% reads as a line that has been drawn that far.
+
+       `ink-stroke` is ONE stroked cubic (`icon-glyphs.mjs`), not a
+       variable-width filled outline — which is why a dash works here and does
+       not work for `LogoMark`, whose own comment says so. `stroke-linecap` is
+       already `round` in the baked sprite, so the cut end IS a pen tip. And
+       `stroke-dasharray`/`stroke-dashoffset` are INHERITED SVG properties, so
+       they cross into the external `<use>` shadow tree that host CSS cannot
+       otherwise reach — the only two properties available to us here, and they
+       happen to be exactly the right two.
+
+       `--cw-ink-stroke-length` is 29.46, the path's measured `getTotalLength()`
+       and not an estimate; the specimen prints it. The leaving drop is a fill
+       and a dash cannot clip it, so it stays painted ahead of the tip — at the
+       horizontal stretch this box runs it is crushed to about 1.5px of height
+       and reads as nothing. That was checked before this shipped, not assumed.
+
+       ONE LADDER FOR EVERY SURFACE, which is the part `scaleX` made impossible.
+       A fraction of `scaleX` is a fraction of the BOX, so every surface whose
+       mark box differed from its label had to hand-tune its own rest value —
+       0.38, 0.58, 0.72 and 0.9 were all live at once for one stroke. A fraction
+       of the dash is a fraction of the STROKE, identical everywhere, so the two
+       tokens below are the whole ladder.
+
+       AND THE LADDER STARTS AT NOTHING (2026-09-10). Rest is 0 — an undrawn
+       line — because a stroke that is already 38% drawn at rest spends the
+       gesture before the gesture happens: pointing at a nav item then extended
+       something that was already there, which is a nudge, not a stroke. Nothing
+       → 80% → full is the pen arriving, and it is what the topbar has always
+       expressed with `opacity: 0` at rest anyway. The `link` variant is the one
+       exception and it is below, with its reason. */
     transform:
-      scaleX(0.72)
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
     transform-origin: left center;
+    stroke-dasharray: var(--cw-ink-stroke-length);
+    stroke-dashoffset: calc(var(--cw-ink-stroke-length) * (1 - var(--cw-ink-drawn-rest)));
     pointer-events: none;
-    transition: opacity 0.16s ease, transform 0.18s ease;
+    transition:
+      opacity var(--cw-motion-state) var(--cw-ease-state),
+      stroke-dashoffset var(--cw-motion-state) var(--cw-ease-state),
+      transform var(--cw-motion-surface) var(--cw-ease-state);
   }
 
   /* The account menu is the reference text-selection gesture. It is a baked
@@ -1827,11 +2045,100 @@ body {
      tilt come from the base now, which is what makes it the same stroke. */
   .cw-ink-label[data-cw-ink-variant="menu"] .cw-ink-label-mark {
     transform:
-      scaleX(0.38)
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
     transform-origin: left center;
   }
+
+  /* TAB: A ROUNDED EDGE AROUND THE WORD, NOT A STROKE UNDER IT (2026-09-10).
+     A segmented control picks one of several — the checkbox row's grammar,
+     not the nav row's — and the stroke sprite above is a fixed-length glyph
+     that cannot stretch to fit whatever word a tab happens to hold. `.cw-ink-
+     label-box` is a distinct element and class from `.cw-ink-label-mark` on
+     purpose: the fifteen rules above give that mark a weight, a tilt and a
+     dash-offset tuned for a 36px sprite, and reusing the class here would
+     have inherited a `scaleY(3.4)` written for a hairline, stretching a
+     rounded rect to four times its height the moment a tab went current. */
+  .cw-ink-label[data-cw-ink-variant="tab"] {
+    width: fit-content;
+    /* The room the edge needs, taken from the spacing scale rather than
+       eyeballed — `guard:geometry` ratchets on values that are not steps of
+       `--cw-space-*`, and it caught 0.3rem here. `xs` and not `2xs`: at 4px
+       the mark was tight to the ascenders on every consumer, not only tabs. */
+    padding-block: var(--cw-space-xs);
+  }
+
+  .cw-ink-label-box {
+    position: absolute;
+    z-index: 0;
+    inset: 0 calc(-1 * var(--cw-space-sm));
+    border-radius: var(--cw-radius-pill);
+    border: 1px solid var(--cw-nav-marker);
+    opacity: 0;
+    transform: scale(0.94);
+    pointer-events: none;
+    transition: opacity var(--cw-motion-state) var(--cw-ease-state), transform var(--cw-motion-state) var(--cw-ease-state);
+  }
+
+  /* The box reads the SAME selector families as the stroke above — a consumer
+     opts in by asking `InteractionInkLabel` for `variant="tab"` and marking
+     its control `data-cw-ink-control`, and gets all four states with no local
+     CSS at all. That is the point of moving the topbar, the trail, the builder
+     rows and the room onto this: each of those had copied the stroke recipe
+     into its own module, and the copies drifted (the dasharray note on
+     `.cw-ink-label-mark` above is the post-mortem of one such drift landing on
+     four modules at once). */
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible .cw-ink-label-box {
+    opacity: var(--cw-ink-hover-opacity);
+    transform: scale(0.98);
+  }
+
+  @media (hover: hover) {
+    :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover .cw-ink-label-box {
+      opacity: var(--cw-ink-hover-opacity);
+      transform: scale(0.98);
+    }
+  }
+
+  /* Press is full strength and outside the hover query, same as every other
+     ink mark's press state (see the 2026-09-10 note above). */
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):active .cw-ink-label-box {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]) .cw-ink-label-box {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* Hover/focus repeated against the current one, and declared after the plain
+     hover/focus rules above: those carry the same three-step specificity
+     (family + pseudo + `.cw-ink-label-box`), so without this compound a
+     pointer resting on the SELECTED item would win the tie and dim its edge
+     back to the hover half — the exact bug already fixed once this session for
+     the underline mark, written correctly here from the start instead of
+     rediscovered on this shape too. */
+  :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]):focus-visible .cw-ink-label-box {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  @media (hover: hover) {
+    :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]):hover .cw-ink-label-box {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Last of the box rules, for the same reason the link variant's is last
+     among the stroke's: this ties with the hover family on specificity, so
+     order is what keeps a selected label at full strength under a pointer. */
+  .cw-ink-label[data-cw-ink-active="true"] .cw-ink-label-box {
+    opacity: 1;
+    transform: scale(1);
+  }
+
 
   .cw-ink-icon {
     position: relative;
@@ -1892,15 +2199,28 @@ body {
      baked stroke that could never reach an opacity above zero. The reader saw
      the browser's own `text-decoration` underneath it and nothing else, which
      is exactly the "I still don't see the ink underline" report. */
+  /* A LINK IS DRAWN FULL AT EVERY STRENGTH, AND ONLY ITS FORCE VARIES.
+
+     The ladder above starts at nothing, which is right everywhere a pointer can
+     announce something and wrong here. This stroke REPLACED the browser's
+     underline (see the 2026-08-31 note): it is the whole of how a link says it
+     is a link, and the canon requires that without hover and without colour. At
+     rest 0 a footer link would be indistinguishable from the sentence around it
+     until pointed at — and a phone cannot point, so on a handheld no link in
+     the product would ever announce itself at all.
+
+     So a link keeps the full length and takes the FAINT force instead: thin, not
+     short. That is the existing force axis doing exactly its job — «one stroke,
+     three forces, and the force is opacity and length, NEVER weight», stated on
+     the base rule above. Drawing a thinner line here would have meant a second
+     `scaleY`, which is the defect that comment exists to prevent. */
   .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark {
     opacity: var(--cw-ink-rest-opacity);
     transform:
-      scaleX(var(--cw-ink-rest-scale))
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
   }
 
-  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover .cw-ink-label-mark,
   :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible .cw-ink-label-mark {
     opacity: var(--cw-ink-hover-opacity);
     /* Restating the weight here is not redundancy — it is the fix for a real
@@ -1908,36 +2228,131 @@ body {
        this one comes later, so a menu label losing `scaleY` on hover meant the
        account menu's stroke went thin exactly while it was being pointed at. */
     transform:
-      scaleX(0.96)
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
+    stroke-dashoffset: calc(var(--cw-ink-stroke-length) * (1 - var(--cw-ink-drawn-hover)));
+  }
+
+  @media (hover: hover) {
+    :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover .cw-ink-label-mark {
+      opacity: var(--cw-ink-hover-opacity);
+      /* Restating the weight here is not redundancy — it is the fix for a real
+         bug. This selector and the `menu` variant's carry equal specificity, and
+         this one comes later, so a menu label losing `scaleY` on hover meant the
+         account menu's stroke went thin exactly while it was being pointed at. */
+      transform:
+        scaleY(var(--cw-ink-stroke-weight))
+        rotate(var(--cw-ink-stroke-tilt));
+      stroke-dashoffset: calc(var(--cw-ink-stroke-length) * (1 - var(--cw-ink-drawn-hover)));
+    }
+  }
+
+  /* PRESS IS THE MARK RUN FULL, AND IT IS DELIBERATELY NOT IN A HOVER QUERY
+     (2026-09-10).
+
+     Hover had to be gated because a phone cannot hover and latches the state
+     instead. Press is the mirror image of that: a touch device is the one
+     device that unambiguously HAS this state, and it was the state the product
+     did not answer. Measured before this rule: 153 selectors in the platform
+     could paint a hover and 12 could paint a press. On a finger that means
+     nothing at all happens between deciding to tap and the next screen —
+     the interface receives the gesture and says so nowhere.
+
+     It is not a fourth strength. The ladder is rest 0.34 → hover 0.68 →
+     current 1, and a press is the CURRENT strength borrowed for as long as the
+     finger is down: the same stroke, run to full, released when you release.
+     That is why this introduces no token and no new graphic — the answer to
+     "what does pressed look like" was already drawn, it just had no selector.
+
+     One rule reaches every ink-carrying control at once — nav items, tabs,
+     builder rows, breadcrumbs, footer links, the library's niches, the
+     reader's size options — because they already share this selector family
+     for the other three states. */
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):active .cw-ink-label-mark {
+    opacity: 1;
+    transform:
+      scaleY(var(--cw-ink-stroke-weight))
+      rotate(var(--cw-ink-stroke-tilt));
+    stroke-dashoffset: 0;
   }
 
   :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]) .cw-ink-label-mark {
     opacity: 1;
     transform:
-      scaleX(1)
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
+    stroke-dashoffset: 0;
+  }
+
+  /* `:is(...):hover .mark` carries one more compound step than the plain
+     `:is(...) .mark` above, so hover was the more specific selector and
+     quietly outranked "current" on every pointer that could hover: hovering a
+     selected tab dropped its mark from full ink back to the hover half —
+     "current" meaning "you are here, or your cursor is" again, which the
+     ladder comment above already named as the bug this file was rewritten to
+     remove. Matching hover's specificity here settles the tie in "current"'s
+     favour by source order, the same tie-break the link-variant note above
+     relies on; gated behind the same `@media (hover: hover)` as every other
+     hover half, since a touch device latches instead of hovering. */
+  @media (hover: hover) {
+    :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]):hover .cw-ink-label-mark {
+      opacity: 1;
+      transform:
+        scaleY(var(--cw-ink-stroke-weight))
+        rotate(var(--cw-ink-stroke-tilt));
+      stroke-dashoffset: 0;
+    }
   }
 
   .cw-ink-label[data-cw-ink-active="true"] .cw-ink-label-mark {
     opacity: 1;
     transform:
-      scaleX(1)
       scaleY(var(--cw-ink-stroke-weight))
       rotate(var(--cw-ink-stroke-tilt));
+    stroke-dashoffset: 0;
   }
 
-  :is(.cw-icon-btn, .cw-page-btn, .cw-nav-link, [data-cw-ink-control]):hover .cw-ink-icon-mark,
+  /* Pinned last on purpose. Every state rule above carries the same (0,3,0)
+     specificity as the link variant's selector, so a tie is broken by order —
+     and without this the hover rule would SHORTEN a link's stroke to 80% at the
+     moment it is pointed at, which is the ladder running backwards. Length is
+     not a variable for this variant; only opacity is. */
+  .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark {
+    stroke-dashoffset: 0;
+  }
+
   :is(.cw-icon-btn, .cw-page-btn, .cw-nav-link, [data-cw-ink-control]):focus-visible .cw-ink-icon-mark {
     opacity: var(--cw-ink-hover-opacity);
     transform: scale(0.94) rotate(-7deg);
   }
 
+  @media (hover: hover) {
+    :is(.cw-icon-btn, .cw-page-btn, .cw-nav-link, [data-cw-ink-control]):hover .cw-ink-icon-mark {
+      opacity: var(--cw-ink-hover-opacity);
+      transform: scale(0.94) rotate(-7deg);
+    }
+  }
+
+  /* The ring's press, for the same reason and on the same terms as the label's
+     above: full, held, outside the hover query. */
+  :is(.cw-icon-btn, .cw-page-btn, .cw-nav-link, [data-cw-ink-control]):active .cw-ink-icon-mark {
+    opacity: 1;
+    transform: scale(1) rotate(-7deg);
+  }
+
   :is(.cw-nav-link-active, [aria-current="page"], [aria-expanded="true"], [aria-pressed="true"]) .cw-ink-icon-mark {
     opacity: 1;
     transform: scale(1) rotate(-7deg);
+  }
+
+  /* Same compound-specificity fix as the label mark above, and gated the same
+     way: without the `:hover` copy, hovering an already-current icon ring
+     lost to the plain hover rule and dimmed back to the hover ring. */
+  @media (hover: hover) {
+    :is(.cw-nav-link-active, [aria-current="page"], [aria-expanded="true"], [aria-pressed="true"]):hover .cw-ink-icon-mark {
+      opacity: 1;
+      transform: scale(1) rotate(-7deg);
+    }
   }
 
   .cw-nav-link:focus-visible,
@@ -1999,8 +2414,10 @@ body {
     transition: color 0.2s ease, opacity 0.2s ease;
   }
 
-  .cw-page-btn:hover {
-    color: var(--cw-text);
+  @media (hover: hover) {
+    .cw-page-btn:hover {
+      color: var(--cw-text);
+    }
   }
 
   .cw-page-btn:disabled {
@@ -2034,8 +2451,10 @@ body {
     transition: background-color 0.2s ease;
   }
 
-  .cw-chart-bar:hover {
-    background-color: color-mix(in srgb, var(--cw-muted) 68%, transparent);
+  @media (hover: hover) {
+    .cw-chart-bar:hover {
+      background-color: color-mix(in srgb, var(--cw-muted) 68%, transparent);
+    }
   }
 
   /* THE SCROLLBAR, IN ONE PLACE (2026-08-28, made general 2026-09-07).
@@ -2135,11 +2554,13 @@ body {
     background-clip: padding-box;
   }
 
-  .cw-scroll:hover::-webkit-scrollbar-thumb,
+  @media (hover: hover) {
+    .cw-scroll:hover::-webkit-scrollbar-thumb,
   .custom-scrollbar:hover::-webkit-scrollbar-thumb,
   .cw-scroll-rail:hover::-webkit-scrollbar-thumb,
   .cw-tabbar:hover::-webkit-scrollbar-thumb {
-    background-color: var(--cw-mat-scroll-thumb-hover);
+      background-color: var(--cw-mat-scroll-thumb-hover);
+    }
   }
 
   .cw-scroll-none,

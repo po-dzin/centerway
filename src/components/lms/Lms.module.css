@@ -180,9 +180,20 @@
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
-.outlineItem:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--cw-mat-shadow-raised);
+@media (hover: hover) {
+  .outlineItem:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--cw-mat-shadow-raised);
+  }
+}
+
+/* Press: the object settles IN by `--cw-press-settle` while held — the mirror
+   of the lift it takes on hover, and the only state a finger can actually
+   produce. Outside the hover query on purpose (docs/design-system.md →
+   "Press is the state a finger has"). */
+.outlineItem:active {
+  transform: translateY(var(--cw-press-settle));
+  box-shadow: var(--cw-mat-shadow-soft);
 }
 
 /* The lesson the schedule has arrived at wears the accent on its edge — the one
@@ -438,14 +449,10 @@
   text-align: start;
 }
 
-.sizeOption:hover:not(:disabled) {
-  background: transparent;
-}
-
-.sizeOption:hover .sizeInkMark,
-.sizeOption:focus-visible .sizeInkMark {
-  opacity: var(--cw-nav-marker-hover-opacity);
-  transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
+@media (hover: hover) {
+  .sizeOption:hover:not(:disabled) {
+    background: transparent;
+  }
 }
 
 /* NAMES EVERY ANCESTOR, and that is not tidiness (2026-08-28).
@@ -465,18 +472,21 @@
   composes: sizeOption;
 }
 
-.sizeOptionCurrent .sizeInkMark {
-  opacity: 1;
-  transform: scaleX(1) scaleY(var(--cw-ink-stroke-weight)) rotate(var(--cw-ink-stroke-tilt));
-}
+/* THE MARK IS NOT DRAWN HERE ANY MORE (2026-09-10), and the reason is worth
+   keeping: `.sizeInkLabel` and `.sizeInkMark` composed `menuInkLabel` and
+   `menuInkMark` from PlatformShell — two classes that stopped existing in
+   `aac33b76 refactor(ui): unify platform surface contracts` and were never
+   anywhere in the repo afterwards. A `composes` pointing at nothing is not a
+   build error, so the rules survived as empty bodies: the mark had no position,
+   no height and no colour, and `HandGraphic` rendered a bare 36px graphic
+   inline in the row rather than a stroke under the word. Three state rules sat
+   above it, faithfully re-pointing an element that was never in place.
 
-.sizeInkLabel {
-  composes: menuInkLabel from "../platform/PlatformShell.module.css";
-}
-
-.sizeInkMark {
-  composes: menuInkMark from "../platform/PlatformShell.module.css";
-}
+   `ReaderTextSize` now renders `InteractionInkLabel variant="menu"`, which is
+   the account menu's own gesture and the only platform entry point for baked
+   ink. Rest / hover / current all arrive from `globals.css`, including the draw
+   — so nothing here restates a length, an opacity or a weight, and there is no
+   local ladder left to drift from the shared one. */
 
 .sizeLabel {
   font-size: var(--ds-type-body-sm-size);
@@ -668,9 +678,20 @@
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
-.pagerLink:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--cw-mat-shadow-raised);
+@media (hover: hover) {
+  .pagerLink:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--cw-mat-shadow-raised);
+  }
+}
+
+/* Press: the object settles IN by `--cw-press-settle` while held — the mirror
+   of the lift it takes on hover, and the only state a finger can actually
+   produce. Outside the hover query on purpose (docs/design-system.md →
+   "Press is the state a finger has"). */
+.pagerLink:active {
+  transform: translateY(var(--cw-press-settle));
+  box-shadow: var(--cw-mat-shadow-soft);
 }
 
 .pagerLink:focus-visible {
@@ -1218,9 +1239,14 @@
   transition: transform 160ms ease;
 }
 
-.markDot:hover::before,
 .markDot:focus-visible::before {
   transform: scale(1.4);
+}
+
+@media (hover: hover) {
+  .markDot:hover::before {
+    transform: scale(1.4);
+  }
 }
 
 .markDot:focus-visible {
@@ -1361,8 +1387,10 @@
   text-decoration: none;
 }
 
-.notesLesson:hover {
-  color: var(--cw-platform-text);
+@media (hover: hover) {
+  .notesLesson:hover {
+    color: var(--cw-platform-text);
+  }
 }
 
 .notesList {
@@ -1616,4 +1644,17 @@
   display: grid;
   gap: var(--cw-space-md);
   min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The press keeps its elevation change and loses the settle — the same
+     trade the button contract makes, so one gesture behaves one way
+     everywhere a reader has asked for less movement. */
+  .outlineItem:active {
+    transform: none;
+  }
+
+  .pagerLink:active {
+    transform: none;
+  }
 }

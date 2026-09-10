@@ -278,7 +278,7 @@ function AdminShell({ children }: { children: ReactNode }) {
                                         if (!active) {
                                             return (
                                                 <span key={key} aria-disabled="true" data-disabled="true">
-                                                    <InteractionInkLabel variant="menu">{t(key)}</InteractionInkLabel>
+                                                    <InteractionInkLabel variant="tab">{t(key)}</InteractionInkLabel>
                                                 </span>
                                             );
                                         }
@@ -291,7 +291,7 @@ function AdminShell({ children }: { children: ReactNode }) {
                                                 aria-current={current ? "page" : undefined}
                                                 data-current={current || undefined}
                                             >
-                                                <InteractionInkLabel variant="menu" active={current}>{t(key)}</InteractionInkLabel>
+                                                <InteractionInkLabel variant="tab" active={current}>{t(key)}</InteractionInkLabel>
                                             </Link>
                                         );
                                     })}
@@ -351,7 +351,7 @@ function AdminShell({ children }: { children: ReactNode }) {
                             >
                                 {expanded ? <Icon name={icon} size={20} /> : <InteractionInkIcon><Icon name={icon} size={20} /></InteractionInkIcon>}
                                 <span className={styles.railLabel}>
-                                    <InteractionInkLabel>{t(key)}</InteractionInkLabel>
+                                    <InteractionInkLabel variant="tab">{t(key)}</InteractionInkLabel>
                                 </span>
                                 {/* Tooltip when collapsed */}
                                 {!expanded && (

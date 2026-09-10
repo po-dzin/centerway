@@ -23,6 +23,7 @@ import { useToast } from "@/components/ToastProvider";
 import { getErrorMessage } from "@/lib/errors";
 import { supabaseClient } from "@/lib/supabaseClient";
 import type { AuthorProfileRow, CourseRow } from "@/lib/admin/accessTypes";
+import surfaces from "@/components/admin/AdminSurfaces.module.css";
 
 async function authFetch(input: string, init: RequestInit = {}) {
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -118,7 +119,7 @@ export function CourseAuthorshipTab({
 
     return (
         <div className="space-y-4">
-            <div className="cw-panel p-4">
+            <div className={surfaces.plate}>
                 <p className="text-sm font-semibold cw-text">{t("access_builder_title")}</p>
                 <p className="text-xs cw-muted mt-1">{t("access_builder_hint")}</p>
                 {!canGrant ? <p className="text-xs cw-muted mt-2">{t("access_role_admin_only")}</p> : null}

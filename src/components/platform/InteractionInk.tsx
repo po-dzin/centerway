@@ -28,15 +28,25 @@ export function InteractionInkLabel({
    *   of the system uses, one strength quieter. This is what makes an ink link
    *   safe to use where the default underline used to be.
    * `menu` — the established thick stroke used by the account menu.
+   * `tab` — a segmented control chooses one of several, the way a checkbox
+   *   row does, rather than pointing at a way out the way a nav row does; the
+   *   stroke sprite is also a fixed length and cannot stretch to fit whatever
+   *   word sits inside a tab. So this variant draws a real rounded-rect edge
+   *   around the label instead, at the same three ink strengths as everything
+   *   else, rather than reaching for a second, unrelated "selected" idiom.
    */
-  variant?: "navigation" | "link" | "menu";
+  variant?: "navigation" | "link" | "menu" | "tab";
   /** For selected text inside a compound control such as a checkbox list. */
   active?: boolean;
 }) {
   return (
     <span className="cw-ink-label" data-cw-ink-variant={variant} data-cw-ink-active={active || undefined}>
       <span className="cw-ink-label-text">{children}</span>
-      <HandGraphic className="cw-ink-label-mark" name="ink-stroke" size={36} />
+      {variant === "tab" ? (
+        <span className="cw-ink-label-box" aria-hidden="true" />
+      ) : (
+        <HandGraphic className="cw-ink-label-mark" name="ink-stroke" size={36} />
+      )}
     </span>
   );
 }

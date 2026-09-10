@@ -62,10 +62,12 @@
   filter: grayscale(1) opacity(0.5);
 }
 
-.find:hover {
-  border-color: var(--cw-nav-marker);
-  background: var(--cw-mat-surface);
-  color: var(--cw-platform-text);
+@media (hover: hover) {
+  .find:hover {
+    border-color: var(--cw-nav-marker);
+    background: var(--cw-mat-surface);
+    color: var(--cw-platform-text);
+  }
 }
 
 .find:focus-within {
@@ -89,7 +91,6 @@
   color: var(--cw-platform-muted);
 }
 
-.filterToggle:hover:not(:disabled),
 .filterToggle:active:not(:disabled),
 .filterToggle:focus-visible,
 .filterToggle[aria-expanded="true"] {
@@ -97,6 +98,15 @@
   border-color: var(--cw-nav-marker);
   background-color: var(--cw-mat-surface);
   color: var(--cw-platform-text);
+}
+
+@media (hover: hover) {
+  .filterToggle:hover:not(:disabled) {
+    transform: none;
+    border-color: var(--cw-nav-marker);
+    background-color: var(--cw-mat-surface);
+    color: var(--cw-platform-text);
+  }
 }
 
 .filterCount {
@@ -136,16 +146,16 @@
   box-shadow: var(--cw-mat-shadow-medium);
 }
 
+/* Used to hold a title beside this button — the popover repeating the word
+   already printed on the disclosure that opens it. Removed (2026-09-11): the
+   button alone is the only thing this row ever says now, so it sits at the
+   trailing edge rather than at the leading one `space-between` gave a title. */
 .filterPopoverHead {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: var(--cw-space-sm);
   padding: var(--cw-space-2xs);
-  color: var(--cw-platform-muted);
-  font-size: var(--ds-type-label-size);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .filterClear {
@@ -156,6 +166,18 @@
   font-size: var(--ds-type-label-size);
   letter-spacing: normal;
   text-transform: none;
+}
+
+/* The same rule `.filterCount[data-empty]` states a few lines above: this
+   button owns its row's height even with nothing to clear. Unmounting it
+   collapsed the row to zero, so checking the first box PUSHED every option
+   below it down by the row's height — a choice reading as a relayout, on the
+   one control this whole file was written to keep still. `visibility`, not
+   `display`, because it is the one hiding mechanism that still reserves the
+   box: the row's height stays constant across every state instead of only in
+   the states someone remembered to test. */
+.filterClear[data-empty] {
+  visibility: hidden;
 }
 
 .filterOptions {
@@ -185,9 +207,14 @@
   justify-self: start;
 }
 
-.filterOption:hover,
 .filterOption:has(input:focus-visible) {
   background: var(--cw-mat-surface-sunk);
+}
+
+@media (hover: hover) {
+  .filterOption:hover {
+    background: var(--cw-mat-surface-sunk);
+  }
 }
 
 .filterOption input {

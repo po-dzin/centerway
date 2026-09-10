@@ -158,13 +158,22 @@ export function ShelfFilter({
           </button>
           {open ? (
             <div className={styles.filterPopover} role="group" aria-label={copy.shelfFilterLabel}>
+              {/* Named only for `role="group"` now — a printed heading here
+                  restated the disclosure button's own «Фільтри» a few pixels
+                  above it. The row itself is never unmounted: see
+                  `.filterClear[data-empty]`, the same «owns its slot» rule
+                  the count badge on the button already followed. */}
               <div className={styles.filterPopoverHead}>
-                <span>{copy.shelfFilterLabel}</span>
-                {query.categories.length > 0 ? (
-                  <button className={styles.filterClear} type="button" onClick={() => onChange({ ...query, categories: [] })}>
-                    {copy.shelfFilterAll}
-                  </button>
-                ) : null}
+                <button
+                  className={styles.filterClear}
+                  type="button"
+                  data-empty={query.categories.length === 0 || undefined}
+                  aria-hidden={query.categories.length === 0 || undefined}
+                  tabIndex={query.categories.length === 0 ? -1 : undefined}
+                  onClick={() => onChange({ ...query, categories: [] })}
+                >
+                  {copy.shelfFilterAll}
+                </button>
               </div>
               <div className={styles.filterOptions}>
                 {offered.map((one) => (

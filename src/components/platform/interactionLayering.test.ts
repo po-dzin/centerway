@@ -94,15 +94,51 @@ describe("platform interaction layers", () => {
     expect(pagination).toContain("InteractionInkIcon");
   });
 
-  it("uses the account-menu ink variant for selected labels in compound controls", () => {
+  it("splits the two selection marks by what the control already draws", () => {
     const accountMenu = read("src/components/platform/layout/PlatformAccountMenu.tsx");
     const shelfFilter = read("src/components/platform/cabinet/ShelfFilter.tsx");
     const shelfCss = read("src/components/platform/cabinet/ShelfFilter.module.css");
 
+    /* A MENU ROW TAKES THE EDGE; A CHECKBOX ROW KEEPS THE STROKE (2026-09-10).
+       Both used to ask for `menu`. They are not the same case, and the
+       difference is whether the row already has a box of its own:
+
+       - A menu row, a tab, a nav item, a crumb — the mark is the ONLY thing
+         saying which one you are on, so it takes the rounded ink edge
+         (`variant="tab"`) the whole product now marks «this is the one» with.
+       - A filter option already carries a checkbox, and a checkbox IS a box.
+         Drawing an edge around its label too is one state said twice, which
+         is the defect the selection grammar in docs/design-system.md exists
+         to prevent — so these keep the stroke under the label. */
     expect(css).toContain('[data-cw-ink-variant="menu"]');
-    expect(accountMenu).toContain('InteractionInkLabel variant="menu"');
+    expect(css).toContain('[data-cw-ink-variant="tab"]');
+    expect(accountMenu).toContain('InteractionInkLabel variant="tab"');
+    expect(accountMenu).not.toContain('InteractionInkLabel variant="menu"');
     expect(shelfFilter).toContain('InteractionInkLabel variant="menu" active={query.categories.includes(one)}');
     expect(shelfCss).not.toContain("cw-ink-label-mark");
+  });
+
+  it("leaves no module holding its own copy of a state mark", () => {
+    /* Four modules each carried a hand-copy of the stroke recipe — offset,
+       weight, tilt, dasharray — and the dasharray note in globals.css is the
+       post-mortem of one fix having to land in four places and landing
+       correctly in none. The topbar and the trail now ask the primitive for
+       the mark; nothing in either module draws one. */
+    for (const rel of [
+      "src/components/platform/PlatformShell.module.css",
+      "src/components/platform/PlatformTrail.module.css",
+    ]) {
+      const sheet = read(rel);
+      expect(sheet, `${rel} still declares a mark`).not.toMatch(/^\.\w*[Ii]nkMark\s*\{/m);
+      expect(sheet, `${rel} still draws a stroke`).not.toContain("stroke-dasharray");
+    }
+
+    /* The builder keeps its own mark element, because local layout rules reach
+       for `.inkLabel > .inkMark` directly — but it is a border and a radius
+       now, not a second copy of the stroke's geometry. */
+    const builder = read("src/components/builder/Builder.module.css");
+    expect(builder).not.toMatch(/\.inkMark[\s\S]{0,400}?stroke-dasharray/);
+    expect(builder).toMatch(/\.inkMark\s*\{[\s\S]*?border-radius: var\(--cw-radius-pill\)/);
   });
 
   it("holds the public catalogue filter to the shelf's recipe rather than a second copy", () => {

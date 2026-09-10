@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useI18n } from "@/components/I18nProvider";
+import surfaces from "@/components/admin/AdminSurfaces.module.css";
 
 export default function AdminSystemPage() {
     const { t } = useI18n();
@@ -16,14 +17,14 @@ export default function AdminSystemPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Link
                     href="/admin/system/audit"
-                    className="cw-panel p-5 hover:bg-[var(--cw-surface-2)] transition-colors"
+                    className={`${surfaces.plate} hover:bg-[var(--cw-surface-2)] transition-colors`}
                 >
                     <p className="text-sm cw-muted">{t("system_card_audit_label")}</p>
                     <p className="text-lg font-semibold cw-text mt-1">{t("system_card_audit_title")}</p>
                     <p className="text-sm cw-muted mt-2">{t("system_card_audit_desc")}</p>
                 </Link>
 
-                <div className="cw-panel p-5">
+                <div className={surfaces.plate}>
                     <p className="text-sm cw-muted">{t("system_card_integrations_label")}</p>
                     <p className="text-lg font-semibold cw-text mt-1">{t("system_card_integrations_title")}</p>
                     <p className="text-sm cw-muted mt-2">{t("system_card_integrations_desc")}</p>
