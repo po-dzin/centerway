@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { LEARNING_SHELF_HREF, contact, platformHomeHref, socialLinks } from "@/lib/platform/content";
 import styles from "@/components/platform/PlatformShellStyles";
@@ -54,6 +55,7 @@ const PERSONAL_LEAD = ["Місце уважної присутності.", "Т�
 
 export function PlatformFooter({ variant = "full" }: { variant?: "full" | "personal" }) {
   const href = useSurfaceHref();
+  const pathname = usePathname();
   const homeHref = href(platformHomeHref);
   const shelfHref = href(LEARNING_SHELF_HREF);
   const profileHref = href("/profile");
@@ -61,6 +63,16 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
   const privacyHref = href("/legal/privacy");
 
   if (variant === "personal") {
+    /* `usePathname` is the browser's path, which is what `href()` has already
+       mapped these hrefs into — on `my` the learning tree loses its `/learn`
+       prefix, so the shelf is `/` there and `/learn` on localhost. Comparing
+       mapped href against actual path is therefore right on both. */
+    const here = pathname;
+    const WAYS_OUT = [
+      { href: shelfHref, label: "Мої матеріали" },
+      { href: profileHref, label: "Кабінет" },
+    ];
+
     return (
       <footer className={styles.footerPersonal} data-platform-footer="personal">
         <div className={`${styles.container} ${styles.footerRowPersonal}`}>
@@ -71,13 +83,26 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
             <span className={styles.brandSymbol} aria-hidden="true" />
             <span className={styles.footerBrandText}>CENTERWAY</span>
           </Link>
+          {/* A WAY OUT IS NOT A WAY TO WHERE YOU ALREADY ARE.
+              The cabinet's own footer offered «Кабінет», and the shelf's
+              offered «Мої матеріали» — a link that reloads the page it is
+              printed on. It is not merely redundant: these two are the only
+              two places this footer can lead, so on either of them one third
+              of the row was inert, and a reader who pressed it learned nothing
+              except that they had already arrived.
+
+              Filtered rather than special-cased, so a third destination added
+              later cannot forget the rule. */}
           <nav className={styles.footerRowLinks} aria-label="Кінець сторінки">
-            <Link className={styles.footerTextLink} href={shelfHref} data-cw-ink-control>
-              <InteractionInkLabel>Мої матеріали</InteractionInkLabel>
-            </Link>
-            <Link className={styles.footerTextLink} href={profileHref} data-cw-ink-control>
-              <InteractionInkLabel>Кабінет</InteractionInkLabel>
-            </Link>
+            {WAYS_OUT.map(({ href, label }) =>
+              href === here ? null : (
+                <Link key={label} className={styles.footerTextLink} href={href} data-cw-ink-control>
+                  <InteractionInkLabel>{label}</InteractionInkLabel>
+                </Link>
+              )
+            )}
+            {/* Support leaves the origin entirely, so it is never self-reference
+                and never filtered. */}
             <a className={styles.footerTextLink} href={SUPPORT_BOT_URL} target="_blank" rel="noopener noreferrer" data-cw-ink-control>
               <InteractionInkLabel>Підтримка</InteractionInkLabel>
             </a>

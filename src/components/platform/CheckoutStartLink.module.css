@@ -1,0 +1,67 @@
+/* The pending state of the checkout control, and nothing else.
+   The button's own skin — ground, contour, radius, weight — stays with the
+   surface that owns it (`PlatformOfferCommerce.module.css` for the panel,
+   `PlatformShell.module.css` for the sticky bar). This file only adds the
+   second thing the control can be saying. */
+
+/* Appended to whatever class the calling surface already gave the anchor, so
+   the waiting label has something to be positioned against. Nothing else here
+   touches the button's appearance at rest. */
+.control {
+  position: relative;
+}
+
+/* THE WIDTH IS SET BY THE RESTING LABEL AND NEVER CHANGES.
+   `visibility: hidden` and not `display: none`: the resting label keeps its
+   box, so the button cannot shrink or grow at the instant it is pressed. A
+   control that resizes under the finger reads as a misfire, and this one is
+   pressed on a phone by someone about to spend money. */
+.rest {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: inherit;
+}
+
+[data-pending="true"] .rest {
+  visibility: hidden;
+}
+
+.wait {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cw-space-2xs, 0.5rem);
+  /* Inherited, not restated: the pending label is the same voice as the resting
+     one, in the same ink. Naming a colour here would be a second answer to a
+     question the button has already answered. */
+  color: inherit;
+}
+
+[data-pending="true"] .wait {
+  display: flex;
+}
+
+/* The control is in flight; a hover state on it would be answering the reader's
+   next question while still working on their last one. */
+[data-pending="true"] {
+  cursor: progress;
+}
+
+/* THE MARK IS THE WAITING STATE (docs/design-system.md → "One way to wait").
+   It is not scaled, tinted or rotated here — it gains density in turn, which is
+   what it does everywhere else in the product. */
+.wait svg {
+  flex: none;
+}
+
+/* A reader who has asked for less motion still needs to know the control was
+   heard. The words and the ellipsis carry that on their own; the mark simply
+   stops turning, which `LogoMark` already honours. */
+@media (prefers-reduced-motion: reduce) {
+  .wait {
+    gap: var(--cw-space-2xs, 0.5rem);
+  }
+}

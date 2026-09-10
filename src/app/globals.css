@@ -1326,6 +1326,22 @@ body {
      track on their own; a standalone one asks for `w-full`. */
   .cw-input {
     border: 1px solid var(--cw-border);
+    /* ONE HEIGHT FOR A FIELD AND THE BUTTON BESIDE IT.
+       `.cw-btn` has carried `min-height: var(--ds-touch-target-min)` since it
+       was written; this had nothing, so a field's height was whatever Tailwind
+       `py-*` the calling surface happened to type. Every field/button pair in
+       the control panel was therefore mismatched — 28px of select against 48px
+       of button in the same row — and the mismatch was invisible in the source,
+       because both sides read `py-1.5`.
+
+       It is raised to the button rather than the button lowered to it, which is
+       the opposite of what a dense admin row wants and is still correct: 3rem
+       is the touch target, the panel is now used on a phone, and a 28px select
+       was already under the floor. A control that is comfortable to hit is not
+       a luxury the internal surface gets to skip.
+
+       `py-*` utilities stay harmless — they pad inside the minimum. */
+    min-height: var(--ds-touch-target-min);
     border-radius: var(--cw-radius-sm);
     background-color: var(--cw-surface);
     color: var(--cw-text);

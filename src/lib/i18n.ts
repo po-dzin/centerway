@@ -427,7 +427,7 @@ export const translations = {
         access_grant_deadline: "Доступ до",
         access_grant_forever: "Безстроково",
         access_grant_role: "Роль",
-        access_grant_role_none: "без ролі",
+        access_grant_role_none: "no role",
         access_add_course: "Ще курс:",
         access_add_course_submit: "Додати",
         access_add_course_all: "Має доступ до всіх курсів.",
