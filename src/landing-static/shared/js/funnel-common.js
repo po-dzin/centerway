@@ -1,28 +1,42 @@
+/* THE FUNNEL LANDINGS' ONE SCRIPT (2026-09-11).
+   way21, irem and reset-day each shipped their own js/common.js — 572 to 583
+   lines, differing in the five constants at the top and in one feature: way21's
+   per-button package selection, which falls back to the page defaults and so
+   is harmless on a page whose buttons carry no selection. This is way21's
+   file with the constants read from the page's <html> (or its
+   main[data-cw-landing]) data attributes:
+
+     data-cw-landing / data-cw-product   the product code
+     data-cw-offer-id                    the offer id the checkout is filed under
+     data-cw-price-value                 the price the pixel reports (NOT what is charged —
+                                         the server reads the price from the offer row)
+     data-cw-currency                    defaults to UAH
+     data-cw-content-name                Meta's reporting label for the product
+
+   The priced-HTML pass (syncLandingCommerce) already overrides offer id and price
+   through the same attributes; that override is unchanged. */
 (function() {
   var API_BASE = window.CW_API_BASE || window.location.origin;
   var DIRECT_PAY_ENDPOINT = API_BASE + "/api/pay/start";
   var EVENTS_ENDPOINT = API_BASE + "/api/events";
-  var PRODUCT = "irem";
-  var OFFER_ID = "irem_main_4100";
-  var PRICE_VALUE = 3950;
-  var CURRENCY = "UAH";
-  var CONTENT_NAME = "IREM";
   var CLARITY_PROJECT_ID = "vy9u7jygno";
   var REDIRECT_RESET_MS = 5000;
   var isRedirecting = false;
   var deferredScriptStarted = {};
-  var ROOT = document.querySelector('main[data-cw-landing="irem"]') || document.documentElement;
+  var ROOT = document.querySelector("main[data-cw-landing]") || document.documentElement;
+  var PAGE = ROOT instanceof HTMLElement ? ROOT.dataset : {};
+  var HTML = document.documentElement.dataset || {};
+  var PRODUCT = PAGE.cwProduct || PAGE.cwLanding || HTML.cwProduct || HTML.cwLanding || "";
+  var OFFER_ID = PAGE.cwOfferId || HTML.cwOfferId || "";
+  var CURRENCY = PAGE.cwCurrency || HTML.cwCurrency || "UAH";
+  var CONTENT_NAME = PAGE.cwContentName || HTML.cwContentName || PRODUCT;
 
   function parsePositiveNumber(value, fallback) {
     var num = Number(value);
     return Number.isFinite(num) && num > 0 ? num : fallback;
   }
 
-  if (ROOT instanceof HTMLElement) {
-    OFFER_ID = ROOT.dataset.cwOfferId || OFFER_ID;
-    PRICE_VALUE = parsePositiveNumber(ROOT.dataset.cwPriceValue, PRICE_VALUE);
-    CURRENCY = ROOT.dataset.cwCurrency || CURRENCY;
-  }
+  var PRICE_VALUE = parsePositiveNumber(PAGE.cwPriceValue || HTML.cwPriceValue, 0);
 
   function pad2(value) {
     return String(value).padStart(2, "0");
@@ -261,15 +275,25 @@
     });
   }
 
-  function trackInitialCheckout(attrib, eventId) {
+  // Per-CTA package selection: a button may carry its own product / offer / price
+  // (e.g. way21 self vs way21-support). Falls back to the page defaults.
+  function resolveSelection(trigger) {
+    var product = (trigger && trigger.getAttribute("data-cw-product")) || PRODUCT;
+    var offerId = (trigger && trigger.getAttribute("data-cw-offer-id")) || OFFER_ID;
+    var rawValue = trigger && trigger.getAttribute("data-cw-price-value");
+    var value = parsePositiveNumber(rawValue, PRICE_VALUE);
+    return { product: product, offerId: offerId, value: value };
+  }
+
+  function trackInitialCheckout(attrib, eventId, selection) {
     if (typeof fbq !== "function") {
       return;
     }
     fbq("track", "InitiateCheckout", {
-      value: PRICE_VALUE,
+      value: selection.value,
       currency: CURRENCY,
       content_name: CONTENT_NAME,
-      offer_id: OFFER_ID,
+      offer_id: selection.offerId,
       ...attrib
     }, { eventID: eventId });
   }
@@ -319,12 +343,12 @@
   }
 
 
-  function buildPayUrl(attrib, eventId) {
+  function buildPayUrl(attrib, eventId, selection) {
     var url = new URL(DIRECT_PAY_ENDPOINT, window.location.origin);
-    url.searchParams.set("product", PRODUCT);
-    url.searchParams.set("site", PRODUCT);
-    url.searchParams.set("offer_id", OFFER_ID);
-    url.searchParams.set("value", String(PRICE_VALUE));
+    url.searchParams.set("product", selection.product);
+    url.searchParams.set("site", selection.product);
+    url.searchParams.set("offer_id", selection.offerId);
+    url.searchParams.set("value", String(selection.value));
     url.searchParams.set("currency", CURRENCY);
     url.searchParams.set("event_id", eventId);
 
@@ -442,10 +466,11 @@
       }
       isRedirecting = true;
       setButtonsLoading(true);
+      var selection = resolveSelection(trigger);
       var attrib = collectAttrib();
-      var eventId = makeEventId("checkout_" + PRODUCT);
-      trackInitialCheckout(attrib, eventId);
-      window.location.assign(buildPayUrl(attrib, eventId));
+      var eventId = makeEventId("checkout_" + selection.product);
+      trackInitialCheckout(attrib, eventId, selection);
+      window.location.assign(buildPayUrl(attrib, eventId, selection));
       window.setTimeout(function() {
         isRedirecting = false;
         setButtonsLoading(false);
