@@ -29,7 +29,7 @@ import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { getErrorMessage } from "@/lib/errors";
-import { getAdminLocale } from "@/lib/adminLocale";
+import { getAdminLocale } from "@/lib/admin/adminLocale";
 import type { CourseRow, LearnerAccountRow, LearnerRow, LearnerStatus, PersonRow } from "@/lib/admin/accessTypes";
 import { deadlineInputValue, ELEVATED_ROLES, grantDeadlineValue, GRANTABLE_ROLES, PAYMENT_CURRENCIES } from "@/lib/admin/accessTypes";
 

@@ -4,7 +4,7 @@ import { sendCapiEvent } from "@/lib/tracking/capi";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { normalizeTrackingString } from "@/lib/tracking/metaClickIds";
 import { getErrorMessage } from "@/lib/errors";
-import { processDoshaReminderJob } from "@/lib/doshaReminder";
+import { processDoshaReminderJob } from "@/lib/dosha/doshaReminder";
 import { PRODUCTS, isCatalogProduct } from "@/lib/products";
 import { parseCourseOfferCode } from "@/lms-core";
 

@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { resolveIremLandingOffer } from "@/lib/landing/offers";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import {
   createPaymentInvoice,

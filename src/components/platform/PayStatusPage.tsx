@@ -5,7 +5,7 @@ import { PurchaseSignal } from "@/components/platform/PurchaseSignal";
 import { PayPendingWatcher } from "@/components/platform/PayPendingWatcher";
 import offerStyles from "@/components/platform/PlatformOfferStyles";
 import styles from "@/components/platform/PlatformOfferCommerce.module.css";
-import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
+import { SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
 import { PROFILE_PATH_PREFIX, surfaceUrl } from "@/lib/surfaces/catalog";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import type { ReturnStatus } from "@/lib/payments/payReturn";

@@ -11,7 +11,7 @@
 
 import { adminClient } from "@/lib/auth/adminClient";
 import { surfaceUrl } from "@/lib/surfaces/catalog";
-import { sendTelegramMessage } from "@/lib/tg";
+import { sendTelegramMessage } from "@/lib/telegram/tg";
 
 export type NotificationChannel = "telegram" | "email" | "webpush";
 

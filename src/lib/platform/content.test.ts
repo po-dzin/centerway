@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { LEARNING_SHELF_HREF, learningNavItem, personalNav, platformNav } from "./content";
 import manifest from "@/app/manifest";
-import { botCopy } from "@/lib/tgSupportBotCopy";
+import { botCopy } from "@/lib/telegram/tgSupportBotCopy";
 
 describe("the learning entry", () => {
   it("keeps the public home explicit and the personal bar application-only", () => {

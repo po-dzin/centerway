@@ -30,7 +30,7 @@
 
 import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNode } from "react";
 
-import { hostBrandFromHost } from "@/lib/hostBrand";
+import { hostBrandFromHost } from "@/lib/surfaces/hostBrand";
 import { isPersonalHost, resolveSurfaceHref, servesEveryPath } from "@/lib/platform/surfaceHref";
 import { PERSONAL_HOST, PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 

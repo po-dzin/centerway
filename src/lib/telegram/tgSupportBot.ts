@@ -17,14 +17,15 @@
  */
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { normalizeEmail } from "@/lib/strings";
 import { asJson } from "@/lib/db/types";
 import type { ProductCode } from "@/lib/products";
-import { callTelegramBotApi, sendTelegramMessage } from "@/lib/tg";
+import { callTelegramBotApi, sendTelegramMessage } from "@/lib/telegram/tg";
 import { verifyTelegramLinkToken } from "@/lib/platform/telegramLink";
 import { verifyDoshaResultToken } from "@/lib/platform/doshaTelegramLink";
-import { classifyDosha, type DoshaResultType } from "@/lib/doshaTest";
-import { buildDoshaResultMessage } from "@/lib/doshaResultCopy";
-import { DOSHA_PRIMARY_EXIT, doshaExitHref } from "@/lib/doshaRouting";
+import { classifyDosha, type DoshaResultType } from "@/lib/dosha/doshaTest";
+import { buildDoshaResultMessage } from "@/lib/dosha/doshaResultCopy";
+import { DOSHA_PRIMARY_EXIT, doshaExitHref } from "@/lib/dosha/doshaRouting";
 import { captureQuestion } from "@/lib/agent/questions/store";
 import {
   botCopy,
@@ -34,7 +35,7 @@ import {
   FAQ_PHOTO_URL,
   GREETING_PHOTO_URL,
   SUPPORT_PHOTO_URL,
-} from "@/lib/tgSupportBotCopy";
+} from "@/lib/telegram/tgSupportBotCopy";
 
 type Supabase = ReturnType<typeof supabaseAdmin>;
 type BotProductCode = Extract<ProductCode, "short" | "irem" | "way21" | "reset-day">;
@@ -143,12 +144,6 @@ export function assertProduct(value: string | null | undefined): BotProductCode 
     return "reset-day";
   }
   return null;
-}
-
-export function normalizeEmail(input: string): string | null {
-  const value = input.trim().toLowerCase();
-  if (!value || !value.includes("@")) return null;
-  return value;
 }
 
 export function normalizePhoneDigits(input: string): string | null {
@@ -892,3 +887,6 @@ export async function handleTgSupportBotUpdate(
     throw error;
   }
 }
+
+/** Re-exported: the bot's tests and callers read it from here. */
+export { normalizeEmail };

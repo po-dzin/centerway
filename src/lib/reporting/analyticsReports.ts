@@ -1,5 +1,5 @@
 import { adminClient } from "@/lib/auth/adminClient";
-import { sendTelegramMessageWithToken } from "@/lib/tg";
+import { sendTelegramMessageWithToken } from "@/lib/telegram/tg";
 
 const REPORTS_TIME_ZONE = process.env.ANALYTICS_REPORTS_TIMEZONE || "Europe/Kyiv";
 const REPORTS_CHAT_ID = process.env.ANALYTICS_REPORTS_CHAT_ID;

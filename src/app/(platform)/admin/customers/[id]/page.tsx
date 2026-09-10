@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
 import { getErrorMessage } from "@/lib/errors";
-import { getAdminLocale } from "@/lib/adminLocale";
+import { getAdminLocale } from "@/lib/admin/adminLocale";
 
 interface Customer {
     id: string;

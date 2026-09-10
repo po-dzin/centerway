@@ -323,7 +323,7 @@ for (const entry of Object.values(PRODUCT_SURFACE_REGISTRY)) {
   }
 }
 
-function normalizeHost(raw: string | null): string {
+export function normalizeHost(raw: string | null | undefined): string {
   if (!raw) return "";
   return raw.split(":")[0].trim().toLowerCase();
 }

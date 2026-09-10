@@ -18,8 +18,9 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import { escapeHtml } from "@/lib/strings";
 import { fulfilmentDestination } from "@/lib/payments/fulfilmentDestination";
-import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
+import { SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
 import type { ProductFulfilment } from "@/lib/products";
 import { sendEmail } from "./resend";
 
@@ -42,14 +43,6 @@ function formatAmount(amount: number | null, currency: string): string | null {
   if (amount == null || !Number.isFinite(amount)) return null;
   const rounded = Number.isInteger(amount) ? String(amount) : amount.toFixed(2);
   return `${rounded} ${currency.toUpperCase()}`;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 /**

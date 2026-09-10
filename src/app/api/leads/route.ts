@@ -1,10 +1,11 @@
 import crypto from "crypto";
+import { asString } from "@/lib/strings";
 import { NextRequest, NextResponse } from "next/server";
 import { persistLeadBestEffort, type LeadRecord } from "@/lib/payments/checkoutFlow";
 import { normalizeProduct, type ProductCode } from "@/lib/products";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { sendTelegramMessage } from "@/lib/tg";
+import { sendTelegramMessage } from "@/lib/telegram/tg";
 
 export const runtime = "nodejs";
 
@@ -67,12 +68,6 @@ type LeadRequestBody = {
   fbclid?: unknown;
   event_id?: unknown;
 };
-
-function asString(v: unknown): string | null {
-  if (typeof v !== "string") return null;
-  const s = v.trim();
-  return s || null;
-}
 
 function cors(res: NextResponse) {
   res.headers.set("Access-Control-Allow-Origin", "*");

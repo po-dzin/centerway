@@ -26,6 +26,7 @@
  */
 
 import type { InlineSpan, InlineText } from "@/lms-core";
+import { escapeHtml } from "@/lib/strings";
 
 /** A structural stand-in for a DOM node — the subset this conversion needs. */
 export type MarkupNode =
@@ -110,17 +111,6 @@ export function inlineToNodes(value: InlineText): MarkupNode[] {
     if (span.href) node = { kind: "element", tag: "a", href: span.href, children: [node] };
     return node;
   });
-}
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-};
-
-function escapeHtml(text: string): string {
-  return text.replace(/[&<>"]/g, (char) => ESCAPES[char]);
 }
 
 /**

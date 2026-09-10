@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { asString } from "@/lib/strings";
 import { adminClient } from "@/lib/auth/adminClient";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
-import { classifyDosha, DOSHA_TEST_SLUG, isValidScoreInvariant } from "@/lib/doshaTest";
-import { DOSHA_PRIMARY_EXIT } from "@/lib/doshaRouting";
+import { classifyDosha, DOSHA_TEST_SLUG, isValidScoreInvariant } from "@/lib/dosha/doshaTest";
+import { DOSHA_PRIMARY_EXIT } from "@/lib/dosha/doshaRouting";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import {
   createTestAttempt,
   emitDoshaTestEvent,
@@ -15,7 +16,7 @@ import {
   loadTestDefinitionBySlug,
   syncCustomerDoshaTestTags,
   type TestAttemptRow,
-} from "@/lib/doshaTestRepo";
+} from "@/lib/dosha/doshaTestRepo";
 
 export const runtime = "nodejs";
 
@@ -29,12 +30,6 @@ type CompleteBody = {
   source?: unknown;
   sessionId?: unknown;
 };
-
-function asString(v: unknown): string | null {
-  if (typeof v !== "string") return null;
-  const s = v.trim();
-  return s || null;
-}
 
 function toAnswerList(input: unknown): Array<{ questionId: string; optionId: string }> | null {
   if (!Array.isArray(input)) return null;

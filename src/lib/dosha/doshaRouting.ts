@@ -1,5 +1,5 @@
 import { getFunnelHostUrl } from "@/lib/surfaces/catalog";
-import type { DoshaConfidence, DoshaResultType } from "@/lib/doshaTest";
+import type { DoshaConfidence, DoshaResultType } from "@/lib/dosha/doshaTest";
 
 /**
  * WHO IS ALLOWED TO HEAR THE RESULT.

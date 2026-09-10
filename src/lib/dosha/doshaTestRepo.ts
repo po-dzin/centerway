@@ -7,7 +7,7 @@ import {
   DoshaResultType,
   BaseDosha,
   doshaTagFromResult,
-} from "@/lib/doshaTest";
+} from "@/lib/dosha/doshaTest";
 
 type SupabaseAdmin = ReturnType<typeof adminClient>;
 

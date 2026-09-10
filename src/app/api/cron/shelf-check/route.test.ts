@@ -17,7 +17,7 @@ const sendTelegramMessage =
     );
 const auditShelf = vi.fn();
 
-vi.mock("@/lib/tg", () => ({ sendTelegramMessage }));
+vi.mock("@/lib/telegram/tg", () => ({ sendTelegramMessage }));
 vi.mock("@/lib/lms/shelfHealth", async () => {
     const actual = await vi.importActual<typeof import("@/lib/lms/shelfHealth")>("@/lib/lms/shelfHealth");
     return { ...actual, auditShelf };

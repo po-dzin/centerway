@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PlatformProgramsIndexPage } from "@/components/platform/PlatformCatalogPages";
 import { describe } from "@/lib/brand/identity";
 import { pageMetadata } from "@/lib/seo/metadata";
-import { JsonLd } from "@/lib/seo/StructuredData";
+import { JsonLd } from "@/components/seo/StructuredData";
 import { breadcrumbLd, graph, itemListLd } from "@/lib/seo/jsonLd";
 import { programs } from "@/lib/platform/content";
 import { listStorefrontCourses } from "@/lib/platform/offers";

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
-import { DOSHA_TEST_SLUG, presentQuestionsForSession } from "@/lib/doshaTest";
-import { ensureDoshaTestSeed, loadTestDefinitionBySlug } from "@/lib/doshaTestRepo";
+import { DOSHA_TEST_SLUG, presentQuestionsForSession } from "@/lib/dosha/doshaTest";
+import { ensureDoshaTestSeed, loadTestDefinitionBySlug } from "@/lib/dosha/doshaTestRepo";
 
 export const runtime = "nodejs";
 

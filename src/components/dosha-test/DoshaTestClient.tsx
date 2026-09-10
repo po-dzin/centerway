@@ -7,17 +7,17 @@ import type { Session } from "@supabase/supabase-js";
 import { Icon } from "@/components/Icon";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "@/components/platform/PlatformDiagnosticStyles";
-import { classifyDosha, type DoshaConfidence, type DoshaResultType } from "@/lib/doshaTest";
+import { classifyDosha, type DoshaConfidence, type DoshaResultType } from "@/lib/dosha/doshaTest";
 import {
   BOUNDARY_NOTE,
   CONFIDENCE_COPY,
   DOSHA_DISCLOSURE,
   HOW_IT_WORKS_STEPS,
   RESULT_COPY,
-} from "@/lib/doshaResultCopy";
+} from "@/lib/dosha/doshaResultCopy";
 import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
 import { CW_THEME_QUERY_KEYS } from "@/lib/generator/theme";
-import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT, doshaExitHref } from "@/lib/doshaRouting";
+import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT, doshaExitHref } from "@/lib/dosha/doshaRouting";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { heroFraming } from "@/components/platform/heroFraming";
 import { platformPageArtwork } from "@/lib/platform/content";

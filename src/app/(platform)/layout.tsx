@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
-import { GoogleTagProvider } from "@/lib/tracking/GoogleTagProvider";
-import { PixelProvider } from "@/lib/tracking/PixelProvider";
+import { GoogleTagProvider } from "@/components/tracking/GoogleTagProvider";
+import { PixelProvider } from "@/components/tracking/PixelProvider";
 import { Suspense } from "react";
 import { preload } from "react-dom";
 import { RouteMotion } from "@/components/platform/RouteMotion";
@@ -11,7 +11,7 @@ import "../globals.css";
 import { PLATFORM_GROUND } from "@/lib/platform/chrome";
 import { THEME_BOOT_SCRIPT } from "@/lib/platform/theme";
 import { BRAND, BRAND_COVER, BRAND_LOCALE } from "@/lib/brand/identity";
-import { JsonLd } from "@/lib/seo/StructuredData";
+import { JsonLd } from "@/components/seo/StructuredData";
 import { graph, organizationLd, personLd, websiteLd } from "@/lib/seo/jsonLd";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 

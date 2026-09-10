@@ -15,7 +15,7 @@
 import { describe, expect, it } from "vitest";
 
 import { translations, type Lang } from "./i18n";
-import { getAdminLocale } from "./adminLocale";
+import { getAdminLocale } from "@/lib/admin/adminLocale";
 
 const LOCALES: Lang[] = ["uk", "en"];
 

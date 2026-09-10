@@ -11,7 +11,7 @@ import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { getErrorMessage } from "@/lib/errors";
-import { getAdminLocale } from "@/lib/adminLocale";
+import { getAdminLocale } from "@/lib/admin/adminLocale";
 
 interface Identity {
     id: string;

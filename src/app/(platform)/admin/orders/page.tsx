@@ -13,8 +13,8 @@ import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { ReconcileModal } from "@/components/admin/modals/ReconcileModal";
 import { useToast } from "@/components/ToastProvider";
 import { getErrorMessage } from "@/lib/errors";
-import { getAdminLocale } from "@/lib/adminLocale";
-import { ORDER_STATUS_BADGE_CLASS } from "@/lib/adminStatusStyles";
+import { getAdminLocale } from "@/lib/admin/adminLocale";
+import { ORDER_STATUS_BADGE_CLASS } from "@/lib/admin/adminStatusStyles";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 
 interface Order {

@@ -1,4 +1,5 @@
 import { ProductCode } from "@/lib/products";
+import { asString } from "@/lib/strings";
 import { asJson } from "@/lib/db/types";
 import { CheckoutStartRequest, buildCheckoutEventPayload } from "@/lib/payments/checkout";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
@@ -15,12 +16,6 @@ export type LeadRecord = {
   fbclid?: string | null;
   campaign?: string | null;
 };
-
-function asString(v: unknown): string | null {
-  if (typeof v !== "string") return null;
-  const s = v.trim();
-  return s || null;
-}
 
 export function buildLeadRecord(
   body: CheckoutStartRequest,

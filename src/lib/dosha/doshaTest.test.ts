@@ -6,7 +6,7 @@ import {
   classifyDosha,
   presentQuestionsForSession,
   type DoshaResultType,
-} from "./doshaTest";
+} from "@/lib/dosha/doshaTest";
 
 const TOTAL = DOSHA_TEST_QUESTIONS.length;
 
@@ -183,7 +183,7 @@ describe("presentQuestionsForSession", () => {
 
 describe("buildDoshaResultMessage", () => {
   it("says the same thing the screen says, at the same strength", async () => {
-    const { buildDoshaResultMessage, RESULT_COPY } = await import("./doshaResultCopy");
+    const { buildDoshaResultMessage, RESULT_COPY } = await import("@/lib/dosha/doshaResultCopy");
 
     const firm = buildDoshaResultMessage({
       resultType: "vata",

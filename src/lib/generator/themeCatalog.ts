@@ -1,4 +1,5 @@
 import tokenPacksJson from "../../../data/generator/token_packs.json";
+import { isRecord } from "@/lms-core/inline";
 
 type ThemeTokenPreview = {
   key: string;
@@ -31,10 +32,6 @@ const PREVIEW_ROLES: Array<{ key: `--${string}`; label: string }> = [
   { key: "--cw-role-trust-policy-surface", label: "Межі" },
   { key: "--cw-role-support-surface", label: "Підтримка" },
 ];
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
 
 function normalizeThemeLabel(key: string): string {
   return THEME_LABELS[key] ?? key;

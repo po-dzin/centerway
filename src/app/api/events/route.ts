@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { asString, asStringArray } from "@/lib/strings";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
 
@@ -56,12 +57,6 @@ function isLocalOnlyEventName(name: string): name is LocalOnlyEventName {
   return LOCAL_ONLY_EVENT_NAMES.has(name as LocalOnlyEventName);
 }
 
-function asString(v: unknown): string | null {
-  if (typeof v !== "string") return null;
-  const s = v.trim();
-  return s || null;
-}
-
 function asNumber(v: unknown): number | undefined {
   if (typeof v === "number" && Number.isFinite(v)) return v;
   if (typeof v === "string") {
@@ -69,14 +64,6 @@ function asNumber(v: unknown): number | undefined {
     if (Number.isFinite(n)) return n;
   }
   return undefined;
-}
-
-function asStringArray(v: unknown): string[] | undefined {
-  if (!Array.isArray(v)) return undefined;
-  const arr = v
-    .map((item) => (typeof item === "string" ? item.trim() : ""))
-    .filter(Boolean);
-  return arr.length ? arr : undefined;
 }
 
 function clientIpFromHeaders(headers: Headers): string | null {

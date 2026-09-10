@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { asString } from "@/lib/strings";
 import crypto from "crypto";
 import { adminClient } from "@/lib/auth/adminClient";
 import { badRequestResponse, forbiddenResponse, requireAdminSession, serverErrorResponse, unauthorizedResponse } from "@/lib/api/adminRoute";
@@ -31,12 +32,6 @@ function isPersonalOfferSchemaError(message: string): boolean {
       normalized.includes("does not exist")
     )
   );
-}
-
-function asString(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  return trimmed || null;
 }
 
 function normalizeEntries(body: Body | null): Entry[] {

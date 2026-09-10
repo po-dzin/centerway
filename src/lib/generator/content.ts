@@ -1,4 +1,5 @@
 import funnelContentJson from "../../../data/generator/funnel_content.json";
+import { isNonEmptyString, isRecord } from "@/lms-core/inline";
 
 export type FunnelRouteKey = "consult" | "detox" | "herbs";
 export type EthnoIconName = "seed" | "spiral" | "hands" | "leaf" | "person";
@@ -68,14 +69,6 @@ export type FunnelContentManifest = {
   schema_version: string;
   content: Record<FunnelRouteKey, RouteContent>;
 };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
-}
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);

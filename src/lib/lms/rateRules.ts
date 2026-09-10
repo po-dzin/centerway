@@ -17,7 +17,7 @@
  * hitting a ceiling never throttles another on the same address.
  */
 
-import type { RateLimitRule } from "@/lib/rateLimit";
+import type { RateLimitRule } from "@/lib/api/rateLimit";
 
 /** Saves, renames, deletes, review submissions, revision writes. */
 export const LMS_COURSE_WRITE: RateLimitRule = {

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const sent: Array<{ chatId: number | string; text: string }> = [];
 
-vi.mock("@/lib/tg", () => ({
+vi.mock("@/lib/telegram/tg", () => ({
   sendTelegramMessage: async (chatId: number | string, text: string) => {
     sent.push({ chatId, text });
   },

@@ -28,7 +28,7 @@ import { contact, legal, programs } from "@/lib/platform/content";
 import { plural } from "@/lib/plural";
 import { PRODUCTS, formatPrice, productDescription, productHeading, productListPrice, type CatalogProductCode } from "@/lib/products";
 import { platformTests } from "@/lib/platform/tests";
-import { botCopy, SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
+import { botCopy, SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
 import type { KnowledgeDoc } from "./types";
 
 /**

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
-import { GoogleTagProvider } from "@/lib/tracking/GoogleTagProvider";
+import { GoogleTagProvider } from "@/components/tracking/GoogleTagProvider";
 import { Suspense } from "react";
 import { PLATFORM_GROUND } from "@/lib/platform/chrome";
 import { BRAND } from "@/lib/brand/identity";

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { asString } from "@/lib/strings";
 import { adminClient } from "@/lib/auth/adminClient";
-import { classifyDosha, isValidScoreInvariant, DOSHA_TEST_SLUG } from "@/lib/doshaTest";
-import { DOSHA_PRIMARY_EXIT } from "@/lib/doshaRouting";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { classifyDosha, isValidScoreInvariant, DOSHA_TEST_SLUG } from "@/lib/dosha/doshaTest";
+import { DOSHA_PRIMARY_EXIT } from "@/lib/dosha/doshaRouting";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import {
   emitDoshaTestEvent,
   ensureDoshaTestSeed,
@@ -12,7 +13,7 @@ import {
   loadTestAttempt,
   loadTestDefinitionBySlug,
   syncCustomerDoshaTestTags,
-} from "@/lib/doshaTestRepo";
+} from "@/lib/dosha/doshaTestRepo";
 
 export const runtime = "nodejs";
 
@@ -20,12 +21,6 @@ type SubmitAnswerBody = {
   questionId?: unknown;
   optionId?: unknown;
 };
-
-function asString(v: unknown): string | null {
-  if (typeof v !== "string") return null;
-  const s = v.trim();
-  return s || null;
-}
 
 export async function POST(
   req: NextRequest,

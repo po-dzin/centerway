@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { createTelegramLinkToken } from "@/lib/platform/telegramLink";
-import { callTelegramBotApi } from "@/lib/tg";
+import { callTelegramBotApi } from "@/lib/telegram/tg";
 
 export const runtime = "nodejs";
 

@@ -30,7 +30,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { denialResponse, isDenied, resolveCourseAccessForIdentity, resolveIdentityFromRequest } from "@/lib/lms/courseAccess";
 import { MAX_INPUT_BYTES, isPrepareFailure, prepareMedia } from "@/lib/lms/mediaPipeline";
 import { LMS_MEDIA_UPLOAD } from "@/lib/lms/rateRules";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";

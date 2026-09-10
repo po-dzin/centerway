@@ -35,7 +35,7 @@ describe("one notification contract for four application surfaces", () => {
     const menu = read("src/components/builder/BuilderCourseList.tsx");
     for (const name of ["export", "unpublish"]) {
       expect(menu).toContain(`icon: "${name}"`);
-      expect(read("src/components/iconNames.ts")).toContain(`"${name}"`);
+      expect(read("src/lib/brand/iconNames.ts")).toContain(`"${name}"`);
       for (const sprite of ["public/cw/icons/cw-icons.svg", "src/landing-static/shared/img/cw-icons.svg"]) {
         expect(read(sprite)).toContain(`id="cw-${name}"`);
       }

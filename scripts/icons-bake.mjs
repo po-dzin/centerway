@@ -52,7 +52,7 @@ function parseArgs(argv) {
 }
 
 /** The name union is generated too, so a typo in <Icon name> fails typecheck. */
-const NAMES_TARGET = path.join(ROOT, "src/components/iconNames.ts");
+const NAMES_TARGET = path.join(ROOT, "src/lib/brand/iconNames.ts");
 
 function namesModule() {
   const list = (names) => names.map((n) => `  "${n}",`).join("\n");

@@ -1,4 +1,5 @@
 import { getLandingCriticalCss, getLandingPublicRouteName, getLandingShellAssets } from "@/lib/landing/config";
+import { escapeHtml } from "@/lib/strings";
 import type { LandingResolvedOffer } from "@/lib/landing/offers";
 import type { StaticLandingProduct } from "@/lib/landing/types";
 import { VERCEL_WEB_ANALYTICS_SNIPPET } from "@/lib/landing/vercelAnalytics";
@@ -10,14 +11,6 @@ type RenderEntryHtmlDocumentInput = {
   title?: string | null;
   description?: string | null;
 };
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
 
 function dataAttr(name: string, value: string | number | null | undefined): string {
   if (value === null || value === undefined || value === "") {

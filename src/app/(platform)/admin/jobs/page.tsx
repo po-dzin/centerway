@@ -11,8 +11,8 @@ import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { JobDetailsModal } from "@/components/admin/modals/JobDetailsModal";
 import { getErrorMessage } from "@/lib/errors";
-import { getAdminLocale } from "@/lib/adminLocale";
-import { JOB_STATUS_BADGE_CLASS } from "@/lib/adminStatusStyles";
+import { getAdminLocale } from "@/lib/admin/adminLocale";
+import { JOB_STATUS_BADGE_CLASS } from "@/lib/admin/adminStatusStyles";
 
 interface Job {
     id: string;

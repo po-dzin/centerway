@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
-import { JOB_STATUS_BADGE_CLASS } from "@/lib/adminStatusStyles";
+import { JOB_STATUS_BADGE_CLASS } from "@/lib/admin/adminStatusStyles";
 import { useToast } from "@/components/ToastProvider";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 

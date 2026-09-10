@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { getErrorMessage } from "@/lib/errors";
-import { ORDER_STATUS_BADGE_CLASS } from "@/lib/adminStatusStyles";
+import { ORDER_STATUS_BADGE_CLASS } from "@/lib/admin/adminStatusStyles";
 
 interface Order {
     order_ref: string;

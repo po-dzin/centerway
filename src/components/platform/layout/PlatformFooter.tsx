@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { LEARNING_SHELF_HREF, contact, platformHomeHref, socialLinks } from "@/lib/platform/content";
 import styles from "@/components/platform/PlatformShellStyles";
-import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
+import { SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
 import { useSurfaceHref } from "./SurfaceHost";
 
 /**

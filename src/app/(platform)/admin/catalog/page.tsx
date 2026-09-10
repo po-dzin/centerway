@@ -36,7 +36,7 @@ import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
-import { getAdminLocale } from "@/lib/adminLocale";
+import { getAdminLocale } from "@/lib/admin/adminLocale";
 import { getErrorMessage } from "@/lib/errors";
 import { supabaseClient } from "@/lib/supabaseClient";
 import type { CatalogRow, SaleBlocker } from "@/lib/admin/catalogTypes";

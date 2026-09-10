@@ -7,7 +7,7 @@ import { parseBody, withRoute } from "@/lib/api/route";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import { makeOrderRef } from "@/lib/payments/paymentStart";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 
 export const runtime = "nodejs";

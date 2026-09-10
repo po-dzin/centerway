@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
-import { loadTestAttempt, syncCustomerDoshaTestTags } from "@/lib/doshaTestRepo";
-import type { DoshaResultType } from "@/lib/doshaTest";
+import { loadTestAttempt, syncCustomerDoshaTestTags } from "@/lib/dosha/doshaTestRepo";
+import type { DoshaResultType } from "@/lib/dosha/doshaTest";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 
 export const runtime = "nodejs";
 

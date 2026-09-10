@@ -1,5 +1,5 @@
 import { adminClient } from "@/lib/auth/adminClient";
-import { emitDoshaTestEvent } from "@/lib/doshaTestRepo";
+import { emitDoshaTestEvent } from "@/lib/dosha/doshaTestRepo";
 
 type ReminderJobPayload = {
   attemptId: string;

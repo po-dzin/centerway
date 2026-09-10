@@ -4,7 +4,7 @@ import Script from "next/script";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 
-import { META_PIXEL_ID } from "./pixelId";
+import { META_PIXEL_ID } from "@/lib/tracking/pixelId";
 
 /**
  * The Meta Pixel on the platform.

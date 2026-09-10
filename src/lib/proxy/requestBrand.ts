@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { type HostBrand, hostBrandFromHost } from "@/lib/hostBrand";
+import { type HostBrand, hostBrandFromHost } from "@/lib/surfaces/hostBrand";
 import { getProductKeyByAlias } from "@/lib/surfaces/catalog";
 
 function normalizedHost(rawHost: string | null): string {

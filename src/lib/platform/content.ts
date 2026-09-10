@@ -1,4 +1,4 @@
-import type { CwIconName } from "@/components/iconNames";
+import type { CwIconName } from "@/lib/brand/iconNames";
 import { getFunnelHostUrl, getPlatformRoute } from "@/lib/surfaces/catalog";
 
 export const platformHomeHref = "/";

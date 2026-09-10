@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ZodError, type z } from "zod";
 
 import { AccessError } from "@/lib/admin/access";
-import { errorMessage } from "@/lib/errorMessage";
+import { errorMessage } from "@/lib/errors";
 import { log } from "@/lib/logger";
 
 /**

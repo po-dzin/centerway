@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
-import { sendTelegramMessage } from "@/lib/tg";
+import { sendTelegramMessage } from "@/lib/telegram/tg";
 
 export const runtime = "nodejs";
 

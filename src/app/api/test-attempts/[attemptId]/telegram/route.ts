@@ -11,10 +11,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { adminClient } from "@/lib/auth/adminClient";
-import { loadTestAttempt } from "@/lib/doshaTestRepo";
+import { loadTestAttempt } from "@/lib/dosha/doshaTestRepo";
 import { createDoshaResultToken } from "@/lib/platform/doshaTelegramLink";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
-import { callTelegramBotApi } from "@/lib/tg";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
+import { callTelegramBotApi } from "@/lib/telegram/tg";
 
 export const runtime = "nodejs";
 

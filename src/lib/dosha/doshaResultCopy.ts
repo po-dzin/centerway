@@ -7,7 +7,7 @@
  * here decides what the result is (that is `classifyDosha`).
  */
 
-import { classifyDosha, type DoshaConfidence, type DoshaResultType } from "@/lib/doshaTest";
+import { classifyDosha, type DoshaConfidence, type DoshaResultType } from "@/lib/dosha/doshaTest";
 
 /* `title` asserts, `softTitle` suggests. Which one the result screen uses is
    decided by how far the scores sit from the nearest boundary, not by the type:

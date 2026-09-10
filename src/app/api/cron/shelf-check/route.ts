@@ -21,7 +21,7 @@ import { NextResponse } from "next/server";
 
 import { requireCronAuth } from "@/lib/cron/auth";
 import { auditShelf, formatShelfAudit } from "@/lib/lms/shelfHealth";
-import { sendTelegramMessage } from "@/lib/tg";
+import { sendTelegramMessage } from "@/lib/telegram/tg";
 
 export const runtime = "nodejs";
 

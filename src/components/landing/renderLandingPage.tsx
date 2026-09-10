@@ -1,7 +1,7 @@
 import { getLandingPublicEntryPath, LANDING_ROUTE_CONFIG } from "@/lib/landing/config";
 import { LANDING_CONTENT } from "@/lib/landing/content";
 import { resolveIremLandingOffer } from "@/lib/landing/offers";
-import { LandingPageShell } from "@/lib/landing/LandingPageShell";
+import { LandingPageShell } from "@/components/landing/LandingPageShell";
 import { prepareLandingHtml } from "@/lib/landing/prepareLandingHtml";
 import type { StaticLandingProduct } from "@/lib/landing/types";
 import type { SearchParams } from "@/lib/products";

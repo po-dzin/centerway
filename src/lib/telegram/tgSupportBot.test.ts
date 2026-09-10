@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { PRODUCT_DELIVERY, PRODUCT_LABELS, assertProduct, normalizeEmail, normalizePhoneDigits } from "./tgSupportBot";
+import { PRODUCT_DELIVERY, PRODUCT_LABELS, assertProduct, normalizeEmail, normalizePhoneDigits } from "@/lib/telegram/tgSupportBot";
 import {
   botCopy,
   ACCESS_PHOTO_URL,
@@ -13,7 +13,7 @@ import {
   FAQ_PHOTO_URL,
   GREETING_PHOTO_URL,
   SUPPORT_PHOTO_URL,
-} from "./tgSupportBotCopy";
+} from "@/lib/telegram/tgSupportBotCopy";
 
 describe("support bot — product routing", () => {
   it("has a delivery target and a label for every product it offers", () => {

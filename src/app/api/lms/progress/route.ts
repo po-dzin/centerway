@@ -13,7 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { LMS_LEARNER_WRITE } from "@/lib/lms/rateRules";
 import { loadLearnerCourse, loadProgress, recordProgressEvent } from "@/lib/lms/server";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import {
   buildOutline,
   canCompleteLesson,

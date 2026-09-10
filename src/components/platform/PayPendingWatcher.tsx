@@ -25,7 +25,7 @@
 
 import { useEffect, useState } from "react";
 
-import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
+import { SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
 import styles from "./PlatformSurfaceStyles";
 
 /** Polite to the endpoint, immediate to the eye. */

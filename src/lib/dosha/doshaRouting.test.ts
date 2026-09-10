@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT, doshaExitHref } from "./doshaRouting";
+import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT, doshaExitHref } from "@/lib/dosha/doshaRouting";
 
 describe("doshaExitHref", () => {
   it("carries the result and its confidence to the landing", () => {

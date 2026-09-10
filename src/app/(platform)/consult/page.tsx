@@ -2,7 +2,7 @@ import { PlatformConsultPage } from "@/components/platform/PlatformStandalonePag
 import type { Metadata } from "next";
 import { describe } from "@/lib/brand/identity";
 import { pageMetadata } from "@/lib/seo/metadata";
-import { JsonLd } from "@/lib/seo/StructuredData";
+import { JsonLd } from "@/components/seo/StructuredData";
 import { breadcrumbLd, graph, personLd, serviceLd } from "@/lib/seo/jsonLd";
 import { BRAND } from "@/lib/brand/identity";
 import { listListedAuthors } from "@/lib/lms/authors";

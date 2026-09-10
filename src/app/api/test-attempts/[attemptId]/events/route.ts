@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { asString } from "@/lib/strings";
 import { adminClient } from "@/lib/auth/adminClient";
-import { emitDoshaTestEvent, loadTestAttempt } from "@/lib/doshaTestRepo";
-import { classifyDosha } from "@/lib/doshaTest";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { emitDoshaTestEvent, loadTestAttempt } from "@/lib/dosha/doshaTestRepo";
+import { classifyDosha } from "@/lib/dosha/doshaTest";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -20,12 +21,6 @@ type EventBody = {
   completedAt?: unknown;
   nextStep?: unknown;
 };
-
-function asString(v: unknown): string | null {
-  if (typeof v !== "string") return null;
-  const s = v.trim();
-  return s || null;
-}
 
 function asFiniteNumber(v: unknown): number | null {
   if (typeof v === "number" && Number.isFinite(v)) return v;

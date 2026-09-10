@@ -36,7 +36,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
-import { enforceRateLimit, tooManyRequests, type RateLimitRule } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests, type RateLimitRule } from "@/lib/api/rateLimit";
 import { loadBuilderCourse, readCourseOwnership } from "./builder";
 import { canEditCourse, resolveBuilderIdentity, type BuilderIdentity } from "./builderAccess";
 

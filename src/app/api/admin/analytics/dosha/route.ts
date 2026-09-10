@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { adminClient } from "@/lib/auth/adminClient";
 import { requireAdminSession, serverErrorResponse, unauthorizedResponse } from "@/lib/api/adminRoute";
-import type { DoshaResultType } from "@/lib/doshaTest";
+import type { DoshaResultType } from "@/lib/dosha/doshaTest";
 
 export const runtime = "nodejs";
 

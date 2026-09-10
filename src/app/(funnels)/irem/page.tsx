@@ -1,4 +1,4 @@
-import { getLandingMetadata, renderLandingPage } from "@/lib/landing/renderLandingPage";
+import { getLandingMetadata, renderLandingPage } from "@/components/landing/renderLandingPage";
 import type { SearchParams } from "@/lib/products";
 
 export const runtime = "nodejs";

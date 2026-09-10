@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   handleTgSupportBotUpdate,
   type TelegramUpdate,
-} from "@/lib/tgSupportBot";
+} from "@/lib/telegram/tgSupportBot";
 
 export const runtime = "nodejs";
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { errorMessage } from "@/lib/errorMessage";
+import { errorMessage } from "@/lib/errors";
 import { adminClient } from "@/lib/auth/adminClient";
 import { requireCronAuth } from "@/lib/cron/auth";
 

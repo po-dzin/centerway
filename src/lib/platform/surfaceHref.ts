@@ -11,19 +11,15 @@
  * path" is how a menu comes to offer a link the router then redirects.
  */
 
-import { hostBrandFromHost } from "@/lib/hostBrand";
+import { hostBrandFromHost } from "@/lib/surfaces/hostBrand";
 import {
   PERSONAL_HOST,
+  normalizeHost,
   canonicalPersonalPath,
   isPersonalPath,
   personalUrl,
   platformUrl,
 } from "@/lib/surfaces/catalog";
-
-export function normalizeHost(rawHost: string | null | undefined): string {
-  if (!rawHost) return "";
-  return rawHost.split(":")[0].trim().toLowerCase();
-}
 
 /** The personal host, and the `www.` form the proxy folds into it. */
 export function isPersonalHost(rawHost: string | null | undefined): boolean {
@@ -71,3 +67,6 @@ export function resolveSurfaceHref(path: string, rawHost: string | null | undefi
   }
   return path;
 }
+
+/** Re-exported: callers read it from here; it lives beside the hosts it normalises. */
+export { normalizeHost };
