@@ -22,6 +22,7 @@ export const auth = {
   common_error: { uk: "Помилка", en: "Error" },
   common_unknown: { uk: "невідомо", en: "unknown" },
   common_currency_uah: { uk: "UAH", en: "UAH" },
+  common_clear_search: { uk: "Очистити пошук", en: "Clear search" },
   common_expand: { uk: "Розгорнути", en: "Expand" },
   common_collapse: { uk: "Згорнути", en: "Collapse" },
   common_switch_language: { uk: "Змінити мову", en: "Switch language" },
