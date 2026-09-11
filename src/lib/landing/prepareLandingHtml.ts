@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { versionSpriteUrls } from "@/lib/brand/spriteUrl";
 import { getLandingPublicRouteName, LANDING_ROUTE_CONFIG } from "@/lib/landing/config";
 import { LANDING_CONTENT } from "@/lib/landing/content";
 import { MANAGED_LANDING_FILE_BY_PAGE, type ManagedLandingPage } from "@/lib/landing/contracts";
@@ -399,6 +400,7 @@ export async function prepareLandingHtml(
 
   html = stripInlineTracking(html);
   html = normalizeRelativeUrls(product, html);
+  html = versionSpriteUrls(html);
 
   if (options.pageKind === "entry") {
     html = applyTypedHeroReplacements(product, html);

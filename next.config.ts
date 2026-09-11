@@ -142,9 +142,31 @@ const nextConfig: NextConfig = {
    * had already visited. A week is the trade: ~99% of these round trips
    * disappear, and a rebuilt sprite still reaches returning visitors within it.
    *
-   * If that week ever becomes the wrong answer, the fix is not a shorter cache
-   * — it is content-hashing those two baked filenames, after which this whole
-   * source can take `immutable` like the fonts do.
+   * THAT WEEK BECAME THE WRONG ANSWER ON 2026-09-11, and this paragraph used to
+   * say what to do about it: content-hash the baked filenames, after which the
+   * source can take `immutable` like the fonts. Half of that is now done, and
+   * the half matters.
+   *
+   * The sprite is the file where a stale week actually breaks something,
+   * because it is referenced BY ID. Adding `cw-ink-rule` changed which ids
+   * exist, and every visitor holding a week-old copy had `<use>` resolve to
+   * nothing — which paints nothing, with no error and no empty box, so the ink
+   * marks simply vanished site-wide and read as a CSS bug.
+   *
+   * It is versioned by CONTENT HASH now, in the query rather than the
+   * filename: `CW_SPRITE_VERSION` comes off the baker, `Icon.tsx` puts it on
+   * the platform URL and `prepareLandingHtml` puts it on the landings'. The
+   * query was chosen over renaming because the name is typed into eight
+   * hand-written landing files 164 times; a rename would put that churn into
+   * source markup on every rebake, and a query keys the cache identically on
+   * this stack.
+   *
+   * SO `/cw/icons/**` TAKES `immutable` — every reference to it now carries a
+   * hash, and a URL that changes with its content cannot go stale. The rest of
+   * `/cw/**` keeps the week: `cw/brand/cw-mark.svg` is the other baked artifact
+   * that keeps its name, it is referenced from design tokens rather than from a
+   * component, and versioning it means teaching a second pipeline. Until then a
+   * redrawn mark still reaches returning visitors within the week.
    *
    * NOT MATCHED HERE, deliberately: `sw.js` and `offline.html` at the root of
    * `public/`. A long-cached service worker is a page that cannot be updated,
@@ -159,6 +181,15 @@ const nextConfig: NextConfig = {
       {
         source: "/cw/:path*",
         headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" }],
+      },
+      /* AFTER the general rule, not before it: Next applies every matching
+         entry in order and a later one wins for the same key, so the specific
+         case has to come second or the week overwrites it. Verified against a
+         running build, not assumed. Every reference to the sprite carries its
+         content hash, so this can never serve a stale answer. */
+      {
+        source: "/cw/icons/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
     ];
   },

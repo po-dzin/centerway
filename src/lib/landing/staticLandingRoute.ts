@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { versionSpriteUrls } from "@/lib/brand/spriteUrl";
 import path from "node:path";
 
 import { hasLandingCommerce, syncLandingCommerce } from "@/lib/landing/landingPrices";
@@ -43,7 +44,10 @@ export function createStaticLandingGet(brand: string): () => Promise<Response> {
   }
 
   return async function GET(): Promise<Response> {
-    const base = await readBaseHtml();
+    /* The funnel brands are served straight from disk and never pass through
+       `prepareLandingHtml`, so the sprite version is stamped here too — this
+       is the path `/way21` and its siblings actually take. */
+    const base = versionSpriteUrls(await readBaseHtml());
     const commerce = hasLandingCommerce(base);
     const html = commerce ? await syncLandingCommerce(base) : base;
     return new Response(html, {
