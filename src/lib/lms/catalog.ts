@@ -15,8 +15,9 @@
  * `liveCatalog.ts` instead — the names here all say `snapshot` so a call site
  * cannot pick the wrong source by accident.
  *
- * Mirrors the repo's generator convention (src/lib/generator/content.ts):
- * validate once at module load and fail loudly, rather than defensively at use.
+ * Validates once at module load and fails loudly, rather than defensively at
+ * use: a malformed course file should stop the build, not reach a reader as an
+ * empty card.
  */
 
 import iremGymnasticsCourse from "../../../data/courses/irem-gymnastics.json";

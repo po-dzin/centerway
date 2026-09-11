@@ -621,7 +621,10 @@ export const GRAPHICS = {
     d: ["M3.5 18.4C13.2 18.4 22.8 18.4 32.5 18.4"],
     hand: { frequency: 0, scale: 0, seed: 0 },
     strokeWidth: 1.5,
-    dots: [{ cx: 3.4, cy: 18.4, r: 1.1 }, { cx: 32.6, cy: 18.4, r: 0.8 }],
+    dots: [
+      { cx: 3.4, cy: 18.4, r: 1.1 },
+      { cx: 32.6, cy: 18.4, r: 0.8 },
+    ],
   },
   "ink-ring": {
     group: "Graphics",

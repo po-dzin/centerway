@@ -6,7 +6,6 @@ import {
   isLandingRootAssetPath,
   isNextLandingEnabled,
 } from "@/lib/landing/routing";
-import { resolveExperimentAssignmentRoute, withExperimentAssignmentRewrite } from "@/lib/proxy/experiments";
 import { isPlatformEscapePath, redirectToPlatformOrigin } from "@/lib/proxy/platformEscape";
 import { resolveRequestBrand } from "@/lib/proxy/requestBrand";
 import { CW_SURFACE_KIND_HEADER } from "@/lib/surfaces/headers";
@@ -17,11 +16,6 @@ export const CW_HOST_UTILITY_REWRITE_HEADER = "x-cw-host-utility-rewrite";
 function rewriteSurfaceRoute(req: NextRequest, pathname: string, surfaceKind: "funnel" | "platform") {
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set(CW_SURFACE_KIND_HEADER, surfaceKind);
-  const routeKey = resolveExperimentAssignmentRoute();
-  if (routeKey) {
-    return withExperimentAssignmentRewrite(req, pathname, routeKey, requestHeaders);
-  }
-
   const url = req.nextUrl.clone();
   url.pathname = pathname;
   return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
