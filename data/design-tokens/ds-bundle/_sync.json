@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "generator": "scripts/ds-export.mjs",
-  "sourceCommit": "fe674f45",
+  "sourceCommit": "96e4aca1",
   "tokensSource": "f80f6506efaff2e9",
   "files": {
     "styles.css": "683617531c30ce2f",
