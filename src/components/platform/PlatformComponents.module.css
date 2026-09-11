@@ -136,6 +136,26 @@
   text-transform: uppercase;
 }
 
+/* THE CHIP IS GLASS, SO IT DEGRADES LIKE GLASS (2026-09-11). It draws the
+   canvas tint by hand instead of declaring `[data-cw-material="glass"]`, which
+   is why the base rule's fallback in globals.css never reached it: the same
+   76% with no blur behind it, sitting on the diagnostic stage panel's own
+   copy. The fallback is the one the material contract already names for this
+   tint — the opaque surface — so the chip lands on exactly what every other
+   glass object in the product lands on when the blur is gone. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .diagnosticStepChip {
+    background-color: var(--cw-mat-surface);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .diagnosticStepChip {
+    backdrop-filter: none;
+    background-color: var(--cw-mat-surface);
+  }
+}
+
 .diagnosticProgressRow {
   display: grid;
   gap: var(--cw-space-xs);
