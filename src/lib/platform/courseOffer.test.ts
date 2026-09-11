@@ -83,6 +83,19 @@ describe("the duration", () => {
   });
 });
 
+describe("the pretitle", () => {
+  /* The mirror of the subtitle, and the one of the author's three lines that
+     had nowhere to go: it reached the catalogue card and stopped there, so a
+     card said more about an offer than the offer's own page did. */
+  it("carries the author's line above the name, as written", () => {
+    expect(toOfferSurface(course({ pretitle: "Авторський курс" })).pretitle).toBe("Авторський курс");
+  });
+
+  it("stays absent when the author wrote none — there is nothing to parse it out of", () => {
+    expect(toOfferSurface(course({})).pretitle).toBeUndefined();
+  });
+});
+
 describe("the subtitle", () => {
   it("prefers the field over the dash the parser used to look for", () => {
     const surface = toOfferSurface(

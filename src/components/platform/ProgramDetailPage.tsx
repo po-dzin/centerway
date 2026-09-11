@@ -196,6 +196,9 @@ export function ProgramDetailPage({
         trail={[{ label: "Програми", href: "/programs" }, { label: program.title }]}
         hero={{
           title: program.fullTitle,
+          /* The author's line above the name, when they wrote one. It reaches
+             the catalogue card already; this is the page that card previews. */
+          ...(program.pretitle ? { pretitle: program.pretitle } : {}),
           /* The hero prints the author's whole title, and for a course written
              as «Ім'я — пояснення» the subtitle IS that explanation, parsed back
              out of the same string. Printed under a title that already ends in

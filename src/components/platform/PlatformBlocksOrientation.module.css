@@ -401,6 +401,38 @@
   text-wrap: balance;
 }
 
+/* THE LINE ABOVE THE NAME (2026-09-11), and the mirror of the subtitle below.
+
+   A builder author writes three lines around the title — надзаголовок, назва,
+   підзаголовок — and until now this page printed two of them. The first reached
+   the catalogue card and stopped there, so a card said more about an offer than
+   the offer's own page did.
+
+   It is set like the card's own pretitle rather than like the subtitle: the
+   data face, small and tracked, because this is a frame around the name and not
+   a claim of its own — the claim is the subtitle and the lead below. Bounded at
+   two lines, not the card's one: a card is a fixed preview format and has to
+   hold its rows to a height, while a hero has room, and cutting an author's
+   line mid-phrase on the page that is about their course is the wrong trade at
+   this size. Deliberately NOT uppercase: the badge directly above it is, and
+   two capitalised rows stacked read as one broken label rather than as two
+   things. */
+.detailHeroPretitle {
+  max-width: min(24rem, 100%);
+  margin: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 84%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: var(--ds-type-body-sm-line-height);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 /* The subtitle, and why it is set in the editorial face.
 
    It sits between an 800-weight UI title and a 560-weight UI lead, and a third

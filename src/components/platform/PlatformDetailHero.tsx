@@ -23,6 +23,18 @@ export type DetailHeroMeta = {
 type PlatformDetailHeroProps = {
   title: string;
   /**
+   * The author's own line above the name — the mirror of `subtitle`.
+   *
+   * It sits between the badge and the h1, which is the same order the
+   * catalogue card puts them in (label, pretitle, name, posttitle): a reader
+   * arriving from a card meets the three lines in the order they already read
+   * them. NOT folded into `badge`, for the reason the badge's own comment
+   * gives about taglines — that pill is uppercase and holds the system's word
+   * for a kind of thing, and an author's sentence set in caps across the top of
+   * a hero is the bug, not the feature.
+   */
+  pretitle?: string;
+  /**
    * What this is, between the name and the reason for it.
    *
    * Three rows, three different questions, and that is why it is its own line
@@ -82,6 +94,7 @@ type PlatformDetailHeroProps = {
 
 export function PlatformDetailHero({
   title,
+  pretitle,
   subtitle,
   description,
   badge,
@@ -122,6 +135,7 @@ export function PlatformDetailHero({
         <p className={styles.heroBadge}>
           <span>{badge}</span>
         </p>
+        {pretitle ? <p className={styles.detailHeroPretitle}>{pretitle}</p> : null}
         <h1 className={styles.detailHeroTitle}>{title}</h1>
         {subtitle ? <p className={styles.detailHeroSubtitle}>{subtitle}</p> : null}
         <p className={styles.heroFeatureLead}>{description}</p>

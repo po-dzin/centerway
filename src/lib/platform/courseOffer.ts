@@ -99,6 +99,11 @@ export function toOfferSurface(course: Course): OfferSurface {
        author's own line wins, and the parse stays for courses written that way.
        The hero drops this when its own title already ends in it — see
        ProgramDetailPage — so nothing says the tail twice. */
+    /* The author's line above the name, carried as written. No fallback and no
+       parse: unlike `subtitle`, this was never inferred from anything — an
+       author either wrote a надзаголовок or did not, and a page that has none
+       prints none. */
+    ...(course.pretitle ? { pretitle: course.pretitle } : {}),
     ...(course.posttitle || offerSubtitle(course.title)
       ? { subtitle: course.posttitle ?? offerSubtitle(course.title) }
       : {}),
