@@ -742,9 +742,13 @@
   font-weight: 600;
   color: var(--ds-color-text, #111);
   text-decoration: none;
-  border-radius: var(--ds-radius-sm, 12px);
 }
-.cw-nav__desktop a:hover { background: rgba(17, 17, 17, 0.05); }
+/* THE GREY WASH IS GONE (2026-09-11). Pointing at a nav item used to fill its
+   box with 5% black — a second «selected» idiom, and one this product stopped
+   using everywhere else: the answer to «which one am I on» is the ink stroke,
+   which these rows now carry from /shared/css/ink.css. The radius went with the
+   fill, because the box it rounded is no longer painted; what is left is a
+   touch target. */
 .cw-nav__burger {
   position: relative;
   z-index: 2;

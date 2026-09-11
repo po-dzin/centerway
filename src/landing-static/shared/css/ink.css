@@ -1,0 +1,128 @@
+/* THE SELECTION STROKE, for the static network (2026-09-11).
+
+   One mark answers «which one of these am I on» across this product: a drawn
+   rule under the word, absent at rest, half-strength when you point at it, full
+   when it is the current thing. The platform has drawn it that way since the
+   ink primitives landed; the eight static landings did not, because the two
+   things it needs had never reached them — the graphic (`cw-ink-rule`, baked
+   into the network sprite) and the four numbers that say how thick the stroke
+   is, how far under the word it sits and how firmly it comes up. Both are here
+   now, so the capsules and hover fills the landings had invented in their place
+   are gone: a tinted pill in `.cwn`, a grey wash in `.cw-nav__desktop`.
+
+   THIS FILE EXISTS BECAUSE THE NETWORK HAS TWO NAVIGATION BARS, not because the
+   recipe wanted a file. `.cwn` (the five funnel landings) loads network-nav.css;
+   `.cw-nav` (short, short-b, irem) loads landing.bridge.css or its own theme,
+   and neither loads the other. Writing the stroke into both is how the network
+   got two of everything else. It is written once, here, and each host adds one
+   `<link>`.
+
+   It is a TRANSPOSITION of `.cw-ink-label` in src/app/globals.css, not a second
+   design: same three boxes, same class names, same tokens, same four states.
+   These hosts cannot load globals.css — that is the whole reason for the copy —
+   and `npm run tokens:check` is what keeps the numbers from drifting, because
+   neither side holds a value of its own.
+
+   Markup, matching the platform's `InteractionInkLabel` exactly:
+
+     <a href="#x" data-cw-ink-control>
+       <span class="cw-ink-label" data-cw-ink-variant="navigation">
+         <span class="cw-ink-label-text">Label</span>
+         <svg class="cw-ink-label-mark" width="36" height="36" viewBox="0 0 36 36"
+              preserveAspectRatio="none" aria-hidden="true" focusable="false">
+           <use href="/shared/img/cw-icons.svg#cw-ink-rule" width="100%" height="100%"/>
+         </svg>
+       </span>
+     </a>
+
+   `data-cw-ink-control` on the control is what opts it in — the same attribute
+   the platform's state rules key on, so a row that carries it behaves the same
+   on either side of the boundary. */
+
+.cw-ink-label {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  line-height: 1;
+}
+
+.cw-ink-label-text {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The mark is a stretched hand graphic, not a border: `preserveAspectRatio` is
+   off in the markup so the 36-unit drawing fills this band, and the band is
+   thin — which is why the weight comes back as a vertical scale rather than as
+   a stroke-width. The same correction the platform's bar applies, for the same
+   reason: without it the stroke renders at roughly a third of the weight it was
+   drawn at.
+
+   The colour falls back to the label's own: `--cw-nav-marker` is the network
+   nav's per-tone decision (ink on the light bar, brass on the night one) and
+   the three `.cw-nav` landings have no such token — their bar is one tone, and
+   there the mark belongs to the word above it. */
+.cw-ink-label-mark {
+  position: absolute;
+  z-index: 0;
+  left: -0.2rem;
+  right: -0.2rem;
+  bottom: var(--cw-ink-stroke-offset);
+  width: calc(100% + 0.4rem);
+  height: var(--cw-ink-stroke-height);
+  color: var(--cw-nav-marker, currentColor);
+  opacity: 0;
+  transform:
+    scaleY(var(--cw-ink-stroke-weight))
+    rotate(var(--cw-ink-stroke-tilt));
+  transform-origin: left center;
+  pointer-events: none;
+  transition:
+    opacity var(--cw-motion-state, 160ms) ease,
+    color var(--cw-motion-state, 160ms) ease;
+}
+
+/* Hover is half the mark — and it is gated, because a phone cannot hover and
+   latches the state onto whatever was tapped last. Focus is not gated: a
+   keyboard has that state on every device. */
+[data-cw-ink-control]:focus-visible .cw-ink-label-mark {
+  opacity: var(--cw-ink-hover-opacity);
+}
+
+@media (hover: hover) {
+  [data-cw-ink-control]:hover .cw-ink-label-mark {
+    opacity: var(--cw-ink-hover-opacity);
+  }
+}
+
+/* Press is the current strength borrowed while the finger is down — the one
+   state a touch device unambiguously has, and the one these landings answered
+   nowhere at all. */
+[data-cw-ink-control]:active .cw-ink-label-mark {
+  opacity: 1;
+}
+
+[data-cw-ink-control][aria-current="page"] .cw-ink-label-mark,
+.cw-ink-label[data-cw-ink-active="true"] .cw-ink-label-mark {
+  opacity: 1;
+}
+
+/* Hovering the current item must not DROP it back to the hover half. This
+   selector and the hover one carry the same specificity, so without restating
+   it here source order alone would decide, and «current» would come to mean
+   «you are here, or your cursor is» — the exact bug the platform's own file
+   was rewritten to remove. */
+@media (hover: hover) {
+  [data-cw-ink-control][aria-current="page"]:hover .cw-ink-label-mark {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cw-ink-label-mark { transition: none; }
+}
