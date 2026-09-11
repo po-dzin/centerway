@@ -71,6 +71,7 @@ export function CropEditor({
   onReset,
   onClose,
   labels,
+  axis = "both",
 }: {
   src: string;
   alt: string;
@@ -88,6 +89,17 @@ export function CropEditor({
   onReset: () => void;
   onClose: () => void;
   labels: CropEditorLabels;
+  /**
+   * Which way the window may move.
+   *
+   * `both` for a frame that owns its whole crop. `y` for one that follows
+   * another frame horizontally and only decides its own vertical — the course
+   * cover's ultra-wide hero is that: it shares the card's x by contract, and an
+   * editor that let the hand drag x would be moving a number it then refuses to
+   * store, which is the exact "pulled and nothing happened" this editor exists
+   * to end.
+   */
+  axis?: "both" | "y";
 }) {
   const titleId = useId();
   const positionId = useId();
@@ -155,7 +167,7 @@ export function CropEditor({
       photo,
       frame,
     );
-    onChange(next.x, next.y);
+    onChange(axis === "y" ? x : next.x, next.y);
   };
 
   const beginDrag = (event: PointerEvent<HTMLDivElement>) => {
@@ -182,8 +194,8 @@ export function CropEditor({
       event.preventDefault();
       return;
     }
-    if (event.key === "ArrowLeft") onChange(clampCropAxis(x - step), y);
-    else if (event.key === "ArrowRight") onChange(clampCropAxis(x + step), y);
+    if (event.key === "ArrowLeft") onChange(axis === "y" ? x : clampCropAxis(x - step), y);
+    else if (event.key === "ArrowRight") onChange(axis === "y" ? x : clampCropAxis(x + step), y);
     else if (event.key === "ArrowUp") onChange(x, clampCropAxis(y - step));
     else if (event.key === "ArrowDown") onChange(x, clampCropAxis(y + step));
     else return;

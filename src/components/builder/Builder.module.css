@@ -3811,16 +3811,21 @@
   gap: var(--cw-space-2xs);
 }
 
+/* A BUTTON NOW, NOT A DRAG SURFACE (2026-09-11). The frame stopped being the
+   editor and became the way into one, so it carries a button's reset and a
+   pointer rather than a grab cursor: what happens here is a press. */
 .coverPreviewLandscape,
 .coverPreviewWide,
 .coverPreviewPortrait {
   position: relative;
+  display: block;
   width: 100%;
+  padding: 0;
+  border: 0;
   overflow: hidden;
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
-  cursor: grab;
-  touch-action: none;
+  cursor: pointer;
   user-select: none;
 }
 
@@ -3832,7 +3837,6 @@
    the frame reads as a band rather than a second full picker. */
 .coverPreviewWide {
   aspect-ratio: 21 / 9;
-  cursor: ns-resize;
 }
 
 .coverPreviewPortrait {
@@ -3841,15 +3845,12 @@
   margin-inline: auto;
 }
 
-/* Grabbing, not crosshair — these frames pan the picture now rather than
-   placing a point where you click. */
-.coverPreviewLandscape[data-dragging],
-.coverPreviewPortrait[data-dragging] {
-  cursor: grabbing;
-}
-
-.coverPreviewWide[data-dragging] {
-  cursor: ns-resize;
+@media (hover: hover) {
+  .coverPreviewLandscape:hover,
+  .coverPreviewWide:hover,
+  .coverPreviewPortrait:hover {
+    box-shadow: var(--cw-mat-active-shadow);
+  }
 }
 
 .coverPreviewLandscape:focus-visible,
@@ -3870,9 +3871,10 @@
   pointer-events: none;
 }
 
-/* Thirds while the hand is down, and nothing otherwise — the same guides
-   `.guides` draws in CropEditor.module.css, on a frame that likewise has
-   nothing to grab but the picture. */
+/* THE GUIDES WENT WITH THE DRAG (2026-09-11). Thirds belong on the stage where
+   the crop is chosen — `.guides` in CropEditor.module.css draws them there —
+   and this frame no longer chooses anything: it shows the result and opens the
+   editor. Kept declared because the rule is shared vocabulary, unused here. */
 .coverCropGuides {
   position: absolute;
   inset: 0;
@@ -3896,9 +3898,6 @@
   pointer-events: none;
 }
 
-.coverPreviewLandscape[data-dragging] .coverCropGuides,
-.coverPreviewWide[data-dragging] .coverCropGuides,
-.coverPreviewPortrait[data-dragging] .coverCropGuides,
 .coverPreviewLandscape:focus-visible .coverCropGuides,
 .coverPreviewWide:focus-visible .coverCropGuides,
 .coverPreviewPortrait:focus-visible .coverCropGuides {
@@ -4571,10 +4570,30 @@
   border-block-start: 0;
 }
 
+/* THE WHOLE HEAD OPENS THE SECTION, not the 44px the chevron occupies.
+   A disclosure head is a title, a summary of what is set, and a chevron — and
+   only the chevron answered the press, so an author aiming at the words
+   «Надзаголовок і підзаголовок не додані» hit nothing and had to go back for
+   the arrow. The chevron is a PICTURE of the control, not the control.
+
+   Done as a stretched overlay rather than by wrapping the head in a button:
+   the title is an `<h3>` that `aria-labelledby` points at, and flow content
+   cannot live inside a button. The overlay therefore sits over the copy — a
+   collapsed summary trades text selection for being pressable, which is the
+   right way round for a line whose whole job is to be opened. A head that ever
+   gains a second control must lift it above the overlay. */
 .courseSettingHead {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: var(--cw-space-sm);
+}
+
+.courseSettingEdit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
 }
 
 .courseSettingCopy {
