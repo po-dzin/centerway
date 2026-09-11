@@ -79,9 +79,7 @@ describe("courseReadiness", () => {
 
   it("demands a boundary note from any protocol that touches the body", () => {
     const protocol = course();
-    protocol.modules[0].lessons[0].blocks = [
-      { id: "b1", type: "practice_block", title: "Дихальна практика" },
-    ];
+    protocol.modules[0].lessons[0].blocks = [{ id: "b1", type: "practice_block", title: "Дихальна практика" }];
 
     const codes = courseReadiness(protocol).blockers.map((blocker) => blocker.code);
     expect(codes).toContain("lms_ready_missing_boundary");
@@ -106,7 +104,7 @@ describe("courseReadiness", () => {
     };
 
     expect(courseReadiness(withReference).blockers.map((blocker) => blocker.code)).toContain(
-      "lms_ready_broken_reference"
+      "lms_ready_broken_reference",
     );
   });
 
@@ -132,9 +130,7 @@ describe("courseReadiness", () => {
       blocks: [{ id: "b2", type: "rich_text", content: [{ kind: "p", text: "Далі." }] }],
     });
 
-    expect(courseReadiness(withFuture).blockers.map((blocker) => blocker.code)).toContain(
-      "lms_ready_future_reference"
-    );
+    expect(courseReadiness(withFuture).blockers.map((blocker) => blocker.code)).toContain("lms_ready_future_reference");
   });
 });
 
@@ -226,8 +222,16 @@ describe("what a card owes a stranger", () => {
   });
 
   it("asks a listed course what its page will say, not only its card", () => {
-    const codes = courseReadiness(course({ visibility: "listed", ...complete, audience: undefined, results: [], format: undefined, accessNote: "  " }))
-      .blockers.map((one) => one.code);
+    const codes = courseReadiness(
+      course({
+        visibility: "listed",
+        ...complete,
+        audience: undefined,
+        results: [],
+        format: undefined,
+        accessNote: "  ",
+      }),
+    ).blockers.map((one) => one.code);
     expect(codes).toContain("lms_ready_missing_audience");
     // An empty list is silence, not an answer: the page drops a card with
     // nothing in it, so `[]` and absent produce the same blank storefront.
@@ -249,7 +253,7 @@ describe("what a card owes a stranger", () => {
 
   it("catches a cover whose description was never written", () => {
     const codes = courseReadiness(
-      course({ ...complete, visibility: "listed", cover: { src: "/cover.webp", alt: "   " } })
+      course({ ...complete, visibility: "listed", cover: { src: "/cover.webp", alt: "   " } }),
     ).blockers.map((one) => one.code);
     expect(codes).toContain("lms_ready_missing_cover_alt");
     // One complaint about the cover, not two: an image with a blank description
@@ -262,16 +266,16 @@ describe("what a card owes a stranger", () => {
     // /programs/novyi-kurs-5. The author renamed the course; the slug, which
     // they never see, kept the generated name.
     const codes = courseReadiness(
-      course({ ...complete, visibility: "listed", slug: "novyi-kurs-5", title: "Soul Daily Ritual" })
+      course({ ...complete, visibility: "listed", slug: "novyi-kurs-5", title: "Soul Daily Ritual" }),
     ).blockers.map((one) => one.code);
     expect(codes).toContain("lms_ready_default_slug");
   });
 
   it("catches the un-numbered default and the collision suffix alike", () => {
     for (const slug of ["novyi-kurs", "novyi-kurs-2", "novyi-kurs-12"]) {
-      const codes = courseReadiness(
-        course({ ...complete, visibility: "listed", slug })
-      ).blockers.map((one) => one.code);
+      const codes = courseReadiness(course({ ...complete, visibility: "listed", slug })).blockers.map(
+        (one) => one.code,
+      );
       expect(codes, slug).toContain("lms_ready_default_slug");
     }
   });
@@ -280,9 +284,9 @@ describe("what a card owes a stranger", () => {
     // `novyi-kurs-pro` is a name somebody chose. The gate keys on the exact
     // shape the builder generates, not on a prefix.
     for (const slug of ["soul-daily-ritual", "novyi-kurs-pro", "way21"]) {
-      const codes = courseReadiness(
-        course({ ...complete, visibility: "listed", slug })
-      ).blockers.map((one) => one.code);
+      const codes = courseReadiness(course({ ...complete, visibility: "listed", slug })).blockers.map(
+        (one) => one.code,
+      );
       expect(codes, slug).not.toContain("lms_ready_default_slug");
     }
   });
@@ -299,8 +303,9 @@ describe("what a card owes a stranger", () => {
     // course's own lesson count when the author has not said, so an unset
     // duration is a worse label, not a hole. A standing daily ritual has no
     // honest number of days, and the gate must not make one up for it.
-    const codes = courseReadiness(course({ visibility: "listed", ...complete, durationDays: undefined }))
-      .blockers.map((one) => one.code);
+    const codes = courseReadiness(course({ visibility: "listed", ...complete, durationDays: undefined })).blockers.map(
+      (one) => one.code,
+    );
     expect(codes).not.toContain("lms_ready_missing_duration");
     expect(codes).toHaveLength(0);
   });

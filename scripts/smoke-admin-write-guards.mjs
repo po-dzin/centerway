@@ -30,7 +30,10 @@ function normalizeCase(entry) {
   return {
     method: String(entry.method || "").toUpperCase(),
     path: String(entry.path || ""),
-    body: entry.body !== undefined ? entry.body : bodyFallbacks.get(`${String(entry.method || "").toUpperCase()} ${String(entry.path || "")}`),
+    body:
+      entry.body !== undefined
+        ? entry.body
+        : bodyFallbacks.get(`${String(entry.method || "").toUpperCase()} ${String(entry.path || "")}`),
   };
 }
 
@@ -76,7 +79,9 @@ async function checkCase(testCase, mode) {
 
     const expectedStatuses = mode === "public" ? [401, 403] : [403];
     const ok = expectedStatuses.includes(response.status);
-    console.log(`${ok ? "PASS" : "FAIL"} [${mode}] ${formatLabel(testCase.method, testCase.path)} -> ${response.status}`);
+    console.log(
+      `${ok ? "PASS" : "FAIL"} [${mode}] ${formatLabel(testCase.method, testCase.path)} -> ${response.status}`,
+    );
 
     if (!ok) {
       const bodyPreview = (await response.text().catch(() => "")).trim().slice(0, 300);

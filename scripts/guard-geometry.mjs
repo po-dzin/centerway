@@ -90,7 +90,8 @@ const bandFor = (px) => BANDS.find((b) => px <= b.max);
    geometry test, because "is this a dot or a small square" is not something CSS
    can be asked — but it is something a name says out loud, and a name that
    lies about it is its own bug. */
-const ROUND = /(dot|ring|track|thumb|handle|rail|bar|wheel|orb|bullet|marker|spinner|knob|swatch|mark|number|ordinal)(?=$|[A-Z0-9_])/i;
+const ROUND =
+  /(dot|ring|track|thumb|handle|rail|bar|wheel|orb|bullet|marker|spinner|knob|swatch|mark|number|ordinal)(?=$|[A-Z0-9_])/i;
 
 /* A pseudo-element wearing `pill` is a drawn thing — a counter disc, a
    connector line, the brass rule under a name — never a control, because a
@@ -227,7 +228,9 @@ for (const file of cssFiles()) {
        28px-round input. Every declared dimension is resolved and the smallest
        one decides, which is the closest CSS can get to "how big is this
        object". */
-    const sizes = [...body.matchAll(/(?:^|\s)(?:min-height|height|min-width|width|block-size|inline-size):\s*([^;]+);/g)]
+    const sizes = [
+      ...body.matchAll(/(?:^|\s)(?:min-height|height|min-width|width|block-size|inline-size):\s*([^;]+);/g),
+    ]
       .map((m) => toPx(m[1]))
       .filter((n) => n !== null && n >= 8);
     const token = /var\((--[a-z-]+)\)/.exec(radius)?.[1];
@@ -236,8 +239,7 @@ for (const file of cssFiles()) {
 
     const name = selector.replace(/^[.#]/, "");
     const exempt =
-      token === "--cw-radius-pill" &&
-      (ROUND.test(name) || FACE.test(name) || CHIP.test(name) || DRAWN.test(selector));
+      token === "--cw-radius-pill" && (ROUND.test(name) || FACE.test(name) || CHIP.test(name) || DRAWN.test(selector));
     const band = bandFor(size);
     seen.push({ file: rel(file), selector, size, token, band: band.label, exempt });
     if (exempt) continue;
@@ -278,7 +280,8 @@ if (!tailwindValues.length) {
 }
 
 /* 5. The spacing ratchet. */
-const spacingProps = /(?:^|\s)(?:padding|margin|gap|row-gap|column-gap)(?:-(?:inline|block|top|right|bottom|left)(?:-(?:start|end))?)?:\s*([^;{]+);/g;
+const spacingProps =
+  /(?:^|\s)(?:padding|margin|gap|row-gap|column-gap)(?:-(?:inline|block|top|right|bottom|left)(?:-(?:start|end))?)?:\s*([^;{]+);/g;
 const offScale = {};
 for (const file of cssFiles()) {
   const source = strip(fs.readFileSync(file, "utf8"));
@@ -432,7 +435,11 @@ for (const [file, count] of Object.entries(landingOffScaleSpacing)) {
 if (report) {
   console.log("\nRadius by box size (rules that declare both):\n");
   for (const row of seen.sort((a, b) => a.size - b.size)) {
-    const flag = row.exempt ? "carve-out" : RADIUS_PX[row.token] === RADIUS_PX[bandFor(row.size).token] ? "ok" : "MISMATCH";
+    const flag = row.exempt
+      ? "carve-out"
+      : RADIUS_PX[row.token] === RADIUS_PX[bandFor(row.size).token]
+        ? "ok"
+        : "MISMATCH";
     console.log(
       `  ${String(Math.round(row.size)).padStart(4)}px  ${row.token.replace("--cw-", "").padEnd(12)} ${flag.padEnd(9)} ${row.selector.padEnd(40)} ${row.file}`,
     );

@@ -41,10 +41,7 @@ function asScorePayload(v: unknown): { vata: number; pitta: number; kapha: numbe
   return { vata, pitta, kapha };
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ attemptId: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ attemptId: string }> }) {
   const rl = await enforceRateLimit(req, { name: "test_event", limit: 120, windowSeconds: 60 });
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
@@ -80,21 +77,19 @@ export async function POST(
         ? classifyDosha(attempt.score_vata ?? 0, attempt.score_pitta ?? 0, attempt.score_kapha ?? 0)
         : null;
 
-    await emitDoshaTestEvent(
-      db,
-      eventName as "dosha_result_viewed" | "dosha_followup_clicked",
-      {
-        attemptId: attempt.id,
-        testId: attempt.test_id,
-        resultType: attempt.result_type,
-        shares: profile?.shares ?? null,
-        confidence: profile?.confidence ?? null,
-        target: target ?? null,
-        screen: screen ?? null,
-        step,
-        ctaTarget: ctaTarget ?? null,
-        uiVariant: uiVariant ?? null,
-        resultView: eventName === "dosha_result_viewed"
+    await emitDoshaTestEvent(db, eventName as "dosha_result_viewed" | "dosha_followup_clicked", {
+      attemptId: attempt.id,
+      testId: attempt.test_id,
+      resultType: attempt.result_type,
+      shares: profile?.shares ?? null,
+      confidence: profile?.confidence ?? null,
+      target: target ?? null,
+      screen: screen ?? null,
+      step,
+      ctaTarget: ctaTarget ?? null,
+      uiVariant: uiVariant ?? null,
+      resultView:
+        eventName === "dosha_result_viewed"
           ? {
               resultType: resultType ?? attempt.result_type,
               scores,
@@ -102,9 +97,8 @@ export async function POST(
               nextStep,
             }
           : null,
-        timestamp: new Date().toISOString(),
-      }
-    );
+      timestamp: new Date().toISOString(),
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {

@@ -53,9 +53,7 @@ function hasMarker(value: string): boolean {
 function richTextOf(nodes: RichTextNode[]): string {
   return nodes
     .map((node) =>
-      node.kind === "ul" || node.kind === "ol"
-        ? node.items.map((item) => textOf(item)).join(" ")
-        : textOf(node.text)
+      node.kind === "ul" || node.kind === "ol" ? node.items.map((item) => textOf(item)).join(" ") : textOf(node.text),
     )
     .join(" ");
 }
@@ -69,7 +67,7 @@ function inlineValues(block: LessonBlock): InlineText[] {
     case "quote":
       return [block.text];
     case "rich_text":
-      return block.content.flatMap((node) => node.kind === "ul" || node.kind === "ol" ? node.items : [node.text]);
+      return block.content.flatMap((node) => (node.kind === "ul" || node.kind === "ol" ? node.items : [node.text]));
     case "protocol_step":
     case "practice_block":
       return [block.title, ...(block.text ? [block.text] : [])];

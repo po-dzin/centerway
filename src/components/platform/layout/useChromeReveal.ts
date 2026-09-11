@@ -2,11 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore, type RefObject } from "react";
 
-import {
-  chromeSheetClosedOnServer,
-  isChromeSheetOpen,
-  subscribeChromeSheet,
-} from "./chromeSheetStore";
+import { chromeSheetClosedOnServer, isChromeSheetOpen, subscribeChromeSheet } from "./chromeSheetStore";
 
 /**
  * ONE GESTURE REVEALS THE CHROME.
@@ -78,11 +74,7 @@ export function useChromeReveal(
   /* Subscribed rather than read: a sheet opens on a click this hook never
      sees, and the bar has to stop hiding from that moment, not from the next
      scroll frame. */
-  const sheetOpen = useSyncExternalStore(
-    subscribeChromeSheet,
-    isChromeSheetOpen,
-    chromeSheetClosedOnServer,
-  );
+  const sheetOpen = useSyncExternalStore(subscribeChromeSheet, isChromeSheetOpen, chromeSheetClosedOnServer);
   /* ONLY FOR CHROME A SHEET CAN HANG FROM. A sheet is portalled and anchored
      to the bar or the island row that opened it, so those must stay put while
      it is on screen. The reader's back-to-top button anchors nothing — holding
@@ -114,9 +106,7 @@ export function useChromeReveal(
       }
       last = y;
       const hidden = !focusInside && y > TOP_ZONE && delta > 0;
-      setState((current) =>
-        current.hidden === hidden && current.deep === deep ? current : { hidden, deep },
-      );
+      setState((current) => (current.hidden === hidden && current.deep === deep ? current : { hidden, deep }));
     };
 
     const onFocusIn = () => {

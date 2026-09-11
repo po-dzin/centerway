@@ -11,9 +11,7 @@ import {
 
 describe("offerName", () => {
   it("drops the explanation hung off the name", () => {
-    expect(offerName("Розвантажувальний день — практикум з умовного голодування")).toBe(
-      "Розвантажувальний день",
-    );
+    expect(offerName("Розвантажувальний день — практикум з умовного голодування")).toBe("Розвантажувальний день");
   });
 
   it("keeps a hyphen that is part of a word", () => {

@@ -36,8 +36,7 @@ export function createDoshaResultToken(attemptId: string, now = Date.now()): str
 }
 
 export type DoshaResultTokenVerdict =
-  | { ok: true; attemptId: string }
-  | { ok: false; reason: "malformed" | "expired" | "bad_signature" };
+  { ok: true; attemptId: string } | { ok: false; reason: "malformed" | "expired" | "bad_signature" };
 
 export function verifyDoshaResultToken(token: string, now = Date.now()): DoshaResultTokenVerdict {
   if (!token.startsWith(PREFIX)) return { ok: false, reason: "malformed" };

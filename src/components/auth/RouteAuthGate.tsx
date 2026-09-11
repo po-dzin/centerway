@@ -16,7 +16,7 @@ export function RouteAuthGate({ routeKey, children }: RouteAuthGateProps) {
   const [session, setSession] = useState<Session | null>(null);
   const isAuthEnabled = useMemo(
     () => Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
-    []
+    [],
   );
   const [isLoading, setIsLoading] = useState(isAuthEnabled);
 
@@ -57,7 +57,9 @@ export function RouteAuthGate({ routeKey, children }: RouteAuthGateProps) {
 
   const signInWithGoogle = useCallback(async () => {
     const redirectTo =
-      typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}${window.location.search}` : undefined;
+      typeof window !== "undefined"
+        ? `${window.location.origin}${window.location.pathname}${window.location.search}`
+        : undefined;
 
     await supabaseClient.auth.signInWithOAuth({
       provider: "google",
@@ -72,7 +74,10 @@ export function RouteAuthGate({ routeKey, children }: RouteAuthGateProps) {
   if (isLoading) {
     return (
       <main className="min-h-dvh px-6 py-10 md:flex md:items-center md:justify-center">
-        <div className="mx-auto w-full max-w-lg rounded-3xl border p-6 sm:p-8" style={{ borderColor: "var(--cw-border)", background: "var(--cw-surface)" }}>
+        <div
+          className="mx-auto w-full max-w-lg rounded-3xl border p-6 sm:p-8"
+          style={{ borderColor: "var(--cw-border)", background: "var(--cw-surface)" }}
+        >
           <p className="text-sm animate-pulse" style={{ color: "var(--cw-muted)" }}>
             Перевіряємо сесію...
           </p>

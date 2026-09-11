@@ -48,7 +48,7 @@ export function clientIp(req: NextRequest): string {
 export async function enforceRateLimit(
   req: NextRequest,
   rule: RateLimitRule,
-  identityKey?: string
+  identityKey?: string,
 ): Promise<RateLimitResult> {
   const key = `${rule.name}:${identityKey ? `user:${identityKey}` : clientIp(req)}`;
   try {
@@ -82,6 +82,6 @@ export function tooManyRequests(retryAfter: number): NextResponse {
     {
       status: 429,
       headers: { "Retry-After": String(Math.max(1, retryAfter)) },
-    }
+    },
   );
 }

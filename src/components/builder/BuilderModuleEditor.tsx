@@ -35,24 +35,84 @@ export function BuilderCourseRail({
   return (
     <div className={styles.courseRail}>
       <nav className={styles.courseRailNav} aria-label="Розділи курсу">
-        <a className={styles.courseRailLink} href="#course-overview" aria-label="Обкладинка" aria-current={activeMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("course"); }}>
-          <span className={styles.courseRailIcon}><Icon name="display" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
+        <a
+          className={styles.courseRailLink}
+          href="#course-overview"
+          aria-label="Обкладинка"
+          aria-current={activeMode === "course" ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            onMode("course");
+          }}
+        >
+          <span className={styles.courseRailIcon}>
+            <Icon name="display" size={20} />
+            <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+          </span>
           <BuilderInkLabel>Обкладинка</BuilderInkLabel>
         </a>
-        <a className={styles.courseRailLink} href="#course-structure" aria-label="Зміст" aria-current={activeMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("content"); }}>
-          <span className={styles.courseRailIcon}><Icon name="view-rows" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
+        <a
+          className={styles.courseRailLink}
+          href="#course-structure"
+          aria-label="Зміст"
+          aria-current={activeMode === "content" ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            onMode("content");
+          }}
+        >
+          <span className={styles.courseRailIcon}>
+            <Icon name="view-rows" size={20} />
+            <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+          </span>
           <BuilderInkLabel>Зміст</BuilderInkLabel>
         </a>
-        <a className={styles.courseRailLink} href="#course-offer" aria-label="Сторінка програми" aria-current={activeMode === "offer" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("offer"); }}>
-          <span className={styles.courseRailIcon}><Icon name="document" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
+        <a
+          className={styles.courseRailLink}
+          href="#course-offer"
+          aria-label="Сторінка програми"
+          aria-current={activeMode === "offer" ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            onMode("offer");
+          }}
+        >
+          <span className={styles.courseRailIcon}>
+            <Icon name="document" size={20} />
+            <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+          </span>
           <BuilderInkLabel>Сторінка</BuilderInkLabel>
         </a>
-        <a className={styles.courseRailLink} href="#course-author" aria-label="Автор" aria-current={activeMode === "author" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("author"); }}>
-          <span className={styles.courseRailIcon}><Icon name="user" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
+        <a
+          className={styles.courseRailLink}
+          href="#course-author"
+          aria-label="Автор"
+          aria-current={activeMode === "author" ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            onMode("author");
+          }}
+        >
+          <span className={styles.courseRailIcon}>
+            <Icon name="user" size={20} />
+            <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+          </span>
           <BuilderInkLabel>Автор</BuilderInkLabel>
         </a>
-        <a className={styles.courseRailLink} href="#course-release" aria-label="Публікація" aria-current={activeMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("release"); }}>
-          <span className={styles.courseRailIcon}><Icon name="shield-check" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
+        <a
+          className={styles.courseRailLink}
+          href="#course-release"
+          aria-label="Публікація"
+          aria-current={activeMode === "release" ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            onMode("release");
+          }}
+        >
+          <span className={styles.courseRailIcon}>
+            <Icon name="shield-check" size={20} />
+            <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+          </span>
           <BuilderInkLabel>Публікація</BuilderInkLabel>
         </a>
       </nav>
@@ -232,102 +292,121 @@ export function ModuleEditor({
         </p>
       ) : null}
 
-      {collapsed ? null : <>
-      <div className={styles.lessonList}>
-      {module.lessons.map((lesson, lessonIndex) => {
-        const lessonRow: DragRef = { list: "lesson", group: moduleIndex, index: lessonIndex };
-        return (
-        <div
-          className={`${styles.lessonRowWrap} ${styles.dragRow}`}
-          key={lesson.id}
-          {...lessonDrag.rowProps(lessonRow)}
-        >
-          <BuilderGrip drag={lessonDrag} row={lessonRow} label={lesson.title} />
-          <div className={styles.lessonRow}>
-            <span
-              className={styles.lessonOrdinal}
-              data-short-label={String(lessonIndex + 1).padStart(2, "0")}
-              aria-hidden="true"
-            >
-              {sequenceIndex === null
-                ? String(lessonIndex + 1).padStart(2, "0")
-                : `${String(sequenceIndex).padStart(2, "0")}.${String(lessonIndex + 1).padStart(2, "0")}`}
-            </span>
-            <Icon className={styles.lessonIcon} name="document" size={20} />
-            <span className={styles.lessonText}>
-              <BuilderEditableTitle
-                compact
-                level="h4"
-                value={lesson.title}
-                label={`Редагувати назву уроку ${lessonIndex + 1}`}
-                href={`/build/${course.slug}/${lesson.slug}`}
-                onLinkClick={(event) => {
-                  if (onOpenLesson(`/build/${course.slug}/${lesson.slug}`) === "held") event.preventDefault();
-                }}
-                onChange={(value) => onChange(["modules", moduleIndex, "lessons", lessonIndex, "title"], value)}
-              />
-              <span className={styles.lessonMeta}>
-                {lesson.dayIndex ? `День ${lesson.dayIndex} · ` : ""}
-                {lesson.blocks.length} {plural(lesson.blocks.length, "блок", "блоки", "блоків")}
-              </span>
-            </span>
+      {collapsed ? null : (
+        <>
+          <div className={styles.lessonList}>
+            {module.lessons.map((lesson, lessonIndex) => {
+              const lessonRow: DragRef = { list: "lesson", group: moduleIndex, index: lessonIndex };
+              return (
+                <div
+                  className={`${styles.lessonRowWrap} ${styles.dragRow}`}
+                  key={lesson.id}
+                  {...lessonDrag.rowProps(lessonRow)}
+                >
+                  <BuilderGrip drag={lessonDrag} row={lessonRow} label={lesson.title} />
+                  <div className={styles.lessonRow}>
+                    <span
+                      className={styles.lessonOrdinal}
+                      data-short-label={String(lessonIndex + 1).padStart(2, "0")}
+                      aria-hidden="true"
+                    >
+                      {sequenceIndex === null
+                        ? String(lessonIndex + 1).padStart(2, "0")
+                        : `${String(sequenceIndex).padStart(2, "0")}.${String(lessonIndex + 1).padStart(2, "0")}`}
+                    </span>
+                    <Icon className={styles.lessonIcon} name="document" size={20} />
+                    <span className={styles.lessonText}>
+                      <BuilderEditableTitle
+                        compact
+                        level="h4"
+                        value={lesson.title}
+                        label={`Редагувати назву уроку ${lessonIndex + 1}`}
+                        href={`/build/${course.slug}/${lesson.slug}`}
+                        onLinkClick={(event) => {
+                          if (onOpenLesson(`/build/${course.slug}/${lesson.slug}`) === "held") event.preventDefault();
+                        }}
+                        onChange={(value) => onChange(["modules", moduleIndex, "lessons", lessonIndex, "title"], value)}
+                      />
+                      <span className={styles.lessonMeta}>
+                        {lesson.dayIndex ? `День ${lesson.dayIndex} · ` : ""}
+                        {lesson.blocks.length} {plural(lesson.blocks.length, "блок", "блоки", "блоків")}
+                      </span>
+                    </span>
+                  </div>
+                  <BuilderMenu
+                    label={`Дії з уроком «${lesson.title}»`}
+                    items={[
+                      {
+                        label: "Підняти вище",
+                        icon: "arrow-up",
+                        disabled: moduleIndex === 0 && lessonIndex === 0,
+                        onSelect: () => moveLesson(lessonIndex, -1),
+                      },
+                      {
+                        label: "Опустити нижче",
+                        icon: "arrow-down",
+                        disabled:
+                          moduleIndex === course.modules.length - 1 && lessonIndex === module.lessons.length - 1,
+                        onSelect: () => moveLesson(lessonIndex, 1),
+                      },
+                      {
+                        label: "Експортувати Markdown",
+                        disabled: busy,
+                        onSelect: () => void onExportLesson(lesson, "md"),
+                      },
+                      {
+                        label: "Експортувати Word",
+                        disabled: busy,
+                        onSelect: () => void onExportLesson(lesson, "docx"),
+                      },
+                      {
+                        label: "Експортувати текст",
+                        disabled: busy,
+                        onSelect: () => void onExportLesson(lesson, "txt"),
+                      },
+                      {
+                        label: "Видалити урок",
+                        icon: "trash" as const,
+                        danger: true,
+                        onSelect: () => deleteLesson(lessonIndex),
+                      },
+                    ]}
+                  />
+                </div>
+              );
+            })}
           </div>
-          <BuilderMenu
-            label={`Дії з уроком «${lesson.title}»`}
-            items={[
-              {
-                label: "Підняти вище",
-                icon: "arrow-up",
-                disabled: moduleIndex === 0 && lessonIndex === 0,
-                onSelect: () => moveLesson(lessonIndex, -1),
-              },
-              {
-                label: "Опустити нижче",
-                icon: "arrow-down",
-                disabled: moduleIndex === course.modules.length - 1 && lessonIndex === module.lessons.length - 1,
-                onSelect: () => moveLesson(lessonIndex, 1),
-              },
-              { label: "Експортувати Markdown", disabled: busy, onSelect: () => void onExportLesson(lesson, "md") },
-              { label: "Експортувати Word", disabled: busy, onSelect: () => void onExportLesson(lesson, "docx") },
-              { label: "Експортувати текст", disabled: busy, onSelect: () => void onExportLesson(lesson, "txt") },
-              { label: "Видалити урок", icon: "trash" as const, danger: true, onSelect: () => deleteLesson(lessonIndex) },
-            ]}
-          />
-        </div>
-        );
-      })}
-      </div>
 
-      <div className={styles.addRow}>
-        <button
-          className={styles.addAction}
-          type="button"
-          onClick={() =>
-            onModules((current) =>
-              current.modules.map((entry, index) => {
-                if (index !== moduleIndex) return entry;
-                const position = entry.lessons.length + 1;
-                const title = `Урок ${position}`;
-                // Lesson slugs are unique across the WHOLE course, not the module:
-                // they are the URL key, and `validateCourse` refuses a duplicate.
-                const taken = current.modules.flatMap((one) => one.lessons.map((item) => item.slug));
-                // A daily course refuses a lesson with no day at all, so a new
-                // one takes the day after the last — never a renumber of the rest.
-                const dayIndex = entry.reference ? undefined : nextDayIndex(current);
-                return {
-                  ...entry,
-                  lessons: [
-                    ...entry.lessons,
-                    newLesson(ids, { order: position, title, slug: uniqueSlug(title, taken), dayIndex }),
-                  ],
-                };
-              })
-            )
-          }
-        >
-          <Icon name="plus" size={20} /> Новий урок
-        </button>
-        {/* NEXT TO THE HAND-MADE ONE, because it makes the same thing — but as
+          <div className={styles.addRow}>
+            <button
+              className={styles.addAction}
+              type="button"
+              onClick={() =>
+                onModules((current) =>
+                  current.modules.map((entry, index) => {
+                    if (index !== moduleIndex) return entry;
+                    const position = entry.lessons.length + 1;
+                    const title = `Урок ${position}`;
+                    // Lesson slugs are unique across the WHOLE course, not the module:
+                    // they are the URL key, and `validateCourse` refuses a duplicate.
+                    const taken = current.modules.flatMap((one) => one.lessons.map((item) => item.slug));
+                    // A daily course refuses a lesson with no day at all, so a new
+                    // one takes the day after the last — never a renumber of the rest.
+                    const dayIndex = entry.reference ? undefined : nextDayIndex(current);
+                    return {
+                      ...entry,
+                      lessons: [
+                        ...entry.lessons,
+                        newLesson(ids, { order: position, title, slug: uniqueSlug(title, taken), dayIndex }),
+                      ],
+                    };
+                  }),
+                )
+              }
+            >
+              <Icon name="plus" size={20} /> Новий урок
+            </button>
+            {/* NEXT TO THE HAND-MADE ONE, because it makes the same thing — but as
             a GLYPH, not a second sentence. Two full labels side by side read as
             two equal offers and doubled the width of a row that repeats once per
             module; on a phone they wrapped. The words belong to the one an
@@ -337,34 +416,35 @@ export function ModuleEditor({
 
             `multiple` is the point of it: five files are five lessons in one
             press, appended in the order the picker returns them. */}
-        <button
-          className={styles.moduleImportAction}
-          type="button"
-          disabled={busy}
-          onClick={() => importPicker.current?.click()}
-          title={busy ? "Опрацьовуємо…" : "Імпортувати уроки з файлів"}
-          aria-label={busy ? "Опрацьовуємо…" : "Імпортувати уроки з файлів"}
-        >
-          <Icon name="import" size={20} />
-          <HandGraphic className={styles.stepInkRing} name="ink-ring" size={42} />
-        </button>
-        <input
-          ref={importPicker}
-          className={styles.visuallyHidden}
-          type="file"
-          accept=".md,.markdown,.docx,.txt,text/markdown,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-          multiple
-          tabIndex={-1}
-          onChange={(event) => {
-            const files = Array.from(event.target.files ?? []);
-            /* Cleared before the work starts, so picking the same files again
+            <button
+              className={styles.moduleImportAction}
+              type="button"
+              disabled={busy}
+              onClick={() => importPicker.current?.click()}
+              title={busy ? "Опрацьовуємо…" : "Імпортувати уроки з файлів"}
+              aria-label={busy ? "Опрацьовуємо…" : "Імпортувати уроки з файлів"}
+            >
+              <Icon name="import" size={20} />
+              <HandGraphic className={styles.stepInkRing} name="ink-ring" size={42} />
+            </button>
+            <input
+              ref={importPicker}
+              className={styles.visuallyHidden}
+              type="file"
+              accept=".md,.markdown,.docx,.txt,text/markdown,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              multiple
+              tabIndex={-1}
+              onChange={(event) => {
+                const files = Array.from(event.target.files ?? []);
+                /* Cleared before the work starts, so picking the same files again
                still fires a change event. */
-            event.target.value = "";
-            if (files.length) void onImportLessons(files);
-          }}
-        />
-      </div>
-      </>}
+                event.target.value = "";
+                if (files.length) void onImportLessons(files);
+              }}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -456,15 +456,10 @@ export function classifyDosha(vata: number, pitta: number, kapha: number): Dosha
     ? Math.abs(leaderSharePp - DOSHA_DUAL_LEADER_SHARE_MAX_PP)
     : Number.POSITIVE_INFINITY;
 
-  const marginPp =
-    type === "tridosha" ? distanceToTridosha : Math.min(distanceToTridosha, distanceToDualLine);
+  const marginPp = type === "tridosha" ? distanceToTridosha : Math.min(distanceToTridosha, distanceToDualLine);
 
   const confidence: DoshaConfidence =
-    marginPp >= DOSHA_CONFIDENCE_HIGH_PP
-      ? "high"
-      : marginPp >= DOSHA_CONFIDENCE_MEDIUM_PP
-        ? "medium"
-        : "low";
+    marginPp >= DOSHA_CONFIDENCE_HIGH_PP ? "high" : marginPp >= DOSHA_CONFIDENCE_MEDIUM_PP ? "medium" : "low";
 
   return {
     type,
@@ -540,24 +535,19 @@ function shuffleWithSeed<T>(items: T[], seed: number): T[] {
  * has to return the same arrangement. Different sessions get different orders,
  * which is what takes the position bias out of the aggregate.
  */
-export function presentQuestionsForSession(
-  questions: SourceQuestion[],
-  sessionId: string
-): PublicTestQuestion[] {
+export function presentQuestionsForSession(questions: SourceQuestion[], sessionId: string): PublicTestQuestion[] {
   return questions.map((question) => ({
     id: question.id,
     orderIndex: question.orderIndex,
     code: question.code,
     text: question.text,
-    options: shuffleWithSeed(question.options, hash32(`${sessionId}:${question.code}`)).map(
-      (option, index) => ({
-        id: option.id,
-        // The position on screen, not the seed order — the seed order is the key.
-        order: index + 1,
-        code: option.code,
-        text: option.text,
-      })
-    ),
+    options: shuffleWithSeed(question.options, hash32(`${sessionId}:${question.code}`)).map((option, index) => ({
+      id: option.id,
+      // The position on screen, not the seed order — the seed order is the key.
+      order: index + 1,
+      code: option.code,
+      text: option.text,
+    })),
   }));
 }
 

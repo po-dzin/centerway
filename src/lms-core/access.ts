@@ -92,9 +92,7 @@ export function acceptedPaidOrders(input: {
   orders: PaidOrderRef[];
   now: Date;
 }): PaidOrderRef[] {
-  const accepted = new Set(
-    [...input.courseProductCodes, courseOfferCode(input.courseSlug)].map(normalizeCode)
-  );
+  const accepted = new Set([...input.courseProductCodes, courseOfferCode(input.courseSlug)].map(normalizeCode));
 
   return input.orders
     .filter((order) => order.status.trim().toLowerCase() === "paid")
@@ -111,9 +109,7 @@ export function resolveEntitlement(input: EntitlementInput): Entitlement {
      — and the omission would be invisible until a buyer complained. The
      declared codes stay: they are how the OLD funnel names ("mini-detox") keep
      working. */
-  const accepted = new Set(
-    [...input.courseProductCodes, courseOfferCode(input.courseSlug)].map(normalizeCode)
-  );
+  const accepted = new Set([...input.courseProductCodes, courseOfferCode(input.courseSlug)].map(normalizeCode));
 
   const manual = (input.manualGrants ?? []).find((grant) => grant.courseSlug === input.courseSlug);
   if (manual) {
@@ -306,7 +302,7 @@ export function planAccess(input: AccessPlanInput): AccessPlan {
 
   const spentUntil = Math.max(
     anchor ? Date.parse(anchor.createdAt) : Number.NEGATIVE_INFINITY,
-    input.existing?.revokedAt ? Date.parse(input.existing.revokedAt) : Number.NEGATIVE_INFINITY
+    input.existing?.revokedAt ? Date.parse(input.existing.revokedAt) : Number.NEGATIVE_INFINITY,
   );
 
   const fresh = paid.filter((order) => Date.parse(order.createdAt) > spentUntil);
@@ -328,13 +324,10 @@ export function planAccess(input: AccessPlanInput): AccessPlan {
   // Stacking starts from whatever is still owed. A live window keeps its
   // remaining days; a lapsed or revoked one starts again at the payment.
   const stillOpen =
-    input.existing &&
-    input.existing.status !== "revoked" &&
-    !isEnrollmentExpired(input.existing.expiresAt, input.now);
+    input.existing && input.existing.status !== "revoked" && !isEnrollmentExpired(input.existing.expiresAt, input.now);
 
-  let end = stillOpen && input.existing?.expiresAt
-    ? Date.parse(input.existing.expiresAt)
-    : Date.parse(fresh[0].createdAt);
+  let end =
+    stillOpen && input.existing?.expiresAt ? Date.parse(input.existing.expiresAt) : Date.parse(fresh[0].createdAt);
 
   if (!Number.isFinite(end)) end = input.now.getTime();
 

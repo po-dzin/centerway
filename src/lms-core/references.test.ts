@@ -20,19 +20,23 @@ const course = (): Course => ({
   version: 1,
   schedule: { mode: "open" },
   entitlementProductCodes: [],
-  modules: [{
-    id: "module",
-    slug: "module",
-    title: "Модуль",
-    order: 1,
-    lessons: [{
-      id: "lesson-stable-id",
-      slug: "mutable-slug",
-      title: "Нова назва уроку",
+  modules: [
+    {
+      id: "module",
+      slug: "module",
+      title: "Модуль",
       order: 1,
-      blocks: [{ id: "practice-stable-id", type: "practice_block", title: "Дихання" }],
-    }],
-  }],
+      lessons: [
+        {
+          id: "lesson-stable-id",
+          slug: "mutable-slug",
+          title: "Нова назва уроку",
+          order: 1,
+          blocks: [{ id: "practice-stable-id", type: "practice_block", title: "Дихання" }],
+        },
+      ],
+    },
+  ],
 });
 
 describe("internal references", () => {

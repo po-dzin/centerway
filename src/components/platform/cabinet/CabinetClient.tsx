@@ -131,10 +131,7 @@ export function CabinetClient() {
      the shelf knows enrollment and its deadline, and neither of them knows
      "completed" either. A number nobody can compute honestly is better absent
      than replaced with a second wrong one. */
-  const productPurchases = useMemo(
-    () => purchases.filter((purchase) => purchase.offerKind === "product"),
-    [purchases],
-  );
+  const productPurchases = useMemo(() => purchases.filter((purchase) => purchase.offerKind === "product"), [purchases]);
 
   const copy = useMemo(
     () =>
@@ -154,10 +151,7 @@ export function CabinetClient() {
   const shelfHref = href(LEARNING_SHELF_HREF);
   const homeHref = href("/");
 
-  const ownedCourses = useMemo(
-    () => (shelf ?? []).filter((course) => course.access !== "locked"),
-    [shelf],
-  );
+  const ownedCourses = useMemo(() => (shelf ?? []).filter((course) => course.access !== "locked"), [shelf]);
 
   /** The single course the dashboard offers to resume: latest real activity wins. */
   const resumeCourse = useMemo(() => pickResumeCourse(ownedCourses), [ownedCourses]);
@@ -198,91 +192,90 @@ export function CabinetClient() {
           and only its contents sit on the page's own column. Inside the shell
           it was a picture in a frame with the paper visible around it, which is
           a photograph of a room rather than being in one. */}
-        <CabinetHero
-          label={copy.profile}
-          name={account.fullName ?? copy.fallbackName}
-          role={platformRoleLabel(identity.role)}
-          email={account.email ?? copy.fallbackEmail}
-          notice={
-            reach && !reach.linked && reach.linkUrl
-              ? { label: cab.notificationsMissing, action: cab.connectTelegram, href: reach.linkUrl }
-              : undefined
-          }
-          avatar={
-            account.avatarUrl ? (
-              // Remote auth avatars stay on plain img to avoid introducing image config coupling into platform profile.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={account.avatarUrl} alt="" referrerPolicy="no-referrer" />
-            ) : (
-              getUserInitial(session, account.fullName)
-            )
-          }
-          /* THREE FACTS, ONE ROW. The count came back beside the dosha — a
+      <CabinetHero
+        label={copy.profile}
+        name={account.fullName ?? copy.fallbackName}
+        role={platformRoleLabel(identity.role)}
+        email={account.email ?? copy.fallbackEmail}
+        notice={
+          reach && !reach.linked && reach.linkUrl
+            ? { label: cab.notificationsMissing, action: cab.connectTelegram, href: reach.linkUrl }
+            : undefined
+        }
+        avatar={
+          account.avatarUrl ? (
+            // Remote auth avatars stay on plain img to avoid introducing image config coupling into platform profile.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={account.avatarUrl} alt="" referrerPolicy="no-referrer" />
+          ) : (
+            getUserInitial(session, account.fullName)
+          )
+        }
+        /* THREE FACTS, ONE ROW. The count came back beside the dosha — a
              room with one dash under «Продукти» and nothing else is a room
              missing a fact, not a room kept clean. What did NOT come back is
              the word «Бібліотека»: that names the ROUTE, and every course it
              used to stand for is printed by name a few centimetres below. */
-          stats={[
-            { label: copy.dosha, value: formatDoshaResult(dosha?.resultType, lang) },
-            {
-              label: cab.coursesLabel,
-              /* An ellipsis while the shelf is still being read: "—" would
+        stats={[
+          { label: copy.dosha, value: formatDoshaResult(dosha?.resultType, lang) },
+          {
+            label: cab.coursesLabel,
+            /* An ellipsis while the shelf is still being read: "—" would
                  claim an empty library to somebody who owns nine courses. */
-              value: shelfLoading
-                ? "…"
-                : ownedCourses.length > 0
-                  ? cab.coursesCount(ownedCourses.length)
-                  : copy.emptyValue,
-            },
-            {
-              label: copy.products,
-              /* "—" is an answer: it means none. */
-              value:
-                productPurchases.length > 0 ? cab.productsCount(productPurchases.length) : copy.emptyValue,
-            },
-          ]}
-        >
-          {/* THE WHOLE FIRST SCREEN IS THE ANSWER, in one row of three: the
+            value: shelfLoading
+              ? "…"
+              : ownedCourses.length > 0
+                ? cab.coursesCount(ownedCourses.length)
+                : copy.emptyValue,
+          },
+          {
+            label: copy.products,
+            /* "—" is an answer: it means none. */
+            value: productPurchases.length > 0 ? cab.productsCount(productPurchases.length) : copy.emptyValue,
+          },
+        ]}
+      >
+        {/* THE WHOLE FIRST SCREEN IS THE ANSWER, in one row of three: the
               course to resume, the rest of the shelf as glances, and the dosha
               result — the three things this person holds. The dosha used to be
               a card in a section below the photograph, which put a scroll
               between somebody and the test they took. */}
-          <div className={styles.shelfRow} data-shelf={ownedCourses.length > 1 ? "courses" : "single"}>
-            {resumeCourse ? (
-              /* The one answer: cover, where you stopped, and the only control
+        <div className={styles.shelfRow} data-shelf={ownedCourses.length > 1 ? "courses" : "single"}>
+          {resumeCourse ? (
+            /* The one answer: cover, where you stopped, and the only control
                  in the row. */
-              <CompactCourseCard course={resumeCourse} copy={cab} primary />
-            ) : shelfFailed ? (
-              /* Not "no courses yet" — the shelf just could not be read. Those
+            <CompactCourseCard course={resumeCourse} copy={cab} primary />
+          ) : shelfFailed ? (
+            /* Not "no courses yet" — the shelf just could not be read. Those
                  look identical without this branch, and a learner who paid for
                  something would be told to go buy it again. */
-              <ShelfErrorCard copy={cab} onRetry={() => void reloadShelf()} />
-            ) : shelfLoading ? (
-              /* Same reasoning as the branch above, one state earlier: still
+            <ShelfErrorCard copy={cab} onRetry={() => void reloadShelf()} />
+          ) : shelfLoading ? (
+            /* Same reasoning as the branch above, one state earlier: still
                  reading is not the same as nothing to read. */
-              <PlatformLoadingState
-                label={cab.learningLabel}
-                title={cab.learningLoadingTitle}
-                detail={cab.learningLoadingLead}
-              />
-            ) : (
-              <article className={styles.shelfCard} {...glassMedia}>
-                <h3 className={styles.shelfCardTitle}>{cab.learningEmptyTitle}</h3>
-                <p className={styles.shelfCardNote}>{cab.learningEmptyLead}</p>
-                <div className={styles.shelfCardAction}>
-                  <Link className={styles.actionPrimary} href={programsHref}>
-                    {cab.browsePrograms}
-                  </Link>
-                </div>
-              </article>
-            )}
+            <PlatformLoadingState
+              label={cab.learningLabel}
+              title={cab.learningLoadingTitle}
+              detail={cab.learningLoadingLead}
+            />
+          ) : (
+            <article className={styles.shelfCard} {...glassMedia}>
+              <h3 className={styles.shelfCardTitle}>{cab.learningEmptyTitle}</h3>
+              <p className={styles.shelfCardNote}>{cab.learningEmptyLead}</p>
+              <div className={styles.shelfCardAction}>
+                <Link className={styles.actionPrimary} href={programsHref}>
+                  {cab.browsePrograms}
+                </Link>
+              </div>
+            </article>
+          )}
 
-            {/* The way onward, and nothing else in this column. It used to
+          {/* The way onward, and nothing else in this column. It used to
                 stand at the end of three more courses; with those gone it is
                 what it always was — one crossing, to the place the whole shelf
                 lives. */}
-            {ownedCourses.length > 1 ? (
-              /* `PlatformBlockLink`, not a local copy of it. This was hand-rolled
+          {ownedCourses.length > 1 ? (
+            /* `PlatformBlockLink`, not a local copy of it. This was hand-rolled
                  — page ink for the label, a PERMANENTLY gold arrow beside it,
                  no stroke — so the cabinet's way out looked like a different
                  affordance from the identical act on every showcase block. The
@@ -290,78 +283,77 @@ export function CabinetClient() {
                  system spends on hover, and spending it at rest left nothing
                  for the pointer to say. Position is unchanged — the last row of
                  the column, where the list runs out. */
-              <span className={styles.glanceMore}>
-                <PlatformBlockLink href={shelfHref} label={cab.allCourses} />
-              </span>
-            ) : null}
+            <span className={styles.glanceMore}>
+              <PlatformBlockLink href={shelfHref} label={cab.allCourses} />
+            </span>
+          ) : null}
 
-            {/* The dosha RESULT, not the tests catalogue. What the test is and
+          {/* The dosha RESULT, not the tests catalogue. What the test is and
                 what else exists is the showcase's business — this tile holds
                 the answer that belongs to this person, at the size of a glance
                 rather than of a card: the shape, the type, one way back in. */}
-            <article className={styles.shelfAside} {...glassMedia}>
-              {/* The word «Доша» and the result are BOTH printed in the fact
+          <article className={styles.shelfAside} {...glassMedia}>
+            {/* The word «Доша» and the result are BOTH printed in the fact
                   row at the top of this same screen — naming the tile again
                   here said nothing the reader had not just read. The wheel
                   carries the type at its own size, and its `<title>` names
                   it for a screen reader. */}
-              {dosha ? (
-                <>
-                  {/* The shape, the type and the three scores — three
+            {dosha ? (
+              <>
+                {/* The shape, the type and the three scores — three
                       horizontal meters cost a card's width to say the same
                       thing less densely. See `DoshaWheel`. */}
-                  <DoshaWheel
-                    scores={dosha.scores ?? { vata: 0, pitta: 0, kapha: 0 }}
-                    labels={copy.doshaLabels}
-                    resultLabel={formatDoshaResult(dosha.resultType, lang)}
-                    lang={lang}
-                  />
-                  <p className={styles.shelfCardMeta}>
-                    {copy.completedShort} {fmtDate(dosha.completedAt, dateLocale)}
-                  </p>
-                </>
-              ) : (
-                <p className={styles.shelfCardNote}>{copy.doshaEmptyLead}</p>
-              )}
-              <div className={styles.shelfCardAction}>
-                <Link className={dosha ? styles.actionGhost : styles.actionPrimary} href={doshaTestHref}>
-                  {dosha ? copy.retakeTest : copy.startTest}
-                </Link>
-              </div>
-            </article>
-          </div>
-        </CabinetHero>
+                <DoshaWheel
+                  scores={dosha.scores ?? { vata: 0, pitta: 0, kapha: 0 }}
+                  labels={copy.doshaLabels}
+                  resultLabel={formatDoshaResult(dosha.resultType, lang)}
+                  lang={lang}
+                />
+                <p className={styles.shelfCardMeta}>
+                  {copy.completedShort} {fmtDate(dosha.completedAt, dateLocale)}
+                </p>
+              </>
+            ) : (
+              <p className={styles.shelfCardNote}>{copy.doshaEmptyLead}</p>
+            )}
+            <div className={styles.shelfCardAction}>
+              <Link className={dosha ? styles.actionGhost : styles.actionPrimary} href={doshaTestHref}>
+                {dosha ? copy.retakeTest : copy.startTest}
+              </Link>
+            </div>
+          </article>
+        </div>
+      </CabinetHero>
 
       <div className={styles.shell}>
-
         {/* A receipt is reference, not the answer the dashboard exists to give.
             It remains folded until the reader asks for it at every viewport. */}
         <CabinetFold label={copy.products} title={copy.productsTitle} lead={copy.productsLead}>
           {purchases.length > 0 ? (
             <div className={styles.cardGrid}>
               {purchases.map((purchase) => (
-                  <article key={purchase.orderRef} className={styles.card} {...matte}>
-                    <div className={styles.chipRow}>
-                      <span className={styles.chip}>
-                        {isProgramKind(purchase.offerKind) ? copy.programsLabel : copy.productLabel}
-                      </span>
-                    </div>
-                    <h3 className={styles.cardTitle}>{purchase.title}</h3>
-                    <ul className={styles.metaList}>
-                      <li>
-                        {copy.purchasedAt}: <strong>{fmtDate(purchase.createdAt, dateLocale)}</strong>
-                      </li>
-                      <li>
-                        {copy.price}: <strong>{fmtMoney(purchase.amount, purchase.currency)}</strong>
-                      </li>
-                    </ul>
-                    {/* No link into the course from here on purpose: a
+                <article key={purchase.orderRef} className={styles.card} {...matte}>
+                  <div className={styles.chipRow}>
+                    <span className={styles.chip}>
+                      {isProgramKind(purchase.offerKind) ? copy.programsLabel : copy.productLabel}
+                    </span>
+                  </div>
+                  <h3 className={styles.cardTitle}>{purchase.title}</h3>
+                  <ul className={styles.metaList}>
+                    <li>
+                      {copy.purchasedAt}: <strong>{fmtDate(purchase.createdAt, dateLocale)}</strong>
+                    </li>
+                    <li>
+                      {copy.price}: <strong>{fmtMoney(purchase.amount, purchase.currency)}</strong>
+                    </li>
+                  </ul>
+                  {/* No link into the course from here on purpose: a
                         purchase carries an OFFER code, and the shelf carries a
                         program slug. They are not the same key, and a lookup
                         that happens to match today would silently send someone
                         to the wrong course the first time they diverge. The way
                         into a course is the shelf, which is keyed correctly. */}
-                  </article>
+                </article>
               ))}
             </div>
           ) : (

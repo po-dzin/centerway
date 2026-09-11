@@ -7,7 +7,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 export const metadata: Metadata = pageMetadata({
   title: "Трав'яна підтримка",
   description: describe(
-    "Трав'яний збір CenterWay: індивідуальний підбір за станом і ритмом, як він поєднується з харчуванням і програмами і коли його не варто починати."
+    "Трав'яний збір CenterWay: індивідуальний підбір за станом і ритмом, як він поєднується з харчуванням і програмами і коли його не варто починати.",
   ),
   path: "/products/herbs",
 });

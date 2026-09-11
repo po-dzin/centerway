@@ -59,7 +59,7 @@ export function ReaderMarkLayer({
 
   const highlights = useMemo(
     () => annotations.filter((item) => item.kind === "highlight" && item.anchor),
-    [annotations]
+    [annotations],
   );
 
   /**
@@ -207,7 +207,7 @@ export function ReaderMarkLayer({
       const clientId = await onMark(anchor, null);
       if (withNote && clientId) setEditing({ clientId, draft: "" });
     },
-    [clearSelection, onMark, pending]
+    [clearSelection, onMark, pending],
   );
 
   /* ── Opening an existing mark ───────────────────── */
@@ -242,9 +242,7 @@ export function ReaderMarkLayer({
     return () => body.removeEventListener("click", onClick);
   }, [bodyRef, highlights]);
 
-  const editingAnnotation = editing
-    ? annotations.find((item) => item.clientId === editing.clientId) ?? null
-    : null;
+  const editingAnnotation = editing ? (annotations.find((item) => item.clientId === editing.clientId) ?? null) : null;
 
   return (
     <div className={styles.markLayer} ref={layerRef}>
@@ -295,9 +293,13 @@ export function ReaderMarkLayer({
       ) : null}
 
       {editing && editingAnnotation ? (
-        <div className={styles.noteEditorBackdrop} role="presentation" onClick={(event) => {
-          if (event.target === event.currentTarget) setEditing(null);
-        }}>
+        <div
+          className={styles.noteEditorBackdrop}
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setEditing(null);
+          }}
+        >
           <div className={styles.noteEditor} role="dialog" aria-modal="true" aria-label="Нотатка на полях">
             <p className={styles.noteQuote}>{editingAnnotation.anchor?.quote}</p>
             <textarea
@@ -337,7 +339,9 @@ export function ReaderMarkLayer({
       {!highlightsSupported() && highlights.length > 0 ? (
         // Said once, quietly, and only where it is true: the marks exist and are
         // listed, this browser simply cannot paint them onto the words.
-        <p className={styles.markNotice}>Ваш браузер не показує підсвітку в тексті — позначки доступні у списку нотаток.</p>
+        <p className={styles.markNotice}>
+          Ваш браузер не показує підсвітку в тексті — позначки доступні у списку нотаток.
+        </p>
       ) : null}
     </div>
   );

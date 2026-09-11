@@ -2,11 +2,10 @@ import { chromium } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 
-const baseUrl = (
-  process.env.SMOKE_UI_BASE_URL ||
-  process.env.SMOKE_BASE_URL ||
-  "http://localhost:8000"
-).replace(/\/+$/, "");
+const baseUrl = (process.env.SMOKE_UI_BASE_URL || process.env.SMOKE_BASE_URL || "http://localhost:8000").replace(
+  /\/+$/,
+  "",
+);
 
 const entry = (process.env.BASELINE_LANDING_ENTRY || "next").toLowerCase();
 const stamp = new Date().toISOString().replace(/[:.]/g, "-");

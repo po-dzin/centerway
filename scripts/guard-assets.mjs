@@ -75,7 +75,8 @@ function resolves(reference) {
 
 /** How a landing page names its own images: relative to the file that names them. */
 const LANDING_ROOT = path.join(rootDir, "src", "landing-static");
-const RELATIVE = /(?:data-src|data-srcset|src|srcset|href|url)\s*[=(]\s*["']?((?!https?:|\/\/|data:|#|mailto:|tel:)[A-Za-z0-9_\-./]+\.(?:png|jpe?g|webp|avif|gif|svg|woff2?|mp4|webm))/g;
+const RELATIVE =
+  /(?:data-src|data-srcset|src|srcset|href|url)\s*[=(]\s*["']?((?!https?:|\/\/|data:|#|mailto:|tel:)[A-Za-z0-9_\-./]+\.(?:png|jpe?g|webp|avif|gif|svg|woff2?|mp4|webm))/g;
 
 const missing = [];
 let checked = 0;

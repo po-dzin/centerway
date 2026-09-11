@@ -53,7 +53,12 @@ export function BlockInsert({
   const ring = useRef<HTMLButtonElement>(null);
 
   return (
-    <div className={styles.blockInsert} data-open={anchor ? "" : undefined} data-drop={drop || undefined} data-gap={position}>
+    <div
+      className={styles.blockInsert}
+      data-open={anchor ? "" : undefined}
+      data-drop={drop || undefined}
+      data-gap={position}
+    >
       <button
         ref={ring}
         className={styles.blockInsertAction}

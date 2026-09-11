@@ -120,9 +120,7 @@ async function checkCase(testCase, mode) {
 
   const expectedStatusLabel = mode === "public" ? "401/403" : "4xx";
   const expectedStatusOk =
-    mode === "public"
-      ? (status) => status === 401 || status === 403
-      : (status) => status >= 400 && status < 500;
+    mode === "public" ? (status) => status === 401 || status === 403 : (status) => status >= 400 && status < 500;
 
   try {
     const response = await fetchWithTimeout(testCase.path, {
@@ -133,15 +131,23 @@ async function checkCase(testCase, mode) {
 
     const label = formatLabel(testCase.method, testCase.path);
     const statusOk = expectedStatusOk(response.status);
-    console.log(`${statusOk ? "PASS" : "FAIL"} [${mode}] ${label} status -> ${response.status} (expected ${expectedStatusLabel})`);
+    console.log(
+      `${statusOk ? "PASS" : "FAIL"} [${mode}] ${label} status -> ${response.status} (expected ${expectedStatusLabel})`,
+    );
 
     const bodyResult = await readJsonBody(response);
-    const bodyIsObject = bodyResult.ok && bodyResult.value !== null && typeof bodyResult.value === "object" && !Array.isArray(bodyResult.value);
-    console.log(`${bodyIsObject ? "PASS" : "FAIL"} [${mode}] ${label} body -> ${bodyIsObject ? "JSON object" : "not a JSON object"}`);
+    const bodyIsObject =
+      bodyResult.ok &&
+      bodyResult.value !== null &&
+      typeof bodyResult.value === "object" &&
+      !Array.isArray(bodyResult.value);
+    console.log(
+      `${bodyIsObject ? "PASS" : "FAIL"} [${mode}] ${label} body -> ${bodyIsObject ? "JSON object" : "not a JSON object"}`,
+    );
 
     const contractOk = bodyIsObject && hasContractKey(bodyResult.value);
     console.log(
-      `${contractOk ? "PASS" : "FAIL"} [${mode}] ${label} contract -> ${contractOk ? "contains one of [error, message, ok, success]" : "missing contract key"}`
+      `${contractOk ? "PASS" : "FAIL"} [${mode}] ${label} contract -> ${contractOk ? "contains one of [error, message, ok, success]" : "missing contract key"}`,
     );
 
     if (!statusOk || !bodyIsObject || !contractOk) {

@@ -1,8 +1,7 @@
-const baseUrl = (
-  process.env.SMOKE_UI_BASE_URL ||
-  process.env.SMOKE_BASE_URL ||
-  "http://localhost:8000"
-).replace(/\/+$/, "");
+const baseUrl = (process.env.SMOKE_UI_BASE_URL || process.env.SMOKE_BASE_URL || "http://localhost:8000").replace(
+  /\/+$/,
+  "",
+);
 
 const smokeTgUserId = process.env.SMOKE_DYNAMIC_TG_USER_ID || "";
 const smokeEmail = process.env.SMOKE_DYNAMIC_EMAIL || "";

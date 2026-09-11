@@ -57,7 +57,16 @@ describe("POST /api/orders/create", () => {
   it("writes the order and one InitiateCheckout job, and answers with the reference", async () => {
     const res = await post({
       product_code: "way21",
-      attrib: { fbp: "fb.1.1.2", fbc: "fb.1.1.abc", fbclid: "abc", utm_campaign: "spring", event_id: "evt-1", page_url: "https://www.centerway.net.ua/way21", client_ip: "1.2.3.4", client_ua: "UA" },
+      attrib: {
+        fbp: "fb.1.1.2",
+        fbc: "fb.1.1.abc",
+        fbclid: "abc",
+        utm_campaign: "spring",
+        event_id: "evt-1",
+        page_url: "https://www.centerway.net.ua/way21",
+        client_ip: "1.2.3.4",
+        client_ua: "UA",
+      },
     });
     expect(res.status).toBe(200);
     const body = (await res.json()) as Record<string, unknown>;
@@ -65,11 +74,29 @@ describe("POST /api/orders/create", () => {
     expect(String(body.order_ref)).toMatch(/^way21_\d{8}_[0-9a-f]{8}$/);
 
     expect(db.tables.orders).toHaveLength(1);
-    expect(db.tables.orders[0]).toMatchObject({ order_ref: body.order_ref, product_code: "way21", amount: 4100, status: "created", fbp: "fb.1.1.2", fbclid: "abc", campaign: "spring", page_url: "https://www.centerway.net.ua/way21" });
+    expect(db.tables.orders[0]).toMatchObject({
+      order_ref: body.order_ref,
+      product_code: "way21",
+      amount: 4100,
+      status: "created",
+      fbp: "fb.1.1.2",
+      fbclid: "abc",
+      campaign: "spring",
+      page_url: "https://www.centerway.net.ua/way21",
+    });
 
     expect(db.tables.jobs).toHaveLength(1);
     expect(db.tables.jobs[0]).toMatchObject({ type: "meta:capi", status: "pending" });
-    expect(db.tables.jobs[0].payload).toMatchObject({ event_name: "InitiateCheckout", event_id: "evt-1", order_ref: body.order_ref, value: 4100, currency: "UAH", content_name: "Way21 Detox", content_ids: ["way21"], fbc: "fb.1.1.abc" });
+    expect(db.tables.jobs[0].payload).toMatchObject({
+      event_name: "InitiateCheckout",
+      event_id: "evt-1",
+      order_ref: body.order_ref,
+      value: 4100,
+      currency: "UAH",
+      content_name: "Way21 Detox",
+      content_ids: ["way21"],
+      fbc: "fb.1.1.abc",
+    });
     expect(res.headers.get("access-control-allow-origin")).toBe("https://www.centerway.net.ua");
     expect(res.headers.get("vary")).toBe("Origin");
   });
@@ -81,7 +108,11 @@ describe("POST /api/orders/create", () => {
   });
 
   it("does not file a second InitiateCheckout for an event id it already has", async () => {
-    db.tables.jobs.push({ id: "j0", type: "meta:capi", payload: { event_name: "InitiateCheckout", event_id: "evt-dup" } });
+    db.tables.jobs.push({
+      id: "j0",
+      type: "meta:capi",
+      payload: { event_name: "InitiateCheckout", event_id: "evt-dup" },
+    });
     await post({ product_code: "way21", attrib: { event_id: "evt-dup" } });
     expect(db.tables.orders).toHaveLength(1);
     expect(db.tables.jobs).toHaveLength(1);
@@ -89,7 +120,10 @@ describe("POST /api/orders/create", () => {
 
   it("drops a broken attribution field instead of refusing the order", async () => {
     // The landings' common.js has sent null, undefined and the odd number here.
-    const res = await post({ product_code: "way21", attrib: { fbp: null, fbc: 42, utm_campaign: "   ", client_ip: undefined } });
+    const res = await post({
+      product_code: "way21",
+      attrib: { fbp: null, fbc: 42, utm_campaign: "   ", client_ip: undefined },
+    });
     expect(res.status).toBe(200);
     expect(db.tables.orders[0]).toMatchObject({ fbp: null, campaign: null, client_ip: null });
   });
@@ -112,11 +146,21 @@ describe("POST /api/orders/create", () => {
     expect(foreign.headers.get("access-control-allow-origin")).toBeNull();
     expect(foreign.headers.get("vary")).toBe("Origin");
 
-    const preflight = await OPTIONS(new NextRequest("https://www.centerway.net.ua/api/orders/create", { method: "OPTIONS", headers: { origin: "https://evil.example" } }));
+    const preflight = await OPTIONS(
+      new NextRequest("https://www.centerway.net.ua/api/orders/create", {
+        method: "OPTIONS",
+        headers: { origin: "https://evil.example" },
+      }),
+    );
     expect(preflight.status).toBe(204);
     expect(preflight.headers.get("access-control-allow-origin")).toBeNull();
 
-    const sub = await OPTIONS(new NextRequest("https://www.centerway.net.ua/api/orders/create", { method: "OPTIONS", headers: { origin: "https://my.centerway.net.ua" } }));
+    const sub = await OPTIONS(
+      new NextRequest("https://www.centerway.net.ua/api/orders/create", {
+        method: "OPTIONS",
+        headers: { origin: "https://my.centerway.net.ua" },
+      }),
+    );
     expect(sub.headers.get("access-control-allow-origin")).toBe("https://my.centerway.net.ua");
 
     const sameOrigin = await post({ product_code: "way21" }, null);

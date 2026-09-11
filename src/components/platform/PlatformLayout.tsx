@@ -81,11 +81,15 @@ export function PlatformShell({
 
   return (
     <SurfaceHostProvider host={host}>
-    <div className={`${styles.shell} ${floats ? styles.shellOverlay : ""}`} data-cw-chrome={bare ? "none" : undefined} data-cw-shell-mode={headerMode}
-      /* Read by the shell's own stylesheet to re-state the room the hidden bar
+      <div
+        className={`${styles.shell} ${floats ? styles.shellOverlay : ""}`}
+        data-cw-chrome={bare ? "none" : undefined}
+        data-cw-shell-mode={headerMode}
+        /* Read by the shell's own stylesheet to re-state the room the hidden bar
          used to hold open below 901px. */
-      data-cw-organs={bare ? undefined : "mobile"}>
-      {/* THE PHONE'S CHROME, ON EVERY SURFACE THIS SHELL WRAPS (2026-09-06).
+        data-cw-organs={bare ? undefined : "mobile"}
+      >
+        {/* THE PHONE'S CHROME, ON EVERY SURFACE THIS SHELL WRAPS (2026-09-06).
 
           It shipped on `learn` alone a day earlier, and the note here said why
           `overlay` was not the same case: the storefront's bar carries five
@@ -105,42 +109,43 @@ export function PlatformShell({
           The mark stays a plain link. A surface with sections builds its own
           leading control (the reader does); everything here has none, and a
           sheet holding one row is a menu apologising for existing. */}
-      {bare ? null : (
-        <PlatformOrgans
-          scope="mobile"
-          reveal="gesture"
-          label="Навігація"
-          left={back ? <PlatformBackOrgan href={back.href} label={back.label} /> : <PlatformMarkOrgan />}
-          right={
-            /* TWO CONTROLS IN THIS CORNER (2026-09-06): the map and the
+        {bare ? null : (
+          <PlatformOrgans
+            scope="mobile"
+            reveal="gesture"
+            label="Навігація"
+            left={back ? <PlatformBackOrgan href={back.href} label={back.label} /> : <PlatformMarkOrgan />}
+            right={
+              /* TWO CONTROLS IN THIS CORNER (2026-09-06): the map and the
                account. They were one for a day — the route rows folded into
                the account sheet — and one sheet holding both answered «where
                can I go» and «who am I» in a single column, marking two rows as
                current at once. The burger is the same glyph the bar carries
                above 901px, so the control does not change identity with the
                viewport. */
-            <span className={chromeOrgans.pair}>
-              {/* `learn` has no top-level route map by design — the lesson tree
+              <span className={chromeOrgans.pair}>
+                {/* `learn` has no top-level route map by design — the lesson tree
                   is the page, not the chrome — so the burger is not rendered
                   there at all rather than opening an empty sheet. */}
-              {headerMode === "learn" ? null : (
-                <PlatformRouteMenu routes={(close) => <PlatformRouteRows onNavigate={close} />} />
-              )}
-              <PlatformAccountMenu compact />
-            </span>
-          }
-        />
-      )}
-      {bare ? null : <PlatformHeader
-        /* Desktop-only on every mode now, not just `learn`: below 901px the
+                {headerMode === "learn" ? null : (
+                  <PlatformRouteMenu routes={(close) => <PlatformRouteRows onNavigate={close} />} />
+                )}
+                <PlatformAccountMenu compact />
+              </span>
+            }
+          />
+        )}
+        {bare ? null : (
+          <PlatformHeader
+            /* Desktop-only on every mode now, not just `learn`: below 901px the
            islands above are the chrome, and two of them rendering at once was
            the state this shell was in for exactly one day. */
-        scope="desktop"
-        initialTone={headerMode === "overlay" ? "dark" : "light"}
-        mode={headerMode === "learn" ? "workspace" : headerMode}
-        surface={surface}
-        workspaceContent={workspaceContent}
-        /* EVERY SURFACE THIS SHELL WRAPS, because every one of them is read
+            scope="desktop"
+            initialTone={headerMode === "overlay" ? "dark" : "light"}
+            mode={headerMode === "learn" ? "workspace" : headerMode}
+            surface={surface}
+            workspaceContent={workspaceContent}
+            /* EVERY SURFACE THIS SHELL WRAPS, because every one of them is read
            rather than operated. It started on the lesson and it is the same
            argument on the storefront, the catalogue and the dashboard: while
            you are moving down a page the bar is only the way OUT, and the way
@@ -153,18 +158,21 @@ export function PlatformShell({
            itself (BuilderShell.tsx) and leaves this off, because its bar holds
            save state, undo and the preview button — controls in use, which a
            bar that walks off mid-edit would be hiding. */
-        autoHide
-      />}
-      {children}
-      {/* The storefront's close — phone, four social networks — is the wrong
+            autoHide
+          />
+        )}
+        {children}
+        {/* The storefront's close — phone, four social networks — is the wrong
           ending for every page of the personal host, not just for a lesson:
           nobody on `my` is being sold to, and every one of those links leaves
           the origin. The personal footer keeps the shape and the brand and
           drops the sales column, and it follows the HOST as well as the mode,
           so `my` ends one way on every page. */}
-      {footer ? <PlatformFooter variant={headerMode === "learn" || bare || personalSurface ? "personal" : "full"} /> : null}
-      <PwaRuntime />
-    </div>
+        {footer ? (
+          <PlatformFooter variant={headerMode === "learn" || bare || personalSurface ? "personal" : "full"} />
+        ) : null}
+        <PwaRuntime />
+      </div>
     </SurfaceHostProvider>
   );
 }

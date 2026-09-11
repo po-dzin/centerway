@@ -56,7 +56,7 @@ export async function enqueueDoshaReminderJobs(limit = 100): Promise<number> {
       .or(
         attempt.user_id
           ? `user_id.eq.${attempt.user_id},session_id.eq.${attempt.session_id}`
-          : `session_id.eq.${attempt.session_id}`
+          : `session_id.eq.${attempt.session_id}`,
       )
       .gt("created_at", attempt.last_activity_at)
       .limit(1);
@@ -109,7 +109,7 @@ export async function processDoshaReminderJob(payload: unknown): Promise<void> {
     .or(
       attempt.user_id
         ? `user_id.eq.${attempt.user_id},session_id.eq.${attempt.session_id}`
-        : `session_id.eq.${attempt.session_id}`
+        : `session_id.eq.${attempt.session_id}`,
     )
     .gt("completed_at", attempt.last_activity_at)
     .limit(1);

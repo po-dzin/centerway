@@ -74,10 +74,7 @@ const REVALIDATE_SECONDS = 120;
  */
 export const PURGE = { expire: 0 } as const;
 
-type LiveRead =
-  | { kind: "course"; course: Course }
-  | { kind: "absent" }
-  | { kind: "unavailable"; reason: string };
+type LiveRead = { kind: "course"; course: Course } | { kind: "absent" } | { kind: "unavailable"; reason: string };
 
 async function readCourse(slug: string): Promise<LiveRead> {
   try {
@@ -151,8 +148,8 @@ async function readAll(): Promise<{ courses: Course[]; complete: boolean }> {
           courseFromRows(
             row,
             modules.filter((module) => module.course_id === row.id),
-            lessons.filter((lesson) => lesson.course_id === row.id)
-          )
+            lessons.filter((lesson) => lesson.course_id === row.id),
+          ),
         );
       } catch (error) {
         // One malformed course must not empty the shelf for every other one.

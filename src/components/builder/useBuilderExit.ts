@@ -66,7 +66,7 @@ export function useBuilderExit({
         else setPendingHref(null);
       });
     },
-    [dirty, pendingHref, prompt, router, save]
+    [dirty, pendingHref, prompt, router, save],
   );
 
   /** Ask before crossing the course boundary; move freely inside it. */
@@ -77,7 +77,7 @@ export function useBuilderExit({
       if (pendingHref || prompt) return;
       setPrompt({ href, saving: false, refused: false });
     },
-    [dirty, navigate, pendingHref, prompt, router, slug]
+    [dirty, navigate, pendingHref, prompt, router, slug],
   );
 
   const saveAndLeave = useCallback(() => {

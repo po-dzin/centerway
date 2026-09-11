@@ -173,7 +173,7 @@ export function CourseContentsDrawer({
       if (event.key !== "Tab" || !panelRef.current) return;
 
       const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>(MODAL_FOCUSABLE)).filter(
-        (element) => element.getClientRects().length > 0
+        (element) => element.getClientRects().length > 0,
       );
       if (focusable.length === 0) {
         event.preventDefault();
@@ -203,7 +203,7 @@ export function CourseContentsDrawer({
     (event: React.MouseEvent<HTMLDivElement>) => {
       if (!panelRef.current?.contains(event.target as Node)) onClose();
     },
-    [onClose]
+    [onClose],
   );
 
   // Steps only, so the drawer's counter agrees with the course map's. Reference
@@ -284,10 +284,7 @@ export function CourseContentsDrawer({
                   aria-current={isCurrent ? "page" : undefined}
                   onClick={onClose}
                 >
-                  <span
-                    className={entry.completed ? styles.drawerMarkDone : styles.drawerMark}
-                    aria-hidden="true"
-                  >
+                  <span className={entry.completed ? styles.drawerMarkDone : styles.drawerMark} aria-hidden="true">
                     {entry.completed ? <Icon name="check" size={14} /> : (entry.dayIndex ?? "•")}
                   </span>
                   <span>

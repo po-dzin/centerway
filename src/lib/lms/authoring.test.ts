@@ -33,7 +33,11 @@ function fakeWriter(): StructureWriter & { rows: Record<string, Row[]>; log: str
           for (const row of payload) {
             for (const column of NOT_NULL[table] ?? []) {
               if (row[column] === undefined || row[column] === null) {
-                return { error: { message: `null value in column "${column}" of relation "${table}" violates not-null constraint` } };
+                return {
+                  error: {
+                    message: `null value in column "${column}" of relation "${table}" violates not-null constraint`,
+                  },
+                };
               }
             }
             const existing = (rows[table] ??= []).find((candidate) => candidate.id === row.id);
@@ -164,7 +168,7 @@ describe("writeCourseStructure", () => {
     expect(tablesTouched).not.toContain("lms_course_offers");
     expect(Object.keys(db.rows)).not.toContain("lms_course_offers");
     expect(Object.keys(db.rows.lms_courses[0])).toEqual(
-      expect.not.arrayContaining(["amount", "price", "offer", "list_amount", "currency"])
+      expect.not.arrayContaining(["amount", "price", "offer", "list_amount", "currency"]),
     );
   });
 
@@ -179,9 +183,9 @@ describe("writeCourseStructure", () => {
           : {
               ...module,
               lessons: module.lessons.map((lesson, at) =>
-                at > 0 ? lesson : { ...lesson, title: "[ЗАПОВНИ: назва уроку]" }
+                at > 0 ? lesson : { ...lesson, title: "[ЗАПОВНИ: назва уроку]" },
               ),
-            }
+            },
       ),
     };
     await expect(writeCourseStructure(fakeWriter(), holed)).rejects.toThrow(/lms_authoring_not_publishable/);
@@ -310,9 +314,7 @@ describe("builder → rows → builder", () => {
     // The `$`-prefixed keys are annotations on the FILE, not fields of the
     // course, and the database has no column for them — see
     // `preserveFileAnnotations`, which is what stops a pull from dropping them.
-    const withoutAnnotations = Object.fromEntries(
-      Object.entries(edited).filter(([key]) => !key.startsWith("$"))
-    );
+    const withoutAnnotations = Object.fromEntries(Object.entries(edited).filter(([key]) => !key.startsWith("$")));
     // `version` is the one field the write owns rather than the payload — it is
     // bumped so clients can cache lesson bodies hard.
     expect(restored).toEqual({ ...withoutAnnotations, version: edited.version });
@@ -376,16 +378,38 @@ describe("courseFromRows against an un-migrated database", () => {
     // `select("*")` on a table without the column returns rows with no such
     // key. Reading those would export a course whose recipe module had rejoined
     // the numbered flow — with nothing anywhere saying so.
-    const courseRow = { id: "c", slug: "s", title: "T", program_slug: "p", brand: "b", locale: "uk",
-      translation_group_id: "g", status: "draft", version: 1, summary: null, schedule: { mode: "open" },
-      entitlement_product_codes: [], theme: null, cover: null, sort_order: null };
+    const courseRow = {
+      id: "c",
+      slug: "s",
+      title: "T",
+      program_slug: "p",
+      brand: "b",
+      locale: "uk",
+      translation_group_id: "g",
+      status: "draft",
+      version: 1,
+      summary: null,
+      schedule: { mode: "open" },
+      entitlement_product_codes: [],
+      theme: null,
+      cover: null,
+      sort_order: null,
+    };
     const moduleRow = { id: "m", course_id: "c", slug: "m", title: "M", order: 1, summary: null };
-    const lessonRow = { id: "l", course_id: "c", module_id: "m", slug: "l", title: "L", order: 1,
-      day_index: null, duration_min: null, summary: null, blocks: [{ id: "b", type: "rich_text", content: [{ kind: "p", text: "x" }] }] };
+    const lessonRow = {
+      id: "l",
+      course_id: "c",
+      module_id: "m",
+      slug: "l",
+      title: "L",
+      order: 1,
+      day_index: null,
+      duration_min: null,
+      summary: null,
+      blocks: [{ id: "b", type: "rich_text", content: [{ kind: "p", text: "x" }] }],
+    };
 
-    expect(() => courseFromRows(courseRow, [moduleRow], [lessonRow])).toThrow(
-      /lms_authoring_missing_reference_column/
-    );
+    expect(() => courseFromRows(courseRow, [moduleRow], [lessonRow])).toThrow(/lms_authoring_missing_reference_column/);
     // And with the column present it reads fine.
     expect(() => courseFromRows(courseRow, [{ ...moduleRow, reference: false }], [lessonRow])).not.toThrow();
   });

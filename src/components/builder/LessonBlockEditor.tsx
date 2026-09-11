@@ -8,7 +8,15 @@
 
 import { useState } from "react";
 import { BlockRenderer } from "@/components/lms/LessonBlocks";
-import { buildInternalReferenceTargets, moveItem, newBlock, newTableRow, todo, type LessonBlock, type LessonBlockType } from "@/lms-core";
+import {
+  buildInternalReferenceTargets,
+  moveItem,
+  newBlock,
+  newTableRow,
+  todo,
+  type LessonBlock,
+  type LessonBlockType,
+} from "@/lms-core";
 import { BuilderMenu, type MenuItem } from "./BuilderMenu";
 import { FieldInput } from "./BuilderFields";
 import { BuilderInlineEditor, type InternalReferenceOption } from "./BuilderInlineEditor";
@@ -75,25 +83,52 @@ export function BlockEditor({
      out loud here: inside a node menu they sit under items about one paragraph,
      and «Видалити» / «Видалити блок» have to be tellable apart on sight. */
   const blockActions: MenuItem[] = [
-    ...(block.type !== "group" && depth < 4 ? [{
-      label: "Зібрати власний блок",
-      icon: "plus" as const,
-      onSelect: () => onBlocks((blocks) => blocks.map((current, position) => position === index
-        ? { id: ids(), type: "group" as const, children: [current] } : current)),
-    }] : []),
-    ...(block.type === "group" ? [{
-      label: "Розібрати на підблоки",
-      icon: "list" as const,
-      onSelect: () => onBlocks((blocks) => blocks.flatMap((current, position) => position === index && current.type === "group" ? current.children : [current])),
-    }] : []),
+    ...(block.type !== "group" && depth < 4
+      ? [
+          {
+            label: "Зібрати власний блок",
+            icon: "plus" as const,
+            onSelect: () =>
+              onBlocks((blocks) =>
+                blocks.map((current, position) =>
+                  position === index ? { id: ids(), type: "group" as const, children: [current] } : current,
+                ),
+              ),
+          },
+        ]
+      : []),
+    ...(block.type === "group"
+      ? [
+          {
+            label: "Розібрати на підблоки",
+            icon: "list" as const,
+            onSelect: () =>
+              onBlocks((blocks) =>
+                blocks.flatMap((current, position) =>
+                  position === index && current.type === "group" ? current.children : [current],
+                ),
+              ),
+          },
+        ]
+      : []),
     {
       label: "Властивості блоку",
       icon: "settings",
       hint: "Налаштування блоку в панелі праворуч",
       onSelect: onProperties,
     },
-    { label: "Підняти блок вище", icon: "arrow-up", disabled: index === 0, onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index - 1)) },
-    { label: "Опустити блок нижче", icon: "arrow-down", disabled: index === total - 1, onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index + 1)) },
+    {
+      label: "Підняти блок вище",
+      icon: "arrow-up",
+      disabled: index === 0,
+      onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index - 1)),
+    },
+    {
+      label: "Опустити блок нижче",
+      icon: "arrow-down",
+      disabled: index === total - 1,
+      onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index + 1)),
+    },
     {
       label: "Видалити блок",
       icon: "trash",
@@ -150,8 +185,22 @@ export function BlockEditor({
       )}
 
       {block.type === "group" ? (
-        <CompositeEditor block={block} depth={depth} referenceOptions={referenceOptions} referenceTargets={referenceTargets} courseSlug={courseSlug}
-          onUpdate={(update) => onBlocks((blocks) => blocks.map((current, position) => position === index && current.type === "group" ? { ...current, children: update(current.children) } : current))} />
+        <CompositeEditor
+          block={block}
+          depth={depth}
+          referenceOptions={referenceOptions}
+          referenceTargets={referenceTargets}
+          courseSlug={courseSlug}
+          onUpdate={(update) =>
+            onBlocks((blocks) =>
+              blocks.map((current, position) =>
+                position === index && current.type === "group"
+                  ? { ...current, children: update(current.children) }
+                  : current,
+              ),
+            )
+          }
+        />
       ) : block.type === "rich_text" ? (
         <RichTextEditor
           block={block}
@@ -165,16 +214,31 @@ export function BlockEditor({
           onBlockCommand={(id, nodeIndex, commandNode) => {
             const type = id.slice("block:".length) as LessonBlock["type"];
             if (type === "quote" || type === "code" || type === "checklist") {
-              onBlocks((blocks) => blocks.flatMap((current, position) =>
-                position === index && current.type === "rich_text"
-                  ? transformRichNode(commandNode ? { ...current, content: current.content.map((node, i) => i === nodeIndex ? commandNode : node) } : current, nodeIndex, type, ids)
-                  : [current]));
+              onBlocks((blocks) =>
+                blocks.flatMap((current, position) =>
+                  position === index && current.type === "rich_text"
+                    ? transformRichNode(
+                        commandNode
+                          ? {
+                              ...current,
+                              content: current.content.map((node, i) => (i === nodeIndex ? commandNode : node)),
+                            }
+                          : current,
+                        nodeIndex,
+                        type,
+                        ids,
+                      )
+                    : [current],
+                ),
+              );
             } else if (commandNode) {
-              onBlocks((blocks) => blocks.flatMap((current, position) => {
-                if (position !== index || current.type !== "rich_text") return [current];
-                const content = current.content.map((node, i) => i === nodeIndex ? commandNode : node);
-                return [{ ...current, content }, newBlock(type, ids)];
-              }));
+              onBlocks((blocks) =>
+                blocks.flatMap((current, position) => {
+                  if (position !== index || current.type !== "rich_text") return [current];
+                  const content = current.content.map((node, i) => (i === nodeIndex ? commandNode : node));
+                  return [{ ...current, content }, newBlock(type, ids)];
+                }),
+              );
             } else onInsertAfter(type);
           }}
           onChange={editField}
@@ -241,7 +305,14 @@ export function BlockEditor({
   );
 }
 
-function CompositeEditor({ block, depth, referenceOptions, referenceTargets, courseSlug, onUpdate }: {
+function CompositeEditor({
+  block,
+  depth,
+  referenceOptions,
+  referenceTargets,
+  courseSlug,
+  onUpdate,
+}: {
   block: Extract<LessonBlock, { type: "group" }>;
   depth: number;
   referenceOptions: InternalReferenceOption[];
@@ -251,26 +322,65 @@ function CompositeEditor({ block, depth, referenceOptions, referenceTargets, cou
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [picker, setPicker] = useState<DOMRect | null>(null);
-  const drag = useRowDrag((from, to, edge) => onUpdate((children) => moveItem(children, from.index, landingIndex(from.index, to.index, edge, true))));
-  return <div className={styles.compositeEditor} onDragStart={(event) => event.stopPropagation()} onDrop={(event) => event.stopPropagation()}>
-    {block.children.map((child, index) => <BlockEditor key={child.id} block={child} index={index} total={block.children.length}
-      depth={depth + 1} drag={drag} selected={selected === child.id} referenceOptions={referenceOptions} referenceTargets={referenceTargets} courseSlug={courseSlug}
-      onSelect={() => setSelected(child.id)} onProperties={() => setSelected(child.id)}
-      onChange={(path, value) => onUpdate((children) => writePath({ blocks: children }, path, value).blocks)}
-      onBlocks={onUpdate}
-      onInsertAfter={(type) => onUpdate((children) => [...children.slice(0, index + 1), newBlock(type, ids), ...children.slice(index + 1)])} />)}
-    <button type="button" className={styles.addAction} onClick={(event) => setPicker(event.currentTarget.getBoundingClientRect())}>
-      <span className={styles.addGlyph} aria-hidden="true">+</span> Підблок
-    </button>
-    {picker ? <BuilderBlockPicker anchor={picker} onClose={() => setPicker(null)} excludedTypes={depth >= 3 ? ["group"] : []}
-      onPick={(type) => { onUpdate((children) => [...children, newBlock(type, ids)]); setPicker(null); }} /> : null}
-  </div>;
+  const drag = useRowDrag((from, to, edge) =>
+    onUpdate((children) => moveItem(children, from.index, landingIndex(from.index, to.index, edge, true))),
+  );
+  return (
+    <div
+      className={styles.compositeEditor}
+      onDragStart={(event) => event.stopPropagation()}
+      onDrop={(event) => event.stopPropagation()}
+    >
+      {block.children.map((child, index) => (
+        <BlockEditor
+          key={child.id}
+          block={child}
+          index={index}
+          total={block.children.length}
+          depth={depth + 1}
+          drag={drag}
+          selected={selected === child.id}
+          referenceOptions={referenceOptions}
+          referenceTargets={referenceTargets}
+          courseSlug={courseSlug}
+          onSelect={() => setSelected(child.id)}
+          onProperties={() => setSelected(child.id)}
+          onChange={(path, value) => onUpdate((children) => writePath({ blocks: children }, path, value).blocks)}
+          onBlocks={onUpdate}
+          onInsertAfter={(type) =>
+            onUpdate((children) => [...children.slice(0, index + 1), newBlock(type, ids), ...children.slice(index + 1)])
+          }
+        />
+      ))}
+      <button
+        type="button"
+        className={styles.addAction}
+        onClick={(event) => setPicker(event.currentTarget.getBoundingClientRect())}
+      >
+        <span className={styles.addGlyph} aria-hidden="true">
+          +
+        </span>{" "}
+        Підблок
+      </button>
+      {picker ? (
+        <BuilderBlockPicker
+          anchor={picker}
+          onClose={() => setPicker(null)}
+          excludedTypes={depth >= 3 ? ["group"] : []}
+          onPick={(type) => {
+            onUpdate((children) => [...children, newBlock(type, ids)]);
+            setPicker(null);
+          }}
+        />
+      ) : null}
+    </div>
+  );
 }
 
 export function internalReferenceOptions(
   targets: ReturnType<typeof buildInternalReferenceTargets>,
   currentLessonId: string,
-  currentModuleId: string
+  currentModuleId: string,
 ): InternalReferenceOption[] {
   const current = targets.find((target) => target.kind === "lesson" && target.lessonId === currentLessonId);
   if (!current) return [];
@@ -305,9 +415,7 @@ export function internalReferenceOptions(
       key: target.key,
       label: target.label,
       group: group(target),
-      hint: target.kind === "lesson"
-        ? target.moduleTitle
-        : `${target.lessonTitle} · ${target.moduleTitle}`,
+      hint: target.kind === "lesson" ? target.moduleTitle : `${target.lessonTitle} · ${target.moduleTitle}`,
       future: target.lessonIndex > current.lessonIndex && !target.referenceModule,
     }));
 }
@@ -319,8 +427,6 @@ export function internalReferenceOptions(
  * break, which the inline model cannot carry — so they are joined with «; »
  * instead of silently dropping every item but the first.
  */
-
-
 
 /**
  * The "add another one" controls for blocks that hold a list of their own.
@@ -345,7 +451,10 @@ export function RepeatControls({
           type="button"
           onClick={() => onChange(["items"], [...block.items, { id: ids(), text: todo("пункт") }])}
         >
-          <span className={styles.addGlyph} aria-hidden="true">+</span> Пункт
+          <span className={styles.addGlyph} aria-hidden="true">
+            +
+          </span>{" "}
+          Пункт
         </button>
         <button
           className={styles.addAction}
@@ -369,7 +478,10 @@ export function RepeatControls({
             onChange(["items"], [...block.items, { id: ids(), question: todo("питання"), answer: todo("відповідь") }])
           }
         >
-          <span className={styles.addGlyph} aria-hidden="true">+</span> Питання
+          <span className={styles.addGlyph} aria-hidden="true">
+            +
+          </span>{" "}
+          Питання
         </button>
         <button
           className={styles.addAction}
@@ -392,7 +504,10 @@ export function RepeatControls({
           type="button"
           onClick={() => onChange(["rows"], [...block.rows, newTableRow(columns)])}
         >
-          <span className={styles.addGlyph} aria-hidden="true">+</span> Рядок
+          <span className={styles.addGlyph} aria-hidden="true">
+            +
+          </span>{" "}
+          Рядок
         </button>
         <button
           className={styles.addAction}
@@ -412,10 +527,16 @@ export function RepeatControls({
           type="button"
           onClick={() => {
             if (block.head) onChange(["head"], [...block.head, todo(`колонка ${columns + 1}`)]);
-            onChange(["rows"], block.rows.map((row) => [...row, todo("клітинка")]));
+            onChange(
+              ["rows"],
+              block.rows.map((row) => [...row, todo("клітинка")]),
+            );
           }}
         >
-          <span className={styles.addGlyph} aria-hidden="true">+</span> Колонка
+          <span className={styles.addGlyph} aria-hidden="true">
+            +
+          </span>{" "}
+          Колонка
         </button>
         <button
           className={styles.addAction}
@@ -423,7 +544,10 @@ export function RepeatControls({
           disabled={columns === 1}
           onClick={() => {
             if (block.head) onChange(["head"], block.head.slice(0, -1));
-            onChange(["rows"], block.rows.map((row) => row.slice(0, -1)));
+            onChange(
+              ["rows"],
+              block.rows.map((row) => row.slice(0, -1)),
+            );
           }}
         >
           − Остання колонка

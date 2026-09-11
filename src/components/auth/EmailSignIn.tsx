@@ -78,39 +78,36 @@ export function EmailSignIn({ onSignedIn }: { onSignedIn?: () => void }) {
     if (step === "code") codeInputRef.current?.focus();
   }, [step]);
 
-  const sendCode = useCallback(
-    async (address: string) => {
-      setBusy(true);
-      setError(null);
+  const sendCode = useCallback(async (address: string) => {
+    setBusy(true);
+    setError(null);
 
-      const { error: sendError } = await supabaseClient.auth.signInWithOtp({
-        email: address,
-        options: {
-          /* A buyer who has never signed in HAS no account yet — the purchase
+    const { error: sendError } = await supabaseClient.auth.signInWithOtp({
+      email: address,
+      options: {
+        /* A buyer who has never signed in HAS no account yet — the purchase
              was made against an email, not an account. Refusing to create one
              here would turn the fix back into the wall it replaces. */
-          shouldCreateUser: true,
-          /* Only used if the mail template also carries a link. The code is the
+        shouldCreateUser: true,
+        /* Only used if the mail template also carries a link. The code is the
              path this screen supports; this keeps a clicked link from landing
              somewhere unrelated. */
-          emailRedirectTo: typeof window !== "undefined" ? window.location.href : undefined,
-        },
-      });
+        emailRedirectTo: typeof window !== "undefined" ? window.location.href : undefined,
+      },
+    });
 
-      setBusy(false);
+    setBusy(false);
 
-      const failure = classifySignInError(sendError);
-      if (failure) {
-        setError(failureCopy[failure]);
-        return false;
-      }
+    const failure = classifySignInError(sendError);
+    if (failure) {
+      setError(failureCopy[failure]);
+      return false;
+    }
 
-      setStep("code");
-      setCooldown(RESEND_COOLDOWN_SECONDS);
-      return true;
-    },
-    []
-  );
+    setStep("code");
+    setCooldown(RESEND_COOLDOWN_SECONDS);
+    return true;
+  }, []);
 
   const onSubmitEmail = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
@@ -123,7 +120,7 @@ export function EmailSignIn({ onSignedIn }: { onSignedIn?: () => void }) {
       setEmail(address);
       await sendCode(address);
     },
-    [email, sendCode]
+    [email, sendCode],
   );
 
   const onSubmitCode = useCallback(
@@ -156,7 +153,7 @@ export function EmailSignIn({ onSignedIn }: { onSignedIn?: () => void }) {
          re-renders into the page the person was trying to reach. */
       onSignedIn?.();
     },
-    [code, email, onSignedIn]
+    [code, email, onSignedIn],
   );
 
   if (step === "code") {
@@ -187,11 +184,7 @@ export function EmailSignIn({ onSignedIn }: { onSignedIn?: () => void }) {
 
         {error ? <p className={`${styles.status} ${styles.error}`}>{error}</p> : null}
 
-        <button
-          className={styles.primaryButton}
-          type="submit"
-          disabled={busy || !isCompleteOtpCode(code)}
-        >
+        <button className={styles.primaryButton} type="submit" disabled={busy || !isCompleteOtpCode(code)}>
           {busy ? copy.verifying : copy.verify}
         </button>
 

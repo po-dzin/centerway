@@ -49,7 +49,7 @@ async function findIdempotentAttempt(
     testId: string;
     sessionId: string;
     expectedAnswers: Record<string, string>;
-  }
+  },
 ): Promise<TestAttemptRow | null> {
   const threshold = new Date(Date.now() - 10 * 60 * 1000).toISOString();
   const { data, error } = await db
@@ -84,10 +84,7 @@ async function findIdempotentAttempt(
   return null;
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ testSlug: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ testSlug: string }> }) {
   const rl = await enforceRateLimit(req, { name: "test_complete", limit: 20, windowSeconds: 60 });
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
@@ -116,7 +113,7 @@ export async function POST(
     if (answers.length !== test.questions.length) {
       return NextResponse.json(
         { error: "answers_count_mismatch", expected: test.questions.length, received: answers.length },
-        { status: 400 }
+        { status: 400 },
       );
     }
 

@@ -76,10 +76,8 @@ export const PRODUCTS = {
       en: "Short Reboot — online course",
     },
     description: {
-      uk:
-        "Оплата онлайн-курсу \"Short Reboot\" від Centerway. Після успішної оплати курс відкриється у вашому кабінеті на платформі - там уроки, матеріали і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
-      en:
-        "Online course payment by Centerway. After successful payment the course opens in your account on the platform, with its lessons, materials and next steps. Support: if you have questions, message us and we will help quickly.",
+      uk: 'Оплата онлайн-курсу "Short Reboot" від Centerway. Після успішної оплати курс відкриється у вашому кабінеті на платформі - там уроки, матеріали і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
+      en: "Online course payment by Centerway. After successful payment the course opens in your account on the platform, with its lessons, materials and next steps. Support: if you have questions, message us and we will help quickly.",
     },
     amount: 795,
     listAmount: 795,
@@ -99,10 +97,8 @@ export const PRODUCTS = {
       en: "IREM gymnastics — online system",
     },
     description: {
-      uk:
-        "Оплата онлайн-системи \"IREM gymnastics\" від Centerway. Після успішної оплати система відкриється у вашому кабінеті на платформі - там уроки, розбори вправ і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
-      en:
-        "Online system payment by Centerway. After successful payment the system opens in your account on the platform, with its lessons, exercise breakdowns and next steps. Support: if you have questions, message us and we will help quickly.",
+      uk: 'Оплата онлайн-системи "IREM gymnastics" від Centerway. Після успішної оплати система відкриється у вашому кабінеті на платформі - там уроки, розбори вправ і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
+      en: "Online system payment by Centerway. After successful payment the system opens in your account on the platform, with its lessons, exercise breakdowns and next steps. Support: if you have questions, message us and we will help quickly.",
     },
     amount: 3950,
     listAmount: 3950,
@@ -124,10 +120,8 @@ export const PRODUCTS = {
       en: "Way 21 — integrative detox program",
     },
     description: {
-      uk:
-        "Оплата детокс-програми \"Шлях 21\" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
-      en:
-        "Detox program payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
+      uk: 'Оплата детокс-програми "Шлях 21" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
+      en: "Detox program payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
     },
     amount: 4100,
     listAmount: 4100,
@@ -143,10 +137,8 @@ export const PRODUCTS = {
       en: "Way 21 — guided package",
     },
     description: {
-      uk:
-        "Оплата пакета \"Шлях 21 — індивідуальний супровід\" від Centerway: програма детоксу з 2 особистими консультаціями та персональним веденням. Після оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
-      en:
-        "Guided package payment by Centerway: the detox program with 2 personal consultations and individual guidance. After payment, a confirmation page opens with a Telegram bot entry button. Support: if you have questions, message us and we will help quickly.",
+      uk: 'Оплата пакета "Шлях 21 — індивідуальний супровід" від Centerway: програма детоксу з 2 особистими консультаціями та персональним веденням. Після оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
+      en: "Guided package payment by Centerway: the detox program with 2 personal consultations and individual guidance. After payment, a confirmation page opens with a Telegram bot entry button. Support: if you have questions, message us and we will help quickly.",
     },
     // No test price: the guided package sells through the landing's lead form,
     // so nothing charges this amount in the QA flow. It stands as the quote used
@@ -165,10 +157,8 @@ export const PRODUCTS = {
       en: "Reset Day — mini course",
     },
     description: {
-      uk:
-        "Оплата міні-курсу \"Розвантажувальний день\" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
-      en:
-        "Mini course payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
+      uk: 'Оплата міні-курсу "Розвантажувальний день" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
+      en: "Mini course payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
     },
     amount: 795,
     listAmount: 795,
@@ -184,10 +174,8 @@ export const PRODUCTS = {
       en: "Herbal blend — individual selection",
     },
     description: {
-      uk:
-        "Оплата індивідуального підбору фітозбору від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка переходу до продукту в кабінеті — там же будуть подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
-      en:
-        "Individual herbal blend payment by Centerway. After successful payment, a confirmation page opens with a button to the product in the cabinet and next steps. Support: if you have questions, message us and we will help quickly.",
+      uk: "Оплата індивідуального підбору фітозбору від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка переходу до продукту в кабінеті — там же будуть подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
+      en: "Individual herbal blend payment by Centerway. After successful payment, a confirmation page opens with a button to the product in the cabinet and next steps. Support: if you have questions, message us and we will help quickly.",
     },
     // Unreachable: `productOffer` refuses the fallback when `listAmount` is
     // null, so nothing charges this. Zero rather than a placeholder figure, so
@@ -274,8 +262,7 @@ export function normalizeProduct(input: unknown): ProductCode | null {
     if (s === "consult" || s === "consultation") return "consult";
     // `ideal-body` is the name this product was sold under until 2026-08-29;
     // it stays on the left of the arrow for exactly the reason the others do.
-    if (s === "natural-body" || s === "ideal-body" || s === "ideal_body" || s === "idealne-tilo")
-      return "natural-body";
+    if (s === "natural-body" || s === "ideal-body" || s === "ideal_body" || s === "idealne-tilo") return "natural-body";
     if (s === "herbs") return "herbs";
     if (s === "platform" || s === "centerway") return "platform";
     return null;
@@ -284,10 +271,7 @@ export function normalizeProduct(input: unknown): ProductCode | null {
   // объект searchParams
   if (typeof input === "object") {
     const sp = input as SearchParams;
-    const raw =
-      first(sp.product) ??
-      first(sp.product_code) ??
-      first(sp.p);
+    const raw = first(sp.product) ?? first(sp.product_code) ?? first(sp.p);
 
     if (typeof raw === "string") return normalizeProduct(raw);
     return null;
@@ -297,9 +281,7 @@ export function normalizeProduct(input: unknown): ProductCode | null {
 }
 
 /** One of the six written in this file — the only codes `PRODUCTS` may be indexed by. */
-export function isCatalogProduct(
-  product: ProductCode | string | null | undefined
-): product is CatalogProductCode {
+export function isCatalogProduct(product: ProductCode | string | null | undefined): product is CatalogProductCode {
   return typeof product === "string" && Object.prototype.hasOwnProperty.call(PRODUCTS, product);
 }
 

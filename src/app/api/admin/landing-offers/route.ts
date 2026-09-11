@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { asString } from "@/lib/strings";
 import crypto from "crypto";
 import { adminClient } from "@/lib/auth/adminClient";
-import { badRequestResponse, forbiddenResponse, requireAdminSession, serverErrorResponse, unauthorizedResponse } from "@/lib/api/adminRoute";
+import {
+  badRequestResponse,
+  forbiddenResponse,
+  requireAdminSession,
+  serverErrorResponse,
+  unauthorizedResponse,
+} from "@/lib/api/adminRoute";
 import { issueIremPersonalOffer, issueIremPersonalOffersBatch } from "@/lib/landing/offers";
 
 type Body = {
@@ -26,11 +32,9 @@ function isPersonalOfferSchemaError(message: string): boolean {
   const normalized = message.toLowerCase();
   return (
     normalized.includes("personal_offer_tokens") &&
-    (
-      normalized.includes("schema cache") ||
+    (normalized.includes("schema cache") ||
       normalized.includes("could not find the 'status' column") ||
-      normalized.includes("does not exist")
-    )
+      normalized.includes("does not exist"))
   );
 }
 
@@ -43,7 +47,9 @@ function normalizeEntries(body: Body | null): Entry[] {
   if (Array.isArray(body?.entries)) {
     for (const item of body.entries) {
       if (!item || typeof item !== "object") continue;
-      const recipientKey = asString((item as Record<string, unknown>).recipient_key ?? (item as Record<string, unknown>).recipientKey);
+      const recipientKey = asString(
+        (item as Record<string, unknown>).recipient_key ?? (item as Record<string, unknown>).recipientKey,
+      );
       if (!recipientKey) continue;
       entries.push({
         recipientKey,
@@ -164,14 +170,16 @@ export async function POST(req: NextRequest) {
             offer_id: offer.offerId,
             recipient_key: issuedBatch.issuedRecipientKeys[index] ?? null,
             status: offer.status,
-            channel: entries.find((entry) => entry.recipientKey === issuedBatch.issuedRecipientKeys[index])?.channel ?? null,
-            campaign: entries.find((entry) => entry.recipientKey === issuedBatch.issuedRecipientKeys[index])?.campaign ?? null,
+            channel:
+              entries.find((entry) => entry.recipientKey === issuedBatch.issuedRecipientKeys[index])?.channel ?? null,
+            campaign:
+              entries.find((entry) => entry.recipientKey === issuedBatch.issuedRecipientKeys[index])?.campaign ?? null,
             batch_total_requested: issuedBatch.totalRequested,
             batch_total_issued: issuedBatch.totalIssued,
             batch_total_deduped: issuedBatch.totalDeduped,
             batch_id: batchId,
           },
-        }))
+        })),
       );
     }
 
@@ -190,7 +198,7 @@ export async function POST(req: NextRequest) {
     const message = error instanceof Error ? error.message : "offer_issue_failed";
     if (isPersonalOfferSchemaError(message)) {
       return serverErrorResponse(
-        "personal_offer_tokens schema is outdated in Supabase. Run docs/migration/sql/2026-05-22_personal_offer_tokens_apply_all.sql in Supabase SQL Editor."
+        "personal_offer_tokens schema is outdated in Supabase. Run docs/migration/sql/2026-05-22_personal_offer_tokens_apply_all.sql in Supabase SQL Editor.",
       );
     }
     return serverErrorResponse(message);

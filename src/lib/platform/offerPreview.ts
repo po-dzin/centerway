@@ -1,9 +1,4 @@
-import {
-  COURSE_TITLE_MAX,
-  COURSE_TITLE_RAW_MAX,
-  courseTitleName,
-  courseTitleTail,
-} from "@/lms-core";
+import { COURSE_TITLE_MAX, COURSE_TITLE_RAW_MAX, courseTitleName, courseTitleTail } from "@/lms-core";
 
 /**
  * What a card is allowed to say about an offer.

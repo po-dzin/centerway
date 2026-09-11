@@ -37,14 +37,27 @@ const eslintConfig = defineConfig([
     // A test may reach anywhere it needs to assert; the rule is for the code.
     ignores: ["**/*.test.{ts,tsx}"],
     rules: {
-      "no-restricted-imports": ["error", { patterns: [{ group: ["@/components/*", "@/app/*"], message: "lib must not import from components or app — move the type or the module down." }] }],
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/components/*", "@/app/*"],
+              message: "lib must not import from components or app — move the type or the module down.",
+            },
+          ],
+        },
+      ],
     },
   },
   {
     files: ["src/components/**/*.{ts,tsx}"],
     ignores: ["**/*.test.{ts,tsx}"],
     rules: {
-      "no-restricted-imports": ["error", { patterns: [{ group: ["@/app/*"], message: "components must not import from app." }] }],
+      "no-restricted-imports": [
+        "error",
+        { patterns: [{ group: ["@/app/*"], message: "components must not import from app." }] },
+      ],
     },
   },
 
@@ -68,7 +81,8 @@ const eslintConfig = defineConfig([
         "error",
         {
           selector: "ImportDeclaration[source.value=/^[^.]/]",
-          message: "lms-core must have zero dependencies — only relative sibling imports. Move platform-specific code into src/lib or src/components.",
+          message:
+            "lms-core must have zero dependencies — only relative sibling imports. Move platform-specific code into src/lib or src/components.",
         },
         {
           selector: ":matches(ExportNamedDeclaration, ExportAllDeclaration)[source.value=/^[^.]/]",
@@ -113,8 +127,16 @@ const eslintConfig = defineConfig([
         "error",
         {
           patterns: [
-            { group: ["*.css", "**/*.css"], message: "Route files must not import CSS directly — delegate to a shared platform component or template." },
-            { group: ["*PlatformContentStyles*", "**/PlatformContentStyles*"], message: "Route files must not import PlatformContentStyles directly — use an approved shared platform component." },
+            {
+              group: ["*.css", "**/*.css"],
+              message:
+                "Route files must not import CSS directly — delegate to a shared platform component or template.",
+            },
+            {
+              group: ["*PlatformContentStyles*", "**/PlatformContentStyles*"],
+              message:
+                "Route files must not import PlatformContentStyles directly — use an approved shared platform component.",
+            },
           ],
         },
       ],
@@ -137,7 +159,8 @@ const eslintConfig = defineConfig([
         "error",
         {
           selector: `JSXOpeningElement[name.name=/^(${STRUCTURAL_TAGS.join("|")})$/]`,
-          message: "Route files must not author structural layout tags — move the composition into a shared platform component or template.",
+          message:
+            "Route files must not author structural layout tags — move the composition into a shared platform component or template.",
         },
       ],
     },
@@ -156,11 +179,13 @@ const eslintConfig = defineConfig([
         "error",
         {
           selector: `Literal[value=/${ADMIN_FORBIDDEN_CLASS}/]`,
-          message: "Tailwind colour and gradient utilities are forbidden here — the admin is grey, and colour comes from the design tokens.",
+          message:
+            "Tailwind colour and gradient utilities are forbidden here — the admin is grey, and colour comes from the design tokens.",
         },
         {
           selector: `TemplateElement[value.raw=/${ADMIN_FORBIDDEN_CLASS}/]`,
-          message: "Tailwind colour and gradient utilities are forbidden here — the admin is grey, and colour comes from the design tokens.",
+          message:
+            "Tailwind colour and gradient utilities are forbidden here — the admin is grey, and colour comes from the design tokens.",
         },
       ],
     },

@@ -27,7 +27,7 @@ const REVALIDATE_SECONDS = 300;
 
 async function collect(): Promise<KnowledgeDoc[]> {
   const courses = (await listLiveCourses()).filter(
-    (course) => course.status === "published" && course.visibility !== "hidden"
+    (course) => course.status === "published" && course.visibility !== "hidden",
   );
 
   const docs = buildCorpus({ courses });

@@ -119,13 +119,7 @@ export const ICONS = {
   // ── Rhythm of time ─────────────────────────────────────────────────────
   day: {
     group: "Rhythm",
-    d: [
-      "M6.4 16.6a5.6 5.6 0 0 1 11.2 0",
-      "M3 16.6h18",
-      "M12 3.4v2.2",
-      "M5.2 6.2l1.6 1.6",
-      "M18.8 6.2l-1.6 1.6",
-    ],
+    d: ["M6.4 16.6a5.6 5.6 0 0 1 11.2 0", "M3 16.6h18", "M12 3.4v2.2", "M5.2 6.2l1.6 1.6", "M18.8 6.2l-1.6 1.6"],
   },
   phase: {
     group: "Rhythm",
@@ -158,10 +152,7 @@ export const ICONS = {
   },
   "shield-check": {
     group: "Proof",
-    d: [
-      "M12 3.4 4.8 6.2v5.4c0 4.2 2.9 7.4 7.2 9 4.3-1.6 7.2-4.8 7.2-9V6.2z",
-      "M8.8 11.6 11.4 14.2l4-4.4",
-    ],
+    d: ["M12 3.4 4.8 6.2v5.4c0 4.2 2.9 7.4 7.2 9 4.3-1.6 7.2-4.8 7.2-9V6.2z", "M8.8 11.6 11.4 14.2l4-4.4"],
   },
   star: {
     group: "Proof",
@@ -183,9 +174,7 @@ export const ICONS = {
   },
   price: {
     group: "Proof",
-    d: [
-      "M12.6 3.8H20V11.2l-8.4 8.4a1.6 1.6 0 0 1-2.3 0L4 14.3a1.6 1.6 0 0 1 0-2.3z",
-    ],
+    d: ["M12.6 3.8H20V11.2l-8.4 8.4a1.6 1.6 0 0 1-2.3 0L4 14.3a1.6 1.6 0 0 1 0-2.3z"],
     dots: [{ cx: 16.2, cy: 7.6, r: 1.2 }],
   },
 
@@ -200,11 +189,7 @@ export const ICONS = {
   },
   bowl: {
     group: "Elements",
-    d: [
-      "M3.5 10.5h17c0 5-3.8 8.5-8.5 8.5S3.5 15.5 3.5 10.5z",
-      "M9 6.5c1.2-1 1.2-2 .4-3",
-      "M13.5 6.5c1.2-1 1.2-2 .4-3",
-    ],
+    d: ["M3.5 10.5h17c0 5-3.8 8.5-8.5 8.5S3.5 15.5 3.5 10.5z", "M9 6.5c1.2-1 1.2-2 .4-3", "M13.5 6.5c1.2-1 1.2-2 .4-3"],
   },
   stone: {
     group: "Elements",
@@ -471,10 +456,7 @@ export const ICONS = {
   // the join; `unlink` is the same author action reusing this glyph.
   link: {
     group: "Meta",
-    d: [
-      "M9.6 14.4 6.8 17.2A3 3 0 1 0 11 21.4L13.8 18.6",
-      "M14.4 9.6 17.2 6.8A3 3 0 1 1 21.4 11L18.6 13.8",
-    ],
+    d: ["M9.6 14.4 6.8 17.2A3 3 0 1 0 11 21.4L13.8 18.6", "M14.4 9.6 17.2 6.8A3 3 0 1 1 21.4 11L18.6 13.8"],
   },
   // List (bulleted): the same three rules as `menu`, indented one unit for the
   // dots — a bullet list drawn in this set's own dot rather than a borrowed

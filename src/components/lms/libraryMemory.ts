@@ -160,10 +160,12 @@ export function lessonMemo(courseSlug: string, lessonSlug: string, draftPreview:
  */
 function whenIdle(run: () => void): () => void {
   if (typeof window === "undefined") return () => {};
-  const idle = (window as typeof window & {
-    requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number;
-    cancelIdleCallback?: (handle: number) => void;
-  }).requestIdleCallback;
+  const idle = (
+    window as typeof window & {
+      requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    }
+  ).requestIdleCallback;
 
   if (idle) {
     const handle = idle(run, { timeout: 2000 });

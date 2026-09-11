@@ -109,7 +109,10 @@
   border: 1px solid var(--cw-mat-stroke-quiet);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
-  transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .bandField:hover {

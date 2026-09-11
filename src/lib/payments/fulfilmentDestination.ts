@@ -17,12 +17,7 @@
  */
 
 import { PROFILE_PATH_PREFIX, surfaceUrl } from "@/lib/surfaces/catalog";
-import {
-  isCatalogProduct,
-  normalizeProduct,
-  productFulfilment,
-  type ProductFulfilment,
-} from "@/lib/products";
+import { isCatalogProduct, normalizeProduct, productFulfilment, type ProductFulfilment } from "@/lib/products";
 import { parseCourseOfferCode } from "@/lms-core/offerCode";
 
 /**

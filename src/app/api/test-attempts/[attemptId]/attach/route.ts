@@ -8,10 +8,7 @@ import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 
 export const runtime = "nodejs";
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ attemptId: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ attemptId: string }> }) {
   const rl = await enforceRateLimit(req, { name: "test_attach", limit: 30, windowSeconds: 60 });
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
@@ -66,8 +63,7 @@ export async function POST(
         content_type: "lead",
         content_ids: [resultType],
         email: user.email ?? null,
-        ip_address:
-          req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? req.headers.get("x-real-ip") ?? null,
+        ip_address: req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? req.headers.get("x-real-ip") ?? null,
         user_agent: req.headers.get("user-agent"),
       };
       try {

@@ -102,8 +102,7 @@ export const BRAND = {
   ],
 
   /** Where the method stops, in full — for structured data and /llms.txt. */
-  boundary:
-    "CenterWay не ставить діагнозів, не лікує захворювань і не замінює консультацію лікаря.",
+  boundary: "CenterWay не ставить діагнозів, не лікує захворювань і не замінює консультацію лікаря.",
 
   /**
    * The same boundary at meta-description length. A description has ~160

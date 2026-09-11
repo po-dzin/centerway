@@ -94,8 +94,7 @@ export type TelegramUpdate = {
    the cabinet is a web page, and a url button opens it directly instead of
    making the reader long-press a link in the message body. */
 type InlineKeyboardButton =
-  | { text: string; callback_data: string; url?: never }
-  | { text: string; url: string; callback_data?: never };
+  { text: string; callback_data: string; url?: never } | { text: string; url: string; callback_data?: never };
 
 type InlineKeyboardMarkup = {
   inline_keyboard: InlineKeyboardButton[][];
@@ -132,20 +131,14 @@ export const PRODUCT_DELIVERY: Record<BotProductCode, Delivery> = Object.fromEnt
     const fulfilment = PRODUCTS[code].fulfilment;
     if (fulfilment.kind !== "course") throw new Error(`support bot: ${code} is not delivered as a course`);
     return [code, { kind: "platform", courseSlug: fulfilment.courseSlug }];
-  })
+  }),
 ) as Record<BotProductCode, Delivery>;
-
 
 export function assertProduct(value: string | null | undefined): BotProductCode | null {
   if (value === "short" || value === "reboot") return "short";
   if (value === "irem") return "irem";
   if (value === "way21" || value === "shlyah21" || value === "detox21") return "way21";
-  if (
-    value === "reset-day" ||
-    value === "reset_day" ||
-    value === "reset" ||
-    value === "rozvantazhennya"
-  ) {
+  if (value === "reset-day" || value === "reset_day" || value === "reset" || value === "rozvantazhennya") {
     return "reset-day";
   }
   return null;
@@ -237,11 +230,7 @@ function backKeyboard(): InlineKeyboardMarkup {
   return { inline_keyboard: [[{ text: "У меню", callback_data: "menu:back" }]] };
 }
 
-async function sendMessage(
-  chatId: number | string,
-  text: string,
-  replyMarkup?: InlineKeyboardMarkup
-): Promise<void> {
+async function sendMessage(chatId: number | string, text: string, replyMarkup?: InlineKeyboardMarkup): Promise<void> {
   if (!replyMarkup) {
     await sendTelegramMessage(chatId, text);
     return;
@@ -270,7 +259,7 @@ async function sendCaptionedPhoto(
   chatId: number,
   photo: string,
   caption: string,
-  replyMarkup?: InlineKeyboardMarkup
+  replyMarkup?: InlineKeyboardMarkup,
 ): Promise<void> {
   try {
     await callTelegramBotApi("sendPhoto", {
@@ -294,10 +283,7 @@ async function answerCallbackQuery(callbackQueryId: string): Promise<void> {
   });
 }
 
-async function getSession(
-  db: Supabase,
-  user: TelegramUser
-): Promise<BotSession> {
+async function getSession(db: Supabase, user: TelegramUser): Promise<BotSession> {
   const userId = String(user.id);
   const { data, error } = await db
     .from("support_bot_sessions")
@@ -319,7 +305,7 @@ async function getSession(
 async function saveSession(
   db: Supabase,
   user: TelegramUser,
-  patch: Partial<Omit<BotSession, "telegram_user_id">>
+  patch: Partial<Omit<BotSession, "telegram_user_id">>,
 ): Promise<void> {
   const payload = {
     telegram_user_id: String(user.id),
@@ -327,35 +313,21 @@ async function saveSession(
     ...patch,
   };
 
-  const { error } = await db
-    .from("support_bot_sessions")
-    .upsert(payload, { onConflict: "telegram_user_id" });
+  const { error } = await db.from("support_bot_sessions").upsert(payload, { onConflict: "telegram_user_id" });
   if (error) throw error;
 }
 
-async function logEventBestEffort(
-  db: Supabase,
-  type: string,
-  payload: Record<string, unknown>
-): Promise<void> {
+async function logEventBestEffort(db: Supabase, type: string, payload: Record<string, unknown>): Promise<void> {
   await db.from("events").insert({ type, order_ref: null, payload: asJson(payload) });
 }
 
-async function findPaidOrder(
-  db: Supabase,
-  product: BotProductCode,
-  contact: string
-): Promise<boolean> {
+async function findPaidOrder(db: Supabase, product: BotProductCode, contact: string): Promise<boolean> {
   const email = normalizeEmail(contact);
   const phoneVariants = phoneLookupVariants(contact);
   const customerIds = new Set<string>();
 
   if (email) {
-    const { data, error } = await db
-      .from("customers")
-      .select("id")
-      .eq("email", email)
-      .limit(20);
+    const { data, error } = await db.from("customers").select("id").eq("email", email).limit(20);
     if (error) throw error;
     for (const row of data ?? []) {
       if (row.id) customerIds.add(String(row.id));
@@ -363,11 +335,7 @@ async function findPaidOrder(
   }
 
   if (phoneVariants.length > 0) {
-    const { data, error } = await db
-      .from("customers")
-      .select("id")
-      .in("phone", phoneVariants)
-      .limit(20);
+    const { data, error } = await db.from("customers").select("id").in("phone", phoneVariants).limit(20);
     if (error) throw error;
     for (const row of data ?? []) {
       if (row.id) customerIds.add(String(row.id));
@@ -408,12 +376,7 @@ async function sendMainMenu(chatId: number, prompt: string = botCopy.menuPrompt)
  * Every menu branch is reachable from a cold start — none of them waits on a
  * previously chosen course. Only `access` asks for one, and asks for it itself.
  */
-async function handleMenuAction(
-  db: Supabase,
-  chatId: number,
-  user: TelegramUser,
-  action: string
-): Promise<void> {
+async function handleMenuAction(db: Supabase, chatId: number, user: TelegramUser, action: string): Promise<void> {
   if (action === "back") {
     await saveSession(db, user, { state: "idle", contact: null });
     await sendMainMenu(chatId);
@@ -467,7 +430,7 @@ async function handleAccessLookup(
   chatId: number,
   user: TelegramUser,
   session: BotSession,
-  contact: string
+  contact: string,
 ): Promise<void> {
   if (!session.selected_product) {
     await saveSession(db, user, { state: "idle", contact: null });
@@ -512,12 +475,7 @@ async function sendAccessAnswer(chatId: number, product: BotProductCode): Promis
   });
 }
 
-async function handleSupportContact(
-  db: Supabase,
-  chatId: number,
-  user: TelegramUser,
-  contact: string
-): Promise<void> {
+async function handleSupportContact(db: Supabase, chatId: number, user: TelegramUser, contact: string): Promise<void> {
   await saveSession(db, user, {
     state: "awaiting_support_message",
     contact: contact.trim(),
@@ -530,7 +488,7 @@ async function handleSupportMessage(
   chatId: number,
   user: TelegramUser,
   session: BotSession,
-  message: string
+  message: string,
 ): Promise<void> {
   const supportChatId = process.env.SUPPORT_CHAT_ID;
   const product = session.selected_product;
@@ -574,20 +532,36 @@ async function handleSupportMessage(
 
 async function handleBugMessage(db: Supabase, chatId: number, user: TelegramUser, message: string): Promise<void> {
   const supportChatId = process.env.SUPPORT_CHAT_ID;
-  if (!supportChatId) { await sendMessage(chatId, botCopy.supportUnavailable, mainMenuKeyboard()); return; }
+  if (!supportChatId) {
+    await sendMessage(chatId, botCopy.supportUnavailable, mainMenuKeyboard());
+    return;
+  }
   const threadRaw = process.env.BUG_REPORTS_THREAD_ID || process.env.SUPPORT_THREAD_ID;
   const messageThreadId = threadRaw && /^\d+$/.test(threadRaw) ? Number(threadRaw) : null;
   try {
-    await sendTelegramMessage(supportChatId, ["Новий баг-репорт", `Telegram ID: ${user.id}`, `Username: ${user.username ? `@${user.username}` : "-"}`, `Час: ${new Date().toISOString()}`, "", message.trim()].join("\n"), { messageThreadId });
+    await sendTelegramMessage(
+      supportChatId,
+      [
+        "Новий баг-репорт",
+        `Telegram ID: ${user.id}`,
+        `Username: ${user.username ? `@${user.username}` : "-"}`,
+        `Час: ${new Date().toISOString()}`,
+        "",
+        message.trim(),
+      ].join("\n"),
+      { messageThreadId },
+    );
   } catch {
     await sendMessage(chatId, botCopy.supportUnavailable, mainMenuKeyboard());
     return;
   }
-  await logEventBestEffort(db, "tg_bot_bug_reported", { telegram_user_id: String(user.id), telegram_username: user.username ?? null }).catch(() => undefined);
+  await logEventBestEffort(db, "tg_bot_bug_reported", {
+    telegram_user_id: String(user.id),
+    telegram_username: user.username ?? null,
+  }).catch(() => undefined);
   await saveSession(db, user, { state: "idle" });
   await sendMessage(chatId, botCopy.bugSent, backKeyboard());
 }
-
 
 /**
  * Handles a `/start` payload issued by the dosha test's "send to Telegram".
@@ -604,16 +578,13 @@ async function tryDeliverDoshaResult(
   db: Supabase,
   chatId: number,
   user: TelegramUser,
-  payload: string
+  payload: string,
 ): Promise<boolean> {
   const verdict = verifyDoshaResultToken(payload);
 
   if (!verdict.ok) {
     if (verdict.reason === "malformed") return false;
-    await sendMessage(
-      chatId,
-      verdict.reason === "expired" ? botCopy.doshaResultExpired : botCopy.doshaResultBroken
-    );
+    await sendMessage(chatId, verdict.reason === "expired" ? botCopy.doshaResultExpired : botCopy.doshaResultBroken);
     return true;
   }
 
@@ -645,7 +616,7 @@ async function tryDeliverDoshaResult(
       outro: botCopy.doshaResultOutro,
       nextHref: doshaExitHref(DOSHA_PRIMARY_EXIT, { resultType, confidence: profile.confidence }),
     }),
-    backKeyboard()
+    backKeyboard(),
   );
 
   await saveDoshaContact(db, user, { attemptUserId: attempt.user_id, resultType });
@@ -670,7 +641,7 @@ async function tryDeliverDoshaResult(
 async function saveDoshaContact(
   db: Supabase,
   user: TelegramUser,
-  params: { attemptUserId: string | null; resultType: DoshaResultType }
+  params: { attemptUserId: string | null; resultType: DoshaResultType },
 ): Promise<void> {
   const tgId = String(user.id);
   const tags = ["test_completed", `dosha_${params.resultType}`];
@@ -703,20 +674,12 @@ async function saveDoshaContact(
  * keeps its existing behaviour. Returns true once it has answered the user,
  * including for an expired or forged token — those are ours to explain.
  */
-async function tryLinkAccount(
-  db: Supabase,
-  chatId: number,
-  user: TelegramUser,
-  payload: string
-): Promise<boolean> {
+async function tryLinkAccount(db: Supabase, chatId: number, user: TelegramUser, payload: string): Promise<boolean> {
   const verdict = verifyTelegramLinkToken(payload);
 
   if (!verdict.ok) {
     if (verdict.reason === "malformed") return false;
-    await sendMessage(
-      chatId,
-      verdict.reason === "expired" ? botCopy.linkExpired : botCopy.linkBroken
-    );
+    await sendMessage(chatId, verdict.reason === "expired" ? botCopy.linkExpired : botCopy.linkBroken);
     return true;
   }
 
@@ -757,10 +720,7 @@ async function tryLinkAccount(
   return true;
 }
 
-async function handleTextMessage(
-  db: Supabase,
-  message: TelegramMessage
-): Promise<void> {
+async function handleTextMessage(db: Supabase, message: TelegramMessage): Promise<void> {
   const user = message.from;
   const text = message.text?.trim();
   if (!user || !text) return;
@@ -772,7 +732,11 @@ async function handleTextMessage(
     // else — including the product bots' own payloads — falls through to the
     // greeting, so the sales path is untouched.
     const payload = text.slice("/start".length).trim();
-    if (payload === "bug") { await saveSession(db, user, { state: "awaiting_bug_message", contact: null }); await sendMessage(chatId, botCopy.bugAskMessage); return; }
+    if (payload === "bug") {
+      await saveSession(db, user, { state: "awaiting_bug_message", contact: null });
+      await sendMessage(chatId, botCopy.bugAskMessage);
+      return;
+    }
     if (payload && (await tryDeliverDoshaResult(db, chatId, user, payload))) return;
     if (payload && (await tryLinkAccount(db, chatId, user, payload))) return;
 
@@ -828,10 +792,7 @@ async function handleTextMessage(
   await sendMainMenu(chatId, botCopy.fallback);
 }
 
-async function handleCallbackQuery(
-  db: Supabase,
-  callbackQuery: TelegramCallbackQuery
-): Promise<void> {
+async function handleCallbackQuery(db: Supabase, callbackQuery: TelegramCallbackQuery): Promise<void> {
   const data = callbackQuery.data ?? "";
   const chatId = callbackQuery.message?.chat.id;
   if (!chatId) return;
@@ -870,9 +831,7 @@ async function handleCallbackQuery(
   await sendMainMenu(chatId);
 }
 
-export async function handleTgSupportBotUpdate(
-  update: TelegramUpdate
-): Promise<void> {
+export async function handleTgSupportBotUpdate(update: TelegramUpdate): Promise<void> {
   const db = supabaseAdmin();
 
   try {

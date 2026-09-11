@@ -91,7 +91,7 @@ export type SearchHit = { doc: KnowledgeDoc; score: number; terms: string[] };
 export function search(
   index: KnowledgeIndex,
   query: string,
-  options: { limit?: number; audience?: KnowledgeDoc["audience"] } = {}
+  options: { limit?: number; audience?: KnowledgeDoc["audience"] } = {},
 ): SearchHit[] {
   const limit = options.limit ?? 5;
   const queryTerms = [...new Set(tokenize(query).map(key))];
@@ -121,15 +121,17 @@ export function search(
     }
   }
 
-  return [...scores.entries()]
-    .map(([position, { score, terms }]) => ({ doc: index.docs[position], score, terms: [...terms] }))
-    // Audience is filtered AFTER scoring but BEFORE the model sees anything —
-    // and this is the last line of the search, not the first line of a prompt.
-    // What a person may read is not a thing to ask a model to remember.
-    .filter((hit) => (options.audience === "learner" ? true : hit.doc.audience === "public"))
-    // Ties are broken by id so the same question returns the same order — an
-    // assistant that cites a different page on a refresh looks like it is
-    // making things up, whether or not it is.
-    .sort((left, right) => right.score - left.score || left.doc.id.localeCompare(right.doc.id))
-    .slice(0, limit);
+  return (
+    [...scores.entries()]
+      .map(([position, { score, terms }]) => ({ doc: index.docs[position], score, terms: [...terms] }))
+      // Audience is filtered AFTER scoring but BEFORE the model sees anything —
+      // and this is the last line of the search, not the first line of a prompt.
+      // What a person may read is not a thing to ask a model to remember.
+      .filter((hit) => (options.audience === "learner" ? true : hit.doc.audience === "public"))
+      // Ties are broken by id so the same question returns the same order — an
+      // assistant that cites a different page on a refresh looks like it is
+      // making things up, whether or not it is.
+      .sort((left, right) => right.score - left.score || left.doc.id.localeCompare(right.doc.id))
+      .slice(0, limit)
+  );
 }

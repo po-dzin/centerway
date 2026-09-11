@@ -15,38 +15,38 @@ import { grantDeadlineValue, normalizeDeadline } from "./accessTypes";
  * course's own offer instead of defaulting to forever.
  */
 describe("grant deadline: the perpetual checkbox", () => {
-    const now = new Date("2026-08-28T12:00:00Z");
+  const now = new Date("2026-08-28T12:00:00Z");
 
-    it("means perpetual whatever the dimmed date still holds", () => {
-        expect(grantDeadlineValue(true, "")).toBeNull();
-        expect(grantDeadlineValue(true, "2026-12-31")).toBeNull();
-    });
+  it("means perpetual whatever the dimmed date still holds", () => {
+    expect(grantDeadlineValue(true, "")).toBeNull();
+    expect(grantDeadlineValue(true, "2026-12-31")).toBeNull();
+  });
 
-    it("sends the typed date once unticked", () => {
-        expect(grantDeadlineValue(false, "2026-12-31")).toBe("2026-12-31");
-    });
+  it("sends the typed date once unticked", () => {
+    expect(grantDeadlineValue(false, "2026-12-31")).toBe("2026-12-31");
+  });
 
-    it("sends nothing unticked with nothing typed, so the offer's own term applies", () => {
-        // Until 2026-08-28 this was `null` — "perpetual" — which meant a
-        // hand-recorded sale of a time-boxed course granted it forever unless
-        // the operator remembered to type a date. It is not `null` any more.
-        expect(grantDeadlineValue(false, "")).toBeUndefined();
-    });
+  it("sends nothing unticked with nothing typed, so the offer's own term applies", () => {
+    // Until 2026-08-28 this was `null` — "perpetual" — which meant a
+    // hand-recorded sale of a time-boxed course granted it forever unless
+    // the operator remembered to type a date. It is not `null` any more.
+    expect(grantDeadlineValue(false, "")).toBeUndefined();
+  });
 
-    it("survives the route's own normalizer as access that never ends", () => {
-        const normalized = normalizeDeadline(grantDeadlineValue(true, "2026-12-31"));
-        expect(normalized).toEqual({ ok: true, value: null });
-        if (!normalized.ok) throw new Error("unreachable");
+  it("survives the route's own normalizer as access that never ends", () => {
+    const normalized = normalizeDeadline(grantDeadlineValue(true, "2026-12-31"));
+    expect(normalized).toEqual({ ok: true, value: null });
+    if (!normalized.ok) throw new Error("unreachable");
 
-        expect(isEnrollmentExpired(normalized.value, now)).toBe(false);
-        expect(daysRemaining(normalized.value, now)).toBeNull();
-    });
+    expect(isEnrollmentExpired(normalized.value, now)).toBe(false);
+    expect(daysRemaining(normalized.value, now)).toBeNull();
+  });
 
-    it("still turns a real date into an end-of-day deadline that does expire", () => {
-        const normalized = normalizeDeadline(grantDeadlineValue(false, "2026-08-27"));
-        if (!normalized.ok) throw new Error("expected a valid deadline");
+  it("still turns a real date into an end-of-day deadline that does expire", () => {
+    const normalized = normalizeDeadline(grantDeadlineValue(false, "2026-08-27"));
+    if (!normalized.ok) throw new Error("expected a valid deadline");
 
-        expect(normalized.value).toBe("2026-08-27T23:59:59.999Z");
-        expect(isEnrollmentExpired(normalized.value, now)).toBe(true);
-    });
+    expect(normalized.value).toBe("2026-08-27T23:59:59.999Z");
+    expect(isEnrollmentExpired(normalized.value, now)).toBe(true);
+  });
 });

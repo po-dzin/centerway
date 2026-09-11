@@ -173,7 +173,9 @@ export function LeadForm({
       <button className={styles.primaryButton} type="submit" disabled={state === "submitting" || state === "success"}>
         {submitLabel}
       </button>
-      <p className={`${styles.status} ${state === "success" ? styles.success : ""} ${state === "error" ? styles.error : ""}`}>
+      <p
+        className={`${styles.status} ${state === "success" ? styles.success : ""} ${state === "error" ? styles.error : ""}`}
+      >
         {message}
       </p>
     </form>

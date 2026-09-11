@@ -108,14 +108,16 @@ function readProfileBlocks(value: unknown): AuthorProfileInput["profileBlocks"] 
     const body = typeof item.body === "string" && item.body.trim() ? item.body.trim() : undefined;
     const items = readStringArray(item.items)?.slice(0, 30);
     if (!body && !items?.length) return [];
-    return [{
-      id,
-      kind: normalizedKind,
-      ...(typeof item.label === "string" && item.label.trim() ? { label: item.label.trim() } : {}),
-      title,
-      ...(body ? { body } : {}),
-      ...(items?.length ? { items } : {}),
-    }];
+    return [
+      {
+        id,
+        kind: normalizedKind,
+        ...(typeof item.label === "string" && item.label.trim() ? { label: item.label.trim() } : {}),
+        title,
+        ...(body ? { body } : {}),
+        ...(items?.length ? { items } : {}),
+      },
+    ];
   });
   return blocks.length ? blocks : undefined;
 }
@@ -142,8 +144,12 @@ export async function POST(req: NextRequest) {
     ...(readStringArray(body.credentials) ? { credentials: readStringArray(body.credentials) } : {}),
     ...(readStringArray(body.facts) ? { facts: readStringArray(body.facts)?.slice(0, 6) } : {}),
     ...(readProfileBlocks(body.profileBlocks) ? { profileBlocks: readProfileBlocks(body.profileBlocks) } : {}),
-    ...(typeof body.experienceBadge === "string" && body.experienceBadge.trim() ? { experienceBadge: body.experienceBadge.trim() } : {}),
-    ...(typeof body.achievementBadge === "string" && body.achievementBadge.trim() ? { achievementBadge: body.achievementBadge.trim() } : {}),
+    ...(typeof body.experienceBadge === "string" && body.experienceBadge.trim()
+      ? { experienceBadge: body.experienceBadge.trim() }
+      : {}),
+    ...(typeof body.achievementBadge === "string" && body.achievementBadge.trim()
+      ? { achievementBadge: body.achievementBadge.trim() }
+      : {}),
     ...(readConsultation(body.consultation) ? { consultation: readConsultation(body.consultation) } : {}),
     ...(readPhoto(body.photo) ? { photo: readPhoto(body.photo) } : {}),
     ...(readBackground(body.background) ? { background: readBackground(body.background) } : {}),

@@ -24,25 +24,19 @@ import type { Author } from "@/lms-core";
  * others. So the picture is the ground, and the name, the facts and the way
  * through to the profile sit on it.
  */
-export function AuthorCard({
-  author,
-  ctaLabel = "Більше про автора",
-}: {
-  author: Author;
-  ctaLabel?: string;
-}) {
+export function AuthorCard({ author, ctaLabel = "Більше про автора" }: { author: Author; ctaLabel?: string }) {
   /* Three, because the card is a fixed height and each fact takes one line.
      The rest of the six live on the profile the card links to. */
   const facts = author.facts?.slice(0, 3) ?? [];
   /* The badges say "20 років практики" and so does the first fact — on the
      card that showed both, the reader read the same sentence twice. They carry
      the same claim, so only the list shows when there is a list to show. */
-  const badges = facts.length === 0
-    ? [author.experienceBadge, author.achievementBadge].filter((badge): badge is string => Boolean(badge))
-    : [];
-  const note = facts.length === 0
-    ? author.bio ?? author.consultation?.summary ?? author.credentials?.join(" · ")
-    : null;
+  const badges =
+    facts.length === 0
+      ? [author.experienceBadge, author.achievementBadge].filter((badge): badge is string => Boolean(badge))
+      : [];
+  const note =
+    facts.length === 0 ? (author.bio ?? author.consultation?.summary ?? author.credentials?.join(" · ")) : null;
 
   return (
     <article className={styles.guideCard}>
@@ -68,7 +62,9 @@ export function AuthorCard({
       {badges.length > 0 ? (
         <div className={styles.guideBadges}>
           {badges.map((badge) => (
-            <span className={styles.guideBadge} key={badge}>{badge}</span>
+            <span className={styles.guideBadge} key={badge}>
+              {badge}
+            </span>
           ))}
         </div>
       ) : null}

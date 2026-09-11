@@ -61,7 +61,7 @@ export function OfferStickyBar({
       },
       // A CTA half off the bottom of the screen is still a CTA the thumb can
       // reach, so it counts as visible.
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
 
     for (const target of targets) observer.observe(target);

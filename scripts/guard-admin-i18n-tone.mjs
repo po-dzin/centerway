@@ -16,13 +16,7 @@ const ADMIN_KEY_PREFIXES = [
   "customers_",
 ];
 
-const FORBIDDEN_UK = [
-  /останн(ій|я)\s+шанс/i,
-  /тільки\s+сьогодні/i,
-  /терміново/i,
-  /купи\s+зараз/i,
-  /не\s+проґав/i,
-];
+const FORBIDDEN_UK = [/останн(ій|я)\s+шанс/i, /тільки\s+сьогодні/i, /терміново/i, /купи\s+зараз/i, /не\s+проґав/i];
 
 const FORBIDDEN_EN = [
   /last\s+chance/i,
@@ -54,9 +48,7 @@ function parseTranslations(fileContent) {
   if (start === -1 || end === -1) {
     throw new Error("Unable to find translations object in src/lib/i18n.ts");
   }
-  const objectSource = fileContent
-    .slice(start + startMarker.length, end + 1)
-    .trim();
+  const objectSource = fileContent.slice(start + startMarker.length, end + 1).trim();
   return Function(`"use strict"; return (${objectSource});`)();
 }
 

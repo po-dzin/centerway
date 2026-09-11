@@ -60,9 +60,7 @@ describe("course product codes in the payment path", () => {
       declinedUrl: PLATFORM_FAILED_URL,
     });
 
-    const paid = new URL(
-      buildReturnDestination("paid", "course:my-course", "course-my-course_20260822_ab12", {}, 0)
-    );
+    const paid = new URL(buildReturnDestination("paid", "course:my-course", "course-my-course_20260822_ab12", {}, 0));
     // The slug is recovered from the CODE, never from the order reference: the
     // colon cannot survive a provider URL, so the reference carries
     // `course-my-course` and a slug of its own may contain dashes. Splitting
@@ -73,7 +71,7 @@ describe("course product codes in the payment path", () => {
     expect(paid.searchParams.get("order_ref")).toBe("course-my-course_20260822_ab12");
 
     const failed = new URL(
-      buildReturnDestination("failed", "course:my-course", "course-my-course_20260822_ab12", {}, 0)
+      buildReturnDestination("failed", "course:my-course", "course-my-course_20260822_ab12", {}, 0),
     );
     expect(failed.pathname).toBe("/pay/failed");
   });

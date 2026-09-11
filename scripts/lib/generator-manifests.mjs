@@ -39,12 +39,7 @@ const VALID_SEMANTIC_GROUPS = new Set([
 const VALID_SEMANTICS = new Set(["calm", "method", "guide", "trust", "progress", "organic", "embodied", "boundary"]);
 const VALID_ACTION_ROLES = new Set(["primary", "support", "none"]);
 const VALID_RENDER_MODES = new Set(["visual", "semantic-only"]);
-const REQUIRED_TOKEN_KEYS = [
-  "--cw-bg",
-  "--cw-text",
-  "--cw-accent",
-  "--cw-border",
-];
+const REQUIRED_TOKEN_KEYS = ["--cw-bg", "--cw-text", "--cw-accent", "--cw-border"];
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -150,14 +145,17 @@ function createArchetypeBindings(archetypeContracts) {
   }
 
   const bindings = isRecord(archetypeContracts.engine_bindings) ? archetypeContracts.engine_bindings : {};
-  const semanticsInput = isRecord(bindings.required_semantics_by_contract) ? bindings.required_semantics_by_contract : {};
+  const semanticsInput = isRecord(bindings.required_semantics_by_contract)
+    ? bindings.required_semantics_by_contract
+    : {};
 
   const requiredSemanticsByContract = {};
   for (const [archetype, semantics] of Object.entries(semanticsInput)) {
     if (!contractByArchetype.has(archetype)) continue;
     if (!Array.isArray(semantics)) continue;
-    requiredSemanticsByContract[archetype] = semantics
-      .filter((item) => typeof item === "string" && VALID_SEMANTICS.has(item));
+    requiredSemanticsByContract[archetype] = semantics.filter(
+      (item) => typeof item === "string" && VALID_SEMANTICS.has(item),
+    );
   }
 
   return { contractByArchetype, requiredSemanticsByContract };
@@ -168,7 +166,9 @@ async function readJson(filePath) {
   try {
     return JSON.parse(raw);
   } catch (error) {
-    throw new Error(`json_parse_failed:${path.basename(filePath)}:${error instanceof Error ? error.message : "unknown"}`);
+    throw new Error(
+      `json_parse_failed:${path.basename(filePath)}:${error instanceof Error ? error.message : "unknown"}`,
+    );
   }
 }
 
@@ -180,7 +180,7 @@ export async function loadGeneratorManifests(rootDir = process.cwd()) {
       const fullPath = path.join(generatorDir, fileName);
       const data = await readJson(fullPath);
       return [key, data];
-    })
+    }),
   );
 
   const manifests = Object.fromEntries(entries);
@@ -191,7 +191,10 @@ export async function loadGeneratorManifests(rootDir = process.cwd()) {
 }
 
 function normalizeCanonKey(value) {
-  return String(value).trim().toLowerCase().replace(/[_\s/]+/g, "-");
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s/]+/g, "-");
 }
 
 function enforceCanonForScreen(screen, blocks, semanticBlocks, archetypeBindings) {
@@ -216,18 +219,24 @@ function enforceCanonForScreen(screen, blocks, semanticBlocks, archetypeBindings
   const primaryCount = blocks.filter((item) => item.action_role === "primary").length;
   assert(
     primaryCount >= rule.min && primaryCount <= rule.max,
-    `canon_primary_action_invalid:${screen.id}:${screen.archetype}:expected_${rule.min}_${rule.max}:got_${primaryCount}`
+    `canon_primary_action_invalid:${screen.id}:${screen.archetype}:expected_${rule.min}_${rule.max}:got_${primaryCount}`,
   );
 
   const semanticBlockTypes = new Set(semanticBlocks.map((item) => normalizeCanonKey(item.block_type)));
   for (const requiredBlock of contract.semanticBlocks?.required ?? []) {
     const normalized = normalizeCanonKey(requiredBlock);
-    assert(semanticBlockTypes.has(normalized), `canon_missing_required_block:${screen.id}:${screen.archetype}:${requiredBlock}`);
+    assert(
+      semanticBlockTypes.has(normalized),
+      `canon_missing_required_block:${screen.id}:${screen.archetype}:${requiredBlock}`,
+    );
   }
 
   for (const forbiddenBlock of contract.semanticBlocks?.forbidden ?? []) {
     const normalized = normalizeCanonKey(forbiddenBlock);
-    assert(!semanticBlockTypes.has(normalized), `canon_forbidden_block_present:${screen.id}:${screen.archetype}:${forbiddenBlock}`);
+    assert(
+      !semanticBlockTypes.has(normalized),
+      `canon_forbidden_block_present:${screen.id}:${screen.archetype}:${forbiddenBlock}`,
+    );
   }
 
   const familySet = new Set();
@@ -239,12 +248,18 @@ function enforceCanonForScreen(screen, blocks, semanticBlocks, archetypeBindings
 
   for (const requiredFamily of contract.componentFamilies?.required ?? []) {
     const normalized = normalizeCanonKey(requiredFamily);
-    assert(familySet.has(normalized), `canon_missing_required_component_family:${screen.id}:${screen.archetype}:${requiredFamily}`);
+    assert(
+      familySet.has(normalized),
+      `canon_missing_required_component_family:${screen.id}:${screen.archetype}:${requiredFamily}`,
+    );
   }
 
   for (const forbiddenFamily of contract.componentFamilies?.forbidden ?? []) {
     const normalized = normalizeCanonKey(forbiddenFamily);
-    assert(!familySet.has(normalized), `canon_forbidden_component_family_present:${screen.id}:${screen.archetype}:${forbiddenFamily}`);
+    assert(
+      !familySet.has(normalized),
+      `canon_forbidden_component_family_present:${screen.id}:${screen.archetype}:${forbiddenFamily}`,
+    );
   }
 
   const allowedFamilies = new Set(
@@ -252,11 +267,14 @@ function enforceCanonForScreen(screen, blocks, semanticBlocks, archetypeBindings
       ...(contract.componentFamilies?.required ?? []),
       ...(contract.componentFamilies?.optional ?? []),
       ...(contract.componentFamilies?.conditional ?? []),
-    ].map((item) => normalizeCanonKey(item))
+    ].map((item) => normalizeCanonKey(item)),
   );
 
   for (const family of familySet) {
-    assert(allowedFamilies.has(family), `canon_component_family_not_allowed:${screen.id}:${screen.archetype}:${family}`);
+    assert(
+      allowedFamilies.has(family),
+      `canon_component_family_not_allowed:${screen.id}:${screen.archetype}:${family}`,
+    );
   }
 }
 
@@ -299,15 +317,33 @@ export function validateGeneratorManifests(manifests) {
     assert(isRecord(routeContent), `funnel_content_missing_route:${route}`);
     assert(asNonEmptyString(routeContent.title), `funnel_content_missing_title:${route}`);
     assert(asNonEmptyString(routeContent.lead), `funnel_content_missing_lead:${route}`);
-    assert(Array.isArray(routeContent.heroHighlights) && routeContent.heroHighlights.length > 0, `funnel_content_missing_hero_highlights:${route}`);
-    assert(Array.isArray(routeContent.routeCards) && routeContent.routeCards.length > 0, `funnel_content_missing_route_cards:${route}`);
-    assert(Array.isArray(routeContent.nextStepChecklist) && routeContent.nextStepChecklist.length > 0, `funnel_content_missing_next_step:${route}`);
-    assert(isRecord(routeContent.nextBestRoute) && asNonEmptyString(routeContent.nextBestRoute.title), `funnel_content_missing_next_best_route:${route}`);
+    assert(
+      Array.isArray(routeContent.heroHighlights) && routeContent.heroHighlights.length > 0,
+      `funnel_content_missing_hero_highlights:${route}`,
+    );
+    assert(
+      Array.isArray(routeContent.routeCards) && routeContent.routeCards.length > 0,
+      `funnel_content_missing_route_cards:${route}`,
+    );
+    assert(
+      Array.isArray(routeContent.nextStepChecklist) && routeContent.nextStepChecklist.length > 0,
+      `funnel_content_missing_next_step:${route}`,
+    );
+    assert(
+      isRecord(routeContent.nextBestRoute) && asNonEmptyString(routeContent.nextBestRoute.title),
+      `funnel_content_missing_next_best_route:${route}`,
+    );
   }
   assert(Array.isArray(screens.manifests) && screens.manifests.length > 0, "screen_manifests_empty");
   assert(Array.isArray(experiments.experiments), "experiment_manifests_invalid_experiments");
-  assert(Array.isArray(archetypeContracts.contracts) && archetypeContracts.contracts.length > 0, "archetype_contracts_empty");
-  assert(Array.isArray(routeFamilyContracts.contracts) && routeFamilyContracts.contracts.length > 0, "route_family_contracts_empty");
+  assert(
+    Array.isArray(archetypeContracts.contracts) && archetypeContracts.contracts.length > 0,
+    "archetype_contracts_empty",
+  );
+  assert(
+    Array.isArray(routeFamilyContracts.contracts) && routeFamilyContracts.contracts.length > 0,
+    "route_family_contracts_empty",
+  );
 
   const archetypeBindings = createArchetypeBindings(archetypeContracts);
 
@@ -372,10 +408,16 @@ export function validateGeneratorManifests(manifests) {
     const userQuestion = asNonEmptyString(entry.user_question);
     const dominantAction = asNonEmptyString(entry.dominant_action);
     const tier = asNonEmptyString(entry.tier);
-    assert(id && version && blockType && family && primarySemantic && userQuestion && dominantAction && tier, `semantic_block_invalid_fields:${idx}`);
+    assert(
+      id && version && blockType && family && primarySemantic && userQuestion && dominantAction && tier,
+      `semantic_block_invalid_fields:${idx}`,
+    );
     assert(VALID_SEMANTIC_GROUPS.has(family), `semantic_block_invalid_group:${id}:${family}`);
     assert(VALID_SEMANTICS.has(primarySemantic), `semantic_block_invalid_primary_semantic:${id}:${primarySemantic}`);
-    assert(Array.isArray(entry.semantic_tags) && entry.semantic_tags.length > 0, `semantic_block_invalid_semantic_tags:${id}`);
+    assert(
+      Array.isArray(entry.semantic_tags) && entry.semantic_tags.length > 0,
+      `semantic_block_invalid_semantic_tags:${id}`,
+    );
     const semanticTags = entry.semantic_tags.map((tag, tagIdx) => {
       const value = asNonEmptyString(tag);
       assert(value && VALID_SEMANTICS.has(value), `semantic_block_invalid_tag:${id}:${tagIdx}`);
@@ -406,12 +448,24 @@ export function validateGeneratorManifests(manifests) {
     const routeBoundary = asNonEmptyString(entry.route_boundary);
     assert(id && version && routeFamily && routeBoundary, `route_family_contract_invalid_fields:${idx}`);
     assert(VALID_ROUTE_FAMILIES.has(routeFamily), `route_family_contract_invalid_family:${id}:${routeFamily}`);
-    assert(Array.isArray(entry.route_paths) && entry.route_paths.length > 0, `route_family_contract_missing_paths:${id}`);
-    assert(Array.isArray(entry.allowed_archetypes) && entry.allowed_archetypes.length > 0, `route_family_contract_missing_archetypes:${id}`);
+    assert(
+      Array.isArray(entry.route_paths) && entry.route_paths.length > 0,
+      `route_family_contract_missing_paths:${id}`,
+    );
+    assert(
+      Array.isArray(entry.allowed_archetypes) && entry.allowed_archetypes.length > 0,
+      `route_family_contract_missing_archetypes:${id}`,
+    );
     for (const archetype of entry.allowed_archetypes) {
-      assert(archetypeBindings.contractByArchetype.has(archetype), `route_family_contract_unknown_archetype:${id}:${archetype}`);
+      assert(
+        archetypeBindings.contractByArchetype.has(archetype),
+        `route_family_contract_unknown_archetype:${id}:${archetype}`,
+      );
     }
-    assert(Array.isArray(entry.allowed_renderers) && entry.allowed_renderers.length > 0, `route_family_contract_missing_renderers:${id}`);
+    assert(
+      Array.isArray(entry.allowed_renderers) && entry.allowed_renderers.length > 0,
+      `route_family_contract_missing_renderers:${id}`,
+    );
     return {
       id,
       version,
@@ -419,9 +473,13 @@ export function validateGeneratorManifests(manifests) {
       route_boundary: routeBoundary,
       route_paths: entry.route_paths.filter((item) => typeof item === "string"),
       allowed_archetypes: entry.allowed_archetypes.filter((item) => typeof item === "string"),
-      allowed_block_order: Array.isArray(entry.allowed_block_order) ? entry.allowed_block_order.filter((item) => typeof item === "string") : [],
+      allowed_block_order: Array.isArray(entry.allowed_block_order)
+        ? entry.allowed_block_order.filter((item) => typeof item === "string")
+        : [],
       allowed_renderers: entry.allowed_renderers.filter((item) => typeof item === "string"),
-      required_semantic_roles: Array.isArray(entry.required_semantic_roles) ? entry.required_semantic_roles.filter((item) => typeof item === "string") : [],
+      required_semantic_roles: Array.isArray(entry.required_semantic_roles)
+        ? entry.required_semantic_roles.filter((item) => typeof item === "string")
+        : [],
       isolated: typeof entry.isolated === "boolean" ? entry.isolated : undefined,
     };
   });
@@ -444,7 +502,22 @@ export function validateGeneratorManifests(manifests) {
     const actionRole = asNonEmptyString(entry.action_role);
     const renderMode = asNonEmptyString(entry.render_mode);
     const renderer = asNonEmptyString(entry.renderer);
-    assert(id && version && semanticBlockId && semanticBlockVersion && semanticRole && semanticFamily && userQuestion && routeBoundary && manifestMode && recipeId && recipeVersion && actionRole && renderer, `block_manifest_invalid_fields:${idx}`);
+    assert(
+      id &&
+        version &&
+        semanticBlockId &&
+        semanticBlockVersion &&
+        semanticRole &&
+        semanticFamily &&
+        userQuestion &&
+        routeBoundary &&
+        manifestMode &&
+        recipeId &&
+        recipeVersion &&
+        actionRole &&
+        renderer,
+      `block_manifest_invalid_fields:${idx}`,
+    );
     assert(VALID_SEMANTIC_GROUPS.has(semanticFamily), `block_manifest_invalid_semantic_family:${id}:${semanticFamily}`);
     assert(VALID_MODES.has(manifestMode), `block_manifest_invalid_mode:${id}:${manifestMode}`);
     assert(VALID_ACTION_ROLES.has(actionRole), `block_manifest_invalid_action_role:${id}:${actionRole}`);
@@ -467,8 +540,12 @@ export function validateGeneratorManifests(manifests) {
       semantic_role: semanticRole,
       semantic_family: semanticFamily,
       user_question: userQuestion,
-      required_fields: Array.isArray(entry.required_fields) ? entry.required_fields.filter((item) => typeof item === "string") : [],
-      allowed_actions: Array.isArray(entry.allowed_actions) ? entry.allowed_actions.filter((item) => typeof item === "string") : [],
+      required_fields: Array.isArray(entry.required_fields)
+        ? entry.required_fields.filter((item) => typeof item === "string")
+        : [],
+      allowed_actions: Array.isArray(entry.allowed_actions)
+        ? entry.allowed_actions.filter((item) => typeof item === "string")
+        : [],
       route_boundary: routeBoundary,
       mode: manifestMode,
       recipe_id: recipeId,
@@ -479,8 +556,12 @@ export function validateGeneratorManifests(manifests) {
         ? entry.component_families.filter((item) => typeof item === "string")
         : [],
       renderer,
-      token_recipes: Array.isArray(entry.token_recipes) ? entry.token_recipes.filter((item) => typeof item === "string") : [],
-      layout_variants: Array.isArray(entry.layout_variants) ? entry.layout_variants.filter((item) => typeof item === "string") : [],
+      token_recipes: Array.isArray(entry.token_recipes)
+        ? entry.token_recipes.filter((item) => typeof item === "string")
+        : [],
+      layout_variants: Array.isArray(entry.layout_variants)
+        ? entry.layout_variants.filter((item) => typeof item === "string")
+        : [],
       default_props: isRecord(entry.default_props) ? entry.default_props : {},
     };
   });
@@ -507,10 +588,28 @@ export function validateGeneratorManifests(manifests) {
     const modePackId = asNonEmptyString(entry.mode_pack_id);
     const branchOverlayId = asNonEmptyString(entry.branch_overlay_id);
 
-    assert(id && version && routeKey && routePath && routeFamily && routeBoundary && routeFamilyContractId && archetype && mode && branch && tokenPackId && modePackId && branchOverlayId, `screen_manifest_invalid_fields:${idx}`);
+    assert(
+      id &&
+        version &&
+        routeKey &&
+        routePath &&
+        routeFamily &&
+        routeBoundary &&
+        routeFamilyContractId &&
+        archetype &&
+        mode &&
+        branch &&
+        tokenPackId &&
+        modePackId &&
+        branchOverlayId,
+      `screen_manifest_invalid_fields:${idx}`,
+    );
     assert(VALID_ROUTES.has(routeKey), `screen_manifest_invalid_route:${id}:${routeKey}`);
     assert(VALID_ROUTE_FAMILIES.has(routeFamily), `screen_manifest_invalid_route_family:${id}:${routeFamily}`);
-    assert(archetypeBindings.contractByArchetype.has(archetype), `screen_manifest_invalid_archetype:${id}:${archetype}`);
+    assert(
+      archetypeBindings.contractByArchetype.has(archetype),
+      `screen_manifest_invalid_archetype:${id}:${archetype}`,
+    );
     assert(VALID_MODES.has(mode), `screen_manifest_invalid_mode:${id}:${mode}`);
     assert(VALID_BRANCHES.has(branch), `screen_manifest_invalid_branch:${id}:${branch}`);
     assert(tokenPackById.has(tokenPackId), `screen_manifest_missing_token_pack:${id}:${tokenPackId}`);
@@ -519,8 +618,14 @@ export function validateGeneratorManifests(manifests) {
     const routeFamilyContract = routeFamilyContractById.get(routeFamilyContractId);
     assert(routeFamilyContract, `screen_manifest_missing_route_family_contract:${id}:${routeFamilyContractId}`);
     assert(routeFamilyContract.route_family === routeFamily, `screen_manifest_route_family_mismatch:${id}`);
-    assert(routeFamilyContract.route_paths.includes(routePath), `screen_manifest_route_path_not_allowed:${id}:${routePath}`);
-    assert(routeFamilyContract.allowed_archetypes.includes(archetype), `screen_manifest_archetype_not_allowed_for_route_family:${id}:${archetype}`);
+    assert(
+      routeFamilyContract.route_paths.includes(routePath),
+      `screen_manifest_route_path_not_allowed:${id}:${routePath}`,
+    );
+    assert(
+      routeFamilyContract.allowed_archetypes.includes(archetype),
+      `screen_manifest_archetype_not_allowed_for_route_family:${id}:${archetype}`,
+    );
 
     assert(Array.isArray(entry.blocks) && entry.blocks.length > 0, `screen_manifest_invalid_blocks:${id}`);
     const blocks = entry.blocks.map((block, blockIdx) => {
@@ -533,8 +638,14 @@ export function validateGeneratorManifests(manifests) {
 
       const blockManifest = blockManifestById.get(blockManifestId);
       assert(blockManifest, `screen_manifest_missing_block_manifest:${id}:${blockManifestId}`);
-      assert(blockManifest.version === blockManifestVersion, `screen_manifest_block_manifest_version_mismatch:${id}:${blockId}`);
-      assert(routeFamilyContract.allowed_renderers.includes(blockManifest.renderer), `screen_manifest_renderer_not_allowed:${id}:${blockManifest.renderer}`);
+      assert(
+        blockManifest.version === blockManifestVersion,
+        `screen_manifest_block_manifest_version_mismatch:${id}:${blockId}`,
+      );
+      assert(
+        routeFamilyContract.allowed_renderers.includes(blockManifest.renderer),
+        `screen_manifest_renderer_not_allowed:${id}:${blockManifest.renderer}`,
+      );
 
       return {
         id: blockId,
@@ -547,7 +658,9 @@ export function validateGeneratorManifests(manifests) {
     const canonBlockManifests = blocks
       .map((block) => (block.block_manifest_id ? blockManifestById.get(block.block_manifest_id) : null))
       .filter(Boolean);
-    const canonSemanticBlocks = canonBlockManifests.map((block) => semanticBlockById.get(block.semantic_block_id)).filter(Boolean);
+    const canonSemanticBlocks = canonBlockManifests
+      .map((block) => semanticBlockById.get(block.semantic_block_id))
+      .filter(Boolean);
 
     if (canonBlockManifests.length > 0) {
       enforceCanonForScreen(
@@ -557,7 +670,7 @@ export function validateGeneratorManifests(manifests) {
         },
         canonBlockManifests,
         canonSemanticBlocks,
-        archetypeBindings
+        archetypeBindings,
       );
     }
     const semanticRoleSet = new Set(canonBlockManifests.map((block) => block.semantic_role));
@@ -609,7 +722,10 @@ export function validateGeneratorManifests(manifests) {
       assert(Number.isFinite(weight) && weight > 0, `experiment_invalid_variant_weight:${key}:${variantKey}`);
       const screen = screenById.get(screenManifestId);
       assert(screen, `experiment_variant_missing_screen:${key}:${screenManifestId}`);
-      assert(screen.route_key === routeKey, `experiment_variant_route_mismatch:${key}:${variantKey}:${screen.route_key}`);
+      assert(
+        screen.route_key === routeKey,
+        `experiment_variant_route_mismatch:${key}:${variantKey}:${screen.route_key}`,
+      );
       return {
         key: variantKey,
         weight,
@@ -617,7 +733,10 @@ export function validateGeneratorManifests(manifests) {
       };
     });
 
-    assert(variants.some((variant) => variant.key === defaultVariant), `experiment_default_variant_missing:${key}:${defaultVariant}`);
+    assert(
+      variants.some((variant) => variant.key === defaultVariant),
+      `experiment_default_variant_missing:${key}:${defaultVariant}`,
+    );
     ensureUnique(variants, "key", `experiment_variant:${key}`);
 
     return {
@@ -681,7 +800,7 @@ function firstScreenByRoute(screens, routeKey) {
 
 export function resolveScreenForRoute(validationResult, routeKey, assignments = {}) {
   const routeExperiments = validationResult.experiments.filter(
-    (experiment) => experiment.status === "active" && experiment.route_key === routeKey
+    (experiment) => experiment.status === "active" && experiment.route_key === routeKey,
   );
 
   let selectedScreen = null;
@@ -707,7 +826,8 @@ export function resolveScreenForRoute(validationResult, routeKey, assignments = 
 
   if (!selectedScreen) {
     const defaultId = DEFAULT_SCREEN_BY_ROUTE[routeKey];
-    selectedScreen = validationResult.byId.screen.get(defaultId) ?? firstScreenByRoute(validationResult.screens, routeKey);
+    selectedScreen =
+      validationResult.byId.screen.get(defaultId) ?? firstScreenByRoute(validationResult.screens, routeKey);
   }
 
   assert(selectedScreen, `resolve_screen_not_found:${routeKey}`);
@@ -723,7 +843,9 @@ export function resolveScreenForRoute(validationResult, routeKey, assignments = 
   const blocks = selectedScreen.blocks.map((block) => {
     const blockManifest = validationResult.byId.blockManifest.get(block.block_manifest_id);
     assert(blockManifest, `resolve_block_manifest_missing:${selectedScreen.id}:${block.id}`);
-    const semanticBlock = blockManifest ? validationResult.byId.semanticBlock.get(blockManifest.semantic_block_id) : null;
+    const semanticBlock = blockManifest
+      ? validationResult.byId.semanticBlock.get(blockManifest.semantic_block_id)
+      : null;
     const recipeId = blockManifest?.recipe_id;
     const recipe = recipeId ? validationResult.byId.recipe.get(recipeId) : null;
     return {

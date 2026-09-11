@@ -1,6 +1,4 @@
-export function mergeStyleModules(
-  modules: Array<Record<string, string>>,
-): Record<string, string> {
+export function mergeStyleModules(modules: Array<Record<string, string>>): Record<string, string> {
   const styles: Record<string, string> = {};
 
   for (const moduleStyles of modules) {

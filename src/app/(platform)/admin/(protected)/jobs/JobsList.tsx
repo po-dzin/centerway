@@ -15,235 +15,247 @@ import { JOB_STATUS_BADGE_CLASS } from "@/lib/admin/adminStatusStyles";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
 import type { JobListItem as Job, JobsPage } from "@/lib/admin/jobs";
 
-
 /** Same shape as CustomersList: the first page arrives as a prop, the rest via the API. */
 export function JobsList({ initial }: { initial: JobsPage }) {
-    const { lang, t } = useI18n();
-    const locale = getAdminLocale(lang);
-    const statusLabels: Record<Job["status"], string> = {
-        pending: t("jobs_status_pending"),
-        running: t("jobs_status_running"),
-        success: t("jobs_status_success"),
-        failed: t("jobs_status_failed"),
-    };
-    const STATUS_TABS = [
-        { key: "", label: t("jobs_tab_all") },
-        { key: "pending", label: t("jobs_tab_pending") },
-        { key: "running", label: t("jobs_tab_running") },
-        { key: "success", label: t("jobs_tab_success") },
-        { key: "failed", label: t("jobs_tab_failed") },
-    ];
-    const modalLabels = {
-        retryError: t("jobs_retry_error"),
-        retrySuccess: t("jobs_retry_success"),
-        details: t("jobs_details"),
-        type: t("jobs_type"),
-        status: t("jobs_status"),
-        attempts: t("jobs_attempts"),
-        payload: t("jobs_payload"),
-        error: t("jobs_error"),
-        retry: t("jobs_retry"),
-    };
+  const { lang, t } = useI18n();
+  const locale = getAdminLocale(lang);
+  const statusLabels: Record<Job["status"], string> = {
+    pending: t("jobs_status_pending"),
+    running: t("jobs_status_running"),
+    success: t("jobs_status_success"),
+    failed: t("jobs_status_failed"),
+  };
+  const STATUS_TABS = [
+    { key: "", label: t("jobs_tab_all") },
+    { key: "pending", label: t("jobs_tab_pending") },
+    { key: "running", label: t("jobs_tab_running") },
+    { key: "success", label: t("jobs_tab_success") },
+    { key: "failed", label: t("jobs_tab_failed") },
+  ];
+  const modalLabels = {
+    retryError: t("jobs_retry_error"),
+    retrySuccess: t("jobs_retry_success"),
+    details: t("jobs_details"),
+    type: t("jobs_type"),
+    status: t("jobs_status"),
+    attempts: t("jobs_attempts"),
+    payload: t("jobs_payload"),
+    error: t("jobs_error"),
+    retry: t("jobs_retry"),
+  };
 
-    const [q, setQ] = useState("");
-    const [debouncedQ, setDQ] = useState("");
-    const [activeStatus, setStatus] = useState("");
-    const [data, setData] = useState<Job[]>(initial.data);
-    const [count, setCount] = useState(initial.count);
-    const [page, setPage] = useState(0);
-    const LIMIT = 50;
+  const [q, setQ] = useState("");
+  const [debouncedQ, setDQ] = useState("");
+  const [activeStatus, setStatus] = useState("");
+  const [data, setData] = useState<Job[]>(initial.data);
+  const [count, setCount] = useState(initial.count);
+  const [page, setPage] = useState(0);
+  const LIMIT = 50;
 
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-    const requestSeq = useRef(0);
-    const abortRef = useRef<AbortController | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const requestSeq = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
 
-    useEffect(() => {
-        const t = setTimeout(() => {
-            setDQ(q);
-            setPage(0);
-        }, 350);
-        return () => clearTimeout(t);
-    }, [q]);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDQ(q);
+      setPage(0);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [q]);
 
-    const fetchJobs = useCallback(async (query: string, status: string, pageIndex: number) => {
-        requestSeq.current += 1;
-        const reqId = requestSeq.current;
-        abortRef.current?.abort();
-        const ctrl = new AbortController();
-        abortRef.current = ctrl;
+  const fetchJobs = useCallback(async (query: string, status: string, pageIndex: number) => {
+    requestSeq.current += 1;
+    const reqId = requestSeq.current;
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
 
-        setLoading(true);
-        setError(null);
-        setData([]);
-        try {
-            const params = new URLSearchParams();
-            if (query) params.set("q", query);
-            if (status) params.set("status", status);
-            params.set("limit", String(LIMIT));
-            params.set("offset", String(pageIndex * LIMIT));
+    setLoading(true);
+    setError(null);
+    setData([]);
+    try {
+      const params = new URLSearchParams();
+      if (query) params.set("q", query);
+      if (status) params.set("status", status);
+      params.set("limit", String(LIMIT));
+      params.set("offset", String(pageIndex * LIMIT));
 
-            const res = await authorizedFetch(`/api/admin/jobs?${params}`, { signal: ctrl.signal });
-            if (!res.ok) throw new Error(`${res.status}`);
-            const json = await res.json();
-            if (reqId !== requestSeq.current) return;
+      const res = await authorizedFetch(`/api/admin/jobs?${params}`, { signal: ctrl.signal });
+      if (!res.ok) throw new Error(`${res.status}`);
+      const json = await res.json();
+      if (reqId !== requestSeq.current) return;
 
-            setData(json.data ?? []);
-            setCount(json.count ?? 0);
-        } catch (e: unknown) {
-            if (ctrl.signal.aborted) return;
-            if (reqId !== requestSeq.current) return;
-            setError(getErrorMessage(e));
-        } finally {
-            if (reqId !== requestSeq.current) return;
-            setLoading(false);
-        }
-    }, []);
+      setData(json.data ?? []);
+      setCount(json.count ?? 0);
+    } catch (e: unknown) {
+      if (ctrl.signal.aborted) return;
+      if (reqId !== requestSeq.current) return;
+      setError(getErrorMessage(e));
+    } finally {
+      if (reqId !== requestSeq.current) return;
+      setLoading(false);
+    }
+  }, []);
 
-    const firstRun = useRef(true);
-    useEffect(() => {
-        if (firstRun.current) {
-            firstRun.current = false;
-            return;
-        }
-        fetchJobs(debouncedQ, activeStatus, page);
-    }, [debouncedQ, activeStatus, page, fetchJobs]);
+  const firstRun = useRef(true);
+  useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
+    fetchJobs(debouncedQ, activeStatus, page);
+  }, [debouncedQ, activeStatus, page, fetchJobs]);
 
-    useEffect(() => {
-        return () => abortRef.current?.abort();
-    }, []);
+  useEffect(() => {
+    return () => abortRef.current?.abort();
+  }, []);
 
-    const handleStatusChange = (status: string) => {
-        setStatus(status);
-        setPage(0);
-    };
+  const handleStatusChange = (status: string) => {
+    setStatus(status);
+    setPage(0);
+  };
 
-    const totalPages = Math.ceil(count / LIMIT);
+  const totalPages = Math.ceil(count / LIMIT);
 
-    return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h2 className="cw-page-title mb-1">
-                        {t("jobs_title")}
-                    </h2>
-                    <p className="cw-page-subtitle">
-                        {t("jobs_subtitle")}
-                    </p>
-                </div>
-            </div>
-
-            {/* Status tabs */}
-            <AdminTabs
-                items={STATUS_TABS}
-                activeKey={activeStatus}
-                onChange={handleStatusChange}
-                className="overflow-x-auto no-scrollbar"
-            />
-
-            <AdminSearchInput
-                value={q}
-                onChange={setQ}
-                placeholder={t("jobs_search_placeholder")}
-                onClear={q ? () => setQ("") : undefined}
-            />
-
-            {loading ? (
-                <AdminLoadingState variant="spinner" text={t("jobs_loading")} />
-            ) : error ? (
-                <AdminErrorState
-                    title={t("common_error")}
-                    message={error}
-                    action={(
-                        <button type="button" onClick={() => fetchJobs(debouncedQ, activeStatus, page)} className="px-4 py-2 cw-btn cw-surface-2">
-                            {t("analytics_retry")}
-                        </button>
-                    )}
-                />
-            ) : data.length === 0 ? (
-                <AdminEmptyState
-                    className="py-20"
-                    iconWrapperClassName="w-12 h-12 rounded-full"
-                    icon={(
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="cw-muted">
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="m4.93 4.93 14.14 14.14" />
-                        </svg>
-                    )}
-                    title={t("jobs_not_found")}
-                    description={q || activeStatus ? t("jobs_try_filters") : t("jobs_queue_empty")}
-                />
-            ) : (
-                <div className="space-y-1.5">
-                    {data.map((job) => (
-                        <button
-                            key={job.id}
-                            type="button"
-                            onClick={() => setSelectedJob(job)}
-                            className="cw-list-item w-full text-left flex items-center gap-4 p-4 cursor-pointer group"
-                            title={t("jobs_details")}
-                        >
-                            <div className="w-10 h-10 rounded-full cw-surface-2 flex items-center justify-center shrink-0 group-hover:bg-[var(--cw-surface)] transition-colors border border-transparent group-hover:border-[var(--cw-border)]">
-                                <span className={`w-2.5 h-2.5 rounded-full ${job.status === 'success' ? 'cw-status-success-dot' : job.status === 'failed' ? 'cw-status-failed-dot' : job.status === 'running' ? 'cw-status-running-dot animate-pulse' : 'cw-status-pending-dot'}`} />
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <p className="text-sm font-medium cw-text font-mono break-all line-clamp-1">
-                                        {job.type}
-                                    </p>
-                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${JOB_STATUS_BADGE_CLASS[job.status]}`}>
-                                        {statusLabels[job.status]}
-                                    </span>
-                                </div>
-                                <div className="text-xs cw-muted flex items-center gap-3">
-                                    <span className="truncate max-w-[200px] font-mono opacity-60">{job.id}</span>
-                                    {job.status === "failed" && job.error_text && (
-                                        <span className="cw-status-failed-text truncate hidden sm:inline-block max-w-[200px]">
-                                            {job.error_text}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="text-right shrink-0">
-                                <p className="text-sm font-medium cw-text tabular-nums">
-                                    {new Date(job.created_at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
-                                </p>
-                                <p className="text-xs cw-muted mt-0.5">
-                                    {new Date(job.created_at).toLocaleDateString(locale, { day: '2-digit', month: 'short' })}
-                                </p>
-                            </div>
-                        </button>
-                    ))}
-                </div>
-            )}
-
-            {/* Pagination */}
-            {!loading && !error && count > 0 && (
-                <AdminPagination
-                    page={page}
-                    totalPages={totalPages}
-                    onPrev={() => setPage((p) => Math.max(0, p - 1))}
-                    onNext={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                />
-            )}
-
-            {/* Modal */}
-            {selectedJob && (
-                <JobDetailsModal
-                    job={selectedJob}
-                    labels={modalLabels}
-                    statusLabels={statusLabels}
-                    onClose={() => setSelectedJob(null)}
-                    onRetry={() => {
-                        setSelectedJob(null);
-                        fetchJobs(debouncedQ, activeStatus, page);
-                    }}
-                />
-            )}
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="cw-page-title mb-1">{t("jobs_title")}</h2>
+          <p className="cw-page-subtitle">{t("jobs_subtitle")}</p>
         </div>
-    );
+      </div>
+
+      {/* Status tabs */}
+      <AdminTabs
+        items={STATUS_TABS}
+        activeKey={activeStatus}
+        onChange={handleStatusChange}
+        className="overflow-x-auto no-scrollbar"
+      />
+
+      <AdminSearchInput
+        value={q}
+        onChange={setQ}
+        placeholder={t("jobs_search_placeholder")}
+        onClear={q ? () => setQ("") : undefined}
+      />
+
+      {loading ? (
+        <AdminLoadingState variant="spinner" text={t("jobs_loading")} />
+      ) : error ? (
+        <AdminErrorState
+          title={t("common_error")}
+          message={error}
+          action={
+            <button
+              type="button"
+              onClick={() => fetchJobs(debouncedQ, activeStatus, page)}
+              className="px-4 py-2 cw-btn cw-surface-2"
+            >
+              {t("analytics_retry")}
+            </button>
+          }
+        />
+      ) : data.length === 0 ? (
+        <AdminEmptyState
+          className="py-20"
+          iconWrapperClassName="w-12 h-12 rounded-full"
+          icon={
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="cw-muted"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="m4.93 4.93 14.14 14.14" />
+            </svg>
+          }
+          title={t("jobs_not_found")}
+          description={q || activeStatus ? t("jobs_try_filters") : t("jobs_queue_empty")}
+        />
+      ) : (
+        <div className="space-y-1.5">
+          {data.map((job) => (
+            <button
+              key={job.id}
+              type="button"
+              onClick={() => setSelectedJob(job)}
+              className="cw-list-item w-full text-left flex items-center gap-4 p-4 cursor-pointer group"
+              title={t("jobs_details")}
+            >
+              <div className="w-10 h-10 rounded-full cw-surface-2 flex items-center justify-center shrink-0 group-hover:bg-[var(--cw-surface)] transition-colors border border-transparent group-hover:border-[var(--cw-border)]">
+                <span
+                  className={`w-2.5 h-2.5 rounded-full ${job.status === "success" ? "cw-status-success-dot" : job.status === "failed" ? "cw-status-failed-dot" : job.status === "running" ? "cw-status-running-dot animate-pulse" : "cw-status-pending-dot"}`}
+                />
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-sm font-medium cw-text font-mono break-all line-clamp-1">{job.type}</p>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${JOB_STATUS_BADGE_CLASS[job.status]}`}
+                  >
+                    {statusLabels[job.status]}
+                  </span>
+                </div>
+                <div className="text-xs cw-muted flex items-center gap-3">
+                  <span className="truncate max-w-[200px] font-mono opacity-60">{job.id}</span>
+                  {job.status === "failed" && job.error_text && (
+                    <span className="cw-status-failed-text truncate hidden sm:inline-block max-w-[200px]">
+                      {job.error_text}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="text-right shrink-0">
+                <p className="text-sm font-medium cw-text tabular-nums">
+                  {new Date(job.created_at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
+                </p>
+                <p className="text-xs cw-muted mt-0.5">
+                  {new Date(job.created_at).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && !error && count > 0 && (
+        <AdminPagination
+          page={page}
+          totalPages={totalPages}
+          onPrev={() => setPage((p) => Math.max(0, p - 1))}
+          onNext={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+        />
+      )}
+
+      {/* Modal */}
+      {selectedJob && (
+        <JobDetailsModal
+          job={selectedJob}
+          labels={modalLabels}
+          statusLabels={statusLabels}
+          onClose={() => setSelectedJob(null)}
+          onRetry={() => {
+            setSelectedJob(null);
+            fetchJobs(debouncedQ, activeStatus, page);
+          }}
+        />
+      )}
+    </div>
+  );
 }

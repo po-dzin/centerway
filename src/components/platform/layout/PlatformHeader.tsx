@@ -112,9 +112,7 @@ export function PlatformHeader({
 
     const header = headerRef.current;
     const shell = header?.parentElement;
-    const backgroundSiblings = shell
-      ? Array.from(shell.children).filter((element) => element !== header)
-      : [];
+    const backgroundSiblings = shell ? Array.from(shell.children).filter((element) => element !== header) : [];
     const previouslyInert = backgroundSiblings.map((element) => element.hasAttribute("inert"));
     backgroundSiblings.forEach((element) => element.setAttribute("inert", ""));
 
@@ -148,7 +146,7 @@ export function PlatformHeader({
       if (event.key !== "Tab" || !header) return;
 
       const focusable = Array.from(header.querySelectorAll<HTMLElement>(MODAL_FOCUSABLE)).filter(
-        (element) => element.getClientRects().length > 0
+        (element) => element.getClientRects().length > 0,
       );
       if (focusable.length === 0) {
         event.preventDefault();
@@ -282,33 +280,38 @@ export function PlatformHeader({
         >
           <div className={styles.mobileMenuSurface} data-cw-glass="shell">
             <>
-            {/* WHOSE SESSION THIS IS, FIRST. The block lives inside the account
+              {/* WHOSE SESSION THIS IS, FIRST. The block lives inside the account
                 rows on the desktop popover, which on the phone put it halfway
                 down the drawer — below the public destinations, reading as a
                 caption on the apps under it. A menu opened on a phone answers
                 «whose account» before it answers «where to». The rows below are
                 told not to draw it a second time. */}
-            <PlatformAccountIdentity />
-            <nav className={`${styles.nav} ${styles.mobileMenuNav}`} aria-label="Основна навігація">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.resolvedHref}
-                  onClick={closeMenu}
-                  aria-current={isActive(item.href, item.match) ? "page" : undefined}
-                >
-                  <span className={styles.navText}>
-                    {item.label}
-                    <HandGraphic className={styles.navInkMark} name="ink-stroke" size={36} />
-                  </span>
-                </Link>
-              ))}
-            </nav>
-            <div className={styles.mobileProfileSlot} data-cw-rule="chrome">
-              {/* Whatever the list above already names, the account block does
+              <PlatformAccountIdentity />
+              <nav className={`${styles.nav} ${styles.mobileMenuNav}`} aria-label="Основна навігація">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.resolvedHref}
+                    onClick={closeMenu}
+                    aria-current={isActive(item.href, item.match) ? "page" : undefined}
+                  >
+                    <span className={styles.navText}>
+                      {item.label}
+                      <HandGraphic className={styles.navInkMark} name="ink-stroke" size={36} />
+                    </span>
+                  </Link>
+                ))}
+              </nav>
+              <div className={styles.mobileProfileSlot} data-cw-rule="chrome">
+                {/* Whatever the list above already names, the account block does
                   not repeat — and nothing more than that. */}
-              <PlatformAccountMenu variant="inline" exclude={navExcludes} onNavigate={closeMenu} showIdentity={false} />
-            </div>
+                <PlatformAccountMenu
+                  variant="inline"
+                  exclude={navExcludes}
+                  onNavigate={closeMenu}
+                  showIdentity={false}
+                />
+              </div>
             </>
           </div>
         </div>

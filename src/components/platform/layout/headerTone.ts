@@ -142,11 +142,7 @@ function median(values: number[]) {
   return sorted[Math.floor(sorted.length / 2)];
 }
 
-export function useHeaderTone(
-  initialTone: HeaderTone = "light",
-  watchKey?: string | null,
-  frozen = false,
-) {
+export function useHeaderTone(initialTone: HeaderTone = "light", watchKey?: string | null, frozen = false) {
   const [headerTone, setHeaderTone] = useState<HeaderTone>(initialTone);
   // Hysteresis has to compare against the tone that is on screen right now, not
   // the one this render closed over.
@@ -218,17 +214,14 @@ export function useHeaderTone(
       const barEl = document.querySelector<HTMLElement>("header[data-cw-header-tone]");
       const headerEl = barEl?.offsetHeight
         ? barEl
-        : document.querySelector<HTMLElement>('[data-cw-chrome="organs"]') ?? barEl;
+        : (document.querySelector<HTMLElement>('[data-cw-chrome="organs"]') ?? barEl);
       const headerHeight = headerEl?.offsetHeight ?? 72;
       /* MEASURED FROM ITS OWN TOP EDGE, because the two forms do not start in
          the same place: the bar is pinned at 0, the islands float a gutter
          down. `height * 0.72` alone answers for the first and points above the
          second. */
       const headerTop = headerEl ? Math.max(0, Math.round(headerEl.getBoundingClientRect().top)) : 0;
-      const sampleY = Math.max(
-        16,
-        Math.min(window.innerHeight - 16, headerTop + Math.round(headerHeight * 0.72)),
-      );
+      const sampleY = Math.max(16, Math.min(window.innerHeight - 16, headerTop + Math.round(headerHeight * 0.72)));
 
       /* The open sheet is 320px of backdrop, not the bar's 64px, so it is
          sampled down its own height and the tone follows what the sheet actually
@@ -246,9 +239,8 @@ export function useHeaderTone(
          the flip is a palette change and nothing else, carried by the same dwell
          and cross-fade as the bar's own. */
       const menuOpen = headerEl?.dataset.menuOpen === "true";
-      const sheetHeight = menuOpen && headerEl
-        ? Number.parseFloat(headerEl.style.getPropertyValue("--cw-menu-sheet-height")) || 0
-        : 0;
+      const sheetHeight =
+        menuOpen && headerEl ? Number.parseFloat(headerEl.style.getPropertyValue("--cw-menu-sheet-height")) || 0 : 0;
 
       /* A declared band is trusted for the bar, whose whole box it covers. It is
          not trusted for the sheet, which reaches far below that band. */
@@ -260,10 +252,12 @@ export function useHeaderTone(
       }
 
       const samplePoints = [0.18, 0.5, 0.82].map((ratio) => Math.round(window.innerWidth * ratio));
-      const sampleRows = sheetHeight > 0
-        ? [sampleY, ...[0.3, 0.6, 0.92].map((ratio) => Math.round(headerHeight + sheetHeight * ratio))]
-            .filter((y) => y < window.innerHeight - 4)
-        : [sampleY];
+      const sampleRows =
+        sheetHeight > 0
+          ? [sampleY, ...[0.3, 0.6, 0.92].map((ratio) => Math.round(headerHeight + sheetHeight * ratio))].filter(
+              (y) => y < window.innerHeight - 4,
+            )
+          : [sampleY];
 
       const readings = sampleRows
         .flatMap((rowY) => samplePoints.map((sampleX) => resolveReadingFromPoint(sampleX, rowY)))
@@ -285,9 +279,7 @@ export function useHeaderTone(
       }
 
       const luminances = readings.map((reading) =>
-        "tone" in reading
-          ? reading.tone === "dark" ? PHOTO_LUMINANCE : DECLARED_LIGHT_LUMINANCE
-          : reading.luminance,
+        "tone" in reading ? (reading.tone === "dark" ? PHOTO_LUMINANCE : DECLARED_LIGHT_LUMINANCE) : reading.luminance,
       );
 
       /* Median in both cases, and for the same reason: the surface should match
@@ -296,11 +288,7 @@ export function useHeaderTone(
          the sheet reads the same three across four rows of its own height. */
       const level = median(luminances);
       const current = toneRef.current;
-      commitTone(
-        current === "dark"
-          ? level > ENTER_LIGHT ? "light" : "dark"
-          : level < ENTER_DARK ? "dark" : "light",
-      );
+      commitTone(current === "dark" ? (level > ENTER_LIGHT ? "light" : "dark") : level < ENTER_DARK ? "dark" : "light");
     };
 
     const requestToneUpdate = () => {

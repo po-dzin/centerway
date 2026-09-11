@@ -56,7 +56,9 @@ export function PlatformBlock({
         styles.blockFlow,
         graphic ? styles.blockGraphic : "",
         graphic === "path" ? styles.blockGraphicPath : "",
-      ].filter(Boolean).join(" ")}
+      ]
+        .filter(Boolean)
+        .join(" ")}
       id={id}
     >
       <header className={`${styles.blockHead} ${align === "center" ? styles.blockHeadCentered : ""}`}>

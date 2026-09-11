@@ -72,7 +72,11 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 function newOrderRef(product: Parameters<typeof makeOrderRef>[0]) {
-  return makeOrderRef(product, () => Date.now(), (bytes) => crypto.randomBytes(bytes).toString("hex"));
+  return makeOrderRef(
+    product,
+    () => Date.now(),
+    (bytes) => crypto.randomBytes(bytes).toString("hex"),
+  );
 }
 
 export const POST = withRoute("orders.create", async (req) => {
@@ -119,11 +123,8 @@ export const POST = withRoute("orders.create", async (req) => {
 
     if (error) {
       return cors(
-        NextResponse.json(
-          { ok: false, error: "db_order_insert_failed", details: error.message },
-          { status: 500 }
-        ),
-        origin
+        NextResponse.json({ ok: false, error: "db_order_insert_failed", details: error.message }, { status: 500 }),
+        origin,
       );
     }
 
@@ -188,7 +189,7 @@ export const POST = withRoute("orders.create", async (req) => {
         currency: cfg.currency,
         status: "created",
       }),
-      origin
+      origin,
     );
   }
 });

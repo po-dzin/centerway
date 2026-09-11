@@ -15,7 +15,13 @@ export type JobListItem = {
 };
 export type JobsPage = { data: JobListItem[]; count: number };
 
-export async function listJobs(input: { q?: string; status?: string; type?: string; limit: number; offset: number }): Promise<JobsPage> {
+export async function listJobs(input: {
+  q?: string;
+  status?: string;
+  type?: string;
+  limit: number;
+  offset: number;
+}): Promise<JobsPage> {
   const q = input.q?.trim() ?? "";
   let query = serviceClient()
     .from("jobs")

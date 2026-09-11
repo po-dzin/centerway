@@ -37,11 +37,7 @@ type EventsRequestBody = {
 type LocalOnlyEventName = "ScrollDepth50" | "ConsultCTA" | "DetoxCTA" | "PurchaseClientSignal";
 type AllowedEventName = CapiEventPayload["event_name"] | LocalOnlyEventName;
 
-const CAPI_EVENT_NAMES = new Set<CapiEventPayload["event_name"]>([
-  "ViewContent",
-  "Lead",
-  "InitiateCheckout",
-]);
+const CAPI_EVENT_NAMES = new Set<CapiEventPayload["event_name"]>(["ViewContent", "Lead", "InitiateCheckout"]);
 const LOCAL_ONLY_EVENT_NAMES = new Set<LocalOnlyEventName>([
   "ScrollDepth50",
   "ConsultCTA",
@@ -156,8 +152,8 @@ export async function POST(req: NextRequest) {
       return cors(
         NextResponse.json(
           { ok: false, error: "event_insert_failed", details: insertErr.message ?? "unknown" },
-          { status: 500 }
-        )
+          { status: 500 },
+        ),
       );
     }
     return cors(NextResponse.json({ ok: true, mode: "local_only" }));
@@ -173,8 +169,8 @@ export async function POST(req: NextRequest) {
       return cors(
         NextResponse.json(
           { ok: false, error: "event_insert_failed", details: insertErr.message ?? "unknown" },
-          { status: 500 }
-        )
+          { status: 500 },
+        ),
       );
     }
   }
@@ -222,8 +218,8 @@ export async function POST(req: NextRequest) {
     return cors(
       NextResponse.json(
         { ok: false, error: "job_enqueue_failed", details: error.message ?? "unknown" },
-        { status: 500 }
-      )
+        { status: 500 },
+      ),
     );
   }
 

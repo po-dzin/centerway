@@ -85,7 +85,10 @@ export function LogoMark({
       className={animate === "breath" ? styles.breathBody : animate === "wait" ? styles.waitBody : undefined}
     >
       {build.arcs.map((d, i) => (
-        <path key={d.slice(0, 24)} d={d} className={`${styles.arc} ${styles[`arc${i}`]}`}
+        <path
+          key={d.slice(0, 24)}
+          d={d}
+          className={`${styles.arc} ${styles[`arc${i}`]}`}
           // `wait` runs the same keyframes on every arc, staggered — the offset
           // is per-index data, so it belongs here rather than in three classes.
           style={animate === "wait" ? { animationDelay: `${i * 0.26}s` } : undefined}

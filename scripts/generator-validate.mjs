@@ -1,8 +1,4 @@
-import {
-  loadGeneratorManifests,
-  summarizeValidation,
-  validateGeneratorManifests,
-} from "./lib/generator-manifests.mjs";
+import { loadGeneratorManifests, summarizeValidation, validateGeneratorManifests } from "./lib/generator-manifests.mjs";
 
 async function main() {
   const { manifests } = await loadGeneratorManifests();

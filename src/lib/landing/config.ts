@@ -27,10 +27,7 @@ const SHARED_STYLES = [
   "/shared/css/landing.bridge.css",
 ];
 
-const SHARED_SCRIPTS = [
-  "/shared/js/landing-pixel.js",
-  "/shared/js/landing-runtime.js",
-];
+const SHARED_SCRIPTS = ["/shared/js/landing-pixel.js", "/shared/js/landing-runtime.js"];
 
 export const LANDING_ROUTE_CONFIG: Record<StaticLandingProduct, LandingRouteConfig> = {
   short: {
@@ -61,10 +58,7 @@ export function getLandingShellAssets(product: StaticLandingProduct) {
   const { assetPrefix, assetName } = LANDING_ROUTE_CONFIG[product];
   const styles =
     product === "irem"
-      ? [
-          ...SHARED_STYLES,
-          `${assetPrefix}/css/irem.theme.css`,
-        ]
+      ? [...SHARED_STYLES, `${assetPrefix}/css/irem.theme.css`]
       : [
           `${assetPrefix}/js/themes/simple.css`,
           ...SHARED_STYLES,
@@ -75,10 +69,7 @@ export function getLandingShellAssets(product: StaticLandingProduct) {
   const scripts =
     product === "irem"
       ? [`${assetPrefix}/js/common.js`, `${assetPrefix}/js/irem-enhance.js`, "/shared/js/lead-form.js"]
-      : [
-          `${assetPrefix}/js/lazysizes.min.js`,
-          `${assetPrefix}/js/common.js`,
-        ];
+      : [`${assetPrefix}/js/lazysizes.min.js`, `${assetPrefix}/js/common.js`];
 
   return {
     styles,

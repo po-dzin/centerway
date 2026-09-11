@@ -32,7 +32,7 @@ describe("resolveReturnStatus", () => {
     // The callback may not have been written yet; the return parameter is
     // first-hand and current, and the row will catch up.
     expect(resolveReturnStatus({ fromParams: "paid", orderStatus: "created", lastCallbackStatus: "Declined" })).toBe(
-      "paid"
+      "paid",
     );
   });
 
@@ -42,7 +42,7 @@ describe("resolveReturnStatus", () => {
 
   it("treats a refunded order as failed, whatever the last callback said", () => {
     expect(resolveReturnStatus({ ...nothingKnown, orderStatus: "refunded", lastCallbackStatus: "Approved" })).toBe(
-      "failed"
+      "failed",
     );
   });
 
@@ -50,13 +50,13 @@ describe("resolveReturnStatus", () => {
      declined the payment is a real failure; silence is not. */
   it("calls it failed only once a rejecting callback has actually arrived", () => {
     expect(resolveReturnStatus({ ...nothingKnown, orderStatus: "created", lastCallbackStatus: "Declined" })).toBe(
-      "failed"
+      "failed",
     );
     expect(resolveReturnStatus({ ...nothingKnown, orderStatus: "created", lastCallbackStatus: "Expired" })).toBe(
-      "failed"
+      "failed",
     );
     expect(resolveReturnStatus({ ...nothingKnown, orderStatus: "created", lastCallbackStatus: "Refunded" })).toBe(
-      "failed"
+      "failed",
     );
   });
 
@@ -68,7 +68,7 @@ describe("resolveReturnStatus", () => {
 
   it("recovers a payment whose callback landed but whose order write did not", () => {
     expect(resolveReturnStatus({ ...nothingKnown, orderStatus: "created", lastCallbackStatus: "Approved" })).toBe(
-      "paid"
+      "paid",
     );
   });
 
@@ -100,7 +100,7 @@ describe("buildReturnDestination", () => {
 
   it("does not send a pending course to the course page — it is not owned yet", () => {
     const dest = new URL(
-      buildReturnDestination("pending", "course:my-course", "course-my-course_20260902_ab12", {}, 0)
+      buildReturnDestination("pending", "course:my-course", "course-my-course_20260902_ab12", {}, 0),
     );
     expect(dest.pathname).toBe("/pay/pending");
   });

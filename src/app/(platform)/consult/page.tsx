@@ -10,7 +10,7 @@ import { listListedAuthors } from "@/lib/lms/authors";
 export const metadata: Metadata = pageMetadata({
   title: "Аюрведична консультація",
   description: describe(
-    "Персональна консультація з Євгенієм Корякіним: онлайн до 90 хвилин, аюрведичний профіль, харчування, режим і план на 2-4 тижні. Освіта, практика і підхід автора."
+    "Персональна консультація з Євгенієм Корякіним: онлайн до 90 хвилин, аюрведичний профіль, харчування, режим і план на 2-4 тижні. Освіта, практика і підхід автора.",
   ),
   path: "/consult",
 });
@@ -43,7 +43,7 @@ export default async function ConsultPage() {
           breadcrumbLd([
             { path: "/", name: "CenterWay" },
             { path: "/consult", name: "Консультація" },
-          ])
+          ]),
         )}
       />
       <PlatformConsultPage authors={authors} />

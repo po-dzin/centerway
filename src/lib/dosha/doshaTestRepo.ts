@@ -162,7 +162,7 @@ export async function ensureDoshaTestSeed(db: SupabaseAdmin): Promise<TestDefini
         question_text: question.text,
         status: "active",
       })),
-      { onConflict: "test_id,question_code" }
+      { onConflict: "test_id,question_code" },
     )
     .select("id, question_code");
 
@@ -183,9 +183,7 @@ export async function ensureDoshaTestSeed(db: SupabaseAdmin): Promise<TestDefini
     }));
   });
 
-  const { error: oErr } = await db
-    .from("test_options")
-    .upsert(optionRows, { onConflict: "question_id,option_code" });
+  const { error: oErr } = await db.from("test_options").upsert(optionRows, { onConflict: "question_id,option_code" });
   if (oErr) {
     throw new Error(`test_option_upsert_failed:${oErr.message}`);
   }
@@ -266,7 +264,7 @@ export async function createTestAttempt(
     source: string | null;
     userId: string | null;
     version: string;
-  }
+  },
 ): Promise<TestAttemptRow> {
   const now = new Date().toISOString();
   const { data, error } = await db
@@ -327,7 +325,7 @@ export async function emitDoshaTestEvent(
     | "dosha_reminder_sent"
     | "dosha_followup_clicked",
   payload: Record<string, unknown>,
-  customerId: string | null = null
+  customerId: string | null = null,
 ): Promise<void> {
   const { error } = await db.from("events").insert({
     type: eventType,
@@ -347,7 +345,7 @@ export async function syncCustomerDoshaTestTags(
   params: {
     userId: string;
     resultType: DoshaResultType;
-  }
+  },
 ): Promise<void> {
   const { data: customer, error } = await db
     .from("customers")
@@ -366,7 +364,7 @@ export async function syncCustomerDoshaTestTags(
 export async function findTestQuestionById(
   db: SupabaseAdmin,
   questionId: string,
-  testId: string
+  testId: string,
 ): Promise<TestQuestionRow | null> {
   const { data, error } = await db
     .from("test_questions")
@@ -383,7 +381,7 @@ export async function findTestQuestionById(
 export async function findTestOptionById(
   db: SupabaseAdmin,
   optionId: string,
-  questionId: string
+  questionId: string,
 ): Promise<TestOptionRow | null> {
   const { data, error } = await db
     .from("test_options")

@@ -87,7 +87,12 @@ function extractExportedMethods(fileText) {
   for (const match of fileText.matchAll(namedExportRegex)) {
     const names = match[1]
       .split(",")
-      .map((value) => value.trim().split(/\s+as\s+/i)[0].trim())
+      .map((value) =>
+        value
+          .trim()
+          .split(/\s+as\s+/i)[0]
+          .trim(),
+      )
       .filter(Boolean);
     for (const name of names) {
       if (allowedMethods.has(name)) {

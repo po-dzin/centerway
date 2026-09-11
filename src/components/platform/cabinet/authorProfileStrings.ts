@@ -4,7 +4,6 @@
  * Split out of AuthorProfileFold.tsx (1,573 lines) on 2026-09-11; nothing inside any declaration changed.
  */
 
-
 export const STRINGS = {
   uk: {
     title: "Профіль автора",

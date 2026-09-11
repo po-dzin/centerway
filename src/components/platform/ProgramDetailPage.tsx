@@ -94,9 +94,7 @@ export function ProgramDetailPage({
   // lesson count for a marketing claim, not live content. A live read here
   // would turn a static page into a per-request query.
   const course = given ?? getSnapshotCourseByProgram(program.slug);
-  const lessonCount = course
-    ? course.modules.reduce((total, module) => total + module.lessons.length, 0)
-    : 0;
+  const lessonCount = course ? course.modules.reduce((total, module) => total + module.lessons.length, 0) : 0;
   const isMiniCourse = program.surfaceType === "mini-course";
 
   /* Where the thing you bought actually appears. Not one sentence for all of
@@ -145,7 +143,11 @@ export function ProgramDetailPage({
        re-deriving the condition keeps this true even if that fallback changes. */
     ...(course && lessonLabel !== program.duration ? [lessonLabel] : []),
     ...(course ? [] : [program.tag]),
-    isCheckout ? "оплата просто тут, без переходу на лендинг" : isFree ? "доступ без оплати" : "участь узгоджуємо в розмові",
+    isCheckout
+      ? "оплата просто тут, без переходу на лендинг"
+      : isFree
+        ? "доступ без оплати"
+        : "участь узгоджуємо в розмові",
   ];
 
   /* WHAT THE PANEL IS TITLED, now that the duration is the badge's.
@@ -249,7 +251,7 @@ export function ProgramDetailPage({
                   { path: "/", name: "CenterWay" },
                   { path: "/programs", name: "Програми" },
                   { path: `/programs/${program.slug}`, name: program.title },
-                ])
+                ]),
               )}
             />
             {/* `OwnedCourseNotice` used to sit here — a banner telling a buyer
@@ -318,14 +320,14 @@ export function ProgramDetailPage({
                       ? `Відкрити доступ до «${program.title}»`
                       : isFree
                         ? `Почати «${program.title}» без оплати`
-                      : `Записатися на «${program.title}»`}
+                        : `Записатися на «${program.title}»`}
                   </h2>
                   <p className={offerPanelStyles.lead}>
                     {isCheckout
                       ? `Оплата проходить тут, на платформі, без переходу на окремий лендинг: ${deliveryLine}.`
                       : isFree
                         ? `Це безкоштовний доступ до курсу: ${deliveryLine}. Увійдіть або створіть акаунт, щоб зберегти прогрес.`
-                      : "Цю програму ми узгоджуємо в розмові — щоб формат, темп і межі методу підходили саме вашому стану. Залиште контакт, і ми повернемося з деталями і способом оплати."}
+                        : "Цю програму ми узгоджуємо в розмові — щоб формат, темп і межі методу підходили саме вашому стану. Залиште контакт, і ми повернемося з деталями і способом оплати."}
                   </p>
                 </article>
                 {isCheckout ? (
@@ -360,21 +362,15 @@ export function ProgramDetailPage({
           />
         }
         trailing={
-          <OfferStickyBar
-            price={isCheckout || isFree ? commerce.price : null}
-            buyHref={buyHref}
-            buyLabel={buyLabel}
-          />
+          <OfferStickyBar price={isCheckout || isFree ? commerce.price : null} buyHref={buyHref} buyLabel={buyLabel} />
         }
         boundary={{
           label: "Межі методу",
           title: "Чесний формат без медичних обіцянок",
-          lead:
-            "CenterWay працює як освітня wellness-платформа і супровід практики. Програми не замінюють діагностику, лікування або рекомендації вашого лікаря; якщо є гострі стани, вагітність, хронічні захворювання або медикаментозна терапія, спочатку потрібна медична консультація.",
+          lead: "CenterWay працює як освітня wellness-платформа і супровід практики. Програми не замінюють діагностику, лікування або рекомендації вашого лікаря; якщо є гострі стани, вагітність, хронічні захворювання або медикаментозна терапія, спочатку потрібна медична консультація.",
         }}
         afterBoundary={nextStep}
       />
     </OfferAccessProvider>
   );
 }
-

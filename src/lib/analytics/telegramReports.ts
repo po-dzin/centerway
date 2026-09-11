@@ -1,5 +1,12 @@
 import { adminClient } from "@/lib/auth/adminClient";
-import { asFiniteNumber, safeDivide, isoDateFromParts, shiftIsoDate, getIsoDateInTimeZone, localMidnightUtcIso } from "@/lib/analytics/helpers";
+import {
+  asFiniteNumber,
+  safeDivide,
+  isoDateFromParts,
+  shiftIsoDate,
+  getIsoDateInTimeZone,
+  localMidnightUtcIso,
+} from "@/lib/analytics/helpers";
 import { sendTelegramMessageWithToken } from "@/lib/telegram/tg";
 
 const REPORTS_TIME_ZONE = process.env.ANALYTICS_REPORTS_TIMEZONE || "Europe/Kyiv";
@@ -117,10 +124,7 @@ function productLabel(productCode: string | null | undefined): string {
 }
 
 function escapeTelegramText(input: string): string {
-  return input
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return input.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function bulletLine(label: string, value: string): string {
@@ -342,7 +346,7 @@ function normalizeCampaignKey(input: string): string {
 
 function isMissingOptionalMetaBreakdown(
   error: { message?: string | null } | null | undefined,
-  table: "analytics_meta_adset_daily" | "analytics_meta_ad_daily"
+  table: "analytics_meta_adset_daily" | "analytics_meta_ad_daily",
 ): boolean {
   const message = typeof error?.message === "string" ? error.message.toLowerCase() : "";
   return (
@@ -361,10 +365,7 @@ function topCampaignLines(campaigns: CampaignSummary[]): string[] {
   });
 }
 
-function resolveCampaignRevenueMatches(
-  sourceCampaign: string,
-  campaigns: CampaignSummary[]
-): CampaignSummary[] {
+function resolveCampaignRevenueMatches(sourceCampaign: string, campaigns: CampaignSummary[]): CampaignSummary[] {
   const normalized = normalizeCampaignKey(sourceCampaign);
   if (!normalized) return [];
 
@@ -378,10 +379,7 @@ function resolveCampaignRevenueMatches(
   return fuzzyMatches;
 }
 
-function resolveCampaignAliasMatches(
-  sourceCampaign: string,
-  aliases: CampaignAliasSummary[]
-): CampaignAliasSummary[] {
+function resolveCampaignAliasMatches(sourceCampaign: string, aliases: CampaignAliasSummary[]): CampaignAliasSummary[] {
   const normalized = normalizeCampaignKey(sourceCampaign);
   if (!normalized) return [];
 
@@ -397,7 +395,7 @@ function resolveCampaignAliasMatches(
 function allocateCampaignRevenue(
   sourceCampaign: string,
   totals: { revenue: number; paidOrders: number },
-  campaigns: CampaignSummary[]
+  campaigns: CampaignSummary[],
 ): void {
   const matches = resolveCampaignRevenueMatches(sourceCampaign, campaigns);
   if (matches.length === 0) return;
@@ -460,7 +458,7 @@ function allocateCampaignRevenueByAliases(
   sourceCampaign: string,
   totals: { revenue: number; paidOrders: number },
   aliases: CampaignAliasSummary[],
-  campaignLookup: Map<string, CampaignSummary>
+  campaignLookup: Map<string, CampaignSummary>,
 ): boolean {
   const matches = resolveCampaignAliasMatches(sourceCampaign, aliases);
   if (matches.length === 0) return false;
@@ -617,13 +615,7 @@ type PeriodicReport = { text: string; hasActivity: boolean };
 async function buildPeriodicReport(window: ReportWindow): Promise<PeriodicReport> {
   const db = adminClient();
 
-  const [
-    ordersResult,
-    metaResult,
-    campaignResult,
-    adsetResult,
-    adResult,
-  ] = await Promise.all([
+  const [ordersResult, metaResult, campaignResult, adsetResult, adResult] = await Promise.all([
     db
       .from("orders")
       .select("product_code, status, amount, currency, campaign, page_url")
@@ -667,7 +659,7 @@ async function buildPeriodicReport(window: ReportWindow): Promise<PeriodicReport
   if (adsetResult.error && adsetMissingTable) {
     console.warn("Analytics reports: adset breakdown skipped:", adsetResult.error.message);
   }
-  const adsetRows = adsetMissingTable ? [] : adsetResult.data ?? [];
+  const adsetRows = adsetMissingTable ? [] : (adsetResult.data ?? []);
 
   const adMissingTable = isMissingOptionalMetaBreakdown(adResult.error, "analytics_meta_ad_daily");
   if (adResult.error && !adMissingTable) {
@@ -676,7 +668,7 @@ async function buildPeriodicReport(window: ReportWindow): Promise<PeriodicReport
   if (adResult.error && adMissingTable) {
     console.warn("Analytics reports: ad breakdown skipped:", adResult.error.message);
   }
-  const adRows = adMissingTable ? [] : adResult.data ?? [];
+  const adRows = adMissingTable ? [] : (adResult.data ?? []);
 
   const productTotals = new Map<string, ProductTotals>();
   const orderCampaignTotals = new Map<string, { revenue: number; paidOrders: number }>();
@@ -752,14 +744,8 @@ async function buildPeriodicReport(window: ReportWindow): Promise<PeriodicReport
 
   const campaignAliases = new Map<string, CampaignAliasSummary>();
   for (const row of adsetRows) {
-    const alias =
-      typeof row.adset_name === "string" && row.adset_name.trim()
-        ? row.adset_name.trim()
-        : "";
-    const campaign =
-      typeof row.campaign_name === "string" && row.campaign_name.trim()
-        ? row.campaign_name.trim()
-        : "";
+    const alias = typeof row.adset_name === "string" && row.adset_name.trim() ? row.adset_name.trim() : "";
+    const campaign = typeof row.campaign_name === "string" && row.campaign_name.trim() ? row.campaign_name.trim() : "";
     if (!alias || !campaign) continue;
     const key = `${campaign}::${alias}`;
     const existing = campaignAliases.get(key) ?? { alias, campaign, spend: 0, purchases: 0 };
@@ -768,14 +754,8 @@ async function buildPeriodicReport(window: ReportWindow): Promise<PeriodicReport
     campaignAliases.set(key, existing);
   }
   for (const row of adRows) {
-    const alias =
-      typeof row.ad_name === "string" && row.ad_name.trim()
-        ? row.ad_name.trim()
-        : "";
-    const campaign =
-      typeof row.campaign_name === "string" && row.campaign_name.trim()
-        ? row.campaign_name.trim()
-        : "";
+    const alias = typeof row.ad_name === "string" && row.ad_name.trim() ? row.ad_name.trim() : "";
+    const campaign = typeof row.campaign_name === "string" && row.campaign_name.trim() ? row.campaign_name.trim() : "";
     if (!alias || !campaign) continue;
     const key = `${campaign}::${alias}`;
     const existing = campaignAliases.get(key) ?? { alias, campaign, spend: 0, purchases: 0 };
@@ -796,19 +776,18 @@ async function buildPeriodicReport(window: ReportWindow): Promise<PeriodicReport
       campaignName,
       totals,
       Array.from(campaignAliases.values()),
-      campaignMap
+      campaignMap,
     );
     if (!allocatedByAlias) {
       continue;
     }
   }
 
-  const topCampaigns = Array.from(campaignMap.values())
-    .sort((a, b) => {
-      if (b.revenue !== a.revenue) return b.revenue - a.revenue;
-      if (b.spend !== a.spend) return b.spend - a.spend;
-      return b.purchases - a.purchases;
-    });
+  const topCampaigns = Array.from(campaignMap.values()).sort((a, b) => {
+    if (b.revenue !== a.revenue) return b.revenue - a.revenue;
+    if (b.spend !== a.spend) return b.spend - a.spend;
+    return b.purchases - a.purchases;
+  });
 
   const topProducts = Array.from(productTotals.entries())
     .filter(([, totals]) => totals.paidOrders > 0)
@@ -843,7 +822,7 @@ async function buildPeriodicReport(window: ReportWindow): Promise<PeriodicReport
     bulletLine("Виторг", formatCurrency(totalRevenue, currency)),
     bulletLine(
       "Воронка",
-      `перегляд сторінки ${formatNumber(metaTotals.viewContent)} → створено замовлень ${formatNumber(totalOrders)} → покупка ${formatNumber(totalPaidOrders)}`
+      `перегляд сторінки ${formatNumber(metaTotals.viewContent)} → створено замовлень ${formatNumber(totalOrders)} → покупка ${formatNumber(totalPaidOrders)}`,
     ),
     bulletLine("Конверсія перегляд → оплата", toPercent(totalPaidOrders, metaTotals.viewContent)),
     "",
@@ -861,11 +840,7 @@ async function buildPeriodicReport(window: ReportWindow): Promise<PeriodicReport
      ads. Orders count even when none of them was paid — a day with attempts
      and no sales is exactly the day worth reading about. */
   const hasActivity =
-    totalOrders > 0 ||
-    totalRevenue > 0 ||
-    metaTotals.spend > 0 ||
-    metaTotals.impressions > 0 ||
-    metaTotals.clicks > 0;
+    totalOrders > 0 || totalRevenue > 0 || metaTotals.spend > 0 || metaTotals.impressions > 0 || metaTotals.clicks > 0;
 
   if (window.kind === "daily") {
     lines.push("", boldHeading("Висновок"), `• ${escapeTelegramText(conclusionLine)}`);
@@ -879,7 +854,9 @@ async function buildPeriodicReport(window: ReportWindow): Promise<PeriodicReport
   lines.push(
     "",
     boldHeading("Топ кампаній"),
-    ...(topCampaigns.length > 0 ? topCampaignLines(topCampaigns).map((line) => `• ${escapeTelegramText(line)}`) : ["• Немає даних по кампаніях"])
+    ...(topCampaigns.length > 0
+      ? topCampaignLines(topCampaigns).map((line) => `• ${escapeTelegramText(line)}`)
+      : ["• Немає даних по кампаніях"]),
   );
 
   if (attentionLines.length > 0) {

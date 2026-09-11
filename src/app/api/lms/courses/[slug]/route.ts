@@ -52,7 +52,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       timeZone: "Europe/Kyiv",
     };
   } else {
-    const result = await loadLearnerCourse({ authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) }, slug, now);
+    const result = await loadLearnerCourse(
+      { authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) },
+      slug,
+      now,
+    );
     if (!result.ok) {
       return NextResponse.json({ error: result.reason }, { status: FAILURE_STATUS[result.reason] ?? 400 });
     }
@@ -63,7 +67,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const learner = { startedAt: enrollment.startedAt, timeZone, now };
   // Preview must let the author inspect every lesson regardless of drip or
   // sequence, while keeping the authored schedule mode visible in the DTO.
-  const navigableCourse = draftPreview ? { ...course, schedule: { ...course.schedule, mode: "open" as const } } : course;
+  const navigableCourse = draftPreview
+    ? { ...course, schedule: { ...course.schedule, mode: "open" as const } }
+    : course;
 
   const outline = buildOutline(navigableCourse, progress, learner).map((entry) => ({
     moduleId: entry.moduleId,

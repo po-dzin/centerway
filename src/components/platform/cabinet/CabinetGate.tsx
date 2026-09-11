@@ -22,7 +22,17 @@ import { getProfileCopy } from "@/components/platform/profile/copy";
 import type { ProfileLang } from "@/components/platform/profile/types";
 import { isAuthEnabled } from "./useCabinet";
 
-function StatePanel({ label, title, lead, children }: { label: string; title: string; lead: string; children?: ReactNode }) {
+function StatePanel({
+  label,
+  title,
+  lead,
+  children,
+}: {
+  label: string;
+  title: string;
+  lead: string;
+  children?: ReactNode;
+}) {
   return (
     <main className={surfaceStyles.profileEmptyMain} data-cw-platform-template="profile-empty">
       <section className={`${surfaceStyles.container} ${surfaceStyles.section} ${surfaceStyles.profileEmptySection}`}>

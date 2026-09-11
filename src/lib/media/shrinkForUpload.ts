@@ -67,9 +67,7 @@ export async function shrinkForUpload(file: File): Promise<File> {
     if (!context) return file;
     context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
 
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", RE_ENCODE_QUALITY)
-    );
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", RE_ENCODE_QUALITY));
     if (!blob) return file;
     /* Never send the bigger of the two. A small, already-optimised JPEG can
        come back out of the canvas larger than it went in. */

@@ -18,10 +18,7 @@ import {
 } from "@/lib/payments/wfp";
 import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
 import { isStaffOrder } from "@/lib/tracking/staffOrders";
-import {
-  buildPurchaseCapiEventPayload,
-  type PendingPurchaseCapiJobPayload,
-} from "@/lib/jobs/worker";
+import { buildPurchaseCapiEventPayload, type PendingPurchaseCapiJobPayload } from "@/lib/jobs/worker";
 
 export const runtime = "nodejs";
 
@@ -40,7 +37,7 @@ async function readBodyParams(req: NextRequest): Promise<Payload> {
       }
       return out;
     }
-  } catch { }
+  } catch {}
 
   // form-data (WFP иногда шлёт form-url-encoded)
   try {
@@ -48,7 +45,7 @@ async function readBodyParams(req: NextRequest): Promise<Payload> {
     const out: Payload = {};
     for (const [k, v] of fd.entries()) out[k] = String(v);
     return out;
-  } catch { }
+  } catch {}
 
   return {};
 }
@@ -67,7 +64,7 @@ function norm(v: unknown): string | null {
  */
 function guardStatus<T extends { not(column: string, operator: string, value: string): T }>(
   query: T,
-  outcome: WfpCallbackOutcome
+  outcome: WfpCallbackOutcome,
 ): T {
   const protectedStatuses = statusesProtectedFrom(outcome);
   if (protectedStatuses.length === 0) return query;
@@ -133,7 +130,7 @@ function resolvePaymentEventTime(payload: Payload): number {
 async function upsertCustomer(
   sb: ReturnType<typeof supabaseAdmin>,
   email: string | null,
-  phone: string | null
+  phone: string | null,
 ): Promise<string | null> {
   const e = normEmail(email);
   const p = normPhone(phone);
@@ -173,9 +170,7 @@ async function upsertCustomer(
   }
 
   const foundId =
-    candidates
-      .sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? ""))
-      .map((x) => x.id)[0] ?? null;
+    candidates.sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? "")).map((x) => x.id)[0] ?? null;
   if (foundId) {
     /* PATCH WHAT THE CALLBACK CARRIED, AND ONLY THAT. This used to write both
        columns unconditionally, so a callback that quoted an email and no phone
@@ -222,10 +217,7 @@ async function upsertCustomer(
   return null;
 }
 
-async function enqueueTelegramSaleReport(
-  sb: ReturnType<typeof supabaseAdmin>,
-  orderRef: string
-): Promise<void> {
+async function enqueueTelegramSaleReport(sb: ReturnType<typeof supabaseAdmin>, orderRef: string): Promise<void> {
   const { data: existingTelegramJob } = await sb
     .from("jobs")
     .select("id")
@@ -357,7 +349,7 @@ export async function POST(req: NextRequest) {
         if (nextStatus) {
           const { error: pFixErr } = await guardStatus(
             sb.from("payments").update({ status: nextStatus, raw_payload: payload }),
-            outcome
+            outcome,
           )
             .eq("provider", "wfp")
             .eq("order_ref", orderRef);
@@ -374,10 +366,10 @@ export async function POST(req: NextRequest) {
          read above. Two redelivered callbacks can be in flight at once, and a
          decision made from a value read a moment ago is a decision made about
          a row that may have changed since. */
-      const { error: oErr } = await guardStatus(
-        sb.from("orders").update({ status: nextStatus }),
-        outcome
-      ).eq("order_ref", orderRef);
+      const { error: oErr } = await guardStatus(sb.from("orders").update({ status: nextStatus }), outcome).eq(
+        "order_ref",
+        orderRef,
+      );
 
       if (oErr) {
         errors.push(`orders: ${oErr.message ?? "unknown"}`);
@@ -447,10 +439,7 @@ export async function POST(req: NextRequest) {
       // The writes below it are all idempotent, so a redelivery that succeeds
       // completes the order exactly once.
       console.error("wfp_webhook_write_failed", { orderRef, errors });
-      return NextResponse.json(
-        { ok: false, error: "db_write_failed", details: errors.join("; ") },
-        { status: 500 }
-      );
+      return NextResponse.json({ ok: false, error: "db_write_failed", details: errors.join("; ") }, { status: 500 });
     }
 
     // A QA payment made with `cw_staff=1` is a real order and a real WayForPay
@@ -474,9 +463,7 @@ export async function POST(req: NextRequest) {
           .maybeSingle();
         if (!existingPurchaseJob?.id) {
           const amountNumber =
-            meta.amount != null && Number.isFinite(Number(meta.amount))
-              ? Number(meta.amount)
-              : undefined;
+            meta.amount != null && Number.isFinite(Number(meta.amount)) ? Number(meta.amount) : undefined;
           const capiPayload: PendingPurchaseCapiJobPayload = {
             event_name: "Purchase",
             order_ref: orderRef,
@@ -505,9 +492,7 @@ export async function POST(req: NextRequest) {
           // instead of waiting for the daily cron. The thin job row stays the durable
           // fallback; the enriched payload is built lazily off the request path.
           if (purchaseJob?.id) {
-            dispatchCapiEventInline(sb, purchaseJob.id, () =>
-              buildPurchaseCapiEventPayload(capiPayload)
-            );
+            dispatchCapiEventInline(sb, purchaseJob.id, () => buildPurchaseCapiEventPayload(capiPayload));
           }
         }
       } catch (capiErr) {

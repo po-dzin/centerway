@@ -48,15 +48,15 @@ const dated = (rel) => /(\d{4}-\d{2}-\d{2})/.exec(path.basename(rel))?.[1] ?? nu
 const line = (rel) => `- [${heading(path.join(root, rel))}](${rel})`;
 
 const groups = {
-  "Decisions": files.filter((rel) => rel.startsWith("adr/") && rel !== "adr/README.md"),
+  Decisions: files.filter((rel) => rel.startsWith("adr/") && rel !== "adr/README.md"),
   "Notes, newest first": files
     .filter((rel) => !rel.includes("/") && dated(rel) && !START_HERE.some(([f]) => f === rel))
     .sort((a, b) => dated(b).localeCompare(dated(a)) || a.localeCompare(b)),
   "Undated notes": files.filter((rel) => !rel.includes("/") && !dated(rel) && !START_HERE.some(([f]) => f === rel)),
   "Design system": files.filter((rel) => rel.startsWith("design-system/") && !START_HERE.some(([f]) => f === rel)),
-  "Migrations": files.filter((rel) => rel.startsWith("migration/") && !START_HERE.some(([f]) => f === rel)),
-  "Archive": files.filter((rel) => rel.startsWith("archive/")),
-  "Raw": files.filter((rel) => rel.startsWith("raw/")),
+  Migrations: files.filter((rel) => rel.startsWith("migration/") && !START_HERE.some(([f]) => f === rel)),
+  Archive: files.filter((rel) => rel.startsWith("archive/")),
+  Raw: files.filter((rel) => rel.startsWith("raw/")),
 };
 
 const covered = new Set([...START_HERE.map(([f]) => f), ...Object.values(groups).flat()]);
@@ -71,7 +71,9 @@ const sections = [
   "",
   "## Start here",
   "",
-  ...START_HERE.filter(([f]) => fs.existsSync(path.join(root, f))).map(([f, why]) => `- [${heading(path.join(root, f))}](${f}) — ${why}`),
+  ...START_HERE.filter(([f]) => fs.existsSync(path.join(root, f))).map(
+    ([f, why]) => `- [${heading(path.join(root, f))}](${f}) — ${why}`,
+  ),
 ];
 for (const [title, list] of Object.entries(groups)) {
   if (!list.length) continue;

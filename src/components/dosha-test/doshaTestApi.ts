@@ -65,7 +65,10 @@ export async function loadDefinition(sessionId: string): Promise<TestDefinitionR
   }
 }
 
-export async function completeAttempt(input: { sessionId: string; answers: Array<{ questionId: string; optionId: string | null }> }): Promise<Response> {
+export async function completeAttempt(input: {
+  sessionId: string;
+  answers: Array<{ questionId: string; optionId: string | null }>;
+}): Promise<Response> {
   return authorizedFetch("/api/tests/dosha-test/complete", {
     method: "POST",
     body: JSON.stringify({ source: "dosha_test_route", sessionId: input.sessionId, answers: input.answers }),

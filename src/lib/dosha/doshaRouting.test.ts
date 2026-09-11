@@ -25,9 +25,7 @@ describe("doshaExitHref", () => {
     // The platform is multi-author: a consultation in another method must not
     // be handed a vocabulary its expert never agreed to.
     const neutral = { href: "https://example.com/consultants" };
-    const query = new URLSearchParams(
-      doshaExitHref(neutral, { resultType: "vata", confidence: "high" }).split("?")[1]
-    );
+    const query = new URLSearchParams(doshaExitHref(neutral, { resultType: "vata", confidence: "high" }).split("?")[1]);
     expect(query.get("dosha")).toBeNull();
     expect(query.get("dosha_confidence")).toBeNull();
     expect(query.get("utm_content")).toBeNull();

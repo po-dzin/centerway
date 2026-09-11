@@ -15,13 +15,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { bakeSprites } from "./lib/icon-bake-core.mjs";
-import {
-  ICONS,
-  GRAPHICS,
-  HAND_PRESETS,
-  DEFAULT_PRESET,
-  groupsOf,
-} from "./lib/icon-glyphs.mjs";
+import { ICONS, GRAPHICS, HAND_PRESETS, DEFAULT_PRESET, groupsOf } from "./lib/icon-glyphs.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const PRESETS = ["base", "hand1", "hand2", "hand3"];
@@ -163,19 +157,7 @@ ${groups}
 
 // ── page: the character ladder — the original sketch, now baked ──────────────
 function characterPage(baked) {
-  const sample = [
-    "leaf",
-    "bowl",
-    "water",
-    "stone",
-    "breath",
-    "day",
-    "check",
-    "arrow-right",
-    "vata",
-    "pitta",
-    "kapha",
-  ];
+  const sample = ["leaf", "bowl", "water", "stone", "breath", "day", "check", "arrow-right", "vata", "pitta", "kapha"];
 
   // Each preset needs its own symbol ids, so prefix them per row.
   const rows = PRESETS.map((presetName) => {
@@ -188,9 +170,7 @@ function characterPage(baked) {
           : presetName === "hand2"
             ? "<b>approved</b> — the contour is alive, legibility intact"
             : "starts to fall apart on water / kapha";
-    const spec = preset.scale
-      ? `baseFrequency ${preset.frequency} · scale ${preset.scale}`
-      : "no displacement";
+    const spec = preset.scale ? `baseFrequency ${preset.frequency} · scale ${preset.scale}` : "no displacement";
     const glyphs = sample
       .map(
         (n) =>

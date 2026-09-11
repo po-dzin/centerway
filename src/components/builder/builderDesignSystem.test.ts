@@ -50,11 +50,9 @@ describe("custom properties resolve", () => {
    */
   it("never reads a custom property that is defined nowhere", () => {
     const defined = new Set(
-      [
-        code,
-        read("src/app/globals.css"),
-        read("src/components/platform/PlatformButtons.module.css"),
-      ].flatMap((source) => [...source.matchAll(/^\s*(--[a-zA-Z0-9-]+)\s*:/gm)].map((m) => m[1])),
+      [code, read("src/app/globals.css"), read("src/components/platform/PlatformButtons.module.css")].flatMap(
+        (source) => [...source.matchAll(/^\s*(--[a-zA-Z0-9-]+)\s*:/gm)].map((m) => m[1]),
+      ),
     );
 
     const referenced = [...code.matchAll(/var\(\s*(--[a-zA-Z0-9-]+)/g)].map((m) => m[1]);
@@ -241,7 +239,8 @@ describe("the course tabs sit below the chrome, not under it", () => {
 describe("responsive workspace chrome", () => {
   it("keeps the original desktop depth while compacting below the desktop breakpoint", () => {
     const desktopInner = /\.headerInner\s*\{([\s\S]*?)\n\}/.exec(platformShellCss)?.[1] ?? "";
-    const compactInner = /\.headerInner,\s*\n\s*\.headerInner\.container\s*\{([\s\S]*?)\n\s*\}/.exec(platformResponsiveCss)?.[1] ?? "";
+    const compactInner =
+      /\.headerInner,\s*\n\s*\.headerInner\.container\s*\{([\s\S]*?)\n\s*\}/.exec(platformResponsiveCss)?.[1] ?? "";
     const builderShell = /\.shell\s*\{([\s\S]*?)\n\}/.exec(code)?.[1] ?? "";
     const builderDesktop = /@media \(min-width: 901px\)\s*\{\s*\.shell\s*\{([\s\S]*?)\n\s*\}/.exec(code)?.[1] ?? "";
 

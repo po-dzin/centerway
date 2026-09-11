@@ -38,7 +38,6 @@ const THEME_GLYPH: Record<ThemeChoice, CwIconName> = {
  * account menu.
  */
 
-
 export function PlatformThemeControl() {
   const choice = useSyncExternalStore<ThemeChoice | null>(subscribeThemeChoice, readThemeChoice, () => null);
 

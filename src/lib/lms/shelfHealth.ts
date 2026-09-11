@@ -35,18 +35,18 @@ type Row = Record<string, unknown>;
 export type ShelfFaultKind = "unrenderable" | "sold_but_not_public";
 
 export type ShelfFault = {
-    slug: string;
-    title: string;
-    kind: ShelfFaultKind;
-    /** The reason in the words the failure itself used. */
-    detail: string;
+  slug: string;
+  title: string;
+  kind: ShelfFaultKind;
+  /** The reason in the words the failure itself used. */
+  detail: string;
 };
 
 export type ShelfAudit = {
-    checkedAt: string;
-    /** How many course rows were examined — context for "0 faults". */
-    courses: number;
-    faults: ShelfFault[];
+  checkedAt: string;
+  /** How many course rows were examined — context for "0 faults". */
+  courses: number;
+  faults: ShelfFault[];
 };
 
 /**
@@ -57,64 +57,64 @@ export type ShelfAudit = {
  * function the shelf uses, so a course that passes here passes there.
  */
 export async function auditShelf(): Promise<ShelfAudit> {
-    const db = adminClient();
+  const db = adminClient();
 
-    const [courseRows, moduleRows, lessonRows, offerRows] = await Promise.all([
-        db.from("lms_courses").select("*"),
-        db.from("lms_modules").select("*"),
-        db.from("lms_lessons").select("*"),
-        db.from("lms_course_offers").select("course_id, code, amount, active"),
-    ]);
+  const [courseRows, moduleRows, lessonRows, offerRows] = await Promise.all([
+    db.from("lms_courses").select("*"),
+    db.from("lms_modules").select("*"),
+    db.from("lms_lessons").select("*"),
+    db.from("lms_course_offers").select("course_id, code, amount, active"),
+  ]);
 
-    const firstError = courseRows.error ?? moduleRows.error ?? lessonRows.error;
-    if (firstError) throw new Error(`lms_shelf_audit_read_failed:${firstError.message}`);
+  const firstError = courseRows.error ?? moduleRows.error ?? lessonRows.error;
+  if (firstError) throw new Error(`lms_shelf_audit_read_failed:${firstError.message}`);
 
-    const courses = (courseRows.data ?? []) as Row[];
-    const modules = (moduleRows.data ?? []) as Row[];
-    const lessons = (lessonRows.data ?? []) as Row[];
-    const activeOffers = new Set(
-        ((offerRows.data ?? []) as Row[]).filter((row) => row.active).map((row) => row.course_id as string)
-    );
+  const courses = (courseRows.data ?? []) as Row[];
+  const modules = (moduleRows.data ?? []) as Row[];
+  const lessons = (lessonRows.data ?? []) as Row[];
+  const activeOffers = new Set(
+    ((offerRows.data ?? []) as Row[]).filter((row) => row.active).map((row) => row.course_id as string),
+  );
 
-    const faults: ShelfFault[] = [];
+  const faults: ShelfFault[] = [];
 
-    for (const row of courses) {
-        const slug = String(row.slug ?? row.id ?? "?");
-        const title = String(row.title ?? slug);
-        const sold = activeOffers.has(row.id as string);
+  for (const row of courses) {
+    const slug = String(row.slug ?? row.id ?? "?");
+    const title = String(row.title ?? slug);
+    const sold = activeOffers.has(row.id as string);
 
-        try {
-            courseFromRows(
-                row,
-                modules.filter((module) => module.course_id === row.id),
-                lessons.filter((lesson) => lesson.course_id === row.id)
-            );
-        } catch (error) {
-            // A draft that does not assemble is an author mid-edit, not an
-            // incident. What this watcher is for is material the business
-            // believes is live: published, or already being sold.
-            if (row.status === "published" || sold) {
-                faults.push({
-                    slug,
-                    title,
-                    kind: "unrenderable",
-                    detail: error instanceof Error ? error.message : "unknown_error",
-                });
-            }
-            continue;
-        }
-
-        if (sold && (row.status !== "published" || (row.visibility ?? "hidden") === "hidden")) {
-            faults.push({
-                slug,
-                title,
-                kind: "sold_but_not_public",
-                detail: `status=${String(row.status)} visibility=${String(row.visibility ?? "hidden")}`,
-            });
-        }
+    try {
+      courseFromRows(
+        row,
+        modules.filter((module) => module.course_id === row.id),
+        lessons.filter((lesson) => lesson.course_id === row.id),
+      );
+    } catch (error) {
+      // A draft that does not assemble is an author mid-edit, not an
+      // incident. What this watcher is for is material the business
+      // believes is live: published, or already being sold.
+      if (row.status === "published" || sold) {
+        faults.push({
+          slug,
+          title,
+          kind: "unrenderable",
+          detail: error instanceof Error ? error.message : "unknown_error",
+        });
+      }
+      continue;
     }
 
-    return { checkedAt: new Date().toISOString(), courses: courses.length, faults };
+    if (sold && (row.status !== "published" || (row.visibility ?? "hidden") === "hidden")) {
+      faults.push({
+        slug,
+        title,
+        kind: "sold_but_not_public",
+        detail: `status=${String(row.status)} visibility=${String(row.visibility ?? "hidden")}`,
+      });
+    }
+  }
+
+  return { checkedAt: new Date().toISOString(), courses: courses.length, faults };
 }
 
 /**
@@ -126,18 +126,18 @@ export async function auditShelf(): Promise<ShelfAudit> {
  * good" every day teaches its reader to swipe it away.
  */
 export function formatShelfAudit(audit: ShelfAudit): string | null {
-    if (audit.faults.length === 0) return null;
+  if (audit.faults.length === 0) return null;
 
-    const LABEL: Record<ShelfFaultKind, string> = {
-        unrenderable: "не збирається на вітрині",
-        sold_but_not_public: "продається, але не публічний",
-    };
+  const LABEL: Record<ShelfFaultKind, string> = {
+    unrenderable: "не збирається на вітрині",
+    sold_but_not_public: "продається, але не публічний",
+  };
 
-    return [
-        `Вітрина: ${audit.faults.length} з ${audit.courses} курсів потребують уваги.`,
-        "",
-        ...audit.faults.map((fault) => `• ${fault.title} (${fault.slug}) — ${LABEL[fault.kind]}: ${fault.detail}`),
-        "",
-        "Адмінка → Каталог показує це саме в рядку курсу.",
-    ].join("\n");
+  return [
+    `Вітрина: ${audit.faults.length} з ${audit.courses} курсів потребують уваги.`,
+    "",
+    ...audit.faults.map((fault) => `• ${fault.title} (${fault.slug}) — ${LABEL[fault.kind]}: ${fault.detail}`),
+    "",
+    "Адмінка → Каталог показує це саме в рядку курсу.",
+  ].join("\n");
 }

@@ -53,9 +53,7 @@ export function CourseNotes({
   return (
     <section className={styles.notesSection}>
       <h2 className={styles.referenceHeading}>Мої позначки</h2>
-      <p className={styles.referenceLead}>
-        Закладки, виділення і нотатки на полях. Бачите тільки ви.
-      </p>
+      <p className={styles.referenceLead}>Закладки, виділення і нотатки на полях. Бачите тільки ви.</p>
 
       {groups.map(({ entry, items }) => (
         <div key={entry.lessonId} className={styles.notesGroup}>
@@ -71,9 +69,7 @@ export function CourseNotes({
                   // Straight to the block the mark sits in. The lesson treats an
                   // explicit hash as "take me here", so it overrides the saved
                   // reading position rather than fighting it.
-                  href={href(
-                    `/learn/${courseSlug}/${entry.slug}${item.anchor ? `#block-${item.anchor.blockId}` : ""}`
-                  )}
+                  href={href(`/learn/${courseSlug}/${entry.slug}${item.anchor ? `#block-${item.anchor.blockId}` : ""}`)}
                 >
                   <span className={styles.notesGlyph} aria-hidden="true">
                     <Icon name={item.kind === "bookmark" ? "bookmark-marked" : "quote"} size={14} />

@@ -59,7 +59,5 @@ export function buildCheckoutEventPayload(body: CheckoutStartRequest) {
     user_agent: asCleanString(body.user_agent),
   };
 
-  return Object.fromEntries(
-    Object.entries(raw).filter(([, value]) => value !== null && value !== "")
-  );
+  return Object.fromEntries(Object.entries(raw).filter(([, value]) => value !== null && value !== ""));
 }

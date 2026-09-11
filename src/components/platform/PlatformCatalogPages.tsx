@@ -104,13 +104,19 @@ export async function PlatformProgramsIndexPage() {
         >
           <div className={heroStyles.heroPhotoLayer}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className={heroStyles.expertImage} src={platformAggregateArtwork.programs.desktop} alt="Програми CenterWay" />
+            <img
+              className={heroStyles.expertImage}
+              src={platformAggregateArtwork.programs.desktop}
+              alt="Програми CenterWay"
+            />
           </div>
           <div className={heroStyles.heroFeatureContent}>
             <p className={heroStyles.heroBadge}>
               <span>Маршрути · Ритм · Глибина</span>
             </p>
-            <h1 className={heroStyles.heroFeatureTitle} style={heroTitleFit("Програми")}>Програми</h1>
+            <h1 className={heroStyles.heroFeatureTitle} style={heroTitleFit("Програми")}>
+              Програми
+            </h1>
             <p className={heroStyles.heroFeatureLead}>
               Короткі входи, довші програми і різна глибина роботи з тілом, ритмом, харчуванням та увагою.
             </p>
@@ -186,7 +192,9 @@ export function PlatformTestsHubPage() {
             <p className={heroStyles.heroBadge}>
               <span>{testsHubCopy.badge}</span>
             </p>
-            <h1 className={heroStyles.heroFeatureTitle} style={heroTitleFit(testsHubCopy.title)}>{testsHubCopy.title}</h1>
+            <h1 className={heroStyles.heroFeatureTitle} style={heroTitleFit(testsHubCopy.title)}>
+              {testsHubCopy.title}
+            </h1>
             <p className={heroStyles.heroFeatureLead}>{testsHubCopy.lead}</p>
             <div className={heroStyles.heroFeatureActions}>
               <Link className={heroStyles.heroPrimaryButton} href="#tests-available">
@@ -335,8 +343,8 @@ export async function PlatformProductsIndexPage() {
               <p className={offerStyles.label}>Каталог</p>
               <h1 className={offerStyles.title}>Продукти CenterWay</h1>
               <p className={offerStyles.lead}>
-                Цей каталог збирається навколо придатності й контексту. Якщо потрібен наступний крок вже зараз,
-                почніть з доша-тесту або консультації.
+                Цей каталог збирається навколо придатності й контексту. Якщо потрібен наступний крок вже зараз, почніть
+                з доша-тесту або консультації.
               </p>
             </article>
           </section>
@@ -358,16 +366,22 @@ export async function PlatformProductsIndexPage() {
         >
           <div className={heroStyles.heroPhotoLayer}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className={heroStyles.expertImage} src={platformAggregateArtwork.products.desktop} alt="Продукти CenterWay" />
+            <img
+              className={heroStyles.expertImage}
+              src={platformAggregateArtwork.products.desktop}
+              alt="Продукти CenterWay"
+            />
           </div>
           <div className={heroStyles.heroFeatureContent}>
             <p className={heroStyles.heroBadge}>
               <span>Підтримка · Придатність · Контекст</span>
             </p>
-            <h1 className={heroStyles.heroFeatureTitle} style={heroTitleFit("Продукти")}>Продукти</h1>
+            <h1 className={heroStyles.heroFeatureTitle} style={heroTitleFit("Продукти")}>
+              Продукти
+            </h1>
             <p className={heroStyles.heroFeatureLead}>
-              Окремий шар підтримки: трави й інші продуктові формати, які мають сенс тільки в контексті стану, режиму
-              та того, що ви вже проходите.
+              Окремий шар підтримки: трави й інші продуктові формати, які мають сенс тільки в контексті стану, режиму та
+              того, що ви вже проходите.
             </p>
             <div className={heroStyles.heroFeatureActions}>
               <Link className={heroStyles.heroPrimaryButton} href="#product-focus">

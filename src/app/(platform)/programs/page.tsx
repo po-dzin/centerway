@@ -10,7 +10,7 @@ import { listStorefrontCourses } from "@/lib/platform/offers";
 export const metadata: Metadata = pageMetadata({
   title: "Програми і курси",
   description: describe(
-    "Усі програми CenterWay: детокс «Шлях 21», розвантажувальний день, гімнастика IREM, харчування під конституцію — з уроками, практикою і зрозумілим форматом."
+    "Усі програми CenterWay: детокс «Шлях 21», розвантажувальний день, гімнастика IREM, харчування під конституцію — з уроками, практикою і зрозумілим форматом.",
   ),
   path: "/programs",
 });
@@ -48,7 +48,7 @@ export default async function ProgramsIndexPage() {
           breadcrumbLd([
             { path: "/", name: "CenterWay" },
             { path: "/programs", name: "Програми" },
-          ])
+          ]),
         )}
       />
       <PlatformProgramsIndexPage />

@@ -29,7 +29,9 @@ describe("knowledge corpus", () => {
    * the size of the snippet.
    */
   it("never carries a lesson's block text", () => {
-    const corpus = courseDocs(courses).map((doc) => doc.text).join("\n");
+    const corpus = courseDocs(courses)
+      .map((doc) => doc.text)
+      .join("\n");
 
     const blockTexts = courses.flatMap((course) =>
       course.modules.flatMap((module) =>
@@ -37,10 +39,10 @@ describe("knowledge corpus", () => {
           lesson.blocks.flatMap((block) =>
             Object.entries(block)
               .filter(([field, value]) => typeof value === "string" && field !== "id" && field !== "type")
-              .map(([, value]) => value as string)
-          )
-        )
-      )
+              .map(([, value]) => value as string),
+          ),
+        ),
+      ),
     );
 
     const leaked = blockTexts.filter((text) => text.length > 25 && corpus.includes(text));

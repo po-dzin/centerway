@@ -4,8 +4,8 @@
  * the functions went on 2026-09-11, the declaration is what stayed.
  */
 declare global {
-    interface Window {
-        fbq?: (...args: unknown[]) => void;
-    }
+  interface Window {
+    fbq?: (...args: unknown[]) => void;
+  }
 }
 export {};

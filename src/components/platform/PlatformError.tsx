@@ -37,8 +37,8 @@ export function PlatformErrorPanel({ onRetry }: { onRetry?: () => void }) {
         <p className={offerStyles.label}>Сталася помилка</p>
         <h1 className={offerStyles.title}>Щось пішло не так</h1>
         <p className={offerStyles.lead}>
-          Сторінка не змогла відкритися. Спробуйте ще раз — якщо не допоможе, поверніться на
-          головну: усе, що ви вже проходите, лишається на місці, у вашому кабінеті.
+          Сторінка не змогла відкритися. Спробуйте ще раз — якщо не допоможе, поверніться на головну: усе, що ви вже
+          проходите, лишається на місці, у вашому кабінеті.
         </p>
 
         <div className={styles.statusActions}>

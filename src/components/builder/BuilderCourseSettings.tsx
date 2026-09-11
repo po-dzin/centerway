@@ -178,7 +178,10 @@ function StringListField({
         </div>
       ))}
       <button className={styles.addAction} type="button" onClick={() => write([...items, ""])}>
-        <span className={styles.addGlyph} aria-hidden="true">+</span> Ще один
+        <span className={styles.addGlyph} aria-hidden="true">
+          +
+        </span>{" "}
+        Ще один
       </button>
       <span className={styles.fieldHint}>{hint}</span>
     </div>
@@ -227,7 +230,9 @@ function SettingsSection({
     <section className={styles.courseSettingSection} aria-labelledby={`course-setting-${id}`}>
       <div className={styles.courseSettingHead}>
         <div className={styles.courseSettingCopy}>
-          <h3 className={styles.courseSettingTitle} id={`course-setting-${id}`}>{title}</h3>
+          <h3 className={styles.courseSettingTitle} id={`course-setting-${id}`}>
+            {title}
+          </h3>
           {!editing ? <div className={styles.courseSettingSummary}>{summary}</div> : null}
         </div>
         <button
@@ -276,73 +281,82 @@ export function BuilderCourseSettings({
   if (scope === "page") {
     return (
       <div className={styles.coursePageForm}>
-      {/* THE AUTHOR'S HALF OF THE STOREFRONT. What the course claims about
+        {/* THE AUTHOR'S HALF OF THE STOREFRONT. What the course claims about
           itself is content, and content is the author's. The PRICE is not here
           and will not be: it is a commitment the business makes to a buyer, and
           it lives in `lms_course_offers`, which the builder's routes have no
           grant on. That is a different table rather than a hidden field
           precisely so the boundary is structural. */}
-      <section className={styles.courseSettingEditor} aria-labelledby="course-setting-storefront">
-        <h3 className={styles.courseSettingTitle} id="course-setting-storefront">Сторінка програми</h3>
-        <p className={styles.readOnlyNote}>
-          Видимість: <strong>{VISIBILITY_LABELS[visibility]}</strong>. {VISIBILITY_HINTS[visibility]} Автор готує матеріал і сторінку; видимість змінює адміністратор.
-        </p>
-        <StringListField
-          path="results"
-          label="Що людина отримає"
-          itemLabel="Результат"
-          hint="Короткі твердження, не абзаци. Порожні рядки не зберігаються."
-          items={course.results ?? []}
-          required={showcase}
-          onChange={onChange}
-        />
-        <StringListField
-          path="audience"
-          label="Для кого"
-          itemLabel="Аудиторія"
-          hint="Друга половина обіцянки: «що зміниться» вже сказано вище, тут — з ким."
-          items={course.audience ?? []}
-          required={showcase}
-          onChange={onChange}
-        />
-        {/* RENAMED, NOT MOVED. The key is still `format` and the data is
+        <section className={styles.courseSettingEditor} aria-labelledby="course-setting-storefront">
+          <h3 className={styles.courseSettingTitle} id="course-setting-storefront">
+            Сторінка програми
+          </h3>
+          <p className={styles.readOnlyNote}>
+            Видимість: <strong>{VISIBILITY_LABELS[visibility]}</strong>. {VISIBILITY_HINTS[visibility]} Автор готує
+            матеріал і сторінку; видимість змінює адміністратор.
+          </p>
+          <StringListField
+            path="results"
+            label="Що людина отримає"
+            itemLabel="Результат"
+            hint="Короткі твердження, не абзаци. Порожні рядки не зберігаються."
+            items={course.results ?? []}
+            required={showcase}
+            onChange={onChange}
+          />
+          <StringListField
+            path="audience"
+            label="Для кого"
+            itemLabel="Аудиторія"
+            hint="Друга половина обіцянки: «що зміниться» вже сказано вище, тут — з ким."
+            items={course.audience ?? []}
+            required={showcase}
+            onChange={onChange}
+          />
+          {/* RENAMED, NOT MOVED. The key is still `format` and the data is
             untouched; the LABEL changed because «Формат» now names the closed
             list on the cover tab (курс / міні-курс / чек-лист). Two controls
             called «Формат» on one product is how an author puts «чекліст» into
             the wrong one — and both values look right afterwards, so nobody
             finds it. This one always meant the MEDIUM, and its own hint already
             read that way. */}
-        {/* «Що входить», the same words the card on the page prints (2026-09-08).
+          {/* «Що входить», the same words the card on the page prints (2026-09-08).
             The label said «З чого складається» while the page's third card said
             «Формат та інструменти», so an author filling one thing was looking
             at two names for it and could not tell which block on the storefront
             they were writing. Both say «Що входить» now; the key is still
             `format` and no data moved. */}
-        <StringListField
-          path="format"
-          label="Що входить"
-          itemLabel="Складова"
-          hint="Носій, не структура: відео, аудіо, чек-листи, рецепти. Рід курсу — на вкладці «Обкладинка»."
-          items={course.format ?? []}
-          required={showcase}
-          onChange={onChange}
-        />
-        {/* Prose, not policy. What actually cuts access off is the expiry on the
+          <StringListField
+            path="format"
+            label="Що входить"
+            itemLabel="Складова"
+            hint="Носій, не структура: відео, аудіо, чек-листи, рецепти. Рід курсу — на вкладці «Обкладинка»."
+            items={course.format ?? []}
+            required={showcase}
+            onChange={onChange}
+          />
+          {/* Prose, not policy. What actually cuts access off is the expiry on the
             grant itself, set when the seat is sold; this is the promise printed
             beside the price. They are free to differ on purpose — «доступ
             назавжди» is still compatible with revoking a refunded seat. */}
-        <FieldInput
-          field={{ path: ["accessNote"], label: "Термін доступу", kind: "text", required: showcase, hint: "Що обіцяємо покупцю: «доступ назавжди», «30 днів після покупки»." }}
-          value={course.accessNote}
-          onChange={onChange}
-        />
-        {/* `authorNote` moved to its own tab (2026-08-28) — see
+          <FieldInput
+            field={{
+              path: ["accessNote"],
+              label: "Термін доступу",
+              kind: "text",
+              required: showcase,
+              hint: "Що обіцяємо покупцю: «доступ назавжди», «30 днів після покупки».",
+            }}
+            value={course.accessNote}
+            onChange={onChange}
+          />
+          {/* `authorNote` moved to its own tab (2026-08-28) — see
             `BuilderCourseAuthor.tsx`. It sits beside the byline it modifies
             rather than beside the rest of the storefront copy, now that the
             byline has a tab of its own to sit in. */}
-      </section>
+        </section>
 
-      {/* NO «Додатково» FOLD HERE ANY MORE (2026-09-06). It held one control —
+        {/* NO «Додатково» FOLD HERE ANY MORE (2026-09-06). It held one control —
           «Коди продуктів, що відкривають курс» — and that control is not part
           of the storefront this tab is about. It is an ACCESS RULE: the list of
           paid product codes `resolveEntitlement` accepts as a seat in this
@@ -371,9 +385,14 @@ export function BuilderCourseSettings({
         editing={editing === "cover"}
         onEdit={setEditing}
         summary={
-          course.cover?.src
-            ? <><strong>{course.cover.alt || "Опис зображення не додано"}</strong><span>Горизонтальний кадр · mobile автокроп</span></>
-            : <span>Зображення ще не додано</span>
+          course.cover?.src ? (
+            <>
+              <strong>{course.cover.alt || "Опис зображення не додано"}</strong>
+              <span>Горизонтальний кадр · mobile автокроп</span>
+            </>
+          ) : (
+            <span>Зображення ще не додано</span>
+          )
         }
       >
         <BuilderCoverEditor course={course} onChange={onChange} />
@@ -465,9 +484,7 @@ export function BuilderCourseSettings({
                   ? `${course.durationDays} ${plural(course.durationDays, "день", "дні", "днів")}`
                   : null,
                 `${lessonCount} ${plural(lessonCount, "урок", "уроки", "уроків")}`,
-                categories.length > 0
-                  ? categories.map((one) => CATEGORY_LABELS[one]).join(", ")
-                  : "розділ не вказано",
+                categories.length > 0 ? categories.map((one) => CATEGORY_LABELS[one]).join(", ") : "розділ не вказано",
               ]
                 .filter(Boolean)
                 .join(" · ")}
@@ -525,11 +542,22 @@ export function BuilderCourseSettings({
         title="Вигляд"
         editing={editing === "appearance"}
         onEdit={setEditing}
-        summary={<><strong>{PALETTE_LABELS[theme.palette]}</strong><span>{FONT_LABELS[theme.headingFont]} · {SCALE_LABELS[theme.scale]}</span></>}
+        summary={
+          <>
+            <strong>{PALETTE_LABELS[theme.palette]}</strong>
+            <span>
+              {FONT_LABELS[theme.headingFont]} · {SCALE_LABELS[theme.scale]}
+            </span>
+          </>
+        }
       >
         <ChoiceRow
           label="Гама"
-          options={COURSE_PALETTES.map((palette) => ({ value: palette, label: PALETTE_LABELS[palette], swatch: palette === "default" ? undefined : palette }))}
+          options={COURSE_PALETTES.map((palette) => ({
+            value: palette,
+            label: PALETTE_LABELS[palette],
+            swatch: palette === "default" ? undefined : palette,
+          }))}
           value={theme.palette}
           onChange={(next) => next && onChange(["theme", "palette"], next)}
         />
@@ -552,12 +580,20 @@ export function BuilderCourseSettings({
         title="Ритм"
         editing={editing === "rhythm"}
         onEdit={setEditing}
-        summary={<><strong>{MODE_LABELS[course.schedule.mode]}</strong><span>{MODE_HINTS[course.schedule.mode]}</span></>}
+        summary={
+          <>
+            <strong>{MODE_LABELS[course.schedule.mode]}</strong>
+            <span>{MODE_HINTS[course.schedule.mode]}</span>
+          </>
+        }
       >
         <ChoiceRow
           label="Розклад"
           hint={MODE_HINTS[course.schedule.mode]}
-          options={(Object.keys(MODE_LABELS) as CourseScheduleMode[]).map((mode) => ({ value: mode, label: MODE_LABELS[mode] }))}
+          options={(Object.keys(MODE_LABELS) as CourseScheduleMode[]).map((mode) => ({
+            value: mode,
+            label: MODE_LABELS[mode],
+          }))}
           value={course.schedule.mode}
           onChange={(next) => next && onChange(["schedule", "mode"], next)}
         />
@@ -566,12 +602,22 @@ export function BuilderCourseSettings({
             <ChoiceRow
               label="Доступ до наступного дня"
               hint={gate === "soft" ? "Наступний урок доступний раніше свого дня." : "Урок закритий до свого дня."}
-              options={(Object.keys(GATE_LABELS) as CourseScheduleGate[]).map((value) => ({ value, label: GATE_LABELS[value] }))}
+              options={(Object.keys(GATE_LABELS) as CourseScheduleGate[]).map((value) => ({
+                value,
+                label: GATE_LABELS[value],
+              }))}
               value={gate}
               onChange={(next) => next && onChange(["schedule", "gate"], next)}
             />
             <FieldInput
-              field={{ path: ["schedule", "reminderHour"], label: "Година нагадування", kind: "number", min: 0, max: 23, hint: "0–23 у часовому поясі учня." }}
+              field={{
+                path: ["schedule", "reminderHour"],
+                label: "Година нагадування",
+                kind: "number",
+                min: 0,
+                max: 23,
+                hint: "0–23 у часовому поясі учня.",
+              }}
               value={course.schedule.reminderHour}
               onChange={onChange}
             />

@@ -26,10 +26,7 @@ export type BuilderIdentity = {
   isAdmin: boolean;
 };
 
-export async function resolveBuilderIdentity(user: {
-  id: string;
-  email?: string | null;
-}): Promise<BuilderIdentity> {
+export async function resolveBuilderIdentity(user: { id: string; email?: string | null }): Promise<BuilderIdentity> {
   const db = adminClient();
   const { data } = await db.from("user_roles").select("role").eq("user_id", user.id).maybeSingle();
 

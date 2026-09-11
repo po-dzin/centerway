@@ -91,8 +91,7 @@ export const plannedPlatformTests = platformTests.filter((test) => test.status =
 export const testsHubCopy = {
   badge: "Стан · Гіпотеза · Маршрут",
   title: "Діагностика",
-  lead:
-    "Тести не ставлять діагноз. Вони перекладають ваш поточний стан у зрозумілу мову ритму, харчування і практики — і показують, з якого кроку доречно починати.",
+  lead: "Тести не ставлять діагноз. Вони перекладають ваш поточний стан у зрозумілу мову ритму, харчування і практики — і показують, з якого кроку доречно починати.",
   readingLabel: "Як читати результат",
   /* The block had a label and no title, so it was the one section on the page
      that opened with a 10px eyebrow where every other one opens with a serif

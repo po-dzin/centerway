@@ -28,15 +28,14 @@ import styles from "./AdminLayout.module.css";
    gear it used to wear did not say. `settings` stays with the system tab,
    where a gear means what a gear means. */
 const NAV_GLYPH = {
-    analytics: "chart",
-    orders: "price",
-    customers: "user",
-    jobs: "clock",
-    access: "lock",
-    catalog: "document",
-    system: "settings",
+  analytics: "chart",
+  orders: "price",
+  customers: "user",
+  jobs: "clock",
+  access: "lock",
+  catalog: "document",
+  system: "settings",
 } as const satisfies Record<string, CwIconName>;
-
 
 /**
  * The admin chrome: rail, bar, sheet. A client component because the rail
@@ -51,75 +50,75 @@ const NAV_GLYPH = {
  * before rendering, and redirects before a byte of this reaches the browser.
  */
 export function AdminShell({ children }: { children: ReactNode }) {
-    const { t } = useI18n();
-    const pathname = usePathname();
-    const [expanded, setExpanded] = useState(false);
-    const { status } = useSession();
+  const { t } = useI18n();
+  const pathname = usePathname();
+  const [expanded, setExpanded] = useState(false);
+  const { status } = useSession();
 
-    useEffect(() => {
-        if (status !== "signed-in") return;
-        if (!pathname?.startsWith("/admin")) return;
+  useEffect(() => {
+    if (status !== "signed-in") return;
+    if (!pathname?.startsWith("/admin")) return;
 
-        const now = Date.now();
-        const JOBS_PULSE_MS = 60 * 1000;
-        // Materialized analytics refresh is deliberately infrequent because
-        // the dashboard API now carries its own short server-side cache.
-        const ANALYTICS_PULSE_MS = 30 * 60 * 1000;
-        const jobsKey = "cw_admin_jobs_pulse_at";
-        const analyticsKey = "cw_admin_analytics_pulse_at";
+    const now = Date.now();
+    const JOBS_PULSE_MS = 60 * 1000;
+    // Materialized analytics refresh is deliberately infrequent because
+    // the dashboard API now carries its own short server-side cache.
+    const ANALYTICS_PULSE_MS = 30 * 60 * 1000;
+    const jobsKey = "cw_admin_jobs_pulse_at";
+    const analyticsKey = "cw_admin_analytics_pulse_at";
 
-        const getLastTs = (key: string) => {
-            try {
-                return Number(sessionStorage.getItem(key) || "0");
-            } catch {
-                return 0;
-            }
-        };
+    const getLastTs = (key: string) => {
+      try {
+        return Number(sessionStorage.getItem(key) || "0");
+      } catch {
+        return 0;
+      }
+    };
 
-        const setLastTs = (key: string, value: number) => {
-            try {
-                sessionStorage.setItem(key, String(value));
-            } catch {
-                // ignore storage write errors
-            }
-        };
+    const setLastTs = (key: string, value: number) => {
+      try {
+        sessionStorage.setItem(key, String(value));
+      } catch {
+        // ignore storage write errors
+      }
+    };
 
-        const shouldRefreshAnalytics = pathname.startsWith("/admin/analytics");
-        const jobsDue = now - getLastTs(jobsKey) >= JOBS_PULSE_MS;
-        const analyticsDue = shouldRefreshAnalytics && (now - getLastTs(analyticsKey) >= ANALYTICS_PULSE_MS);
+    const shouldRefreshAnalytics = pathname.startsWith("/admin/analytics");
+    const jobsDue = now - getLastTs(jobsKey) >= JOBS_PULSE_MS;
+    const analyticsDue = shouldRefreshAnalytics && now - getLastTs(analyticsKey) >= ANALYTICS_PULSE_MS;
 
-        if (!jobsDue && !analyticsDue) return;
+    if (!jobsDue && !analyticsDue) return;
 
-        const query = new URLSearchParams();
-        if (analyticsDue) query.set("refreshAnalytics", "1");
-        if (analyticsDue) query.set("refreshMeta", "1");
-        const url = `/api/admin/system/pulse${query.toString() ? `?${query.toString()}` : ""}`;
-        authorizedFetch(url, { method: "POST" }).catch(() => {
-            // best-effort background pulse
-        });
+    const query = new URLSearchParams();
+    if (analyticsDue) query.set("refreshAnalytics", "1");
+    if (analyticsDue) query.set("refreshMeta", "1");
+    const url = `/api/admin/system/pulse${query.toString() ? `?${query.toString()}` : ""}`;
+    authorizedFetch(url, { method: "POST" }).catch(() => {
+      // best-effort background pulse
+    });
 
-        if (jobsDue) setLastTs(jobsKey, now);
-        if (analyticsDue) setLastTs(analyticsKey, now);
-    }, [pathname, status]);
+    if (jobsDue) setLastTs(jobsKey, now);
+    if (analyticsDue) setLastTs(analyticsKey, now);
+  }, [pathname, status]);
 
-    const navItems = [
-        { key: "nav_analytics" as const, href: "/admin/analytics", icon: NAV_GLYPH.analytics, active: true },
-        { key: "nav_orders" as const, href: "/admin/orders", icon: NAV_GLYPH.orders, active: true },
-        { key: "nav_customers" as const, href: "/admin/customers", icon: NAV_GLYPH.customers, active: true },
-        { key: "nav_operations" as const, href: "/admin/jobs", icon: NAV_GLYPH.jobs, active: true },
-        { key: "nav_access" as const, href: "/admin/access", icon: NAV_GLYPH.access, active: true },
-        { key: "nav_catalog" as const, href: "/admin/catalog", icon: NAV_GLYPH.catalog, active: true },
-        { key: "nav_system" as const, href: "/admin/system", icon: NAV_GLYPH.system, active: true },
-    ];
-    const isSelectedNav = (href: string) => (href === "/admin" ? pathname === "/admin" : pathname?.startsWith(href));
+  const navItems = [
+    { key: "nav_analytics" as const, href: "/admin/analytics", icon: NAV_GLYPH.analytics, active: true },
+    { key: "nav_orders" as const, href: "/admin/orders", icon: NAV_GLYPH.orders, active: true },
+    { key: "nav_customers" as const, href: "/admin/customers", icon: NAV_GLYPH.customers, active: true },
+    { key: "nav_operations" as const, href: "/admin/jobs", icon: NAV_GLYPH.jobs, active: true },
+    { key: "nav_access" as const, href: "/admin/access", icon: NAV_GLYPH.access, active: true },
+    { key: "nav_catalog" as const, href: "/admin/catalog", icon: NAV_GLYPH.catalog, active: true },
+    { key: "nav_system" as const, href: "/admin/system", icon: NAV_GLYPH.system, active: true },
+  ];
+  const isSelectedNav = (href: string) => (href === "/admin" ? pathname === "/admin" : pathname?.startsWith(href));
 
-    return (
-        <div className="cw-admin-theme flex h-dvh md:h-screen flex-col overflow-hidden font-sans transition-colors duration-300">
-            {/* One workspace topbar owns the whole frame: brand, wordmark and
+  return (
+    <div className="cw-admin-theme flex h-dvh md:h-screen flex-col overflow-hidden font-sans transition-colors duration-300">
+      {/* One workspace topbar owns the whole frame: brand, wordmark and
                 account behave exactly as they do in the library and Builder.
                 The admin rail begins BELOW it, so there is no false seam where
                 two top layers used to meet. */}
-            {/* THE PHONE'S CHROME HERE TOO (2026-09-06). The panel's bar was
+      {/* THE PHONE'S CHROME HERE TOO (2026-09-06). The panel's bar was
                 already only a mark and an account below 901px — the seven
                 sections live in the rail, not in the band — so the band was
                 holding ~52px of an `h-dvh` frame open to say nothing.
@@ -137,60 +136,58 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 avatar, and the page.
 
                 `reveal="always"`: a panel is operated, not read. */}
-            <PlatformOrgans
-                scope="mobile"
-                reveal="always"
-                label="Адмінка"
-                left={<PlatformMarkOrgan />}
-                right={(
-                    /* TWO CONTROLS, NOT ONE (2026-09-06). These seven sections
+      <PlatformOrgans
+        scope="mobile"
+        reveal="always"
+        label="Адмінка"
+        left={<PlatformMarkOrgan />}
+        right={
+          /* TWO CONTROLS, NOT ONE (2026-09-06). These seven sections
                        are the panel's RAIL, and for a day they were folded into
                        the account sheet — so a menu hanging off a person's face
                        opened onto «Аналітика · Замовлення · Клієнти …» with two
                        rows marked current at once. A rail is not an account.
                        The burger carries them, exactly as the bar's did. */
-                    <span className={chromeOrgans.pair}>
-                        <PlatformRouteMenu
-                            label="Розділи адмінки"
-                            routes={(close) => (
-                                <>
-                                    {navItems.map(({ key, href, active }) => {
-                                        const current = Boolean(active && isSelectedNav(href));
-                                        if (!active) {
-                                            return (
-                                                <span key={key} aria-disabled="true" data-disabled="true">
-                                                    <InteractionInkLabel variant="menu">{t(key)}</InteractionInkLabel>
-                                                </span>
-                                            );
-                                        }
-                                        return (
-                                            <Link
-                                                key={key}
-                                                href={href}
-                                                prefetch={false}
-                                                onClick={close}
-                                                aria-current={current ? "page" : undefined}
-                                                data-current={current || undefined}
-                                            >
-                                                <InteractionInkLabel variant="menu" active={current}>{t(key)}</InteractionInkLabel>
-                                            </Link>
-                                        );
-                                    })}
-                                </>
-                            )}
-                        />
-                        <PlatformAccountMenu compact />
-                    </span>
-                )}
+          <span className={chromeOrgans.pair}>
+            <PlatformRouteMenu
+              label="Розділи адмінки"
+              routes={(close) => (
+                <>
+                  {navItems.map(({ key, href, active }) => {
+                    const current = Boolean(active && isSelectedNav(href));
+                    if (!active) {
+                      return (
+                        <span key={key} aria-disabled="true" data-disabled="true">
+                          <InteractionInkLabel variant="menu">{t(key)}</InteractionInkLabel>
+                        </span>
+                      );
+                    }
+                    return (
+                      <Link
+                        key={key}
+                        href={href}
+                        prefetch={false}
+                        onClick={close}
+                        aria-current={current ? "page" : undefined}
+                        data-current={current || undefined}
+                      >
+                        <InteractionInkLabel variant="menu" active={current}>
+                          {t(key)}
+                        </InteractionInkLabel>
+                      </Link>
+                    );
+                  })}
+                </>
+              )}
             />
-            <PlatformHeader
-                surface="personal"
-                mode="workspace"
-                scope="desktop"
-            />
+            <PlatformAccountMenu compact />
+          </span>
+        }
+      />
+      <PlatformHeader surface="personal" mode="workspace" scope="desktop" />
 
-            <div className="flex flex-1 min-h-0">
-            {/* Sidebar — the same chrome material, now a rail below the shared
+      <div className="flex flex-1 min-h-0">
+        {/* Sidebar — the same chrome material, now a rail below the shared
                 bar rather than a competing top panel.
 
                 THE MARKUP USED TO SAY `hidden md:grid`, WHICH WAS NEVER TRUE.
@@ -205,62 +202,69 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 owns `display` alone: what the CSS does is now what the markup
                 says. The phone form of the rail is pinned compact in
                 `AdminLayout.module.css` — 68px, not 244. */}
-            <aside
-                data-cw-material="chrome"
-                className={`${styles.rail} ${expanded ? "" : styles.railCompact} shrink-0 h-full`}
-            >
-                {/* Nav */}
-                <nav className={`${styles.railNav} flex flex-col gap-0.5`} aria-label={t("sidebar_title")}>
-                    {navItems.map(({ key, href, icon, active }) => {
-                        const isSelected = isSelectedNav(href);
+        <aside
+          data-cw-material="chrome"
+          className={`${styles.rail} ${expanded ? "" : styles.railCompact} shrink-0 h-full`}
+        >
+          {/* Nav */}
+          <nav className={`${styles.railNav} flex flex-col gap-0.5`} aria-label={t("sidebar_title")}>
+            {navItems.map(({ key, href, icon, active }) => {
+              const isSelected = isSelectedNav(href);
 
-                        return (
-                            <Link
-                                key={key}
-                                href={href}
-                                prefetch={false}
-                                title={t(key)}
-                                aria-current={active && isSelected ? "page" : undefined}
-                                className={`cw-nav-link ${styles.railLink} px-3 py-2.5 rounded-lg text-sm group relative
-                                    ${active
+              return (
+                <Link
+                  key={key}
+                  href={href}
+                  prefetch={false}
+                  title={t(key)}
+                  aria-current={active && isSelected ? "page" : undefined}
+                  className={`cw-nav-link ${styles.railLink} px-3 py-2.5 rounded-lg text-sm group relative
+                                    ${
+                                      active
                                         ? isSelected
-                                            ? "cw-nav-link-active"
-                                            : ""
+                                          ? "cw-nav-link-active"
+                                          : ""
                                         : "cw-muted opacity-40 cursor-not-allowed pointer-events-none"
                                     }
                                 `}
-                            >
-                                {expanded ? <Icon name={icon} size={20} /> : <InteractionInkIcon><Icon name={icon} size={20} /></InteractionInkIcon>}
-                                <span className={styles.railLabel}>
-                                    <InteractionInkLabel>{t(key)}</InteractionInkLabel>
-                                </span>
-                                {/* Tooltip when collapsed */}
-                                {!expanded && (
-                                    <span className="pointer-events-none absolute left-full ml-3 z-50 whitespace-nowrap rounded-md cw-surface border cw-border cw-text text-xs font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 cw-shadow">
-                                        {t(key)}
-                                    </span>
-                                )}
-                            </Link>
-                        );
-                    })}
-                </nav>
-                <div className={styles.railFoot}>
-                    <button
-                        type="button"
-                        onClick={() => setExpanded(v => !v)}
-                        title={expanded ? t("common_collapse") : t("common_expand")}
-                        aria-label={expanded ? t("common_collapse") : t("common_expand")}
-                        aria-expanded={expanded}
-                        className={styles.railToggle}
-                    >
-                        <Icon name={expanded ? "arrow-left" : "arrow-right"} size={18} />
-                    </button>
-                </div>
-            </aside>
+                >
+                  {expanded ? (
+                    <Icon name={icon} size={20} />
+                  ) : (
+                    <InteractionInkIcon>
+                      <Icon name={icon} size={20} />
+                    </InteractionInkIcon>
+                  )}
+                  <span className={styles.railLabel}>
+                    <InteractionInkLabel>{t(key)}</InteractionInkLabel>
+                  </span>
+                  {/* Tooltip when collapsed */}
+                  {!expanded && (
+                    <span className="pointer-events-none absolute left-full ml-3 z-50 whitespace-nowrap rounded-md cw-surface border cw-border cw-text text-xs font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 cw-shadow">
+                      {t(key)}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+          <div className={styles.railFoot}>
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              title={expanded ? t("common_collapse") : t("common_expand")}
+              aria-label={expanded ? t("common_collapse") : t("common_expand")}
+              aria-expanded={expanded}
+              className={styles.railToggle}
+            >
+              <Icon name={expanded ? "arrow-left" : "arrow-right"} size={18} />
+            </button>
+          </div>
+        </aside>
 
-            {/* Main */}
-            <main className="flex-1 flex flex-col min-w-0 min-h-0">
-                {/* `pt-[5.25rem]` re-states the room the hidden bar used to hold
+        {/* Main */}
+        <main className="flex-1 flex flex-col min-w-0 min-h-0">
+          {/* `pt-[5.25rem]` re-states the room the hidden bar used to hold
                     open, in the islands' own terms — the row's inset plus one
                     touch target plus air, 20 + 48 + 16 — the same arithmetic as
                     the platform shell and the workshop, written in Tailwind
@@ -276,15 +280,18 @@ export function AdminShell({ children }: { children: ReactNode }) {
                     `--cw-page-gutter` is the token every public page and the
                     shelf already read; `md:p-8` still takes over at the width
                     where this frame becomes a desktop panel. */}
-                <div data-admin-scroll className="custom-scrollbar flex-1 px-[var(--cw-page-gutter)] pt-[5.25rem] pb-4 md:p-8 md:pt-8 overflow-y-auto overflow-x-hidden w-full min-h-0">
-                    {/* One content column for every tab, on the platform's own
+          <div
+            data-admin-scroll
+            className="custom-scrollbar flex-1 px-[var(--cw-page-gutter)] pt-[5.25rem] pb-4 md:p-8 md:pt-8 overflow-y-auto overflow-x-hidden w-full min-h-0"
+          >
+            {/* One content column for every tab, on the platform's own
                         guide — see `.cw-admin-content`. The scroll viewport stays
                         the outer element: AdminPagination scrolls it by
                         `[data-admin-scroll]`. */}
-                    <div className="cw-admin-content">{children}</div>
-                </div>
-            </main>
-            </div>
-        </div>
-    );
+            <div className="cw-admin-content">{children}</div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
 }

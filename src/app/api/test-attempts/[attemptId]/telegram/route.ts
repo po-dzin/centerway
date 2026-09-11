@@ -32,10 +32,7 @@ async function botUsername(): Promise<string | null> {
   return cachedBotUsername;
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ attemptId: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ attemptId: string }> }) {
   const rl = await enforceRateLimit(req, { name: "test_telegram_link", limit: 20, windowSeconds: 60 });
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 

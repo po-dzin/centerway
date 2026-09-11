@@ -3,7 +3,13 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { PRODUCT_DELIVERY, PRODUCT_LABELS, assertProduct, normalizeEmail, normalizePhoneDigits } from "@/lib/telegram/tgSupportBot";
+import {
+  PRODUCT_DELIVERY,
+  PRODUCT_LABELS,
+  assertProduct,
+  normalizeEmail,
+  normalizePhoneDigits,
+} from "@/lib/telegram/tgSupportBot";
 import {
   botCopy,
   ACCESS_PHOTO_URL,

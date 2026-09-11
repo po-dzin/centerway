@@ -17,10 +17,7 @@
     "start": "purchase",
     "reminderHour": 9
   },
-  "entitlementProductCodes": [
-    "short",
-    "reboot"
-  ],
+  "entitlementProductCodes": ["short", "reboot"],
   "cover": {
     "alt": "Обкладинка міні-курсу «Short-Перезавантаження»",
     "src": "/cw/platform/programs/reboot-hero-desktop-v2.webp",
@@ -33,9 +30,7 @@
   "sortOrder": 1,
   "tagline": "Десять хвилин на день, з яких починається практика.",
   "kind": "mini",
-  "categories": [
-    "movement"
-  ],
+  "categories": ["movement"],
   "results": [
     "Менше стресу і спокійніший сон уже за перший тиждень",
     "Більше енергії протягом дня, без провалів після обіду",
@@ -717,9 +712,7 @@
                 },
                 {
                   "kind": "ul",
-                  "items": [
-                    "День 3 — три докладні пояснення: гімнастика, ранкове дихання, вечірнє дихання"
-                  ]
+                  "items": ["День 3 — три докладні пояснення: гімнастика, ранкове дихання, вечірнє дихання"]
                 }
               ]
             }

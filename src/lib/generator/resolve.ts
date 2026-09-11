@@ -31,7 +31,9 @@ function mergeTokens(...sources: Array<Record<`--${string}`, string> | null>): R
 }
 
 function findRouteExperiment(routeKey: ScreenRouteKey): ReturnType<typeof getExperiments>[number] | null {
-  const active = getExperiments().filter((experiment) => experiment.status === "active" && experiment.route_key === routeKey);
+  const active = getExperiments().filter(
+    (experiment) => experiment.status === "active" && experiment.route_key === routeKey,
+  );
   return active[0] ?? null;
 }
 
@@ -46,7 +48,7 @@ function findFallbackScreenByRoute(routeKey: ScreenRouteKey): ScreenManifest | n
 export function resolveScreenForRoute(
   routeKey: ScreenRouteKey,
   assignments: Record<string, ExperimentAssignment>,
-  options?: { themeSelection?: string | null }
+  options?: { themeSelection?: string | null },
 ): ResolvedGeneratedScreen {
   const routeExperiment = findRouteExperiment(routeKey);
 

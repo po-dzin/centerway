@@ -199,7 +199,9 @@ async function main() {
 
   for (const ref of gap) {
     const order = held.get(ref);
-    console.log(`  ${ref}  ours=${order?.status ?? "MISSING ORDER ROW"}  ${order?.amount ?? "?"} ${order?.currency ?? ""}  ${approved.get(ref).email ?? "no email"}`);
+    console.log(
+      `  ${ref}  ours=${order?.status ?? "MISSING ORDER ROW"}  ${order?.amount ?? "?"} ${order?.currency ?? ""}  ${approved.get(ref).email ?? "no email"}`,
+    );
   }
 
   if (!confirm) {

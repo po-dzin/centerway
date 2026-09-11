@@ -8,17 +8,40 @@ import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShel
 import { BuilderSheet } from "./BuilderSheet";
 import { Icon } from "@/components/Icon";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
-import { createCourse, deleteCourse, exportCourseFile, listCourses, reorderCourses, unpublishCourse, type BuilderCourseSummary, type BuilderFailure } from "./builderClient";
+import {
+  createCourse,
+  deleteCourse,
+  exportCourseFile,
+  listCourses,
+  reorderCourses,
+  unpublishCourse,
+  type BuilderCourseSummary,
+  type BuilderFailure,
+} from "./builderClient";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { PlatformPageHead } from "@/components/platform/PlatformPageHead";
 import { getCabinetCopy } from "@/components/platform/cabinet/copy";
-import { EMPTY_SHELF_QUERY, ShelfFilter, isShelfQueryEmpty, matchesShelfQuery, type ShelfQuery } from "@/components/platform/cabinet/ShelfFilter";
+import {
+  EMPTY_SHELF_QUERY,
+  ShelfFilter,
+  isShelfQueryEmpty,
+  matchesShelfQuery,
+  type ShelfQuery,
+} from "@/components/platform/cabinet/ShelfFilter";
 import filterStyles from "@/components/platform/cabinet/ShelfFilter.module.css";
 import { ShelfResultBar } from "@/components/platform/cabinet/ShelfPresentation";
 import { CourseCard, CourseRow, ViewSwitch, deleteFailureCopy, unpublishFailureCopy } from "./BuilderCourseEntry";
 import { ImportPanel } from "./BuilderImportPanel";
-import { REMOVE_MS, VIEW_EVENT, VIEW_KEY, readView, subscribeToView, type CourseView, useShelfReflow } from "./builderShelfView";
+import {
+  REMOVE_MS,
+  VIEW_EVENT,
+  VIEW_KEY,
+  readView,
+  subscribeToView,
+  type CourseView,
+  useShelfReflow,
+} from "./builderShelfView";
 
 const SHELF_COPY = getCabinetCopy("uk");
 
@@ -83,7 +106,7 @@ export function BuilderCourseList() {
             isAdmin: result.data.isAdmin,
             canCreate: result.data.canCreate,
           }
-        : { status: "failed", failure: result.failure, detail: result.detail }
+        : { status: "failed", failure: result.failure, detail: result.detail },
     );
   }, []);
 
@@ -103,7 +126,7 @@ export function BuilderCourseList() {
               isAdmin: result.data.isAdmin,
               canCreate: result.data.canCreate,
             }
-          : { status: "failed", failure: result.failure, detail: result.detail }
+          : { status: "failed", failure: result.failure, detail: result.detail },
       );
     })();
     return () => {
@@ -222,7 +245,7 @@ export function BuilderCourseList() {
     setState((current) =>
       current.status === "ready"
         ? { ...current, courses: current.courses.filter((entry) => entry.slug !== slug) }
-        : current
+        : current,
     );
     setRemoving(null);
     setBusy(false);
@@ -260,10 +283,10 @@ export function BuilderCourseList() {
         ? {
             ...current,
             courses: current.courses.map((entry) =>
-              entry.slug === slug ? { ...entry, status: result.data.status } : entry
+              entry.slug === slug ? { ...entry, status: result.data.status } : entry,
             ),
           }
-        : current
+        : current,
     );
     void load();
   }
@@ -275,7 +298,7 @@ export function BuilderCourseList() {
          thing about THIS course rather than the union of every rule. */
       const status =
         state.status === "ready"
-          ? state.courses.find((course) => course.slug === pending.slug)?.status ?? "draft"
+          ? (state.courses.find((course) => course.slug === pending.slug)?.status ?? "draft")
           : "draft";
       void remove(pending.slug, status);
     } else void unpublish(pending.slug);
@@ -303,7 +326,11 @@ export function BuilderCourseList() {
   if (state.status === "loading") {
     return (
       <BuilderShell>
-        <PlatformLoadingState label="Майстерня" title="Завантажуємо ваші курси…" detail="Відновлюємо чернетки, статуси й обкладинки." />
+        <PlatformLoadingState
+          label="Майстерня"
+          title="Завантажуємо ваші курси…"
+          detail="Відновлюємо чернетки, статуси й обкладинки."
+        />
       </BuilderShell>
     );
   }
@@ -319,7 +346,11 @@ export function BuilderCourseList() {
   if (creating) {
     return (
       <BuilderShell trail={[{ label: "Курси", href: "/build" }, { label: "Новий курс" }]}>
-        <PlatformLoadingState label="Майстерня" title="Створюємо чернетку…" detail="Після створення одразу відкриється редактор курсу." />
+        <PlatformLoadingState
+          label="Майстерня"
+          title="Створюємо чернетку…"
+          detail="Після створення одразу відкриється редактор курсу."
+        />
       </BuilderShell>
     );
   }
@@ -398,11 +429,7 @@ export function BuilderCourseList() {
           The children unmount with it on purpose — that is what resets a
           half-picked file, so opening the form twice does not show the first
           attempt's filename. */}
-      <BuilderSheet
-        open={state.canCreate && importing}
-        title="Імпорт курсу"
-        onClose={() => setImporting(false)}
-      >
+      <BuilderSheet open={state.canCreate && importing} title="Імпорт курсу" onClose={() => setImporting(false)}>
         {state.canCreate && importing ? (
           <ImportPanel
             onCancel={() => setImporting(false)}
@@ -414,7 +441,6 @@ export function BuilderCourseList() {
           />
         ) : null}
       </BuilderSheet>
-
 
       {state.courses.length === 0 ? (
         <BuilderNotice
@@ -451,9 +477,7 @@ export function BuilderCourseList() {
                is active, and a filter that matches all nine is still a
                narrowed shelf. Two sides of one shelf, one sentence. */
             count={
-              filtering
-                ? `${shown.length} з ${state.courses.length}`
-                : SHELF_COPY.materialsCount(state.courses.length)
+              filtering ? `${shown.length} з ${state.courses.length}` : SHELF_COPY.materialsCount(state.courses.length)
             }
           >
             <ViewSwitch view={view} onChange={chooseView} />
@@ -461,45 +485,45 @@ export function BuilderCourseList() {
           {shown.length === 0 ? (
             <p className={filterStyles.noMatch}>{SHELF_COPY.shelfNoMatch}</p>
           ) : view === "grid" ? (
-        <div className={styles.courseGrid} ref={shelf}>
-          {shown.map(({ course, index }) => (
-            <CourseCard
-              key={course.slug}
-              course={course}
-              index={index}
-              total={state.courses.length}
-              reorderable={!filtering}
-              busy={busy}
-              pending={pending && pending.slug === course.slug ? pending : null}
-              removing={removing === course.slug}
-              onMove={move}
-              onAsk={askPending}
-              onCancel={dismissPending}
-              onConfirm={confirmPending}
-              onExport={exportOne}
-            />
-          ))}
-        </div>
-      ) : (
-        <ul className={styles.courseRows} ref={shelf}>
-          {shown.map(({ course, index }) => (
-            <CourseRow
-              key={course.slug}
-              course={course}
-              index={index}
-              total={state.courses.length}
-              reorderable={!filtering}
-              busy={busy}
-              pending={pending && pending.slug === course.slug ? pending : null}
-              removing={removing === course.slug}
-              onMove={move}
-              onAsk={askPending}
-              onCancel={dismissPending}
-              onConfirm={confirmPending}
-              onExport={exportOne}
-            />
-          ))}
-        </ul>
+            <div className={styles.courseGrid} ref={shelf}>
+              {shown.map(({ course, index }) => (
+                <CourseCard
+                  key={course.slug}
+                  course={course}
+                  index={index}
+                  total={state.courses.length}
+                  reorderable={!filtering}
+                  busy={busy}
+                  pending={pending && pending.slug === course.slug ? pending : null}
+                  removing={removing === course.slug}
+                  onMove={move}
+                  onAsk={askPending}
+                  onCancel={dismissPending}
+                  onConfirm={confirmPending}
+                  onExport={exportOne}
+                />
+              ))}
+            </div>
+          ) : (
+            <ul className={styles.courseRows} ref={shelf}>
+              {shown.map(({ course, index }) => (
+                <CourseRow
+                  key={course.slug}
+                  course={course}
+                  index={index}
+                  total={state.courses.length}
+                  reorderable={!filtering}
+                  busy={busy}
+                  pending={pending && pending.slug === course.slug ? pending : null}
+                  removing={removing === course.slug}
+                  onMove={move}
+                  onAsk={askPending}
+                  onCancel={dismissPending}
+                  onConfirm={confirmPending}
+                  onExport={exportOne}
+                />
+              ))}
+            </ul>
           )}
         </>
       )}

@@ -28,55 +28,55 @@ import { AccessError, type Db, writeAudit } from "./shared";
  * asserted this payment rather than a provider confirming it.
  */
 export async function recordManualPayment(input: {
-    email: string;
-    productCode: string;
-    amount: number;
-    currency: PaymentCurrency;
-    note?: string | null;
-    actorId: string;
-    /** Set when the buyer already has an account, so the purchase is theirs immediately. */
-    authUserId?: string | null;
+  email: string;
+  productCode: string;
+  amount: number;
+  currency: PaymentCurrency;
+  note?: string | null;
+  actorId: string;
+  /** Set when the buyer already has an account, so the purchase is theirs immediately. */
+  authUserId?: string | null;
 }) {
-    const db = adminClient();
-    const email = input.email.trim().toLowerCase();
-    if (!email) throw new AccessError("email_required");
+  const db = adminClient();
+  const email = input.email.trim().toLowerCase();
+  if (!email) throw new AccessError("email_required");
 
-    const productCode = input.productCode.trim();
-    if (!productCode) throw new AccessError("product_code_required");
-    if (!Number.isFinite(input.amount) || input.amount <= 0) throw new AccessError("amount_invalid");
+  const productCode = input.productCode.trim();
+  if (!productCode) throw new AccessError("product_code_required");
+  if (!Number.isFinite(input.amount) || input.amount <= 0) throw new AccessError("amount_invalid");
 
-    const customerId = await resolveCustomerId(db, email, input.authUserId ?? null);
+  const customerId = await resolveCustomerId(db, email, input.authUserId ?? null);
 
-    const orderRef = manualOrderRef(productCode);
-    const paidAt = new Date().toISOString();
+  const orderRef = manualOrderRef(productCode);
+  const paidAt = new Date().toISOString();
 
-    const { error } = await db.from("orders").insert({
-        order_ref: orderRef,
-        product_code: productCode,
-        amount: input.amount,
-        currency: input.currency,
-        status: "paid",
-        customer_id: customerId,
-        created_at: paidAt,
-    });
-    if (error) throw new AccessError(error.message, 500);
+  const { error } = await db.from("orders").insert({
+    order_ref: orderRef,
+    product_code: productCode,
+    amount: input.amount,
+    currency: input.currency,
+    status: "paid",
+    customer_id: customerId,
+    created_at: paidAt,
+  });
+  if (error) throw new AccessError(error.message, 500);
 
-    await writeAudit(db, {
-        actorId: input.actorId,
-        action: "order.manual.record",
-        entityType: "order",
-        entityId: orderRef,
-        metadata: {
-            email,
-            product_code: productCode,
-            amount: input.amount,
-            currency: input.currency,
-            customer_id: customerId,
-            note: input.note?.trim() || null,
-        },
-    });
+  await writeAudit(db, {
+    actorId: input.actorId,
+    action: "order.manual.record",
+    entityType: "order",
+    entityId: orderRef,
+    metadata: {
+      email,
+      product_code: productCode,
+      amount: input.amount,
+      currency: input.currency,
+      customer_id: customerId,
+      note: input.note?.trim() || null,
+    },
+  });
 
-    return { orderRef, customerId, amount: input.amount, currency: input.currency, productCode, paidAt };
+  return { orderRef, customerId, amount: input.amount, currency: input.currency, productCode, paidAt };
 }
 
 /**
@@ -88,25 +88,25 @@ export async function recordManualPayment(input: {
  * "unconfigured means perpetual" direction the door already takes.
  */
 async function offerExpiryFor(db: Db, courseSlug: string, paidAt: string): Promise<string | null> {
-    const { data: course } = await db.from("lms_courses").select("id").eq("slug", courseSlug).maybeSingle();
-    if (!course?.id) return null;
+  const { data: course } = await db.from("lms_courses").select("id").eq("slug", courseSlug).maybeSingle();
+  if (!course?.id) return null;
 
-    const { data: offer } = await db
-        .from("lms_course_offers")
-        .select("access_days, access_lifetime")
-        .eq("course_id", course.id)
-        .maybeSingle();
-    if (!offer) return null;
+  const { data: offer } = await db
+    .from("lms_course_offers")
+    .select("access_days, access_lifetime")
+    .eq("course_id", course.id)
+    .maybeSingle();
+  if (!offer) return null;
 
-    const rule = accessRuleOf({
-        accessDays: (offer.access_days as number | null) ?? null,
-        accessLifetime: (offer.access_lifetime as boolean | null) ?? null,
-    });
-    if (!rule || rule.lifetime) return null;
+  const rule = accessRuleOf({
+    accessDays: (offer.access_days as number | null) ?? null,
+    accessLifetime: (offer.access_lifetime as boolean | null) ?? null,
+  });
+  if (!rule || rule.lifetime) return null;
 
-    const from = new Date(paidAt);
-    if (!Number.isFinite(from.getTime())) return null;
-    return accessWindowEnd(from, rule);
+  const from = new Date(paidAt);
+  if (!Number.isFinite(from.getTime())) return null;
+  return accessWindowEnd(from, rule);
 }
 
 /**
@@ -117,59 +117,59 @@ async function offerExpiryFor(db: Db, courseSlug: string, paidAt: string): Promi
  * unlinked row would leave the buyer staring at a locked course they paid for.
  */
 async function resolveCustomerId(db: Db, email: string, authUserId: string | null): Promise<string> {
-    const { data: existing, error: readError } = await db
-        .from("customers")
-        .select("id, auth_user_id")
-        .ilike("email", email)
-        .order("created_at", { ascending: true })
-        .limit(1);
-    if (readError) throw new AccessError(readError.message, 500);
+  const { data: existing, error: readError } = await db
+    .from("customers")
+    .select("id, auth_user_id")
+    .ilike("email", email)
+    .order("created_at", { ascending: true })
+    .limit(1);
+  if (readError) throw new AccessError(readError.message, 500);
 
-    const found = existing?.[0];
-    if (found) {
-        // Never re-point a row that already belongs to another account — that is
-        // a support case, not an automatic merge (see `linkPurchasesToAccount`).
-        if (authUserId && !found.auth_user_id) {
-            await db.from("customers").update({ auth_user_id: authUserId }).eq("id", found.id).is("auth_user_id", null);
-        }
-        return found.id as string;
+  const found = existing?.[0];
+  if (found) {
+    // Never re-point a row that already belongs to another account — that is
+    // a support case, not an automatic merge (see `linkPurchasesToAccount`).
+    if (authUserId && !found.auth_user_id) {
+      await db.from("customers").update({ auth_user_id: authUserId }).eq("id", found.id).is("auth_user_id", null);
     }
+    return found.id as string;
+  }
 
-    const { data: inserted, error } = await db
-        .from("customers")
-        .insert({ email, auth_user_id: authUserId })
-        .select("id")
-        .single();
-    if (error) throw new AccessError(error.message, 500);
+  const { data: inserted, error } = await db
+    .from("customers")
+    .insert({ email, auth_user_id: authUserId })
+    .select("id")
+    .single();
+  if (error) throw new AccessError(error.message, 500);
 
-    return inserted.id as string;
+  return inserted.id as string;
 }
 
 function manualOrderRef(productCode: string): string {
-    const token = productCode.replace(/[^a-z0-9-]+/gi, "-");
-    const now = new Date();
-    const stamp = [
-        now.getUTCFullYear(),
-        String(now.getUTCMonth() + 1).padStart(2, "0"),
-        String(now.getUTCDate()).padStart(2, "0"),
-    ].join("");
-    const rand = Math.random().toString(16).slice(2, 10);
-    return `manual_${token}_${stamp}_${rand}`;
+  const token = productCode.replace(/[^a-z0-9-]+/gi, "-");
+  const now = new Date();
+  const stamp = [
+    now.getUTCFullYear(),
+    String(now.getUTCMonth() + 1).padStart(2, "0"),
+    String(now.getUTCDate()).padStart(2, "0"),
+  ].join("");
+  const rand = Math.random().toString(16).slice(2, 10);
+  return `manual_${token}_${stamp}_${rand}`;
 }
 
 export type ProvisionAccessInput = {
-    email: string;
-    fullName?: string | null;
-    courseSlug: string;
-    /** ISO instant or `null`; the route normalizes what the operator typed. */
-    expiresAt?: string | null;
-    /** Create the platform account when this email has never signed in. */
-    createAccount?: boolean;
-    /** Amount that arrived outside the provider. Omitted for a plain gift or a review grant. */
-    payment?: { amount: number; currency: PaymentCurrency; note?: string | null } | null;
-    /** Why this seat exists — `manual` unless the operator says bonus or promo. */
-    source?: GrantSource;
-    actorId: string;
+  email: string;
+  fullName?: string | null;
+  courseSlug: string;
+  /** ISO instant or `null`; the route normalizes what the operator typed. */
+  expiresAt?: string | null;
+  /** Create the platform account when this email has never signed in. */
+  createAccount?: boolean;
+  /** Amount that arrived outside the provider. Omitted for a plain gift or a review grant. */
+  payment?: { amount: number; currency: PaymentCurrency; note?: string | null } | null;
+  /** Why this seat exists — `manual` unless the operator says bonus or promo. */
+  source?: GrantSource;
+  actorId: string;
 };
 
 /**
@@ -194,63 +194,63 @@ export type ProvisionAccessInput = {
  * that is not true a moment earlier.
  */
 export async function provisionAccess(input: ProvisionAccessInput) {
-    const db = adminClient();
-    const account = input.createAccount
-        ? await createAccount({ email: input.email, fullName: input.fullName, actorId: input.actorId })
-        : { created: false, account: await resolveAccountByEmail(db, input.email) };
+  const db = adminClient();
+  const account = input.createAccount
+    ? await createAccount({ email: input.email, fullName: input.fullName, actorId: input.actorId })
+    : { created: false, account: await resolveAccountByEmail(db, input.email) };
 
-    await assertGrantable(db, input.courseSlug, account.account.authUserId);
+  await assertGrantable(db, input.courseSlug, account.account.authUserId);
 
-    const payment = input.payment
-        ? await recordManualPayment({
-              email: input.email,
-              productCode: courseOfferCode(input.courseSlug),
-              amount: input.payment.amount,
-              currency: input.payment.currency,
-              note: input.payment.note,
-              authUserId: account.account.authUserId,
-              actorId: input.actorId,
-          })
-        : null;
+  const payment = input.payment
+    ? await recordManualPayment({
+        email: input.email,
+        productCode: courseOfferCode(input.courseSlug),
+        amount: input.payment.amount,
+        currency: input.payment.currency,
+        note: input.payment.note,
+        authUserId: account.account.authUserId,
+        actorId: input.actorId,
+      })
+    : null;
 
-    /* The term comes from the offer unless the operator overrode it.
+  /* The term comes from the offer unless the operator overrode it.
        A hand-recorded sale used to ignore `access_days` entirely: selling a
        30-day course by hand granted it forever unless somebody remembered to
        type a date. The offer is where the term is agreed, so a sale made in
        admin is sold on the same terms as one made at the checkout. */
-    const expiresAt =
-        input.expiresAt !== undefined
-            ? input.expiresAt
-            : payment
-              ? await offerExpiryFor(db, input.courseSlug, payment.paidAt)
-              : null;
+  const expiresAt =
+    input.expiresAt !== undefined
+      ? input.expiresAt
+      : payment
+        ? await offerExpiryFor(db, input.courseSlug, payment.paidAt)
+        : null;
 
-    const grant = await grantCourse({
-        email: input.email,
-        courseSlug: input.courseSlug,
-        expiresAt,
-        // A hand-recorded sale is a purchase in every way that matters, so it
-        // is not filed as a gift: the money is real and the order exists.
-        source: input.source ?? (payment ? "manual" : undefined),
-        actorId: input.actorId,
-        orderRef: payment?.orderRef ?? null,
-    });
+  const grant = await grantCourse({
+    email: input.email,
+    courseSlug: input.courseSlug,
+    expiresAt,
+    // A hand-recorded sale is a purchase in every way that matters, so it
+    // is not filed as a gift: the money is real and the order exists.
+    source: input.source ?? (payment ? "manual" : undefined),
+    actorId: input.actorId,
+    orderRef: payment?.orderRef ?? null,
+  });
 
-    /* ONLY FOR A SALE. A grant with no payment is a gift or a promo seat, and
+  /* ONLY FOR A SALE. A grant with no payment is a gift or a promo seat, and
        posting "Оплату отримано" with an order number to somebody who paid
        nothing would be a stranger message than silence. That case still has no
        notification of its own; it wants different words, not this one's. */
-    const receipt = payment
-        ? await sendManualSaleReceipt(db, {
-              email: input.email,
-              courseSlug: input.courseSlug,
-              amount: payment.amount,
-              currency: payment.currency,
-              orderRef: payment.orderRef,
-          })
-        : null;
+  const receipt = payment
+    ? await sendManualSaleReceipt(db, {
+        email: input.email,
+        courseSlug: input.courseSlug,
+        amount: payment.amount,
+        currency: payment.currency,
+        orderRef: payment.orderRef,
+      })
+    : null;
 
-    return { accountCreated: account.created, account: grant.account, payment, grant, receipt };
+  return { accountCreated: account.created, account: grant.account, payment, grant, receipt };
 }
 
 /**
@@ -269,10 +269,10 @@ export async function provisionAccess(input: ProvisionAccessInput) {
  * gets the outcome back to say so.
  */
 async function sendManualSaleReceipt(
-    db: Db,
-    input: { email: string; courseSlug: string; amount: number; currency: PaymentCurrency; orderRef: string }
+  db: Db,
+  input: { email: string; courseSlug: string; amount: number; currency: PaymentCurrency; orderRef: string },
 ) {
-    /* THE COURSE ROW, not `loadPayableOffer`. The offer loader is the right
+  /* THE COURSE ROW, not `loadPayableOffer`. The offer loader is the right
        answer at the checkout, where the product code is all anyone has — but it
        reads through `unstable_cache`, so it only works inside a request, and it
        returns null for a course that is unlisted or priced at zero. Both of
@@ -280,20 +280,16 @@ async function sendManualSaleReceipt(
        make this whole function unusable from anywhere but a route handler.
        Here the slug is already known, so the title comes from the row and the
        link goes straight to the course. */
-    const { data: course } = await db
-        .from("lms_courses")
-        .select("title")
-        .eq("slug", input.courseSlug)
-        .maybeSingle();
+  const { data: course } = await db.from("lms_courses").select("title").eq("slug", input.courseSlug).maybeSingle();
 
-    const title = typeof course?.title === "string" && course.title.trim() ? course.title.trim() : null;
+  const title = typeof course?.title === "string" && course.title.trim() ? course.title.trim() : null;
 
-    return sendPurchaseEmail({
-        email: input.email,
-        productTitle: title ?? "Ваше замовлення",
-        amount: input.amount,
-        currency: input.currency,
-        fulfilment: { kind: "course", courseSlug: input.courseSlug },
-        orderRef: input.orderRef,
-    });
+  return sendPurchaseEmail({
+    email: input.email,
+    productTitle: title ?? "Ваше замовлення",
+    amount: input.amount,
+    currency: input.currency,
+    fulfilment: { kind: "course", courseSlug: input.courseSlug },
+    orderRef: input.orderRef,
+  });
 }

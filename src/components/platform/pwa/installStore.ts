@@ -105,7 +105,8 @@ export function isStandaloneDisplay() {
 export function isIosSafari() {
   if (typeof navigator === "undefined") return false;
   const ua = navigator.userAgent;
-  const isIos = /iphone|ipad|ipod/i.test(ua) ||
+  const isIos =
+    /iphone|ipad|ipod/i.test(ua) ||
     // iPadOS reports itself as a Mac; the touch points give it away.
     (/macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
   return isIos && !/crios|fxios|edgios/i.test(ua);

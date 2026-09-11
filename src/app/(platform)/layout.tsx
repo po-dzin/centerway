@@ -133,7 +133,9 @@ export default function RootLayout({
             bfcache after a trip to a funnel landing — see the component for
             why that trip is the one that breaks here. */}
         <BfcacheRestore />
-        <SessionProvider><ToastProvider>{children}</ToastProvider></SessionProvider>
+        <SessionProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </SessionProvider>
         <Analytics />
       </body>
     </html>

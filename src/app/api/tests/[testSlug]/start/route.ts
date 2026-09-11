@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { asString } from "@/lib/strings";
 import { adminClient } from "@/lib/auth/adminClient";
-import {
-  emitDoshaTestEvent,
-  ensureDoshaTestSeed,
-  loadTestDefinitionBySlug,
-} from "@/lib/dosha/doshaTestRepo";
+import { emitDoshaTestEvent, ensureDoshaTestSeed, loadTestDefinitionBySlug } from "@/lib/dosha/doshaTestRepo";
 import { DOSHA_TEST_SLUG, presentQuestionsForSession } from "@/lib/dosha/doshaTest";
 import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 
@@ -17,10 +13,7 @@ type StartBody = {
   userId?: unknown;
 };
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ testSlug: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ testSlug: string }> }) {
   const { testSlug } = await params;
   if (testSlug !== DOSHA_TEST_SLUG) {
     return NextResponse.json({ error: "test_not_found" }, { status: 404 });

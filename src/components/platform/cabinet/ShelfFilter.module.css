@@ -32,7 +32,11 @@
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
   color: var(--cw-platform-muted);
-  transition: border-color 180ms ease, box-shadow 180ms ease, color 180ms ease, background 180ms ease;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease,
+    background 180ms ease;
 }
 
 .findInput {
@@ -204,7 +208,10 @@
   border: 1px solid var(--cw-mat-stroke-control);
   border-radius: var(--cw-radius-inset);
   color: transparent;
-  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
 }
 
 .filterOption input:checked + .filterCheckbox {

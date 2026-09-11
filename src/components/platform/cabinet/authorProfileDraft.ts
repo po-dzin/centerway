@@ -62,9 +62,7 @@ export function draftFromAuthor(author: Author | null): Draft {
        its edge. The editor shows the whole picture now, so a flush axis is
        visible rather than felt as a dead gesture, and this stays a copy. */
     photo: author?.photo ? { ...author.photo } : null,
-    background: author?.background
-      ? { ...author.background }
-      : null,
+    background: author?.background ? { ...author.background } : null,
     listed: author?.listed ?? false,
     slug: author?.slug ?? "",
   };
@@ -91,25 +89,26 @@ export function authorFromDraft(draft: Draft, base: Author | null): Author {
      row and once in the starred list under it. */
   const [achievementBadge, ...credentials] = credentialLines;
   const alt = draft.photo?.alt.trim();
-  const photo = draft.photo?.src && alt
-    ? {
-        src: draft.photo.src,
-        alt,
-        ...(draft.photo.cropX !== undefined ? { cropX: draft.photo.cropX } : {}),
-        ...(draft.photo.cropY !== undefined ? { cropY: draft.photo.cropY } : {}),
-        ...(draft.photo.avatarCropX !== undefined ? { avatarCropX: draft.photo.avatarCropX } : {}),
-        ...(draft.photo.avatarCropY !== undefined ? { avatarCropY: draft.photo.avatarCropY } : {}),
-        /* `> CROP_SCALE_MIN`, not `!== undefined` — absent means "no zoom"
+  const photo =
+    draft.photo?.src && alt
+      ? {
+          src: draft.photo.src,
+          alt,
+          ...(draft.photo.cropX !== undefined ? { cropX: draft.photo.cropX } : {}),
+          ...(draft.photo.cropY !== undefined ? { cropY: draft.photo.cropY } : {}),
+          ...(draft.photo.avatarCropX !== undefined ? { avatarCropX: draft.photo.avatarCropX } : {}),
+          ...(draft.photo.avatarCropY !== undefined ? { avatarCropY: draft.photo.avatarCropY } : {}),
+          /* `> CROP_SCALE_MIN`, not `!== undefined` — absent means "no zoom"
            everywhere else in the crop model (src/lib/media/imageCrop.ts), and
            writing a literal 1 would freeze today's default into the row. */
-        ...(draft.photo.cropScale !== undefined && draft.photo.cropScale > CROP_SCALE_MIN
-          ? { cropScale: draft.photo.cropScale }
-          : {}),
-        ...(draft.photo.avatarCropScale !== undefined && draft.photo.avatarCropScale > CROP_SCALE_MIN
-          ? { avatarCropScale: draft.photo.avatarCropScale }
-          : {}),
-      }
-    : undefined;
+          ...(draft.photo.cropScale !== undefined && draft.photo.cropScale > CROP_SCALE_MIN
+            ? { cropScale: draft.photo.cropScale }
+            : {}),
+          ...(draft.photo.avatarCropScale !== undefined && draft.photo.avatarCropScale > CROP_SCALE_MIN
+            ? { avatarCropScale: draft.photo.avatarCropScale }
+            : {}),
+        }
+      : undefined;
 
   const background = draft.background?.src
     ? {
@@ -130,22 +129,30 @@ export function authorFromDraft(draft: Draft, base: Author | null): Author {
     ...(draft.bio.trim() ? { bio: draft.bio.trim() } : {}),
     ...(draft.quote.trim() ? { quote: draft.quote.trim() } : {}),
     ...(credentials.length > 0 ? { credentials } : {}),
-    facts: draft.facts.map((line) => line.trim()).filter(Boolean).slice(0, 6),
+    facts: draft.facts
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .slice(0, 6),
     /* A block with a title and nothing under it is not a block — the page
        would draw a heading over an empty panel. */
     profileBlocks: draft.profileBlocks.flatMap((block) => {
       const title = block.title.trim();
       const body = block.body?.trim();
-      const items = block.items?.map((line) => line.trim()).filter(Boolean).slice(0, 30);
+      const items = block.items
+        ?.map((line) => line.trim())
+        .filter(Boolean)
+        .slice(0, 30);
       if (!title || (!body && !items?.length)) return [];
-      return [{
-        id: block.id,
-        kind: block.kind,
-        ...(block.label?.trim() ? { label: block.label.trim() } : {}),
-        title,
-        ...(body ? { body } : {}),
-        ...(items?.length ? { items } : {}),
-      }];
+      return [
+        {
+          id: block.id,
+          kind: block.kind,
+          ...(block.label?.trim() ? { label: block.label.trim() } : {}),
+          title,
+          ...(body ? { body } : {}),
+          ...(items?.length ? { items } : {}),
+        },
+      ];
     }),
     ...(draft.experienceBadge.trim() ? { experienceBadge: draft.experienceBadge.trim() } : {}),
     ...(achievementBadge ? { achievementBadge } : {}),
@@ -153,7 +160,10 @@ export function authorFromDraft(draft: Draft, base: Author | null): Author {
       enabled: draft.consultation.enabled,
       ...(draft.consultation.title.trim() ? { title: draft.consultation.title.trim() } : {}),
       ...(draft.consultation.summary.trim() ? { summary: draft.consultation.summary.trim() } : {}),
-      points: draft.consultation.points.map((line) => line.trim()).filter(Boolean).slice(0, 3),
+      points: draft.consultation.points
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .slice(0, 3),
       ...(draft.consultation.contactUrl.trim() ? { contactUrl: draft.consultation.contactUrl.trim() } : {}),
     },
     ...(photo ? { photo } : {}),

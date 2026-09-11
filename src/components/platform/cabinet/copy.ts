@@ -211,12 +211,10 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
 
       installCardTitle: "The app on your screen",
       installTitle: "Add CenterWay to your home screen",
-      installLead:
-        "It opens as an app — full screen, with its own icon, and your courses stay one tap away.",
-      installElsewhereLead:
-        "The app is added from your shelf, so the icon opens your courses rather than the shop.",
+      installLead: "It opens as an app — full screen, with its own icon, and your courses stay one tap away.",
+      installElsewhereLead: "The app is added from your shelf, so the icon opens your courses rather than the shop.",
       installElsewhereAction: "Open the shelf to add it",
-      installBrowserLead: "Open your browser menu and choose \"Install app\" or \"Add to Home Screen\".",
+      installBrowserLead: 'Open your browser menu and choose "Install app" or "Add to Home Screen".',
       installInstalledTitle: "CenterWay is already added to your home screen.",
       installAction: "Add",
       installIosToggle: "Show the two steps",
@@ -241,7 +239,8 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     materialsLabel: "Матеріали",
     materialsCount: (count) => `${count} ${ukPlural(count, "матеріал", "матеріали", "матеріалів")}`,
     coursesLabel: "Курси",
-    learningLead: "Курси й інші матеріали, до яких у вас є доступ. Курси відкриваються з того уроку, на якому ви зупинились.",
+    learningLead:
+      "Курси й інші матеріали, до яких у вас є доступ. Курси відкриваються з того уроку, на якому ви зупинились.",
     shelfViewLabel: "Вигляд полиці",
     shelfViewCards: "Картки",
     shelfViewRows: "Список",
@@ -296,10 +295,8 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
 
     installCardTitle: "Застосунок на екрані",
     installTitle: "Додати CenterWay на екран телефона",
-    installLead:
-      "Відкриватиметься як застосунок — на весь екран, з власною іконкою, і шлях лишається за один дотик.",
-    installElsewhereLead:
-      "Застосунок додається з вашої полиці — тоді іконка відкриває ваші курси, а не вітрину.",
+    installLead: "Відкриватиметься як застосунок — на весь екран, з власною іконкою, і шлях лишається за один дотик.",
+    installElsewhereLead: "Застосунок додається з вашої полиці — тоді іконка відкриває ваші курси, а не вітрину.",
     installElsewhereAction: "Відкрити полицю, щоб додати",
     installBrowserLead: "Відкрийте меню браузера та оберіть «Встановити застосунок» або «На початковий екран».",
     installInstalledTitle: "CenterWay уже додано на ваш екран.",

@@ -96,18 +96,14 @@ export async function POST(req: NextRequest) {
   const name = asString(body.name);
   const phone = asString(body.phone);
   const email = asString(body.email)?.toLowerCase() ?? null;
-  const product = normalizeProduct({
-    product: asString(body.product) ?? undefined,
-    product_code: asString(body.product_code) ?? undefined,
-  }) ?? "consult";
+  const product =
+    normalizeProduct({
+      product: asString(body.product) ?? undefined,
+      product_code: asString(body.product_code) ?? undefined,
+    }) ?? "consult";
 
   if (!name || (!phone && !email)) {
-    return cors(
-      NextResponse.json(
-        { ok: false, error: "contact_required" },
-        { status: 400 }
-      )
-    );
+    return cors(NextResponse.json({ ok: false, error: "contact_required" }, { status: 400 }));
   }
 
   const pageUrl = asString(body.page_url) ?? req.headers.get("referer") ?? null;
@@ -150,12 +146,7 @@ export async function POST(req: NextRequest) {
   const mode = await persistLeadBestEffort(db, lead);
 
   if (mode === "skipped") {
-    return cors(
-      NextResponse.json(
-        { ok: false, error: "lead_persist_failed" },
-        { status: 500 }
-      )
-    );
+    return cors(NextResponse.json({ ok: false, error: "lead_persist_failed" }, { status: 500 }));
   }
 
   if (asString(body.event_id)) {

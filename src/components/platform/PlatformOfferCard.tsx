@@ -110,22 +110,23 @@ export function PlatformOfferCard({
   const photo = artwork?.card ?? artwork?.desktop;
   const photoZoom = artwork?.desktopScale && artwork.desktopScale > 1 ? artwork.desktopScale : undefined;
 
-  const cardStyle = artwork && photo
-    ? ({
-        "--program-photo-image": `url("${photo}")`,
-        /* Cards keep one horizontal master at every breakpoint. The optional
+  const cardStyle =
+    artwork && photo
+      ? ({
+          "--program-photo-image": `url("${photo}")`,
+          /* Cards keep one horizontal master at every breakpoint. The optional
            portrait is reserved for the standalone offer hero on mobile. */
-        "--program-photo-image-mobile": `url("${photo}")`,
-        "--program-photo-position-desktop": artwork.desktopPosition ?? "center 20%",
-        "--program-photo-position-mobile": artwork.desktopPosition ?? "center 20%",
-        /* The card keeps the horizontal master at every breakpoint, so it keeps
+          "--program-photo-image-mobile": `url("${photo}")`,
+          "--program-photo-position-desktop": artwork.desktopPosition ?? "center 20%",
+          "--program-photo-position-mobile": artwork.desktopPosition ?? "center 20%",
+          /* The card keeps the horizontal master at every breakpoint, so it keeps
            that master's zoom too — the portrait's own is for the standalone
            hero. Declared only when there is one: see the `data-photo-zoom` note
            in PlatformBlocksOffer.module.css for why an unzoomed card must not
            carry a `scale(1)`. */
-        ...(photoZoom ? { "--program-photo-scale": String(photoZoom) } : {}),
-      } as CSSProperties)
-    : undefined;
+          ...(photoZoom ? { "--program-photo-scale": String(photoZoom) } : {}),
+        } as CSSProperties)
+      : undefined;
 
   const isPlanned = status === "planned" || !href;
 
@@ -148,9 +149,7 @@ export function PlatformOfferCard({
           is its label, not the only way in. This overlay is the single real link
           in the card: making the CTA a link too would put two links with the same
           destination in the a11y tree and in the tab order. */}
-      {isPlanned ? null : (
-        <Link className={styles.programTileOverlay} href={href} aria-label={title} />
-      )}
+      {isPlanned ? null : <Link className={styles.programTileOverlay} href={href} aria-label={title} />}
       <div
         className={styles.programTileBody}
         data-has-meta={meta ? "true" : "false"}

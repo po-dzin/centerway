@@ -18,9 +18,7 @@ vi.mock("@/lib/auth/adminClient", () => ({
       select: () => ({
         eq: () => ({
           maybeSingle: async () =>
-            table === "platform_users"
-              ? { data: { notification_channels: ["telegram"] } }
-              : { data: { tg_id: "555" } },
+            table === "platform_users" ? { data: { notification_channels: ["telegram"] } } : { data: { tg_id: "555" } },
         }),
       }),
     }),

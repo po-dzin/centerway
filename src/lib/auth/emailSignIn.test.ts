@@ -67,9 +67,9 @@ describe("classifySignInError", () => {
 
   it("reads a rate limit from the status before trusting any wording", () => {
     expect(classifySignInError({ message: "whatever it says today", status: 429 })).toBe("rate_limited");
-    expect(
-      classifySignInError({ message: "For security purposes, you can only request this after 51 seconds" })
-    ).toBe("rate_limited");
+    expect(classifySignInError({ message: "For security purposes, you can only request this after 51 seconds" })).toBe(
+      "rate_limited",
+    );
   });
 
   it("separates an expired code from a wrong one, since only one of them means try again", () => {

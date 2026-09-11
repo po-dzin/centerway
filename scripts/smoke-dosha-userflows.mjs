@@ -1,10 +1,9 @@
 import { chromium } from "@playwright/test";
 
-const baseUrl = (
-  process.env.SMOKE_UI_BASE_URL ||
-  process.env.SMOKE_BASE_URL ||
-  "http://localhost:8000"
-).replace(/\/+$/, "");
+const baseUrl = (process.env.SMOKE_UI_BASE_URL || process.env.SMOKE_BASE_URL || "http://localhost:8000").replace(
+  /\/+$/,
+  "",
+);
 
 const timeoutMs = Number.parseInt(process.env.SMOKE_TIMEOUT_MS || "20000", 10);
 const useMockApi = process.env.SMOKE_DOSHA_MOCK !== "0";

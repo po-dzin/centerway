@@ -36,7 +36,9 @@ const LIST_CAP = 40;
 
 const configPath = path.join(repoRoot, "design.drift.json");
 if (!fs.existsSync(configPath)) {
-  console.error("[ds-drift] no design.drift.json at repo root — this project does not carry the design meta-contract yet.");
+  console.error(
+    "[ds-drift] no design.drift.json at repo root — this project does not carry the design meta-contract yet.",
+  );
   process.exit(2);
 }
 const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
@@ -47,8 +49,7 @@ if (config.contract !== "ds-drift/1") {
 
 /* ---------- value normalisation ---------------------------------------- */
 
-const expandHex = (hex) =>
-  hex.length === 4 ? "#" + [...hex.slice(1)].map((c) => c + c).join("") : hex.toLowerCase();
+const expandHex = (hex) => (hex.length === 4 ? "#" + [...hex.slice(1)].map((c) => c + c).join("") : hex.toLowerCase());
 
 const normaliseValue = (raw) =>
   raw
@@ -62,7 +63,11 @@ const normaliseValue = (raw) =>
     .toLowerCase();
 
 const normaliseSelector = (raw) =>
-  raw.replace(/\s+/g, " ").replace(/\s*([,>{])\s*/g, "$1").replace(/"/g, "'").trim();
+  raw
+    .replace(/\s+/g, " ")
+    .replace(/\s*([,>{])\s*/g, "$1")
+    .replace(/"/g, "'")
+    .trim();
 
 /* ---------- readers ----------------------------------------------------- */
 
@@ -123,7 +128,8 @@ const readTokenJson = (source) => {
     if (!node || typeof node !== "object") return;
     for (const [key, value] of Object.entries(node)) {
       if (value && typeof value === "object") walk(value, [...trail, key]);
-      else if (key.startsWith("--")) out.set(`${source.scope ?? trail.join(".")}|${key}`, normaliseValue(String(value)));
+      else if (key.startsWith("--"))
+        out.set(`${source.scope ?? trail.join(".")}|${key}`, normaliseValue(String(value)));
     }
   };
   walk(root, []);
@@ -158,7 +164,12 @@ const readDocHexes = (source) => {
   return out;
 };
 
-const READERS = { css: readCss, "token-json": readTokenJson, "frontmatter-colors": readFrontmatterColors, "doc-hexes": readDocHexes };
+const READERS = {
+  css: readCss,
+  "token-json": readTokenJson,
+  "frontmatter-colors": readFrontmatterColors,
+  "doc-hexes": readDocHexes,
+};
 
 /* ---------- comparison -------------------------------------------------- */
 
@@ -206,7 +217,9 @@ const compare = (pair, left, right) => {
       const relation = aSubsetB ? "B adds" : bSubsetA ? "A adds" : "conflict";
       mismatched.push({ id, a: [...values].sort(), b: [...other].sort(), relation });
     }
-    mismatched.sort((x, y) => (x.relation === y.relation ? x.id.localeCompare(y.id) : x.relation === "conflict" ? -1 : 1));
+    mismatched.sort((x, y) =>
+      x.relation === y.relation ? x.id.localeCompare(y.id) : x.relation === "conflict" ? -1 : 1,
+    );
   }
   const conflicts = mismatched.filter((m) => m.relation === "conflict");
   return { onlyInA, onlyInB, mismatched, conflicts, sizeA: a.size, sizeB: b.size };
@@ -239,7 +252,9 @@ const stamp = new Date().toISOString().slice(0, 10);
 let commit = "unknown";
 try {
   commit = execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: repoRoot }).toString().trim();
-} catch { /* not a git checkout */ }
+} catch {
+  /* not a git checkout */
+}
 
 const roleLine = (name) => {
   const source = config.sources[name];
@@ -248,7 +263,10 @@ const roleLine = (name) => {
 };
 
 const capped = (list) => {
-  const shown = list.slice(0, LIST_CAP).map((x) => `\`${x}\``).join(" · ");
+  const shown = list
+    .slice(0, LIST_CAP)
+    .map((x) => `\`${x}\``)
+    .join(" · ");
   const rest = list.length - LIST_CAP;
   return rest > 0 ? `${shown} … +${rest} more` : shown;
 };
@@ -258,7 +276,9 @@ lines.push(`# DS drift — ${config.project}`);
 lines.push("");
 lines.push(`Contract \`${config.contract}\` · generated ${stamp} · commit \`${commit}\``);
 lines.push("");
-lines.push(`Mirror: ${config.mirror?.project ?? "—"}${config.mirror?.projectId ? ` \`${config.mirror.projectId}\`` : ""}`);
+lines.push(
+  `Mirror: ${config.mirror?.project ?? "—"}${config.mirror?.projectId ? ` \`${config.mirror.projectId}\`` : ""}`,
+);
 lines.push("");
 lines.push("This is a read-only probe. Nothing here has been synced, exported, or pushed.");
 lines.push("");
@@ -273,7 +293,7 @@ lines.push("|---|---|---|---|---|---|---|---|");
 for (const { pair, diff, drifted, gateFails } of results) {
   const oneSided = diff.mismatched.length - diff.conflicts.length;
   lines.push(
-    `| ${pair.name} | ${pair.mode ?? "tokens"} | ${pair.gate ? `gated${pair.gateOn === "conflict" ? " (conflict)" : ""}` : "watch"} | ${diff.conflicts.length} | ${oneSided} | ${diff.onlyInA.length} | ${diff.onlyInB.length} | ${gateFails ? "FAIL" : drifted ? "DRIFT" : "clean"} |`
+    `| ${pair.name} | ${pair.mode ?? "tokens"} | ${pair.gate ? `gated${pair.gateOn === "conflict" ? " (conflict)" : ""}` : "watch"} | ${diff.conflicts.length} | ${oneSided} | ${diff.onlyInA.length} | ${diff.onlyInB.length} | ${gateFails ? "FAIL" : drifted ? "DRIFT" : "clean"} |`,
   );
 }
 lines.push("");
@@ -294,18 +314,26 @@ for (const { pair, diff, drifted } of results) {
     if (!rows.length) return;
     lines.push(`### ${title} (${rows.length})`);
     lines.push("");
-    if (note) { lines.push(note); lines.push(""); }
+    if (note) {
+      lines.push(note);
+      lines.push("");
+    }
     lines.push(`| token | A · ${pair.from} | B · ${pair.to} |`);
     lines.push("|---|---|---|");
     for (const row of rows.slice(0, LIST_CAP)) {
-      lines.push(`| \`${row.id}\` | ${row.a.map((v) => `\`${v}\``).join(" / ")} | ${row.b.map((v) => `\`${v}\``).join(" / ")} |`);
+      lines.push(
+        `| \`${row.id}\` | ${row.a.map((v) => `\`${v}\``).join(" / ")} | ${row.b.map((v) => `\`${v}\``).join(" / ")} |`,
+      );
     }
     if (rows.length > LIST_CAP) lines.push(`\n… +${rows.length - LIST_CAP} more`);
     lines.push("");
   };
   table("Conflict — the two sides disagree about the value", diff.conflicts);
-  table("One-sided — one side declares a value the other never does", oneSided,
-    "Usually a scope the other side flattens away or does not model. Read before treating as drift.");
+  table(
+    "One-sided — one side declares a value the other never does",
+    oneSided,
+    "Usually a scope the other side flattens away or does not model. Read before treating as drift.",
+  );
   if (diff.onlyInA.length) {
     lines.push(`### Only in A · ${pair.from} (${diff.onlyInA.length})`);
     lines.push("");
@@ -333,7 +361,11 @@ if (WRITE && config.reportDir) {
 
 const gatedDrift = results.filter((r) => r.gateFails);
 if (GATE && gatedDrift.length) {
-  console.error(`\n[ds-drift] FAIL — ${gatedDrift.length} gated pair(s) drifted: ${gatedDrift.map((r) => r.pair.name).join(", ")}`);
+  console.error(
+    `\n[ds-drift] FAIL — ${gatedDrift.length} gated pair(s) drifted: ${gatedDrift.map((r) => r.pair.name).join(", ")}`,
+  );
   process.exit(1);
 }
-console.error(`\n[ds-drift] ${results.filter((r) => r.drifted).length}/${results.length} pair(s) drifted. Nothing was synced.`);
+console.error(
+  `\n[ds-drift] ${results.filter((r) => r.drifted).length}/${results.length} pair(s) drifted. Nothing was synced.`,
+);

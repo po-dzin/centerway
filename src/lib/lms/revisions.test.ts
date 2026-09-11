@@ -34,21 +34,39 @@ describe("история одного урока", () => {
      независимые истории разошлись бы в первый же перенос блока между уроками.
      «Версии этого урока» — фильтр по истории курса. */
   const lesson = (id: string, title: string, text: string) => ({
-    id, slug: id, title, order: 1,
+    id,
+    slug: id,
+    title,
+    order: 1,
     blocks: [{ id: `${id}-b1`, type: "rich_text" as const, content: [{ kind: "p" as const, text }] }],
   });
 
   const courseWith = (first: ReturnType<typeof lesson>, second: ReturnType<typeof lesson>) => ({
-    id: "c1", slug: "kurs", title: "Курс", programSlug: "kurs", brand: "centerway",
-    locale: "uk", translationGroupId: "g1", status: "draft", version: 1,
-    schedule: { mode: "open" }, entitlementProductCodes: [],
+    id: "c1",
+    slug: "kurs",
+    title: "Курс",
+    programSlug: "kurs",
+    brand: "centerway",
+    locale: "uk",
+    translationGroupId: "g1",
+    status: "draft",
+    version: 1,
+    schedule: { mode: "open" },
+    entitlementProductCodes: [],
     modules: [{ id: "m1", slug: "m-1", title: "Модуль", order: 1, lessons: [first, { ...second, order: 2 }] }],
   });
 
   const revisionRow = (n: number, content: unknown) => ({
-    id: `r${n}`, course_id: "c1", revision_number: n, kind: "autosave_checkpoint",
-    content, content_hash: "0".repeat(64), label: null, created_by: null,
-    parent_revision_id: null, source_revision_id: null,
+    id: `r${n}`,
+    course_id: "c1",
+    revision_number: n,
+    kind: "autosave_checkpoint",
+    content,
+    content_hash: "0".repeat(64),
+    label: null,
+    created_by: null,
+    parent_revision_id: null,
+    source_revision_id: null,
     created_at: `2026-09-0${n}T00:00:00.000Z`,
   });
 
@@ -63,7 +81,10 @@ describe("история одного урока", () => {
         // Змінився ТІЛЬКИ другий урок.
         revisionRow(2, courseWith(a1, lesson("l2", "Урок 2", "Другий, змінений"))),
         // Тепер змінився перший.
-        revisionRow(3, courseWith(lesson("l1", "Урок 1", "Перший, змінений"), lesson("l2", "Урок 2", "Другий, змінений"))),
+        revisionRow(
+          3,
+          courseWith(lesson("l1", "Урок 1", "Перший, змінений"), lesson("l2", "Урок 2", "Другий, змінений")),
+        ),
       ],
       platform_users: [],
     });

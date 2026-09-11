@@ -23,19 +23,19 @@ const Body = z.object({
  * `withRoute`; nothing here catches.
  */
 export const POST = withRoute("admin.access.roles", async (req) => {
-    const session = await requireAdminSession(req);
-    if (!session) return unauthorizedResponse();
-    // `support` may read the role map and hand out course access, but handing
-    // out roles — including admin — stays with admin.
-    if (session.role !== "admin") return forbiddenResponse();
+  const session = await requireAdminSession(req);
+  if (!session) return unauthorizedResponse();
+  // `support` may read the role map and hand out course access, but handing
+  // out roles — including admin — stays with admin.
+  if (session.role !== "admin") return forbiddenResponse();
 
-    const parsed = await parseBody(req, Body);
-    if (!parsed.ok) return parsed.response;
+  const parsed = await parseBody(req, Body);
+  if (!parsed.ok) return parsed.response;
 
-    const result = await setRole({ email: parsed.data.email, role: parsed.data.role, actorId: session.user.id });
-    return NextResponse.json({
-        email: result.account.email,
-        previous: result.previous,
-        role: result.role,
-    });
+  const result = await setRole({ email: parsed.data.email, role: parsed.data.role, actorId: session.user.id });
+  return NextResponse.json({
+    email: result.account.email,
+    previous: result.previous,
+    role: result.role,
+  });
 });

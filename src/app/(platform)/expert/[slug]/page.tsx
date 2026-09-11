@@ -31,11 +31,7 @@ async function listedAuthor(slug: string) {
   return author && author.listed === true ? author : null;
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const author = await listedAuthor(slug);
   if (!author) return {};

@@ -112,9 +112,7 @@ export function wfpCallbackOutcome(payload: Record<string, string>): WfpCallback
    undifferentiated "not paid", which the webhook then wrote over a paid order.
    Call `wfpCallbackOutcome` and handle what it actually says. */
 
-export function wfpEventTypeFromStatus(
-  payload: Record<string, string>
-): "payment_paid" | "payment_failed" | null {
+export function wfpEventTypeFromStatus(payload: Record<string, string>): "payment_paid" | "payment_failed" | null {
   const outcome = wfpCallbackOutcome(payload);
   if (outcome === "approved") return "payment_paid";
   if (outcome === "pending") return null;
@@ -177,10 +175,7 @@ export function statusesProtectedFrom(outcome: WfpCallbackOutcome): OrderStatus[
  * out of the database, where the column is free text, and a value this function
  * does not recognise must not be treated as an empty one.
  */
-export function nextOrderStatus(
-  current: string | null | undefined,
-  outcome: WfpCallbackOutcome
-): OrderStatus | null {
+export function nextOrderStatus(current: string | null | undefined, outcome: WfpCallbackOutcome): OrderStatus | null {
   const target = orderStatusForOutcome(outcome);
   if (!target) return null;
 
@@ -245,7 +240,7 @@ export type WfpAcceptResponse = {
  */
 export function buildWfpAcceptResponse(
   orderReference: string,
-  nowSeconds: number = Math.floor(Date.now() / 1000)
+  nowSeconds: number = Math.floor(Date.now() / 1000),
 ): WfpAcceptResponse | null {
   const secret = process.env.WFP_SECRET_KEY;
   if (!secret) return null;

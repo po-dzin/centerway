@@ -191,10 +191,10 @@ export function ensureHighlightStyles(): void {
   try {
     const sheet = new CSSStyleSheet();
     sheet.insertRule(
-      `::highlight(${HIGHLIGHT_NAME}) { background-color: color-mix(in srgb, var(--cw-platform-accent) 18%, transparent); }`
+      `::highlight(${HIGHLIGHT_NAME}) { background-color: color-mix(in srgb, var(--cw-platform-accent) 18%, transparent); }`,
     );
     sheet.insertRule(
-      `::highlight(${HIGHLIGHT_NOTE_NAME}) { background-color: color-mix(in srgb, var(--cw-platform-accent) 30%, transparent); text-decoration: underline; text-decoration-color: var(--cw-platform-accent); text-underline-offset: 0.22em; }`
+      `::highlight(${HIGHLIGHT_NOTE_NAME}) { background-color: color-mix(in srgb, var(--cw-platform-accent) 30%, transparent); text-decoration: underline; text-decoration-color: var(--cw-platform-accent); text-underline-offset: 0.22em; }`,
     );
     document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
   } catch {

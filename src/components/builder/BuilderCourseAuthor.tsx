@@ -84,7 +84,16 @@ export function BuilderCourseAuthor({
     setBusy(false);
     if (result.ok) {
       setRead((prev) =>
-        prev.data ? { ...prev, data: { ...prev.data, linkedAuthor: result.data.linkedAuthor, linkedAuthorId: result.data.linkedAuthorId } } : prev
+        prev.data
+          ? {
+              ...prev,
+              data: {
+                ...prev.data,
+                linkedAuthor: result.data.linkedAuthor,
+                linkedAuthorId: result.data.linkedAuthorId,
+              },
+            }
+          : prev,
       );
       toast.success(action === "attach-self" ? "Профіль прив’язано до курсу" : "Профіль відв’язано від курсу");
     } else toast.error("Не вдалося змінити автора курсу");
@@ -131,7 +140,10 @@ export function BuilderCourseAuthor({
                   {linked.role ? <p className={styles.authorPreviewRole}>{linked.role}</p> : null}
                 </div>
                 {completion ? (
-                  <span className={styles.authorCompletion} aria-label={`Профіль заповнено на ${completion.percent} відсотків`}>
+                  <span
+                    className={styles.authorCompletion}
+                    aria-label={`Профіль заповнено на ${completion.percent} відсотків`}
+                  >
                     Профіль {completion.percent}%
                   </span>
                 ) : null}
@@ -144,7 +156,12 @@ export function BuilderCourseAuthor({
                   </Link>
                 ) : null}
                 {linked.listed ? (
-                  <Link className={styles.authorPreviewCue} href={`/expert/${linked.slug}`} target="_blank" rel="noopener noreferrer">
+                  <Link
+                    className={styles.authorPreviewCue}
+                    href={`/expert/${linked.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     Переглянути профіль <Icon name="arrow-right" size={16} />
                   </Link>
                 ) : null}
@@ -152,9 +169,7 @@ export function BuilderCourseAuthor({
             </div>
           </div>
         ) : (
-          <p className={styles.readOnlyNote}>
-            Автора не прив’язано — блок «Автор» на сторінці курсу не з’явиться.
-          </p>
+          <p className={styles.readOnlyNote}>Автора не прив’язано — блок «Автор» на сторінці курсу не з’явиться.</p>
         )}
 
         {linked && !linked.listed ? (
@@ -166,14 +181,19 @@ export function BuilderCourseAuthor({
           <div className={styles.authorLinkActions}>
             {data.ownAuthor ? (
               !isSelf ? (
-                <button className={styles.quietAction} type="button" disabled={busy} onClick={() => void apply("attach-self")}>
+                <button
+                  className={styles.quietAction}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void apply("attach-self")}
+                >
                   {linked ? "Показувати мій профіль" : "Прив’язати свій профіль"}
                 </button>
               ) : null
             ) : (
               <p className={styles.readOnlyNote}>
-                У вас ще немає профілю автора. <Link href="/profile#author">Створіть його в кабінеті</Link>, щоб показувати
-                себе автором цього й наступних курсів.
+                У вас ще немає профілю автора. <Link href="/profile#author">Створіть його в кабінеті</Link>, щоб
+                показувати себе автором цього й наступних курсів.
               </p>
             )}
             {isSelf ? (

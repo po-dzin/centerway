@@ -99,7 +99,11 @@ export function PlatformCatalogBrowser({
      TWO SOURCES, ONE ANSWER. `fromAddress` is where the reader ARRIVED;
      `edited` is what they have done since, and it wins the moment it exists —
      including when it is empty, which is what «Показати всі» sets. */
-  const hydrated = useSyncExternalStore(subscribeNothing, () => true, () => false);
+  const hydrated = useSyncExternalStore(
+    subscribeNothing,
+    () => true,
+    () => false,
+  );
   const fromAddress = useMemo(
     () => (hydrated ? readCatalogQuery(new URLSearchParams(window.location.search)) : EMPTY_CATALOG_QUERY),
     [hydrated],
@@ -123,10 +127,7 @@ export function PlatformCatalogBrowser({
   }, [hydrated, query]);
 
   const facets = useMemo(() => catalogFacets(entries.map((entry) => entry.filter)), [entries]);
-  const shown = useMemo(
-    () => filterCatalog(entries, query, (entry) => entry.filter),
-    [entries, query],
-  );
+  const shown = useMemo(() => filterCatalog(entries, query, (entry) => entry.filter), [entries, query]);
 
   const narrowed = !isCatalogQueryEmpty(query);
 
@@ -146,12 +147,7 @@ export function PlatformCatalogBrowser({
 
   return (
     <div className={offerStyles.sectionFlow}>
-      <PlatformCatalogFilter
-        query={query}
-        onChange={setEdited}
-        facets={facets}
-        currency={currencyMark(currency)}
-      />
+      <PlatformCatalogFilter query={query} onChange={setEdited} facets={facets} currency={currencyMark(currency)} />
 
       {narrowed ? (
         <p className={styles.summary} role="status">

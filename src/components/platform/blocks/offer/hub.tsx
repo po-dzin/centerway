@@ -29,7 +29,7 @@ export async function HubMini() {
     <PlatformBlock
       id="mini-courses"
       label="Міні-курси"
-      title="М&apos;який вхід без довгого зобов&apos;язання"
+      title="М'який вхід без довгого зобов'язання"
       lead="Кілька днів практики, щоб спробувати підхід без довгого зобов'язання."
       headActions={<PlatformBlockLink href="/programs" label="Усі матеріали" />}
     >

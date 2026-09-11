@@ -9,14 +9,8 @@
       "semantic_role": "orientation",
       "semantic_family": "orientation",
       "user_question": "Куда я попал и какой следующий шаг?",
-      "required_fields": [
-        "title",
-        "lead",
-        "primary_cta"
-      ],
-      "allowed_actions": [
-        "start_or_continue"
-      ],
+      "required_fields": ["title", "lead", "primary_cta"],
+      "allowed_actions": ["start_or_continue"],
       "route_boundary": "isolated funnel route",
       "mode": "consult",
       "recipe_id": "recipe.funnel.hero.v1",
@@ -30,13 +24,8 @@
         "boundary-block-component"
       ],
       "renderer": "funnel.hero",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.guide"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.guide"],
+      "layout_variants": ["default"],
       "default_props": {
         "ctaPrimaryLabel": "Записатися",
         "route": "consult"
@@ -50,30 +39,17 @@
       "semantic_role": "method",
       "semantic_family": "orientation",
       "user_question": "Как устроен маршрут и где я сейчас?",
-      "required_fields": [
-        "route_label",
-        "current_step"
-      ],
-      "allowed_actions": [
-        "orient"
-      ],
+      "required_fields": ["route_label", "current_step"],
+      "allowed_actions": ["orient"],
       "route_boundary": "isolated funnel route",
       "mode": "consult",
       "recipe_id": "recipe.funnel.route-framing.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "section-shell",
-        "stage-card"
-      ],
+      "component_families": ["section-shell", "stage-card"],
       "renderer": "funnel.route-framing",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.guide"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.guide"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "consult.route-framing",
         "route": "consult"
@@ -87,30 +63,17 @@
       "semantic_role": "offer",
       "semantic_family": "offer_route",
       "user_question": "Что это за оффер и для кого он?",
-      "required_fields": [
-        "definition",
-        "fit"
-      ],
-      "allowed_actions": [
-        "evaluate_fit"
-      ],
+      "required_fields": ["definition", "fit"],
+      "allowed_actions": ["evaluate_fit"],
       "route_boundary": "isolated funnel route",
       "mode": "consult",
       "recipe_id": "recipe.funnel.offer-definition.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "section-shell",
-        "proof-card"
-      ],
+      "component_families": ["section-shell", "proof-card"],
       "renderer": "funnel.offer-definition",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.guide"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.guide"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "consult.offer-definition",
         "route": "consult"
@@ -124,28 +87,17 @@
       "semantic_role": "offer",
       "semantic_family": "offer_route",
       "user_question": "Что конкретно входит в предложение?",
-      "required_fields": [
-        "included_items"
-      ],
-      "allowed_actions": [
-        "understand_scope"
-      ],
+      "required_fields": ["included_items"],
+      "allowed_actions": ["understand_scope"],
       "route_boundary": "isolated funnel route",
       "mode": "consult",
       "recipe_id": "recipe.funnel.offer-includes.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "section-shell"
-      ],
+      "component_families": ["section-shell"],
       "renderer": "funnel.offer-includes",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.method"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.method"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "consult.offer-includes",
         "route": "consult"
@@ -159,31 +111,17 @@
       "semantic_role": "offer",
       "semantic_family": "offer_route",
       "user_question": "Сколько это длится, в каком формате и сколько стоит?",
-      "required_fields": [
-        "format",
-        "duration",
-        "price_or_commitment"
-      ],
-      "allowed_actions": [
-        "assess_commitment"
-      ],
+      "required_fields": ["format", "duration", "price_or_commitment"],
+      "allowed_actions": ["assess_commitment"],
       "route_boundary": "isolated funnel route",
       "mode": "consult",
       "recipe_id": "recipe.funnel.format-price.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
-      "component_families": [
-        "section-shell",
-        "expectation-block-component"
-      ],
+      "component_families": ["section-shell", "expectation-block-component"],
       "renderer": "funnel.format-price",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.trust"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.trust"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "consult.format-duration-price",
         "route": "consult"
@@ -197,29 +135,17 @@
       "semantic_role": "method",
       "semantic_family": "method_explanation",
       "user_question": "Как это работает по шагам?",
-      "required_fields": [
-        "steps"
-      ],
-      "allowed_actions": [
-        "understand_method"
-      ],
+      "required_fields": ["steps"],
+      "allowed_actions": ["understand_method"],
       "route_boundary": "isolated funnel route",
       "mode": "consult",
       "recipe_id": "recipe.funnel.how-it-works.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "section-shell",
-        "stage-card"
-      ],
+      "component_families": ["section-shell", "stage-card"],
       "renderer": "funnel.how-it-works",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.method"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.method"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "consult.how-it-works",
         "route": "consult"
@@ -233,29 +159,17 @@
       "semantic_role": "proof",
       "semantic_family": "trust_proof_expectation",
       "user_question": "Почему этому можно доверять?",
-      "required_fields": [
-        "proof_points"
-      ],
-      "allowed_actions": [
-        "validate_trust"
-      ],
+      "required_fields": ["proof_points"],
+      "allowed_actions": ["validate_trust"],
       "route_boundary": "isolated funnel route",
       "mode": "consult",
       "recipe_id": "recipe.funnel.proof.v1",
       "recipe_version": "1.0.0",
       "action_role": "support",
-      "component_families": [
-        "proof-action-button",
-        "support-action-button"
-      ],
+      "component_families": ["proof-action-button", "support-action-button"],
       "renderer": "funnel.proof",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.trust"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.trust"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "consult.proof-block",
         "route": "consult"
@@ -269,29 +183,17 @@
       "semantic_role": "boundary",
       "semantic_family": "boundary_caution",
       "user_question": "Где границы метода и что важно учитывать?",
-      "required_fields": [
-        "limits",
-        "safety_note"
-      ],
-      "allowed_actions": [
-        "set_boundaries"
-      ],
+      "required_fields": ["limits", "safety_note"],
+      "allowed_actions": ["set_boundaries"],
       "route_boundary": "isolated funnel route",
       "mode": "consult",
       "recipe_id": "recipe.funnel.boundary.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "boundary-block-component"
-      ],
+      "component_families": ["boundary-block-component"],
       "renderer": "funnel.boundary",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.boundary"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.boundary"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "consult.boundary-block",
         "route": "consult"
@@ -305,28 +207,17 @@
       "semantic_role": "progress",
       "semantic_family": "progress_pathway",
       "user_question": "Какой следующий шаг после текущего блока?",
-      "required_fields": [
-        "primary_action"
-      ],
-      "allowed_actions": [
-        "continue"
-      ],
+      "required_fields": ["primary_action"],
+      "allowed_actions": ["continue"],
       "route_boundary": "isolated funnel route",
       "mode": "consult",
       "recipe_id": "recipe.funnel.next-step.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
-      "component_families": [
-        "route-action-button"
-      ],
+      "component_families": ["route-action-button"],
       "renderer": "funnel.next-step",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.guide"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.guide"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "consult.next-step",
         "route": "consult"
@@ -340,14 +231,8 @@
       "semantic_role": "orientation",
       "semantic_family": "orientation",
       "user_question": "Куда я попал и какой следующий шаг?",
-      "required_fields": [
-        "title",
-        "lead",
-        "primary_cta"
-      ],
-      "allowed_actions": [
-        "start_or_continue"
-      ],
+      "required_fields": ["title", "lead", "primary_cta"],
+      "allowed_actions": ["start_or_continue"],
       "route_boundary": "isolated funnel route",
       "mode": "detox",
       "recipe_id": "recipe.funnel.hero.v1",
@@ -361,13 +246,8 @@
         "boundary-block-component"
       ],
       "renderer": "funnel.hero",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.guide"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.guide"],
+      "layout_variants": ["default"],
       "default_props": {
         "ctaPrimaryLabel": "Записатися",
         "route": "detox"
@@ -381,30 +261,17 @@
       "semantic_role": "method",
       "semantic_family": "orientation",
       "user_question": "Как устроен маршрут и где я сейчас?",
-      "required_fields": [
-        "route_label",
-        "current_step"
-      ],
-      "allowed_actions": [
-        "orient"
-      ],
+      "required_fields": ["route_label", "current_step"],
+      "allowed_actions": ["orient"],
       "route_boundary": "isolated funnel route",
       "mode": "detox",
       "recipe_id": "recipe.funnel.route-framing.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "section-shell",
-        "stage-card"
-      ],
+      "component_families": ["section-shell", "stage-card"],
       "renderer": "funnel.route-framing",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.guide"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.guide"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "detox.route-framing",
         "route": "detox"
@@ -418,30 +285,17 @@
       "semantic_role": "offer",
       "semantic_family": "offer_route",
       "user_question": "Что это за оффер и для кого он?",
-      "required_fields": [
-        "definition",
-        "fit"
-      ],
-      "allowed_actions": [
-        "evaluate_fit"
-      ],
+      "required_fields": ["definition", "fit"],
+      "allowed_actions": ["evaluate_fit"],
       "route_boundary": "isolated funnel route",
       "mode": "detox",
       "recipe_id": "recipe.funnel.offer-definition.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "section-shell",
-        "proof-card"
-      ],
+      "component_families": ["section-shell", "proof-card"],
       "renderer": "funnel.offer-definition",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.guide"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.guide"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "detox.offer-definition",
         "route": "detox"
@@ -455,28 +309,17 @@
       "semantic_role": "offer",
       "semantic_family": "offer_route",
       "user_question": "Что конкретно входит в предложение?",
-      "required_fields": [
-        "included_items"
-      ],
-      "allowed_actions": [
-        "understand_scope"
-      ],
+      "required_fields": ["included_items"],
+      "allowed_actions": ["understand_scope"],
       "route_boundary": "isolated funnel route",
       "mode": "detox",
       "recipe_id": "recipe.funnel.offer-includes.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "section-shell"
-      ],
+      "component_families": ["section-shell"],
       "renderer": "funnel.offer-includes",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.method"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.method"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "detox.offer-includes",
         "route": "detox"
@@ -490,31 +333,17 @@
       "semantic_role": "offer",
       "semantic_family": "offer_route",
       "user_question": "Сколько это длится, в каком формате и сколько стоит?",
-      "required_fields": [
-        "format",
-        "duration",
-        "price_or_commitment"
-      ],
-      "allowed_actions": [
-        "assess_commitment"
-      ],
+      "required_fields": ["format", "duration", "price_or_commitment"],
+      "allowed_actions": ["assess_commitment"],
       "route_boundary": "isolated funnel route",
       "mode": "detox",
       "recipe_id": "recipe.funnel.format-price.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
-      "component_families": [
-        "section-shell",
-        "expectation-block-component"
-      ],
+      "component_families": ["section-shell", "expectation-block-component"],
       "renderer": "funnel.format-price",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.trust"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.trust"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "detox.format-duration-price",
         "route": "detox"
@@ -528,29 +357,17 @@
       "semantic_role": "method",
       "semantic_family": "method_explanation",
       "user_question": "Как это работает по шагам?",
-      "required_fields": [
-        "steps"
-      ],
-      "allowed_actions": [
-        "understand_method"
-      ],
+      "required_fields": ["steps"],
+      "allowed_actions": ["understand_method"],
       "route_boundary": "isolated funnel route",
       "mode": "detox",
       "recipe_id": "recipe.funnel.how-it-works.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "section-shell",
-        "stage-card"
-      ],
+      "component_families": ["section-shell", "stage-card"],
       "renderer": "funnel.how-it-works",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.method"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.method"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "detox.how-it-works",
         "route": "detox"
@@ -564,29 +381,17 @@
       "semantic_role": "proof",
       "semantic_family": "trust_proof_expectation",
       "user_question": "Почему этому можно доверять?",
-      "required_fields": [
-        "proof_points"
-      ],
-      "allowed_actions": [
-        "validate_trust"
-      ],
+      "required_fields": ["proof_points"],
+      "allowed_actions": ["validate_trust"],
       "route_boundary": "isolated funnel route",
       "mode": "detox",
       "recipe_id": "recipe.funnel.proof.v1",
       "recipe_version": "1.0.0",
       "action_role": "support",
-      "component_families": [
-        "proof-action-button",
-        "support-action-button"
-      ],
+      "component_families": ["proof-action-button", "support-action-button"],
       "renderer": "funnel.proof",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.trust"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.trust"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "detox.proof-block",
         "route": "detox"
@@ -600,29 +405,17 @@
       "semantic_role": "boundary",
       "semantic_family": "boundary_caution",
       "user_question": "Где границы метода и что важно учитывать?",
-      "required_fields": [
-        "limits",
-        "safety_note"
-      ],
-      "allowed_actions": [
-        "set_boundaries"
-      ],
+      "required_fields": ["limits", "safety_note"],
+      "allowed_actions": ["set_boundaries"],
       "route_boundary": "isolated funnel route",
       "mode": "detox",
       "recipe_id": "recipe.funnel.boundary.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "boundary-block-component"
-      ],
+      "component_families": ["boundary-block-component"],
       "renderer": "funnel.boundary",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.boundary"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.boundary"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "detox.boundary-block",
         "route": "detox"
@@ -636,28 +429,17 @@
       "semantic_role": "progress",
       "semantic_family": "progress_pathway",
       "user_question": "Какой следующий шаг после текущего блока?",
-      "required_fields": [
-        "primary_action"
-      ],
-      "allowed_actions": [
-        "continue"
-      ],
+      "required_fields": ["primary_action"],
+      "allowed_actions": ["continue"],
       "route_boundary": "isolated funnel route",
       "mode": "detox",
       "recipe_id": "recipe.funnel.next-step.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
-      "component_families": [
-        "route-action-button"
-      ],
+      "component_families": ["route-action-button"],
       "renderer": "funnel.next-step",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.guide"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.guide"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "detox.next-step",
         "route": "detox"
@@ -671,14 +453,8 @@
       "semantic_role": "orientation",
       "semantic_family": "orientation",
       "user_question": "Куда я попал и какой следующий шаг?",
-      "required_fields": [
-        "title",
-        "lead",
-        "primary_cta"
-      ],
-      "allowed_actions": [
-        "start_or_continue"
-      ],
+      "required_fields": ["title", "lead", "primary_cta"],
+      "allowed_actions": ["start_or_continue"],
       "route_boundary": "isolated funnel route",
       "mode": "herbs",
       "recipe_id": "recipe.funnel.hero.v1",
@@ -692,13 +468,8 @@
         "boundary-block-component"
       ],
       "renderer": "funnel.hero",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.guide"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.guide"],
+      "layout_variants": ["default"],
       "default_props": {
         "ctaPrimaryLabel": "Записатися",
         "route": "herbs"
@@ -712,30 +483,17 @@
       "semantic_role": "method",
       "semantic_family": "orientation",
       "user_question": "Как устроен маршрут и где я сейчас?",
-      "required_fields": [
-        "route_label",
-        "current_step"
-      ],
-      "allowed_actions": [
-        "orient"
-      ],
+      "required_fields": ["route_label", "current_step"],
+      "allowed_actions": ["orient"],
       "route_boundary": "isolated funnel route",
       "mode": "herbs",
       "recipe_id": "recipe.funnel.route-framing.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "section-shell",
-        "stage-card"
-      ],
+      "component_families": ["section-shell", "stage-card"],
       "renderer": "funnel.route-framing",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.guide"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.guide"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "herbs.route-framing",
         "route": "herbs"
@@ -749,30 +507,17 @@
       "semantic_role": "offer",
       "semantic_family": "offer_route",
       "user_question": "Что это за оффер и для кого он?",
-      "required_fields": [
-        "definition",
-        "fit"
-      ],
-      "allowed_actions": [
-        "evaluate_fit"
-      ],
+      "required_fields": ["definition", "fit"],
+      "allowed_actions": ["evaluate_fit"],
       "route_boundary": "isolated funnel route",
       "mode": "herbs",
       "recipe_id": "recipe.funnel.offer-definition.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "section-shell",
-        "proof-card"
-      ],
+      "component_families": ["section-shell", "proof-card"],
       "renderer": "funnel.offer-definition",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.guide"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.guide"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "herbs.offer-definition",
         "route": "herbs"
@@ -786,28 +531,17 @@
       "semantic_role": "offer",
       "semantic_family": "offer_route",
       "user_question": "Что конкретно входит в предложение?",
-      "required_fields": [
-        "included_items"
-      ],
-      "allowed_actions": [
-        "understand_scope"
-      ],
+      "required_fields": ["included_items"],
+      "allowed_actions": ["understand_scope"],
       "route_boundary": "isolated funnel route",
       "mode": "herbs",
       "recipe_id": "recipe.funnel.offer-includes.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "section-shell"
-      ],
+      "component_families": ["section-shell"],
       "renderer": "funnel.offer-includes",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.method"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.method"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "herbs.offer-includes",
         "route": "herbs"
@@ -821,31 +555,17 @@
       "semantic_role": "offer",
       "semantic_family": "offer_route",
       "user_question": "Сколько это длится, в каком формате и сколько стоит?",
-      "required_fields": [
-        "format",
-        "duration",
-        "price_or_commitment"
-      ],
-      "allowed_actions": [
-        "assess_commitment"
-      ],
+      "required_fields": ["format", "duration", "price_or_commitment"],
+      "allowed_actions": ["assess_commitment"],
       "route_boundary": "isolated funnel route",
       "mode": "herbs",
       "recipe_id": "recipe.funnel.format-price.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
-      "component_families": [
-        "section-shell",
-        "expectation-block-component"
-      ],
+      "component_families": ["section-shell", "expectation-block-component"],
       "renderer": "funnel.format-price",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.trust"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.trust"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "herbs.format-duration-price",
         "route": "herbs"
@@ -859,29 +579,17 @@
       "semantic_role": "method",
       "semantic_family": "method_explanation",
       "user_question": "Как это работает по шагам?",
-      "required_fields": [
-        "steps"
-      ],
-      "allowed_actions": [
-        "understand_method"
-      ],
+      "required_fields": ["steps"],
+      "allowed_actions": ["understand_method"],
       "route_boundary": "isolated funnel route",
       "mode": "herbs",
       "recipe_id": "recipe.funnel.how-it-works.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "section-shell",
-        "stage-card"
-      ],
+      "component_families": ["section-shell", "stage-card"],
       "renderer": "funnel.how-it-works",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.method"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.method"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "herbs.how-it-works",
         "route": "herbs"
@@ -895,29 +603,17 @@
       "semantic_role": "proof",
       "semantic_family": "trust_proof_expectation",
       "user_question": "Почему этому можно доверять?",
-      "required_fields": [
-        "proof_points"
-      ],
-      "allowed_actions": [
-        "validate_trust"
-      ],
+      "required_fields": ["proof_points"],
+      "allowed_actions": ["validate_trust"],
       "route_boundary": "isolated funnel route",
       "mode": "herbs",
       "recipe_id": "recipe.funnel.proof.v1",
       "recipe_version": "1.0.0",
       "action_role": "support",
-      "component_families": [
-        "proof-action-button",
-        "support-action-button"
-      ],
+      "component_families": ["proof-action-button", "support-action-button"],
       "renderer": "funnel.proof",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.trust"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.trust"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "herbs.proof-block",
         "route": "herbs"
@@ -931,29 +627,17 @@
       "semantic_role": "boundary",
       "semantic_family": "boundary_caution",
       "user_question": "Где границы метода и что важно учитывать?",
-      "required_fields": [
-        "limits",
-        "safety_note"
-      ],
-      "allowed_actions": [
-        "set_boundaries"
-      ],
+      "required_fields": ["limits", "safety_note"],
+      "allowed_actions": ["set_boundaries"],
       "route_boundary": "isolated funnel route",
       "mode": "herbs",
       "recipe_id": "recipe.funnel.boundary.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "boundary-block-component"
-      ],
+      "component_families": ["boundary-block-component"],
       "renderer": "funnel.boundary",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.boundary"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.boundary"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "herbs.boundary-block",
         "route": "herbs"
@@ -967,28 +651,17 @@
       "semantic_role": "progress",
       "semantic_family": "progress_pathway",
       "user_question": "Какой следующий шаг после текущего блока?",
-      "required_fields": [
-        "primary_action"
-      ],
-      "allowed_actions": [
-        "continue"
-      ],
+      "required_fields": ["primary_action"],
+      "allowed_actions": ["continue"],
       "route_boundary": "isolated funnel route",
       "mode": "herbs",
       "recipe_id": "recipe.funnel.next-step.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
-      "component_families": [
-        "route-action-button"
-      ],
+      "component_families": ["route-action-button"],
       "renderer": "funnel.next-step",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.guide"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.guide"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "herbs.next-step",
         "route": "herbs"
@@ -1002,29 +675,17 @@
       "semantic_role": "orientation",
       "semantic_family": "orientation",
       "user_question": "На каком шаге процесса я нахожусь?",
-      "required_fields": [
-        "current_step"
-      ],
-      "allowed_actions": [
-        "orient"
-      ],
+      "required_fields": ["current_step"],
+      "allowed_actions": ["orient"],
       "route_boundary": "platform utility route",
       "mode": "lesson",
       "recipe_id": "recipe.lesson.pilot.header.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "page-shell",
-        "section-shell"
-      ],
+      "component_families": ["page-shell", "section-shell"],
       "renderer": "lesson.pilot.header",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.progress"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.progress"],
+      "layout_variants": ["default"],
       "default_props": {
         "title": "Модуль 1 · Ритм відновлення",
         "subtitle": "Коротка практика для стабілізації нервової системи і фокусу"
@@ -1038,29 +699,17 @@
       "semantic_role": "method",
       "semantic_family": "method_explanation",
       "user_question": "Что конкретно делать в практическом блоке?",
-      "required_fields": [
-        "practice_instruction"
-      ],
-      "allowed_actions": [
-        "practice"
-      ],
+      "required_fields": ["practice_instruction"],
+      "allowed_actions": ["practice"],
       "route_boundary": "platform utility route",
       "mode": "lesson",
       "recipe_id": "recipe.lesson.pilot.practice.v1",
       "recipe_version": "1.0.0",
       "action_role": "support",
-      "component_families": [
-        "practice-card",
-        "support-card"
-      ],
+      "component_families": ["practice-card", "support-card"],
       "renderer": "lesson.pilot.practice",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.method"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.method"],
+      "layout_variants": ["default"],
       "default_props": {
         "steps": [
           "3 хвилини: дихання 4-6 у спокійному темпі",
@@ -1079,29 +728,17 @@
       "semantic_role": "progress",
       "semantic_family": "progress_pathway",
       "user_question": "Какой следующий шаг после текущего блока?",
-      "required_fields": [
-        "primary_action"
-      ],
-      "allowed_actions": [
-        "continue"
-      ],
+      "required_fields": ["primary_action"],
+      "allowed_actions": ["continue"],
       "route_boundary": "platform utility route",
       "mode": "lesson",
       "recipe_id": "recipe.lesson.pilot.nextstep.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
-      "component_families": [
-        "route-action-button",
-        "next-step-banner"
-      ],
+      "component_families": ["route-action-button", "next-step-banner"],
       "renderer": "lesson.pilot.nextstep",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.guide"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.guide"],
+      "layout_variants": ["default"],
       "default_props": {
         "nextTitle": "Наступний крок",
         "nextText": "Повторіть практику 3 дні поспіль і зафіксуйте зміни у сні та енергії",
@@ -1117,32 +754,17 @@
       "semantic_role": "route-map",
       "semantic_family": "progress_pathway",
       "user_question": "Какой маршрут выбрать дальше?",
-      "required_fields": [
-        "routes",
-        "recommended_next_step"
-      ],
-      "allowed_actions": [
-        "choose_route"
-      ],
+      "required_fields": ["routes", "recommended_next_step"],
+      "allowed_actions": ["choose_route"],
       "route_boundary": "isolated funnel route",
       "mode": "consult",
       "recipe_id": "recipe.funnel.route-map.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "section-shell",
-        "route-nav",
-        "path-card",
-        "route-node"
-      ],
+      "component_families": ["section-shell", "route-nav", "path-card", "route-node"],
       "renderer": "funnel.route-map",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.guide"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.guide"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "consult.route-map",
         "route": "consult"
@@ -1156,32 +778,17 @@
       "semantic_role": "route-map",
       "semantic_family": "progress_pathway",
       "user_question": "Какой маршрут выбрать дальше?",
-      "required_fields": [
-        "routes",
-        "recommended_next_step"
-      ],
-      "allowed_actions": [
-        "choose_route"
-      ],
+      "required_fields": ["routes", "recommended_next_step"],
+      "allowed_actions": ["choose_route"],
       "route_boundary": "isolated funnel route",
       "mode": "detox",
       "recipe_id": "recipe.funnel.route-map.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "section-shell",
-        "route-nav",
-        "path-card",
-        "route-node"
-      ],
+      "component_families": ["section-shell", "route-nav", "path-card", "route-node"],
       "renderer": "funnel.route-map",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.guide"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.guide"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "detox.route-map",
         "route": "detox"
@@ -1195,32 +802,17 @@
       "semantic_role": "route-map",
       "semantic_family": "progress_pathway",
       "user_question": "Какой маршрут выбрать дальше?",
-      "required_fields": [
-        "routes",
-        "recommended_next_step"
-      ],
-      "allowed_actions": [
-        "choose_route"
-      ],
+      "required_fields": ["routes", "recommended_next_step"],
+      "allowed_actions": ["choose_route"],
       "route_boundary": "isolated funnel route",
       "mode": "herbs",
       "recipe_id": "recipe.funnel.route-map.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "component_families": [
-        "section-shell",
-        "route-nav",
-        "path-card",
-        "route-node"
-      ],
+      "component_families": ["section-shell", "route-nav", "path-card", "route-node"],
       "renderer": "funnel.route-map",
-      "token_recipes": [
-        "semantic.runtime",
-        "semantic.guide"
-      ],
-      "layout_variants": [
-        "default"
-      ],
+      "token_recipes": ["semantic.runtime", "semantic.guide"],
+      "layout_variants": ["default"],
       "default_props": {
         "marker": "herbs.route-map",
         "route": "herbs"

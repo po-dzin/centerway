@@ -9,13 +9,7 @@ import { HandGraphic } from "@/components/Icon";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { supabaseClient } from "@/lib/supabaseClient";
 import styles from "@/components/platform/PlatformShellStyles";
-import {
-  appHref,
-  appIsOffOrigin,
-  appsFor,
-  currentAppKey,
-  type PlatformAppKey,
-} from "@/lib/platform/apps";
+import { appHref, appIsOffOrigin, appsFor, currentAppKey, type PlatformAppKey } from "@/lib/platform/apps";
 import { markInstallSurface } from "../pwa/installStore";
 import { usePwaInstall } from "../pwa/usePwaInstall";
 import { usePlatformIdentity } from "./usePlatformIdentity";
@@ -56,10 +50,7 @@ const INSTALL_LABEL = "Додати на екран";
 /* Ukrainian and inline, like every other string in this bar. The cabinet ships
    two languages and reads its own copy table; the shell ships one. */
 const IOS_INSTALL_LEAD = "На iPhone та iPad застосунок додає сам браузер, у два кроки:";
-const IOS_INSTALL_STEPS = [
-  "Натисніть «Поділитися» на панелі Safari.",
-  "Оберіть «На початковий екран».",
-];
+const IOS_INSTALL_STEPS = ["Натисніть «Поділитися» на панелі Safari.", "Оберіть «На початковий екран»."];
 
 /**
  * INSTALL, AS A ROW OF THIS MENU. It used to be a line pinned under the shelf's
@@ -149,13 +140,16 @@ function displayNameOf(session: Session | null) {
 }
 
 function getUserInitial(session: Session | null) {
-  const name =
-    session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email;
+  const name = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email;
   return typeof name === "string" && name.length > 0 ? name.charAt(0).toUpperCase() : "?";
 }
 
 export function InkMenuLabel({ children, active = false }: { children: string; active?: boolean }) {
-  return <InteractionInkLabel variant="menu" active={active}>{children}</InteractionInkLabel>;
+  return (
+    <InteractionInkLabel variant="menu" active={active}>
+      {children}
+    </InteractionInkLabel>
+  );
 }
 
 /**
@@ -360,8 +354,7 @@ export function PlatformAccountMenu({
     );
   }
 
-  const avatarUrl =
-    session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || null;
+  const avatarUrl = session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || null;
   const accountName = displayNameOf(session);
   const accountEmail = session?.user?.email ?? null;
 

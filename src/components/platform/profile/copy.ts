@@ -4,10 +4,7 @@ type ProfileCopyCounts = {
   productPurchases: number;
 };
 
-export function getProfileCopy(
-  lang: ProfileLang,
-  counts: ProfileCopyCounts,
-): ProfileCopy {
+export function getProfileCopy(lang: ProfileLang, counts: ProfileCopyCounts): ProfileCopy {
   const { productPurchases } = counts;
 
   if (lang === "en") {
@@ -42,7 +39,8 @@ export function getProfileCopy(
       doshaCompletedPrefix: "Completed",
       completedShort: "Completed",
       retakeTest: "Retake the test",
-      doshaEmptyLead: "There is no completed dosha test in this account yet, so the personal state map is not assembled.",
+      doshaEmptyLead:
+        "There is no completed dosha test in this account yet, so the personal state map is not assembled.",
       startTest: "Start the dosha test",
       routeSummaryLabel: "At a glance",
       routeSummaryTitle: "Your account at a glance",
@@ -56,7 +54,8 @@ export function getProfileCopy(
       completedProgramLabel: "Completed program",
       routeStarted: "Program started",
       purchasedAt: "Purchase date",
-      programProgressNote: "Program access and status stay visible here, and detailed lesson progress gathers into this map as the program unfolds.",
+      programProgressNote:
+        "Program access and status stay visible here, and detailed lesson progress gathers into this map as the program unfolds.",
       programAccessManual: "Access is confirmed separately",
       programAccessNoToken: "This program was issued without a separate access token",
       noProgramsLead: "There are no programs linked to this account yet.",
@@ -67,7 +66,8 @@ export function getProfileCopy(
       noProductsLead: "There are no purchased products linked to this account yet.",
       progressLabel: "Progress",
       progressTitle: "Program progress",
-      progressLead: "This section assembles your active programs, completed steps, and the next relevant step inside the platform.",
+      progressLead:
+        "This section assembles your active programs, completed steps, and the next relevant step inside the platform.",
       contactsTitle: "Saved contact fields",
       name: "Name",
       email: "Email",
@@ -89,7 +89,8 @@ export function getProfileCopy(
     loadingTitle: "Завантажуємо ваші дані",
     loadingLead: "Підтягуємо результат доша-тесту, програми, продукти і ваші контактні поля.",
     authTitle: "Увійдіть, щоб побачити свій кабінет",
-    authLead: "У кабінеті зберігаються результат доша-тесту, доступи до програм, формати підтримки і контактна інформація.",
+    authLead:
+      "У кабінеті зберігаються результат доша-тесту, доступи до програм, формати підтримки і контактна інформація.",
     signIn: "Увійти через Google",
     returnHome: "Повернутися на головну",
     takeDosha: "Пройти доша-тест",
@@ -126,7 +127,8 @@ export function getProfileCopy(
     completedProgramLabel: "Завершена програма",
     routeStarted: "Старт програми",
     purchasedAt: "Дата покупки",
-    programProgressNote: "Тут уже видно доступ і стан програми, а детальний прогрес уроків збирається в цю ж карту проходження.",
+    programProgressNote:
+      "Тут уже видно доступ і стан програми, а детальний прогрес уроків збирається в цю ж карту проходження.",
     programAccessManual: "Доступ підтверджено окремо",
     programAccessNoToken: "Програма була оформлена без окремого токена доступу",
     noProgramsLead: "Поки немає програм, прив’язаних до цього кабінету.",
@@ -137,7 +139,8 @@ export function getProfileCopy(
     noProductsLead: "Куплених продуктів, прив’язаних до цього кабінету, поки не знайдено.",
     progressLabel: "Поступ",
     progressTitle: "Проходження програм",
-    progressLead: "Цей блок збирає вашу карту проходження: активні програми, завершені етапи і доречний наступний крок у платформі.",
+    progressLead:
+      "Цей блок збирає вашу карту проходження: активні програми, завершені етапи і доречний наступний крок у платформі.",
     contactsTitle: "Збережені контактні поля",
     name: "Ім’я",
     email: "Email",

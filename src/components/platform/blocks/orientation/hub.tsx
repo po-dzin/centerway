@@ -66,9 +66,12 @@ export function HubHero() {
         <p className={styles.heroBadge}>
           <span>Тіло · Ритм · Опора</span>
         </p>
-        <h1 className={styles.heroFeatureTitle} style={heroTitleFit("CenterWay")}>CenterWay</h1>
+        <h1 className={styles.heroFeatureTitle} style={heroTitleFit("CenterWay")}>
+          CenterWay
+        </h1>
         <p className={styles.heroFeatureLead}>
-          Шлях до себе - не пошук нової особистості, а повернення до своєї істинної природи через тіло, увагу і практику.
+          Шлях до себе - не пошук нової особистості, а повернення до своєї істинної природи через тіло, увагу і
+          практику.
         </p>
         <div className={styles.heroFeatureActions}>
           <Link className={styles.heroPrimaryButton} href="#intro-video">
@@ -100,7 +103,9 @@ export function HubIntro() {
           <div className={styles.videoDecisionIntro}>
             <p className={styles.label}>Тест доші · перший крок</p>
             <h2 className={`${styles.title} ${styles.videoDecisionTitle}`}>Спочатку — зрозуміти свій стан</h2>
-            <p className={styles.videoDecisionText}>Кілька хвилин, щоб уважніше подивитися на свій поточний стан і зрозуміти, з чого почати.</p>
+            <p className={styles.videoDecisionText}>
+              Кілька хвилин, щоб уважніше подивитися на свій поточний стан і зрозуміти, з чого почати.
+            </p>
           </div>
           <div className={styles.videoDecisionRail}>
             {/* ONE ACTION. This card used to offer the dosha test and a

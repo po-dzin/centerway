@@ -1,7 +1,10 @@
 import { readFile } from "node:fs/promises";
 import { chromium } from "@playwright/test";
 
-const baseUrl = (process.env.SMOKE_UI_BASE_URL || process.env.SMOKE_BASE_URL || "http://localhost:8000").replace(/\/+$/, "");
+const baseUrl = (process.env.SMOKE_UI_BASE_URL || process.env.SMOKE_BASE_URL || "http://localhost:8000").replace(
+  /\/+$/,
+  "",
+);
 const timeoutMs = Number.parseInt(process.env.SMOKE_TIMEOUT_MS || "20000", 10);
 const useMockApi = process.env.SMOKE_DOSHA_MOCK !== "0";
 
@@ -56,8 +59,7 @@ async function checkStaticContract() {
     details.push(`cw tokens on surface: ${cwTokenHits} (<25)`);
   }
 
-  const motionReduceHits =
-    countMatches(surface, /motion-reduce:/g) + countMatches(surface, /prefers-reduced-motion/g);
+  const motionReduceHits = countMatches(surface, /motion-reduce:/g) + countMatches(surface, /prefers-reduced-motion/g);
   if (motionReduceHits >= 3) {
     points += 5;
     details.push(`reduced-motion hits: ${motionReduceHits}`);
@@ -81,7 +83,10 @@ async function checkStaticContract() {
     details.push("spec missing UI contract link");
   }
 
-  const hasMandatoryRules = contract.includes("UA-first") && contract.includes("One primary CTA per screen") && contract.includes("reduced-motion");
+  const hasMandatoryRules =
+    contract.includes("UA-first") &&
+    contract.includes("One primary CTA per screen") &&
+    contract.includes("reduced-motion");
   if (hasMandatoryRules) {
     points += 5;
     details.push("contract mandatory rules present");
@@ -103,12 +108,7 @@ async function checkStaticContract() {
   points += copyPoints;
   details.push(`route/trust copy markers: ${copyHits}/${requiredCopyMarkers.length} -> ${copyPoints}/20`);
 
-  const ctaMarkers = [
-    "Почати тест",
-    "Отримати персональні рекомендації",
-    "Переглянути програму",
-    "Пройти тест ще раз",
-  ];
+  const ctaMarkers = ["Почати тест", "Отримати персональні рекомендації", "Переглянути програму", "Пройти тест ще раз"];
   const ctaHits = ctaMarkers.filter((phrase) => component.includes(phrase)).length;
   const ctaPoints = Math.round((ctaHits / ctaMarkers.length) * 10);
   points += ctaPoints;
@@ -197,12 +197,7 @@ async function checkRuntimeSemantics() {
     const introPromiseText = page.getByText("12 питань", { exact: false }).first();
     await introPromiseText.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined);
 
-    const introChecks = [
-      "12 питань",
-      "Як це працює",
-      "Почати тест",
-      "Що таке доша?",
-    ];
+    const introChecks = ["12 питань", "Як це працює", "Почати тест", "Що таке доша?"];
 
     let introPass = 0;
     for (const phrase of introChecks) {
@@ -235,7 +230,7 @@ async function checkRuntimeSemantics() {
 
     const targetHeights = await page.evaluate(() => {
       const start = Array.from(document.querySelectorAll("button")).find(
-        (node) => node.textContent?.trim() === "Почати тест"
+        (node) => node.textContent?.trim() === "Почати тест",
       );
       return {
         startHeight: start ? Math.round(start.getBoundingClientRect().height) : 0,

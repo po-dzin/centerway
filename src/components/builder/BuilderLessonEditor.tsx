@@ -3,7 +3,25 @@
 import { useToast } from "@/components/ToastProvider";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
-import { courseThemeAttributes, courseReadiness, buildInternalReferenceTargets, moveItem, newLesson, newModule, PLACEHOLDER_MARKER, courseForSave, renumber, renumberSteps, uniqueSlug, type Course, type CourseModule, type Lesson, type LessonBlock, type LessonBlockType, type RichTextNode } from "@/lms-core";
+import {
+  courseThemeAttributes,
+  courseReadiness,
+  buildInternalReferenceTargets,
+  moveItem,
+  newLesson,
+  newModule,
+  PLACEHOLDER_MARKER,
+  courseForSave,
+  renumber,
+  renumberSteps,
+  uniqueSlug,
+  type Course,
+  type CourseModule,
+  type Lesson,
+  type LessonBlock,
+  type LessonBlockType,
+  type RichTextNode,
+} from "@/lms-core";
 import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShell";
 import { BuilderVersionHistory } from "./BuilderVersionHistory";
 import { BuilderContents } from "./BuilderContents";
@@ -17,7 +35,14 @@ import { useCourseAutosave } from "./useCourseAutosave";
 import { rememberZenPreviewReturn, zenPreviewHref } from "@/components/lms/ZenPreviewShell";
 import { useCourseHistory } from "./useCourseHistory";
 import { useRowDrag } from "./useRowDrag";
-import { BLOCK_TYPE_HINTS, BLOCK_TYPE_LABELS, BLOCK_TYPE_ORDER, BLOCK_STRUCTURE_ORDER, readPath, writePath } from "./blockFields";
+import {
+  BLOCK_TYPE_HINTS,
+  BLOCK_TYPE_LABELS,
+  BLOCK_TYPE_ORDER,
+  BLOCK_STRUCTURE_ORDER,
+  readPath,
+  writePath,
+} from "./blockFields";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { usePlatformSession } from "@/components/platform/layout/usePlatformSession";
@@ -33,9 +58,7 @@ import { LessonToolContent } from "./LessonToolContent";
 import { BLOCK_MOVE_MIME, BUILDER_BLOCK_MIME } from "./lessonDragMime";
 
 type State =
-  | { status: "loading" }
-  | { status: "failed"; failure: BuilderFailure; detail?: string }
-  | { status: "ready" };
+  { status: "loading" } | { status: "failed"; failure: BuilderFailure; detail?: string } | { status: "ready" };
 
 export const ids = () => crypto.randomUUID();
 
@@ -97,9 +120,10 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const [leaveFor, setLeaveFor] = useState<string | null>(null);
   /* Same question as on the course page, asked by the same dialogue: a draft
      this device kept from a session that ended without a save. */
-  const [draftDecision, setDraftDecision] = useState<
-    { kind: "recover" | "conflict"; draft: DurableCourseDraft } | null
-  >(null);
+  const [draftDecision, setDraftDecision] = useState<{
+    kind: "recover" | "conflict";
+    draft: DurableCourseDraft;
+  } | null>(null);
   const importPicker = useRef<HTMLInputElement>(null);
   const docRef = useRef<HTMLDivElement>(null);
   const draftGeneration = useRef<number | null>(null);
@@ -148,11 +172,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
         history.reset(result.data.course);
         setDraftDecision(durable.kind === "none" ? null : { kind: durable.kind, draft: durable.draft });
       }
-      setState(
-        result.ok
-          ? { status: "ready" }
-          : { status: "failed", failure: result.failure, detail: result.detail }
-      );
+      setState(result.ok ? { status: "ready" } : { status: "failed", failure: result.failure, detail: result.detail });
     })();
     return () => {
       cancelled = true;
@@ -174,7 +194,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       // one undo, and moving to the next field starts a new one.
       history.edit(full.join("."), (current) => writePath(current, full, value));
     },
-    [history, located]
+    [history, located],
   );
 
   /**
@@ -192,32 +212,29 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       // deliberate act, and merging two of them would take back a move the
       // author never asked to lose.
       history.edit(null, (current) =>
-        writePath(current, path, renumberSteps(next(readPath(current, path) as LessonBlock[])))
+        writePath(current, path, renumberSteps(next(readPath(current, path) as LessonBlock[]))),
       );
     },
-    [history, located]
+    [history, located],
   );
 
   const insertBlock = useCallback(
     (position: number, type: LessonBlockType) => {
       // A text block starts empty, with the caret ready. Empty prose is pruned
       // before save, so opening a gap and changing one's mind is harmless.
-      const block = type === "rich_text"
-        ? { id: ids(), type, content: [{ kind: "p" as const, text: "" }] }
-        : newBlockRecipe(type, ids);
+      const block =
+        type === "rich_text"
+          ? { id: ids(), type, content: [{ kind: "p" as const, text: "" }] }
+          : newBlockRecipe(type, ids);
       setFreshBlockId(block.id);
       setSelectedBlockId(block.id);
       if (type !== "rich_text") {
         setToolMode("block");
         setToolOpen(true);
       }
-      editBlocks((blocks) => [
-        ...blocks.slice(0, position),
-        block,
-        ...blocks.slice(position),
-      ]);
+      editBlocks((blocks) => [...blocks.slice(0, position), block, ...blocks.slice(position)]);
     },
-    [editBlocks]
+    [editBlocks],
   );
 
   /**
@@ -233,7 +250,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
    */
   const blockDrag = useRowDrag(
     useCallback(() => undefined, []),
-    { mime: BLOCK_MOVE_MIME, dropTargets: false, portraitClass: styles.dragPortrait }
+    { mime: BLOCK_MOVE_MIME, dropTargets: false, portraitClass: styles.dragPortrait },
   );
 
   /**
@@ -263,26 +280,33 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     return best === null ? null : (best as { position: number }).position;
   };
 
-  const persistCourse = useCallback(async (snapshot: Course) => {
-    if (draftGeneration.current === null) {
-      return { ok: false as const, message: "Курс ще завантажується. Спробуйте за мить." };
-    }
-    const result = await saveCourse(slug, courseForSave(snapshot), draftGeneration.current);
-    if (!result.ok) {
-      if (result.failure === "conflict") {
-        return { ok: false as const, message: "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку, щоб не втратити чужі зміни." };
+  const persistCourse = useCallback(
+    async (snapshot: Course) => {
+      if (draftGeneration.current === null) {
+        return { ok: false as const, message: "Курс ще завантажується. Спробуйте за мить." };
       }
-      return { ok: false as const, message: result.detail ?? "Не вдалося зберегти. Спробуйте ще раз." };
-    }
-    draftGeneration.current = result.data.draftGeneration;
-    return {
-      ok: true as const,
-      generation: result.data.draftGeneration,
-      message: result.data.blockers.length === 0
-        ? "Збережено. Блокерів немає."
-        : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`,
-    };
-  }, [slug]);
+      const result = await saveCourse(slug, courseForSave(snapshot), draftGeneration.current);
+      if (!result.ok) {
+        if (result.failure === "conflict") {
+          return {
+            ok: false as const,
+            message: "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку, щоб не втратити чужі зміни.",
+          };
+        }
+        return { ok: false as const, message: result.detail ?? "Не вдалося зберегти. Спробуйте ще раз." };
+      }
+      draftGeneration.current = result.data.draftGeneration;
+      return {
+        ok: true as const,
+        generation: result.data.draftGeneration,
+        message:
+          result.data.blockers.length === 0
+            ? "Збережено. Блокерів немає."
+            : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`,
+      };
+    },
+    [slug],
+  );
 
   /* One of the two hooks has to reach the other through a ref — see the same
      pair on the course page. The exit question gates autosave; answering it
@@ -320,7 +344,9 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       const result = await importLessonFiles(slug, [file]);
       setBusy(false);
       if (!result.ok || !result.data.lessons[0]) {
-        toast.error(lessonDocumentFailureCopy(result.ok ? undefined : result.detail, "Не вдалося імпортувати документ в урок."));
+        toast.error(
+          lessonDocumentFailureCopy(result.ok ? undefined : result.detail, "Не вдалося імпортувати документ в урок."),
+        );
         return;
       }
 
@@ -338,7 +364,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       });
       toast.success(`Імпортовано «${file.name}». Перевірте урок і збережіть зміни.`);
     },
-    [history, located, slug, working, toast]
+    [history, located, slug, working, toast],
   );
 
   /** Flushes the current snapshot and continues without asking a question. */
@@ -354,7 +380,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     (next: (course: Course) => CourseModule[]) => {
       history.edit(null, (current) => ({ ...current, modules: renumber(next(current)) }));
     },
-    [history]
+    [history],
   );
 
   /* Leaving the course asks; anything still inside it saves and goes. The lead
@@ -365,7 +391,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       setContentsOpen(false);
       exit.route(href);
     },
-    [exit]
+    [exit],
   );
 
   /** `/build/<this course>/<lesson>` — and only that — is an in-course move. */
@@ -377,7 +403,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       if (decodeURIComponent(segments[1]) !== slug) return null;
       return decodeURIComponent(segments[2]);
     },
-    [slug]
+    [slug],
   );
 
   /**
@@ -396,7 +422,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       setActiveSlug(target);
       window.history.pushState(null, "", href);
     },
-    [activeSlug, lessonSlugIn, navigate]
+    [activeSlug, lessonSlugIn, navigate],
   );
 
   // Arriving by route — a deep link, or a return from preview — seeds the
@@ -478,7 +504,11 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   if (state.status === "loading") {
     return (
       <BuilderShell trail={trail}>
-        <PlatformLoadingState label="Майстерня" title="Завантажуємо урок…" detail="Відновлюємо блоки уроку і останню збережену версію." />
+        <PlatformLoadingState
+          label="Майстерня"
+          title="Завантажуємо урок…"
+          detail="Відновлюємо блоки уроку і останню збережену версію."
+        />
       </BuilderShell>
     );
   }
@@ -518,7 +548,8 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const addLessonToModule = (moduleId: string) => {
     history.edit(null, (current) => {
       const taken = current.modules.flatMap((entry) => entry.lessons.map((item) => item.slug));
-      const nextDay = Math.max(0, ...current.modules.flatMap((entry) => entry.lessons.map((item) => item.dayIndex ?? 0))) + 1;
+      const nextDay =
+        Math.max(0, ...current.modules.flatMap((entry) => entry.lessons.map((item) => item.dayIndex ?? 0))) + 1;
       return {
         ...current,
         modules: current.modules.map((entry) => {
@@ -547,7 +578,8 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       const order = current.modules.length + 1;
       const title = `Модуль ${order}`;
       const taken = current.modules.map((entry) => entry.slug);
-      const nextDay = Math.max(0, ...current.modules.flatMap((entry) => entry.lessons.map((item) => item.dayIndex ?? 0))) + 1;
+      const nextDay =
+        Math.max(0, ...current.modules.flatMap((entry) => entry.lessons.map((item) => item.dayIndex ?? 0))) + 1;
       return {
         ...current,
         modules: [
@@ -617,12 +649,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       pageMode="document"
       onNavigate={go}
       toolLayer={
-        <BuilderToolRail
-          mode={toolMode}
-          open={toolOpen}
-          onMode={selectTool}
-          onClose={() => setToolOpen(false)}
-        >
+        <BuilderToolRail mode={toolMode} open={toolOpen} onMode={selectTool} onClose={() => setToolOpen(false)}>
           <LessonToolContent
             mode={toolMode}
             course={course}
@@ -666,12 +693,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
               one, sitting exactly where the thumb rests while typing. On the
               wide screen they stay on their panel's edge, where the panel is.
               */}
-          <BuilderToolsOrgan
-            open={toolOpen}
-            mode={toolMode}
-            onOpen={selectTool}
-            onClose={() => setToolOpen(false)}
-          />
+          <BuilderToolsOrgan open={toolOpen} mode={toolMode} onOpen={selectTool} onClose={() => setToolOpen(false)} />
           {/* ИСТОРИЯ ЭТОГО УРОКА — та же панель, что на уровне курса, суженная
               до одного урока. Не вторая история: снимок остаётся курсовым,
               отдельной таблицы версий урока нет. Часы стоят и здесь, потому что
@@ -706,7 +728,11 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
           <span className={styles.workspaceSaveStatus} role="status" aria-live="polite">
             <Icon name="check" size={18} /> {autosave.saving ? "Зберігаємо…" : dirty ? "Є зміни" : "Збережено"}
           </span>
-          <button className={styles.workspaceBlockers} type="button" onClick={() => navigate(`/build/${slug}#course-release`)}>
+          <button
+            className={styles.workspaceBlockers}
+            type="button"
+            onClick={() => navigate(`/build/${slug}#course-release`)}
+          >
             <span aria-hidden="true">•</span> {readiness.blockers.length} блокери
           </button>
         </>
@@ -825,7 +851,12 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
               onBlocks={editBlocks}
               onInsertAfter={(type) => insertBlock(index + 1, type)}
             />
-            <BlockInsert position={index + 1} drop={dropGap === index + 1} onActivate={activateInsert} onAdd={insertBlock} />
+            <BlockInsert
+              position={index + 1}
+              drop={dropGap === index + 1}
+              onActivate={activateInsert}
+              onAdd={insertBlock}
+            />
           </Fragment>
         ))}
       </div>
@@ -841,7 +872,12 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
             <span className={styles.saveState} role="status" aria-live="polite">
               {autosave.message ?? (dirty ? "Зміни збережуться автоматично" : "Усі зміни збережено")}
             </span>
-            <button className={styles.commitAction} type="button" onClick={() => void save()} disabled={working || !dirty}>
+            <button
+              className={styles.commitAction}
+              type="button"
+              onClick={() => void save()}
+              disabled={working || !dirty}
+            >
               {autosave.saving ? "Зберігаємо…" : "Зберегти"}
             </button>
           </>

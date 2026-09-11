@@ -8,11 +8,9 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   const token = authHeader.slice("Bearer ".length);
   if (!token) return null;
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { persistSession: false } }
-  );
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false },
+  });
 
   const {
     data: { user },
@@ -40,11 +38,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: upsertErr.message }, { status: 500 });
   }
 
-  const { data, error: readErr } = await db
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .maybeSingle();
+  const { data, error: readErr } = await db.from("user_roles").select("role").eq("user_id", userId).maybeSingle();
   if (readErr) {
     return NextResponse.json({ error: readErr.message }, { status: 500 });
   }
@@ -57,11 +51,7 @@ export async function POST(req: NextRequest) {
      Ownership is per row (`lms_courses.author_id`), never a global role: see
      `src/lib/lms/builderAccess.ts`. A failed read answers `false`, which hides
      a link rather than offering one the builder would then 404. */
-  const { data: authored } = await db
-    .from("lms_courses")
-    .select("id")
-    .eq("author_id", userId)
-    .limit(1);
+  const { data: authored } = await db.from("lms_courses").select("id").eq("author_id", userId).limit(1);
 
   return NextResponse.json({
     ok: true,

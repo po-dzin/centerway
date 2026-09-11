@@ -25,9 +25,7 @@ import { useSession } from "@/components/auth/SessionProvider";
 
 const LANG_EVENT = "cw-lang-change";
 
-export const isAuthEnabled = Boolean(
-  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-);
+export const isAuthEnabled = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 function resolveProfileLang(): ProfileLang {
   if (typeof window !== "undefined") {
@@ -201,7 +199,7 @@ export function useLearnerShelf(session: Session | null) {
       subscribeLibraryMemory,
       () => recall<LearnerShelfCourseDto[]>(shelfMemo()),
       /* The server remembers nothing on anyone's behalf. */
-      () => undefined
+      () => undefined,
     ) ?? null;
   const [failed, setFailed] = useState(false);
   /* The retry button asks for a re-read by bumping this, rather than by calling
@@ -357,7 +355,7 @@ export function useAuthorProfile(session: Session | null) {
         setSaving(false);
       }
     },
-    [sessionRef]
+    [sessionRef],
   );
 
   const matches = state.userId === userId;

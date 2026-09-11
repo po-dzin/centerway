@@ -1,7 +1,10 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
-const baseUrl = (process.env.SMOKE_UI_BASE_URL || process.env.SMOKE_BASE_URL || "http://localhost:8000").replace(/\/+$/, "");
+const baseUrl = (process.env.SMOKE_UI_BASE_URL || process.env.SMOKE_BASE_URL || "http://localhost:8000").replace(
+  /\/+$/,
+  "",
+);
 
 async function gotoRoute(page: Page, pathname: string) {
   const response = await page.goto(`${baseUrl}${pathname}`, { waitUntil: "domcontentloaded" });
@@ -14,7 +17,9 @@ async function gotoRoute(page: Page, pathname: string) {
 
 async function readMobileHeaderState(page: Page) {
   return page.evaluate(() => {
-    const menuButton = document.querySelector('button[aria-controls="platform-mobile-menu"]') as HTMLButtonElement | null;
+    const menuButton = document.querySelector(
+      'button[aria-controls="platform-mobile-menu"]',
+    ) as HTMLButtonElement | null;
     const profileSlot = document.querySelector("header [class*='profileSlot']") as HTMLElement | null;
     const mobileProfileSlot = document.querySelector("header [class*='mobileProfileSlot']") as HTMLElement | null;
 
@@ -112,8 +117,14 @@ test.describe("platform unification wave 1 smoke", () => {
       bodyScrollWidth: document.body.scrollWidth,
     }));
 
-    expect(overflow.scrollWidth, `mobile home overflow: scrollWidth=${overflow.scrollWidth}, viewport=${overflow.viewportWidth}`).toBeLessThanOrEqual(overflow.viewportWidth);
-    expect(overflow.bodyScrollWidth, `mobile home body overflow: bodyScrollWidth=${overflow.bodyScrollWidth}, viewport=${overflow.viewportWidth}`).toBeLessThanOrEqual(overflow.viewportWidth);
+    expect(
+      overflow.scrollWidth,
+      `mobile home overflow: scrollWidth=${overflow.scrollWidth}, viewport=${overflow.viewportWidth}`,
+    ).toBeLessThanOrEqual(overflow.viewportWidth);
+    expect(
+      overflow.bodyScrollWidth,
+      `mobile home body overflow: bodyScrollWidth=${overflow.bodyScrollWidth}, viewport=${overflow.viewportWidth}`,
+    ).toBeLessThanOrEqual(overflow.viewportWidth);
   });
 
   test("mobile shell keeps burger in topbar and profile inside overlay", async ({ page }) => {
@@ -124,8 +135,13 @@ test.describe("platform unification wave 1 smoke", () => {
 
       const closedState = await readMobileHeaderState(page);
       expect(closedState.menuButton?.display, `${pathname}: mobile burger must be visible in topbar`).toBe("grid");
-      expect(closedState.profileSlot?.display, `${pathname}: compact profile must stay out of mobile topbar`).toBe("none");
-      expect(closedState.mobileProfileSlot, `${pathname}: mobile profile slot should exist in overlay contract`).not.toBeNull();
+      expect(closedState.profileSlot?.display, `${pathname}: compact profile must stay out of mobile topbar`).toBe(
+        "none",
+      );
+      expect(
+        closedState.mobileProfileSlot,
+        `${pathname}: mobile profile slot should exist in overlay contract`,
+      ).not.toBeNull();
     }
 
     await gotoRoute(page, "/consult");

@@ -3,10 +3,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import {
-  isChromeSheetOpen,
-  markChromeSheetOpen,
-} from "./chromeSheetStore";
+import { isChromeSheetOpen, markChromeSheetOpen } from "./chromeSheetStore";
 
 const root = path.resolve(__dirname, "../../../..");
 const read = (rel: string) => fs.readFileSync(path.join(root, rel), "utf8");

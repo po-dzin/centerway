@@ -148,9 +148,7 @@ export type SendPurchaseEmailResult = {
  * recorded and an exception here would be a completed purchase reported as a
  * failure.
  */
-export async function sendPurchaseEmail(
-  input: PurchaseEmailInput
-): Promise<SendPurchaseEmailResult> {
+export async function sendPurchaseEmail(input: PurchaseEmailInput): Promise<SendPurchaseEmailResult> {
   try {
     if (!input.email) return { sent: false, reason: "no_email" };
     if (await purchaseEmailSent(input.orderRef)) return { sent: false, reason: "already_sent" };
@@ -168,7 +166,11 @@ export async function sendPurchaseEmail(
     });
 
     if (!result.sent) {
-      console.warn("[purchase-email] not sent", { orderRef: input.orderRef, reason: result.reason, detail: result.detail });
+      console.warn("[purchase-email] not sent", {
+        orderRef: input.orderRef,
+        reason: result.reason,
+        detail: result.detail,
+      });
       return { sent: false, reason: result.reason };
     }
 

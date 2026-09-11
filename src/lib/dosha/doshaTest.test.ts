@@ -50,9 +50,7 @@ describe("classifyDosha", () => {
   });
 
   it("reaches every declared result type on the 12-question grid", () => {
-    const reached = new Set<DoshaResultType>(
-      allCompositions().map(([v, p, k]) => calculateDoshaResult(v, p, k))
-    );
+    const reached = new Set<DoshaResultType>(allCompositions().map(([v, p, k]) => calculateDoshaResult(v, p, k)));
     expect([...DOSHA_RESULT_TYPES].filter((type) => !reached.has(type))).toEqual([]);
   });
 
@@ -82,8 +80,7 @@ describe("classifyDosha", () => {
         if (second < 1 || lead < second || second < third) continue;
         const before = shape(calculateDoshaResult(lead, second, third));
         const after = shape(calculateDoshaResult(lead + 1, second - 1, third));
-        expect(after, `${lead}/${second}/${third} → ${lead + 1}/${second - 1}/${third}`)
-          .toBeGreaterThanOrEqual(before);
+        expect(after, `${lead}/${second}/${third} → ${lead + 1}/${second - 1}/${third}`).toBeGreaterThanOrEqual(before);
       }
     }
   });
@@ -143,9 +140,7 @@ describe("presentQuestionsForSession", () => {
     const presented = presentQuestionsForSession(source, "session-a");
     expect(presented.map((q) => q.code)).toEqual(source.map((q) => q.code));
     for (const [index, question] of presented.entries()) {
-      expect([...question.options].map((o) => o.id).sort()).toEqual(
-        source[index].options.map((o) => o.id).sort()
-      );
+      expect([...question.options].map((o) => o.id).sort()).toEqual(source[index].options.map((o) => o.id).sort());
       // The order field is the position on screen, not the seed order.
       expect(question.options.map((o) => o.order)).toEqual([1, 2, 3]);
     }
@@ -160,9 +155,7 @@ describe("presentQuestionsForSession", () => {
   it("stops vata from always sitting under the thumb", () => {
     // The seed order put vata first in all twelve questions, for everyone.
     // Across sessions, first place has to be spread over all three doshas.
-    const keyByOptionId = new Map(
-      source.flatMap((q) => q.options.map((o) => [o.id, o.mappedDosha] as const))
-    );
+    const keyByOptionId = new Map(source.flatMap((q) => q.options.map((o) => [o.id, o.mappedDosha] as const)));
     const firstPlace: Record<string, number> = { vata: 0, pitta: 0, kapha: 0 };
 
     for (let i = 0; i < 200; i += 1) {

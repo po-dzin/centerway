@@ -1,9 +1,4 @@
-import {
-  PLATFORM_PENDING_URL,
-  productProgramPath,
-  productReturnUrls,
-  type PayableProductCode,
-} from "@/lib/products";
+import { PLATFORM_PENDING_URL, productProgramPath, productReturnUrls, type PayableProductCode } from "@/lib/products";
 import { wfpCallbackOutcome } from "@/lib/payments/wfp";
 
 /**
@@ -84,7 +79,7 @@ export function buildReturnDestination(
   product: ReturnProduct,
   orderRef: string,
   meta: ReturnMeta,
-  nowMs: number
+  nowMs: number,
 ): string {
   const urls = productReturnUrls(product);
 

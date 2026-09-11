@@ -37,12 +37,16 @@ export async function POST(req: NextRequest) {
   }
   const file = form.get("file");
   if (!(file instanceof File)) return NextResponse.json({ error: "media_missing_file" }, { status: 400 });
-  if (!TYPES.has(file.type)) return NextResponse.json({ error: `media_unsupported_type:${file.type || "unknown"}` }, { status: 415 });
+  if (!TYPES.has(file.type))
+    return NextResponse.json({ error: `media_unsupported_type:${file.type || "unknown"}` }, { status: 415 });
   if (file.size > MAX_INPUT_BYTES) return NextResponse.json({ error: `media_too_large:${file.size}` }, { status: 413 });
 
   const prepared = await prepareMedia(Buffer.from(await file.arrayBuffer()), file.type);
   if (isPrepareFailure(prepared)) {
-    return NextResponse.json({ error: prepared.error }, { status: prepared.error === "media_not_an_image" ? 415 : 413 });
+    return NextResponse.json(
+      { error: prepared.error },
+      { status: prepared.error === "media_not_an_image" ? 415 : 413 },
+    );
   }
 
   const assetId = randomUUID();
@@ -52,7 +56,11 @@ export async function POST(req: NextRequest) {
   const stored: string[] = [];
   for (const rendition of prepared.renditions) {
     const path = `${folder}/${rendition.name}`;
-    const { error } = await storage.upload(path, rendition.bytes, { contentType: rendition.contentType, upsert: false, cacheControl: "31536000" });
+    const { error } = await storage.upload(path, rendition.bytes, {
+      contentType: rendition.contentType,
+      upsert: false,
+      cacheControl: "31536000",
+    });
     if (error) {
       if (stored.length) await storage.remove(stored);
       return NextResponse.json({ error: `media_upload_failed:${error.message}` }, { status: 502 });
@@ -62,9 +70,16 @@ export async function POST(req: NextRequest) {
 
   const canonical = `${folder}/${prepared.renditions[0].name}`;
   const ledger = await admin.from("lms_media_assets").insert({
-    id: assetId, course_id: null, asset_key: folder, canonical_path: canonical, paths: stored,
+    id: assetId,
+    course_id: null,
+    asset_key: folder,
+    canonical_path: canonical,
+    paths: stored,
     bytes: prepared.renditions.reduce((sum, rendition) => sum + rendition.bytes.byteLength, 0),
-    content_type: prepared.renditions[0].contentType, width: prepared.width, height: prepared.height, uploaded_by: user.id,
+    content_type: prepared.renditions[0].contentType,
+    width: prepared.width,
+    height: prepared.height,
+    uploaded_by: user.id,
   });
   if (ledger.error) {
     await storage.remove(stored);

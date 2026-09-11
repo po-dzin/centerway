@@ -31,17 +31,21 @@ const COMMON =
 const PROMPTS = {
   ranges:
     "Five receding ranges of distant mountains, each plane paler and softer than the one in front, " +
-    "valleys filled with mist that eats the bases of the ridges. Serene, immense, far away. " + COMMON,
+    "valleys filled with mist that eats the bases of the ridges. Serene, immense, far away. " +
+    COMMON,
   rock:
     "A single near cliff face rising from the lower right, its body built from short axe-cut " +
     "texture strokes (fu pi cun), one faint far ridge behind it, the foot of the cliff dissolving " +
-    "into low mist. " + COMMON,
+    "into low mist. " +
+    COMMON,
   ma:
     "Almost empty. One low distant ridge along the bottom third and three horizontal bands of mist " +
-    "above still water. Ninety percent of the paper is left blank. Extreme restraint. " + COMMON,
+    "above still water. Ninety percent of the paper is left blank. Extreme restraint. " +
+    COMMON,
   water:
     "A still wide lake in the lower third, one low far shore of hills, mist lying flat on the water, " +
-    "the faintest second shore beyond. Horizontal calm. " + COMMON,
+    "the faintest second shore beyond. Horizontal calm. " +
+    COMMON,
 
   /* Фактурі не потрібне ані «ма», ані композиція: у ній не має бути
      ні світлого кута, ні темного — інакше половина смуги з полицями
@@ -59,17 +63,20 @@ const PROMPTS = {
     "A flat wall of warm rammed clay photographed straight on, perfectly frontal, no perspective, " +
     "no vanishing point, no corners, no floor and no ceiling in frame — only the surface itself, " +
     "edge to edge. Uneven hand-smoothed plaster with trowel marks, hairline cracks, small chips " +
-    "and pits, patches where the clay dried lighter. No openings, no niches, no holes, no objects. " + COMMON,
+    "and pits, patches where the clay dried lighter. No openings, no niches, no holes, no objects. " +
+    COMMON,
   "wall-rock":
     "A flat face of cut sandstone photographed straight on, perfectly frontal, no perspective, " +
     "no vanishing point, no corners, no floor and no ceiling in frame — only the surface, edge to " +
     "edge. Visible chisel courses, shallow fractures, flaked scars, grain and pitting, weathered " +
-    "unevenly. No openings, no niches, no holes, no objects. " + COMMON,
+    "unevenly. No openings, no niches, no holes, no objects. " +
+    COMMON,
   "wall-plaster":
     "A flat lime-plastered wall photographed straight on, perfectly frontal, no perspective, " +
     "no corners, no floor, no ceiling — only the surface, edge to edge. Quiet, almost bare: " +
     "faint tide marks of damp, a few hairline cracks, one flaked patch, otherwise still. " +
-    "Extreme restraint. No openings, no niches, no objects. " + COMMON,
+    "Extreme restraint. No openings, no niches, no objects. " +
+    COMMON,
   "wall-matte":
     "A matte pale clay wall, hand-smoothed, photographed straight on and evenly lit, filling " +
     "the whole frame edge to edge. The surface is almost featureless: the faintest tonal " +
@@ -78,7 +85,6 @@ const PROMPTS = {
     "no openings, no niches, no objects. Traditional East Asian ink-wash rendering on warm " +
     "off-white paper, monochrome, extremely restrained. No text, no seals, no signature, " +
     "no border, no watermark.",
-
 };
 
 const model = process.argv[2] || "bytedance/seedream-5.0-pro";

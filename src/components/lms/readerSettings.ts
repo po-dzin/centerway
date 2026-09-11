@@ -56,7 +56,7 @@ export function writeMark(courseSlug: string, lessonSlug: string, mark: Omit<Rea
   try {
     window.localStorage.setItem(
       markKey(courseSlug, lessonSlug),
-      JSON.stringify({ ...mark, at: Date.now() } satisfies ReaderMark)
+      JSON.stringify({ ...mark, at: Date.now() } satisfies ReaderMark),
     );
   } catch {
     /* Storage refused — the reader loses a convenience, not the lesson. */

@@ -35,9 +35,8 @@ export async function computeDoshaAnalytics(range: DateRange) {
     const rt = typeof row.result_type === "string" ? row.result_type : "unknown";
     completionsByType.set(rt, (completionsByType.get(rt) ?? 0) + 1);
 
-    const dayKey = typeof row.completed_at === "string"
-      ? getIsoDateInTimeZone(new Date(row.completed_at), ANALYTICS_TZ)
-      : null;
+    const dayKey =
+      typeof row.completed_at === "string" ? getIsoDateInTimeZone(new Date(row.completed_at), ANALYTICS_TZ) : null;
     if (dayKey) {
       dailyCompletions.set(dayKey, (dailyCompletions.get(dayKey) ?? 0) + 1);
     }
@@ -48,9 +47,8 @@ export async function computeDoshaAnalytics(range: DateRange) {
   const completionsByTypeArr = ALL_TYPES.map((rt) => ({
     result_type: rt,
     count: completionsByType.get(rt) ?? 0,
-    share_percent: totalCompletions > 0
-      ? Number(((completionsByType.get(rt) ?? 0) * 100 / totalCompletions).toFixed(1))
-      : 0,
+    share_percent:
+      totalCompletions > 0 ? Number((((completionsByType.get(rt) ?? 0) * 100) / totalCompletions).toFixed(1)) : 0,
   })).sort((a, b) => b.count - a.count);
 
   // 2. CTA clicks from events table
@@ -91,9 +89,7 @@ export async function computeDoshaAnalytics(range: DateRange) {
       primary_clicks: entry.primary,
       secondary_clicks: entry.secondary,
       total_clicks: totalClicks,
-      click_through_percent: completions > 0
-        ? Number((totalClicks * 100 / completions).toFixed(1))
-        : 0,
+      click_through_percent: completions > 0 ? Number(((totalClicks * 100) / completions).toFixed(1)) : 0,
     };
   });
 
@@ -109,9 +105,8 @@ export async function computeDoshaAnalytics(range: DateRange) {
   // 4. Top type
   const topType = completionsByTypeArr[0]?.result_type ?? null;
 
-  const ctaClickThroughPercent = totalCompletions > 0
-    ? Number((totalCtaClicks * 100 / totalCompletions).toFixed(1))
-    : 0;
+  const ctaClickThroughPercent =
+    totalCompletions > 0 ? Number(((totalCtaClicks * 100) / totalCompletions).toFixed(1)) : 0;
 
   return {
     period: { from: range.from, to: range.to },
@@ -126,11 +121,9 @@ export async function computeDoshaAnalytics(range: DateRange) {
 }
 
 export function getCachedDoshaAnalytics(range: DateRange) {
-  return unstable_cache(
-    async () => computeDoshaAnalytics(range),
-    ["admin-dosha-analytics-v1", range.from, range.to],
-    { revalidate: 120 }
-  )();
+  return unstable_cache(async () => computeDoshaAnalytics(range), ["admin-dosha-analytics-v1", range.from, range.to], {
+    revalidate: 120,
+  })();
 }
 
 export type DoshaAnalyticsPayload = Awaited<ReturnType<typeof computeDoshaAnalytics>>;

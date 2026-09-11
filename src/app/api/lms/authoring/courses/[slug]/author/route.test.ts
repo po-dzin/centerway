@@ -25,10 +25,11 @@ vi.mock("@/lib/lms/authors", () => ({
   ...authors,
 }));
 vi.mock("@/lib/lms/courseAccess", () => ({
-  withCourseAccess: async (_req: NextRequest, _slug: string, run: (grant: {
-    identity: { authUserId: string };
-    courseId: string;
-  }) => Promise<NextResponse>) => run({ identity: { authUserId: "owner-1" }, courseId: "course-1" }),
+  withCourseAccess: async (
+    _req: NextRequest,
+    _slug: string,
+    run: (grant: { identity: { authUserId: string }; courseId: string }) => Promise<NextResponse>,
+  ) => run({ identity: { authUserId: "owner-1" }, courseId: "course-1" }),
 }));
 vi.mock("@/lib/lms/liveCatalog", () => ({ PURGE: {}, courseTag: (slug: string) => `course:${slug}` }));
 vi.mock("@/lib/lms/rateRules", () => ({ LMS_AUTHORING_READ: {}, LMS_COURSE_WRITE: {} }));
@@ -77,11 +78,17 @@ describe("course author link route", () => {
     });
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ ownAuthor: own, linkedAuthor: assigned, linkedAuthorId: assigned.id });
+    expect(await response.json()).toMatchObject({
+      ownAuthor: own,
+      linkedAuthor: assigned,
+      linkedAuthorId: assigned.id,
+    });
   });
 
   it("lets the course owner replace an admin-set fallback with their own profile", async () => {
-    const response = await route.PATCH(patch({ action: "attach-self" }), { params: Promise.resolve({ slug: "way21" }) });
+    const response = await route.PATCH(patch({ action: "attach-self" }), {
+      params: Promise.resolve({ slug: "way21" }),
+    });
 
     expect(response.status).toBe(200);
     expect(authors.linkCourseAuthorProfile).toHaveBeenCalledWith("course-1", own.id);
@@ -100,7 +107,9 @@ describe("course author link route", () => {
 
   it("refuses a self-attach when the owner has no profile, leaving the current link untouched", async () => {
     state.own = null;
-    const response = await route.PATCH(patch({ action: "attach-self" }), { params: Promise.resolve({ slug: "way21" }) });
+    const response = await route.PATCH(patch({ action: "attach-self" }), {
+      params: Promise.resolve({ slug: "way21" }),
+    });
 
     expect(response.status).toBe(422);
     expect(await response.json()).toEqual({ error: "lms_author_profile_missing" });
@@ -108,14 +117,11 @@ describe("course author link route", () => {
     expect(state.linked).toEqual(assigned);
   });
 
-  it.each([undefined, "attach-other"])(
-    "rejects an invalid action: %j",
-    async (body) => {
-      const response = await route.PATCH(patch(body), { params: Promise.resolve({ slug: "way21" }) });
-      expect(response.status).toBe(400);
-      expect(authors.linkCourseAuthorProfile).not.toHaveBeenCalled();
-    },
-  );
+  it.each([undefined, "attach-other"])("rejects an invalid action: %j", async (body) => {
+    const response = await route.PATCH(patch(body), { params: Promise.resolve({ slug: "way21" }) });
+    expect(response.status).toBe(400);
+    expect(authors.linkCourseAuthorProfile).not.toHaveBeenCalled();
+  });
 
   it("rejects malformed JSON before touching the course", async () => {
     const response = await route.PATCH(malformedPatch(), { params: Promise.resolve({ slug: "way21" }) });
@@ -136,7 +142,9 @@ describe("course author link route", () => {
 
   it("does not claim success or invalidate caches when the relationship write fails", async () => {
     state.linkResult = { ok: false, error: "db_write_failed" };
-    const response = await route.PATCH(patch({ action: "attach-self" }), { params: Promise.resolve({ slug: "way21" }) });
+    const response = await route.PATCH(patch({ action: "attach-self" }), {
+      params: Promise.resolve({ slug: "way21" }),
+    });
 
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ error: "db_write_failed" });

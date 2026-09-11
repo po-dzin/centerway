@@ -109,15 +109,7 @@ export function OfferFreePanel({
 }
 
 /** A generic panel wrapper, so the lead branch keeps the same shape as the buy one. */
-export function OfferSupportPanel({
-  label,
-  title,
-  children,
-}: {
-  label: string;
-  title: string;
-  children: ReactNode;
-}) {
+export function OfferSupportPanel({ label, title, children }: { label: string; title: string; children: ReactNode }) {
   return (
     <article className={offerStyles.formPanel}>
       <p className={offerStyles.label}>{label}</p>

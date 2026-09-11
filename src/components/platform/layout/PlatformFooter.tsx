@@ -99,11 +99,17 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
                 <Link key={label} className={styles.footerTextLink} href={href} data-cw-ink-control>
                   <InteractionInkLabel>{label}</InteractionInkLabel>
                 </Link>
-              )
+              ),
             )}
             {/* Support leaves the origin entirely, so it is never self-reference
                 and never filtered. */}
-            <a className={styles.footerTextLink} href={SUPPORT_BOT_URL} target="_blank" rel="noopener noreferrer" data-cw-ink-control>
+            <a
+              className={styles.footerTextLink}
+              href={SUPPORT_BOT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-cw-ink-control
+            >
               <InteractionInkLabel>Підтримка</InteractionInkLabel>
             </a>
           </nav>
@@ -156,10 +162,17 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
         </div>
       </div>
       <p className={`${styles.container} ${styles.footerBugNote}`}>
-        Платформа наразі неідеальна, як і все у цьому світі. Якщо ви знайшли помилку — {" "}
-        <a className={styles.footerTextLink} href={`${SUPPORT_BOT_URL}?start=bug`} target="_blank" rel="noopener noreferrer" data-cw-ink-control>
+        Платформа наразі неідеальна, як і все у цьому світі. Якщо ви знайшли помилку —{" "}
+        <a
+          className={styles.footerTextLink}
+          href={`${SUPPORT_BOT_URL}?start=bug`}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-cw-ink-control
+        >
           <InteractionInkLabel variant="link">дайте нам знати</InteractionInkLabel>
-        </a>.
+        </a>
+        .
       </p>
     </footer>
   );

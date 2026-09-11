@@ -28,9 +28,8 @@ export default async function LearnCoursePage({
   const search = await searchParams;
   const draftPreview = search.preview === "draft";
   const fallbackReturnTo = `/build/${encodeURIComponent(course)}`;
-  const previewReturnTo = search.returnTo?.startsWith("/build/") && !search.returnTo.startsWith("//")
-    ? search.returnTo
-    : fallbackReturnTo;
+  const previewReturnTo =
+    search.returnTo?.startsWith("/build/") && !search.returnTo.startsWith("//") ? search.returnTo : fallbackReturnTo;
 
   // Existence is public information; entitlement is decided by the API.
   // Draft preview existence is private and is therefore resolved only by the

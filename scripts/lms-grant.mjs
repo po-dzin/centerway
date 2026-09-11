@@ -98,18 +98,14 @@ async function resolveAccount(email) {
   if (!data) {
     fail(
       `no platform account for "${email}".\n` +
-        "The account must sign in to the platform at least once before it can be granted access."
+        "The account must sign in to the platform at least once before it can be granted access.",
     );
   }
   return data;
 }
 
 async function resolveCourse(slug) {
-  const { data, error } = await db
-    .from("lms_courses")
-    .select("id, slug, title, status")
-    .eq("slug", slug)
-    .maybeSingle();
+  const { data, error } = await db.from("lms_courses").select("id, slug, title, status").eq("slug", slug).maybeSingle();
 
   if (error) fail(error.message);
   if (!data) fail(`no course with slug "${slug}". Run \`npm run lms:seed\` first.`);
@@ -153,7 +149,7 @@ async function main() {
   if (existing) {
     console.log(
       `lms:grant — ${account.email} already enrolled in "${course.slug}" ` +
-        `[${existing.source}] since ${existing.started_at}. Nothing to do.`
+        `[${existing.source}] since ${existing.started_at}. Nothing to do.`,
     );
     return;
   }
@@ -174,7 +170,7 @@ async function main() {
     // is needed — see the draft check in src/lib/lms/server.ts.
     console.log(
       `\n  "${course.slug}" is ${course.status}. This manual grant opens the draft for\n` +
-        `  this account only; buyers still get "курс ще готується" until it is published.`
+        `  this account only; buyers still get "курс ще готується" until it is published.`,
     );
   }
   console.log(`\n  Open: /learn/${course.slug}`);

@@ -82,32 +82,122 @@ const pairs = [
   // platform light (:root)
   { theme: "light", fg: "--cw-platform-text", bg: "--cw-platform-bg", min: AA_BODY, context: "body text on page" },
   { theme: "light", fg: "--cw-platform-text", bg: "--cw-platform-surface", min: AA_BODY, context: "body text on card" },
-  { theme: "light", fg: "--cw-platform-text", bg: "--cw-platform-surface-muted", min: AA_BODY, context: "body text on muted surface" },
-  { theme: "light", fg: "--cw-platform-muted", bg: "--cw-platform-bg", min: AA_BODY, context: "secondary text on page" },
-  { theme: "light", fg: "--cw-platform-muted", bg: "--cw-platform-surface", min: AA_BODY, context: "secondary text on card" },
-  { theme: "light", fg: "--cw-sem-method-ink", bg: "--cw-sem-calm-surface", min: AA_BODY, context: "heading ink on calm surface" },
-  { theme: "light", fg: "--cw-sem-method-ink", bg: "--cw-sem-calm-bg", min: AA_BODY, context: "heading ink on calm bg" },
-  { theme: "light", fg: "--cw-platform-accent-contrast", bg: "--cw-platform-accent-strong", min: AA_LARGE, context: "CTA label on strong accent (large/semibold)" },
-  { theme: "light", fg: "--cw-platform-accent-contrast", bg: "--cw-sem-guide-primary", min: AA_LARGE, context: "CTA label on guide primary (large/semibold)" },
-  { theme: "light", fg: "--cw-platform-accent-contrast", bg: "--cw-sem-boundary", min: AA_LARGE, context: "label on boundary fill (large/semibold)" },
-  { theme: "light", fg: "--cw-platform-accent-contrast", bg: "--cw-sem-trust", min: AA_LARGE, context: "label on trust fill (large/semibold)" },
+  {
+    theme: "light",
+    fg: "--cw-platform-text",
+    bg: "--cw-platform-surface-muted",
+    min: AA_BODY,
+    context: "body text on muted surface",
+  },
+  {
+    theme: "light",
+    fg: "--cw-platform-muted",
+    bg: "--cw-platform-bg",
+    min: AA_BODY,
+    context: "secondary text on page",
+  },
+  {
+    theme: "light",
+    fg: "--cw-platform-muted",
+    bg: "--cw-platform-surface",
+    min: AA_BODY,
+    context: "secondary text on card",
+  },
+  {
+    theme: "light",
+    fg: "--cw-sem-method-ink",
+    bg: "--cw-sem-calm-surface",
+    min: AA_BODY,
+    context: "heading ink on calm surface",
+  },
+  {
+    theme: "light",
+    fg: "--cw-sem-method-ink",
+    bg: "--cw-sem-calm-bg",
+    min: AA_BODY,
+    context: "heading ink on calm bg",
+  },
+  {
+    theme: "light",
+    fg: "--cw-platform-accent-contrast",
+    bg: "--cw-platform-accent-strong",
+    min: AA_LARGE,
+    context: "CTA label on strong accent (large/semibold)",
+  },
+  {
+    theme: "light",
+    fg: "--cw-platform-accent-contrast",
+    bg: "--cw-sem-guide-primary",
+    min: AA_LARGE,
+    context: "CTA label on guide primary (large/semibold)",
+  },
+  {
+    theme: "light",
+    fg: "--cw-platform-accent-contrast",
+    bg: "--cw-sem-boundary",
+    min: AA_LARGE,
+    context: "label on boundary fill (large/semibold)",
+  },
+  {
+    theme: "light",
+    fg: "--cw-platform-accent-contrast",
+    bg: "--cw-sem-trust",
+    min: AA_LARGE,
+    context: "label on trust fill (large/semibold)",
+  },
   // Gold CTA (.heroPrimaryButton, .videoActionButton[data-kind=primary]). The
   // fill is a gradient between these two stops, so both are asserted; the
   // lighter one binds. Label is 16px/800 — not WCAG "large", so body AA.
-  { theme: "light", fg: "--cw-platform-on-accent", bg: "--cw-platform-accent", min: AA_BODY, context: "ink label on gold CTA (lighter gradient stop)" },
-  { theme: "light", fg: "--cw-platform-on-accent", bg: "--cw-platform-accent-pressed", min: AA_BODY, context: "ink label on deep-gold CTA (darker stop / hover)" },
+  {
+    theme: "light",
+    fg: "--cw-platform-on-accent",
+    bg: "--cw-platform-accent",
+    min: AA_BODY,
+    context: "ink label on gold CTA (lighter gradient stop)",
+  },
+  {
+    theme: "light",
+    fg: "--cw-platform-on-accent",
+    bg: "--cw-platform-accent-pressed",
+    min: AA_BODY,
+    context: "ink label on deep-gold CTA (darker stop / hover)",
+  },
   // The cabinet hero's doorway (CabinetHero.module.css) — a label over a
   // photograph, which is why the pair is asserted against the SCRIM rather than
   // against any surface: the ramp under the label reaches 94% of the scrim ink
   // at the bottom edge and 84% where the title sits, so the scrim itself is the
   // floor the text is guaranteed against and the photograph can only lighten
   // it. Title is 24-30px serif => large AA; the lead is 15px/600 => body AA.
-  { theme: "light", fg: "--cw-mat-inverse-text", bg: "--cw-mat-scrim-ink", min: AA_LARGE, context: "doorway title on scrim" },
+  {
+    theme: "light",
+    fg: "--cw-mat-inverse-text",
+    bg: "--cw-mat-scrim-ink",
+    min: AA_LARGE,
+    context: "doorway title on scrim",
+  },
   { theme: "light", fg: "--cw-sem-warmth", bg: "--cw-mat-scrim-ink", min: AA_BODY, context: "doorway lead on scrim" },
   // .cw-btn-primary — rendered primary button (RouteAuthGate, dosha test), 14px semibold label => body AA
-  { theme: "light", fg: "--cw-btn-primary-text", bg: "--cw-btn-primary-bg", min: AA_BODY, context: "primary button label on fill" },
-  { theme: "light", fg: "--cw-btn-primary-text-hover", bg: "--cw-btn-primary-bg-hover", min: AA_BODY, context: "primary button label on hover fill" },
-  { theme: "light", fg: "--cw-btn-primary-text-active", bg: "--cw-btn-primary-bg-active", min: AA_BODY, context: "primary button label on active fill" },
+  {
+    theme: "light",
+    fg: "--cw-btn-primary-text",
+    bg: "--cw-btn-primary-bg",
+    min: AA_BODY,
+    context: "primary button label on fill",
+  },
+  {
+    theme: "light",
+    fg: "--cw-btn-primary-text-hover",
+    bg: "--cw-btn-primary-bg-hover",
+    min: AA_BODY,
+    context: "primary button label on hover fill",
+  },
+  {
+    theme: "light",
+    fg: "--cw-btn-primary-text-active",
+    bg: "--cw-btn-primary-bg-active",
+    min: AA_BODY,
+    context: "primary button label on active fill",
+  },
   /* THE FOUR STATES, as text on the panel they are printed on. A job row says
      "виконано" in the state's own colour and wears a 12-22% wash of it behind
      the word; the wash is thin enough that the panel is the real backdrop, so
@@ -115,30 +205,132 @@ const pairs = [
      are brand roles (guide / trust / warmth-strong / boundary) and a role that
      reads on cream does not automatically read on graphite — the night lifts
      each one toward the cream ink, and these rows are what says how far. */
-  { theme: "light", fg: "--cw-status-success", bg: "--cw-surface-solid", min: AA_BODY, context: "success state on a panel" },
-  { theme: "light", fg: "--cw-status-running", bg: "--cw-surface-solid", min: AA_BODY, context: "running state on a panel" },
-  { theme: "light", fg: "--cw-status-pending", bg: "--cw-surface-solid", min: AA_BODY, context: "pending state on a panel" },
-  { theme: "light", fg: "--cw-status-failed", bg: "--cw-surface-solid", min: AA_BODY, context: "failed state on a panel" },
-  { theme: "dark", fg: "--cw-status-success", bg: "--cw-surface-solid", min: AA_BODY, context: "success state on a panel" },
-  { theme: "dark", fg: "--cw-status-running", bg: "--cw-surface-solid", min: AA_BODY, context: "running state on a panel" },
-  { theme: "dark", fg: "--cw-status-pending", bg: "--cw-surface-solid", min: AA_BODY, context: "pending state on a panel" },
-  { theme: "dark", fg: "--cw-status-failed", bg: "--cw-surface-solid", min: AA_BODY, context: "failed state on a panel" },
+  {
+    theme: "light",
+    fg: "--cw-status-success",
+    bg: "--cw-surface-solid",
+    min: AA_BODY,
+    context: "success state on a panel",
+  },
+  {
+    theme: "light",
+    fg: "--cw-status-running",
+    bg: "--cw-surface-solid",
+    min: AA_BODY,
+    context: "running state on a panel",
+  },
+  {
+    theme: "light",
+    fg: "--cw-status-pending",
+    bg: "--cw-surface-solid",
+    min: AA_BODY,
+    context: "pending state on a panel",
+  },
+  {
+    theme: "light",
+    fg: "--cw-status-failed",
+    bg: "--cw-surface-solid",
+    min: AA_BODY,
+    context: "failed state on a panel",
+  },
+  {
+    theme: "dark",
+    fg: "--cw-status-success",
+    bg: "--cw-surface-solid",
+    min: AA_BODY,
+    context: "success state on a panel",
+  },
+  {
+    theme: "dark",
+    fg: "--cw-status-running",
+    bg: "--cw-surface-solid",
+    min: AA_BODY,
+    context: "running state on a panel",
+  },
+  {
+    theme: "dark",
+    fg: "--cw-status-pending",
+    bg: "--cw-surface-solid",
+    min: AA_BODY,
+    context: "pending state on a panel",
+  },
+  {
+    theme: "dark",
+    fg: "--cw-status-failed",
+    bg: "--cw-surface-solid",
+    min: AA_BODY,
+    context: "failed state on a panel",
+  },
   // admin dark (.dark) — real rendered text pairs only
   { theme: "dark", fg: "--cw-text", bg: "--cw-bg", min: AA_BODY, context: "admin body text on page" },
   { theme: "dark", fg: "--cw-text", bg: "--cw-surface-solid", min: AA_BODY, context: "admin body text on panel" },
   { theme: "dark", fg: "--cw-muted", bg: "--cw-bg", min: AA_BODY, context: "admin secondary text on page" },
   { theme: "dark", fg: "--cw-muted", bg: "--cw-surface-solid", min: AA_BODY, context: "admin secondary text on panel" },
-  { theme: "dark", fg: "--cw-text", bg: "--cw-choice-bg-selected", min: AA_BODY, context: "admin text on selected choice" },
-  { theme: "dark", fg: "--cw-btn-primary-text", bg: "--cw-btn-primary-bg", min: AA_BODY, context: "primary button label on fill" },
-  { theme: "dark", fg: "--cw-btn-primary-text-hover", bg: "--cw-btn-primary-bg-hover", min: AA_BODY, context: "primary button label on hover fill" },
-  { theme: "dark", fg: "--cw-btn-primary-text-active", bg: "--cw-btn-primary-bg-active", min: AA_BODY, context: "primary button label on active fill" },
+  {
+    theme: "dark",
+    fg: "--cw-text",
+    bg: "--cw-choice-bg-selected",
+    min: AA_BODY,
+    context: "admin text on selected choice",
+  },
+  {
+    theme: "dark",
+    fg: "--cw-btn-primary-text",
+    bg: "--cw-btn-primary-bg",
+    min: AA_BODY,
+    context: "primary button label on fill",
+  },
+  {
+    theme: "dark",
+    fg: "--cw-btn-primary-text-hover",
+    bg: "--cw-btn-primary-bg-hover",
+    min: AA_BODY,
+    context: "primary button label on hover fill",
+  },
+  {
+    theme: "dark",
+    fg: "--cw-btn-primary-text-active",
+    bg: "--cw-btn-primary-bg-active",
+    min: AA_BODY,
+    context: "primary button label on active fill",
+  },
   // public platform dark ([data-cw-theme="dark"]) — mirrors every light pair, so
   // the two halves of the public palette are held to the same bar.
-  { theme: "platform-dark", fg: "--cw-platform-text", bg: "--cw-platform-bg", min: AA_BODY, context: "body text on page" },
-  { theme: "platform-dark", fg: "--cw-platform-text", bg: "--cw-platform-surface", min: AA_BODY, context: "body text on card" },
-  { theme: "platform-dark", fg: "--cw-platform-text", bg: "--cw-platform-surface-muted", min: AA_BODY, context: "body text on muted surface" },
-  { theme: "platform-dark", fg: "--cw-platform-muted", bg: "--cw-platform-bg", min: AA_BODY, context: "secondary text on page" },
-  { theme: "platform-dark", fg: "--cw-platform-muted", bg: "--cw-platform-surface", min: AA_BODY, context: "secondary text on card" },
+  {
+    theme: "platform-dark",
+    fg: "--cw-platform-text",
+    bg: "--cw-platform-bg",
+    min: AA_BODY,
+    context: "body text on page",
+  },
+  {
+    theme: "platform-dark",
+    fg: "--cw-platform-text",
+    bg: "--cw-platform-surface",
+    min: AA_BODY,
+    context: "body text on card",
+  },
+  {
+    theme: "platform-dark",
+    fg: "--cw-platform-text",
+    bg: "--cw-platform-surface-muted",
+    min: AA_BODY,
+    context: "body text on muted surface",
+  },
+  {
+    theme: "platform-dark",
+    fg: "--cw-platform-muted",
+    bg: "--cw-platform-bg",
+    min: AA_BODY,
+    context: "secondary text on page",
+  },
+  {
+    theme: "platform-dark",
+    fg: "--cw-platform-muted",
+    bg: "--cw-platform-surface",
+    min: AA_BODY,
+    context: "secondary text on card",
+  },
   /* No `accent-contrast on accent` row here, and the light block above does not
      have one either — the label on a GOLD fill is `--cw-platform-on-accent`,
      asserted two rows down. This assertion did exist, and it passed only by
@@ -147,9 +339,27 @@ const pairs = [
      Once dark became graphite and its accent-contrast became the same cream as
      the light theme's, the row failed — correctly, because it was describing a
      pairing no component makes. */
-  { theme: "platform-dark", fg: "--cw-platform-accent-contrast", bg: "--cw-platform-accent-strong", min: AA_LARGE, context: "CTA label on strong accent (large/semibold)" },
-  { theme: "platform-dark", fg: "--cw-platform-on-accent", bg: "--cw-platform-accent", min: AA_BODY, context: "ink label on gold CTA (lighter gradient stop)" },
-  { theme: "platform-dark", fg: "--cw-platform-on-accent", bg: "--cw-platform-accent-pressed", min: AA_BODY, context: "ink label on deep-gold CTA (darker stop / hover)" },
+  {
+    theme: "platform-dark",
+    fg: "--cw-platform-accent-contrast",
+    bg: "--cw-platform-accent-strong",
+    min: AA_LARGE,
+    context: "CTA label on strong accent (large/semibold)",
+  },
+  {
+    theme: "platform-dark",
+    fg: "--cw-platform-on-accent",
+    bg: "--cw-platform-accent",
+    min: AA_BODY,
+    context: "ink label on gold CTA (lighter gradient stop)",
+  },
+  {
+    theme: "platform-dark",
+    fg: "--cw-platform-on-accent",
+    bg: "--cw-platform-accent-pressed",
+    min: AA_BODY,
+    context: "ink label on deep-gold CTA (darker stop / hover)",
+  },
 ];
 
 // --- Material (M1 glass) -----------------------------------------------------
@@ -177,78 +387,138 @@ const glassPairs = [
   // filled part of a bar has to be distinguishable from its track or the
   // graphic carries no information. The fill is a gradient, so both ends are
   // asserted against the track — the lighter one binds.
-  { theme: "light", fg: "--cw-sem-guide-primary", glass: { plain: "--cw-mat-meter-track" }, min: AA_LARGE, context: "meter fill (start of gradient) against its track (UI bound, not text)" },
-  { theme: "light", fg: "--cw-sem-guide-strong", glass: { plain: "--cw-mat-meter-track" }, min: AA_LARGE, context: "meter fill (end of gradient) against its track (UI bound, not text)" },
+  {
+    theme: "light",
+    fg: "--cw-sem-guide-primary",
+    glass: { plain: "--cw-mat-meter-track" },
+    min: AA_LARGE,
+    context: "meter fill (start of gradient) against its track (UI bound, not text)",
+  },
+  {
+    theme: "light",
+    fg: "--cw-sem-guide-strong",
+    glass: { plain: "--cw-mat-meter-track" },
+    min: AA_LARGE,
+    context: "meter fill (end of gradient) against its track (UI bound, not text)",
+  },
   // The material's control stroke. Not text: this is the boundary that makes a
   // secondary button and the chosen cabinet tab exist as objects at all, and
   // WCAG 1.4.11 puts a UI boundary at 3:1. It is translucent ink (light) and
   // translucent cream (dark), so it is composited over each surface it is drawn
   // on before being compared to that same surface. Thin the mix and this fails
   // instead of the control quietly going flat again.
-  { theme: "light", fg: "--cw-mat-stroke-control", glass: { plain: "--cw-mat-surface" }, min: AA_LARGE, context: "control outline on card material (UI bound, not text)" },
-  { theme: "light", fg: "--cw-mat-stroke-control", glass: { plain: "--cw-platform-bg" }, min: AA_LARGE, context: "control outline on the page ground (UI bound, not text)" },
-  { theme: "dark", fg: "--cw-mat-stroke-control", glass: { plain: "--cw-mat-surface" }, min: AA_LARGE, context: "control outline on card material (UI bound, not text)" },
-  { theme: "platform-dark", fg: "--cw-mat-stroke-control", glass: { plain: "--cw-platform-bg" }, min: AA_LARGE, context: "control outline on the page ground (UI bound, not text)" },
+  {
+    theme: "light",
+    fg: "--cw-mat-stroke-control",
+    glass: { plain: "--cw-mat-surface" },
+    min: AA_LARGE,
+    context: "control outline on card material (UI bound, not text)",
+  },
+  {
+    theme: "light",
+    fg: "--cw-mat-stroke-control",
+    glass: { plain: "--cw-platform-bg" },
+    min: AA_LARGE,
+    context: "control outline on the page ground (UI bound, not text)",
+  },
+  {
+    theme: "dark",
+    fg: "--cw-mat-stroke-control",
+    glass: { plain: "--cw-mat-surface" },
+    min: AA_LARGE,
+    context: "control outline on card material (UI bound, not text)",
+  },
+  {
+    theme: "platform-dark",
+    fg: "--cw-mat-stroke-control",
+    glass: { plain: "--cw-platform-bg" },
+    min: AA_LARGE,
+    context: "control outline on the page ground (UI bound, not text)",
+  },
 
   {
-    theme: "light", fg: "--cw-platform-text",
+    theme: "light",
+    fg: "--cw-platform-text",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-floor", over: "--cw-sem-calm-surface-muted" },
-    min: AA_BODY, context: "body text on M1 glass over worst-case canvas",
+    min: AA_BODY,
+    context: "body text on M1 glass over worst-case canvas",
   },
   {
-    theme: "light", fg: "--cw-platform-muted",
+    theme: "light",
+    fg: "--cw-platform-muted",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-floor", over: "--cw-sem-calm-surface-muted" },
-    min: AA_BODY, context: "secondary text on M1 glass over worst-case canvas",
+    min: AA_BODY,
+    context: "secondary text on M1 glass over worst-case canvas",
   },
   {
-    theme: "light", fg: "--cw-platform-text",
+    theme: "light",
+    fg: "--cw-platform-text",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-media-floor", over: "#000000" },
-    min: AA_BODY, context: "body text on M1 glass over worst-case photo (black)",
+    min: AA_BODY,
+    context: "body text on M1 glass over worst-case photo (black)",
   },
   {
-    theme: "light", fg: "--cw-platform-muted",
+    theme: "light",
+    fg: "--cw-platform-muted",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-media-floor", over: "#000000" },
-    min: AA_LARGE, context: "muted label on M1 glass over worst-case photo (large/semibold only)",
+    min: AA_LARGE,
+    context: "muted label on M1 glass over worst-case photo (large/semibold only)",
   },
   {
-    theme: "dark", fg: "--cw-text",
+    theme: "dark",
+    fg: "--cw-text",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-floor", over: "--cw-surface-solid" },
-    min: AA_BODY, context: "body text on M1 glass over worst-case canvas",
+    min: AA_BODY,
+    context: "body text on M1 glass over worst-case canvas",
   },
   {
-    theme: "dark", fg: "--cw-muted",
+    theme: "dark",
+    fg: "--cw-muted",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-floor", over: "--cw-surface-solid" },
-    min: AA_BODY, context: "secondary text on M1 glass over worst-case canvas",
+    min: AA_BODY,
+    context: "secondary text on M1 glass over worst-case canvas",
   },
   {
-    theme: "dark", fg: "--cw-text",
+    theme: "dark",
+    fg: "--cw-text",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-media-floor", over: "#ffffff" },
-    min: AA_BODY, context: "body text on M1 glass over worst-case photo (white)",
+    min: AA_BODY,
+    context: "body text on M1 glass over worst-case photo (white)",
   },
   {
-    theme: "dark", fg: "--cw-muted",
+    theme: "dark",
+    fg: "--cw-muted",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-media-floor", over: "#ffffff" },
-    min: AA_LARGE, context: "muted label on M1 glass over worst-case photo (large/semibold only)",
+    min: AA_LARGE,
+    context: "muted label on M1 glass over worst-case photo (large/semibold only)",
   },
   {
-    theme: "platform-dark", fg: "--cw-platform-text",
+    theme: "platform-dark",
+    fg: "--cw-platform-text",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-floor", over: "--cw-platform-surface-muted" },
-    min: AA_BODY, context: "body text on M1 glass over worst-case canvas",
+    min: AA_BODY,
+    context: "body text on M1 glass over worst-case canvas",
   },
   {
-    theme: "platform-dark", fg: "--cw-platform-muted",
+    theme: "platform-dark",
+    fg: "--cw-platform-muted",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-floor", over: "--cw-platform-surface-muted" },
-    min: AA_BODY, context: "secondary text on M1 glass over worst-case canvas",
+    min: AA_BODY,
+    context: "secondary text on M1 glass over worst-case canvas",
   },
   {
-    theme: "platform-dark", fg: "--cw-platform-text",
+    theme: "platform-dark",
+    fg: "--cw-platform-text",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-media-floor", over: "#ffffff" },
-    min: AA_BODY, context: "body text on M1 glass over worst-case photo (white)",
+    min: AA_BODY,
+    context: "body text on M1 glass over worst-case photo (white)",
   },
   {
-    theme: "platform-dark", fg: "--cw-platform-muted",
+    theme: "platform-dark",
+    fg: "--cw-platform-muted",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-media-floor", over: "#ffffff" },
-    min: AA_LARGE, context: "muted label on M1 glass over worst-case photo (large/semibold only)",
+    min: AA_LARGE,
+    context: "muted label on M1 glass over worst-case photo (large/semibold only)",
   },
   // .heroBadge / .heroSecondaryButton used to be checked here as ink on the day
   // surface over a black photo pixel. That recipe is gone — both now run the
@@ -265,12 +535,15 @@ const glassPairs = [
   // desktop scrim is 78%+ across the copy column). The backdrop below is that
   // scrim over the brightest pixel a photograph can supply.
   {
-    theme: "light", fg: "--cw-platform-accent-contrast",
+    theme: "light",
+    fg: "--cw-platform-accent-contrast",
     glass: {
-      tint: "--cw-mat-surface-night", alpha: "--cw-mat-tint-chrome-floor",
+      tint: "--cw-mat-surface-night",
+      alpha: "--cw-mat-tint-chrome-floor",
       over: "color-mix(in srgb, var(--cw-platform-text) 64%, #ffffff 36%)",
     },
-    min: AA_BODY, context: "hero badge & secondary-button label on night chrome glass over the hero scrim at its weakest",
+    min: AA_BODY,
+    context: "hero badge & secondary-button label on night chrome glass over the hero scrim at its weakest",
   },
   // --- Tone-managed chrome (the topbar) ------------------------------------
   // The topbar is not "glass over arbitrary media": headerTone samples what is
@@ -285,14 +558,18 @@ const glassPairs = [
   // labels. The nav's secondary state runs at 86-90% of the foreground, not the
   // 62-78% a solid surface would allow, and that is what these pairs assert.
   {
-    theme: "light", fg: "--cw-platform-text",
+    theme: "light",
+    fg: "--cw-platform-text",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#8a8a8a" },
-    min: AA_BODY, context: "topbar label on chrome glass, light tone, at the tone bound",
+    min: AA_BODY,
+    context: "topbar label on chrome glass, light tone, at the tone bound",
   },
   {
-    theme: "header-dark", fg: "--cw-platform-accent-contrast",
+    theme: "header-dark",
+    fg: "--cw-platform-accent-contrast",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#8a8a8a" },
-    min: AA_BODY, context: "topbar label on chrome glass, dark tone, at the tone bound",
+    min: AA_BODY,
+    context: "topbar label on chrome glass, dark tone, at the tone bound",
   },
   {
     theme: "header-dark",
@@ -300,52 +577,66 @@ const glassPairs = [
     // full strength in dark tone, see the note beside it
     fg: "--cw-platform-accent-contrast",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#8a8a8a" },
-    min: AA_BODY, context: "topbar secondary nav label on chrome glass, dark tone",
+    min: AA_BODY,
+    context: "topbar secondary nav label on chrome glass, dark tone",
   },
   {
     theme: "light",
     fg: "color-mix(in srgb, var(--cw-platform-text) 86%, transparent)",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#8a8a8a" },
-    min: AA_BODY, context: "topbar secondary nav label on chrome glass, light tone",
+    min: AA_BODY,
+    context: "topbar secondary nav label on chrome glass, light tone",
   },
   // The active nav item, in the bar and in the open sheet. It used to be gold and
   // was never asserted; on the dense light sheet that measured about 2.0 as a
   // label. It now follows the foreground, which is what these two pairs pin.
   {
-    theme: "light", fg: "--cw-platform-text",
+    theme: "light",
+    fg: "--cw-platform-text",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-media-floor", over: "#ffffff" },
-    min: AA_BODY, context: "active nav label on the open sheet, light tone",
+    min: AA_BODY,
+    context: "active nav label on the open sheet, light tone",
   },
   {
-    theme: "header-dark", fg: "--cw-platform-accent-contrast",
+    theme: "header-dark",
+    fg: "--cw-platform-accent-contrast",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-media-floor", over: "#ffffff" },
-    min: AA_BODY, context: "active nav label on the open sheet, dark tone",
+    min: AA_BODY,
+    context: "active nav label on the open sheet, dark tone",
   },
   // The light tone has a bound too, and it is the dark end: ENTER_DARK in
   // headerTone.ts, luminance 0.18 (#767676). Below that the sampler flips to the
   // dark tone, or — for the open sheet, where both ends can break at once —
   // declares the ground mixed and lets density take over.
   {
-    theme: "light", fg: "--cw-platform-text",
+    theme: "light",
+    fg: "--cw-platform-text",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#767676" },
-    min: AA_BODY, context: "topbar/sheet label on chrome glass, light tone, at the dark end of the bound",
+    min: AA_BODY,
+    context: "topbar/sheet label on chrome glass, light tone, at the dark end of the bound",
   },
   {
     theme: "light",
     fg: "color-mix(in srgb, var(--cw-platform-text) 86%, transparent)",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#767676" },
-    min: AA_BODY, context: "topbar secondary nav label, light tone, at the dark end of the bound",
+    min: AA_BODY,
+    context: "topbar secondary nav label, light tone, at the dark end of the bound",
   },
   // Inverse panel: the gradient's lighter stop is the harder ground for its text.
   {
-    theme: "light", fg: "--cw-mat-inverse-text",
+    theme: "light",
+    fg: "--cw-mat-inverse-text",
     glass: { plain: "#2c4635" },
-    min: AA_BODY, context: "text on inverse mineral panel (lighter gradient stop)",
+    min: AA_BODY,
+    context: "text on inverse mineral panel (lighter gradient stop)",
   },
   {
-    theme: "light", fg: "--cw-mat-inverse-text-muted", fgOver: "#2c4635",
+    theme: "light",
+    fg: "--cw-mat-inverse-text-muted",
+    fgOver: "#2c4635",
     glass: { plain: "#2c4635" },
-    min: AA_BODY, context: "muted label on inverse mineral panel (lighter gradient stop)",
+    min: AA_BODY,
+    context: "muted label on inverse mineral panel (lighter gradient stop)",
   },
   // --- way21 phyto card -----------------------------------------------------
   // These pairs predate the photo ground and outlive it: the card once carried a
@@ -356,24 +647,35 @@ const glassPairs = [
   // written. The card's text is literal rgba() in landing.css, restated here as
   // color-mix so the gate composites it.
   {
-    theme: "light", fg: "color-mix(in srgb, #ffffff 82%, transparent)", fgOver: "#2c4635",
+    theme: "light",
+    fg: "color-mix(in srgb, #ffffff 82%, transparent)",
+    fgOver: "#2c4635",
     glass: { plain: "#2c4635" },
-    min: AA_BODY, context: "way21 phyto card body text on graded photo ground",
+    min: AA_BODY,
+    context: "way21 phyto card body text on graded photo ground",
   },
   {
-    theme: "light", fg: "color-mix(in srgb, #ffffff 60%, transparent)", fgOver: "#2c4635",
+    theme: "light",
+    fg: "color-mix(in srgb, #ffffff 60%, transparent)",
+    fgOver: "#2c4635",
     glass: { plain: "#2c4635" },
-    min: AA_BODY, context: "way21 phyto card phase subtitle on graded photo ground",
+    min: AA_BODY,
+    context: "way21 phyto card phase subtitle on graded photo ground",
   },
   {
-    theme: "light", fg: "#aec0a9",
+    theme: "light",
+    fg: "#aec0a9",
     glass: { plain: "#2c4635" },
-    min: AA_BODY, context: "way21 phyto card mono row label on graded photo ground",
+    min: AA_BODY,
+    context: "way21 phyto card mono row label on graded photo ground",
   },
   {
-    theme: "light", fg: "color-mix(in srgb, #ffffff 62%, transparent)", fgOver: "#2c4635",
+    theme: "light",
+    fg: "color-mix(in srgb, #ffffff 62%, transparent)",
+    fgOver: "#2c4635",
     glass: { plain: "#2c4635" },
-    min: AA_BODY, context: "way21 card fine print (scoped bump from the shared .45 default)",
+    min: AA_BODY,
+    context: "way21 card fine print (scoped bump from the shared .45 default)",
   },
   // --- builder course card, the status badge worn on the cover --------------
   // `.coverPill` / `.coverPillPublished` in Builder.module.css. The badge sits
@@ -388,30 +690,40 @@ const glassPairs = [
   // take the majority back, and this is what catches it. Both themes, because
   // the accent is the one token in the recipe that differs between them.
   {
-    theme: "light", fg: "--cw-mat-inverse-text",
+    theme: "light",
+    fg: "--cw-mat-inverse-text",
     glass: { tint: "--cw-mat-scrim-ink", alpha: 0.76, over: "#ffffff" },
-    min: AA_BODY, context: "builder card draft badge on its scrim over a white cover pixel",
+    min: AA_BODY,
+    context: "builder card draft badge on its scrim over a white cover pixel",
   },
   {
-    theme: "light", fg: "--cw-mat-inverse-text",
+    theme: "light",
+    fg: "--cw-mat-inverse-text",
     glass: {
       tint: "color-mix(in srgb, var(--cw-platform-accent) 22%, var(--cw-mat-scrim-ink) 78%)",
-      alpha: 0.76, over: "#ffffff",
+      alpha: 0.76,
+      over: "#ffffff",
     },
-    min: AA_BODY, context: "builder card published badge on its accent-tinted scrim over a white cover pixel",
+    min: AA_BODY,
+    context: "builder card published badge on its accent-tinted scrim over a white cover pixel",
   },
   {
-    theme: "dark", fg: "--cw-mat-inverse-text",
+    theme: "dark",
+    fg: "--cw-mat-inverse-text",
     glass: { tint: "--cw-mat-scrim-ink", alpha: 0.76, over: "#ffffff" },
-    min: AA_BODY, context: "builder card draft badge on its scrim over a white cover pixel",
+    min: AA_BODY,
+    context: "builder card draft badge on its scrim over a white cover pixel",
   },
   {
-    theme: "dark", fg: "--cw-mat-inverse-text",
+    theme: "dark",
+    fg: "--cw-mat-inverse-text",
     glass: {
       tint: "color-mix(in srgb, var(--cw-platform-accent) 22%, var(--cw-mat-scrim-ink) 78%)",
-      alpha: 0.76, over: "#ffffff",
+      alpha: 0.76,
+      over: "#ffffff",
     },
-    min: AA_BODY, context: "builder card published badge on its accent-tinted scrim over a white cover pixel",
+    min: AA_BODY,
+    context: "builder card published badge on its accent-tinted scrim over a white cover pixel",
   },
   // --- network photo hero (data-cw-hero="photo") ----------------------------
   // The copy band sits on .wrap::before — the brand dark at 92%, over the
@@ -420,24 +732,32 @@ const glassPairs = [
   // the hero's whole on-dark palette (--cw-net-hero-ink / -ink-soft / -ink-label
   // / -accent). Thin the 92% scrim and this is what catches it.
   {
-    theme: "light", fg: "#ffffff",
+    theme: "light",
+    fg: "#ffffff",
     glass: { tint: "#221f19", alpha: 0.92, over: "#ffffff" },
-    min: AA_BODY, context: "photo hero title on the copy-band scrim over a white photo pixel",
+    min: AA_BODY,
+    context: "photo hero title on the copy-band scrim over a white photo pixel",
   },
   {
-    theme: "light", fg: "#d7e0d2",
+    theme: "light",
+    fg: "#d7e0d2",
     glass: { tint: "#221f19", alpha: 0.92, over: "#ffffff" },
-    min: AA_BODY, context: "photo hero lead/trust text on the copy-band scrim",
+    min: AA_BODY,
+    context: "photo hero lead/trust text on the copy-band scrim",
   },
   {
-    theme: "light", fg: "#aec0a9",
+    theme: "light",
+    fg: "#aec0a9",
     glass: { tint: "#221f19", alpha: 0.92, over: "#ffffff" },
-    min: AA_BODY, context: "photo hero mono price label on the copy-band scrim",
+    min: AA_BODY,
+    context: "photo hero mono price label on the copy-band scrim",
   },
   {
-    theme: "light", fg: "#e5ae65",
+    theme: "light",
+    fg: "#e5ae65",
     glass: { tint: "#221f19", alpha: 0.92, over: "#ffffff" },
-    min: AA_BODY, context: "photo hero accent (title emphasis, trust tick) on the copy-band scrim",
+    min: AA_BODY,
+    context: "photo hero accent (title emphasis, trust tick) on the copy-band scrim",
   },
   // The badge and chips on that band run the material's night tone: a white
   // lift (--cw-net-hero-glass, 8%) rather than a tint, because the band is
@@ -447,9 +767,11 @@ const glassPairs = [
   // which is the same worst case the four pairs above assert. Raise the lift
   // and the pill goes pale against the band; this is what holds it honest.
   {
-    theme: "light", fg: "#d7e0d2",
+    theme: "light",
+    fg: "#d7e0d2",
     glass: { tint: "#ffffff", alpha: 0.08, over: "#34312b" },
-    min: AA_BODY, context: "photo hero badge/chip label on the night-tone glass over the copy band",
+    min: AA_BODY,
+    context: "photo hero badge/chip label on the night-tone glass over the copy band",
   },
   // --- network nav ----------------------------------------------------------
   // Light tone: the bar and the drawer it opens into are one sheet on the chrome
@@ -460,19 +782,25 @@ const glassPairs = [
   // the light canvas declares itself with data-cw-nav-dark. The worst light
   // ground is the network's chip surface.
   {
-    theme: "light", fg: "#203126",
-    glass: { tint: "#fff8ef", alpha: 0.30, over: "#faefe0" },
-    min: AA_BODY, context: "nav ink label on the light-tone sheet over the worst network canvas",
+    theme: "light",
+    fg: "#203126",
+    glass: { tint: "#fff8ef", alpha: 0.3, over: "#faefe0" },
+    min: AA_BODY,
+    context: "nav ink label on the light-tone sheet over the worst network canvas",
   },
   {
-    theme: "light", fg: "#3f6350",
-    glass: { tint: "#fff8ef", alpha: 0.30, over: "#faefe0" },
-    min: AA_BODY, context: "nav accent (focus ring) on the light-tone sheet",
+    theme: "light",
+    fg: "#3f6350",
+    glass: { tint: "#fff8ef", alpha: 0.3, over: "#faefe0" },
+    min: AA_BODY,
+    context: "nav accent (focus ring) on the light-tone sheet",
   },
   {
-    theme: "light", fg: "#1f2e24",
-    glass: { tint: "#fff8ef", alpha: 0.30, over: "#faefe0" },
-    min: AA_BODY, context: "nav active/hover label (--cw-nav-active-ink) on the light-tone sheet",
+    theme: "light",
+    fg: "#1f2e24",
+    glass: { tint: "#fff8ef", alpha: 0.3, over: "#faefe0" },
+    min: AA_BODY,
+    context: "nav active/hover label (--cw-nav-active-ink) on the light-tone sheet",
   },
   // Dark tone: backdrop is a declared dark section, so the worst ground is the
   // lightest stop of a skin's dark gradient — reset-day's #3a5c48, not white.
@@ -480,19 +808,25 @@ const glassPairs = [
   // does and still read as glass. The drawer no longer has rows of its own here:
   // it is the same sheet at the same density, so these pairs cover both.
   {
-    theme: "light", fg: "#ffffff",
-    glass: { tint: "#221f19", alpha: 0.30, over: "#3a5c48" },
-    min: AA_BODY, context: "nav brand/ink on the dark-tone sheet over the lightest dark-section stop",
+    theme: "light",
+    fg: "#ffffff",
+    glass: { tint: "#221f19", alpha: 0.3, over: "#3a5c48" },
+    min: AA_BODY,
+    context: "nav brand/ink on the dark-tone sheet over the lightest dark-section stop",
   },
   {
-    theme: "light", fg: "#d7e0d2",
-    glass: { tint: "#221f19", alpha: 0.30, over: "#3a5c48" },
-    min: AA_BODY, context: "nav link label on the dark-tone sheet",
+    theme: "light",
+    fg: "#d7e0d2",
+    glass: { tint: "#221f19", alpha: 0.3, over: "#3a5c48" },
+    min: AA_BODY,
+    context: "nav link label on the dark-tone sheet",
   },
   {
-    theme: "light", fg: "#ffffff",
-    glass: { tint: "#221f19", alpha: 0.30, over: "#3a5c48" },
-    min: AA_BODY, context: "nav active/hover label (--cw-nav-active-ink) on the dark-tone sheet",
+    theme: "light",
+    fg: "#ffffff",
+    glass: { tint: "#221f19", alpha: 0.3, over: "#3a5c48" },
+    min: AA_BODY,
+    context: "nav active/hover label (--cw-nav-active-ink) on the dark-tone sheet",
   },
   // The focus ring is a non-text indicator, so it is held to the 3:1 UI bound,
   // not the 4.5 body bound. Worth knowing where it actually lands: on the
@@ -501,17 +835,21 @@ const glassPairs = [
   // being gold here (--cw-nav-active-ink). Gold on this bar is now only the ring
   // and the mark image; thin the material any further and the ring goes too.
   {
-    theme: "light", fg: "#e5ae65",
-    glass: { tint: "#221f19", alpha: 0.30, over: "#3a5c48" },
-    min: AA_LARGE, context: "nav accent focus ring on the dark-tone sheet (UI bound, not text)",
+    theme: "light",
+    fg: "#e5ae65",
+    glass: { tint: "#221f19", alpha: 0.3, over: "#3a5c48" },
+    min: AA_LARGE,
+    context: "nav accent focus ring on the dark-tone sheet (UI bound, not text)",
   },
   // The footer lockup now runs the same gold word the dark-tone bar does. Not
   // glass — the footer is the solid --cw-net-text of the skin, and the worst
   // (lightest) one across the five network landings is #283b2b.
   {
-    theme: "light", fg: "#e5ae65",
+    theme: "light",
+    fg: "#e5ae65",
     glass: { plain: "#283b2b" },
-    min: AA_BODY, context: "gold footer wordmark on the lightest network footer ground",
+    min: AA_BODY,
+    context: "gold footer wordmark on the lightest network footer ground",
   },
 
   // --- Course packs (2026-08-21) --------------------------------------------
@@ -525,36 +863,60 @@ const glassPairs = [
   // landings' own, deepened for reset-day and herbs until they cleared this
   // gate — the same move the brand sheet's #588768 → #456b58 made.
   {
-    theme: "light", fg: "#1f2e24", glass: { plain: "#fff8ef" },
-    min: AA_BODY, context: "course pack way21 — body ink on the reading surface",
+    theme: "light",
+    fg: "#1f2e24",
+    glass: { plain: "#fff8ef" },
+    min: AA_BODY,
+    context: "course pack way21 — body ink on the reading surface",
   },
   {
-    theme: "light", fg: "#3f6350", glass: { plain: "#fff8ef" },
-    min: AA_BODY, context: "course pack way21 — accent ink on the reading surface",
+    theme: "light",
+    fg: "#3f6350",
+    glass: { plain: "#fff8ef" },
+    min: AA_BODY,
+    context: "course pack way21 — accent ink on the reading surface",
   },
   {
-    theme: "light", fg: "#26372c", glass: { plain: "#fff8ef" },
-    min: AA_BODY, context: "course pack reset-day — body ink on the reading surface",
+    theme: "light",
+    fg: "#26372c",
+    glass: { plain: "#fff8ef" },
+    min: AA_BODY,
+    context: "course pack reset-day — body ink on the reading surface",
   },
   {
-    theme: "light", fg: "#517a65", glass: { plain: "#fff8ef" },
-    min: AA_BODY, context: "course pack reset-day — accent ink on the reading surface",
+    theme: "light",
+    fg: "#517a65",
+    glass: { plain: "#fff8ef" },
+    min: AA_BODY,
+    context: "course pack reset-day — accent ink on the reading surface",
   },
   {
-    theme: "light", fg: "#48544c", glass: { plain: "#fdf6ec" },
-    min: AA_BODY, context: "course pack reset-day — muted label on its own canvas",
+    theme: "light",
+    fg: "#48544c",
+    glass: { plain: "#fdf6ec" },
+    min: AA_BODY,
+    context: "course pack reset-day — muted label on its own canvas",
   },
   {
-    theme: "light", fg: "#283b2b", glass: { plain: "#fff8ef" },
-    min: AA_BODY, context: "course pack herbs — body ink on the reading surface",
+    theme: "light",
+    fg: "#283b2b",
+    glass: { plain: "#fff8ef" },
+    min: AA_BODY,
+    context: "course pack herbs — body ink on the reading surface",
   },
   {
-    theme: "light", fg: "#537c4c", glass: { plain: "#fff8ef" },
-    min: AA_BODY, context: "course pack herbs — accent ink on the reading surface",
+    theme: "light",
+    fg: "#537c4c",
+    glass: { plain: "#fff8ef" },
+    min: AA_BODY,
+    context: "course pack herbs — accent ink on the reading surface",
   },
   {
-    theme: "light", fg: "#31403e", glass: { plain: "#fbfaf6" },
-    min: AA_BODY, context: "course pack mineral — body ink on the reading surface",
+    theme: "light",
+    fg: "#31403e",
+    glass: { plain: "#fbfaf6" },
+    min: AA_BODY,
+    context: "course pack mineral — body ink on the reading surface",
   },
 ];
 
@@ -578,7 +940,11 @@ const maps = {
 
 function hexToRgb(hex) {
   let h = hex.replace("#", "");
-  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  if (h.length === 3)
+    h = h
+      .split("")
+      .map((c) => c + c)
+      .join("");
   const n = parseInt(h.slice(0, 6), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
@@ -594,9 +960,7 @@ function resolve(value, map, depth = 0) {
   const varMatch = val.match(/^var\(\s*(--[\w-]+)\s*\)$/);
   if (varMatch) return resolve(map.get(varMatch[1]), map, depth + 1);
 
-  const mixMatch = val.match(
-    /^color-mix\(in srgb,\s*(.+?)\s+(\d+(?:\.\d+)?)%\s*,\s*(.+?)\s+(\d+(?:\.\d+)?)%\s*\)$/,
-  );
+  const mixMatch = val.match(/^color-mix\(in srgb,\s*(.+?)\s+(\d+(?:\.\d+)?)%\s*,\s*(.+?)\s+(\d+(?:\.\d+)?)%\s*\)$/);
   if (mixMatch) {
     const a = resolve(mixMatch[1], map, depth + 1);
     const b = resolve(mixMatch[3], map, depth + 1);

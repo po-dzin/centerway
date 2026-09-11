@@ -103,11 +103,7 @@ export function OfferForm({ route, programSlug }: Pick<PlatformRouteBlockProps, 
         <article className={styles.formPanel}>
           <p className={styles.label}>Форма</p>
           <h2 className={styles.title}>Залишити контакти</h2>
-          <LeadForm
-            productCode={productCode}
-            source={`platform_${route}_form`}
-            ctaPlace={`${route}_offer`}
-          />
+          <LeadForm productCode={productCode} source={`platform_${route}_form`} ctaPlace={`${route}_offer`} />
         </article>
       </div>
     </section>

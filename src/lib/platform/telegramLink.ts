@@ -46,8 +46,7 @@ export function createTelegramLinkToken(authUserId: string, now = Date.now()): s
 }
 
 export type TelegramLinkVerdict =
-  | { ok: true; authUserId: string }
-  | { ok: false; reason: "malformed" | "expired" | "bad_signature" };
+  { ok: true; authUserId: string } | { ok: false; reason: "malformed" | "expired" | "bad_signature" };
 
 /** Reverses `createTelegramLinkToken`, refusing anything it did not issue. */
 export function verifyTelegramLinkToken(token: string, now = Date.now()): TelegramLinkVerdict {

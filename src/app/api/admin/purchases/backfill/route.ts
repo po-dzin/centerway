@@ -77,13 +77,7 @@ type PurchaseBackfillCandidate = {
   paid_at: string | null;
   payload: CapiEventPayload;
   existing_job: JobRow | null;
-  diagnosis:
-    | "missing_job"
-    | "job_failed"
-    | "job_pending"
-    | "job_running"
-    | "job_success"
-    | "missing_event_time";
+  diagnosis: "missing_job" | "job_failed" | "job_pending" | "job_running" | "job_success" | "missing_event_time";
 };
 
 type BackfillOrderResult = {
@@ -230,7 +224,7 @@ async function updateJobForImmediateFailure(
   db: ReturnType<typeof adminClient>,
   jobId: string,
   currentAttempts: number,
-  errorText: string
+  errorText: string,
 ) {
   const retryState = computeRetryState(currentAttempts);
   await db
@@ -247,7 +241,7 @@ async function updateJobForImmediateFailure(
 async function fetchLatestCapiJobByOrderRef(
   db: ReturnType<typeof adminClient>,
   eventName: CapiEventPayload["event_name"],
-  orderRef: string
+  orderRef: string,
 ): Promise<JobRow | null> {
   const { data, error } = await db
     .from("jobs")
@@ -263,11 +257,7 @@ async function fetchLatestCapiJobByOrderRef(
   return (data as JobRow | null) ?? null;
 }
 
-async function supersedeDuplicatePurchaseJobs(
-  db: ReturnType<typeof adminClient>,
-  orderRef: string,
-  keepJobId: string
-) {
+async function supersedeDuplicatePurchaseJobs(db: ReturnType<typeof adminClient>, orderRef: string, keepJobId: string) {
   const { data, error } = await db
     .from("jobs")
     .select("id, status")
@@ -311,10 +301,7 @@ function buildPurchasePayload(input: {
     event_id: `purchase_${input.order.order_ref}`,
     event_time: eventTime,
     fbc_creation_time_seconds: parseEventTimeSeconds(input.order.created_at) ?? eventTime,
-    value:
-      typeof input.order.amount === "number"
-        ? input.order.amount
-        : Number(input.order.amount) || undefined,
+    value: typeof input.order.amount === "number" ? input.order.amount : Number(input.order.amount) || undefined,
     currency: input.order.currency ?? input.paymentMeta?.currency ?? "UAH",
     order_ref: input.order.order_ref,
     email: normalizeTrackingString(input.customer?.email) ?? input.paymentMeta?.email ?? null,
@@ -323,9 +310,7 @@ function buildPurchasePayload(input: {
       normalizeTrackingString(input.order.fbp) ??
       payloadString(input.initiatePayload, "fbp") ??
       payloadString(input.checkoutPayload, "fbp"),
-    fbc:
-      payloadString(input.initiatePayload, "fbc") ??
-      payloadString(input.checkoutPayload, "fbc"),
+    fbc: payloadString(input.initiatePayload, "fbc") ?? payloadString(input.checkoutPayload, "fbc"),
     fbclid:
       normalizeTrackingString(input.order.fbclid) ??
       payloadString(input.initiatePayload, "fbclid") ??
@@ -414,7 +399,7 @@ export async function POST(req: NextRequest) {
     const { data: orders, error: ordersErr } = await db
       .from("orders")
       .select(
-        "order_ref, product_code, amount, currency, status, customer_id, fbp, fbclid, client_ip, client_ua, page_url, created_at"
+        "order_ref, product_code, amount, currency, status, customer_id, fbp, fbclid, client_ip, client_ua, page_url, created_at",
       )
       .in("status", ["paid", "completed"])
       .in("order_ref", orderRefsInWindow)
@@ -424,7 +409,9 @@ export async function POST(req: NextRequest) {
 
     const orderRows = ((orders ?? []) as OrderRow[])
       .filter((row) => paidAtByOrderRef.has(row.order_ref))
-      .sort((a, b) => compareIsoDesc(paidAtByOrderRef.get(a.order_ref) ?? null, paidAtByOrderRef.get(b.order_ref) ?? null))
+      .sort((a, b) =>
+        compareIsoDesc(paidAtByOrderRef.get(a.order_ref) ?? null, paidAtByOrderRef.get(b.order_ref) ?? null),
+      )
       .slice(0, limit);
 
     if (orderRows.length === 0) {
@@ -442,7 +429,11 @@ export async function POST(req: NextRequest) {
 
     const orderRefs = orderRows.map((row) => row.order_ref);
     const customerIds = Array.from(
-      new Set(orderRows.map((row) => row.customer_id).filter((value): value is string => typeof value === "string" && value.length > 0))
+      new Set(
+        orderRows
+          .map((row) => row.customer_id)
+          .filter((value): value is string => typeof value === "string" && value.length > 0),
+      ),
     );
 
     const [paymentsRes, eventsRes, customersRes] = await Promise.all([
@@ -490,7 +481,10 @@ export async function POST(req: NextRequest) {
       if (row.type === "checkout_started" && !checkoutStartedByOrderRef.has(orderRef)) {
         checkoutStartedByOrderRef.set(orderRef, row);
       }
-      if ((row.type === "purchase_completed" || row.type === "payment_approved") && !paymentEventByOrderRef.has(orderRef)) {
+      if (
+        (row.type === "purchase_completed" || row.type === "payment_approved") &&
+        !paymentEventByOrderRef.has(orderRef)
+      ) {
         paymentEventByOrderRef.set(orderRef, row);
       }
     }
@@ -505,7 +499,7 @@ export async function POST(req: NextRequest) {
         ]);
         initiateCheckoutJobByOrderRef.set(orderRef, initiateJob);
         purchaseJobByOrderRef.set(orderRef, purchaseJob);
-      })
+      }),
     );
 
     const candidates: PurchaseBackfillCandidate[] = [];
@@ -514,8 +508,13 @@ export async function POST(req: NextRequest) {
       const paymentRow = paidPaymentByOrderRef.get(order.order_ref) ?? null;
       const paymentMeta = paymentRow ? extractPaymentMeta(paymentRow.raw_payload) : null;
       const paymentEvent = paymentEventByOrderRef.get(order.order_ref) ?? null;
-      const paidAt = paidAtByOrderRef.get(order.order_ref) ?? paymentRow?.created_at ?? paymentEvent?.created_at ?? order.created_at ?? null;
-      const customer = order.customer_id ? customersById.get(order.customer_id) ?? null : null;
+      const paidAt =
+        paidAtByOrderRef.get(order.order_ref) ??
+        paymentRow?.created_at ??
+        paymentEvent?.created_at ??
+        order.created_at ??
+        null;
+      const customer = order.customer_id ? (customersById.get(order.customer_id) ?? null) : null;
       const initiatePayload = initiateCheckoutJobByOrderRef.get(order.order_ref)?.payload ?? null;
       const checkoutPayload = checkoutStartedByOrderRef.get(order.order_ref)?.payload ?? null;
       const payload = buildPurchasePayload({
@@ -722,8 +721,8 @@ export async function POST(req: NextRequest) {
             .update({
               status: "success",
               error_text: null,
-              })
-              .eq("id", jobId);
+            })
+            .eq("id", jobId);
           await supersedeDuplicatePurchaseJobs(db, candidate.order_ref, jobId);
         }
         results.push({

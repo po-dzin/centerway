@@ -30,9 +30,11 @@ export type CourseRevisionSummary = {
 function canonical(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonical);
   if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value as Record<string, unknown>)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, entry]) => [key, canonical(entry)]));
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([key, entry]) => [key, canonical(entry)]),
+    );
   }
   return value;
 }
@@ -55,7 +57,9 @@ function canonical(value: unknown): unknown {
 export function courseRevisionHash(course: Course): string {
   const { version: _version, ...content } = course;
   void _version;
-  return createHash("sha256").update(JSON.stringify(canonical(content))).digest("hex");
+  return createHash("sha256")
+    .update(JSON.stringify(canonical(content)))
+    .digest("hex");
 }
 
 /**
@@ -66,7 +70,8 @@ export function courseRevisionHash(course: Course): string {
 async function resolveActors(ids: string[]): Promise<Map<string, string>> {
   const unique = [...new Set(ids)];
   if (unique.length === 0) return new Map();
-  const { data, error } = await adminClient().from("platform_users")
+  const { data, error } = await adminClient()
+    .from("platform_users")
     .select("auth_user_id, email, full_name")
     .in("auth_user_id", unique);
   if (error) {
@@ -74,15 +79,23 @@ async function resolveActors(ids: string[]): Promise<Map<string, string>> {
     console.warn(`lms: revision actors unresolved — ${error.message}`);
     return new Map();
   }
-  return new Map((data ?? []).map((row) => [
-    row.auth_user_id as string,
-    ((row.full_name as string | null) || (row.email as string | null) || "") as string,
-  ].filter(Boolean) as [string, string]));
+  return new Map(
+    (data ?? []).map(
+      (row) =>
+        [
+          row.auth_user_id as string,
+          ((row.full_name as string | null) || (row.email as string | null) || "") as string,
+        ].filter(Boolean) as [string, string],
+    ),
+  );
 }
 
 export async function listCourseRevisions(courseId: string): Promise<CourseRevisionSummary[]> {
-  const { data, error } = await adminClient().from("lms_course_revisions")
-    .select("id, revision_number, kind, content_hash, label, created_by, parent_revision_id, source_revision_id, created_at")
+  const { data, error } = await adminClient()
+    .from("lms_course_revisions")
+    .select(
+      "id, revision_number, kind, content_hash, label, created_by, parent_revision_id, source_revision_id, created_at",
+    )
     .eq("course_id", courseId)
     .order("revision_number", { ascending: false });
   if (error) throw new Error(`lms_revision_list_failed:${error.message}`);
@@ -104,9 +117,15 @@ export async function listCourseRevisions(courseId: string): Promise<CourseRevis
   }));
 }
 
-export async function loadCourseRevision(courseId: string, revisionId: string): Promise<(CourseRevisionSummary & { content: Course }) | null> {
-  const { data, error } = await adminClient().from("lms_course_revisions")
-    .select("id, revision_number, kind, content_hash, label, created_by, parent_revision_id, source_revision_id, created_at, content")
+export async function loadCourseRevision(
+  courseId: string,
+  revisionId: string,
+): Promise<(CourseRevisionSummary & { content: Course }) | null> {
+  const { data, error } = await adminClient()
+    .from("lms_course_revisions")
+    .select(
+      "id, revision_number, kind, content_hash, label, created_by, parent_revision_id, source_revision_id, created_at, content",
+    )
     .eq("course_id", courseId)
     .eq("id", revisionId)
     .maybeSingle();
@@ -125,7 +144,9 @@ export async function loadCourseRevision(courseId: string, revisionId: string): 
     contentHash: data.content_hash as string,
     label: (data.label as string | null) ?? null,
     createdBy: (data.created_by as string | null) ?? null,
-    actor: (await resolveActors([data.created_by as string].filter(Boolean) as string[])).get(data.created_by as string) ?? null,
+    actor:
+      (await resolveActors([data.created_by as string].filter(Boolean) as string[])).get(data.created_by as string) ??
+      null,
     parentRevisionId: (data.parent_revision_id as string | null) ?? null,
     sourceRevisionId: (data.source_revision_id as string | null) ?? null,
     createdAt: data.created_at as string,
@@ -232,8 +253,11 @@ export async function listLessonRevisions(
   lessonId: string,
   limit = 60,
 ): Promise<LessonRevisionEntry[]> {
-  const { data, error } = await adminClient().from("lms_course_revisions")
-    .select("id, revision_number, kind, content_hash, label, created_by, parent_revision_id, source_revision_id, created_at, content")
+  const { data, error } = await adminClient()
+    .from("lms_course_revisions")
+    .select(
+      "id, revision_number, kind, content_hash, label, created_by, parent_revision_id, source_revision_id, created_at, content",
+    )
     .eq("course_id", courseId)
     .order("revision_number", { ascending: false })
     .limit(limit);

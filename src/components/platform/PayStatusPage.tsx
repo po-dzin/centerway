@@ -9,11 +9,7 @@ import { SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
 import { PROFILE_PATH_PREFIX, surfaceUrl } from "@/lib/surfaces/catalog";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import type { ReturnStatus } from "@/lib/payments/payReturn";
-import {
-  formatPrice,
-  type ProductFulfilment,
-  type SearchParams,
-} from "@/lib/products";
+import { formatPrice, type ProductFulfilment, type SearchParams } from "@/lib/products";
 
 /**
  * One confirmation page for every product, on the platform's own design system.
@@ -47,13 +43,7 @@ function parseAmount(raw: string | null): number | null {
   return Number.isFinite(value) && value > 0 ? value : null;
 }
 
-export async function PayStatusPage({
-  status,
-  searchParams,
-}: {
-  status: ReturnStatus;
-  searchParams: SearchParams;
-}) {
+export async function PayStatusPage({ status, searchParams }: { status: ReturnStatus; searchParams: SearchParams }) {
   /* NO LONGER DEFAULTS TO "short". It used to, so that the page rendered
      something when the provider dropped the field — but the same default sent
      a buyer of anything unrecognised to Short Reboot's Telegram bot. An unknown
@@ -75,7 +65,9 @@ export async function PayStatusPage({
      ended at a catalogue. The product is already resolved on this page, so the
      way back to the same checkout is one link — a buyer whose bank refused the
      first card is trying again, not shopping. */
-  const retryHref = offer?.code ? `/api/pay/start?product=${encodeURIComponent(offer.code)}&cta_place=pay_failed_retry` : null;
+  const retryHref = offer?.code
+    ? `/api/pay/start?product=${encodeURIComponent(offer.code)}&cta_place=pay_failed_retry`
+    : null;
 
   const destination = paid
     ? fulfilment.kind === "bot"
@@ -151,9 +143,7 @@ export async function PayStatusPage({
             </h1>
             <p className={offerStyles.lead}>{lead}</p>
 
-            {pending && orderRef ? (
-              <PayPendingWatcher orderRef={orderRef} product={product || null} />
-            ) : null}
+            {pending && orderRef ? <PayPendingWatcher orderRef={orderRef} product={product || null} /> : null}
 
             <div className={styles.statusActions}>
               {/* NO PRIMARY ACTION WHILE WAITING. The sentence above asks the
@@ -190,8 +180,8 @@ export async function PayStatusPage({
                    used at checkout, so signing in with another address finds no
                    purchase and reads as "I paid and got nothing". */
                 <li>
-                  <strong>Важливо:</strong> входьте тим самим email, який вказали під час оплати — за ним
-                  відкривається доступ.
+                  <strong>Важливо:</strong> входьте тим самим email, який вказали під час оплати — за ним відкривається
+                  доступ.
                 </li>
               ) : null}
               {meta.length > 0 ? <li>{meta.join(" · ")}</li> : null}

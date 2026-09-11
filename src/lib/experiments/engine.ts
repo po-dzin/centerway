@@ -81,7 +81,7 @@ export function parseCookieHeader(rawCookieHeader: string | null): Map<string, s
 
 export function resolveExperimentAssignments(input: ResolveExperimentInput): ResolveExperimentOutput {
   const routeExperiments = input.experiments.filter(
-    (experiment) => experiment.status === "active" && experiment.route_key === input.routeKey
+    (experiment) => experiment.status === "active" && experiment.route_key === input.routeKey,
   );
 
   const cookieMutations: Array<{ name: string; value: string }> = [];

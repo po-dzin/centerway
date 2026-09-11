@@ -122,9 +122,7 @@ describe("preparePortableCourse", () => {
 
     const result = preparePortableCourse(source, { takenSlugs: [], ids: ids() });
     expect(result.course.status).toBe("draft");
-    expect(result.readiness.blockers).toEqual([
-      expect.objectContaining({ code: "lms_ready_placeholder" }),
-    ]);
+    expect(result.readiness.blockers).toEqual([expect.objectContaining({ code: "lms_ready_placeholder" })]);
   });
 
   it("rejects a broken transfer instead of inventing missing structure", () => {

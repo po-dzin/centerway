@@ -57,7 +57,11 @@ export function PlatformHeroPhoto({ artwork, alt, className, eager }: PlatformHe
   return (
     <picture>
       {mobile && mobileStatus?.src === mobile.src && mobileStatus.ready ? (
-        <source media={PORTRAIT_MEDIA} srcSet={mobile.srcSet ?? mobile.src} sizes={mobile.srcSet ? MEDIA_SIZES.full : undefined} />
+        <source
+          media={PORTRAIT_MEDIA}
+          srcSet={mobile.srcSet ?? mobile.src}
+          sizes={mobile.srcSet ? MEDIA_SIZES.full : undefined}
+        />
       ) : null}
       <img
         className={className}

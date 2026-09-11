@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { asString } from "@/lib/strings";
 import { adminClient } from "@/lib/auth/adminClient";
-import {
-  emitDoshaTestEvent,
-  ensureDoshaTestSeed,
-  loadTestDefinitionBySlug,
-} from "@/lib/dosha/doshaTestRepo";
+import { emitDoshaTestEvent, ensureDoshaTestSeed, loadTestDefinitionBySlug } from "@/lib/dosha/doshaTestRepo";
 import { DOSHA_TEST_SLUG } from "@/lib/dosha/doshaTest";
 import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 
@@ -18,10 +14,7 @@ type RestartBody = {
   userId?: unknown;
 };
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ testSlug: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ testSlug: string }> }) {
   const rl = await enforceRateLimit(req, { name: "test_restart", limit: 20, windowSeconds: 60 });
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 

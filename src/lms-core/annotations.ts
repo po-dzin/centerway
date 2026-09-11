@@ -73,9 +73,7 @@ export function clampNote(value: string): string {
   return value.trim().slice(0, ANNOTATION_NOTE_MAX);
 }
 
-export type AnchorResolution =
-  | { found: true; start: number; end: number; moved: boolean }
-  | { found: false };
+export type AnchorResolution = { found: true; start: number; end: number; moved: boolean } | { found: false };
 
 /**
  * Where the mark sits in the block's text NOW.

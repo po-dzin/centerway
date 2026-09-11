@@ -95,12 +95,10 @@ export function useAnnotations(courseSlug: string, enabled: boolean): Annotation
       }
       // The server's row wins: it carries the real timestamps and the clamped
       // text, so a note typed longer than the cap does not keep its tail here.
-      setAll((current) =>
-        current.map((item) => (item.clientId === next.clientId ? result.data.annotation : item))
-      );
+      setAll((current) => current.map((item) => (item.clientId === next.clientId ? result.data.annotation : item)));
       return true;
     },
-    [courseSlug]
+    [courseSlug],
   );
 
   const toggleBookmark = useCallback(
@@ -130,7 +128,7 @@ export function useAnnotations(courseSlug: string, enabled: boolean): Annotation
       setAll((current) => [...current, next]);
       await write(next, previous);
     },
-    [all, courseSlug, write]
+    [all, courseSlug, write],
   );
 
   const mark = useCallback(
@@ -151,7 +149,7 @@ export function useAnnotations(courseSlug: string, enabled: boolean): Annotation
       const saved = await write(next, previous);
       return saved ? next.clientId : null;
     },
-    [all, write]
+    [all, write],
   );
 
   const setNote = useCallback(
@@ -163,7 +161,7 @@ export function useAnnotations(courseSlug: string, enabled: boolean): Annotation
       setAll((current) => current.map((item) => (item.clientId === clientId ? next : item)));
       await write(next, previous);
     },
-    [all, write]
+    [all, write],
   );
 
   const remove = useCallback(
@@ -173,7 +171,7 @@ export function useAnnotations(courseSlug: string, enabled: boolean): Annotation
       const result = await deleteRemote(courseSlug, clientId);
       if (!result.ok) setAll(previous);
     },
-    [all, courseSlug]
+    [all, courseSlug],
   );
 
   return useMemo(
@@ -187,6 +185,6 @@ export function useAnnotations(courseSlug: string, enabled: boolean): Annotation
       remove,
       ready,
     }),
-    [all, mark, ready, remove, setNote, toggleBookmark]
+    [all, mark, ready, remove, setNote, toggleBookmark],
   );
 }

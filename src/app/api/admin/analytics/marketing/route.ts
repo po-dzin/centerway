@@ -33,9 +33,7 @@ function isMissingMarketingInputsTable(message: string | undefined): boolean {
   const lower = message.toLowerCase();
   return (
     lower.includes("analytics_marketing_inputs") &&
-    (lower.includes("could not find the table") ||
-      lower.includes("relation") ||
-      lower.includes("does not exist"))
+    (lower.includes("could not find the table") || lower.includes("relation") || lower.includes("does not exist"))
   );
 }
 
@@ -86,7 +84,7 @@ export async function PATCH(req: NextRequest) {
           error:
             "Missing table public.analytics_marketing_inputs. Run SQL migration: docs/migration/sql/2026-03-05_analytics_marketing_inputs.sql",
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
     return serverErrorResponse(error.message);

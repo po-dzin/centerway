@@ -186,13 +186,12 @@
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background:
-    linear-gradient(
-      170deg,
-      color-mix(in srgb, var(--cw-mat-scrim-ink) 38%, transparent) 0%,
-      color-mix(in srgb, var(--cw-mat-scrim-ink) 20%, transparent) 30%,
-      transparent 52%
-    );
+  background: linear-gradient(
+    170deg,
+    color-mix(in srgb, var(--cw-mat-scrim-ink) 38%, transparent) 0%,
+    color-mix(in srgb, var(--cw-mat-scrim-ink) 20%, transparent) 30%,
+    transparent 52%
+  );
 }
 
 .seamMark {
@@ -365,7 +364,6 @@
      above the name. */
   padding: 0;
 }
-
 
 /* ── Wider ────────────────────────────────────────── */
 

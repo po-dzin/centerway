@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  DAILY_TOKEN_LIMIT,
-  DAILY_TOKEN_LIMIT_PLATFORM,
-  budgetDayStart,
-  budgetVerdict,
-} from "./budget";
+import { DAILY_TOKEN_LIMIT, DAILY_TOKEN_LIMIT_PLATFORM, budgetDayStart, budgetVerdict } from "./budget";
 
 describe("agent budget", () => {
   it("allows a subject under its ceiling and reports what is left", () => {

@@ -36,7 +36,12 @@ type CropPreviewProps = {
 type CropFormat = "landscape" | "wide" | "portrait";
 
 const FRAME = {
-  landscape: { className: "coverPreviewLandscape", axis: "both", note: "16:9 · картки і hero до 16:9", label: "Горизонтальний" },
+  landscape: {
+    className: "coverPreviewLandscape",
+    axis: "both",
+    note: "16:9 · картки і hero до 16:9",
+    label: "Горизонтальний",
+  },
   wide: { className: "coverPreviewWide", axis: "y", note: "21:9 · hero на широкому екрані", label: "Широкий" },
   portrait: { className: "coverPreviewPortrait", axis: "both", note: "9:16 · hero на mobile", label: "Вертикальний" },
 } as const;
@@ -62,7 +67,17 @@ const PORTRAIT_SPEC: ImageSpec = { minWidth: 1080, ratio: 9 / 16, recommended: "
 
 const clamp = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 
-function CropPreview({ src, alt, format, x, y, scale, onChange, onScaleChange, reset }: CropPreviewProps & { reset?: { label: string; onReset: () => void } }) {
+function CropPreview({
+  src,
+  alt,
+  format,
+  x,
+  y,
+  scale,
+  onChange,
+  onScaleChange,
+  reset,
+}: CropPreviewProps & { reset?: { label: string; onReset: () => void } }) {
   const activePointer = useRef<number | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   /* Where the hand and the crop both were when the drag began — deltas come
@@ -98,7 +113,7 @@ function CropPreview({ src, alt, format, x, y, scale, onChange, onScaleChange, r
       { dx: event.clientX - origin.current.pointerX, dy: event.clientY - origin.current.pointerY },
       { width: bounds.width, height: bounds.height },
       { width: image?.naturalWidth ?? 0, height: image?.naturalHeight ?? 0 },
-      scale
+      scale,
     );
     onChange(horizontal ? next.x : x, next.y);
   };
@@ -136,7 +151,13 @@ function CropPreview({ src, alt, format, x, y, scale, onChange, onScaleChange, r
         onPointerCancel={endDrag}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- authored cover may use any public host */}
-        <img ref={imageRef} src={src} alt={alt} style={cropStyle({ x, y, scale }, { x: 50, y: 50 })} draggable={false} />
+        <img
+          ref={imageRef}
+          src={src}
+          alt={alt}
+          style={cropStyle({ x, y, scale }, { x: 50, y: 50 })}
+          draggable={false}
+        />
         {/* Thirds while the hand is down — the same guides the cabinet's crop
             draws, and for the same reason: the grip badge that used to sit here
             explained a gesture this frame no longer uses. */}

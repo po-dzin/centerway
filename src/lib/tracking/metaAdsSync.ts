@@ -102,11 +102,7 @@ function extractEventCounts(actions: MetaInsightsAction[] | undefined) {
       "omni_initiate_checkout",
       "initiate_checkout",
     ]),
-    purchase: pickActionValue(totals, [
-      "offsite_conversion.fb_pixel_purchase",
-      "omni_purchase",
-      "purchase",
-    ]),
+    purchase: pickActionValue(totals, ["offsite_conversion.fb_pixel_purchase", "omni_purchase", "purchase"]),
   };
 }
 
@@ -132,9 +128,7 @@ function parsePixelRowTotals(row: unknown): PixelDayTotals {
     if (key) {
       const valueCandidates = [r.total_count, r.total, r.value, r.count];
       const value =
-        valueCandidates
-          .map((candidate) => toNumber(candidate))
-          .find((n) => Number.isFinite(n) && n >= 0) ?? 0;
+        valueCandidates.map((candidate) => toNumber(candidate)).find((n) => Number.isFinite(n) && n >= 0) ?? 0;
       totals[key] += Math.max(0, Math.round(value));
     }
   }
@@ -156,7 +150,7 @@ function parsePixelRowTotals(row: unknown): PixelDayTotals {
 
 async function syncPixelDailyStats(
   db: ReturnType<typeof adminClient>,
-  options: { since: string; until: string; token: string; pixelId: string; apiVersion: string }
+  options: { since: string; until: string; token: string; pixelId: string; apiVersion: string },
 ): Promise<number> {
   const nowIso = toIsoDate(new Date());
   const boundedUntil = options.until > nowIso ? nowIso : options.until;
@@ -221,19 +215,13 @@ function resolveSyncWindow(sinceInput?: string | null, untilInput?: string | nul
   const now = new Date();
   const defaultUntil = toIsoDate(now);
   const defaultDaysRaw = Number(process.env.META_SYNC_DEFAULT_DAYS ?? 2);
-  const defaultDays = Number.isFinite(defaultDaysRaw) && defaultDaysRaw > 0
-    ? Math.floor(defaultDaysRaw)
-    : 2;
+  const defaultDays = Number.isFinite(defaultDaysRaw) && defaultDaysRaw > 0 ? Math.floor(defaultDaysRaw) : 2;
   const defaultSinceDate = new Date(now);
   defaultSinceDate.setDate(defaultSinceDate.getDate() - (defaultDays - 1));
   const defaultSince = toIsoDate(defaultSinceDate);
 
-  const since = typeof sinceInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(sinceInput)
-    ? sinceInput
-    : defaultSince;
-  const until = typeof untilInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(untilInput)
-    ? untilInput
-    : defaultUntil;
+  const since = typeof sinceInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(sinceInput) ? sinceInput : defaultSince;
+  const until = typeof untilInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(untilInput) ? untilInput : defaultUntil;
 
   return { since, until };
 }
@@ -248,7 +236,10 @@ async function fetchInsightsPage(url: string): Promise<MetaInsightsResponse> {
   return json;
 }
 
-export async function syncMetaAdsInsights(options?: { since?: string | null; until?: string | null }): Promise<MetaSyncResult> {
+export async function syncMetaAdsInsights(options?: {
+  since?: string | null;
+  until?: string | null;
+}): Promise<MetaSyncResult> {
   const token = process.env.META_ADS_ACCESS_TOKEN || process.env.META_ACCESS_TOKEN;
   const rawAccount = process.env.META_AD_ACCOUNT_ID;
   const rawPixelId = process.env.META_PIXEL_ID || process.env.META_AD_PIXEL_ID || process.env.META_PIXEL;
@@ -305,7 +296,8 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
         impressions: Math.round(toNumber(row.impressions)),
         clicks: Math.round(toNumber(row.clicks)),
         spend: toNumber(row.spend),
-        currency: typeof row.account_currency === "string" && row.account_currency.trim() ? row.account_currency.trim() : "UAH",
+        currency:
+          typeof row.account_currency === "string" && row.account_currency.trim() ? row.account_currency.trim() : "UAH",
         view_content: Math.round(events.view_content),
         initiate_checkout: Math.round(events.initiate_checkout),
         purchase: Math.round(events.purchase),
@@ -365,7 +357,8 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
         impressions: Math.round(toNumber(row.impressions)),
         clicks: Math.round(toNumber(row.clicks)),
         spend: toNumber(row.spend),
-        currency: typeof row.account_currency === "string" && row.account_currency.trim() ? row.account_currency.trim() : "UAH",
+        currency:
+          typeof row.account_currency === "string" && row.account_currency.trim() ? row.account_currency.trim() : "UAH",
         view_content: Math.round(events.view_content),
         initiate_checkout: Math.round(events.initiate_checkout),
         purchase: Math.round(events.purchase),
@@ -379,7 +372,9 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
   if (campaignUpsertRows.length > 0) {
     const { error } = await db
       .from("analytics_meta_campaign_daily")
-      .upsert(campaignUpsertRows as Insert<"analytics_meta_campaign_daily">[], { onConflict: "day,account_id,campaign_id" });
+      .upsert(campaignUpsertRows as Insert<"analytics_meta_campaign_daily">[], {
+        onConflict: "day,account_id,campaign_id",
+      });
     if (error) {
       const message = error.message.toLowerCase();
       const isMissingTable =
@@ -398,7 +393,8 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
     access_token: token,
     level: "adset",
     time_increment: "1",
-    fields: "date_start,date_stop,campaign_id,campaign_name,adset_id,adset_name,spend,reach,impressions,clicks,actions,account_currency",
+    fields:
+      "date_start,date_stop,campaign_id,campaign_name,adset_id,adset_name,spend,reach,impressions,clicks,actions,account_currency",
     time_range: JSON.stringify({ since, until }),
     limit: "500",
   });
@@ -439,7 +435,8 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
         impressions: Math.round(toNumber(row.impressions)),
         clicks: Math.round(toNumber(row.clicks)),
         spend: toNumber(row.spend),
-        currency: typeof row.account_currency === "string" && row.account_currency.trim() ? row.account_currency.trim() : "UAH",
+        currency:
+          typeof row.account_currency === "string" && row.account_currency.trim() ? row.account_currency.trim() : "UAH",
         view_content: Math.round(events.view_content),
         initiate_checkout: Math.round(events.initiate_checkout),
         purchase: Math.round(events.purchase),
@@ -472,7 +469,8 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
     access_token: token,
     level: "ad",
     time_increment: "1",
-    fields: "date_start,date_stop,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,reach,impressions,clicks,actions,account_currency",
+    fields:
+      "date_start,date_stop,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,reach,impressions,clicks,actions,account_currency",
     time_range: JSON.stringify({ since, until }),
     limit: "500",
   });
@@ -517,7 +515,8 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
         impressions: Math.round(toNumber(row.impressions)),
         clicks: Math.round(toNumber(row.clicks)),
         spend: toNumber(row.spend),
-        currency: typeof row.account_currency === "string" && row.account_currency.trim() ? row.account_currency.trim() : "UAH",
+        currency:
+          typeof row.account_currency === "string" && row.account_currency.trim() ? row.account_currency.trim() : "UAH",
         view_content: Math.round(events.view_content),
         initiate_checkout: Math.round(events.initiate_checkout),
         purchase: Math.round(events.purchase),

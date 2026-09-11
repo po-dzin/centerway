@@ -81,7 +81,7 @@ export function RichTextEditor({
    * they meant it. The block itself is the unit that travels.
    */
   const drag = useRowDrag((from, to, edge) =>
-    setContent(moveItem(block.content, from.index, landingIndex(from.index, to.index, edge, true)))
+    setContent(moveItem(block.content, from.index, landingIndex(from.index, to.index, edge, true))),
   );
 
   const commands: SlashCommand[] = [...NODE_COMMANDS, ...(blockCommands ?? [])];
@@ -90,14 +90,14 @@ export function RichTextEditor({
     const current = block.content[index];
     const commandNode: RichTextNode | undefined = clearSlash
       ? current.kind === "ul" || current.kind === "ol"
-        ? { ...current, items: current.items.map((item, i) => i === itemIndex ? "" : item) }
+        ? { ...current, items: current.items.map((item, i) => (i === itemIndex ? "" : item)) }
         : { ...current, text: "" }
       : undefined;
     if (id.startsWith("block:")) {
       onBlockCommand?.(id, index, commandNode);
       return;
     }
-    const content = commandNode ? block.content.map((node, i) => i === index ? commandNode : node) : block.content;
+    const content = commandNode ? block.content.map((node, i) => (i === index ? commandNode : node)) : block.content;
     setContent(changeNodeKind(content, index, id as RichTextNode["kind"]));
     setFocus(id === "ul" || id === "ol" ? `${index}:0` : `${index}`);
   };
@@ -117,9 +117,7 @@ export function RichTextEditor({
     // empty node had never been there.
     const target = Math.max(0, index - 1);
     const previous = block.content[target];
-    setFocus(
-      previous.kind === "ul" || previous.kind === "ol" ? `${target}:${previous.items.length - 1}` : `${target}`
-    );
+    setFocus(previous.kind === "ul" || previous.kind === "ol" ? `${target}:${previous.items.length - 1}` : `${target}`);
   };
 
   /* What the second half of every node menu acts on, said in the block's own
@@ -180,9 +178,29 @@ export function RichTextEditor({
                   /* Still `startsGroup`: same subject as the four above it, so
                      the break between «what this is» and «what to do with it»
                      stays a rule rather than a second caption. */
-                  { label: "Підняти вище", icon: "arrow-up" as const, section: nodeSection, startsGroup: true, disabled: index === 0, onSelect: () => setContent(moveItem(block.content, index, index - 1)) },
-                  { label: "Опустити нижче", icon: "arrow-down" as const, section: nodeSection, disabled: index === block.content.length - 1, onSelect: () => setContent(moveItem(block.content, index, index + 1)) },
-                  { label: "Видалити", icon: "trash" as const, section: nodeSection, danger: true, disabled: block.content.length === 1, onSelect: () => setContent(block.content.filter((_, position) => position !== index)) },
+                  {
+                    label: "Підняти вище",
+                    icon: "arrow-up" as const,
+                    section: nodeSection,
+                    startsGroup: true,
+                    disabled: index === 0,
+                    onSelect: () => setContent(moveItem(block.content, index, index - 1)),
+                  },
+                  {
+                    label: "Опустити нижче",
+                    icon: "arrow-down" as const,
+                    section: nodeSection,
+                    disabled: index === block.content.length - 1,
+                    onSelect: () => setContent(moveItem(block.content, index, index + 1)),
+                  },
+                  {
+                    label: "Видалити",
+                    icon: "trash" as const,
+                    section: nodeSection,
+                    danger: true,
+                    disabled: block.content.length === 1,
+                    onSelect: () => setContent(block.content.filter((_, position) => position !== index)),
+                  },
                   /* The caption opens the group, so these no longer ask for a
                      rule of their own — two edges under one heading. */
                   ...(blockActions ?? []).map((action) => ({ ...action, section: BLOCK_SECTION })),
@@ -206,7 +224,7 @@ export function RichTextEditor({
                       onChange={(next) =>
                         onChange(
                           ["content", index, "items"],
-                          node.items.map((current, position) => (position === itemIndex ? next ?? "" : current))
+                          node.items.map((current, position) => (position === itemIndex ? (next ?? "") : current)),
                         )
                       }
                       onEnter={() => {
@@ -239,7 +257,7 @@ export function RichTextEditor({
                         }
                         onChange(
                           ["content", index, "items"],
-                          node.items.filter((_, position) => position !== itemIndex)
+                          node.items.filter((_, position) => position !== itemIndex),
                         );
                         setFocus(`${index}:${Math.max(0, itemIndex - 1)}`);
                       }}
@@ -273,7 +291,10 @@ export function RichTextEditor({
           is one "/" away, and a row of four buttons under every block was the
           picker problem in miniature: choose the shape before writing a word. */}
       <button className={styles.addAction} type="button" onClick={() => openParagraph(block.content.length - 1)}>
-        <span className={styles.addGlyph} aria-hidden="true">+</span> Абзац
+        <span className={styles.addGlyph} aria-hidden="true">
+          +
+        </span>{" "}
+        Абзац
       </button>
     </div>
   );

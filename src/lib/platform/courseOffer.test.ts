@@ -86,7 +86,7 @@ describe("the duration", () => {
 describe("the subtitle", () => {
   it("prefers the field over the dash the parser used to look for", () => {
     const surface = toOfferSurface(
-      course({ title: "Розвантажувальний день — практикум", posttitle: "три дні без їжі" })
+      course({ title: "Розвантажувальний день — практикум", posttitle: "три дні без їжі" }),
     );
     expect(surface.subtitle).toBe("три дні без їжі");
     // The title is still cut for the name: that rule is about the h1, not about
@@ -105,8 +105,9 @@ describe("the subtitle", () => {
 
 describe("the course-specific author note", () => {
   it("carries it to the offer surface without inventing one for another course", () => {
-    expect(toOfferSurface(course({ authorNote: "Я створив цей курс для м’якого старту." })).authorNote)
-      .toBe("Я створив цей курс для м’якого старту.");
+    expect(toOfferSurface(course({ authorNote: "Я створив цей курс для м’якого старту." })).authorNote).toBe(
+      "Я створив цей курс для м’якого старту.",
+    );
     expect(toOfferSurface(course()).authorNote).toBeUndefined();
   });
 });

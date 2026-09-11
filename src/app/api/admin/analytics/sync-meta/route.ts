@@ -15,8 +15,7 @@ type SyncBody = {
 
 const DEFAULT_COOLDOWN_SECONDS = 600;
 const MANUAL_META_SYNC_ENABLED =
-  process.env.ENABLE_MANUAL_META_SYNC === "1" ||
-  process.env.ENABLE_MANUAL_META_SYNC === "true";
+  process.env.ENABLE_MANUAL_META_SYNC === "1" || process.env.ENABLE_MANUAL_META_SYNC === "true";
 
 function asDateString(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -36,7 +35,7 @@ export async function POST(req: NextRequest) {
         error: "manual_sync_disabled",
         message: "Manual Meta sync is disabled. Automatic daily cron sync is active.",
       },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
@@ -63,17 +62,13 @@ export async function POST(req: NextRequest) {
   if (body.until !== undefined && !until) return badRequestResponse("invalid_until");
 
   const cooldownSecondsRaw = Number(process.env.META_SYNC_COOLDOWN_SECONDS ?? DEFAULT_COOLDOWN_SECONDS);
-  const cooldownSeconds = Number.isFinite(cooldownSecondsRaw) && cooldownSecondsRaw > 0
-    ? Math.floor(cooldownSecondsRaw)
-    : DEFAULT_COOLDOWN_SECONDS;
+  const cooldownSeconds =
+    Number.isFinite(cooldownSecondsRaw) && cooldownSecondsRaw > 0
+      ? Math.floor(cooldownSecondsRaw)
+      : DEFAULT_COOLDOWN_SECONDS;
 
   const [metaLastSync, pixelLastSync] = await Promise.all([
-    db
-      .from("analytics_meta_daily")
-      .select("synced_at")
-      .order("synced_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+    db.from("analytics_meta_daily").select("synced_at").order("synced_at", { ascending: false }).limit(1).maybeSingle(),
     db
       .from("analytics_pixel_daily")
       .select("synced_at")
@@ -82,9 +77,10 @@ export async function POST(req: NextRequest) {
       .maybeSingle(),
   ]);
 
-  const latestSyncIso = [metaLastSync.data?.synced_at, pixelLastSync.data?.synced_at]
-    .filter((v): v is string => typeof v === "string" && v.length > 0)
-    .sort((a, b) => (a > b ? -1 : 1))[0] ?? null;
+  const latestSyncIso =
+    [metaLastSync.data?.synced_at, pixelLastSync.data?.synced_at]
+      .filter((v): v is string => typeof v === "string" && v.length > 0)
+      .sort((a, b) => (a > b ? -1 : 1))[0] ?? null;
   const latestSyncMs = latestSyncIso ? Date.parse(latestSyncIso) : NaN;
   if (Number.isFinite(latestSyncMs)) {
     const nowMs = Date.now();
@@ -98,7 +94,7 @@ export async function POST(req: NextRequest) {
           message: asRateLimitMessage(retryAfterSeconds),
           retry_after_seconds: retryAfterSeconds,
         },
-        { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } }
+        { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } },
       );
     }
   }
@@ -114,9 +110,9 @@ export async function POST(req: NextRequest) {
       lower.includes("rate limit") ||
       lower.includes("rate-limiting") ||
       lower.includes("error code 4") ||
-      lower.includes("code\":4") ||
-      lower.includes("code\":17") ||
-      lower.includes("code\":80004");
+      lower.includes('code":4') ||
+      lower.includes('code":17') ||
+      lower.includes('code":80004');
     if (isRateLimited) {
       const retryAfterSeconds = cooldownSeconds;
       return NextResponse.json(
@@ -126,7 +122,7 @@ export async function POST(req: NextRequest) {
           retry_after_seconds: retryAfterSeconds,
           details: message,
         },
-        { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } }
+        { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } },
       );
     }
     return serverErrorResponse(message);

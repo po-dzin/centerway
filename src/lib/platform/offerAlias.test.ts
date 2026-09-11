@@ -169,7 +169,17 @@ describe("every legacy code that names a course", () => {
   it.each(ALIASED)("keeps $code's hand-written invoice prose", async ({ code, slug }) => {
     getLiveCourse.mockResolvedValue({ ...publishedCourse, slug } as unknown as Course);
     readOfferRow.mockReturnValue({
-      data: [{ code: `course:${slug}`, course_id: "c-1", amount: 100, list_amount: null, currency: "UAH", pixel_content_name: "row", active: true }],
+      data: [
+        {
+          code: `course:${slug}`,
+          course_id: "c-1",
+          amount: 100,
+          list_amount: null,
+          currency: "UAH",
+          pixel_content_name: "row",
+          active: true,
+        },
+      ],
       error: null,
     });
     const { loadPayableOffer } = await import("./offers");

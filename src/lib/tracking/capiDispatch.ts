@@ -83,4 +83,3 @@ export function dispatchCapiEventInline(
     // already persisted, so the cron worker remains responsible for delivery.
   }
 }
-

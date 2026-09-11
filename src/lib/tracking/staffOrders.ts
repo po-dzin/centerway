@@ -21,10 +21,7 @@ export const STAFF_CHECKOUT_EVENT = "staff_checkout";
  * Purchase. A missed suppression costs one wrong row in Meta; a missed Purchase
  * costs attribution for a real sale.
  */
-export async function isStaffOrder(
-  sb: SupabaseClient,
-  orderRef: string
-): Promise<boolean> {
+export async function isStaffOrder(sb: SupabaseClient, orderRef: string): Promise<boolean> {
   try {
     const { data, error } = await sb
       .from("events")

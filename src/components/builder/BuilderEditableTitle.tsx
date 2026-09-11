@@ -157,7 +157,12 @@ export function BuilderEditableTitle({
         onClick={href ? undefined : open}
       >
         {href ? (
-          <Link className={styles.editableTitleLink} href={href} title={visibleValue || undefined} onClick={onLinkClick}>
+          <Link
+            className={styles.editableTitleLink}
+            href={href}
+            title={visibleValue || undefined}
+            onClick={onLinkClick}
+          >
             {visibleValue || placeholder}
           </Link>
         ) : (

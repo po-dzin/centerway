@@ -1,13 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  appHref,
-  appIsOffOrigin,
-  appsFor,
-  currentAppKey,
-  hostServesPersonalPath,
-  isPersonalHost,
-} from "./apps";
+import { appHref, appIsOffOrigin, appsFor, currentAppKey, hostServesPersonalPath, isPersonalHost } from "./apps";
 import { PERSONAL_HOST } from "@/lib/surfaces/catalog";
 
 const anon = { signedIn: false, role: null, authorsCourses: false };

@@ -27,10 +27,11 @@ const courseOffer: PayableOffer = {
 
 function stubDeps() {
   const inserted: Array<Record<string, unknown>> = [];
-  const fetchFn = vi.fn(async () =>
-    new Response(JSON.stringify({ invoiceUrl: "https://secure.wayforpay.com/invoice/x" }), {
-      headers: { "Content-Type": "application/json" },
-    })
+  const fetchFn = vi.fn(
+    async () =>
+      new Response(JSON.stringify({ invoiceUrl: "https://secure.wayforpay.com/invoice/x" }), {
+        headers: { "Content-Type": "application/json" },
+      }),
   );
   /**
    * Enough of the client for the analytics path to run rather than fall into
@@ -104,10 +105,7 @@ describe("createPaymentInvoice", () => {
   it("tells WayForPay where we actually live, from code and not from the environment", async () => {
     const { deps, fetchFn } = stubDeps();
 
-    await createPaymentInvoiceWithDeps(
-      { offer: courseOffer, locale: "uk", source: "pay_start", staff: true },
-      deps
-    );
+    await createPaymentInvoiceWithDeps({ offer: courseOffer, locale: "uk", source: "pay_start", staff: true }, deps);
 
     const body = wfpBody(fetchFn);
     expect(body.serviceUrl).toBe("https://www.centerway.net.ua/api/wfp/webhook");
@@ -119,7 +117,7 @@ describe("createPaymentInvoice", () => {
 
     const result = await createPaymentInvoiceWithDeps(
       { offer: courseOffer, locale: "uk", source: "pay_start", staff: true },
-      deps
+      deps,
     );
 
     expect(result.ok).toBe(true);
@@ -134,10 +132,7 @@ describe("createPaymentInvoice", () => {
   it("reports the offer's agreed label to Meta, not the invoice heading", async () => {
     const { deps, inserted } = stubDeps();
 
-    await createPaymentInvoiceWithDeps(
-      { offer: courseOffer, locale: "uk", source: "pay_start" },
-      deps
-    );
+    await createPaymentInvoiceWithDeps({ offer: courseOffer, locale: "uk", source: "pay_start" }, deps);
 
     const capiJob = inserted.find((row) => row.__table === "jobs");
     const payload = capiJob?.payload as Record<string, unknown>;
@@ -153,10 +148,7 @@ describe("createPaymentInvoice", () => {
   it("marks a staff checkout so the webhook can keep it out of Meta", async () => {
     const { deps, inserted } = stubDeps();
 
-    await createPaymentInvoiceWithDeps(
-      { offer: courseOffer, locale: "uk", source: "pay_start", staff: true },
-      deps
-    );
+    await createPaymentInvoiceWithDeps({ offer: courseOffer, locale: "uk", source: "pay_start", staff: true }, deps);
 
     // The browser flag cannot reach the WayForPay callback, so the order carries
     // the mark instead.
@@ -169,7 +161,7 @@ describe("createPaymentInvoice", () => {
 
     const result = await createPaymentInvoiceWithDeps(
       { offer: courseOffer, locale: "uk", source: "pay_start", staff: true },
-      deps
+      deps,
     );
 
     expect(result.ok && result.order_ref).toBe("course-my-course_20260822_ab12cd34");
@@ -185,7 +177,7 @@ describe("createPaymentInvoice", () => {
 
     await createPaymentInvoiceWithDeps(
       { offer: catalogOffer("reset-day"), locale: "uk", source: "pay_start", staff: true },
-      deps
+      deps,
     );
 
     expect(inserted[0].product_code).toBe("reset-day");

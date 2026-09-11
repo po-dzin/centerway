@@ -63,9 +63,7 @@ export function matchesShelfQuery(
   }
   const text = query.text.trim().toLowerCase();
   if (!text) return true;
-  const hay = [entry.title, ...entry.categories.map((c) => copy.courseCategories[c])]
-    .join(" ")
-    .toLowerCase();
+  const hay = [entry.title, ...entry.categories.map((c) => copy.courseCategories[c])].join(" ").toLowerCase();
   return hay.includes(text);
 }
 
@@ -161,7 +159,11 @@ export function ShelfFilter({
               <div className={styles.filterPopoverHead}>
                 <span>{copy.shelfFilterLabel}</span>
                 {query.categories.length > 0 ? (
-                  <button className={styles.filterClear} type="button" onClick={() => onChange({ ...query, categories: [] })}>
+                  <button
+                    className={styles.filterClear}
+                    type="button"
+                    onClick={() => onChange({ ...query, categories: [] })}
+                  >
                     {copy.shelfFilterAll}
                   </button>
                 ) : null}

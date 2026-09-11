@@ -45,17 +45,27 @@ function authorFromRow(row: Row): Author {
     ...(Array.isArray(row.credentials) && row.credentials.length > 0
       ? { credentials: row.credentials as string[] }
       : {}),
-    ...(Array.isArray(row.profile_facts) && row.profile_facts.length > 0 ? { facts: row.profile_facts as string[] } : {}),
-    ...(Array.isArray(row.profile_blocks) && row.profile_blocks.length > 0 ? { profileBlocks: row.profile_blocks as NonNullable<Author["profileBlocks"]> } : {}),
+    ...(Array.isArray(row.profile_facts) && row.profile_facts.length > 0
+      ? { facts: row.profile_facts as string[] }
+      : {}),
+    ...(Array.isArray(row.profile_blocks) && row.profile_blocks.length > 0
+      ? { profileBlocks: row.profile_blocks as NonNullable<Author["profileBlocks"]> }
+      : {}),
     ...(row.experience_badge ? { experienceBadge: row.experience_badge as string } : {}),
     ...(row.achievement_badge ? { achievementBadge: row.achievement_badge as string } : {}),
-    ...((row.consultation_enabled || row.consultation_title || row.consultation_summary) ? { consultation: {
-      enabled: Boolean(row.consultation_enabled),
-      ...(row.consultation_title ? { title: row.consultation_title as string } : {}),
-      ...(row.consultation_summary ? { summary: row.consultation_summary as string } : {}),
-      ...(Array.isArray(row.consultation_points) && row.consultation_points.length > 0 ? { points: row.consultation_points as string[] } : {}),
-      ...(row.consultation_contact_url ? { contactUrl: row.consultation_contact_url as string } : {}),
-    }} : {}),
+    ...(row.consultation_enabled || row.consultation_title || row.consultation_summary
+      ? {
+          consultation: {
+            enabled: Boolean(row.consultation_enabled),
+            ...(row.consultation_title ? { title: row.consultation_title as string } : {}),
+            ...(row.consultation_summary ? { summary: row.consultation_summary as string } : {}),
+            ...(Array.isArray(row.consultation_points) && row.consultation_points.length > 0
+              ? { points: row.consultation_points as string[] }
+              : {}),
+            ...(row.consultation_contact_url ? { contactUrl: row.consultation_contact_url as string } : {}),
+          },
+        }
+      : {}),
     ...(row.photo ? { photo: row.photo as Author["photo"] } : {}),
     ...(row.background ? { background: row.background as Author["background"] } : {}),
     // `false` reads back as ABSENT, the same way `visibility: "hidden"` does on
@@ -91,7 +101,7 @@ async function readCourseAuthor(courseSlug: string): Promise<Author | null> {
     return row ? authorFromRow(row as Row) : null;
   } catch (error) {
     console.warn(
-      `lms_course_author_unavailable:${courseSlug}:${error instanceof Error ? error.message : "unknown_error"}`
+      `lms_course_author_unavailable:${courseSlug}:${error instanceof Error ? error.message : "unknown_error"}`,
     );
     return null;
   }
@@ -140,9 +150,7 @@ async function readListedAuthors(): Promise<Author[]> {
         authors.push(authorFromRow(row));
       } catch (invalid) {
         // One malformed profile must not empty the directory for the rest.
-        console.warn(
-          `lms_author_invalid:${String(row.slug)}:${invalid instanceof Error ? invalid.message : ""}`
-        );
+        console.warn(`lms_author_invalid:${String(row.slug)}:${invalid instanceof Error ? invalid.message : ""}`);
       }
     }
     return authors;
@@ -268,7 +276,7 @@ export type UpsertAuthorProfileResult =
  */
 export async function upsertAuthorProfile(
   userId: string,
-  input: AuthorProfileInput
+  input: AuthorProfileInput,
 ): Promise<UpsertAuthorProfileResult> {
   if (!(await isEligibleAuthor(userId))) return { ok: false, error: "not_an_author" };
   if (input.listed && (!input.experienceBadge?.trim() || !input.achievementBadge?.trim())) {
@@ -290,7 +298,10 @@ export async function upsertAuthorProfile(
     slug = slugify(requestedSlug);
   } else if (!slug) {
     const { data: rows } = await db.from("lms_authors").select("slug");
-    slug = uniqueSlug(input.name, (rows ?? []).map((row) => row.slug as string));
+    slug = uniqueSlug(
+      input.name,
+      (rows ?? []).map((row) => row.slug as string),
+    );
   }
 
   if (slug !== existing?.slug) {
@@ -346,7 +357,7 @@ export async function upsertAuthorProfile(
         background: input.background ?? null,
         listed: input.listed ?? false,
       },
-      { onConflict: "auth_user_id" }
+      { onConflict: "auth_user_id" },
     )
     .select("*")
     .single();
@@ -378,7 +389,7 @@ export async function getCourseAuthorProfileId(courseId: string): Promise<string
  */
 export async function linkCourseAuthorProfile(
   courseId: string,
-  authorProfileId: string | null
+  authorProfileId: string | null,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const db = adminClient();
   const { error } = await db.from("lms_courses").update({ author_profile_id: authorProfileId }).eq("id", courseId);

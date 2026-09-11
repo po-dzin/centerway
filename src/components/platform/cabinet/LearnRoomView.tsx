@@ -192,8 +192,28 @@ function nicheSvg(ci: number, W: number, H: number, inkW: number): string {
   let out = "";
   for (let i = 1; i <= 4; i++) {
     const t = i / 5;
-    out += penStroke(1 + (bx - 1) * t, 1 + (by - 1) * t, W - 1 + (bX - W + 1) * t, 1 + (by - 1) * t, 0.9, 0.16, 60 + i, inkW, jr);
-    out += penStroke(1 + (bx - 1) * t, 1 + (by - 1) * t, 1 + (bx - 1) * t, H - 1 + (bY - H + 1) * t, 0.9, 0.14, 70 + i, inkW, jr);
+    out += penStroke(
+      1 + (bx - 1) * t,
+      1 + (by - 1) * t,
+      W - 1 + (bX - W + 1) * t,
+      1 + (by - 1) * t,
+      0.9,
+      0.16,
+      60 + i,
+      inkW,
+      jr,
+    );
+    out += penStroke(
+      1 + (bx - 1) * t,
+      1 + (by - 1) * t,
+      1 + (bx - 1) * t,
+      H - 1 + (bY - H + 1) * t,
+      0.9,
+      0.14,
+      70 + i,
+      inkW,
+      jr,
+    );
   }
   out += penStroke(1, 1, bx, by, 1, 0.22, 40, inkW, jr);
   out += penStroke(W - 1, 1, bX, by, 1, 0.22, 41, inkW, jr);
@@ -480,8 +500,29 @@ const LADDER = [
   { bw: 8, per: 6 },
 ];
 
-type Section = { ci: number; from: number; count: number; bw: number; gap: number; pad: number; w: number; h: number; x: number; y: number };
-type Group = { ci: number; secs: Section[]; w: number; h: number; hidden: number; sgap: number; bw: number; x0: number; x1: number };
+type Section = {
+  ci: number;
+  from: number;
+  count: number;
+  bw: number;
+  gap: number;
+  pad: number;
+  w: number;
+  h: number;
+  x: number;
+  y: number;
+};
+type Group = {
+  ci: number;
+  secs: Section[];
+  w: number;
+  h: number;
+  hidden: number;
+  sgap: number;
+  bw: number;
+  x0: number;
+  x1: number;
+};
 
 /** Packs every category's books into shelf sections and lays those sections
     into rows inside the wall's band, weighted so a heavier category gets a
@@ -526,7 +567,18 @@ function layoutRoom(cases: RoomCase[], W: number, H: number, narrow: boolean): N
         let take = Math.round(step.per * (0.34 + seeded(ci * 17 + k) * 1.2));
         take = Math.max(2, Math.min(take, n - i));
         if (n - i - take === 1) take += 1;
-        secs.push({ ci, from: i, count: take, bw, gap, pad, w: take * (bw + gap) - gap + pad * 2, h: unit, x: 0, y: 0 });
+        secs.push({
+          ci,
+          from: i,
+          count: take,
+          bw,
+          gap,
+          pad,
+          w: take * (bw + gap) - gap + pad * 2,
+          h: unit,
+          x: 0,
+          y: 0,
+        });
         i += take;
         k += 1;
       }
@@ -798,7 +850,6 @@ function rowInk(seed: number, dark: boolean): string {
   return hit;
 }
 
-
 export function LearnRoomView({
   courses,
   copy,
@@ -875,7 +926,7 @@ export function LearnRoomView({
     const ci = CATEGORY_ORDER.indexOf(category);
     return cases.some((one) => one.ci === ci) ? ci : -1;
   }, [category, cases]);
-  const openCase = open < 0 ? null : cases.find((one) => one.ci === open) ?? null;
+  const openCase = open < 0 ? null : (cases.find((one) => one.ci === open) ?? null);
 
   const camera = useMemo(() => frameCase(niches, open, size.w, size.h, narrow), [niches, open, size.w, size.h, narrow]);
 
@@ -1020,69 +1071,72 @@ export function LearnRoomView({
             through a transform mid-flight is how a layout starts chasing its
             own animation. */}
         <div className={styles.camera} ref={cameraRef}>
-        <div className={styles.wall} />
-        <div className={styles.rake} aria-hidden="true" />
-        {niches.map((n) => (
-          <div
-            key={`${n.ci}:${n.from}`}
-            className={styles.niche}
-            /* ATTENTION IS ONE STATE, WHEREVER IT CAME FROM. A niche is hot
+          <div className={styles.wall} />
+          <div className={styles.rake} aria-hidden="true" />
+          {niches.map((n) => (
+            <div
+              key={`${n.ci}:${n.from}`}
+              className={styles.niche}
+              /* ATTENTION IS ONE STATE, WHEREVER IT CAME FROM. A niche is hot
                when the course being looked at stands in it — pointed at on the
                wall, or pointed at in the column beside it. Same `hot` as the
                row and the spine, so the three never disagree about which work
                is being read. */
-            data-hot={n.books.some((b) => b.slug === hot)}
-            data-dim={!n.books.some((b) => lit.has(b.slug))}
-            /* THE SHELF BEING READ, AND THE SHELVES THAT ARE NOT. `data-away`
+              data-hot={n.books.some((b) => b.slug === hot)}
+              data-dim={!n.books.some((b) => lit.has(b.slug))}
+              /* THE SHELF BEING READ, AND THE SHELVES THAT ARE NOT. `data-away`
                is not a stronger `data-dim`: a query DIMS, because where a work
                stands is the one thing this view knows and a wall that empties
                itself under a search has thrown that away — but a reader who
                has walked up to one shelf is not looking at the others at all,
                and at three times the scale the others are not shelves in the
                background, they are slabs sliding across the text column. */
-            data-open={open === n.ci}
-            data-away={open >= 0 && open !== n.ci}
-            style={{ left: n.x, top: n.y, width: n.w, height: n.h, ["--depth" as string]: n.depth.toFixed(2) }}
-          >
-            <div className={styles.nicheCast} aria-hidden="true" />
-            {/* WALKING UP TO THE SHELF — the cut itself, as a control.
+              data-open={open === n.ci}
+              data-away={open >= 0 && open !== n.ci}
+              style={{ left: n.x, top: n.y, width: n.w, height: n.h, ["--depth" as string]: n.depth.toFixed(2) }}
+            >
+              <div className={styles.nicheCast} aria-hidden="true" />
+              {/* WALKING UP TO THE SHELF — the cut itself, as a control.
                 A button UNDER the books rather than around them: a link inside
                 a button is not markup a browser has an answer for, and the two
                 are genuinely different acts anyway. The spines answer «open
                 this work»; the shelf they stand on answers «bring me closer to
                 these». Its name says which shelf, because the drawing does not
                 say anything to a reader who cannot see it. */}
-            {onCategory && open !== n.ci ? (
-              <button
-                className={styles.nicheEnter}
-                type="button"
-                ref={(node) => {
-                  if (node) nicheEnterRefs.current.set(n.ci, node);
-                  else nicheEnterRefs.current.delete(n.ci);
-                }}
-                aria-label={copy.roomEnter(cases.find((one) => one.ci === n.ci)?.label ?? "")}
-                onClick={() => {
-                  focusBackAfterOpen.current = true;
-                  onCategory(CATEGORY_ORDER[n.ci]);
-                }}
-                onMouseEnter={() => setHot(n.books[0]?.slug ?? null)}
-              />
-            ) : null}
-            {/* THE MARK LIVES OUTSIDE THE CUT — it is drawn AROUND the shelf,
+              {onCategory && open !== n.ci ? (
+                <button
+                  className={styles.nicheEnter}
+                  type="button"
+                  ref={(node) => {
+                    if (node) nicheEnterRefs.current.set(n.ci, node);
+                    else nicheEnterRefs.current.delete(n.ci);
+                  }}
+                  aria-label={copy.roomEnter(cases.find((one) => one.ci === n.ci)?.label ?? "")}
+                  onClick={() => {
+                    focusBackAfterOpen.current = true;
+                    onCategory(CATEGORY_ORDER[n.ci]);
+                  }}
+                  onMouseEnter={() => setHot(n.books[0]?.slug ?? null)}
+                />
+              ) : null}
+              {/* THE MARK LIVES OUTSIDE THE CUT — it is drawn AROUND the shelf,
                 and `.nicheBox` clips. Drawn eagerly rather than on first look
                 (the prototype's `ensureMark`): that laziness paid for a wall of
                 a hundred openings, and this room has one cut per section of one
                 of three categories. Drawing it up front is what lets the fade
                 actually be a fade. */}
-            <div
-              className={styles.nicheMark}
-              aria-hidden="true"
-              dangerouslySetInnerHTML={{ __html: markInk(n.ci, n.w, n.h, dark) }}
-            />
-            <div className={styles.nicheBox}>
-              <div className={styles.nichePersp} dangerouslySetInnerHTML={{ __html: nicheInk(n.ci, n.w, n.h, dark) }} />
-              {n.books.map((b) => {
-                /* The prototype's own arithmetic for a name on a board, kept:
+              <div
+                className={styles.nicheMark}
+                aria-hidden="true"
+                dangerouslySetInnerHTML={{ __html: markInk(n.ci, n.w, n.h, dark) }}
+              />
+              <div className={styles.nicheBox}>
+                <div
+                  className={styles.nichePersp}
+                  dangerouslySetInnerHTML={{ __html: nicheInk(n.ci, n.w, n.h, dark) }}
+                />
+                {n.books.map((b) => {
+                  /* The prototype's own arithmetic for a name on a board, kept:
                    the size is a fraction of the spine's width, clamped, and
                    the fit test is the name's own run down the board against
                    the board's height. Two things are added to it, and both
@@ -1091,23 +1145,29 @@ export function LearnRoomView({
                    (in the hall it would be three walls of speckle), and only
                    when the camera has actually made it a size a person can
                    read — 7px on screen, below which type is a texture. */
-                const fs = Math.max(2.6, Math.min(9, b.w * 0.52));
-                const fits = b.title.trim().length * fs * 0.58 <= b.h * 0.76;
-                const named = open === n.ci && fits && fs * camera.s >= 7;
-                return (
-                <MotionLink
-                  key={b.slug}
-                  className={styles.book}
-                  data-live={b.live}
-                  data-hot={hot === b.slug}
-                  style={{ left: b.x, bottom: b.y, width: b.w, height: b.h, ["--tilt" as string]: `${b.tilt.toFixed(1)}deg` }}
-                  aria-label={`${b.title} · ${b.state}`}
-                  href={courseAction(b.course, copy).href}
-                  onMouseEnter={() => setHot(b.slug)}
-                  onFocus={() => setHot(b.slug)}
-                >
-                  <span className={styles.bookDraw} dangerouslySetInnerHTML={{ __html: spineInk(b.w, b.h) }} />
-                  {/* THE NAME ARRIVES WITH THE CAMERA, and this is the whole
+                  const fs = Math.max(2.6, Math.min(9, b.w * 0.52));
+                  const fits = b.title.trim().length * fs * 0.58 <= b.h * 0.76;
+                  const named = open === n.ci && fits && fs * camera.s >= 7;
+                  return (
+                    <MotionLink
+                      key={b.slug}
+                      className={styles.book}
+                      data-live={b.live}
+                      data-hot={hot === b.slug}
+                      style={{
+                        left: b.x,
+                        bottom: b.y,
+                        width: b.w,
+                        height: b.h,
+                        ["--tilt" as string]: `${b.tilt.toFixed(1)}deg`,
+                      }}
+                      aria-label={`${b.title} · ${b.state}`}
+                      href={courseAction(b.course, copy).href}
+                      onMouseEnter={() => setHot(b.slug)}
+                      onFocus={() => setHot(b.slug)}
+                    >
+                      <span className={styles.bookDraw} dangerouslySetInnerHTML={{ __html: spineInk(b.w, b.h) }} />
+                      {/* THE NAME ARRIVES WITH THE CAMERA, and this is the whole
                       reason the camera exists. At wall distance a title on a
                       20px board is speckle, which is why a spine wears a
                       LABEL there (see `spineCode`). Walked up to, the same
@@ -1119,25 +1179,29 @@ export function LearnRoomView({
                       will not fit down the board, the label stays — a cut
                       title on a spine says nothing the label did not, and
                       lies that it can be read. */}
-                  {named ? (
-                    <span className={styles.bookTitle} aria-hidden="true" style={{ fontSize: `${fs.toFixed(1)}px` }}>
-                      {b.title}
-                    </span>
-                  ) : (
-                    <span
-                      className={styles.bookSpine}
-                      aria-hidden="true"
-                      dangerouslySetInnerHTML={{ __html: codeInk(b.title, b.w, b.h) }}
-                    />
-                  )}
-                </MotionLink>
-                );
-              })}
+                      {named ? (
+                        <span
+                          className={styles.bookTitle}
+                          aria-hidden="true"
+                          style={{ fontSize: `${fs.toFixed(1)}px` }}
+                        >
+                          {b.title}
+                        </span>
+                      ) : (
+                        <span
+                          className={styles.bookSpine}
+                          aria-hidden="true"
+                          dangerouslySetInnerHTML={{ __html: codeInk(b.title, b.w, b.h) }}
+                        />
+                      )}
+                    </MotionLink>
+                  );
+                })}
+              </div>
+              {n.label ? <span className={styles.nicheLabel}>{n.label}</span> : null}
+              {n.more ? <span className={styles.nicheMore}>+{n.more}</span> : null}
             </div>
-            {n.label ? <span className={styles.nicheLabel}>{n.label}</span> : null}
-            {n.more ? <span className={styles.nicheMore}>+{n.more}</span> : null}
-          </div>
-        ))}
+          ))}
         </div>
 
         {/* THE SHELF SAYS ITS OWN NAME WHILE YOU STAND AT IT.
@@ -1170,11 +1234,7 @@ export function LearnRoomView({
           pointing at 20px spines: the titles were in the drawing, not in the
           document. The column is the shelf as text — the same courses, the same
           doorways, in a list that can be read, scrolled and tabbed through. */}
-      <nav
-        className={styles.sheet}
-        aria-label={copy.learningLabel}
-        onMouseLeave={() => setHot(null)}
-      >
+      <nav className={styles.sheet} aria-label={copy.learningLabel} onMouseLeave={() => setHot(null)}>
         <ol className={styles.shelfList}>
           {shown.map((course, i) => {
             const done = course.standing?.completedLessons ?? 0;

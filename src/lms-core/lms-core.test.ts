@@ -91,35 +91,40 @@ describe("block validation", () => {
             { kind: "ul", items: ["one", "two"] },
           ],
         },
-        "test"
-      )
+        "test",
+      ),
     ).not.toThrow();
   });
 
   it("rejects an image without alt text", () => {
     expect(() => validateLessonBlock({ id: "b", type: "image", src: "/a.webp" }, "test")).toThrow(
-      /lms_block_missing_image_alt/
+      /lms_block_missing_image_alt/,
     );
   });
 
   it("rejects an unknown block type", () => {
-    expect(() => validateLessonBlock({ id: "b", type: "iframe_embed" }, "test")).toThrow(
-      /lms_block_unknown_type/
-    );
+    expect(() => validateLessonBlock({ id: "b", type: "iframe_embed" }, "test")).toThrow(/lms_block_unknown_type/);
   });
 
   it("rejects duplicate checklist item ids", () => {
     expect(() =>
       validateLessonBlock(
-        { id: "b", type: "checklist", items: [{ id: "x", text: "a" }, { id: "x", text: "b" }] },
-        "test"
-      )
+        {
+          id: "b",
+          type: "checklist",
+          items: [
+            { id: "x", text: "a" },
+            { id: "x", text: "b" },
+          ],
+        },
+        "test",
+      ),
     ).toThrow(/lms_block_checklist_duplicate_item_id/);
   });
 
   it("rejects a non-youtube video provider while the decision stands", () => {
     expect(() => validateLessonBlock({ id: "b", type: "video", provider: "mux", videoId: "x" }, "t")).toThrow(
-      /lms_block_unsupported_video_provider/
+      /lms_block_unsupported_video_provider/,
     );
   });
 });
@@ -530,7 +535,7 @@ describe("daily reminder decision", () => {
         startedAt,
         timeZone: "Europe/Kyiv",
         now: new Date("2026-08-15T06:00:00Z"),
-      })
+      }),
     ).toEqual({ send: false, reason: "already_done" });
   });
 
@@ -540,7 +545,7 @@ describe("daily reminder decision", () => {
         startedAt,
         timeZone: "Europe/Kyiv",
         now: new Date("2026-08-20T06:00:00Z"),
-      })
+      }),
     ).toEqual({ send: false, reason: "finished" });
   });
 
@@ -591,7 +596,7 @@ describe("daily reminder decision", () => {
         timeZone: "America/Vancouver",
         now: new Date("2026-08-15T06:00:00Z"),
         hourPolicy: "single-daily-run",
-      })
+      }),
     ).toEqual({ send: false, reason: "already_done" });
   });
 });
@@ -631,7 +636,7 @@ describe("unstarted nudge decision", () => {
         ...base,
         now: new Date("2026-09-30T06:00:00Z"),
         sentNudgeNumbers: [1, 2],
-      })
+      }),
     ).toEqual({ send: false, reason: "all_sent" });
   });
 
@@ -651,7 +656,7 @@ describe("unstarted nudge decision", () => {
         ...base,
         timeZone: "America/Vancouver",
         now: new Date("2026-08-16T06:00:00Z"),
-      })
+      }),
     ).toEqual({ send: false, reason: "wrong_hour" });
   });
 
@@ -662,7 +667,7 @@ describe("unstarted nudge decision", () => {
         timeZone: "America/Vancouver",
         now: new Date("2026-08-16T06:00:00Z"),
         hourPolicy: "single-daily-run",
-      })
+      }),
     ).toMatchObject({ send: true, nudgeNumber: 1 });
   });
 
@@ -673,7 +678,7 @@ describe("unstarted nudge decision", () => {
         ...base,
         now: new Date("2026-08-16T06:00:00Z"),
         hourPolicy: "single-daily-run",
-      })
+      }),
     ).toEqual({ send: false, reason: "not_published" });
     expect(decideUnstartedReminder(draft, { ...base, now: new Date("2026-08-16T06:00:00Z") })).toEqual({
       send: false,
@@ -744,9 +749,7 @@ describe("entitlement", () => {
       courseProductCodes: [],
       courseSlug: "my-course",
       now,
-      orders: [
-        { orderRef: "o1", productCode: "course:my-course", status: "paid", createdAt: "2026-08-01T10:00:00Z" },
-      ],
+      orders: [{ orderRef: "o1", productCode: "course:my-course", status: "paid", createdAt: "2026-08-01T10:00:00Z" }],
     });
     expect(result).toMatchObject({ entitled: true, source: "order", orderRef: "o1" });
   });

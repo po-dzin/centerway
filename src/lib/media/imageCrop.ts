@@ -149,7 +149,7 @@ export function cropBackgroundStyle(crop: ImageCrop | undefined, fallback: { x: 
 export function cropOverflow(
   frame: { width: number; height: number },
   natural: { width: number; height: number },
-  scale: number
+  scale: number,
 ): { x: number; y: number } {
   const usable = natural.width > 0 && natural.height > 0;
   if (!usable) return { x: frame.width, y: frame.height };
@@ -171,7 +171,7 @@ export function cropPan(
   delta: { dx: number; dy: number },
   frame: { width: number; height: number },
   natural: { width: number; height: number },
-  scale: number
+  scale: number,
 ): { x: number; y: number } {
   const overflow = cropOverflow(frame, natural, scale);
   const can = cropCanPan(overflow);
@@ -213,7 +213,7 @@ export function cropPan(
  */
 export function containRect(
   stage: { width: number; height: number },
-  natural: { width: number; height: number }
+  natural: { width: number; height: number },
 ): { left: number; top: number; width: number; height: number } {
   const usable = natural.width > 0 && natural.height > 0 && stage.width > 0 && stage.height > 0;
   if (!usable) return { left: 0, top: 0, width: stage.width, height: stage.height };
@@ -239,7 +239,7 @@ export function cropWindowRect(
   photo: { width: number; height: number },
   ratio: number,
   scale: number,
-  crop: { x: number; y: number }
+  crop: { x: number; y: number },
 ): { left: number; top: number; width: number; height: number } {
   if (!(photo.width > 0 && photo.height > 0 && ratio > 0)) {
     return { left: 0, top: 0, width: photo.width, height: photo.height };
@@ -274,7 +274,7 @@ export function cropWindowPan(
   start: { x: number; y: number },
   delta: { dx: number; dy: number },
   photo: { width: number; height: number },
-  window: { width: number; height: number }
+  window: { width: number; height: number },
 ): { x: number; y: number } {
   const slack = { x: photo.width - window.width, y: photo.height - window.height };
   return {

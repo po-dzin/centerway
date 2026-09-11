@@ -40,7 +40,7 @@ export type CourseTemplate = {
 /** A lesson with a named set of blocks, all of them marked unfilled. */
 function lesson(
   ids: IdSource,
-  options: { title: string; slug: string; order: number; blocks: Array<Parameters<typeof newBlock>[0]> }
+  options: { title: string; slug: string; order: number; blocks: Array<Parameters<typeof newBlock>[0]> },
 ) {
   const base = newLesson(ids, { order: options.order, title: options.title, slug: options.slug });
   return { ...base, blocks: options.blocks.map((type) => newBlock(type, ids)) };
@@ -48,7 +48,7 @@ function lesson(
 
 function module(
   ids: IdSource,
-  options: { title: string; slug: string; order: number; reference?: boolean; lessons: ReturnType<typeof lesson>[] }
+  options: { title: string; slug: string; order: number; reference?: boolean; lessons: ReturnType<typeof lesson>[] },
 ): CourseModule {
   return {
     id: ids(),
@@ -205,7 +205,14 @@ export const COURSE_TEMPLATES: CourseTemplate[] = [
         title: "Як користуватися",
         slug: "how-to",
         order: 1,
-        lessons: [lesson(ids, { title: "Як користуватися", slug: "how-to", order: 1, blocks: ["lesson_objective", "rich_text"] })],
+        lessons: [
+          lesson(ids, {
+            title: "Як користуватися",
+            slug: "how-to",
+            order: 1,
+            blocks: ["lesson_objective", "rich_text"],
+          }),
+        ],
       }),
       module(ids, {
         title: "Довідник",
@@ -244,7 +251,7 @@ export function newCourseFromTemplate(
     theme?: Course["theme"];
     brand?: string;
     locale?: Course["locale"];
-  }
+  },
 ): Course {
   const template = findTemplate(options.template);
   const modules = template.build(ids);

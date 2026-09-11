@@ -4,7 +4,6 @@ export function getErrorMessage(error: unknown, fallback = "unknown"): string {
   return fallback;
 }
 
-
 /**
  * The message of a thrown value, whatever it was — the `catch (e)` form.
  *

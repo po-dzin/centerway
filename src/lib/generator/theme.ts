@@ -14,7 +14,10 @@ const THEME_ALIASES: Record<string, string> = {
 };
 
 function normalizeToken(raw: string): string {
-  return raw.trim().toLowerCase().replace(/[_\s.]+/g, "-");
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s.]+/g, "-");
 }
 
 function parsePackFamilyFromId(raw: string): string | null {
@@ -75,7 +78,7 @@ export function resolveTokenPackFromSelection(input: {
 
   const availableFamilies = new Set(byFamily.keys());
   const fromVariant = Object.values(assignments ?? {}).find((assignment) =>
-    extractThemeFromVariantKey(assignment.variant_key, availableFamilies)
+    extractThemeFromVariantKey(assignment.variant_key, availableFamilies),
   );
   if (fromVariant) {
     const family = extractThemeFromVariantKey(fromVariant.variant_key, availableFamilies);

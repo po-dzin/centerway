@@ -34,8 +34,8 @@ export function PlatformNotFoundPanel() {
         <p className={offerStyles.label}>Сторінку не знайдено</p>
         <h1 className={offerStyles.title}>Такої сторінки немає</h1>
         <p className={offerStyles.lead}>
-          Можливо, адресу набрано з помилкою або сторінку перенесли. Усе, що ви вже проходите, на
-          місці — воно у вашому кабінеті.
+          Можливо, адресу набрано з помилкою або сторінку перенесли. Усе, що ви вже проходите, на місці — воно у вашому
+          кабінеті.
         </p>
 
         <div className={styles.statusActions}>

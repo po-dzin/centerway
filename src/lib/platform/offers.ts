@@ -229,7 +229,6 @@ export type StorefrontCard = {
   kind?: CourseKind;
 };
 
-
 /** Course palette → the card variant closest to it. */
 const VISUAL_BY_PALETTE: Record<string, string> = {
   way21: "leaf",
@@ -265,68 +264,68 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
   const offers = await Promise.all(listed.map((course) => loadCourseOffer(course.slug)));
 
   return listed.map((course, index) => {
-      /* THE CARD SAYS WHAT THE PAGE SAYS. The eyebrow, the name and the
+    /* THE CARD SAYS WHAT THE PAGE SAYS. The eyebrow, the name and the
          duration are read off the same `toOfferSurface` the offer page is built
          from, so a reader who follows a card meets the two facts they were
          shown, in the same words. This used to be its own opinion — the tagline
          as the eyebrow, the raw title as the name — and it drifted the moment
          a course was authored with a long title. */
-      const surface = toOfferSurface(course);
-      const card = course.cover ? coverCard(course.cover.src) : undefined;
-      const offer = offers[index];
-      return {
-        slug: course.slug,
-        programSlug: course.programSlug,
-        title: surface.title,
-        /* THE EYEBROW LOSES THE KIND WHEN THE CORNER GAINS IT. Printing
+    const surface = toOfferSurface(course);
+    const card = course.cover ? coverCard(course.cover.src) : undefined;
+    const offer = offers[index];
+    return {
+      slug: course.slug,
+      programSlug: course.programSlug,
+      title: surface.title,
+      /* THE EYEBROW LOSES THE KIND WHEN THE CORNER GAINS IT. Printing
            «Міні-курс» in a chip on the plate and again in the line under it is
            the same word twice on a card with three text rows. A course whose
            author has not set a kind keeps the old, joined eyebrow — the
            derivation still runs, it just has nowhere better to go. */
-        tag: course.kind ? surface.duration : offerEyebrow(surface.tag, surface.duration),
-        ...(course.kind ? { kindBadge: surface.tag, kind: course.kind } : {}),
-        description: course.summary ? inlineToPlainText(course.summary) : "",
-        href: `/programs/${course.programSlug}`,
-        commercialMode: offer ? (offer.amount === 0 ? "free" : "fixed") : "inquiry",
-        price: offer ? (offer.amount === 0 ? "Безкоштовно" : formatPrice(offer.amount, offer.currency)) : null,
-        amount: offer ? offer.amount : null,
-        currency: offer ? offer.currency : null,
-        // A free course quotes its former price too — see the free branch of
-        // `courseOfferCommerce`. The one rule is that the quoted figure is
-        // strictly above the charged one, which zero satisfies like any other.
-        compareAtPrice:
-          offer && offer.listAmount !== null && offer.listAmount !== undefined && offer.listAmount > offer.amount
-            ? formatPrice(offer.listAmount, offer.currency)
-            : null,
-        ...(course.cover
-          ? {
-              artwork: {
-                desktop: course.cover.src,
-                // An author's own upload has a 640px rendition beside it, and a
-                // catalogue card is the place that wants it. A cover that came
-                // from the repository instead has no such sibling to promise,
-                // so the card falls back to the full plate as it always did.
-                ...(card ? { card } : {}),
-                ...coverArtworkFraming(course.cover),
-              },
-            }
-          : {}),
-        visual: VISUAL_BY_PALETTE[course.theme?.palette ?? ""] ?? "stone",
-        lessons: course.modules.reduce((total, module) => total + module.lessons.length, 0),
-        // The cover's own three lines, carried to the card that shows them. The
-        // subtitle falls back to the dash-split for courses authored before
-        // `posttitle` existed — the same fallback `toOfferSurface` uses, read
-        // from it rather than repeated here.
-        ...(course.pretitle ? { pretitle: course.pretitle } : {}),
-        ...(surface.subtitle ? { posttitle: surface.subtitle } : {}),
-        ...(course.categories
-          ? {
-              categories: course.categories,
-              categoryLabels: course.categories.map((one) => COURSE_CATEGORY_LABELS[one]),
-            }
-          : {}),
-      };
-    });
+      tag: course.kind ? surface.duration : offerEyebrow(surface.tag, surface.duration),
+      ...(course.kind ? { kindBadge: surface.tag, kind: course.kind } : {}),
+      description: course.summary ? inlineToPlainText(course.summary) : "",
+      href: `/programs/${course.programSlug}`,
+      commercialMode: offer ? (offer.amount === 0 ? "free" : "fixed") : "inquiry",
+      price: offer ? (offer.amount === 0 ? "Безкоштовно" : formatPrice(offer.amount, offer.currency)) : null,
+      amount: offer ? offer.amount : null,
+      currency: offer ? offer.currency : null,
+      // A free course quotes its former price too — see the free branch of
+      // `courseOfferCommerce`. The one rule is that the quoted figure is
+      // strictly above the charged one, which zero satisfies like any other.
+      compareAtPrice:
+        offer && offer.listAmount !== null && offer.listAmount !== undefined && offer.listAmount > offer.amount
+          ? formatPrice(offer.listAmount, offer.currency)
+          : null,
+      ...(course.cover
+        ? {
+            artwork: {
+              desktop: course.cover.src,
+              // An author's own upload has a 640px rendition beside it, and a
+              // catalogue card is the place that wants it. A cover that came
+              // from the repository instead has no such sibling to promise,
+              // so the card falls back to the full plate as it always did.
+              ...(card ? { card } : {}),
+              ...coverArtworkFraming(course.cover),
+            },
+          }
+        : {}),
+      visual: VISUAL_BY_PALETTE[course.theme?.palette ?? ""] ?? "stone",
+      lessons: course.modules.reduce((total, module) => total + module.lessons.length, 0),
+      // The cover's own three lines, carried to the card that shows them. The
+      // subtitle falls back to the dash-split for courses authored before
+      // `posttitle` existed — the same fallback `toOfferSurface` uses, read
+      // from it rather than repeated here.
+      ...(course.pretitle ? { pretitle: course.pretitle } : {}),
+      ...(surface.subtitle ? { posttitle: surface.subtitle } : {}),
+      ...(course.categories
+        ? {
+            categories: course.categories,
+            categoryLabels: course.categories.map((one) => COURSE_CATEGORY_LABELS[one]),
+          }
+        : {}),
+    };
+  });
 }
 
 /**

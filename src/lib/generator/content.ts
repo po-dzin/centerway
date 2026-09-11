@@ -79,15 +79,33 @@ function validateRouteContent(route: string, value: unknown): asserts value is R
   assert(isNonEmptyString(value.eyebrow), `funnel_content_missing_eyebrow:${route}`);
   assert(isNonEmptyString(value.title), `funnel_content_missing_title:${route}`);
   assert(isNonEmptyString(value.lead), `funnel_content_missing_lead:${route}`);
-  assert(Array.isArray(value.heroHighlights) && value.heroHighlights.every(isNonEmptyString), `funnel_content_invalid_hero_highlights:${route}`);
+  assert(
+    Array.isArray(value.heroHighlights) && value.heroHighlights.every(isNonEmptyString),
+    `funnel_content_invalid_hero_highlights:${route}`,
+  );
   assert(Array.isArray(value.routeCards) && value.routeCards.length > 0, `funnel_content_invalid_route_cards:${route}`);
-  assert(Array.isArray(value.howItWorks) && value.howItWorks.length > 0, `funnel_content_invalid_how_it_works:${route}`);
-  assert(Array.isArray(value.stageBreakdown) && value.stageBreakdown.length > 0, `funnel_content_invalid_stage_breakdown:${route}`);
+  assert(
+    Array.isArray(value.howItWorks) && value.howItWorks.length > 0,
+    `funnel_content_invalid_how_it_works:${route}`,
+  );
+  assert(
+    Array.isArray(value.stageBreakdown) && value.stageBreakdown.length > 0,
+    `funnel_content_invalid_stage_breakdown:${route}`,
+  );
   assert(Array.isArray(value.proof) && value.proof.length > 0, `funnel_content_invalid_proof:${route}`);
   assert(Array.isArray(value.boundary) && value.boundary.length > 0, `funnel_content_invalid_boundary:${route}`);
-  assert(Array.isArray(value.nextStepChecklist) && value.nextStepChecklist.length > 0, `funnel_content_invalid_next_step:${route}`);
-  assert(isRecord(value.nextBestRoute) && isNonEmptyString(value.nextBestRoute.title), `funnel_content_invalid_next_best_route:${route}`);
-  assert(isRecord(value.resourceEntry) && isNonEmptyString(value.resourceEntry.title), `funnel_content_invalid_resource_entry:${route}`);
+  assert(
+    Array.isArray(value.nextStepChecklist) && value.nextStepChecklist.length > 0,
+    `funnel_content_invalid_next_step:${route}`,
+  );
+  assert(
+    isRecord(value.nextBestRoute) && isNonEmptyString(value.nextBestRoute.title),
+    `funnel_content_invalid_next_best_route:${route}`,
+  );
+  assert(
+    isRecord(value.resourceEntry) && isNonEmptyString(value.resourceEntry.title),
+    `funnel_content_invalid_resource_entry:${route}`,
+  );
 }
 
 function validateManifest(input: unknown): FunnelContentManifest {

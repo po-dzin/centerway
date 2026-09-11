@@ -92,7 +92,7 @@ describe("sortAnnotations", () => {
         mark({ clientId: "early", anchor: anchor({ blockId: "b1", start: 40, end: 44 }) }),
         mark({ clientId: "book", kind: "bookmark", anchor: null }),
       ],
-      order
+      order,
     );
     expect(sorted.map((a) => a.clientId)).toEqual(["book", "early", "late", "gone"]);
   });

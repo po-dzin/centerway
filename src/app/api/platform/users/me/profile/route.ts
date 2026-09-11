@@ -22,7 +22,9 @@ export async function GET(req: NextRequest) {
       .maybeSingle(),
     db
       .from("v_user_dosha_test_profile")
-      .select("user_id, test_id, test_slug, attempt_id, result_type, score_vata, score_pitta, score_kapha, completed_at, version")
+      .select(
+        "user_id, test_id, test_slug, attempt_id, result_type, score_vata, score_pitta, score_kapha, completed_at, version",
+      )
       .eq("user_id", user.id)
       .maybeSingle(),
   ]);

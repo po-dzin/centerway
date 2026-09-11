@@ -30,13 +30,7 @@ import { validateCourse, type Course } from "@/lms-core";
    and became an ordinary published course. A snapshot missing from this array
    is not a missing file — it is a course the fallback cannot serve and, until
    it was added, a product whose fulfilment named a course nothing here knew. */
-const rawCourses: unknown[] = [
-  iremGymnasticsCourse,
-  naturalBodyCourse,
-  resetDayCourse,
-  shortCourse,
-  way21Course,
-];
+const rawCourses: unknown[] = [iremGymnasticsCourse, naturalBodyCourse, resetDayCourse, shortCourse, way21Course];
 
 function loadCourses(): Course[] {
   return rawCourses.map((raw, index) => {

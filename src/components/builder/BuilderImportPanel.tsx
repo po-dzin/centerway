@@ -68,8 +68,8 @@ export function ImportPanel({ onCancel, onImported }: { onCancel: () => void; on
        radius holding one form. */
     <div className={styles.importForm}>
       <p className={styles.panelText}>
-        Виберіть JSON, експортований з Builder або сумісний з <code>lms:import</code>. Спершу ми покажемо
-        перевірку; запис відбудеться лише після підтвердження.
+        Виберіть JSON, експортований з Builder або сумісний з <code>lms:import</code>. Спершу ми покажемо перевірку;
+        запис відбудеться лише після підтвердження.
       </p>
 
       <div className={styles.addRow}>
@@ -103,12 +103,10 @@ export function ImportPanel({ onCancel, onImported }: { onCancel: () => void; on
         <div className={styles.importPreview} aria-live="polite">
           <strong>{ready.preview.title}</strong>
           <span>
-            Адреса: <code>{ready.preview.slug}</code> · {ready.preview.moduleCount} мод. · {ready.preview.lessonCount} ур. ·{" "}
-            {ready.preview.blockCount} блоків
+            Адреса: <code>{ready.preview.slug}</code> · {ready.preview.moduleCount} мод. · {ready.preview.lessonCount}{" "}
+            ур. · {ready.preview.blockCount} блоків
           </span>
-          <span>
-            Імпорт створить приховану чернетку, нові ID і не перенесе прив’язки до оплат.
-          </span>
+          <span>Імпорт створить приховану чернетку, нові ID і не перенесе прив’язки до оплат.</span>
           <span>
             {ready.preview.blockerCount === 0
               ? "Структура готова до подальшого редагування."
@@ -124,7 +122,12 @@ export function ImportPanel({ onCancel, onImported }: { onCancel: () => void; on
         <button className={styles.retreatAction} type="button" onClick={onCancel} disabled={waiting}>
           Скасувати
         </button>
-        <button className={styles.commitAction} type="button" onClick={() => void commit()} disabled={!ready || waiting}>
+        <button
+          className={styles.commitAction}
+          type="button"
+          onClick={() => void commit()}
+          disabled={!ready || waiting}
+        >
           {state.status === "committing" ? "Імпортуємо…" : "Імпортувати чернетку"}
         </button>
       </div>

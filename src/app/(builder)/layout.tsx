@@ -30,7 +30,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -56,7 +55,11 @@ export default async function BuilderRootLayout({ children }: Readonly<{ childre
         {/* Same dynamic-render, no-store shape as the platform root — see the
             component for why that makes Chrome's bfcache the one that misbehaves. */}
         <BfcacheRestore />
-        <SurfaceHostProvider host={host}><SessionProvider><ToastProvider>{children}</ToastProvider></SessionProvider></SurfaceHostProvider>
+        <SurfaceHostProvider host={host}>
+          <SessionProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </SessionProvider>
+        </SurfaceHostProvider>
       </body>
     </html>
   );

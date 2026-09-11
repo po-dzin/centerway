@@ -1,4 +1,10 @@
+# Not ours to format.
 node_modules
+package-lock.json
+public
+supabase/local
+
+# Build output.
 .next
 .next-dev
 output
@@ -6,11 +12,23 @@ artifacts
 coverage
 test-results
 playwright-report
-public
-src/landing-static
+
+# CODEGEN. Formatting any of these puts the file out of step with the script
+# that writes it, and the check that compares the two then fails on whitespace:
+# `tokens:check`, `icons:check`, `generator:determinism` and `ds:sync:check` all
+# regenerate and diff. Edit the source, run the generator, commit the output.
 src/app/globals.css
+src/landing-static/shared/css/cw-tokens.generated.css
 data/design-tokens/ds-bundle
-supabase/local
-docs/**/*.html
+data/design-tokens/geometry-baseline.json
+data/generator/snapshots
+src/lib/brand/iconNames.ts
+src/lib/db/database.types.ts
+
+# The five landings are hand-written documents with their own conventions, and
+# several guards read them by line (carriers, rhythm, the DS contract).
+src/landing-static
+
+# Prose is written, not formatted; docs/README.md is generated besides.
 *.md
-package-lock.json
+docs/**/*.html

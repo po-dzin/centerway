@@ -16,12 +16,7 @@
     "start": "purchase",
     "reminderHour": 9
   },
-  "entitlementProductCodes": [
-    "way21",
-    "way21-support",
-    "detox21",
-    "shlyah21"
-  ],
+  "entitlementProductCodes": ["way21", "way21-support", "detox21", "shlyah21"],
   "cover": {
     "alt": "Обкладинка програми «Шлях 21»",
     "src": "/cw/platform/programs/way21-home-desktop-v1.webp"
@@ -30,10 +25,7 @@
   "posttitle": "інтегративна детокс-програма",
   "tagline": "21-денна аюрведична програма розвантаження: харчування, трави, режим і щоденні опори без жорсткого тиску.",
   "kind": "course",
-  "categories": [
-    "cleansing",
-    "nutrition"
-  ],
+  "categories": ["cleansing", "nutrition"],
   "results": [
     "Сильне травлення без важкості після їжі",
     "Менше набряків, чистіша шкіра, рівна енергія",

@@ -18,16 +18,17 @@ const OUT = "src/lib/db/database.types.ts";
 
 let generated;
 try {
-  generated = execFileSync(
-    "supabase",
-    ["gen", "types", "typescript", "--db-url", poolerUrl(), "--schema", "public"],
-    { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] },
-  );
+  generated = execFileSync("supabase", ["gen", "types", "typescript", "--db-url", poolerUrl(), "--schema", "public"], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"],
+  });
 } catch (error) {
   // Never let the failure print the command line: it carries the password.
   const stdout = String(error?.stdout ?? "");
   const hint = /running container/.test(stdout) ? " (Docker is not running — supabase gen types needs it)" : "";
-  console.error(`supabase gen types failed${hint}: ${stdout.trim() || String(error?.message ?? "").split("\n")[0] || "unknown"}`);
+  console.error(
+    `supabase gen types failed${hint}: ${stdout.trim() || String(error?.message ?? "").split("\n")[0] || "unknown"}`,
+  );
   process.exit(1);
 }
 

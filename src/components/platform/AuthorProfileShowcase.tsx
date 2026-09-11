@@ -22,11 +22,9 @@ function courseCountLabel(count: number) {
 /** Public author identity and course showcase. */
 export function AuthorProfileShowcase({ author, courses }: { author: Author; courses: StorefrontCard[] }) {
   /* The header's small facts, in one list because they end up in one row. */
-  const meta = [
-    courseCountLabel(courses.length),
-    author.experienceBadge,
-    author.achievementBadge,
-  ].filter((fact): fact is string => Boolean(fact));
+  const meta = [courseCountLabel(courses.length), author.experienceBadge, author.achievementBadge].filter(
+    (fact): fact is string => Boolean(fact),
+  );
 
   return (
     <main>
@@ -43,7 +41,7 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
               backgroundImage: `url("${author.background.src}")`,
               ...cropBackgroundStyle(
                 { x: author.background.cropX, y: author.background.cropY, scale: author.background.cropScale },
-                AUTHOR_BANNER_CROP_DEFAULT
+                AUTHOR_BANNER_CROP_DEFAULT,
               ),
             }}
           />
@@ -51,11 +49,7 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
       ) : null}
       <header className={author.background ? `${styles.hero} ${styles.heroWithBanner}` : styles.hero}>
         <div className={styles.identity}>
-          <AuthorPortrait
-            photo={author.photo}
-            size="lg"
-            fallback={author.name.trim().charAt(0).toUpperCase()}
-          />
+          <AuthorPortrait photo={author.photo} size="lg" fallback={author.name.trim().charAt(0).toUpperCase()} />
           <div className={styles.identityCopy}>
             {/* No eyebrow. The portrait is beside it and the name is the H1:
                 a line reading «Профіль автора» over a face and a name told
@@ -75,7 +69,9 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
             {meta.length > 0 ? (
               <div className={styles.meta}>
                 {meta.map((fact) => (
-                  <span className={styles.chip} key={fact}>{fact}</span>
+                  <span className={styles.chip} key={fact}>
+                    {fact}
+                  </span>
                 ))}
               </div>
             ) : null}
@@ -107,7 +103,12 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
             <h2 className={styles.courseTitle}>Досвід і головні орієнтири</h2>
           </div>
           <ul className={styles.factGrid}>
-            {author.facts.map((line) => <li key={line}><Icon name="star" size={20} /><span>{line}</span></li>)}
+            {author.facts.map((line) => (
+              <li key={line}>
+                <Icon name="star" size={20} />
+                <span>{line}</span>
+              </li>
+            ))}
           </ul>
         </section>
       ) : null}
@@ -119,37 +120,92 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
             <h2 className={styles.courseTitle}>{block.title}</h2>
           </div>
           <div className={styles.profilePanel}>
-            {block.body ? block.body.split(/\n{2,}/).map((paragraph) => <p className={styles.profileParagraph} key={paragraph}>{paragraph}</p>) : null}
+            {block.body
+              ? block.body.split(/\n{2,}/).map((paragraph) => (
+                  <p className={styles.profileParagraph} key={paragraph}>
+                    {paragraph}
+                  </p>
+                ))
+              : null}
             {block.items?.length && block.kind === "timeline" ? (
               <>
-                <ul className={styles.timelineList}>{block.items.slice(0, 4).map((item) => <li key={item}>{item}</li>)}</ul>
-                {block.items.length > 4 ? <details className={styles.timelineMore}>
-                  <summary>Показати весь шлях</summary>
-                  <ul className={styles.timelineList}>{block.items.slice(4).map((item) => <li key={item}>{item}</li>)}</ul>
-                </details> : null}
+                <ul className={styles.timelineList}>
+                  {block.items.slice(0, 4).map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+                {block.items.length > 4 ? (
+                  <details className={styles.timelineMore}>
+                    <summary>Показати весь шлях</summary>
+                    <ul className={styles.timelineList}>
+                      {block.items.slice(4).map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </details>
+                ) : null}
               </>
             ) : block.items?.length ? (
-              <ul className={styles.credentials}>{block.items.map((item) => <li className={styles.credential} key={item}><Icon name="star" size={20} /><span>{item}</span></li>)}</ul>
+              <ul className={styles.credentials}>
+                {block.items.map((item) => (
+                  <li className={styles.credential} key={item}>
+                    <Icon name="star" size={20} />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
             ) : null}
           </div>
         </section>
       ))}
 
-      {author.consultation?.enabled ? <section className={styles.consultation} id="consultation">
-        {/* No eyebrow: the heading already carries the word. When the author
+      {author.consultation?.enabled ? (
+        <section className={styles.consultation} id="consultation">
+          {/* No eyebrow: the heading already carries the word. When the author
             leaves the title empty it falls back to «Консультація з …», and
             when they write their own, their word is the better one. Either
             way the eyebrow was never the best available line. */}
-        <h2 className={styles.courseTitle}>{author.consultation.title || `Консультація з ${author.name}`}</h2>
-        {author.consultation.summary ? <p className={styles.bio}>{author.consultation.summary}</p> : null}
-        {author.consultation.points?.length ? <ul className={styles.credentials}>{author.consultation.points.map((point) => <li className={styles.credential} key={point}><Icon name="check" size={20} /><span>{point}</span></li>)}</ul> : null}
-        <h2 className={styles.courseTitle}>Як це відбувається</h2>
-        <ol className={styles.steps}>{consultationSteps.map((step) => <li key={step.id}><strong>{step.title}</strong><span>{step.text}</span></li>)}</ol>
-        {author.consultation.contactUrl ? <a className={styles.consultationAction} href={author.consultation.contactUrl} target="_blank" rel="noopener noreferrer">Домовитися про консультацію</a> : null}
-      </section> : null}
+          <h2 className={styles.courseTitle}>{author.consultation.title || `Консультація з ${author.name}`}</h2>
+          {author.consultation.summary ? <p className={styles.bio}>{author.consultation.summary}</p> : null}
+          {author.consultation.points?.length ? (
+            <ul className={styles.credentials}>
+              {author.consultation.points.map((point) => (
+                <li className={styles.credential} key={point}>
+                  <Icon name="check" size={20} />
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <h2 className={styles.courseTitle}>Як це відбувається</h2>
+          <ol className={styles.steps}>
+            {consultationSteps.map((step) => (
+              <li key={step.id}>
+                <strong>{step.title}</strong>
+                <span>{step.text}</span>
+              </li>
+            ))}
+          </ol>
+          {author.consultation.contactUrl ? (
+            <a
+              className={styles.consultationAction}
+              href={author.consultation.contactUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Домовитися про консультацію
+            </a>
+          ) : null}
+        </section>
+      ) : null}
       {/* The author's route, not the consultation page's — these two sections
           render on both, and they used to declare `/consult` here. */}
-      {author.consultation?.enabled ? <><ConsultBoundary route="platform:/expert/[slug]" /><ConsultFaq route="platform:/expert/[slug]" /></> : null}
+      {author.consultation?.enabled ? (
+        <>
+          <ConsultBoundary route="platform:/expert/[slug]" />
+          <ConsultFaq route="platform:/expert/[slug]" />
+        </>
+      ) : null}
 
       <section className={styles.courses}>
         {/* The crossing sits in the head, beside the title — the same place and

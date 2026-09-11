@@ -24,8 +24,7 @@ const BLOCKER_LABELS: Record<string, string> = {
   // think about addresses, and «змініть slug» would read as bureaucracy. What
   // they can act on is that the address is about to become permanent and still
   // says «новий курс».
-  lms_ready_default_slug:
-    "Адреса курсу лишилась типовою — її видно в каталозі й потім не змінити",
+  lms_ready_default_slug: "Адреса курсу лишилась типовою — її видно в каталозі й потім не змінити",
   lms_ready_missing_cover: "Немає обкладинки — картка в каталозі буде порожньою",
   lms_ready_missing_cover_alt: "Обкладинка без опису для читача з екранним диктором",
   lms_ready_missing_tagline: "Немає рядка під назвою — картці нічого сказати",
@@ -129,4 +128,3 @@ export function BuilderBlockers({
     </section>
   );
 }
-

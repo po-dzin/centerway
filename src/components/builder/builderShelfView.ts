@@ -95,8 +95,7 @@ export function useShelfReflow(resetKey: string, deps: unknown[]) {
     const root = container.current;
     if (!root) return;
 
-    const reduced =
-      typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const rebased = lastResetKey.current !== resetKey;
     lastResetKey.current = resetKey;
 
@@ -120,10 +119,10 @@ export function useShelfReflow(resetKey: string, deps: unknown[]) {
       // on every card on every reload.
       if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
 
-      item.animate(
-        [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }],
-        { duration: 260, easing: "cubic-bezier(0.22, 0.61, 0.36, 1)" },
-      );
+      item.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }], {
+        duration: 260,
+        easing: "cubic-bezier(0.22, 0.61, 0.36, 1)",
+      });
     }
 
     lastRects.current = nextRects;

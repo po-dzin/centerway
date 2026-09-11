@@ -21,13 +21,7 @@ import { HandGraphic } from "@/components/Icon";
 import { READER_SCALE_STEPS } from "./readerSettings";
 import styles from "./Lms.module.css";
 
-export function ReaderTextSize({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (id: string) => void;
-}) {
+export function ReaderTextSize({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 

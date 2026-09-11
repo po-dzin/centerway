@@ -42,10 +42,7 @@ export function dateLocaleFor(lang: ProfileLang) {
  * so the id remains the fallback rather than being hidden: "connected, but I
  * cannot name it" beats an em dash that reads as "not connected".
  */
-export function formatTelegram(
-  contacts: ProfileResponse["profile"]["contacts"],
-  emptyValue: string,
-): string {
+export function formatTelegram(contacts: ProfileResponse["profile"]["contacts"], emptyValue: string): string {
   if (contacts?.telegramUsername) return `@${contacts.telegramUsername}`;
   if (contacts?.telegram) return contacts.telegram;
   return emptyValue;

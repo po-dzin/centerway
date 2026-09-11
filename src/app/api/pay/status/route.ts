@@ -57,8 +57,7 @@ export async function GET(req: NextRequest) {
     const status = resolveReturnStatus({
       fromParams: null,
       orderStatus: (order?.status as string | null) ?? null,
-      lastCallbackStatus:
-        typeof callbackStatus === "string" && callbackStatus.trim() ? callbackStatus.trim() : null,
+      lastCallbackStatus: typeof callbackStatus === "string" && callbackStatus.trim() ? callbackStatus.trim() : null,
     });
 
     /* Never cached. The whole value of this answer is that it is the current

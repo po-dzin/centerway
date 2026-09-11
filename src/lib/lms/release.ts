@@ -52,9 +52,11 @@ export type CourseRevisionRef = { id: string; revisionNumber: number; createdAt:
  * failing with a message that reads like a bug.
  */
 function isMissingFunction(error: { code?: string; message: string }): boolean {
-  return error.code === "PGRST202"
-    || /could not find the function/i.test(error.message)
-    || /schema cache/i.test(error.message);
+  return (
+    error.code === "PGRST202" ||
+    /could not find the function/i.test(error.message) ||
+    /schema cache/i.test(error.message)
+  );
 }
 
 export const JOURNAL_MIGRATION_REQUIRED = "lms_release_journal_migration_required";

@@ -52,7 +52,12 @@ describe("layers", () => {
      surfaces a layer is stated in CSS against `--ds-z-*`, never as a rung from
      a scale this product does not run. */
   it("never states a layer in Tailwind's scale on a platform surface", () => {
-    const dirs = ["src/components/platform", "src/components/lms", "src/components/builder", "src/components/dosha-test"];
+    const dirs = [
+      "src/components/platform",
+      "src/components/lms",
+      "src/components/builder",
+      "src/components/dosha-test",
+    ];
     const offenders: string[] = [];
     const walk = (dir: string) => {
       for (const entry of fs.readdirSync(path.resolve(__dirname, "../..", dir), { withFileTypes: true })) {

@@ -8,7 +8,7 @@ export const metadata: Metadata = pageMetadata({
   title: "Політика конфіденційності",
   description: describe(
     "Як CenterWay збирає, використовує і захищає персональні дані користувачів платформи, і які права має користувач.",
-    { bounded: false }
+    { bounded: false },
   ),
   path: "/legal/privacy",
 });

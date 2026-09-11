@@ -53,7 +53,15 @@ describe("course sources", () => {
     // The grant says "this course"; the service is what makes a guessed id from
     // a different course answer nothing at all.
     const { module } = await withDatabase([
-      { id: "src-1", course_id: "course-2", kind: "note", title: "чужа", extracted_text: "секрет", created_at: "1", updated_at: "1" },
+      {
+        id: "src-1",
+        course_id: "course-2",
+        kind: "note",
+        title: "чужа",
+        extracted_text: "секрет",
+        created_at: "1",
+        updated_at: "1",
+      },
     ]);
     expect(await module.readCourseSource("course-1", "src-1")).toBeNull();
     expect(await module.listCourseSources("course-1")).toEqual([]);
@@ -61,7 +69,15 @@ describe("course sources", () => {
 
   it("reports text length in the list without carrying the text", async () => {
     const { module } = await withDatabase([
-      { id: "src-1", course_id: "course-1", kind: "document", title: "т", extracted_text: "abcde", created_at: "1", updated_at: "1" },
+      {
+        id: "src-1",
+        course_id: "course-1",
+        kind: "document",
+        title: "т",
+        extracted_text: "abcde",
+        created_at: "1",
+        updated_at: "1",
+      },
     ]);
     const [summary] = await module.listCourseSources("course-1");
     expect(summary.extractedChars).toBe(5);

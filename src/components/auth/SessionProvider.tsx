@@ -58,7 +58,7 @@ function useSubscription(enabled: boolean): SessionState {
       setState((current) =>
         current.status !== "loading" && sameSession(current.session, next)
           ? current
-          : { session: next, status: next ? "signed-in" : "signed-out" }
+          : { session: next, status: next ? "signed-in" : "signed-out" },
       );
 
     void supabaseClient.auth.getSession().then(({ data }) => publish(data.session));

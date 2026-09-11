@@ -11,10 +11,6 @@ export const metadata: Metadata = pageMetadata({
   noindex: true,
 });
 
-export default async function PayFailedPage({
-  searchParams,
-}: {
-  searchParams: Promise<SearchParams>;
-}) {
+export default async function PayFailedPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   return <PayStatusPage status="failed" searchParams={await searchParams} />;
 }

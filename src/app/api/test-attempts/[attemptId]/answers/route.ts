@@ -22,10 +22,7 @@ type SubmitAnswerBody = {
   optionId?: unknown;
 };
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ attemptId: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ attemptId: string }> }) {
   const rl = await enforceRateLimit(req, { name: "test_answer", limit: 120, windowSeconds: 60 });
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 

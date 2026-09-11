@@ -180,7 +180,13 @@ export function AuthorMediaSlot({
             />
             <Icon name="edit" size={18} />
           </label>
-          <button type="button" className={styles.authorMediaAction} aria-label={removeLabel} title={removeLabel} onClick={onRemove}>
+          <button
+            type="button"
+            className={styles.authorMediaAction}
+            aria-label={removeLabel}
+            title={removeLabel}
+            onClick={onRemove}
+          >
             <Icon name="close" size={18} />
           </button>
         </div>

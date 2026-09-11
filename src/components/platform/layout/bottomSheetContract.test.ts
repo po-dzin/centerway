@@ -27,8 +27,9 @@ describe("bottom sheet", () => {
     const lms = read("src/components/lms/Lms.module.css");
     expect(rule(lms, ".drawer")).toContain('composes: sheet from "../platform/layout/BottomSheet.module.css"');
     expect(rule(lms, ".noteEditor")).toContain('composes: sheet from "../platform/layout/BottomSheet.module.css"');
-    expect(rule(read("src/components/builder/Builder.module.css"), ".asideSheet"))
-      .toContain('composes: sheet from "../platform/layout/BottomSheet.module.css"');
+    expect(rule(read("src/components/builder/Builder.module.css"), ".asideSheet")).toContain(
+      'composes: sheet from "../platform/layout/BottomSheet.module.css"',
+    );
   });
 
   it("keeps the two axes a caller may set, and only those", () => {
@@ -42,7 +43,8 @@ describe("bottom sheet", () => {
 
   it("gives every sheet the same grab bar, in the surface's own ink", () => {
     expect(rule(read(recipe), ".handle")).toContain("var(--sheet-rule, var(--cw-platform-border))");
-    expect(rule(read("src/components/builder/Builder.module.css"), ".asideHandle"))
-      .toContain("--sheet-rule: var(--builder-rule)");
+    expect(rule(read("src/components/builder/Builder.module.css"), ".asideHandle")).toContain(
+      "--sheet-rule: var(--builder-rule)",
+    );
   });
 });

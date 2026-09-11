@@ -48,10 +48,7 @@ describe("computeWfpCallbackSignature", () => {
     const payload = callback();
     const expected = crypto
       .createHmac("md5", SECRET)
-      .update(
-        "centerway_net_ua;course-reset-day_20260828_ab12;795;UAH;123456;44**** ****1234;Approved;1100",
-        "utf8"
-      )
+      .update("centerway_net_ua;course-reset-day_20260828_ab12;795;UAH;123456;44**** ****1234;Approved;1100", "utf8")
       .digest("hex");
 
     expect(sign(payload)).toBe(expected);
@@ -86,18 +83,18 @@ describe("verifyWfpCallbackSignature", () => {
     process.env.WFP_SECRET_KEY = SECRET;
     const payload = callback();
 
-    expect(
-      verifyWfpCallbackSignature({ ...payload, merchantSignature: sign(payload).toUpperCase() }).ok
-    ).toBe(true);
+    expect(verifyWfpCallbackSignature({ ...payload, merchantSignature: sign(payload).toUpperCase() }).ok).toBe(true);
   });
 
   it("refuses a callback signed with somebody else's secret", () => {
     process.env.WFP_SECRET_KEY = SECRET;
     const payload = callback();
 
-    expect(
-      verifyWfpCallbackSignature({ ...payload, merchantSignature: sign(payload, "not-our-secret") })
-    ).toEqual({ ok: false, present: true, reason: "mismatch" });
+    expect(verifyWfpCallbackSignature({ ...payload, merchantSignature: sign(payload, "not-our-secret") })).toEqual({
+      ok: false,
+      present: true,
+      reason: "mismatch",
+    });
   });
 
   it("refuses a forged amount even when the rest of the callback is untouched", () => {
@@ -105,9 +102,7 @@ describe("verifyWfpCallbackSignature", () => {
     const genuine = callback();
     const signature = sign(genuine);
 
-    expect(
-      verifyWfpCallbackSignature({ ...genuine, amount: "1", merchantSignature: signature }).ok
-    ).toBe(false);
+    expect(verifyWfpCallbackSignature({ ...genuine, amount: "1", merchantSignature: signature }).ok).toBe(false);
   });
 
   it("refuses an unsigned callback — the forged-webhook shape", () => {
@@ -118,9 +113,7 @@ describe("verifyWfpCallbackSignature", () => {
       present: false,
       reason: "missing_signature",
     });
-    expect(verifyWfpCallbackSignature({ ...callback(), merchantSignature: "   " }).reason).toBe(
-      "missing_signature"
-    );
+    expect(verifyWfpCallbackSignature({ ...callback(), merchantSignature: "   " }).reason).toBe("missing_signature");
   });
 
   it("refuses everything when the secret is absent, rather than waving callbacks through", () => {

@@ -98,7 +98,7 @@ export function navigateAsOneMovement(go: () => void): void {
         settle = resolve;
         deadline = window.setTimeout(finish, DEADLINE_MS);
         go();
-      })
+      }),
   );
 }
 

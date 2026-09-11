@@ -13,15 +13,17 @@ const read = (file: string) => fs.readFileSync(path.resolve(__dirname, "../../..
    above a definition silently pointed these assertions at the wrong block. The
    definitions are written one selector per line at column zero; the variants
    never are. */
-const rule = (source: string, name: string) =>
-  new RegExp(`^\\.${name}\\s*\\{([^}]+)}`, "m").exec(source)?.[1] ?? "";
+const rule = (source: string, name: string) => new RegExp(`^\\.${name}\\s*\\{([^}]+)}`, "m").exec(source)?.[1] ?? "";
 
 describe("reader / author preview chrome contract", () => {
   it("keeps the learner's back route and reading tools in one row", () => {
-    const html = renderToStaticMarkup(createElement(ReaderChrome, {
-      backHref: "/learn/example", backLabel: "До курсу: приклад",
-      tools: createElement("button", null, "Зміст курсу"),
-    }));
+    const html = renderToStaticMarkup(
+      createElement(ReaderChrome, {
+        backHref: "/learn/example",
+        backLabel: "До курсу: приклад",
+        tools: createElement("button", null, "Зміст курсу"),
+      }),
+    );
     expect(html).toContain('href="/learn/example"');
     expect(html).toContain("До курсу: приклад");
     expect(html).toContain("Зміст курсу");
@@ -29,12 +31,18 @@ describe("reader / author preview chrome contract", () => {
   });
 
   it("replaces the back action with one author return, keeping the same tools", () => {
-    const html = renderToStaticMarkup(createElement(ZenPreviewContext.Provider, {
-      value: { returnToBuilder: () => undefined },
-    }, createElement(ReaderChrome, {
-      backHref: "/learn/example?preview=draft",
-      tools: createElement("button", null, "Зміст курсу"),
-    })));
+    const html = renderToStaticMarkup(
+      createElement(
+        ZenPreviewContext.Provider,
+        {
+          value: { returnToBuilder: () => undefined },
+        },
+        createElement(ReaderChrome, {
+          backHref: "/learn/example?preview=draft",
+          tools: createElement("button", null, "Зміст курсу"),
+        }),
+      ),
+    );
     /* THE ARROW CARRIES THE WORD, IT DOES NOT PRINT IT (2026-09-07): the label
        is on the control twice, for the screen reader and for the tooltip, and
        nowhere in the row — an empty loading screen with one captioned pill on
@@ -102,7 +110,9 @@ describe("reader / author preview chrome contract", () => {
     /* The author's way out of the preview is the SAME island as the reader's
        way out of a lesson since 2026-09-07 — it used to compose a button role
        because it carried a word, and it no longer carries one. */
-    expect(rule(css, "readerPreviewBack")).toContain('composes: organ from "../platform/layout/ChromeOrgans.module.css"');
+    expect(rule(css, "readerPreviewBack")).toContain(
+      'composes: organ from "../platform/layout/ChromeOrgans.module.css"',
+    );
   });
 
   it("gives sidebar append commands the shared themed button recipe", () => {

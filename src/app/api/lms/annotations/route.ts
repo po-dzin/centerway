@@ -48,7 +48,7 @@ async function context(req: NextRequest, courseSlug: string, limited = false) {
 
   const result = await loadLearnerCourse(
     { authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) },
-    courseSlug
+    courseSlug,
   );
   if (!result.ok) {
     return {

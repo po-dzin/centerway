@@ -40,8 +40,7 @@ export type LandingPrice = {
 export type LandingPrices = Record<string, LandingPrice>;
 
 /** `data-cw-price="<code>"`, optionally `data-cw-price-kind="list"`. */
-const PRICED_ELEMENT =
-  /<(\w+)((?:\s+[^<>]*?)?\sdata-cw-price="([^"]+)"(?:\s+[^<>]*?)?)>([\s\S]*?)<\/\1>/g;
+const PRICED_ELEMENT = /<(\w+)((?:\s+[^<>]*?)?\sdata-cw-price="([^"]+)"(?:\s+[^<>]*?)?)>([\s\S]*?)<\/\1>/g;
 
 /** The analytics value on a checkout trigger, so the pixel matches the page. */
 const PRICE_VALUE_ATTR = /(<[^<>]*?\sdata-cw-product="([^"]+)"[^<>]*?\sdata-cw-price-value=")(\d+)(")/g;

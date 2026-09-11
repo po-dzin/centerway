@@ -11,8 +11,9 @@ describe("mediaSources", () => {
   });
 
   it("stays silent about flat paths written before the pipeline existed", () => {
-    expect(mediaSources(`https://x.supabase.co/storage/v1/object/public/course-media/courses/c1/abc.webp`).srcSet)
-      .toBeUndefined();
+    expect(
+      mediaSources(`https://x.supabase.co/storage/v1/object/public/course-media/courses/c1/abc.webp`).srcSet,
+    ).toBeUndefined();
   });
 
   it("stays silent about an animation, which has no renditions", () => {

@@ -71,11 +71,7 @@ async function accountFor(email) {
 }
 
 async function gatingRole(authUserId) {
-  const { data, error } = await db
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", authUserId)
-    .maybeSingle();
+  const { data, error } = await db.from("user_roles").select("role").eq("user_id", authUserId).maybeSingle();
   if (error) fail(error.message);
   return typeof data?.role === "string" ? data.role : null;
 }

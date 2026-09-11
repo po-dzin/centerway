@@ -31,7 +31,7 @@ export async function listCustomers(input: { q?: string; limit: number; offset: 
     .order("created_at", { ascending: false });
   if (q) {
     query = query.or(
-      `email.ilike.%${q}%,phone.ilike.%${q}%,display_name.ilike.%${q}%,tg_id.ilike.%${q}%,google_id.ilike.%${q}%`
+      `email.ilike.%${q}%,phone.ilike.%${q}%,display_name.ilike.%${q}%,tg_id.ilike.%${q}%,google_id.ilike.%${q}%`,
     );
   }
   const { data, error, count } = await query;

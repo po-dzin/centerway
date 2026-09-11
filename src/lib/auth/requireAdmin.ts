@@ -20,11 +20,7 @@ export async function requireAdmin(req: NextRequest): Promise<AdminSession | nul
   const user = await verifyBearer(req.headers.get("Authorization"));
   if (!user) return null;
 
-  const { data, error } = await serviceClient()
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const { data, error } = await serviceClient().from("user_roles").select("role").eq("user_id", user.id).maybeSingle();
 
   if (error) {
     log.error("auth.role_fetch_failed", { userId: user.id, message: error.message });

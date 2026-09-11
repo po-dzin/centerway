@@ -55,11 +55,11 @@ export type PaymentStartInput = {
   fbc?: string | null;
   fbclid?: string | null;
   campaign?: string | null;
-  client_ip?: string | null;   // IP пользователя в момент клика на оплату
-  client_ua?: string | null;   // User-Agent браузера
-  page_url?: string | null;    // URL лендинга (event_source_url для CAPI)
-  event_id?: string | null;    // event_id для dedupe Pixel + CAPI (InitiateCheckout)
-  staff?: boolean;             // internal/QA traffic — skip Meta CAPI (InitiateCheckout)
+  client_ip?: string | null; // IP пользователя в момент клика на оплату
+  client_ua?: string | null; // User-Agent браузера
+  page_url?: string | null; // URL лендинга (event_source_url для CAPI)
+  event_id?: string | null; // event_id для dedupe Pixel + CAPI (InitiateCheckout)
+  staff?: boolean; // internal/QA traffic — skip Meta CAPI (InitiateCheckout)
 };
 
 type PaymentDb = ReturnType<typeof supabaseAdmin>;
@@ -152,11 +152,7 @@ function localeFromAcceptLanguage(headers: Headers): Locale | null {
 }
 
 export function resolveLocaleFromRequest(headers: Headers, search: URLSearchParams): Locale {
-  const override = normalizeLocale(
-    search.get("lang") ??
-    search.get("locale") ??
-    search.get("language")
-  );
+  const override = normalizeLocale(search.get("lang") ?? search.get("locale") ?? search.get("language"));
   if (override) return override;
 
   const country = countryFromHeaders(headers);
@@ -170,7 +166,7 @@ export function resolveLocaleFromRequest(headers: Headers, search: URLSearchPara
 
 export async function createPaymentInvoiceWithDeps(
   input: PaymentStartInput,
-  deps: PaymentDeps
+  deps: PaymentDeps,
 ): Promise<PaymentStartResult> {
   const { missing, need } = requiredPaymentEnv();
   if (missing.length) {
@@ -189,10 +185,7 @@ export async function createPaymentInvoiceWithDeps(
     typeof input.amountOverride === "number" && Number.isFinite(input.amountOverride) && input.amountOverride > 0
       ? input.amountOverride
       : cfg.amount;
-  const title = buildWfpProductName(
-    offerHeading(cfg, input.locale),
-    offerDescription(cfg, input.locale)
-  );
+  const title = buildWfpProductName(offerHeading(cfg, input.locale), offerDescription(cfg, input.locale));
 
   const merchantAccount = process.env.WFP_MERCHANT_ACCOUNT!;
   const secretKey = process.env.WFP_SECRET_KEY!;
@@ -273,81 +266,80 @@ export async function createPaymentInvoiceWithDeps(
     page_url: input.page_url,
   });
 
-  const clientEventId =
-    typeof input.event_id === "string" && input.event_id.trim()
-      ? input.event_id.trim()
-      : null;
+  const clientEventId = typeof input.event_id === "string" && input.event_id.trim() ? input.event_id.trim() : null;
   const capiEventId = clientEventId ?? `checkout_${order_ref}`;
 
   // Ensure exactly one server-side InitiateCheckout CAPI job per order. This is pure
   // analytics, so it runs alongside the WFP call and never blocks the redirect.
   // Staff / QA traffic is excluded so it never reaches Meta.
-  const capiJobPromise = input.staff ? Promise.resolve() : (async () => {
-    try {
-      const [existingByEventIdRes, existingByOrderRefRes] = await Promise.all([
-        sb
-          .from("jobs")
-          .select("id")
-          .eq("type", "meta:capi")
-          .contains("payload", { event_name: "InitiateCheckout", event_id: capiEventId })
-          .limit(1)
-          .maybeSingle(),
-        sb
-          .from("jobs")
-          .select("id")
-          .eq("type", "meta:capi")
-          .contains("payload", { event_name: "InitiateCheckout", order_ref: order_ref })
-          .limit(1)
-          .maybeSingle(),
-      ]);
+  const capiJobPromise = input.staff
+    ? Promise.resolve()
+    : (async () => {
+        try {
+          const [existingByEventIdRes, existingByOrderRefRes] = await Promise.all([
+            sb
+              .from("jobs")
+              .select("id")
+              .eq("type", "meta:capi")
+              .contains("payload", { event_name: "InitiateCheckout", event_id: capiEventId })
+              .limit(1)
+              .maybeSingle(),
+            sb
+              .from("jobs")
+              .select("id")
+              .eq("type", "meta:capi")
+              .contains("payload", { event_name: "InitiateCheckout", order_ref: order_ref })
+              .limit(1)
+              .maybeSingle(),
+          ]);
 
-      const hasExistingInitiateCheckoutJob =
-        Boolean(existingByEventIdRes.data?.id) || Boolean(existingByOrderRefRes.data?.id);
+          const hasExistingInitiateCheckoutJob =
+            Boolean(existingByEventIdRes.data?.id) || Boolean(existingByOrderRefRes.data?.id);
 
-      if (hasExistingInitiateCheckoutJob) {
-        return;
-      }
+          if (hasExistingInitiateCheckoutJob) {
+            return;
+          }
 
-      const capiPayload: CapiEventPayload = {
-        event_name: "InitiateCheckout",
-        event_id: capiEventId,
-        event_time: Math.floor(deps.nowMs() / 1000),
-        value: amount,
-        currency: cfg.currency,
-        order_ref,
-        fbp: input.fbp ?? null,
-        fbc: input.fbc ?? null,
-        fbclid: input.fbclid ?? null,
-        ip_address: input.client_ip ?? null,
-        user_agent: input.client_ua ?? null,
-        event_source_url: input.page_url ?? null,
-        action_source: "website",
-        // The agreed reporting label, not the invoice line. This used to send
-        // the localized heading, which made the same product arrive in Meta
-        // under a different name per language and per surface.
-        content_name: cfg.pixelContentName,
-        content_type: "product",
-        content_ids: [product],
-      };
-      const { data: job } = await sb
-        .from("jobs")
-        .insert({
-          type: "meta:capi",
-          payload: capiPayload,
-          status: "pending",
-        })
-        .select("id")
-        .maybeSingle();
+          const capiPayload: CapiEventPayload = {
+            event_name: "InitiateCheckout",
+            event_id: capiEventId,
+            event_time: Math.floor(deps.nowMs() / 1000),
+            value: amount,
+            currency: cfg.currency,
+            order_ref,
+            fbp: input.fbp ?? null,
+            fbc: input.fbc ?? null,
+            fbclid: input.fbclid ?? null,
+            ip_address: input.client_ip ?? null,
+            user_agent: input.client_ua ?? null,
+            event_source_url: input.page_url ?? null,
+            action_source: "website",
+            // The agreed reporting label, not the invoice line. This used to send
+            // the localized heading, which made the same product arrive in Meta
+            // under a different name per language and per surface.
+            content_name: cfg.pixelContentName,
+            content_type: "product",
+            content_ids: [product],
+          };
+          const { data: job } = await sb
+            .from("jobs")
+            .insert({
+              type: "meta:capi",
+              payload: capiPayload,
+              status: "pending",
+            })
+            .select("id")
+            .maybeSingle();
 
-      // Fire InitiateCheckout to Meta immediately (alongside the browser Pixel event);
-      // the job row stays the durable fallback for the daily cron.
-      if (job?.id) {
-        dispatchCapiEventInline(sb, job.id, capiPayload);
-      }
-    } catch (capiErr) {
-      console.warn("capi_initiate_checkout_failed", capiErr, { order_ref });
-    }
-  })();
+          // Fire InitiateCheckout to Meta immediately (alongside the browser Pixel event);
+          // the job row stays the durable fallback for the daily cron.
+          if (job?.id) {
+            dispatchCapiEventInline(sb, job.id, capiPayload);
+          }
+        } catch (capiErr) {
+          console.warn("capi_initiate_checkout_failed", capiErr, { order_ref });
+        }
+      })();
 
   /* The staff flag lives in the browser, and the WayForPay webhook has no browser.
      Without a mark on the order itself, a 1 ₴ QA payment came back as a real
@@ -371,34 +363,35 @@ export async function createPaymentInvoiceWithDeps(
       })()
     : Promise.resolve();
 
-  if (!input.staff) void (async () => {
-    try {
-      const { error: checkoutStartedErr } = await sb.from("events").insert({
-        type: "checkout_started",
-        order_ref,
-        payload: {
-          source: input.source,
-          host: input.host ?? null,
-          product,
-          offer_id: input.offer_id ?? null,
-          event_id: clientEventId,
-          fbp: input.fbp ?? null,
-          fbc: input.fbc ?? null,
-          fbclid: input.fbclid ?? null,
-          campaign: input.campaign ?? null,
-          client_ip: input.client_ip ?? null,
-          client_ua: input.client_ua ?? null,
-          page_url: input.page_url ?? null,
-          ...(input.payload ?? {}),
-        },
-      });
-      if (checkoutStartedErr) {
-        console.warn("checkout_started_insert_failed", checkoutStartedErr.message, { order_ref });
+  if (!input.staff)
+    void (async () => {
+      try {
+        const { error: checkoutStartedErr } = await sb.from("events").insert({
+          type: "checkout_started",
+          order_ref,
+          payload: {
+            source: input.source,
+            host: input.host ?? null,
+            product,
+            offer_id: input.offer_id ?? null,
+            event_id: clientEventId,
+            fbp: input.fbp ?? null,
+            fbc: input.fbc ?? null,
+            fbclid: input.fbclid ?? null,
+            campaign: input.campaign ?? null,
+            client_ip: input.client_ip ?? null,
+            client_ua: input.client_ua ?? null,
+            page_url: input.page_url ?? null,
+            ...(input.payload ?? {}),
+          },
+        });
+        if (checkoutStartedErr) {
+          console.warn("checkout_started_insert_failed", checkoutStartedErr.message, { order_ref });
+        }
+      } catch (checkoutStartedErr) {
+        console.warn("checkout_started_insert_failed", checkoutStartedErr, { order_ref });
       }
-    } catch (checkoutStartedErr) {
-      console.warn("checkout_started_insert_failed", checkoutStartedErr, { order_ref });
-    }
-  })();
+    })();
 
   const [{ error: orderErr }, resp] = await Promise.all([orderInsertPromise, wfpResponsePromise]);
   // Keep the CAPI job overlapped with the WFP call without dropping it on the floor.

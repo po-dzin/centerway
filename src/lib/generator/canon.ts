@@ -65,7 +65,9 @@ function parseArchetypeContracts(): {
   if (semanticsInput) {
     for (const [archetype, semantics] of Object.entries(semanticsInput)) {
       if (!contractByArchetype.has(archetype as ArchetypeContract["archetype"])) continue;
-      requiredSemanticsByContract[archetype as ArchetypeContract["archetype"]] = asStringArray(semantics) as CWSemanticFamily[];
+      requiredSemanticsByContract[archetype as ArchetypeContract["archetype"]] = asStringArray(
+        semantics,
+      ) as CWSemanticFamily[];
     }
   }
 
@@ -79,13 +81,16 @@ function countPrimaryActions(blocks: BlockManifest[]): number {
 }
 
 function normalizeCanonKey(value: string): string {
-  return value.trim().toLowerCase().replace(/[_\s/]+/g, "-");
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s/]+/g, "-");
 }
 
 export function enforceCanonForScreen(
   screen: ScreenManifest,
   blocks: BlockManifest[],
-  semanticBlocks: SemanticBlockManifest[]
+  semanticBlocks: SemanticBlockManifest[],
 ): void {
   const canonicalArchetype = screen.archetype as ArchetypeContract["archetype"];
   const contract = contracts.contractByArchetype.get(canonicalArchetype);
@@ -114,7 +119,7 @@ export function enforceCanonForScreen(
   const count = countPrimaryActions(blocks);
   if (count < primaryRule.min || count > primaryRule.max) {
     throw new Error(
-      `canon_primary_action_invalid:${screen.id}:${screen.archetype}:expected_${primaryRule.min}_${primaryRule.max}:got_${count}`
+      `canon_primary_action_invalid:${screen.id}:${screen.archetype}:expected_${primaryRule.min}_${primaryRule.max}:got_${count}`,
     );
   }
 
@@ -159,7 +164,7 @@ export function enforceCanonForScreen(
       ...contract.componentFamilies.required,
       ...(contract.componentFamilies.optional ?? []),
       ...(contract.componentFamilies.conditional ?? []),
-    ].map((value) => normalizeCanonKey(value))
+    ].map((value) => normalizeCanonKey(value)),
   );
 
   for (const family of familySet) {

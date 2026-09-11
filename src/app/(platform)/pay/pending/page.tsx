@@ -20,10 +20,6 @@ export const metadata: Metadata = pageMetadata({
  * not been taken. This page says the true thing instead, and moves on by itself
  * the moment the answer arrives.
  */
-export default async function PayPendingPage({
-  searchParams,
-}: {
-  searchParams: Promise<SearchParams>;
-}) {
+export default async function PayPendingPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   return <PayStatusPage status="pending" searchParams={await searchParams} />;
 }

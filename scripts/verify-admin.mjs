@@ -11,7 +11,12 @@ const steps = [
   { name: "smoke:admin", cmd: "npm", args: ["run", "-s", "smoke:admin"], required: true },
   { name: "smoke:admin:authz-surface", cmd: "npm", args: ["run", "-s", "smoke:admin:authz-surface"], required: true },
   { name: "guard:admin:authz-coverage", cmd: "npm", args: ["run", "-s", "guard:admin:authz-coverage"], required: true },
-  { name: "smoke:admin:payload-contracts", cmd: "npm", args: ["run", "-s", "smoke:admin:payload-contracts"], required: true },
+  {
+    name: "smoke:admin:payload-contracts",
+    cmd: "npm",
+    args: ["run", "-s", "smoke:admin:payload-contracts"],
+    required: true,
+  },
   { name: "smoke:admin:write-guards", cmd: "npm", args: ["run", "-s", "smoke:admin:write-guards"], required: true },
   {
     name: "smoke:admin:auth",
@@ -85,7 +90,9 @@ async function isServerRunning() {
   try {
     await fetch("http://localhost:8000/");
     return true;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 async function main() {
@@ -98,7 +105,12 @@ async function main() {
        was down. It never touched the server: it reads src/app/api/admin and
        data/admin-authz-matrix.json, which is why it is a guard now. The four
        static checks run regardless; only these genuinely call the app. */
-    const networkSteps = ["smoke:admin", "smoke:admin:authz-surface", "smoke:admin:payload-contracts", "smoke:admin:write-guards"];
+    const networkSteps = [
+      "smoke:admin",
+      "smoke:admin:authz-surface",
+      "smoke:admin:payload-contracts",
+      "smoke:admin:write-guards",
+    ];
     for (const step of steps) {
       if (networkSteps.includes(step.name)) {
         step.required = false;
@@ -127,7 +139,9 @@ async function main() {
       console.log(`PASS ${result.name} (${result.elapsedMs}ms)`);
     } else {
       failed += 1;
-      console.log(`FAIL ${result.name} (exit=${result.code}, signal=${result.signal ?? "none"}, ${result.elapsedMs}ms)`);
+      console.log(
+        `FAIL ${result.name} (exit=${result.code}, signal=${result.signal ?? "none"}, ${result.elapsedMs}ms)`,
+      );
     }
   }
 

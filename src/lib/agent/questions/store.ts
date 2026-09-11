@@ -87,7 +87,7 @@ function toQuestion(row: Record<string, unknown>): CapturedQuestion {
  * work queue, not the measurement.
  */
 export async function listQuestions(
-  options: { limit?: number; labelled?: boolean; source?: QuestionSource } = {}
+  options: { limit?: number; labelled?: boolean; source?: QuestionSource } = {},
 ): Promise<CapturedQuestion[]> {
   let query = untypedDb()
     .from("agent_questions")

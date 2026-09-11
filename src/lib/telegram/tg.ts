@@ -43,10 +43,7 @@ export async function callTelegramBotApiWithToken<T>(
   return json.result ?? null;
 }
 
-export async function callTelegramBotApi<T>(
-  method: string,
-  payload: Record<string, unknown>
-): Promise<T | null> {
+export async function callTelegramBotApi<T>(method: string, payload: Record<string, unknown>): Promise<T | null> {
   const token = requireTelegramToken(process.env.TELEGRAM_BOT_TOKEN, "TELEGRAM_BOT_TOKEN");
   return callTelegramBotApiWithToken(method, payload, token);
 }
@@ -54,7 +51,7 @@ export async function callTelegramBotApi<T>(
 export async function sendTelegramMessage(
   chatId: number | string,
   text: string,
-  options?: { messageThreadId?: number | null }
+  options?: { messageThreadId?: number | null },
 ): Promise<void> {
   await callTelegramBotApi("sendMessage", {
     chat_id: normalizeTelegramChatId(chatId),
@@ -71,7 +68,7 @@ export async function sendTelegramMessageWithToken(
   options?: {
     messageThreadId?: number | null;
     parseMode?: "HTML" | "MarkdownV2";
-  }
+  },
 ): Promise<void> {
   await callTelegramBotApiWithToken(
     "sendMessage",
@@ -82,6 +79,6 @@ export async function sendTelegramMessageWithToken(
       ...(options?.parseMode ? { parse_mode: options.parseMode } : {}),
       ...(options?.messageThreadId ? { message_thread_id: options.messageThreadId } : {}),
     },
-    requireTelegramToken(token, "custom telegram token")
+    requireTelegramToken(token, "custom telegram token"),
   );
 }

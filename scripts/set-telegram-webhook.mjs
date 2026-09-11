@@ -31,7 +31,7 @@ if (!secretToken) {
   process.exit(1);
 }
 
-const base = explicitUrl ? null : (appBaseUrl || PLATFORM_ORIGIN);
+const base = explicitUrl ? null : appBaseUrl || PLATFORM_ORIGIN;
 const webhookUrl = explicitUrl || `${base.replace(/\/$/, "")}/api/tg/support-bot`;
 
 if (!webhookUrl.startsWith("https://")) {

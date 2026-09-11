@@ -7,19 +7,8 @@
  */
 
 import { collectRequiredChecklistItemIds } from "./blocks";
-import {
-  countLessons,
-  flattenLessons,
-  flattenSteps,
-  isReferenceLesson,
-  type Course,
-  type Lesson,
-} from "./course";
-import {
-  checklistSatisfied,
-  isLessonCompleted,
-  type CourseProgress,
-} from "./progress";
+import { countLessons, flattenLessons, flattenSteps, isReferenceLesson, type Course, type Lesson } from "./course";
+import { checklistSatisfied, isLessonCompleted, type CourseProgress } from "./progress";
 import { enrollmentDayNumber, localHour, resolveTimeZone } from "./time";
 
 /**
@@ -85,7 +74,7 @@ export function lessonAvailability(
   course: Course,
   lesson: Lesson,
   progress: CourseProgress,
-  context: LearnerContext
+  context: LearnerContext,
 ): LessonAvailability {
   const mode = course.schedule.mode;
   const hardGate = course.schedule.gate === "hard";
@@ -134,7 +123,7 @@ export function canCompleteLesson(
   course: Course,
   lesson: Lesson,
   progress: CourseProgress,
-  context: LearnerContext
+  context: LearnerContext,
 ): { allowed: true } | { allowed: false; reason: "unavailable" | "checklist_incomplete" } {
   const availability = lessonAvailability(course, lesson, progress, context);
   if (!availability.available) return { allowed: false, reason: "unavailable" };
@@ -151,11 +140,7 @@ export function canCompleteLesson(
  * The lesson to send the learner to when they open the course:
  * the first available, uncompleted one — otherwise the last completed.
  */
-export function resolveCurrentLesson(
-  course: Course,
-  progress: CourseProgress,
-  context: LearnerContext
-): Lesson | null {
+export function resolveCurrentLesson(course: Course, progress: CourseProgress, context: LearnerContext): Lesson | null {
   // Steps only: "continue where you left off" must never point at a recipe list.
   const walk = flattenSteps(course);
   if (walk.length === 0) return null;
@@ -190,11 +175,7 @@ export type CourseOutlineEntry = {
 };
 
 /** The learner-facing course map: order, lock state and completion in one pass. */
-export function buildOutline(
-  course: Course,
-  progress: CourseProgress,
-  context: LearnerContext
-): CourseOutlineEntry[] {
+export function buildOutline(course: Course, progress: CourseProgress, context: LearnerContext): CourseOutlineEntry[] {
   return flattenLessons(course).map(({ module, lesson }) => ({
     moduleId: module.id,
     moduleTitle: module.title,
@@ -215,7 +196,7 @@ export type CourseStandingSummary = {
 export function summarizeStanding(
   course: Course,
   progress: CourseProgress,
-  context: LearnerContext
+  context: LearnerContext,
 ): CourseStandingSummary {
   const total = countLessons(course);
   const completed = progress.completedLessonIds.length;
@@ -266,7 +247,7 @@ export function decideUnstartedReminder(
     sentNudgeNumbers: number[];
     /** Defaults to the designed hourly behaviour; the cron overrides it. */
     hourPolicy?: ReminderHourPolicy;
-  }
+  },
 ): UnstartedReminderDecision {
   // Never push someone toward a course that is not open to them yet.
   if (course.status !== "published") return { send: false, reason: "not_published" };
@@ -308,7 +289,7 @@ export type ReminderDecision =
 export function decideDailyReminder(
   course: Course,
   progress: CourseProgress,
-  context: LearnerContext & { hourPolicy?: ReminderHourPolicy }
+  context: LearnerContext & { hourPolicy?: ReminderHourPolicy },
 ): ReminderDecision {
   if (course.schedule.mode !== "daily") return { send: false, reason: "not_daily" };
 

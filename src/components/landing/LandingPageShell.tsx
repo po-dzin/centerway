@@ -15,11 +15,7 @@ export function LandingPageShell({ product, bodyHtml, offer }: LandingPageShellP
   const criticalCss = getLandingCriticalCss(product);
   const fontPreloads =
     product === "irem"
-      ? [
-          "/irem/fonts/Formular.woff2",
-          "/irem/fonts/Formular-Bold.woff2",
-          "/irem/fonts/Formular-Black.woff2",
-        ]
+      ? ["/irem/fonts/Formular.woff2", "/irem/fonts/Formular-Bold.woff2", "/irem/fonts/Formular-Black.woff2"]
       : [];
 
   return (
@@ -32,15 +28,14 @@ export function LandingPageShell({ product, bodyHtml, offer }: LandingPageShellP
         <link key={href} rel="stylesheet" href={href} />
       ))}
       <Script src={config.pixelScript} data-cw-product={product} strategy="afterInteractive" />
-      {config.scripts
-        .map((src) => (
-          <Script
-            key={src}
-            src={src}
-            strategy="afterInteractive"
-            {...(src.includes("lazysizes.min.js") || src.includes("common.js") ? { async: true } : {})}
-          />
-        ))}
+      {config.scripts.map((src) => (
+        <Script
+          key={src}
+          src={src}
+          strategy="afterInteractive"
+          {...(src.includes("lazysizes.min.js") || src.includes("common.js") ? { async: true } : {})}
+        />
+      ))}
       <Script src={config.runtimeScript} strategy="afterInteractive" />
       <main
         data-cw-landing={product}
@@ -49,8 +44,10 @@ export function LandingPageShell({ product, bodyHtml, offer }: LandingPageShellP
         data-cw-offer-id={offer?.offerId ?? undefined}
         data-cw-price-value={offer?.amount ?? undefined}
         data-cw-currency={offer?.currency ?? undefined}
-        data-cw-offer-token={offer?.offerApplied ? offer.offerToken ?? undefined : undefined}
-        data-cw-offer-state={offer ? (offer.offerApplied ? "active" : offer.offerExpired ? "expired" : "base") : undefined}
+        data-cw-offer-token={offer?.offerApplied ? (offer.offerToken ?? undefined) : undefined}
+        data-cw-offer-state={
+          offer ? (offer.offerApplied ? "active" : offer.offerExpired ? "expired" : "base") : undefined
+        }
         data-cw-offer-issued-at={offer?.issuedAt ?? undefined}
         data-cw-offer-expires-at={offer?.expiresAt ?? undefined}
         suppressHydrationWarning

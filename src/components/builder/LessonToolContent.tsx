@@ -11,7 +11,13 @@ import type { Course, Lesson, LessonBlock, LessonBlockType } from "@/lms-core";
 import { FieldInput } from "./BuilderFields";
 import { InkLabel } from "./BuilderInkLabel";
 import type { BuilderToolMode } from "./BuilderToolRail";
-import { BLOCK_TYPE_HINTS, BLOCK_TYPE_LABELS, BLOCK_TYPE_ORDER, BLOCK_STRUCTURE_ORDER, BLOCK_TEMPLATE_ORDER } from "./blockFields";
+import {
+  BLOCK_TYPE_HINTS,
+  BLOCK_TYPE_LABELS,
+  BLOCK_TYPE_ORDER,
+  BLOCK_STRUCTURE_ORDER,
+  BLOCK_TEMPLATE_ORDER,
+} from "./blockFields";
 import styles from "./Builder.module.css";
 import { RepeatControls } from "./LessonBlockEditor";
 import { BUILDER_BLOCK_MIME, carryChip } from "./lessonDragMime";
@@ -50,10 +56,13 @@ export function LessonToolContent({
   if (mode === "blocks") {
     const query = search.trim().toLocaleLowerCase("uk");
     const visibleTypes = BLOCK_TYPE_ORDER.filter((type) =>
-      `${BLOCK_TYPE_LABELS[type]} ${BLOCK_TYPE_HINTS[type]}`.toLocaleLowerCase("uk").includes(query)
+      `${BLOCK_TYPE_LABELS[type]} ${BLOCK_TYPE_HINTS[type]}`.toLocaleLowerCase("uk").includes(query),
     );
     const groups = [
-      { title: "Текст і медіа", types: visibleTypes.filter((type) => type === "rich_text" || BLOCK_STRUCTURE_ORDER.includes(type)) },
+      {
+        title: "Текст і медіа",
+        types: visibleTypes.filter((type) => type === "rich_text" || BLOCK_STRUCTURE_ORDER.includes(type)),
+      },
       { title: "Практика і навчання", types: visibleTypes.filter((type) => BLOCK_TEMPLATE_ORDER.includes(type)) },
     ];
 
@@ -63,33 +72,45 @@ export function LessonToolContent({
           <Icon name="view-rows" size={18} />
           <input value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Знайти блок…" />
         </label>
-        <p className={styles.toolHint}>Додасться в обрану позицію {insertPosition + 1}. Перетягніть блок на знак + або натисніть його.</p>
-        {groups.map((group) => group.types.length > 0 ? (
-          <section className={styles.toolGroup} key={group.title}>
-            <h3>{group.title}</h3>
-            <div className={styles.toolLibrary}>
-              {group.types.map((type) => (
-                <button
-                  className={styles.toolBlock}
-                  type="button"
-                  key={type}
-                  draggable
-                  onDragStart={(event) => {
-                    event.dataTransfer.effectAllowed = "copy";
-                    event.dataTransfer.setData(BUILDER_BLOCK_MIME, type);
-                    carryChip(event, BLOCK_TYPE_LABELS[type]);
-                  }}
-                  onClick={() => onInsert(insertPosition, type)}
-                >
-                  <Icon name={type === "practice_block" ? "motion" : type === "boundary_note" ? "boundary" : "document"} size={20} />
-                  <span><InkLabel strong>{BLOCK_TYPE_LABELS[type]}</InkLabel><small>{BLOCK_TYPE_HINTS[type]}</small></span>
-                  <Icon name="grip" size={16} />
-                </button>
-              ))}
-            </div>
-          </section>
-        ) : null)}
-        {visibleTypes.length === 0 ? <p className={styles.toolEmpty}>Нічого не знайдено. Спробуйте коротшу назву.</p> : null}
+        <p className={styles.toolHint}>
+          Додасться в обрану позицію {insertPosition + 1}. Перетягніть блок на знак + або натисніть його.
+        </p>
+        {groups.map((group) =>
+          group.types.length > 0 ? (
+            <section className={styles.toolGroup} key={group.title}>
+              <h3>{group.title}</h3>
+              <div className={styles.toolLibrary}>
+                {group.types.map((type) => (
+                  <button
+                    className={styles.toolBlock}
+                    type="button"
+                    key={type}
+                    draggable
+                    onDragStart={(event) => {
+                      event.dataTransfer.effectAllowed = "copy";
+                      event.dataTransfer.setData(BUILDER_BLOCK_MIME, type);
+                      carryChip(event, BLOCK_TYPE_LABELS[type]);
+                    }}
+                    onClick={() => onInsert(insertPosition, type)}
+                  >
+                    <Icon
+                      name={type === "practice_block" ? "motion" : type === "boundary_note" ? "boundary" : "document"}
+                      size={20}
+                    />
+                    <span>
+                      <InkLabel strong>{BLOCK_TYPE_LABELS[type]}</InkLabel>
+                      <small>{BLOCK_TYPE_HINTS[type]}</small>
+                    </span>
+                    <Icon name="grip" size={16} />
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null,
+        )}
+        {visibleTypes.length === 0 ? (
+          <p className={styles.toolEmpty}>Нічого не знайдено. Спробуйте коротшу назву.</p>
+        ) : null}
       </div>
     );
   }
@@ -107,7 +128,10 @@ export function LessonToolContent({
       <div className={styles.toolStack}>
         <div className={styles.toolSelectionTitle}>
           <Icon name="boundary" size={20} />
-          <span><small>Блок {selectedBlockIndex + 1}</small><strong>{BLOCK_TYPE_LABELS[selectedBlock.type]}</strong></span>
+          <span>
+            <small>Блок {selectedBlockIndex + 1}</small>
+            <strong>{BLOCK_TYPE_LABELS[selectedBlock.type]}</strong>
+          </span>
         </div>
         <p className={styles.toolHint}>{BLOCK_TYPE_HINTS[selectedBlock.type]}</p>
         <RepeatControls block={selectedBlock} onChange={onBlockChange} />
@@ -130,11 +154,17 @@ export function LessonToolContent({
             places, and the destructive one is the one an author would reach for
             by mistake. See the lifecycle note for why this level can only ever
             mean replace: by the time you are on the page, the lesson exists. */}
-        <button className={styles.quietAction} type="button" disabled={working} onClick={() => importPicker.current?.click()}>
+        <button
+          className={styles.quietAction}
+          type="button"
+          disabled={working}
+          onClick={() => importPicker.current?.click()}
+        >
           <Icon name="import" size={20} /> Замінити з документа
         </button>
         <p className={styles.toolHint}>
-          Замінить назву, опис і всі блоки цього уроку. Адреса, порядок і день лишаються. Скасовується через ⌘Z до збереження.
+          Замінить назву, опис і всі блоки цього уроку. Адреса, порядок і день лишаються. Скасовується через ⌘Z до
+          збереження.
         </p>
         <input
           ref={importPicker}
@@ -153,13 +183,27 @@ export function LessonToolContent({
             path: ["dayIndex"],
             label: "День курсу",
             kind: "number",
-            hint: course.schedule.mode === "daily" ? "День програми; пропуски можуть бути навмисними." : "Використовується лише в курсах з розкладом по днях.",
+            hint:
+              course.schedule.mode === "daily"
+                ? "День програми; пропуски можуть бути навмисними."
+                : "Використовується лише в курсах з розкладом по днях.",
           }}
           value={lesson.dayIndex}
           onChange={onLessonChange}
         />
-        <FieldInput field={{ path: ["durationMin"], label: "Тривалість, хв", kind: "number" }} value={lesson.durationMin} onChange={onLessonChange} />
-        <p className={styles.readOnlyNote}>Адреса: <code>/learn/{course.slug}/{lesson.slug}</code><br />Закріплена для посилань і нагадувань.</p>
+        <FieldInput
+          field={{ path: ["durationMin"], label: "Тривалість, хв", kind: "number" }}
+          value={lesson.durationMin}
+          onChange={onLessonChange}
+        />
+        <p className={styles.readOnlyNote}>
+          Адреса:{" "}
+          <code>
+            /learn/{course.slug}/{lesson.slug}
+          </code>
+          <br />
+          Закріплена для посилань і нагадувань.
+        </p>
       </div>
     );
   }

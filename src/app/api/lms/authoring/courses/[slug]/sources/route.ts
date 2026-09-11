@@ -21,41 +21,51 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  return withCourseAccess(req, slug, async (grant) => {
-    try {
-      return NextResponse.json({ sources: await listCourseSources(grant.courseId) });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "unknown_error";
-      return NextResponse.json({ error: message }, { status: 500 });
-    }
-  }, LMS_AUTHORING_READ);
+  return withCourseAccess(
+    req,
+    slug,
+    async (grant) => {
+      try {
+        return NextResponse.json({ sources: await listCourseSources(grant.courseId) });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "unknown_error";
+        return NextResponse.json({ error: message }, { status: 500 });
+      }
+    },
+    LMS_AUTHORING_READ,
+  );
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  return withCourseAccess(req, slug, async (grant) => {
-    const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
-    if (!body) return NextResponse.json({ error: "lms_source_missing_body" }, { status: 400 });
+  return withCourseAccess(
+    req,
+    slug,
+    async (grant) => {
+      const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+      if (!body) return NextResponse.json({ error: "lms_source_missing_body" }, { status: 400 });
 
-    try {
-      const source = await registerCourseSource({
-        courseId: grant.courseId,
-        kind: body.kind,
-        title: body.title,
-        origin: body.origin,
-        mimeType: body.mimeType,
-        byteSize: body.byteSize,
-        checksum: body.checksum,
-        extractedText: body.extractedText,
-        uploadedBy: grant.identity.authUserId,
-      });
-      return NextResponse.json({ source }, { status: 201 });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "unknown_error";
-      if (message === "lms_source_duplicate") return NextResponse.json({ error: message }, { status: 409 });
-      const isAuthorError = message.startsWith("lms_source_") && !message.includes("_failed:");
-      return NextResponse.json({ error: message }, { status: isAuthorError ? 422 : 500 });
-    }
-  }, LMS_COURSE_WRITE);
+      try {
+        const source = await registerCourseSource({
+          courseId: grant.courseId,
+          kind: body.kind,
+          title: body.title,
+          origin: body.origin,
+          mimeType: body.mimeType,
+          byteSize: body.byteSize,
+          checksum: body.checksum,
+          extractedText: body.extractedText,
+          uploadedBy: grant.identity.authUserId,
+        });
+        return NextResponse.json({ source }, { status: 201 });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "unknown_error";
+        if (message === "lms_source_duplicate") return NextResponse.json({ error: message }, { status: 409 });
+        const isAuthorError = message.startsWith("lms_source_") && !message.includes("_failed:");
+        return NextResponse.json({ error: message }, { status: isAuthorError ? 422 : 500 });
+      }
+    },
+    LMS_COURSE_WRITE,
+  );
 }

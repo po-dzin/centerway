@@ -40,10 +40,10 @@ export function renderEntryHtmlDocument(input: RenderEntryHtmlDocumentInput): st
     dataAttr("data-cw-offer-id", offer?.offerId ?? undefined),
     dataAttr("data-cw-price-value", offer?.amount ?? undefined),
     dataAttr("data-cw-currency", offer?.currency ?? undefined),
-    dataAttr("data-cw-offer-token", offer?.offerApplied ? offer.offerToken ?? undefined : undefined),
+    dataAttr("data-cw-offer-token", offer?.offerApplied ? (offer.offerToken ?? undefined) : undefined),
     dataAttr(
       "data-cw-offer-state",
-      offer ? (offer.offerApplied ? "active" : offer.offerExpired ? "expired" : "base") : undefined
+      offer ? (offer.offerApplied ? "active" : offer.offerExpired ? "expired" : "base") : undefined,
     ),
     dataAttr("data-cw-offer-issued-at", offer?.issuedAt ?? undefined),
     dataAttr("data-cw-offer-expires-at", offer?.expiresAt ?? undefined),

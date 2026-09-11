@@ -46,11 +46,7 @@ export function BuilderRevisionNotice({
      they can act on: save first, then the blockers, both of which the release
      panel lists by name. A disabled control with no reason beside it is the
      thing this notice exists to stop being. */
-  const refusal = dirty
-    ? "Спочатку збережіть зміни."
-    : !ready
-      ? `Лишилось блокерів: ${blockerCount}.`
-      : null;
+  const refusal = dirty ? "Спочатку збережіть зміни." : !ready ? `Лишилось блокерів: ${blockerCount}.` : null;
 
   return (
     <aside className={styles.revisionNotice} aria-label="Стан цієї версії">
@@ -63,12 +59,7 @@ export function BuilderRevisionNotice({
       </p>
       <div className={styles.revisionNoticeActions}>
         {submitted ? null : (
-          <button
-            className={styles.quietAction}
-            type="button"
-            onClick={onSubmit}
-            disabled={busy || dirty || !ready}
-          >
+          <button className={styles.quietAction} type="button" onClick={onSubmit} disabled={busy || dirty || !ready}>
             Надіслати на перевірку
           </button>
         )}

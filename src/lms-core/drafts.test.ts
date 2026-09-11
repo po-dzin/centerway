@@ -162,7 +162,14 @@ describe("pruneEmptyProse", () => {
     ({ id: "b1", type: "rich_text", content }) as unknown as LessonBlock;
 
   it("drops a paragraph the author opened and never wrote", () => {
-    const pruned = pruneEmptyProse(course([rich([{ kind: "p", text: "Написане" }, { kind: "p", text: "" }])]));
+    const pruned = pruneEmptyProse(
+      course([
+        rich([
+          { kind: "p", text: "Написане" },
+          { kind: "p", text: "" },
+        ]),
+      ]),
+    );
     expect(pruned.modules[0].lessons[0].blocks[0]).toMatchObject({
       content: [{ kind: "p", text: "Написане" }],
     });
@@ -187,7 +194,14 @@ describe("pruneEmptyProse", () => {
   });
 
   it("counts whitespace as nothing written", () => {
-    const pruned = pruneEmptyProse(course([rich([{ kind: "p", text: "   " }, { kind: "p", text: "Є" }])]));
+    const pruned = pruneEmptyProse(
+      course([
+        rich([
+          { kind: "p", text: "   " },
+          { kind: "p", text: "Є" },
+        ]),
+      ]),
+    );
     expect(pruned.modules[0].lessons[0].blocks[0]).toMatchObject({ content: [{ kind: "p", text: "Є" }] });
   });
 });

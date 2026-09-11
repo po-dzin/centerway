@@ -39,20 +39,24 @@ record("TELEGRAM_BOT_TOKEN", Boolean(token), token ? "set" : "unset — the bot 
 record(
   "TELEGRAM_WEBHOOK_SECRET",
   Boolean(webhookSecret),
-  webhookSecret ? "set" : "unset — /api/tg/support-bot answers 500 to every update"
+  webhookSecret ? "set" : "unset — /api/tg/support-bot answers 500 to every update",
 );
 record(
   "SUPPORT_CHAT_ID",
   Boolean(supportChatId),
   supportChatId
     ? `set (${supportChatId})`
-    : "unset — support requests, landing leads and SendPulse write-ins all return early, silently"
+    : "unset — support requests, landing leads and SendPulse write-ins all return early, silently",
 );
-record("SUPPORT_THREAD_ID", true, supportThreadId ? `set (${supportThreadId})` : "unset — posts to the group's General topic");
+record(
+  "SUPPORT_THREAD_ID",
+  true,
+  supportThreadId ? `set (${supportThreadId})` : "unset — posts to the group's General topic",
+);
 record(
   "LEADS_THREAD_ID",
   true,
-  leadsThreadId ? `set (${leadsThreadId})` : `unset — landing leads fall back to SUPPORT_THREAD_ID`
+  leadsThreadId ? `set (${leadsThreadId})` : `unset — landing leads fall back to SUPPORT_THREAD_ID`,
 );
 
 if (token) {
@@ -72,7 +76,7 @@ if (token) {
       !info.last_error_message,
       info.last_error_message
         ? `${info.last_error_message} (${new Date((info.last_error_date ?? 0) * 1000).toISOString()})`
-        : "none"
+        : "none",
     );
     record("pending updates", info.pending_update_count === 0, String(info.pending_update_count ?? 0));
   }
@@ -84,7 +88,7 @@ if (token) {
       Boolean(chat.ok),
       chat.ok
         ? `${chat.result.title ?? chat.result.type} — the bot is a member`
-        : `${chat.description} — the bot is probably not in the group, or the id is wrong`
+        : `${chat.description} — the bot is probably not in the group, or the id is wrong`,
     );
   }
 }

@@ -51,11 +51,7 @@ import { getLiveCourse, listLiveCourses } from "./liveCatalog";
  */
 export async function isStaff(authUserId: string): Promise<boolean> {
   const db = adminClient();
-  const { data } = await db
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", authUserId)
-    .maybeSingle();
+  const { data } = await db.from("user_roles").select("role").eq("user_id", authUserId).maybeSingle();
 
   return isStaffRole(data?.role);
 }
@@ -78,20 +74,15 @@ async function hasManualGrant(authUserId: string, courseId: string, now = new Da
     .maybeSingle();
 
   if (data?.source !== "manual") return false;
-  return accessStateOf(
-    { status: data.status, blockedAt: data.blocked_at, expiresAt: data.expires_at },
-    now
-  ) === "active";
+  return (
+    accessStateOf({ status: data.status, blockedAt: data.blocked_at, expiresAt: data.expires_at }, now) === "active"
+  );
 }
 
 /** An author may inspect their own unpublished work in the learner surface. */
 async function isCourseAuthor(authUserId: string, courseId: string): Promise<boolean> {
   const db = adminClient();
-  const { data } = await db
-    .from("lms_courses")
-    .select("author_id")
-    .eq("id", courseId)
-    .maybeSingle();
+  const { data } = await db.from("lms_courses").select("author_id").eq("id", courseId).maybeSingle();
 
   return data?.author_id === authUserId;
 }
@@ -136,11 +127,7 @@ export type LearnerSettings = {
 /** Reads the learner's timezone; falls back to Kyiv when unset or invalid. */
 export async function getLearnerSettings(authUserId: string): Promise<LearnerSettings> {
   const db = adminClient();
-  const { data } = await db
-    .from("platform_users")
-    .select("timezone")
-    .eq("auth_user_id", authUserId)
-    .maybeSingle();
+  const { data } = await db.from("platform_users").select("timezone").eq("auth_user_id", authUserId).maybeSingle();
 
   return { timeZone: resolveTimeZone(data?.timezone ?? DEFAULT_TIMEZONE) };
 }
@@ -185,7 +172,7 @@ async function findCustomerIds(identity: LearnerIdentity): Promise<string[]> {
 export async function checkEntitlement(
   identity: LearnerIdentity,
   course: Course,
-  now = new Date()
+  now = new Date(),
 ): Promise<ReturnType<typeof resolveEntitlement>> {
   if (await isStaff(identity.authUserId)) {
     return { entitled: true, source: "manual", grantedAt: now.toISOString(), orderRef: null };
@@ -224,9 +211,7 @@ export async function checkEntitlement(
  * effect was to REVOKE access that had been paid for (see `EntitlementInput` in
  * lms-core/access.ts). Deleting the rule deleted the round trip with it.
  */
-async function loadPurchases(
-  identity: LearnerIdentity
-): Promise<{ orders: PaidOrderRef[] }> {
+async function loadPurchases(identity: LearnerIdentity): Promise<{ orders: PaidOrderRef[] }> {
   const db = adminClient();
   const customerIds = await findCustomerIds(identity);
   if (customerIds.length === 0) return { orders: [] };
@@ -288,8 +273,7 @@ async function readOfferAccess(course: Course): Promise<{ rule: AccessRule | nul
 }
 
 /** The columns every enrollment read selects, so all of them fold the same way. */
-const ENROLLMENT_COLUMNS =
-  "id, course_id, started_at, source, order_ref, expires_at, status, revoked_at, blocked_at";
+const ENROLLMENT_COLUMNS = "id, course_id, started_at, source, order_ref, expires_at, status, revoked_at, blocked_at";
 
 type EnrollmentRow = {
   id: string;
@@ -347,7 +331,7 @@ function denialFor(state: AccessState): AccessDenial {
 export async function ensureEnrollment(
   identity: LearnerIdentity,
   course: Course,
-  now = new Date()
+  now = new Date(),
 ): Promise<{ enrollment: EnrollmentRecord } | { enrollment: null; reason: AccessDenial }> {
   const db = adminClient();
 
@@ -426,7 +410,7 @@ export async function ensureEnrollment(
 
       const state = accessStateOf(
         { status: updated.status, blockedAt: updated.blocked_at, expiresAt: updated.expires_at },
-        now
+        now,
       );
       // A renewal can still land in the past: a 30-day term bought three months
       // ago and never opened is a window that has already closed.
@@ -434,10 +418,7 @@ export async function ensureEnrollment(
       return { enrollment: toEnrollmentRecord(updated) };
     }
 
-    const state = accessStateOf(
-      { status: row.status, blockedAt: row.blocked_at, expiresAt: row.expires_at },
-      now
-    );
+    const state = accessStateOf({ status: row.status, blockedAt: row.blocked_at, expiresAt: row.expires_at }, now);
     if (state !== "active") return { enrollment: null, reason: denialFor(state) };
     return { enrollment: toEnrollmentRecord(row) };
   }
@@ -493,7 +474,7 @@ export async function ensureEnrollment(
     const raced = retry.data as EnrollmentRow;
     const state = accessStateOf(
       { status: raced.status, blockedAt: raced.blocked_at, expiresAt: raced.expires_at },
-      now
+      now,
     );
     if (state !== "active") return { enrollment: null, reason: denialFor(state) };
     return { enrollment: toEnrollmentRecord(raced) };
@@ -589,17 +570,11 @@ export type LearnerShelfEntry = {
  * Nothing is hidden for want of access: a course nobody has bought is shown
  * locked, with its price and its offer page one tap away.
  */
-export async function listLearnerCourses(
-  identity: LearnerIdentity,
-  now = new Date()
-): Promise<LearnerShelfEntry[]> {
+export async function listLearnerCourses(identity: LearnerIdentity, now = new Date()): Promise<LearnerShelfEntry[]> {
   const db = adminClient();
 
   const [{ data: enrollmentRows }, { data: roleRow }, settings, purchases] = await Promise.all([
-    db
-      .from("lms_enrollments")
-      .select(ENROLLMENT_COLUMNS)
-      .eq("auth_user_id", identity.authUserId),
+    db.from("lms_enrollments").select(ENROLLMENT_COLUMNS).eq("auth_user_id", identity.authUserId),
     db.from("user_roles").select("role").eq("user_id", identity.authUserId).maybeSingle(),
     getLearnerSettings(identity.authUserId),
     loadPurchases(identity),
@@ -611,9 +586,7 @@ export async function listLearnerCourses(
   const staff = isStaffRole(role);
   const admin = isAdminRole(role);
 
-  const enrollmentByCourse = new Map(
-    ((enrollmentRows ?? []) as EnrollmentRow[]).map((row) => [row.course_id, row])
-  );
+  const enrollmentByCourse = new Map(((enrollmentRows ?? []) as EnrollmentRow[]).map((row) => [row.course_id, row]));
 
   const courses = await listLiveCourses();
 
@@ -623,10 +596,7 @@ export async function listLearnerCourses(
   // draft, not testing their own material.
   const { data: courseAuthorRows } = await db.from("lms_courses").select("id, author_id");
   const authorByCourse = new Map(
-    ((courseAuthorRows ?? []) as Array<{ id: string; author_id: string | null }>).map((row) => [
-      row.id,
-      row.author_id,
-    ])
+    ((courseAuthorRows ?? []) as Array<{ id: string; author_id: string | null }>).map((row) => [row.id, row.author_id]),
   );
 
   // One read for every term rather than one per card: the shelf renders the
@@ -650,13 +620,13 @@ export async function listLearnerCourses(
         accessDays: (row.access_days as number | null) ?? null,
         accessLifetime: (row.access_lifetime as boolean | null) ?? null,
       }),
-    ])
+    ]),
   );
   const freeByCourse = new Map<string, boolean>(
     ((offerRows ?? []) as Array<Record<string, unknown>>).map((row) => [
       row.course_id as string,
       Boolean(row.active) && Number(row.amount) === 0,
-    ])
+    ]),
   );
 
   const entries = await Promise.all(
@@ -767,7 +737,7 @@ export async function listLearnerCourses(
         currentLessonSlug: null,
         currentLessonTitle: null,
       };
-    })
+    }),
   );
 
   return entries.filter((entry): entry is LearnerShelfEntry => entry !== null);
@@ -787,7 +757,7 @@ export type LearnerCourseContext = {
 export async function loadLearnerCourse(
   identity: LearnerIdentity,
   courseSlug: string,
-  now = new Date()
+  now = new Date(),
 ): Promise<
   | { ok: true; context: LearnerCourseContext }
   | { ok: false; reason: "course_not_found" | "not_published" | AccessDenial }

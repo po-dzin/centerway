@@ -106,9 +106,7 @@ export function BuilderStructureStart({
         <Icon className={styles.courseSettingsAdvancedGlyph} name="chevron-down" size={18} />
       </summary>
       <div className={styles.structureReplaceBody}>
-        <p className={styles.fieldHint}>
-          Замінює всі модулі й уроки. Назва, обкладинка та доступ залишаться.
-        </p>
+        <p className={styles.fieldHint}>Замінює всі модулі й уроки. Назва, обкладинка та доступ залишаться.</p>
         {options}
         {confirming ? (
           <div className={styles.confirmRow}>

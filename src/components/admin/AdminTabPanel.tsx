@@ -32,25 +32,25 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 export function AdminTabPanel({ active, children }: { active: boolean; children: ReactNode }) {
-    // State rather than a ref, because a ref written during render is exactly
-    // the bug the rule warns about: the write would not schedule the re-render
-    // that a stale `false` needs to recover from. It only ever goes false → true.
-    const [opened, setOpened] = useState(active);
+  // State rather than a ref, because a ref written during render is exactly
+  // the bug the rule warns about: the write would not schedule the re-render
+  // that a stale `false` needs to recover from. It only ever goes false → true.
+  const [opened, setOpened] = useState(active);
 
-    // Adjusting state during render, which is React's own answer for a value
-    // derived from a prop (react.dev, "You Might Not Need an Effect"). React
-    // re-runs this component immediately, before touching the DOM or any child,
-    // so it costs nothing an effect would not have cost more of — and unlike an
-    // effect it cannot flash the wrong thing for a frame.
-    if (active && !opened) setOpened(true);
+  // Adjusting state during render, which is React's own answer for a value
+  // derived from a prop (react.dev, "You Might Not Need an Effect"). React
+  // re-runs this component immediately, before touching the DOM or any child,
+  // so it costs nothing an effect would not have cost more of — and unlike an
+  // effect it cannot flash the wrong thing for a frame.
+  if (active && !opened) setOpened(true);
 
-    if (!opened && !active) return null;
+  if (!opened && !active) return null;
 
-    return (
-        <div hidden={!active} aria-hidden={!active ? true : undefined}>
-            {children}
-        </div>
-    );
+  return (
+    <div hidden={!active} aria-hidden={!active ? true : undefined}>
+      {children}
+    </div>
+  );
 }
 
 /**
@@ -68,34 +68,37 @@ export function AdminTabPanel({ active, children }: { active: boolean; children:
  * having that.
  */
 export function useStickyTab<T extends string>(
-    storageKey: string,
-    fallback: T,
-    allowed: readonly T[],
+  storageKey: string,
+  fallback: T,
+  allowed: readonly T[],
 ): [T, (next: T) => void] {
-    const key = `cw-admin-tab:${storageKey}`;
-    const [tab, setTab] = useState<T>(fallback);
+  const key = `cw-admin-tab:${storageKey}`;
+  const [tab, setTab] = useState<T>(fallback);
 
-    useEffect(() => {
-        try {
-            const stored = sessionStorage.getItem(key);
-            if (stored && (allowed as readonly string[]).includes(stored)) setTab(stored as T);
-        } catch {
-            /* Private mode or storage disabled: the fallback is a correct answer. */
-        }
-        // `allowed` is a literal rebuilt every render; its CONTENTS are static,
-        // and re-running this on a new array identity would fight the operator
-        // by resetting the tab they just picked.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [key]);
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem(key);
+      if (stored && (allowed as readonly string[]).includes(stored)) setTab(stored as T);
+    } catch {
+      /* Private mode or storage disabled: the fallback is a correct answer. */
+    }
+    // `allowed` is a literal rebuilt every render; its CONTENTS are static,
+    // and re-running this on a new array identity would fight the operator
+    // by resetting the tab they just picked.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
-    const choose = useCallback((next: T) => {
-        setTab(next);
-        try {
-            sessionStorage.setItem(key, next);
-        } catch {
-            /* Nothing to do — the tab simply will not be remembered. */
-        }
-    }, [key]);
+  const choose = useCallback(
+    (next: T) => {
+      setTab(next);
+      try {
+        sessionStorage.setItem(key, next);
+      } catch {
+        /* Nothing to do — the tab simply will not be remembered. */
+      }
+    },
+    [key],
+  );
 
-    return [tab, choose];
+  return [tab, choose];
 }

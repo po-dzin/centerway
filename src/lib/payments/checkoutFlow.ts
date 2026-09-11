@@ -17,11 +17,7 @@ export type LeadRecord = {
   campaign?: string | null;
 };
 
-export function buildLeadRecord(
-  body: CheckoutStartRequest,
-  product: ProductCode,
-  orderRef: string
-): LeadRecord {
+export function buildLeadRecord(body: CheckoutStartRequest, product: ProductCode, orderRef: string): LeadRecord {
   return {
     order_ref: orderRef,
     product_code: product,
@@ -40,10 +36,7 @@ type SupabaseLike = ReturnType<typeof supabaseAdmin>;
 
 const LEAD_DEDUP_WINDOW_MS = 2 * 60 * 1000;
 
-function hasRecentLead(
-  createdAt: string | null | undefined,
-  nowMs: number
-): boolean {
+function hasRecentLead(createdAt: string | null | undefined, nowMs: number): boolean {
   if (!createdAt) return false;
   const ts = Date.parse(createdAt);
   if (Number.isNaN(ts)) return false;
@@ -83,7 +76,7 @@ async function findRecentDuplicateLead(sb: SupabaseLike, lead: LeadRecord): Prom
 
 export async function persistLeadBestEffort(
   sb: SupabaseLike,
-  lead: LeadRecord
+  lead: LeadRecord,
 ): Promise<"leads" | "leads_deduped" | "events_fallback" | "skipped"> {
   if (await findRecentDuplicateLead(sb, lead)) {
     return "leads_deduped";

@@ -14,7 +14,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 export const metadata: Metadata = pageMetadata({
   title: "Природнє тіло з Аюрведою",
   description: describe(
-    "Стара адреса програми. Актуальна сторінка — «Природнє тіло з Аюрведою» на /programs/natural-body."
+    "Стара адреса програми. Актуальна сторінка — «Природнє тіло з Аюрведою» на /programs/natural-body.",
   ),
   noindex: true,
 });

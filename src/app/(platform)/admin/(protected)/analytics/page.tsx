@@ -168,16 +168,7 @@ type FunnelUiSettings = {
 };
 
 type MetricFieldKey =
-  | "revenue"
-  | "reach"
-  | "impressions"
-  | "frequency"
-  | "clicks"
-  | "spend"
-  | "cpa"
-  | "cpc"
-  | "roas"
-  | "roi";
+  "revenue" | "reach" | "impressions" | "frequency" | "clicks" | "spend" | "cpa" | "cpc" | "roas" | "roi";
 
 type MetricDef = {
   key: MetricFieldKey;
@@ -309,11 +300,7 @@ function buildNiceScale(maxValue: number, tickCount = 5): { scaleMax: number; ti
   const rawStep = maxValue / (tickCount - 1);
   const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
   const residual = rawStep / magnitude;
-  const niceResidual =
-    residual <= 1 ? 1 :
-      residual <= 2 ? 2 :
-        residual <= 2.5 ? 2.5 :
-          residual <= 5 ? 5 : 10;
+  const niceResidual = residual <= 1 ? 1 : residual <= 2 ? 2 : residual <= 2.5 ? 2.5 : residual <= 5 ? 5 : 10;
   const step = niceResidual * magnitude;
   const scaleMax = Math.ceil(maxValue / step) * step;
   const ticks = Array.from({ length: tickCount }, (_, index) => index * step);
@@ -340,10 +327,7 @@ function buildPresetRange(preset: RangePresetKey): DateRange {
     };
   }
 
-  const days =
-    preset === "7d" ? 7 :
-      preset === "30d" ? 30 :
-        preset === "90d" ? 90 : 365;
+  const days = preset === "7d" ? 7 : preset === "30d" ? 30 : preset === "90d" ? 90 : 365;
   return {
     from: shiftedDate(days - 1),
     to: formatDateLocal(new Date()),
@@ -362,10 +346,7 @@ function detectActivePreset(range: DateRange): RangePresetKey | null {
   return null;
 }
 
-function freshnessStatus(
-  isoTs: string | null,
-  staleAfterHours: number
-): "ok" | "warn" | "empty" {
+function freshnessStatus(isoTs: string | null, staleAfterHours: number): "ok" | "warn" | "empty" {
   if (!isoTs) return "empty";
   const ts = Date.parse(isoTs);
   if (!Number.isFinite(ts)) return "empty";
@@ -387,7 +368,7 @@ function funnelSourceLabel(
     | "manual_input"
     | "orders_created"
     | "paid_orders"
-    | "token_consumed"
+    | "token_consumed",
 ): string {
   if (source === "local_events") return t("analytics_source_local_events" as never);
   if (source === "local_events_floored") return t("analytics_source_local_events_floored" as never);
@@ -528,7 +509,10 @@ function DateRangePicker({ value, onApply, applyLabel, locale, className = "" }:
     <div className="w-full">
       <div className="grid grid-cols-7 gap-0.5 mb-0.5">
         {dayNames.map((name) => (
-          <div key={`${monthDate.getMonth()}-${name}`} className="h-6 text-[10px] cw-muted flex items-center justify-center uppercase">
+          <div
+            key={`${monthDate.getMonth()}-${name}`}
+            className="h-6 text-[10px] cw-muted flex items-center justify-center uppercase"
+          >
             {name}
           </div>
         ))}
@@ -585,7 +569,18 @@ function DateRangePicker({ value, onApply, applyLabel, locale, className = "" }:
         <span className="cw-text truncate">
           {formatDisplayDate(draftRange.from)} - {formatDisplayDate(draftRange.to)}
         </span>
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="cw-muted">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="cw-muted"
+        >
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
           <line x1="16" y1="2" x2="16" y2="6" />
           <line x1="8" y1="2" x2="8" y2="6" />
@@ -602,7 +597,21 @@ function DateRangePicker({ value, onApply, applyLabel, locale, className = "" }:
               className="cw-icon-btn"
               aria-label="Previous month"
             >
-              <InteractionInkIcon><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg></InteractionInkIcon>
+              <InteractionInkIcon>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </InteractionInkIcon>
             </button>
             <div className="text-sm font-semibold cw-text capitalize">{monthLabel}</div>
             <button
@@ -611,7 +620,21 @@ function DateRangePicker({ value, onApply, applyLabel, locale, className = "" }:
               className="cw-icon-btn"
               aria-label="Next month"
             >
-              <InteractionInkIcon><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg></InteractionInkIcon>
+              <InteractionInkIcon>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </InteractionInkIcon>
             </button>
           </div>
 
@@ -678,9 +701,7 @@ export default function AnalyticsPage() {
   const [marketingInputs, setMarketingInputs] = useState<MarketingInputs | null>(null);
   const [savingMarketing, setSavingMarketing] = useState(false);
 
-  const [visibleFields, setVisibleFields] = useState<MetricFieldKey[]>(
-    PRIMARY_METRIC_FIELDS.map((item) => item.key)
-  );
+  const [visibleFields, setVisibleFields] = useState<MetricFieldKey[]>(PRIMARY_METRIC_FIELDS.map((item) => item.key));
   const [funnelUiSettings, setFunnelUiSettings] = useState<FunnelUiSettings>({
     mode: "payment",
     showLeadsCard: false,
@@ -721,9 +742,7 @@ export default function AnalyticsPage() {
       if (!raw) return;
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return;
-      const valid = parsed.filter((value) =>
-        METRIC_FIELDS.some((item) => item.key === value)
-      ) as MetricFieldKey[];
+      const valid = parsed.filter((value) => METRIC_FIELDS.some((item) => item.key === value)) as MetricFieldKey[];
       if (valid.length > 0) {
         setVisibleFields(valid);
       }
@@ -946,11 +965,7 @@ export default function AnalyticsPage() {
 
   const renderMetricValue = (key: MetricFieldKey) => {
     const value = metricValues.values[key];
-    if (
-      key === "reach" ||
-      key === "impressions" ||
-      key === "clicks"
-    ) {
+    if (key === "reach" || key === "impressions" || key === "clicks") {
       return value.toLocaleString();
     }
 
@@ -1049,19 +1064,12 @@ export default function AnalyticsPage() {
     return (
       <AdminErrorState
         title={t("analytics_load_error")}
-        message={
-          errorType === "sql"
-            ? `${error}. ${t("analytics_sql_reminder")}`
-            : error
-        }
-        action={(
-          <button
-            onClick={() => fetchAnalytics()}
-            className="px-4 py-2 cw-btn cw-surface-2"
-          >
+        message={errorType === "sql" ? `${error}. ${t("analytics_sql_reminder")}` : error}
+        action={
+          <button onClick={() => fetchAnalytics()} className="px-4 py-2 cw-btn cw-surface-2">
             {t("analytics_retry")}
           </button>
-        )}
+        }
       />
     );
   }
@@ -1082,20 +1090,17 @@ export default function AnalyticsPage() {
   const minTrackWidthPx = Math.max(0, funnel.length * minBarWidth + Math.max(0, funnel.length - 1) * barGapPx);
   const barsTrackWidth = `max(100%, ${minTrackWidthPx}px)`;
   const yAxisLabelOffsetPx = -8;
-  const tickLayout = [...ticks]
-    .reverse()
-    .map((tickValue) => {
-      const ratio = scaleMax > 0 ? tickValue / scaleMax : 0;
-      const yPx = chartTopPadding + (1 - ratio) * chartHeight;
-      return {
-        tickValue,
-        yPx,
-      };
-    });
+  const tickLayout = [...ticks].reverse().map((tickValue) => {
+    const ratio = scaleMax > 0 ? tickValue / scaleMax : 0;
+    const yPx = chartTopPadding + (1 - ratio) * chartHeight;
+    return {
+      tickValue,
+      yPx,
+    };
+  });
   const paymentConversion = funnelChain?.checkout_to_purchase_percent ?? 0;
   const accessConversion = funnelChain?.purchase_to_access_percent ?? 0;
-  const primaryConversion =
-    funnelUiSettings.mode === "payment" ? paymentConversion : accessConversion;
+  const primaryConversion = funnelUiSettings.mode === "payment" ? paymentConversion : accessConversion;
   const primaryConversionLabel =
     funnelUiSettings.mode === "payment"
       ? t("analytics_primary_conversion_payment")
@@ -1103,9 +1108,7 @@ export default function AnalyticsPage() {
   const dateLocale = lang === "en" ? "en-US" : "uk-UA";
   const uniqueImpressions = marketingInputs?.reach ?? 0;
   const viewContentFromReachPercent =
-    uniqueImpressions > 0
-      ? Number((((funnelChain?.view_content ?? 0) * 100) / uniqueImpressions).toFixed(2))
-      : 0;
+    uniqueImpressions > 0 ? Number((((funnelChain?.view_content ?? 0) * 100) / uniqueImpressions).toFixed(2)) : 0;
   const analyticsTabs = [
     { key: "overview", label: t("analytics_subtab_overview") },
     { key: "funnel", label: t("analytics_subtab_funnel") },
@@ -1136,7 +1139,7 @@ export default function AnalyticsPage() {
   const handleAnalyticsSectionChange = (key: string) => {
     flushSync(() => {
       setAnalyticsSection(
-        key as "overview" | "funnel" | "products" | "campaigns" | "capi" | "dosha" | "inputs_quality"
+        key as "overview" | "funnel" | "products" | "campaigns" | "capi" | "dosha" | "inputs_quality",
       );
     });
     if (key === "dosha" && !doshaData) {
@@ -1149,10 +1152,7 @@ export default function AnalyticsPage() {
       [key]: !prev[key],
     }));
   };
-  const sourceColumnLabel =
-    campaignsLevel === "ad"
-      ? t("analytics_col_source_ad")
-      : t("analytics_col_source_adset");
+  const sourceColumnLabel = campaignsLevel === "ad" ? t("analytics_col_source_ad") : t("analytics_col_source_adset");
   const activeBar = hovered ?? selectedBar;
   return (
     <div className="space-y-4 md:space-y-6">
@@ -1161,9 +1161,7 @@ export default function AnalyticsPage() {
           <h1 className="text-xl sm:text-2xl font-bold cw-text">{t("analytics_title")}</h1>
           <p className="text-xs cw-muted mt-2">
             {t("analytics_data_source")}:{" "}
-            {marketingInputs?.source === "meta"
-              ? t("analytics_data_source_meta")
-              : t("analytics_data_source_manual")}
+            {marketingInputs?.source === "meta" ? t("analytics_data_source_meta") : t("analytics_data_source_manual")}
           </p>
           {marketingInputs?.updated_at ? (
             <p className="text-xs cw-muted mt-1">
@@ -1178,28 +1176,19 @@ export default function AnalyticsPage() {
             applyLabel={lang === "en" ? "Apply" : "Применить"}
             locale={dateLocale}
           />
-          {isRefreshing ? (
-            <p className="text-[11px] cw-muted text-right">{t("analytics_loading")}</p>
-          ) : null}
+          {isRefreshing ? <p className="text-[11px] cw-muted text-right">{t("analytics_loading")}</p> : null}
         </div>
       </div>
 
       <div className="pt-1">
-        <AdminTabs
-          items={[...analyticsTabs]}
-          activeKey={analyticsSection}
-          onChange={handleAnalyticsSectionChange}
-        />
+        <AdminTabs items={[...analyticsTabs]} activeKey={analyticsSection} onChange={handleAnalyticsSectionChange} />
       </div>
 
       {analyticsSection === "inputs_quality" && (
         <div className="space-y-1">
           <h2 className="text-lg font-semibold cw-text">{t("analytics_inputs_title")}</h2>
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => fetchAnalytics()}
-              className="px-4 py-2 text-sm font-medium cw-btn"
-            >
+            <button onClick={() => fetchAnalytics()} className="px-4 py-2 text-sm font-medium cw-btn">
               {t("analytics_refresh")}
             </button>
           </div>
@@ -1246,9 +1235,7 @@ export default function AnalyticsPage() {
                 <button
                   type="button"
                   className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
-                    funnelUiSettings.mode === "payment"
-                      ? "cw-border cw-surface-2 cw-text"
-                      : "cw-btn cw-btn-muted"
+                    funnelUiSettings.mode === "payment" ? "cw-border cw-surface-2 cw-text" : "cw-btn cw-btn-muted"
                   }`}
                   onClick={() =>
                     setFunnelUiSettings((prev) => ({
@@ -1262,9 +1249,7 @@ export default function AnalyticsPage() {
                 <button
                   type="button"
                   className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
-                    funnelUiSettings.mode === "access"
-                      ? "cw-border cw-surface-2 cw-text"
-                      : "cw-btn cw-btn-muted"
+                    funnelUiSettings.mode === "access" ? "cw-border cw-surface-2 cw-text" : "cw-btn cw-btn-muted"
                   }`}
                   onClick={() =>
                     setFunnelUiSettings((prev) => ({
@@ -1389,13 +1374,48 @@ export default function AnalyticsPage() {
           {freshness ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
               {[
-                { key: "local_view_content_last_at", label: t("analytics_freshness_local_view_content"), value: freshness.local_view_content_last_at, staleHours: 24 },
-                { key: "local_scroll_depth_50_last_at", label: t("analytics_freshness_local_scroll50"), value: freshness.local_scroll_depth_50_last_at, staleHours: 24 },
-                { key: "orders_created_last_at", label: t("analytics_freshness_orders_created"), value: freshness.orders_created_last_at, staleHours: 24 },
-                { key: "orders_paid_last_at", label: t("analytics_freshness_orders_paid"), value: freshness.orders_paid_last_at, staleHours: 48 },
-                { key: "capi_last_sent_at", label: t("analytics_freshness_capi"), value: freshness.capi_last_sent_at, staleHours: 24 },
-                { key: "meta_last_synced_at", label: t("analytics_freshness_meta_sync"), value: freshness.meta_last_synced_at, staleHours: 24 },
-                { key: "pixel_daily_last_synced_at", label: t("analytics_freshness_pixel_daily_sync"), value: freshness.pixel_daily_last_synced_at, staleHours: 24 },
+                {
+                  key: "local_view_content_last_at",
+                  label: t("analytics_freshness_local_view_content"),
+                  value: freshness.local_view_content_last_at,
+                  staleHours: 24,
+                },
+                {
+                  key: "local_scroll_depth_50_last_at",
+                  label: t("analytics_freshness_local_scroll50"),
+                  value: freshness.local_scroll_depth_50_last_at,
+                  staleHours: 24,
+                },
+                {
+                  key: "orders_created_last_at",
+                  label: t("analytics_freshness_orders_created"),
+                  value: freshness.orders_created_last_at,
+                  staleHours: 24,
+                },
+                {
+                  key: "orders_paid_last_at",
+                  label: t("analytics_freshness_orders_paid"),
+                  value: freshness.orders_paid_last_at,
+                  staleHours: 48,
+                },
+                {
+                  key: "capi_last_sent_at",
+                  label: t("analytics_freshness_capi"),
+                  value: freshness.capi_last_sent_at,
+                  staleHours: 24,
+                },
+                {
+                  key: "meta_last_synced_at",
+                  label: t("analytics_freshness_meta_sync"),
+                  value: freshness.meta_last_synced_at,
+                  staleHours: 24,
+                },
+                {
+                  key: "pixel_daily_last_synced_at",
+                  label: t("analytics_freshness_pixel_daily_sync"),
+                  value: freshness.pixel_daily_last_synced_at,
+                  staleHours: 24,
+                },
               ].map((item) => {
                 const status = freshnessStatus(item.value, item.staleHours);
                 return (
@@ -1418,9 +1438,7 @@ export default function AnalyticsPage() {
                             : t("analytics_freshness_status_empty")}
                       </span>
                     </div>
-                    <p className="text-sm cw-text mt-2">
-                      {item.value ? new Date(item.value).toLocaleString() : "—"}
-                    </p>
+                    <p className="text-sm cw-text mt-2">{item.value ? new Date(item.value).toLocaleString() : "—"}</p>
                   </div>
                 );
               })}
@@ -1453,7 +1471,9 @@ export default function AnalyticsPage() {
               </div>
               <div className="cw-surface-2 border cw-border rounded-lg p-3">
                 <p className="text-xs cw-muted">{t("analytics_quality_recoverable_fbc")}</p>
-                <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_recoverable_fbc_from_fbclid ?? 0}</p>
+                <p className="text-lg font-semibold cw-text mt-1">
+                  {qualityGaps.paid_recoverable_fbc_from_fbclid ?? 0}
+                </p>
               </div>
               <div className="cw-surface-2 border cw-border rounded-lg p-3">
                 <p className="text-xs cw-muted">{t("analytics_quality_truly_missing_fbc")}</p>
@@ -1495,14 +1515,28 @@ export default function AnalyticsPage() {
                     <tr>
                       <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_col_date")}</th>
                       <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_col_paid")}</th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_fbc_raw")}</th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_recoverable_fbc")}</th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_truly_missing_fbc")}</th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_fbclid")}</th>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">
+                        {t("analytics_quality_missing_fbc_raw")}
+                      </th>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">
+                        {t("analytics_quality_recoverable_fbc")}
+                      </th>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">
+                        {t("analytics_quality_truly_missing_fbc")}
+                      </th>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">
+                        {t("analytics_quality_missing_fbclid")}
+                      </th>
                       <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_fbp")}</th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_page_url")}</th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_client_ip")}</th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_client_ua")}</th>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">
+                        {t("analytics_quality_missing_page_url")}
+                      </th>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">
+                        {t("analytics_quality_missing_client_ip")}
+                      </th>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">
+                        {t("analytics_quality_missing_client_ua")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1552,7 +1586,9 @@ export default function AnalyticsPage() {
                 </div>
                 <div className="cw-surface-2 border cw-border rounded-lg p-3">
                   <p className="text-xs cw-muted">{t("analytics_purchase_transport_pending")}</p>
-                  <p className="text-lg font-semibold cw-status-pending-text mt-1">{purchaseTransport.pending + purchaseTransport.running}</p>
+                  <p className="text-lg font-semibold cw-status-pending-text mt-1">
+                    {purchaseTransport.pending + purchaseTransport.running}
+                  </p>
                 </div>
                 <div className="cw-surface-2 border cw-border rounded-lg p-3">
                   <p className="text-xs cw-muted">{t("analytics_purchase_transport_failed")}</p>
@@ -1577,7 +1613,9 @@ export default function AnalyticsPage() {
                 <div className="cw-surface-2 border cw-border rounded-lg p-3">
                   <p className="text-xs cw-muted">{t("analytics_purchase_transport_last_success")}</p>
                   <p className="text-sm font-semibold cw-text mt-1">
-                    {purchaseTransport.last_success_at ? new Date(purchaseTransport.last_success_at).toLocaleString() : "—"}
+                    {purchaseTransport.last_success_at
+                      ? new Date(purchaseTransport.last_success_at).toLocaleString()
+                      : "—"}
                   </p>
                 </div>
               </div>
@@ -1605,74 +1643,76 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "overview" && (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        {funnelUiSettings.showLeadsCard ? (
-          <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
-            <div className="text-sm font-medium cw-muted">{t("analytics_leads")}</div>
-            <div className="text-3xl font-bold mt-2 cw-text">{summary.totalLeads}</div>
-          </div>
-        ) : null}
-        <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
-          <div className="text-sm font-medium cw-muted">{t("analytics_purchases")}</div>
-          <div className="text-3xl font-bold mt-2 cw-text">{summary.totalPaidOrders}</div>
-        </div>
-        <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
-          <div className="text-sm font-medium cw-muted">{primaryConversionLabel}</div>
-          <div className="text-3xl font-bold mt-2 cw-text">{primaryConversion}%</div>
-        </div>
-        <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
-          <div className="text-sm font-medium cw-muted">{t("analytics_revenue_period")}</div>
-          <div className="text-3xl font-bold mt-2 cw-text">{summary.totalRevenue.toLocaleString()} ₴</div>
-        </div>
-      </div>
-      )}
-
-      {analyticsSection === "overview" && (
-      <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4 md:space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
-          <div>
-            <h2 className="text-lg font-semibold cw-text">{t("analytics_unified_kpi_title")}</h2>
-            <p className="text-sm cw-muted">{t("analytics_unified_kpi_subtitle")}</p>
-          </div>
-          {marketingInputs?.updated_at ? (
-            <span className="text-xs cw-muted">
-              {t("analytics_last_update")}: {new Date(marketingInputs.updated_at).toLocaleString()}
-            </span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          {funnelUiSettings.showLeadsCard ? (
+            <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+              <div className="text-sm font-medium cw-muted">{t("analytics_leads")}</div>
+              <div className="text-3xl font-bold mt-2 cw-text">{summary.totalLeads}</div>
+            </div>
           ) : null}
+          <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+            <div className="text-sm font-medium cw-muted">{t("analytics_purchases")}</div>
+            <div className="text-3xl font-bold mt-2 cw-text">{summary.totalPaidOrders}</div>
+          </div>
+          <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+            <div className="text-sm font-medium cw-muted">{primaryConversionLabel}</div>
+            <div className="text-3xl font-bold mt-2 cw-text">{primaryConversion}%</div>
+          </div>
+          <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+            <div className="text-sm font-medium cw-muted">{t("analytics_revenue_period")}</div>
+            <div className="text-3xl font-bold mt-2 cw-text">{summary.totalRevenue.toLocaleString()} ₴</div>
+          </div>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {METRIC_FIELDS.filter((field) => visibleFields.includes(field.key)).map((field) => (
-            <div key={field.key} className="cw-surface-2 border cw-border rounded-xl p-3">
-              <div className="text-xs cw-muted">{t(field.labelKey as never)}</div>
-              <div className="text-lg font-semibold cw-text mt-1">{renderMetricValue(field.key)}</div>
-            </div>
-          ))}
-        </div>
-      </div>
       )}
 
       {analyticsSection === "overview" && (
-      <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold cw-text">{t("analytics_engagement_title")}</h2>
-          <p className="text-sm cw-muted">{t("analytics_engagement_subtitle")}</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="cw-surface-2 border cw-border rounded-xl p-4">
-            <div className="text-xs cw-muted">{t("analytics_metric_scroll_depth_50")}</div>
-            <div className="text-2xl font-bold cw-text mt-1">{scrollDepth50.toLocaleString()}</div>
+        <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4 md:space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
+            <div>
+              <h2 className="text-lg font-semibold cw-text">{t("analytics_unified_kpi_title")}</h2>
+              <p className="text-sm cw-muted">{t("analytics_unified_kpi_subtitle")}</p>
+            </div>
+            {marketingInputs?.updated_at ? (
+              <span className="text-xs cw-muted">
+                {t("analytics_last_update")}: {new Date(marketingInputs.updated_at).toLocaleString()}
+              </span>
+            ) : null}
           </div>
-          <div className="cw-surface-2 border cw-border rounded-xl p-4">
-            <div className="text-xs cw-muted">{t("analytics_scroll50_to_checkout_percent")}</div>
-            <div className="text-2xl font-bold cw-text mt-1">{scroll50ToCheckoutPercent}%</div>
-            <div className="text-xs cw-muted mt-1">
-              {t("analytics_event_initiate_checkout")}: {engagementInitiateAligned}
-              {engagementAlignedFrom ? ` • ${t("analytics_period_from")} ${new Date(engagementAlignedFrom).toLocaleDateString(dateLocale)}` : ""}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            {METRIC_FIELDS.filter((field) => visibleFields.includes(field.key)).map((field) => (
+              <div key={field.key} className="cw-surface-2 border cw-border rounded-xl p-3">
+                <div className="text-xs cw-muted">{t(field.labelKey as never)}</div>
+                <div className="text-lg font-semibold cw-text mt-1">{renderMetricValue(field.key)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {analyticsSection === "overview" && (
+        <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold cw-text">{t("analytics_engagement_title")}</h2>
+            <p className="text-sm cw-muted">{t("analytics_engagement_subtitle")}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="cw-surface-2 border cw-border rounded-xl p-4">
+              <div className="text-xs cw-muted">{t("analytics_metric_scroll_depth_50")}</div>
+              <div className="text-2xl font-bold cw-text mt-1">{scrollDepth50.toLocaleString()}</div>
+            </div>
+            <div className="cw-surface-2 border cw-border rounded-xl p-4">
+              <div className="text-xs cw-muted">{t("analytics_scroll50_to_checkout_percent")}</div>
+              <div className="text-2xl font-bold cw-text mt-1">{scroll50ToCheckoutPercent}%</div>
+              <div className="text-xs cw-muted mt-1">
+                {t("analytics_event_initiate_checkout")}: {engagementInitiateAligned}
+                {engagementAlignedFrom
+                  ? ` • ${t("analytics_period_from")} ${new Date(engagementAlignedFrom).toLocaleDateString(dateLocale)}`
+                  : ""}
+              </div>
             </div>
           </div>
         </div>
-      </div>
       )}
 
       {analyticsSection === "funnel" && (
@@ -1681,12 +1721,26 @@ export default function AnalyticsPage() {
           {funnelSources ? (
             <div className="flex flex-wrap gap-2">
               {[
-                { key: "unique_impressions", label: t("analytics_event_unique_impressions"), value: marketingInputs?.source === "meta" ? "meta_daily" : "manual_input" },
+                {
+                  key: "unique_impressions",
+                  label: t("analytics_event_unique_impressions"),
+                  value: marketingInputs?.source === "meta" ? "meta_daily" : "manual_input",
+                },
                 { key: "view_content", label: t("analytics_event_view_content"), value: funnelSources.view_content },
-                { key: "initiate_checkout", label: t("analytics_event_initiate_checkout"), value: funnelSources.initiate_checkout },
+                {
+                  key: "initiate_checkout",
+                  label: t("analytics_event_initiate_checkout"),
+                  value: funnelSources.initiate_checkout,
+                },
                 { key: "purchase", label: t("analytics_event_purchase"), value: funnelSources.purchase },
                 ...(funnelUiSettings.mode === "access" || funnelUiSettings.showAccessGrantedCard
-                  ? [{ key: "access_granted", label: t("analytics_event_access_granted"), value: funnelSources.access_granted as "token_consumed" }]
+                  ? [
+                      {
+                        key: "access_granted",
+                        label: t("analytics_event_access_granted"),
+                        value: funnelSources.access_granted as "token_consumed",
+                      },
+                    ]
                   : []),
               ].map((item) => (
                 <span
@@ -1703,9 +1757,7 @@ export default function AnalyticsPage() {
             <div className="cw-surface-2 border cw-border rounded-xl p-4">
               <div className="text-xs cw-muted">{t("analytics_event_unique_impressions")}</div>
               <div className="text-2xl font-bold cw-text mt-1">{uniqueImpressions.toLocaleString()}</div>
-              <div className="text-xs cw-muted mt-1">
-                {t("analytics_chain_from_prev")}: —
-              </div>
+              <div className="text-xs cw-muted mt-1">{t("analytics_chain_from_prev")}: —</div>
             </div>
             <div className="cw-surface-2 border cw-border rounded-xl p-4">
               <div className="text-xs cw-muted">{t("analytics_event_view_content")}</div>
@@ -1745,7 +1797,9 @@ export default function AnalyticsPage() {
                 <tr>
                   <th className="px-4 py-2 text-left cw-muted uppercase text-xs">{t("analytics_col_event")}</th>
                   <th className="px-4 py-2 text-left cw-muted uppercase text-xs">{t("analytics_col_total")}</th>
-                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">{t("analytics_col_conversion_from_prev")}</th>
+                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">
+                    {t("analytics_col_conversion_from_prev")}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -1816,324 +1870,384 @@ export default function AnalyticsPage() {
           </div>
           {capiOverview ? (
             <div className="text-sm cw-muted">
-              {t("analytics_capi_overview")}: {t("analytics_col_total")} {capiOverview.total}, {t("analytics_col_capi_success")} {capiOverview.success}, {t("analytics_col_capi_pending")} {capiOverview.pending + capiOverview.running}, {t("analytics_col_capi_failed")} {capiOverview.failed}
+              {t("analytics_capi_overview")}: {t("analytics_col_total")} {capiOverview.total},{" "}
+              {t("analytics_col_capi_success")} {capiOverview.success}, {t("analytics_col_capi_pending")}{" "}
+              {capiOverview.pending + capiOverview.running}, {t("analytics_col_capi_failed")} {capiOverview.failed}
             </div>
           ) : null}
         </div>
       )}
 
       {analyticsSection === "overview" && (
-      <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
-        <h2 className="text-lg font-medium mb-4 md:mb-6 cw-text">{t("analytics_daily_revenue")}</h2>
-        {funnel.length === 0 ? (
-          <div className="text-center text-sm cw-muted py-10">{t("analytics_no_chart_data")}</div>
-        ) : (
-          <div ref={chartContainerRef} className="relative overflow-visible">
-            {activeBar && (
-              <div
-                className="absolute z-40 -top-2 -translate-x-1/2 -translate-y-full border cw-border cw-shadow cw-text text-xs rounded-md py-1.5 px-2.5 whitespace-nowrap pointer-events-none"
-                style={{
-                  left: `${Math.max(64, Math.min(activeBar.x, (chartContainerRef.current?.clientWidth ?? activeBar.x) - 64))}px`,
-                  backgroundColor: "var(--cw-surface-solid)",
-                }}
-              >
-                <div className="font-semibold">{activeBar.day.date}</div>
-                <div className="cw-muted">
-                  {t("analytics_tooltip_revenue")}: <span className="cw-text">{activeBar.day.total_revenue} ₴</span>
-                </div>
-                <div className="cw-muted">
-                  {t("analytics_tooltip_paid")}: <span className="cw-text">{activeBar.day.orders_paid}</span>
-                </div>
-              </div>
-            )}
-            <div className="flex items-end gap-2">
-              <div
-                className="relative shrink-0 pr-1"
-                style={{
-                  height: `${chartAreaHeight}px`,
-                  width: `${yAxisWidthPx}px`,
-                  backgroundColor: "transparent",
-                }}
-              >
-                <svg className="absolute inset-0" width={yAxisWidthPx} height={chartAreaHeight} aria-hidden="true">
-                  {tickLayout.map(({ tickValue, yPx }) => (
-                    <text
-                      key={tickValue}
-                      x={yAxisWidthPx - 8}
-                      y={yPx + yAxisLabelOffsetPx}
-                      textAnchor="end"
-                      dominantBaseline="middle"
-                      alignmentBaseline="middle"
-                      fill="var(--cw-muted)"
-                      fontSize="11"
-                      fontWeight="500"
-                      style={{ fontVariantNumeric: "tabular-nums" }}
-                    >
-                      {formatCompactTick(tickValue, dateLocale)}
-                    </text>
-                  ))}
-                </svg>
-              </div>
-
-              <div ref={chartScrollRef} className="flex-1 overflow-x-auto pb-2 custom-scrollbar">
+        <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+          <h2 className="text-lg font-medium mb-4 md:mb-6 cw-text">{t("analytics_daily_revenue")}</h2>
+          {funnel.length === 0 ? (
+            <div className="text-center text-sm cw-muted py-10">{t("analytics_no_chart_data")}</div>
+          ) : (
+            <div ref={chartContainerRef} className="relative overflow-visible">
+              {activeBar && (
                 <div
-                  ref={chartWrapRef}
-                  className="relative min-w-0 pr-1"
+                  className="absolute z-40 -top-2 -translate-x-1/2 -translate-y-full border cw-border cw-shadow cw-text text-xs rounded-md py-1.5 px-2.5 whitespace-nowrap pointer-events-none"
                   style={{
-                    height: `${chartAreaHeight}px`,
-                    width: barsTrackWidth,
-                    minWidth: barsTrackWidth,
+                    left: `${Math.max(64, Math.min(activeBar.x, (chartContainerRef.current?.clientWidth ?? activeBar.x) - 64))}px`,
+                    backgroundColor: "var(--cw-surface-solid)",
                   }}
                 >
-                  <svg className="absolute inset-0 pointer-events-none" width="100%" height={chartAreaHeight} aria-hidden="true">
+                  <div className="font-semibold">{activeBar.day.date}</div>
+                  <div className="cw-muted">
+                    {t("analytics_tooltip_revenue")}: <span className="cw-text">{activeBar.day.total_revenue} ₴</span>
+                  </div>
+                  <div className="cw-muted">
+                    {t("analytics_tooltip_paid")}: <span className="cw-text">{activeBar.day.orders_paid}</span>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-end gap-2">
+                <div
+                  className="relative shrink-0 pr-1"
+                  style={{
+                    height: `${chartAreaHeight}px`,
+                    width: `${yAxisWidthPx}px`,
+                    backgroundColor: "transparent",
+                  }}
+                >
+                  <svg className="absolute inset-0" width={yAxisWidthPx} height={chartAreaHeight} aria-hidden="true">
                     {tickLayout.map(({ tickValue, yPx }) => (
-                      <line
+                      <text
                         key={tickValue}
-                        x1="0"
-                        x2="100%"
-                        y1={yPx}
-                        y2={yPx}
-                        stroke="color-mix(in srgb, var(--cw-border) 22%, transparent)"
-                        strokeWidth="1"
-                        shapeRendering="crispEdges"
-                      />
+                        x={yAxisWidthPx - 8}
+                        y={yPx + yAxisLabelOffsetPx}
+                        textAnchor="end"
+                        dominantBaseline="middle"
+                        alignmentBaseline="middle"
+                        fill="var(--cw-muted)"
+                        fontSize="11"
+                        fontWeight="500"
+                        style={{ fontVariantNumeric: "tabular-nums" }}
+                      >
+                        {formatCompactTick(tickValue, dateLocale)}
+                      </text>
                     ))}
                   </svg>
+                </div>
+
+                <div ref={chartScrollRef} className="flex-1 overflow-x-auto pb-2 custom-scrollbar">
                   <div
-                    className="absolute left-0 right-1 flex items-end gap-1"
+                    ref={chartWrapRef}
+                    className="relative min-w-0 pr-1"
                     style={{
-                      top: `${chartTopPadding}px`,
-                      bottom: `${chartBottomPadding}px`,
+                      height: `${chartAreaHeight}px`,
+                      width: barsTrackWidth,
+                      minWidth: barsTrackWidth,
                     }}
                   >
-                    {funnel.map((day, idx) => {
-                      const barHeight = Math.max((day.total_revenue / scaleMax) * chartHeight, 2);
-                      const isLast = idx === funnel.length - 1;
-                      return (
-                        <div
-                          key={idx}
-                          ref={isLast ? lastBarRef : null}
-                          className="relative flex h-full flex-col items-center justify-end"
-                          style={{ flex: "1 1 0", minWidth: `${minBarWidth}px` }}
-                          onMouseEnter={(e) => {
-                            const containerRect = chartContainerRef.current?.getBoundingClientRect();
-                            const x = containerRect ? e.clientX - containerRect.left : 0;
-                            setHovered({ day, x, idx });
-                          }}
-                          onMouseMove={(e) => {
-                            const containerRect = chartContainerRef.current?.getBoundingClientRect();
-                            const x = containerRect ? e.clientX - containerRect.left : 0;
-                            setHovered({ day, x, idx });
-                          }}
-                          onMouseLeave={() => setHovered(null)}
-                          onPointerUp={(e) => {
-                            const containerRect = chartContainerRef.current?.getBoundingClientRect();
-                            const itemRect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-                            const x = containerRect ? itemRect.left - containerRect.left + itemRect.width / 2 : 0;
-                            setSelectedBar((prev) => (prev?.idx === idx ? null : { day, x, idx }));
-                          }}
-                        >
-                          <div className="w-full cw-chart-bar rounded-t-sm" style={{ height: `${barHeight}px` }} />
-                        </div>
-                      );
-                    })}
+                    <svg
+                      className="absolute inset-0 pointer-events-none"
+                      width="100%"
+                      height={chartAreaHeight}
+                      aria-hidden="true"
+                    >
+                      {tickLayout.map(({ tickValue, yPx }) => (
+                        <line
+                          key={tickValue}
+                          x1="0"
+                          x2="100%"
+                          y1={yPx}
+                          y2={yPx}
+                          stroke="color-mix(in srgb, var(--cw-border) 22%, transparent)"
+                          strokeWidth="1"
+                          shapeRendering="crispEdges"
+                        />
+                      ))}
+                    </svg>
+                    <div
+                      className="absolute left-0 right-1 flex items-end gap-1"
+                      style={{
+                        top: `${chartTopPadding}px`,
+                        bottom: `${chartBottomPadding}px`,
+                      }}
+                    >
+                      {funnel.map((day, idx) => {
+                        const barHeight = Math.max((day.total_revenue / scaleMax) * chartHeight, 2);
+                        const isLast = idx === funnel.length - 1;
+                        return (
+                          <div
+                            key={idx}
+                            ref={isLast ? lastBarRef : null}
+                            className="relative flex h-full flex-col items-center justify-end"
+                            style={{ flex: "1 1 0", minWidth: `${minBarWidth}px` }}
+                            onMouseEnter={(e) => {
+                              const containerRect = chartContainerRef.current?.getBoundingClientRect();
+                              const x = containerRect ? e.clientX - containerRect.left : 0;
+                              setHovered({ day, x, idx });
+                            }}
+                            onMouseMove={(e) => {
+                              const containerRect = chartContainerRef.current?.getBoundingClientRect();
+                              const x = containerRect ? e.clientX - containerRect.left : 0;
+                              setHovered({ day, x, idx });
+                            }}
+                            onMouseLeave={() => setHovered(null)}
+                            onPointerUp={(e) => {
+                              const containerRect = chartContainerRef.current?.getBoundingClientRect();
+                              const itemRect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                              const x = containerRect ? itemRect.left - containerRect.left + itemRect.width / 2 : 0;
+                              setSelectedBar((prev) => (prev?.idx === idx ? null : { day, x, idx }));
+                            }}
+                          >
+                            <div className="w-full cw-chart-bar rounded-t-sm" style={{ height: `${barHeight}px` }} />
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
       )}
 
       {analyticsSection === "campaigns" && (
-      <div className="cw-surface rounded-2xl border cw-border cw-shadow overflow-hidden">
-        <div className="px-4 sm:px-5 md:px-6 py-4 md:py-5 border-b cw-border">
-          <h2 className="text-lg font-medium cw-text">{t("analytics_campaign_breakdown")}</h2>
-          <p className="text-sm cw-muted mt-1">{t("analytics_campaign_breakdown_subtitle")}</p>
-          <div className="mt-3 inline-flex rounded-lg border cw-border overflow-hidden">
-            <button
-              type="button"
-              className={`px-3 py-1.5 text-sm ${campaignsLevel === "adset" ? "cw-surface-2 cw-text" : "cw-btn-muted cw-muted"}`}
-              onClick={() => setCampaignsLevel("adset")}
-            >
-              {t("analytics_level_adset")}
-            </button>
-            <button
-              type="button"
-              className={`px-3 py-1.5 text-sm border-l cw-border ${campaignsLevel === "ad" ? "cw-surface-2 cw-text" : "cw-btn-muted cw-muted"}`}
-              onClick={() => setCampaignsLevel("ad")}
-            >
-              {t("analytics_level_ad")}
-            </button>
+        <div className="cw-surface rounded-2xl border cw-border cw-shadow overflow-hidden">
+          <div className="px-4 sm:px-5 md:px-6 py-4 md:py-5 border-b cw-border">
+            <h2 className="text-lg font-medium cw-text">{t("analytics_campaign_breakdown")}</h2>
+            <p className="text-sm cw-muted mt-1">{t("analytics_campaign_breakdown_subtitle")}</p>
+            <div className="mt-3 inline-flex rounded-lg border cw-border overflow-hidden">
+              <button
+                type="button"
+                className={`px-3 py-1.5 text-sm ${campaignsLevel === "adset" ? "cw-surface-2 cw-text" : "cw-btn-muted cw-muted"}`}
+                onClick={() => setCampaignsLevel("adset")}
+              >
+                {t("analytics_level_adset")}
+              </button>
+              <button
+                type="button"
+                className={`px-3 py-1.5 text-sm border-l cw-border ${campaignsLevel === "ad" ? "cw-surface-2 cw-text" : "cw-btn-muted cw-muted"}`}
+                onClick={() => setCampaignsLevel("ad")}
+              >
+                {t("analytics_level_ad")}
+              </button>
+            </div>
           </div>
-        </div>
-        {(() => {
-          const showRevenueCol = visibleFields.includes("revenue");
-          const showImpressionsCol = visibleFields.includes("impressions");
-          const showReachCol = visibleFields.includes("reach");
-          const showSpendCol = visibleFields.includes("spend");
-          const totalColumns =
-            4 + // source + view content + orders + paid
-            (showRevenueCol ? 1 : 0) +
-            (showImpressionsCol ? 1 : 0) +
-            (showReachCol ? 1 : 0) +
-            (showSpendCol ? 1 : 0);
+          {(() => {
+            const showRevenueCol = visibleFields.includes("revenue");
+            const showImpressionsCol = visibleFields.includes("impressions");
+            const showReachCol = visibleFields.includes("reach");
+            const showSpendCol = visibleFields.includes("spend");
+            const totalColumns =
+              4 + // source + view content + orders + paid
+              (showRevenueCol ? 1 : 0) +
+              (showImpressionsCol ? 1 : 0) +
+              (showReachCol ? 1 : 0) +
+              (showSpendCol ? 1 : 0);
 
-          return (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y" style={{ borderColor: "var(--cw-border)" }}>
-            <thead className="cw-surface-2">
-              <tr>
-                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                  {sourceColumnLabel}
-                </th>
-                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                  {t("analytics_metric_view_content")}
-                </th>
-                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                  {t("analytics_col_orders")}
-                </th>
-                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                  {t("analytics_col_paid")}
-                </th>
-                {showRevenueCol ? (
-                  <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                    {t("analytics_col_revenue")}
-                  </th>
-                ) : null}
-                {showSpendCol ? (
-                  <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                    {t("analytics_metric_spend")}
-                  </th>
-                ) : null}
-                {showReachCol ? (
-                  <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                    {t("analytics_metric_reach")}
-                  </th>
-                ) : null}
-                {showImpressionsCol ? (
-                  <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                    {t("analytics_metric_impressions")}
-                  </th>
-                ) : null}
-              </tr>
-            </thead>
-            <tbody className="cw-surface" style={{ borderColor: "var(--cw-border)" }}>
-              {campaigns.length === 0 ? (
-                <tr>
-                  <td colSpan={totalColumns} className="px-4 md:px-6 py-4 text-center text-sm cw-muted">
-                    {t("analytics_no_campaign_data")}
-                  </td>
-                </tr>
-              ) : (
-                campaigns.map((camp, idx) => (
-                  <tr key={idx} className="border-t cw-border cw-row-hover">
-                    <td className="px-4 md:px-6 py-4 text-sm font-medium cw-text">
-                      {resolveCampaignSource(camp.source_campaign)}
-                    </td>
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{(camp.view_content ?? 0).toLocaleString()}</td>
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.total_orders.toLocaleString()}</td>
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.paid_orders.toLocaleString()}</td>
-                    {showRevenueCol ? (
-                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">{camp.total_revenue.toLocaleString()} ₴</td>
-                    ) : null}
-                    {showSpendCol ? (
-                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{formatCampaignSpend(camp.spend ?? 0, camp.currency)}</td>
-                    ) : null}
-                    {showReachCol ? (
-                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{(camp.reach ?? 0).toLocaleString()}</td>
-                    ) : null}
-                    {showImpressionsCol ? (
-                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{(camp.impressions ?? 0).toLocaleString()}</td>
-                    ) : null}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+            return (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y" style={{ borderColor: "var(--cw-border)" }}>
+                  <thead className="cw-surface-2">
+                    <tr>
+                      <th
+                        scope="col"
+                        className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
+                      >
+                        {sourceColumnLabel}
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
+                      >
+                        {t("analytics_metric_view_content")}
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
+                      >
+                        {t("analytics_col_orders")}
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
+                      >
+                        {t("analytics_col_paid")}
+                      </th>
+                      {showRevenueCol ? (
+                        <th
+                          scope="col"
+                          className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
+                        >
+                          {t("analytics_col_revenue")}
+                        </th>
+                      ) : null}
+                      {showSpendCol ? (
+                        <th
+                          scope="col"
+                          className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
+                        >
+                          {t("analytics_metric_spend")}
+                        </th>
+                      ) : null}
+                      {showReachCol ? (
+                        <th
+                          scope="col"
+                          className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
+                        >
+                          {t("analytics_metric_reach")}
+                        </th>
+                      ) : null}
+                      {showImpressionsCol ? (
+                        <th
+                          scope="col"
+                          className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
+                        >
+                          {t("analytics_metric_impressions")}
+                        </th>
+                      ) : null}
+                    </tr>
+                  </thead>
+                  <tbody className="cw-surface" style={{ borderColor: "var(--cw-border)" }}>
+                    {campaigns.length === 0 ? (
+                      <tr>
+                        <td colSpan={totalColumns} className="px-4 md:px-6 py-4 text-center text-sm cw-muted">
+                          {t("analytics_no_campaign_data")}
+                        </td>
+                      </tr>
+                    ) : (
+                      campaigns.map((camp, idx) => (
+                        <tr key={idx} className="border-t cw-border cw-row-hover">
+                          <td className="px-4 md:px-6 py-4 text-sm font-medium cw-text">
+                            {resolveCampaignSource(camp.source_campaign)}
+                          </td>
+                          <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                            {(camp.view_content ?? 0).toLocaleString()}
+                          </td>
+                          <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                            {camp.total_orders.toLocaleString()}
+                          </td>
+                          <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                            {camp.paid_orders.toLocaleString()}
+                          </td>
+                          {showRevenueCol ? (
+                            <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">
+                              {camp.total_revenue.toLocaleString()} ₴
+                            </td>
+                          ) : null}
+                          {showSpendCol ? (
+                            <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                              {formatCampaignSpend(camp.spend ?? 0, camp.currency)}
+                            </td>
+                          ) : null}
+                          {showReachCol ? (
+                            <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                              {(camp.reach ?? 0).toLocaleString()}
+                            </td>
+                          ) : null}
+                          {showImpressionsCol ? (
+                            <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                              {(camp.impressions ?? 0).toLocaleString()}
+                            </td>
+                          ) : null}
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
         </div>
-          );
-        })()}
-      </div>
       )}
 
       {analyticsSection === "products" && (
-      <div className="space-y-4 md:space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-          <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
-            <div className="text-sm font-medium cw-muted">{t("analytics_col_orders")}</div>
-            <div className="text-3xl font-bold mt-2 cw-text">{(summary.totalOrders ?? 0).toLocaleString()}</div>
+        <div className="space-y-4 md:space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+            <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+              <div className="text-sm font-medium cw-muted">{t("analytics_col_orders")}</div>
+              <div className="text-3xl font-bold mt-2 cw-text">{(summary.totalOrders ?? 0).toLocaleString()}</div>
+            </div>
+            <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+              <div className="text-sm font-medium cw-muted">{t("analytics_col_paid")}</div>
+              <div className="text-3xl font-bold mt-2 cw-text">{summary.totalPaidOrders.toLocaleString()}</div>
+            </div>
+            <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+              <div className="text-sm font-medium cw-muted">{t("analytics_revenue_period")}</div>
+              <div className="text-3xl font-bold mt-2 cw-text">{summary.totalRevenue.toLocaleString()} ₴</div>
+            </div>
           </div>
-          <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
-            <div className="text-sm font-medium cw-muted">{t("analytics_col_paid")}</div>
-            <div className="text-3xl font-bold mt-2 cw-text">{summary.totalPaidOrders.toLocaleString()}</div>
-          </div>
-          <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
-            <div className="text-sm font-medium cw-muted">{t("analytics_revenue_period")}</div>
-            <div className="text-3xl font-bold mt-2 cw-text">{summary.totalRevenue.toLocaleString()} ₴</div>
-          </div>
-        </div>
 
-        <div className="cw-surface rounded-2xl border cw-border cw-shadow overflow-hidden">
-          <div className="px-4 sm:px-5 md:px-6 py-4 md:py-5 border-b cw-border">
-            <h2 className="text-lg font-medium cw-text">{t("analytics_products_breakdown")}</h2>
-            <p className="text-sm cw-muted mt-1">{t("analytics_products_breakdown_subtitle")}</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y" style={{ borderColor: "var(--cw-border)" }}>
-              <thead className="cw-surface-2">
-                <tr>
-                  <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                    {t("analytics_col_product")}
-                  </th>
-                  <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                    {t("analytics_col_orders")}
-                  </th>
-                  <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                    {t("analytics_col_paid")}
-                  </th>
-                  <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                    {t("analytics_col_revenue")}
-                  </th>
-                  <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                    {t("analytics_col_revenue_share")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="cw-surface" style={{ borderColor: "var(--cw-border)" }}>
-                {products.length === 0 ? (
+          <div className="cw-surface rounded-2xl border cw-border cw-shadow overflow-hidden">
+            <div className="px-4 sm:px-5 md:px-6 py-4 md:py-5 border-b cw-border">
+              <h2 className="text-lg font-medium cw-text">{t("analytics_products_breakdown")}</h2>
+              <p className="text-sm cw-muted mt-1">{t("analytics_products_breakdown_subtitle")}</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y" style={{ borderColor: "var(--cw-border)" }}>
+                <thead className="cw-surface-2">
                   <tr>
-                    <td colSpan={5} className="px-4 md:px-6 py-4 text-center text-sm cw-muted">
-                      {t("analytics_no_product_data")}
-                    </td>
+                    <th
+                      scope="col"
+                      className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
+                    >
+                      {t("analytics_col_product")}
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
+                    >
+                      {t("analytics_col_orders")}
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
+                    >
+                      {t("analytics_col_paid")}
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
+                    >
+                      {t("analytics_col_revenue")}
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
+                    >
+                      {t("analytics_col_revenue_share")}
+                    </th>
                   </tr>
-                ) : (
-                  products.map((product) => (
-                    <tr key={product.product_code} className="border-t cw-border cw-row-hover">
-                      <td className="px-4 md:px-6 py-4 text-sm font-medium cw-text">
-                        {formatProductName(product.product_code, t("analytics_product_unknown"))}
-                      </td>
-                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
-                        {product.total_orders.toLocaleString()}
-                      </td>
-                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
-                        {product.paid_orders.toLocaleString()}
-                      </td>
-                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">
-                        {product.total_revenue.toLocaleString()} ₴
-                      </td>
-                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
-                        {product.share_revenue_percent.toLocaleString()}%
+                </thead>
+                <tbody className="cw-surface" style={{ borderColor: "var(--cw-border)" }}>
+                  {products.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 md:px-6 py-4 text-center text-sm cw-muted">
+                        {t("analytics_no_product_data")}
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    products.map((product) => (
+                      <tr key={product.product_code} className="border-t cw-border cw-row-hover">
+                        <td className="px-4 md:px-6 py-4 text-sm font-medium cw-text">
+                          {formatProductName(product.product_code, t("analytics_product_unknown"))}
+                        </td>
+                        <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                          {product.total_orders.toLocaleString()}
+                        </td>
+                        <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                          {product.paid_orders.toLocaleString()}
+                        </td>
+                        <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">
+                          {product.total_revenue.toLocaleString()} ₴
+                        </td>
+                        <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                          {product.share_revenue_percent.toLocaleString()}%
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
       )}
 
       {analyticsSection === "dosha" && (
@@ -2142,7 +2256,9 @@ export default function AnalyticsPage() {
             <h2 className="text-lg font-semibold cw-text">Доша-тест: аналітика</h2>
             <button
               type="button"
-              onClick={() => { void fetchDoshaAnalytics({ from: fromDate, to: toDate }); }}
+              onClick={() => {
+                void fetchDoshaAnalytics({ from: fromDate, to: toDate });
+              }}
               disabled={doshaLoading}
               className="px-4 py-2 text-sm font-medium cw-btn disabled:opacity-50"
             >
@@ -2166,7 +2282,9 @@ export default function AnalyticsPage() {
                 </div>
                 <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
                   <div className="text-sm font-medium cw-muted">Домінуючий тип</div>
-                  <div className="text-3xl font-bold mt-2 cw-text capitalize">{doshaData.top_type?.replace("_", " + ") ?? "—"}</div>
+                  <div className="text-3xl font-bold mt-2 cw-text capitalize">
+                    {doshaData.top_type?.replace("_", " + ") ?? "—"}
+                  </div>
                 </div>
               </div>
 
@@ -2176,7 +2294,10 @@ export default function AnalyticsPage() {
                   {doshaData.completions_by_type.map((row) => (
                     <div key={row.result_type} className="flex items-center gap-3">
                       <div className="w-32 text-sm cw-text shrink-0">{row.result_type.replace(/_/g, " + ")}</div>
-                      <div className="flex-1 h-5 rounded-full overflow-hidden" style={{ background: "var(--cw-border)" }}>
+                      <div
+                        className="flex-1 h-5 rounded-full overflow-hidden"
+                        style={{ background: "var(--cw-border)" }}
+                      >
                         <div
                           className="h-full rounded-full"
                           style={{
@@ -2185,7 +2306,9 @@ export default function AnalyticsPage() {
                           }}
                         />
                       </div>
-                      <div className="w-24 text-right text-sm cw-muted shrink-0">{row.count} ({row.share_percent}%)</div>
+                      <div className="w-24 text-right text-sm cw-muted shrink-0">
+                        {row.count} ({row.share_percent}%)
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -2209,7 +2332,8 @@ export default function AnalyticsPage() {
                     </thead>
                     <tbody>
                       {doshaData.cta_by_type.map((row) => {
-                        const completions = doshaData.completions_by_type.find((c) => c.result_type === row.result_type)?.count ?? 0;
+                        const completions =
+                          doshaData.completions_by_type.find((c) => c.result_type === row.result_type)?.count ?? 0;
                         return (
                           <tr key={row.result_type} className="border-t cw-border">
                             <td className="px-4 py-3 cw-text">{row.result_type.replace(/_/g, " + ")}</td>
@@ -2237,12 +2361,14 @@ export default function AnalyticsPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {doshaData.daily.filter((row) => row.completions > 0).map((row) => (
-                          <tr key={row.date} className="border-t cw-border">
-                            <td className="px-3 py-2 cw-text">{row.date}</td>
-                            <td className="px-3 py-2 cw-text">{row.completions}</td>
-                          </tr>
-                        ))}
+                        {doshaData.daily
+                          .filter((row) => row.completions > 0)
+                          .map((row) => (
+                            <tr key={row.date} className="border-t cw-border">
+                              <td className="px-3 py-2 cw-text">{row.date}</td>
+                              <td className="px-3 py-2 cw-text">{row.completions}</td>
+                            </tr>
+                          ))}
                       </tbody>
                     </table>
                   </div>

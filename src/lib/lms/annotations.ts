@@ -13,13 +13,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
-import {
-  clampNote,
-  clampPrefix,
-  clampQuote,
-  type Annotation,
-  type AnnotationKind,
-} from "@/lms-core";
+import { clampNote, clampPrefix, clampQuote, type Annotation, type AnnotationKind } from "@/lms-core";
 
 type AnnotationRow = {
   client_id: string;
@@ -65,12 +59,14 @@ function toAnnotation(row: AnnotationRow, lessonSlug: string): StoredAnnotation 
 /** Every mark this reader has made in this course, oldest first. */
 export async function listAnnotations(
   enrollmentId: string,
-  lessonSlugById: Map<string, string>
+  lessonSlugById: Map<string, string>,
 ): Promise<StoredAnnotation[]> {
   const db = adminClient();
   const { data, error } = await db
     .from("lms_annotations")
-    .select("client_id, kind, lesson_id, block_id, start_offset, end_offset, quote, prefix, note, course_version, created_at, updated_at")
+    .select(
+      "client_id, kind, lesson_id, block_id, start_offset, end_offset, quote, prefix, note, course_version, created_at, updated_at",
+    )
     .eq("enrollment_id", enrollmentId)
     .order("created_at", { ascending: true });
 
@@ -126,9 +122,11 @@ export async function saveAnnotation(input: SaveAnnotationInput): Promise<Stored
         prefix: input.anchor ? clampPrefix(input.anchor.prefix) : null,
         note,
       },
-      { onConflict: "enrollment_id,client_id" }
+      { onConflict: "enrollment_id,client_id" },
     )
-    .select("client_id, kind, lesson_id, block_id, start_offset, end_offset, quote, prefix, note, course_version, created_at, updated_at")
+    .select(
+      "client_id, kind, lesson_id, block_id, start_offset, end_offset, quote, prefix, note, course_version, created_at, updated_at",
+    )
     .single();
 
   if (error) throw new Error(`lms_annotation_write_failed:${error.message}`);

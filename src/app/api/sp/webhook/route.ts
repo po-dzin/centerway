@@ -70,9 +70,7 @@ function hasMeaningfulContent(body: SpWebhookBody): boolean {
   const hasVar = KNOWN_VARIABLES.some((v) => resolvedVar(body.variables, v.keys));
   if (hasVar) return true;
   const messageText =
-    typeof body.message === "string"
-      ? str(body.message)
-      : str(body.message?.text) ?? str(body.last_message) ?? null;
+    typeof body.message === "string" ? str(body.message) : (str(body.message?.text) ?? str(body.last_message) ?? null);
   return Boolean(messageText);
 }
 
@@ -86,27 +84,17 @@ function formatNotification(body: SpWebhookBody): string {
   const username = str(contact.username) ?? str(body.contact_username);
   const source = str(contact.source) ?? str(body.channel) ?? "sp";
 
-  const email =
-    str(contact.email) ??
-    str(body.contact_email) ??
-    str(body.variables?.["email"]) ??
-    null;
+  const email = str(contact.email) ?? str(body.contact_email) ?? str(body.variables?.["email"]) ?? null;
 
-  const phone =
-    str(contact.phone) ??
-    str(body.contact_phone) ??
-    str(body.variables?.["phone"]) ??
-    null;
+  const phone = str(contact.phone) ?? str(body.contact_phone) ?? str(body.variables?.["phone"]) ?? null;
 
   // Named variables (questions / feedback / promo) take priority.
-  const captured = KNOWN_VARIABLES
-    .map((v) => ({ ...v, value: resolvedVar(body.variables, v.keys) }))
-    .filter((v) => v.value);
+  const captured = KNOWN_VARIABLES.map((v) => ({ ...v, value: resolvedVar(body.variables, v.keys) })).filter(
+    (v) => v.value,
+  );
 
   const messageText =
-    typeof body.message === "string"
-      ? str(body.message)
-      : str(body.message?.text) ?? str(body.last_message) ?? null;
+    typeof body.message === "string" ? str(body.message) : (str(body.message?.text) ?? str(body.last_message) ?? null);
 
   // Header reflects the primary captured type. A free-text message with no
   // named variable is a plain user write-in → treat it as a support request
@@ -149,10 +137,7 @@ function formatNotification(body: SpWebhookBody): string {
   return lines.join("\n");
 }
 
-function logEventBestEffort(
-  db: ReturnType<typeof adminClient>,
-  body: SpWebhookBody
-): void {
+function logEventBestEffort(db: ReturnType<typeof adminClient>, body: SpWebhookBody): void {
   const contact = body.contact ?? {};
   void (async () => {
     try {
@@ -167,7 +152,9 @@ function logEventBestEffort(
           flow_id: str(body.flow?.id),
         },
       });
-    } catch { /* fire-and-forget */ }
+    } catch {
+      /* fire-and-forget */
+    }
   })();
 }
 
@@ -186,7 +173,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json().catch(() => null) as SpWebhookBody | null;
+  const body = (await req.json().catch(() => null)) as SpWebhookBody | null;
   if (!body || typeof body !== "object") {
     return NextResponse.json({ ok: false, error: "bad_body" }, { status: 400 });
   }

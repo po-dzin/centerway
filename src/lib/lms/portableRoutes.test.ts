@@ -16,19 +16,23 @@ const course: Course = {
   schedule: { mode: "open" },
   entitlementProductCodes: [],
   visibility: "hidden",
-  modules: [{
-    id: "fresh-module",
-    slug: "start",
-    title: "Початок",
-    order: 1,
-    lessons: [{
-      id: "fresh-lesson",
-      slug: "welcome",
-      title: "Вступ",
+  modules: [
+    {
+      id: "fresh-module",
+      slug: "start",
+      title: "Початок",
       order: 1,
-      blocks: [{ id: "fresh-block", type: "lesson_objective", text: "Почати." }],
-    }],
-  }],
+      lessons: [
+        {
+          id: "fresh-lesson",
+          slug: "welcome",
+          title: "Вступ",
+          order: 1,
+          blocks: [{ id: "fresh-block", type: "lesson_objective", text: "Почати." }],
+        },
+      ],
+    },
+  ],
 };
 
 const session = { user: { id: "author-1" } };

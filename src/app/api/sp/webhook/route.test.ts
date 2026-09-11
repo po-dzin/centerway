@@ -13,7 +13,9 @@ import { NextRequest } from "next/server";
 import { FakeSupabase } from "@/lib/admin/fakeSupabase";
 
 const db = new FakeSupabase();
-const sendTelegramMessage = vi.fn<(chatId: string, text: string, opts?: { messageThreadId?: number | null }) => Promise<void>>(async () => undefined);
+const sendTelegramMessage = vi.fn<
+  (chatId: string, text: string, opts?: { messageThreadId?: number | null }) => Promise<void>
+>(async () => undefined);
 
 vi.mock("@/lib/auth/adminClient", () => ({ adminClient: () => db }));
 vi.mock("@/lib/telegram/tg", () => ({ sendTelegramMessage }));
@@ -30,7 +32,9 @@ function post(body: unknown, opts: { secret?: string | null; viaQuery?: boolean 
     if (opts.viaQuery) url.searchParams.set("secret", secret);
     else headers["x-sp-secret"] = secret;
   }
-  return POST(new NextRequest(url, { method: "POST", headers, body: typeof body === "string" ? body : JSON.stringify(body) }));
+  return POST(
+    new NextRequest(url, { method: "POST", headers, body: typeof body === "string" ? body : JSON.stringify(body) }),
+  );
 }
 
 const settle = () => new Promise((r) => setTimeout(r, 0));
@@ -77,7 +81,14 @@ describe("POST /api/sp/webhook", () => {
 
   it("forwards a course question to the support thread, with the contact block first and the text last", async () => {
     const res = await post({
-      contact: { id: "c1", name: "Оля", last_name: "Петренко", username: "@olya", source: "telegram", email: "olya@example.com" },
+      contact: {
+        id: "c1",
+        name: "Оля",
+        last_name: "Петренко",
+        username: "@olya",
+        source: "telegram",
+        email: "olya@example.com",
+      },
       variables: { Course_question: "Чи є доступ назавжди?" },
       bot: { id: "b1", name: "CW bot" },
       flow: { id: "f1", name: "FAQ" },
@@ -99,7 +110,10 @@ describe("POST /api/sp/webhook", () => {
 
     await settle();
     expect(db.tables.events).toHaveLength(1);
-    expect(db.tables.events[0]).toMatchObject({ type: "sp_chatbot_webhook", payload: { contact_id: "c1", bot_id: "b1", flow_id: "f1" } });
+    expect(db.tables.events[0]).toMatchObject({
+      type: "sp_chatbot_webhook",
+      payload: { contact_id: "c1", bot_id: "b1", flow_id: "f1" },
+    });
   });
 
   it("treats a free-text message with no named variable as a support request", async () => {
@@ -110,7 +124,10 @@ describe("POST /api/sp/webhook", () => {
   });
 
   it("acknowledges an empty fire without forwarding: unresolved {{placeholders}} are not content", async () => {
-    const res = await post({ contact: { name: "Оля" }, variables: { Course_question: "{{Course_question}}", Feedback_full: "" } });
+    const res = await post({
+      contact: { name: "Оля" },
+      variables: { Course_question: "{{Course_question}}", Feedback_full: "" },
+    });
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ ok: true, forwarded: false, reason: "empty" });
     expect(sendTelegramMessage).not.toHaveBeenCalled();

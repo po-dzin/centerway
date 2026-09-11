@@ -95,7 +95,6 @@
     width: 7.35rem;
     height: 1.52rem;
   }
-
 }
 
 @media (min-width: 901px) {
@@ -124,7 +123,6 @@
     box-shadow: none;
     backdrop-filter: none;
   }
-
 }
 
 @media (max-width: 900px) {
@@ -501,8 +499,8 @@
        34rem / 72svh ceiling manufactured overflow on ordinary phone screens
        even when another 150–200px was visibly free below the sheet. */
     max-height: calc(
-      100dvh - var(--platform-mobile-header-top) - var(--platform-mobile-header-height) -
-        var(--cw-space-sm) - env(safe-area-inset-bottom)
+      100dvh - var(--platform-mobile-header-top) - var(--platform-mobile-header-height) - var(--cw-space-sm) -
+        env(safe-area-inset-bottom)
     );
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -983,15 +981,19 @@
     /* Same neutral ink as the desktop ramp — see the note there. */
     --hero-scrim-ink: var(--cw-mat-scrim-ink);
     background:
-      linear-gradient(180deg,
+      linear-gradient(
+        180deg,
         color-mix(in srgb, var(--hero-scrim-ink) 18%, transparent) 0%,
         color-mix(in srgb, var(--hero-scrim-ink) 24%, transparent) 26%,
         color-mix(in srgb, var(--hero-scrim-ink) 64%, transparent) 50%,
-        color-mix(in srgb, var(--hero-scrim-ink) 82%, transparent) 100%),
-      linear-gradient(150deg,
+        color-mix(in srgb, var(--hero-scrim-ink) 82%, transparent) 100%
+      ),
+      linear-gradient(
+        150deg,
         color-mix(in srgb, var(--cw-sem-guide-strong) 5%, transparent),
         transparent 55%,
-        color-mix(in srgb, var(--cw-sem-warmth) 6%, transparent));
+        color-mix(in srgb, var(--cw-sem-warmth) 6%, transparent)
+      );
   }
 
   /* Bottom-anchored, the same photo-hero recipe the landing network runs on
@@ -1696,7 +1698,6 @@
   .videoActionCard strong {
     font-size: 1.28rem;
   }
-
 }
 
 @media (min-width: 1101px) {

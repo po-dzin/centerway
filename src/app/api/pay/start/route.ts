@@ -4,10 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { resolveIremLandingOffer } from "@/lib/landing/offers";
 import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { loadPayableOffer } from "@/lib/platform/offers";
-import {
-  createPaymentInvoice,
-  resolveLocaleFromRequest,
-} from "@/lib/payments/paymentStart";
+import { createPaymentInvoice, resolveLocaleFromRequest } from "@/lib/payments/paymentStart";
 
 export const runtime = "nodejs";
 
@@ -80,7 +77,7 @@ export async function GET(req: NextRequest) {
         order_ref: started.order_ref,
         raw: started.raw,
       },
-      { status: started.status }
+      { status: started.status },
     );
   }
 

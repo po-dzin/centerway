@@ -46,8 +46,8 @@ describe("inline markup", () => {
   });
 
   it("renders the expected dialect", () => {
-    expect(inlineToMarkup([{ text: "жирне", bold: true }, { text: " і ", }, { text: "лінк", href: "/learn" }])).toBe(
-      "**жирне** і [лінк](/learn)"
+    expect(inlineToMarkup([{ text: "жирне", bold: true }, { text: " і " }, { text: "лінк", href: "/learn" }])).toBe(
+      "**жирне** і [лінк](/learn)",
     );
   });
 

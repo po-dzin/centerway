@@ -6,9 +6,21 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { Course, CourseDiff } from "@/lms-core";
 import type { CourseRevisionSummary, LessonRevisionEntry } from "@/lib/lms/revisions";
-import { createCourseRevision, listCourseRevisions, listLessonRevisions, loadCourseRevision, restoreCourseRevision } from "./builderClient";
+import {
+  createCourseRevision,
+  listCourseRevisions,
+  listLessonRevisions,
+  loadCourseRevision,
+  restoreCourseRevision,
+} from "./builderClient";
 import { BuilderSheet } from "./BuilderSheet";
-import { BOUNDARY_WARNING, courseShape, describeLessonChange, REVISION_KIND_LABELS, summarizeDiff } from "./versionHistory";
+import {
+  BOUNDARY_WARNING,
+  courseShape,
+  describeLessonChange,
+  REVISION_KIND_LABELS,
+  summarizeDiff,
+} from "./versionHistory";
 import styles from "./Builder.module.css";
 
 const dateTime = new Intl.DateTimeFormat("uk-UA", {
@@ -104,9 +116,11 @@ export function BuilderVersionHistory({
     }
     setLabel("");
     await refresh();
-    toast.success(result.data.revision.created
-      ? `Версію №${result.data.revision.revisionNumber} збережено.`
-      : `Ця версія вже збережена — №${result.data.revision.revisionNumber}.`);
+    toast.success(
+      result.data.revision.created
+        ? `Версію №${result.data.revision.revisionNumber} збережено.`
+        : `Ця версія вже збережена — №${result.data.revision.revisionNumber}.`,
+    );
   };
 
   const openRevision = async (revisionId: string) => {
@@ -148,12 +162,12 @@ export function BuilderVersionHistory({
   /* Подписи для режима урока. Собираются один раз, а не считаются в разметке
      на каждый элемент списка. */
   const lessonChangeById = new Map(
-    (lessonEntries ?? []).map((entry) => [entry.revision.id, describeLessonChange(entry.change)])
+    (lessonEntries ?? []).map((entry) => [entry.revision.id, describeLessonChange(entry.change)]),
   );
   const boundaryById = new Set(
     (lessonEntries ?? [])
       .filter((entry) => entry.change.kind === "changed" && entry.change.boundaryTouched)
-      .map((entry) => entry.revision.id)
+      .map((entry) => entry.revision.id),
   );
 
   const shape = selected ? courseShape(selected.content) : null;
@@ -167,10 +181,18 @@ export function BuilderVersionHistory({
             Показано лише ті версії, у яких змінювався урок «{lessonTitle}».
           </p>
         ) : null}
-        <section className={styles.versionCheckpoint} aria-labelledby="version-checkpoint-title" hidden={Boolean(lessonId)}>
+        <section
+          className={styles.versionCheckpoint}
+          aria-labelledby="version-checkpoint-title"
+          hidden={Boolean(lessonId)}
+        >
           <div>
-            <h3 className={styles.subTitle} id="version-checkpoint-title">Зберегти контрольну версію</h3>
-            <p className={styles.fieldHint}>Автозбереження веде робочу копію. Тут лишаються тільки свідомі точки повернення.</p>
+            <h3 className={styles.subTitle} id="version-checkpoint-title">
+              Зберегти контрольну версію
+            </h3>
+            <p className={styles.fieldHint}>
+              Автозбереження веде робочу копію. Тут лишаються тільки свідомі точки повернення.
+            </p>
           </div>
           <label className={styles.field}>
             <span className={styles.fieldLabel}>Назва, необов’язково</span>
@@ -194,25 +216,43 @@ export function BuilderVersionHistory({
           </button>
         </section>
 
-
         {selected && shape ? (
           <section className={styles.versionDetail} aria-labelledby="version-detail-title">
-            <button className={styles.quietAction} type="button" onClick={() => { setSelected(null); setDiff(null); }}>До списку</button>
+            <button
+              className={styles.quietAction}
+              type="button"
+              onClick={() => {
+                setSelected(null);
+                setDiff(null);
+              }}
+            >
+              До списку
+            </button>
             <div>
               <span className={styles.courseMeta}>
                 {REVISION_KIND_LABELS[selected.kind]} · версія №{selected.revisionNumber}
                 {selected.actor ? ` · ${selected.actor}` : ""}
               </span>
-              <h3 className={styles.subTitle} id="version-detail-title">{selected.label || selected.content.title}</h3>
-              <time className={styles.fieldHint} dateTime={selected.createdAt}>{dateTime.format(new Date(selected.createdAt))}</time>
+              <h3 className={styles.subTitle} id="version-detail-title">
+                {selected.label || selected.content.title}
+              </h3>
+              <time className={styles.fieldHint} dateTime={selected.createdAt}>
+                {dateTime.format(new Date(selected.createdAt))}
+              </time>
             </div>
-            <p className={styles.panelText}>{shape.modules} модулів · {shape.lessons} уроків · {shape.blocks} блоків</p>
+            <p className={styles.panelText}>
+              {shape.modules} модулів · {shape.lessons} уроків · {shape.blocks} блоків
+            </p>
             {/* Чим ця версія відрізняється від того, що зараз у редакторі —
                 питання перед відновленням саме таке. */}
             {diff ? (
               <>
                 <p className={styles.fieldHint}>Порівняно з поточною версією: {summarizeDiff(diff)}</p>
-                {diff.boundaryTouched ? <p className={styles.panelText}><strong>{BOUNDARY_WARNING}</strong></p> : null}
+                {diff.boundaryTouched ? (
+                  <p className={styles.panelText}>
+                    <strong>{BOUNDARY_WARNING}</strong>
+                  </p>
+                ) : null}
               </>
             ) : null}
             <ol className={styles.versionOutline}>
@@ -226,8 +266,8 @@ export function BuilderVersionHistory({
             {confirmRestore ? (
               <>
                 <p className={styles.fieldHint}>
-                  Відновлення створює нову чернетку з цієї версії. Чинний курс залишається таким, яким його зараз бачать учні,
-                  доки оновлення не пройде перевірку. Незбережені зміни в редакторі буде втрачено.
+                  Відновлення створює нову чернетку з цієї версії. Чинний курс залишається таким, яким його зараз бачать
+                  учні, доки оновлення не пройде перевірку. Незбережені зміни в редакторі буде втрачено.
                 </p>
                 <button
                   className={styles.commitAction}
@@ -237,7 +277,12 @@ export function BuilderVersionHistory({
                 >
                   {restoring ? "Відновлюємо…" : `Так, відновити версію №${selected.revisionNumber}`}
                 </button>
-                <button className={styles.quietAction} type="button" disabled={restoring} onClick={() => setConfirmRestore(false)}>
+                <button
+                  className={styles.quietAction}
+                  type="button"
+                  disabled={restoring}
+                  onClick={() => setConfirmRestore(false)}
+                >
                   Скасувати
                 </button>
               </>
@@ -249,8 +294,12 @@ export function BuilderVersionHistory({
           </section>
         ) : (
           <section aria-labelledby="version-list-title">
-            <h3 className={styles.subTitle} id="version-list-title">Контрольні версії</h3>
-            {loading ? <p className={styles.panelText}>Завантажуємо…</p> : revisions.length === 0 ? (
+            <h3 className={styles.subTitle} id="version-list-title">
+              Контрольні версії
+            </h3>
+            {loading ? (
+              <p className={styles.panelText}>Завантажуємо…</p>
+            ) : revisions.length === 0 ? (
               <p className={styles.panelText}>
                 {lessonId ? "Цей урок ще не змінювався в збережених версіях." : "Ще немає контрольних версій."}
               </p>
@@ -269,9 +318,7 @@ export function BuilderVersionHistory({
                             ним: назва контрольної точки тут відповідає не на те
                             питання, з яким сюди прийшли. */}
                         <strong>
-                          {lessonChangeById.get(revision.id)
-                            ?? revision.label
-                            ?? REVISION_KIND_LABELS[revision.kind]}
+                          {lessonChangeById.get(revision.id) ?? revision.label ?? REVISION_KIND_LABELS[revision.kind]}
                         </strong>
                         {/* Хто це зробив. Для перевірки «документ такий-то» без
                             «від кого» доводить половину. */}

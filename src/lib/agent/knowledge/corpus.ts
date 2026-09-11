@@ -26,7 +26,14 @@
 import { inlineToPlainText, type Course } from "@/lms-core";
 import { contact, legal, programs } from "@/lib/platform/content";
 import { plural } from "@/lib/plural";
-import { PRODUCTS, formatPrice, productDescription, productHeading, productListPrice, type CatalogProductCode } from "@/lib/products";
+import {
+  PRODUCTS,
+  formatPrice,
+  productDescription,
+  productHeading,
+  productListPrice,
+  type CatalogProductCode,
+} from "@/lib/products";
 import { platformTests } from "@/lib/platform/tests";
 import { botCopy, SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
 import type { KnowledgeDoc } from "./types";
@@ -106,9 +113,7 @@ export function productDocs(): KnowledgeDoc[] {
       text: paragraphs([
         productHeading(code, "uk"),
         productDescription(code, "uk"),
-        price === null
-          ? "Ціна узгоджується окремо."
-          : `Ціна: ${formatPrice(price, PRODUCTS[code].currency)}.`,
+        price === null ? "Ціна узгоджується окремо." : `Ціна: ${formatPrice(price, PRODUCTS[code].currency)}.`,
         fulfilment.kind === "course"
           ? "Доступ відкривається в кабінеті, у розділі «Бібліотека»."
           : "Доступ відкривається в Telegram-боті продукту після оплати.",
@@ -197,9 +202,7 @@ export function testDocs(): KnowledgeDoc[] {
       `${test.title} — ${test.tag}. ${test.format}.`,
       test.description,
       `Що читає: ${test.reads}.`,
-      test.status === "planned"
-        ? "Тест ще готується — пройти його поки не можна."
-        : "Тест доступний і безкоштовний.",
+      test.status === "planned" ? "Тест ще готується — пройти його поки не можна." : "Тест доступний і безкоштовний.",
       // Said in the corpus rather than left to the model, because this is the
       // boundary the assistant is most likely to be pushed across: a test is a
       // working hypothesis about a state, not a diagnosis.
@@ -245,10 +248,7 @@ export function policyDocs(): KnowledgeDoc[] {
       kind: "policy" as const,
       title: "Політика конфіденційності",
       href: "/legal/privacy",
-      text: paragraphs([
-        legal.privacy,
-        `Питання щодо персональних даних — на ${contact.email} або ${contact.phone}.`,
-      ]),
+      text: paragraphs([legal.privacy, `Питання щодо персональних даних — на ${contact.email} або ${contact.phone}.`]),
       locale: "uk" as const,
       audience: "public" as const,
       source: "src/lib/platform/content.ts",

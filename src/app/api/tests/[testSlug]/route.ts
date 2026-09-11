@@ -5,10 +5,7 @@ import { ensureDoshaTestSeed, loadTestDefinitionBySlug } from "@/lib/dosha/dosha
 
 export const runtime = "nodejs";
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ testSlug: string }> }
-) {
+export async function GET(req: Request, { params }: { params: Promise<{ testSlug: string }> }) {
   const { testSlug } = await params;
   if (testSlug !== DOSHA_TEST_SLUG) {
     return NextResponse.json({ error: "test_not_found" }, { status: 404 });

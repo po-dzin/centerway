@@ -50,10 +50,42 @@ export function todo(what: string): string {
  * pasted into places that mangle anything else.
  */
 const TRANSLITERATION: Record<string, string> = {
-  а: "a", б: "b", в: "v", г: "h", ґ: "g", д: "d", е: "e", є: "ie", ж: "zh",
-  з: "z", и: "y", і: "i", ї: "i", й: "i", к: "k", л: "l", м: "m", н: "n",
-  о: "o", п: "p", р: "r", с: "s", т: "t", у: "u", ф: "f", х: "kh", ц: "ts",
-  ч: "ch", ш: "sh", щ: "shch", ь: "", ю: "iu", я: "ia", ы: "y", э: "e", ъ: "",
+  а: "a",
+  б: "b",
+  в: "v",
+  г: "h",
+  ґ: "g",
+  д: "d",
+  е: "e",
+  є: "ie",
+  ж: "zh",
+  з: "z",
+  и: "y",
+  і: "i",
+  ї: "i",
+  й: "i",
+  к: "k",
+  л: "l",
+  м: "m",
+  н: "n",
+  о: "o",
+  п: "p",
+  р: "r",
+  с: "s",
+  т: "t",
+  у: "u",
+  ф: "f",
+  х: "kh",
+  ц: "ts",
+  ч: "ch",
+  ш: "sh",
+  щ: "shch",
+  ь: "",
+  ю: "iu",
+  я: "ia",
+  ы: "y",
+  э: "e",
+  ъ: "",
   ё: "e",
 };
 
@@ -164,7 +196,10 @@ export function newTableRow(columns: number): string[] {
   return Array.from({ length: Math.max(1, columns) }, () => todo("клітинка"));
 }
 
-export function newLesson(ids: IdSource, options: { order: number; dayIndex?: number; title?: string; slug?: string }): Lesson {
+export function newLesson(
+  ids: IdSource,
+  options: { order: number; dayIndex?: number; title?: string; slug?: string },
+): Lesson {
   const title = options.title ?? todo("назва уроку");
   return {
     id: ids(),
@@ -180,7 +215,10 @@ export function newLesson(ids: IdSource, options: { order: number; dayIndex?: nu
   };
 }
 
-export function newModule(ids: IdSource, options: { order: number; title?: string; slug?: string; dayIndex?: number }): CourseModule {
+export function newModule(
+  ids: IdSource,
+  options: { order: number; title?: string; slug?: string; dayIndex?: number },
+): CourseModule {
   return {
     id: ids(),
     slug: options.slug ?? `module-${options.order}`,
@@ -192,7 +230,7 @@ export function newModule(ids: IdSource, options: { order: number; title?: strin
 
 export function newCourse(
   ids: IdSource,
-  options: { slug: string; title: string; programSlug: string; brand?: string; locale?: Course["locale"] }
+  options: { slug: string; title: string; programSlug: string; brand?: string; locale?: Course["locale"] },
 ): Course {
   return {
     id: ids(),
@@ -236,23 +274,23 @@ export function newCourse(
  * one to refuse it, by name, in the readiness list.
  */
 export function pruneEmptyProse(course: Course): Course {
-  const written = (text: InlineText | undefined) =>
-    text !== undefined && inlineToPlainText(text).trim().length > 0;
-  const prune = (blocks: LessonBlock[]): LessonBlock[] => blocks.flatMap<LessonBlock>((block) => {
-    if (block.type === "group") {
-      const children = prune(block.children);
-      return children.length ? [{ ...block, children }] : [];
-    }
-    if (block.type !== "rich_text") return [block];
-    const content = block.content.flatMap<RichTextNode>((node) => {
-      if (node.kind === "ul" || node.kind === "ol") {
-        const items = node.items.filter(written);
-        return items.length ? [{ ...node, items }] : [];
+  const written = (text: InlineText | undefined) => text !== undefined && inlineToPlainText(text).trim().length > 0;
+  const prune = (blocks: LessonBlock[]): LessonBlock[] =>
+    blocks.flatMap<LessonBlock>((block) => {
+      if (block.type === "group") {
+        const children = prune(block.children);
+        return children.length ? [{ ...block, children }] : [];
       }
-      return written(node.text) ? [node] : [];
+      if (block.type !== "rich_text") return [block];
+      const content = block.content.flatMap<RichTextNode>((node) => {
+        if (node.kind === "ul" || node.kind === "ol") {
+          const items = node.items.filter(written);
+          return items.length ? [{ ...node, items }] : [];
+        }
+        return written(node.text) ? [node] : [];
+      });
+      return content.length ? [{ ...block, content }] : [];
     });
-    return content.length ? [{ ...block, content }] : [];
-  });
 
   return {
     ...course,
@@ -360,12 +398,13 @@ export function renumber(modules: CourseModule[]): CourseModule[] {
  */
 export function renumberSteps(blocks: LessonBlock[]): LessonBlock[] {
   let step = 0;
-  const renumber = (items: LessonBlock[]): LessonBlock[] => items.map((block) => {
-    if (block.type === "group") return { ...block, children: renumber(block.children) };
-    if (block.type !== "protocol_step") return block;
-    step += 1;
-    return block.step === step ? block : { ...block, step };
-  });
+  const renumber = (items: LessonBlock[]): LessonBlock[] =>
+    items.map((block) => {
+      if (block.type === "group") return { ...block, children: renumber(block.children) };
+      if (block.type !== "protocol_step") return block;
+      step += 1;
+      return block.step === step ? block : { ...block, step };
+    });
   return renumber(blocks);
 }
 

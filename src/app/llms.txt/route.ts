@@ -48,7 +48,7 @@ export async function GET(): Promise<Response> {
     return line(
       `${base}/${program.slug}`,
       program.fullTitle,
-      `${program.description} Формат: ${program.duration}. ${price}`
+      `${program.description} Формат: ${program.duration}. ${price}`,
     );
   });
 
@@ -82,7 +82,7 @@ export async function GET(): Promise<Response> {
               ? "Доступ безкоштовний."
               : "Ціна узгоджується в розмові.";
         return line(course.href, course.title, `${course.description || course.tag} ${price}`);
-      })
+      }),
   );
 
   const body = [

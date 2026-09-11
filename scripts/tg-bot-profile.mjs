@@ -134,9 +134,7 @@ if (dryRun) {
     method: "POST",
     body: form,
   });
-  const photoBody = await photoResponse
-    .json()
-    .catch(() => ({ ok: false, description: "unparseable response" }));
+  const photoBody = await photoResponse.json().catch(() => ({ ok: false, description: "unparseable response" }));
   if (!photoBody.ok) {
     console.error(`setMyProfilePhoto failed: ${photoBody.description ?? "unknown error"}`);
     process.exit(1);
@@ -152,5 +150,5 @@ console.log(
     "  1. open @BotFather → /mybots → this bot → Edit Bot → Edit Description Picture",
     `  2. send ${existsSync(DESCRIPTION_PICTURE) ? DESCRIPTION_PICTURE : `${DESCRIPTION_PICTURE}  (MISSING — run: npm run brand:build)`}`,
     "",
-  ].join("\n")
+  ].join("\n"),
 );

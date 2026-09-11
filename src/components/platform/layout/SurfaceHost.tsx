@@ -65,7 +65,11 @@ export function SurfaceHostProvider({ host, children }: { host: string | null; c
  */
 const noSubscription = () => () => {};
 function useRuntimeHost(): string | null {
-  return useSyncExternalStore(noSubscription, () => window.location.host, () => null);
+  return useSyncExternalStore(
+    noSubscription,
+    () => window.location.host,
+    () => null,
+  );
 }
 
 export function useSurfaceHost(): string | null {

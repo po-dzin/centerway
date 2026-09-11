@@ -205,7 +205,7 @@ export function BuilderInlineEditor({
   } | null>(null);
 
   const matches = (commands ?? []).filter(
-    (command) => query !== null && command.label.toLowerCase().includes(query.toLowerCase())
+    (command) => query !== null && command.label.toLowerCase().includes(query.toLowerCase()),
   );
   const referenceMatches = (references ?? []).filter((option) => {
     if (referenceQuery === null) return false;
@@ -289,7 +289,7 @@ export function BuilderInlineEditor({
       closeMenu();
       onCommand?.(id, true);
     },
-    [closeMenu, onCommand]
+    [closeMenu, onCommand],
   );
 
   // Measured rather than declared, and fixed rather than absolute — the same
@@ -370,33 +370,39 @@ export function BuilderInlineEditor({
   // under a live selection is what makes naive contenteditable components jump
   // the caret to the start on every keystroke.
 
-  const emitFromElement = useCallback((element: HTMLElement) => {
-    const next = nodesToInline(readNodes(element));
-    onChange(next === "" ? undefined : next);
-  }, [onChange]);
+  const emitFromElement = useCallback(
+    (element: HTMLElement) => {
+      const next = nodesToInline(readNodes(element));
+      onChange(next === "" ? undefined : next);
+    },
+    [onChange],
+  );
 
-  const runReference = useCallback((option: InternalReferenceOption) => {
-    const element = ref.current;
-    const range = referenceRange.current;
-    if (!element || !range) return;
+  const runReference = useCallback(
+    (option: InternalReferenceOption) => {
+      const element = ref.current;
+      const range = referenceRange.current;
+      if (!element || !range) return;
 
-    const link = document.createElement("a");
-    link.setAttribute("href", option.key);
-    link.textContent = option.label;
-    const space = document.createTextNode(" ");
-    range.deleteContents();
-    range.insertNode(link);
-    link.after(space);
+      const link = document.createElement("a");
+      link.setAttribute("href", option.key);
+      link.textContent = option.label;
+      const space = document.createTextNode(" ");
+      range.deleteContents();
+      range.insertNode(link);
+      link.after(space);
 
-    const caret = document.createRange();
-    caret.setStartAfter(space);
-    caret.collapse(true);
-    const selection = window.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(caret);
-    closeMenu();
-    emitFromElement(element);
-  }, [closeMenu, emitFromElement]);
+      const caret = document.createRange();
+      caret.setStartAfter(space);
+      caret.collapse(true);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(caret);
+      closeMenu();
+      emitFromElement(element);
+    },
+    [closeMenu, emitFromElement],
+  );
 
   const emit = useCallback(() => {
     const element = ref.current;
@@ -607,10 +613,22 @@ export function BuilderInlineEditor({
                       whole field is edited. A divider marks each seam so the
                       icon-only row still reads as sentences rather than a
                       single undifferentiated strip. */}
-                  <button className={styles.formatIconAction} type="button" title="Жирний" aria-label="Жирний" onClick={() => exec("bold")}>
+                  <button
+                    className={styles.formatIconAction}
+                    type="button"
+                    title="Жирний"
+                    aria-label="Жирний"
+                    onClick={() => exec("bold")}
+                  >
                     <Icon name="bold" size={18} />
                   </button>
-                  <button className={styles.formatIconAction} type="button" title="Курсив" aria-label="Курсив" onClick={() => exec("italic")}>
+                  <button
+                    className={styles.formatIconAction}
+                    type="button"
+                    title="Курсив"
+                    aria-label="Курсив"
+                    onClick={() => exec("italic")}
+                  >
                     <Icon name="italic" size={18} />
                   </button>
                   <button
@@ -650,45 +668,127 @@ export function BuilderInlineEditor({
                     {onCommand && commands?.some((command) => command.id === "ul") ? (
                       <>
                         <span className={styles.formatDivider} aria-hidden="true" />
-                        <button className={styles.formatIconAction} type="button" title="Список" aria-label="Список" onClick={() => { onCommand("ul"); closeBar(); }}>
+                        <button
+                          className={styles.formatIconAction}
+                          type="button"
+                          title="Список"
+                          aria-label="Список"
+                          onClick={() => {
+                            onCommand("ul");
+                            closeBar();
+                          }}
+                        >
                           <Icon name="list" size={18} />
                         </button>
-                        <button className={styles.formatIconAction} type="button" title="Нумерований список" aria-label="Нумерований список" onClick={() => { onCommand("ol"); closeBar(); }}>
+                        <button
+                          className={styles.formatIconAction}
+                          type="button"
+                          title="Нумерований список"
+                          aria-label="Нумерований список"
+                          onClick={() => {
+                            onCommand("ol");
+                            closeBar();
+                          }}
+                        >
                           <Icon name="list-ordered" size={18} />
                         </button>
-                        <button className={styles.formatIconAction} type="button" title="Чек-лист" aria-label="Чек-лист" onClick={() => { onCommand("block:checklist"); closeBar(); }}>
+                        <button
+                          className={styles.formatIconAction}
+                          type="button"
+                          title="Чек-лист"
+                          aria-label="Чек-лист"
+                          onClick={() => {
+                            onCommand("block:checklist");
+                            closeBar();
+                          }}
+                        >
                           <Icon name="check" size={18} />
                         </button>
                         <span className={styles.formatDivider} aria-hidden="true" />
-                        <button className={styles.formatIconAction} type="button" title="Цитата" aria-label="Цитата" onClick={() => { onCommand("block:quote"); closeBar(); }}>
+                        <button
+                          className={styles.formatIconAction}
+                          type="button"
+                          title="Цитата"
+                          aria-label="Цитата"
+                          onClick={() => {
+                            onCommand("block:quote");
+                            closeBar();
+                          }}
+                        >
                           <Icon name="quote" size={18} />
                         </button>
-                        <button className={styles.formatIconAction} type="button" title="Код" aria-label="Код" onClick={() => { onCommand("block:code"); closeBar(); }}>
+                        <button
+                          className={styles.formatIconAction}
+                          type="button"
+                          title="Код"
+                          aria-label="Код"
+                          onClick={() => {
+                            onCommand("block:code");
+                            closeBar();
+                          }}
+                        >
                           <Icon name="code" size={18} />
                         </button>
                       </>
                     ) : null}
                   </span>
-                  {onCommand && commands?.some((command) => command.id === "ul") ? <span className={styles.formatNarrowOnly}>
-                    <span className={styles.formatDivider} aria-hidden="true" />
-                    <BuilderMenu
-                      label="Ще форматування"
-                      contextArea={false}
-                      items={[
-                        ...[
-                              { label: "Список", icon: "list" as const, onSelect: () => { onCommand("ul"); closeBar(); } },
-                              { label: "Нумерований список", icon: "list-ordered" as const, onSelect: () => { onCommand("ol"); closeBar(); } },
-                              { label: "Чек-лист", icon: "check" as const, onSelect: () => { onCommand("block:checklist"); closeBar(); } },
-                              { label: "Цитата", icon: "quote" as const, onSelect: () => { onCommand("block:quote"); closeBar(); } },
-                              { label: "Код", icon: "code" as const, onSelect: () => { onCommand("block:code"); closeBar(); } },
-                            ],
-                      ]}
-                    />
-                  </span> : null}
+                  {onCommand && commands?.some((command) => command.id === "ul") ? (
+                    <span className={styles.formatNarrowOnly}>
+                      <span className={styles.formatDivider} aria-hidden="true" />
+                      <BuilderMenu
+                        label="Ще форматування"
+                        contextArea={false}
+                        items={[
+                          ...[
+                            {
+                              label: "Список",
+                              icon: "list" as const,
+                              onSelect: () => {
+                                onCommand("ul");
+                                closeBar();
+                              },
+                            },
+                            {
+                              label: "Нумерований список",
+                              icon: "list-ordered" as const,
+                              onSelect: () => {
+                                onCommand("ol");
+                                closeBar();
+                              },
+                            },
+                            {
+                              label: "Чек-лист",
+                              icon: "check" as const,
+                              onSelect: () => {
+                                onCommand("block:checklist");
+                                closeBar();
+                              },
+                            },
+                            {
+                              label: "Цитата",
+                              icon: "quote" as const,
+                              onSelect: () => {
+                                onCommand("block:quote");
+                                closeBar();
+                              },
+                            },
+                            {
+                              label: "Код",
+                              icon: "code" as const,
+                              onSelect: () => {
+                                onCommand("block:code");
+                                closeBar();
+                              },
+                            },
+                          ],
+                        ]}
+                      />
+                    </span>
+                  ) : null}
                 </>
               )}
             </div>,
-            document.body
+            document.body,
           )
         : null}
 
@@ -708,7 +808,9 @@ export function BuilderInlineEditor({
             >
               {groupedMatches.map((group) => (
                 <div className={styles.slashGroup} role="group" aria-label={group.label} key={group.label}>
-                  <div className={styles.slashGroupTitle} aria-hidden="true">{group.label}</div>
+                  <div className={styles.slashGroupTitle} aria-hidden="true">
+                    {group.label}
+                  </div>
                   {group.commands.map((command) => {
                     const index = matches.indexOf(command);
                     return (
@@ -733,7 +835,7 @@ export function BuilderInlineEditor({
                 </div>
               ))}
             </div>,
-            document.body
+            document.body,
           )
         : null}
 
@@ -746,36 +848,44 @@ export function BuilderInlineEditor({
               data-flip={anchor.flip || undefined}
               style={{ top: anchor.top, left: anchor.left, width: anchor.width, maxHeight: anchor.maxHeight }}
             >
-              {references?.map((option) => option.group).filter((group, index, groups) => groups.indexOf(group) === index).map((group) => {
-                const options = referenceMatches.filter((option) => option.group === group);
-                if (options.length === 0) return null;
-                return (
-                  <div className={styles.slashGroup} role="group" aria-label={group} key={group}>
-                    <div className={styles.slashGroupTitle} aria-hidden="true">{group}</div>
-                    {options.map((option) => {
-                      const index = referenceMatches.indexOf(option);
-                      return (
-                        <button
-                          key={option.key}
-                          className={styles.slashItem}
-                          type="button"
-                          role="option"
-                          aria-selected={index === active}
-                          data-active={index === active || undefined}
-                          onMouseDown={(event) => event.preventDefault()}
-                          onMouseEnter={() => setCursor(index)}
-                          onClick={() => runReference(option)}
-                        >
-                          <span className={styles.slashLabel}>{option.label}</span>
-                          <span className={styles.slashHint}>{option.future ? "Майбутній урок · " : ""}{option.hint}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                );
-              })}
+              {references
+                ?.map((option) => option.group)
+                .filter((group, index, groups) => groups.indexOf(group) === index)
+                .map((group) => {
+                  const options = referenceMatches.filter((option) => option.group === group);
+                  if (options.length === 0) return null;
+                  return (
+                    <div className={styles.slashGroup} role="group" aria-label={group} key={group}>
+                      <div className={styles.slashGroupTitle} aria-hidden="true">
+                        {group}
+                      </div>
+                      {options.map((option) => {
+                        const index = referenceMatches.indexOf(option);
+                        return (
+                          <button
+                            key={option.key}
+                            className={styles.slashItem}
+                            type="button"
+                            role="option"
+                            aria-selected={index === active}
+                            data-active={index === active || undefined}
+                            onMouseDown={(event) => event.preventDefault()}
+                            onMouseEnter={() => setCursor(index)}
+                            onClick={() => runReference(option)}
+                          >
+                            <span className={styles.slashLabel}>{option.label}</span>
+                            <span className={styles.slashHint}>
+                              {option.future ? "Майбутній урок · " : ""}
+                              {option.hint}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
             </div>,
-            document.body
+            document.body,
           )
         : null}
     </Box>

@@ -64,18 +64,12 @@ export const LEARNING_PATH_PREFIX = "/learn";
  */
 export const PROFILE_PATH_PREFIX = "/profile";
 
-export const PERSONAL_PATH_PREFIXES = [
-  LEARNING_PATH_PREFIX,
-  BUILDER_PATH_PREFIX,
-  PROFILE_PATH_PREFIX,
-] as const;
+export const PERSONAL_PATH_PREFIXES = [LEARNING_PATH_PREFIX, BUILDER_PATH_PREFIX, PROFILE_PATH_PREFIX] as const;
 
 /** True for a path owned by the personal host, prefix-exact. */
 export function isPersonalPath(path: string): boolean {
   const pathname = path.split("?")[0].split("#")[0];
-  return PERSONAL_PATH_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
+  return PERSONAL_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
 /**
@@ -176,15 +170,7 @@ export function surfaceUrl(path: string): string {
   return isPersonalPath(path) ? personalUrl(canonicalPersonalPath(path)) : platformUrl(path);
 }
 
-export type ProductKey =
-  | "reboot"
-  | "irem"
-  | "detox"
-  | "way21"
-  | "reset-day"
-  | "dosha"
-  | "herbs"
-  | "consult";
+export type ProductKey = "reboot" | "irem" | "detox" | "way21" | "reset-day" | "dosha" | "herbs" | "consult";
 export type SurfaceKind = "funnel" | "platform" | "utility";
 export type CtaMode = "lead" | "checkout" | "redirect";
 export type FunnelRuntime = "landing-app" | "generated-app" | "disabled";

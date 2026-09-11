@@ -64,8 +64,7 @@ export function handArcPath({ cx, cy, radius, fromDeg, toDeg, seed, amplitude = 
   for (let i = 0; i <= steps; i += 1) {
     const deg = start + (span * i) / steps;
     const rad = (deg * Math.PI) / 180;
-    const wobble =
-      amplitude * (Math.sin(rad * 2.7 + phaseA) * 0.62 + Math.sin(rad * 6.1 + phaseB) * 0.38);
+    const wobble = amplitude * (Math.sin(rad * 2.7 + phaseA) * 0.62 + Math.sin(rad * 6.1 + phaseB) * 0.38);
     const r = radius + wobble;
     const x = cx + Math.sin(rad) * r;
     const y = cy - Math.cos(rad) * r;

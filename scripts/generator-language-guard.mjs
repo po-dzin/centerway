@@ -12,10 +12,7 @@ const FILES = [
 const LATIN_WORD_RE = /[A-Za-z][A-Za-z0-9-]*/g;
 const CYRILLIC_RE = /[\u0400-\u04FF]/;
 const LATIN_RE = /[A-Za-z]/;
-const WHITELIST = new Set([
-  "CenterWay",
-  "CENTERWAY",
-]);
+const WHITELIST = new Set(["CenterWay", "CENTERWAY"]);
 
 function extractStringLiterals(source) {
   const literals = [];
@@ -28,7 +25,7 @@ function extractStringLiterals(source) {
 }
 
 function detectMixedLanguage(text) {
-  text = text.replace(/\$\{[^}]+\}/g, '');
+  text = text.replace(/\$\{[^}]+\}/g, "");
   if (!CYRILLIC_RE.test(text) || !LATIN_RE.test(text)) return [];
   const words = text.match(LATIN_WORD_RE) ?? [];
   return words.filter((word) => !WHITELIST.has(word));
@@ -41,15 +38,18 @@ async function main() {
   for (const rel of FILES) {
     const full = path.join(root, rel);
     const source = await fs.readFile(full, "utf8");
-    const literals = rel.endsWith(".json")
-      ? collectJsonStringLiterals(source)
-      : extractStringLiterals(source);
+    const literals = rel.endsWith(".json") ? collectJsonStringLiterals(source) : extractStringLiterals(source);
 
     for (const literal of literals) {
       const badWords = detectMixedLanguage(literal.text);
       if (badWords.length === 0) continue;
       const line = source.slice(0, literal.index).split("\n").length;
-      problems.push({ rel, line, badWords: Array.from(new Set(badWords)).join(", "), text: literal.text.slice(0, 120) });
+      problems.push({
+        rel,
+        line,
+        badWords: Array.from(new Set(badWords)).join(", "),
+        text: literal.text.slice(0, 120),
+      });
     }
   }
 

@@ -35,10 +35,7 @@ const FAILURE_STATUS: Record<string, number> = {
   blocked: 403,
 };
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ slug: string; lessonSlug: string }> }
-) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string; lessonSlug: string }> }) {
   const user = await requireUserFromBearer(req.headers.get("authorization"));
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
@@ -61,7 +58,11 @@ export async function GET(
       timeZone: "Europe/Kyiv",
     };
   } else {
-    const result = await loadLearnerCourse({ authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) }, slug, now);
+    const result = await loadLearnerCourse(
+      { authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) },
+      slug,
+      now,
+    );
     if (!result.ok) {
       return NextResponse.json({ error: result.reason }, { status: FAILURE_STATUS[result.reason] ?? 400 });
     }
@@ -69,7 +70,9 @@ export async function GET(
   }
 
   const { course, enrollment, progress, timeZone } = context;
-  const navigableCourse = draftPreview ? { ...course, schedule: { ...course.schedule, mode: "open" as const } } : course;
+  const navigableCourse = draftPreview
+    ? { ...course, schedule: { ...course.schedule, mode: "open" as const } }
+    : course;
   const found = findLesson(navigableCourse, lessonSlug);
   if (!found) return NextResponse.json({ error: "lesson_not_found" }, { status: 404 });
 

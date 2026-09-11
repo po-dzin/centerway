@@ -34,11 +34,7 @@ function productFrom(orderRef: string | null, productRaw: string | null): Produc
 async function productFromOrder(orderRef: string): Promise<ProductCode | null> {
   try {
     const sb = supabaseAdmin();
-    const { data } = await sb
-      .from("orders")
-      .select("product_code")
-      .eq("order_ref", orderRef)
-      .maybeSingle();
+    const { data } = await sb.from("orders").select("product_code").eq("order_ref", orderRef).maybeSingle();
     return normalizePayableProduct(data?.product_code ?? null);
   } catch (err) {
     console.warn("pay_return_product_read_failed", {
@@ -76,10 +72,7 @@ async function readBody(req: NextRequest): Promise<Record<string, string>> {
 }
 
 function statusFromParams(p: Record<string, string>, sp: URLSearchParams): "paid" | "failed" | null {
-  const ts =
-    norm(p["transactionStatus"] ?? p["status"]) ||
-    norm(sp.get("transactionStatus")) ||
-    norm(sp.get("status"));
+  const ts = norm(p["transactionStatus"] ?? p["status"]) || norm(sp.get("transactionStatus")) || norm(sp.get("status"));
 
   if (!ts) return null;
 
@@ -96,16 +89,18 @@ function extractMeta(raw: unknown): { rrn?: string; amount?: string; currency?: 
   const rrn = typeof r.rrn === "string" ? r.rrn : typeof r.RRN === "string" ? r.RRN : undefined;
 
   const amount =
-    typeof r.amount === "string" ? r.amount :
-    typeof r.amount === "number" ? String(r.amount) :
-    typeof r.orderAmount === "string" ? r.orderAmount :
-    typeof r.orderAmount === "number" ? String(r.orderAmount) :
-    undefined;
+    typeof r.amount === "string"
+      ? r.amount
+      : typeof r.amount === "number"
+        ? String(r.amount)
+        : typeof r.orderAmount === "string"
+          ? r.orderAmount
+          : typeof r.orderAmount === "number"
+            ? String(r.orderAmount)
+            : undefined;
 
   const currency =
-    typeof r.currency === "string" ? r.currency :
-    typeof r.orderCurrency === "string" ? r.orderCurrency :
-    undefined;
+    typeof r.currency === "string" ? r.currency : typeof r.orderCurrency === "string" ? r.orderCurrency : undefined;
 
   return { rrn, amount, currency };
 }
@@ -129,7 +124,7 @@ function sleep(ms: number): Promise<void> {
  * Declined is the one thing that distinguishes a real failure from silence.
  */
 async function paymentEvidence(
-  orderRef: string
+  orderRef: string,
 ): Promise<{ orderStatus: string | null; lastCallbackStatus: string | null }> {
   const attempts = 4;
   const delayMs = 350;
@@ -138,11 +133,7 @@ async function paymentEvidence(
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
       const sb = supabaseAdmin();
-      const { data: order } = await sb
-        .from("orders")
-        .select("status")
-        .eq("order_ref", orderRef)
-        .maybeSingle();
+      const { data: order } = await sb.from("orders").select("status").eq("order_ref", orderRef).maybeSingle();
       orderStatus = (order?.status as string | null) ?? orderStatus;
       if (orderStatus === "paid" || orderStatus === "refunded") {
         return { orderStatus, lastCallbackStatus: null };
@@ -220,7 +211,8 @@ async function handler(req: NextRequest) {
   // "short" only as the last resort of the last resort: the catch-all below has
   // to redirect somewhere real even when the request carried nothing at all,
   // and every product's failure page is the same platform page anyway.
-  let product: ProductCode = productFrom(norm(sp.get("order_ref")) || norm(sp.get("orderReference")), norm(sp.get("product"))) ?? "short";
+  let product: ProductCode =
+    productFrom(norm(sp.get("order_ref")) || norm(sp.get("orderReference")), norm(sp.get("product"))) ?? "short";
 
   try {
     const body = await readBody(req);
@@ -268,7 +260,7 @@ async function handler(req: NextRequest) {
       product,
       orderRef,
       { rrn: meta.rrn ?? null, amount: meta.amount ?? null, currency: meta.currency ?? null },
-      Date.now()
+      Date.now(),
     );
 
     return NextResponse.redirect(destination, { status: 302 });

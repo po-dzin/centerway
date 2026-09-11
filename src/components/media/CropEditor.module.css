@@ -115,12 +115,18 @@
   inset: 0;
   opacity: 0;
   background-image:
-    linear-gradient(to right, currentColor 0 100%),
-    linear-gradient(to right, currentColor 0 100%),
-    linear-gradient(to bottom, currentColor 0 100%),
-    linear-gradient(to bottom, currentColor 0 100%);
-  background-size: 1px 100%, 1px 100%, 100% 1px, 100% 1px;
-  background-position: 33.33% 0, 66.66% 0, 0 33.33%, 0 66.66%;
+    linear-gradient(to right, currentColor 0 100%), linear-gradient(to right, currentColor 0 100%),
+    linear-gradient(to bottom, currentColor 0 100%), linear-gradient(to bottom, currentColor 0 100%);
+  background-size:
+    1px 100%,
+    1px 100%,
+    100% 1px,
+    100% 1px;
+  background-position:
+    33.33% 0,
+    66.66% 0,
+    0 33.33%,
+    0 66.66%;
   background-repeat: no-repeat;
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 55%, transparent);
   transition: opacity 120ms ease;

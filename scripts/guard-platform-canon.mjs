@@ -16,11 +16,7 @@ const requiredExternalCanon = [
   "Реестр.md",
 ];
 
-const requiredLocalCanon = [
-  "AGENTS.md",
-  "docs/CANON.md",
-  "docs/platform_agent_preflight.md",
-];
+const requiredLocalCanon = ["AGENTS.md", "docs/CANON.md", "docs/platform_agent_preflight.md"];
 
 const platformCssRoot = "src/components/platform";
 const tokenSourceFiles = ["src/app/globals.css", "data/design-tokens/cw.tokens.json"];
@@ -250,7 +246,9 @@ if (existsSync(preflightPath)) {
     }
   }
 
-  for (const file of requiredLocalCanon.filter((file) => file !== "AGENTS.md" && file !== "docs/platform_agent_preflight.md")) {
+  for (const file of requiredLocalCanon.filter(
+    (file) => file !== "AGENTS.md" && file !== "docs/platform_agent_preflight.md",
+  )) {
     if (!preflight.includes(file)) {
       failures.push(`platform_agent_preflight.md is missing local implementation reference: ${file}`);
     }
@@ -341,7 +339,13 @@ if (semanticRuntimeFiles.every((file) => existsSync(path.join(repoRoot, file))))
         failures.push(`${screen.id}: missing block manifest ${screenBlock.block_manifest_id}`);
         continue;
       }
-      if (!block.semantic_role || !block.semantic_family || !block.user_question || !block.route_boundary || !block.renderer) {
+      if (
+        !block.semantic_role ||
+        !block.semantic_family ||
+        !block.user_question ||
+        !block.route_boundary ||
+        !block.renderer
+      ) {
         failures.push(`${block.id}: block contract is missing semantic role/family/question/boundary/renderer`);
       }
       if (!Array.isArray(block.required_fields) || block.required_fields.length === 0) {

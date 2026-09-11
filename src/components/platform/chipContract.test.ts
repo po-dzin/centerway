@@ -40,8 +40,9 @@ describe("chip", () => {
   });
 
   it("keeps its rounded ends — a chip is a token, not a control", () => {
-    expect(block(read("src/components/platform/Chip.module.css"), ".chip"))
-      .toContain("border-radius: var(--cw-radius-pill)");
+    expect(block(read("src/components/platform/Chip.module.css"), ".chip")).toContain(
+      "border-radius: var(--cw-radius-pill)",
+    );
   });
 
   it("says the ground once, and only the ground", () => {
@@ -50,6 +51,8 @@ describe("chip", () => {
     expect(media).toContain("var(--cw-mat-inverse-text)");
     // A second answer to "what is a chip's ground over a picture" is how the
     // 76% mix came to exist.
-    expect(read("src/components/platform/PlatformSurfaces.module.css")).not.toContain("color-mix(in srgb, var(--cw-mat-scrim-ink)");
+    expect(read("src/components/platform/PlatformSurfaces.module.css")).not.toContain(
+      "color-mix(in srgb, var(--cw-mat-scrim-ink)",
+    );
   });
 });

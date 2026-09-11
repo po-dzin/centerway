@@ -24,8 +24,8 @@ type QueueDepth = { pending: number; failed: number; running: number };
 async function readQueueDepth(sb: ReturnType<typeof supabaseAdmin>): Promise<QueueDepth | null> {
   const counts = await Promise.all(
     (["pending", "failed", "running"] as const).map((status) =>
-      sb.from("jobs").select("id", { count: "exact", head: true }).eq("status", status)
-    )
+      sb.from("jobs").select("id", { count: "exact", head: true }).eq("status", status),
+    ),
   );
   if (counts.some((result) => result.error)) return null;
   const [pending, failed, running] = counts.map((result) => result.count ?? 0);
@@ -55,8 +55,7 @@ export async function GET(req: Request) {
   }
 
   const secret = process.env.CRON_SECRET;
-  const authorized =
-    Boolean(secret) && req.headers.get("authorization") === `Bearer ${secret}`;
+  const authorized = Boolean(secret) && req.headers.get("authorization") === `Bearer ${secret}`;
 
   const body: Record<string, unknown> = { ok: dbUp, db: dbUp ? "up" : "down", ts };
 

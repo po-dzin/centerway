@@ -4,18 +4,44 @@ import { useToast } from "@/components/ToastProvider";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { HandGraphic, Icon } from "@/components/Icon";
-import { newCourseFromTemplate, courseForSave, newModule, nextDayIndex, PLACEHOLDER_MARKER, renumber, uniqueSlug, type Course, type CourseModule, type CourseTemplateId, type Lesson } from "@/lms-core";
+import {
+  newCourseFromTemplate,
+  courseForSave,
+  newModule,
+  nextDayIndex,
+  PLACEHOLDER_MARKER,
+  renumber,
+  uniqueSlug,
+  type Course,
+  type CourseModule,
+  type CourseTemplateId,
+  type Lesson,
+} from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
 import { plural } from "@/lib/plural";
 import { OFFER_CARD_TITLE_MAX, OFFER_TITLE_RAW_MAX, offerCardOverflow } from "@/lib/platform/offerPreview";
 import { BuilderFailureNotice, BuilderShell } from "./BuilderShell";
 import { BuilderCourseSettings } from "./BuilderCourseSettings";
 import { ShelfPresentation } from "@/components/platform/cabinet/ShelfPresentation";
-import { COURSE_WORKSPACE_HASH, DEFAULT_COURSE_WORKSPACE_MODE, courseWorkspaceModeFromHash, type WorkspaceMode } from "./courseWorkspace";
+import {
+  COURSE_WORKSPACE_HASH,
+  DEFAULT_COURSE_WORKSPACE_MODE,
+  courseWorkspaceModeFromHash,
+  type WorkspaceMode,
+} from "./courseWorkspace";
 import { BuilderCourseAuthor } from "./BuilderCourseAuthor";
 import { BuilderStructureStart, isPristineStructure } from "./BuilderStructureStart";
 import { BuilderBlockers } from "./BuilderBlockers";
-import { exportLessonFile, importLessonFiles, loadCourse, renameCourseSlug, saveCourse, submitCourseForReview, type BuilderCourseDto, type BuilderFailure } from "./builderClient";
+import {
+  exportLessonFile,
+  importLessonFiles,
+  loadCourse,
+  renameCourseSlug,
+  saveCourse,
+  submitCourseForReview,
+  type BuilderCourseDto,
+  type BuilderFailure,
+} from "./builderClient";
 import { BuilderHistory } from "./BuilderHistory";
 import { BuilderEditableTitle } from "./BuilderEditableTitle";
 import { BuilderRecordField } from "./BuilderRecordField";
@@ -38,7 +64,15 @@ import { BuilderExitPrompt } from "./BuilderExitPrompt";
 import { useBuilderExit } from "./useBuilderExit";
 import { BuilderVersionHistory } from "./BuilderVersionHistory";
 import { BuilderCourseRail, BuilderInkLabel, ModuleEditor, normalize, reviewStatusLabel } from "./BuilderModuleEditor";
-import { STRUCTURE_VIEW_EVENT, STRUCTURE_VIEW_KEY, STRUCTURE_WIDE, readStructureView, subscribeToStructureView, subscribeToStructureWidth, type StructureView } from "./builderStructureView";
+import {
+  STRUCTURE_VIEW_EVENT,
+  STRUCTURE_VIEW_KEY,
+  STRUCTURE_WIDE,
+  readStructureView,
+  subscribeToStructureView,
+  subscribeToStructureWidth,
+  type StructureView,
+} from "./builderStructureView";
 
 type State =
   | { status: "loading" }
@@ -76,13 +110,18 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   /* The draft found on this device, and what it is: `recover` is a session
      that ended badly, `conflict` is one that ended badly while another tab
      moved the server on. Neither is applied until the author answers. */
-  const [draftDecision, setDraftDecision] = useState<
-    { kind: "recover" | "conflict"; draft: DurableCourseDraft } | null
-  >(null);
+  const [draftDecision, setDraftDecision] = useState<{
+    kind: "recover" | "conflict";
+    draft: DurableCourseDraft;
+  } | null>(null);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const draftGeneration = useRef<number | null>(null);
   const router = useRouter();
-  const storedStructureView = useSyncExternalStore(subscribeToStructureView, readStructureView, () => "rows" as StructureView);
+  const storedStructureView = useSyncExternalStore(
+    subscribeToStructureView,
+    readStructureView,
+    () => "rows" as StructureView,
+  );
   const structureWide = useSyncExternalStore(
     subscribeToStructureWidth,
     () => window.matchMedia(STRUCTURE_WIDE).matches,
@@ -122,7 +161,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     setState(
       result.ok
         ? { status: "ready", data: result.data }
-        : { status: "failed", failure: result.failure, detail: result.detail }
+        : { status: "failed", failure: result.failure, detail: result.detail },
     );
   }, [history, ownerId, slug]);
 
@@ -143,7 +182,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       setState(
         result.ok
           ? { status: "ready", data: result.data }
-          : { status: "failed", failure: result.failure, detail: result.detail }
+          : { status: "failed", failure: result.failure, detail: result.detail },
       );
     })();
     return () => {
@@ -158,7 +197,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       // Coalesced by the path: retitling a module is one undo, not one per letter.
       history.edit(path.join("."), (current) => normalize(writePath(current, path, value)));
     },
-    [history]
+    [history],
   );
 
   /**
@@ -177,7 +216,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       // its own act and gets its own step back.
       history.edit(null, (current) => ({ ...current, modules: renumber(next(current)) }));
     },
-    [history]
+    [history],
   );
 
   /** Modules reorder within the course; the drop names a place in the list on screen. */
@@ -186,8 +225,8 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       (from: DragRef, to: DragRef, edge: DropEdge) => {
         editModules((current) => moveModuleTo(current.modules, from, to, edge));
       },
-      [editModules]
-    )
+      [editModules],
+    ),
   );
 
   /**
@@ -202,9 +241,9 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       (from: DragRef, to: DragRef, edge: DropEdge) => {
         editModules((current) => moveLessonTo(current.modules, from, to, edge));
       },
-      [editModules]
+      [editModules],
     ),
-    { crossGroup: true }
+    { crossGroup: true },
   );
 
   /**
@@ -243,20 +282,23 @@ export function BuilderCourseView({ slug }: { slug: string }) {
    * shape is not just its lessons, and applying its structure while leaving the
    * course `open` would produce a template that half-applied.
    */
-  const applyTemplate = useCallback((template: CourseTemplateId) => {
-    history.edit(null, (current) => {
-      const preset = newCourseFromTemplate(ids, {
-        slug: current.slug,
-        title: current.title,
-        programSlug: current.programSlug,
-        template,
+  const applyTemplate = useCallback(
+    (template: CourseTemplateId) => {
+      history.edit(null, (current) => {
+        const preset = newCourseFromTemplate(ids, {
+          slug: current.slug,
+          title: current.title,
+          programSlug: current.programSlug,
+          template,
+        });
+        return { ...current, schedule: preset.schedule, modules: preset.modules };
       });
-      return { ...current, schedule: preset.schedule, modules: preset.modules };
-    });
-    toast.success("Структуру застосовано. Перевірте модулі й збережіть курс.");
-    /* `ids` is module scope, not state — listing it would claim this callback
+      toast.success("Структуру застосовано. Перевірте модулі й збережіть курс.");
+      /* `ids` is module scope, not state — listing it would claim this callback
        re-forms when it changes, and it cannot. */
-  }, [history, toast]);
+    },
+    [history, toast],
+  );
 
   async function importLessons(moduleIndex: number, files: File[]) {
     if (!files.length || working) return;
@@ -324,42 +366,51 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     toast.success(`Експортовано ${result.data.filename}`);
   }
 
-  const persistCourse = useCallback(async (snapshot: Course) => {
-    if (draftGeneration.current === null) {
-      return { ok: false as const, message: "Курс ще завантажується. Спробуйте за мить." };
-    }
-    const result = await saveCourse(slug, courseForSave(snapshot), draftGeneration.current);
-    if (!result.ok) {
-      if (result.failure === "conflict") {
-        return { ok: false as const, message: "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку, щоб не втратити чужі зміни." };
+  const persistCourse = useCallback(
+    async (snapshot: Course) => {
+      if (draftGeneration.current === null) {
+        return { ok: false as const, message: "Курс ще завантажується. Спробуйте за мить." };
       }
-      /* The server's `detail` is an assertion id, not a sentence — see
+      const result = await saveCourse(slug, courseForSave(snapshot), draftGeneration.current);
+      if (!result.ok) {
+        if (result.failure === "conflict") {
+          return {
+            ok: false as const,
+            message: "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку, щоб не втратити чужі зміни.",
+          };
+        }
+        /* The server's `detail` is an assertion id, not a sentence — see
          `courseSaveCopy`. It used to be printed raw, so a course whose cover
          had no alt text answered every save with
          `lms_course_cover_missing_alt:builder`. */
-      return {
-        ok: false as const,
-        message: courseSaveFailureCopy(result.detail, "Не вдалося зберегти. Спробуйте ще раз."),
-      };
-    }
-    draftGeneration.current = result.data.draftGeneration;
-    // Keep server-derived readiness current without reloading the document. A
-    // reload here would overwrite keystrokes made while this request was in
-    // flight; the history records the exact accepted snapshot instead.
-    setState((current) => current.status === "ready" ? {
-      ...current,
-      data: {
-        ...current.data,
-        course: snapshot,
-        draftGeneration: result.data.draftGeneration,
-        hasPendingRevision: result.data.staged ? true : current.data.hasPendingRevision,
-        readiness: { ready: result.data.blockers.length === 0, blockers: result.data.blockers },
-        review: result.data.staged || current.data.liveStatus === "draft"
-          ? { ...current.data.review, status: "draft", note: null }
-          : current.data.review,
-      },
-    } : current);
-    /* A STAGED SAVE SAYS SO (2026-09-06). On a published course this write does
+        return {
+          ok: false as const,
+          message: courseSaveFailureCopy(result.detail, "Не вдалося зберегти. Спробуйте ще раз."),
+        };
+      }
+      draftGeneration.current = result.data.draftGeneration;
+      // Keep server-derived readiness current without reloading the document. A
+      // reload here would overwrite keystrokes made while this request was in
+      // flight; the history records the exact accepted snapshot instead.
+      setState((current) =>
+        current.status === "ready"
+          ? {
+              ...current,
+              data: {
+                ...current.data,
+                course: snapshot,
+                draftGeneration: result.data.draftGeneration,
+                hasPendingRevision: result.data.staged ? true : current.data.hasPendingRevision,
+                readiness: { ready: result.data.blockers.length === 0, blockers: result.data.blockers },
+                review:
+                  result.data.staged || current.data.liveStatus === "draft"
+                    ? { ...current.data.review, status: "draft", note: null }
+                    : current.data.review,
+              },
+            }
+          : current,
+      );
+      /* A STAGED SAVE SAYS SO (2026-09-06). On a published course this write does
        not touch what learners read: `saveBuilderCourse` puts it in
        `pending_content` as the next version and only three presentational
        fields patch the live release (see publishedEditPolicy.ts). The bar
@@ -368,16 +419,18 @@ export function BuilderCourseView({ slug }: { slug: string }) {
        found the old copy — with nothing on this screen having mentioned a
        version, a review, or a queue. The save was true; the sentence was not
        the whole of it. */
-    return {
-      ok: true as const,
-      generation: result.data.draftGeneration,
-      message: result.data.staged
-        ? "Збережено як наступну версію — учні бачать поточну."
-        : result.data.blockers.length === 0
-        ? "Збережено. Блокерів немає."
-        : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`,
-    };
-  }, [slug]);
+      return {
+        ok: true as const,
+        generation: result.data.draftGeneration,
+        message: result.data.staged
+          ? "Збережено як наступну версію — учні бачать поточну."
+          : result.data.blockers.length === 0
+            ? "Збережено. Блокерів немає."
+            : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`,
+      };
+    },
+    [slug],
+  );
 
   /* The exit question decides whether autosave may run, and answering it runs
      a save — so one of the two has to be reached through a ref. It is the save,
@@ -411,11 +464,14 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     saveRef.current = save;
   }, [save]);
 
-  const openLesson = useCallback((href: string): "allow" | "held" => {
-    if (!dirty) return "allow";
-    navigate(href);
-    return "held";
-  }, [dirty, navigate]);
+  const openLesson = useCallback(
+    (href: string): "allow" | "held" => {
+      if (!dirty) return "allow";
+      navigate(href);
+      return "held";
+    },
+    [dirty, navigate],
+  );
 
   const preview = () => {
     if (working) return;
@@ -447,9 +503,11 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     setBusy(false);
 
     if (!result.ok) {
-      toast.error(result.failure === "conflict"
-        ? "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку."
-        : result.detail ?? "Не вдалося зберегти. Спробуйте ще раз.");
+      toast.error(
+        result.failure === "conflict"
+          ? "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку."
+          : (result.detail ?? "Не вдалося зберегти. Спробуйте ще раз."),
+      );
       return;
     }
     draftGeneration.current = result.data.draftGeneration;
@@ -514,7 +572,11 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   if (state.status === "loading") {
     return (
       <BuilderShell trail={trail}>
-        <PlatformLoadingState label="Майстерня" title="Завантажуємо курс…" detail="Відновлюємо структуру, налаштування і статус публікації." />
+        <PlatformLoadingState
+          label="Майстерня"
+          title="Завантажуємо курс…"
+          detail="Відновлюємо структуру, налаштування і статус публікації."
+        />
       </BuilderShell>
     );
   }
@@ -530,7 +592,11 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   if (!course) {
     return (
       <BuilderShell trail={trail}>
-        <PlatformLoadingState label="Майстерня" title="Завантажуємо курс…" detail="Відновлюємо структуру, налаштування і статус публікації." />
+        <PlatformLoadingState
+          label="Майстерня"
+          title="Завантажуємо курс…"
+          detail="Відновлюємо структуру, налаштування і статус публікації."
+        />
       </BuilderShell>
     );
   }
@@ -546,7 +612,10 @@ export function BuilderCourseView({ slug }: { slug: string }) {
 
   return (
     <BuilderShell
-      trail={[{ label: "Курси", onNavigate: () => route("/build") }, { label: trailTitle(course.title, "Курс без назви") }]}
+      trail={[
+        { label: "Курси", onNavigate: () => route("/build") },
+        { label: trailTitle(course.title, "Курс без назви") },
+      ]}
       /* Two objects for the phone's capsule: the version drawer and the learner
          preview. The save button stays in `tools` — it is the workspace's
          primary action, it carries a word, and the document already has one at
@@ -635,11 +704,61 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         onStay={exit.stay}
       />
       <nav className={styles.courseMobileNav} aria-label="Розділи курсу">
-        <a className={styles.courseMobileNavItem} href="#course-overview" aria-current={workspaceMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("course"); }}><BuilderInkLabel>Обкладинка</BuilderInkLabel></a>
-        <a className={styles.courseMobileNavItem} href="#course-structure" aria-current={workspaceMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("content"); }}><BuilderInkLabel>Зміст</BuilderInkLabel></a>
-        <a className={styles.courseMobileNavItem} href="#course-offer" aria-current={workspaceMode === "offer" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("offer"); }}><BuilderInkLabel>Сторінка</BuilderInkLabel></a>
-        <a className={styles.courseMobileNavItem} href="#course-author" aria-current={workspaceMode === "author" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("author"); }}><BuilderInkLabel>Автор</BuilderInkLabel></a>
-        <a className={styles.courseMobileNavItem} href="#course-release" aria-current={workspaceMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("release"); }}><BuilderInkLabel>Публікація</BuilderInkLabel></a>
+        <a
+          className={styles.courseMobileNavItem}
+          href="#course-overview"
+          aria-current={workspaceMode === "course" ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            selectWorkspaceMode("course");
+          }}
+        >
+          <BuilderInkLabel>Обкладинка</BuilderInkLabel>
+        </a>
+        <a
+          className={styles.courseMobileNavItem}
+          href="#course-structure"
+          aria-current={workspaceMode === "content" ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            selectWorkspaceMode("content");
+          }}
+        >
+          <BuilderInkLabel>Зміст</BuilderInkLabel>
+        </a>
+        <a
+          className={styles.courseMobileNavItem}
+          href="#course-offer"
+          aria-current={workspaceMode === "offer" ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            selectWorkspaceMode("offer");
+          }}
+        >
+          <BuilderInkLabel>Сторінка</BuilderInkLabel>
+        </a>
+        <a
+          className={styles.courseMobileNavItem}
+          href="#course-author"
+          aria-current={workspaceMode === "author" ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            selectWorkspaceMode("author");
+          }}
+        >
+          <BuilderInkLabel>Автор</BuilderInkLabel>
+        </a>
+        <a
+          className={styles.courseMobileNavItem}
+          href="#course-release"
+          aria-current={workspaceMode === "release" ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            selectWorkspaceMode("release");
+          }}
+        >
+          <BuilderInkLabel>Публікація</BuilderInkLabel>
+        </a>
       </nav>
 
       {/* THE ONE FACT EVERY EDITING TAB WAS MISSING — see BuilderRevisionNotice.
@@ -657,106 +776,123 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         />
       ) : null}
 
-      <section className={styles.courseWorkspacePanel} id="course-overview" hidden={workspaceMode !== "course"} aria-labelledby="course-overview-title">
-      <div className={styles.docHead}>
-        <div className={styles.courseTitleRow}>
-          <BuilderEditableTitle
-            register="record"
-            value={course.title}
-            label="Редагувати назву курсу"
-            /* The RAW ceiling, not the card's: the field must accept «назва —
+      <section
+        className={styles.courseWorkspacePanel}
+        id="course-overview"
+        hidden={workspaceMode !== "course"}
+        aria-labelledby="course-overview-title"
+      >
+        <div className={styles.docHead}>
+          <div className={styles.courseTitleRow}>
+            <BuilderEditableTitle
+              register="record"
+              value={course.title}
+              label="Редагувати назву курсу"
+              /* The RAW ceiling, not the card's: the field must accept «назва —
                пояснення» whole, and the hint below is what asks for a shorter
                NAME. A cap at the card's number truncates mid-word as you type. */
-            maxLength={OFFER_TITLE_RAW_MAX}
-            onChange={(value) => editCourse(["title"], value)}
-          />
-          <span className={published ? styles.pillPublished : styles.pill}>
-            {published ? "Опубліковано" : "Чернетка"}
-          </span>
-        </div>
-        {/* One shared hard limit holds both the page and two catalogue lines on
+              maxLength={OFFER_TITLE_RAW_MAX}
+              onChange={(value) => editCourse(["title"], value)}
+            />
+            <span className={published ? styles.pillPublished : styles.pill}>
+              {published ? "Опубліковано" : "Чернетка"}
+            </span>
+          </div>
+          {/* One shared hard limit holds both the page and two catalogue lines on
             the narrowest phone. The hint below only appears for an older
             imported title that predates this contract. */}
-        {titleOverflow > 0 ? (
-          <p className={styles.courseTitleHint}>
-            Назва довша за ліміт {OFFER_CARD_TITLE_MAX}{" "}
-            {plural(OFFER_CARD_TITLE_MAX, "символ", "символи", "символів")} на {titleOverflow}{" "}
-            {plural(titleOverflow, "символ", "символи", "символів")}. Скоротіть її: на картці доступні дві строки.
-          </p>
-        ) : null}
-        <div className={styles.pageLead}>
-          <BuilderRecordField
-            multiline
-            value={course.summary}
-            label="Редагувати короткий опис курсу"
-            placeholder="Про що цей курс — одне-два речення."
-            onChange={(next) => editCourse(["summary"], next)}
-          />
-        </div>
-        <div className={styles.courseAddressRow}>
-          <span className={styles.courseAddressLabel}>Адреса курсу</span>
-          {slugEditing ? (
-            <form
-              className={styles.slugForm}
-              onSubmit={(event) => {
-                event.preventDefault();
-                void renameSlug();
-              }}
-            >
-              <input
-                className={styles.slugInput}
-                value={slugDraft}
-                autoFocus
-                aria-label="Частина адреси курсу після домену"
-                onChange={(event) => setSlugDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") setSlugEditing(false);
+          {titleOverflow > 0 ? (
+            <p className={styles.courseTitleHint}>
+              Назва довша за ліміт {OFFER_CARD_TITLE_MAX}{" "}
+              {plural(OFFER_CARD_TITLE_MAX, "символ", "символи", "символів")} на {titleOverflow}{" "}
+              {plural(titleOverflow, "символ", "символи", "символів")}. Скоротіть її: на картці доступні дві строки.
+            </p>
+          ) : null}
+          <div className={styles.pageLead}>
+            <BuilderRecordField
+              multiline
+              value={course.summary}
+              label="Редагувати короткий опис курсу"
+              placeholder="Про що цей курс — одне-два речення."
+              onChange={(next) => editCourse(["summary"], next)}
+            />
+          </div>
+          <div className={styles.courseAddressRow}>
+            <span className={styles.courseAddressLabel}>Адреса курсу</span>
+            {slugEditing ? (
+              <form
+                className={styles.slugForm}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void renameSlug();
                 }}
-              />
-              <button className={styles.quietAction} type="button" onClick={() => setSlugEditing(false)} disabled={working}>Скасувати</button>
-              <button className={styles.quietAction} type="submit" disabled={working || slugDraft.trim() === ""}>Зберегти</button>
-            </form>
-          ) : (
-            <>
-              <code className={styles.courseAddressValue}>my.centerway.net.ua/{course.slug}</code>
-              {state.data.slugEditable ? (
-                <span className={styles.slugControlTooltip} title={dirty ? "Спочатку збережіть зміни курсу" : "Змінити автоматично створену адресу"}>
-                  <button
-                    className={styles.slugEditAction}
-                    type="button"
-                    aria-label={dirty ? "Спочатку збережіть зміни курсу" : "Змінити автоматично створену адресу"}
-                    aria-describedby="course-address-hint"
-                    disabled={dirty || busy}
-                    onClick={() => {
-                      setSlugDraft(course.slug);
-                      setSlugEditing(true);
-                    }}
-                  >
-                    <Icon name="edit" size={16} />
-                    <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
-                  </button>
-                </span>
-              ) : (
-                <span
-                  className={styles.slugLockState}
-                  role="img"
-                  aria-label="Адресу закріплено"
-                  title="Адресу закріплено після першої публікації, появи учнів або підключення вітрини"
+              >
+                <input
+                  className={styles.slugInput}
+                  value={slugDraft}
+                  autoFocus
+                  aria-label="Частина адреси курсу після домену"
+                  onChange={(event) => setSlugDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") setSlugEditing(false);
+                  }}
+                />
+                <button
+                  className={styles.quietAction}
+                  type="button"
+                  onClick={() => setSlugEditing(false)}
+                  disabled={working}
                 >
-                  <Icon name="lock" size={16} />
+                  Скасувати
+                </button>
+                <button className={styles.quietAction} type="submit" disabled={working || slugDraft.trim() === ""}>
+                  Зберегти
+                </button>
+              </form>
+            ) : (
+              <>
+                <code className={styles.courseAddressValue}>my.centerway.net.ua/{course.slug}</code>
+                {state.data.slugEditable ? (
+                  <span
+                    className={styles.slugControlTooltip}
+                    title={dirty ? "Спочатку збережіть зміни курсу" : "Змінити автоматично створену адресу"}
+                  >
+                    <button
+                      className={styles.slugEditAction}
+                      type="button"
+                      aria-label={dirty ? "Спочатку збережіть зміни курсу" : "Змінити автоматично створену адресу"}
+                      aria-describedby="course-address-hint"
+                      disabled={dirty || busy}
+                      onClick={() => {
+                        setSlugDraft(course.slug);
+                        setSlugEditing(true);
+                      }}
+                    >
+                      <Icon name="edit" size={16} />
+                      <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+                    </button>
+                  </span>
+                ) : (
+                  <span
+                    className={styles.slugLockState}
+                    role="img"
+                    aria-label="Адресу закріплено"
+                    title="Адресу закріплено після першої публікації, появи учнів або підключення вітрини"
+                  >
+                    <Icon name="lock" size={16} />
+                  </span>
+                )}
+                <span className={styles.courseAddressHint} id="course-address-hint">
+                  {state.data.slugEditable
+                    ? "Адресу створено автоматично. Її можна змінити до першої публікації, появи учнів або підключення вітрини."
+                    : "Адресу закріплено, щоб уже видані посилання залишалися робочими."}
                 </span>
-              )}
-              <span className={styles.courseAddressHint} id="course-address-hint">
-                {state.data.slugEditable
-                  ? "Адресу створено автоматично. Її можна змінити до першої публікації, появи учнів або підключення вітрини."
-                  : "Адресу закріплено, щоб уже видані посилання залишалися робочими."}
-              </span>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* NO VISIBLE HEADING HERE ANY MORE. «Про курс» sat above a list whose
+        {/* NO VISIBLE HEADING HERE ANY MORE. «Про курс» sat above a list whose
           every row already carries its own caption — ВІТРИНА, РИТМ, ВИГЛЯД,
           ОБКЛАДИНКА — so it named nothing the reader could not see, and it
           landed under a tab that says «Огляд» three rows above. A heading that
@@ -765,14 +901,12 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           It stays as the section's ACCESSIBLE name, because
           `aria-labelledby` on the panel above points at it and a screen
           reader still needs to hear what this region is. */}
-      <div className={styles.courseSettingsPanel}>
-        <h2 className={styles.visuallyHidden} id="course-overview-title">Про курс</h2>
-        <BuilderCourseSettings
-          course={course}
-          scope="cover"
-          onChange={editCourse}
-        />
-      </div>
+        <div className={styles.courseSettingsPanel}>
+          <h2 className={styles.visuallyHidden} id="course-overview-title">
+            Про курс
+          </h2>
+          <BuilderCourseSettings course={course} scope="cover" onChange={editCourse} />
+        </div>
       </section>
 
       {/* THE OFFER PAGE, on its own screen. Same component, other half of its
@@ -780,29 +914,40 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           purpose: the name, the short description and the address belong to the
           course, are edited once on the cover tab, and a second copy here would
           be a second place to change them from. */}
-      <section className={styles.courseWorkspacePanel} id="course-offer" hidden={workspaceMode !== "offer"} aria-labelledby="course-offer-title">
+      <section
+        className={styles.courseWorkspacePanel}
+        id="course-offer"
+        hidden={workspaceMode !== "offer"}
+        aria-labelledby="course-offer-title"
+      >
         <div className={styles.coursePageSettingsPanel}>
-          <h2 className={styles.visuallyHidden} id="course-offer-title">Сторінка програми</h2>
-          <BuilderCourseSettings
-            course={course}
-            scope="page"
-            onChange={editCourse}
-          />
+          <h2 className={styles.visuallyHidden} id="course-offer-title">
+            Сторінка програми
+          </h2>
+          <BuilderCourseSettings course={course} scope="page" onChange={editCourse} />
         </div>
       </section>
 
-      <section className={styles.courseWorkspacePanel} id="course-author" hidden={workspaceMode !== "author"} aria-labelledby="course-author-title">
+      <section
+        className={styles.courseWorkspacePanel}
+        id="course-author"
+        hidden={workspaceMode !== "author"}
+        aria-labelledby="course-author-title"
+      >
         <div className={styles.coursePageWorkspaceBody}>
-          <h2 className={styles.visuallyHidden} id="course-author-title">Автор</h2>
-          <BuilderCourseAuthor
-            course={course}
-            slug={course.slug}
-            onChange={editCourse}
-          />
+          <h2 className={styles.visuallyHidden} id="course-author-title">
+            Автор
+          </h2>
+          <BuilderCourseAuthor course={course} slug={course.slug} onChange={editCourse} />
         </div>
       </section>
 
-      <section id="course-structure" hidden={workspaceMode !== "content"} className={`${styles.panel} ${styles.structure} ${structureView === "cards" ? styles.structureCards : ""}`} aria-labelledby="course-structure-title">
+      <section
+        id="course-structure"
+        hidden={workspaceMode !== "content"}
+        className={`${styles.panel} ${styles.structure} ${structureView === "cards" ? styles.structureCards : ""}`}
+        aria-labelledby="course-structure-title"
+      >
         <header className={`${styles.panelHead} ${styles.structureHead}`}>
           <div>
             {/* No kicker. It printed the course title one row under the trail
@@ -817,10 +962,12 @@ export function BuilderCourseView({ slug }: { slug: string }) {
                 What stays visible is the count under it, which the tab cannot
                 carry; the word itself stays as the region's accessible name,
                 because `aria-labelledby` points at it. */}
-            <h2 className={styles.visuallyHidden} id="course-structure-title">Зміст</h2>
+            <h2 className={styles.visuallyHidden} id="course-structure-title">
+              Зміст
+            </h2>
             <p className={styles.structureMeta}>
-              {course.modules.length} {plural(course.modules.length, "модуль", "модулі", "модулів")} ·{" "}
-              {lessonCount} {plural(lessonCount, "урок", "уроки", "уроків")}
+              {course.modules.length} {plural(course.modules.length, "модуль", "модулі", "модулів")} · {lessonCount}{" "}
+              {plural(lessonCount, "урок", "уроки", "уроків")}
             </p>
           </div>
           {structureWide ? (
@@ -845,9 +992,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             It sits ABOVE the list rather than replacing it: the placeholder
             module below is real, and a control that hides the document it acts
             on is the one thing this panel must not do. */}
-        {isPristineStructure(course) ? (
-          <BuilderStructureStart format="start" onApply={applyTemplate} />
-        ) : null}
+        {isPristineStructure(course) ? <BuilderStructureStart format="start" onApply={applyTemplate} /> : null}
 
         <div className={styles.structureModules}>
           {course.modules.map((module, moduleIndex) => (
@@ -879,29 +1024,39 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             ])
           }
         >
-          <span className={styles.addGlyph} aria-hidden="true">+</span> Додати модуль
+          <span className={styles.addGlyph} aria-hidden="true">
+            +
+          </span>{" "}
+          Додати модуль
         </button>
 
         {/* THE SAME CONTROL, FOLDED, once there is work to lose. On a course
             with content the templates stop being a starting point and become a
             wrecking ball, so this one is closed by default, sits after
             everything it would destroy, and asks before it does. */}
-        {isPristineStructure(course) ? null : (
-          <BuilderStructureStart format="replace" onApply={applyTemplate} />
-        )}
+        {isPristineStructure(course) ? null : <BuilderStructureStart format="replace" onApply={applyTemplate} />}
       </section>
 
-      <section className={styles.releaseWorkspace} id="course-release" hidden={workspaceMode !== "release"} aria-labelledby="course-release-title">
+      <section
+        className={styles.releaseWorkspace}
+        id="course-release"
+        hidden={workspaceMode !== "release"}
+        aria-labelledby="course-release-title"
+      >
         <header className={styles.releaseWorkspaceHead}>
           <div>
             {/* No eyebrow. The rail item that opened this workspace already
                 says «Публікація», the heading says it again, and neither of
                 the other two workspaces captions itself — this line was the
                 word a third time before the reader had read anything. */}
-            <h2 className={styles.pageTitle} id="course-release-title">Перевірка й публікація</h2>
+            <h2 className={styles.pageTitle} id="course-release-title">
+              Перевірка й публікація
+            </h2>
           </div>
           <div className={styles.releaseSummary}>
-            <span className={published ? styles.pillPublished : styles.pill}>{published ? "Опубліковано" : "Чернетка"}</span>
+            <span className={published ? styles.pillPublished : styles.pill}>
+              {published ? "Опубліковано" : "Чернетка"}
+            </span>
             <span className={styles.panelStatus}>{reviewStatusLabel(state.data)}</span>
           </div>
         </header>
@@ -928,12 +1083,22 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           </p>
           {state.data.accessCodesEditable ? (
             <FieldInput
-              field={{ path: [], label: "Коди продуктів", kind: "text", hint: "Через кому. Порожньо — приймається лише власний код курсу." }}
+              field={{
+                path: [],
+                label: "Коди продуктів",
+                kind: "text",
+                hint: "Через кому. Порожньо — приймається лише власний код курсу.",
+              }}
               value={course.entitlementProductCodes.join(", ")}
               onChange={(_path, value) =>
                 editCourse(
                   ["entitlementProductCodes"],
-                  typeof value === "string" ? value.split(",").map((code) => code.trim()).filter(Boolean) : [],
+                  typeof value === "string"
+                    ? value
+                        .split(",")
+                        .map((code) => code.trim())
+                        .filter(Boolean)
+                    : [],
                 )
               }
             />
@@ -952,24 +1117,54 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             {state.data.hasPendingRevision
               ? "Ви редагуєте наступну версію. Учні поки бачать опублікований курс; надішліть оновлення на перевірку, коли воно готове."
               : state.data.review.enabled
-              ? "Збережіть готову структуру й надішліть її на перевірку. Після схвалення курс можна відкрити учням; видимість у каталозі окремо визначає адміністратор."
-              : "Контур модерації ще не активовано в базі. Поточне ручне тестування публікації залишається доступним."}
+                ? "Збережіть готову структуру й надішліть її на перевірку. Після схвалення курс можна відкрити учням; видимість у каталозі окремо визначає адміністратор."
+                : "Контур модерації ще не активовано в базі. Поточне ручне тестування публікації залишається доступним."}
           </p>
-          {state.data.review.note ? <p className={styles.panelText}>Коментар адміністратора: {state.data.review.note}</p> : null}
+          {state.data.review.note ? (
+            <p className={styles.panelText}>Коментар адміністратора: {state.data.review.note}</p>
+          ) : null}
           {dirty ? <p className={styles.panelText}>Спочатку збережіть поточні зміни структури.</p> : null}
           <div className={styles.panelActions}>
             {published ? (
               state.data.hasPendingRevision ? (
                 state.data.review.status === "in_review" ? null : (
-                  <button className={styles.commitAction} type="button" onClick={() => void submitReview()} disabled={working || dirty || !readiness.ready}>Надіслати оновлення на перевірку</button>
+                  <button
+                    className={styles.commitAction}
+                    type="button"
+                    onClick={() => void submitReview()}
+                    disabled={working || dirty || !readiness.ready}
+                  >
+                    Надіслати оновлення на перевірку
+                  </button>
                 )
               ) : (
-                <button className={styles.retreatAction} type="button" onClick={() => setStatus("draft")} disabled={working}>Зняти з публікації</button>
+                <button
+                  className={styles.retreatAction}
+                  type="button"
+                  onClick={() => setStatus("draft")}
+                  disabled={working}
+                >
+                  Зняти з публікації
+                </button>
               )
             ) : !state.data.review.enabled || state.data.review.status === "approved" ? (
-              <button className={styles.commitAction} type="button" onClick={() => setStatus("published")} disabled={working || dirty || !readiness.ready}>Опублікувати</button>
+              <button
+                className={styles.commitAction}
+                type="button"
+                onClick={() => setStatus("published")}
+                disabled={working || dirty || !readiness.ready}
+              >
+                Опублікувати
+              </button>
             ) : state.data.review.status === "in_review" ? null : (
-              <button className={styles.commitAction} type="button" onClick={() => void submitReview()} disabled={working || dirty || !readiness.ready}>Надіслати на перевірку</button>
+              <button
+                className={styles.commitAction}
+                type="button"
+                onClick={() => void submitReview()}
+                disabled={working || dirty || !readiness.ready}
+              >
+                Надіслати на перевірку
+              </button>
             )}
           </div>
         </section>
@@ -991,16 +1186,16 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         <span className={styles.saveState} role="status" aria-live="polite">
           {pendingHref
             ? "Зберігаємо зміни перед переходом…"
-            : autosave.message
-              ?? (dirty
+            : (autosave.message ??
+              (dirty
                 ? "Зміни збережуться автоматично"
-                /* «Усі зміни збережено» is true and, on a course with a staged
+                : /* «Усі зміни збережено» is true and, on a course with a staged
                    revision, answers the wrong question: saved WHERE. The line
                    the author needs at rest is which of the two versions the
                    learners are reading. */
-                : state.data.hasPendingRevision
+                  state.data.hasPendingRevision
                   ? "Наступна версія збережена — учні бачать поточну"
-                  : "Усі зміни збережено")}
+                  : "Усі зміни збережено"))}
         </span>
         {/* The label never changes. It names what the button DOES, and the line
             beside it already says what is happening — a button that relabels

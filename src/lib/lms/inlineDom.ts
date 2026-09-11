@@ -30,8 +30,7 @@ import { escapeHtml } from "@/lib/strings";
 
 /** A structural stand-in for a DOM node — the subset this conversion needs. */
 export type MarkupNode =
-  | { kind: "text"; text: string }
-  | { kind: "element"; tag: string; href?: string; children: MarkupNode[] };
+  { kind: "text"; text: string } | { kind: "element"; tag: string; href?: string; children: MarkupNode[] };
 
 type Style = { bold?: true; italic?: true; href?: string };
 

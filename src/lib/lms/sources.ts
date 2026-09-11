@@ -183,10 +183,6 @@ export async function registerCourseSource(input: RegisterSourceInput): Promise<
 
 /** Removes one source. Scoped by course for the same reason the read is. */
 export async function deleteCourseSource(courseId: string, id: string): Promise<void> {
-  const { error } = await adminClient()
-    .from("lms_course_sources")
-    .delete()
-    .eq("course_id", courseId)
-    .eq("id", id);
+  const { error } = await adminClient().from("lms_course_sources").delete().eq("course_id", courseId).eq("id", id);
   if (error) throw new Error(`lms_source_delete_failed:${error.message}`);
 }

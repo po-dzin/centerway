@@ -4,8 +4,6 @@
  * Split out of BuilderCourseView.tsx (1,458 lines) on 2026-09-11; nothing inside any declaration changed.
  */
 
-
-
 export type StructureView = "rows" | "cards";
 
 /**

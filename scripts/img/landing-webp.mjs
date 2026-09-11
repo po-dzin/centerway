@@ -57,7 +57,8 @@ const force = process.argv.includes("--force");
 
 const SOURCE_FILES = /\.(html|css|js)$/i;
 const CONVERTIBLE = /\.(png|jpe?g)$/i;
-const REFERENCE = /(?:data-src|data-srcset|src|srcset|href|url)\s*[=(]\s*["']?([^"'\s)>]+\.(?:png|jpe?g|gif|webp|avif))/gi;
+const REFERENCE =
+  /(?:data-src|data-srcset|src|srcset|href|url)\s*[=(]\s*["']?([^"'\s)>]+\.(?:png|jpe?g|gif|webp|avif))/gi;
 
 const files = execFileSync("git", ["ls-files", ROOT], { encoding: "utf8" })
   .split("\n")

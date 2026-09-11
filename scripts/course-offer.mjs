@@ -112,7 +112,7 @@ function report(course, offer) {
       }`
     : "(not for sale)";
   console.log(
-    `  ${offer?.active ? "✓" : "·"} ${course.slug.padEnd(28)} ${course.status}/${course.visibility}  ${price}${accessLabel(offer)}`
+    `  ${offer?.active ? "✓" : "·"} ${course.slug.padEnd(28)} ${course.status}/${course.visibility}  ${price}${accessLabel(offer)}`,
   );
 }
 
@@ -199,7 +199,7 @@ async function main() {
   if (!accessLifetime && !accessDays) {
     fail(
       "no access term. Pass --access-days=N (how many days one purchase buys, counted from the payment) " +
-        "or --access-lifetime for an offer sold without an end."
+        "or --access-lifetime for an offer sold without an end.",
     );
   }
 
@@ -251,7 +251,7 @@ async function main() {
   if (course.status !== "published" || course.visibility === "hidden") {
     console.log(
       "\n  Priced, but not on sale yet: the course is still " +
-        `${course.status}/${course.visibility}. Publish it and set visibility in the builder.`
+        `${course.status}/${course.visibility}. Publish it and set visibility in the builder.`,
     );
   }
 }

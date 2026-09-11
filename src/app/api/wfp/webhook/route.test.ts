@@ -21,11 +21,18 @@ import { FakeSupabase } from "@/lib/admin/fakeSupabase";
 
 const db = new FakeSupabase();
 db.uniqueKeys = { payments: [["provider", "order_ref"]] };
-const sendPurchaseEmail = vi.fn<(input: Record<string, unknown>) => Promise<{ sent: boolean }>>(async () => ({ sent: true }));
-const sendConfirmedSaleTelegramReport = vi.fn<(orderRef: string) => Promise<{ sent: boolean }>>(async () => ({ sent: true }));
+const sendPurchaseEmail = vi.fn<(input: Record<string, unknown>) => Promise<{ sent: boolean }>>(async () => ({
+  sent: true,
+}));
+const sendConfirmedSaleTelegramReport = vi.fn<(orderRef: string) => Promise<{ sent: boolean }>>(async () => ({
+  sent: true,
+}));
 const dispatchCapiEventInline = vi.fn();
 const isStaffOrder = vi.fn(async () => false);
-const loadPayableOffer = vi.fn(async () => ({ pixelContentName: "Way21 Detox", fulfilment: { kind: "course", courseSlug: "way21", programSlug: "way21" } }));
+const loadPayableOffer = vi.fn(async () => ({
+  pixelContentName: "Way21 Detox",
+  fulfilment: { kind: "course", courseSlug: "way21", programSlug: "way21" },
+}));
 
 vi.mock("@/lib/supabaseAdmin", () => ({ supabaseAdmin: () => db }));
 vi.mock("@/lib/email/purchaseEmail", () => ({ sendPurchaseEmail }));
@@ -62,19 +69,34 @@ function callback(over: Record<string, string> = {}, opts: { sign?: boolean } = 
 }
 
 async function post(payload: Record<string, string>) {
-  return POST(new NextRequest("https://www.centerway.net.ua/api/wfp/webhook", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload),
-  }));
+  return POST(
+    new NextRequest("https://www.centerway.net.ua/api/wfp/webhook", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
+  );
 }
 
 beforeEach(() => {
   process.env.WFP_SECRET_KEY = SECRET;
   process.env.WFP_MERCHANT_ACCOUNT = MERCHANT;
-  db.tables = { orders: [{ id: "o1", order_ref: ORDER, status: "created", product_code: "way21", customer_id: null }], payments: [], customers: [], events: [], jobs: [] };
+  db.tables = {
+    orders: [{ id: "o1", order_ref: ORDER, status: "created", product_code: "way21", customer_id: null }],
+    payments: [],
+    customers: [],
+    events: [],
+    jobs: [],
+  };
   db.failures = {};
-  for (const m of [sendPurchaseEmail, sendConfirmedSaleTelegramReport, dispatchCapiEventInline, isStaffOrder, loadPayableOffer]) m.mockClear();
+  for (const m of [
+    sendPurchaseEmail,
+    sendConfirmedSaleTelegramReport,
+    dispatchCapiEventInline,
+    isStaffOrder,
+    loadPayableOffer,
+  ])
+    m.mockClear();
   isStaffOrder.mockResolvedValue(false);
   vi.spyOn(console, "warn").mockImplementation(() => undefined);
   vi.spyOn(console, "error").mockImplementation(() => undefined);
@@ -111,7 +133,12 @@ describe("POST /api/wfp/webhook", () => {
     expect(typeof body.signature).toBe("string");
 
     expect(db.tables.payments).toHaveLength(1);
-    expect(db.tables.payments[0]).toMatchObject({ provider: "wfp", order_ref: ORDER, status: "paid", provider_tx_id: "rrn-1" });
+    expect(db.tables.payments[0]).toMatchObject({
+      provider: "wfp",
+      order_ref: ORDER,
+      status: "paid",
+      provider_tx_id: "rrn-1",
+    });
     expect(db.tables.orders[0].status).toBe("paid");
 
     expect(db.tables.customers).toHaveLength(1);
@@ -123,11 +150,22 @@ describe("POST /api/wfp/webhook", () => {
 
     const purchase = db.tables.jobs.filter((j) => j.type === "meta:capi");
     expect(purchase).toHaveLength(1);
-    expect(purchase[0].payload).toMatchObject({ event_name: "Purchase", order_ref: ORDER, value: 4100, currency: "UAH", payment_event_time: 1757600000 });
+    expect(purchase[0].payload).toMatchObject({
+      event_name: "Purchase",
+      order_ref: ORDER,
+      value: 4100,
+      currency: "UAH",
+      payment_event_time: 1757600000,
+    });
     expect(dispatchCapiEventInline).toHaveBeenCalledTimes(1);
 
     expect(sendPurchaseEmail).toHaveBeenCalledTimes(1);
-    expect(sendPurchaseEmail.mock.calls[0][0]).toMatchObject({ email: "buyer@example.com", productTitle: "Way21 Detox", amount: 4100, orderRef: ORDER });
+    expect(sendPurchaseEmail.mock.calls[0][0]).toMatchObject({
+      email: "buyer@example.com",
+      productTitle: "Way21 Detox",
+      amount: 4100,
+      orderRef: ORDER,
+    });
     expect(sendConfirmedSaleTelegramReport).toHaveBeenCalledWith(ORDER);
   });
 

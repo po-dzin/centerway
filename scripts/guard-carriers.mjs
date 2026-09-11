@@ -81,7 +81,12 @@ function label(section, index) {
   const cls = section.match(/^<section[^>]*\bclass="([a-z0-9-]+)/);
   if (cls && cls[1] !== "sec") return cls[1];
   const heading = section.match(/<h2[^>]*>([\s\S]{0,80}?)<\/h2>/);
-  const text = heading ? heading[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim() : "";
+  const text = heading
+    ? heading[1]
+        .replace(/<[^>]+>/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+    : "";
   return text ? `${index}:${text.slice(0, 34)}` : `${index}`;
 }
 
@@ -103,7 +108,10 @@ function carriersOf(section) {
   let chromeBudget = chromeMarked;
   for (const [, id] of section.matchAll(/<use[^>]*href="[^"#]*#cw-([a-z0-9-]+)"/g)) {
     if (CHROME_GLYPHS.has(id)) continue;
-    if (chromeBudget > 0) { chromeBudget -= 1; continue; }
+    if (chromeBudget > 0) {
+      chromeBudget -= 1;
+      continue;
+    }
     if (GRAPHIC_GLYPHS.has(id)) add("graphic", id);
     else add("icon", id);
   }

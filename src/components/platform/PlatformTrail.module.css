@@ -152,7 +152,9 @@
   opacity: 0;
   transform: scaleX(0.58) rotate(-1.2deg);
   transform-origin: center;
-  transition: opacity 160ms ease, transform 160ms ease;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
 }
 
 .crumbLink:hover .inkMark,

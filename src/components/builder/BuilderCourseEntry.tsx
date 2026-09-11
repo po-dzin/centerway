@@ -78,9 +78,8 @@ export function CourseRow(props: EntryProps) {
             {course.status === "published" ? "Опубліковано" : "Чернетка"}
           </span>
           <span className={styles.courseMeta}>
-            {course.moduleCount} {plural(course.moduleCount, "модуль", "модулі", "модулів")} ·{" "}
-            {course.lessonCount} {plural(course.lessonCount, "урок", "уроки", "уроків")} ·{" "}
-            {blockerLine(course.blockerCount)}
+            {course.moduleCount} {plural(course.moduleCount, "модуль", "модулі", "модулів")} · {course.lessonCount}{" "}
+            {plural(course.lessonCount, "урок", "уроки", "уроків")} · {blockerLine(course.blockerCount)}
           </span>
         </span>
       </Link>
@@ -137,8 +136,8 @@ export function CourseCard(props: EntryProps) {
               label; the thing under the pointer here is the whole card. */}
           <span className={styles.courseTitle}>{course.title}</span>
           <span className={styles.courseMeta}>
-            {course.moduleCount} {plural(course.moduleCount, "модуль", "модулі", "модулів")} ·{" "}
-            {course.lessonCount} {plural(course.lessonCount, "урок", "уроки", "уроків")}
+            {course.moduleCount} {plural(course.moduleCount, "модуль", "модулі", "модулів")} · {course.lessonCount}{" "}
+            {plural(course.lessonCount, "урок", "уроки", "уроків")}
           </span>
           <span className={styles.courseMeta}>{blockerLine(course.blockerCount)}</span>
         </span>
@@ -148,7 +147,19 @@ export function CourseCard(props: EntryProps) {
   );
 }
 
-export function EntryControls({ course, index, total, reorderable, busy, pending, onMove, onAsk, onCancel, onConfirm, onExport }: EntryProps) {
+export function EntryControls({
+  course,
+  index,
+  total,
+  reorderable,
+  busy,
+  pending,
+  onMove,
+  onAsk,
+  onCancel,
+  onConfirm,
+  onExport,
+}: EntryProps) {
   const focusRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -166,7 +177,9 @@ export function EntryControls({ course, index, total, reorderable, busy, pending
           if (event.key === "Escape") onCancel();
         }}
       >
-        <span className={styles.confirmText} title={course.title}>{copy.question}</span>
+        <span className={styles.confirmText} title={course.title}>
+          {copy.question}
+        </span>
         <button ref={focusRef} className={styles.quietAction} type="button" onClick={onCancel} disabled={busy}>
           Ні
         </button>
@@ -247,9 +260,10 @@ export function EntryControls({ course, index, total, reorderable, busy, pending
              A published one has a first step before deleting is even a
              question; a draft's only remaining gate is whether anyone is
              enrolled, which the shelf cannot see from here. */
-          hint: course.status === "published"
-            ? "Спершу зніміть курс з публікації — опублікований курс не видаляється"
-            : "Курс із учнями не видаляється: їхню історію не можна стерти",
+          hint:
+            course.status === "published"
+              ? "Спершу зніміть курс з публікації — опублікований курс не видаляється"
+              : "Курс із учнями не видаляється: їхню історію не можна стерти",
           onSelect: () => onAsk(course.slug, "delete"),
           disabled: busy,
           danger: true,

@@ -9,8 +9,7 @@ function request(host: string, path: string): NextRequest {
   return new NextRequest(new URL(path, `https://${host}`), { headers: { host } });
 }
 
-const rewriteOf = (res: { headers: Headers } | null | undefined) =>
-  res?.headers.get("x-middleware-rewrite") ?? null;
+const rewriteOf = (res: { headers: Headers } | null | undefined) => res?.headers.get("x-middleware-rewrite") ?? null;
 
 describe("personal host routing", () => {
   it("recognises the personal host with and without www", () => {

@@ -6,7 +6,10 @@ export function buildReturnUrl(appBaseUrl: string, product: PayableProductCode, 
 }
 
 export function sanitizeWfpProductName(input: string): string {
-  const noTags = input.replace(/<br\s*\/?>/gi, " ").replace(/\s+/g, " ").trim();
+  const noTags = input
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   if (noTags.length <= 255) return noTags;
   return `${noTags.slice(0, 252)}...`;
 }

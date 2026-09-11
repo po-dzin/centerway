@@ -90,12 +90,18 @@ function run(cmd, args) {
 
 function probeSize(file) {
   const out = run("ffprobe", [
-    "-v", "error",
-    "-select_streams", "v:0",
-    "-show_entries", "stream=width,height",
-    "-of", "csv=p=0:s=x",
+    "-v",
+    "error",
+    "-select_streams",
+    "v:0",
+    "-show_entries",
+    "stream=width,height",
+    "-of",
+    "csv=p=0:s=x",
     file,
-  ]).toString().trim();
+  ])
+    .toString()
+    .trim();
   const [width, height] = out.split("x").map(Number);
   if (!width || !height) throw new Error(`could not read dimensions of ${file}`);
   return { width, height };
@@ -127,7 +133,7 @@ function buildFilter(boxes) {
     const out = index === boxes.length - 1 ? "" : `[b${index}]`;
     parts.push(
       `[0:v]crop=${box.w}:${box.h}:${box.x}:${box.y},` +
-        `scale=${sw}:${sh}:flags=neighbor,scale=${box.w}:${box.h}:flags=neighbor[${cropped}]`
+        `scale=${sw}:${sh}:flags=neighbor,scale=${box.w}:${box.h}:flags=neighbor[${cropped}]`,
     );
     parts.push(`[${base}][${cropped}]overlay=${box.x}:${box.y}${out}`);
     base = `b${index}`;

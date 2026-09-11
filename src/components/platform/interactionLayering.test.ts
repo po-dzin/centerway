@@ -125,7 +125,13 @@ describe("platform interaction layers", () => {
 
   it("keeps both shelves on the same post-filter and presentation primitives", () => {
     const library = read("src/components/platform/cabinet/LearnShelfClient.tsx");
-    const workshop = ["src/components/builder/BuilderCourseList.tsx", "src/components/builder/BuilderCourseEntry.tsx", "src/components/builder/BuilderImportPanel.tsx"].map(read).join("\n");
+    const workshop = [
+      "src/components/builder/BuilderCourseList.tsx",
+      "src/components/builder/BuilderCourseEntry.tsx",
+      "src/components/builder/BuilderImportPanel.tsx",
+    ]
+      .map(read)
+      .join("\n");
     const presentation = read("src/components/platform/cabinet/ShelfPresentation.tsx");
     const presentationCss = read("src/components/platform/cabinet/ShelfPresentation.module.css");
     const filterCss = read("src/components/platform/cabinet/ShelfFilter.module.css");
@@ -134,7 +140,7 @@ describe("platform interaction layers", () => {
     expect(library).toContain("<ShelfPresentation");
     expect(library).toContain("cab.materialsCount(shelf.length)");
     expect(workshop).toContain('title="Матеріали"');
-    expect(workshop).toContain("lead=\"Створюйте, редагуйте та публікуйте навчальні матеріали.\"");
+    expect(workshop).toContain('lead="Створюйте, редагуйте та публікуйте навчальні матеріали."');
     expect(workshop).toContain("<ShelfResultBar");
     expect(workshop).toContain("<ShelfPresentation");
     expect(presentation).toContain("InteractionInkIcon");
@@ -162,7 +168,7 @@ describe("platform interaction layers", () => {
     const rail = read("src/app/(platform)/admin/AdminLayout.module.css");
     const workspaceTokens = read("src/app/globals.css");
 
-    expect(layout).toContain('<PlatformHeader');
+    expect(layout).toContain("<PlatformHeader");
     expect(layout).toContain('surface="personal"');
     expect(layout).toContain('mode="workspace"');
     expect(layout).not.toContain("workspaceMobileContent");

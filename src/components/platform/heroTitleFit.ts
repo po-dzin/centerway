@@ -15,9 +15,7 @@ import type { CSSProperties } from "react";
  * three-word title is free to take three lines at full size.
  */
 export function longestWordLength(title: string): number {
-  return title
-    .split(/\s+/)
-    .reduce((longest, word) => Math.max(longest, word.length), 0);
+  return title.split(/\s+/).reduce((longest, word) => Math.max(longest, word.length), 0);
 }
 
 /**

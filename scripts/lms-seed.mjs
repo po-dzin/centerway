@@ -41,7 +41,7 @@ async function main() {
     const lessons = course.modules.reduce((total, module) => total + module.lessons.length, 0);
     console.log(
       `  · ${course.slug} [${course.status}] — ${course.modules.length} module(s), ${lessons} lesson(s)` +
-        `  (${path.relative(rootDir, files[index])})`
+        `  (${path.relative(rootDir, files[index])})`,
     );
     reportReadiness(course.slug, courseReadiness(course).blockers);
   });

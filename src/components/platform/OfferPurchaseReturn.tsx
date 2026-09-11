@@ -65,8 +65,8 @@ export function OfferPurchaseReturn({ purchase }: { purchase: PurchaseReturn }) 
               page cannot tell here whether they are signed in — that answer
               arrives in the browser a moment later — so it states the rule once
               rather than guessing. */}
-          Доступ прив&apos;язаний до пошти, яку ви вказали при оплаті. Увійдіть із нею — і курс
-          відкриється просто тут, разом з усіма уроками.
+          Доступ прив&apos;язаний до пошти, яку ви вказали при оплаті. Увійдіть із нею — і курс відкриється просто тут,
+          разом з усіма уроками.
         </p>
         <ul className={styles.timeline}>
           {receipt.map((line) => (
@@ -87,7 +87,7 @@ export function OfferPurchaseReturn({ purchase }: { purchase: PurchaseReturn }) 
  */
 export function readPurchaseReturn(
   params: Record<string, string | string[] | undefined>,
-  offer: { pixelContentName: string; currency: string } | null
+  offer: { pixelContentName: string; currency: string } | null,
 ): Omit<PurchaseReturn, "product"> | null {
   const first = (value: string | string[] | undefined): string | null =>
     Array.isArray(value) ? (value[0] ?? null) : (value ?? null);

@@ -20,7 +20,7 @@ const DERIVED = new Set(["protocol_step:step"]);
 
 function everyBlock(): LessonBlock[] {
   return snapshotCourses().flatMap((course) =>
-    course.modules.flatMap((module) => module.lessons.flatMap((lesson) => lesson.blocks))
+    course.modules.flatMap((module) => module.lessons.flatMap((lesson) => lesson.blocks)),
   );
 }
 
