@@ -119,9 +119,17 @@ The rhythm of one work cycle:
 3. **Publish once, when the cycle is done.** One branch, one PR, one merge — not
    a PR per commit and not a preview deployment per idea. Both Vercel and the
    review queue are shared, finite, and paid for.
-4. **Rehearse a migration before pushing it.** A schema change goes through
-   `npm run db:stage` and `npm run db:local:reset` first, so it runs against
-   populated tables locally before `npm run db:push` sends it to production.
+4. **Write a migration down before applying it, not after.** The SQL belongs in
+   `docs/migration/sql/<YYYY-MM-DD>_<name>.sql`, and that file is created FIRST.
+   `supabase/migrations/` is gitignored staging that `npm run db:stage` empties
+   on every run, so a change living only there is one command away from living
+   nowhere — that is how `author_profile_background` ran in production for two
+   weeks with its SQL in no file this repo keeps (2026-09-11). Then rehearse
+   with `npm run db:stage` and
+   `npm run db:local:reset`, apply, record the version, and close the cycle with
+   `npm run check:migration-drift`, which fails when production holds a change
+   this repo cannot show. `npm run db:push` does not currently work;
+   `docs/migration/README.md` says why and what to do instead.
 
 If a change genuinely cannot be judged locally — a payment callback, a Telegram
 webhook, a phone-sized check on a real URL — say so and name the reason. A tunnel

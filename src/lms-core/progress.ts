@@ -10,8 +10,9 @@
  *
  * Fold invariants:
  * - completion changes only through an explicit completion event — a later
- *   `lesson.started` never un-completes a lesson, but `lesson.uncompleted`
- *   does, and the two are resolved last-write-wins by `occurredAt`;
+ *   `lesson.started` / `lesson.opened` never un-completes a lesson, but
+ *   `lesson.uncompleted` does, and the two are resolved last-write-wins by
+ *   `occurredAt`;
  * - checklist ticks are last-write-wins per item, ordered by `occurredAt`;
  * - events are deduplicated by `clientId`, so a retried offline flush is safe.
  *
@@ -23,7 +24,20 @@
  */
 
 export type ProgressEventType =
+  /** The first time this learner opened this lesson. Written once. */
   | "lesson.started"
+  /**
+   * Every later visit to the same lesson.
+   *
+   * Split out on 2026-09-11. Both facts used to be written as `lesson.started`
+   * and told apart only by a prefix inside `client_id`, which meant anything
+   * counting "starts" was counting page loads: 189 of the first 265 rows in
+   * production were returns, against 76 real beginnings. The FOLD treats the
+   * two identically on purpose —
+   * this is a naming fix, not a behaviour change — but a counter can now tell
+   * "twelve people began the lesson" from "one person opened it twelve times".
+   */
+  | "lesson.opened"
   | "lesson.completed"
   | "lesson.uncompleted"
   | "checklist.toggled";
@@ -91,7 +105,12 @@ export function foldProgress(events: ProgressEvent[]): CourseProgress {
     lastActivityAt = event.occurredAt;
 
     switch (event.type) {
+      // One arm, two types. `lesson.opened` must fold identically to
+      // `lesson.started`: a log that lost its start row (an older client, a
+      // backfill) still has to report the lesson as begun, and `startedAt` is
+      // `??`-guarded so the earliest event of either type wins.
       case "lesson.started":
+      case "lesson.opened":
         lessons[event.lessonId] = {
           ...current,
           // Monotonic: a re-open of a finished lesson does not reset it.

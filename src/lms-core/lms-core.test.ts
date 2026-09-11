@@ -328,6 +328,53 @@ describe("progress fold", () => {
     expect(progress.lessons.l1.status).toBe("completed");
   });
 
+  it("never un-completes a lesson that is opened again", () => {
+    const progress = foldProgress([
+      ...events,
+      { clientId: "e4b", type: "lesson.opened", lessonId: "l1", occurredAt: "2026-08-16T06:00:00Z" },
+    ]);
+    expect(progress.lessons.l1.status).toBe("completed");
+    // A return is activity even when it changes nothing else about the lesson.
+    expect(progress.lastActivityAt).toBe("2026-08-16T06:00:00Z");
+    // And it must not re-stamp the beginning.
+    expect(progress.lessons.l1.startedAt).toBe("2026-08-15T06:00:00Z");
+  });
+
+  it("folds `lesson.opened` exactly like `lesson.started`", () => {
+    // The split exists so counting can tell the two apart. It must NOT make them
+    // fold differently, or the same log would report different progress before
+    // and after the backfill.
+    const started = foldProgress([
+      { clientId: "a", type: "lesson.started", lessonId: "l9", occurredAt: "2026-08-15T06:00:00Z" },
+    ]);
+    const opened = foldProgress([
+      { clientId: "a", type: "lesson.opened", lessonId: "l9", occurredAt: "2026-08-15T06:00:00Z" },
+    ]);
+    expect(opened).toEqual(started);
+    expect(opened.lessons.l9.status).toBe("started");
+  });
+
+  it("keeps the earliest of start/open as startedAt, whichever type carries it", () => {
+    const progress = foldProgress([
+      { clientId: "o1", type: "lesson.opened", lessonId: "l2", occurredAt: "2026-08-17T09:00:00Z" },
+      { clientId: "s1", type: "lesson.started", lessonId: "l2", occurredAt: "2026-08-15T06:00:00Z" },
+    ]);
+    expect(progress.lessons.l2.startedAt).toBe("2026-08-15T06:00:00Z");
+  });
+
+  it("counts a beginning apart from a return", () => {
+    // A log that says "one person began this and came back twice" must not read
+    // as "three people began it" — the whole reason the type was split.
+    const log: ProgressEvent[] = [
+      { clientId: "s", type: "lesson.started", lessonId: "l4", occurredAt: "2026-08-15T06:00:00Z" },
+      { clientId: "o1", type: "lesson.opened", lessonId: "l4", occurredAt: "2026-08-15T06:30:00Z" },
+      { clientId: "o2", type: "lesson.opened", lessonId: "l4", occurredAt: "2026-08-16T06:00:00Z" },
+    ];
+    expect(log.filter((e) => e.type === "lesson.started")).toHaveLength(1);
+    expect(log.filter((e) => e.type === "lesson.opened")).toHaveLength(2);
+    expect(foldProgress(log).lessons.l4.startedAt).toBe("2026-08-15T06:00:00Z");
+  });
+
   it("un-completes on an explicit event, keeping the checklist intact", () => {
     const progress = foldProgress([
       ...events,
