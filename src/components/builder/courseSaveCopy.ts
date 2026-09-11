@@ -60,3 +60,31 @@ export function courseSaveFailureCopy(detail: string | undefined, fallback: stri
   if (!detail) return fallback;
   return MESSAGES[detail.split(":")[0] ?? detail] ?? fallback;
 }
+
+/**
+ * THE FIVE SENTENCES THE SAVE PATH SAYS ON ITS OWN, when the server has not
+ * named a rule: two editors and the autosave hook each held their own copy of
+ * them, and the copies had already come apart. One tab conflict had three
+ * wordings — «Перезавантажте сторінку, щоб не втратити чужі зміни.» in both
+ * editors, «Перезавантажте сторінку.» a hundred lines below one of them, and
+ * «Відкрийте його, щоб побачити актуальну версію.» in the course list, which is
+ * a different instruction to a different reader (2026-09-11).
+ *
+ * They are one export because they are one moment for the author — the save did
+ * not go through — and an author who meets the same refusal in the lesson and
+ * in the course should not be told two different things about it.
+ */
+export const SAVE_COPY = {
+  /** The document is not loaded yet; nothing to send. */
+  notReady: "Курс ще завантажується. Спробуйте за мить.",
+  /** Someone else's version is newer. Said where the author can reload. */
+  staleReload: "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку, щоб не втратити чужі зміни.",
+  /** The same conflict, said where reloading is not the next step — the course
+      is not open, so the author opens it rather than reloads. */
+  staleOpen: "Цей курс уже змінили в іншій вкладці. Відкрийте його, щоб побачити актуальну версію.",
+  /** The fallback when the server refused without naming a rule. */
+  failed: "Не вдалося зберегти. Спробуйте ще раз.",
+  /** The two ends of the recovered-draft question. */
+  draftRestored: "Локальну копію відновлено. Вона збережеться як поточна версія.",
+  draftDiscarded: "Залишено актуальну серверну версію.",
+} as const;

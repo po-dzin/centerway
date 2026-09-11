@@ -6,10 +6,13 @@
  * the two halves of the product disagreed about what language it speaks. That
  * is closed; these tests are what keeps it closed.
  *
- * The key-parity check matters more than it looks: `TranslationKey` is derived
- * from `translations.en`, so a key added to `en` alone still typechecks
- * everywhere and simply renders `undefined` on the Ukrainian panel. Only a test
- * can catch that.
+ * The key-parity check used to matter more than it looked: `TranslationKey` was
+ * derived from `translations.en`, so a key added to `en` alone still typechecked
+ * everywhere and simply rendered `undefined` on the Ukrainian panel, and only a
+ * test could catch it. Since 2026-09-11 the dictionary is paired — one entry
+ * carries both languages — so half a string no longer compiles. The parity
+ * assertions stay as the proof that the composition step preserves that
+ * property, which is the part a refactor could still break.
  */
 
 import { describe, expect, it } from "vitest";

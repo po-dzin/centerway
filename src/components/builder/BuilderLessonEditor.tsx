@@ -46,6 +46,7 @@ import {
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { usePlatformSession } from "@/components/platform/layout/usePlatformSession";
+import { courseSaveFailureCopy, SAVE_COPY } from "./courseSaveCopy";
 import { lessonDocumentFailureCopy } from "./lessonDocumentCopy";
 import { clearDurableCourseDraft, inspectDurableCourseDraft, type DurableCourseDraft } from "./courseDraftStore";
 import { BuilderDraftRecovery } from "./BuilderDraftRecovery";
@@ -283,17 +284,17 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const persistCourse = useCallback(
     async (snapshot: Course) => {
       if (draftGeneration.current === null) {
-        return { ok: false as const, message: "Курс ще завантажується. Спробуйте за мить." };
+        return { ok: false as const, message: SAVE_COPY.notReady };
       }
       const result = await saveCourse(slug, courseForSave(snapshot), draftGeneration.current);
       if (!result.ok) {
         if (result.failure === "conflict") {
-          return {
-            ok: false as const,
-            message: "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку, щоб не втратити чужі зміни.",
-          };
+          return { ok: false as const, message: SAVE_COPY.staleReload };
         }
-        return { ok: false as const, message: result.detail ?? "Не вдалося зберегти. Спробуйте ще раз." };
+        /* Was `result.detail` raw here, where the course view had already
+           learned to translate it — the same save, refused by the same rule,
+           answering in two languages depending on which screen asked. */
+        return { ok: false as const, message: courseSaveFailureCopy(result.detail, SAVE_COPY.failed) };
       }
       draftGeneration.current = result.data.draftGeneration;
       return {
@@ -487,14 +488,14 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     if (!draftDecision || !serverCourse.current) return;
     history.recover(serverCourse.current, draftDecision.draft.course);
     setDraftDecision(null);
-    toast.success("Локальну копію відновлено. Вона збережеться як поточна версія.");
+    toast.success(SAVE_COPY.draftRestored);
   };
 
   const discardDraft = () => {
     if (!draftDecision) return;
     void clearDurableCourseDraft(draftDecision.draft.courseId).catch(() => undefined);
     setDraftDecision(null);
-    toast.success("Залишено актуальну серверну версію.");
+    toast.success(SAVE_COPY.draftDiscarded);
   };
 
   const trail = [

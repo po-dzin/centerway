@@ -56,7 +56,7 @@ import { writePath } from "./blockFields";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { usePlatformSession } from "@/components/platform/layout/usePlatformSession";
-import { courseSaveFailureCopy } from "./courseSaveCopy";
+import { courseSaveFailureCopy, SAVE_COPY } from "./courseSaveCopy";
 import { lessonDocumentFailureCopy } from "./lessonDocumentCopy";
 import { clearDurableCourseDraft, inspectDurableCourseDraft, type DurableCourseDraft } from "./courseDraftStore";
 import { BuilderDraftRecovery } from "./BuilderDraftRecovery";
@@ -369,15 +369,12 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   const persistCourse = useCallback(
     async (snapshot: Course) => {
       if (draftGeneration.current === null) {
-        return { ok: false as const, message: "Курс ще завантажується. Спробуйте за мить." };
+        return { ok: false as const, message: SAVE_COPY.notReady };
       }
       const result = await saveCourse(slug, courseForSave(snapshot), draftGeneration.current);
       if (!result.ok) {
         if (result.failure === "conflict") {
-          return {
-            ok: false as const,
-            message: "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку, щоб не втратити чужі зміни.",
-          };
+          return { ok: false as const, message: SAVE_COPY.staleReload };
         }
         /* The server's `detail` is an assertion id, not a sentence — see
          `courseSaveCopy`. It used to be printed raw, so a course whose cover
@@ -385,7 +382,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
          `lms_course_cover_missing_alt:builder`. */
         return {
           ok: false as const,
-          message: courseSaveFailureCopy(result.detail, "Не вдалося зберегти. Спробуйте ще раз."),
+          message: courseSaveFailureCopy(result.detail, SAVE_COPY.failed),
         };
       }
       draftGeneration.current = result.data.draftGeneration;
@@ -496,17 +493,19 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     // make the button a second, silent save with a different gate.
     if (draftGeneration.current === null) {
       setBusy(false);
-      toast.warning("Курс ще завантажується. Спробуйте за мить.");
+      toast.warning(SAVE_COPY.notReady);
       return;
     }
     const result = await saveCourse(slug, { ...state.data.course, status: next }, draftGeneration.current);
     setBusy(false);
 
     if (!result.ok) {
+      /* Publishing went through `result.detail` raw until 2026-09-11, so this
+         one path still answered with `lms_course_cover_missing_alt:builder`
+         while the save bar two functions up had been saying it in Ukrainian
+         for months. Same refusal, same sentence, wherever it is met. */
       toast.error(
-        result.failure === "conflict"
-          ? "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку."
-          : (result.detail ?? "Не вдалося зберегти. Спробуйте ще раз."),
+        result.failure === "conflict" ? SAVE_COPY.staleReload : courseSaveFailureCopy(result.detail, SAVE_COPY.failed),
       );
       return;
     }
@@ -557,14 +556,14 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     if (state.status !== "ready" || !draftDecision) return;
     history.recover(state.data.course, draftDecision.draft.course);
     setDraftDecision(null);
-    toast.success("Локальну копію відновлено. Вона збережеться як поточна версія.");
+    toast.success(SAVE_COPY.draftRestored);
   };
 
   const discardDraft = () => {
     if (!draftDecision) return;
     void clearDurableCourseDraft(draftDecision.draft.courseId).catch(() => undefined);
     setDraftDecision(null);
-    toast.success("Залишено актуальну серверну версію.");
+    toast.success(SAVE_COPY.draftDiscarded);
   };
 
   const trail = [{ label: "Курси", href: "/build" }];
