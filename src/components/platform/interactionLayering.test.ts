@@ -141,12 +141,26 @@ describe("platform interaction layers", () => {
       expect(sheet, `${rel} still draws a stroke`).not.toContain("stroke-dasharray");
     }
 
-    /* The builder keeps its own mark element, because local layout rules reach
-       for `.inkLabel > .inkMark` directly — but it is a border and a radius
-       now, not a second copy of the stroke's geometry. */
+    /* The builder held the last copy, and for one day it was not even the same
+       drawing: a border and a radius — a rounded edge around the label — while
+       the rest of the product marked a text choice with the stroke. It shipped
+       that way. It now holds no mark at all: `InkLabel` renders the primitive's
+       own graphic and globals.css drives it, so the assertion here is the same
+       one the two modules above answer. */
     const builder = read("src/components/builder/Builder.module.css");
-    expect(builder).not.toMatch(/\.inkMark[\s\S]{0,400}?stroke-dasharray/);
-    expect(builder).toMatch(/\.inkMark\s*\{[\s\S]*?border-radius: var\(--cw-radius-pill\)/);
+    expect(builder, "the builder still declares a mark").not.toMatch(/^\.\w*[Ii]nkMark\s*\{/m);
+    expect(builder, "the builder still draws a stroke").not.toContain("stroke-dasharray");
+
+    /* And its rows are attached to that contract. The attribute is what hands
+       a builder row to the shared hover rules; without it a row renders the
+       mark and nothing ever reveals it. */
+    for (const rel of [
+      "src/components/builder/BuilderModuleEditor.tsx",
+      "src/components/builder/BuilderFields.tsx",
+      "src/components/builder/BuilderContents.tsx",
+    ]) {
+      expect(read(rel), `${rel} renders ink labels with nothing to trigger them`).toContain("data-cw-ink-control");
+    }
   });
 
   it("holds the public catalogue filter to the shelf's recipe rather than a second copy", () => {

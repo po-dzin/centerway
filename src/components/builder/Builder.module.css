@@ -256,8 +256,17 @@
    pointer, full on the current row. That is the whole point: a highlight plate
    used for both makes the selected row read as stuck hover the moment the
    pointer rests on it, which is what it did. Any row that can be pointed at or
-   chosen composes `inkRow` and renders an `InkLabel`; nothing in the builder
-   is allowed to invent a second answer. */
+   chosen composes `inkRow`, renders an `InkLabel` and carries
+   `data-cw-ink-control`; nothing in the builder is allowed to invent a second
+   answer.
+
+   THE STROKE IS NOT DRAWN HERE (2026-09-11). It is `InteractionInk`'s baked
+   graphic, positioned and timed by globals.css from the same `--cw-ink-*`
+   tokens as the topbar and the menus — which is why this file no longer holds
+   an opacity, a transform or a radius for it. The attribute is what hands a
+   builder row to that contract; `aria-current` is what says which row is the
+   one. A module that keeps its own copy of a mark is a module that will still
+   be drawing last month's mark. */
 /* A row that carries a grip. The grip is revealed by THIS row and no other:
    `.dragRow:hover` used to do it, and a module block is a drag row containing
    every one of its lesson rows — so pointing at one lesson lit the module's
@@ -296,25 +305,6 @@
 .inkRow:focus-visible {
   outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
   outline-offset: var(--ds-focus-ring-offset);
-}
-
-.inkRow:focus-visible .inkMark {
-  opacity: var(--cw-ink-hover-opacity);
-  transform: scale(0.98);
-}
-
-@media (hover: hover) {
-  .inkRow:hover .inkMark {
-    opacity: var(--cw-ink-hover-opacity);
-    transform: scale(0.98);
-  }
-}
-
-/* Full ink: this row IS the thing being edited. */
-.inkRow[aria-current="page"] .inkMark,
-.inkRow[data-selected] .inkMark {
-  opacity: 1;
-  transform: scale(1);
 }
 
 /* ── Bar ──────────────────────────────────────────── */
@@ -1075,8 +1065,13 @@
   border-color: var(--cw-platform-accent);
 }
 
+/* THE SELECTED BLOCK IS MARKED ONCE, by `::before` — the system's dashed
+   contour, drawn from `--cw-contour-*` further down this file. This rule
+   recoloured the card's own solid border on top of it, so a chosen block
+   carried two lines saying the same thing: the canonical contour in its margin
+   and a brass edge on the card itself. Removed 2026-09-11 with the builder's
+   other local marks. */
 .blockCard[data-selected] {
-  border-color: var(--cw-nav-marker);
   outline: 0;
 }
 
@@ -3675,8 +3670,12 @@
   white-space: nowrap;
 }
 
+/* THE CHOSEN OPTION IS MARKED BY ITS LABEL'S STROKE, not by a tinted plate
+   (2026-09-11). A filled chip is the plate idiom this builder removed from its
+   lists two weeks earlier and kept here — so the same question, «which of
+   these is selected», was answered one way in the outline and another way in a
+   field. `aria-pressed` is already a state the shared ink CSS reads. */
 .choiceOption[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--cw-platform-accent) 22%, var(--cw-mat-surface));
   color: var(--cw-platform-text);
 }
 
@@ -4718,8 +4717,14 @@
 }
 
 /* The choice still owns a full touch target, but no longer draws a large pill
-   around every word. On the manuscript surface the active underline is enough
-   to say which of the neighbouring values is selected. */
+   around every word. On the manuscript surface the mark under the label is
+   enough to say which of the neighbouring values is selected.
+
+   THAT MARK IS THE INK STROKE NOW (2026-09-11). It was `border-block-end` — a
+   straight 1px CSS rule, drawn by this file, in the one product that has a
+   hand-drawn stroke for exactly this. Nothing here draws it any more: the
+   label renders `InkLabel` and `aria-pressed` is one of the states the shared
+   ink CSS already reads. */
 .courseSettingEditor .choiceOption {
   padding-inline: var(--cw-space-sm);
   border-color: transparent;
@@ -4727,16 +4732,9 @@
   background: transparent;
 }
 
-.courseSettingEditor .choiceOption[aria-pressed="true"] {
-  border-block-end-color: var(--cw-platform-text);
+.courseSettingEditor .choiceOption[aria-pressed="true"],
+.courseSettingEditor .choiceOption:hover:not(:disabled) {
   background: transparent;
-}
-
-@media (hover: hover) {
-  .courseSettingEditor .choiceOption:hover:not(:disabled) {
-    border-block-end-color: var(--cw-platform-text);
-    background: transparent;
-  }
 }
 
 .courseSettingsAdvanced {
@@ -5739,27 +5737,6 @@
   text-overflow: ellipsis;
 }
 
-/* THE BUILDER'S MARK IS A ROUNDED EDGE NOW (2026-09-10).
-   It was the stroke recipe copied into this module — offset, weight, tilt,
-   dasharray, the lot. The whole product moved to marking «this is the one»
-   with a rounded ink edge around the label rather than a line under it, so
-   this follows, and drops the stroke's five geometry values for a border and
-   a radius. The DOM did not move: the mark is still `.inkLabel > .inkMark`,
-   so every layout rule in this file that reaches for either still lands.
-   Strengths and timing stay on the shared tokens they were already on. */
-.inkMark {
-  position: absolute;
-  inset: calc(-1 * var(--cw-space-2xs)) calc(-1 * var(--cw-space-xs));
-  border: 1.5px solid var(--cw-nav-marker);
-  border-radius: var(--cw-radius-pill);
-  pointer-events: none;
-  opacity: 0;
-  transform: scale(0.94);
-  transition:
-    opacity var(--builder-motion-ink) ease,
-    transform var(--builder-motion-ink) ease;
-}
-
 .courseMobileNavItem:focus-visible,
 .courseMobileNavItem[aria-current="page"] {
   color: var(--cw-platform-text);
@@ -5769,23 +5746,6 @@
   .courseMobileNavItem:hover {
     color: var(--cw-platform-text);
   }
-}
-
-.courseMobileNavItem:focus-visible .inkMark {
-  opacity: var(--cw-ink-hover-opacity);
-  transform: scale(0.98);
-}
-
-@media (hover: hover) {
-  .courseMobileNavItem:hover .inkMark {
-    opacity: var(--cw-ink-hover-opacity);
-    transform: scale(0.98);
-  }
-}
-
-.courseMobileNavItem[aria-current="page"] .inkMark {
-  opacity: 1;
-  transform: scale(1);
 }
 
 .courseRail {
@@ -5837,23 +5797,6 @@
   .courseRailLink:hover {
     color: var(--cw-platform-text);
   }
-}
-
-.courseRailLink:focus-visible .inkMark {
-  opacity: var(--cw-ink-hover-opacity);
-  transform: scale(0.98);
-}
-
-@media (hover: hover) {
-  .courseRailLink:hover .inkMark {
-    opacity: var(--cw-ink-hover-opacity);
-    transform: scale(0.98);
-  }
-}
-
-.courseRailLink[aria-current="page"] .inkMark {
-  opacity: 1;
-  transform: scale(1);
 }
 
 .courseRailStatus {

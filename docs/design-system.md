@@ -975,6 +975,23 @@ to the selection stroke, exactly as `menu` does — the call sites across the
 topbar, the account and apps menus, the admin rail and route menu, breadcrumbs,
 the reader's text-size control and the Builder's rows keep working unedited.
 
+**The builder did not come back with it, and shipped the edge (fixed 2026-09-11).**
+The sentence above — "the Builder's rows keep working unedited" — was true of
+the call sites and false of the drawing. The builder did not call
+`InteractionInkLabel`: it had its own `InkLabel` and its own `.inkMark`, a
+border and a pill radius written into `Builder.module.css`, so reverting the
+experiment on the platform left the rail, the outline, the block palette and
+the lesson tools marking selection with a capsule. A reader of the two files
+could not see the disagreement; only a reader of the two screens could.
+
+The builder now holds no mark of its own. `InkLabel` renders the primitive's
+graphic, rows carry `data-cw-ink-control` so the shared hover rules reach them,
+and `aria-current` / `aria-pressed` say which one is the one — including the
+closed lists in the course settings, whose selected option was a 1px
+`border-block-end` drawn by that same module. The contract test in
+`interactionLayering.test.ts` now asks the builder the same question it asks the
+topbar and the trail: **do you declare a mark?** The answer must stay no.
+
 **The stroke is full length in every state.** States differ in opacity, weight
 and colour, never in how much of the word is covered. A progressive draw —
 `stroke-dasharray`/`stroke-dashoffset` over a measured path length — is a

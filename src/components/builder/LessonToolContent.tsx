@@ -83,6 +83,7 @@ export function LessonToolContent({
                 {group.types.map((type) => (
                   <button
                     className={styles.toolBlock}
+                    data-cw-ink-control=""
                     type="button"
                     key={type}
                     draggable

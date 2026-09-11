@@ -12,6 +12,7 @@ import { newLesson, nextDayIndex, uniqueSlug, type Course, type CourseModule, ty
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
 import { plural } from "@/lib/plural";
 import { BuilderMenu } from "./BuilderMenu";
+import { InkLabel as BuilderInkLabel } from "./BuilderInkLabel";
 import type { WorkspaceMode } from "./courseWorkspace";
 import type { BuilderCourseDto } from "./builderClient";
 import { BuilderGrip } from "./BuilderGrip";
@@ -37,6 +38,7 @@ export function BuilderCourseRail({
       <nav className={styles.courseRailNav} aria-label="Розділи курсу">
         <a
           className={styles.courseRailLink}
+          data-cw-ink-control=""
           href="#course-overview"
           aria-label="Обкладинка"
           aria-current={activeMode === "course" ? "page" : undefined}
@@ -53,6 +55,7 @@ export function BuilderCourseRail({
         </a>
         <a
           className={styles.courseRailLink}
+          data-cw-ink-control=""
           href="#course-structure"
           aria-label="Зміст"
           aria-current={activeMode === "content" ? "page" : undefined}
@@ -69,6 +72,7 @@ export function BuilderCourseRail({
         </a>
         <a
           className={styles.courseRailLink}
+          data-cw-ink-control=""
           href="#course-offer"
           aria-label="Сторінка програми"
           aria-current={activeMode === "offer" ? "page" : undefined}
@@ -85,6 +89,7 @@ export function BuilderCourseRail({
         </a>
         <a
           className={styles.courseRailLink}
+          data-cw-ink-control=""
           href="#course-author"
           aria-label="Автор"
           aria-current={activeMode === "author" ? "page" : undefined}
@@ -101,6 +106,7 @@ export function BuilderCourseRail({
         </a>
         <a
           className={styles.courseRailLink}
+          data-cw-ink-control=""
           href="#course-release"
           aria-label="Публікація"
           aria-current={activeMode === "release" ? "page" : undefined}
@@ -130,16 +136,16 @@ export function BuilderCourseRail({
   );
 }
 
-export function BuilderInkLabel({ children }: { children: string }) {
-  return (
-    <span className={styles.inkLabel}>
-      {children}
-      {/* The rounded ink edge drawn by `.inkMark`, not a stroke graphic —
-          the same 2026-09-10 decision `InkLabel` carries. */}
-      <span className={styles.inkMark} aria-hidden="true" />
-    </span>
-  );
-}
+/**
+ * The rail's label, which is `InkLabel` and was a second copy of it.
+ *
+ * Two components rendering the same mark is how the mark stops being one mark:
+ * when the product moved to a rounded edge and back, this copy moved once and
+ * the other did not. Re-exported rather than renamed at the five call sites —
+ * the name reads correctly in the rail, and there is now one implementation
+ * under it (2026-09-11).
+ */
+export { BuilderInkLabel };
 
 /**
  * A course whose optional objects were emptied field by field.

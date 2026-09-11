@@ -747,6 +747,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       <nav className={styles.courseMobileNav} aria-label="Розділи курсу">
         <a
           className={styles.courseMobileNavItem}
+          data-cw-ink-control=""
           href="#course-overview"
           aria-current={workspaceMode === "course" ? "page" : undefined}
           onClick={(event) => {
@@ -758,6 +759,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         </a>
         <a
           className={styles.courseMobileNavItem}
+          data-cw-ink-control=""
           href="#course-structure"
           aria-current={workspaceMode === "content" ? "page" : undefined}
           onClick={(event) => {
@@ -769,6 +771,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         </a>
         <a
           className={styles.courseMobileNavItem}
+          data-cw-ink-control=""
           href="#course-offer"
           aria-current={workspaceMode === "offer" ? "page" : undefined}
           onClick={(event) => {
@@ -780,6 +783,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         </a>
         <a
           className={styles.courseMobileNavItem}
+          data-cw-ink-control=""
           href="#course-author"
           aria-current={workspaceMode === "author" ? "page" : undefined}
           onClick={(event) => {
@@ -791,6 +795,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         </a>
         <a
           className={styles.courseMobileNavItem}
+          data-cw-ink-control=""
           href="#course-release"
           aria-current={workspaceMode === "release" ? "page" : undefined}
           onClick={(event) => {
