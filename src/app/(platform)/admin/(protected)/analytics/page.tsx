@@ -5,20 +5,22 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { flushSync } from "react-dom";
 import { accessToken, authorizedFetch } from "@/components/auth/authorizedFetch";
-import type { AnalyticsPayload } from "@/lib/analytics/dashboard";
-import type { DoshaAnalyticsPayload } from "@/lib/analytics/dosha";
 import { useI18n } from "@/components/I18nProvider";
 import { getErrorMessage } from "@/lib/errors";
 import { useToast } from "@/components/ToastProvider";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
-import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import surfaces from "@/components/admin/AdminSurfaces.module.css";
-import { Icon } from "@/components/Icon";
 /* The mode's rules live outside this file because they are the part that can
    actually be wrong, and the admin is behind a Google sign-in — it cannot be
-   verified by opening it, only by testing it. See dashboardMode.ts. */
+   verified by opening it, only by testing it. See dashboardMode.ts.
+
+   THE SAME ARGUMENT, APPLIED TO THE REST OF IT (2026-09-11). This file was
+   2583 lines: the payload types, the date arithmetic, the metric catalogue, a
+   215-line calendar and a disclosure panel, all sitting above the component
+   that uses them and all unreachable from a test. They are four files now, and
+   what is left here is the page — its state, its fetch, and its sections. */
 import {
   DASHBOARD_MODES,
   DEFAULT_DASHBOARD_MODE,
@@ -28,653 +30,54 @@ import {
   type AnalyticsSection,
   type DashboardMode,
 } from "@/lib/admin/dashboardMode";
-
-type FunnelData = {
-  date: string;
-  leads_count: number;
-  orders_created: number;
-  orders_paid: number;
-  total_revenue: number;
-};
-
-type CampaignData = {
-  source_campaign: string;
-  total_orders: number;
-  paid_orders: number;
-  total_revenue: number;
-  view_content: number;
-  impressions: number;
-  reach: number;
-  spend: number;
-  currency: string;
-};
-
-type ProductData = {
-  product_code: string;
-  product_title: string | null;
-  total_orders: number;
-  paid_orders: number;
-  total_revenue: number;
-  share_revenue_percent: number;
-};
-
-/* Derived from the engine: the route sends totalOrders as number | null and
-   avgConversionRate as string | number, which the hand-written copy narrowed. */
-type AnalyticsSummary = AnalyticsPayload["summary"];
-
-type CapiEventName = "ViewContent" | "InitiateCheckout" | "Purchase";
-
-type CapiEventStats = {
-  event_name: CapiEventName;
-  total: number;
-  success: number;
-  pending: number;
-  running: number;
-  failed: number;
-  last_seen_at: string | null;
-};
-
-type CapiOverview = {
-  total: number;
-  success: number;
-  pending: number;
-  running: number;
-  failed: number;
-};
-
-type FunnelChain = {
-  view_content: number;
-  initiate_checkout: number;
-  purchase: number;
-  access_granted: number;
-  view_to_checkout_percent: number;
-  checkout_to_purchase_percent: number;
-  purchase_to_access_percent: number;
-};
-
-type MarketingInputs = {
-  reach: number;
-  impressions: number;
-  clicks: number;
-  spend: number;
-  currency: string;
-  period_label: string | null;
-  updated_at: string | null;
-  source?: "meta" | "manual";
-};
-
-type UnifiedKpis = {
-  cpa: number;
-  cpc: number;
-  ctr_percent: number;
-  roas: number;
-  roi_percent: number;
-};
-
-type QualityGaps = {
-  snapshot_date: string;
-  paid_missing_fbc_raw: number;
-  paid_recoverable_fbc_from_fbclid: number;
-  paid_truly_missing_fbc: number;
-  paid_missing_fbclid: number;
-  paid_missing_fbp: number;
-  paid_missing_page_url: number;
-  paid_missing_client_ip: number;
-  paid_missing_client_ua: number;
-};
-
-type AnalyticsFreshness = {
-  local_view_content_last_at: string | null;
-  local_scroll_depth_50_last_at: string | null;
-  orders_created_last_at: string | null;
-  orders_paid_last_at: string | null;
-  capi_last_sent_at: string | null;
-  meta_last_synced_at: string | null;
-  pixel_daily_last_synced_at: string | null;
-  quality_snapshot_date: string | null;
-};
-
-type QualitySeriesRow = {
-  date: string;
-  paid_orders: number;
-  missing_fbc_raw: number;
-  recoverable_fbc_from_fbclid: number;
-  truly_missing_fbc: number;
-  missing_fbclid: number;
-  missing_fbp: number;
-  missing_page_url: number;
-  missing_client_ip: number;
-  missing_client_ua: number;
-};
-
-type PurchaseTransport = {
-  total_paid_orders: number;
-  success: number;
-  pending: number;
-  running: number;
-  failed: number;
-  missing_job: number;
-  stale_pending: number;
-  client_signal: number;
-  missing_client_signal: number;
-  last_success_at: string | null;
-};
-
-type DiagnosticsPanelKey = "freshness" | "quality" | "purchase_transport";
-
-type DoshaAnalytics = DoshaAnalyticsPayload;
-
-type LeadsSummary = {
-  new_in_period: number;
-  won_in_period: number;
-  lost_in_period: number;
-  open_total: number;
-  conversion_percent: number;
-};
-
-type LearningSummary = {
-  granted_in_period: number;
-  started_in_period: number;
-  started_percent: number;
-  active_total: number;
-  expiring_14d: number;
-  expired_total: number;
-};
-
-/* The engine's own payload type, not a copy of it: a field the route stops
-   sending fails here at compile time instead of rendering as undefined.
-   `learning` and `leads` are the two sections the dashboard route adds on top
-   of it — optional on both sides, so a route that has not shipped them yet
-   simply renders nothing rather than a zero it invented. */
-type AnalyticsResponse = AnalyticsPayload & {
-  learning?: LearningSummary;
-  leads?: LeadsSummary;
-};
-
-type DateRange = {
-  from: string;
-  to: string;
-};
-
-type FunnelMode = "payment" | "access";
-
-type FunnelUiSettings = {
-  mode: FunnelMode;
-  showAccessGrantedCard: boolean;
-};
-
-type MetricFieldKey =
-  "revenue" | "reach" | "impressions" | "frequency" | "clicks" | "spend" | "cpa" | "cpc" | "roas" | "roi";
-
-type MetricDef = {
-  key: MetricFieldKey;
-  labelKey: string;
-};
-
-const PRIMARY_METRIC_FIELDS: MetricDef[] = [
-  { key: "spend", labelKey: "analytics_metric_spend" },
-  { key: "revenue", labelKey: "analytics_metric_revenue" },
-  { key: "roas", labelKey: "analytics_metric_roas" },
-  { key: "cpa", labelKey: "analytics_metric_cpa" },
-  { key: "roi", labelKey: "analytics_metric_roi" },
-];
-
-const OPTIONAL_METRIC_FIELDS: MetricDef[] = [
-  { key: "reach", labelKey: "analytics_metric_reach" },
-  { key: "impressions", labelKey: "analytics_metric_impressions" },
-  { key: "frequency", labelKey: "analytics_metric_frequency" },
-  { key: "clicks", labelKey: "analytics_metric_clicks" },
-  { key: "cpc", labelKey: "analytics_metric_cpc" },
-];
-
-const METRIC_FIELDS: MetricDef[] = [...PRIMARY_METRIC_FIELDS, ...OPTIONAL_METRIC_FIELDS];
-
-const METRIC_VISIBILITY_KEY = "cw_analytics_visible_metrics";
-const FUNNEL_UI_SETTINGS_KEY = "cw_analytics_funnel_ui_settings";
-const DASHBOARD_MODE_KEY = "cw_analytics_dashboard_mode";
-
-function metricEventLabelKey(eventName: CapiEventName): string {
-  if (eventName === "ViewContent") return "analytics_event_view_content";
-  if (eventName === "InitiateCheckout") return "analytics_event_initiate_checkout";
-  return "analytics_event_purchase";
-}
-
-function AnalyticsCollapsePanel(props: {
-  title: string;
-  note?: string;
-  open: boolean;
-  onToggle: () => void;
-  expandLabel: string;
-  collapseLabel: string;
-  children: React.ReactNode;
-}) {
-  const { title, note, open, onToggle, expandLabel, collapseLabel, children } = props;
-  return (
-    <div className={surfaces.plate}>
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-start justify-between gap-3 text-left"
-        aria-expanded={open}
-      >
-        <div>
-          <h3 className="text-sm font-semibold cw-text">{title}</h3>
-          {note ? <p className="text-xs cw-muted mt-1">{note}</p> : null}
-        </div>
-        <span
-          className="cw-icon-btn shrink-0 inline-flex items-center justify-center"
-          aria-label={open ? collapseLabel : expandLabel}
-          title={open ? collapseLabel : expandLabel}
-        >
-          <InteractionInkIcon>
-            <Icon className={`transition-transform ${open ? "rotate-180" : ""}`} name="chevron-down" size={16} />
-          </InteractionInkIcon>
-        </span>
-      </button>
-      {open ? <div className="mt-3">{children}</div> : null}
-    </div>
-  );
-}
-
-function toNumberInput(value: string): number {
-  const num = Number(value);
-  return Number.isFinite(num) && num >= 0 ? num : 0;
-}
-
-function pad2(value: number): string {
-  return String(value).padStart(2, "0");
-}
-
-function formatDateLocal(date: Date): string {
-  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
-}
-
-function shiftedDate(daysBack: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - daysBack);
-  return formatDateLocal(d);
-}
-
-function clampIsoToToday(value: string): string {
-  const todayIso = formatDateLocal(new Date());
-  return value > todayIso ? todayIso : value;
-}
-
-function isIsoDateInput(value: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value);
-}
-
-function formatCompactTick(value: number, locale: string): string {
-  if (value <= 0) return "0";
-  return new Intl.NumberFormat(locale, {
-    notation: "compact",
-    maximumFractionDigits: value >= 1000 ? 1 : 0,
-  }).format(value);
-}
-
-/**
- * THE SERVER NAMES THE PRODUCT NOW (see `productIdentity.ts`).
- *
- * This used to be a three-name switch — `short`/`reboot` → "Short Reboot",
- * `irem` → "IREM Gymnastics", everything else raw — written before the builder
- * sold anything. Every course that shipped after 2026-08-26 fell through it and
- * rendered as its own product code, and a course renamed by its author kept the
- * old name here until someone edited this file.
- *
- * `product_title` arrives resolved from `lms_courses`, so the only judgement
- * left on this side is what to print when a code delivers no course at all.
- */
-function formatProductName(
-  product: { product_code: string; product_title?: string | null },
-  unknownLabel: string,
-): string {
-  if (product.product_title) return product.product_title;
-  const normalized = product.product_code.trim().toLowerCase();
-  if (!normalized || normalized === "unknown") return unknownLabel;
-  return product.product_code;
-}
-
-function buildNiceScale(maxValue: number, tickCount = 5): { scaleMax: number; ticks: number[] } {
-  if (!Number.isFinite(maxValue) || maxValue <= 0 || tickCount < 2) {
-    return { scaleMax: 1, ticks: [0, 0.25, 0.5, 0.75, 1] };
-  }
-
-  const rawStep = maxValue / (tickCount - 1);
-  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
-  const residual = rawStep / magnitude;
-  const niceResidual = residual <= 1 ? 1 : residual <= 2 ? 2 : residual <= 2.5 ? 2.5 : residual <= 5 ? 5 : 10;
-  const step = niceResidual * magnitude;
-  const scaleMax = Math.ceil(maxValue / step) * step;
-  const ticks = Array.from({ length: tickCount }, (_, index) => index * step);
-
-  return { scaleMax, ticks };
-}
-
-function normalizeDateRange(range: DateRange): DateRange {
-  const clampedFromDate = clampIsoToToday(range.from);
-  const clampedToDate = clampIsoToToday(range.to);
-  const from = clampedFromDate <= clampedToDate ? clampedFromDate : clampedToDate;
-  const to = clampedToDate >= clampedFromDate ? clampedToDate : clampedFromDate;
-  return { from, to };
-}
-
-type RangePresetKey = "7d" | "30d" | "mtd" | "90d" | "1y";
-
-function buildPresetRange(preset: RangePresetKey): DateRange {
-  if (preset === "mtd") {
-    const now = new Date();
-    return {
-      from: `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-01`,
-      to: formatDateLocal(now),
-    };
-  }
-
-  const days = preset === "7d" ? 7 : preset === "30d" ? 30 : preset === "90d" ? 90 : 365;
-  return {
-    from: shiftedDate(days - 1),
-    to: formatDateLocal(new Date()),
-  };
-}
-
-function detectActivePreset(range: DateRange): RangePresetKey | null {
-  const normalized = normalizeDateRange(range);
-  const presets: RangePresetKey[] = ["7d", "30d", "mtd", "90d", "1y"];
-  for (const preset of presets) {
-    const candidate = normalizeDateRange(buildPresetRange(preset));
-    if (candidate.from === normalized.from && candidate.to === normalized.to) {
-      return preset;
-    }
-  }
-  return null;
-}
-
-function freshnessStatus(isoTs: string | null, staleAfterHours: number): "ok" | "warn" | "empty" {
-  if (!isoTs) return "empty";
-  const ts = Date.parse(isoTs);
-  if (!Number.isFinite(ts)) return "empty";
-  const diffMs = Date.now() - ts;
-  const staleMs = staleAfterHours * 60 * 60 * 1000;
-  return diffMs <= staleMs ? "ok" : "warn";
-}
-
-function funnelSourceLabel(
-  t: (key: never) => string,
-  source:
-    | "local_events"
-    | "local_events_floored"
-    | "pixel_daily_stats"
-    | "pixel_stats_reference"
-    | "pixel_fallback"
-    | "capi_fallback"
-    | "meta_daily"
-    | "manual_input"
-    | "orders_created"
-    | "paid_orders"
-    | "access_delivered",
-): string {
-  if (source === "local_events") return t("analytics_source_local_events" as never);
-  if (source === "local_events_floored") return t("analytics_source_local_events_floored" as never);
-  if (source === "pixel_daily_stats") return t("analytics_source_pixel_daily_stats" as never);
-  if (source === "pixel_stats_reference") return t("analytics_source_pixel_stats_reference" as never);
-  if (source === "pixel_fallback") return t("analytics_source_pixel_fallback" as never);
-  if (source === "capi_fallback") return t("analytics_source_capi_fallback" as never);
-  if (source === "meta_daily") return t("analytics_source_meta_daily" as never);
-  if (source === "manual_input") return t("analytics_source_manual_input" as never);
-  if (source === "orders_created") return t("analytics_source_orders_created" as never);
-  if (source === "paid_orders") return t("analytics_source_paid_orders" as never);
-  /* `token_consumed` was retired when access stopped being proved by a token:
-     the engine now counts an enrolment or a sent receipt and labels the source
-     `access_delivered`. The branch outlived its dictionary key by one merge,
-     which would have printed the key itself into the admin. */
-  return t("analytics_source_access_delivered" as never);
-}
-
-function isoToDate(value: string): Date | null {
-  if (!isIsoDateInput(value)) return null;
-  const [year, month, day] = value.split("-").map(Number);
-  if (year === undefined || month === undefined || day === undefined) return null;
-  const date = new Date(year, month - 1, day);
-  if (
-    Number.isNaN(date.getTime()) ||
-    date.getFullYear() !== year ||
-    date.getMonth() !== month - 1 ||
-    date.getDate() !== day
-  ) {
-    return null;
-  }
-  return date;
-}
-
-function buildMonthGrid(viewMonth: Date): Date[] {
-  const monthStart = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1);
-  const weekDayMondayFirst = (monthStart.getDay() + 6) % 7;
-  const gridStart = new Date(monthStart);
-  gridStart.setDate(monthStart.getDate() - weekDayMondayFirst);
-
-  return Array.from({ length: 42 }, (_, idx) => {
-    const day = new Date(gridStart);
-    day.setDate(gridStart.getDate() + idx);
-    return day;
-  });
-}
-
-type DateRangePickerProps = {
-  value: DateRange;
-  onApply: (next: DateRange) => Promise<void> | void;
-  applyLabel: string;
-  locale: string;
-  className?: string;
-};
-
-function DateRangePicker({ value, onApply, applyLabel, locale, className = "" }: DateRangePickerProps) {
-  const [open, setOpen] = useState(false);
-  const [selectingEnd, setSelectingEnd] = useState(false);
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const [draftRange, setDraftRange] = useState<DateRange>(() => normalizeDateRange(value));
-  const selectedFromDate = useMemo(() => isoToDate(draftRange.from), [draftRange.from]);
-  const [viewMonth, setViewMonth] = useState<Date>(() => selectedFromDate ?? new Date());
-
-  useEffect(() => {
-    if (!open) {
-      setDraftRange(normalizeDateRange(value));
-      setSelectingEnd(false);
-    }
-  }, [open, value]);
-
-  useEffect(() => {
-    if (open && selectedFromDate) {
-      setViewMonth(new Date(selectedFromDate.getFullYear(), selectedFromDate.getMonth(), 1));
-    }
-  }, [open, selectedFromDate]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-    const onEsc = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onEsc);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onEsc);
-    };
-  }, [open]);
-
-  const monthLabel = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(viewMonth);
-  const dayNames = useMemo(() => {
-    const monday = new Date(Date.UTC(2024, 0, 1)); // Monday
-    return Array.from({ length: 7 }, (_, idx) => {
-      const date = new Date(monday);
-      date.setUTCDate(monday.getUTCDate() + idx);
-      return new Intl.DateTimeFormat(locale, { weekday: "short" }).format(date);
-    });
-  }, [locale]);
-  const days = useMemo(() => buildMonthGrid(viewMonth), [viewMonth]);
-  const todayIso = formatDateLocal(new Date());
-  const activePreset = detectActivePreset(draftRange);
-
-  const formatDisplayDate = (iso: string) => {
-    const date = isoToDate(iso);
-    if (!date) return "YYYY-MM-DD";
-    return date.toLocaleDateString(locale, { day: "2-digit", month: "2-digit", year: "numeric" });
-  };
-
-  const selectDate = (iso: string) => {
-    if (iso > todayIso) return;
-    if (!selectingEnd) {
-      setDraftRange({ from: iso, to: iso });
-      setSelectingEnd(true);
-      return;
-    }
-    const next = normalizeDateRange({ from: draftRange.from, to: iso });
-    setDraftRange(next);
-    setSelectingEnd(false);
-  };
-
-  const applyRange = async () => {
-    const normalized = normalizeDateRange(draftRange);
-    setDraftRange(normalized);
-    setSelectingEnd(false);
-    setOpen(false);
-    await onApply(normalized);
-  };
-
-  const applyPresetQuick = async (preset: RangePresetKey) => {
-    const next = normalizeDateRange(buildPresetRange(preset));
-    setDraftRange(next);
-    setSelectingEnd(false);
-    setOpen(false);
-    await onApply(next);
-  };
-
-  const renderMonth = (monthDays: Date[], monthDate: Date) => (
-    <div className="w-full">
-      <div className="grid grid-cols-7 gap-0.5 mb-0.5">
-        {dayNames.map((name) => (
-          <div
-            key={`${monthDate.getMonth()}-${name}`}
-            className="h-6 text-[10px] cw-muted flex items-center justify-center uppercase"
-          >
-            {name}
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 auto-rows-[32px] gap-0">
-        {monthDays.map((day) => {
-          const iso = formatDateLocal(day);
-          const isCurrentMonth = day.getMonth() === monthDate.getMonth();
-          const isFuture = iso > todayIso;
-          const isStart = draftRange.from === iso;
-          const isEnd = draftRange.to === iso;
-          const isSingle = isStart && isEnd;
-          const inRange = iso >= draftRange.from && iso <= draftRange.to;
-          const isToday = iso === todayIso;
-          const rangeShapeClass = isSingle
-            ? "rounded-md border-[var(--cw-interactive-active-border)]"
-            : isStart
-              ? "rounded-l-md rounded-r-none border-r-0 border-[var(--cw-interactive-active-border)]"
-              : isEnd
-                ? "rounded-r-md rounded-l-none border-l-0 border-[var(--cw-interactive-active-border)]"
-                : "rounded-none border-transparent";
-
-          return (
-            <button
-              key={`${monthDate.getMonth()}-${iso}`}
-              type="button"
-              disabled={isFuture}
-              onClick={() => selectDate(iso)}
-              className={`h-8 border text-xs transition-colors ${
-                isFuture
-                  ? "border-transparent cw-muted opacity-35 cursor-not-allowed"
-                  : inRange
-                    ? `cw-text bg-[var(--cw-interactive-active-bg)] ${rangeShapeClass}`
-                    : isCurrentMonth
-                      ? "border-transparent cw-text hover:bg-[var(--cw-interactive-hover-bg)] rounded-md"
-                      : "border-transparent cw-muted opacity-65 hover:bg-[var(--cw-interactive-hover-bg)] rounded-md"
-              } ${isToday && !inRange && !isFuture ? "border cw-border" : ""} ${isSingle || isStart || isEnd ? "font-semibold" : ""}`}
-            >
-              {day.getDate()}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-
-  return (
-    <div ref={rootRef} className={`relative w-full sm:w-[340px] ${className}`.trim()}>
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className="cw-input w-full h-10 px-3 text-sm flex items-center justify-between gap-2"
-      >
-        <span className="cw-text truncate">
-          {formatDisplayDate(draftRange.from)} - {formatDisplayDate(draftRange.to)}
-        </span>
-        <Icon className="cw-muted" name="calendar" size={16} />
-      </button>
-
-      {open && (
-        <div className="absolute top-full right-0 mt-2 z-40 w-full cw-surface-solid border cw-border rounded-xl cw-shadow p-2.5 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setViewMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
-              className="cw-icon-btn"
-              aria-label="Previous month"
-            >
-              <InteractionInkIcon>
-                <Icon name="arrow-left" size={16} />
-              </InteractionInkIcon>
-            </button>
-            <div className="text-sm font-semibold cw-text capitalize">{monthLabel}</div>
-            <button
-              type="button"
-              onClick={() => setViewMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
-              className="cw-icon-btn"
-              aria-label="Next month"
-            >
-              <InteractionInkIcon>
-                <Icon name="arrow-right" size={16} />
-              </InteractionInkIcon>
-            </button>
-          </div>
-
-          {renderMonth(days, viewMonth)}
-
-          <div className="flex items-center gap-1.5 border-t cw-border pt-2">
-            <div className="flex items-center gap-0.5 flex-1 min-w-0">
-              {(["7d", "30d", "mtd", "90d", "1y"] as RangePresetKey[]).map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => {
-                    void applyPresetQuick(preset);
-                  }}
-                  className={`h-7 min-w-9 px-1.5 text-[11px] rounded-md border transition-colors ${
-                    activePreset === preset
-                      ? "cw-text border-[var(--cw-interactive-active-border)] bg-[var(--cw-interactive-active-bg)]"
-                      : "cw-btn-muted border-[var(--cw-border)] hover:bg-[var(--cw-interactive-hover-bg)]"
-                  }`}
-                >
-                  {preset.toUpperCase()}
-                </button>
-              ))}
-            </div>
-            <button type="button" onClick={applyRange} className="h-8 px-2.5 text-sm font-medium cw-btn shrink-0">
-              {applyLabel}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+import { AnalyticsCollapsePanel } from "@/components/admin/analytics/AnalyticsCollapsePanel";
+import { DateRangePicker } from "@/components/admin/analytics/DateRangePicker";
+import {
+  buildNiceScale,
+  formatCompactTick,
+  formatDateLocal,
+  formatProductName,
+  freshnessStatus,
+  funnelSourceLabel,
+  isIsoDateInput,
+  normalizeDateRange,
+  shiftedDate,
+  toNumberInput,
+} from "@/lib/admin/analytics/format";
+import {
+  DASHBOARD_MODE_KEY,
+  FUNNEL_UI_SETTINGS_KEY,
+  METRIC_FIELDS,
+  METRIC_VISIBILITY_KEY,
+  OPTIONAL_METRIC_FIELDS,
+  PRIMARY_METRIC_FIELDS,
+  metricEventLabelKey,
+  type MetricFieldKey,
+} from "@/lib/admin/analytics/metricFields";
+import type {
+  AnalyticsFreshness,
+  AnalyticsResponse,
+  AnalyticsSummary,
+  CampaignData,
+  CapiEventStats,
+  CapiEventName,
+  CapiOverview,
+  DateRange,
+  DiagnosticsPanelKey,
+  DoshaAnalytics,
+  FunnelChain,
+  FunnelData,
+  FunnelMode,
+  FunnelUiSettings,
+  LeadsSummary,
+  LearningSummary,
+  MarketingInputs,
+  ProductData,
+  PurchaseTransport,
+  QualityGaps,
+  QualitySeriesRow,
+  UnifiedKpis,
+} from "@/lib/admin/analytics/types";
 
 export default function AnalyticsPage() {
   const { t, lang } = useI18n();
