@@ -219,24 +219,34 @@ export function saveCourse(
   });
 }
 
+export type AuthorProfileOption = { id: string; slug: string; name: string; listed: boolean };
+
 export type CourseAuthorLinkDto = {
   eligible: boolean;
   ownAuthor: Author | null;
   linkedAuthor: Author | null;
   linkedAuthorId: string | null;
+  /** Admin only: may hand the byline to a named profile, not only to themselves. */
+  mayAssign?: boolean;
+  assignableAuthors?: AuthorProfileOption[];
 };
 
 export function loadCourseAuthorLink(slug: string): Promise<BuilderResult<CourseAuthorLinkDto>> {
   return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/author`);
 }
 
+export type CourseAuthorLinkMove =
+  | { action: "attach-self" }
+  | { action: "detach" }
+  | { action: "attach-profile"; authorProfileId: string };
+
 export function setCourseAuthorLink(
   slug: string,
-  action: "attach-self" | "detach",
+  move: CourseAuthorLinkMove,
 ): Promise<BuilderResult<{ linkedAuthor: Author | null; linkedAuthorId: string | null }>> {
   return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/author`, {
     method: "PATCH",
-    body: JSON.stringify({ action }),
+    body: JSON.stringify(move),
   });
 }
 

@@ -154,10 +154,27 @@ export async function moderateCourse(input: {
 
            A PENDING REVISION still requires the queue: that is unpublished
            material waiting on a decision, and waving it through unreviewed is
-           the thing review exists to prevent. */
-    const approvable = reviewStatus === "in_review" || (!hasPendingRevision && course.status === "published");
-    if (!approvable) throw new AccessError("course_not_in_review", 409);
-    if (hasPendingRevision) {
+           the thing review exists to prevent.
+
+           BUT A REVISION MUST NOT LOCK THE RELEASE UNDER IT. The two are
+           different objects — one is on the shelf, the other is a draft beside
+           it — and while the draft was merely SAVED (`pending_review_status`
+           still `draft`), the old condition offered no approve at all. That
+           reopened the same corner from the other side: `short` and
+           `irem-gymnastics` sat published, listed and unapproved with an
+           untouched draft on top, and no way to approve the thing that was
+           already public. So an unsubmitted revision is left exactly where it
+           is and the LIVE release is approved on its own. */
+    const revisionInReview = hasPendingRevision && course.pending_review_status === "in_review";
+    /* Two live cases, and the draft one must survive this relaxation: a
+       course submitted from the builder and still unpublished
+       (`review_status = 'in_review'`) is approved exactly as before. */
+    const approvesLiveRelease =
+      !revisionInReview
+      && course.review_status !== "approved"
+      && (course.review_status === "in_review" || course.status === "published");
+    if (!revisionInReview && !approvesLiveRelease) throw new AccessError("course_not_in_review", 409);
+    if (revisionInReview) {
       try {
         validateCourse(course.pending_content, "pending_revision");
       } catch (error) {
