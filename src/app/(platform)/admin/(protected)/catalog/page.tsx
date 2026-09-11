@@ -47,6 +47,7 @@ import type { ProductOfferRow } from "@/lib/admin/productOfferTypes";
 import { ACCESS_TERM_PRESETS } from "@/lib/admin/catalogTypes";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
+import { Icon } from "@/components/Icon";
 
 const BLOCKER_KEY: Record<SaleBlocker, string> = {
   not_renderable: "catalog_blocker_not_renderable",
@@ -60,20 +61,7 @@ const BLOCKER_KEY: Record<SaleBlocker, string> = {
 
 function EmptyIcon() {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="cw-muted"
-    >
-      <path d="M3 7h18M3 12h18M3 17h12" />
-    </svg>
+    <Icon className="cw-muted" name="list" size={20} />
   );
 }
 

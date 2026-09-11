@@ -55,7 +55,7 @@ export function AdminPagination({ page, totalPages, onPrev, onNext }: AdminPagin
         title={t("common_next")}
       >
         <InteractionInkIcon>
-          <Icon name="chevron-right" size={20} />
+          <Icon name="arrow-right" size={20} />
         </InteractionInkIcon>
       </button>
     </div>

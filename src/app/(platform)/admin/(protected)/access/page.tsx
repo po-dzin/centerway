@@ -39,6 +39,7 @@ import {
   PAYMENT_CURRENCIES,
 } from "@/lib/admin/accessTypes";
 import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
+import { Icon } from "@/components/Icon";
 
 const LIMIT = 50;
 
@@ -65,58 +66,23 @@ async function fetchCourses(): Promise<{ items: CourseRow[]; canGrant: boolean }
 
 function EmptyIcon() {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="cw-muted"
-    >
-      <rect x="3" y="11" width="18" height="11" rx="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
+    <Icon className="cw-muted" name="lock" size={20} />
   );
 }
 
 function PlusGlyph() {
   return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <path d="M12 5v14M5 12h14" />
-    </svg>
+    <Icon name="plus" size={16} />
   );
 }
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
+    <Icon
       className={`cw-muted shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
-    >
-      <path d="m6 9 6 6 6-6" />
-    </svg>
+      name="chevron-down"
+      size={16}
+    />
   );
 }
 

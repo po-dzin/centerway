@@ -36,25 +36,11 @@ import { useToast } from "@/components/ToastProvider";
 import { getErrorMessage } from "@/lib/errors";
 import type { ProductOfferRow } from "@/lib/admin/productOfferTypes";
 import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
+import { Icon } from "@/components/Icon";
 
 function EmptyIcon() {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="cw-muted"
-    >
-      <path d="M12 2 2 7l10 5 10-5-10-5Z" />
-      <path d="M2 17l10 5 10-5" />
-      <path d="M2 12l10 5 10-5" />
-    </svg>
+    <Icon className="cw-muted" name="price" size={20} />
   );
 }
 

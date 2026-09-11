@@ -23,6 +23,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Icon } from "@/components/Icon";
 
 /**
  * Some Monday, derived rather than asserted.
@@ -296,19 +297,5 @@ export function AdminDateField({
 }
 
 function CalendarGlyph() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <rect x="3" y="5" width="18" height="16" rx="2.5" />
-      <path d="M3 10h18M8 3v4M16 3v4" />
-    </svg>
-  );
+  return <Icon name="calendar" size={16} />;
 }

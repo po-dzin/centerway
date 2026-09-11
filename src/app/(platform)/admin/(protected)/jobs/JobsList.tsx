@@ -14,6 +14,7 @@ import { getAdminLocale } from "@/lib/admin/adminLocale";
 import { JOB_STATUS_BADGE_CLASS } from "@/lib/admin/adminStatusStyles";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
 import type { JobListItem as Job, JobsPage } from "@/lib/admin/jobs";
+import { Icon } from "@/components/Icon";
 
 /** Same shape as CustomersList: the first page arrives as a prop, the rest via the API. */
 export function JobsList({ initial }: { initial: JobsPage }) {
@@ -166,21 +167,7 @@ export function JobsList({ initial }: { initial: JobsPage }) {
           className="py-20"
           iconWrapperClassName="w-12 h-12 rounded-full"
           icon={
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="cw-muted"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <path d="m4.93 4.93 14.14 14.14" />
-            </svg>
+            <Icon className="cw-muted" name="clock" size={20} />
           }
           title={t("jobs_not_found")}
           description={q || activeStatus ? t("jobs_try_filters") : t("jobs_queue_empty")}
