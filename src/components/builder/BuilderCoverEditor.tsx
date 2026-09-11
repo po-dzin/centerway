@@ -3,6 +3,8 @@
 import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 
+import { Icon } from "@/components/Icon";
+
 import { CROP_SCALE_MIN, cropStyle } from "@/lib/media/imageCrop";
 import type { Course } from "@/lms-core";
 import { BuilderImageField, type ImageSpec } from "./BuilderImageField";
@@ -118,6 +120,12 @@ function CropFrame({
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- authored cover may use any public host */}
         <img src={src} alt={alt} style={cropStyle({ x, y, scale }, { x: 50, y: 50 })} draggable={false} />
+        {/* A frame that opens an editor has to say so — the cabinet's own rule,
+            and its own mark: without one this is a photograph, and photographs
+            are not usually buttons. */}
+        <span className={styles.coverCropOpen} aria-hidden="true">
+          <Icon name="lens" size={16} />
+        </span>
       </button>
       <div className={styles.coverPreviewTools}>
         <span>{frame.note}</span>

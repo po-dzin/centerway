@@ -373,7 +373,7 @@ export function AuthorProfileFold({
                                 if (file) void handleBackground(file);
                               }}
                             />
-                            <Icon name="edit" size={18} />
+                            <Icon name="import" size={18} />
                           </label>
                           <button
                             type="button"
@@ -557,7 +557,7 @@ export function AuthorProfileFold({
                                   if (file) void handlePhoto(file);
                                 }}
                               />
-                              <Icon name="edit" size={18} />
+                              <Icon name="import" size={18} />
                             </label>
                             <button
                               type="button"

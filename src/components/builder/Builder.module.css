@@ -3860,6 +3860,25 @@
   outline-offset: var(--ds-focus-ring-offset);
 }
 
+/* THE SAME MARK THE CABINET'S FRAMES CARRY, and deliberately the same one:
+   both say "this picture opens an editor", and a lens that means it here and a
+   pencil that means it there is how one gesture becomes two. Geometry mirrors
+   `.photoCropOpen` in Cabinet.module.css. */
+.coverCropOpen {
+  position: absolute;
+  left: var(--cw-space-2xs);
+  bottom: var(--cw-space-2xs);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--cw-radius-md);
+  background: color-mix(in srgb, var(--cw-mat-scrim-ink) 62%, transparent);
+  color: var(--cw-platform-accent-contrast);
+  pointer-events: none;
+}
+
 .coverPreviewLandscape img,
 .coverPreviewWide img,
 .coverPreviewPortrait img {

@@ -2021,7 +2021,11 @@
   justify-content: center;
   width: 1.75rem;
   height: 1.75rem;
-  border-radius: var(--cw-radius-sm);
+  /* md, because a 28px box takes md — the geometry law, and this rule was one
+     of the 22 exceptions the ratchet was carrying. Burnt down 2026-09-11 rather
+     than copied: the builder's cover frames took the same mark that day, and a
+     new file inheriting an old exemption is how a baseline stops shrinking. */
+  border-radius: var(--cw-radius-md);
   background: color-mix(in srgb, var(--cw-mat-scrim-ink) 62%, transparent);
   color: var(--cw-platform-accent-contrast);
   pointer-events: none;
