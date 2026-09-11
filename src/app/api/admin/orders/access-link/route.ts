@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { badRequestResponse, forbiddenResponse, requireAdminSession } from "@/lib/api/adminRoute";
-import { fulfilmentDestination, orderFulfilment } from "@/lib/fulfilmentDestination";
+import { fulfilmentDestination, orderFulfilment } from "@/lib/payments/fulfilmentDestination";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 /**

@@ -3,7 +3,11 @@
   min-height: 100dvh;
   background:
     radial-gradient(circle at top, color-mix(in srgb, var(--cw-platform-accent) 12%, transparent), transparent 42%),
-    linear-gradient(180deg, var(--cw-platform-bg), color-mix(in srgb, var(--cw-platform-surface) 92%, var(--cw-platform-bg)));
+    linear-gradient(
+      180deg,
+      var(--cw-platform-bg),
+      color-mix(in srgb, var(--cw-platform-surface) 92%, var(--cw-platform-bg))
+    );
   color: var(--cw-platform-text);
 }
 

@@ -13,7 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { LMS_LEARNER_WRITE } from "@/lib/lms/rateRules";
 import { loadLearnerCourse, loadProgress, recordProgressEvent } from "@/lib/lms/server";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import {
   buildOutline,
   canCompleteLesson,
@@ -83,7 +83,11 @@ export async function POST(req: NextRequest) {
   }
 
   const now = new Date();
-  const result = await loadLearnerCourse({ authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) }, courseSlug, now);
+  const result = await loadLearnerCourse(
+    { authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) },
+    courseSlug,
+    now,
+  );
   if (!result.ok) {
     return NextResponse.json({ error: result.reason }, { status: FAILURE_STATUS[result.reason] ?? 400 });
   }

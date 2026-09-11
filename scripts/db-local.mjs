@@ -97,7 +97,10 @@ function loadEnv() {
     const index = trimmed.indexOf("=");
     const key = trimmed.slice(0, index).trim();
     if (!process.env[key]) {
-      process.env[key] = trimmed.slice(index + 1).trim().replace(/^["']|["']$/g, "");
+      process.env[key] = trimmed
+        .slice(index + 1)
+        .trim()
+        .replace(/^["']|["']$/g, "");
     }
   }
 }
@@ -108,9 +111,7 @@ function pgBin(name) {
   if (fs.existsSync(brewed)) return brewed;
   const found = spawnSync("which", [name], { encoding: "utf8" });
   if (found.status === 0) return found.stdout.trim();
-  throw new Error(
-    `${name} not found. Install the Postgres client: brew install libpq`,
-  );
+  throw new Error(`${name} not found. Install the Postgres client: brew install libpq`);
 }
 
 /**
@@ -121,9 +122,7 @@ function pgBin(name) {
 function productionUrl() {
   const direct = process.env.SUPABASE_DB_URL;
   if (!direct) throw new Error("SUPABASE_DB_URL missing from .env.local");
-  const match = direct.match(
-    /^postgresql:\/\/postgres:([^@]+)@db\.([a-z0-9]+)\.supabase\.co/,
-  );
+  const match = direct.match(/^postgresql:\/\/postgres:([^@]+)@db\.([a-z0-9]+)\.supabase\.co/);
   if (!match) return direct; // already a pooler URL, or something bespoke
   const [, password, ref] = match;
   return `postgresql://postgres.${ref}:${password}@aws-1-eu-west-2.pooler.supabase.com:5432/postgres`;
@@ -177,10 +176,7 @@ function sync() {
   // 030 — the accounts content points at.
   const ids = new Set();
   for (const [table, column] of CONTENT_AUTHOR_REFS) {
-    const rows = query(
-      url,
-      `select distinct ${column}::text from public.${table} where ${column} is not null`,
-    );
+    const rows = query(url, `select distinct ${column}::text from public.${table} where ${column} is not null`);
     for (const id of rows.split("\n").filter(Boolean)) ids.add(id);
   }
   const accounts = [...ids].sort();
@@ -199,7 +195,8 @@ function sync() {
   '{"provider":"email","providers":["email"]}', '{}', now(), now()
 ) on conflict (id) do nothing;`,
       )
-      .join("\n\n") + "\n";
+      .join("\n\n") +
+    "\n";
   fs.writeFileSync(path.join(localDir, "030_accounts.sql"), accountsSql);
   console.log(`  030_accounts.sql ${accounts.length} accounts`);
 
@@ -242,9 +239,7 @@ function assertLocal() {
       stdio: ["ignore", "pipe", "ignore"],
     }).trim();
   } catch {
-    throw new Error(
-      "no database on 127.0.0.1:54322 — start the stack first: supabase start",
-    );
+    throw new Error("no database on 127.0.0.1:54322 — start the stack first: supabase start");
   }
   if (answer !== "54322") {
     throw new Error(`127.0.0.1:54322 answered as port ${answer}; refusing to write`);
@@ -348,7 +343,13 @@ function status() {
       LOCAL_DB_URL,
       "select relname||' '||n_live_tup from pg_stat_user_tables where schemaname='public' and n_live_tup>0 order by relname",
     );
-    console.log("local stack: up\n" + rows.split("\n").map((r) => "  " + r).join("\n"));
+    console.log(
+      "local stack: up\n" +
+        rows
+          .split("\n")
+          .map((r) => "  " + r)
+          .join("\n"),
+    );
   } catch (error) {
     console.log(`local stack: down (${error.message})`);
   }

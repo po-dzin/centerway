@@ -5,7 +5,12 @@ import type { MouseEvent, ReactNode } from "react";
 import { HandGraphic, Icon } from "@/components/Icon";
 import { PlatformAccountMenu } from "@/components/platform/layout/PlatformAccountMenu";
 import { PlatformHeader } from "@/components/platform/layout/PlatformHeader";
-import { PlatformBackOrgan, PlatformMarkOrgan, PlatformOrgans, chromeOrgans } from "@/components/platform/layout/PlatformOrgans";
+import {
+  PlatformBackOrgan,
+  PlatformMarkOrgan,
+  PlatformOrgans,
+  chromeOrgans,
+} from "@/components/platform/layout/PlatformOrgans";
 import { PlatformTrail, type TrailStep } from "@/components/platform/PlatformTrail";
 import { supabaseClient } from "@/lib/supabaseClient";
 import type { BuilderFailure } from "./builderClient";
@@ -102,10 +107,11 @@ export function BuilderShell({
      place — it has no route, because there is no page for one. Reading
      `length - 2` blindly found that dead step, fell through to the mark, and
      the arrow never appeared on the one screen it matters most. */
-  const parent = trail
-    .slice(0, -1)
-    .reverse()
-    .find((step) => step.onNavigate || step.href) ?? null;
+  const parent =
+    trail
+      .slice(0, -1)
+      .reverse()
+      .find((step) => step.onNavigate || step.href) ?? null;
 
   /* Two ways to fold one panel, one thing the control has to say. `collapsed`
      empties the rail, `compact` narrows it to its icon column — but from the
@@ -114,7 +120,16 @@ export function BuilderShell({
   const asideFolded = Boolean(asideCollapsed || asideCompact);
 
   const interceptNavigation = (event: MouseEvent<HTMLDivElement>) => {
-    if (!onNavigate || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (
+      !onNavigate ||
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
+      return;
     const target = event.target;
     if (!(target instanceof Element)) return;
     const anchor = target.closest("a[href]");
@@ -122,7 +137,12 @@ export function BuilderShell({
     const destination = new URL(anchor.href, window.location.href);
     if (destination.origin !== window.location.origin) return;
     // In-page mode tabs own their hash and do not leave the document.
-    if (destination.pathname === window.location.pathname && destination.search === window.location.search && destination.hash) return;
+    if (
+      destination.pathname === window.location.pathname &&
+      destination.search === window.location.search &&
+      destination.hash
+    )
+      return;
     event.preventDefault();
     event.stopPropagation();
     onNavigate(`${destination.pathname}${destination.search}${destination.hash}`);
@@ -149,15 +169,19 @@ export function BuilderShell({
         scope="mobile"
         reveal="always"
         label="Майстерня"
-        left={parent?.onNavigate
-          ? <PlatformBackOrgan onNavigate={parent.onNavigate} label={`Назад: ${parent.label}`} />
-          : parent?.href
-            ? <PlatformBackOrgan href={parent.href} label={`Назад: ${parent.label}`} />
-            : <PlatformMarkOrgan />}
+        left={
+          parent?.onNavigate ? (
+            <PlatformBackOrgan onNavigate={parent.onNavigate} label={`Назад: ${parent.label}`} />
+          ) : parent?.href ? (
+            <PlatformBackOrgan href={parent.href} label={`Назад: ${parent.label}`} />
+          ) : (
+            <PlatformMarkOrgan />
+          )
+        }
         /* No `routes`. The workshop is a focused mode: `PlatformHeader` gives
            it an empty `navSource` for the same reason, so a route map in the
            sheet would be a map the bar above 901px does not draw. */
-        right={(
+        right={
           /* THE DOCUMENT'S TOOLS, THEN THE ACCOUNT. The capsule is the reader's
              own recipe (`chromeOrgans.cluster`): several controls travelling as
              one object, so they read as this lesson's toolkit rather than as
@@ -167,18 +191,25 @@ export function BuilderShell({
             {organs ? <span className={chromeOrgans.cluster}>{organs}</span> : null}
             <PlatformAccountMenu compact />
           </span>
-        )}
+        }
       />
       <PlatformHeader
         surface="personal"
         mode="workspace"
         scope="desktop"
-        workspaceContent={(
+        workspaceContent={
           <div className={styles.workspaceTopbarContext}>
             {showTrail ? <PlatformTrail steps={trail} /> : <span />}
-            {tools || organs ? <div className={styles.workspaceTopbarTools}>{organs}{tools}</div> : <span />}
+            {tools || organs ? (
+              <div className={styles.workspaceTopbarTools}>
+                {organs}
+                {tools}
+              </div>
+            ) : (
+              <span />
+            )}
           </div>
-        )}
+        }
       />
 
       <div
@@ -329,15 +360,7 @@ export function BuilderSignIn() {
 }
 
 /** A panel that states one thing and stops — loading, empty, refused, broken. */
-export function BuilderNotice({
-  title,
-  text,
-  children,
-}: {
-  title: string;
-  text?: string;
-  children?: ReactNode;
-}) {
+export function BuilderNotice({ title, text, children }: { title: string; text?: string; children?: ReactNode }) {
   return (
     <section className={styles.panel}>
       <h2 className={styles.panelTitle}>{title}</h2>

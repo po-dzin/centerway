@@ -70,7 +70,10 @@ describe("author portrait", () => {
      box's step; the face inside it is round. */
   it("draws every chrome face round too, not just the component's", () => {
     const shell = read("src/components/platform/PlatformShell.module.css");
-    const bar = shell.slice(shell.indexOf("\n.profileAvatar {"), shell.indexOf("}", shell.indexOf("\n.profileAvatar {")));
+    const bar = shell.slice(
+      shell.indexOf("\n.profileAvatar {"),
+      shell.indexOf("}", shell.indexOf("\n.profileAvatar {")),
+    );
     expect(bar).toContain("border-radius: var(--cw-radius-pill)");
 
     const island = shell.slice(shell.indexOf('[data-cw-chrome="organs"] .profileAvatar {'));

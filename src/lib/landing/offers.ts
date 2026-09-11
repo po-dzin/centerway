@@ -285,7 +285,9 @@ async function activateDraftIremOffer(offerToken: string): Promise<PersonalOffer
     .eq("token", offerToken)
     .eq("product_code", "irem")
     .eq("status", "draft")
-    .select("token, product_code, offer_id, status, recipient_key, channel, campaign, amount, old_amount, currency, issued_at, expires_at, metadata")
+    .select(
+      "token, product_code, offer_id, status, recipient_key, channel, campaign, amount, old_amount, currency, issued_at, expires_at, metadata",
+    )
     .limit(1)
     .maybeSingle();
 
@@ -317,7 +319,9 @@ export async function resolveIremLandingOffer(input: QueryLike): Promise<Landing
   const db = adminClient();
   const { data, error } = await db
     .from("personal_offer_tokens")
-    .select("token, product_code, offer_id, status, recipient_key, channel, campaign, amount, old_amount, currency, issued_at, expires_at, metadata")
+    .select(
+      "token, product_code, offer_id, status, recipient_key, channel, campaign, amount, old_amount, currency, issued_at, expires_at, metadata",
+    )
     .eq("token", offerToken)
     .eq("product_code", "irem")
     .maybeSingle();
@@ -335,7 +339,9 @@ export async function resolveIremLandingOffer(input: QueryLike): Promise<Landing
     }
     const { data: refetched } = await db
       .from("personal_offer_tokens")
-      .select("token, product_code, offer_id, status, recipient_key, channel, campaign, amount, old_amount, currency, issued_at, expires_at, metadata")
+      .select(
+        "token, product_code, offer_id, status, recipient_key, channel, campaign, amount, old_amount, currency, issued_at, expires_at, metadata",
+      )
       .eq("token", offerToken)
       .eq("product_code", "irem")
       .maybeSingle();
@@ -404,7 +410,9 @@ export async function issueIremPersonalOffer(input: IssuePersonalOfferInput): Pr
   };
 }
 
-export async function issueOrReuseIremPersonalOffer(input: IssuePersonalOfferInput): Promise<IssueOrReusePersonalOfferResult> {
+export async function issueOrReuseIremPersonalOffer(
+  input: IssuePersonalOfferInput,
+): Promise<IssueOrReusePersonalOfferResult> {
   const recipientKey = input.recipientKey.trim();
   const campaign = first(input.campaign ?? null);
 
@@ -418,7 +426,9 @@ export async function issueOrReuseIremPersonalOffer(input: IssuePersonalOfferInp
   const db = adminClient();
   const { data, error } = await db
     .from("personal_offer_tokens")
-    .select("token, product_code, offer_id, status, recipient_key, channel, campaign, amount, old_amount, currency, issued_at, expires_at, created_at, metadata")
+    .select(
+      "token, product_code, offer_id, status, recipient_key, channel, campaign, amount, old_amount, currency, issued_at, expires_at, created_at, metadata",
+    )
     .eq("product_code", "irem")
     .eq("recipient_key", recipientKey)
     .eq("campaign", campaign)
@@ -445,7 +455,9 @@ export async function issueOrReuseIremPersonalOffer(input: IssuePersonalOfferInp
   };
 }
 
-export async function issueIremPersonalOffersBatch(input: IssuePersonalOfferBatchInput): Promise<IssuedPersonalOfferBatch> {
+export async function issueIremPersonalOffersBatch(
+  input: IssuePersonalOfferBatchInput,
+): Promise<IssuedPersonalOfferBatch> {
   const seen = new Set<string>();
   const dedupedRecipientKeys: string[] = [];
   const uniqueEntries: IssuePersonalOfferInput[] = [];

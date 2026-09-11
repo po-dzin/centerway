@@ -20,12 +20,24 @@ export function CourseNextStep({ currentSlug, courses }: { currentSlug: string; 
           same destination without creating duplicate tab stops. */}
       <PlatformOfferCarousel label="Рекомендовані курси">
         {next.map((course) => (
-          <PlatformOfferCard key={course.slug} title={course.title} tag={course.tag}
-            description={course.description} href={course.href} visual={course.visual}
-            slug={course.slug} artwork={course.artwork} kindBadge={course.kindBadge}
-            categories={course.categoryLabels} pretitle={course.pretitle} posttitle={course.posttitle}
-            commercialMode={course.commercialMode} price={course.price} compareAtPrice={course.compareAtPrice}
-            ctaLabel="Наступний крок" />
+          <PlatformOfferCard
+            key={course.slug}
+            title={course.title}
+            tag={course.tag}
+            description={course.description}
+            href={course.href}
+            visual={course.visual}
+            slug={course.slug}
+            artwork={course.artwork}
+            kindBadge={course.kindBadge}
+            categories={course.categoryLabels}
+            pretitle={course.pretitle}
+            posttitle={course.posttitle}
+            commercialMode={course.commercialMode}
+            price={course.price}
+            compareAtPrice={course.compareAtPrice}
+            ctaLabel="Наступний крок"
+          />
         ))}
       </PlatformOfferCarousel>
     </PlatformBlock>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PlatformProgramsIndexPage } from "@/components/platform/PlatformCatalogPages";
 import { describe } from "@/lib/brand/identity";
 import { pageMetadata } from "@/lib/seo/metadata";
-import { JsonLd } from "@/lib/seo/StructuredData";
+import { JsonLd } from "@/components/seo/StructuredData";
 import { breadcrumbLd, graph, itemListLd } from "@/lib/seo/jsonLd";
 import { programs } from "@/lib/platform/content";
 import { listStorefrontCourses } from "@/lib/platform/offers";
@@ -10,7 +10,7 @@ import { listStorefrontCourses } from "@/lib/platform/offers";
 export const metadata: Metadata = pageMetadata({
   title: "Програми і курси",
   description: describe(
-    "Усі програми CenterWay: детокс «Шлях 21», розвантажувальний день, гімнастика ІВЕМ, харчування під конституцію — з уроками, практикою і зрозумілим форматом."
+    "Усі програми CenterWay: детокс «Шлях 21», розвантажувальний день, гімнастика ІВЕМ, харчування під конституцію — з уроками, практикою і зрозумілим форматом.",
   ),
   path: "/programs",
 });
@@ -48,7 +48,7 @@ export default async function ProgramsIndexPage() {
           breadcrumbLd([
             { path: "/", name: "CenterWay" },
             { path: "/programs", name: "Програми" },
-          ])
+          ]),
         )}
       />
       <PlatformProgramsIndexPage />

@@ -83,7 +83,7 @@ async function main() {
     process.exit(process.exitCode || 1);
   }
 
-  const requiredKeysOk = checkRequiredKeys(json, ["summary", "funnel_chain", "capi_overview", "freshness"]);
+  checkRequiredKeys(json, ["summary", "funnel_chain", "capi_overview", "freshness"]);
 
   const summary = json.summary;
   if (!summary || typeof summary !== "object" || Array.isArray(summary)) {
@@ -105,10 +105,19 @@ async function main() {
     fail("funnel_chain is missing or not an object");
   } else {
     const funnelRules = [
-      ["funnel_chain.view_content is a finite non-negative number", isFiniteNonNegativeNumber(funnelChain.view_content)],
-      ["funnel_chain.initiate_checkout is a finite non-negative number", isFiniteNonNegativeNumber(funnelChain.initiate_checkout)],
+      [
+        "funnel_chain.view_content is a finite non-negative number",
+        isFiniteNonNegativeNumber(funnelChain.view_content),
+      ],
+      [
+        "funnel_chain.initiate_checkout is a finite non-negative number",
+        isFiniteNonNegativeNumber(funnelChain.initiate_checkout),
+      ],
       ["funnel_chain.purchase is a finite non-negative number", isFiniteNonNegativeNumber(funnelChain.purchase)],
-      ["funnel_chain.access_granted is a finite non-negative number", isFiniteNonNegativeNumber(funnelChain.access_granted)],
+      [
+        "funnel_chain.access_granted is a finite non-negative number",
+        isFiniteNonNegativeNumber(funnelChain.access_granted),
+      ],
     ];
     for (const [label, ok] of funnelRules) {
       if (ok) pass(label);
@@ -120,7 +129,7 @@ async function main() {
         pass("funnel_chain.purchase is less than or equal to funnel_chain.initiate_checkout");
       } else {
         fail(
-          `funnel_chain.purchase (${funnelChain.purchase}) is greater than funnel_chain.initiate_checkout (${funnelChain.initiate_checkout})`
+          `funnel_chain.purchase (${funnelChain.purchase}) is greater than funnel_chain.initiate_checkout (${funnelChain.initiate_checkout})`,
         );
       }
     }

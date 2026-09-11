@@ -16,7 +16,7 @@
  */
 
 import { coverArtworkFraming } from "@/lib/lms/courseCover";
-import type { OfferSurface } from "@/components/platform/ProgramDetailPage";
+import type { OfferSurface } from "@/lib/platform/offerSurface";
 import { plural } from "@/lib/plural";
 import { offerName, offerSubtitle } from "@/lib/platform/offerPreview";
 import { COURSE_KIND_BADGES } from "@/lib/platform/catalogVocabulary";

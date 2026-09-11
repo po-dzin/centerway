@@ -79,9 +79,10 @@ type Token = { text: string; bold: boolean; italic: boolean; href?: string };
 export function markupToInline(input: string): InlineText {
   const tokens = parse(input);
 
-  if (tokens.length === 0) return "";
-  if (tokens.length === 1 && !tokens[0].bold && !tokens[0].italic && !tokens[0].href) {
-    return tokens[0].text;
+  const [only] = tokens;
+  if (!only) return "";
+  if (tokens.length === 1 && !only.bold && !only.italic && !only.href) {
+    return only.text;
   }
 
   return tokens.map((token) => {
@@ -109,8 +110,9 @@ function parse(input: string): Token[] {
   while (index < input.length) {
     const char = input[index];
 
-    if (char === "\\" && index + 1 < input.length && ESCAPABLE.has(input[index + 1])) {
-      buffer += input[index + 1];
+    const escaped = input.charAt(index + 1);
+    if (char === "\\" && index + 1 < input.length && ESCAPABLE.has(escaped)) {
+      buffer += escaped;
       index += 2;
       continue;
     }
@@ -157,7 +159,7 @@ function readLink(input: string, start: number): { label: string; href: string; 
 
   while (index < input.length && input[index] !== "]") {
     if (input[index] === "\\" && index + 1 < input.length) {
-      label += input[index] + input[index + 1];
+      label += input.charAt(index) + input.charAt(index + 1);
       index += 2;
       continue;
     }

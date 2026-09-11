@@ -97,7 +97,11 @@ export function BlockPreview({ block }: { block: LessonBlock }) {
   }
 
   if (block.type === "code") {
-    return <pre className={styles.previewCode}><code>{block.code}</code></pre>;
+    return (
+      <pre className={styles.previewCode}>
+        <code>{block.code}</code>
+      </pre>
+    );
   }
 
   return null;

@@ -60,7 +60,7 @@ export async function resolveLandingPrices(html: string): Promise<LandingPrices>
         });
         return null;
       }
-    })
+    }),
   );
 
   return Object.fromEntries(entries.filter((entry) => entry !== null));
@@ -95,7 +95,7 @@ export async function resolveClosedCheckouts(codes: string[]): Promise<Set<strin
         });
         closed.add(code);
       }
-    })
+    }),
   );
 
   return closed;

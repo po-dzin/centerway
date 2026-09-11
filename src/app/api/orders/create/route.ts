@@ -1,33 +1,42 @@
 // src/app/api/orders/create/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import crypto from "crypto";
+import { parseBody, withRoute } from "@/lib/api/route";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { loadPayableOffer } from "@/lib/platform/offers";
-import { makeOrderRef } from "@/lib/paymentStart";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { makeOrderRef } from "@/lib/payments/paymentStart";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 
 export const runtime = "nodejs";
 
-type Body = {
-  product_code?: unknown; // может прилететь что угодно
-  // optional attribution payload for CAPI matching quality
-  attrib?: {
-    fbp?: unknown;
-    fbc?: unknown;
-    fbclid?: unknown;
-    utm_campaign?: unknown;
-    event_id?: unknown;
-    page_url?: unknown;
-    client_ip?: unknown;
-    client_ua?: unknown;
-  } | null;
-};
+/* An attribution field that is not a string is dropped, not refused: the
+   landings' common.js has sent `null`, `undefined` and the odd number here for
+   months, and an order must not fail over a broken fbp cookie. */
+const optionalText = z
+  .string()
+  .transform((v) => (v.trim() ? v.trim() : null))
+  .nullish()
+  .catch(null);
 
-function asOptionalString(value: unknown): string | null {
-  return typeof value === "string" && value.trim() ? value.trim() : null;
-}
+const Body = z.object({
+  product_code: z.string().min(1),
+  // optional attribution payload for CAPI matching quality
+  attrib: z
+    .object({
+      fbp: optionalText,
+      fbc: optionalText,
+      fbclid: optionalText,
+      utm_campaign: optionalText,
+      event_id: optionalText,
+      page_url: optionalText,
+      client_ip: optionalText,
+      client_ua: optionalText,
+    })
+    .nullish(),
+});
 
 /**
  * This route writes a row that the entitlement later reads, so it answers to
@@ -63,18 +72,24 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 function newOrderRef(product: Parameters<typeof makeOrderRef>[0]) {
-  return makeOrderRef(product, () => Date.now(), (bytes) => crypto.randomBytes(bytes).toString("hex"));
+  return makeOrderRef(
+    product,
+    () => Date.now(),
+    (bytes) => crypto.randomBytes(bytes).toString("hex"),
+  );
 }
 
-export async function POST(req: NextRequest) {
+export const POST = withRoute("orders.create", async (req) => {
   const origin = allowedOrigin(req);
 
   const rl = await enforceRateLimit(req, { name: "orders_create", limit: 30, windowSeconds: 60 });
   if (!rl.allowed) return cors(tooManyRequests(rl.retryAfter), origin);
 
-  try {
-    const body = (await req.json()) as Body;
+  const parsed = await parseBody(req, Body);
+  if (!parsed.ok) return cors(parsed.response, origin);
+  const body = parsed.data;
 
+  {
     /* Same rule as /api/pay/start: no fallback product. This route only
        RECORDS an order, but the row it writes is what the entitlement later
        reads, so an order filed under the wrong code is access to the wrong
@@ -85,6 +100,7 @@ export async function POST(req: NextRequest) {
     }
     const product = cfg.code;
     const attrib = body.attrib ?? null;
+    const asOptionalString = (v: string | null | undefined) => v ?? null;
 
     const order_ref = newOrderRef(product);
 
@@ -107,11 +123,8 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       return cors(
-        NextResponse.json(
-          { ok: false, error: "db_order_insert_failed", details: error.message },
-          { status: 500 }
-        ),
-        origin
+        NextResponse.json({ ok: false, error: "db_order_insert_failed", details: error.message }, { status: 500 }),
+        origin,
       );
     }
 
@@ -176,15 +189,7 @@ export async function POST(req: NextRequest) {
         currency: cfg.currency,
         status: "created",
       }),
-      origin
-    );
-  } catch (e: any) {
-    return cors(
-      NextResponse.json(
-        { ok: false, error: "bad_request", details: String(e?.message ?? e) },
-        { status: 400 }
-      ),
-      origin
+      origin,
     );
   }
-}
+});

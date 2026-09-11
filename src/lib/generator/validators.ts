@@ -59,9 +59,7 @@ function asStringRecord(input: unknown): Record<`--${string}`, string> | null {
 
 function asStringArray(input: unknown): string[] {
   if (!Array.isArray(input)) return [];
-  return input
-    .map((value) => asString(value))
-    .filter((value): value is string => Boolean(value));
+  return input.map((value) => asString(value)).filter((value): value is string => Boolean(value));
 }
 
 function ensureUnique(ids: string[], entityName: string): void {
@@ -176,11 +174,16 @@ export function validateArchetypeContracts(input: unknown): ArchetypeContractsMa
         conditional: componentConditional.filter((value): value is string => typeof value === "string"),
         forbidden: componentForbidden.filter((value): value is string => typeof value === "string"),
       },
-      rules: Array.isArray(entry.rules) ? entry.rules.filter((value): value is string => typeof value === "string") : [],
+      rules: Array.isArray(entry.rules)
+        ? entry.rules.filter((value): value is string => typeof value === "string")
+        : [],
     } satisfies ArchetypeContract;
   });
 
-  ensureUnique(contracts.map((item) => item.archetype), "archetype_contract");
+  ensureUnique(
+    contracts.map((item) => item.archetype),
+    "archetype_contract",
+  );
 
   for (const archetype of registry) {
     if (!contracts.some((contract) => contract.archetype === archetype)) {
@@ -255,7 +258,10 @@ export function validateTokenPacks(input: unknown): TokenPackManifest[] {
     };
   });
 
-  ensureUnique(packs.map((item) => item.id), "token_pack");
+  ensureUnique(
+    packs.map((item) => item.id),
+    "token_pack",
+  );
   return packs;
 }
 
@@ -283,7 +289,10 @@ export function validateModePacks(input: unknown): ModePackManifest[] {
     };
   });
 
-  ensureUnique(packs.map((item) => item.id), "mode_pack");
+  ensureUnique(
+    packs.map((item) => item.id),
+    "mode_pack",
+  );
   return packs;
 }
 
@@ -311,7 +320,10 @@ export function validateBranchOverlays(input: unknown): BranchOverlayManifest[] 
     };
   });
 
-  ensureUnique(overlays.map((item) => item.id), "branch_overlay");
+  ensureUnique(
+    overlays.map((item) => item.id),
+    "branch_overlay",
+  );
   return overlays;
 }
 
@@ -337,7 +349,10 @@ export function validateRecipes(input: unknown): ComponentRecipeManifest[] {
     };
   });
 
-  ensureUnique(recipes.map((item) => item.id), "recipe");
+  ensureUnique(
+    recipes.map((item) => item.id),
+    "recipe",
+  );
   return recipes;
 }
 
@@ -397,7 +412,10 @@ export function validateSemanticBlocks(input: unknown): SemanticBlockManifest[] 
     };
   });
 
-  ensureUnique(blocks.map((item) => item.id), "semantic_block");
+  ensureUnique(
+    blocks.map((item) => item.id),
+    "semantic_block",
+  );
   return blocks;
 }
 
@@ -477,7 +495,10 @@ export function validateBlockManifests(input: unknown): BlockManifest[] {
     };
   });
 
-  ensureUnique(manifests.map((item) => item.id), "block_manifest");
+  ensureUnique(
+    manifests.map((item) => item.id),
+    "block_manifest",
+  );
   return manifests;
 }
 
@@ -573,7 +594,10 @@ export function validateScreens(input: unknown): ScreenManifest[] {
     };
   });
 
-  ensureUnique(manifests.map((item) => item.id), "screen_manifest");
+  ensureUnique(
+    manifests.map((item) => item.id),
+    "screen_manifest",
+  );
   return manifests;
 }
 
@@ -635,8 +659,14 @@ export function validateExperiments(input: unknown): ExperimentManifest[] {
     };
   });
 
-  ensureUnique(experiments.map((item) => item.id), "experiment");
-  ensureUnique(experiments.map((item) => item.key), "experiment_key");
+  ensureUnique(
+    experiments.map((item) => item.id),
+    "experiment",
+  );
+  ensureUnique(
+    experiments.map((item) => item.key),
+    "experiment_key",
+  );
   return experiments;
 }
 
@@ -688,7 +718,10 @@ export function validateRouteFamilyContracts(input: unknown): RouteFamilyContrac
     return contract;
   });
 
-  ensureUnique(contracts.map((item) => item.id), "route_family_contract");
+  ensureUnique(
+    contracts.map((item) => item.id),
+    "route_family_contract",
+  );
   return { schema_version: schemaVersion, contracts };
 }
 
@@ -697,7 +730,7 @@ export function enforceCanonicalIntegrity(
   blockManifests: BlockManifest[],
   semanticBlocks: SemanticBlockManifest[],
   recipes: ComponentRecipeManifest[],
-  routeFamilyContracts?: RouteFamilyContract[]
+  routeFamilyContracts?: RouteFamilyContract[],
 ): void {
   const blockManifestMap = new Map(blockManifests.map((item) => [item.id, item]));
   const semanticBlockMap = new Map(semanticBlocks.map((item) => [item.id, item]));

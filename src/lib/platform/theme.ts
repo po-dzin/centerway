@@ -150,8 +150,8 @@ export const THEME_BOOT_SCRIPT = [
   `try{c=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});}catch(e){}`,
   'if(c!=="light"&&c!=="dark"){try{c=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}catch(e){c="light";}}',
   'var r=document.documentElement;r.setAttribute("data-cw-theme",c);r.style.colorScheme=c;',
-  'var m=document.querySelector(\'meta[name="theme-color"]\');',
+  "var m=document.querySelector('meta[name=\"theme-color\"]');",
   `if(m)m.setAttribute("content",c==="dark"?${JSON.stringify(PLATFORM_GROUND_DARK)}:${JSON.stringify(
-    PLATFORM_GROUND
+    PLATFORM_GROUND,
   )});})();`,
 ].join("");

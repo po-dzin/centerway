@@ -36,9 +36,7 @@ describe("blockerTarget", () => {
 
   /** The index is resolved to the block's own id: an index moves, an id does not. */
   it("names the block by id, not by position", () => {
-    expect(blockerTarget(course, blocker("way21.week-1.day-1.blocks[1]"))?.href).toBe(
-      "/build/way21/day-1#block-b2"
-    );
+    expect(blockerTarget(course, blocker("way21.week-1.day-1.blocks[1]"))?.href).toBe("/build/way21/day-1#block-b2");
   });
 
   it("falls back to the lesson when the index is past the end", () => {

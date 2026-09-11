@@ -83,7 +83,7 @@ describe("inlineToHtml", () => {
 
   it("writes bold inside italic inside link, the same order as the text dialect", () => {
     expect(inlineToHtml([{ text: "x", bold: true, italic: true, href: "/p" }])).toBe(
-      '<a href="/p"><i><b>x</b></i></a>'
+      '<a href="/p"><i><b>x</b></i></a>',
     );
   });
 });

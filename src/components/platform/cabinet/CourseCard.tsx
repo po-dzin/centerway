@@ -122,9 +122,7 @@ export function CourseCard({
         <CourseCover course={course} dimmed={course.access === "locked"} />
         {course.status === "draft" ? (
           <span className={styles.draftBadge}>
-            <span className={styles.draftBadgeChip}>
-              {copy.courseDraft}
-            </span>
+            <span className={styles.draftBadgeChip}>{copy.courseDraft}</span>
           </span>
         ) : null}
       </div>
@@ -168,10 +166,7 @@ export function CourseCard({
       </ul>
 
       <div className={styles.actions}>
-        <MotionLink
-          className={action.primary ? styles.actionPrimary : styles.actionGhost}
-          href={href(action.href)}
-        >
+        <MotionLink className={action.primary ? styles.actionPrimary : styles.actionGhost} href={href(action.href)}>
           {action.label}
         </MotionLink>
         {course.access !== "locked" && action.href !== courseMapHref(course) ? (

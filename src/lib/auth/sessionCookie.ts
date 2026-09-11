@@ -1,3 +1,5 @@
+import { normalizeHost } from "@/lib/surfaces/catalog";
+
 /**
  * Where the browser session is stored, and who can read it.
  *
@@ -34,11 +36,6 @@ export type SessionCookieOptions = {
   sameSite: "lax";
   secure: boolean;
 };
-
-function normalizeHost(host: string | null | undefined): string {
-  if (!host) return "";
-  return host.split(":")[0].trim().toLowerCase();
-}
 
 /**
  * True only for the real domain and its subdomains.

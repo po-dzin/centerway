@@ -14,21 +14,21 @@ const customers = new Map<string, { id: string; email: string | null; display_na
 const leads: Array<Record<string, unknown>> = [];
 const attempts = new Map<string, { id: string; status: string; result_type: string | null }>();
 
-vi.mock("@/lib/rateLimit", () => ({
+vi.mock("@/lib/api/rateLimit", () => ({
   enforceRateLimit: async () => ({ allowed: true }),
   tooManyRequests: () => new Response(null, { status: 429 }),
 }));
 
-vi.mock("@/lib/tg", () => ({ sendTelegramMessage: async () => undefined }));
+vi.mock("@/lib/telegram/tg", () => ({ sendTelegramMessage: async () => undefined }));
 
-vi.mock("@/lib/checkoutFlow", () => ({
+vi.mock("@/lib/payments/checkoutFlow", () => ({
   persistLeadBestEffort: async (_db: unknown, lead: Record<string, unknown>) => {
     leads.push(lead);
     return "leads";
   },
 }));
 
-vi.mock("@/lib/doshaTestRepo", () => ({
+vi.mock("@/lib/dosha/doshaTestRepo", () => ({
   loadTestAttempt: async (_db: unknown, id: string) => attempts.get(id) ?? null,
   applyDoshaTagsToCustomer: async (_db: unknown, params: { customerId: string; resultType: string }) => {
     const row = customers.get(params.customerId);
@@ -52,11 +52,29 @@ vi.mock("@/lib/platform/customerIdentity", async (importOriginal) => {
   };
 });
 
+/**
+ * The chain this mock answers, named rather than left as `any` — exactly the
+ * calls the route makes through the admin client. A method the route starts
+ * using and this mock has not grown is a type error here rather than an
+ * `undefined is not a function` halfway through a request.
+ */
+type MockBuilder = {
+  _filters: Array<[string, unknown]>;
+  /** The pending `.update()` patch; its presence is what makes this a write. */
+  _patch?: Record<string, unknown>;
+  select(): MockBuilder;
+  insert(): Promise<{ error: null }>;
+  eq(column: string, value: unknown): MockBuilder;
+  update(patch: Record<string, unknown>): MockBuilder;
+  maybeSingle(): Promise<{ data: null }>;
+  then(resolve: (value: { data: null; error: null }) => unknown): unknown;
+};
+
 vi.mock("@/lib/supabaseAdmin", () => ({
   supabaseAdmin: () => ({
     from: (table: string) => {
-      const builder: any = {
-        _filters: [] as Array<[string, unknown]>,
+      const builder: MockBuilder = {
+        _filters: [],
         select: () => builder,
         insert: async () => ({ error: null }),
         eq(column: string, value: unknown) {
@@ -69,10 +87,11 @@ vi.mock("@/lib/supabaseAdmin", () => ({
         },
         maybeSingle: async () => ({ data: null }),
         then(resolve: (value: { data: null; error: null }) => unknown) {
-          if (table === "customers" && builder._patch) {
-            const id = builder._filters.find(([c]: [string, unknown]) => c === "id")?.[1] as string;
+          const patch = builder._patch;
+          if (table === "customers" && patch) {
+            const id = builder._filters.find(([c]) => c === "id")?.[1] as string;
             const row = customers.get(id);
-            if (row) Object.assign(row, builder._patch);
+            if (row) Object.assign(row, patch);
           }
           return resolve({ data: null, error: null });
         },
@@ -125,8 +144,8 @@ describe("a stranger submitting somebody else's address", () => {
   it("still records the claim, because a lead is not a lie — it is a request", async () => {
     await route.POST(post({ name: "ЗЛОВМИСНИК", email: "buyer@example.com", attempt_id: "att-1" }));
     expect(leads).toHaveLength(1);
-    expect(leads[0].name).toBe("ЗЛОВМИСНИК");
-    expect((leads[0].payload as Record<string, unknown>).dosha_result_type).toBe("vata");
+    expect(leads[0]!.name).toBe("ЗЛОВМИСНИК");
+    expect((leads[0]!.payload as Record<string, unknown>).dosha_result_type).toBe("vata");
   });
 });
 
@@ -145,24 +164,24 @@ describe("what the form will accept as a test result", () => {
   it("ignores an attempt that was started but never finished", async () => {
     attempts.set("half", { id: "half", status: "started", result_type: "kapha" });
     await route.POST(post({ name: "x", email: "a@example.com", attempt_id: "half" }));
-    expect((leads[0].payload as Record<string, unknown>).dosha_result_type).toBeUndefined();
+    expect((leads[0]!.payload as Record<string, unknown>).dosha_result_type).toBeUndefined();
   });
 
   it("ignores an attempt id that does not exist", async () => {
     await route.POST(post({ name: "x", email: "a@example.com", attempt_id: "nope" }));
-    expect((leads[0].payload as Record<string, unknown>).dosha_result_type).toBeUndefined();
+    expect((leads[0]!.payload as Record<string, unknown>).dosha_result_type).toBeUndefined();
   });
 
   it("keeps a page-supplied ?dosha= as a claim and never as a result", async () => {
     await route.POST(post({ name: "x", email: "a@example.com", dosha: "vata" }));
-    const payload = leads[0].payload as Record<string, unknown>;
+    const payload = leads[0]!.payload as Record<string, unknown>;
     expect(payload.dosha_claimed).toBe("vata");
     expect(payload.dosha_result_type).toBeUndefined();
   });
 
   it("refuses a made-up dosha outright, in either field", async () => {
     await route.POST(post({ name: "x", email: "a@example.com", dosha: "<script>alert(1)</script>" }));
-    const payload = leads[0].payload as Record<string, unknown>;
+    const payload = leads[0]!.payload as Record<string, unknown>;
     expect(payload.dosha_claimed).toBeUndefined();
     expect(payload.dosha_result_type).toBeUndefined();
   });

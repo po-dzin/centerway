@@ -91,35 +91,40 @@ describe("block validation", () => {
             { kind: "ul", items: ["one", "two"] },
           ],
         },
-        "test"
-      )
+        "test",
+      ),
     ).not.toThrow();
   });
 
   it("rejects an image without alt text", () => {
     expect(() => validateLessonBlock({ id: "b", type: "image", src: "/a.webp" }, "test")).toThrow(
-      /lms_block_missing_image_alt/
+      /lms_block_missing_image_alt/,
     );
   });
 
   it("rejects an unknown block type", () => {
-    expect(() => validateLessonBlock({ id: "b", type: "iframe_embed" }, "test")).toThrow(
-      /lms_block_unknown_type/
-    );
+    expect(() => validateLessonBlock({ id: "b", type: "iframe_embed" }, "test")).toThrow(/lms_block_unknown_type/);
   });
 
   it("rejects duplicate checklist item ids", () => {
     expect(() =>
       validateLessonBlock(
-        { id: "b", type: "checklist", items: [{ id: "x", text: "a" }, { id: "x", text: "b" }] },
-        "test"
-      )
+        {
+          id: "b",
+          type: "checklist",
+          items: [
+            { id: "x", text: "a" },
+            { id: "x", text: "b" },
+          ],
+        },
+        "test",
+      ),
     ).toThrow(/lms_block_checklist_duplicate_item_id/);
   });
 
   it("rejects a non-youtube video provider while the decision stands", () => {
     expect(() => validateLessonBlock({ id: "b", type: "video", provider: "mux", videoId: "x" }, "t")).toThrow(
-      /lms_block_unsupported_video_provider/
+      /lms_block_unsupported_video_provider/,
     );
   });
 });
@@ -241,14 +246,14 @@ describe("course validation", () => {
   it("requires a dayIndex on every lesson of a daily course", () => {
     const course = dailyCourse() as unknown as Record<string, unknown>;
     const modules = course.modules as Array<{ lessons: Array<Record<string, unknown>> }>;
-    delete modules[0].lessons[1].dayIndex;
+    delete modules[0]!.lessons![1]!.dayIndex;
     expect(() => validateCourse(course)).toThrow(/lms_lesson_missing_day_index/);
   });
 
   it("rejects duplicate lesson slugs across modules", () => {
     const course = dailyCourse() as unknown as Record<string, unknown>;
     const modules = course.modules as Array<{ lessons: Array<Record<string, unknown>> }>;
-    modules[0].lessons[1].slug = "day-1";
+    modules[0]!.lessons![1]!.slug = "day-1";
     expect(() => validateCourse(course)).toThrow(/lms_lesson_duplicate_slug/);
   });
 
@@ -307,8 +312,8 @@ describe("progress fold", () => {
 
   it("folds events into lesson state", () => {
     const progress = foldProgress(events);
-    expect(progress.lessons.l1.status).toBe("completed");
-    expect(progress.lessons.l1.checklist.c1).toBe(true);
+    expect(progress.lessons.l1!.status).toBe("completed");
+    expect(progress.lessons.l1!.checklist!.c1).toBe(true);
     expect(progress.completedLessonIds).toEqual(["l1"]);
   });
 
@@ -325,7 +330,7 @@ describe("progress fold", () => {
       ...events,
       { clientId: "e4", type: "lesson.started", lessonId: "l1", occurredAt: "2026-08-16T06:00:00Z" },
     ]);
-    expect(progress.lessons.l1.status).toBe("completed");
+    expect(progress.lessons.l1!.status).toBe("completed");
   });
 
   it("never un-completes a lesson that is opened again", () => {
@@ -333,11 +338,11 @@ describe("progress fold", () => {
       ...events,
       { clientId: "e4b", type: "lesson.opened", lessonId: "l1", occurredAt: "2026-08-16T06:00:00Z" },
     ]);
-    expect(progress.lessons.l1.status).toBe("completed");
+    expect(progress.lessons.l1!.status).toBe("completed");
     // A return is activity even when it changes nothing else about the lesson.
     expect(progress.lastActivityAt).toBe("2026-08-16T06:00:00Z");
     // And it must not re-stamp the beginning.
-    expect(progress.lessons.l1.startedAt).toBe("2026-08-15T06:00:00Z");
+    expect(progress.lessons.l1!.startedAt).toBe("2026-08-15T06:00:00Z");
   });
 
   it("folds `lesson.opened` exactly like `lesson.started`", () => {
@@ -351,7 +356,7 @@ describe("progress fold", () => {
       { clientId: "a", type: "lesson.opened", lessonId: "l9", occurredAt: "2026-08-15T06:00:00Z" },
     ]);
     expect(opened).toEqual(started);
-    expect(opened.lessons.l9.status).toBe("started");
+    expect(opened.lessons.l9!.status).toBe("started");
   });
 
   it("keeps the earliest of start/open as startedAt, whichever type carries it", () => {
@@ -359,7 +364,7 @@ describe("progress fold", () => {
       { clientId: "o1", type: "lesson.opened", lessonId: "l2", occurredAt: "2026-08-17T09:00:00Z" },
       { clientId: "s1", type: "lesson.started", lessonId: "l2", occurredAt: "2026-08-15T06:00:00Z" },
     ]);
-    expect(progress.lessons.l2.startedAt).toBe("2026-08-15T06:00:00Z");
+    expect(progress.lessons.l2!.startedAt).toBe("2026-08-15T06:00:00Z");
   });
 
   it("counts a beginning apart from a return", () => {
@@ -372,7 +377,7 @@ describe("progress fold", () => {
     ];
     expect(log.filter((e) => e.type === "lesson.started")).toHaveLength(1);
     expect(log.filter((e) => e.type === "lesson.opened")).toHaveLength(2);
-    expect(foldProgress(log).lessons.l4.startedAt).toBe("2026-08-15T06:00:00Z");
+    expect(foldProgress(log).lessons.l4!.startedAt).toBe("2026-08-15T06:00:00Z");
   });
 
   it("un-completes on an explicit event, keeping the checklist intact", () => {
@@ -380,11 +385,11 @@ describe("progress fold", () => {
       ...events,
       { clientId: "e5", type: "lesson.uncompleted", lessonId: "l1", occurredAt: "2026-08-16T06:00:00Z" },
     ]);
-    expect(progress.lessons.l1.status).toBe("started");
-    expect(progress.lessons.l1.completedAt).toBeNull();
+    expect(progress.lessons.l1!.status).toBe("started");
+    expect(progress.lessons.l1!.completedAt).toBeNull();
     expect(progress.completedLessonIds).toEqual([]);
     // Un-ticking the step must not silently discard the learner's answers.
-    expect(progress.lessons.l1.checklist.c1).toBe(true);
+    expect(progress.lessons.l1!.checklist!.c1).toBe(true);
   });
 
   it("re-completes after un-completing, and re-stamps completedAt", () => {
@@ -393,9 +398,9 @@ describe("progress fold", () => {
       { clientId: "e5", type: "lesson.uncompleted", lessonId: "l1", occurredAt: "2026-08-16T06:00:00Z" },
       { clientId: "e6", type: "lesson.completed", lessonId: "l1", occurredAt: "2026-08-17T06:00:00Z" },
     ]);
-    expect(progress.lessons.l1.status).toBe("completed");
+    expect(progress.lessons.l1!.status).toBe("completed");
     // The second pass reports when IT finished, not when the first one did.
-    expect(progress.lessons.l1.completedAt).toBe("2026-08-17T06:00:00Z");
+    expect(progress.lessons.l1!.completedAt).toBe("2026-08-17T06:00:00Z");
   });
 
   it("resolves completion by occurredAt, not by arrival order", () => {
@@ -424,7 +429,7 @@ describe("progress fold", () => {
         payload: { itemId: "c1", checked: false },
       },
     ]);
-    expect(progress.lessons.l1.checklist.c1).toBe(false);
+    expect(progress.lessons.l1!.checklist!.c1).toBe(false);
   });
 
   it("treats an empty requirement list as satisfied", () => {
@@ -444,8 +449,8 @@ describe("drip availability", () => {
     const progress = foldProgress([]);
     const [day1, day2] = flattenLessons(course).map((entry) => entry.lesson);
 
-    expect(lessonAvailability(course, day1, progress, context)).toEqual({ available: true });
-    expect(lessonAvailability(course, day2, progress, context)).toEqual({
+    expect(lessonAvailability(course, day1!, progress, context)).toEqual({ available: true });
+    expect(lessonAvailability(course, day2!, progress, context)).toEqual({
       available: true,
       ahead: { reason: "before_day", scheduledDay: 2, daysAhead: 1 },
     });
@@ -457,8 +462,8 @@ describe("drip availability", () => {
     const progress = foldProgress([]);
     const [day1, day2] = flattenLessons(strict).map((entry) => entry.lesson);
 
-    expect(lessonAvailability(strict, day1, progress, context).available).toBe(true);
-    expect(lessonAvailability(strict, day2, progress, context)).toEqual({
+    expect(lessonAvailability(strict, day1!, progress, context).available).toBe(true);
+    expect(lessonAvailability(strict, day2!, progress, context)).toEqual({
       available: false,
       reason: "locked_by_day",
       unlocksOnDay: 2,
@@ -492,13 +497,13 @@ describe("drip availability", () => {
       timeZone: "Europe/Kyiv",
       now: new Date("2026-08-16T06:00:00Z"),
     };
-    const day2 = flattenLessons(course)[1].lesson;
-    expect(lessonAvailability(course, day2, foldProgress([]), context).available).toBe(true);
+    const day2 = flattenLessons(course)[1]!.lesson;
+    expect(lessonAvailability(course, day2!, foldProgress([]), context).available).toBe(true);
   });
 
   it("blocks completion until required checklist items are ticked", () => {
     const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
-    const day1 = flattenLessons(course)[0].lesson;
+    const day1 = flattenLessons(course)[0]!.lesson;
 
     expect(canCompleteLesson(course, day1, foldProgress([]), context)).toEqual({
       allowed: false,
@@ -533,13 +538,13 @@ describe("drip availability", () => {
     const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
     const outline = buildOutline(course, foldProgress([]), context);
     expect(outline).toHaveLength(2);
-    expect(outline[0].availability).toEqual({ available: true });
-    expect(outline[1].availability.available).toBe(true);
-    expect(outline[1].availability.available && outline[1].availability.ahead?.reason).toBe("before_day");
+    expect(outline[0]!.availability).toEqual({ available: true });
+    expect(outline[1]!.availability!.available).toBe(true);
+    expect(outline[1]!.availability!.available && outline[1]!.availability!.ahead?.reason).toBe("before_day");
   });
 
   it("collects checklist items that gate completion", () => {
-    const day1 = flattenLessons(course)[0].lesson;
+    const day1 = flattenLessons(course)[0]!.lesson;
     expect(collectRequiredChecklistItemIds(day1.blocks)).toEqual(["c1", "c2"]);
   });
 });
@@ -577,7 +582,7 @@ describe("daily reminder decision", () => {
         startedAt,
         timeZone: "Europe/Kyiv",
         now: new Date("2026-08-15T06:00:00Z"),
-      })
+      }),
     ).toEqual({ send: false, reason: "already_done" });
   });
 
@@ -587,7 +592,7 @@ describe("daily reminder decision", () => {
         startedAt,
         timeZone: "Europe/Kyiv",
         now: new Date("2026-08-20T06:00:00Z"),
-      })
+      }),
     ).toEqual({ send: false, reason: "finished" });
   });
 
@@ -638,7 +643,7 @@ describe("daily reminder decision", () => {
         timeZone: "America/Vancouver",
         now: new Date("2026-08-15T06:00:00Z"),
         hourPolicy: "single-daily-run",
-      })
+      }),
     ).toEqual({ send: false, reason: "already_done" });
   });
 });
@@ -678,7 +683,7 @@ describe("unstarted nudge decision", () => {
         ...base,
         now: new Date("2026-09-30T06:00:00Z"),
         sentNudgeNumbers: [1, 2],
-      })
+      }),
     ).toEqual({ send: false, reason: "all_sent" });
   });
 
@@ -698,7 +703,7 @@ describe("unstarted nudge decision", () => {
         ...base,
         timeZone: "America/Vancouver",
         now: new Date("2026-08-16T06:00:00Z"),
-      })
+      }),
     ).toEqual({ send: false, reason: "wrong_hour" });
   });
 
@@ -709,7 +714,7 @@ describe("unstarted nudge decision", () => {
         timeZone: "America/Vancouver",
         now: new Date("2026-08-16T06:00:00Z"),
         hourPolicy: "single-daily-run",
-      })
+      }),
     ).toMatchObject({ send: true, nudgeNumber: 1 });
   });
 
@@ -720,7 +725,7 @@ describe("unstarted nudge decision", () => {
         ...base,
         now: new Date("2026-08-16T06:00:00Z"),
         hourPolicy: "single-daily-run",
-      })
+      }),
     ).toEqual({ send: false, reason: "not_published" });
     expect(decideUnstartedReminder(draft, { ...base, now: new Date("2026-08-16T06:00:00Z") })).toEqual({
       send: false,
@@ -791,9 +796,7 @@ describe("entitlement", () => {
       courseProductCodes: [],
       courseSlug: "my-course",
       now,
-      orders: [
-        { orderRef: "o1", productCode: "course:my-course", status: "paid", createdAt: "2026-08-01T10:00:00Z" },
-      ],
+      orders: [{ orderRef: "o1", productCode: "course:my-course", status: "paid", createdAt: "2026-08-01T10:00:00Z" }],
     });
     expect(result).toMatchObject({ entitled: true, source: "order", orderRef: "o1" });
   });

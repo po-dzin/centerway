@@ -14,7 +14,7 @@
  * surfaces cannot drift into disagreeing about what is buyable.
  *
  * The quoted figure comes from `productListPrice`, never from the charged
- * amount — see the CW_TEST_PRICE_1UAH note in src/lib/products.ts.
+ * amount — see the note above `PRODUCTS` in src/lib/products.ts.
  */
 
 import {
@@ -101,7 +101,7 @@ const LEAD_BY_SLUG: Partial<Record<string, string>> = {
 /** The site-relative link that starts a checkout for one payable code. */
 function checkoutHref(productCode: PayableProductCode, slug: string): string {
   return `/api/pay/start?product=${encodeURIComponent(productCode)}&cta_place=${encodeURIComponent(
-    `${slug}_platform_offer`
+    `${slug}_platform_offer`,
   )}&source=platform_offer`;
 }
 
@@ -140,9 +140,7 @@ export function courseOfferCommerce(slug: string, offer: CourseOffer | null): Of
       accessHref: `/learn/${encodeURIComponent(offer.courseSlug)}`,
       price: "Безкоштовно",
       compareAtPrice:
-        offer.listAmount !== null && offer.listAmount > 0
-          ? formatPrice(offer.listAmount, offer.currency)
-          : null,
+        offer.listAmount !== null && offer.listAmount > 0 ? formatPrice(offer.listAmount, offer.currency) : null,
       amount: 0,
       currency: offer.currency,
     };

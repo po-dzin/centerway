@@ -6,7 +6,6 @@ import { LANDING_STATIC_BRANDS } from "@/lib/landing/contracts";
 // /tests/dosha) turned its own images into disabled-surface 404s.
 const INFRA_BYPASS_PREFIXES = [
   "/api/",
-  "/v1/",
   "/_next/",
   "/_vercel/",
   "/pay/return",

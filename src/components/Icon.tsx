@@ -56,10 +56,14 @@ export function Icon({ name, size = 24, ...rest }: IconBaseProps & { name: CwIco
  * The dot / path / orbit layer. Same sprite, 36 grid. This is navigation
  * between blocks, not decoration: never place it inside a text column.
  */
-export function HandGraphic({
-  name,
-  size = 72,
-  ...rest
-}: IconBaseProps & { name: CwGraphicName }) {
-  return <Glyph id={`cw-${name}`} size={size} viewBox="0 0 36 36" stretch={name === "ink-stroke" || name === "ink-rule"} {...rest} />;
+export function HandGraphic({ name, size = 72, ...rest }: IconBaseProps & { name: CwGraphicName }) {
+  return (
+    <Glyph
+      id={`cw-${name}`}
+      size={size}
+      viewBox="0 0 36 36"
+      stretch={name === "ink-stroke" || name === "ink-rule"}
+      {...rest}
+    />
+  );
 }

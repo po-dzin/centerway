@@ -127,7 +127,15 @@ export const BLOCK_TYPE_HINTS: Record<LessonBlock["type"], string> = {
  * So the shapes live in the slash menu, where writing happens, and the roles
  * live behind «Шаблон…», where choosing is the point.
  */
-export const BLOCK_STRUCTURE_ORDER: LessonBlock["type"][] = ["group", "table", "video", "image", "quote", "code", "cta"];
+export const BLOCK_STRUCTURE_ORDER: LessonBlock["type"][] = [
+  "group",
+  "table",
+  "video",
+  "image",
+  "quote",
+  "code",
+  "cta",
+];
 
 export const BLOCK_TEMPLATE_ORDER = Object.keys(LESSON_BLOCK_RECIPES) as LessonBlock["type"][];
 
@@ -135,11 +143,7 @@ export const BLOCK_TEMPLATE_ORDER = Object.keys(LESSON_BLOCK_RECIPES) as LessonB
  * The order the picker offers types in — by how often a lesson needs one,
  * not alphabetically and not by the order they happen to sit in the union.
  */
-export const BLOCK_TYPE_ORDER: LessonBlock["type"][] = [
-  "rich_text",
-  ...BLOCK_TEMPLATE_ORDER,
-  ...BLOCK_STRUCTURE_ORDER,
-];
+export const BLOCK_TYPE_ORDER: LessonBlock["type"][] = ["rich_text", ...BLOCK_TEMPLATE_ORDER, ...BLOCK_STRUCTURE_ORDER];
 
 const RICH_NODE_LABELS: Record<RichTextNode["kind"], string> = {
   p: "Абзац",
@@ -185,7 +189,12 @@ export function describeBlock(block: LessonBlock): BlockField[] {
     // goes wrong silently.
     case "protocol_step":
       return [
-        { path: ["timing"], label: "Час або умова", kind: "text", hint: "Наприклад «07:00» або «натще». Рендериться як написано." },
+        {
+          path: ["timing"],
+          label: "Час або умова",
+          kind: "text",
+          hint: "Наприклад «07:00» або «натще». Рендериться як написано.",
+        },
         { path: ["title"], label: "Назва", kind: "inline" },
         { path: ["text"], label: "Опис", kind: "inline", multiline: true },
       ];
@@ -284,7 +293,7 @@ export function describeBlock(block: LessonBlock): BlockField[] {
             path: ["rows", rowIndex, cellIndex],
             label: `Рядок ${rowIndex + 1}, колонка ${cellIndex + 1}`,
             kind: "inline" as const,
-          }))
+          })),
         ),
       ];
 
@@ -322,6 +331,8 @@ export function writePath<T>(source: T, path: (string | number)[], value: unknow
   if (path.length === 0) return value as T;
 
   const [key, ...rest] = path;
+  // `path` is not empty (checked above), so the head is always there.
+  if (key === undefined) return source;
 
   if (Array.isArray(source)) {
     const next = [...source];

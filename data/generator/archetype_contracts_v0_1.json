@@ -17,36 +17,12 @@
   ],
   "engine_bindings": {
     "required_semantics_by_contract": {
-      "overview-entry": [
-        "guide",
-        "method",
-        "progress"
-      ],
-      "hub-journey": [
-        "guide",
-        "trust"
-      ],
-      "offer-detail": [
-        "guide",
-        "trust",
-        "boundary"
-      ],
-      "platform-program-offer": [
-        "guide",
-        "trust",
-        "boundary"
-      ],
-      "platform-mini-course-offer": [
-        "guide",
-        "trust",
-        "boundary"
-      ],
-      "lesson-practice": [
-        "progress",
-        "method",
-        "embodied",
-        "guide"
-      ]
+      "overview-entry": ["guide", "method", "progress"],
+      "hub-journey": ["guide", "trust"],
+      "offer-detail": ["guide", "trust", "boundary"],
+      "platform-program-offer": ["guide", "trust", "boundary"],
+      "platform-mini-course-offer": ["guide", "trust", "boundary"],
+      "lesson-practice": ["progress", "method", "embodied", "guide"]
     }
   },
   "contracts": [
@@ -55,12 +31,7 @@
       "primaryCTA": "1",
       "primary_cta_repetition": "1..N",
       "semanticBlocks": {
-        "required": [
-          "hero-entry-definition",
-          "route-framing",
-          "route-choice",
-          "next-step"
-        ],
+        "required": ["hero-entry-definition", "route-framing", "route-choice", "next-step"],
         "optional": [
           "offer-includes",
           "how-it-works",
@@ -84,23 +55,11 @@
           "contraindication-block",
           "error-recovery"
         ],
-        "forbidden": [
-          "practice-unit",
-          "reflection-note",
-          "current-progress",
-          "completion-block"
-        ]
+        "forbidden": ["practice-unit", "reflection-note", "current-progress", "completion-block"]
       },
       "componentFamilies": {
-        "required": [
-          "page-shell",
-          "section-shell",
-          "route-action-button",
-          "path-card"
-        ],
-        "optional": [
-          "testimonial-card"
-        ],
+        "required": ["page-shell", "section-shell", "route-action-button", "path-card"],
+        "optional": ["testimonial-card"],
         "conditional": [
           "route-nav",
           "breadcrumb-return-path",
@@ -145,9 +104,7 @@
       "primaryCTA": "1",
       "primary_cta_repetition": "1..N",
       "semanticBlocks": {
-        "required": [
-          "hero-entry-definition"
-        ],
+        "required": ["hero-entry-definition"],
         "optional": [],
         "conditional": [
           "route-framing",
@@ -178,12 +135,7 @@
         ]
       },
       "componentFamilies": {
-        "required": [
-          "page-shell",
-          "section-shell",
-          "route-action-button",
-          "path-card"
-        ],
+        "required": ["page-shell", "section-shell", "route-action-button", "path-card"],
         "optional": [],
         "conditional": [
           "route-nav",
@@ -261,22 +213,11 @@
           "contraindication-block",
           "error-recovery"
         ],
-        "forbidden": [
-          "practice-unit",
-          "current-progress"
-        ]
+        "forbidden": ["practice-unit", "current-progress"]
       },
       "componentFamilies": {
-        "required": [
-          "page-shell",
-          "section-shell",
-          "route-action-button",
-          "proof-card",
-          "boundary-block-component"
-        ],
-        "optional": [
-          "testimonial-card"
-        ],
+        "required": ["page-shell", "section-shell", "route-action-button", "proof-card", "boundary-block-component"],
+        "optional": ["testimonial-card"],
         "conditional": [
           "route-nav",
           "breadcrumb-return-path",
@@ -322,12 +263,7 @@
       "primaryCTA": "1",
       "primary_cta_repetition": "1..N",
       "semanticBlocks": {
-        "required": [
-          "hero-entry-definition",
-          "offer-definition",
-          "support-path",
-          "boundary-block"
-        ],
+        "required": ["hero-entry-definition", "offer-definition", "support-path", "boundary-block"],
         "optional": [
           "route-framing",
           "offer-includes",
@@ -353,22 +289,11 @@
           "contraindication-block",
           "error-recovery"
         ],
-        "forbidden": [
-          "practice-unit",
-          "current-progress"
-        ]
+        "forbidden": ["practice-unit", "current-progress"]
       },
       "componentFamilies": {
-        "required": [
-          "page-shell",
-          "section-shell",
-          "route-action-button",
-          "boundary-block-component"
-        ],
-        "optional": [
-          "proof-card",
-          "testimonial-card"
-        ],
+        "required": ["page-shell", "section-shell", "route-action-button", "boundary-block-component"],
+        "optional": ["proof-card", "testimonial-card"],
         "conditional": [
           "route-nav",
           "breadcrumb-return-path",
@@ -413,12 +338,7 @@
       "primaryCTA": "1",
       "primary_cta_repetition": "1..N",
       "semanticBlocks": {
-        "required": [
-          "hero-entry-definition",
-          "offer-definition",
-          "support-path",
-          "boundary-block"
-        ],
+        "required": ["hero-entry-definition", "offer-definition", "support-path", "boundary-block"],
         "optional": [
           "route-framing",
           "offer-includes",
@@ -444,22 +364,11 @@
           "contraindication-block",
           "error-recovery"
         ],
-        "forbidden": [
-          "practice-unit",
-          "current-progress"
-        ]
+        "forbidden": ["practice-unit", "current-progress"]
       },
       "componentFamilies": {
-        "required": [
-          "page-shell",
-          "section-shell",
-          "route-action-button",
-          "boundary-block-component"
-        ],
-        "optional": [
-          "proof-card",
-          "testimonial-card"
-        ],
+        "required": ["page-shell", "section-shell", "route-action-button", "boundary-block-component"],
+        "optional": ["proof-card", "testimonial-card"],
         "conditional": [
           "route-nav",
           "breadcrumb-return-path",
@@ -593,11 +502,7 @@
       "primaryCTA": "1",
       "primary_cta_repetition": "1",
       "semanticBlocks": {
-        "required": [
-          "current-step",
-          "practice-unit",
-          "next-step"
-        ],
+        "required": ["current-step", "practice-unit", "next-step"],
         "optional": [],
         "conditional": [
           "hero-entry-definition",
@@ -628,11 +533,7 @@
         ]
       },
       "componentFamilies": {
-        "required": [
-          "page-shell",
-          "route-action-button",
-          "practice-card"
-        ],
+        "required": ["page-shell", "route-action-button", "practice-card"],
         "optional": [],
         "conditional": [
           "section-shell",
@@ -681,14 +582,7 @@
       "primaryCTA": "1",
       "primary_cta_repetition": "1",
       "semanticBlocks": {
-        "required": [
-          "route-framing",
-          "current-step",
-          "pathway-map",
-          "current-progress",
-          "next-step",
-          "support-path"
-        ],
+        "required": ["route-framing", "current-step", "pathway-map", "current-progress", "next-step", "support-path"],
         "optional": [],
         "conditional": [
           "hero-entry-definition",
@@ -859,9 +753,7 @@
       "primaryCTA": "1",
       "primary_cta_repetition": "1",
       "semanticBlocks": {
-        "required": [
-          "next-step"
-        ],
+        "required": ["next-step"],
         "optional": [],
         "conditional": [
           "current-step",
@@ -895,10 +787,7 @@
         ]
       },
       "componentFamilies": {
-        "required": [
-          "route-action-button",
-          "modal"
-        ],
+        "required": ["route-action-button", "modal"],
         "optional": [],
         "conditional": [
           "page-shell",
@@ -937,25 +826,16 @@
           "admin-status-badge"
         ]
       },
-      "rules": [
-        "exactly one primary action",
-        "safe cancel or close path required",
-        "compact payload only"
-      ]
+      "rules": ["exactly one primary action", "safe cancel or close path required", "compact payload only"]
     },
     {
       "archetype": "admin-utility",
       "primaryCTA": "0..1",
       "primary_cta_repetition": "0..1",
       "semanticBlocks": {
-        "required": [
-          "error-recovery"
-        ],
+        "required": ["error-recovery"],
         "optional": [],
-        "conditional": [
-          "current-step",
-          "next-step"
-        ],
+        "conditional": ["current-step", "next-step"],
         "forbidden": [
           "hero-entry-definition",
           "route-framing",
@@ -1114,12 +994,7 @@
       "next-step",
       "safe-close"
     ],
-    "admin-utility": [
-      "current-task-context",
-      "data-control",
-      "state-feedback",
-      "next-step|completion-path"
-    ]
+    "admin-utility": ["current-task-context", "data-control", "state-feedback", "next-step|completion-path"]
   },
   "assembly_constraints": [
     "for health-adjacent or commitment-adjacent screens include at least one trust-oriented semantic block and trust-oriented component family",

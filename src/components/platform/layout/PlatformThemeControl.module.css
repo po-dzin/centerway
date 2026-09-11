@@ -152,7 +152,9 @@
   pointer-events: none;
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.72) rotate(-4deg);
-  transition: opacity 160ms ease, transform 160ms ease;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
 }
 
 .control .option:hover .ring,

@@ -49,10 +49,7 @@ describe("applyPriceSync", () => {
   });
 
   it("moves the pixel value to the charged amount, never the list price", () => {
-    const out = applyPriceSync(
-      '<a data-cw-product="reset-day" data-cw-price-value="795">Купити</a>',
-      PRICES
-    );
+    const out = applyPriceSync('<a data-cw-product="reset-day" data-cw-price-value="795">Купити</a>', PRICES);
     // Meta optimises spend against this number: told a sale is worth the
     // pre-discount figure, a campaign bids for the wrong thing.
     expect(out).toContain('data-cw-price-value="390"');
@@ -80,9 +77,7 @@ describe("collectCheckoutCodes", () => {
   });
 
   it("reads the two attributes in either order", () => {
-    expect(collectCheckoutCodes('<button data-cw-product="way21" data-cw-checkout>Купити</button>')).toEqual([
-      "way21",
-    ]);
+    expect(collectCheckoutCodes('<button data-cw-product="way21" data-cw-checkout>Купити</button>')).toEqual(["way21"]);
   });
 
   it("ignores a product named without a checkout on it", () => {

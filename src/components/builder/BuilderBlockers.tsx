@@ -1,6 +1,7 @@
 "use client";
 
 import type { Course, ReadinessBlocker } from "@/lms-core";
+import { plural } from "@/lib/plural";
 
 import { Icon } from "@/components/Icon";
 import { blockerTarget } from "./blockerTargets";
@@ -23,8 +24,7 @@ const BLOCKER_LABELS: Record<string, string> = {
   // think about addresses, and «змініть slug» would read as bureaucracy. What
   // they can act on is that the address is about to become permanent and still
   // says «новий курс».
-  lms_ready_default_slug:
-    "Адреса курсу лишилась типовою — її видно в каталозі й потім не змінити",
+  lms_ready_default_slug: "Адреса курсу лишилась типовою — її видно в каталозі й потім не змінити",
   lms_ready_missing_cover: "Немає обкладинки — картка в каталозі буде порожньою",
   lms_ready_missing_cover_alt: "Обкладинка без опису для читача з екранним диктором",
   lms_ready_missing_tagline: "Немає рядка під назвою — картці нічого сказати",
@@ -127,13 +127,4 @@ export function BuilderBlockers({
       ) : null}
     </section>
   );
-}
-
-function plural(count: number, one: string, few: string, many: string): string {
-  const mod100 = count % 100;
-  if (mod100 >= 11 && mod100 <= 14) return many;
-  const mod10 = count % 10;
-  if (mod10 === 1) return one;
-  if (mod10 >= 2 && mod10 <= 4) return few;
-  return many;
 }

@@ -91,7 +91,13 @@ export function PlatformTrail({
         <span className={styles.back}>
           <Icon className={styles.backIcon} name="arrow-left" size={16} />
           {back.onNavigate ? (
-            <button className={styles.crumbLink} data-cw-ink-control type="button" onClick={back.onNavigate} title={back.label}>
+            <button
+              className={styles.crumbLink}
+              data-cw-ink-control
+              type="button"
+              onClick={back.onNavigate}
+              title={back.label}
+            >
               <TrailInkLabel>{back.label}</TrailInkLabel>
             </button>
           ) : (
@@ -105,7 +111,13 @@ export function PlatformTrail({
         <span className={styles.step} key={`${step.label}-${index}`}>
           {index > 0 ? <Icon className={styles.sep} name="chevron-right" size={14} /> : null}
           {step.onNavigate ? (
-            <button className={styles.crumbLink} data-cw-ink-control type="button" onClick={step.onNavigate} title={step.label}>
+            <button
+              className={styles.crumbLink}
+              data-cw-ink-control
+              type="button"
+              onClick={step.onNavigate}
+              title={step.label}
+            >
               <TrailInkLabel>{step.label}</TrailInkLabel>
             </button>
           ) : step.href ? (

@@ -35,10 +35,7 @@ export async function POST(req: NextRequest) {
   }
 
   const db = adminClient();
-  const { error } = await db
-    .from("platform_users")
-    .update({ timezone })
-    .eq("auth_user_id", user.id);
+  const { error } = await db.from("platform_users").update({ timezone }).eq("auth_user_id", user.id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

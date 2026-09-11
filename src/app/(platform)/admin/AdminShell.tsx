@@ -1,0 +1,297 @@
+"use client";
+
+import Link from "next/link";
+import { ReactNode, useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { Icon } from "@/components/Icon";
+import type { CwIconName } from "@/components/iconNames";
+import { useI18n } from "@/components/I18nProvider";
+import { InteractionInkIcon, InteractionInkLabel } from "@/components/platform/InteractionInk";
+import { PlatformAccountMenu } from "@/components/platform/layout/PlatformAccountMenu";
+import { PlatformHeader } from "@/components/platform/layout/PlatformHeader";
+import { PlatformRouteMenu } from "@/components/platform/layout/PlatformRouteMenu";
+import { PlatformMarkOrgan, PlatformOrgans, chromeOrgans } from "@/components/platform/layout/PlatformOrgans";
+import { useSession } from "@/components/auth/SessionProvider";
+import { authorizedFetch } from "@/components/auth/authorizedFetch";
+import styles from "./AdminLayout.module.css";
+
+/* THE PRODUCT'S OWN HAND (2026-08-28). These were a borrowed outline set —
+   nine inline feather-style SVGs at stroke 1.8 on a 24 grid, drawn by nobody
+   here — sitting in the one route that had also kept its own palette and its
+   own theme class. The sprite is the system's answer: baked geometry with the
+   wobble already in it, one stroke weight, `currentColor`, no filter pass.
+
+   Two of the nine had no glyph to move to and both were resolved rather than
+   approximated: `chart` was added to `icon-glyphs.mjs` for analytics (the
+   dashboard is the one screen whose subject IS measurement), and background
+   jobs took `clock` — a queue is a thing that has not happened yet, which the
+   gear it used to wear did not say. `settings` stays with the system tab,
+   where a gear means what a gear means. */
+const NAV_GLYPH = {
+  analytics: "chart",
+  orders: "price",
+  customers: "user",
+  jobs: "clock",
+  access: "lock",
+  catalog: "document",
+  system: "settings",
+} as const satisfies Record<string, CwIconName>;
+
+/**
+ * The admin chrome: rail, bar, sheet. A client component because the rail
+ * folds, the sheet opens and the nav marks the current path.
+ *
+ * WHAT IT NO LONGER DOES (2026-09-10). It used to subscribe to auth, POST to
+ * /api/admin/bootstrap-role with a 60-second in-memory cache and a
+ * sessionStorage cache, and redirect to /admin after hydration when the role
+ * was not staff — so a non-admin saw the admin frame for as long as the
+ * round trip took, and an admin saw it twice. The server layout above
+ * (`(protected)/layout.tsx`) answers "is this person staff" from the cookie
+ * before rendering, and redirects before a byte of this reaches the browser.
+ */
+export function AdminShell({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
+  const pathname = usePathname();
+  const [expanded, setExpanded] = useState(false);
+  const { status } = useSession();
+
+  useEffect(() => {
+    if (status !== "signed-in") return;
+    if (!pathname?.startsWith("/admin")) return;
+
+    const now = Date.now();
+    const JOBS_PULSE_MS = 60 * 1000;
+    // Materialized analytics refresh is deliberately infrequent because
+    // the dashboard API now carries its own short server-side cache.
+    const ANALYTICS_PULSE_MS = 30 * 60 * 1000;
+    const jobsKey = "cw_admin_jobs_pulse_at";
+    const analyticsKey = "cw_admin_analytics_pulse_at";
+
+    const getLastTs = (key: string) => {
+      try {
+        return Number(sessionStorage.getItem(key) || "0");
+      } catch {
+        return 0;
+      }
+    };
+
+    const setLastTs = (key: string, value: number) => {
+      try {
+        sessionStorage.setItem(key, String(value));
+      } catch {
+        // ignore storage write errors
+      }
+    };
+
+    const shouldRefreshAnalytics = pathname.startsWith("/admin/analytics");
+    const jobsDue = now - getLastTs(jobsKey) >= JOBS_PULSE_MS;
+    const analyticsDue = shouldRefreshAnalytics && now - getLastTs(analyticsKey) >= ANALYTICS_PULSE_MS;
+
+    if (!jobsDue && !analyticsDue) return;
+
+    const query = new URLSearchParams();
+    if (analyticsDue) query.set("refreshAnalytics", "1");
+    if (analyticsDue) query.set("refreshMeta", "1");
+    const url = `/api/admin/system/pulse${query.toString() ? `?${query.toString()}` : ""}`;
+    authorizedFetch(url, { method: "POST" }).catch(() => {
+      // best-effort background pulse
+    });
+
+    if (jobsDue) setLastTs(jobsKey, now);
+    if (analyticsDue) setLastTs(analyticsKey, now);
+  }, [pathname, status]);
+
+  const navItems = [
+    { key: "nav_analytics" as const, href: "/admin/analytics", icon: NAV_GLYPH.analytics, active: true },
+    { key: "nav_orders" as const, href: "/admin/orders", icon: NAV_GLYPH.orders, active: true },
+    { key: "nav_customers" as const, href: "/admin/customers", icon: NAV_GLYPH.customers, active: true },
+    { key: "nav_operations" as const, href: "/admin/jobs", icon: NAV_GLYPH.jobs, active: true },
+    { key: "nav_access" as const, href: "/admin/access", icon: NAV_GLYPH.access, active: true },
+    { key: "nav_catalog" as const, href: "/admin/catalog", icon: NAV_GLYPH.catalog, active: true },
+    { key: "nav_system" as const, href: "/admin/system", icon: NAV_GLYPH.system, active: true },
+  ];
+  const isSelectedNav = (href: string) => (href === "/admin" ? pathname === "/admin" : pathname?.startsWith(href));
+
+  return (
+    <div className="cw-admin-theme flex h-dvh md:h-screen flex-col overflow-hidden font-sans transition-colors duration-300">
+      {/* One workspace topbar owns the whole frame: brand, wordmark and
+                account behave exactly as they do in the library and Builder.
+                The admin rail begins BELOW it, so there is no false seam where
+                two top layers used to meet. */}
+      {/* THE PHONE'S CHROME HERE TOO (2026-09-06). The panel's bar was
+                already only a mark and an account below 901px — the seven
+                sections live in the rail, not in the band — so the band was
+                holding ~52px of an `h-dvh` frame open to say nothing.
+
+                THE RAIL IS NOT CHROME ON A PHONE. It was permanently on screen
+                at 375px — 68px of icon column beside a 307px document, a fifth
+                of the width spent on a control strip — and that is the whole
+                reason this surface first shipped with no leading island: a mark
+                at the 20px gutter would have landed on the rail's first row.
+                Two permanent chromes competing for one corner is the problem,
+                not the mark. The rail folds away below 901px and its seven
+                sections ride in the ONE sheet this surface opens, above the
+                account's own rows, exactly as the storefront's five do. The
+                panel then reads like every other mobile surface: a mark, an
+                avatar, and the page.
+
+                `reveal="always"`: a panel is operated, not read. */}
+      <PlatformOrgans
+        scope="mobile"
+        reveal="always"
+        label={t("admin_aria_panel")}
+        left={<PlatformMarkOrgan />}
+        right={
+          /* TWO CONTROLS, NOT ONE (2026-09-06). These seven sections
+                       are the panel's RAIL, and for a day they were folded into
+                       the account sheet — so a menu hanging off a person's face
+                       opened onto «Аналітика · Замовлення · Клієнти …» with two
+                       rows marked current at once. A rail is not an account.
+                       The burger carries them, exactly as the bar's did. */
+          <span className={chromeOrgans.pair}>
+            <PlatformRouteMenu
+              label={t("admin_aria_sections")}
+              routes={(close) => (
+                <>
+                  {navItems.map(({ key, href, active }) => {
+                    const current = Boolean(active && isSelectedNav(href));
+                    if (!active) {
+                      return (
+                        <span key={key} aria-disabled="true" data-disabled="true">
+                          <InteractionInkLabel variant="tab">{t(key)}</InteractionInkLabel>
+                        </span>
+                      );
+                    }
+                    return (
+                      <Link
+                        key={key}
+                        href={href}
+                        prefetch={false}
+                        onClick={close}
+                        aria-current={current ? "page" : undefined}
+                        data-current={current || undefined}
+                      >
+                        <InteractionInkLabel variant="tab" active={current}>
+                          {t(key)}
+                        </InteractionInkLabel>
+                      </Link>
+                    );
+                  })}
+                </>
+              )}
+            />
+            <PlatformAccountMenu compact />
+          </span>
+        }
+      />
+      <PlatformHeader surface="personal" mode="workspace" scope="desktop" />
+
+      <div className="flex flex-1 min-h-0">
+        {/* Sidebar — the same chrome material, now a rail below the shared
+                bar rather than a competing top panel.
+
+                THE MARKUP USED TO SAY `hidden md:grid`, WHICH WAS NEVER TRUE.
+                `.rail[data-cw-material="chrome"]` sets `display: grid` at
+                specificity 0,2,0 and Tailwind's `.hidden` is 0,1,0, so the rail
+                has been on screen at 375px for as long as it has existed — the
+                markup claimed one thing and the cascade did another, and the
+                next reader would have believed the markup. The rail is kept,
+                because it is the only route to the seven sections and it marks
+                the current one; folding it into a sheet would mean a second
+                route to the same seven. So the class is dropped and the module
+                owns `display` alone: what the CSS does is now what the markup
+                says. The phone form of the rail is pinned compact in
+                `AdminLayout.module.css` — 68px, not 244. */}
+        <aside
+          data-cw-material="chrome"
+          className={`${styles.rail} ${expanded ? "" : styles.railCompact} shrink-0 h-full`}
+        >
+          {/* Nav */}
+          <nav className={`${styles.railNav} flex flex-col gap-0.5`} aria-label={t("sidebar_title")}>
+            {navItems.map(({ key, href, icon, active }) => {
+              const isSelected = isSelectedNav(href);
+
+              return (
+                <Link
+                  key={key}
+                  href={href}
+                  prefetch={false}
+                  title={t(key)}
+                  aria-current={active && isSelected ? "page" : undefined}
+                  className={`cw-nav-link ${styles.railLink} px-3 py-2.5 rounded-lg text-sm group relative
+                                    ${
+                                      active
+                                        ? isSelected
+                                          ? "cw-nav-link-active"
+                                          : ""
+                                        : "cw-muted opacity-40 cursor-not-allowed pointer-events-none"
+                                    }
+                                `}
+                >
+                  {expanded ? (
+                    <Icon name={icon} size={20} />
+                  ) : (
+                    <InteractionInkIcon>
+                      <Icon name={icon} size={20} />
+                    </InteractionInkIcon>
+                  )}
+                  <span className={styles.railLabel}>
+                    <InteractionInkLabel variant="tab">{t(key)}</InteractionInkLabel>
+                  </span>
+                  {/* Tooltip when collapsed */}
+                  {!expanded && (
+                    <span className="pointer-events-none absolute left-full ml-3 z-50 whitespace-nowrap rounded-md cw-surface border cw-border cw-text text-xs font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 cw-shadow">
+                      {t(key)}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+          <div className={styles.railFoot}>
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              title={expanded ? t("common_collapse") : t("common_expand")}
+              aria-label={expanded ? t("common_collapse") : t("common_expand")}
+              aria-expanded={expanded}
+              className={styles.railToggle}
+            >
+              <Icon name={expanded ? "arrow-left" : "arrow-right"} size={18} />
+            </button>
+          </div>
+        </aside>
+
+        {/* Main */}
+        <main className="flex-1 flex flex-col min-w-0 min-h-0">
+          {/* `pt-[5.25rem]` re-states the room the hidden bar used to hold
+                    open, in the islands' own terms — the row's inset plus one
+                    touch target plus air, 20 + 48 + 16 — the same arithmetic as
+                    the platform shell and the workshop, written in Tailwind
+                    because this frame is — and `md:pt-8` hands it back at the
+                    width where the bar returns. The scroll pane is what needs
+                    it: the island floats over this column's top-right corner.
+
+                    THE SIDES ARE THE PRODUCT'S GUTTER (2026-09-07), not this
+                    panel's own guess at one. They were `px-3` / `sm:px-4` — 12
+                    then 16px, against the platform's 20 — so the admin was the
+                    narrowest margin in the product and the one place a card
+                    reached closer to the edge than the same card anywhere else.
+                    `--cw-page-gutter` is the token every public page and the
+                    shelf already read; `md:p-8` still takes over at the width
+                    where this frame becomes a desktop panel. */}
+          <div
+            data-admin-scroll
+            className="custom-scrollbar flex-1 px-[var(--cw-page-gutter)] pt-[5.25rem] pb-4 md:p-8 md:pt-8 overflow-y-auto overflow-x-hidden w-full min-h-0"
+          >
+            {/* One content column for every tab, on the platform's own
+                        guide — see `.cw-admin-content`. The scroll viewport stays
+                        the outer element: AdminPagination scrolls it by
+                        `[data-admin-scroll]`. */}
+            <div className="cw-admin-content">{children}</div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}

@@ -34,11 +34,7 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { COURSE_CATEGORY_LABELS, COURSE_KIND_BADGES } from "@/lib/platform/catalogVocabulary";
-import {
-  countCatalogNarrowing,
-  type CatalogFacets,
-  type CatalogQuery,
-} from "@/lib/platform/catalogQuery";
+import { countCatalogNarrowing, type CatalogFacets, type CatalogQuery } from "@/lib/platform/catalogQuery";
 import type { CourseCategory, CourseKind } from "@/lms-core";
 import styles from "./PlatformCatalogFilter.module.css";
 
@@ -98,9 +94,7 @@ export function PlatformCatalogFilter({
   const toggleKind = (kind: CourseKind) =>
     onChange({
       ...query,
-      kinds: query.kinds.includes(kind)
-        ? query.kinds.filter((one) => one !== kind)
-        : [...query.kinds, kind],
+      kinds: query.kinds.includes(kind) ? query.kinds.filter((one) => one !== kind) : [...query.kinds, kind],
     });
 
   const toggleCategory = (category: CourseCategory) =>
@@ -194,11 +188,7 @@ export function PlatformCatalogFilter({
                   <div className={styles.filterOptions}>
                     {facets.kinds.map((kind) => (
                       <label key={kind} className={styles.filterOption}>
-                        <input
-                          type="checkbox"
-                          checked={query.kinds.includes(kind)}
-                          onChange={() => toggleKind(kind)}
-                        />
+                        <input type="checkbox" checked={query.kinds.includes(kind)} onChange={() => toggleKind(kind)} />
                         <span className={styles.filterCheckbox} aria-hidden="true">
                           <Icon name="check" size={14} />
                         </span>

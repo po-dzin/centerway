@@ -65,7 +65,13 @@ export function BuilderRecordField({
       <p className={text ? undefined : styles.editableHeadingEmpty} onClick={() => setEditing(true)}>
         {text || placeholder}
       </p>
-      <button className={styles.titleEditAction} type="button" aria-label={label} title={label} onClick={() => setEditing(true)}>
+      <button
+        className={styles.titleEditAction}
+        type="button"
+        aria-label={label}
+        title={label}
+        onClick={() => setEditing(true)}
+      >
         <Icon name="edit" size={16} />
       </button>
     </div>

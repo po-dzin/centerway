@@ -26,9 +26,8 @@ export default async function LearnLessonPage({
   const search = await searchParams;
   const draftPreview = search.preview === "draft";
   const fallbackReturnTo = `/build/${encodeURIComponent(course)}/${encodeURIComponent(lesson)}`;
-  const previewReturnTo = search.returnTo?.startsWith("/build/") && !search.returnTo.startsWith("//")
-    ? search.returnTo
-    : fallbackReturnTo;
+  const previewReturnTo =
+    search.returnTo?.startsWith("/build/") && !search.returnTo.startsWith("//") ? search.returnTo : fallbackReturnTo;
 
   // 404 only for content that does not exist. Whether this learner may READ it
   // is decided by /api/lms/*, which owns entitlement and drip.
@@ -38,17 +37,18 @@ export default async function LearnLessonPage({
   }
 
   const view = (
-    <LessonView
-      courseSlug={course}
-      lessonSlug={lesson}
-      draftPreview={draftPreview}
-      previewReturnTo={previewReturnTo}
-    />
+    <LessonView courseSlug={course} lessonSlug={lesson} draftPreview={draftPreview} previewReturnTo={previewReturnTo} />
   );
 
-  return draftPreview
-    ? <ZenPreviewShell returnTo={previewReturnTo} reader>{view}</ZenPreviewShell>
+  return draftPreview ? (
+    <ZenPreviewShell returnTo={previewReturnTo} reader>
+      {view}
+    </ZenPreviewShell>
+  ) : (
     /* No bar on a lesson — see the `reading` note in PlatformLayout. The
        column carries its own two controls. */
-    : <PlatformShell headerMode="reading" surface="personal" footer={false}>{view}</PlatformShell>;
+    <PlatformShell headerMode="reading" surface="personal" footer={false}>
+      {view}
+    </PlatformShell>
+  );
 }

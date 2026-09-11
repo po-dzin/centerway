@@ -16,41 +16,40 @@
  * only until one of them changes shape.
  */
 
-import { useEffect, useId, useState, type ChangeEvent, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import Link from "next/link";
-
 import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
 import type { Author, AuthorProfileBlock } from "@/lms-core";
 import type { ProfileLang } from "@/components/platform/profile/types";
-import { AUTHOR_AVATAR_CROP_DEFAULT, AUTHOR_BANNER_CROP_DEFAULT, AUTHOR_CARD_CROP_DEFAULT } from "@/lib/lms/authorPhoto";
-import { CropEditor } from "@/components/media/CropEditor";
-import { CROP_SCALE_MIN, cropStyle } from "@/lib/media/imageCrop";
+import {
+  AUTHOR_AVATAR_CROP_DEFAULT,
+  AUTHOR_BANNER_CROP_DEFAULT,
+  AUTHOR_CARD_CROP_DEFAULT,
+} from "@/lib/lms/authorPhoto";
+import dynamic from "next/dynamic";
+import { CROP_SCALE_MIN } from "@/lib/media/imageCrop";
 import { shrinkForUpload } from "@/lib/media/shrinkForUpload";
 import type { AuthorProfileInput } from "./useCabinet";
 import styles from "./Cabinet.module.css";
 import { matte } from "./CourseCard";
+import {
+  AuthorMediaSlot,
+  PHOTO_ACCEPT,
+  PhotoCropPreview,
+  RequiredMark,
+  type PhotoCropShape,
+} from "./AuthorProfileMedia";
+import { authorFromDraft, draftFromAuthor, type Draft } from "./authorProfileDraft";
+import { STRINGS } from "./authorProfileStrings";
 
-type Draft = {
-  name: string;
-  role: string;
-  bio: string;
-  quote: string;
-  credentials: string[];
-  facts: string[];
-  profileBlocks: AuthorProfileBlock[];
-  experienceBadge: string;
-  consultation: { enabled: boolean; title: string; summary: string; points: string[]; contactUrl: string };
-  photo: NonNullable<Author["photo"]> | null;
-  background: NonNullable<Author["background"]> | null;
-  listed: boolean;
-  slug: string;
-};
+const CropEditor = dynamic(() => import("@/components/media/CropEditor").then((m) => m.CropEditor), { ssr: false });
 
-type PhotoCropShape = "card" | "avatar" | "banner";
-
-const PHOTO_CROP_FRAME: Record<PhotoCropShape, { className: "photoCropCard" | "photoCropAvatar" | "photoCropBanner" }> = {
+export const PHOTO_CROP_FRAME: Record<
+  PhotoCropShape,
+  { className: "photoCropCard" | "photoCropAvatar" | "photoCropBanner" }
+> = {
   card: { className: "photoCropCard" },
   avatar: { className: "photoCropAvatar" },
   /* The backdrop band on the author's own page — a 6:1 letterbox, which is why
@@ -58,543 +57,6 @@ const PHOTO_CROP_FRAME: Record<PhotoCropShape, { className: "photoCropCard" | "p
      loses about five sixths of its height to `cover`. */
   banner: { className: "photoCropBanner" },
 };
-
-/**
- * HEIC AND HEIF ARE ON THE LIST NOW, and the upload route still does not take
- * them. That is not a contradiction: an iPhone left on "keep originals" hands
- * over `image/heic`, `shrinkForUpload` re-encodes anything the browser can
- * decode into JPEG, and JPEG is what the route sees. Leaving them off the list
- * did not protect anything — it made the picker grey out the photograph the
- * author was pointing at.
- */
-const PHOTO_ACCEPT = "image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif";
-
-/**
- * THE RESTING FRAME — the picture as the page will print it, and the way in.
- *
- * It used to be the editor too: you dragged the photograph inside this box and
- * a slider under it magnified. That made the one place an author chooses a crop
- * the one place they could not see what the crop discards, and at scale 1 the
- * `cover` fit is flush on one axis, so half the drags moved nothing at all.
- *
- * So it stopped editing and went back to being what it is best at: the exact
- * frame `/expert/[slug]` and `AuthorCard` draw, in the composition they draw it
- * in, so this fold still reads as a preview of the page it writes. Pressing it
- * opens `CropEditor`, which shows the whole photograph with this frame over it.
- * The frame hands its own `aspect-ratio` and `border-radius` to that editor, so
- * the shape stays declared once — in CSS — for both.
- */
-function PhotoCropPreview({
-  src,
-  alt,
-  shape,
-  x,
-  y,
-  scale,
-  label,
-  busy,
-  onOpen,
-}: {
-  src: string;
-  alt: string;
-  shape: PhotoCropShape;
-  x: number;
-  y: number;
-  /** 1–4, the frame's magnification about its own focus point. */
-  scale: number;
-  label: string;
-  /** An upload is in flight for THIS frame's image. */
-  busy?: boolean;
-  onOpen: (frame: HTMLElement) => void;
-}) {
-  const frameClass = PHOTO_CROP_FRAME[shape].className;
-  return (
-    <button
-      type="button"
-      className={styles[frameClass]}
-      /* ON THE PICTURE, BECAUSE THAT IS WHERE THE EYE IS. The only sign an
-         upload was running used to be a line of text below the crop grid and
-         the alt field — on a phone, a screen and a half under the thumb that
-         just picked the file. */
-      data-busy={busy || undefined}
-      disabled={busy}
-      aria-label={label}
-      onClick={(event) => onOpen(event.currentTarget)}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element -- the cabinet's own upload, any public host */}
-      <img src={src} alt={alt} style={cropStyle({ x, y, scale }, { x: 50, y: 50 })} draggable={false} />
-      {/* The affordance, in the one corner the replace/remove pair never takes.
-          A frame that opens an editor has to say so: without a mark it is a
-          photograph, and photographs are not usually buttons. */}
-      <span className={styles.photoCropOpen} aria-hidden="true">
-        <Icon name="edit" size={15} />
-      </span>
-    </button>
-  );
-}
-
-/**
- * The photo and the background share one frame: an image once there is one, a
- * clickable dashed slot before there is — dragged onto or picked through the
- * same hidden input — and a corner replace/remove pair once it is filled.
- *
- * Reused rather than written twice: the two fields used to diverge on exactly
- * this, and the background's empty slot was invisible — its span asked for
- * `width: 100%` inside a `width: fit-content` frame, a circular size neither
- * browser resolves to anything but zero. One component means there is only
- * one place this can go wrong again.
- */
-function AuthorMediaSlot({
-  src,
-  previewClassName,
-  emptyClassName,
-  uploadLabel,
-  replaceLabel,
-  removeLabel,
-  dropLabel,
-  uploading,
-  onFile,
-  onRemove,
-}: {
-  src: string | undefined;
-  previewClassName: string;
-  emptyClassName: string;
-  uploadLabel: string;
-  replaceLabel: string;
-  removeLabel: string;
-  dropLabel: string;
-  uploading: boolean;
-  onFile: (file: File) => void;
-  onRemove: () => void;
-}) {
-  const [dragOver, setDragOver] = useState(false);
-
-  const pick = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (file) onFile(file);
-  };
-
-  return (
-    <div
-      className={styles.authorMediaFrame}
-      data-drag-over={dragOver || undefined}
-      onDragOver={(event) => {
-        if (!event.dataTransfer.types.includes("Files")) return;
-        event.preventDefault();
-        setDragOver(true);
-      }}
-      onDragLeave={(event) => {
-        if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
-        setDragOver(false);
-      }}
-      onDrop={(event) => {
-        event.preventDefault();
-        setDragOver(false);
-        const file = event.dataTransfer.files?.[0];
-        if (file) onFile(file);
-      }}
-    >
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img className={previewClassName} src={src} alt="" />
-      ) : (
-        <label className={emptyClassName} aria-label={uploadLabel}>
-          <input
-            className={styles.visuallyHidden}
-            type="file"
-            aria-label={uploadLabel}
-            accept={PHOTO_ACCEPT}
-            disabled={uploading}
-            onChange={pick}
-          />
-          <Icon name="import" size={22} />
-          <span>{dragOver ? dropLabel : uploadLabel}</span>
-        </label>
-      )}
-      {src ? (
-        <div className={styles.authorMediaActions}>
-          <label className={styles.authorMediaAction} aria-label={replaceLabel} title={replaceLabel}>
-            <input
-              className={styles.visuallyHidden}
-              type="file"
-              aria-label={replaceLabel}
-              accept={PHOTO_ACCEPT}
-              disabled={uploading}
-              onChange={pick}
-            />
-            <Icon name="edit" size={18} />
-          </label>
-          <button type="button" className={styles.authorMediaAction} aria-label={removeLabel} title={removeLabel} onClick={onRemove}>
-            <Icon name="close" size={18} />
-          </button>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-/**
- * A field that is only sometimes required — the badges are, once the profile
- * is public — marked once, here, rather than as prose in parentheses after
- * every label that needs it. `title` is a real hover tooltip; the visually
- * hidden text is what a screen reader says instead of a bare asterisk.
- */
-function RequiredMark({ tooltip }: { tooltip: string }) {
-  const id = useId();
-  /* A NAME PER MARK. `anchor-name` written once in the stylesheet gives every
-     mark on the page the SAME name, and a popover then anchors to the last
-     element carrying it — measured 227px away, beside a different field.
-     The name has to be per instance, so it comes from `useId` here; the
-     stylesheet keeps the geometry. */
-  const anchor = `--cw-required-${id.replace(/[^a-zA-Z0-9]/g, "")}`;
-  return (
-    <>
-      <button
-        type="button"
-        className={styles.authorRequiredMark}
-        style={{ anchorName: anchor } as CSSProperties}
-        popoverTarget={id}
-        aria-label={tooltip}
-      >
-        *
-      </button>
-      <span
-        className={styles.authorRequiredHint}
-        style={{ positionAnchor: anchor } as CSSProperties}
-        popover="auto"
-        id={id}
-      >
-        {tooltip}
-      </span>
-    </>
-  );
-}
-
-function draftFromAuthor(author: Author | null): Draft {
-  return {
-    name: author?.name ?? "",
-    role: author?.role ?? "",
-    bio: author?.bio ?? "",
-    quote: author?.quote ?? "",
-    // A blank starting row rather than an empty list — see `AuthorMediaSlot`'s
-    // note on the same instinct: a list with nothing to click but "+" reads as
-    // broken, not as "add your first one".
-    /* ONE FIELD, NOT TWO. «Головне досягнення» was a separate input that the
-       card printed as a badge while this list printed underneath it — two
-       places to say the same kind of thing, and the badge was the one that
-       blocked publishing. The list's first row is the badge now. An existing
-       profile filled both, so the stored badge is seeded as row one: without
-       that, the first save after this change would overwrite it with whatever
-       happened to be first in the list. */
-    credentials: (() => {
-      const stored = author?.credentials ?? [];
-      const badge = author?.achievementBadge?.trim();
-      const rest = stored.filter((line) => line.trim() !== badge);
-      const rows = badge ? [badge, ...rest] : stored;
-      return rows.length ? rows : [""];
-    })(),
-    facts: author?.facts?.length ? author.facts : [""],
-    profileBlocks: author?.profileBlocks ?? [],
-    experienceBadge: author?.experienceBadge ?? "",
-    consultation: {
-      enabled: author?.consultation?.enabled ?? false,
-      title: author?.consultation?.title ?? "",
-      summary: author?.consultation?.summary ?? "",
-      points: author?.consultation?.points?.length ? author.consultation.points : [""],
-      contactUrl: author?.consultation?.contactUrl ?? "",
-    },
-    /* THE DRAFT OPENS ON WHAT IS STORED, AND SEEDS NOTHING. A zoom was briefly
-       seeded here so both axes had room to drag; it meant opening the cabinet
-       and pressing save re-cropped every photograph already published by 15% of
-       its edge. The editor shows the whole picture now, so a flush axis is
-       visible rather than felt as a dead gesture, and this stays a copy. */
-    photo: author?.photo ? { ...author.photo } : null,
-    background: author?.background
-      ? { ...author.background }
-      : null,
-    listed: author?.listed ?? false,
-    slug: author?.slug ?? "",
-  };
-}
-
-/**
- * THE DRAFT AS AN `Author` — one normalisation, in one place.
- *
- * WHY IT IS ONE FUNCTION. The trimming, the slicing and the "row one of the
- * credentials is the badge" rule used to live inside `handleSubmit`, which then
- * listed the fields of its payload by hand — and a hand-written list is how
- * both crop scales came to be edited, drawn on screen and then silently dropped
- * on save (2026-09-06). The draft becomes the platform's own `Author` here, so
- * a field that exists on the type reaches the row without anyone remembering to
- * add a line.
- *
- * `base` carries the identifiers a draft has no opinion about — the row's id
- * and the slug the server assigned.
- */
-function authorFromDraft(draft: Draft, base: Author | null): Author {
-  const credentialLines = draft.credentials.map((line) => line.trim()).filter(Boolean);
-  /* Row one is the badge, the remainder is the list — sending row one in both
-     would print the same sentence twice on `/expert`, once in the hero badge
-     row and once in the starred list under it. */
-  const [achievementBadge, ...credentials] = credentialLines;
-  const alt = draft.photo?.alt.trim();
-  const photo = draft.photo?.src && alt
-    ? {
-        src: draft.photo.src,
-        alt,
-        ...(draft.photo.cropX !== undefined ? { cropX: draft.photo.cropX } : {}),
-        ...(draft.photo.cropY !== undefined ? { cropY: draft.photo.cropY } : {}),
-        ...(draft.photo.avatarCropX !== undefined ? { avatarCropX: draft.photo.avatarCropX } : {}),
-        ...(draft.photo.avatarCropY !== undefined ? { avatarCropY: draft.photo.avatarCropY } : {}),
-        /* `> CROP_SCALE_MIN`, not `!== undefined` — absent means "no zoom"
-           everywhere else in the crop model (src/lib/media/imageCrop.ts), and
-           writing a literal 1 would freeze today's default into the row. */
-        ...(draft.photo.cropScale !== undefined && draft.photo.cropScale > CROP_SCALE_MIN
-          ? { cropScale: draft.photo.cropScale }
-          : {}),
-        ...(draft.photo.avatarCropScale !== undefined && draft.photo.avatarCropScale > CROP_SCALE_MIN
-          ? { avatarCropScale: draft.photo.avatarCropScale }
-          : {}),
-      }
-    : undefined;
-
-  const background = draft.background?.src
-    ? {
-        src: draft.background.src,
-        ...(draft.background.cropX !== undefined ? { cropX: draft.background.cropX } : {}),
-        ...(draft.background.cropY !== undefined ? { cropY: draft.background.cropY } : {}),
-        ...(draft.background.cropScale !== undefined && draft.background.cropScale > CROP_SCALE_MIN
-          ? { cropScale: draft.background.cropScale }
-          : {}),
-      }
-    : undefined;
-
-  return {
-    id: base?.id ?? "draft",
-    slug: draft.slug.trim() || base?.slug || "",
-    name: draft.name.trim(),
-    ...(draft.role.trim() ? { role: draft.role.trim() } : {}),
-    ...(draft.bio.trim() ? { bio: draft.bio.trim() } : {}),
-    ...(draft.quote.trim() ? { quote: draft.quote.trim() } : {}),
-    ...(credentials.length > 0 ? { credentials } : {}),
-    facts: draft.facts.map((line) => line.trim()).filter(Boolean).slice(0, 6),
-    /* A block with a title and nothing under it is not a block — the page
-       would draw a heading over an empty panel. */
-    profileBlocks: draft.profileBlocks.flatMap((block) => {
-      const title = block.title.trim();
-      const body = block.body?.trim();
-      const items = block.items?.map((line) => line.trim()).filter(Boolean).slice(0, 30);
-      if (!title || (!body && !items?.length)) return [];
-      return [{
-        id: block.id,
-        kind: block.kind,
-        ...(block.label?.trim() ? { label: block.label.trim() } : {}),
-        title,
-        ...(body ? { body } : {}),
-        ...(items?.length ? { items } : {}),
-      }];
-    }),
-    ...(draft.experienceBadge.trim() ? { experienceBadge: draft.experienceBadge.trim() } : {}),
-    ...(achievementBadge ? { achievementBadge } : {}),
-    consultation: {
-      enabled: draft.consultation.enabled,
-      ...(draft.consultation.title.trim() ? { title: draft.consultation.title.trim() } : {}),
-      ...(draft.consultation.summary.trim() ? { summary: draft.consultation.summary.trim() } : {}),
-      points: draft.consultation.points.map((line) => line.trim()).filter(Boolean).slice(0, 3),
-      ...(draft.consultation.contactUrl.trim() ? { contactUrl: draft.consultation.contactUrl.trim() } : {}),
-    },
-    ...(photo ? { photo } : {}),
-    /* NORMALISED THE SAME WAY THE PHOTO IS, and it was not: this passed the
-       draft object through raw, so the band wrote `cropScale: 1` into the row —
-       the literal default the photo branch above exists to keep out. One frame
-       storing "no zoom" as absence and the other as 1 is two answers to one
-       question, and the reader of the row cannot tell which means what. */
-    ...(background ? { background } : {}),
-    listed: draft.listed,
-  };
-}
-
-const STRINGS = {
-  uk: {
-    title: "Профіль автора",
-    lead: "Ім'я, фото і біографія тут — вони підуть на кожен ваш курс і, якщо публічний, на власну сторінку.",
-    name: "Ім'я",
-    role: "Роль (один рядок)",
-    bio: "Біографія",
-    quote: "Цитата від першої особи",
-    credentials: "Досягнення",
-    credentialAdd: "Додати досягнення",
-    credentialRemove: "Прибрати досягнення",
-    credentialRequired: "Перший рядок потрібен, щоб сторінку було видно",
-    credentialsHint: "Перше — головне: саме воно стоїть бейджем на картці.",
-    facts: "Головні факти про себе",
-    factsHint: "До 6 — перші три показуються на картці.",
-    factAdd: "Додати факт",
-    factRemove: "Прибрати факт",
-    profileBlocks: "Блоки сторінки автора",
-    profileBlockAdd: "Додати блок",
-    profileBlockRemove: "Прибрати блок",
-    profileBlockKind: "Формат блока",
-    profileBlockLabel: "Надзаголовок",
-    profileBlockTitle: "Заголовок",
-    profileBlockBody: "Текст блока",
-    profileBlockItems: "Пункти — кожен з нового рядка",
-    profileBlockText: "Текст",
-    profileBlockList: "Список",
-    profileBlockTimeline: "Шлях / хронологія",
-    experienceBadge: "Бейдж досвіду",
-    requiredForCard: "Обов’язково для публічної картки",
-    consultation: "Консультація",
-    consultationEnabled: "Приймаю запити на консультацію",
-    consultationPoints: "Головні пункти",
-    consultationPointsHint: "До 3.",
-    consultationPointAdd: "Додати пункт",
-    consultationPointRemove: "Прибрати пункт",
-    photo: "Фото",
-    photoUpload: "Завантажити фото",
-    photoReplace: "Замінити фото",
-    photoRemove: "Прибрати фото",
-    photoUploading: "Завантаження…",
-    /* ONE MESSAGE PER REASON. The upload used to answer every failure with the
-       form's generic «Не вдалося зберегти» — which on a phone, where the file
-       is large and the connection is not, read as "it silently did nothing".
-       The route already distinguishes these; the form now repeats it. */
-    uploadTooLarge: "Файл завеликий — до 20 МБ.",
-    uploadBadType: "Такий формат не підтримується. JPEG, PNG, WebP, AVIF або GIF.",
-    uploadTooOften: "Забагато завантажень поспіль. Спробуйте за хвилину.",
-    uploadFailed: "Не вдалося завантажити фото. Спробуйте ще раз.",
-    sectionYou: "Ви",
-    sectionYouNote: "Фото, ім'я і роль — друкуються під кожним вашим курсом, навіть поки сторінка прихована.",
-    sectionAbout: "Про себе",
-    sectionAboutNote: "Текст і факти. Перші три факти та бейджі показуються на картці автора.",
-    sectionPage: "Ваша сторінка",
-    sectionPageNote: "Чи є вона, за якою адресою, і з чого складається.",
-    photoAltRequired: "Без опису фото не збережеться",
-    consultationTitleLabel: "Назва консультації",
-    consultationSummaryLabel: "Кому і з чим допомагаю",
-    consultationContactLabel: "Посилання для домовленості",
-    consultationRequired: "Потрібно, поки консультації увімкнено",
-    /* The stage, not the frame: what the hand moves here is the window over the
-       whole photograph, and telling someone to drag the photo would be telling
-       them to drag the one thing on this screen that stays still. */
-    cropFocus: "Ціла світлина. Перетягуйте рамку або використовуйте стрілки. Ctrl і колесо — масштаб.",
-    cropOpen: "Обрати кадр",
-    cropDone: "Готово",
-    cropZoom: "Масштаб",
-    cropFocusAt: "Фокус: {x}% по горизонталі, {y}% по вертикалі",
-    nameRequired: "Ім'я потрібне завжди — воно стоїть під кожним курсом",
-    blockNumber: "Блок",
-    photoAlt: "Опис фото (для читачів екрана)",
-    mediaDrop: "Відпустіть, щоб завантажити",
-    photoCropCardTitle: "Картка",
-    photoCropCardNote: "Головна · консультації · директорія авторів",
-    /* Named by its job, not by its shape (2026-09-06): portraits left the
-       circle, and a caption that says «кругла» over a soft-rect preview teaches
-       the author a shape the product no longer draws. */
-    photoCropAvatarTitle: "Аватарка",
-    photoCropAvatarNote: "Сторінка автора · автор курсу",
-    photoCropCenter: "По центру",
-    background: "Фон публічної сторінки",
-    backgroundHint: "Друкується тільки на вашій сторінці, під портретом.",
-    backgroundUpload: "Завантажити фон",
-    backgroundReplace: "Замінити фон",
-    backgroundRemove: "Прибрати фон",
-    listed: "Публічна сторінка",
-    listedOn: "Сторінку /expert видно всім",
-    listedOff: "Сторінка прихована — видно лише в описі курсу",
-    slug: "Адреса сторінки",
-    save: "Зберегти",
-    saving: "Зберігаємо…",
-    saved: "Збережено",
-    viewPublic: "Відкрити",
-    error: "Не вдалося зберегти. Перевірте поля і спробуйте ще раз.",
-  },
-  en: {
-    title: "Author profile",
-    lead: "Name, photo and bio live here — they follow every course you write, and your own page if it's public.",
-    name: "Name",
-    role: "Role (one line)",
-    bio: "Bio",
-    quote: "A quote, in your own voice",
-    credentials: "Credentials",
-    credentialAdd: "Add credential",
-    credentialRemove: "Remove credential",
-    credentialRequired: "The first line is needed for the page to be visible",
-    credentialsHint: "The first one is the main one — it stands as the badge on your card.",
-    facts: "Key facts about you",
-    factsHint: "Up to 6 — the first three show on the card.",
-    factAdd: "Add fact",
-    factRemove: "Remove fact",
-    profileBlocks: "Author page blocks",
-    profileBlockAdd: "Add block",
-    profileBlockRemove: "Remove block",
-    profileBlockKind: "Block format",
-    profileBlockLabel: "Eyebrow",
-    profileBlockTitle: "Heading",
-    profileBlockBody: "Block text",
-    profileBlockItems: "Items — one per line",
-    profileBlockText: "Text",
-    profileBlockList: "List",
-    profileBlockTimeline: "Path / timeline",
-    experienceBadge: "Experience badge",
-    requiredForCard: "Required for the public card",
-    consultation: "Consultation",
-    consultationEnabled: "Accept consultation requests",
-    consultationPoints: "Key points",
-    consultationPointsHint: "Up to 3.",
-    consultationPointAdd: "Add point",
-    consultationPointRemove: "Remove point",
-    photo: "Photo",
-    photoUpload: "Upload photo",
-    photoReplace: "Replace photo",
-    photoRemove: "Remove photo",
-    photoUploading: "Uploading…",
-    uploadTooLarge: "File is too large — 20 MB maximum.",
-    uploadBadType: "That format is not supported. JPEG, PNG, WebP, AVIF or GIF.",
-    uploadTooOften: "Too many uploads in a row. Try again in a minute.",
-    uploadFailed: "Could not upload the photo. Try again.",
-    sectionYou: "You",
-    sectionYouNote: "Photo, name and role — printed under every course you write, even while your page is hidden.",
-    sectionAbout: "About you",
-    sectionAboutNote: "The text and the facts. The first three facts and both badges show on your card.",
-    sectionPage: "Your page",
-    sectionPageNote: "Whether it exists, at what address, and what it is made of.",
-    photoAltRequired: "Without a description the photo is not saved",
-    consultationTitleLabel: "Consultation title",
-    consultationSummaryLabel: "Who you help, and with what",
-    consultationContactLabel: "Link for arranging it",
-    consultationRequired: "Needed while consultations are on",
-    cropFocus: "The whole photograph. Drag the frame, or use the arrow keys. Ctrl and the wheel zoom.",
-    cropOpen: "Choose the frame",
-    cropDone: "Done",
-    cropZoom: "Zoom",
-    cropFocusAt: "Focus: {x}% across, {y}% down",
-    nameRequired: "Always needed — it prints under every course",
-    blockNumber: "Block",
-    photoAlt: "Photo description (for screen readers)",
-    mediaDrop: "Drop to upload",
-    photoCropCardTitle: "Card",
-    photoCropCardNote: "Home · consultations · author directory",
-    photoCropAvatarTitle: "Avatar",
-    photoCropAvatarNote: "Author's own page · course byline",
-    photoCropCenter: "Centre",
-    background: "Public page background",
-    backgroundHint: "Prints on your own page only, behind the portrait.",
-    backgroundUpload: "Upload background",
-    backgroundReplace: "Replace background",
-    backgroundRemove: "Remove background",
-    listed: "Public page",
-    listedOn: "The /expert page is visible to everyone",
-    listedOff: "Hidden — shown only as a course byline",
-    slug: "Page address",
-    save: "Save",
-    saving: "Saving…",
-    saved: "Saved",
-    viewPublic: "Preview",
-    error: "Could not save. Check the fields and try again.",
-  },
-} as const;
 
 export function AuthorProfileFold({
   session,
@@ -894,7 +356,11 @@ export function AuthorProfileFold({
                           onOpen={openCrop("banner")}
                         />
                         <div className={styles.authorMediaActions}>
-                          <label className={styles.authorPhotoToolbarAction} aria-label={t.backgroundReplace} title={t.backgroundReplace}>
+                          <label
+                            className={styles.authorPhotoToolbarAction}
+                            aria-label={t.backgroundReplace}
+                            title={t.backgroundReplace}
+                          >
                             <input
                               className={styles.visuallyHidden}
                               type="file"
@@ -937,7 +403,7 @@ export function AuthorProfileFold({
                                     cropScale: CROP_SCALE_MIN,
                                   },
                                 }
-                              : prev
+                              : prev,
                           )
                         }
                       >
@@ -958,8 +424,16 @@ export function AuthorProfileFold({
                       onRemove={() => setDraft((prev) => ({ ...prev, background: null }))}
                     />
                   )}
-                  {uploading && uploadTarget === "background" ? <span className={styles.authorNotice} role="status">{t.photoUploading}</span> : null}
-                  {uploadError && uploadTarget === "background" ? <span className={styles.authorNoticeError} role="alert">{uploadError}</span> : null}
+                  {uploading && uploadTarget === "background" ? (
+                    <span className={styles.authorNotice} role="status">
+                      {t.photoUploading}
+                    </span>
+                  ) : null}
+                  {uploadError && uploadTarget === "background" ? (
+                    <span className={styles.authorNoticeError} role="alert">
+                      {uploadError}
+                    </span>
+                  ) : null}
                 </div>
 
                 <div className={styles.authorHeroIdentity}>
@@ -985,28 +459,28 @@ export function AuthorProfileFold({
                         <div className={styles.authorHeroCaptionRow}>
                           <p className={styles.authorHeroCaption}>{t.photoCropAvatarNote}</p>
                           <button
-                              type="button"
-                              className={styles.authorIconAction}
-                              aria-label={`${t.photoCropCenter} — ${t.photoCropAvatarTitle}`}
-                              title={t.photoCropCenter}
-                              onClick={() =>
-                                setDraft((prev) =>
-                                  prev.photo
-                                    ? {
-                                        ...prev,
-                                        photo: {
-                                          ...prev.photo,
-                                          avatarCropX: AUTHOR_AVATAR_CROP_DEFAULT.x,
-                                          avatarCropY: AUTHOR_AVATAR_CROP_DEFAULT.y,
-                                          avatarCropScale: CROP_SCALE_MIN,
-                                        },
-                                      }
-                                    : prev
-                                )
-                              }
-                            >
-                              <Icon name="undo" size={20} />
-                            </button>
+                            type="button"
+                            className={styles.authorIconAction}
+                            aria-label={`${t.photoCropCenter} — ${t.photoCropAvatarTitle}`}
+                            title={t.photoCropCenter}
+                            onClick={() =>
+                              setDraft((prev) =>
+                                prev.photo
+                                  ? {
+                                      ...prev,
+                                      photo: {
+                                        ...prev.photo,
+                                        avatarCropX: AUTHOR_AVATAR_CROP_DEFAULT.x,
+                                        avatarCropY: AUTHOR_AVATAR_CROP_DEFAULT.y,
+                                        avatarCropScale: CROP_SCALE_MIN,
+                                      },
+                                    }
+                                  : prev,
+                              )
+                            }
+                          >
+                            <Icon name="undo" size={20} />
+                          </button>
                         </div>
                       </>
                     ) : null}
@@ -1054,10 +528,10 @@ export function AuthorProfileFold({
                             (`.authorMediaActions`). `stopPropagation`
                             because the frame under them owns the drag. */}
                         <div className={styles.photoCropFrame}>
-                            <PhotoCropPreview
-                              src={draft.photo.src}
-                              alt=""
-                              shape="card"
+                          <PhotoCropPreview
+                            src={draft.photo.src}
+                            alt=""
+                            shape="card"
                             label={`${t.cropOpen} — ${t.photoCropCardTitle}`}
                             x={draft.photo.cropX ?? AUTHOR_CARD_CROP_DEFAULT.x}
                             y={draft.photo.cropY ?? AUTHOR_CARD_CROP_DEFAULT.y}
@@ -1066,7 +540,11 @@ export function AuthorProfileFold({
                             onOpen={openCrop("card")}
                           />
                           <div className={styles.authorMediaActions}>
-                            <label className={styles.authorPhotoToolbarAction} aria-label={t.photoReplace} title={t.photoReplace}>
+                            <label
+                              className={styles.authorPhotoToolbarAction}
+                              aria-label={t.photoReplace}
+                              title={t.photoReplace}
+                            >
                               <input
                                 className={styles.visuallyHidden}
                                 type="file"
@@ -1093,32 +571,32 @@ export function AuthorProfileFold({
                           </div>
                         </div>
                         <button
-                            type="button"
-                            className={styles.authorIconAction}
-                            aria-label={`${t.photoCropCenter} — ${t.photoCropCardTitle}`}
-                            title={t.photoCropCenter}
-                            onClick={() =>
-                              setDraft((prev) =>
-                                prev.photo
-                                  ? {
-                                      ...prev,
-                                      photo: {
-                                        ...prev.photo,
-                                        cropX: AUTHOR_CARD_CROP_DEFAULT.x,
-                                        cropY: AUTHOR_CARD_CROP_DEFAULT.y,
-                                        /* Recentring undoes the whole crop, zoom
+                          type="button"
+                          className={styles.authorIconAction}
+                          aria-label={`${t.photoCropCenter} — ${t.photoCropCardTitle}`}
+                          title={t.photoCropCenter}
+                          onClick={() =>
+                            setDraft((prev) =>
+                              prev.photo
+                                ? {
+                                    ...prev,
+                                    photo: {
+                                      ...prev.photo,
+                                      cropX: AUTHOR_CARD_CROP_DEFAULT.x,
+                                      cropY: AUTHOR_CARD_CROP_DEFAULT.y,
+                                      /* Recentring undoes the whole crop, zoom
                                            included — a frame recentred but still
                                            at 2.4× is not the frame the button's
                                            icon promises to give back. */
-                                        cropScale: CROP_SCALE_MIN,
-                                      },
-                                    }
-                                  : prev
-                              )
-                            }
-                          >
-                            <Icon name="undo" size={20} />
-                          </button>
+                                      cropScale: CROP_SCALE_MIN,
+                                    },
+                                  }
+                                : prev,
+                            )
+                          }
+                        >
+                          <Icon name="undo" size={20} />
+                        </button>
                       </div>
                     </section>
                     {/* A LABEL, NOT A PLACEHOLDER, AND REQUIRED — a placeholder
@@ -1157,8 +635,16 @@ export function AuthorProfileFold({
                     onRemove={() => setDraft((prev) => ({ ...prev, photo: null }))}
                   />
                 )}
-                {uploading && uploadTarget === "photo" ? <span className={styles.authorNotice} role="status">{t.photoUploading}</span> : null}
-                {uploadError && uploadTarget === "photo" ? <span className={styles.authorNoticeError} role="alert">{uploadError}</span> : null}
+                {uploading && uploadTarget === "photo" ? (
+                  <span className={styles.authorNotice} role="status">
+                    {t.photoUploading}
+                  </span>
+                ) : null}
+                {uploadError && uploadTarget === "photo" ? (
+                  <span className={styles.authorNoticeError} role="alert">
+                    {uploadError}
+                  </span>
+                ) : null}
               </div>
             </div>
           </details>
@@ -1229,7 +715,9 @@ export function AuthorProfileFold({
                         className={styles.authorIconAction}
                         aria-label={t.factRemove}
                         title={t.factRemove}
-                        onClick={() => setDraft((prev) => ({ ...prev, facts: prev.facts.filter((_, i) => i !== index) }))}
+                        onClick={() =>
+                          setDraft((prev) => ({ ...prev, facts: prev.facts.filter((_, i) => i !== index) }))
+                        }
                       >
                         <Icon name="close" size={18} />
                       </button>
@@ -1268,17 +756,17 @@ export function AuthorProfileFold({
                       }
                     />
                     {index > 0 ? (
-                    <button
-                      type="button"
-                      className={styles.authorIconAction}
-                      aria-label={t.credentialRemove}
-                      title={t.credentialRemove}
-                      onClick={() =>
-                        setDraft((prev) => ({ ...prev, credentials: prev.credentials.filter((_, i) => i !== index) }))
-                      }
-                    >
-                      <Icon name="close" size={18} />
-                    </button>
+                      <button
+                        type="button"
+                        className={styles.authorIconAction}
+                        aria-label={t.credentialRemove}
+                        title={t.credentialRemove}
+                        onClick={() =>
+                          setDraft((prev) => ({ ...prev, credentials: prev.credentials.filter((_, i) => i !== index) }))
+                        }
+                      >
+                        <Icon name="close" size={18} />
+                      </button>
                     ) : null}
                   </div>
                 ))}
@@ -1292,7 +780,12 @@ export function AuthorProfileFold({
                   {t.experienceBadge}
                   {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
                 </span>
-                <input className={styles.authorInput} value={draft.experienceBadge} required={draft.listed} onChange={(e) => setDraft((prev) => ({ ...prev, experienceBadge: e.target.value }))} />
+                <input
+                  className={styles.authorInput}
+                  value={draft.experienceBadge}
+                  required={draft.listed}
+                  onChange={(e) => setDraft((prev) => ({ ...prev, experienceBadge: e.target.value }))}
+                />
               </label>
             </div>
           </details>
@@ -1339,16 +832,20 @@ export function AuthorProfileFold({
                           group, and every field inside carries the same label as
                           its counterpart in every other block — nothing told a
                           screen reader which block it was in. */}
-                      <legend className={styles.authorProfileBlockNumber}>{t.blockNumber} {index + 1}</legend>
+                      <legend className={styles.authorProfileBlockNumber}>
+                        {t.blockNumber} {index + 1}
+                      </legend>
                       <button
                         type="button"
                         className={styles.authorIconAction}
                         aria-label={t.profileBlockRemove}
                         title={t.profileBlockRemove}
-                        onClick={() => setDraft((prev) => ({
-                          ...prev,
-                          profileBlocks: prev.profileBlocks.filter((item) => item.id !== block.id),
-                        }))}
+                        onClick={() =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            profileBlocks: prev.profileBlocks.filter((item) => item.id !== block.id),
+                          }))
+                        }
                       >
                         <Icon name="close" size={18} />
                       </button>
@@ -1358,12 +855,16 @@ export function AuthorProfileFold({
                       <select
                         className={styles.authorInput}
                         value={block.kind}
-                        onChange={(event) => setDraft((prev) => ({
-                          ...prev,
-                          profileBlocks: prev.profileBlocks.map((item) => item.id === block.id
-                            ? { ...item, kind: event.target.value as AuthorProfileBlock["kind"] }
-                            : item),
-                        }))}
+                        onChange={(event) =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            profileBlocks: prev.profileBlocks.map((item) =>
+                              item.id === block.id
+                                ? { ...item, kind: event.target.value as AuthorProfileBlock["kind"] }
+                                : item,
+                            ),
+                          }))
+                        }
                       >
                         <option value="text">{t.profileBlockText}</option>
                         <option value="list">{t.profileBlockList}</option>
@@ -1372,33 +873,70 @@ export function AuthorProfileFold({
                     </label>
                     <label className={styles.authorField}>
                       <span>{t.profileBlockLabel}</span>
-                      <input className={styles.authorInput} value={block.label ?? ""} onChange={(event) => setDraft((prev) => ({
-                        ...prev,
-                        profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, label: event.target.value } : item),
-                      }))} />
+                      <input
+                        className={styles.authorInput}
+                        value={block.label ?? ""}
+                        onChange={(event) =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            profileBlocks: prev.profileBlocks.map((item) =>
+                              item.id === block.id ? { ...item, label: event.target.value } : item,
+                            ),
+                          }))
+                        }
+                      />
                     </label>
                     <label className={styles.authorField}>
                       <span>{t.profileBlockTitle}</span>
-                      <input className={styles.authorInput} value={block.title} required onChange={(event) => setDraft((prev) => ({
-                        ...prev,
-                        profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, title: event.target.value } : item),
-                      }))} />
+                      <input
+                        className={styles.authorInput}
+                        value={block.title}
+                        required
+                        onChange={(event) =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            profileBlocks: prev.profileBlocks.map((item) =>
+                              item.id === block.id ? { ...item, title: event.target.value } : item,
+                            ),
+                          }))
+                        }
+                      />
                     </label>
                     {block.kind === "text" ? (
                       <label className={styles.authorField}>
                         <span>{t.profileBlockBody}</span>
-                        <textarea className={styles.authorTextarea} rows={6} value={block.body ?? ""} required onChange={(event) => setDraft((prev) => ({
-                          ...prev,
-                          profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, body: event.target.value } : item),
-                        }))} />
+                        <textarea
+                          className={styles.authorTextarea}
+                          rows={6}
+                          value={block.body ?? ""}
+                          required
+                          onChange={(event) =>
+                            setDraft((prev) => ({
+                              ...prev,
+                              profileBlocks: prev.profileBlocks.map((item) =>
+                                item.id === block.id ? { ...item, body: event.target.value } : item,
+                              ),
+                            }))
+                          }
+                        />
                       </label>
                     ) : (
                       <label className={styles.authorField}>
                         <span>{t.profileBlockItems}</span>
-                        <textarea className={styles.authorTextarea} rows={7} value={(block.items ?? []).join("\n")} required onChange={(event) => setDraft((prev) => ({
-                          ...prev,
-                          profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, items: event.target.value.split("\n") } : item),
-                        }))} />
+                        <textarea
+                          className={styles.authorTextarea}
+                          rows={7}
+                          value={(block.items ?? []).join("\n")}
+                          required
+                          onChange={(event) =>
+                            setDraft((prev) => ({
+                              ...prev,
+                              profileBlocks: prev.profileBlocks.map((item) =>
+                                item.id === block.id ? { ...item, items: event.target.value.split("\n") } : item,
+                              ),
+                            }))
+                          }
+                        />
                       </label>
                     )}
                   </fieldset>
@@ -1409,15 +947,20 @@ export function AuthorProfileFold({
                     className={styles.authorBlockAdd}
                     aria-label={t.profileBlockAdd}
                     title={t.profileBlockAdd}
-                    onClick={() => setDraft((prev) => ({
-                      ...prev,
-                      profileBlocks: [...prev.profileBlocks, {
-                        id: `section-${crypto.randomUUID()}`,
-                        kind: "text",
-                        title: "",
-                        body: "",
-                      }],
-                    }))}
+                    onClick={() =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        profileBlocks: [
+                          ...prev.profileBlocks,
+                          {
+                            id: `section-${crypto.randomUUID()}`,
+                            kind: "text",
+                            title: "",
+                            body: "",
+                          },
+                        ],
+                      }))
+                    }
                   >
                     <Icon name="plus" size={20} />
                     <span>{t.profileBlockAdd}</span>
@@ -1435,9 +978,22 @@ export function AuthorProfileFold({
               <Icon className={styles.authorSectionChevron} name="chevron-down" size={20} />
             </summary>
             <div className={styles.authorSectionBody}>
-                <label className={styles.authorVisibilityRow}><input className={styles.authorVisibilityInput} type="checkbox" checked={draft.consultation.enabled} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, enabled: e.target.checked } }))} /><span className={styles.authorVisibilityMark} aria-hidden="true"><Icon name="check" size={14} /></span><span>{t.consultationEnabled}</span></label>
-                {draft.consultation.enabled ? (
-                  <>
+              <label className={styles.authorVisibilityRow}>
+                <input
+                  className={styles.authorVisibilityInput}
+                  type="checkbox"
+                  checked={draft.consultation.enabled}
+                  onChange={(e) =>
+                    setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, enabled: e.target.checked } }))
+                  }
+                />
+                <span className={styles.authorVisibilityMark} aria-hidden="true">
+                  <Icon name="check" size={14} />
+                </span>
+                <span>{t.consultationEnabled}</span>
+              </label>
+              {draft.consultation.enabled ? (
+                <>
                   {/* `upsertAuthorProfile` REFUSES the whole save when consultations
                       are on and any of these three is blank (`authors.ts` returns
                       `invalid_profile`). They were optional, unlabelled placeholders
@@ -1450,14 +1006,32 @@ export function AuthorProfileFold({
                       {t.consultationTitleLabel}
                       <RequiredMark tooltip={t.consultationRequired} />
                     </span>
-                    <input className={styles.authorInput} value={draft.consultation.title} required onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, title: e.target.value } }))} />
+                    <input
+                      className={styles.authorInput}
+                      value={draft.consultation.title}
+                      required
+                      onChange={(e) =>
+                        setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, title: e.target.value } }))
+                      }
+                    />
                   </label>
                   <label className={styles.authorField}>
                     <span>
                       {t.consultationSummaryLabel}
                       <RequiredMark tooltip={t.consultationRequired} />
                     </span>
-                    <textarea className={styles.authorTextarea} rows={3} value={draft.consultation.summary} required onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, summary: e.target.value } }))} />
+                    <textarea
+                      className={styles.authorTextarea}
+                      rows={3}
+                      value={draft.consultation.summary}
+                      required
+                      onChange={(e) =>
+                        setDraft((prev) => ({
+                          ...prev,
+                          consultation: { ...prev.consultation, summary: e.target.value },
+                        }))
+                      }
+                    />
                   </label>
                   <div className={styles.authorFieldHead}>
                     <span>{t.consultationPoints}</span>
@@ -1501,7 +1075,10 @@ export function AuthorProfileFold({
                           onClick={() =>
                             setDraft((prev) => ({
                               ...prev,
-                              consultation: { ...prev.consultation, points: prev.consultation.points.filter((_, i) => i !== index) },
+                              consultation: {
+                                ...prev.consultation,
+                                points: prev.consultation.points.filter((_, i) => i !== index),
+                              },
                             }))
                           }
                         >
@@ -1515,24 +1092,41 @@ export function AuthorProfileFold({
                       {t.consultationContactLabel}
                       <RequiredMark tooltip={t.consultationRequired} />
                     </span>
-                    <input className={styles.authorInput} type="url" inputMode="url" value={draft.consultation.contactUrl} required onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, contactUrl: e.target.value } }))} />
+                    <input
+                      className={styles.authorInput}
+                      type="url"
+                      inputMode="url"
+                      value={draft.consultation.contactUrl}
+                      required
+                      onChange={(e) =>
+                        setDraft((prev) => ({
+                          ...prev,
+                          consultation: { ...prev.consultation, contactUrl: e.target.value },
+                        }))
+                      }
+                    />
                   </label>
-                  </>
-                ) : null}
+                </>
+              ) : null}
             </div>
           </details>
 
-            <div className={styles.actions}>
-              <button className={styles.actionPrimary} type="submit" disabled={saving || uploading}>
-                {saving ? t.saving : uploading ? t.photoUploading : t.save}
-              </button>
-              {author?.listed && author.slug ? (
-                <Link className={styles.actionGhost} href={`/expert/${author.slug}`} target="_blank" rel="noopener noreferrer">
-                  <span>{t.viewPublic}</span>
-                  <Icon name="arrow-right" size={18} />
-                </Link>
-              ) : null}
-            </div>
+          <div className={styles.actions}>
+            <button className={styles.actionPrimary} type="submit" disabled={saving || uploading}>
+              {saving ? t.saving : uploading ? t.photoUploading : t.save}
+            </button>
+            {author?.listed && author.slug ? (
+              <Link
+                className={styles.actionGhost}
+                href={`/expert/${author.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>{t.viewPublic}</span>
+                <Icon name="arrow-right" size={18} />
+              </Link>
+            ) : null}
+          </div>
         </form>
       </div>
       {/* OUTSIDE THE FORM'S FIELDS, INSIDE ITS STATE. One editor serves all three

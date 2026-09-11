@@ -139,30 +139,30 @@ export function OfferCurriculum({
                   <h3 className={styles.outlineModuleTitle}>{module.title}</h3>
                 </div>
                 <ul className={styles.outlineLessons}>
-                {module.lessons.map((lesson) => {
-                  const state = stateFor(lesson.slug);
-                  return (
-                    <li className={styles.outlineLesson} data-state={state.kind} key={lesson.slug}>
-                      <span className={styles.outlineLessonGlyph}>
-                        {state.glyph ? <Icon name={state.glyph} size={20} /> : null}
-                      </span>
-                      <span>
-                        {state.kind === "locked" ? (
-                          lesson.title
-                        ) : (
-                          <Link
-                            className={styles.outlineLessonLink}
-                            href={surfaceHref(`/learn/${course.slug}/${lesson.slug}`)}
-                            data-cw-ink-control
-                          >
-                            <InteractionInkLabel variant="link">{lesson.title}</InteractionInkLabel>
-                          </Link>
-                        )}
-                        {state.note ? <span className={styles.outlineLessonNote}>{state.note}</span> : null}
-                      </span>
-                    </li>
-                  );
-                })}
+                  {module.lessons.map((lesson) => {
+                    const state = stateFor(lesson.slug);
+                    return (
+                      <li className={styles.outlineLesson} data-state={state.kind} key={lesson.slug}>
+                        <span className={styles.outlineLessonGlyph}>
+                          {state.glyph ? <Icon name={state.glyph} size={20} /> : null}
+                        </span>
+                        <span>
+                          {state.kind === "locked" ? (
+                            lesson.title
+                          ) : (
+                            <Link
+                              className={styles.outlineLessonLink}
+                              href={surfaceHref(`/learn/${course.slug}/${lesson.slug}`)}
+                              data-cw-ink-control
+                            >
+                              <InteractionInkLabel variant="link">{lesson.title}</InteractionInkLabel>
+                            </Link>
+                          )}
+                          {state.note ? <span className={styles.outlineLessonNote}>{state.note}</span> : null}
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             </li>

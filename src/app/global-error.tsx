@@ -26,12 +26,7 @@ import styles from "@/components/platform/PlatformNotFound.module.css";
  * from `(funnels)`/`(builder)`, which do not mount that provider the same
  * way). The panel's own two exits are the way out.
  */
-export default function GlobalError({
-  error,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
+export default function GlobalError({ error }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error(error);
   }, [error]);

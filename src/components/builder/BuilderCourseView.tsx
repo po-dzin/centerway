@@ -1,15 +1,12 @@
 "use client";
 
 import { useToast } from "@/components/ToastProvider";
-
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-
 import { HandGraphic, Icon } from "@/components/Icon";
 import {
   newCourseFromTemplate,
   courseForSave,
-  newLesson,
   newModule,
   nextDayIndex,
   PLACEHOLDER_MARKER,
@@ -24,10 +21,14 @@ import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
 import { plural } from "@/lib/plural";
 import { OFFER_CARD_TITLE_MAX, OFFER_TITLE_RAW_MAX, offerCardOverflow } from "@/lib/platform/offerPreview";
 import { BuilderFailureNotice, BuilderShell } from "./BuilderShell";
-import { BuilderMenu } from "./BuilderMenu";
 import { BuilderCourseSettings } from "./BuilderCourseSettings";
 import { ShelfPresentation } from "@/components/platform/cabinet/ShelfPresentation";
-import { COURSE_WORKSPACE_HASH, DEFAULT_COURSE_WORKSPACE_MODE, courseWorkspaceModeFromHash, type WorkspaceMode } from "./courseWorkspace";
+import {
+  COURSE_WORKSPACE_HASH,
+  DEFAULT_COURSE_WORKSPACE_MODE,
+  courseWorkspaceModeFromHash,
+  type WorkspaceMode,
+} from "./courseWorkspace";
 import { BuilderCourseAuthor } from "./BuilderCourseAuthor";
 import { BuilderStructureStart, isPristineStructure } from "./BuilderStructureStart";
 import { BuilderBlockers } from "./BuilderBlockers";
@@ -41,7 +42,6 @@ import {
   type BuilderCourseDto,
   type BuilderFailure,
 } from "./builderClient";
-import { BuilderGrip } from "./BuilderGrip";
 import { BuilderHistory } from "./BuilderHistory";
 import { BuilderEditableTitle } from "./BuilderEditableTitle";
 import { BuilderRecordField } from "./BuilderRecordField";
@@ -50,85 +50,39 @@ import { FieldInput } from "./BuilderFields";
 import { useCourseHistory } from "./useCourseHistory";
 import { useCourseAutosave } from "./useCourseAutosave";
 import { rememberZenPreviewReturn, zenPreviewHref } from "@/components/lms/ZenPreviewShell";
-import { useRowDrag, type DragRef, type DropEdge, type RowDrag } from "./useRowDrag";
-import {
-  LAST_LESSON_REFUSAL,
-  moveLessonTo,
-  moveModuleTo,
-  removeLesson,
-  removeModule,
-  stepLesson,
-  stepModule,
-} from "./structureMoves";
+import { useRowDrag, type DragRef, type DropEdge } from "./useRowDrag";
+import { moveLessonTo, moveModuleTo } from "./structureMoves";
 import { writePath } from "./blockFields";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { usePlatformSession } from "@/components/platform/layout/usePlatformSession";
 import { courseSaveFailureCopy } from "./courseSaveCopy";
 import { lessonDocumentFailureCopy } from "./lessonDocumentCopy";
-import {
-  clearDurableCourseDraft,
-  inspectDurableCourseDraft,
-  type DurableCourseDraft,
-} from "./courseDraftStore";
+import { clearDurableCourseDraft, inspectDurableCourseDraft, type DurableCourseDraft } from "./courseDraftStore";
 import { BuilderDraftRecovery } from "./BuilderDraftRecovery";
 import { BuilderExitPrompt } from "./BuilderExitPrompt";
 import { useBuilderExit } from "./useBuilderExit";
 import { BuilderVersionHistory } from "./BuilderVersionHistory";
+import { BuilderCourseRail, BuilderInkLabel, ModuleEditor, normalize, reviewStatusLabel } from "./BuilderModuleEditor";
+import {
+  STRUCTURE_VIEW_EVENT,
+  STRUCTURE_VIEW_KEY,
+  STRUCTURE_WIDE,
+  readStructureView,
+  subscribeToStructureView,
+  subscribeToStructureWidth,
+  type StructureView,
+} from "./builderStructureView";
 
 type State =
   | { status: "loading" }
   | { status: "failed"; failure: BuilderFailure; detail?: string }
   | { status: "ready"; data: BuilderCourseDto };
 
-const ids = () => crypto.randomUUID();
+export const ids = () => crypto.randomUUID();
 
-type StructureView = "rows" | "cards";
-/**
- * The four screens of a course, in the order the work happens.
- *
- * `course` is the COVER — the catalogue card and everything on it. `offer` is
- * the OFFER PAGE — what a buyer reads after they clicked. They were one tab
- * called «Огляд» until 2026-08-28, and one tab was the reason the offer half
- * looked optional: it lived below the fold of the card half.
- *
- * The key stays `course` rather than becoming `cover`, and the hash stays
- * `#course-overview`, because blocker arrows already point course-level
- * blockers there (`blockerTargets.ts`) and links to it are already in the
- * wild. Renaming the identifier would have renamed a URL to fix a label.
- *
- * `author` joined 2026-08-28: who this course's byline is, and the one line
- * (`authorNote`) that changes about them from course to course. It used to be
- * a field buried at the bottom of `offer`'s settings; a byline that a course
- * cannot exist without printing correctly earned a screen of its own, not a
- * row at the end of someone else's form.
- */
-const STRUCTURE_VIEW_KEY = "cw.builder.structureView";
-const STRUCTURE_VIEW_EVENT = "cw:builder-structure-view";
-const trailTitle = (value: string, fallback: string) =>
+export const trailTitle = (value: string, fallback: string) =>
   value.includes(PLACEHOLDER_MARKER) || value.trim() === "" ? fallback : value;
-// Two module cards need enough measure for a title, grip and overflow menu.
-// Phones and compact tablets stay in the faster, reorderable row view.
-const STRUCTURE_WIDE = "(min-width: 901px)";
-
-function subscribeToStructureView(onChange: () => void) {
-  window.addEventListener("storage", onChange);
-  window.addEventListener(STRUCTURE_VIEW_EVENT, onChange);
-  return () => {
-    window.removeEventListener("storage", onChange);
-    window.removeEventListener(STRUCTURE_VIEW_EVENT, onChange);
-  };
-}
-
-function readStructureView(): StructureView {
-  return window.localStorage.getItem(STRUCTURE_VIEW_KEY) === "cards" ? "cards" : "rows";
-}
-
-function subscribeToStructureWidth(onChange: () => void) {
-  const query = window.matchMedia(STRUCTURE_WIDE);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
 
 /**
  * The course page — structure, settings, readiness, publish.
@@ -156,13 +110,18 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   /* The draft found on this device, and what it is: `recover` is a session
      that ended badly, `conflict` is one that ended badly while another tab
      moved the server on. Neither is applied until the author answers. */
-  const [draftDecision, setDraftDecision] = useState<
-    { kind: "recover" | "conflict"; draft: DurableCourseDraft } | null
-  >(null);
+  const [draftDecision, setDraftDecision] = useState<{
+    kind: "recover" | "conflict";
+    draft: DurableCourseDraft;
+  } | null>(null);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const draftGeneration = useRef<number | null>(null);
   const router = useRouter();
-  const storedStructureView = useSyncExternalStore(subscribeToStructureView, readStructureView, () => "rows" as StructureView);
+  const storedStructureView = useSyncExternalStore(
+    subscribeToStructureView,
+    readStructureView,
+    () => "rows" as StructureView,
+  );
   const structureWide = useSyncExternalStore(
     subscribeToStructureWidth,
     () => window.matchMedia(STRUCTURE_WIDE).matches,
@@ -202,7 +161,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     setState(
       result.ok
         ? { status: "ready", data: result.data }
-        : { status: "failed", failure: result.failure, detail: result.detail }
+        : { status: "failed", failure: result.failure, detail: result.detail },
     );
   }, [history, ownerId, slug]);
 
@@ -223,7 +182,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       setState(
         result.ok
           ? { status: "ready", data: result.data }
-          : { status: "failed", failure: result.failure, detail: result.detail }
+          : { status: "failed", failure: result.failure, detail: result.detail },
       );
     })();
     return () => {
@@ -238,7 +197,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       // Coalesced by the path: retitling a module is one undo, not one per letter.
       history.edit(path.join("."), (current) => normalize(writePath(current, path, value)));
     },
-    [history]
+    [history],
   );
 
   /**
@@ -257,7 +216,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       // its own act and gets its own step back.
       history.edit(null, (current) => ({ ...current, modules: renumber(next(current)) }));
     },
-    [history]
+    [history],
   );
 
   /** Modules reorder within the course; the drop names a place in the list on screen. */
@@ -266,8 +225,8 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       (from: DragRef, to: DragRef, edge: DropEdge) => {
         editModules((current) => moveModuleTo(current.modules, from, to, edge));
       },
-      [editModules]
-    )
+      [editModules],
+    ),
   );
 
   /**
@@ -282,9 +241,9 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       (from: DragRef, to: DragRef, edge: DropEdge) => {
         editModules((current) => moveLessonTo(current.modules, from, to, edge));
       },
-      [editModules]
+      [editModules],
     ),
-    { crossGroup: true }
+    { crossGroup: true },
   );
 
   /**
@@ -323,20 +282,23 @@ export function BuilderCourseView({ slug }: { slug: string }) {
    * shape is not just its lessons, and applying its structure while leaving the
    * course `open` would produce a template that half-applied.
    */
-  const applyTemplate = useCallback((template: CourseTemplateId) => {
-    history.edit(null, (current) => {
-      const preset = newCourseFromTemplate(ids, {
-        slug: current.slug,
-        title: current.title,
-        programSlug: current.programSlug,
-        template,
+  const applyTemplate = useCallback(
+    (template: CourseTemplateId) => {
+      history.edit(null, (current) => {
+        const preset = newCourseFromTemplate(ids, {
+          slug: current.slug,
+          title: current.title,
+          programSlug: current.programSlug,
+          template,
+        });
+        return { ...current, schedule: preset.schedule, modules: preset.modules };
       });
-      return { ...current, schedule: preset.schedule, modules: preset.modules };
-    });
-    toast.success("Структуру застосовано. Перевірте модулі й збережіть курс.");
-    /* `ids` is module scope, not state — listing it would claim this callback
+      toast.success("Структуру застосовано. Перевірте модулі й збережіть курс.");
+      /* `ids` is module scope, not state — listing it would claim this callback
        re-forms when it changes, and it cannot. */
-  }, [history, toast]);
+    },
+    [history, toast],
+  );
 
   async function importLessons(moduleIndex: number, files: File[]) {
     if (!files.length || working) return;
@@ -404,42 +366,51 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     toast.success(`Експортовано ${result.data.filename}`);
   }
 
-  const persistCourse = useCallback(async (snapshot: Course) => {
-    if (draftGeneration.current === null) {
-      return { ok: false as const, message: "Курс ще завантажується. Спробуйте за мить." };
-    }
-    const result = await saveCourse(slug, courseForSave(snapshot), draftGeneration.current);
-    if (!result.ok) {
-      if (result.failure === "conflict") {
-        return { ok: false as const, message: "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку, щоб не втратити чужі зміни." };
+  const persistCourse = useCallback(
+    async (snapshot: Course) => {
+      if (draftGeneration.current === null) {
+        return { ok: false as const, message: "Курс ще завантажується. Спробуйте за мить." };
       }
-      /* The server's `detail` is an assertion id, not a sentence — see
+      const result = await saveCourse(slug, courseForSave(snapshot), draftGeneration.current);
+      if (!result.ok) {
+        if (result.failure === "conflict") {
+          return {
+            ok: false as const,
+            message: "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку, щоб не втратити чужі зміни.",
+          };
+        }
+        /* The server's `detail` is an assertion id, not a sentence — see
          `courseSaveCopy`. It used to be printed raw, so a course whose cover
          had no alt text answered every save with
          `lms_course_cover_missing_alt:builder`. */
-      return {
-        ok: false as const,
-        message: courseSaveFailureCopy(result.detail, "Не вдалося зберегти. Спробуйте ще раз."),
-      };
-    }
-    draftGeneration.current = result.data.draftGeneration;
-    // Keep server-derived readiness current without reloading the document. A
-    // reload here would overwrite keystrokes made while this request was in
-    // flight; the history records the exact accepted snapshot instead.
-    setState((current) => current.status === "ready" ? {
-      ...current,
-      data: {
-        ...current.data,
-        course: snapshot,
-        draftGeneration: result.data.draftGeneration,
-        hasPendingRevision: result.data.staged ? true : current.data.hasPendingRevision,
-        readiness: { ready: result.data.blockers.length === 0, blockers: result.data.blockers },
-        review: result.data.staged || current.data.liveStatus === "draft"
-          ? { ...current.data.review, status: "draft", note: null }
-          : current.data.review,
-      },
-    } : current);
-    /* A STAGED SAVE SAYS SO (2026-09-06). On a published course this write does
+        return {
+          ok: false as const,
+          message: courseSaveFailureCopy(result.detail, "Не вдалося зберегти. Спробуйте ще раз."),
+        };
+      }
+      draftGeneration.current = result.data.draftGeneration;
+      // Keep server-derived readiness current without reloading the document. A
+      // reload here would overwrite keystrokes made while this request was in
+      // flight; the history records the exact accepted snapshot instead.
+      setState((current) =>
+        current.status === "ready"
+          ? {
+              ...current,
+              data: {
+                ...current.data,
+                course: snapshot,
+                draftGeneration: result.data.draftGeneration,
+                hasPendingRevision: result.data.staged ? true : current.data.hasPendingRevision,
+                readiness: { ready: result.data.blockers.length === 0, blockers: result.data.blockers },
+                review:
+                  result.data.staged || current.data.liveStatus === "draft"
+                    ? { ...current.data.review, status: "draft", note: null }
+                    : current.data.review,
+              },
+            }
+          : current,
+      );
+      /* A STAGED SAVE SAYS SO (2026-09-06). On a published course this write does
        not touch what learners read: `saveBuilderCourse` puts it in
        `pending_content` as the next version and only three presentational
        fields patch the live release (see publishedEditPolicy.ts). The bar
@@ -448,16 +419,18 @@ export function BuilderCourseView({ slug }: { slug: string }) {
        found the old copy — with nothing on this screen having mentioned a
        version, a review, or a queue. The save was true; the sentence was not
        the whole of it. */
-    return {
-      ok: true as const,
-      generation: result.data.draftGeneration,
-      message: result.data.staged
-        ? "Збережено як наступну версію — учні бачать поточну."
-        : result.data.blockers.length === 0
-        ? "Збережено. Блокерів немає."
-        : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`,
-    };
-  }, [slug]);
+      return {
+        ok: true as const,
+        generation: result.data.draftGeneration,
+        message: result.data.staged
+          ? "Збережено як наступну версію — учні бачать поточну."
+          : result.data.blockers.length === 0
+            ? "Збережено. Блокерів немає."
+            : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`,
+      };
+    },
+    [slug],
+  );
 
   /* The exit question decides whether autosave may run, and answering it runs
      a save — so one of the two has to be reached through a ref. It is the save,
@@ -491,11 +464,14 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     saveRef.current = save;
   }, [save]);
 
-  const openLesson = useCallback((href: string): "allow" | "held" => {
-    if (!dirty) return "allow";
-    navigate(href);
-    return "held";
-  }, [dirty, navigate]);
+  const openLesson = useCallback(
+    (href: string): "allow" | "held" => {
+      if (!dirty) return "allow";
+      navigate(href);
+      return "held";
+    },
+    [dirty, navigate],
+  );
 
   const preview = () => {
     if (working) return;
@@ -527,9 +503,11 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     setBusy(false);
 
     if (!result.ok) {
-      toast.error(result.failure === "conflict"
-        ? "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку."
-        : result.detail ?? "Не вдалося зберегти. Спробуйте ще раз.");
+      toast.error(
+        result.failure === "conflict"
+          ? "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку."
+          : (result.detail ?? "Не вдалося зберегти. Спробуйте ще раз."),
+      );
       return;
     }
     draftGeneration.current = result.data.draftGeneration;
@@ -594,7 +572,11 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   if (state.status === "loading") {
     return (
       <BuilderShell trail={trail}>
-        <PlatformLoadingState label="Майстерня" title="Завантажуємо курс…" detail="Відновлюємо структуру, налаштування і статус публікації." />
+        <PlatformLoadingState
+          label="Майстерня"
+          title="Завантажуємо курс…"
+          detail="Відновлюємо структуру, налаштування і статус публікації."
+        />
       </BuilderShell>
     );
   }
@@ -610,7 +592,11 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   if (!course) {
     return (
       <BuilderShell trail={trail}>
-        <PlatformLoadingState label="Майстерня" title="Завантажуємо курс…" detail="Відновлюємо структуру, налаштування і статус публікації." />
+        <PlatformLoadingState
+          label="Майстерня"
+          title="Завантажуємо курс…"
+          detail="Відновлюємо структуру, налаштування і статус публікації."
+        />
       </BuilderShell>
     );
   }
@@ -626,7 +612,10 @@ export function BuilderCourseView({ slug }: { slug: string }) {
 
   return (
     <BuilderShell
-      trail={[{ label: "Курси", onNavigate: () => route("/build") }, { label: trailTitle(course.title, "Курс без назви") }]}
+      trail={[
+        { label: "Курси", onNavigate: () => route("/build") },
+        { label: trailTitle(course.title, "Курс без назви") },
+      ]}
       /* Two objects for the phone's capsule: the version drawer and the learner
          preview. The save button stays in `tools` — it is the workspace's
          primary action, it carries a word, and the document already has one at
@@ -715,11 +704,61 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         onStay={exit.stay}
       />
       <nav className={styles.courseMobileNav} aria-label="Розділи курсу">
-        <a className={styles.courseMobileNavItem} href="#course-overview" aria-current={workspaceMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("course"); }}><BuilderInkLabel>Обкладинка</BuilderInkLabel></a>
-        <a className={styles.courseMobileNavItem} href="#course-structure" aria-current={workspaceMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("content"); }}><BuilderInkLabel>Зміст</BuilderInkLabel></a>
-        <a className={styles.courseMobileNavItem} href="#course-offer" aria-current={workspaceMode === "offer" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("offer"); }}><BuilderInkLabel>Сторінка</BuilderInkLabel></a>
-        <a className={styles.courseMobileNavItem} href="#course-author" aria-current={workspaceMode === "author" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("author"); }}><BuilderInkLabel>Автор</BuilderInkLabel></a>
-        <a className={styles.courseMobileNavItem} href="#course-release" aria-current={workspaceMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("release"); }}><BuilderInkLabel>Публікація</BuilderInkLabel></a>
+        <a
+          className={styles.courseMobileNavItem}
+          href="#course-overview"
+          aria-current={workspaceMode === "course" ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            selectWorkspaceMode("course");
+          }}
+        >
+          <BuilderInkLabel>Обкладинка</BuilderInkLabel>
+        </a>
+        <a
+          className={styles.courseMobileNavItem}
+          href="#course-structure"
+          aria-current={workspaceMode === "content" ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            selectWorkspaceMode("content");
+          }}
+        >
+          <BuilderInkLabel>Зміст</BuilderInkLabel>
+        </a>
+        <a
+          className={styles.courseMobileNavItem}
+          href="#course-offer"
+          aria-current={workspaceMode === "offer" ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            selectWorkspaceMode("offer");
+          }}
+        >
+          <BuilderInkLabel>Сторінка</BuilderInkLabel>
+        </a>
+        <a
+          className={styles.courseMobileNavItem}
+          href="#course-author"
+          aria-current={workspaceMode === "author" ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            selectWorkspaceMode("author");
+          }}
+        >
+          <BuilderInkLabel>Автор</BuilderInkLabel>
+        </a>
+        <a
+          className={styles.courseMobileNavItem}
+          href="#course-release"
+          aria-current={workspaceMode === "release" ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            selectWorkspaceMode("release");
+          }}
+        >
+          <BuilderInkLabel>Публікація</BuilderInkLabel>
+        </a>
       </nav>
 
       {/* THE ONE FACT EVERY EDITING TAB WAS MISSING — see BuilderRevisionNotice.
@@ -737,106 +776,123 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         />
       ) : null}
 
-      <section className={styles.courseWorkspacePanel} id="course-overview" hidden={workspaceMode !== "course"} aria-labelledby="course-overview-title">
-      <div className={styles.docHead}>
-        <div className={styles.courseTitleRow}>
-          <BuilderEditableTitle
-            register="record"
-            value={course.title}
-            label="Редагувати назву курсу"
-            /* The RAW ceiling, not the card's: the field must accept «назва —
+      <section
+        className={styles.courseWorkspacePanel}
+        id="course-overview"
+        hidden={workspaceMode !== "course"}
+        aria-labelledby="course-overview-title"
+      >
+        <div className={styles.docHead}>
+          <div className={styles.courseTitleRow}>
+            <BuilderEditableTitle
+              register="record"
+              value={course.title}
+              label="Редагувати назву курсу"
+              /* The RAW ceiling, not the card's: the field must accept «назва —
                пояснення» whole, and the hint below is what asks for a shorter
                NAME. A cap at the card's number truncates mid-word as you type. */
-            maxLength={OFFER_TITLE_RAW_MAX}
-            onChange={(value) => editCourse(["title"], value)}
-          />
-          <span className={published ? styles.pillPublished : styles.pill}>
-            {published ? "Опубліковано" : "Чернетка"}
-          </span>
-        </div>
-        {/* One shared hard limit holds both the page and two catalogue lines on
+              maxLength={OFFER_TITLE_RAW_MAX}
+              onChange={(value) => editCourse(["title"], value)}
+            />
+            <span className={published ? styles.pillPublished : styles.pill}>
+              {published ? "Опубліковано" : "Чернетка"}
+            </span>
+          </div>
+          {/* One shared hard limit holds both the page and two catalogue lines on
             the narrowest phone. The hint below only appears for an older
             imported title that predates this contract. */}
-        {titleOverflow > 0 ? (
-          <p className={styles.courseTitleHint}>
-            Назва довша за ліміт {OFFER_CARD_TITLE_MAX}{" "}
-            {plural(OFFER_CARD_TITLE_MAX, "символ", "символи", "символів")} на {titleOverflow}{" "}
-            {plural(titleOverflow, "символ", "символи", "символів")}. Скоротіть її: на картці доступні дві строки.
-          </p>
-        ) : null}
-        <div className={styles.pageLead}>
-          <BuilderRecordField
-            multiline
-            value={course.summary}
-            label="Редагувати короткий опис курсу"
-            placeholder="Про що цей курс — одне-два речення."
-            onChange={(next) => editCourse(["summary"], next)}
-          />
-        </div>
-        <div className={styles.courseAddressRow}>
-          <span className={styles.courseAddressLabel}>Адреса курсу</span>
-          {slugEditing ? (
-            <form
-              className={styles.slugForm}
-              onSubmit={(event) => {
-                event.preventDefault();
-                void renameSlug();
-              }}
-            >
-              <input
-                className={styles.slugInput}
-                value={slugDraft}
-                autoFocus
-                aria-label="Частина адреси курсу після домену"
-                onChange={(event) => setSlugDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") setSlugEditing(false);
+          {titleOverflow > 0 ? (
+            <p className={styles.courseTitleHint}>
+              Назва довша за ліміт {OFFER_CARD_TITLE_MAX}{" "}
+              {plural(OFFER_CARD_TITLE_MAX, "символ", "символи", "символів")} на {titleOverflow}{" "}
+              {plural(titleOverflow, "символ", "символи", "символів")}. Скоротіть її: на картці доступні дві строки.
+            </p>
+          ) : null}
+          <div className={styles.pageLead}>
+            <BuilderRecordField
+              multiline
+              value={course.summary}
+              label="Редагувати короткий опис курсу"
+              placeholder="Про що цей курс — одне-два речення."
+              onChange={(next) => editCourse(["summary"], next)}
+            />
+          </div>
+          <div className={styles.courseAddressRow}>
+            <span className={styles.courseAddressLabel}>Адреса курсу</span>
+            {slugEditing ? (
+              <form
+                className={styles.slugForm}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void renameSlug();
                 }}
-              />
-              <button className={styles.quietAction} type="button" onClick={() => setSlugEditing(false)} disabled={working}>Скасувати</button>
-              <button className={styles.quietAction} type="submit" disabled={working || slugDraft.trim() === ""}>Зберегти</button>
-            </form>
-          ) : (
-            <>
-              <code className={styles.courseAddressValue}>my.centerway.net.ua/{course.slug}</code>
-              {state.data.slugEditable ? (
-                <span className={styles.slugControlTooltip} title={dirty ? "Спочатку збережіть зміни курсу" : "Змінити автоматично створену адресу"}>
-                  <button
-                    className={styles.slugEditAction}
-                    type="button"
-                    aria-label={dirty ? "Спочатку збережіть зміни курсу" : "Змінити автоматично створену адресу"}
-                    aria-describedby="course-address-hint"
-                    disabled={dirty || busy}
-                    onClick={() => {
-                      setSlugDraft(course.slug);
-                      setSlugEditing(true);
-                    }}
-                  >
-                    <Icon name="edit" size={16} />
-                    <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
-                  </button>
-                </span>
-              ) : (
-                <span
-                  className={styles.slugLockState}
-                  role="img"
-                  aria-label="Адресу закріплено"
-                  title="Адресу закріплено після першої публікації, появи учнів або підключення вітрини"
+              >
+                <input
+                  className={styles.slugInput}
+                  value={slugDraft}
+                  autoFocus
+                  aria-label="Частина адреси курсу після домену"
+                  onChange={(event) => setSlugDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") setSlugEditing(false);
+                  }}
+                />
+                <button
+                  className={styles.quietAction}
+                  type="button"
+                  onClick={() => setSlugEditing(false)}
+                  disabled={working}
                 >
-                  <Icon name="lock" size={16} />
+                  Скасувати
+                </button>
+                <button className={styles.quietAction} type="submit" disabled={working || slugDraft.trim() === ""}>
+                  Зберегти
+                </button>
+              </form>
+            ) : (
+              <>
+                <code className={styles.courseAddressValue}>my.centerway.net.ua/{course.slug}</code>
+                {state.data.slugEditable ? (
+                  <span
+                    className={styles.slugControlTooltip}
+                    title={dirty ? "Спочатку збережіть зміни курсу" : "Змінити автоматично створену адресу"}
+                  >
+                    <button
+                      className={styles.slugEditAction}
+                      type="button"
+                      aria-label={dirty ? "Спочатку збережіть зміни курсу" : "Змінити автоматично створену адресу"}
+                      aria-describedby="course-address-hint"
+                      disabled={dirty || busy}
+                      onClick={() => {
+                        setSlugDraft(course.slug);
+                        setSlugEditing(true);
+                      }}
+                    >
+                      <Icon name="edit" size={16} />
+                      <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+                    </button>
+                  </span>
+                ) : (
+                  <span
+                    className={styles.slugLockState}
+                    role="img"
+                    aria-label="Адресу закріплено"
+                    title="Адресу закріплено після першої публікації, появи учнів або підключення вітрини"
+                  >
+                    <Icon name="lock" size={16} />
+                  </span>
+                )}
+                <span className={styles.courseAddressHint} id="course-address-hint">
+                  {state.data.slugEditable
+                    ? "Адресу створено автоматично. Її можна змінити до першої публікації, появи учнів або підключення вітрини."
+                    : "Адресу закріплено, щоб уже видані посилання залишалися робочими."}
                 </span>
-              )}
-              <span className={styles.courseAddressHint} id="course-address-hint">
-                {state.data.slugEditable
-                  ? "Адресу створено автоматично. Її можна змінити до першої публікації, появи учнів або підключення вітрини."
-                  : "Адресу закріплено, щоб уже видані посилання залишалися робочими."}
-              </span>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* NO VISIBLE HEADING HERE ANY MORE. «Про курс» sat above a list whose
+        {/* NO VISIBLE HEADING HERE ANY MORE. «Про курс» sat above a list whose
           every row already carries its own caption — ВІТРИНА, РИТМ, ВИГЛЯД,
           ОБКЛАДИНКА — so it named nothing the reader could not see, and it
           landed under a tab that says «Огляд» three rows above. A heading that
@@ -845,14 +901,12 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           It stays as the section's ACCESSIBLE name, because
           `aria-labelledby` on the panel above points at it and a screen
           reader still needs to hear what this region is. */}
-      <div className={styles.courseSettingsPanel}>
-        <h2 className={styles.visuallyHidden} id="course-overview-title">Про курс</h2>
-        <BuilderCourseSettings
-          course={course}
-          scope="cover"
-          onChange={editCourse}
-        />
-      </div>
+        <div className={styles.courseSettingsPanel}>
+          <h2 className={styles.visuallyHidden} id="course-overview-title">
+            Про курс
+          </h2>
+          <BuilderCourseSettings course={course} scope="cover" onChange={editCourse} />
+        </div>
       </section>
 
       {/* THE OFFER PAGE, on its own screen. Same component, other half of its
@@ -860,29 +914,40 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           purpose: the name, the short description and the address belong to the
           course, are edited once on the cover tab, and a second copy here would
           be a second place to change them from. */}
-      <section className={styles.courseWorkspacePanel} id="course-offer" hidden={workspaceMode !== "offer"} aria-labelledby="course-offer-title">
+      <section
+        className={styles.courseWorkspacePanel}
+        id="course-offer"
+        hidden={workspaceMode !== "offer"}
+        aria-labelledby="course-offer-title"
+      >
         <div className={styles.coursePageSettingsPanel}>
-          <h2 className={styles.visuallyHidden} id="course-offer-title">Сторінка програми</h2>
-          <BuilderCourseSettings
-            course={course}
-            scope="page"
-            onChange={editCourse}
-          />
+          <h2 className={styles.visuallyHidden} id="course-offer-title">
+            Сторінка програми
+          </h2>
+          <BuilderCourseSettings course={course} scope="page" onChange={editCourse} />
         </div>
       </section>
 
-      <section className={styles.courseWorkspacePanel} id="course-author" hidden={workspaceMode !== "author"} aria-labelledby="course-author-title">
+      <section
+        className={styles.courseWorkspacePanel}
+        id="course-author"
+        hidden={workspaceMode !== "author"}
+        aria-labelledby="course-author-title"
+      >
         <div className={styles.coursePageWorkspaceBody}>
-          <h2 className={styles.visuallyHidden} id="course-author-title">Автор</h2>
-          <BuilderCourseAuthor
-            course={course}
-            slug={course.slug}
-            onChange={editCourse}
-          />
+          <h2 className={styles.visuallyHidden} id="course-author-title">
+            Автор
+          </h2>
+          <BuilderCourseAuthor course={course} slug={course.slug} onChange={editCourse} />
         </div>
       </section>
 
-      <section id="course-structure" hidden={workspaceMode !== "content"} className={`${styles.panel} ${styles.structure} ${structureView === "cards" ? styles.structureCards : ""}`} aria-labelledby="course-structure-title">
+      <section
+        id="course-structure"
+        hidden={workspaceMode !== "content"}
+        className={`${styles.panel} ${styles.structure} ${structureView === "cards" ? styles.structureCards : ""}`}
+        aria-labelledby="course-structure-title"
+      >
         <header className={`${styles.panelHead} ${styles.structureHead}`}>
           <div>
             {/* No kicker. It printed the course title one row under the trail
@@ -897,10 +962,12 @@ export function BuilderCourseView({ slug }: { slug: string }) {
                 What stays visible is the count under it, which the tab cannot
                 carry; the word itself stays as the region's accessible name,
                 because `aria-labelledby` points at it. */}
-            <h2 className={styles.visuallyHidden} id="course-structure-title">Зміст</h2>
+            <h2 className={styles.visuallyHidden} id="course-structure-title">
+              Зміст
+            </h2>
             <p className={styles.structureMeta}>
-              {course.modules.length} {plural(course.modules.length, "модуль", "модулі", "модулів")} ·{" "}
-              {lessonCount} {plural(lessonCount, "урок", "уроки", "уроків")}
+              {course.modules.length} {plural(course.modules.length, "модуль", "модулі", "модулів")} · {lessonCount}{" "}
+              {plural(lessonCount, "урок", "уроки", "уроків")}
             </p>
           </div>
           {structureWide ? (
@@ -925,9 +992,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             It sits ABOVE the list rather than replacing it: the placeholder
             module below is real, and a control that hides the document it acts
             on is the one thing this panel must not do. */}
-        {isPristineStructure(course) ? (
-          <BuilderStructureStart format="start" onApply={applyTemplate} />
-        ) : null}
+        {isPristineStructure(course) ? <BuilderStructureStart format="start" onApply={applyTemplate} /> : null}
 
         <div className={styles.structureModules}>
           {course.modules.map((module, moduleIndex) => (
@@ -959,29 +1024,39 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             ])
           }
         >
-          <span className={styles.addGlyph} aria-hidden="true">+</span> Додати модуль
+          <span className={styles.addGlyph} aria-hidden="true">
+            +
+          </span>{" "}
+          Додати модуль
         </button>
 
         {/* THE SAME CONTROL, FOLDED, once there is work to lose. On a course
             with content the templates stop being a starting point and become a
             wrecking ball, so this one is closed by default, sits after
             everything it would destroy, and asks before it does. */}
-        {isPristineStructure(course) ? null : (
-          <BuilderStructureStart format="replace" onApply={applyTemplate} />
-        )}
+        {isPristineStructure(course) ? null : <BuilderStructureStart format="replace" onApply={applyTemplate} />}
       </section>
 
-      <section className={styles.releaseWorkspace} id="course-release" hidden={workspaceMode !== "release"} aria-labelledby="course-release-title">
+      <section
+        className={styles.releaseWorkspace}
+        id="course-release"
+        hidden={workspaceMode !== "release"}
+        aria-labelledby="course-release-title"
+      >
         <header className={styles.releaseWorkspaceHead}>
           <div>
             {/* No eyebrow. The rail item that opened this workspace already
                 says «Публікація», the heading says it again, and neither of
                 the other two workspaces captions itself — this line was the
                 word a third time before the reader had read anything. */}
-            <h2 className={styles.pageTitle} id="course-release-title">Перевірка й публікація</h2>
+            <h2 className={styles.pageTitle} id="course-release-title">
+              Перевірка й публікація
+            </h2>
           </div>
           <div className={styles.releaseSummary}>
-            <span className={published ? styles.pillPublished : styles.pill}>{published ? "Опубліковано" : "Чернетка"}</span>
+            <span className={published ? styles.pillPublished : styles.pill}>
+              {published ? "Опубліковано" : "Чернетка"}
+            </span>
             <span className={styles.panelStatus}>{reviewStatusLabel(state.data)}</span>
           </div>
         </header>
@@ -1008,12 +1083,22 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           </p>
           {state.data.accessCodesEditable ? (
             <FieldInput
-              field={{ path: [], label: "Коди продуктів", kind: "text", hint: "Через кому. Порожньо — приймається лише власний код курсу." }}
+              field={{
+                path: [],
+                label: "Коди продуктів",
+                kind: "text",
+                hint: "Через кому. Порожньо — приймається лише власний код курсу.",
+              }}
               value={course.entitlementProductCodes.join(", ")}
               onChange={(_path, value) =>
                 editCourse(
                   ["entitlementProductCodes"],
-                  typeof value === "string" ? value.split(",").map((code) => code.trim()).filter(Boolean) : [],
+                  typeof value === "string"
+                    ? value
+                        .split(",")
+                        .map((code) => code.trim())
+                        .filter(Boolean)
+                    : [],
                 )
               }
             />
@@ -1032,24 +1117,54 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             {state.data.hasPendingRevision
               ? "Ви редагуєте наступну версію. Учні поки бачать опублікований курс; надішліть оновлення на перевірку, коли воно готове."
               : state.data.review.enabled
-              ? "Збережіть готову структуру й надішліть її на перевірку. Після схвалення курс можна відкрити учням; видимість у каталозі окремо визначає адміністратор."
-              : "Контур модерації ще не активовано в базі. Поточне ручне тестування публікації залишається доступним."}
+                ? "Збережіть готову структуру й надішліть її на перевірку. Після схвалення курс можна відкрити учням; видимість у каталозі окремо визначає адміністратор."
+                : "Контур модерації ще не активовано в базі. Поточне ручне тестування публікації залишається доступним."}
           </p>
-          {state.data.review.note ? <p className={styles.panelText}>Коментар адміністратора: {state.data.review.note}</p> : null}
+          {state.data.review.note ? (
+            <p className={styles.panelText}>Коментар адміністратора: {state.data.review.note}</p>
+          ) : null}
           {dirty ? <p className={styles.panelText}>Спочатку збережіть поточні зміни структури.</p> : null}
           <div className={styles.panelActions}>
             {published ? (
               state.data.hasPendingRevision ? (
                 state.data.review.status === "in_review" ? null : (
-                  <button className={styles.commitAction} type="button" onClick={() => void submitReview()} disabled={working || dirty || !readiness.ready}>Надіслати оновлення на перевірку</button>
+                  <button
+                    className={styles.commitAction}
+                    type="button"
+                    onClick={() => void submitReview()}
+                    disabled={working || dirty || !readiness.ready}
+                  >
+                    Надіслати оновлення на перевірку
+                  </button>
                 )
               ) : (
-                <button className={styles.retreatAction} type="button" onClick={() => setStatus("draft")} disabled={working}>Зняти з публікації</button>
+                <button
+                  className={styles.retreatAction}
+                  type="button"
+                  onClick={() => setStatus("draft")}
+                  disabled={working}
+                >
+                  Зняти з публікації
+                </button>
               )
             ) : !state.data.review.enabled || state.data.review.status === "approved" ? (
-              <button className={styles.commitAction} type="button" onClick={() => setStatus("published")} disabled={working || dirty || !readiness.ready}>Опублікувати</button>
+              <button
+                className={styles.commitAction}
+                type="button"
+                onClick={() => setStatus("published")}
+                disabled={working || dirty || !readiness.ready}
+              >
+                Опублікувати
+              </button>
             ) : state.data.review.status === "in_review" ? null : (
-              <button className={styles.commitAction} type="button" onClick={() => void submitReview()} disabled={working || dirty || !readiness.ready}>Надіслати на перевірку</button>
+              <button
+                className={styles.commitAction}
+                type="button"
+                onClick={() => void submitReview()}
+                disabled={working || dirty || !readiness.ready}
+              >
+                Надіслати на перевірку
+              </button>
             )}
           </div>
         </section>
@@ -1071,16 +1186,16 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         <span className={styles.saveState} role="status" aria-live="polite">
           {pendingHref
             ? "Зберігаємо зміни перед переходом…"
-            : autosave.message
-              ?? (dirty
+            : (autosave.message ??
+              (dirty
                 ? "Зміни збережуться автоматично"
-                /* «Усі зміни збережено» is true and, on a course with a staged
+                : /* «Усі зміни збережено» is true and, on a course with a staged
                    revision, answers the wrong question: saved WHERE. The line
                    the author needs at rest is which of the two versions the
                    learners are reading. */
-                : state.data.hasPendingRevision
+                  state.data.hasPendingRevision
                   ? "Наступна версія збережена — учні бачать поточну"
-                  : "Усі зміни збережено")}
+                  : "Усі зміни збережено"))}
         </span>
         {/* The label never changes. It names what the button DOES, and the line
             beside it already says what is happening — a button that relabels
@@ -1097,362 +1212,4 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       </div>
     </BuilderShell>
   );
-}
-
-function BuilderCourseRail({
-  published,
-  blockerCount,
-  activeMode,
-  onMode,
-}: {
-  published: boolean;
-  blockerCount: number;
-  activeMode: WorkspaceMode;
-  onMode: (mode: WorkspaceMode) => void;
-}) {
-  return (
-    <div className={styles.courseRail}>
-      <nav className={styles.courseRailNav} aria-label="Розділи курсу">
-        <a className={styles.courseRailLink} href="#course-overview" aria-label="Обкладинка" aria-current={activeMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("course"); }}>
-          <span className={styles.courseRailIcon}><Icon name="display" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
-          <BuilderInkLabel>Обкладинка</BuilderInkLabel>
-        </a>
-        <a className={styles.courseRailLink} href="#course-structure" aria-label="Зміст" aria-current={activeMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("content"); }}>
-          <span className={styles.courseRailIcon}><Icon name="view-rows" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
-          <BuilderInkLabel>Зміст</BuilderInkLabel>
-        </a>
-        <a className={styles.courseRailLink} href="#course-offer" aria-label="Сторінка програми" aria-current={activeMode === "offer" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("offer"); }}>
-          <span className={styles.courseRailIcon}><Icon name="document" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
-          <BuilderInkLabel>Сторінка</BuilderInkLabel>
-        </a>
-        <a className={styles.courseRailLink} href="#course-author" aria-label="Автор" aria-current={activeMode === "author" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("author"); }}>
-          <span className={styles.courseRailIcon}><Icon name="user" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
-          <BuilderInkLabel>Автор</BuilderInkLabel>
-        </a>
-        <a className={styles.courseRailLink} href="#course-release" aria-label="Публікація" aria-current={activeMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("release"); }}>
-          <span className={styles.courseRailIcon}><Icon name="shield-check" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
-          <BuilderInkLabel>Публікація</BuilderInkLabel>
-        </a>
-      </nav>
-      <div className={styles.courseRailStatus}>
-        <span className={styles.courseRailStatusLine}>
-          <HandGraphic className={styles.courseRailStatusDot} name="dot" size={12} />
-          {published ? "Опубліковано" : "Чернетка"}
-        </span>
-        <span className={styles.courseRailStatusLine}>
-          <HandGraphic className={styles.courseRailStatusDotBoundary} name="dot" size={12} />
-          {blockerCount} {plural(blockerCount, "блокер", "блокери", "блокерів")}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function BuilderInkLabel({ children }: { children: string }) {
-  return (
-    <span className={styles.inkLabel}>
-      {children}
-      <span className={styles.inkMark} aria-hidden="true" />
-    </span>
-  );
-}
-
-/**
- * A course whose optional objects were emptied field by field.
- *
- * `cover` is written through two separate inputs, so an author who clears both
- * leaves `{}` behind — a shape the validator rejects with
- * `lms_course_cover_missing_src` at save time, long after the field that caused
- * it went off screen. Cleared here instead, where the cause is one keystroke old.
- */
-function normalize(course: Course): Course {
-  if (course.cover && !course.cover.src) {
-    const next = { ...course };
-    delete next.cover;
-    return next;
-  }
-  return course;
-}
-
-function ModuleEditor({
-  course,
-  module,
-  moduleIndex,
-  moduleDrag,
-  lessonDrag,
-  onChange,
-  onModules,
-  onNote,
-  onOpenLesson,
-  busy,
-  onImportLessons,
-  onExportLesson,
-}: {
-  course: Course;
-  module: CourseModule;
-  moduleIndex: number;
-  moduleDrag: RowDrag;
-  lessonDrag: RowDrag;
-  onChange: (path: (string | number)[], value: unknown) => void;
-  onModules: (next: (course: Course) => CourseModule[]) => void;
-  onNote: (note: string) => void;
-  /** Answers whether the row may follow its own href, or is being held back. */
-  onOpenLesson: (href: string) => "allow" | "held";
-  busy: boolean;
-  onImportLessons: (files: File[]) => Promise<void>;
-  onExportLesson: (lesson: Lesson, format: LessonDocumentFormat) => Promise<void>;
-}) {
-  const isOnlyModule = course.modules.length === 1;
-  const importPicker = useRef<HTMLInputElement>(null);
-  const [collapsed, setCollapsed] = useState(false);
-  const sequenceIndex = module.reference
-    ? null
-    : course.modules.slice(0, moduleIndex + 1).filter((entry) => entry.reference !== true).length;
-  const collapsedPreview = module.lessons
-    .slice(0, 2)
-    .map((lesson) => trailTitle(lesson.title, "Урок без назви"))
-    .join(" · ");
-
-  const moveLesson = (lessonIndex: number, delta: number) => {
-    onModules((current) => stepLesson(current.modules, moduleIndex, lessonIndex, delta) ?? current.modules);
-  };
-
-  const deleteLesson = (lessonIndex: number) => {
-    onModules((current) => {
-      const next = removeLesson(current.modules, moduleIndex, lessonIndex);
-      if (!next) {
-        onNote(LAST_LESSON_REFUSAL);
-        return current.modules;
-      }
-      return next;
-    });
-  };
-
-  const moduleRow: DragRef = { list: "module", group: 0, index: moduleIndex };
-
-  return (
-    <div
-      className={`${styles.moduleBlock} ${styles.dragRow}`}
-      /* The rail reads this: a reference module is outside the sequence, so it
-         gets a dash on the path instead of the next number, and the numbers
-         after it do not skip. */
-      data-reference={module.reference === true ? "" : undefined}
-      data-collapsed={collapsed ? "" : undefined}
-      {...moduleDrag.rowProps(moduleRow)}
-    >
-      <div className={styles.moduleHead}>
-        <BuilderGrip drag={moduleDrag} row={moduleRow} label={module.title} />
-        <span
-          className={styles.moduleOrdinal}
-          data-short-label={sequenceIndex === null ? "Дов." : String(sequenceIndex).padStart(2, "0")}
-          aria-hidden="true"
-        >
-          {sequenceIndex === null ? "Довідка" : `Модуль ${String(sequenceIndex).padStart(2, "0")}`}
-        </span>
-        <button
-          className={styles.moduleCollapse}
-          type="button"
-          aria-label={collapsed ? `Розгорнути модуль «${module.title}»` : `Згорнути модуль «${module.title}»`}
-          aria-expanded={!collapsed}
-          onClick={() => setCollapsed((current) => !current)}
-        >
-          <Icon name={collapsed ? "chevron-right" : "chevron-down"} size={18} />
-        </button>
-        <BuilderEditableTitle
-          compact
-          register="record"
-          level="h3"
-          value={module.title}
-          label={`Редагувати назву модуля ${moduleIndex + 1}`}
-          onChange={(value) => onChange(["modules", moduleIndex, "title"], value)}
-        />
-        <span className={styles.moduleLessonCount}>
-          {module.lessons.length} {plural(module.lessons.length, "урок", "уроки", "уроків")}
-        </span>
-        <BuilderMenu
-          label={`Дії з модулем «${module.title}»`}
-          items={[
-            {
-              label: "Підняти вище",
-              icon: "arrow-up",
-              disabled: moduleIndex === 0,
-              onSelect: () => onModules((current) => stepModule(current.modules, moduleIndex, -1) ?? current.modules),
-            },
-            {
-              label: "Опустити нижче",
-              icon: "arrow-down",
-              disabled: moduleIndex === course.modules.length - 1,
-              onSelect: () => onModules((current) => stepModule(current.modules, moduleIndex, 1) ?? current.modules),
-            },
-            {
-              label: module.reference ? "Повернути в послідовність" : "Зробити довідковим",
-              icon: "question",
-              onSelect: () => onChange(["modules", moduleIndex, "reference"], module.reference ? undefined : true),
-            },
-            {
-              label: "Видалити модуль",
-              icon: "trash",
-              danger: true,
-              // The last module cannot go: `validateCourse` requires one, and
-              // the author would meet that as a save error instead of a
-              // disabled item.
-              disabled: isOnlyModule,
-              onSelect: () => onModules((current) => removeModule(current.modules, moduleIndex) ?? current.modules),
-            },
-          ]}
-        />
-      </div>
-
-      {collapsed ? (
-        <p className={styles.moduleCollapsedPreview}>
-          {collapsedPreview}
-          {module.lessons.length > 2 ? ` · ще ${module.lessons.length - 2}` : ""}
-        </p>
-      ) : null}
-
-      {collapsed ? null : <>
-      <div className={styles.lessonList}>
-      {module.lessons.map((lesson, lessonIndex) => {
-        const lessonRow: DragRef = { list: "lesson", group: moduleIndex, index: lessonIndex };
-        return (
-        <div
-          className={`${styles.lessonRowWrap} ${styles.dragRow}`}
-          key={lesson.id}
-          {...lessonDrag.rowProps(lessonRow)}
-        >
-          <BuilderGrip drag={lessonDrag} row={lessonRow} label={lesson.title} />
-          <div className={styles.lessonRow}>
-            <span
-              className={styles.lessonOrdinal}
-              data-short-label={String(lessonIndex + 1).padStart(2, "0")}
-              aria-hidden="true"
-            >
-              {sequenceIndex === null
-                ? String(lessonIndex + 1).padStart(2, "0")
-                : `${String(sequenceIndex).padStart(2, "0")}.${String(lessonIndex + 1).padStart(2, "0")}`}
-            </span>
-            <Icon className={styles.lessonIcon} name="document" size={20} />
-            <span className={styles.lessonText}>
-              <BuilderEditableTitle
-                compact
-                level="h4"
-                value={lesson.title}
-                label={`Редагувати назву уроку ${lessonIndex + 1}`}
-                href={`/build/${course.slug}/${lesson.slug}`}
-                onLinkClick={(event) => {
-                  if (onOpenLesson(`/build/${course.slug}/${lesson.slug}`) === "held") event.preventDefault();
-                }}
-                onChange={(value) => onChange(["modules", moduleIndex, "lessons", lessonIndex, "title"], value)}
-              />
-              <span className={styles.lessonMeta}>
-                {lesson.dayIndex ? `День ${lesson.dayIndex} · ` : ""}
-                {lesson.blocks.length} {plural(lesson.blocks.length, "блок", "блоки", "блоків")}
-              </span>
-            </span>
-          </div>
-          <BuilderMenu
-            label={`Дії з уроком «${lesson.title}»`}
-            items={[
-              {
-                label: "Підняти вище",
-                icon: "arrow-up",
-                disabled: moduleIndex === 0 && lessonIndex === 0,
-                onSelect: () => moveLesson(lessonIndex, -1),
-              },
-              {
-                label: "Опустити нижче",
-                icon: "arrow-down",
-                disabled: moduleIndex === course.modules.length - 1 && lessonIndex === module.lessons.length - 1,
-                onSelect: () => moveLesson(lessonIndex, 1),
-              },
-              { label: "Експортувати Markdown", disabled: busy, onSelect: () => void onExportLesson(lesson, "md") },
-              { label: "Експортувати Word", disabled: busy, onSelect: () => void onExportLesson(lesson, "docx") },
-              { label: "Експортувати текст", disabled: busy, onSelect: () => void onExportLesson(lesson, "txt") },
-              { label: "Видалити урок", icon: "trash" as const, danger: true, onSelect: () => deleteLesson(lessonIndex) },
-            ]}
-          />
-        </div>
-        );
-      })}
-      </div>
-
-      <div className={styles.addRow}>
-        <button
-          className={styles.addAction}
-          type="button"
-          onClick={() =>
-            onModules((current) =>
-              current.modules.map((entry, index) => {
-                if (index !== moduleIndex) return entry;
-                const position = entry.lessons.length + 1;
-                const title = `Урок ${position}`;
-                // Lesson slugs are unique across the WHOLE course, not the module:
-                // they are the URL key, and `validateCourse` refuses a duplicate.
-                const taken = current.modules.flatMap((one) => one.lessons.map((item) => item.slug));
-                // A daily course refuses a lesson with no day at all, so a new
-                // one takes the day after the last — never a renumber of the rest.
-                const dayIndex = entry.reference ? undefined : nextDayIndex(current);
-                return {
-                  ...entry,
-                  lessons: [
-                    ...entry.lessons,
-                    newLesson(ids, { order: position, title, slug: uniqueSlug(title, taken), dayIndex }),
-                  ],
-                };
-              })
-            )
-          }
-        >
-          <Icon name="plus" size={20} /> Новий урок
-        </button>
-        {/* NEXT TO THE HAND-MADE ONE, because it makes the same thing — but as
-            a GLYPH, not a second sentence. Two full labels side by side read as
-            two equal offers and doubled the width of a row that repeats once per
-            module; on a phone they wrapped. The words belong to the one an
-            author takes ten times a day, and the side door keeps a tooltip and
-            an accessible name — the same split as the course list's head, where
-            «Новий курс» is the gold button and import is the glyph beside it.
-
-            `multiple` is the point of it: five files are five lessons in one
-            press, appended in the order the picker returns them. */}
-        <button
-          className={styles.moduleImportAction}
-          type="button"
-          disabled={busy}
-          onClick={() => importPicker.current?.click()}
-          title={busy ? "Опрацьовуємо…" : "Імпортувати уроки з файлів"}
-          aria-label={busy ? "Опрацьовуємо…" : "Імпортувати уроки з файлів"}
-        >
-          <Icon name="import" size={20} />
-          <HandGraphic className={styles.stepInkRing} name="ink-ring" size={42} />
-        </button>
-        <input
-          ref={importPicker}
-          className={styles.visuallyHidden}
-          type="file"
-          accept=".md,.markdown,.docx,.txt,text/markdown,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-          multiple
-          tabIndex={-1}
-          onChange={(event) => {
-            const files = Array.from(event.target.files ?? []);
-            /* Cleared before the work starts, so picking the same files again
-               still fires a change event. */
-            event.target.value = "";
-            if (files.length) void onImportLessons(files);
-          }}
-        />
-      </div>
-      </>}
-    </div>
-  );
-}
-
-
-function reviewStatusLabel(data: BuilderCourseDto): string {
-  if (data.course.status === "published") return "Курс відкритий учням";
-  if (!data.review.enabled) return "Ручний тестовий контур";
-  if (data.review.status === "approved") return "Перевірку пройдено";
-  if (data.review.status === "in_review") return "На перевірці";
-  if (data.review.status === "changes_requested") return "Потрібні зміни";
-  return "Перевірка не розпочата";
 }

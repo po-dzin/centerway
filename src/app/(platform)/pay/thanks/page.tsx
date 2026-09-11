@@ -13,10 +13,6 @@ export const metadata: Metadata = pageMetadata({
   noindex: true,
 });
 
-export default async function PayThanksPage({
-  searchParams,
-}: {
-  searchParams: Promise<SearchParams>;
-}) {
+export default async function PayThanksPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   return <PayStatusPage status="paid" searchParams={await searchParams} />;
 }

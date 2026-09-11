@@ -49,7 +49,15 @@ function readReturnState(): PreviewReturnState | null {
   }
 }
 
-export function ZenPreviewShell({ returnTo, children, reader = false }: { returnTo: string; children: ReactNode; reader?: boolean }) {
+export function ZenPreviewShell({
+  returnTo,
+  children,
+  reader = false,
+}: {
+  returnTo: string;
+  children: ReactNode;
+  reader?: boolean;
+}) {
   const router = useRouter();
 
   const returnToBuilder = () => {

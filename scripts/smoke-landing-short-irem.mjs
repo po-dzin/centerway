@@ -1,10 +1,9 @@
 import { chromium } from "@playwright/test";
 
-const baseUrl = (
-  process.env.SMOKE_UI_BASE_URL ||
-  process.env.SMOKE_BASE_URL ||
-  "http://localhost:8000"
-).replace(/\/+$/, "");
+const baseUrl = (process.env.SMOKE_UI_BASE_URL || process.env.SMOKE_BASE_URL || "http://localhost:8000").replace(
+  /\/+$/,
+  "",
+);
 
 const timeoutMs = Number.parseInt(process.env.SMOKE_TIMEOUT_MS || "20000", 10);
 const landingEntry = (process.env.SMOKE_LANDING_ENTRY || "next").toLowerCase();
@@ -101,7 +100,7 @@ async function assertShortDataContract(page, label) {
 
   if (!contract.topCta || !contract.finalCta || !contract.stickyMenu) {
     fail(
-      `${label}: missing data contract (top=${contract.topCta}, final=${contract.finalCta}, sticky=${contract.stickyMenu})`
+      `${label}: missing data contract (top=${contract.topCta}, final=${contract.finalCta}, sticky=${contract.stickyMenu})`,
     );
     return;
   }
@@ -137,7 +136,7 @@ async function assertIremEntryContract(page, label) {
     !contract.shortEntryBridge
   ) {
     fail(
-      `${label}: missing promoted contract (hero=${contract.hero}, offer=${contract.offer}, formatPrice=${contract.formatPrice}, heroCta=${contract.heroCta}, finalCheckout=${contract.finalCheckoutCta}, sticky=${contract.stickyCta}, shortBridge=${contract.shortEntryBridge})`
+      `${label}: missing promoted contract (hero=${contract.hero}, offer=${contract.offer}, formatPrice=${contract.formatPrice}, heroCta=${contract.heroCta}, finalCheckout=${contract.finalCheckoutCta}, sticky=${contract.stickyCta}, shortBridge=${contract.shortEntryBridge})`,
     );
     return;
   }
@@ -169,9 +168,12 @@ async function assertIremCheckoutRedirect(page, label) {
 
   await page.waitForFunction(() => typeof window.CW_trackLead === "function");
   await page.locator(".openModal[data-cta-final]").first().scrollIntoViewIfNeeded();
-  await page.locator(".openModal[data-cta-final]").first().evaluate((node) => {
-    node.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
-  });
+  await page
+    .locator(".openModal[data-cta-final]")
+    .first()
+    .evaluate((node) => {
+      node.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    });
   await page.waitForTimeout(200);
 
   if (!payStartUrl) {
@@ -267,43 +269,53 @@ async function main() {
     await assertRouteStatus(browser, "irem-v2 removal", "/irem-v2", 404);
     await assertRouteStatus(browser, "irem thanks", "/irem/thanks", 200, async (page) => {
       const ok = await page.evaluate(() => {
-        return Boolean(document.querySelector('link[href="/irem/css/irem.theme.css"]')) &&
-          Boolean(document.querySelector(".utility-status-card"));
+        return (
+          Boolean(document.querySelector('link[href="/irem/css/irem.theme.css"]')) &&
+          Boolean(document.querySelector(".utility-status-card"))
+        );
       });
       return ok ? "" : "missing themed thanks utility contract";
     });
     await assertRouteStatus(browser, "irem pay-failed", "/irem/pay-failed", 200, async (page) => {
       const ok = await page.evaluate(() => {
-        return Boolean(document.querySelector('link[href="/irem/css/irem.theme.css"]')) &&
-          Boolean(document.querySelector(".utility-status-card"));
+        return (
+          Boolean(document.querySelector('link[href="/irem/css/irem.theme.css"]')) &&
+          Boolean(document.querySelector(".utility-status-card"))
+        );
       });
       return ok ? "" : "missing themed pay-failed utility contract";
     });
     await assertRouteStatus(browser, "irem public-offer", "/irem/public-offer.html", 200, async (page) => {
       const ok = await page.evaluate(() => {
-        return Boolean(document.querySelector('link[href="/irem/css/irem.theme.css"]')) &&
+        return (
+          Boolean(document.querySelector('link[href="/irem/css/irem.theme.css"]')) &&
           Boolean(document.querySelector(".public-offer-page")) &&
-          Boolean(document.querySelector(".public-offer"));
+          Boolean(document.querySelector(".public-offer"))
+        );
       });
       return ok ? "" : "missing themed public-offer contract";
     });
     await assertRouteStatus(browser, "irem index2", "/irem/index2.html", 200, async (page) => {
       const ok = await page.evaluate(() => {
-        return document.documentElement.getAttribute("data-cw-page") === "index2" &&
+        return (
+          document.documentElement.getAttribute("data-cw-page") === "index2" &&
           Boolean(document.querySelector('script[src="/shared/js/landing-runtime.js"]')) &&
           Boolean(document.querySelector('link[href="css/irem.theme.css"], link[href="/irem/css/irem.theme.css"]')) &&
           Boolean(document.querySelector(".public-offer-page")) &&
-          Boolean(document.querySelector(".cw-legal"));
+          Boolean(document.querySelector(".cw-legal"))
+        );
       });
       return ok ? "" : "missing managed index2 contract";
     });
     await assertRouteStatus(browser, "reboot index2", "/reboot/index2.html", 200, async (page) => {
       const ok = await page.evaluate(() => {
-        return document.documentElement.getAttribute("data-cw-page") === "index2" &&
+        return (
+          document.documentElement.getAttribute("data-cw-page") === "index2" &&
           Boolean(document.querySelector('script[src="/shared/js/landing-runtime.js"]')) &&
           Boolean(document.querySelector('link[href="/shared/css/landing.bridge.css"]')) &&
           Boolean(document.querySelector(".public-offer-page, body > h1")) &&
-          !document.documentElement.innerHTML.includes("/irem/css/irem.theme.css");
+          !document.documentElement.innerHTML.includes("/irem/css/irem.theme.css")
+        );
       });
       return ok ? "" : "missing managed reboot index2 contract";
     });

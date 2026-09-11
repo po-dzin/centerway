@@ -17,9 +17,9 @@ describe("resolveOfferCommerce", () => {
   });
 
   it("quotes the LIST price, never the charged one", () => {
-    // The 1 ₴ QA window is open (CW_TEST_PRICE_1UAH), so these two differ. A
-    // page reading PRODUCTS[...].amount would advertise a hryvnia; this is the
-    // test that fails if anyone reconnects them.
+    // A page must read listAmount, never amount: the two are separate fields so
+    // a QA price can sit in amount without any page advertising it. This is
+    // the test that fails if anyone reconnects them.
     const way21 = resolveOfferCommerce("way21");
     expect(way21.mode === "checkout" && way21.price).toContain("4");
     expect(way21.mode === "checkout" && way21.price).not.toBe("1 ₴");

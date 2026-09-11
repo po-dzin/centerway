@@ -152,7 +152,9 @@ for (const source of plates) {
   narrow += 1;
   narrowBefore += input.byteLength;
   narrowAfter += output.byteLength;
-  console.log(`card  ${target}  ${Math.round(input.byteLength / 1024)} KB → ${Math.round(output.byteLength / 1024)} KB`);
+  console.log(
+    `card  ${target}  ${Math.round(input.byteLength / 1024)} KB → ${Math.round(output.byteLength / 1024)} KB`,
+  );
 }
 
 if (narrow > 0) {

@@ -16,7 +16,8 @@ export function NextStep({ route, programSlug }: Pick<PlatformRouteBlockProps, "
         <p className={styles.label}>Наступний крок</p>
         <h2 className={styles.title}>{routeLabels[route] ?? program?.title ?? "CenterWay"}</h2>
         <p className={styles.lead}>
-          Оберіть дію, яка відповідає вашому стану зараз: отримати орієнтацію через діагностику, спробувати коротку вхідну програму або зібрати персональний план із провідником.
+          Оберіть дію, яка відповідає вашому стану зараз: отримати орієнтацію через діагностику, спробувати коротку
+          вхідну програму або зібрати персональний план із провідником.
         </p>
         <div className={styles.heroFooter}>
           <Link className={styles.primaryButton} href={primaryHref}>

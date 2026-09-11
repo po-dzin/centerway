@@ -9,11 +9,11 @@ node_modules
 legacy/
 next-env.d.ts
 *.tsbuildinfo
-pnpm-workspace.yaml
 artifacts/
 output/
 outputs/
 test-results/
+playwright-report/
 .design/
 # Image-generator scratch. Promoting a frame out of these is a deliberate step
 # (docs/design-system.md, "The imagery pipeline") — the raw renders are not.
@@ -24,3 +24,4 @@ public/cw/img/_candidates/
 __pycache__/
 *.pyc
 dist-library-depth.html
+coverage/

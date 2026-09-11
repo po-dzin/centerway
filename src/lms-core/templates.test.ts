@@ -87,9 +87,7 @@ describe("program template", () => {
     // The tedium the template exists to remove is creating them by hand.
     const steps = flattenSteps(course);
     expect(steps.length).toBe(21);
-    expect(steps.map((entry) => entry.lesson.dayIndex)).toEqual(
-      Array.from({ length: 21 }, (_, index) => index + 1)
-    );
+    expect(steps.map((entry) => entry.lesson.dayIndex)).toEqual(Array.from({ length: 21 }, (_, index) => index + 1));
   });
 
   it("never lets a lesson title disagree with its own day badge", () => {

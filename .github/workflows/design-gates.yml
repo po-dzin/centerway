@@ -36,51 +36,11 @@ jobs:
       - name: Install
         run: npm ci
 
-      # THE TOKENS ARE CODEGEN. `tokens:check` regenerates from
-      # cw.tokens.json and fails if globals.css moves — the one check that
-      # catches a hand-edit inside a marker block, which is invisible in review
-      # and is silently reverted by the next build.
-      - name: Tokens are generated, not typed
-        run: npm run -s tokens:check
-
-      # The mirror bundle is derived from the same JSON. Out of sync here means
-      # the Claude Design project is being shown a design system this repo no
-      # longer ships.
-      - name: DS bundle in sync with the tokens
-        run: npm run -s ds:sync:check
-
-      # Code vs mirror, gated on CONFLICTS only — a token whose value differs
-      # between the two. One-sided entries are expected and documented in
-      # design.drift.json; a conflict never is.
-      - name: Code and mirror agree on every shared token
-        run: npm run -s ds:drift:gate
-
-      - name: Platform canon
-        run: npm run -s canon:guard
-
-      - name: Assets referenced exist
-        run: npm run -s guard:assets
-
-      - name: Brand mark
-        run: npm run -s brand:check
-
-      - name: Shared DS contract
-        run: npm run -s guard:ds-contract
-
-      - name: Contrast
-        run: npm run -s guard:contrast
-
-      - name: Button contract
-        run: npm run -s guard:buttons
-
-      # Radius, spacing and type: one vocabulary, the box decides the step, and
-      # two ratchets that fail on the next new literal rather than on the ones
-      # already counted. See docs/design-system/geometry-audit-2026-09-07.md.
-      - name: Geometry
-        run: npm run -s guard:geometry
-
-      - name: Generated screens
-        run: npm run -s generator:validate
-
-      - name: Semantic architecture
-        run: npm run -s semantic:audit
+      # Every check that reads the repository and decides — design system,
+      # canon, generated screens, the ESLint architecture rules, and the four
+      # admin gates that used to run again in admin-smoke. The list and the
+      # reason for each gate live in scripts/verify-guards.mjs: one place, and
+      # runnable before a push rather than only after one. It does not stop at
+      # the first failure, so a red run names every broken gate.
+      - name: Static guards
+        run: npm run -s verify:guards

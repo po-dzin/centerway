@@ -10,19 +10,19 @@
 export type ProductOfferKind = "checkout" | "lead";
 
 export type ProductOffer = {
-    code: string;
-    amount: number | null;
-    listAmount: number | null;
-    currency: string;
-    kind: ProductOfferKind;
-    pixelContentName: string | null;
-    active: boolean;
-    updatedAt: string | null;
+  code: string;
+  amount: number | null;
+  listAmount: number | null;
+  currency: string;
+  kind: ProductOfferKind;
+  pixelContentName: string | null;
+  active: boolean;
+  updatedAt: string | null;
 };
 
 export type ProductOfferRow = {
-    code: string;
-    title: string;
-    expectedKind: ProductOfferKind;
-    offer: ProductOffer | null;
+  code: string;
+  title: string;
+  expectedKind: ProductOfferKind;
+  offer: ProductOffer | null;
 };

@@ -1,128 +1,113 @@
 # Migrations — how a schema change reaches production
 
-Written 2026-09-11, after an audit found a change live in production that this
-folder did not mention. Its SQL was not lost — it sat in git history and in the
-database's own history table, identical in both — but it was unfindable in the
-one place people look, which is the same thing in practice.
+**The canon is `supabase/migrations/`.** One file per change, named
+`YYYYMMDDHHMMSS_name.sql`, and the journal that says what production has is
+`supabase_migrations.schema_migrations`. Since 2026-09-10 the two agree: every
+file in the folder has a journal row, every journal row has a file. The decision
+and its price are in
+[ADR-0001](../adr/0001-migrations-live-in-supabase-migrations.md).
 
-The audit also got something wrong, which is worth keeping: run from a branch 47
-commits behind `main`, it called a second migration missing when `main` had held
-the file all along. Audit against `origin/main`, never against whatever happens
-to be checked out.
+Until that day the record lived in `docs/migration/sql/` (76 files), and
+`supabase/migrations/` was a gitignored staging queue that
+`scripts/db-stage-migration.mjs` filled one file at a time. The journal held
+29 of the 76; the other 47 had been applied by hand and never registered, and
+two had never been applied at all. Reconciled by checking each file's objects
+and effects against production, then journaling what was there. The staging
+queue and its script are gone: a directory emptied on every run is where a
+change goes to become unfindable.
 
-## Three places, and only one of them is the record
+## Applying a change
 
-| place | what it is | tracked in git |
-|---|---|---|
-| `docs/migration/sql/` | **the record.** Every schema change ever applied. | yes |
-| `supabase/migrations/` | staging for the CLI. Holds ONE file at a time. | **no — gitignored** |
-| `supabase_migrations.schema_migrations` (production) | what the database believes it has run. | n/a |
+1. **Write the file first**, before applying anything:
+   `supabase/migrations/<stamp>_<name>.sql`. Idempotent — `IF NOT EXISTS`,
+   guarded `DO $$` blocks — so a re-run is harmless. Every failure the
+   2026-09-11 audit found was "applied, then meant to write it down".
+2. Rehearse: `npm run db:local:reset` loads production's schema and content into
+   the local stack and runs the pending files against populated tables.
+3. `npm run db:push:dry`, then `npm run db:push`. Both go through the session
+   pooler (`scripts/lib/db-url.mjs`); the direct host is IPv6-only from here.
+4. If you applied it with `psql` or the SQL editor instead, register it in the
+   journal yourself. A file the journal does not know about is a file the next
+   push runs again:
 
-The record is the only durable one. `npm run db:stage` calls `clearStage()`
-before every run, so the staging directory is emptied each time; anything whose
-only copy lived there is gone the next time someone stages something else.
+   ```sql
+   insert into supabase_migrations.schema_migrations (version) values ('<stamp>');
+   ```
 
-## The order
+   The stamp in the row and the stamp in the filename are the same string. That
+   identity is what the guard below compares.
+5. `npm run db:types` (needs Docker) and commit the regenerated types with the
+   migration.
+6. Close the cycle: `npm run check:migration-drift`.
 
-**1. Write the file first.** `docs/migration/sql/<YYYY-MM-DD>_<name>.sql`, with a
-header saying what the change is for. Before applying anything. This is the whole
-point of the rule — every failure found in the audit was "applied, then meant to
-write it down."
-
-**2. Rehearse locally.**
-
-```
-npm run db:stage -- <YYYY-MM-DD>_<name>
-npm run db:local:reset
-```
-
-`db:stage` copies the canonical file into `supabase/migrations/` under a
-CLI-shaped version stamp; `db:local:reset` loads production's schema and content
-into the local stack and then runs the staged file against populated tables.
-
-**3. Apply to production.** Through the Supabase SQL editor — see *Why `db push`
-does not work* below.
-
-**4. Record the version by hand**, so the history stays complete:
-
-```sql
-insert into supabase_migrations.schema_migrations (version) values ('<YYYYMMDD000000>');
-```
-
-The stamp is the one `db:stage` printed in step 2. Same-day migrations collide on
-`YYYYMMDD000000`, so a second one that day takes `...010000`, a third `...020000`,
-matching what is already in the table.
-
-**5. Close the cycle.**
+## The guard
 
 ```
 npm run check:migration-drift
 ```
 
-It fails when production holds a version with no file in `docs/migration/sql/`.
-That is the one thing it guards, and it is the one thing that actually went wrong.
+`scripts/check-migration-drift.mjs` reads the production journal over `pg` and
+fails when a version live in production has no SQL file in
+`supabase/migrations/`. That is the one thing it guards, and it is the one thing
+that actually went wrong. It needs database credentials and a network, so it is
+not part of `lms:qa` or any gate that runs without secrets — run it deliberately.
 
-## Why `db push` does not work
+It was written on 2026-09-11 after an audit found `author_profile_background` —
+applied 2026-08-29, its SQL committed into the staging queue and deleted along
+with it two weeks later. The text was never lost: it sat in git history and in
+the journal's `statements` column, identical in both. It was simply unfindable
+in the one place people look, which in practice is the same thing.
 
-`supabase db push` compares the local folder with the remote history and refuses
-when remote holds versions the folder does not. Staging holds one file by design,
-so all 76 remote versions always look missing. This is structural, not a passing
-fault — it has been true since at least 2026-08-22.
+The audit also got something wrong, which is worth keeping: run from a branch 47
+commits behind `main`, it called a second migration missing when `main` had held
+the file all along. The guard now warns when the checkout is behind
+`origin/main`. Audit from an up-to-date checkout, never from whatever happens to
+be sitting in the tree.
 
-**Do not run the fix the CLI suggests.** `supabase migration repair --status
-reverted <76 versions>` marks 76 applied migrations as reverted. That is a lie
-written into the history table, and the next push would try to run them all.
+**What fails:** a journal version with no file. Nothing else exits non-zero.
+
+**What is reported but does not fail:** a file with no journal row; a file
+renamed since it was applied; two files sharing one version stamp; a version
+applied with no stored statements — the signature of the SQL editor plus a
+hand-written version row, which means the repo file is the only copy of that SQL
+anywhere. The guard prints that last list on every run so it stays visible.
+
+Matching is **by version**, not by name. Under the old scheme a staged file's
+stamp was derived from its date alone, so same-day migrations collided and the
+name had to carry the identity; under ADR-0001 the filename carries the journal
+version verbatim, which is the key the journal is keyed on. A journal row
+registered by hand can have an empty `name`, so a name is not a key.
 
 ## What the guard cannot see
 
-It compares the history table with this folder. It does **not** compare the
-schema with either. A change made in the SQL editor whose version was never
-recorded is invisible to it — the database has the change, the history does not
-mention it, and nothing disagrees. Step 4 is what keeps that from happening, and
+It compares the journal with the folder. It does **not** compare either with the
+actual schema. A change made in the SQL editor whose version was never recorded
+is invisible to it — the database has the change, the journal does not mention
+it, and nothing disagrees. Step 4 above is what keeps that from happening, and
 nothing automated is behind it.
 
-## Known fragile: six migrations whose only copy is this folder
+## `declined/`
 
-These were applied with no statements stored in the history table (the signature
-of the SQL editor plus a hand-written version row). For them, the file in
-`docs/migration/sql/` is the only copy of the SQL that exists anywhere:
+Migrations that were written and never applied, and on 2026-09-11 were decided
+against rather than left as a queue. They sit outside the canon on purpose: a
+prepared-but-unapplied file inside `supabase/migrations/` is a file `db:push`
+will eventually run.
 
-```
-20260822000000  lms_course_storefront
-20260822010000  course_media_bucket
-20260829000000  lms_author_founder_publish
-20260829010000  lms_author_founder_link_user
-20260902000000  free_course_offers
-20260910000000  lead_stage
-```
+- `2026-04-07_parametric_experiments_foundation.sql` — four tables no code
+  reads; the experiments the proxy runs come from the registry in
+  `src/lib/generator`. Not needed.
+- `2026-08-31_reset_day_title_dedup.sql` — trims the reset-day title that
+  still carries its own posttitle. Since 2026-08-26 the offer surface derives
+  the subtitle itself (`offerSubtitle`, `posttitle` first), so nothing on
+  the storefront shows the duplicate; the long title in the row is cosmetic.
+  Applying it is harmless and buys nothing, so it was not applied.
 
-`check:migration-drift` prints this list on every run so it stays visible. For
-every one of them, losing the repo file means losing the SQL: the history table
-has the version and the name, and nothing else.
+Kept as files rather than deleted so the next person who wonders finds the
+answer here instead of rewriting the migration.
 
-## Open decision: move to real `db push`
+## Local stack
 
-The reason this project uses staging has expired. `scripts/db-stage-migration.mjs`
-was built when production had no migration history, so pushing the whole folder
-would have re-run everything. Production now has 76 recorded versions, and
-`db push` only applies what is absent from that table — its own `--include-all`
-flag is documented as "Include all migrations **not found on remote history
-table**". Nothing would be re-run.
-
-Switching would mean: un-gitignore `supabase/migrations/`, place all 76 files
-there under their real version stamps, and run `supabase migration repair
---status applied <76 versions>` — a bookkeeping write that marks without
-executing. After that the manual steps 3 and 4 disappear, production stores the
-statements itself, and this folder stops being the only copy of anything.
-
-It has a cost that is easy to miss: `db-local.mjs reset` runs every file in
-`supabase/migrations/` after loading the production dump. With one staged file
-that is harmless; with 76 it is not, because roughly 30 of them are not safe to
-re-run against a schema that already has them (23 `create policy` with no
-matching `drop policy`, 6 `insert` with no `on conflict`, and one each of
-`create type`, `create table` and `add column` without a guard — counted by
-pattern, not by running them). So the switch has to fix the local reset in the
-same change, or it repairs production and breaks everyone's development.
-
-Decided 2026-09-11: not now. Write the file first, keep the guard, revisit this
-as its own slice.
+`scripts/db-local.mjs` (on its own branch as of 2026-09-10) replays every file
+in `supabase/migrations/` as "pending" after restoring the production dump.
+With the canon in that folder it needs to skip what the dump's journal already
+has, or it will re-run 75 files — most idempotent, the backfills not.

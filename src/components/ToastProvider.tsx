@@ -17,7 +17,10 @@ interface ToastContextValue {
 }
 const ToastContext = createContext<ToastContextValue | null>(null);
 const TYPE_LABELS: Record<ToastVariant, string> = {
-  success: "Успішно", error: "Помилка", info: "Інформація", warning: "Увага",
+  success: "Успішно",
+  error: "Помилка",
+  info: "Інформація",
+  warning: "Увага",
 };
 
 function Toast({ item, dismiss }: { item: ToastItem; dismiss: (id: number) => void }) {
@@ -25,7 +28,7 @@ function Toast({ item, dismiss }: { item: ToastItem; dismiss: (id: number) => vo
   useEffect(() => {
     const clock = createToastTimer(() => dismiss(item.id), item.durationMs);
     timer.current = clock;
-    const visibility = () => document.hidden ? clock.pause("hidden") : clock.resume("hidden");
+    const visibility = () => (document.hidden ? clock.pause("hidden") : clock.resume("hidden"));
     visibility();
     document.addEventListener("visibilitychange", visibility);
     return () => {
@@ -48,10 +51,13 @@ function Toast({ item, dismiss }: { item: ToastItem; dismiss: (id: number) => vo
     >
       <span className={styles.dot} aria-hidden="true" />
       <p className={styles.message} role={item.variant === "error" ? "alert" : "status"} aria-atomic="true">
-        <span className={styles.srOnly}>{TYPE_LABELS[item.variant]}: </span>{item.message}
+        <span className={styles.srOnly}>{TYPE_LABELS[item.variant]}: </span>
+        {item.message}
       </p>
       <button type="button" className={styles.close} onClick={() => dismiss(item.id)} aria-label="Закрити сповіщення">
-        <InteractionInkIcon><Icon name="close" size={18} /></InteractionInkIcon>
+        <InteractionInkIcon>
+          <Icon name="close" size={18} />
+        </InteractionInkIcon>
       </button>
     </div>
   );
@@ -68,18 +74,23 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     // Repeated results renew their own timer rather than flooding the viewport.
     setToasts((items) => [...items.filter((one) => one.message !== message || one.variant !== variant), item]);
   }, []);
-  const value = useMemo<ToastContextValue>(() => ({
-    showToast,
-    success: (message, duration) => showToast(message, "success", duration),
-    error: (message, duration) => showToast(message, "error", duration),
-    info: (message, duration) => showToast(message, "info", duration),
-    warning: (message, duration) => showToast(message, "warning", duration),
-  }), [showToast]);
+  const value = useMemo<ToastContextValue>(
+    () => ({
+      showToast,
+      success: (message, duration) => showToast(message, "success", duration),
+      error: (message, duration) => showToast(message, "error", duration),
+      info: (message, duration) => showToast(message, "info", duration),
+      warning: (message, duration) => showToast(message, "warning", duration),
+    }),
+    [showToast],
+  );
   return (
     <ToastContext.Provider value={value}>
       {children}
       <div className={styles.viewport} aria-label="Сповіщення">
-        {toasts.map((item) => <Toast key={item.id} item={item} dismiss={dismiss} />)}
+        {toasts.map((item) => (
+          <Toast key={item.id} item={item} dismiss={dismiss} />
+        ))}
       </div>
     </ToastContext.Provider>
   );

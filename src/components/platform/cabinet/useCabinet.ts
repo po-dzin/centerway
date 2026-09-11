@@ -20,12 +20,12 @@ import { fetchMyCourses, type LearnerShelfCourseDto } from "@/components/lms/lms
 import { recall, remember, shelfMemo, subscribeLibraryMemory } from "@/components/lms/libraryMemory";
 import type { ProfileLang, ProfileResponse } from "@/components/platform/profile/types";
 import type { Author } from "@/lms-core";
+import { authorizedFetch } from "@/components/auth/authorizedFetch";
+import { useSession } from "@/components/auth/SessionProvider";
 
 const LANG_EVENT = "cw-lang-change";
 
-export const isAuthEnabled = Boolean(
-  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-);
+export const isAuthEnabled = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 function resolveProfileLang(): ProfileLang {
   if (typeof window !== "undefined") {
@@ -67,43 +67,15 @@ export type CabinetSessionState = {
   signOut: () => Promise<void>;
 };
 
-/**
- * Whether two sessions are the same answer to "who is signed in, with what".
- *
- * supabase-js hands back a NEW object for `INITIAL_SESSION` and `SIGNED_IN`
- * even when they describe the session `getSession()` just returned. Published
- * as-is, each one is a fresh identity for every consumer downstream.
- */
-export function sameSession(a: Session | null, b: Session | null): boolean {
-  if (a === b) return true;
-  if (!a || !b) return false;
-  return a.user?.id === b.user?.id && a.access_token === b.access_token;
-}
+export { sameSession } from "@/components/auth/SessionProvider";
 
 export function useCabinetSession(): CabinetSessionState {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(isAuthEnabled);
-
-  useEffect(() => {
-    if (!isAuthEnabled) return;
-
-    /* Published through `sameSession` rather than straight into state: a page
-       load produces the restored session plus one or two auth events that
-       describe it again, and each one used to re-render the whole cabinet. */
-    const publish = (next: Session | null) =>
-      setSession((current) => (sameSession(current, next) ? current : next));
-
-    void supabaseClient.auth.getSession().then(({ data }) => {
-      publish(data.session);
-      setLoading(false);
-    });
-
-    const {
-      data: { subscription },
-    } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => publish(nextSession));
-
-    return () => subscription.unsubscribe();
-  }, []);
+  /* One subscription for the whole tree, in the root layout's SessionProvider;
+     the cabinet used to hold its own and dedupe the restored session against
+     the auth events that describe it again. `loading` is the provider's
+     `loading` status — false at once when auth is not configured. */
+  const { session, status } = useSession();
+  const loading = isAuthEnabled && status === "loading";
 
   const signInWithGoogle = useCallback(async () => {
     const redirectTo = typeof window !== "undefined" ? window.location.href : undefined;
@@ -112,7 +84,6 @@ export function useCabinetSession(): CabinetSessionState {
 
   const signOut = useCallback(async () => {
     await supabaseClient.auth.signOut();
-    setSession(null);
   }, []);
 
   return { session, loading, signInWithGoogle, signOut };
@@ -126,37 +97,14 @@ export function useCabinetSession(): CabinetSessionState {
  * to a signed-in user whose session is perfectly valid.
  */
 async function readWithToken(url: string, session: Session): Promise<Response | null> {
-  const read = (token: string) => fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-
   if (!session.access_token) return null;
-  let res = await read(session.access_token);
-
-  if (res.status === 401) {
-    const { data: refreshed } = await supabaseClient.auth.refreshSession();
-    if (refreshed.session?.access_token) res = await read(refreshed.session.access_token);
-  }
-
-  return res;
+  return authorizedFetch(url);
 }
 
 /** `readWithToken`'s write counterpart — same one-refresh-on-401 retry. */
 async function readWithTokenPost(url: string, session: Session, body: unknown): Promise<Response | null> {
-  const post = (token: string) =>
-    fetch(url, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
   if (!session.access_token) return null;
-  let res = await post(session.access_token);
-
-  if (res.status === 401) {
-    const { data: refreshed } = await supabaseClient.auth.refreshSession();
-    if (refreshed.session?.access_token) res = await post(refreshed.session.access_token);
-  }
-
-  return res;
+  return authorizedFetch(url, { method: "POST", body: JSON.stringify(body) });
 }
 
 /**
@@ -251,7 +199,7 @@ export function useLearnerShelf(session: Session | null) {
       subscribeLibraryMemory,
       () => recall<LearnerShelfCourseDto[]>(shelfMemo()),
       /* The server remembers nothing on anyone's behalf. */
-      () => undefined
+      () => undefined,
     ) ?? null;
   const [failed, setFailed] = useState(false);
   /* The retry button asks for a re-read by bumping this, rather than by calling
@@ -407,7 +355,7 @@ export function useAuthorProfile(session: Session | null) {
         setSaving(false);
       }
     },
-    [sessionRef]
+    [sessionRef],
   );
 
   const matches = state.userId === userId;

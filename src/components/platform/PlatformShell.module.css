@@ -25,7 +25,11 @@
      a phone, and not one to paper over from this side. */
   --platform-topbar-top: 0.75rem;
   background:
-    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--cw-platform-accent) 13%, transparent), transparent 26rem),
+    radial-gradient(
+      circle at 12% 0%,
+      color-mix(in srgb, var(--cw-platform-accent) 13%, transparent),
+      transparent 26rem
+    ),
     /* The wash was mixed from `--cw-sem-calm-surface-muted`, which is the
        LIGHT gamma's ground and is not re-pointed by the dark theme — only the
        `--cw-platform-*` names are. So on a dark page the shell painted a cream
@@ -78,8 +82,7 @@
      The wordmark stays gold in the dark tone as a logotype, which WCAG exempts
      and which measures 5.28 on the dense sheet anyway. */
   --platform-header-nav-marker: var(--cw-nav-marker);
-  --platform-header-nav-marker-shadow:
-    0 0 0 0.36rem color-mix(in srgb, var(--cw-platform-accent) 14%, transparent);
+  --platform-header-nav-marker-shadow: 0 0 0 0.36rem color-mix(in srgb, var(--cw-platform-accent) 14%, transparent);
   --platform-header-symbol-color: color-mix(in srgb, var(--platform-header-fg) 96%, transparent);
   --platform-header-hover-bg: var(--cw-mat-tint-hover);
   --platform-header-band-bg: var(--cw-mat-tint-chrome);
@@ -99,8 +102,7 @@
      circle. See the note on `--platform-island-radius` in
      ChromeOrgans.module.css — same box, same reasoning, one pair of values. */
   --platform-utility-control-radius: var(--cw-radius-sm);
-  --platform-utility-control-focus:
-    0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+  --platform-utility-control-focus: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
   border: 0;
   border-radius: var(--platform-header-shell-radius);
   box-shadow: var(--platform-header-sheet-shadow);
@@ -123,8 +125,7 @@
   --platform-header-nav-muted-fg: var(--cw-platform-accent-contrast);
   --platform-header-nav-active-fg: var(--cw-platform-accent-contrast);
   --platform-header-nav-marker: var(--cw-nav-marker);
-  --platform-header-nav-marker-shadow:
-    0 0 0 0.42rem color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
+  --platform-header-nav-marker-shadow: 0 0 0 0.42rem color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
   --platform-header-symbol-color: var(--cw-platform-accent);
   --platform-header-hover-bg: var(--cw-mat-tint-hover);
   --platform-header-popover-bg: var(--cw-mat-surface);
@@ -182,8 +183,7 @@
   --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 90%, transparent);
   --platform-header-nav-active-fg: var(--cw-platform-accent-contrast);
   --platform-header-nav-marker: var(--cw-nav-marker);
-  --platform-header-nav-marker-shadow:
-    0 0 0 0.42rem color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
+  --platform-header-nav-marker-shadow: 0 0 0 0.42rem color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
   --platform-header-symbol-color: var(--cw-platform-accent);
   --platform-header-hover-bg: var(--cw-mat-tint-hover);
   /* Overlay mode always floats over hero media, so both tones take the media
@@ -199,8 +199,7 @@
   --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-text) 86%, transparent);
   --platform-header-nav-active-fg: var(--cw-platform-text);
   --platform-header-nav-marker: var(--cw-nav-marker);
-  --platform-header-nav-marker-shadow:
-    0 0 0 0.36rem color-mix(in srgb, var(--cw-platform-accent) 14%, transparent);
+  --platform-header-nav-marker-shadow: 0 0 0 0.36rem color-mix(in srgb, var(--cw-platform-accent) 14%, transparent);
   --platform-header-symbol-color: color-mix(in srgb, var(--platform-header-fg) 96%, transparent);
   --platform-header-hover-bg: var(--cw-mat-tint-hover);
   --platform-header-band-bg: var(--cw-mat-tint-chrome);
@@ -478,7 +477,6 @@
   composes: wide from "./PlatformButtons.module.css";
 }
 
-
 /* ONE RULE FOR THIS LINK, AND IT IS A CONTROL (2026-09-07).
 
    There were two `.nav a` blocks in this file, twenty-eight lines apart and at
@@ -574,7 +572,9 @@
   pointer-events: none;
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.72) rotate(-4deg);
-  transition: opacity 160ms ease, transform 160ms ease;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
 }
 
 .menuButton:focus-visible .iconInkRing,
@@ -585,7 +585,7 @@
 
 @media (hover: hover) {
   .menuButton:hover .iconInkRing,
-.profileEntry:hover .profileInkRing {
+  .profileEntry:hover .profileInkRing {
     opacity: var(--cw-ink-hover-opacity);
     transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
   }
@@ -1401,7 +1401,7 @@
 
 @media (hover: hover) {
   .profileMenu[data-cw-header-tone="dark"] a:hover,
-.profileMenu[data-cw-header-tone="dark"] button:hover {
+  .profileMenu[data-cw-header-tone="dark"] button:hover {
     color: var(--cw-platform-accent-contrast);
   }
 }
@@ -1542,7 +1542,9 @@
   position: relative;
   z-index: 1;
   color: currentColor;
-  transition: opacity 160ms ease, transform 160ms ease;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
 }
 
 .menuGlyphClose,

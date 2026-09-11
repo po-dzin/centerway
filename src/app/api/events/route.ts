@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { asString, asStringArray } from "@/lib/strings";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
 
@@ -36,11 +37,7 @@ type EventsRequestBody = {
 type LocalOnlyEventName = "ScrollDepth50" | "ConsultCTA" | "DetoxCTA" | "PurchaseClientSignal";
 type AllowedEventName = CapiEventPayload["event_name"] | LocalOnlyEventName;
 
-const CAPI_EVENT_NAMES = new Set<CapiEventPayload["event_name"]>([
-  "ViewContent",
-  "Lead",
-  "InitiateCheckout",
-]);
+const CAPI_EVENT_NAMES = new Set<CapiEventPayload["event_name"]>(["ViewContent", "Lead", "InitiateCheckout"]);
 const LOCAL_ONLY_EVENT_NAMES = new Set<LocalOnlyEventName>([
   "ScrollDepth50",
   "ConsultCTA",
@@ -56,12 +53,6 @@ function isLocalOnlyEventName(name: string): name is LocalOnlyEventName {
   return LOCAL_ONLY_EVENT_NAMES.has(name as LocalOnlyEventName);
 }
 
-function asString(v: unknown): string | null {
-  if (typeof v !== "string") return null;
-  const s = v.trim();
-  return s || null;
-}
-
 function asNumber(v: unknown): number | undefined {
   if (typeof v === "number" && Number.isFinite(v)) return v;
   if (typeof v === "string") {
@@ -71,17 +62,19 @@ function asNumber(v: unknown): number | undefined {
   return undefined;
 }
 
-function asStringArray(v: unknown): string[] | undefined {
-  if (!Array.isArray(v)) return undefined;
-  const arr = v
-    .map((item) => (typeof item === "string" ? item.trim() : ""))
-    .filter(Boolean);
-  return arr.length ? arr : undefined;
+/* An EMPTY FORWARDED-FOR IS NOT AN ADDRESS. `?.split(",")[0].trim() ?? next`
+   only falls through when the header is absent: a header that is present and
+   blank — or a leading comma — trimmed to `""`, which `??` happily kept, and
+   the event was attributed to no one while `cf-connecting-ip` sat unread right
+   below it. Falsy has to fall through here, not just nullish. */
+function firstForwardedIp(value: string | null): string | null {
+  const first = value?.split(",")[0]?.trim();
+  return first ? first : null;
 }
 
 function clientIpFromHeaders(headers: Headers): string | null {
   return (
-    headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    firstForwardedIp(headers.get("x-forwarded-for")) ??
     headers.get("cf-connecting-ip") ??
     headers.get("x-real-ip") ??
     null
@@ -169,8 +162,8 @@ export async function POST(req: NextRequest) {
       return cors(
         NextResponse.json(
           { ok: false, error: "event_insert_failed", details: insertErr.message ?? "unknown" },
-          { status: 500 }
-        )
+          { status: 500 },
+        ),
       );
     }
     return cors(NextResponse.json({ ok: true, mode: "local_only" }));
@@ -186,8 +179,8 @@ export async function POST(req: NextRequest) {
       return cors(
         NextResponse.json(
           { ok: false, error: "event_insert_failed", details: insertErr.message ?? "unknown" },
-          { status: 500 }
-        )
+          { status: 500 },
+        ),
       );
     }
   }
@@ -235,8 +228,8 @@ export async function POST(req: NextRequest) {
     return cors(
       NextResponse.json(
         { ok: false, error: "job_enqueue_failed", details: error.message ?? "unknown" },
-        { status: 500 }
-      )
+        { status: 500 },
+      ),
     );
   }
 

@@ -16,7 +16,18 @@ import path from "node:path";
 const srcDir = pathToFileURL(path.join(process.cwd(), "src") + path.sep).href;
 const hasExtension = /\.[mc]?[jt]sx?$|\.json$/;
 
+// `import "server-only"` is a build-time tripwire for Next: the package's
+// default export THROWS, and Next's bundler swaps in an empty module under the
+// react-server condition. Plain Node has no such condition, so a script that
+// imports src/lib/db/server.ts through this hook would die at import. The
+// scripts ARE the server, so the tripwire resolves to nothing here.
+const EMPTY_MODULE = "data:text/javascript,";
+
 export async function resolve(specifier, context, next) {
+  if (specifier === "server-only") {
+    return { url: EMPTY_MODULE, shortCircuit: true };
+  }
+
   if (specifier.startsWith("@/")) {
     return resolve(srcDir + specifier.slice(2), context, next);
   }

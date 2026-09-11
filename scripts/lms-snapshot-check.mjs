@@ -18,7 +18,7 @@
  * SKIP and exits clean. A job that genuinely has the keys passes `--require-db`
  * and turns a missing key into a failure of its own.
  *
- * NOT IN `lms:qa` YET, and deliberately. The snapshots are already adrift the
+ * NOT IN `verify:lms` YET, and deliberately. The snapshots are already adrift the
  * day this lands, so wiring it into the shared gate would fail every run for
  * everyone until someone pulls. Clear the drift first, then add it — the check
  * is worth nothing as a step people learn to ignore.
@@ -54,7 +54,11 @@ function sameCourse(a, b) {
 function sortKeysDeep(value) {
   if (Array.isArray(value)) return value.map(sortKeysDeep);
   if (value && typeof value === "object") {
-    return Object.fromEntries(Object.keys(value).sort().map((key) => [key, sortKeysDeep(value[key])]));
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((key) => [key, sortKeysDeep(value[key])]),
+    );
   }
   return value;
 }
@@ -82,9 +86,7 @@ function describe(fileCourse, dbCourse) {
 
   const fields = new Set([...Object.keys(fileCourse), ...Object.keys(dbCourse)]);
   fields.delete("modules");
-  const changed = [...fields].filter(
-    (key) => JSON.stringify(fileCourse[key]) !== JSON.stringify(dbCourse[key]),
-  );
+  const changed = [...fields].filter((key) => JSON.stringify(fileCourse[key]) !== JSON.stringify(dbCourse[key]));
   if (changed.length > 0) notes.push(changed.join(", "));
 
   if (notes.length === 0) notes.push("lesson content");
@@ -117,11 +119,7 @@ async function main() {
     const fileCourse = readCourseFile(file);
     const slug = fileCourse.slug ?? path.basename(file, ".json");
 
-    const { data: courseRow, error } = await client
-      .from("lms_courses")
-      .select("*")
-      .eq("slug", slug)
-      .maybeSingle();
+    const { data: courseRow, error } = await client.from("lms_courses").select("*").eq("slug", slug).maybeSingle();
     if (error) {
       console.error(`[FAIL] lms:snapshot:check — read failed for ${slug}: ${error.message}`);
       return 1;
@@ -142,9 +140,7 @@ async function main() {
       client.from("lms_lessons").select("*").eq("course_id", courseRow.id),
     ]);
     if (moduleError || lessonError) {
-      console.error(
-        `[FAIL] lms:snapshot:check — read failed for ${slug}: ${(moduleError ?? lessonError).message}`,
-      );
+      console.error(`[FAIL] lms:snapshot:check — read failed for ${slug}: ${(moduleError ?? lessonError).message}`);
       return 1;
     }
 
@@ -168,9 +164,7 @@ async function main() {
     console.error(`  ${entry.slug} — ${entry.note}`);
     console.error(`    fix: npm run lms:pull -- ${entry.slug}   (rewrites ${entry.file})`);
   }
-  console.error(
-    "\n  The file is the fallback `liveCatalog` serves when the database cannot answer.",
-  );
+  console.error("\n  The file is the fallback `liveCatalog` serves when the database cannot answer.");
   console.error("  Stale, it is a month-old course handed to someone at the worst moment.\n");
   return 1;
 }

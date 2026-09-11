@@ -1,4 +1,7 @@
-const baseUrl = (process.env.SMOKE_BASE_URL || process.env.SMOKE_UI_BASE_URL || "http://localhost:8000").replace(/\/+$/, "");
+const baseUrl = (process.env.SMOKE_BASE_URL || process.env.SMOKE_UI_BASE_URL || "http://localhost:8000").replace(
+  /\/+$/,
+  "",
+);
 
 function fail(message) {
   console.log(`FAIL ${message}`);

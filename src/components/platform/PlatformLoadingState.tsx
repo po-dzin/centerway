@@ -10,15 +10,7 @@ import styles from "./PlatformShellStyles";
  * That prevents a second full-page layer from replacing the first one midway
  * through session + data restoration.
  */
-export function PlatformLoadingState({
-  label,
-  title,
-  detail,
-}: {
-  label?: string;
-  title: string;
-  detail?: string;
-}) {
+export function PlatformLoadingState({ label, title, detail }: { label?: string; title: string; detail?: string }) {
   return (
     <section
       className={styles.platformLoadingState}

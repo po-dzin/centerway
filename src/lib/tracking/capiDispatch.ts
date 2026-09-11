@@ -1,4 +1,5 @@
 import { after } from "next/server";
+import type { Db } from "@/lib/db/server";
 import { sendCapiEvent, type CapiEventPayload } from "@/lib/tracking/capi";
 import { getErrorMessage } from "@/lib/errors";
 
@@ -25,20 +26,42 @@ import { getErrorMessage } from "@/lib/errors";
  */
 type JobId = string | number;
 
-// Minimal shape shared by supabaseAdmin() and adminClient() clients used by callers.
-type JobsUpdatableClient = {
-  from: (table: string) => {
-    update: (values: Record<string, unknown>) => {
-      eq: (column: string, value: JobId) => PromiseLike<{ error: unknown }>;
+/**
+ * The one write this makes, as a shape — what a test's stub has to provide.
+ *
+ * The parameter below is `Db | JobsUpdatableClient` rather than this shape
+ * alone: checking the generated client against a structural type sends the
+ * checker into "excessively deep" territory, while checking it against itself
+ * is free. Inside, the client is used through this shape either way.
+ */
+export type JobsUpdatableClient = {
+  from(table: "jobs"): {
+    update(values: { status: string; error_text?: string | null }): {
+      eq(column: string, value: JobId): PromiseLike<{ error: unknown }>;
     };
   };
 };
 
+/* Two signatures on purpose. The first is the typed service client, matched by
+   identity; the second is the stub shape a test provides. As one union the
+   checker tried the structural member first against the generated client and
+   reported "excessively deep" — the overload order is what keeps it shallow. */
 export function dispatchCapiEventInline(
-  db: JobsUpdatableClient,
+  client: Db,
+  jobId: JobId,
+  payload: CapiEventPayload | (() => Promise<CapiEventPayload>),
+): void;
+export function dispatchCapiEventInline(
+  client: JobsUpdatableClient,
+  jobId: JobId,
+  payload: CapiEventPayload | (() => Promise<CapiEventPayload>),
+): void;
+export function dispatchCapiEventInline(
+  client: unknown,
   jobId: JobId,
   payload: CapiEventPayload | (() => Promise<CapiEventPayload>),
 ): void {
+  const db = client as unknown as JobsUpdatableClient;
   const task = async () => {
     try {
       const resolved = typeof payload === "function" ? await payload() : payload;
@@ -60,4 +83,3 @@ export function dispatchCapiEventInline(
     // already persisted, so the cron worker remains responsible for delivery.
   }
 }
-

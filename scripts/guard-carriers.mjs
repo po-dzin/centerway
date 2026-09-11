@@ -42,8 +42,27 @@ const LANDINGS = path.join(ROOT, "src/landing-static");
  */
 const SURFACES = ["way21", "reset-day", "consult", "herbs", "dosha"];
 
-/** Glyphs that are affordances rather than content. */
-const CHROME_GLYPHS = new Set(["chevron-down", "chevron-right", "arrow-right", "arrow-left", "menu", "close"]);
+/**
+ * Glyphs that are affordances rather than content.
+ *
+ * `arrow-down` joined the set on 2026-09-11, and the evidence was already in
+ * the file: way21 line 394 puts two of these arrows in ONE paragraph, both in
+ * the same `<span class="arr">` inside the same kind of link — `arrow-right`
+ * for the page that lives elsewhere, `arrow-down` for the anchor further down
+ * this page. One was chrome and the other was a carrier, purely because of
+ * which way it points. That is not a rule about carriers, it is an omission,
+ * and it had the guard reporting the phase cards as though the photograph were
+ * competing with a link's own arrow.
+ */
+const CHROME_GLYPHS = new Set([
+  "chevron-down",
+  "chevron-right",
+  "arrow-right",
+  "arrow-left",
+  "arrow-down",
+  "menu",
+  "close",
+]);
 
 /** The hand-graphics primitives, whatever they are drawn with. */
 const GRAPHIC_GLYPHS = new Set(["dot", "orbit", "rail", "connector"]);
@@ -81,7 +100,12 @@ function label(section, index) {
   const cls = section.match(/^<section[^>]*\bclass="([a-z0-9-]+)/);
   if (cls && cls[1] !== "sec") return cls[1];
   const heading = section.match(/<h2[^>]*>([\s\S]{0,80}?)<\/h2>/);
-  const text = heading ? heading[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim() : "";
+  const text = heading
+    ? heading[1]
+        .replace(/<[^>]+>/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+    : "";
   return text ? `${index}:${text.slice(0, 34)}` : `${index}`;
 }
 
@@ -103,7 +127,10 @@ function carriersOf(section) {
   let chromeBudget = chromeMarked;
   for (const [, id] of section.matchAll(/<use[^>]*href="[^"#]*#cw-([a-z0-9-]+)"/g)) {
     if (CHROME_GLYPHS.has(id)) continue;
-    if (chromeBudget > 0) { chromeBudget -= 1; continue; }
+    if (chromeBudget > 0) {
+      chromeBudget -= 1;
+      continue;
+    }
     if (GRAPHIC_GLYPHS.has(id)) add("graphic", id);
     else add("icon", id);
   }

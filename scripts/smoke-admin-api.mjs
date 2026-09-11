@@ -31,7 +31,11 @@ const unauthorizedMatrix = [
 ];
 
 const authenticatedContracts = [
-  { method: "GET", path: "/api/admin/analytics", expectedKeys: ["summary", "funnel", "campaigns", "funnel_chain", "freshness"] },
+  {
+    method: "GET",
+    path: "/api/admin/analytics",
+    expectedKeys: ["summary", "funnel", "campaigns", "funnel_chain", "freshness"],
+  },
   { method: "GET", path: "/api/admin/orders?limit=1", expectedKeys: ["data", "count", "totalPaid"] },
   { method: "GET", path: "/api/admin/jobs?limit=1", expectedKeys: ["data", "count"] },
   { method: "GET", path: "/api/admin/customers?limit=1", expectedKeys: ["data", "count"] },
@@ -130,7 +134,9 @@ async function main() {
   let authFailed = 0;
   if (bearerToken) {
     console.log(`Authenticated contract checks: ${authenticatedContracts.length}`);
-    const authResults = await Promise.all(authenticatedContracts.map((testCase) => checkAuthenticatedContract(testCase)));
+    const authResults = await Promise.all(
+      authenticatedContracts.map((testCase) => checkAuthenticatedContract(testCase)),
+    );
     authFailed = authResults.filter((result) => !result).length;
   } else if (requireAuthChecks) {
     console.log("FAIL authenticated checks required but SMOKE_ADMIN_BEARER is missing");

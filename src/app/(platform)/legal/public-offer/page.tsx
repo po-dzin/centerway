@@ -8,7 +8,7 @@ export const metadata: Metadata = pageMetadata({
   title: "Публічний договір",
   description: describe(
     "Публічна оферта CenterWay: умови продажу цифрових онлайн-продуктів, консультацій і супутніх сервісів, оплата, доступ і повернення.",
-    { bounded: false }
+    { bounded: false },
   ),
   path: "/legal/public-offer",
 });

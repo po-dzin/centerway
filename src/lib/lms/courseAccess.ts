@@ -36,7 +36,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
-import { enforceRateLimit, tooManyRequests, type RateLimitRule } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests, type RateLimitRule } from "@/lib/api/rateLimit";
 import { loadBuilderCourse, readCourseOwnership } from "./builder";
 import { canEditCourse, resolveBuilderIdentity, type BuilderIdentity } from "./builderAccess";
 
@@ -74,7 +74,7 @@ export function isDenied(access: CourseAccess | { identity: BuilderIdentity } | 
  */
 export async function resolveCourseAccess(
   user: { id: string; email?: string | null } | null,
-  slug: string
+  slug: string,
 ): Promise<CourseAccess> {
   if (!user) return { denied: "unauthenticated" };
   return resolveCourseAccessForIdentity(await resolveBuilderIdentity(user), slug);
@@ -87,10 +87,7 @@ export async function resolveCourseAccess(
  * so it has to authenticate BEFORE parsing — otherwise a stranger's twenty
  * megabytes get decoded into a function's heap before anyone asks who they are.
  */
-export async function resolveCourseAccessForIdentity(
-  identity: BuilderIdentity,
-  slug: string
-): Promise<CourseAccess> {
+export async function resolveCourseAccessForIdentity(identity: BuilderIdentity, slug: string): Promise<CourseAccess> {
   const owned = await readCourseOwnership(slug);
   if (!owned || !canEditCourse(identity, owned.authorId)) return { denied: "not_found" };
 
@@ -114,7 +111,7 @@ export async function resolveCourseAccessForIdentity(
 
 /** The identity alone, for the routes that operate on the shelf rather than one course. */
 export async function resolveIdentityFromRequest(
-  req: NextRequest
+  req: NextRequest,
 ): Promise<{ identity: BuilderIdentity } | AccessDenial> {
   const user = await requireUserFromBearer(req.headers.get("authorization"));
   if (!user) return { denied: "unauthenticated" };
@@ -139,7 +136,7 @@ export async function withCourseAccess(
   req: NextRequest,
   slug: string,
   run: (grant: CourseGrant) => Promise<NextResponse>,
-  rule?: RateLimitRule
+  rule?: RateLimitRule,
 ): Promise<NextResponse> {
   const user = await requireUserFromBearer(req.headers.get("authorization"));
   const access = await resolveCourseAccess(user, slug);
@@ -157,7 +154,7 @@ export async function withCourseAccess(
 export async function withBuilderIdentity(
   req: NextRequest,
   run: (identity: BuilderIdentity) => Promise<NextResponse>,
-  rule?: RateLimitRule
+  rule?: RateLimitRule,
 ): Promise<NextResponse> {
   const access = await resolveIdentityFromRequest(req);
   if (isDenied(access)) return denialResponse(access);

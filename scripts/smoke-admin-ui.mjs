@@ -1,18 +1,13 @@
 import { chromium } from "@playwright/test";
 
-const baseUrl = (
-  process.env.SMOKE_UI_BASE_URL ||
-  process.env.SMOKE_BASE_URL ||
-  "http://localhost:8000"
-).replace(/\/+$/, "");
+const baseUrl = (process.env.SMOKE_UI_BASE_URL || process.env.SMOKE_BASE_URL || "http://localhost:8000").replace(
+  /\/+$/,
+  "",
+);
 
 const timeoutMs = Number.parseInt(process.env.SMOKE_TIMEOUT_MS || "15000", 10);
 
-const routes = [
-  "/admin",
-  "/admin/analytics",
-  "/admin/system/audit",
-];
+const routes = ["/admin", "/admin/analytics", "/admin/system/audit"];
 
 function fail(message) {
   console.log(`FAIL ${message}`);

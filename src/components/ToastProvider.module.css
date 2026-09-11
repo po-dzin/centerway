@@ -4,7 +4,10 @@
   z-index: calc(var(--ds-z-modal) + 1);
   inset-block-start: env(safe-area-inset-top);
   inset-inline-end: env(safe-area-inset-right);
-  inline-size: min(calc(26rem + 2 * var(--cw-space-md)), calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  inline-size: min(
+    calc(26rem + 2 * var(--cw-space-md)),
+    calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right))
+  );
   max-block-size: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   /* Keep the scroll clip outside the rounded cards and their shadows. */
   box-sizing: border-box;
@@ -28,9 +31,15 @@
   pointer-events: auto;
   animation: arrive 180ms ease-out;
 }
-.toast[data-variant="success"] { --toast-tone: var(--cw-status-success); }
-.toast[data-variant="error"] { --toast-tone: var(--cw-status-failed); }
-.toast[data-variant="warning"] { --toast-tone: var(--cw-status-pending); }
+.toast[data-variant="success"] {
+  --toast-tone: var(--cw-status-success);
+}
+.toast[data-variant="error"] {
+  --toast-tone: var(--cw-status-failed);
+}
+.toast[data-variant="warning"] {
+  --toast-tone: var(--cw-status-pending);
+}
 .dot {
   flex: 0 0 var(--cw-space-xs);
   block-size: var(--cw-space-xs);
@@ -60,9 +69,17 @@
   white-space: nowrap;
 }
 @keyframes arrive {
-  from { opacity: 0; transform: translateY(calc(-1 * var(--cw-space-xs))); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--cw-space-xs)));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .toast { animation: none; }
+  .toast {
+    animation: none;
+  }
 }

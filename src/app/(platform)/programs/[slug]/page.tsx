@@ -74,11 +74,7 @@ function unavailableProgramFallback(address: string): string | null {
   return null;
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const course = await publicCourse(slug);
   if (!course) return {};
@@ -150,9 +146,7 @@ export default async function CourseOfferPage({
       course={course}
       commerce={courseOfferCommerce(course.programSlug, offer)}
       author={author}
-      purchase={
-        returned ? <OfferPurchaseReturn purchase={{ ...returned, product: returnedCode }} /> : undefined
-      }
+      purchase={returned ? <OfferPurchaseReturn purchase={{ ...returned, product: returnedCode }} /> : undefined}
       nextStep={<CourseNextStep currentSlug={course.slug} courses={storefrontCourses} />}
     />
   );

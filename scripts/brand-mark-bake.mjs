@@ -125,18 +125,19 @@ function markSvg(build, { fill, size }) {
  * animation. Two exported consts let the bundler drop what a route never uses.
  */
 function geometryModule(geometry) {
-  const build = (name, data) => [
-    `export const ${name}: MarkBuild = {`,
-    `  arcs: [`,
-    ...data.arcs.map((d) => `    "${d}",`),
-    `  ],`,
-    `  mids: [`,
-    ...data.mids.map((d) => `    "${d}",`),
-    `  ],`,
-    `  lens: [${data.lens.join(", ")}],`,
-    `  coreR: ${data.coreR},`,
-    `};`,
-  ].join("\n");
+  const build = (name, data) =>
+    [
+      `export const ${name}: MarkBuild = {`,
+      `  arcs: [`,
+      ...data.arcs.map((d) => `    "${d}",`),
+      `  ],`,
+      `  mids: [`,
+      ...data.mids.map((d) => `    "${d}",`),
+      `  ],`,
+      `  lens: [${data.lens.join(", ")}],`,
+      `  coreR: ${data.coreR},`,
+      `};`,
+    ].join("\n");
 
   return [
     `// ${BANNER}`,
@@ -386,7 +387,10 @@ async function main() {
   emit(["public/cw/brand/cw-mark-compact.svg"], markSvg(geometry.compact, { fill: "#000", size: 64 }));
 
   // Pre-coloured, for <img> consumers: the platform footer and every landing nav.
-  for (const [tone, colour] of [["ink", ink], ["gold", gold]]) {
+  for (const [tone, colour] of [
+    ["ink", ink],
+    ["gold", gold],
+  ]) {
     emit(
       [`public/cw/brand/cw-mark-${tone}.svg`, `src/landing-static/shared/img/cw-mark-${tone}.svg`],
       markSvg(geometry.full, { fill: colour, size: 64 }),
@@ -439,7 +443,9 @@ async function main() {
 
      Full build, not compact: these render at 180-512px, where the turns the
      compact build drops are the whole mark. */
-  const iconAny = Buffer.from(appIconSvg(geometry.full, { fill: ink, background: calm, fit: FIT.launcher, rounded: true }));
+  const iconAny = Buffer.from(
+    appIconSvg(geometry.full, { fill: ink, background: calm, fit: FIT.launcher, rounded: true }),
+  );
   const iconMaskable = Buffer.from(appIconSvg(geometry.full, { fill: ink, background: calm, fit: FIT.maskable }));
   // iOS rounds the corners itself and composites a transparent icon onto black,
   // so the touch icon is opaque and keeps a little more air than the square
@@ -448,8 +454,14 @@ async function main() {
 
   // Mirrored into shared/img as well: the funnel hosts cannot see /cw/**, and a
   // landing still needs a raster favicon for the browsers without SVG support.
-  emit(["public/cw/brand/cw-icon-192.png", "src/landing-static/shared/img/cw-icon-192.png"], await rasterise(iconAny, 192));
-  emit(["src/app/apple-icon.png", "src/landing-static/shared/img/cw-apple-touch.png"], await rasterise(touchIcon, 180, calm));
+  emit(
+    ["public/cw/brand/cw-icon-192.png", "src/landing-static/shared/img/cw-icon-192.png"],
+    await rasterise(iconAny, 192),
+  );
+  emit(
+    ["src/app/apple-icon.png", "src/landing-static/shared/img/cw-apple-touch.png"],
+    await rasterise(touchIcon, 180, calm),
+  );
   emit(["public/cw/brand/cw-icon-512.png"], await rasterise(iconAny, 512));
   emit(["public/cw/brand/cw-icon-maskable-512.png"], await rasterise(iconMaskable, 512, calm));
 
@@ -465,17 +477,17 @@ async function main() {
   // Link preview. Also mirrored into shared/img so the funnel hosts, which
   // cannot see /cw/**, can point og:image at their own origin.
   const wordmark = await fs.readFile(WORDMARK_GOLD, "utf8");
-  const wordmarkInner = wordmark.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "").trim();
+  const wordmarkInner = wordmark
+    .replace(/^[\s\S]*?<svg[^>]*>/, "")
+    .replace(/<\/svg>\s*$/, "")
+    .trim();
   const wordmarkViewBox = /viewBox="([^"]+)"/.exec(wordmark)[1];
   const ogSource = Buffer.from(
     brandCardSvg(geometry.full, { mark: gold, background: ink, wordmarkInner, wordmarkViewBox }),
   );
   // density oversamples the curves, then resize brings it back to the 1200x630
   // the scrapers actually want — rasterising at 1:1 leaves the arc edges chewed.
-  const ogPng = await sharp(ogSource, { density: 300 })
-    .resize(1200, 630)
-    .png({ compressionLevel: 9 })
-    .toBuffer();
+  const ogPng = await sharp(ogSource, { density: 300 }).resize(1200, 630).png({ compressionLevel: 9 }).toBuffer();
   emit(["public/cw/brand/cw-og-cover.png", "src/landing-static/shared/img/cw-og-cover.png"], ogPng);
 
   /* The same card at Telegram's own ratio. Two consumers, one file: the picture
@@ -483,7 +495,14 @@ async function main() {
      the photo the greeting carries, so the frame someone sees before pressing
      Start and the one that answers them are the same object. */
   const tgCardSource = Buffer.from(
-    brandCardSvg(geometry.full, { mark: gold, background: ink, wordmarkInner, wordmarkViewBox, width: 640, height: 360 }),
+    brandCardSvg(geometry.full, {
+      mark: gold,
+      background: ink,
+      wordmarkInner,
+      wordmarkViewBox,
+      width: 640,
+      height: 360,
+    }),
   );
   emit(
     ["public/cw/brand/cw-tg-cover.png"],

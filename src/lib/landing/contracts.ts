@@ -3,7 +3,18 @@ export type ManagedLandingPage = UtilityPage | "index2";
 
 // "short-b" is the A/B variant of the Short landing (/reboot-b): it owns css/js/fonts
 // under src/landing-static/short-b and reuses /short/img for imagery.
-export const LANDING_STATIC_BRANDS = new Set(["short", "short-b", "reboot", "irem", "way21", "reset-day", "dosha", "consult", "herbs", "shared"]);
+export const LANDING_STATIC_BRANDS = new Set([
+  "short",
+  "short-b",
+  "reboot",
+  "irem",
+  "way21",
+  "reset-day",
+  "dosha",
+  "consult",
+  "herbs",
+  "shared",
+]);
 
 export const UTILITY_FILE_BY_PAGE: Record<UtilityPage, string> = {
   thanks: "thanks.html",
@@ -17,11 +28,11 @@ export const MANAGED_LANDING_FILE_BY_PAGE: Record<ManagedLandingPage, string> = 
 };
 
 export const UTILITY_PAGE_BY_FILE: Record<string, UtilityPage> = Object.fromEntries(
-  Object.entries(UTILITY_FILE_BY_PAGE).map(([page, file]) => [file, page as UtilityPage])
+  Object.entries(UTILITY_FILE_BY_PAGE).map(([page, file]) => [file, page as UtilityPage]),
 ) as Record<string, UtilityPage>;
 
 export const MANAGED_LANDING_PAGE_BY_FILE: Record<string, ManagedLandingPage> = Object.fromEntries(
-  Object.entries(MANAGED_LANDING_FILE_BY_PAGE).map(([page, file]) => [file, page as ManagedLandingPage])
+  Object.entries(MANAGED_LANDING_FILE_BY_PAGE).map(([page, file]) => [file, page as ManagedLandingPage]),
 ) as Record<string, ManagedLandingPage>;
 
 export function getUtilityPageByFile(fileName: string): UtilityPage | null {
@@ -33,10 +44,12 @@ export function getManagedLandingPageByFile(fileName: string): ManagedLandingPag
 }
 
 export function getUtilityPageFromAssetPath(assetPath: string[]): UtilityPage | null {
-  if (assetPath.length !== 1) {
+  // Destructured first so the single segment is a string rather than a lookup
+  // the compiler cannot prove; `rest` empty is the old length check.
+  const [segment, ...rest] = assetPath;
+  if (segment === undefined || rest.length > 0) {
     return null;
   }
-  const [segment] = assetPath;
   if (segment in UTILITY_FILE_BY_PAGE) {
     return segment as UtilityPage;
   }
@@ -44,10 +57,12 @@ export function getUtilityPageFromAssetPath(assetPath: string[]): UtilityPage | 
 }
 
 export function getManagedLandingPageFromAssetPath(assetPath: string[]): ManagedLandingPage | null {
-  if (assetPath.length !== 1) {
+  // Destructured first so the single segment is a string rather than a lookup
+  // the compiler cannot prove; `rest` empty is the old length check.
+  const [segment, ...rest] = assetPath;
+  if (segment === undefined || rest.length > 0) {
     return null;
   }
-  const [segment] = assetPath;
   if (segment in MANAGED_LANDING_FILE_BY_PAGE) {
     return segment as ManagedLandingPage;
   }

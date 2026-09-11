@@ -17,7 +17,7 @@ import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { isEligibleAuthor } from "@/lib/lms/authors";
 import { MAX_INPUT_BYTES, isPrepareFailure, prepareMedia } from "@/lib/lms/mediaPipeline";
 import { LMS_MEDIA_UPLOAD } from "@/lib/lms/rateRules";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
@@ -61,6 +61,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: prepared.error }, { status });
   }
 
+  /* The pipeline always returns at least one rendition, and everything below
+     reads the first one — the canonical path, the ledger's content type, the
+     size reported back. An empty list would store a folder with no file in it
+     and a row pointing at nothing, so it is refused before any bytes move. */
+  const [primaryRendition] = prepared.renditions;
+  if (!primaryRendition) {
+    return NextResponse.json({ error: "media_prepare_empty" }, { status: 500 });
+  }
+
   const assetId = randomUUID();
   const folder = `authors/${user.id}/${assetId}`;
 
@@ -83,7 +92,7 @@ export async function POST(req: NextRequest) {
     stored.push(path);
   }
 
-  const canonical = `${folder}/${prepared.renditions[0].name}`;
+  const canonical = `${folder}/${primaryRendition.name}`;
 
   const ledger = await admin.from("lms_media_assets").insert({
     id: assetId,
@@ -92,7 +101,7 @@ export async function POST(req: NextRequest) {
     canonical_path: canonical,
     paths: stored,
     bytes: prepared.renditions.reduce((sum, rendition) => sum + rendition.bytes.byteLength, 0),
-    content_type: prepared.renditions[0].contentType,
+    content_type: primaryRendition.contentType,
     width: prepared.width,
     height: prepared.height,
     uploaded_by: user.id,
@@ -110,7 +119,7 @@ export async function POST(req: NextRequest) {
     path: canonical,
     width: prepared.width,
     height: prepared.height,
-    bytes: prepared.renditions[0].bytes.byteLength,
+    bytes: primaryRendition.bytes.byteLength,
     sourceBytes: file.size,
   });
 }

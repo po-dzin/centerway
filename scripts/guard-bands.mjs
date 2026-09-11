@@ -71,7 +71,9 @@ for (const surface of SURFACES) {
 
   if (REPORT) {
     console.log(`\n${surface}`);
-    bands.forEach((b, i) => console.log(`  ${String(i + 1).padStart(2)} ${b.band === "alt" ? "alt " : "base"}  ${b.title}`));
+    bands.forEach((b, i) =>
+      console.log(`  ${String(i + 1).padStart(2)} ${b.band === "alt" ? "alt " : "base"}  ${b.title}`),
+    );
   }
 
   for (let i = 1; i < bands.length; i += 1) {

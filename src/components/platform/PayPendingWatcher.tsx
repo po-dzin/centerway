@@ -25,7 +25,7 @@
 
 import { useEffect, useState } from "react";
 
-import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
+import { SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
 import styles from "./PlatformSurfaceStyles";
 
 /** Polite to the endpoint, immediate to the eye. */
@@ -93,8 +93,8 @@ export function PayPendingWatcher({ orderRef, product }: { orderRef: string; pro
   return (
     <div className={styles.form}>
       <p className={styles.status}>
-        Підтвердження від банку йде довше за звичайне. Гроші при цьому в безпеці: якщо оплата пройшла,
-        доступ відкриється автоматично, а якщо ні — кошти повернуться на картку. Платити вдруге не потрібно.
+        Підтвердження від банку йде довше за звичайне. Гроші при цьому в безпеці: якщо оплата пройшла, доступ
+        відкриється автоматично, а якщо ні — кошти повернуться на картку. Платити вдруге не потрібно.
       </p>
       <button
         className={styles.secondaryButton}

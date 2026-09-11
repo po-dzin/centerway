@@ -54,4 +54,3 @@ export function resolveFbc(input: {
 
   return buildFbcFromFbclid(fbclid, creationTimeSeconds);
 }
-

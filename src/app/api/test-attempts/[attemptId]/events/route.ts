@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { asString } from "@/lib/strings";
 import { adminClient } from "@/lib/auth/adminClient";
-import { emitDoshaTestEvent, loadTestAttempt } from "@/lib/doshaTestRepo";
-import { classifyDosha } from "@/lib/doshaTest";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { emitDoshaTestEvent, loadTestAttempt } from "@/lib/dosha/doshaTestRepo";
+import { classifyDosha } from "@/lib/dosha/doshaTest";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -20,12 +21,6 @@ type EventBody = {
   completedAt?: unknown;
   nextStep?: unknown;
 };
-
-function asString(v: unknown): string | null {
-  if (typeof v !== "string") return null;
-  const s = v.trim();
-  return s || null;
-}
 
 function asFiniteNumber(v: unknown): number | null {
   if (typeof v === "number" && Number.isFinite(v)) return v;
@@ -46,10 +41,7 @@ function asScorePayload(v: unknown): { vata: number; pitta: number; kapha: numbe
   return { vata, pitta, kapha };
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ attemptId: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ attemptId: string }> }) {
   const rl = await enforceRateLimit(req, { name: "test_event", limit: 120, windowSeconds: 60 });
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
@@ -85,21 +77,19 @@ export async function POST(
         ? classifyDosha(attempt.score_vata ?? 0, attempt.score_pitta ?? 0, attempt.score_kapha ?? 0)
         : null;
 
-    await emitDoshaTestEvent(
-      db,
-      eventName as "dosha_result_viewed" | "dosha_followup_clicked",
-      {
-        attemptId: attempt.id,
-        testId: attempt.test_id,
-        resultType: attempt.result_type,
-        shares: profile?.shares ?? null,
-        confidence: profile?.confidence ?? null,
-        target: target ?? null,
-        screen: screen ?? null,
-        step,
-        ctaTarget: ctaTarget ?? null,
-        uiVariant: uiVariant ?? null,
-        resultView: eventName === "dosha_result_viewed"
+    await emitDoshaTestEvent(db, eventName as "dosha_result_viewed" | "dosha_followup_clicked", {
+      attemptId: attempt.id,
+      testId: attempt.test_id,
+      resultType: attempt.result_type,
+      shares: profile?.shares ?? null,
+      confidence: profile?.confidence ?? null,
+      target: target ?? null,
+      screen: screen ?? null,
+      step,
+      ctaTarget: ctaTarget ?? null,
+      uiVariant: uiVariant ?? null,
+      resultView:
+        eventName === "dosha_result_viewed"
           ? {
               resultType: resultType ?? attempt.result_type,
               scores,
@@ -107,9 +97,8 @@ export async function POST(
               nextStep,
             }
           : null,
-        timestamp: new Date().toISOString(),
-      }
-    );
+      timestamp: new Date().toISOString(),
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {

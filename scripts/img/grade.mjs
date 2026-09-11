@@ -120,7 +120,11 @@ export async function gradeImage(
   if (avif) {
     const avifOut = out.replace(/\.webp$/, ".avif");
     // avif carries the profile through sharp correctly — only webp is broken.
-    await pipeline.clone().avif({ quality: quality - 4, effort: 5 }).withIccProfile("srgb").toFile(avifOut);
+    await pipeline
+      .clone()
+      .avif({ quality: quality - 4, effort: 5 })
+      .withIccProfile("srgb")
+      .toFile(avifOut);
     written.push(avifOut);
   }
   return written;
@@ -147,7 +151,16 @@ export async function tagSrgb(file) {
 }
 
 function parseArgs(argv) {
-  const args = { input: null, out: null, profile: "default", width: null, avif: false, jpeg: false, fadeBottom: 0, fadeColor: "#fdf4e7" };
+  const args = {
+    input: null,
+    out: null,
+    profile: "default",
+    width: null,
+    avif: false,
+    jpeg: false,
+    fadeBottom: 0,
+    fadeColor: "#fdf4e7",
+  };
   for (let i = 2; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--out") args.out = argv[++i];
@@ -163,7 +176,8 @@ function parseArgs(argv) {
     else if (!args.input) args.input = arg;
     else throw new Error(`unexpected argument: ${arg}`);
   }
-  if (!args.input || !args.out) throw new Error("usage: grade.mjs <input> --out <file.webp> [--profile p] [--width n] [--avif]");
+  if (!args.input || !args.out)
+    throw new Error("usage: grade.mjs <input> --out <file.webp> [--profile p] [--width n] [--avif]");
   if (!args.out.endsWith(".webp")) throw new Error("--out must be a .webp path");
   return args;
 }

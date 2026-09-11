@@ -67,7 +67,7 @@ if (report.misses.length) {
   }
 }
 
-// Non-zero on a miss so this can gate a branch later. It is NOT in `ds:qa`
+// Non-zero on a miss so this can gate a branch later. It is NOT in `verify:ds`
 // today: the same cases already run in `eval.test.ts`, and a second gate over
 // the identical seed would only slow the suite down. The script earns its exit
 // code once `--db` is the normal way to run it.

@@ -5,13 +5,7 @@
  */
 
 import { chromium } from "@playwright/test";
-import {
-  ICONS,
-  GRAPHICS,
-  ICON_VIEWBOX,
-  GRAPHIC_VIEWBOX,
-  HAND_PRESETS,
-} from "./icon-glyphs.mjs";
+import { ICONS, GRAPHICS, ICON_VIEWBOX, GRAPHIC_VIEWBOX, HAND_PRESETS } from "./icon-glyphs.mjs";
 
 export const STROKE_WIDTH = { icon: 1.5, graphic: 1.5 };
 
@@ -115,7 +109,7 @@ function bakeInPage(job) {
       const pts = [];
       const count = closed ? steps : steps + 1;
       for (let i = 0; i < count; i += 1) {
-        const at = (total * (closed ? i / steps : i / steps));
+        const at = total * (closed ? i / steps : i / steps);
         pts.push(displace(probe.getPointAtLength(Math.min(at, total))));
       }
       out.push(toPathData(pts, closed));
@@ -187,9 +181,7 @@ function spriteMarkup(presetName, iconBaked, graphicBaked) {
     `<svg xmlns="http://www.w3.org/2000/svg" style="display:none">`,
   ];
   const body = [
-    ...Object.keys(ICONS).map((name) =>
-      symbolMarkup(name, iconBaked[name], ICON_VIEWBOX, STROKE_WIDTH.icon),
-    ),
+    ...Object.keys(ICONS).map((name) => symbolMarkup(name, iconBaked[name], ICON_VIEWBOX, STROKE_WIDTH.icon)),
     ...Object.keys(GRAPHICS).map((name) =>
       symbolMarkup(name, graphicBaked[name], GRAPHIC_VIEWBOX, STROKE_WIDTH.graphic),
     ),
@@ -237,4 +229,3 @@ export async function bakeSprites(presetNames) {
 }
 
 export { symbolMarkup, spriteMarkup };
-

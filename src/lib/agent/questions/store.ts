@@ -12,6 +12,18 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+/**
+ * NOT YET IN THE GENERATED TYPES. The table's migration (agent_questions,
+ * 2026-09-01) was written and sat unapplied until 2026-09-10 — every
+ * `captureQuestion` call in production failed quietly with "[questions]
+ * capture failed" for nine days, and the type error when the client became
+ * typed was the first signal. Applied and journaled on 2026-09-10; the types
+ * regenerate with `npm run db:types` (needs Docker), and this untyped view of
+ * the client goes with that regeneration.
+ */
+const untypedDb = () => adminClient() as unknown as SupabaseClient;
 import { isStorableQuestion, redactPersonal } from "./redact";
 
 export type QuestionSource = "bot_fallback" | "bot_support" | "assistant";
@@ -42,7 +54,7 @@ export async function captureQuestion(input: { text: string; source: QuestionSou
   if (!isStorableQuestion(text)) return false;
 
   try {
-    const { error } = await adminClient()
+    const { error } = await untypedDb()
       .from("agent_questions")
       .insert({ text, source: input.source, redacted: removed });
     if (error) {
@@ -75,9 +87,9 @@ function toQuestion(row: Record<string, unknown>): CapturedQuestion {
  * work queue, not the measurement.
  */
 export async function listQuestions(
-  options: { limit?: number; labelled?: boolean; source?: QuestionSource } = {}
+  options: { limit?: number; labelled?: boolean; source?: QuestionSource } = {},
 ): Promise<CapturedQuestion[]> {
-  let query = adminClient()
+  let query = untypedDb()
     .from("agent_questions")
     .select("id, text, source, expected_doc_id, topic, created_at")
     .order("created_at", { ascending: false })

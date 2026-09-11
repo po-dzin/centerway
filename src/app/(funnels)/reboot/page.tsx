@@ -1,4 +1,4 @@
-import { getLandingMetadata, renderLandingPage } from "@/lib/landing/renderLandingPage";
+import { getLandingMetadata, renderLandingPage } from "@/components/landing/renderLandingPage";
 
 export const runtime = "nodejs";
 export const metadata = getLandingMetadata("short");

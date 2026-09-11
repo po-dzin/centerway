@@ -608,7 +608,7 @@
     padding: var(--builder-panel-pad-block) 0 0;
     background: transparent;
     border-inline-end: 1px solid var(--builder-rule);
-  border-image: var(--cw-rule-fade-y);
+    border-image: var(--cw-rule-fade-y);
     box-shadow: none;
   }
 
@@ -681,7 +681,7 @@
     justify-self: stretch;
     margin: 0;
     border-block-start: 1px solid var(--builder-rule);
-  border-image: var(--cw-rule-fade-x);
+    border-image: var(--cw-rule-fade-x);
     transform: none;
     z-index: 2;
     background: transparent;
@@ -860,7 +860,7 @@
 
 @media (hover: hover) {
   .toolTab:hover,
-.toolClose:hover {
+  .toolClose:hover {
     color: var(--cw-platform-text);
   }
 }
@@ -880,7 +880,8 @@
   /* An ANIMATION, not a transition, because the closed panel is now gone from
      the layout rather than merely transparent — and a transition has nothing to
      run from when an element appears. Same rise as the sheet, same curve. */
-  animation: sheetIn var(--builder-motion-panel) var(--builder-ease-tool, cubic-bezier(0.16, 1, 0.3, 1));}
+  animation: sheetIn var(--builder-motion-panel) var(--builder-ease-tool, cubic-bezier(0.16, 1, 0.3, 1));
+}
 
 /* GONE, not invisible. This is what the desktop band has always done; the
    compact band kept the box and paid for it with a stranded tab strip. */
@@ -1126,7 +1127,7 @@
     padding: var(--builder-panel-pad-block) 0 0;
     background: transparent;
     border-inline-start: 1px solid var(--builder-rule);
-  border-image: var(--cw-rule-fade-y);
+    border-image: var(--cw-rule-fade-y);
     pointer-events: auto;
   }
 
@@ -1256,8 +1257,6 @@
   }
 }
 
-
-
 /* Icon-only chrome: `chromeBare` drops the inline padding that exists for a
    label, so the control comes out square instead of a wide empty button. */
 .stepAction {
@@ -1334,12 +1333,12 @@
 }
 @media (hover: hover) {
   .stepAction:hover:not(:disabled) .inkRing,
-.moduleImportAction:hover:not(:disabled) .inkRing,
-.toolTab:hover .inkRing,
-.toolClose:hover .inkRing,
-.menuTrigger:hover .inkRing,
-.slugEditAction:hover .inkRing,
-.titleEditAction:hover .inkRing {
+  .moduleImportAction:hover:not(:disabled) .inkRing,
+  .toolTab:hover .inkRing,
+  .toolClose:hover .inkRing,
+  .menuTrigger:hover .inkRing,
+  .slugEditAction:hover .inkRing,
+  .titleEditAction:hover .inkRing {
     opacity: var(--cw-ink-hover-opacity);
     transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
   }
@@ -1474,8 +1473,6 @@
   text-align: start;
 }
 
-
-
 /* The lesson line: the row that navigates, plus the two controls that
    restructure it. They are quiet until the row is under the pointer or holds
    focus — a structure read straight down should be titles, not a column of
@@ -1509,7 +1506,7 @@
 
 @media (hover: hover) {
   .contentsRow:hover > .menuTrigger,
-.contentsModuleRow:hover > .menuTrigger {
+  .contentsModuleRow:hover > .menuTrigger {
     opacity: 1;
   }
 }
@@ -3137,7 +3134,9 @@
   color: var(--cw-platform-muted);
   background: var(--cw-platform-bg);
   opacity: 0;
-  transition: opacity var(--builder-motion-reveal) ease, color var(--builder-motion-reveal) ease;
+  transition:
+    opacity var(--builder-motion-reveal) ease,
+    color var(--builder-motion-reveal) ease;
 }
 
 .blockInsert:focus-within .blockInsertAction,
@@ -3468,7 +3467,6 @@
    same side it takes in the gutter on a wide screen, so the handle does not
    change edges when the layout does. */
 @media (max-width: 900px) {
-
   .blockRail {
     position: static;
     inset: auto;
@@ -3727,7 +3725,9 @@
   display: grid;
   gap: var(--cw-space-2xs);
   border-radius: var(--cw-radius-md);
-  transition: outline-color var(--builder-motion-tool) ease, background-color var(--builder-motion-tool) ease;
+  transition:
+    outline-color var(--builder-motion-tool) ease,
+    background-color var(--builder-motion-tool) ease;
   outline: 2px dashed transparent;
   outline-offset: 4px;
 }
@@ -3879,12 +3879,18 @@
   inset: 0;
   opacity: 0;
   background-image:
-    linear-gradient(to right, currentColor 0 100%),
-    linear-gradient(to right, currentColor 0 100%),
-    linear-gradient(to bottom, currentColor 0 100%),
-    linear-gradient(to bottom, currentColor 0 100%);
-  background-size: 1px 100%, 1px 100%, 100% 1px, 100% 1px;
-  background-position: 33.33% 0, 66.66% 0, 0 33.33%, 0 66.66%;
+    linear-gradient(to right, currentColor 0 100%), linear-gradient(to right, currentColor 0 100%),
+    linear-gradient(to bottom, currentColor 0 100%), linear-gradient(to bottom, currentColor 0 100%);
+  background-size:
+    1px 100%,
+    1px 100%,
+    100% 1px,
+    100% 1px;
+  background-position:
+    33.33% 0,
+    66.66% 0,
+    0 33.33%,
+    0 66.66%;
   background-repeat: no-repeat;
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 55%, transparent);
   transition: opacity var(--builder-motion-reveal) ease;
@@ -3988,7 +3994,12 @@
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
   color: var(--cw-platform-text);
-  font: 0.85rem/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font:
+    0.85rem/1.55 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    monospace;
   white-space: pre;
 }
 
@@ -4052,8 +4063,7 @@
 @media (max-width: 900px) {
   .saveBar {
     bottom: calc(
-      max(var(--cw-space-md), env(safe-area-inset-bottom)) + var(--ds-touch-target-min) +
-        var(--cw-space-sm)
+      max(var(--cw-space-md), env(safe-area-inset-bottom)) + var(--ds-touch-target-min) + var(--cw-space-sm)
     );
   }
 }
@@ -4761,7 +4771,9 @@
 
 .courseSettingsAdvancedGlyph {
   color: var(--cw-platform-muted);
-  transition: transform var(--builder-motion-reveal) ease, color var(--builder-motion-reveal) ease;
+  transition:
+    transform var(--builder-motion-reveal) ease,
+    color var(--builder-motion-reveal) ease;
 }
 
 .courseSettingsAdvanced[open] > summary .courseSettingsAdvancedGlyph {
@@ -4880,7 +4892,6 @@
     background: var(--cw-platform-bg);
   }
 }
-
 
 /* ── The decision dialogue ────────────────────────────
 
@@ -5191,8 +5202,12 @@
   gap: var(--cw-space-2xs);
 }
 
-.editableTitle { flex: 1 1 auto; }
-.editableTitleCompact { flex: 1 1 auto; }
+.editableTitle {
+  flex: 1 1 auto;
+}
+.editableTitleCompact {
+  flex: 1 1 auto;
+}
 
 .editableHeadingEmpty {
   color: var(--cw-platform-muted);
@@ -6148,7 +6163,7 @@
 
 @media (hover: hover) {
   .structure:not(.structureCards) .addAction:hover:not(:disabled),
-.structure:not(.structureCards) .addRow .quietAction:hover:not(:disabled) {
+  .structure:not(.structureCards) .addRow .quietAction:hover:not(:disabled) {
     color: var(--cw-platform-text);
   }
 }
@@ -6324,7 +6339,6 @@
   .courseSaveBar:not([data-pending]) {
     display: none;
   }
-
 }
 
 @media (min-width: 1660px) {

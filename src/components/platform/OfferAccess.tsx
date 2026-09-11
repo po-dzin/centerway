@@ -60,13 +60,7 @@ export function useOfferAccess(): OfferAccess {
  * it sells, and the shelf entry carries `programSlug` for exactly this join —
  * the course delivering it may be slugged differently.
  */
-export function OfferAccessProvider({
-  programSlug,
-  children,
-}: {
-  programSlug: string;
-  children: ReactNode;
-}) {
+export function OfferAccessProvider({ programSlug, children }: { programSlug: string; children: ReactNode }) {
   const [access, setAccess] = useState<OfferAccess>({ state: "unknown" });
 
   useEffect(() => {
@@ -82,7 +76,7 @@ export function OfferAccessProvider({
       if (!shelf.ok) return;
 
       const match = shelf.data.courses.find(
-        (course) => course.programSlug === programSlug && course.access !== "locked"
+        (course) => course.programSlug === programSlug && course.access !== "locked",
       );
       if (!match) {
         setAccess({ state: "none" });

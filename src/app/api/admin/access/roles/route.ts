@@ -1,19 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { AccessError, isGrantableRole, setRole } from "@/lib/admin/access";
-import {
-    badRequestResponse,
-    forbiddenResponse,
-    requireAdminSession,
-    serverErrorResponse,
-    unauthorizedResponse,
-} from "@/lib/api/adminRoute";
+import { NextResponse } from "next/server";
+import { z } from "zod";
 
-function failed(error: unknown) {
-    if (error instanceof AccessError) {
-        return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    return serverErrorResponse(error instanceof Error ? error.message : "unknown_error");
-}
+import { GRANTABLE_ROLES, setRole } from "@/lib/admin/access";
+import { parseBody, withRoute } from "@/lib/api/route";
+import { forbiddenResponse, requireAdminSession, unauthorizedResponse } from "@/lib/api/adminRoute";
+
+const Body = z.object({
+  email: z.string().trim().min(1),
+  role: z.enum(GRANTABLE_ROLES),
+});
 
 /**
  * POST /api/admin/access/roles { email, role }
@@ -23,25 +18,24 @@ function failed(error: unknown) {
  * of the account, which is a facet rather than a tab. `/access/accounts?role=`
  * answers it now, from the one list, so this route is only the write.
  * See docs/admin-access-shape-2026-08-28.md.
+ *
+ * An `AccessError` thrown by `setRole` becomes its own status through
+ * `withRoute`; nothing here catches.
  */
-export async function POST(req: NextRequest) {
-    const session = await requireAdminSession(req);
-    if (!session) return unauthorizedResponse();
-    // `support` may read the role map and hand out course access, but handing
-    // out roles — including admin — stays with admin.
-    if (session.role !== "admin") return forbiddenResponse();
+export const POST = withRoute("admin.access.roles", async (req) => {
+  const session = await requireAdminSession(req);
+  if (!session) return unauthorizedResponse();
+  // `support` may read the role map and hand out course access, but handing
+  // out roles — including admin — stays with admin.
+  if (session.role !== "admin") return forbiddenResponse();
 
-    const body = (await req.json().catch(() => ({}))) as { email?: string; role?: string };
-    if (!body.email || !isGrantableRole(body.role)) return badRequestResponse("email_and_valid_role_required");
+  const parsed = await parseBody(req, Body);
+  if (!parsed.ok) return parsed.response;
 
-    try {
-        const result = await setRole({ email: body.email, role: body.role, actorId: session.user.id });
-        return NextResponse.json({
-            email: result.account.email,
-            previous: result.previous,
-            role: result.role,
-        });
-    } catch (error) {
-        return failed(error);
-    }
-}
+  const result = await setRole({ email: parsed.data.email, role: parsed.data.role, actorId: session.user.id });
+  return NextResponse.json({
+    email: result.account.email,
+    previous: result.previous,
+    role: result.role,
+  });
+});

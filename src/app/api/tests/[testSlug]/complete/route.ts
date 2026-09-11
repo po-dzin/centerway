@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { asString } from "@/lib/strings";
 import { adminClient } from "@/lib/auth/adminClient";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
-import { classifyDosha, DOSHA_TEST_SLUG, isValidScoreInvariant } from "@/lib/doshaTest";
-import { DOSHA_PRIMARY_EXIT } from "@/lib/doshaRouting";
+import { classifyDosha, DOSHA_TEST_SLUG, isValidScoreInvariant } from "@/lib/dosha/doshaTest";
+import { DOSHA_PRIMARY_EXIT } from "@/lib/dosha/doshaRouting";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import {
   createTestAttempt,
   emitDoshaTestEvent,
@@ -15,7 +16,7 @@ import {
   loadTestDefinitionBySlug,
   syncCustomerDoshaTestTags,
   type TestAttemptRow,
-} from "@/lib/doshaTestRepo";
+} from "@/lib/dosha/doshaTestRepo";
 
 export const runtime = "nodejs";
 
@@ -29,12 +30,6 @@ type CompleteBody = {
   source?: unknown;
   sessionId?: unknown;
 };
-
-function asString(v: unknown): string | null {
-  if (typeof v !== "string") return null;
-  const s = v.trim();
-  return s || null;
-}
 
 function toAnswerList(input: unknown): Array<{ questionId: string; optionId: string }> | null {
   if (!Array.isArray(input)) return null;
@@ -54,7 +49,7 @@ async function findIdempotentAttempt(
     testId: string;
     sessionId: string;
     expectedAnswers: Record<string, string>;
-  }
+  },
 ): Promise<TestAttemptRow | null> {
   const threshold = new Date(Date.now() - 10 * 60 * 1000).toISOString();
   const { data, error } = await db
@@ -89,10 +84,7 @@ async function findIdempotentAttempt(
   return null;
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ testSlug: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ testSlug: string }> }) {
   const rl = await enforceRateLimit(req, { name: "test_complete", limit: 20, windowSeconds: 60 });
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
@@ -121,7 +113,7 @@ export async function POST(
     if (answers.length !== test.questions.length) {
       return NextResponse.json(
         { error: "answers_count_mismatch", expected: test.questions.length, received: answers.length },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -177,8 +169,7 @@ export async function POST(
       answer_order: number;
     }> = [];
 
-    for (let idx = 0; idx < answers.length; idx += 1) {
-      const answer = answers[idx];
+    for (const [idx, answer] of answers.entries()) {
       const question = await findTestQuestionById(db, answer.questionId, test.id);
       if (!question) {
         return NextResponse.json({ error: "question_not_in_test", questionId: answer.questionId }, { status: 400 });
@@ -284,7 +275,11 @@ export async function POST(
       content_type: userId ? "lead" : "product",
       content_ids: [resultType],
       email: user?.email ?? null,
-      ip_address: req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? req.headers.get("x-real-ip") ?? null,
+      /* Empty falls through, not just nullish: a present-but-blank
+         `x-forwarded-for` trims to `""`, which `??` would have kept and sent to
+         Meta as the address instead of reading `x-real-ip`. */
+      ip_address:
+        (req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null) ?? req.headers.get("x-real-ip") ?? null,
       user_agent: req.headers.get("user-agent"),
     };
     try {

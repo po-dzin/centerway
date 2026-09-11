@@ -68,7 +68,7 @@ async function fetchAllRows<T>(
   // typed as a real Promise (same mismatch builder.ts's StructureWriter cast
   // works around) — `await` accepts either, but the parameter type has to say
   // so or every call site fails to typecheck against the builder it passes in.
-  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>
+  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
 ): Promise<T[]> {
   const all: T[] = [];
   let from = 0;
@@ -119,7 +119,7 @@ async function dailyCourseIds(): Promise<Map<string, Course>> {
 export async function runUnstartedReminders(
   limit = 500,
   now = new Date(),
-  hourPolicy: ReminderHourPolicy = "learner-local"
+  hourPolicy: ReminderHourPolicy = "learner-local",
 ): Promise<ReminderRunResult> {
   const db = adminClient();
   const skipped: Record<string, number> = {};
@@ -148,7 +148,7 @@ export async function runUnstartedReminders(
         .in("product_code", productCodes)
         .order("created_at", { ascending: true })
         .order("order_ref", { ascending: true })
-        .range(from, to)
+        .range(from, to),
     );
 
     const orders = orderRows.filter((order) => order.order_ref && order.customer_id);
@@ -160,7 +160,7 @@ export async function runUnstartedReminders(
     const { data: customerRows } = await db
       .from("customers")
       .select("id, auth_user_id")
-      .in("id", [...new Set(orders.map((order) => order.customer_id))])
+      .in("id", [...new Set(orders.map((order) => order.customer_id).filter((id): id is string => Boolean(id)))])
       .not("auth_user_id", "is", null);
 
     const authByCustomer = new Map((customerRows ?? []).map((row) => [row.id, row.auth_user_id as string]));
@@ -194,6 +194,8 @@ export async function runUnstartedReminders(
       sentByOrder.set(key, [...(sentByOrder.get(key) ?? []), row.nudge_number as number]);
     }
 
+    const timeZoneByUser = await loadTimeZones(db, authUserIds);
+
     // One purchase per learner per course is enough to nudge about; a learner
     // who bought twice must not be messaged twice in the same run.
     const handledUsers = new Set<string>();
@@ -214,15 +216,9 @@ export async function runUnstartedReminders(
         continue;
       }
 
-      const { data: profile } = await db
-        .from("platform_users")
-        .select("timezone")
-        .eq("auth_user_id", authUserId)
-        .maybeSingle();
-
       const decision = decideUnstartedReminder(course, {
         purchasedAt: new Date(order.created_at ?? now.toISOString()),
-        timeZone: resolveTimeZone(profile?.timezone),
+        timeZone: resolveTimeZone(timeZoneByUser.get(authUserId) ?? undefined),
         now,
         sentNudgeNumbers: sentByOrder.get(orderRef) ?? [],
         hourPolicy,
@@ -277,10 +273,33 @@ export async function runUnstartedReminders(
   return { scanned, sent, skipped };
 }
 
+/**
+ * Every learner's timezone in one read, instead of one read per learner from
+ * inside the loop. Both runs iterate up to 500 rows; that was up to 500
+ * point-lookups of `platform_users` per cron tick.
+ */
+async function loadTimeZones(
+  db: ReturnType<typeof adminClient>,
+  authUserIds: Array<string | null | undefined>,
+): Promise<Map<string, string | null>> {
+  const ids = [...new Set(authUserIds.filter((id): id is string => Boolean(id)))];
+  const out = new Map<string, string | null>();
+  for (let i = 0; i < ids.length; i += 500) {
+    const { data } = await db
+      .from("platform_users")
+      .select("auth_user_id, timezone")
+      .in("auth_user_id", ids.slice(i, i + 500));
+    for (const row of data ?? []) {
+      if (row.auth_user_id) out.set(row.auth_user_id, row.timezone ?? null);
+    }
+  }
+  return out;
+}
+
 export async function runDailyReminders(
   limit = 500,
   now = new Date(),
-  hourPolicy: ReminderHourPolicy = "learner-local"
+  hourPolicy: ReminderHourPolicy = "learner-local",
 ): Promise<ReminderRunResult> {
   const db = adminClient();
   const courses = await dailyCourseIds();
@@ -300,9 +319,13 @@ export async function runDailyReminders(
       .select("id, course_id, auth_user_id, started_at, expires_at, status, blocked_at")
       .in("course_id", [...courses.keys()])
       .order("id", { ascending: true })
-      .range(from, to)
+      .range(from, to),
   );
   let sent = 0;
+  const timeZoneByUser = await loadTimeZones(
+    db,
+    enrollments.map((enrollment) => enrollment.auth_user_id),
+  );
 
   for (const enrollment of enrollments) {
     const course = courses.get(enrollment.course_id);
@@ -315,20 +338,14 @@ export async function runDailyReminders(
     if (
       accessStateOf(
         { status: enrollment.status, blockedAt: enrollment.blocked_at, expiresAt: enrollment.expires_at },
-        now
+        now,
       ) !== "active"
     ) {
       bump(skipped, "access_closed");
       continue;
     }
 
-    const { data: profile } = await db
-      .from("platform_users")
-      .select("timezone")
-      .eq("auth_user_id", enrollment.auth_user_id)
-      .maybeSingle();
-
-    const timeZone = resolveTimeZone(profile?.timezone);
+    const timeZone = resolveTimeZone(timeZoneByUser.get(enrollment.auth_user_id) ?? undefined);
     const progress = await loadProgress(enrollment.id);
 
     const decision = decideDailyReminder(course, progress, {

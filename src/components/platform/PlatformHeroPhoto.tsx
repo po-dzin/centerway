@@ -18,8 +18,9 @@ const PORTRAIT_MEDIA = "(max-width: 560px)";
 type PlatformHeroPhotoProps = {
   artwork?: PlatformOfferArtwork;
   alt: string;
-  /** The hero photo class of the calling surface, usually styles.expertImage. */
-  className: string;
+  /** The hero photo class of the calling surface, usually styles.expertImage.
+      A CSS-module lookup, so `undefined` is a shape the callers really have. */
+  className: string | undefined;
   /** Above-the-fold heroes should not lazy-load. */
   eager?: boolean;
 };
@@ -57,7 +58,11 @@ export function PlatformHeroPhoto({ artwork, alt, className, eager }: PlatformHe
   return (
     <picture>
       {mobile && mobileStatus?.src === mobile.src && mobileStatus.ready ? (
-        <source media={PORTRAIT_MEDIA} srcSet={mobile.srcSet ?? mobile.src} sizes={mobile.srcSet ? MEDIA_SIZES.full : undefined} />
+        <source
+          media={PORTRAIT_MEDIA}
+          srcSet={mobile.srcSet ?? mobile.src}
+          sizes={mobile.srcSet ? MEDIA_SIZES.full : undefined}
+        />
       ) : null}
       <img
         className={className}

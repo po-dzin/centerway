@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendConfirmedSaleTelegramReport } from "@/lib/reporting/analyticsReports";
+import { errorMessage } from "@/lib/errors";
+import { sendConfirmedSaleTelegramReport } from "@/lib/analytics/telegramReports";
 import { sendPurchaseEmail } from "@/lib/email/purchaseEmail";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { normalizeCustomerEmail, upsertCustomerByContact } from "@/lib/platform/customerIdentity";
 import { closeWonLeadsForPurchase } from "@/lib/platform/leadStage";
-import { extractPaymentMeta } from "@/lib/paymentMeta";
+import { extractPaymentMeta } from "@/lib/payments/paymentMeta";
 import {
   buildWfpAcceptResponse,
   nextOrderStatus,
@@ -16,13 +17,10 @@ import {
   wfpEventTypeFromStatus,
   type WfpCallbackOutcome,
   type WfpSignatureCheck,
-} from "@/lib/wfp";
+} from "@/lib/payments/wfp";
 import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
 import { isStaffOrder } from "@/lib/tracking/staffOrders";
-import {
-  buildPurchaseCapiEventPayload,
-  type PendingPurchaseCapiJobPayload,
-} from "@/lib/jobs/worker";
+import { buildPurchaseCapiEventPayload, type PendingPurchaseCapiJobPayload } from "@/lib/jobs/worker";
 
 export const runtime = "nodejs";
 
@@ -41,7 +39,7 @@ async function readBodyParams(req: NextRequest): Promise<Payload> {
       }
       return out;
     }
-  } catch { }
+  } catch {}
 
   // form-data (WFP иногда шлёт form-url-encoded)
   try {
@@ -49,7 +47,7 @@ async function readBodyParams(req: NextRequest): Promise<Payload> {
     const out: Payload = {};
     for (const [k, v] of fd.entries()) out[k] = String(v);
     return out;
-  } catch { }
+  } catch {}
 
   return {};
 }
@@ -68,7 +66,7 @@ function norm(v: unknown): string | null {
  */
 function guardStatus<T extends { not(column: string, operator: string, value: string): T }>(
   query: T,
-  outcome: WfpCallbackOutcome
+  outcome: WfpCallbackOutcome,
 ): T {
   const protectedStatuses = statusesProtectedFrom(outcome);
   if (protectedStatuses.length === 0) return query;
@@ -124,10 +122,7 @@ function resolvePaymentEventTime(payload: Payload): number {
   return Math.floor(Date.now() / 1000);
 }
 
-async function enqueueTelegramSaleReport(
-  sb: ReturnType<typeof supabaseAdmin>,
-  orderRef: string
-): Promise<void> {
+async function enqueueTelegramSaleReport(sb: ReturnType<typeof supabaseAdmin>, orderRef: string): Promise<void> {
   const { data: existingTelegramJob } = await sb
     .from("jobs")
     .select("id")
@@ -259,7 +254,7 @@ export async function POST(req: NextRequest) {
         if (nextStatus) {
           const { error: pFixErr } = await guardStatus(
             sb.from("payments").update({ status: nextStatus, raw_payload: payload }),
-            outcome
+            outcome,
           )
             .eq("provider", "wfp")
             .eq("order_ref", orderRef);
@@ -276,10 +271,10 @@ export async function POST(req: NextRequest) {
          read above. Two redelivered callbacks can be in flight at once, and a
          decision made from a value read a moment ago is a decision made about
          a row that may have changed since. */
-      const { error: oErr } = await guardStatus(
-        sb.from("orders").update({ status: nextStatus }),
-        outcome
-      ).eq("order_ref", orderRef);
+      const { error: oErr } = await guardStatus(sb.from("orders").update({ status: nextStatus }), outcome).eq(
+        "order_ref",
+        orderRef,
+      );
 
       if (oErr) {
         errors.push(`orders: ${oErr.message ?? "unknown"}`);
@@ -298,7 +293,13 @@ export async function POST(req: NextRequest) {
     // 3) customers: материализуем email/phone из платежа
 
     try {
-      const customerId = await upsertCustomerByContact(sb, { email: meta.email ?? null, phone: meta.phone ?? null });
+      /* `upsertCustomerByContact` answers with `{ id, created }`, not a bare id —
+         taking the whole object here would write a JSON blob into
+         `orders.customer_id` and into the event row. Only the id is wanted. */
+      const { id: customerId } = await upsertCustomerByContact(sb, {
+        email: meta.email ?? null,
+        phone: meta.phone ?? null,
+      });
       if (customerId && !order?.customer_id) {
         const { error: ocErr } = await sb
           .from("orders")
@@ -334,8 +335,8 @@ export async function POST(req: NextRequest) {
           if (eErr) errors.push(`events: ${eErr.message ?? "unknown"}`);
         }
       }
-    } catch (e: any) {
-      errors.push(`customers: ${String(e?.message || e)}`);
+    } catch (e) {
+      errors.push(`customers: ${errorMessage(e)}`);
     }
 
     if (errors.length) {
@@ -349,10 +350,7 @@ export async function POST(req: NextRequest) {
       // The writes below it are all idempotent, so a redelivery that succeeds
       // completes the order exactly once.
       console.error("wfp_webhook_write_failed", { orderRef, errors });
-      return NextResponse.json(
-        { ok: false, error: "db_write_failed", details: errors.join("; ") },
-        { status: 500 }
-      );
+      return NextResponse.json({ ok: false, error: "db_write_failed", details: errors.join("; ") }, { status: 500 });
     }
 
     // A QA payment made with `cw_staff=1` is a real order and a real WayForPay
@@ -384,8 +382,8 @@ export async function POST(req: NextRequest) {
         if (closed.closed > 0) {
           console.log("[wfp webhook] leads closed as won", { orderRef, closed: closed.closed });
         }
-      } catch (e: any) {
-        console.warn("[wfp webhook] lead close failed", { orderRef, error: String(e?.message || e) });
+      } catch (e) {
+        console.warn("[wfp webhook] lead close failed", { orderRef, error: errorMessage(e) });
       }
 
       try {
@@ -398,9 +396,7 @@ export async function POST(req: NextRequest) {
           .maybeSingle();
         if (!existingPurchaseJob?.id) {
           const amountNumber =
-            meta.amount != null && Number.isFinite(Number(meta.amount))
-              ? Number(meta.amount)
-              : undefined;
+            meta.amount != null && Number.isFinite(Number(meta.amount)) ? Number(meta.amount) : undefined;
           const capiPayload: PendingPurchaseCapiJobPayload = {
             event_name: "Purchase",
             order_ref: orderRef,
@@ -429,9 +425,7 @@ export async function POST(req: NextRequest) {
           // instead of waiting for the daily cron. The thin job row stays the durable
           // fallback; the enriched payload is built lazily off the request path.
           if (purchaseJob?.id) {
-            dispatchCapiEventInline(sb, purchaseJob.id, () =>
-              buildPurchaseCapiEventPayload(capiPayload)
-            );
+            dispatchCapiEventInline(sb, purchaseJob.id, () => buildPurchaseCapiEventPayload(capiPayload));
           }
         }
       } catch (capiErr) {
@@ -509,7 +503,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "missing_secret" }, { status: 500 });
     }
     return NextResponse.json(accept);
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, error: "webhook_failed", details: String(e?.message || e) }, { status: 500 });
+  } catch (e) {
+    return NextResponse.json({ ok: false, error: "webhook_failed", details: errorMessage(e) }, { status: 500 });
   }
 }

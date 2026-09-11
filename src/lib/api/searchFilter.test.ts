@@ -62,8 +62,6 @@ describe("orIlikeFilter", () => {
 
   it("survives the characters a real contact actually contains", () => {
     expect(orIlikeFilter(["phone"], "+380501112233")).toBe('phone.ilike."%+380501112233%"');
-    expect(orIlikeFilter(["email"], "o'brien@example.com")).toBe(
-      'email.ilike."%o\'brien@example.com%"'
-    );
+    expect(orIlikeFilter(["email"], "o'brien@example.com")).toBe('email.ilike."%o\'brien@example.com%"');
   });
 });

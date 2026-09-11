@@ -15,13 +15,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { bakeSprites } from "./lib/icon-bake-core.mjs";
-import {
-  ICONS,
-  GRAPHICS,
-  HAND_PRESETS,
-  DEFAULT_PRESET,
-  groupsOf,
-} from "./lib/icon-glyphs.mjs";
+import { ICONS, GRAPHICS, HAND_PRESETS, DEFAULT_PRESET, groupsOf } from "./lib/icon-glyphs.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const PRESETS = ["base", "hand1", "hand2", "hand3"];
@@ -123,10 +117,10 @@ ${body}
 `;
 }
 
-const use = (name, size, cls = "ico") =>
+const svgUse = (name, size, cls = "ico") =>
   `<svg class="${cls}" width="${size}" height="${size}" aria-hidden="true"><use href="#cw-${name}"/></svg>`;
 
-const cell = (name, size = 40) => `<div class="cell">${use(name, size)}<small>${name}</small></div>`;
+const cell = (name, size = 40) => `<div class="cell">${svgUse(name, size)}<small>${name}</small></div>`;
 
 // ── page: the whole set, grouped, light and dark ─────────────────────────────
 function overviewPage(sprite) {
@@ -163,19 +157,7 @@ ${groups}
 
 // ── page: the character ladder — the original sketch, now baked ──────────────
 function characterPage(baked) {
-  const sample = [
-    "leaf",
-    "bowl",
-    "water",
-    "stone",
-    "breath",
-    "day",
-    "check",
-    "arrow-right",
-    "vata",
-    "pitta",
-    "kapha",
-  ];
+  const sample = ["leaf", "bowl", "water", "stone", "breath", "day", "check", "arrow-right", "vata", "pitta", "kapha"];
 
   // Each preset needs its own symbol ids, so prefix them per row.
   const rows = PRESETS.map((presetName) => {
@@ -188,9 +170,7 @@ function characterPage(baked) {
           : presetName === "hand2"
             ? "<b>approved</b> — the contour is alive, legibility intact"
             : "starts to fall apart on water / kapha";
-    const spec = preset.scale
-      ? `baseFrequency ${preset.frequency} · scale ${preset.scale}`
-      : "no displacement";
+    const spec = preset.scale ? `baseFrequency ${preset.frequency} · scale ${preset.scale}` : "no displacement";
     const glyphs = sample
       .map(
         (n) =>
@@ -230,7 +210,7 @@ ${rows}`,
 // ── page: dot / path / orbit ─────────────────────────────────────────────────
 function graphicsPage(sprite) {
   const primitives = Object.keys(GRAPHICS)
-    .map((n) => `<div class="cell">${use(n, 76)}<small>${n}</small></div>`)
+    .map((n) => `<div class="cell">${svgUse(n, 76)}<small>${n}</small></div>`)
     .join("");
 
   const stepOrbit = (steps, active) => {
@@ -340,7 +320,7 @@ ${swatch("accent · --cw-sem-warmth", TOKENS.light.accent, "#dba54f")}
 
 <h2>Sizes in the wild</h2>
 <div class="row">
-${[20, 24, 32, 40, 56].map((s) => `<div class="cell">${use("leaf", s)}<small>${s}px</small></div>`).join("")}
+${[20, 24, 32, 40, 56].map((s) => `<div class="cell">${svgUse("leaf", s)}<small>${s}px</small></div>`).join("")}
 </div>`,
   });
 }

@@ -75,9 +75,13 @@ function applyTypedHeroReplacements(product: StaticLandingProduct, html: string)
     if (shortTitleMatch) {
       const titlePrefix = shortTitleMatch[1];
       const titleAccent = shortTitleMatch[2];
-      next = replaceIfMatch(next, /(<h1>)[\s\S]*?(<span class="accent">)([\s\S]*?)(<\/span>)([\s\S]*?<\/h1>)/i, (match) => {
-        return `${match[1]}${titlePrefix}${match[2]}${titleAccent}${match[4]}${match[5]}`;
-      });
+      next = replaceIfMatch(
+        next,
+        /(<h1>)[\s\S]*?(<span class="accent">)([\s\S]*?)(<\/span>)([\s\S]*?<\/h1>)/i,
+        (match) => {
+          return `${match[1]}${titlePrefix}${match[2]}${titleAccent}${match[4]}${match[5]}`;
+        },
+      );
     }
 
     next = replaceIfMatch(next, /(<h3>)([\s\S]*?)(<\/h3>)/i, (match) => {
@@ -88,7 +92,7 @@ function applyTypedHeroReplacements(product: StaticLandingProduct, html: string)
       next = replaceIfMatch(
         next,
         /(<div class="benefits-block">[\s\S]*?<p>)([\s\S]*?)(<\/p>[\s\S]*?<ul class="benefits__list">)/i,
-        (match) => `${match[1]}${hero.lead}${match[3]}`
+        (match) => `${match[1]}${hero.lead}${match[3]}`,
       );
     }
 
@@ -112,7 +116,7 @@ function applyTypedHeroReplacements(product: StaticLandingProduct, html: string)
       next = replaceIfMatch(
         next,
         /(<p class="hero-proof__quote hero-proof__quote-after-list">)([\s\S]*?)(<\/p>)/i,
-        (match) => `${match[1]}${hero.note}${match[3]}`
+        (match) => `${match[1]}${hero.note}${match[3]}`,
       );
     }
 
@@ -137,9 +141,13 @@ function applyTypedHeroReplacements(product: StaticLandingProduct, html: string)
     });
 
     if (hero.price.notes.length >= 2) {
-      next = replaceIfMatch(next, /(<span class="price-note">)([\s\S]*?)(<\/span>[\s\S]*?<span class="price-note">)([\s\S]*?)(<\/span>)/i, (match) => {
-        return `${match[1]}${hero.price.notes[0]}${match[3]}${hero.price.notes[1]}${match[5]}`;
-      });
+      next = replaceIfMatch(
+        next,
+        /(<span class="price-note">)([\s\S]*?)(<\/span>[\s\S]*?<span class="price-note">)([\s\S]*?)(<\/span>)/i,
+        (match) => {
+          return `${match[1]}${hero.price.notes[0]}${match[3]}${hero.price.notes[1]}${match[5]}`;
+        },
+      );
     }
 
     if (hero.cta.note) {
@@ -151,7 +159,7 @@ function applyTypedHeroReplacements(product: StaticLandingProduct, html: string)
     next = replaceIfMatch(
       next,
       /(<div id="menu" class="default" data-sticky-menu>[\s\S]*?<button class="openModal">)([\s\S]*?)(<\/button>)/i,
-      (match) => `${match[1]}${hero.ctaStickyLabel}${match[3]}`
+      (match) => `${match[1]}${hero.ctaStickyLabel}${match[3]}`,
     );
 
     return next;
@@ -201,7 +209,7 @@ ${match[3]}`;
   next = replaceIfMatch(
     next,
     /(<div id="menu" class="default" data-sticky-menu>[\s\S]*?<button class="openModal">)([\s\S]*?)(<\/button>)/i,
-    (match) => `${match[1]}${hero.ctaStickyLabel}${match[3]}`
+    (match) => `${match[1]}${hero.ctaStickyLabel}${match[3]}`,
   );
 
   return next;
@@ -245,7 +253,11 @@ function buildIremMicroctaPriceMarkup(offer: LandingResolvedOffer): string {
   return `<div class="microcta-price"><b>${offer.currentPriceLabel}</b><small>повний доступ</small></div>`;
 }
 
-function applyOfferReplacements(product: StaticLandingProduct, html: string, offer?: LandingResolvedOffer | null): string {
+function applyOfferReplacements(
+  product: StaticLandingProduct,
+  html: string,
+  offer?: LandingResolvedOffer | null,
+): string {
   if (product !== "irem" || !offer) {
     return html;
   }
@@ -255,24 +267,13 @@ function applyOfferReplacements(product: StaticLandingProduct, html: string, off
   const offerMarkup = buildIremPriceMarkup(offer, "format", true);
   const microctaMarkup = buildIremMicroctaPriceMarkup(offer);
 
-  next = replaceIfMatch(
-    next,
-    /<div class="hero-price">\s*<b>[\s\S]*?<\/small>\s*<\/div>\s*/i,
-    () => `${heroMarkup}\n`
-  );
+  next = replaceIfMatch(next, /<div class="hero-price">\s*<b>[\s\S]*?<\/small>\s*<\/div>\s*/i, () => `${heroMarkup}\n`);
 
-  next = replaceIfMatch(
-    next,
-    /<div class="fc-price">\s*<b>[\s\S]*?<\/small>\s*<\/div>\s*/i,
-    () => `${offerMarkup}\n`
-  );
+  next = replaceIfMatch(next, /<div class="fc-price">\s*<b>[\s\S]*?<\/small>\s*<\/div>\s*/i, () => `${offerMarkup}\n`);
 
   // Two identical micro-CTA blocks on the page — replace every occurrence,
   // unlike the single hero/offer price blocks above.
-  next = next.replace(
-    /<div class="microcta-price">\s*<b>[\s\S]*?<\/small>\s*<\/div>/gi,
-    () => microctaMarkup
-  );
+  next = next.replace(/<div class="microcta-price">\s*<b>[\s\S]*?<\/small>\s*<\/div>/gi, () => microctaMarkup);
 
   return next;
 }
@@ -283,10 +284,11 @@ function stripInlineTracking(html: string): string {
 
 function extractBody(html: string, product: StaticLandingProduct): string {
   const match = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-  if (!match) {
+  const body = match?.[1];
+  if (body === undefined) {
     throw new Error(`Unable to extract <body> from ${product} landing source`);
   }
-  return match[1];
+  return body;
 }
 
 function toProductAssetPath(product: StaticLandingProduct, url: string): string {
@@ -321,7 +323,7 @@ function normalizeRelativeUrls(product: StaticLandingProduct, html: string): str
 function injectHtmlDataAttrs(html: string, product: StaticLandingProduct, page: ManagedLandingPage): string {
   return html.replace(
     /<html([^>]*)>/i,
-    `<html$1 data-cw-landing="${product}" data-cw-runtime="next" data-cw-page="${page}">`
+    `<html$1 data-cw-landing="${product}" data-cw-runtime="next" data-cw-page="${page}">`,
   );
 }
 
@@ -337,7 +339,7 @@ function injectManagedHead(html: string, product: StaticLandingProduct): string 
   if (/<meta name="viewport" content="width=device-width,\s*initial-scale=1(?:\.0)?"\s*\/?>/i.test(html)) {
     return html.replace(
       /<meta name="viewport" content="width=device-width,\s*initial-scale=1(?:\.0)?"\s*\/?>/i,
-      (match) => `${match}\n${inject}`
+      (match) => `${match}\n${inject}`,
     );
   }
 
@@ -361,22 +363,16 @@ function patchManagedLandingPageContent(html: string, product: StaticLandingProd
     return html
       .replace(
         /(<a class="btn primary" href=")[^"]+(" target="_blank" rel="noopener">Відкрити курс<\/a>)/i,
-        `$1${content.thanks.courseUrl}$2`
+        `$1${content.thanks.courseUrl}$2`,
       )
-      .replace(
-        /(<a class="btn" href=")[^"]+(">Повернутися на сайт<\/a>)/i,
-        `$1${content.thanks.siteUrl}$2`
-      )
-      .replace(
-        /window\.location\.href\s*=\s*"[^"]+";/i,
-        `window.location.href = "${content.thanks.courseUrl}";`
-      );
+      .replace(/(<a class="btn" href=")[^"]+(">Повернутися на сайт<\/a>)/i, `$1${content.thanks.siteUrl}$2`)
+      .replace(/window\.location\.href\s*=\s*"[^"]+";/i, `window.location.href = "${content.thanks.courseUrl}";`);
   }
 
   if (page === "pay-failed") {
     return html.replace(
       /(<a class="btn primary" href=")[^"]+(">Спробувати ще раз<\/a>)/i,
-      `$1${content.payFailed.retryUrl}$2`
+      `$1${content.payFailed.retryUrl}$2`,
     );
   }
 
@@ -396,7 +392,7 @@ async function loadLandingHtml(product: StaticLandingProduct, options: PrepareLa
 export async function prepareLandingHtml(options: PrepareEntryOptions): Promise<PreparedEntryHtml>;
 export async function prepareLandingHtml(options: PrepareUtilityOptions): Promise<PreparedUtilityHtml>;
 export async function prepareLandingHtml(
-  options: PrepareLandingHtmlOptions
+  options: PrepareLandingHtmlOptions,
 ): Promise<PreparedEntryHtml | PreparedUtilityHtml> {
   const { product } = options;
   let html = await loadLandingHtml(product, options);

@@ -9,10 +9,10 @@
  * renderer instead of a second implementation.
  */
 
-import { supabaseClient } from "@/lib/supabaseClient";
 import type { Author, Course, CourseCategory, CourseDiff, CourseTheme, Lesson, ReadinessBlocker } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
 import type { CourseRevisionSummary, LessonRevisionEntry } from "@/lib/lms/revisions";
+import { accessToken, authorizedFetch } from "@/components/auth/authorizedFetch";
 
 export type BuilderFailure = "unauthenticated" | "forbidden" | "not_found" | "invalid" | "conflict" | "network";
 
@@ -66,28 +66,15 @@ export type CourseImportPreview = {
 
 export type BuilderResult<T> = { ok: true; data: T } | { ok: false; failure: BuilderFailure; detail?: string };
 
-async function accessToken(): Promise<string | null> {
-  const { data } = await supabaseClient.auth.getSession();
-  return data.session?.access_token ?? null;
-}
-
 async function request<T>(path: string, init?: RequestInit): Promise<BuilderResult<T>> {
   const token = await accessToken();
   if (!token) return { ok: false, failure: "unauthenticated" };
 
   let response: Response;
   try {
-    response = await fetch(path, {
-      ...init,
-      headers: {
-        // Only for a JSON body. A FormData body must carry the browser's own
-        // multipart boundary, and naming a content-type here overwrites it —
-        // the server then cannot find where one part ends and the next begins.
-        ...(typeof init?.body === "string" ? { "content-type": "application/json" } : {}),
-        authorization: `Bearer ${token}`,
-        ...(init?.headers ?? {}),
-      },
-    });
+    // The token and, for a JSON body, the content-type are authorizedFetch's;
+    // a FormData body keeps the browser's own multipart boundary.
+    response = await authorizedFetch(path, init);
   } catch {
     return { ok: false, failure: "network" };
   }
@@ -146,9 +133,7 @@ export function commitCourseImport(course: unknown): Promise<BuilderResult<{ slu
 }
 
 /** Download uses the same Bearer boundary but keeps the response as text. */
-export async function exportCourseFile(
-  slug: string,
-): Promise<BuilderResult<{ filename: string; text: string }>> {
+export async function exportCourseFile(slug: string): Promise<BuilderResult<{ filename: string; text: string }>> {
   const token = await accessToken();
   if (!token) return { ok: false, failure: "unauthenticated" };
 
@@ -195,11 +180,7 @@ export async function unpublishCourse(slug: string): Promise<BuilderResult<{ sta
   if (loaded.data.course.status !== "published") {
     return { ok: true, data: { status: loaded.data.course.status } };
   }
-  const saved = await saveCourse(
-    slug,
-    { ...loaded.data.course, status: "draft" },
-    loaded.data.draftGeneration,
-  );
+  const saved = await saveCourse(slug, { ...loaded.data.course, status: "draft" }, loaded.data.draftGeneration);
   if (!saved.ok) return saved;
   return { ok: true, data: { status: saved.data.status } };
 }
@@ -223,14 +204,27 @@ export function saveCourse(
   slug: string,
   course: Course,
   expectedGeneration: number,
-): Promise<BuilderResult<{ slug: string; status: Course["status"]; blockers: ReadinessBlocker[]; staged?: true; draftGeneration: number }>> {
+): Promise<
+  BuilderResult<{
+    slug: string;
+    status: Course["status"];
+    blockers: ReadinessBlocker[];
+    staged?: true;
+    draftGeneration: number;
+  }>
+> {
   return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}`, {
     method: "PUT",
     body: JSON.stringify({ course, expectedGeneration }),
   });
 }
 
-export type CourseAuthorLinkDto = { eligible: boolean; ownAuthor: Author | null; linkedAuthor: Author | null; linkedAuthorId: string | null };
+export type CourseAuthorLinkDto = {
+  eligible: boolean;
+  ownAuthor: Author | null;
+  linkedAuthor: Author | null;
+  linkedAuthorId: string | null;
+};
 
 export function loadCourseAuthorLink(slug: string): Promise<BuilderResult<CourseAuthorLinkDto>> {
   return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/author`);
@@ -246,9 +240,7 @@ export function setCourseAuthorLink(
   });
 }
 
-export function listCourseRevisions(
-  slug: string,
-): Promise<BuilderResult<{ revisions: CourseRevisionSummary[] }>> {
+export function listCourseRevisions(slug: string): Promise<BuilderResult<{ revisions: CourseRevisionSummary[] }>> {
   return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions`);
 }
 
@@ -258,7 +250,7 @@ export function listLessonRevisions(
   lessonId: string,
 ): Promise<BuilderResult<{ lessonRevisions: LessonRevisionEntry[] }>> {
   return request(
-    `/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions?lesson=${encodeURIComponent(lessonId)}`
+    `/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions?lesson=${encodeURIComponent(lessonId)}`,
   );
 }
 
@@ -276,15 +268,17 @@ export function loadCourseRevision(
   slug: string,
   revisionId: string,
 ): Promise<BuilderResult<{ revision: CourseRevisionSummary & { content: Course }; diff: CourseDiff | null }>> {
-  return request(
-    `/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions/${encodeURIComponent(revisionId)}`,
-  );
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions/${encodeURIComponent(revisionId)}`);
 }
 
 export function restoreCourseRevision(
   slug: string,
   revisionId: string,
-): Promise<BuilderResult<{ restored: { slug: string; status: string; staged: boolean; draftGeneration: number; restoredFrom: number } }>> {
+): Promise<
+  BuilderResult<{
+    restored: { slug: string; status: string; staged: boolean; draftGeneration: number; restoredFrom: number };
+  }>
+> {
   return request(
     `/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions/${encodeURIComponent(revisionId)}/restore`,
     { method: "POST" },
@@ -309,7 +303,9 @@ export function renameCourseSlug(slug: string, nextSlug: string): Promise<Builde
 export function uploadMedia(
   courseSlug: string,
   file: File,
-): Promise<BuilderResult<{ src: string; path: string; width: number; height: number; bytes: number; sourceBytes: number }>> {
+): Promise<
+  BuilderResult<{ src: string; path: string; width: number; height: number; bytes: number; sourceBytes: number }>
+> {
   const body = new FormData();
   body.set("courseSlug", courseSlug);
   body.set("file", file);

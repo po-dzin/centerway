@@ -15,12 +15,7 @@ export function CourseTopbarTrail({ courseTitle }: CourseTrailProps) {
   const href = useSurfaceHref();
   return (
     <div className={styles.courseTopbarTrail}>
-      <PlatformTrail
-        steps={[
-          { label: "Мої матеріали", href: href(LEARNING_SHELF_HREF) },
-          { label: courseTitle },
-        ]}
-      />
+      <PlatformTrail steps={[{ label: "Мої матеріали", href: href(LEARNING_SHELF_HREF) }, { label: courseTitle }]} />
     </div>
   );
 }

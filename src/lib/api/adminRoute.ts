@@ -2,23 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 
 export async function requireAdminSession(req: NextRequest) {
-    return requireAdmin(req);
+  return requireAdmin(req);
 }
 
 export function unauthorizedResponse() {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 
 export function forbiddenResponse() {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 }
 
 export function badRequestResponse(error: string) {
-    return NextResponse.json({ error }, { status: 400 });
+  return NextResponse.json({ error }, { status: 400 });
 }
 
 export function serverErrorResponse(error: string) {
-    return NextResponse.json({ error }, { status: 500 });
+  return NextResponse.json({ error }, { status: 500 });
 }
 
 /**
@@ -40,17 +40,17 @@ export function serverErrorResponse(error: string) {
  * that an operator meant.
  */
 export function parseLimitOffset(
-    searchParams: URLSearchParams,
-    { defaultLimit, maxLimit }: { defaultLimit: number; maxLimit: number }
+  searchParams: URLSearchParams,
+  { defaultLimit, maxLimit }: { defaultLimit: number; maxLimit: number },
 ) {
-    const asCount = (raw: string | null, fallback: number): number => {
-        if (raw === null || raw.trim() === "") return fallback;
-        const value = Number(raw);
-        if (!Number.isFinite(value)) return fallback;
-        return Math.floor(value);
-    };
+  const asCount = (raw: string | null, fallback: number): number => {
+    if (raw === null || raw.trim() === "") return fallback;
+    const value = Number(raw);
+    if (!Number.isFinite(value)) return fallback;
+    return Math.floor(value);
+  };
 
-    const limit = Math.min(Math.max(asCount(searchParams.get("limit"), defaultLimit), 1), maxLimit);
-    const offset = Math.max(asCount(searchParams.get("offset"), 0), 0);
-    return { limit, offset };
+  const limit = Math.min(Math.max(asCount(searchParams.get("limit"), defaultLimit), 1), maxLimit);
+  const offset = Math.max(asCount(searchParams.get("offset"), 0), 0);
+  return { limit, offset };
 }

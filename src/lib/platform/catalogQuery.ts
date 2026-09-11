@@ -112,10 +112,7 @@ export function matchesCatalogQuery(item: CatalogItem, query: CatalogQuery): boo
     return false;
   }
 
-  if (
-    query.categories.length > 0 &&
-    !query.categories.some((category) => item.categories?.includes(category))
-  ) {
+  if (query.categories.length > 0 && !query.categories.some((category) => item.categories?.includes(category))) {
     return false;
   }
 
@@ -132,21 +129,14 @@ export function matchesCatalogQuery(item: CatalogItem, query: CatalogQuery): boo
   const text = query.text.trim().toLowerCase();
   if (!text) return true;
 
-  return [item.title, item.description ?? "", ...(item.keywords ?? [])]
-    .join(" ")
-    .toLowerCase()
-    .includes(text);
+  return [item.title, item.description ?? "", ...(item.keywords ?? [])].join(" ").toLowerCase().includes(text);
 }
 
 /**
  * The list, narrowed. Order is never touched — the author's `sortOrder` is the
  * shelf's order, and a filter answers "which of these", not "in what sequence".
  */
-export function filterCatalog<T>(
-  entries: readonly T[],
-  query: CatalogQuery,
-  read: (entry: T) => CatalogItem,
-): T[] {
+export function filterCatalog<T>(entries: readonly T[], query: CatalogQuery, read: (entry: T) => CatalogItem): T[] {
   if (isCatalogQueryEmpty(query)) return [...entries];
   return entries.filter((entry) => matchesCatalogQuery(read(entry), query));
 }

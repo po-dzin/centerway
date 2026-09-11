@@ -8,11 +8,11 @@ import styles from "./Builder.module.css";
 
 export type BuilderToolMode = "blocks" | "block" | "page";
 
-const TOOL_TABS: Array<{ mode: BuilderToolMode; label: string; icon: CwIconName }> = [
+const TOOL_TABS = [
   { mode: "blocks", label: "Блоки", icon: "view-cards" },
   { mode: "block", label: "Властивості блоку", icon: "settings" },
   { mode: "page", label: "Властивості сторінки", icon: "document" },
-];
+] as const satisfies ReadonlyArray<{ mode: BuilderToolMode; label: string; icon: CwIconName }>;
 
 /**
  * THE THREE MODES, AS A CONTROL OF THEIR OWN.

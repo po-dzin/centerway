@@ -175,11 +175,7 @@ export function isLessonCompleted(progress: CourseProgress, lessonId: string): b
  * Whether every checklist item that gates completion has been ticked.
  * An empty requirement list means the lesson has no gate.
  */
-export function checklistSatisfied(
-  progress: CourseProgress,
-  lessonId: string,
-  requiredItemIds: string[]
-): boolean {
+export function checklistSatisfied(progress: CourseProgress, lessonId: string, requiredItemIds: string[]): boolean {
   if (requiredItemIds.length === 0) return true;
   const checklist = lessonProgressOf(progress, lessonId).checklist;
   return requiredItemIds.every((itemId) => checklist[itemId] === true);

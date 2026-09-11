@@ -19,8 +19,8 @@ describe("course sources", () => {
     const { db, module } = await withDatabase();
     await module.registerCourseSource({ ...BASE, extractedText: "тіло документа" });
     expect(db.tables.lms_course_sources).toHaveLength(1);
-    expect(db.tables.lms_course_sources[0].course_id).toBe("course-1");
-    expect(db.tables.lms_course_sources[0].uploaded_by).toBe("author-1");
+    expect(db.tables.lms_course_sources![0]!.course_id).toBe("course-1");
+    expect(db.tables.lms_course_sources![0]!.uploaded_by).toBe("author-1");
   });
 
   it("refuses a kind the table's CHECK constraint would refuse, with a code the caller can read", async () => {
@@ -53,7 +53,15 @@ describe("course sources", () => {
     // The grant says "this course"; the service is what makes a guessed id from
     // a different course answer nothing at all.
     const { module } = await withDatabase([
-      { id: "src-1", course_id: "course-2", kind: "note", title: "чужа", extracted_text: "секрет", created_at: "1", updated_at: "1" },
+      {
+        id: "src-1",
+        course_id: "course-2",
+        kind: "note",
+        title: "чужа",
+        extracted_text: "секрет",
+        created_at: "1",
+        updated_at: "1",
+      },
     ]);
     expect(await module.readCourseSource("course-1", "src-1")).toBeNull();
     expect(await module.listCourseSources("course-1")).toEqual([]);
@@ -61,10 +69,18 @@ describe("course sources", () => {
 
   it("reports text length in the list without carrying the text", async () => {
     const { module } = await withDatabase([
-      { id: "src-1", course_id: "course-1", kind: "document", title: "т", extracted_text: "abcde", created_at: "1", updated_at: "1" },
+      {
+        id: "src-1",
+        course_id: "course-1",
+        kind: "document",
+        title: "т",
+        extracted_text: "abcde",
+        created_at: "1",
+        updated_at: "1",
+      },
     ]);
     const [summary] = await module.listCourseSources("course-1");
-    expect(summary.extractedChars).toBe(5);
+    expect(summary!.extractedChars).toBe(5);
     expect(summary).not.toHaveProperty("extractedText");
   });
 });

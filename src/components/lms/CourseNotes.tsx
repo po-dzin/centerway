@@ -79,9 +79,7 @@ export function CourseNotes({
                   // Straight to the block the mark sits in. The lesson treats an
                   // explicit hash as "take me here", so it overrides the saved
                   // reading position rather than fighting it.
-                  href={href(
-                    `/learn/${courseSlug}/${entry.slug}${item.anchor ? `#block-${item.anchor.blockId}` : ""}`
-                  )}
+                  href={href(`/learn/${courseSlug}/${entry.slug}${item.anchor ? `#block-${item.anchor.blockId}` : ""}`)}
                 >
                   <span className={styles.notesGlyph} aria-hidden="true">
                     <Icon name={item.kind === "bookmark" ? "bookmark-marked" : "quote"} size={14} />

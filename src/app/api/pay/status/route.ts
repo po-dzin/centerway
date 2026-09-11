@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { resolveReturnStatus } from "@/lib/payReturn";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { resolveReturnStatus } from "@/lib/payments/payReturn";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
@@ -57,8 +57,7 @@ export async function GET(req: NextRequest) {
     const status = resolveReturnStatus({
       fromParams: null,
       orderStatus: (order?.status as string | null) ?? null,
-      lastCallbackStatus:
-        typeof callbackStatus === "string" && callbackStatus.trim() ? callbackStatus.trim() : null,
+      lastCallbackStatus: typeof callbackStatus === "string" && callbackStatus.trim() ? callbackStatus.trim() : null,
     });
 
     /* Never cached. The whole value of this answer is that it is the current

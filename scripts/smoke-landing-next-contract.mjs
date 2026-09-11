@@ -1,8 +1,7 @@
-const baseUrl = (
-  process.env.SMOKE_UI_BASE_URL ||
-  process.env.SMOKE_BASE_URL ||
-  "http://localhost:8000"
-).replace(/\/+$/, "");
+const baseUrl = (process.env.SMOKE_UI_BASE_URL || process.env.SMOKE_BASE_URL || "http://localhost:8000").replace(
+  /\/+$/,
+  "",
+);
 
 const requireNextLanding = (process.env.SMOKE_REQUIRE_NEXT_LANDING || "0").toLowerCase() === "1";
 
@@ -14,17 +13,14 @@ const utilityRoutes = ["/reboot/thanks", "/irem/thanks.html"];
 const utilityAliasRoutes = ["/short/thanks", "/short/thanks.html"];
 const requiredSnippets = [
   'data-cw-runtime="next"',
-  '/shared/css/landing.bridge.css',
-  '/shared/js/landing-pixel.js',
-  '/shared/js/landing-runtime.js',
+  "/shared/css/landing.bridge.css",
+  "/shared/js/landing-pixel.js",
+  "/shared/js/landing-runtime.js",
 ];
-const forbiddenSnippets = [
-  "cw_attrib",
-  "Meta Pixel Code",
-];
+const forbiddenSnippets = ["cw_attrib", "Meta Pixel Code"];
 const utilityRequiredSnippets = [
   'data-cw-runtime="next"',
-  '/shared/js/landing-pixel.js',
+  "/shared/js/landing-pixel.js",
   "fbq('track', 'Purchase'",
   "cw_purchase_fired:",
 ];
@@ -107,7 +103,10 @@ async function main() {
       }
     }
 
-    if (checkedHtml.includes("localStorage.setItem('cw_attrib'") || checkedHtml.includes('localStorage.setItem("cw_attrib"')) {
+    if (
+      checkedHtml.includes("localStorage.setItem('cw_attrib'") ||
+      checkedHtml.includes('localStorage.setItem("cw_attrib"')
+    ) {
       fail(`${route}: found legacy cw_attrib writer`);
     } else {
       pass(`${route}: no legacy cw_attrib writer`);

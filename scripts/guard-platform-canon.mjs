@@ -16,14 +16,9 @@ const requiredExternalCanon = [
   "Реестр.md",
 ];
 
-const requiredLocalCanon = [
-  "AGENTS.md",
-  "docs/CANON.md",
-  "docs/platform_agent_preflight.md",
-];
+const requiredLocalCanon = ["AGENTS.md", "docs/CANON.md", "docs/platform_agent_preflight.md"];
 
 const platformCssRoot = "src/components/platform";
-const publicPlatformRoutesRoot = "src/app/(platform)";
 const tokenSourceFiles = ["src/app/globals.css", "data/design-tokens/cw.tokens.json"];
 const semanticRuntimeFiles = [
   "data/generator/route_family_contracts.json",
@@ -251,7 +246,9 @@ if (existsSync(preflightPath)) {
     }
   }
 
-  for (const file of requiredLocalCanon.filter((file) => file !== "AGENTS.md" && file !== "docs/platform_agent_preflight.md")) {
+  for (const file of requiredLocalCanon.filter(
+    (file) => file !== "AGENTS.md" && file !== "docs/platform_agent_preflight.md",
+  )) {
     if (!preflight.includes(file)) {
       failures.push(`platform_agent_preflight.md is missing local implementation reference: ${file}`);
     }
@@ -296,41 +293,17 @@ for (const absolute of platformCssFiles) {
   }
 }
 
-const publicPlatformRouteFiles = listFiles(publicPlatformRoutesRoot, (file) => {
-  const normalized = relativePath(file);
-  return normalized.endsWith("/page.tsx") && !normalized.includes("/admin/");
-});
-
-for (const absolute of publicPlatformRouteFiles) {
-  const file = relativePath(absolute);
-  const source = readFileSync(absolute, "utf8");
-
-  for (const match of collectMatches(source, /from\s+["']([^"']+\.css)["']/g)) {
-    addFailure(
-      `Public platform route files must not import CSS directly: ${match.value}. Route files must delegate to shared platform components/templates.`,
-      absolute,
-      match,
-    );
-  }
-
-  for (const match of collectMatches(source, /from\s+["']([^"']*PlatformContentStyles[^"']*)["']/g)) {
-    addFailure(
-      `Public platform route files must not import PlatformContentStyles directly: ${match.value}. Use approved shared platform components/templates instead.`,
-      absolute,
-      match,
-    );
-  }
-
-  if (file !== "src/app/(platform)/funnel-entry/[product]/page.tsx" && file !== "src/app/(platform)/lesson/pilot/page.tsx") {
-    for (const match of collectMatches(source, /<(main|section|aside|nav|header)\b/g)) {
-      addFailure(
-        `Public platform route files must not author structural layout tags directly: <${match.value}>. Move layout composition into shared platform components/templates.`,
-        absolute,
-        match,
-      );
-    }
-  }
-}
+/*
+ * The three rules that used to live here — no CSS import, no
+ * PlatformContentStyles, no structural layout tag in a public route file — are
+ * ESLint rules as of 2026-09-11 (`eslint.config.mjs`, "PUBLIC ROUTE FILES
+ * COMPOSE"). They were the only checks in this guard that read TypeScript, and
+ * a regex over lines cannot tell `<section>` in JSX from the same five letters
+ * in a string. `npm run guard:eslint` proves they still bite.
+ *
+ * What is left in this file is what ESLint cannot see: the canon documents, the
+ * platform CSS token discipline, and the generator manifests.
+ */
 
 if (semanticRuntimeFiles.every((file) => existsSync(path.join(repoRoot, file)))) {
   const routeContracts = readJson("data/generator/route_family_contracts.json");
@@ -366,7 +339,13 @@ if (semanticRuntimeFiles.every((file) => existsSync(path.join(repoRoot, file))))
         failures.push(`${screen.id}: missing block manifest ${screenBlock.block_manifest_id}`);
         continue;
       }
-      if (!block.semantic_role || !block.semantic_family || !block.user_question || !block.route_boundary || !block.renderer) {
+      if (
+        !block.semantic_role ||
+        !block.semantic_family ||
+        !block.user_question ||
+        !block.route_boundary ||
+        !block.renderer
+      ) {
         failures.push(`${block.id}: block contract is missing semantic role/family/question/boundary/renderer`);
       }
       if (!Array.isArray(block.required_fields) || block.required_fields.length === 0) {

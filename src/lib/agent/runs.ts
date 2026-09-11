@@ -13,6 +13,7 @@
  */
 
 import { createHash } from "node:crypto";
+import { asJson } from "@/lib/db/types";
 
 import { adminClient } from "@/lib/auth/adminClient";
 import { budgetDayStart, budgetVerdict, type BudgetSubject, type BudgetVerdict } from "./budget";
@@ -84,15 +85,17 @@ export type AgentMessageInput = {
  * session the author is in the middle of.
  */
 export async function recordAgentMessage(input: AgentMessageInput): Promise<void> {
-  const { error } = await adminClient().from("agent_messages").insert({
-    run_id: input.runId,
-    seq: input.seq,
-    role: input.role,
-    content: input.content ?? null,
-    tool_name: input.toolName ?? null,
-    tool_args: input.toolArgs === undefined ? null : input.toolArgs,
-    tool_result: input.toolResult ?? null,
-  });
+  const { error } = await adminClient()
+    .from("agent_messages")
+    .insert({
+      run_id: input.runId,
+      seq: input.seq,
+      role: input.role,
+      content: input.content ?? null,
+      tool_name: input.toolName ?? null,
+      tool_args: input.toolArgs === undefined ? null : asJson(input.toolArgs),
+      tool_result: input.toolResult ?? null,
+    });
   if (error) console.error("[agent] message log failed:", error.message);
 }
 
@@ -124,7 +127,10 @@ export async function finishAgentRun(input: {
  * project ever reaches the point where this scan is felt, the honest fix is a
  * materialised daily total, not a cleverer query here.
  */
-async function tokensSince(since: string, subject?: { userId?: string | null; guestKey?: string | null }): Promise<number> {
+async function tokensSince(
+  since: string,
+  subject?: { userId?: string | null; guestKey?: string | null },
+): Promise<number> {
   let query = adminClient().from("agent_runs").select("input_tokens, output_tokens").gte("started_at", since);
   if (subject?.userId) query = query.eq("user_id", subject.userId);
   else if (subject?.guestKey) query = query.eq("guest_key", subject.guestKey);

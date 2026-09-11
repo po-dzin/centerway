@@ -16,19 +16,23 @@ const course: Course = {
   schedule: { mode: "open" },
   entitlementProductCodes: [],
   visibility: "hidden",
-  modules: [{
-    id: "fresh-module",
-    slug: "start",
-    title: "Початок",
-    order: 1,
-    lessons: [{
-      id: "fresh-lesson",
-      slug: "welcome",
-      title: "Вступ",
+  modules: [
+    {
+      id: "fresh-module",
+      slug: "start",
+      title: "Початок",
       order: 1,
-      blocks: [{ id: "fresh-block", type: "lesson_objective", text: "Почати." }],
-    }],
-  }],
+      lessons: [
+        {
+          id: "fresh-lesson",
+          slug: "welcome",
+          title: "Вступ",
+          order: 1,
+          blocks: [{ id: "fresh-block", type: "lesson_objective", text: "Почати." }],
+        },
+      ],
+    },
+  ],
 };
 
 const session = { user: { id: "author-1" } };
@@ -58,8 +62,8 @@ vi.mock("@/lib/lms/builderAccess", () => ({
 // The routes now carry a rate limit, which talks to Postgres. These tests are
 // about what the routes do with a course, so the limiter answers "allowed"
 // rather than failing open through a real client that has no database.
-vi.mock("@/lib/rateLimit", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/rateLimit")>()),
+vi.mock("@/lib/api/rateLimit", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/api/rateLimit")>()),
   enforceRateLimit: async () => ({ allowed: true, retryAfter: 0, count: 0 }),
 }));
 

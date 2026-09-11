@@ -138,12 +138,7 @@ function assertPathAbsent(filePath, label) {
   pass(label);
 }
 
-function assertNoRepoPattern({
-  pattern,
-  label,
-  include = /\.(?:[cm]?[jt]sx?|mjs|cjs|css|html)$/,
-  ignore = [],
-}) {
+function assertNoRepoPattern({ pattern, label, include = /\.(?:[cm]?[jt]sx?|mjs|cjs|css|html)$/, ignore = [] }) {
   const offenders = [];
   for (const dir of sourceDirsForContractScan) {
     const root = path.join(rootDir, dir);
@@ -271,11 +266,15 @@ function assertSourceHtmlHealth() {
   ];
 
   for (const filePath of htmlFiles) {
-    assertNoPattern(filePath, /css\/(main|media|main2)\.css/, `No deprecated CSS include in ${path.relative(rootDir, filePath)}`);
+    assertNoPattern(
+      filePath,
+      /css\/(main|media|main2)\.css/,
+      `No deprecated CSS include in ${path.relative(rootDir, filePath)}`,
+    );
     assertNoPattern(
       filePath,
       /shared\/css\/landing\.css/,
-      `No deprecated shared landing include in ${path.relative(rootDir, filePath)}`
+      `No deprecated shared landing include in ${path.relative(rootDir, filePath)}`,
     );
   }
 }
@@ -296,7 +295,11 @@ function assertThemeCssGuardrails(filePath, product) {
 function assertCrossLayerConsumptionGuardrails(filePath, product) {
   const labelPrefix = path.relative(rootDir, filePath);
   assertNoConsumptionPattern(filePath, /var\(--legacy-color-/g, `${labelPrefix}: no legacy-color consumption`);
-  assertNoConsumptionPattern(filePath, /var\(--product-color-ref-/g, `${labelPrefix}: no product-color-ref consumption`);
+  assertNoConsumptionPattern(
+    filePath,
+    /var\(--product-color-ref-/g,
+    `${labelPrefix}: no product-color-ref consumption`,
+  );
   assertNoConsumptionPattern(filePath, /var\(--product-/g, `${labelPrefix}: no product-* consumption`);
   assertNoConsumptionPattern(filePath, /var\(--ds-color-/g, `${labelPrefix}: no direct ds-color consumption`);
   if (product === "irem") {
@@ -316,7 +319,7 @@ function parseHeroStringsByProduct(contentFilePath) {
   for (const product of products) {
     const productBlockRegex = new RegExp(
       `${escapeRegExp(product)}\\s*:\\s*\\{[\\s\\S]*?hero\\s*:\\s*\\{([\\s\\S]*?)\\}\\s*,\\s*utility\\s*:`,
-      "m"
+      "m",
     );
     const productMatch = source.match(productBlockRegex);
     if (!productMatch) {
@@ -426,9 +429,7 @@ function main() {
   // there and only there.
   assertTokens(
     files.appGlobals,
-    requiredDsTokens.filter(
-      (token) => !token.startsWith("--ds-color-product-") && !token.startsWith("--ds-radius-"),
-    ),
+    requiredDsTokens.filter((token) => !token.startsWith("--ds-color-product-") && !token.startsWith("--ds-radius-")),
     "App globals DS bridge contract",
   );
   assertTokens(files.appGlobals, requiredSemanticTokens, "App globals semantic layer contract");
@@ -444,7 +445,7 @@ function main() {
   assertContains(
     files.landingConfig,
     ["/shared/css/landing.bridge.css", "/shared/js/landing-pixel.js", "/shared/js/landing-runtime.js"],
-    "Landing shell assets include managed bridge/runtime"
+    "Landing shell assets include managed bridge/runtime",
   );
   assertContains(
     files.landingPrepare,
@@ -456,7 +457,7 @@ function main() {
       "stripInlineTracking",
       "SCRIPT_TAG_BLOCK",
     ],
-    "Unified landing HTML preparation pipeline sentinels"
+    "Unified landing HTML preparation pipeline sentinels",
   );
 
   assertDeprecatedCssRemoval();

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
-import { GoogleTagProvider } from "@/lib/tracking/GoogleTagProvider";
+import { GoogleTagProvider } from "@/components/tracking/GoogleTagProvider";
 import { Suspense } from "react";
 import { PLATFORM_GROUND } from "@/lib/platform/chrome";
 import { BRAND } from "@/lib/brand/identity";
@@ -30,7 +30,6 @@ export const metadata: Metadata = {
     images: ["/cw/brand/cw-og-cover.png"],
   },
 };
-
 
 export const viewport: Viewport = {
   width: "device-width",

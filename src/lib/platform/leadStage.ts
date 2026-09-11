@@ -24,7 +24,8 @@
  * finds nothing open the second time.
  */
 
-import { canonicalProductKey } from "@/lib/reporting/productIdentity";
+import { canonicalProductKey } from "@/lib/analytics/productIdentity";
+import type { Db } from "@/lib/db/server";
 
 /**
  * THE STAGE VOCABULARY, and why it is not in the route that reads it.
@@ -47,7 +48,12 @@ export function isLeadStage(value: unknown): value is LeadStage {
 }
 import { normalizeCustomerEmail, normalizeCustomerPhone } from "@/lib/platform/customerIdentity";
 
-type SupabaseLike = { from: (table: string) => any };
+/* Only `.from` is ever used, and taking only that keeps the tests' fake table
+   honest — it has to satisfy the real builder's shape, not `any`. */
+type SupabaseLike = Pick<Db, "from">;
+
+/** The two columns this module reads off a `leads` row. */
+type LeadRow = { id: string; product_code: string | null };
 
 export type LeadCloseScope = "same_product" | "all_open";
 
@@ -72,7 +78,7 @@ export async function closeWonLeadsForPurchase(
     phone?: string | null;
     productCode?: string | null;
     scope: LeadCloseScope;
-  }
+  },
 ): Promise<CloseWonLeadsResult> {
   const email = normalizeCustomerEmail(params.email);
   const phone = normalizeCustomerPhone(params.phone);
@@ -92,7 +98,7 @@ export async function closeWonLeadsForPurchase(
        Equality filters carry their values out of band, so nothing the caller
        was given can change the SHAPE of the query. */
     const openStages = [...LEAD_OPEN_STAGES];
-    const found = new Map<string, { id: string; product_code: string | null }>();
+    const found = new Map<string, LeadRow>();
 
     for (const [column, value] of [
       ["email", email],
@@ -105,7 +111,7 @@ export async function closeWonLeadsForPurchase(
         .in("stage", openStages)
         .eq(column, value);
       if (error) continue;
-      for (const row of (data ?? []) as Array<{ id: string; product_code: string | null }>) {
+      for (const row of data ?? []) {
         found.set(row.id, row);
       }
     }
@@ -117,9 +123,9 @@ export async function closeWonLeadsForPurchase(
     const matching =
       params.scope === "all_open"
         ? data
-        : data.filter((row: any) => paidKey !== "" && canonicalProductKey(row.product_code, "") === paidKey);
+        : data.filter((row) => paidKey !== "" && canonicalProductKey(row.product_code, "") === paidKey);
 
-    const ids = matching.map((row: any) => row.id).filter(Boolean);
+    const ids = matching.map((row) => row.id).filter(Boolean);
     if (ids.length === 0) return { closed: 0, reason: "nothing_open" };
 
     const { error: writeError } = await db

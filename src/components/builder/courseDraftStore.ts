@@ -25,9 +25,7 @@ export type DurableCourseDraft = {
 };
 
 export type DurableDraftDecision =
-  | { kind: "none" }
-  | { kind: "recover"; draft: DurableCourseDraft }
-  | { kind: "conflict"; draft: DurableCourseDraft };
+  { kind: "none" } | { kind: "recover"; draft: DurableCourseDraft } | { kind: "conflict"; draft: DurableCourseDraft };
 
 /**
  * AS THE SERVER WOULD HOLD THEM, not as they sit in the editor.
@@ -107,7 +105,7 @@ export async function writeDurableCourseDraft(draft: DurableCourseDraft): Promis
 }
 
 export async function readDurableCourseDraft(courseId: string): Promise<DurableCourseDraft | null> {
-  return await withStore("readonly", (store) => store.get(courseId)) as DurableCourseDraft | null;
+  return (await withStore("readonly", (store) => store.get(courseId))) as DurableCourseDraft | null;
 }
 
 export async function clearDurableCourseDraft(courseId: string): Promise<void> {

@@ -1,4 +1,5 @@
 import funnelContentJson from "../../../data/generator/funnel_content.json";
+import { isNonEmptyString, isRecord } from "@/lms-core/inline";
 
 export type FunnelRouteKey = "consult" | "detox" | "herbs";
 export type EthnoIconName = "seed" | "spiral" | "hands" | "leaf" | "person";
@@ -69,14 +70,6 @@ export type FunnelContentManifest = {
   content: Record<FunnelRouteKey, RouteContent>;
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
-}
-
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
@@ -86,15 +79,33 @@ function validateRouteContent(route: string, value: unknown): asserts value is R
   assert(isNonEmptyString(value.eyebrow), `funnel_content_missing_eyebrow:${route}`);
   assert(isNonEmptyString(value.title), `funnel_content_missing_title:${route}`);
   assert(isNonEmptyString(value.lead), `funnel_content_missing_lead:${route}`);
-  assert(Array.isArray(value.heroHighlights) && value.heroHighlights.every(isNonEmptyString), `funnel_content_invalid_hero_highlights:${route}`);
+  assert(
+    Array.isArray(value.heroHighlights) && value.heroHighlights.every(isNonEmptyString),
+    `funnel_content_invalid_hero_highlights:${route}`,
+  );
   assert(Array.isArray(value.routeCards) && value.routeCards.length > 0, `funnel_content_invalid_route_cards:${route}`);
-  assert(Array.isArray(value.howItWorks) && value.howItWorks.length > 0, `funnel_content_invalid_how_it_works:${route}`);
-  assert(Array.isArray(value.stageBreakdown) && value.stageBreakdown.length > 0, `funnel_content_invalid_stage_breakdown:${route}`);
+  assert(
+    Array.isArray(value.howItWorks) && value.howItWorks.length > 0,
+    `funnel_content_invalid_how_it_works:${route}`,
+  );
+  assert(
+    Array.isArray(value.stageBreakdown) && value.stageBreakdown.length > 0,
+    `funnel_content_invalid_stage_breakdown:${route}`,
+  );
   assert(Array.isArray(value.proof) && value.proof.length > 0, `funnel_content_invalid_proof:${route}`);
   assert(Array.isArray(value.boundary) && value.boundary.length > 0, `funnel_content_invalid_boundary:${route}`);
-  assert(Array.isArray(value.nextStepChecklist) && value.nextStepChecklist.length > 0, `funnel_content_invalid_next_step:${route}`);
-  assert(isRecord(value.nextBestRoute) && isNonEmptyString(value.nextBestRoute.title), `funnel_content_invalid_next_best_route:${route}`);
-  assert(isRecord(value.resourceEntry) && isNonEmptyString(value.resourceEntry.title), `funnel_content_invalid_resource_entry:${route}`);
+  assert(
+    Array.isArray(value.nextStepChecklist) && value.nextStepChecklist.length > 0,
+    `funnel_content_invalid_next_step:${route}`,
+  );
+  assert(
+    isRecord(value.nextBestRoute) && isNonEmptyString(value.nextBestRoute.title),
+    `funnel_content_invalid_next_best_route:${route}`,
+  );
+  assert(
+    isRecord(value.resourceEntry) && isNonEmptyString(value.resourceEntry.title),
+    `funnel_content_invalid_resource_entry:${route}`,
+  );
 }
 
 function validateManifest(input: unknown): FunnelContentManifest {

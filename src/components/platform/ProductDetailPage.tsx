@@ -1,9 +1,12 @@
-import { PlatformOfferResultList, PlatformOfferSurfaceTemplate } from "@/components/platform/PlatformOfferSurfaceTemplate";
+import {
+  PlatformOfferResultList,
+  PlatformOfferSurfaceTemplate,
+} from "@/components/platform/PlatformOfferSurfaceTemplate";
 import { OfferCheckoutPanel } from "@/components/platform/OfferCommerce";
 import { productOfferCommerce } from "@/lib/platform/offerCommerce";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import type { programs } from "@/lib/platform/content";
-import { JsonLd } from "@/lib/seo/StructuredData";
+import { JsonLd } from "@/components/seo/StructuredData";
 import { breadcrumbLd, graph, productLd } from "@/lib/seo/jsonLd";
 
 type Product = (typeof programs)[number];
@@ -43,7 +46,7 @@ export async function ProductDetailPage({ product }: { product: Product }) {
               { path: "/", name: "CenterWay" },
               { path: "/products", name: "Продукти" },
               { path: `/products/${product.slug}`, name: product.title },
-            ])
+            ]),
           )}
         />
       }
@@ -88,8 +91,7 @@ export async function ProductDetailPage({ product }: { product: Product }) {
       supportLeft={{
         label: "Підбір",
         title: "Запит на підбір природної підтримки",
-        lead:
-          "Ця сторінка не підміняє діагностику і не робить вигляд, що банку можна обрати без контексту. Залиште запит, якщо хочете пройти через підбір, а не випадкову покупку.",
+        lead: "Ця сторінка не підміняє діагностику і не робить вигляд, що банку можна обрати без контексту. Залиште запит, якщо хочете пройти через підбір, а не випадкову покупку.",
       }}
       form={
         commerce.mode === "lead"

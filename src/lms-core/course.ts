@@ -7,13 +7,7 @@
  * Shape mirrors ReOS `Архитектура.md` layer C: Program ⊃ Course ⊃ Module ⊃ Lesson ⊃ Block.
  */
 
-import {
-  assert,
-  isNonEmptyString,
-  isRecord,
-  type InlineText,
-  validateInlineText,
-} from "./inline";
+import { assert, isNonEmptyString, isRecord, type InlineText, validateInlineText } from "./inline";
 import { addressedBlocks, validateLessonBlock, type LessonBlock } from "./blocks";
 import { validateCourseTheme, type CourseTheme } from "./theme";
 import { courseTitleName } from "./title";
@@ -354,7 +348,7 @@ export type CourseValidationMode = "write" | "stored";
 export function validateCourse(
   input: unknown,
   path = "course",
-  mode: CourseValidationMode = "write"
+  mode: CourseValidationMode = "write",
 ): asserts input is Course {
   const bounded = mode === "write";
   assert(isRecord(input), `lms_course_invalid_shape:${path}`);
@@ -365,23 +359,17 @@ export function validateCourse(
   // under them. See the constants above.
   assert(
     !bounded || courseTitleName(input.title).trim().length <= COURSE_TITLE_MAX,
-    `lms_course_title_too_long:${path}`
+    `lms_course_title_too_long:${path}`,
   );
-  assert(
-    !bounded || input.title.trim().length <= COURSE_TITLE_RAW_MAX,
-    `lms_course_title_too_long:${path}`
-  );
+  assert(!bounded || input.title.trim().length <= COURSE_TITLE_RAW_MAX, `lms_course_title_too_long:${path}`);
   assert(isNonEmptyString(input.programSlug), `lms_course_missing_program:${path}`);
   assert(isNonEmptyString(input.brand), `lms_course_missing_brand:${path}`);
-  assert(
-    input.locale === "uk" || input.locale === "en",
-    `lms_course_invalid_locale:${path}`
-  );
+  assert(input.locale === "uk" || input.locale === "en", `lms_course_invalid_locale:${path}`);
   assert(isNonEmptyString(input.translationGroupId), `lms_course_missing_translation_group:${path}`);
   assert(input.status === "draft" || input.status === "published", `lms_course_invalid_status:${path}`);
   assert(
     typeof input.version === "number" && Number.isInteger(input.version) && input.version > 0,
-    `lms_course_invalid_version:${path}`
+    `lms_course_invalid_version:${path}`,
   );
   if (input.summary !== undefined) validateInlineText(input.summary, `${path}.summary`);
   if (input.theme !== undefined) validateCourseTheme(input.theme, `${path}.theme`);
@@ -400,7 +388,7 @@ export function validateCourse(
       if (value === undefined) continue;
       assert(
         typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100,
-        `lms_course_invalid_cover_crop:${path}.${cropKey}`
+        `lms_course_invalid_cover_crop:${path}.${cropKey}`,
       );
     }
     // Not `Number.isInteger` like the focal points above: a zoom worth having
@@ -411,7 +399,7 @@ export function validateCourse(
       if (value === undefined) continue;
       assert(
         typeof value === "number" && Number.isFinite(value) && value >= 1 && value <= 4,
-        `lms_course_invalid_cover_crop:${path}.${scaleKey}`
+        `lms_course_invalid_cover_crop:${path}.${scaleKey}`,
       );
     }
   }
@@ -419,7 +407,7 @@ export function validateCourse(
   if (input.sortOrder !== undefined) {
     assert(
       typeof input.sortOrder === "number" && Number.isInteger(input.sortOrder),
-      `lms_course_invalid_sort_order:${path}`
+      `lms_course_invalid_sort_order:${path}`,
     );
   }
 
@@ -442,10 +430,7 @@ export function validateCourse(
   }
 
   if (input.kind !== undefined) {
-    assert(
-      (COURSE_KINDS as readonly string[]).includes(input.kind as string),
-      `lms_course_invalid_kind:${path}`
-    );
+    assert((COURSE_KINDS as readonly string[]).includes(input.kind as string), `lms_course_invalid_kind:${path}`);
   }
 
   if (input.categories !== undefined) {
@@ -456,11 +441,11 @@ export function validateCourse(
       Array.isArray(input.categories) &&
         input.categories.length > 0 &&
         input.categories.every((one) => (COURSE_CATEGORIES as readonly string[]).includes(one as string)),
-      `lms_course_invalid_categories:${path}`
+      `lms_course_invalid_categories:${path}`,
     );
     assert(
       new Set(input.categories as string[]).size === input.categories.length,
-      `lms_course_duplicate_categories:${path}`
+      `lms_course_duplicate_categories:${path}`,
     );
   }
 
@@ -470,7 +455,7 @@ export function validateCourse(
         Number.isInteger(input.durationDays) &&
         input.durationDays >= 1 &&
         input.durationDays <= COURSE_DURATION_DAYS_MAX,
-      `lms_course_invalid_duration_days:${path}`
+      `lms_course_invalid_duration_days:${path}`,
     );
   }
 
@@ -480,7 +465,7 @@ export function validateCourse(
     // nothing.
     assert(
       Array.isArray(input.results) && input.results.length > 0 && input.results.every(isNonEmptyString),
-      `lms_course_invalid_results:${path}`
+      `lms_course_invalid_results:${path}`,
     );
   }
 
@@ -491,7 +476,7 @@ export function validateCourse(
     if (value === undefined) continue;
     assert(
       Array.isArray(value) && value.length > 0 && value.every(isNonEmptyString),
-      `lms_course_invalid_${listKey}:${path}`
+      `lms_course_invalid_${listKey}:${path}`,
     );
   }
 
@@ -504,20 +489,20 @@ export function validateCourse(
   if (input.visibility !== undefined) {
     assert(
       (COURSE_VISIBILITIES as readonly string[]).includes(input.visibility as string),
-      `lms_course_invalid_visibility:${path}`
+      `lms_course_invalid_visibility:${path}`,
     );
   }
 
   assert(
     Array.isArray(input.entitlementProductCodes) && input.entitlementProductCodes.every(isNonEmptyString),
-    `lms_course_invalid_entitlement:${path}`
+    `lms_course_invalid_entitlement:${path}`,
   );
 
   const schedule = input.schedule;
   assert(isRecord(schedule), `lms_course_missing_schedule:${path}`);
   assert(
     schedule.mode === "open" || schedule.mode === "sequential" || schedule.mode === "daily",
-    `lms_course_invalid_schedule_mode:${path}`
+    `lms_course_invalid_schedule_mode:${path}`,
   );
   if (schedule.gate !== undefined) {
     assert(schedule.gate === "soft" || schedule.gate === "hard", `lms_course_invalid_schedule_gate:${path}`);
@@ -528,7 +513,7 @@ export function validateCourse(
         Number.isInteger(schedule.reminderHour) &&
         schedule.reminderHour >= 0 &&
         schedule.reminderHour <= 23,
-      `lms_course_invalid_reminder_hour:${path}`
+      `lms_course_invalid_reminder_hour:${path}`,
     );
   }
   if (schedule.mode === "daily" && schedule.start === "date") {
@@ -548,7 +533,7 @@ export function validateCourse(
     assert(isNonEmptyString(module.title), `lms_module_missing_title:${modulePath}`);
     assert(
       typeof module.order === "number" && Number.isInteger(module.order) && module.order > 0,
-      `lms_module_invalid_order:${modulePath}`
+      `lms_module_invalid_order:${modulePath}`,
     );
     if (module.reference !== undefined) {
       assert(typeof module.reference === "boolean", `lms_module_invalid_reference:${modulePath}`);
@@ -564,7 +549,7 @@ export function validateCourse(
       assert(isNonEmptyString(lesson.title), `lms_lesson_missing_title:${lessonPath}`);
       assert(
         typeof lesson.order === "number" && Number.isInteger(lesson.order) && lesson.order > 0,
-        `lms_lesson_invalid_order:${lessonPath}`
+        `lms_lesson_invalid_order:${lessonPath}`,
       );
 
       // Lesson slugs are the URL key, so they must be unique across the course.
@@ -578,7 +563,7 @@ export function validateCourse(
       if (schedule.mode === "daily" && module.reference !== true) {
         assert(
           typeof lesson.dayIndex === "number" && Number.isInteger(lesson.dayIndex) && lesson.dayIndex > 0,
-          `lms_lesson_missing_day_index:${lessonPath}`
+          `lms_lesson_missing_day_index:${lessonPath}`,
         );
         assert(!dayIndexes.has(lesson.dayIndex), `lms_lesson_duplicate_day_index:${lessonPath}`);
         dayIndexes.add(lesson.dayIndex);
@@ -593,10 +578,11 @@ export function validateCourse(
       addressedBlocks(lesson.blocks as LessonBlock[]).forEach(({ block, path: blockPath }) => {
         assert(!blockIds.has(block.id), `lms_block_duplicate_id:${lessonPath}.${blockPath}`);
         blockIds.add(block.id);
-        if (block.type === "checklist") block.items.forEach((item) => {
-          assert(!checklistIds.has(item.id), `lms_block_checklist_duplicate_item_id:${lessonPath}.${blockPath}`);
-          checklistIds.add(item.id);
-        });
+        if (block.type === "checklist")
+          block.items.forEach((item) => {
+            assert(!checklistIds.has(item.id), `lms_block_checklist_duplicate_item_id:${lessonPath}.${blockPath}`);
+            checklistIds.add(item.id);
+          });
       });
     });
   });
@@ -606,11 +592,7 @@ export function validateCourse(
 export function flattenLessons(course: Course): Array<{ module: CourseModule; lesson: Lesson }> {
   return [...course.modules]
     .sort((a, b) => a.order - b.order)
-    .flatMap((module) =>
-      [...module.lessons]
-        .sort((a, b) => a.order - b.order)
-        .map((lesson) => ({ module, lesson }))
-    );
+    .flatMap((module) => [...module.lessons].sort((a, b) => a.order - b.order).map((lesson) => ({ module, lesson })));
 }
 
 /**

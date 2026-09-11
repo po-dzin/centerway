@@ -26,6 +26,8 @@ export function moveModuleTo(modules: CourseModule[], from: DragRef, to: DragRef
   const next = clone(modules);
   const insert = landingIndex(from.index, to.index, edge, true);
   const [moved] = next.splice(from.index, 1);
+  // An index outside the list is not a move: leave the original untouched.
+  if (!moved) return modules;
   next.splice(insert, 0, moved);
   return next;
 }
@@ -39,12 +41,7 @@ export function moveModuleTo(modules: CourseModule[], from: DragRef, to: DragRef
  * because `validateCourse` requires at least one lesson in each and the author
  * would meet that as a save error long after the gesture.
  */
-export function moveLessonTo(
-  modules: CourseModule[],
-  from: DragRef,
-  to: DragRef,
-  edge: DropEdge
-): CourseModule[] {
+export function moveLessonTo(modules: CourseModule[], from: DragRef, to: DragRef, edge: DropEdge): CourseModule[] {
   const next = clone(modules);
   const source = next[from.group];
   const target = next[to.group];
@@ -53,6 +50,7 @@ export function moveLessonTo(
 
   const insert = landingIndex(from.index, to.index, edge, source === target);
   const [moved] = source.lessons.splice(from.index, 1);
+  if (!moved) return modules;
   target.lessons.splice(insert, 0, moved);
   return next;
 }
@@ -67,6 +65,7 @@ export function stepModule(modules: CourseModule[], index: number, delta: number
   if (target < 0 || target >= modules.length) return null;
   const next = clone(modules);
   const [moved] = next.splice(index, 1);
+  if (!moved) return null;
   next.splice(target, 0, moved);
   return next;
 }
@@ -80,7 +79,7 @@ export function stepLesson(
   modules: CourseModule[],
   moduleIndex: number,
   lessonIndex: number,
-  delta: number
+  delta: number,
 ): CourseModule[] | null {
   const next = clone(modules);
   const from = next[moduleIndex];
@@ -89,6 +88,7 @@ export function stepLesson(
 
   if (target >= 0 && target < from.lessons.length) {
     const [moved] = from.lessons.splice(lessonIndex, 1);
+    if (!moved) return null;
     from.lessons.splice(target, 0, moved);
     return next;
   }
@@ -99,6 +99,7 @@ export function stepLesson(
 
   const [moved] = from.lessons.splice(lessonIndex, 1);
   const neighbour = next[neighbourIndex];
+  if (!moved || !neighbour) return null;
   neighbour.lessons.splice(delta > 0 ? 0 : neighbour.lessons.length, 0, moved);
   return next;
 }
@@ -110,16 +111,12 @@ export function removeModule(modules: CourseModule[], index: number): CourseModu
 }
 
 /** Nor the last lesson of a module — that is a request to delete the module. */
-export function removeLesson(
-  modules: CourseModule[],
-  moduleIndex: number,
-  lessonIndex: number
-): CourseModule[] | null {
+export function removeLesson(modules: CourseModule[], moduleIndex: number, lessonIndex: number): CourseModule[] | null {
   const holder = modules[moduleIndex];
   if (!holder || holder.lessons.length <= 1) return null;
   return modules.map((entry, index) =>
     index === moduleIndex
       ? { ...entry, lessons: entry.lessons.filter((_, position) => position !== lessonIndex) }
-      : entry
+      : entry,
   );
 }

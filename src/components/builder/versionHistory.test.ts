@@ -12,7 +12,8 @@ describe("builder version history", () => {
       modules: resetDay.modules.length,
       lessons: resetDay.modules.reduce((total, module) => total + module.lessons.length, 0),
       blocks: resetDay.modules.reduce(
-        (total, module) => total + module.lessons.reduce((lessonTotal, lesson) => lessonTotal + lesson.blocks.length, 0),
+        (total, module) =>
+          total + module.lessons.reduce((lessonTotal, lesson) => lessonTotal + lesson.blocks.length, 0),
         0,
       ),
     });

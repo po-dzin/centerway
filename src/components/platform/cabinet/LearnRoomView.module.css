@@ -147,7 +147,7 @@
     --room-select-tint: color-mix(in srgb, var(--room-brass) 34%, var(--room-fill));
     --room-cast: color-mix(in srgb, var(--cw-mat-scrim-ink) 62%, transparent);
     --room-ink-w: 1.7;
-  --room-wall-shade: 0.62;
+    --room-wall-shade: 0.62;
   }
 }
 
@@ -240,10 +240,18 @@
   mask-image: url("/cw/platform/learn/room-wall-matte.webp"), var(--room-edge-fade);
   -webkit-mask-composite: source-in;
   mask-composite: intersect;
-  -webkit-mask-size: cover, 100% 100%;
-  mask-size: cover, 100% 100%;
-  -webkit-mask-position: 50% 50%, 50% 50%;
-  mask-position: 50% 50%, 50% 50%;
+  -webkit-mask-size:
+    cover,
+    100% 100%;
+  mask-size:
+    cover,
+    100% 100%;
+  -webkit-mask-position:
+    50% 50%,
+    50% 50%;
+  mask-position:
+    50% 50%,
+    50% 50%;
   -webkit-mask-repeat: no-repeat, no-repeat;
   mask-repeat: no-repeat, no-repeat;
 }
@@ -302,7 +310,8 @@
 }
 
 .nicheBox {
-  --niche-depth: inset 0 22px 32px -14px var(--room-cast), inset 18px 0 30px -16px var(--room-cast),
+  --niche-depth:
+    inset 0 22px 32px -14px var(--room-cast), inset 18px 0 30px -16px var(--room-cast),
     inset -8px -12px 24px -16px color-mix(in srgb, var(--room-paper-lit) 55%, transparent);
   position: absolute;
   inset: 0;
@@ -359,7 +368,9 @@
    its own shadow, and around it the room draws a frame — with the same pen. */
 .niche:hover .nicheBox,
 .niche[data-hot="true"] .nicheBox {
-  box-shadow: var(--niche-depth), inset 0 26px 40px -14px var(--room-cast);
+  box-shadow:
+    var(--niche-depth),
+    inset 0 26px 40px -14px var(--room-cast);
 }
 
 /* The mark lives in the ROOM, not in the shelf: it is drawn outside the cut,
@@ -514,7 +525,9 @@
   background: transparent;
   transform-origin: 50% 100%;
   transform: translateZ(0) rotate(var(--tilt, 0deg));
-  transition: transform 750ms cubic-bezier(0.16, 0.5, 0.2, 1), filter 600ms ease;
+  transition:
+    transform 750ms cubic-bezier(0.16, 0.5, 0.2, 1),
+    filter 600ms ease;
   cursor: pointer;
   overflow: visible;
   text-decoration: none;
@@ -706,7 +719,9 @@
   color: var(--room-ink-faint);
   cursor: pointer;
   border-block-end: 1px solid transparent;
-  transition: color 220ms ease, border-color 220ms ease;
+  transition:
+    color 220ms ease,
+    border-color 220ms ease;
 }
 
 .back:hover,
@@ -780,7 +795,9 @@
   /* Attention here has the shape of a drawing, not of a card: a strip and a
      rule, no radius, nothing lifting off the sheet. */
   border-radius: 0;
-  transition: padding-inline-start 220ms ease, color 180ms ease;
+  transition:
+    padding-inline-start 220ms ease,
+    color 180ms ease;
 }
 
 .shelfList > li:last-child .row {
@@ -854,7 +871,9 @@
   pointer-events: none;
   transform: scaleX(0.58);
   transform-origin: center;
-  transition: opacity 160ms ease, transform 160ms ease;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
 }
 
 .rowMark svg {

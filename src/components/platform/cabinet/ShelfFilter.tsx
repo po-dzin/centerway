@@ -63,9 +63,7 @@ export function matchesShelfQuery(
   }
   const text = query.text.trim().toLowerCase();
   if (!text) return true;
-  const hay = [entry.title, ...entry.categories.map((c) => copy.courseCategories[c])]
-    .join(" ")
-    .toLowerCase();
+  const hay = [entry.title, ...entry.categories.map((c) => copy.courseCategories[c])].join(" ").toLowerCase();
   return hay.includes(text);
 }
 

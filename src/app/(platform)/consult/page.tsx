@@ -2,7 +2,7 @@ import { PlatformConsultPage } from "@/components/platform/PlatformStandalonePag
 import type { Metadata } from "next";
 import { describe } from "@/lib/brand/identity";
 import { pageMetadata } from "@/lib/seo/metadata";
-import { JsonLd } from "@/lib/seo/StructuredData";
+import { JsonLd } from "@/components/seo/StructuredData";
 import { breadcrumbLd, graph, personLd, serviceLd } from "@/lib/seo/jsonLd";
 import { BRAND } from "@/lib/brand/identity";
 import { listListedAuthors } from "@/lib/lms/authors";
@@ -10,7 +10,7 @@ import { listListedAuthors } from "@/lib/lms/authors";
 export const metadata: Metadata = pageMetadata({
   title: "Аюрведична консультація",
   description: describe(
-    "Персональна консультація з Євгенієм Корякіним: онлайн до 90 хвилин, аюрведичний профіль, харчування, режим і план на 2-4 тижні. Освіта, практика і підхід автора."
+    "Персональна консультація з Євгенієм Корякіним: онлайн до 90 хвилин, аюрведичний профіль, харчування, режим і план на 2-4 тижні. Освіта, практика і підхід автора.",
   ),
   path: "/consult",
 });
@@ -43,7 +43,7 @@ export default async function ConsultPage() {
           breadcrumbLd([
             { path: "/", name: "CenterWay" },
             { path: "/consult", name: "Консультація" },
-          ])
+          ]),
         )}
       />
       <PlatformConsultPage authors={authors} />

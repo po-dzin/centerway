@@ -6,7 +6,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 export const metadata: Metadata = pageMetadata({
   title: "Тест доші: безкоштовно, 12 питань",
   description: describe(
-    "Безкоштовний тест доші CenterWay: 12 питань про сон, травлення, енергію і реакцію на стрес — і зрозумілий перший крок за результатом."
+    "Безкоштовний тест доші CenterWay: 12 питань про сон, травлення, енергію і реакцію на стрес — і зрозумілий перший крок за результатом.",
   ),
   path: "/tests/dosha",
 });

@@ -7,13 +7,30 @@
  */
 
 import { describe, expect, it } from "vitest";
-import {
-  normalizeCustomerEmail,
-  normalizeCustomerPhone,
-  upsertCustomerByContact,
-} from "./customerIdentity";
+import { normalizeCustomerEmail, normalizeCustomerPhone, upsertCustomerByContact } from "./customerIdentity";
 
 type Row = { id: string; email: string | null; phone: string | null; created_at: string };
+
+/**
+ * The chain this fake answers, named rather than left as `any`: exactly the
+ * calls `upsertCustomerByContact` makes. Filter columns are `keyof Row`, so a
+ * filter on a column this fake table does not carry is a type error here
+ * instead of a silently empty result.
+ */
+type CustomersBuilder = {
+  _filters: Array<[keyof Row, unknown]>;
+  /** The pending `.update()` patch; its presence is what makes this a write. */
+  _patch?: Record<string, unknown>;
+  /** The pending `.insert()` row, likewise. */
+  _insert?: { email: string | null; phone: string | null };
+  select(columns: string): CustomersBuilder;
+  eq(column: keyof Row, value: unknown): CustomersBuilder;
+  order(column: string, options?: { ascending?: boolean }): CustomersBuilder;
+  limit(count: number): CustomersBuilder;
+  update(patch: Record<string, unknown>): CustomersBuilder;
+  insert(row: { email: string | null; phone: string | null }): CustomersBuilder;
+  then(resolve: (value: { data: Row[] | null; error: unknown }) => unknown): unknown;
+};
 
 function fakeDb(rows: Row[], opts: { insertError?: { code?: string } } = {}) {
   let seq = rows.length;
@@ -23,12 +40,12 @@ function fakeDb(rows: Row[], opts: { insertError?: { code?: string } } = {}) {
     updates: [] as Array<{ id: string; patch: Record<string, unknown> }>,
     from(table: string) {
       if (table !== "customers") throw new Error(`unexpected table ${table}`);
-      const builder: any = {
-        _filters: [] as Array<[string, unknown]>,
+      const builder: CustomersBuilder = {
+        _filters: [],
         select() {
           return builder;
         },
-        eq(column: string, value: unknown) {
+        eq(column: keyof Row, value: unknown) {
           builder._filters.push([column, value]);
           return builder;
         },
@@ -47,28 +64,30 @@ function fakeDb(rows: Row[], opts: { insertError?: { code?: string } } = {}) {
           return builder;
         },
         then(resolve: (value: { data: Row[] | null; error: unknown }) => unknown) {
-          if (builder._insert) {
+          const inserting = builder._insert;
+          if (inserting) {
             state.inserts += 1;
             if (opts.insertError) return resolve({ data: null, error: opts.insertError });
             seq += 1;
             rows.push({
               id: `c${seq}`,
-              email: builder._insert.email,
-              phone: builder._insert.phone,
+              email: inserting.email,
+              phone: inserting.phone,
               created_at: `2026-01-0${seq}T00:00:00Z`,
             });
             return resolve({ data: null, error: null });
           }
-          if (builder._patch) {
-            const id = builder._filters.find(([c]: [string, unknown]) => c === "id")?.[1] as string;
+          const patch = builder._patch;
+          if (patch) {
+            const id = builder._filters.find(([c]) => c === "id")?.[1] as string;
             const row = rows.find((r) => r.id === id);
-            if (row) Object.assign(row, builder._patch);
-            state.updates.push({ id, patch: builder._patch });
+            if (row) Object.assign(row, patch);
+            state.updates.push({ id, patch });
             return resolve({ data: null, error: null });
           }
           let found = rows;
           for (const [column, value] of builder._filters) {
-            found = found.filter((row) => (row as any)[column] === value);
+            found = found.filter((row) => row[column] === value);
           }
           found = [...found].sort((a, b) => a.created_at.localeCompare(b.created_at)).slice(0, 1);
           return resolve({ data: found, error: null });
@@ -136,7 +155,7 @@ describe("upsertCustomerByContact", () => {
       { id: "c1", email: "ann@example.com", phone: "+380501112233", created_at: "2026-01-01T00:00:00Z" },
     ]);
     await upsertCustomerByContact(db as never, { email: "ann@example.com", phone: null });
-    expect(db.rows[0].phone).toBe("+380501112233");
+    expect(db.rows[0]!.phone).toBe("+380501112233");
     expect(db.updates[0]?.patch).toEqual({ email: "ann@example.com" });
   });
 
@@ -151,13 +170,12 @@ describe("upsertCustomerByContact", () => {
     // `created` is a trust boundary, not bookkeeping: the public lead form
     // writes profile fields only for a row it brought into being. Treating a
     // lost race as a creation would hand unverified input that write access.
-    const db = fakeDb(
-      [{ id: "c1", email: "ann@example.com", phone: null, created_at: "2026-01-01T00:00:00Z" }],
-      { insertError: { code: "23505" } }
-    );
+    const db = fakeDb([{ id: "c1", email: "ann@example.com", phone: null, created_at: "2026-01-01T00:00:00Z" }], {
+      insertError: { code: "23505" },
+    });
     // Force the insert path by making the pre-check miss: the row is keyed on a
     // phone this call does not carry.
-    db.rows[0].email = "ann@example.com";
+    db.rows[0]!.email = "ann@example.com";
     const result = await upsertCustomerByContact(db as never, { email: "ann@example.com" });
     // Found on the pre-check, so no insert was attempted at all.
     expect(result).toEqual({ id: "c1", created: false });

@@ -17,7 +17,9 @@ describe("shared surface boundaries", () => {
     expect(paint).toContain("translate(-50%, -50%)");
     expect(paint).not.toContain("inset: 0;");
     const tokens = read("data/design-tokens/cw.tokens.json");
-    expect(tokens).toContain("calc(var(--cw-ink-ring-size) * var(--cw-ink-hover-scale) * var(--cw-ink-ring-optical-ratio))");
+    expect(tokens).toContain(
+      "calc(var(--cw-ink-ring-size) * var(--cw-ink-hover-scale) * var(--cw-ink-ring-optical-ratio))",
+    );
   });
 
   it("uses one borderless media capsule in library and workshop", () => {
@@ -30,23 +32,29 @@ describe("shared surface boundaries", () => {
     const chip = read("src/components/platform/Chip.module.css");
     expect(chip).toContain("border-radius: var(--cw-radius-pill)");
     expect(chip).toContain("border: 0");
-    expect(block(read("src/components/platform/PlatformSurfaces.module.css"), ".mediaBadge"))
-      .toContain("composes: chip onMedia");
+    expect(block(read("src/components/platform/PlatformSurfaces.module.css"), ".mediaBadge")).toContain(
+      "composes: chip onMedia",
+    );
     for (const [file, selector] of [
       ["src/components/platform/cabinet/Cabinet.module.css", ".draftBadgeChip"],
       ["src/components/builder/Builder.module.css", ".coverPill"],
       ["src/components/builder/Builder.module.css", ".coverPillPublished"],
     ]) {
-      expect(block(read(file), selector)).toContain("composes: mediaBadge");
+      expect(block(read(file!), selector!)).toContain("composes: mediaBadge");
     }
-    expect(read("src/components/platform/cabinet/CourseCard.tsx")).not.toContain('className={styles.draftBadgeChip} {...glassMedia}');
+    expect(read("src/components/platform/cabinet/CourseCard.tsx")).not.toContain(
+      "className={styles.draftBadgeChip} {...glassMedia}",
+    );
   });
 
   it("removes both decorative edges from loading and library objects, not structural panels", () => {
     const globals = read("src/app/globals.css");
     expect(block(globals, '[data-cw-material][data-cw-edge="none"]')).toContain("border-color: transparent");
     expect(block(globals, '[data-cw-material][data-cw-edge="none"]::before')).toContain("box-shadow: none");
-    for (const file of ["src/components/platform/PlatformLoadingState.tsx", "src/components/platform/cabinet/CourseCard.tsx"]) {
+    for (const file of [
+      "src/components/platform/PlatformLoadingState.tsx",
+      "src/components/platform/cabinet/CourseCard.tsx",
+    ]) {
       expect(read(file)).toContain('data-cw-edge="none"');
     }
     expect(read("src/components/platform/cabinet/AuthorProfileFold.tsx")).not.toContain('data-cw-edge="none"');
@@ -97,8 +105,11 @@ describe("shared surface boundaries", () => {
     expect(page.length).toBeGreaterThan(0);
     expect(editor.length).toBeGreaterThan(0);
 
-    for (const [side, frames] of [["page", page], ["editor", editor]] as const) {
-      const shaped = frames.filter((rule) => rule.includes("aspect-ratio"));
+    for (const [side, frames] of [
+      ["page", page],
+      ["editor", editor],
+    ] as const) {
+      const shaped = frames.filter((rule) => rule!.includes("aspect-ratio"));
       // Exactly one rule per side states the shape, and it states it as the token.
       expect(shaped, `${side}: one rule should set the ratio`).toHaveLength(1);
       expect(shaped[0]).toContain("aspect-ratio: var(--ds-author-banner-ratio)");

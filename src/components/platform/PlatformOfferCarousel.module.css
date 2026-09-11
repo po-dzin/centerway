@@ -209,7 +209,10 @@
   border-radius: var(--cw-radius-pill);
   background: currentColor;
   opacity: 0.32;
-  transition: width 160ms ease, height 160ms ease, opacity 160ms ease;
+  transition:
+    width 160ms ease,
+    height 160ms ease,
+    opacity 160ms ease;
 }
 
 .queueDotButton:hover .queueDot {

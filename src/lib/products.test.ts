@@ -12,7 +12,7 @@ import {
   type CatalogProductCode,
 } from "@/lib/products";
 import { getSnapshotCourse, getSnapshotCourseByProgram } from "@/lib/lms/catalog";
-import { buildReturnDestination } from "@/lib/payReturn";
+import { buildReturnDestination } from "@/lib/payments/payReturn";
 
 const payableCodes = Object.keys(PRODUCTS) as CatalogProductCode[];
 
@@ -35,10 +35,20 @@ describe("payable product chain", () => {
     }
   });
 
-  it("charges a positive amount in a known currency", () => {
+  it("charges a positive amount in a known currency, or none where no price was agreed", () => {
     for (const code of payableCodes) {
       const product = PRODUCTS[code];
-      expect(product.amount, `${code} amount`).toBeGreaterThan(0);
+      if (product.listAmount === null) {
+        // No agreed price: the fallback refuses the sale (offerAlias.test.ts),
+        // so the constant must not carry a figure anyone could be charged.
+        expect(product.amount, `${code} amount`).toBe(0);
+      } else {
+        expect(product.amount, `${code} amount`).toBeGreaterThan(0);
+        // The charged figure and the quoted one are the same number. A 1 ₴ QA
+        // placeholder sat in `amount` under a 4100 `listAmount` for three
+        // weeks; this is the line that would have caught it.
+        expect(product.amount, `${code} amount must equal its list price`).toBe(product.listAmount);
+      }
       expect(Number.isInteger(product.amount), `${code} amount must be whole`).toBe(true);
       expect(product.currency, `${code} currency`).toBe("UAH");
     }
@@ -64,12 +74,7 @@ describe("payable product chain", () => {
 
   it("has a route file for each of those two paths", () => {
     for (const raw of [PLATFORM_THANKS_URL, PLATFORM_FAILED_URL]) {
-      const route = path.join(
-        process.cwd(),
-        "src/app/(platform)",
-        new URL(raw).pathname,
-        "page.tsx"
-      );
+      const route = path.join(process.cwd(), "src/app/(platform)", new URL(raw).pathname, "page.tsx");
       expect(existsSync(route), `missing route for ${raw}`).toBe(true);
     }
   });
@@ -111,7 +116,7 @@ describe("payable product chain", () => {
         expect(getSnapshotCourse(fulfilment.courseSlug), `${code} names a course nothing serves`).not.toBeNull();
         expect(
           getSnapshotCourseByProgram(fulfilment.programSlug),
-          `${code} returns a buyer to a program page nothing serves`
+          `${code} returns a buyer to a program page nothing serves`,
         ).not.toBeNull();
       }
     }
@@ -133,7 +138,7 @@ describe("payable product chain", () => {
   it("returns a paid course to its offer page and everything else to the confirmation", () => {
     for (const code of payableCodes) {
       const paid = new URL(
-        buildReturnDestination("paid", code, `qa_${code}`, { rrn: "QA1", amount: "1", currency: "UAH" }, 0)
+        buildReturnDestination("paid", code, `qa_${code}`, { rrn: "QA1", amount: "1", currency: "UAH" }, 0),
       );
       expect(paid.origin).toBe(new URL(PLATFORM_THANKS_URL).origin);
       expect(paid.searchParams.get("order_ref")).toBe(`qa_${code}`);
@@ -142,7 +147,7 @@ describe("payable product chain", () => {
       const fulfilment = PRODUCTS[code].fulfilment;
       if (fulfilment.kind === "course") {
         expect(paid.pathname, `${code} is a course and must land on its offer page`).toBe(
-          `/programs/${fulfilment.programSlug}`
+          `/programs/${fulfilment.programSlug}`,
         );
       } else {
         expect(paid.pathname, `${code} has no offer page and keeps the confirmation`).toBe("/pay/thanks");

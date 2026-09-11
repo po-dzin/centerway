@@ -151,7 +151,7 @@ export function courseRows(course: Course): CourseRows {
         duration_min: lesson.durationMin ?? null,
         summary: lesson.summary ?? null,
         blocks: lesson.blocks,
-      }))
+      })),
     ),
   };
 }
@@ -167,7 +167,7 @@ export function courseRows(course: Course): CourseRows {
 export function courseFromRows(
   courseRow: Record<string, unknown>,
   moduleRowsIn: Record<string, unknown>[],
-  lessonRowsIn: Record<string, unknown>[]
+  lessonRowsIn: Record<string, unknown>[],
 ): Course {
   // A row set from a database that has not run the wave-2 migration carries no
   // `reference` key at all — and every reference module would then read back as
@@ -179,7 +179,7 @@ export function courseFromRows(
   const missingReference = moduleRowsIn.find((row) => !("reference" in row));
   if (missingReference) {
     throw new Error(
-      "lms_authoring_missing_reference_column:run docs/migration/sql/2026-08-21_lms_builder_authoring.sql (see docs/lms-builder-2026-08-21.md)"
+      "lms_authoring_missing_reference_column:run docs/migration/sql/2026-08-21_lms_builder_authoring.sql (see docs/lms-builder-2026-08-21.md)",
     );
   }
 
@@ -260,9 +260,7 @@ export function courseFromRows(
     ...(Array.isArray(courseRow.audience) && courseRow.audience.length > 0
       ? { audience: courseRow.audience as string[] }
       : {}),
-    ...(Array.isArray(courseRow.format) && courseRow.format.length > 0
-      ? { format: courseRow.format as string[] }
-      : {}),
+    ...(Array.isArray(courseRow.format) && courseRow.format.length > 0 ? { format: courseRow.format as string[] } : {}),
     ...(courseRow.duration_days === null || courseRow.duration_days === undefined
       ? {}
       : { durationDays: Number(courseRow.duration_days) }),
@@ -297,13 +295,11 @@ export function courseFromRows(
  */
 export function preserveFileAnnotations(
   existing: Record<string, unknown> | null,
-  next: Course
+  next: Course,
 ): Record<string, unknown> {
   if (!existing) return next as unknown as Record<string, unknown>;
 
-  const annotations = Object.fromEntries(
-    Object.entries(existing).filter(([key]) => key.startsWith("$"))
-  );
+  const annotations = Object.fromEntries(Object.entries(existing).filter(([key]) => key.startsWith("$")));
   // Annotations first, so a course field can never be shadowed by one.
   return { ...annotations, ...(next as unknown as Record<string, unknown>) };
 }
@@ -350,7 +346,7 @@ export type WriteCourseResult = {
  */
 export async function planRemovedRows(
   db: StructureWriter,
-  course: Course
+  course: Course,
 ): Promise<{ removedLessonIds: string[]; deletableModuleIds: string[] }> {
   const keptModuleIds = new Set(course.modules.map((module) => module.id));
   const keptLessonIds = new Set(course.modules.flatMap((module) => module.lessons.map((lesson) => lesson.id)));
@@ -379,9 +375,7 @@ export async function planRemovedRows(
     }
     const touchedLessonIds = new Set(((touched ?? []) as { lesson_id: string }[]).map((row) => row.lesson_id));
     if (touchedLessonIds.size > 0) {
-      throw new Error(
-        `lms_authoring_reconcile_lesson_has_learners:${[...touchedLessonIds].join(",")}`
-      );
+      throw new Error(`lms_authoring_reconcile_lesson_has_learners:${[...touchedLessonIds].join(",")}`);
     }
   }
 
@@ -434,7 +428,7 @@ async function reconcileRemovedRows(db: StructureWriter, course: Course): Promis
  */
 export function prepareCourseWrite(
   input: unknown,
-  options: WriteCourseOptions = {}
+  options: WriteCourseOptions = {},
 ): {
   course: Course;
   courseWithoutStatus: Row;
@@ -483,7 +477,7 @@ export function prepareCourseWrite(
 export async function writeCourseStructure(
   db: StructureWriter,
   input: unknown,
-  options: WriteCourseOptions = {}
+  options: WriteCourseOptions = {},
 ): Promise<WriteCourseResult> {
   const prepared = prepareCourseWrite(input, options);
   const { course } = prepared;

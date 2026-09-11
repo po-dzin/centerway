@@ -85,22 +85,22 @@ describe("preparePortableCourse", () => {
     const sourceIds = [
       source.id,
       source.translationGroupId,
-      source.modules[0].id,
-      source.modules[0].lessons[0].id,
-      ...source.modules[0].lessons[0].blocks.flatMap((block) => {
+      source.modules[0]!.id,
+      source.modules[0]!.lessons![0]!.id,
+      ...source.modules[0]!.lessons![0]!.blocks!.flatMap((block) => {
         if (block.type === "checklist" || block.type === "faq_block") {
           return [block.id, ...block.items.map((item) => item.id)];
         }
         return [block.id];
       }),
     ];
-    const lesson = course.modules[0].lessons[0];
+    const lesson = course.modules[0]!.lessons![0];
     const importedIds = [
       course.id,
       course.translationGroupId,
-      course.modules[0].id,
-      lesson.id,
-      ...lesson.blocks.flatMap((block) => {
+      course.modules[0]!.id,
+      lesson!.id,
+      ...lesson!.blocks!.flatMap((block) => {
         if (block.type === "checklist" || block.type === "faq_block") {
           return [block.id, ...block.items.map((item) => item.id)];
         }
@@ -114,7 +114,7 @@ describe("preparePortableCourse", () => {
 
   it("reports readiness blockers without refusing a structurally valid draft", () => {
     const source = sourceCourse();
-    source.modules[0].lessons[0].blocks[0] = {
+    source.modules[0]!.lessons![0]!.blocks![0] = {
       id: "objective-source",
       type: "lesson_objective",
       text: "[ЗАПОВНИ: мету]",
@@ -122,9 +122,7 @@ describe("preparePortableCourse", () => {
 
     const result = preparePortableCourse(source, { takenSlugs: [], ids: ids() });
     expect(result.course.status).toBe("draft");
-    expect(result.readiness.blockers).toEqual([
-      expect.objectContaining({ code: "lms_ready_placeholder" }),
-    ]);
+    expect(result.readiness.blockers).toEqual([expect.objectContaining({ code: "lms_ready_placeholder" })]);
   });
 
   it("rejects a broken transfer instead of inventing missing structure", () => {

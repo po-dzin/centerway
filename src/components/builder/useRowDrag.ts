@@ -102,7 +102,7 @@ export function useRowDrag(
     mime,
     dropTargets = true,
     portraitClass,
-  }: { crossGroup?: boolean; mime?: string; dropTargets?: boolean; portraitClass?: string } = {}
+  }: { crossGroup?: boolean; mime?: string; dropTargets?: boolean; portraitClass?: string } = {},
 ): RowDrag {
   const [dragging, setDragging] = useState<DragRef | null>(null);
   const [over, setOver] = useState<{ ref: DragRef; edge: DropEdge } | null>(null);
@@ -118,11 +118,8 @@ export function useRowDrag(
   const [armed, setArmed] = useState<string | null>(null);
 
   const accepts = useCallback(
-    (ref: DragRef) =>
-      dragging !== null &&
-      dragging.list === ref.list &&
-      (crossGroup || dragging.group === ref.group),
-    [crossGroup, dragging]
+    (ref: DragRef) => dragging !== null && dragging.list === ref.list && (crossGroup || dragging.group === ref.group),
+    [crossGroup, dragging],
   );
 
   const handleProps = useCallback(
@@ -142,7 +139,7 @@ export function useRowDrag(
       // drag with itself as the image.
       draggable: false as const,
     }),
-    []
+    [],
   );
 
   const rowProps = useCallback(
@@ -194,9 +191,7 @@ export function useRowDrag(
           event.preventDefault();
           event.dataTransfer.dropEffect = "move";
           const edge = edgeOf(event);
-          setOver((current) =>
-            current && same(current.ref, ref) && current.edge === edge ? current : { ref, edge }
-          );
+          setOver((current) => (current && same(current.ref, ref) && current.edge === edge ? current : { ref, edge }));
         },
         onDragLeave: () => {
           setOver((current) => (current && same(current.ref, ref) ? null : current));
@@ -216,7 +211,7 @@ export function useRowDrag(
         ...(isOver && dropTargets ? { "data-drop": over.edge } : {}),
       };
     },
-    [accepts, armed, dragging, dropTargets, mime, onMove, over, portraitClass]
+    [accepts, armed, dragging, dropTargets, mime, onMove, over, portraitClass],
   );
 
   return { handleProps, rowProps };

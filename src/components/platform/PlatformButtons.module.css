@@ -223,7 +223,8 @@
      The grain layer is the same noise `.onMedia` and every glass surface use
      — a flat gradient alone reads as a rendered plastic chip; this is what
      "matte" costs on a filled plate instead of a translucent one. */
-  background-image: var(--cw-mat-grain-image), linear-gradient(180deg, var(--cw-platform-accent), var(--cw-platform-accent-pressed));
+  background-image:
+    var(--cw-mat-grain-image), linear-gradient(180deg, var(--cw-platform-accent), var(--cw-platform-accent-pressed));
   /* Two shadows, two jobs: the first lifts the plate off the page (elevation),
      the second is a tight zero-offset bloom — the actual glow — since a pure
      drop shadow reads as a shadow, not as the gold lighting the air around it. */
@@ -234,11 +235,13 @@
 
 .primary:hover:not(:disabled) {
   transform: translateY(var(--ds-button-lift));
-  background-image: var(--cw-mat-grain-image), linear-gradient(
-    180deg,
-    var(--cw-platform-accent-pressed),
-    color-mix(in srgb, var(--cw-platform-accent-pressed) 86%, var(--cw-platform-on-accent))
-  );
+  background-image:
+    var(--cw-mat-grain-image),
+    linear-gradient(
+      180deg,
+      var(--cw-platform-accent-pressed),
+      color-mix(in srgb, var(--cw-platform-accent-pressed) 86%, var(--cw-platform-on-accent))
+    );
   box-shadow:
     0 20px 32px color-mix(in srgb, var(--cw-platform-accent) 24%, transparent),
     0 0 28px color-mix(in srgb, var(--cw-platform-accent) 46%, transparent);

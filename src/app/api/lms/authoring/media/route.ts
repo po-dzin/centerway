@@ -27,10 +27,15 @@ import { randomUUID } from "node:crypto";
 
 import { NextRequest, NextResponse } from "next/server";
 
-import { denialResponse, isDenied, resolveCourseAccessForIdentity, resolveIdentityFromRequest } from "@/lib/lms/courseAccess";
+import {
+  denialResponse,
+  isDenied,
+  resolveCourseAccessForIdentity,
+  resolveIdentityFromRequest,
+} from "@/lib/lms/courseAccess";
 import { MAX_INPUT_BYTES, isPrepareFailure, prepareMedia } from "@/lib/lms/mediaPipeline";
 import { LMS_MEDIA_UPLOAD } from "@/lib/lms/rateRules";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
@@ -107,6 +112,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: prepared.error }, { status });
   }
 
+  /* The pipeline always returns at least one rendition, and everything below
+     reads the first one — the canonical path, the ledger's content type, the
+     size reported back. An empty list would store a folder with no file in it
+     and a row pointing at nothing, so it is refused before any bytes move. */
+  const [primaryRendition] = prepared.renditions;
+  if (!primaryRendition) {
+    return NextResponse.json({ error: "media_prepare_empty" }, { status: 500 });
+  }
+
   // A FOLDER PER IMAGE, not a file per image. Foldered by course so a deleted
   // course's images can be found and swept; foldered again by uuid because one
   // upload is now several objects, and their relationship has to survive being
@@ -142,7 +156,7 @@ export async function POST(req: NextRequest) {
     stored.push(path);
   }
 
-  const canonical = `${folder}/${prepared.renditions[0].name}`;
+  const canonical = `${folder}/${primaryRendition.name}`;
 
   // THE LEDGER IS WRITTEN BEFORE THE AUTHOR IS TOLD IT WORKED, and failing to
   // write it un-does the upload. The alternative — keep the bytes, lose the
@@ -156,7 +170,7 @@ export async function POST(req: NextRequest) {
     canonical_path: canonical,
     paths: stored,
     bytes: prepared.renditions.reduce((sum, rendition) => sum + rendition.bytes.byteLength, 0),
-    content_type: prepared.renditions[0].contentType,
+    content_type: primaryRendition.contentType,
     width: prepared.width,
     height: prepared.height,
     uploaded_by: grant.identity.authUserId,
@@ -176,7 +190,7 @@ export async function POST(req: NextRequest) {
     // rather than silently handing back a different image than they picked.
     width: prepared.width,
     height: prepared.height,
-    bytes: prepared.renditions[0].bytes.byteLength,
+    bytes: primaryRendition.bytes.byteLength,
     sourceBytes: file.size,
   });
 }

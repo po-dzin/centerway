@@ -1,4 +1,4 @@
-import type { CwIconName } from "@/components/iconNames";
+import type { CwIconName } from "@/lib/brand/iconNames";
 import { getFunnelHostUrl, getPlatformRoute } from "@/lib/surfaces/catalog";
 
 export const platformHomeHref = "/";
@@ -143,7 +143,8 @@ export const programs = [
       desktopPosition: "center 24%",
       mobilePosition: "center 22%",
     },
-    description: "Трав'яні формули і м'яка природна підтримка, яку обирають за станом, ритмом і поточним етапом відновлення.",
+    description:
+      "Трав'яні формули і м'яка природна підтримка, яку обирають за станом, ритмом і поточним етапом відновлення.",
     /* The three lines a reader needs before they can judge whether this product
        is for them — appropriateness, limits, context. They used to be a prose
        block ABOVE the card (`naturalSupportItems`, plus a "Як читати" panel on
@@ -205,7 +206,7 @@ export const platformAggregateArtwork = {
   },
   products: {
     desktop: "/cw/platform/aggregates/products-hero-v1.webp",
-      card: "/cw/platform/aggregates/products-hero-v1-960.webp",
+    card: "/cw/platform/aggregates/products-hero-v1-960.webp",
     desktopPosition: "center 16%",
     mobilePosition: "center 18%",
   },
@@ -325,9 +326,6 @@ export const platformGuides = [
   },
 ] satisfies PlatformGuide[];
 
-
-
-
 export const doshas = [
   {
     title: "Харчування",
@@ -357,15 +355,33 @@ export const consultationCopy = {
    wall — the icon is what lets the eye tell them apart before reading, and it
    comes from the baked set so it is the same hand as everything else. */
 export const proofItems = [
-  { icon: "day" as const, text: "Коли з'являється ясний план, легше втримувати харчування, сон і щоденний ритм без самокритики." },
-  { icon: "rhythm" as const, text: "Практики працюють не як одноразовий ривок, а як повторювані дії, які поступово повертають опору." },
-  { icon: "support" as const, text: "Найціннішим для учасників часто стає не швидкий результат, а розуміння, що робити далі у звичайному житті." },
+  {
+    icon: "day" as const,
+    text: "Коли з'являється ясний план, легше втримувати харчування, сон і щоденний ритм без самокритики.",
+  },
+  {
+    icon: "rhythm" as const,
+    text: "Практики працюють не як одноразовий ривок, а як повторювані дії, які поступово повертають опору.",
+  },
+  {
+    icon: "support" as const,
+    text: "Найціннішим для учасників часто стає не швидкий результат, а розуміння, що робити далі у звичайному житті.",
+  },
 ];
 
 export const naturalSupportItems = [
-  { icon: "leaf" as const, text: "Трави - не «магічний продукт», а природна підтримка процесу очищення і відновлення." },
-  { icon: "vata" as const, text: "Підбір має спиратися на стан, конституцію і поточний ритм, а не на універсальну схему для всіх." },
-  { icon: "bowl" as const, text: "Трави доречні тоді, коли вони підтримують основне, а не замінюють харчування, сон і практику." },
+  {
+    icon: "leaf" as const,
+    text: "Трави - не «магічний продукт», а природна підтримка процесу очищення і відновлення.",
+  },
+  {
+    icon: "vata" as const,
+    text: "Підбір має спиратися на стан, конституцію і поточний ритм, а не на універсальну схему для всіх.",
+  },
+  {
+    icon: "bowl" as const,
+    text: "Трави доречні тоді, коли вони підтримують основне, а не замінюють харчування, сон і практику.",
+  },
 ];
 
 export const legal = {

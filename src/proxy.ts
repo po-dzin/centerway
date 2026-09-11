@@ -39,10 +39,10 @@ const PLATFORM_APEX_HOST = "centerway.net.ua";
 const PLATFORM_CANONICAL_HOST = `www.${PLATFORM_APEX_HOST}`;
 
 function retiredHostRedirect(req: NextRequest): NextResponse | null {
-  const host = (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "")
-    .split(":")[0]
-    .trim()
-    .toLowerCase();
+  const rawHost = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
+  // A string split always yields at least one element; the default never applies.
+  const [hostWithoutPort = ""] = rawHost.split(":");
+  const host = hostWithoutPort.trim().toLowerCase();
 
   // Exact match only: every funnel host ends in this domain and must not be
   // dragged to www.
@@ -133,10 +133,12 @@ export function proxy(req: NextRequest) {
  *
  * `_next/static` and `_next/image` were already here and stay. `/shared/` is
  * deliberately NOT here: it is a landing-bundle path, not a `public/` root, and
- * its first segment is also a brand name.
+ * its first segment is also a brand name. Neither is `/api/`: it is bypassed
+ * too, but only AFTER the canonical-host redirect, and taking it out of the
+ * matcher would serve API calls on the apex instead of forwarding them.
  */
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|sitemap\\.xml|robots\\.txt|v1/|fonts/|cw/|sw\\.js|offline\\.html|favicon\\.ico|manifest\\.webmanifest|icon\\.svg|apple-icon\\.png).*)",
+    "/((?!_next/static|_next/image|sitemap\.xml|robots\.txt|fonts/|cw/|sw\.js|offline\.html|favicon\.ico|manifest\.webmanifest|icon\.svg|apple-icon\.png).*)",
   ],
 };

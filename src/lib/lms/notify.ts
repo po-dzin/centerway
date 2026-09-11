@@ -11,7 +11,7 @@
 
 import { adminClient } from "@/lib/auth/adminClient";
 import { surfaceUrl } from "@/lib/surfaces/catalog";
-import { sendTelegramMessage } from "@/lib/tg";
+import { sendTelegramMessage } from "@/lib/telegram/tg";
 
 export type NotificationChannel = "telegram" | "email" | "webpush";
 
@@ -36,9 +36,7 @@ const senders: Partial<Record<NotificationChannel, ChannelSender>> = {
     // not linkify "/learn/way21" — it prints it as text. Every reminder we have
     // ever queued points at a lesson, so this is the difference between a nudge
     // that is one tap away and one that is a path the reader has to retype.
-    const body = notification.href
-      ? `${notification.text}\n\n${surfaceUrl(notification.href)}`
-      : notification.text;
+    const body = notification.href ? `${notification.text}\n\n${surfaceUrl(notification.href)}` : notification.text;
     await sendTelegramMessage(chatId, body);
   },
   // email / webpush intentionally unimplemented on H1 — see file header.

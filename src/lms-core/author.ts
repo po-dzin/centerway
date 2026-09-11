@@ -150,30 +150,57 @@ export function validateAuthor(input: unknown, path = "author"): asserts input i
   }
 
   if (input.facts !== undefined) {
-    assert(Array.isArray(input.facts) && input.facts.length <= 6 && input.facts.every(isNonEmptyString), `lms_author_invalid_facts:${path}`);
+    assert(
+      Array.isArray(input.facts) && input.facts.length <= 6 && input.facts.every(isNonEmptyString),
+      `lms_author_invalid_facts:${path}`,
+    );
   }
   if (input.profileBlocks !== undefined) {
-    assert(Array.isArray(input.profileBlocks) && input.profileBlocks.length <= 12, `lms_author_invalid_profile_blocks:${path}`);
+    assert(
+      Array.isArray(input.profileBlocks) && input.profileBlocks.length <= 12,
+      `lms_author_invalid_profile_blocks:${path}`,
+    );
     for (const [index, block] of input.profileBlocks.entries()) {
       const blockPath = `${path}.profileBlocks.${index}`;
       assert(isRecord(block), `lms_author_invalid_profile_block:${blockPath}`);
       assert(isNonEmptyString(block.id), `lms_author_profile_block_missing_id:${blockPath}`);
-      assert(["text", "list", "timeline"].includes(String(block.kind)), `lms_author_profile_block_invalid_kind:${blockPath}`);
+      assert(
+        ["text", "list", "timeline"].includes(String(block.kind)),
+        `lms_author_profile_block_invalid_kind:${blockPath}`,
+      );
       assert(isNonEmptyString(block.title), `lms_author_profile_block_missing_title:${blockPath}`);
-      if (block.label !== undefined) assert(isNonEmptyString(block.label), `lms_author_profile_block_invalid_label:${blockPath}`);
-      if (block.body !== undefined) assert(isNonEmptyString(block.body), `lms_author_profile_block_invalid_body:${blockPath}`);
+      if (block.label !== undefined)
+        assert(isNonEmptyString(block.label), `lms_author_profile_block_invalid_label:${blockPath}`);
+      if (block.body !== undefined)
+        assert(isNonEmptyString(block.body), `lms_author_profile_block_invalid_body:${blockPath}`);
       if (block.items !== undefined) {
-        assert(Array.isArray(block.items) && block.items.length <= 30 && block.items.every(isNonEmptyString), `lms_author_profile_block_invalid_items:${blockPath}`);
+        assert(
+          Array.isArray(block.items) && block.items.length <= 30 && block.items.every(isNonEmptyString),
+          `lms_author_profile_block_invalid_items:${blockPath}`,
+        );
       }
-      assert(block.body !== undefined || (Array.isArray(block.items) && block.items.length > 0), `lms_author_profile_block_empty:${blockPath}`);
+      assert(
+        block.body !== undefined || (Array.isArray(block.items) && block.items.length > 0),
+        `lms_author_profile_block_empty:${blockPath}`,
+      );
     }
   }
   if (input.consultation !== undefined) {
-    assert(isRecord(input.consultation) && typeof input.consultation.enabled === "boolean", `lms_author_invalid_consultation:${path}`);
+    assert(
+      isRecord(input.consultation) && typeof input.consultation.enabled === "boolean",
+      `lms_author_invalid_consultation:${path}`,
+    );
     for (const key of ["title", "summary", "contactUrl"] as const) {
-      if (input.consultation[key] !== undefined) assert(isNonEmptyString(input.consultation[key]), `lms_author_invalid_consultation_${key}:${path}`);
+      if (input.consultation[key] !== undefined)
+        assert(isNonEmptyString(input.consultation[key]), `lms_author_invalid_consultation_${key}:${path}`);
     }
-    if (input.consultation.points !== undefined) assert(Array.isArray(input.consultation.points) && input.consultation.points.length <= 3 && input.consultation.points.every(isNonEmptyString), `lms_author_invalid_consultation_points:${path}`);
+    if (input.consultation.points !== undefined)
+      assert(
+        Array.isArray(input.consultation.points) &&
+          input.consultation.points.length <= 3 &&
+          input.consultation.points.every(isNonEmptyString),
+        `lms_author_invalid_consultation_points:${path}`,
+      );
   }
 
   if (input.credentials !== undefined) {
@@ -181,10 +208,8 @@ export function validateAuthor(input: unknown, path = "author"): asserts input i
     // to say "none" is to leave the field out, not to store a heading over
     // nothing.
     assert(
-      Array.isArray(input.credentials) &&
-        input.credentials.length > 0 &&
-        input.credentials.every(isNonEmptyString),
-      `lms_author_invalid_credentials:${path}`
+      Array.isArray(input.credentials) && input.credentials.length > 0 && input.credentials.every(isNonEmptyString),
+      `lms_author_invalid_credentials:${path}`,
     );
   }
 
@@ -195,7 +220,10 @@ export function validateAuthor(input: unknown, path = "author"): asserts input i
     for (const cropKey of ["cropX", "cropY", "avatarCropX", "avatarCropY"] as const) {
       const value = input.photo[cropKey];
       if (value === undefined) continue;
-      assert(typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100, `lms_author_invalid_photo_${cropKey}:${path}`);
+      assert(
+        typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100,
+        `lms_author_invalid_photo_${cropKey}:${path}`,
+      );
     }
     // The zoom is bounded on both sides, and the floor is 1 rather than 0: a
     // scale below 1 would shrink the picture inside a frame it is there to
@@ -205,7 +233,7 @@ export function validateAuthor(input: unknown, path = "author"): asserts input i
       if (value === undefined) continue;
       assert(
         typeof value === "number" && Number.isFinite(value) && value >= 1 && value <= 4,
-        `lms_author_invalid_photo_${scaleKey}:${path}`
+        `lms_author_invalid_photo_${scaleKey}:${path}`,
       );
     }
   }
@@ -218,7 +246,7 @@ export function validateAuthor(input: unknown, path = "author"): asserts input i
       if (value === undefined) continue;
       assert(
         typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100,
-        `lms_author_invalid_background_${cropKey}:${path}`
+        `lms_author_invalid_background_${cropKey}:${path}`,
       );
     }
     if (input.background.cropScale !== undefined) {
@@ -227,7 +255,7 @@ export function validateAuthor(input: unknown, path = "author"): asserts input i
           Number.isFinite(input.background.cropScale) &&
           input.background.cropScale >= 1 &&
           input.background.cropScale <= 4,
-        `lms_author_invalid_background_cropScale:${path}`
+        `lms_author_invalid_background_cropScale:${path}`,
       );
     }
   }

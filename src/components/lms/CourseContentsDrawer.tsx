@@ -65,17 +65,19 @@ function useSwipeToDismiss(panelRef: React.RefObject<HTMLDivElement | null>, onC
     };
 
     const onStart = (event: TouchEvent) => {
-      if (event.touches.length !== 1 || panel.scrollTop > 0) return;
+      const touch = event.touches[0];
+      if (event.touches.length !== 1 || !touch || panel.scrollTop > 0) return;
       active = true;
       pulled = 0;
-      startY = event.touches[0].clientY;
+      startY = touch.clientY;
       startedAt = performance.now();
       panel.style.transition = "none";
     };
 
     const onMove = (event: TouchEvent) => {
-      if (!active) return;
-      const dy = event.touches[0].clientY - startY;
+      const touch = event.touches[0];
+      if (!active || !touch) return;
+      const dy = touch.clientY - startY;
       if (dy <= 0) {
         /* Upward again — the reader is scrolling the list after all, so the
            gesture goes back to the browser rather than being held hostage. */
@@ -173,14 +175,14 @@ export function CourseContentsDrawer({
       if (event.key !== "Tab" || !panelRef.current) return;
 
       const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>(MODAL_FOCUSABLE)).filter(
-        (element) => element.getClientRects().length > 0
+        (element) => element.getClientRects().length > 0,
       );
-      if (focusable.length === 0) {
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (!first || !last) {
         event.preventDefault();
         return;
       }
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
       if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
         last.focus();
@@ -203,7 +205,7 @@ export function CourseContentsDrawer({
     (event: React.MouseEvent<HTMLDivElement>) => {
       if (!panelRef.current?.contains(event.target as Node)) onClose();
     },
-    [onClose]
+    [onClose],
   );
 
   // Steps only, so the drawer's counter agrees with the course map's. Reference
@@ -284,10 +286,7 @@ export function CourseContentsDrawer({
                   aria-current={isCurrent ? "page" : undefined}
                   onClick={onClose}
                 >
-                  <span
-                    className={entry.completed ? styles.drawerMarkDone : styles.drawerMark}
-                    aria-hidden="true"
-                  >
+                  <span className={entry.completed ? styles.drawerMarkDone : styles.drawerMark} aria-hidden="true">
                     {entry.completed ? <Icon name="check" size={14} /> : (entry.dayIndex ?? "•")}
                   </span>
                   <span>

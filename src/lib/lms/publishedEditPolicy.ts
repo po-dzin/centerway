@@ -22,7 +22,10 @@ function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
   if (value && typeof value === "object") {
     const record = value as Record<string, unknown>;
-    return `{${Object.keys(record).sort().map((key) => `${JSON.stringify(key)}:${canonical(record[key])}`).join(",")}}`;
+    return `{${Object.keys(record)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonical(record[key])}`)
+      .join(",")}}`;
   }
   return JSON.stringify(value);
 }
@@ -32,10 +35,7 @@ function canonical(value: unknown): string {
  * unchanged. Comparing whole objects and subtracting the explicit allow-list
  * means this contract cannot accidentally be widened by a future UI field.
  */
-export function immediatePublishedPatch(
-  live: Course,
-  incoming: Course,
-): ImmediatePublishedPatch | null {
+export function immediatePublishedPatch(live: Course, incoming: Course): ImmediatePublishedPatch | null {
   const ignored = new Set(["cover", "sortOrder", "status", "version", "visibility"]);
   const keys = new Set([...Object.keys(live), ...Object.keys(incoming)]);
   for (const key of keys) {

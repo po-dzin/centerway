@@ -68,6 +68,12 @@ const offerRow = {
   error: null,
 };
 
+/* Warm the transform once, outside any test's clock; `vi.resetModules()`
+   below clears the registry, not the transform cache, so each test still gets
+   a fresh module without paying the cold import that timed out under load. */
+await import("./offers");
+await import("@/lib/products");
+
 beforeEach(() => {
   vi.resetModules();
   getLiveCourse.mockReset();
@@ -163,7 +169,17 @@ describe("every legacy code that names a course", () => {
   it.each(ALIASED)("keeps $code's hand-written invoice prose", async ({ code, slug }) => {
     getLiveCourse.mockResolvedValue({ ...publishedCourse, slug } as unknown as Course);
     readOfferRow.mockReturnValue({
-      data: [{ code: `course:${slug}`, course_id: "c-1", amount: 100, list_amount: null, currency: "UAH", pixel_content_name: "row", active: true }],
+      data: [
+        {
+          code: `course:${slug}`,
+          course_id: "c-1",
+          amount: 100,
+          list_amount: null,
+          currency: "UAH",
+          pixel_content_name: "row",
+          active: true,
+        },
+      ],
       error: null,
     });
     const { loadPayableOffer } = await import("./offers");

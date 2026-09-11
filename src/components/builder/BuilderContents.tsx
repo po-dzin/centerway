@@ -94,7 +94,7 @@ export function BuilderContents({
     (from: DragRef, to: DragRef, edge: DropEdge) => {
       editing?.onModules((current) => moveLessonTo(current.modules, from, to, edge));
     },
-    { crossGroup: true }
+    { crossGroup: true },
   );
 
   /**
@@ -146,7 +146,12 @@ export function BuilderContents({
                 ) : (
                   <Icon name="grip" size={16} />
                 )}
-                <button className={styles.contentsModuleToggle} type="button" aria-expanded={!closed} onClick={() => toggleModule(entry.id)}>
+                <button
+                  className={styles.contentsModuleToggle}
+                  type="button"
+                  aria-expanded={!closed}
+                  onClick={() => toggleModule(entry.id)}
+                >
                   <Icon name={closed ? "chevron-right" : "chevron-down"} size={16} />
                   <InkLabel>{moduleLabel}</InkLabel>
                 </button>
@@ -159,14 +164,18 @@ export function BuilderContents({
                         icon: "arrow-up",
                         disabled: moduleIndex === 0,
                         onSelect: () =>
-                          editing.onModules((current) => stepModule(current.modules, moduleIndex, -1) ?? current.modules),
+                          editing.onModules(
+                            (current) => stepModule(current.modules, moduleIndex, -1) ?? current.modules,
+                          ),
                       },
                       {
                         label: "Опустити нижче",
                         icon: "arrow-down",
                         disabled: moduleIndex === course.modules.length - 1,
                         onSelect: () =>
-                          editing.onModules((current) => stepModule(current.modules, moduleIndex, 1) ?? current.modules),
+                          editing.onModules(
+                            (current) => stepModule(current.modules, moduleIndex, 1) ?? current.modules,
+                          ),
                       },
                       {
                         label: "Видалити модуль",
@@ -224,54 +233,59 @@ export function BuilderContents({
                               lesson, so an icon that says «lesson» on all of
                               them says nothing — it was a column of filler
                               between the grip and the number. */}
-                          <span className={styles.contentsLessonOrdinal}>{String(lessonIndex + 1).padStart(2, "0")}</span>
+                          <span className={styles.contentsLessonOrdinal}>
+                            {String(lessonIndex + 1).padStart(2, "0")}
+                          </span>
                           <InkLabel className={styles.lessonName}>{item.title}</InkLabel>
                         </a>
                         {editing ? (
                           <BuilderMenu
-                              label={`Дії з уроком «${item.title}»`}
-                              /* The row keeps the browser's own context menu.
+                            label={`Дії з уроком «${item.title}»`}
+                            /* The row keeps the browser's own context menu.
                                  Elsewhere the right click is the fast path to
                                  these actions, but this list is how an author
                                  OPENS lessons, and «відкрити в новій вкладці»
                                  on a lesson is worth more than a second way
                                  into a menu whose button is on the row. */
-                              contextArea={false}
-                              items={[
-                                {
-                                  label: "Підняти вище",
-                                  icon: "arrow-up",
-                                  onSelect: () =>
-                                    editing.onModules(
-                                      (current) => stepLesson(current.modules, moduleIndex, lessonIndex, -1) ?? current.modules
-                                    ),
+                            contextArea={false}
+                            items={[
+                              {
+                                label: "Підняти вище",
+                                icon: "arrow-up",
+                                onSelect: () =>
+                                  editing.onModules(
+                                    (current) =>
+                                      stepLesson(current.modules, moduleIndex, lessonIndex, -1) ?? current.modules,
+                                  ),
+                              },
+                              {
+                                label: "Опустити нижче",
+                                icon: "arrow-down",
+                                onSelect: () =>
+                                  editing.onModules(
+                                    (current) =>
+                                      stepLesson(current.modules, moduleIndex, lessonIndex, 1) ?? current.modules,
+                                  ),
+                              },
+                              {
+                                label: "Видалити урок",
+                                icon: "trash",
+                                danger: true,
+                                disabled: entry.lessons.length === 1,
+                                hint: entry.lessons.length === 1 ? LAST_LESSON_REFUSAL : undefined,
+                                onSelect: () => {
+                                  if (item.slug === currentSlug)
+                                    editing.onLeaveCurrent(neighbourHref(moduleIndex, lessonIndex));
+                                  editing.onModules((current) => {
+                                    const next = removeLesson(current.modules, moduleIndex, lessonIndex);
+                                    if (!next) {
+                                      editing.onNote(LAST_LESSON_REFUSAL);
+                                      return current.modules;
+                                    }
+                                    return next;
+                                  });
                                 },
-                                {
-                                  label: "Опустити нижче",
-                                  icon: "arrow-down",
-                                  onSelect: () =>
-                                    editing.onModules(
-                                      (current) => stepLesson(current.modules, moduleIndex, lessonIndex, 1) ?? current.modules
-                                    ),
-                                },
-                                {
-                                  label: "Видалити урок",
-                                  icon: "trash",
-                                  danger: true,
-                                  disabled: entry.lessons.length === 1,
-                                  hint: entry.lessons.length === 1 ? LAST_LESSON_REFUSAL : undefined,
-                                  onSelect: () => {
-                                    if (item.slug === currentSlug) editing.onLeaveCurrent(neighbourHref(moduleIndex, lessonIndex));
-                                    editing.onModules((current) => {
-                                      const next = removeLesson(current.modules, moduleIndex, lessonIndex);
-                                      if (!next) {
-                                        editing.onNote(LAST_LESSON_REFUSAL);
-                                        return current.modules;
-                                      }
-                                      return next;
-                                    });
-                                  },
-                                },
+                              },
                             ]}
                           />
                         ) : null}

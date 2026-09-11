@@ -29,9 +29,7 @@ describe("public root segments", () => {
          which moved to that host on 2026-08-27, and `/journal` is the reader's
          own writing (2026-09-10) — all three are routes here and addresses on
          `my`. */
-      .filter((name) =>
-        ![LEARNING_PATH_PREFIX, PROFILE_PATH_PREFIX, JOURNAL_PATH_PREFIX].includes(`/${name}`)
-      )
+      .filter((name) => ![LEARNING_PATH_PREFIX, PROFILE_PATH_PREFIX, JOURNAL_PATH_PREFIX].includes(`/${name}`))
       .sort();
 
     expect(routed).toEqual([...PUBLIC_ROOT_SEGMENTS].sort());

@@ -21,11 +21,13 @@ function parseCssColor(value: string) {
   if (normalized.startsWith("#")) {
     const hex = normalized.slice(1);
     if (hex.length === 3 || hex.length === 4) {
+      const [h0, h1, h2, h3] = hex;
+      if (!h0 || !h1 || !h2) return null;
       return {
-        r: parseInt(hex[0] + hex[0], 16),
-        g: parseInt(hex[1] + hex[1], 16),
-        b: parseInt(hex[2] + hex[2], 16),
-        a: hex.length === 4 ? parseInt(hex[3] + hex[3], 16) / 255 : 1,
+        r: parseInt(h0 + h0, 16),
+        g: parseInt(h1 + h1, 16),
+        b: parseInt(h2 + h2, 16),
+        a: h3 ? parseInt(h3 + h3, 16) / 255 : 1,
       };
     }
 
@@ -43,12 +45,12 @@ function parseCssColor(value: string) {
 }
 
 function luminanceFromColor(color: { r: number; g: number; b: number }) {
-  const channels = [color.r, color.g, color.b].map((value) => {
+  const toChannel = (value: number) => {
     const channel = value / 255;
     return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-  });
+  };
 
-  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+  return toChannel(color.r) * 0.2126 + toChannel(color.g) * 0.7152 + toChannel(color.b) * 0.0722;
 }
 
 function resolveExplicitTopbarTone(sampleY: number): HeaderTone | null {
@@ -142,11 +144,7 @@ function median(values: number[]) {
   return sorted[Math.floor(sorted.length / 2)];
 }
 
-export function useHeaderTone(
-  initialTone: HeaderTone = "light",
-  watchKey?: string | null,
-  frozen = false,
-) {
+export function useHeaderTone(initialTone: HeaderTone = "light", watchKey?: string | null, frozen = false) {
   const [headerTone, setHeaderTone] = useState<HeaderTone>(initialTone);
   // Hysteresis has to compare against the tone that is on screen right now, not
   // the one this render closed over.
@@ -218,17 +216,14 @@ export function useHeaderTone(
       const barEl = document.querySelector<HTMLElement>("header[data-cw-header-tone]");
       const headerEl = barEl?.offsetHeight
         ? barEl
-        : document.querySelector<HTMLElement>('[data-cw-chrome="organs"]') ?? barEl;
+        : (document.querySelector<HTMLElement>('[data-cw-chrome="organs"]') ?? barEl);
       const headerHeight = headerEl?.offsetHeight ?? 72;
       /* MEASURED FROM ITS OWN TOP EDGE, because the two forms do not start in
          the same place: the bar is pinned at 0, the islands float a gutter
          down. `height * 0.72` alone answers for the first and points above the
          second. */
       const headerTop = headerEl ? Math.max(0, Math.round(headerEl.getBoundingClientRect().top)) : 0;
-      const sampleY = Math.max(
-        16,
-        Math.min(window.innerHeight - 16, headerTop + Math.round(headerHeight * 0.72)),
-      );
+      const sampleY = Math.max(16, Math.min(window.innerHeight - 16, headerTop + Math.round(headerHeight * 0.72)));
 
       /* The open sheet is 320px of backdrop, not the bar's 64px, so it is
          sampled down its own height and the tone follows what the sheet actually
@@ -246,9 +241,8 @@ export function useHeaderTone(
          the flip is a palette change and nothing else, carried by the same dwell
          and cross-fade as the bar's own. */
       const menuOpen = headerEl?.dataset.menuOpen === "true";
-      const sheetHeight = menuOpen && headerEl
-        ? Number.parseFloat(headerEl.style.getPropertyValue("--cw-menu-sheet-height")) || 0
-        : 0;
+      const sheetHeight =
+        menuOpen && headerEl ? Number.parseFloat(headerEl.style.getPropertyValue("--cw-menu-sheet-height")) || 0 : 0;
 
       /* A declared band is trusted for the bar, whose whole box it covers. It is
          not trusted for the sheet, which reaches far below that band. */
@@ -260,10 +254,12 @@ export function useHeaderTone(
       }
 
       const samplePoints = [0.18, 0.5, 0.82].map((ratio) => Math.round(window.innerWidth * ratio));
-      const sampleRows = sheetHeight > 0
-        ? [sampleY, ...[0.3, 0.6, 0.92].map((ratio) => Math.round(headerHeight + sheetHeight * ratio))]
-            .filter((y) => y < window.innerHeight - 4)
-        : [sampleY];
+      const sampleRows =
+        sheetHeight > 0
+          ? [sampleY, ...[0.3, 0.6, 0.92].map((ratio) => Math.round(headerHeight + sheetHeight * ratio))].filter(
+              (y) => y < window.innerHeight - 4,
+            )
+          : [sampleY];
 
       const readings = sampleRows
         .flatMap((rowY) => samplePoints.map((sampleX) => resolveReadingFromPoint(sampleX, rowY)))
@@ -285,9 +281,7 @@ export function useHeaderTone(
       }
 
       const luminances = readings.map((reading) =>
-        "tone" in reading
-          ? reading.tone === "dark" ? PHOTO_LUMINANCE : DECLARED_LIGHT_LUMINANCE
-          : reading.luminance,
+        "tone" in reading ? (reading.tone === "dark" ? PHOTO_LUMINANCE : DECLARED_LIGHT_LUMINANCE) : reading.luminance,
       );
 
       /* Median in both cases, and for the same reason: the surface should match
@@ -295,12 +289,9 @@ export function useHeaderTone(
          speak for the whole thing. The bar reads three columns of its own 64px;
          the sheet reads the same three across four rows of its own height. */
       const level = median(luminances);
+      if (level === undefined) return;
       const current = toneRef.current;
-      commitTone(
-        current === "dark"
-          ? level > ENTER_LIGHT ? "light" : "dark"
-          : level < ENTER_DARK ? "dark" : "light",
-      );
+      commitTone(current === "dark" ? (level > ENTER_LIGHT ? "light" : "dark") : level < ENTER_DARK ? "dark" : "light");
     };
 
     const requestToneUpdate = () => {

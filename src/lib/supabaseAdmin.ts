@@ -1,17 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
-
 /**
- * Server-only Supabase client (service role).
- * DO NOT import this in browser code.
+ * Kept as a name: 19 importers. The client itself lives in src/lib/db/server.ts,
+ * which is where `server-only` guards it. New code imports `serviceClient` from
+ * there; this alias goes when the last importer moves.
  */
-export function supabaseAdmin() {
-  const url = process.env.SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-  if (!url) throw new Error("Missing SUPABASE_URL");
-  if (!key) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
-
-  return createClient(url, key, {
-    auth: { persistSession: false },
-  });
-}
+export { serviceClient as supabaseAdmin } from "@/lib/db/server";

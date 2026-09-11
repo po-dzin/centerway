@@ -22,7 +22,8 @@
 
      The gap under the controls is `lg`, not `sm`: at 12px the caption sat in
      the arrow's shadow and the screen opened tight. */
-  margin: calc(max(var(--cw-page-gutter), env(safe-area-inset-top)) + var(--ds-touch-target-min) + var(--cw-space-lg)) auto 0;
+  margin: calc(max(var(--cw-page-gutter), env(safe-area-inset-top)) + var(--ds-touch-target-min) + var(--cw-space-lg))
+    auto 0;
   padding-block: 0 var(--cw-space-3xl);
   /* Short states (loading, "курс ще готується") would otherwise let the footer
      ride up under the header. */
@@ -177,7 +178,9 @@
   border-radius: var(--cw-card-radius);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-soft);
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 
 @media (hover: hover) {
@@ -199,7 +202,9 @@
 /* The lesson the schedule has arrived at wears the accent on its edge — the one
    row worth returning to, without a second button competing for the eye. */
 .outlineItem[data-current] {
-  box-shadow: inset 3px 0 0 0 var(--cw-platform-accent), var(--cw-mat-shadow-soft);
+  box-shadow:
+    inset 3px 0 0 0 var(--cw-platform-accent),
+    var(--cw-mat-shadow-soft);
 }
 
 .outlineLink {
@@ -675,7 +680,9 @@
   box-shadow: var(--cw-mat-shadow-soft);
   color: var(--cw-platform-text);
   text-decoration: none;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 
 @media (hover: hover) {
@@ -696,7 +703,9 @@
 
 .pagerLink:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 40%, transparent), var(--cw-mat-shadow-soft);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 40%, transparent),
+    var(--cw-mat-shadow-soft);
 }
 
 .pagerLinkNext {
@@ -1030,7 +1039,12 @@
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
   color: var(--cw-platform-text);
-  font: 0.88rem/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font:
+    0.88rem/1.6 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    monospace;
   white-space: pre;
 }
 
@@ -1184,7 +1198,6 @@
   font-size: var(--ds-type-body-sm-size);
   color: var(--cw-platform-muted);
 }
-
 
 /* ── Reader's marks ───────────────────────────────── */
 
@@ -1366,7 +1379,6 @@
   color: var(--cw-platform-accent);
 }
 
-
 /* ── The reader's notes on the course map ─────────── */
 
 .notesSection {
@@ -1484,9 +1496,10 @@
      `.wrap` rules used to sit here setting `margin-top` and `margin-block-start`
      to different values three lines apart; the second silently won. */
   .wrap {
-    margin-block-start: calc(max(var(--cw-page-gutter), env(safe-area-inset-top)) + var(--ds-touch-target-min) + var(--cw-space-2xl));
+    margin-block-start: calc(
+      max(var(--cw-page-gutter), env(safe-area-inset-top)) + var(--ds-touch-target-min) + var(--cw-space-2xl)
+    );
   }
-
 
   /* The drawer becomes a centred dialog once there is room for one. */
   .drawerBackdrop {
@@ -1632,7 +1645,9 @@
   opacity: 0;
   transform: translateY(0.5rem);
   pointer-events: none;
-  transition: opacity 200ms ease, transform 200ms ease;
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
 }
 
 .topButton[data-shown="true"] {

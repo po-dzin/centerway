@@ -1,4 +1,7 @@
 import { adminClient } from "@/lib/auth/adminClient";
+import { normalizePixelEventNameStrict } from "@/lib/analytics/pixelEvents";
+import { toIsoDate } from "@/lib/analytics/helpers";
+import { asJson, type Insert } from "@/lib/db/types";
 
 type MetaInsightsAction = {
   action_type?: string;
@@ -99,31 +102,8 @@ function extractEventCounts(actions: MetaInsightsAction[] | undefined) {
       "omni_initiate_checkout",
       "initiate_checkout",
     ]),
-    purchase: pickActionValue(totals, [
-      "offsite_conversion.fb_pixel_purchase",
-      "omni_purchase",
-      "purchase",
-    ]),
+    purchase: pickActionValue(totals, ["offsite_conversion.fb_pixel_purchase", "omni_purchase", "purchase"]),
   };
-}
-
-function toIsoDate(input: Date): string {
-  return input.toISOString().slice(0, 10);
-}
-
-function normalizePixelEventName(raw: string): "view_content" | "initiate_checkout" | "purchase" | null {
-  const value = raw.trim().toLowerCase();
-  if (!value) return null;
-  if (value === "viewcontent" || value === "view_content" || value.includes("fb_pixel_view_content")) {
-    return "view_content";
-  }
-  if (value === "initiatecheckout" || value === "initiate_checkout" || value.includes("fb_pixel_initiate_checkout")) {
-    return "initiate_checkout";
-  }
-  if (value === "purchase" || value.includes("fb_pixel_purchase")) {
-    return "purchase";
-  }
-  return null;
 }
 
 type PixelDayTotals = {
@@ -144,13 +124,11 @@ function parsePixelRowTotals(row: unknown): PixelDayTotals {
     (typeof r.action_type === "string" && r.action_type) ||
     null;
   if (rawName) {
-    const key = normalizePixelEventName(rawName);
+    const key = normalizePixelEventNameStrict(rawName);
     if (key) {
       const valueCandidates = [r.total_count, r.total, r.value, r.count];
       const value =
-        valueCandidates
-          .map((candidate) => toNumber(candidate))
-          .find((n) => Number.isFinite(n) && n >= 0) ?? 0;
+        valueCandidates.map((candidate) => toNumber(candidate)).find((n) => Number.isFinite(n) && n >= 0) ?? 0;
       totals[key] += Math.max(0, Math.round(value));
     }
   }
@@ -161,7 +139,7 @@ function parsePixelRowTotals(row: unknown): PixelDayTotals {
     if (!item || typeof item !== "object") continue;
     const entry = item as Record<string, unknown>;
     const nestedName = typeof entry.value === "string" ? entry.value : "";
-    const key = normalizePixelEventName(nestedName);
+    const key = normalizePixelEventNameStrict(nestedName);
     if (!key) continue;
     const count = toNumber(entry.count);
     totals[key] += Math.max(0, Math.round(count));
@@ -172,7 +150,7 @@ function parsePixelRowTotals(row: unknown): PixelDayTotals {
 
 async function syncPixelDailyStats(
   db: ReturnType<typeof adminClient>,
-  options: { since: string; until: string; token: string; pixelId: string; apiVersion: string }
+  options: { since: string; until: string; token: string; pixelId: string; apiVersion: string },
 ): Promise<number> {
   const nowIso = toIsoDate(new Date());
   const boundedUntil = options.until > nowIso ? nowIso : options.until;
@@ -217,14 +195,14 @@ async function syncPixelDailyStats(
     view_content: payload.totals.view_content,
     initiate_checkout: payload.totals.initiate_checkout,
     purchase: payload.totals.purchase,
-    raw: { rows: payload.rawRows },
+    raw: asJson({ rows: payload.rawRows }),
     synced_at: new Date().toISOString(),
   }));
 
   if (upsertRows.length > 0) {
     const { error } = await db
       .from("analytics_pixel_daily")
-      .upsert(upsertRows, { onConflict: "day,pixel_id" });
+      .upsert(upsertRows as Insert<"analytics_pixel_daily">[], { onConflict: "day,pixel_id" });
     if (error) {
       throw new Error(error.message);
     }
@@ -237,19 +215,13 @@ function resolveSyncWindow(sinceInput?: string | null, untilInput?: string | nul
   const now = new Date();
   const defaultUntil = toIsoDate(now);
   const defaultDaysRaw = Number(process.env.META_SYNC_DEFAULT_DAYS ?? 2);
-  const defaultDays = Number.isFinite(defaultDaysRaw) && defaultDaysRaw > 0
-    ? Math.floor(defaultDaysRaw)
-    : 2;
+  const defaultDays = Number.isFinite(defaultDaysRaw) && defaultDaysRaw > 0 ? Math.floor(defaultDaysRaw) : 2;
   const defaultSinceDate = new Date(now);
   defaultSinceDate.setDate(defaultSinceDate.getDate() - (defaultDays - 1));
   const defaultSince = toIsoDate(defaultSinceDate);
 
-  const since = typeof sinceInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(sinceInput)
-    ? sinceInput
-    : defaultSince;
-  const until = typeof untilInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(untilInput)
-    ? untilInput
-    : defaultUntil;
+  const since = typeof sinceInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(sinceInput) ? sinceInput : defaultSince;
+  const until = typeof untilInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(untilInput) ? untilInput : defaultUntil;
 
   return { since, until };
 }
@@ -264,7 +236,10 @@ async function fetchInsightsPage(url: string): Promise<MetaInsightsResponse> {
   return json;
 }
 
-export async function syncMetaAdsInsights(options?: { since?: string | null; until?: string | null }): Promise<MetaSyncResult> {
+export async function syncMetaAdsInsights(options?: {
+  since?: string | null;
+  until?: string | null;
+}): Promise<MetaSyncResult> {
   const token = process.env.META_ADS_ACCESS_TOKEN || process.env.META_ACCESS_TOKEN;
   const rawAccount = process.env.META_AD_ACCOUNT_ID;
   const rawPixelId = process.env.META_PIXEL_ID || process.env.META_AD_PIXEL_ID || process.env.META_PIXEL;
@@ -321,7 +296,8 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
         impressions: Math.round(toNumber(row.impressions)),
         clicks: Math.round(toNumber(row.clicks)),
         spend: toNumber(row.spend),
-        currency: typeof row.account_currency === "string" && row.account_currency.trim() ? row.account_currency.trim() : "UAH",
+        currency:
+          typeof row.account_currency === "string" && row.account_currency.trim() ? row.account_currency.trim() : "UAH",
         view_content: Math.round(events.view_content),
         initiate_checkout: Math.round(events.initiate_checkout),
         purchase: Math.round(events.purchase),
@@ -334,7 +310,7 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
   if (upsertRows.length > 0) {
     const { error } = await db
       .from("analytics_meta_daily")
-      .upsert(upsertRows, { onConflict: "day,account_id" });
+      .upsert(upsertRows as Insert<"analytics_meta_daily">[], { onConflict: "day,account_id" });
     if (error) {
       throw new Error(error.message);
     }
@@ -381,7 +357,8 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
         impressions: Math.round(toNumber(row.impressions)),
         clicks: Math.round(toNumber(row.clicks)),
         spend: toNumber(row.spend),
-        currency: typeof row.account_currency === "string" && row.account_currency.trim() ? row.account_currency.trim() : "UAH",
+        currency:
+          typeof row.account_currency === "string" && row.account_currency.trim() ? row.account_currency.trim() : "UAH",
         view_content: Math.round(events.view_content),
         initiate_checkout: Math.round(events.initiate_checkout),
         purchase: Math.round(events.purchase),
@@ -395,7 +372,9 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
   if (campaignUpsertRows.length > 0) {
     const { error } = await db
       .from("analytics_meta_campaign_daily")
-      .upsert(campaignUpsertRows, { onConflict: "day,account_id,campaign_id" });
+      .upsert(campaignUpsertRows as Insert<"analytics_meta_campaign_daily">[], {
+        onConflict: "day,account_id,campaign_id",
+      });
     if (error) {
       const message = error.message.toLowerCase();
       const isMissingTable =
@@ -414,7 +393,8 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
     access_token: token,
     level: "adset",
     time_increment: "1",
-    fields: "date_start,date_stop,campaign_id,campaign_name,adset_id,adset_name,spend,reach,impressions,clicks,actions,account_currency",
+    fields:
+      "date_start,date_stop,campaign_id,campaign_name,adset_id,adset_name,spend,reach,impressions,clicks,actions,account_currency",
     time_range: JSON.stringify({ since, until }),
     limit: "500",
   });
@@ -455,7 +435,8 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
         impressions: Math.round(toNumber(row.impressions)),
         clicks: Math.round(toNumber(row.clicks)),
         spend: toNumber(row.spend),
-        currency: typeof row.account_currency === "string" && row.account_currency.trim() ? row.account_currency.trim() : "UAH",
+        currency:
+          typeof row.account_currency === "string" && row.account_currency.trim() ? row.account_currency.trim() : "UAH",
         view_content: Math.round(events.view_content),
         initiate_checkout: Math.round(events.initiate_checkout),
         purchase: Math.round(events.purchase),
@@ -469,7 +450,7 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
   if (adsetUpsertRows.length > 0) {
     const { error } = await db
       .from("analytics_meta_adset_daily")
-      .upsert(adsetUpsertRows, { onConflict: "day,account_id,adset_id" });
+      .upsert(adsetUpsertRows as Insert<"analytics_meta_adset_daily">[], { onConflict: "day,account_id,adset_id" });
     if (error) {
       const message = error.message.toLowerCase();
       const isMissingTable =
@@ -488,7 +469,8 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
     access_token: token,
     level: "ad",
     time_increment: "1",
-    fields: "date_start,date_stop,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,reach,impressions,clicks,actions,account_currency",
+    fields:
+      "date_start,date_stop,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,reach,impressions,clicks,actions,account_currency",
     time_range: JSON.stringify({ since, until }),
     limit: "500",
   });
@@ -533,7 +515,8 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
         impressions: Math.round(toNumber(row.impressions)),
         clicks: Math.round(toNumber(row.clicks)),
         spend: toNumber(row.spend),
-        currency: typeof row.account_currency === "string" && row.account_currency.trim() ? row.account_currency.trim() : "UAH",
+        currency:
+          typeof row.account_currency === "string" && row.account_currency.trim() ? row.account_currency.trim() : "UAH",
         view_content: Math.round(events.view_content),
         initiate_checkout: Math.round(events.initiate_checkout),
         purchase: Math.round(events.purchase),
@@ -547,7 +530,7 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
   if (adUpsertRows.length > 0) {
     const { error } = await db
       .from("analytics_meta_ad_daily")
-      .upsert(adUpsertRows, { onConflict: "day,account_id,ad_id" });
+      .upsert(adUpsertRows as Insert<"analytics_meta_ad_daily">[], { onConflict: "day,account_id,ad_id" });
     if (error) {
       const message = error.message.toLowerCase();
       const isMissingTable =

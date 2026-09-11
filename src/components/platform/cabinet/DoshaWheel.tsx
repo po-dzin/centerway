@@ -74,57 +74,49 @@ export function DoshaWheel({
      than a `let` walked through `.map` — the lint rule that forbids reassigning
      after render is right on principle here: a running cursor in a render body
      is state pretending to be a local. */
-  const arcs = ORDER.reduce<Array<{ key: DoshaKey; share: number; fromDeg: number; toDeg: number }>>(
-    (acc, key) => {
-      const before = acc.reduce((sum, item) => sum + item.share, 0);
-      const share = Math.max(0, scores[key] ?? 0) / total;
-      const fromDeg = before * 360 + GAP / 2;
-      const toDeg = (before + share) * 360 - GAP / 2;
-      return [...acc, { key, share, fromDeg, toDeg }];
-    },
-    [],
-  ).filter((arc) => arc.toDeg > arc.fromDeg);
+  const arcs = ORDER.reduce<Array<{ key: DoshaKey; share: number; fromDeg: number; toDeg: number }>>((acc, key) => {
+    const before = acc.reduce((sum, item) => sum + item.share, 0);
+    const share = Math.max(0, scores[key] ?? 0) / total;
+    const fromDeg = before * 360 + GAP / 2;
+    const toDeg = (before + share) * 360 - GAP / 2;
+    return [...acc, { key, share, fromDeg, toDeg }];
+  }, []).filter((arc) => arc.toDeg > arc.fromDeg);
 
   const ring = (
-      <svg
-        className={styles.wheelRing}
-        viewBox={`0 0 ${BOX} ${BOX}`}
-        role="img"
-        aria-labelledby={titleId}
-      >
-        <title id={titleId}>
-          {lang === "en" ? "Dosha balance" : "Баланс дош"}: {resultLabel}
-        </title>
-        {/* The unlit ring the arcs are drawn on — without it a low score reads
+    <svg className={styles.wheelRing} viewBox={`0 0 ${BOX} ${BOX}`} role="img" aria-labelledby={titleId}>
+      <title id={titleId}>
+        {lang === "en" ? "Dosha balance" : "Баланс дош"}: {resultLabel}
+      </title>
+      {/* The unlit ring the arcs are drawn on — without it a low score reads
             as a missing piece rather than as a smaller share. */}
+      <path
+        className={styles.wheelTrack}
+        d={handArcPath({ cx: BOX / 2, cy: BOX / 2, radius: RADIUS, fromDeg: 0, toDeg: 360, seed: 9 })}
+        fill="none"
+        strokeWidth={STROKE}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {arcs.map((arc, index) => (
         <path
-          className={styles.wheelTrack}
-          d={handArcPath({ cx: BOX / 2, cy: BOX / 2, radius: RADIUS, fromDeg: 0, toDeg: 360, seed: 9 })}
+          key={arc.key}
+          className={styles.wheelArc}
+          data-dosha={arc.key}
+          d={handArcPath({
+            cx: BOX / 2,
+            cy: BOX / 2,
+            radius: RADIUS,
+            fromDeg: arc.fromDeg,
+            toDeg: arc.toDeg,
+            seed: index + 1,
+          })}
           fill="none"
           strokeWidth={STROKE}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        {arcs.map((arc, index) => (
-          <path
-            key={arc.key}
-            className={styles.wheelArc}
-            data-dosha={arc.key}
-            d={handArcPath({
-              cx: BOX / 2,
-              cy: BOX / 2,
-              radius: RADIUS,
-              fromDeg: arc.fromDeg,
-              toDeg: arc.toDeg,
-              seed: index + 1,
-            })}
-            fill="none"
-            strokeWidth={STROKE}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        ))}
-      </svg>
+      ))}
+    </svg>
   );
 
   return (

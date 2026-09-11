@@ -28,7 +28,14 @@ type PlatformLegalTemplateProps = {
   shellMode?: "platform" | "plain";
 };
 
-function LegalContent({ eyebrow, title, lead, panels = [], actions = [], children }: Omit<PlatformLegalTemplateProps, "shellMode">) {
+function LegalContent({
+  eyebrow,
+  title,
+  lead,
+  panels = [],
+  actions = [],
+  children,
+}: Omit<PlatformLegalTemplateProps, "shellMode">) {
   return (
     <main className={`${templateStyles.page} ${styles.section}`}>
       <div className={`${styles.container} ${templateStyles.stack}`}>

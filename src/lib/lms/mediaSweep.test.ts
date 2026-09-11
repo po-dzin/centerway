@@ -23,7 +23,10 @@ describe("planSweep", () => {
   });
 
   it("leaves a just-uploaded image alone — it is not yet saved, not orphaned", () => {
-    const result = plan([asset("courses/c/fresh", daysAgo(1)), asset("courses/c/kept", daysAgo(9))], ["courses/c/kept"]);
+    const result = plan(
+      [asset("courses/c/fresh", daysAgo(1)), asset("courses/c/kept", daysAgo(9))],
+      ["courses/c/kept"],
+    );
     expect(result.collectable).toHaveLength(0);
     expect(result.young.map((a) => a.assetKey)).toEqual(["courses/c/fresh"]);
   });
@@ -53,7 +56,10 @@ describe("planSweep", () => {
   });
 
   it("keeps a file whose timestamp cannot be read", () => {
-    const result = plan([asset("courses/c/broken", "not a date"), asset("courses/c/live", daysAgo(1))], ["courses/c/live"]);
+    const result = plan(
+      [asset("courses/c/broken", "not a date"), asset("courses/c/live", daysAgo(1))],
+      ["courses/c/live"],
+    );
     expect(result.collectable).toHaveLength(0);
     expect(result.young).toHaveLength(1);
   });

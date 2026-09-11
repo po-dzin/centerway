@@ -13,7 +13,14 @@
 import { describe, expect, it } from "vitest";
 
 import { snapshotCourses, getSnapshotCourse, getSnapshotCourseByProgram } from "./catalog";
-import { countLessons, courseReadiness, flattenLessons, flattenReference, flattenSteps, formatReadiness } from "@/lms-core";
+import {
+  countLessons,
+  courseReadiness,
+  flattenLessons,
+  flattenReference,
+  flattenSteps,
+  formatReadiness,
+} from "@/lms-core";
 
 describe("course catalog", () => {
   it("loads and validates every authored course", () => {
@@ -55,8 +62,8 @@ describe("course catalog", () => {
       expect(days[0], `course ${course.slug} does not start on day 1`).toBe(1);
       for (let index = 1; index < days.length; index += 1) {
         expect(
-          days[index] > days[index - 1],
-          `course ${course.slug}: day ${days[index]} does not follow day ${days[index - 1]}`
+          days[index]! > days[index - 1]!,
+          `course ${course.slug}: day ${days[index]} does not follow day ${days[index - 1]}`,
         ).toBe(true);
       }
     }
@@ -77,7 +84,7 @@ describe("course catalog", () => {
     for (const course of snapshotCourses()) {
       if (course.schedule.mode !== "daily") continue;
       const hasBoundary = flattenLessons(course).some((entry) =>
-        entry.lesson.blocks.some((block) => block.type === "boundary_note")
+        entry.lesson.blocks.some((block) => block.type === "boundary_note"),
       );
       expect(hasBoundary, `course ${course.slug} has no boundary_note`).toBe(true);
     }
@@ -118,9 +125,9 @@ describe("course catalog", () => {
     const course = getSnapshotCourse("reset-day")!;
     const day2 = flattenLessons(course).find((entry) => entry.lesson.slug === "day-2");
     const variants = (day2?.lesson.blocks ?? []).filter(
-      (block) => block.type === "practice_block" && /^\d\./.test(
-        typeof block.title === "string" ? block.title : block.title.map((span) => span.text).join("")
-      )
+      (block) =>
+        block.type === "practice_block" &&
+        /^\d\./.test(typeof block.title === "string" ? block.title : block.title.map((span) => span.text).join("")),
     );
     expect(variants).toHaveLength(6);
   });

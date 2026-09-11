@@ -97,9 +97,13 @@ export function formatCalendarDate(date: CalendarDate): string {
 export function parseCalendarDate(value: string): CalendarDate | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
   if (!match) return null;
+
+  const [, year, month, day] = match;
+  if (!year || !month || !day) return null;
+
   return {
-    year: Number.parseInt(match[1], 10),
-    month: Number.parseInt(match[2], 10),
-    day: Number.parseInt(match[3], 10),
+    year: Number.parseInt(year, 10),
+    month: Number.parseInt(month, 10),
+    day: Number.parseInt(day, 10),
   };
 }

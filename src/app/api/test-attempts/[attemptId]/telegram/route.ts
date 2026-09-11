@@ -11,10 +11,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { adminClient } from "@/lib/auth/adminClient";
-import { loadTestAttempt } from "@/lib/doshaTestRepo";
+import { loadTestAttempt } from "@/lib/dosha/doshaTestRepo";
 import { createDoshaResultToken } from "@/lib/platform/doshaTelegramLink";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
-import { callTelegramBotApi } from "@/lib/tg";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
+import { callTelegramBotApi } from "@/lib/telegram/tg";
 
 export const runtime = "nodejs";
 
@@ -32,10 +32,7 @@ async function botUsername(): Promise<string | null> {
   return cachedBotUsername;
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ attemptId: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ attemptId: string }> }) {
   const rl = await enforceRateLimit(req, { name: "test_telegram_link", limit: 20, windowSeconds: 60 });
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 

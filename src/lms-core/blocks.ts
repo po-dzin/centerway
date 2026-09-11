@@ -11,13 +11,7 @@
  * subset needed for reset-day and way21, and no more.
  */
 
-import {
-  assert,
-  isNonEmptyString,
-  isRecord,
-  validateInlineText,
-  type InlineText,
-} from "./inline";
+import { assert, isNonEmptyString, isRecord, validateInlineText, type InlineText } from "./inline";
 
 export type LessonBlockType =
   | "group"
@@ -125,7 +119,7 @@ export function youtubeIdFrom(input: string): string | null {
 
   for (const pattern of patterns) {
     const found = pattern.exec(value);
-    if (found) return found[1];
+    if (found?.[1]) return found[1];
   }
 
   return null;
@@ -229,10 +223,7 @@ export const LESSON_BLOCK_TYPES: readonly LessonBlockType[] = [
 function validateRichTextNode(node: unknown, path: string): asserts node is RichTextNode {
   assert(isRecord(node), `lms_block_invalid_node:${path}`);
   const kind = node.kind;
-  assert(
-    kind === "p" || kind === "h3" || kind === "ul" || kind === "ol",
-    `lms_block_unknown_node_kind:${path}`
-  );
+  assert(kind === "p" || kind === "h3" || kind === "ul" || kind === "ol", `lms_block_unknown_node_kind:${path}`);
 
   if (kind === "p" || kind === "h3") {
     validateInlineText(node.text, `${path}.text`);
@@ -257,7 +248,7 @@ export function validateLessonBlock(block: unknown, path: string, depth = 0): as
   const type = block.type;
   assert(
     typeof type === "string" && (LESSON_BLOCK_TYPES as readonly string[]).includes(type),
-    `lms_block_unknown_type:${path}`
+    `lms_block_unknown_type:${path}`,
   );
 
   switch (type as LessonBlockType) {
@@ -273,7 +264,8 @@ export function validateLessonBlock(block: unknown, path: string, depth = 0): as
 
     case "code":
       assert(isNonEmptyString(block.code), `lms_block_missing_code:${path}`);
-      if (block.language !== undefined) assert(typeof block.language === "string", `lms_block_invalid_language:${path}`);
+      if (block.language !== undefined)
+        assert(typeof block.language === "string", `lms_block_invalid_language:${path}`);
       return;
 
     case "rich_text":
@@ -284,7 +276,7 @@ export function validateLessonBlock(block: unknown, path: string, depth = 0): as
     case "protocol_step":
       assert(
         typeof block.step === "number" && Number.isInteger(block.step) && block.step > 0,
-        `lms_block_invalid_step:${path}`
+        `lms_block_invalid_step:${path}`,
       );
       validateInlineText(block.title, `${path}.title`);
       if (block.text !== undefined) validateInlineText(block.text, `${path}.text`);
@@ -390,7 +382,7 @@ export function collectRequiredChecklistItemIds(blocks: LessonBlock[]): string[]
 
 /** Depth-first reading order, with stable identities retained inside groups. */
 export function flattenBlocks(blocks: LessonBlock[]): Exclude<LessonBlock, { type: "group" }>[] {
-  return blocks.flatMap((block) => block.type === "group" ? flattenBlocks(block.children) : [block]);
+  return blocks.flatMap((block) => (block.type === "group" ? flattenBlocks(block.children) : [block]));
 }
 
 export function addressedBlocks(blocks: LessonBlock[], prefix = "blocks"): { block: LessonBlock; path: string }[] {

@@ -1,9 +1,5 @@
 import { getLandingPublicEntryPath, LANDING_ROUTE_CONFIG } from "@/lib/landing/config";
-import {
-  LANDING_ASSET_PREFIXES,
-  LANDING_ROOT_FILES,
-  ROOT_LANDING_PAGE_MAP,
-} from "@/lib/landing/contracts";
+import { LANDING_ASSET_PREFIXES, LANDING_ROOT_FILES, ROOT_LANDING_PAGE_MAP } from "@/lib/landing/contracts";
 import type { StaticLandingProduct } from "@/lib/landing/types";
 
 export function normalizeLandingPathname(pathname: string): string {

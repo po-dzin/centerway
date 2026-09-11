@@ -51,7 +51,7 @@ export type EvalReport = {
 export function evaluateRetrieval(
   index: KnowledgeIndex,
   cases: EvalCase[],
-  options: { k?: number; audience?: "public" | "learner" } = {}
+  options: { k?: number; audience?: "public" | "learner" } = {},
 ): EvalReport {
   const k = options.k ?? 5;
   const known = new Set(index.docs.map((doc) => doc.id));

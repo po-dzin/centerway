@@ -12,9 +12,7 @@ const GLOBALS_CSS_PATH = path.join(repoRoot, "src", "app", "globals.css");
 // so they used to carry hand-copied duplicates of the platform palette. This
 // file is the same values emitted from the same source, which is what keeps the
 // network from drifting away from the platform on the next palette edit.
-const NETWORK_CSS_PATH = path.join(
-  repoRoot, "src", "landing-static", "shared", "css", "cw-tokens.generated.css",
-);
+const NETWORK_CSS_PATH = path.join(repoRoot, "src", "landing-static", "shared", "css", "cw-tokens.generated.css");
 
 const LIGHT_START = "/* DS_ALIAS_LIGHT_START */";
 const LIGHT_END = "/* DS_ALIAS_LIGHT_END */";
@@ -348,9 +346,7 @@ async function main() {
   ]);
   const coursePackDecls = Object.entries(tokens.layers?.packs ?? {})
     .map(([name, values]) => {
-      const hueOnly = Object.fromEntries(
-        Object.entries(values).filter(([token]) => PACK_DARK_ROLES.has(token))
-      );
+      const hueOnly = Object.fromEntries(Object.entries(values).filter(([token]) => PACK_DARK_ROLES.has(token)));
       // The SWATCH the builder shows for this gamma, and it applies in both
       // themes on purpose. A swatch is not the surface — it is a picture OF the
       // surface, and a course's gamma is a light-side choice, so the sample has
@@ -385,8 +381,20 @@ async function main() {
   let nextGlobals = upsertBefore(globals, BASE_LIGHT_START, BASE_LIGHT_END, RUNTIME_START, baseLightDecls);
   nextGlobals = upsertBefore(nextGlobals, RUNTIME_START, RUNTIME_END, "/* Platform DS contract:", runtimeDecls);
   nextGlobals = upsertBefore(nextGlobals, LIGHT_START, LIGHT_END, "/* Platform DS contract:", lightDecls);
-  nextGlobals = upsertBefore(nextGlobals, MATERIAL_DARK_START, MATERIAL_DARK_END, "/* Public platform dark palette", materialDarkDecls);
-  nextGlobals = upsertBefore(nextGlobals, PLATFORM_DARK_START, PLATFORM_DARK_END, "/* Public platform dark palette", platformDarkDecls);
+  nextGlobals = upsertBefore(
+    nextGlobals,
+    MATERIAL_DARK_START,
+    MATERIAL_DARK_END,
+    "/* Public platform dark palette",
+    materialDarkDecls,
+  );
+  nextGlobals = upsertBefore(
+    nextGlobals,
+    PLATFORM_DARK_START,
+    PLATFORM_DARK_END,
+    "/* Public platform dark palette",
+    platformDarkDecls,
+  );
   nextGlobals = replaceBetween(nextGlobals, PACK_MINERAL_START, PACK_MINERAL_END, packMineralDecls);
   nextGlobals = replaceBetween(nextGlobals, COURSE_PACKS_START, COURSE_PACKS_END, coursePackDecls);
   nextGlobals = replaceBetween(nextGlobals, POINTER_FINE_START, POINTER_FINE_END, pointerFineDecls);

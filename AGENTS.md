@@ -89,6 +89,129 @@ Use local docs for implementation notes, audits, route-specific decisions, runti
 
 Update RAverse only when a local decision becomes a durable project rule that should guide future work beyond one immediate task, route, script, component, or migration.
 
+## Database Rule
+
+The schema record is `supabase/migrations/`, and the journal of what
+production has is `supabase_migrations.schema_migrations`. They agree since
+2026-09-10 and must keep agreeing: a change goes in as a file there and is
+applied with `npm run db:push` (through the session pooler — the direct host is
+IPv6-only from this machine), or with `psql` followed by a journal row written
+by hand. Never as a statement typed into the SQL editor and nowhere else; that
+is how 47 migrations went unregistered. `docs/migration/README.md` has the
+procedure and the two unapplied files awaiting a decision.
+
+Regenerate `src/lib/db/database.types.ts` (`npm run db:types`, needs Docker)
+in the same change as the migration, and commit it with it.
+
+**Row Level Security is not the application's guard.** Decided 2026-09-10: the
+server reads and writes through the service role, which bypasses RLS, and
+authorization is the JavaScript in `src/lib/auth/` and `src/lib/admin/access.ts`
+— `requireAdmin`, `verifyBearer`, the entitlement check. The policies in the
+schema stay as defence in depth for anything that reaches the database with a
+user token (the browser client, a future native app), and no policy is to be
+relied on by server code. A route that needs a check writes it in TypeScript.
+
+## Test Rule
+
+Four kinds of test exist, and a fifth deliberately does not.
+
+- **Unit tests** (`npm run test`, vitest, `src/**/*.test.{ts,tsx}`) next
+  to the code they cover. Server modules run against `src/lib/admin/fakeSupabase.ts`,
+  an in-memory client that answers the query chains the code uses; a chain it
+  does not know throws, and the fix is to teach the fake, not to loosen the test.
+- **Route tests** are unit tests that call a handler's `POST`/`GET` with a
+  `NextRequest` and mocked collaborators (`src/app/api/wfp/webhook/route.test.ts`
+  is the pattern). The routes money passes through have them; a new route that
+  writes to the database gets one.
+- **Contract tests** grep sources for a rule that must hold (`*.contract.test.ts`
+  and the `guard:*` scripts). They prove a text invariant, not behaviour.
+- **Browser smoke** (Playwright, `tests/e2e`). `smoke:thanks:browser` needs no
+  secrets — `playwright.config.ts` starts `next start` on the build — and runs
+  on every CI job. `smoke:platform:browser` needs a deployment with a database
+  and runs only when `SMOKE_UI_BASE_URL` is set.
+- **Component tests: none, on purpose.** There is no jsdom and no Testing
+  Library. The components are thin over server data and CSS modules, and what
+  goes wrong in them is visual, which the browser smoke and the design gates
+  catch. `vitest` collects `.test.tsx` all the same, so the day a component
+  earns a test, nothing stands in the way. Do not add a rendering harness to
+  test a single component; write the browser smoke instead.
+
+Coverage is a ratchet (`npm run test:coverage`, thresholds in `vitest.config.ts`):
+the figures are the day's baseline rounded down, CI fails below them, and a
+change that raises them moves them up. Nobody chases the number.
+
+## Guard Rule
+
+An architectural rule lives in `eslint.config.mjs` if ESLint can see it, and in
+`scripts/guard-*.mjs` if it cannot. That line is the whole policy.
+
+ESLint holds what is expressed in TypeScript: the layer boundaries, the
+`src/lms-core` portability contract (zero dependencies, no host globals, no
+JSX), the composition rule for public route files under `(platform)` (no CSS
+import, no `PlatformContentStyles`, no structural layout tag), and the admin's
+grey palette. These are checked against the syntax tree, so they are exact and
+they underline in the editor. Add the next such rule there, not to a script.
+
+The scripts hold what has no syntax tree: CSS tokens and contrast, the brand
+mark, generated screens and manifests, the canon documents, assets that must
+exist, and files that must not. A script named `guard-*` reads the repository
+and decides; a script named `smoke-*` calls a running app. Nothing that only
+reads files is called a smoke.
+
+`npm run guard:eslint` is the test of the ESLint half: it writes a violating
+file for each rule and requires the complaint, and writes the clean cases the
+old line-regex guards used to reject. A rule that cannot be shown to fail is
+not a rule, and config is easy to break in silence.
+
+## Formatting Rule
+
+Prettier owns formatting: `npm run format` writes, `npm run format:check`
+decides, and `verify:guards` runs the check. Do not hand-wrap code to taste —
+the whole repository was formatted in one pass on 2026-09-11 and the only way
+that stays true is that nobody re-wraps by hand.
+
+What Prettier does not own is written in `.prettierignore` with the reason:
+codegen output (formatting it puts the file out of step with the script that
+writes it, and the check that compares the two then fails on whitespace),
+`src/landing-static` (hand-written documents that three guards read by line),
+and prose.
+
+That one pass touched 541 files, so `.git-blame-ignore-revs` lists it. Run
+`git config blame.ignoreRevsFile .git-blame-ignore-revs` once per clone and
+blame walks past it to the commit that wrote the line. A commit goes in that
+file only if it changed no identifier, no string and no comment prose.
+
+## Script Rule
+
+A script's prefix says what kind of thing it is, and there are four kinds:
+
+- `guard:*` reads the repository and decides. No server, no secret, no network.
+- `smoke:*` needs a running app, a browser, or credentials.
+- `verify:*` is an aggregate of the two, for one area or for the whole repo.
+- everything else is a tool you invoke on purpose: `db:`, `lms:`, `tg:`, `img:`,
+  `wfp:`, `media:`, `admin:`, `docs:`, `icons:`, `tokens:`, `brand:`, `ds:`.
+
+This is not tidiness. `smoke:admin:authz-coverage` was named a smoke, listed
+among the steps that need the app, and therefore skipped itself whenever the
+server was down — while reading nothing but two files on disk. A name that
+misstates the kind eventually gets believed.
+
+The entry points, and there are about a dozen:
+
+| | |
+|---|---|
+| `dev`, `build`, `start` | run it |
+| `lint`, `typecheck`, `test`, `test:coverage` | check one dimension |
+| `verify` | lint + typecheck + test + build — before any push |
+| `verify:guards` | every static gate, ~10s, no server. Takes a filter: `npm run verify:guards -- guard:admin` |
+| `verify:ds` | the design-system gate, plus lint and build |
+| `verify:lms`, `verify:landing`, `verify:admin`, `verify:dosha`, `verify:generator` | one area, end to end |
+| `format`, `clean` | housekeeping |
+
+Everything else sits behind those and is listed in `package.json`. Add a new
+check to the list inside `scripts/verify-guards.mjs`, not to a workflow file:
+CI calls that script, so a gate added there runs everywhere at once.
+
 ## Agent Output Path Rule
 
 When agents report changed files, references, handoff notes, or review comments, do not print full absolute filesystem paths by default.
@@ -120,16 +243,15 @@ The rhythm of one work cycle:
    a PR per commit and not a preview deployment per idea. Both Vercel and the
    review queue are shared, finite, and paid for.
 4. **Write a migration down before applying it, not after.** The SQL belongs in
-   `docs/migration/sql/<YYYY-MM-DD>_<name>.sql`, and that file is created FIRST.
-   `supabase/migrations/` is gitignored staging that `npm run db:stage` empties
-   on every run, so a change living only there is one command away from living
-   nowhere — that is how `author_profile_background` ran in production for two
-   weeks with its SQL in no file this repo keeps (2026-09-11). Then rehearse
-   with `npm run db:stage` and
-   `npm run db:local:reset`, apply, record the version, and close the cycle with
+   `supabase/migrations/<YYYYMMDDHHMMSS>_<name>.sql`, committed, and that file is
+   created FIRST (ADR-0001). The staging queue that used to sit there was
+   emptied on every run, so a change living only in it was one command away from
+   living nowhere — that is how `author_profile_background` ran in production
+   for two weeks with its SQL in no file this repo keeps (2026-09-11). Then
+   rehearse with `npm run db:local:reset`, apply with `npm run db:push`, record
+   the version if you applied it by hand instead, and close the cycle with
    `npm run check:migration-drift`, which fails when production holds a change
-   this repo cannot show. `npm run db:push` does not currently work;
-   `docs/migration/README.md` says why and what to do instead.
+   this repo cannot show. `docs/migration/README.md` has the full procedure.
 
 If a change genuinely cannot be judged locally — a payment callback, a Telegram
 webhook, a phone-sized check on a real URL — say so and name the reason. A tunnel

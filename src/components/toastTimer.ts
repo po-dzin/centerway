@@ -14,7 +14,13 @@ export function createToastTimer(expire: () => void, durationMs: number): ToastT
   const start = () => {
     if (disposed || paused.size || handle !== undefined || durationMs <= 0 || !Number.isFinite(durationMs)) return;
     started = Date.now();
-    handle = setTimeout(() => { disposed = true; expire(); }, Math.max(0, remaining));
+    handle = setTimeout(
+      () => {
+        disposed = true;
+        expire();
+      },
+      Math.max(0, remaining),
+    );
   };
   start();
   return {
@@ -26,7 +32,13 @@ export function createToastTimer(expire: () => void, durationMs: number): ToastT
         remaining -= Date.now() - started;
       }
     },
-    resume(reason) { paused.delete(reason); start(); },
-    dispose() { disposed = true; clearTimeout(handle); },
+    resume(reason) {
+      paused.delete(reason);
+      start();
+    },
+    dispose() {
+      disposed = true;
+      clearTimeout(handle);
+    },
   };
 }

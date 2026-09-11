@@ -6,15 +6,8 @@
       "version": "1.0.0",
       "route_family": "funnel surface",
       "route_boundary": "isolated funnel route",
-      "route_paths": [
-        "/funnel-entry/consult",
-        "/funnel-entry/detox",
-        "/funnel-entry/herbs"
-      ],
-      "allowed_archetypes": [
-        "offer-detail",
-        "overview-entry"
-      ],
+      "route_paths": ["/funnel-entry/consult", "/funnel-entry/detox", "/funnel-entry/herbs"],
+      "allowed_archetypes": ["offer-detail", "overview-entry"],
       "allowed_block_order": [
         "hero-entry-definition",
         "route-framing",
@@ -42,11 +35,7 @@
         "funnel.next-step",
         "funnel.resource-entry"
       ],
-      "required_semantic_roles": [
-        "orientation",
-        "offer",
-        "boundary"
-      ],
+      "required_semantic_roles": ["orientation", "offer", "boundary"],
       "isolated": true
     },
     {
@@ -54,14 +43,8 @@
       "version": "1.0.0",
       "route_family": "utility",
       "route_boundary": "platform utility route",
-      "route_paths": [
-        "/lesson/pilot"
-      ],
-      "allowed_archetypes": [
-        "overview-entry",
-        "lesson-practice",
-        "support-proof"
-      ],
+      "route_paths": ["/lesson/pilot"],
+      "allowed_archetypes": ["overview-entry", "lesson-practice", "support-proof"],
       "allowed_block_order": [
         "hero-entry-definition",
         "route-framing",
@@ -71,14 +54,8 @@
         "next-step",
         "boundary-block"
       ],
-      "allowed_renderers": [
-        "lesson.pilot.header",
-        "lesson.pilot.practice",
-        "lesson.pilot.nextstep"
-      ],
-      "required_semantic_roles": [
-        "orientation"
-      ]
+      "allowed_renderers": ["lesson.pilot.header", "lesson.pilot.practice", "lesson.pilot.nextstep"],
+      "required_semantic_roles": ["orientation"]
     }
   ]
 }

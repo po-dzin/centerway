@@ -14,15 +14,10 @@ function activityTime(course: LearnerShelfCourseDto): number {
  * decide this card. Among unfinished enrolled courses, the latest persisted
  * learner activity wins. A paid but unopened course remains the fallback.
  */
-export function pickResumeCourse(
-  courses: LearnerShelfCourseDto[],
-): LearnerShelfCourseDto | null {
+export function pickResumeCourse(courses: LearnerShelfCourseDto[]): LearnerShelfCourseDto | null {
   const active = [...courses]
     .filter(
-      (course) =>
-        course.access === "enrolled" &&
-        !course.standing?.isFinished &&
-        Boolean(course.currentLessonSlug),
+      (course) => course.access === "enrolled" && !course.standing?.isFinished && Boolean(course.currentLessonSlug),
     )
     .sort((left, right) => activityTime(right) - activityTime(left));
 

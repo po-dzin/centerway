@@ -8,15 +8,7 @@
  * with every write, so a rejected event self-corrects rather than drifting.
  */
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type CSSProperties,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { MotionLink } from "@/components/platform/MotionLink";
 
 import { courseThemeAttributes, inlineToPlainText } from "@/lms-core";
@@ -57,10 +49,7 @@ import { lessonMemo, recall, remember, subscribeLibraryMemory, warm } from "./li
 import styles from "./Lms.module.css";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 
-type State =
-  | { status: "loading" }
-  | { status: "ready"; data: LessonViewDto }
-  | { status: "error"; error: LmsFailure };
+type State = { status: "loading" } | { status: "ready"; data: LessonViewDto } | { status: "error"; error: LmsFailure };
 
 /** One shared «nothing ticked», so an unread lesson is not a new object per render. */
 const NO_TICKS: Record<string, boolean> = Object.freeze({});
@@ -92,17 +81,13 @@ export function LessonView({
   const known = useSyncExternalStore(
     subscribeLibraryMemory,
     () => recall<LessonViewDto>(memo),
-    () => undefined
+    () => undefined,
   );
   const [failure, setFailure] = useState<LmsFailure | null>(null);
   const state: State = useMemo(
     () =>
-      known
-        ? { status: "ready", data: known }
-        : failure
-          ? { status: "error", error: failure }
-          : { status: "loading" },
-    [known, failure]
+      known ? { status: "ready", data: known } : failure ? { status: "error", error: failure } : { status: "loading" },
+    [known, failure],
   );
 
   /* WHAT THE READER HAS JUST DONE, BEFORE THE SERVER HAS AGREED.
@@ -113,23 +98,24 @@ export function LessonView({
      that used to be spelled out by hand in every branch that called `load()`.
      It also means a remembered lesson arrives with its ticks already on, rather
      than blank for the frame before the network confirms them. */
-  const [overlay, setOverlay] = useState<
-    { base: LessonViewDto; checklist: Record<string, boolean>; completed: boolean } | null
-  >(null);
+  const [overlay, setOverlay] = useState<{
+    base: LessonViewDto;
+    checklist: Record<string, boolean>;
+    completed: boolean;
+  } | null>(null);
   const live = overlay && overlay.base === known ? overlay : null;
   /* Memoised because the mark layer and the completion gate both key off its
      identity — a fresh object every render would make every render a recount. */
-  const checklist = useMemo(
-    () => (live ? live.checklist : known?.progress.checklist ?? NO_TICKS),
-    [live, known]
-  );
+  const checklist = useMemo(() => (live ? live.checklist : (known?.progress.checklist ?? NO_TICKS)), [live, known]);
   const completed = live ? live.completed : known?.progress.status === "completed";
 
   const editProgress = useCallback(
-    (change: (current: { checklist: Record<string, boolean>; completed: boolean }) => {
-      checklist: Record<string, boolean>;
-      completed: boolean;
-    }) => {
+    (
+      change: (current: { checklist: Record<string, boolean>; completed: boolean }) => {
+        checklist: Record<string, boolean>;
+        completed: boolean;
+      },
+    ) => {
       if (!known) return;
       setOverlay((current) => {
         const base =
@@ -139,7 +125,7 @@ export function LessonView({
         return { base: known, ...change(base) };
       });
     },
-    [known]
+    [known],
   );
 
   const [pending, setPending] = useState(false);
@@ -216,9 +202,7 @@ export function LessonView({
   const nextSlug = known?.nav.next?.available ? known.nav.next.slug : null;
   useEffect(() => {
     if (!nextSlug || draftPreview) return;
-    return warm(lessonMemo(courseSlug, nextSlug, draftPreview), () =>
-      fetchLesson(courseSlug, nextSlug, draftPreview)
-    );
+    return warm(lessonMemo(courseSlug, nextSlug, draftPreview), () => fetchLesson(courseSlug, nextSlug, draftPreview));
   }, [courseSlug, nextSlug, draftPreview]);
 
   // Reading position for the current lesson, driven by how far the body has
@@ -411,7 +395,7 @@ export function LessonView({
         editProgress((current) => ({ ...current, checklist: { ...current.checklist, [itemId]: !checked } }));
       }
     },
-    [courseSlug, lesson, draftPreview, editProgress]
+    [courseSlug, lesson, draftPreview, editProgress],
   );
 
   /**
@@ -459,14 +443,18 @@ export function LessonView({
       // completing a step can unlock the next one, and un-completing can close it.
       void load();
     },
-    [courseSlug, lesson, pending, load, draftPreview, editProgress]
+    [courseSlug, lesson, pending, load, draftPreview, editProgress],
   );
 
   if (state.status === "loading") {
     return (
       <main className={styles.wrap} data-cw-platform-template="learn-lesson">
         <ReaderChrome backHref={surfaceHref(`/learn/${courseSlug}${previewQuery}`)} />
-        <PlatformLoadingState label="Бібліотека" title="Завантажуємо урок…" detail="Відновлюємо матеріали і ваш стан проходження." />
+        <PlatformLoadingState
+          label="Бібліотека"
+          title="Завантажуємо урок…"
+          detail="Відновлюємо матеріали і ваш стан проходження."
+        />
       </main>
     );
   }
@@ -505,11 +493,11 @@ export function LessonView({
         // lesson text and nothing else on the platform.
         style={{ "--cw-reader-scale": scaleValue(scaleId) } as CSSProperties}
       >
-      <div className={styles.readingTrack} aria-hidden="true">
-        <div className={styles.readingFill} style={{ width: `${Math.round(readingRatio * 100)}%` }} />
-      </div>
+        <div className={styles.readingTrack} aria-hidden="true">
+          <div className={styles.readingFill} style={{ width: `${Math.round(readingRatio * 100)}%` }} />
+        </div>
 
-      {/* THE READER'S CHROME, FLOATING (2026-08-29). There is no topbar on this
+        {/* THE READER'S CHROME, FLOATING (2026-08-29). There is no topbar on this
           route — see the `reading` note in PlatformLayout. What a lesson needs
           is two answers, and they are two objects on the bar's own material
           rather than three full-width rows above the first line: the way out on
@@ -521,160 +509,164 @@ export function LessonView({
           column `inert`, and these controls belong to the column it is covering.
           Nothing on the way down is `position: relative`, so the fixed layer is
           measured against the viewport as intended. */}
-      <ReaderChrome
-        backHref={surfaceHref(`/learn/${courseSlug}${previewQuery}`)}
-        backLabel={`До курсу: ${data.courseTitle}`}
-        locked={contentsOpen}
-        tools={<>
-          {/* A bookmark is about the LESSON, so it sits with the lesson's own
+        <ReaderChrome
+          backHref={surfaceHref(`/learn/${courseSlug}${previewQuery}`)}
+          backLabel={`До курсу: ${data.courseTitle}`}
+          locked={contentsOpen}
+          tools={
+            <>
+              {/* A bookmark is about the LESSON, so it sits with the lesson's own
               controls rather than in the text. It is not progress and never
               becomes progress: «пройдено» is a claim about doing the work,
               «закладка» is a note that this page is one to come back to. */}
-          {!draftPreview ? (
-            <button
-              className={`${styles.iconButton} ${styles.bookmarkButton}`}
-              type="button"
-              data-marked={marks.bookmarked(lessonSlug) ? "true" : undefined}
-              aria-pressed={marks.bookmarked(lessonSlug)}
-              aria-label={marks.bookmarked(lessonSlug) ? "Прибрати закладку" : "Додати закладку"}
-              /* Held until the course's first fetch resolves, same as
+              {!draftPreview ? (
+                <button
+                  className={`${styles.iconButton} ${styles.bookmarkButton}`}
+                  type="button"
+                  data-marked={marks.bookmarked(lessonSlug) ? "true" : undefined}
+                  aria-pressed={marks.bookmarked(lessonSlug)}
+                  aria-label={marks.bookmarked(lessonSlug) ? "Прибрати закладку" : "Додати закладку"}
+                  /* Held until the course's first fetch resolves, same as
                  ReaderMarkLayer below. A press that lands first writes an
                  optimistic bookmark that GET then has no way to know about —
                  the fetch overwrites the whole list wholesale — so the mark
                  saved to the server comes back unmarked until reload. */
-              disabled={!marks.ready}
-              onClick={() => void marks.toggleBookmark(lessonSlug)}
-            >
-              {/* Two glyphs, not one glyph and a colour: a set bookmark is
+                  disabled={!marks.ready}
+                  onClick={() => void marks.toggleBookmark(lessonSlug)}
+                >
+                  {/* Two glyphs, not one glyph and a colour: a set bookmark is
                   solid, an unset one is the outline. The state is in the shape,
                   so it survives a screenshot, a colour-blind reader and the
                   moment the control is not the only thing on screen. */}
-              <Icon name={marks.bookmarked(lessonSlug) ? "bookmark-marked" : "bookmark"} size={18} />
-            </button>
-          ) : null}
+                  <Icon name={marks.bookmarked(lessonSlug) ? "bookmark-marked" : "bookmark"} size={18} />
+                </button>
+              ) : null}
 
-          <ReaderTextSize value={scaleId} onChange={chooseScale} />
+              <ReaderTextSize value={scaleId} onChange={chooseScale} />
 
-          {/* The word «Зміст» went with the row. In a cluster of equal targets
+              {/* The word «Зміст» went with the row. In a cluster of equal targets
               one labelled control sets the width of everything beside it, and
               the list glyph says the same thing at a third of the room. */}
-          <button
-            className={`${styles.iconButton} ${styles.contentsButton}`}
-            type="button"
-            onClick={() => setContentsOpen(true)}
-            aria-haspopup="dialog"
-            aria-label="Зміст курсу"
-          >
-            <Icon name="menu" size={18} />
-          </button>
-        </>}
-      />
+              <button
+                className={`${styles.iconButton} ${styles.contentsButton}`}
+                type="button"
+                onClick={() => setContentsOpen(true)}
+                aria-haspopup="dialog"
+                aria-label="Зміст курсу"
+              >
+                <Icon name="menu" size={18} />
+              </button>
+            </>
+          }
+        />
 
-      {/* Position in the course sits next to the duration, so "where am I / how
+        {/* Position in the course sits next to the duration, so "where am I / how
           long is this" is answered in one glance. It is a CAPTION now rather
           than half of a chrome row: it stopped sharing a line with the tools
           when they floated off, so it reads with the title it belongs to and
           scrolls away with it. Reference pages get a label instead of a
           counter — they hold no place in the sequence. */}
-      <p className={styles.stepMarker}>
-        {nav.position !== null ? (
-          <span className={styles.stepCount}>
-            {nav.position} / {nav.total}
-          </span>
-        ) : (
-          <span className={styles.referenceTag}>Довідник</span>
-        )}
-        <span>{data.module.title}</span>
-        {/* Total length answers "should I start this now"; once reading has
+        <p className={styles.stepMarker}>
+          {nav.position !== null ? (
+            <span className={styles.stepCount}>
+              {nav.position} / {nav.total}
+            </span>
+          ) : (
+            <span className={styles.referenceTag}>Довідник</span>
+          )}
+          <span>{data.module.title}</span>
+          {/* Total length answers "should I start this now"; once reading has
             started the only useful number is what is left, and the same
             authored duration answers that against the scroll position. */}
-        {data.lesson.durationMin ? (
-          <>
-            <span className={styles.stepDivider} aria-hidden="true">·</span>
-            <span>
-              {readingRatio > 0.08 && readingRatio < 0.99
-                ? `лишилось ~${minutesRemaining(data.lesson.durationMin, readingRatio)} хв`
-                : `${data.lesson.durationMin} хв`}
-            </span>
-          </>
-        ) : null}
-      </p>
+          {data.lesson.durationMin ? (
+            <>
+              <span className={styles.stepDivider} aria-hidden="true">
+                ·
+              </span>
+              <span>
+                {readingRatio > 0.08 && readingRatio < 0.99
+                  ? `лишилось ~${minutesRemaining(data.lesson.durationMin, readingRatio)} хв`
+                  : `${data.lesson.durationMin} хв`}
+              </span>
+            </>
+          ) : null}
+        </p>
 
-      <h1 className={styles.title}>{data.lesson.title}</h1>
-      {/* One abstract under the title, never two. Every lesson carries both a
+        <h1 className={styles.title}>{data.lesson.title}</h1>
+        {/* One abstract under the title, never two. Every lesson carries both a
           `summary` and a `lesson_objective`, and in practice they paraphrase
           each other — "Задача етапу — увійти в процес та підготувати органи"
           against "Увійти в процес і підготувати органи". Stacked, they read as
           a choice the page failed to make. The objective wins: it is the more
           specific and the more actionable of the two, and it is already the
           first block. The summary only renders when a lesson has no objective. */}
-      {data.lesson.summary && !hasObjective ? (
-        <p className={styles.lead}>{inlineToPlainText(data.lesson.summary)}</p>
-      ) : null}
-
-      <div className={styles.blocks} ref={bodyRef}>
-        {data.lesson.blocks.map((block) => (
-          <div id={`block-${block.id}`} key={block.id}>
-            <BlockRenderer
-              block={block}
-              checklist={checklist}
-              onToggleChecklistItem={toggleItem}
-              disabled={completed}
-              courseSlug={courseSlug}
-              referenceTargets={data.referenceTargets}
-            />
-          </div>
-        ))}
-
-        {/* Drawn over the column, never inside it — the block tree stays
-            exactly what BlockRenderer produced. */}
-        {!draftPreview && marks.ready ? (
-          <ReaderMarkLayer
-            bodyRef={bodyRef}
-            lessonSlug={lessonSlug}
-            annotations={lessonMarks}
-            onMark={(anchor, note) => marks.mark(lessonSlug, anchor, note)}
-            onSetNote={marks.setNote}
-            onRemove={marks.remove}
-            layoutKey={scaleId}
-          />
+        {data.lesson.summary && !hasObjective ? (
+          <p className={styles.lead}>{inlineToPlainText(data.lesson.summary)}</p>
         ) : null}
-      </div>
 
-      {data.isReference ? (
-        // A lookup page is never "completed", so it has nothing to stick to the
-        // bottom of the screen. Contents stays in the stable top position; the
-        // hint remains in flow at its real weight, without a fake sequence.
-        <p className={styles.completeHint}>Довідкова сторінка — повертайся сюди будь-коли.</p>
-      ) : (
-        <>
-          <label
-            className={completed ? styles.completeToggleDone : styles.completeToggle}
-            data-blocked={!completed && !checklistSatisfied ? "" : undefined}
-          >
-            <input
-              type="checkbox"
-              className={styles.completeInput}
-              checked={completed}
-              /* A finished lesson CAN be un-ticked: the protocol is repeatable,
+        <div className={styles.blocks} ref={bodyRef}>
+          {data.lesson.blocks.map((block) => (
+            <div id={`block-${block.id}`} key={block.id}>
+              <BlockRenderer
+                block={block}
+                checklist={checklist}
+                onToggleChecklistItem={toggleItem}
+                disabled={completed}
+                courseSlug={courseSlug}
+                referenceTargets={data.referenceTargets}
+              />
+            </div>
+          ))}
+
+          {/* Drawn over the column, never inside it — the block tree stays
+            exactly what BlockRenderer produced. */}
+          {!draftPreview && marks.ready ? (
+            <ReaderMarkLayer
+              bodyRef={bodyRef}
+              lessonSlug={lessonSlug}
+              annotations={lessonMarks}
+              onMark={(anchor, note) => marks.mark(lessonSlug, anchor, note)}
+              onSetNote={marks.setNote}
+              onRemove={marks.remove}
+              layoutKey={scaleId}
+            />
+          ) : null}
+        </div>
+
+        {data.isReference ? (
+          // A lookup page is never "completed", so it has nothing to stick to the
+          // bottom of the screen. Contents stays in the stable top position; the
+          // hint remains in flow at its real weight, without a fake sequence.
+          <p className={styles.completeHint}>Довідкова сторінка — повертайся сюди будь-коли.</p>
+        ) : (
+          <>
+            <label
+              className={completed ? styles.completeToggleDone : styles.completeToggle}
+              data-blocked={!completed && !checklistSatisfied ? "" : undefined}
+            >
+              <input
+                type="checkbox"
+                className={styles.completeInput}
+                checked={completed}
+                /* A finished lesson CAN be un-ticked: the protocol is repeatable,
                  and the checklist gate guards claiming the lesson is done, not
                  withdrawing that claim. */
-              disabled={pending || (!completed && !checklistSatisfied)}
-              onChange={(event) => void setLessonCompleted(event.target.checked)}
-            />
-            <span className={styles.completeMark} aria-hidden="true">
-              <Icon name="check" size={16} />
-            </span>
-            <span>{completed ? "Урок пройдено" : pending ? "Зберігаємо…" : "Позначити урок пройденим"}</span>
-          </label>
+                disabled={pending || (!completed && !checklistSatisfied)}
+                onChange={(event) => void setLessonCompleted(event.target.checked)}
+              />
+              <span className={styles.completeMark} aria-hidden="true">
+                <Icon name="check" size={16} />
+              </span>
+              <span>{completed ? "Урок пройдено" : pending ? "Зберігаємо…" : "Позначити урок пройденим"}</span>
+            </label>
 
-          {!completed && !checklistSatisfied ? (
-            <p className={styles.completeHint}>Відзначте пункти чек-листа, щоб завершити урок.</p>
-          ) : null}
-        </>
-      )}
+            {!completed && !checklistSatisfied ? (
+              <p className={styles.completeHint}>Відзначте пункти чек-листа, щоб завершити урок.</p>
+            ) : null}
+          </>
+        )}
 
-      {/* Only real neighbours render. A first or last lesson gets one full-width
+        {/* Only real neighbours render. A first or last lesson gets one full-width
           destination; a one-step course and reference material get no pager at
           all. Contents has one stable home above the lesson title and is never
           used as a substitute for a missing neighbour.
@@ -687,36 +679,35 @@ export function LessonView({
           gone. The lesson title is the only thing here a reader cannot infer,
           and it now gets the whole cell. Direction still reaches screen readers
           through aria-label. */}
-      {pager.mode !== "hidden" ? (
-        <nav className={styles.pager} data-layout={pager.mode} aria-label="Навігація по уроках">
-          {pager.showPrevious && nav.previous ? (
-            <MotionLink
-              ref={previousLinkRef}
-              className={styles.pagerLink}
-              href={surfaceHref(`/learn/${courseSlug}/${nav.previous.slug}${previewQuery}`)}
-              aria-label={`Попередній урок: ${nav.previous.title}`}
-              title={nav.previous.title}
-            >
-              <Icon name="arrow-left" size={16} className={styles.pagerArrow} />
-              <span className={styles.pagerTitle}>{nav.previous.title}</span>
-            </MotionLink>
-          ) : null}
+        {pager.mode !== "hidden" ? (
+          <nav className={styles.pager} data-layout={pager.mode} aria-label="Навігація по уроках">
+            {pager.showPrevious && nav.previous ? (
+              <MotionLink
+                ref={previousLinkRef}
+                className={styles.pagerLink}
+                href={surfaceHref(`/learn/${courseSlug}/${nav.previous.slug}${previewQuery}`)}
+                aria-label={`Попередній урок: ${nav.previous.title}`}
+                title={nav.previous.title}
+              >
+                <Icon name="arrow-left" size={16} className={styles.pagerArrow} />
+                <span className={styles.pagerTitle}>{nav.previous.title}</span>
+              </MotionLink>
+            ) : null}
 
-          {pager.showNext && nav.next ? (
-            <MotionLink
-              ref={nextLinkRef}
-              className={completed ? styles.pagerLinkNextAccent : styles.pagerLinkNext}
-              href={surfaceHref(`/learn/${courseSlug}/${nav.next.slug}${previewQuery}`)}
-              aria-label={`Наступний урок: ${nav.next.title}`}
-              title={nav.next.title}
-            >
-              <span className={styles.pagerTitle}>{nav.next.title}</span>
-              <Icon name="arrow-right" size={16} className={styles.pagerArrow} />
-            </MotionLink>
-          ) : null}
-        </nav>
-      ) : null}
-
+            {pager.showNext && nav.next ? (
+              <MotionLink
+                ref={nextLinkRef}
+                className={completed ? styles.pagerLinkNextAccent : styles.pagerLinkNext}
+                href={surfaceHref(`/learn/${courseSlug}/${nav.next.slug}${previewQuery}`)}
+                aria-label={`Наступний урок: ${nav.next.title}`}
+                title={nav.next.title}
+              >
+                <span className={styles.pagerTitle}>{nav.next.title}</span>
+                <Icon name="arrow-right" size={16} className={styles.pagerArrow} />
+              </MotionLink>
+            ) : null}
+          </nav>
+        ) : null}
       </main>
 
       {/* Outside `<main>`, because `main` goes inert while the contents drawer

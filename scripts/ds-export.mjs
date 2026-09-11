@@ -28,7 +28,15 @@ const TOKENS_PATH = path.join(repoRoot, "data", "design-tokens", "cw.tokens.json
 const OUT_DIR = path.join(repoRoot, "data", "design-tokens", "ds-bundle");
 const FORMAT_VERSION = 1;
 
-const GEOMETRY_PREFIXES = ["--cw-space-", "--cw-radius-", "--cw-card-", "--cw-shadow", "--cw-max-width", "--cw-border-width", "--ds-radius-"];
+const GEOMETRY_PREFIXES = [
+  "--cw-space-",
+  "--cw-radius-",
+  "--cw-card-",
+  "--cw-shadow",
+  "--cw-max-width",
+  "--cw-border-width",
+  "--ds-radius-",
+];
 const TYPE_PREFIXES = ["--cw-font-"];
 /* Motion, plus the state values that only exist because things move: the press
    settle, the haptic tick's duration, and how far the ink stroke is drawn at
@@ -51,11 +59,16 @@ const isMotion = (k) => MOTION_PREFIXES.some((p) => k.startsWith(p));
 // export keeps those reasons next to the tokens instead of leaving the mirror
 // with a wall of hexes.
 const ROLE_NOTES = {
-  "--cw-sem-guide-primary": "the route voice. Deepened from the brand sheet's #588768, which sat at\n     3.64 against the CTA label and read bright next to the gold.",
-  "--cw-sem-embodied": "the living green — practice marks, progress fills. Split off guide on\n     2026-08-20: the brand sheet had both roles on one value.",
-  "--cw-sem-trust": "the only cool tone, and deliberately not a button colour — proof\n     panels, badges, curator links.",
-  "--cw-sem-muted-ink": "body ink on light grounds. A mix off platform-text lands at 4.19 on\n     the cream ground, below body AA — hence a token, not a formula.",
-  "--cw-platform-text": "one step deeper than method-ink: at #203126 the topbar label on the\n     chrome glass falls to 4.00 at the tone bound.",
+  "--cw-sem-guide-primary":
+    "the route voice. Deepened from the brand sheet's #588768, which sat at\n     3.64 against the CTA label and read bright next to the gold.",
+  "--cw-sem-embodied":
+    "the living green — practice marks, progress fills. Split off guide on\n     2026-08-20: the brand sheet had both roles on one value.",
+  "--cw-sem-trust":
+    "the only cool tone, and deliberately not a button colour — proof\n     panels, badges, curator links.",
+  "--cw-sem-muted-ink":
+    "body ink on light grounds. A mix off platform-text lands at 4.19 on\n     the cream ground, below body AA — hence a token, not a formula.",
+  "--cw-platform-text":
+    "one step deeper than method-ink: at #203126 the topbar label on the\n     chrome glass falls to 4.00 at the tone bound.",
   "--cw-platform-accent-contrast": "#faefe0 reads 4.44 on the dark-tone chrome glass, just under the bar.",
 };
 
@@ -75,17 +88,24 @@ function buildFiles(tokens) {
   const files = {};
 
   files["tokens/primitives.css"] =
-    banner("PRIMITIVES — raw colour anchors (layers.primitives.color).",
-      "Components must not read these directly, only the --cw-sem-* roles above them.") +
+    banner(
+      "PRIMITIVES — raw colour anchors (layers.primitives.color).",
+      "Components must not read these directly, only the --cw-sem-* roles above them.",
+    ) +
     ":root {\n" +
     Object.entries(layers.primitives?.color ?? {})
-      .map(([name, value]) => `  --cw-prim-${name.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase())}: ${value.toLowerCase()};`)
+      .map(
+        ([name, value]) =>
+          `  --cw-prim-${name.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase())}: ${value.toLowerCase()};`,
+      )
       .join("\n") +
     "\n}\n";
 
   files["tokens/colors.css"] =
-    banner("COLOR — chrome base, semantic roles, platform modes, packs.",
-      "Themes: :root light · [data-cw-theme=\"dark\"] dark — ONE pair for the whole\n   product since 2026-08-28. The admin's separate `.dark` class is retired; the\n   chrome family in :root is an alias layer over the platform and material\n   roles, so it flips with them and has no dark half of its own.") +
+    banner(
+      "COLOR — chrome base, semantic roles, platform modes, packs.",
+      'Themes: :root light · [data-cw-theme="dark"] dark — ONE pair for the whole\n   product since 2026-08-28. The admin\'s separate `.dark` class is retired; the\n   chrome family in :root is an alias layer over the platform and material\n   roles, so it flips with them and has no dark half of its own.',
+    ) +
     `:root {\n${decls(chromeLight)}\n\n  /* semantic roles */\n${decls(layers.semanticAliases ?? {})}\n\n  /* platform mode */\n${decls(layers.modeOverrides?.platform ?? {})}\n}\n\n` +
     `[data-cw-theme="dark"] {\n${decls(layers.modeOverrides?.platformDark ?? {})}\n}\n\n` +
     Object.entries(layers.packs ?? {})
@@ -93,21 +113,26 @@ function buildFiles(tokens) {
       .join("\n");
 
   files["tokens/geometry.css"] =
-    banner("GEOMETRY — spacing, radii, card recipe, container.",
-      "Values are exact and never snapped to a 4/8-px grid.") +
-    `:root {\n${decls(pick(light, isGeometry))}\n}\n`;
+    banner(
+      "GEOMETRY — spacing, radii, card recipe, container.",
+      "Values are exact and never snapped to a 4/8-px grid.",
+    ) + `:root {\n${decls(pick(light, isGeometry))}\n}\n`;
 
   files["tokens/motion.css"] =
-    banner("MOTION — durations, curves, and the state values that move.",
-      "Measured from what the product already did, not chosen: 160ms was typed 91\n   times in two notations before it had a name. Movement explains a change and\n   never performs one; `prefers-reduced-motion` is a refusal, not a slower\n   animation. 160 and 180 are provisionally two numbers and probably one.") +
-    `:root {\n${decls(pick(light, isMotion))}\n}\n`;
+    banner(
+      "MOTION — durations, curves, and the state values that move.",
+      "Measured from what the product already did, not chosen: 160ms was typed 91\n   times in two notations before it had a name. Movement explains a change and\n   never performs one; `prefers-reduced-motion` is a refusal, not a slower\n   animation. 160 and 180 are provisionally two numbers and probably one.",
+    ) + `:root {\n${decls(pick(light, isMotion))}\n}\n`;
 
   files["tokens/material.css"] =
-    banner("MATERIAL — the tactile surface layer (layers.material).",
-      "One warm grainy glass, its matte and inverse siblings. Cards are matte;\n   glass is chrome and panels over media. No inset top highlight — it reads\n   as gloss, not matte. One glass depth only; never nest glass in glass.") +
+    banner(
+      "MATERIAL — the tactile surface layer (layers.material).",
+      "One warm grainy glass, its matte and inverse siblings. Cards are matte;\n   glass is chrome and panels over media. No inset top highlight — it reads\n   as gloss, not matte. One glass depth only; never nest glass in glass.",
+    ) +
     `:root {\n${decls(layers.material?.light ?? {})}\n}\n\n` +
     `[data-cw-theme="dark"],\n[data-cw-header-tone="dark"] {\n${decls(layers.material?.dark ?? {})}\n}\n\n` +
-    MATERIAL_RECIPE + LEGACY_SHIM;
+    MATERIAL_RECIPE +
+    LEGACY_SHIM;
 
   /* THE POINTER STEP TRAVELS WITH THE ALIASES (2026-09-10).
 
@@ -132,7 +157,8 @@ function buildFiles(tokens) {
     "   GENERATED by scripts/ds-export.mjs — do not edit by hand. */\n" +
     ["fonts", "primitives", "colors", "material", "typography", "geometry", "motion", "delivery", "brand"]
       .map((n) => `@import "./tokens/${n}.css";`)
-      .join("\n") + "\n";
+      .join("\n") +
+    "\n";
 
   return files;
 }
@@ -235,7 +261,11 @@ async function collect() {
     generator: "scripts/ds-export.mjs",
     sourceCommit: headSha(),
     tokensSource: sha(raw),
-    files: Object.fromEntries(Object.keys(files).sort().map((p) => [p, sha(files[p])])),
+    files: Object.fromEntries(
+      Object.keys(files)
+        .sort()
+        .map((p) => [p, sha(files[p])]),
+    ),
   };
   files["_sync.json"] = JSON.stringify(manifest, null, 2) + "\n";
   return files;

@@ -3,50 +3,37 @@
 import Link from "next/link";
 import { LogoMark } from "@/components/brand/LogoMark";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Session } from "@supabase/supabase-js";
 import { Icon } from "@/components/Icon";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "@/components/platform/PlatformDiagnosticStyles";
-import { classifyDosha, type DoshaConfidence, type DoshaResultType } from "@/lib/doshaTest";
+import { classifyDosha, type DoshaConfidence, type DoshaResultType } from "@/lib/dosha/doshaTest";
 import {
   BOUNDARY_NOTE,
   CONFIDENCE_COPY,
   DOSHA_DISCLOSURE,
   HOW_IT_WORKS_STEPS,
   RESULT_COPY,
-} from "@/lib/doshaResultCopy";
+} from "@/lib/dosha/doshaResultCopy";
 import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
 import { CW_THEME_QUERY_KEYS } from "@/lib/generator/theme";
-import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT, doshaExitHref } from "@/lib/doshaRouting";
+import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT, doshaExitHref } from "@/lib/dosha/doshaRouting";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { heroFraming } from "@/components/platform/heroFraming";
 import { platformPageArtwork } from "@/lib/platform/content";
 import { TESTS_HUB_ROUTE } from "@/lib/platform/tests";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { supabaseClient } from "@/lib/supabaseClient";
-
-type TestOption = {
-  id: string;
-  order: number;
-  code: string;
-  text: string;
-};
-
-type TestQuestion = {
-  id: string;
-  orderIndex: number;
-  code: string;
-  text: string;
-  options: TestOption[];
-};
-
-type TestDefinitionResponse = {
-  testId: string;
-  testVersion: string;
-  totalQuestions: number;
-  questions: TestQuestion[];
-  sessionId?: string;
-};
+import { useSession } from "@/components/auth/SessionProvider";
+import {
+  attachAttempt,
+  completeAttempt,
+  loadDefinition as fetchDefinition,
+  postAttemptEvent,
+  requestTelegramLink,
+  syncPlatformUser,
+  type TestDefinitionResponse,
+  type TestQuestion,
+} from "./doshaTestApi";
 
 type CompleteResponse = {
   attemptId: string;
@@ -128,7 +115,8 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultViewedSent, setResultViewedSent] = useState(false);
-  const [session, setSession] = useState<Session | null>(null);
+  const { session, status } = useSession();
+  const accessToken = session?.access_token ?? null;
   const [savedToCabinet, setSavedToCabinet] = useState(false);
   const [telegramLink, setTelegramLink] = useState<string | null>(null);
   const [resumeDraft, setResumeDraft] = useState<DraftState | null>(null);
@@ -137,12 +125,12 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
   const surfaceHref = useSurfaceHref();
   const isAuthEnabled = useMemo(
     () => Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
-    []
+    [],
   );
 
   const currentQuestion = useMemo(
     () => getCurrentQuestion(questions, currentQuestionIndex),
-    [questions, currentQuestionIndex]
+    [questions, currentQuestionIndex],
   );
 
   const totalQuestions = questions.length || 12;
@@ -172,13 +160,11 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
   }, []);
 
-  const emitAttemptEvent = useCallback(async (eventName: AttemptEventName, payload: AttemptEventPayload = {}) => {
-    if (!attemptId) return;
+  const emitAttemptEvent = useCallback(
+    async (eventName: AttemptEventName, payload: AttemptEventPayload = {}) => {
+      if (!attemptId) return;
 
-    await fetch(`/api/test-attempts/${attemptId}/events`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      await postAttemptEvent(attemptId, {
         eventName,
         target: payload.target ?? null,
         screen: payload.screen ?? phase,
@@ -199,18 +185,22 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
         mode: payload.mode ?? generatorContext?.mode ?? null,
         branch: payload.branch ?? generatorContext?.branch ?? null,
         assignmentSource: payload.assignmentSource ?? generatorContext?.assignment_source ?? null,
-      }),
-    }).catch(() => undefined);
-  }, [attemptId, generatorContext?.assignment_source, generatorContext?.branch, generatorContext?.experiment_key, generatorContext?.manifest_id, generatorContext?.manifest_version, generatorContext?.mode, generatorContext?.recipe_version, generatorContext?.variant_key, phase, uiVariant]);
-
-  const syncPlatformUser = useCallback(async (accessToken: string) => {
-    await fetch("/api/platform/users/sync", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }).catch(() => undefined);
-  }, []);
+      });
+    },
+    [
+      attemptId,
+      generatorContext?.assignment_source,
+      generatorContext?.branch,
+      generatorContext?.experiment_key,
+      generatorContext?.manifest_id,
+      generatorContext?.manifest_version,
+      generatorContext?.mode,
+      generatorContext?.recipe_version,
+      generatorContext?.variant_key,
+      phase,
+      uiVariant,
+    ],
+  );
 
   const signInWithGoogle = useCallback(async (pendingSave?: PendingSave) => {
     if (typeof window !== "undefined" && pendingSave) {
@@ -218,7 +208,9 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     }
 
     const redirectTo =
-      typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}${window.location.search}` : undefined;
+      typeof window !== "undefined"
+        ? `${window.location.origin}${window.location.pathname}${window.location.search}`
+        : undefined;
 
     await supabaseClient.auth.signInWithOAuth({
       provider: "google",
@@ -228,103 +220,58 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     });
   }, []);
 
-  const loadDefinition = useCallback(async (): Promise<TestDefinitionResponse | null> => {
-    const readJson = async (response: Response) => {
-      const data = (await response.json().catch(() => ({ error: "invalid_json" }))) as
-        | TestDefinitionResponse
-        | { error: string };
-      if (!response.ok || "error" in data) return null;
-      return data;
-    };
+  const loadDefinition = useCallback(
+    (): Promise<TestDefinitionResponse | null> => fetchDefinition(getOrCreateSessionId()),
+    [getOrCreateSessionId],
+  );
 
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        /* The session travels with the request: it seeds the order of the
-           answers, so the order holds for the whole attempt and differs
-           between readers. */
-        const res = await fetch(`/api/tests/dosha-test?sessionId=${encodeURIComponent(getOrCreateSessionId())}`, {
-          cache: "no-store",
-          headers: { "Cache-Control": "no-store" },
-        });
-        const data = await readJson(res);
-        if (data) return data;
-      } catch {
-        // Retry once before fallback.
-      }
-    }
+  const completeTest = useCallback(
+    async (finalAnswers: Record<string, string>) => {
+      if (questions.length === 0) return;
 
-    try {
-      const res = await fetch("/api/tests/dosha-test/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          source: "dosha_test_route_fallback_start",
-          sessionId: getOrCreateSessionId(),
-        }),
-      });
-      return await readJson(res);
-    } catch {
-      return null;
-    }
-  }, [getOrCreateSessionId]);
+      const orderedAnswers = questions.map((question) => ({
+        questionId: question.id,
+        optionId: finalAnswers[question.id] ?? null,
+      }));
 
-  const completeTest = useCallback(async (finalAnswers: Record<string, string>) => {
-    if (questions.length === 0) return;
-
-    const orderedAnswers = questions.map((question) => ({
-      questionId: question.id,
-      optionId: finalAnswers[question.id] ?? null,
-    }));
-
-    if (orderedAnswers.some((item) => !item.optionId)) {
-      setError("Не всі відповіді заповнені. Перевірте питання і завершить тест.");
-      return;
-    }
-
-    setIsBusy(true);
-    setError(null);
-    setPhase("loading");
-
-    try {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (session?.access_token) {
-        headers.Authorization = `Bearer ${session.access_token}`;
-      }
-
-      const res = await fetch("/api/tests/dosha-test/complete", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          source: "dosha_test_route",
-          sessionId: getOrCreateSessionId(),
-          answers: orderedAnswers,
-        }),
-      });
-
-      const data = (await res.json()) as CompleteResponse | { error: string };
-      if (!res.ok || "error" in data || !data.isCompleted || !data.resultType) {
-        setError("Не вдалося завершити тест. Спробуйте ще раз.");
-        setPhase("question");
+      if (orderedAnswers.some((item) => !item.optionId)) {
+        setError("Не всі відповіді заповнені. Перевірте питання і завершить тест.");
         return;
       }
 
-      setAttemptId(data.attemptId);
-      saveAttemptId(data.attemptId);
-      setScores(data.scores);
-      setResultType(data.resultType);
-      setCompletedAt(data.completedAt ?? new Date().toISOString());
-      setNextStep(data.nextStep ?? DOSHA_PRIMARY_EXIT.nextStep);
-      setCurrentQuestionIndex(questions.length);
-      setResultViewedSent(false);
-      clearDraft();
-      setPhase("result");
-    } catch {
-      setError("Помилка мережі. Спробуйте ще раз.");
-      setPhase("question");
-    } finally {
-      setIsBusy(false);
-    }
-  }, [clearDraft, getOrCreateSessionId, questions, saveAttemptId, session?.access_token]);
+      setIsBusy(true);
+      setError(null);
+      setPhase("loading");
+
+      try {
+        const res = await completeAttempt({ sessionId: getOrCreateSessionId(), answers: orderedAnswers });
+
+        const data = (await res.json()) as CompleteResponse | { error: string };
+        if (!res.ok || "error" in data || !data.isCompleted || !data.resultType) {
+          setError("Не вдалося завершити тест. Спробуйте ще раз.");
+          setPhase("question");
+          return;
+        }
+
+        setAttemptId(data.attemptId);
+        saveAttemptId(data.attemptId);
+        setScores(data.scores);
+        setResultType(data.resultType);
+        setCompletedAt(data.completedAt ?? new Date().toISOString());
+        setNextStep(data.nextStep ?? DOSHA_PRIMARY_EXIT.nextStep);
+        setCurrentQuestionIndex(questions.length);
+        setResultViewedSent(false);
+        clearDraft();
+        setPhase("result");
+      } catch {
+        setError("Помилка мережі. Спробуйте ще раз.");
+        setPhase("question");
+      } finally {
+        setIsBusy(false);
+      }
+    },
+    [clearDraft, getOrCreateSessionId, questions, saveAttemptId],
+  );
 
   const runStartFlow = useCallback(async () => {
     setIsBusy(true);
@@ -365,8 +312,8 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
 
   /* Back from Google with a result in hand: hand the attempt its owner, then
      put the reader back where they were, on their own result. */
-  const resumePendingSaveIfNeeded = useCallback(async (nextSession: Session | null) => {
-    if (!nextSession?.access_token || typeof window === "undefined") return;
+  const resumePendingSaveIfNeeded = useCallback(async () => {
+    if (typeof window === "undefined") return;
 
     const raw = window.sessionStorage.getItem(PENDING_SAVE_KEY);
     if (!raw) return;
@@ -388,40 +335,22 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     setResultViewedSent(true);
     setPhase("result");
 
-    const res = await fetch(`/api/test-attempts/${pending.attemptId}/attach`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${nextSession.access_token}` },
-    }).catch(() => null);
+    const res = await attachAttempt(pending.attemptId);
 
     setSavedToCabinet(Boolean(res?.ok));
   }, []);
 
+  /* One subscription for the whole tree lives in the root layout's
+     SessionProvider; this component used to hold its own. Whenever a signed-in
+     session appears or its token changes, the account is mirrored and a save
+     left pending across a Google round trip is picked up. */
   useEffect(() => {
-    const bootAuth = async () => {
-      const { data } = await supabaseClient.auth.getSession();
-      setSession(data.session);
-      if (data.session?.access_token) {
-        await syncPlatformUser(data.session.access_token);
-        await resumePendingSaveIfNeeded(data.session);
-      }
-    };
-    void bootAuth();
-
-    const {
-      data: { subscription },
-    } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-
-      if (!nextSession) return;
-
-      void (async () => {
-        await syncPlatformUser(nextSession.access_token);
-        await resumePendingSaveIfNeeded(nextSession);
-      })();
-    });
-
-    return () => subscription.unsubscribe();
-  }, [resumePendingSaveIfNeeded, syncPlatformUser]);
+    if (status !== "signed-in") return;
+    void (async () => {
+      await syncPlatformUser();
+      await resumePendingSaveIfNeeded();
+    })();
+  }, [status, accessToken, resumePendingSaveIfNeeded]);
 
   /* AN UNFINISHED TEST IS PICKED UP, NOT THROWN AWAY.
      This effect used to wipe the draft, the attempt id and the session id on
@@ -533,12 +462,9 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     if (phase !== "result" || !attemptId) return;
     let cancelled = false;
 
-    void fetch(`/api/test-attempts/${attemptId}/telegram`, { method: "POST" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { linkUrl?: string | null } | null) => {
-        if (!cancelled) setTelegramLink(data?.linkUrl ?? null);
-      })
-      .catch(() => undefined);
+    void requestTelegramLink(attemptId).then((link) => {
+      if (!cancelled) setTelegramLink(link);
+    });
 
     return () => {
       cancelled = true;
@@ -578,31 +504,37 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
      nothing else; the step moves when the reader says so, in either direction.
      Nothing reaches the server until the last answer — `completeTest` posts the
      whole set — so going back costs no request and no consistency problem. */
-  const selectAnswer = useCallback((questionId: string, optionId: string) => {
-    if (isBusy) return;
+  const selectAnswer = useCallback(
+    (questionId: string, optionId: string) => {
+      if (isBusy) return;
 
-    const nextAnswers = { ...answers, [questionId]: optionId };
-    setAnswers(nextAnswers);
-    setError(null);
-    saveDraft({
-      answers: nextAnswers,
-      currentQuestionIndex,
-      sessionId: getOrCreateSessionId(),
-      updatedAt: new Date().toISOString(),
-    });
-  }, [answers, currentQuestionIndex, getOrCreateSessionId, isBusy, saveDraft]);
+      const nextAnswers = { ...answers, [questionId]: optionId };
+      setAnswers(nextAnswers);
+      setError(null);
+      saveDraft({
+        answers: nextAnswers,
+        currentQuestionIndex,
+        sessionId: getOrCreateSessionId(),
+        updatedAt: new Date().toISOString(),
+      });
+    },
+    [answers, currentQuestionIndex, getOrCreateSessionId, isBusy, saveDraft],
+  );
 
-  const goToStep = useCallback((nextIndex: number) => {
-    const bounded = Math.min(Math.max(nextIndex, 1), totalQuestions);
-    setCurrentQuestionIndex(bounded);
-    setError(null);
-    saveDraft({
-      answers,
-      currentQuestionIndex: bounded,
-      sessionId: getOrCreateSessionId(),
-      updatedAt: new Date().toISOString(),
-    });
-  }, [answers, getOrCreateSessionId, saveDraft, totalQuestions]);
+  const goToStep = useCallback(
+    (nextIndex: number) => {
+      const bounded = Math.min(Math.max(nextIndex, 1), totalQuestions);
+      setCurrentQuestionIndex(bounded);
+      setError(null);
+      saveDraft({
+        answers,
+        currentQuestionIndex: bounded,
+        sessionId: getOrCreateSessionId(),
+        updatedAt: new Date().toISOString(),
+      });
+    },
+    [answers, getOrCreateSessionId, saveDraft, totalQuestions],
+  );
 
   const answeredCount = Object.keys(answers).length;
   const isLastQuestion = currentQuestionIndex >= totalQuestions;
@@ -627,16 +559,13 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
      and without a field that older stored attempts do not carry. */
   const profile = useMemo(() => classifyDosha(scores.vata, scores.pitta, scores.kapha), [scores]);
   const confidenceCopy = CONFIDENCE_COPY[profile.confidence];
-  const resultHeading = resultCopy
-    ? profile.confidence === "low"
-      ? resultCopy.softTitle
-      : resultCopy.title
-    : null;
+  const resultHeading = resultCopy ? (profile.confidence === "low" ? resultCopy.softTitle : resultCopy.title) : null;
   const testFontFamily = "var(--cw-font-ui), 'Manrope', 'Segoe UI', sans-serif";
-  const topbarBadge = phase === "intro"
-    ? "12 питань • 3-5 хв"
-    : phase === "question"
-      ? `Питання ${currentQuestion?.orderIndex ?? currentQuestionIndex} з ${totalQuestions}`
+  const topbarBadge =
+    phase === "intro"
+      ? "12 питань • 3-5 хв"
+      : phase === "question"
+        ? `Питання ${currentQuestion?.orderIndex ?? currentQuestionIndex} з ${totalQuestions}`
         : phase === "loading"
           ? "Формуємо результат"
           : "Результат готовий";
@@ -689,8 +618,8 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                   </p>
                   <h1 className={styles.title}>Тест доші</h1>
                   <p className={styles.lead}>
-                    Швидка самооцінка ритму, енергії, травлення і напруги — щоб побачити поточний стан і
-                    зрозуміти, з чого почати.
+                    Швидка самооцінка ритму, енергії, травлення і напруги — щоб побачити поточний стан і зрозуміти, з
+                    чого почати.
                   </p>
                 </div>
 
@@ -773,7 +702,9 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
 
                   <div className={styles.diagnosticProgressRow}>
                     <div className={styles.diagnosticProgressMeta}>
-                      <span>Питання {currentQuestion.orderIndex} з {totalQuestions}</span>
+                      <span>
+                        Питання {currentQuestion.orderIndex} з {totalQuestions}
+                      </span>
                       <span>Прогрес {progress}%</span>
                     </div>
                     <div className={styles.diagnosticProgressTrack}>
@@ -818,7 +749,9 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                   <div className={styles.diagnosticStepActions}>
                     <button
                       type="button"
-                      onClick={() => (currentQuestionIndex > 1 ? goToStep(currentQuestionIndex - 1) : setPhase("intro"))}
+                      onClick={() =>
+                        currentQuestionIndex > 1 ? goToStep(currentQuestionIndex - 1) : setPhase("intro")
+                      }
                       className={styles.secondaryButton}
                       disabled={isBusy}
                     >
@@ -886,8 +819,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                         the row used to show three near-equal counts under a
                         headline that claimed one of them dominated. */}
                     <p className={styles.diagnosticScoreRow}>
-                      Вата {profile.shares.vata}% • Пітта {profile.shares.pitta}% • Капха {profile.shares.kapha}%
-                      {" · "}
+                      Вата {profile.shares.vata}% • Пітта {profile.shares.pitta}% • Капха {profile.shares.kapha}%{" · "}
                       {confidenceCopy.label}
                     </p>
                     {confidenceCopy.note ? <p>{confidenceCopy.note}</p> : null}
@@ -913,8 +845,8 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                     {telegramLink ? (
                       <>
                         <p>
-                          Надішлемо профіль у Telegram — щоб він залишився під рукою разом із коротким
-                          вектором на тиждень.
+                          Надішлемо профіль у Telegram — щоб він залишився під рукою разом із коротким вектором на
+                          тиждень.
                         </p>
                         <a
                           className={styles.secondaryButton}
@@ -944,15 +876,19 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                       savedToCabinet || session?.user ? (
                         <>
                           <p>Результат збережено у вашому кабінеті — його видно поруч із програмами і прогресом.</p>
-                          <Link className={styles.diagnosticTextButton} href={surfaceHref("/profile")} data-cw-ink-control>
+                          <Link
+                            className={styles.diagnosticTextButton}
+                            href={surfaceHref("/profile")}
+                            data-cw-ink-control
+                          >
                             <InteractionInkLabel variant="link">Відкрити кабінет</InteractionInkLabel>
                           </Link>
                         </>
                       ) : (
                         <>
                           <p>
-                            У кабінеті профіль зберігається надовго: до нього можна повернутись і порівняти з
-                            наступним проходженням.
+                            У кабінеті профіль зберігається надовго: до нього можна повернутись і порівняти з наступним
+                            проходженням.
                           </p>
                           <button
                             type="button"
@@ -971,9 +907,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                                 nextStep,
                               });
                               void signInWithGoogle(
-                                attemptId
-                                  ? { attemptId, resultType, scores, completedAt, nextStep }
-                                  : undefined
+                                attemptId ? { attemptId, resultType, scores, completedAt, nextStep } : undefined,
                               );
                             }}
                           >
@@ -1034,8 +968,8 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                       says that plainly instead of implying a personalised
                       catalogue it does not have. */}
                   <p className={styles.diagnosticScoreRow}>
-                    Програма одна для всіх типів: доші враховані всередині неї, тож ваш профіль стане
-                    в пригоді з першого дня.
+                    Програма одна для всіх типів: доші враховані всередині неї, тож ваш профіль стане в пригоді з
+                    першого дня.
                   </p>
 
                   <div className={styles.diagnosticFlowFoot}>

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireCronAuth } from "@/lib/cron/auth";
-import { enqueueDoshaReminderJobs } from "@/lib/doshaReminder";
+import { enqueueDoshaReminderJobs } from "@/lib/dosha/doshaReminder";
 import { processPendingJobs } from "@/lib/jobs/worker";
 
 export const runtime = "nodejs";

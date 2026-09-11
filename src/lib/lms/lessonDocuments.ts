@@ -6,14 +6,7 @@
  * No HTML enters the LMS model: every document becomes typed Lesson blocks.
  */
 
-import {
-  Document,
-  HeadingLevel,
-  LevelFormat,
-  Packer,
-  Paragraph,
-  TextRun,
-} from "docx";
+import { Document, HeadingLevel, LevelFormat, Packer, Paragraph, TextRun } from "docx";
 import mammoth from "mammoth";
 
 import {
@@ -66,7 +59,10 @@ export function validatePortableLesson(input: unknown): asserts input is Lesson 
   assert(isNonEmptyString(input.id), "lms_lesson_document_missing_id");
   assert(isNonEmptyString(input.slug), "lms_lesson_document_missing_slug");
   assert(isNonEmptyString(input.title), "lms_lesson_document_missing_title");
-  assert(typeof input.order === "number" && Number.isInteger(input.order) && input.order > 0, "lms_lesson_document_invalid_order");
+  assert(
+    typeof input.order === "number" && Number.isInteger(input.order) && input.order > 0,
+    "lms_lesson_document_invalid_order",
+  );
   if (input.summary !== undefined) {
     validateInlineText(input.summary, "lesson.summary");
   }
@@ -119,36 +115,43 @@ function parseInline(source: string): InlineText {
     const index = match.index ?? 0;
     mergeSpan(spans, { text: source.slice(cursor, index) });
     if (match[2] && match[3]) mergeSpan(spans, { text: match[2], href: match[3] });
-    else if (match[4] || match[5]) mergeSpan(spans, { text: match[4] ?? match[5], bold: true });
-    else mergeSpan(spans, { text: match[6] ?? match[7], italic: true });
+    else if (match[4] || match[5]) mergeSpan(spans, { text: match[4] ?? match[5] ?? "", bold: true });
+    else mergeSpan(spans, { text: match[6] ?? match[7] ?? "", italic: true });
     cursor = index + match[0].length;
   }
   mergeSpan(spans, { text: source.slice(cursor) });
   const cleaned = spans.filter((span) => span.text.trim().length > 0 || spans.length === 1);
-  return cleaned.length === 1 && !cleaned[0].bold && !cleaned[0].italic && !cleaned[0].href
-    ? cleaned[0].text.trim()
+  const [only] = cleaned;
+  return only && cleaned.length === 1 && !only.bold && !only.italic && !only.href
+    ? only.text.trim()
     : cleaned.map((span) => ({ ...span, text: span.text.replace(/\\([\\`*_{}\[\]()#+.!-])/g, "$1") }));
 }
 
 function isSpecial(line: string): boolean {
-  return /^(#{1,6})\s+/.test(line)
-    || /^```/.test(line)
-    || /^>\s?/.test(line)
-    || /^[-*+]\s+/.test(line)
-    || /^\d+[.)]\s+/.test(line)
-    || /^!\[[^\]]*\]\([^)]+\)\s*$/.test(line);
+  return (
+    /^(#{1,6})\s+/.test(line) ||
+    /^```/.test(line) ||
+    /^>\s?/.test(line) ||
+    /^[-*+]\s+/.test(line) ||
+    /^\d+[.)]\s+/.test(line) ||
+    /^!\[[^\]]*\]\([^)]+\)\s*$/.test(line)
+  );
 }
 
 function parseMarkdown(source: string, fallbackTitle: string): { title: string; units: ParsedUnit[] } {
-  const lines = source.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n").split("\n");
+  const lines = source
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n?/g, "\n")
+    .split("\n");
+  /** The line at `at`, or "" past the end — the loops below only ever read inside the array. */
+  const lineAt = (at: number) => lines[at] ?? "";
   const units: ParsedUnit[] = [];
   let title = fallbackTitle;
   let cursor = 0;
   let titleTaken = false;
 
   while (cursor < lines.length) {
-    const raw = lines[cursor];
-    const line = raw.trim();
+    const line = lineAt(cursor).trim();
     if (!line || /^<!--.*-->$/.test(line) || /^---+$/.test(line)) {
       cursor += 1;
       continue;
@@ -156,11 +159,12 @@ function parseMarkdown(source: string, fallbackTitle: string): { title: string; 
 
     const heading = /^(#{1,6})\s+(.+)$/.exec(line);
     if (heading) {
-      if (heading[1].length === 1 && !titleTaken) {
-        title = inlineToPlainText(parseInline(heading[2]));
+      const [, hashes = "", headingText = ""] = heading;
+      if (hashes.length === 1 && !titleTaken) {
+        title = inlineToPlainText(parseInline(headingText));
         titleTaken = true;
       } else {
-        units.push({ kind: "rich", node: { kind: "h3", text: parseInline(heading[2]) } });
+        units.push({ kind: "rich", node: { kind: "h3", text: parseInline(headingText) } });
       }
       cursor += 1;
       continue;
@@ -168,7 +172,8 @@ function parseMarkdown(source: string, fallbackTitle: string): { title: string; 
 
     const image = /^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)\s*$/.exec(line);
     if (image) {
-      units.push({ kind: "image", alt: image[1].trim() || "Зображення уроку", src: image[2] });
+      const [, alt = "", src = ""] = image;
+      units.push({ kind: "image", alt: alt.trim() || "Зображення уроку", src });
       cursor += 1;
       continue;
     }
@@ -177,16 +182,17 @@ function parseMarkdown(source: string, fallbackTitle: string): { title: string; 
     if (fence) {
       const code: string[] = [];
       cursor += 1;
-      while (cursor < lines.length && !/^```\s*$/.test(lines[cursor].trim())) code.push(lines[cursor++]);
+      while (cursor < lines.length && !/^```\s*$/.test(lineAt(cursor).trim())) code.push(lineAt(cursor++));
       if (cursor < lines.length) cursor += 1;
-      if (code.join("\n").trim()) units.push({ kind: "code", code: code.join("\n"), language: fence[1] || undefined });
+      const [, language = ""] = fence;
+      if (code.join("\n").trim()) units.push({ kind: "code", code: code.join("\n"), language: language || undefined });
       continue;
     }
 
     if (/^>\s?/.test(line)) {
       const quote: string[] = [];
-      while (cursor < lines.length && /^>\s?/.test(lines[cursor].trim())) {
-        quote.push(lines[cursor].trim().replace(/^>\s?/, ""));
+      while (cursor < lines.length && /^>\s?/.test(lineAt(cursor).trim())) {
+        quote.push(lineAt(cursor).trim().replace(/^>\s?/, ""));
         cursor += 1;
       }
       units.push({ kind: "quote", text: parseInline(quote.join(" ")) });
@@ -196,8 +202,10 @@ function parseMarkdown(source: string, fallbackTitle: string): { title: string; 
     if (/^[-*+]\s+/.test(line)) {
       const items: InlineText[] = [];
       let checklist = false;
-      while (cursor < lines.length && /^[-*+]\s+/.test(lines[cursor].trim())) {
-        const item = lines[cursor].trim().replace(/^[-*+]\s+/, "");
+      while (cursor < lines.length && /^[-*+]\s+/.test(lineAt(cursor).trim())) {
+        const item = lineAt(cursor)
+          .trim()
+          .replace(/^[-*+]\s+/, "");
         checklist ||= /^\[[ xX]\]\s+/.test(item);
         items.push(parseInline(item.replace(/^\[[ xX]\]\s+/, "")));
         cursor += 1;
@@ -208,8 +216,14 @@ function parseMarkdown(source: string, fallbackTitle: string): { title: string; 
 
     if (/^\d+[.)]\s+/.test(line)) {
       const items: InlineText[] = [];
-      while (cursor < lines.length && /^\d+[.)]\s+/.test(lines[cursor].trim())) {
-        items.push(parseInline(lines[cursor].trim().replace(/^\d+[.)]\s+/, "")));
+      while (cursor < lines.length && /^\d+[.)]\s+/.test(lineAt(cursor).trim())) {
+        items.push(
+          parseInline(
+            lineAt(cursor)
+              .trim()
+              .replace(/^\d+[.)]\s+/, ""),
+          ),
+        );
         cursor += 1;
       }
       units.push({ kind: "rich", node: { kind: "ol", items } });
@@ -218,8 +232,8 @@ function parseMarkdown(source: string, fallbackTitle: string): { title: string; 
 
     const paragraph = [line];
     cursor += 1;
-    while (cursor < lines.length && lines[cursor].trim() && !isSpecial(lines[cursor].trim())) {
-      paragraph.push(lines[cursor].trim());
+    while (cursor < lines.length && lineAt(cursor).trim() && !isSpecial(lineAt(cursor).trim())) {
+      paragraph.push(lineAt(cursor).trim());
       cursor += 1;
     }
     units.push({ kind: "rich", node: { kind: "p", text: parseInline(paragraph.join(" ")) } });
@@ -313,13 +327,15 @@ export async function importLessonDocument(
 
 function markdownInline(value: InlineText): string {
   if (typeof value === "string") return value;
-  return value.map((span) => {
-    let text = span.text;
-    if (span.bold) text = `**${text}**`;
-    if (span.italic) text = `*${text}*`;
-    if (span.href) text = `[${text}](${span.href})`;
-    return text;
-  }).join("");
+  return value
+    .map((span) => {
+      let text = span.text;
+      if (span.bold) text = `**${text}**`;
+      if (span.italic) text = `*${text}*`;
+      if (span.href) text = `[${text}](${span.href})`;
+      return text;
+    })
+    .join("");
 }
 
 export function lessonToMarkdown(lesson: Lesson): string {
@@ -330,53 +346,109 @@ export function lessonToMarkdown(lesson: Lesson): string {
   for (const block of flattenBlocks(lesson.blocks)) {
     out.push("");
     switch (block.type) {
-      case "lesson_objective": out.push("## Мета уроку", "", markdownInline(block.text)); break;
+      case "lesson_objective":
+        out.push("## Мета уроку", "", markdownInline(block.text));
+        break;
       case "rich_text":
         for (const node of block.content) {
           if (node.kind === "p") out.push(markdownInline(node.text), "");
           if (node.kind === "h3") out.push(`### ${markdownInline(node.text)}`, "");
           if (node.kind === "ul") out.push(...node.items.map((item) => `- ${markdownInline(item)}`), "");
-          if (node.kind === "ol") out.push(...node.items.map((item, index) => `${index + 1}. ${markdownInline(item)}`), "");
+          if (node.kind === "ol")
+            out.push(...node.items.map((item, index) => `${index + 1}. ${markdownInline(item)}`), "");
         }
         break;
-      case "protocol_step": out.push(`## Крок ${block.step}: ${markdownInline(block.title)}`, "", ...(block.timing ? [`*${block.timing}*`, ""] : []), ...(block.text ? [markdownInline(block.text)] : [])); break;
-      case "practice_block": out.push(`## Практика: ${markdownInline(block.title)}`, "", ...(block.text ? [markdownInline(block.text), ""] : []), ...(block.durationMin ? [`Тривалість: ${block.durationMin} хв.`] : [])); break;
-      case "checklist": out.push(...block.items.map((item) => `- [ ] ${markdownInline(item.text)}`)); break;
-      case "video": out.push(`## Відео${block.title ? `: ${markdownInline(block.title)}` : ""}`, "", `https://youtu.be/${block.videoId}`); break;
-      case "image": out.push(`![${block.alt}](${block.src})`, ...(block.caption ? ["", markdownInline(block.caption)] : [])); break;
-      case "quote": out.push(...markdownInline(block.text).split("\n").map((line) => `> ${line}`), ...(block.author ? [`> — ${block.author}`] : [])); break;
-      case "code": out.push(`\`\`\`${block.language ?? ""}`, block.code, "\`\`\`"); break;
-      case "boundary_note": out.push("## Межі й застереження", "", markdownInline(block.text)); break;
-      case "faq_block": block.items.forEach((item) => out.push(`### ${markdownInline(item.question)}`, "", markdownInline(item.answer), "")); break;
+      case "protocol_step":
+        out.push(
+          `## Крок ${block.step}: ${markdownInline(block.title)}`,
+          "",
+          ...(block.timing ? [`*${block.timing}*`, ""] : []),
+          ...(block.text ? [markdownInline(block.text)] : []),
+        );
+        break;
+      case "practice_block":
+        out.push(
+          `## Практика: ${markdownInline(block.title)}`,
+          "",
+          ...(block.text ? [markdownInline(block.text), ""] : []),
+          ...(block.durationMin ? [`Тривалість: ${block.durationMin} хв.`] : []),
+        );
+        break;
+      case "checklist":
+        out.push(...block.items.map((item) => `- [ ] ${markdownInline(item.text)}`));
+        break;
+      case "video":
+        out.push(
+          `## Відео${block.title ? `: ${markdownInline(block.title)}` : ""}`,
+          "",
+          `https://youtu.be/${block.videoId}`,
+        );
+        break;
+      case "image":
+        out.push(`![${block.alt}](${block.src})`, ...(block.caption ? ["", markdownInline(block.caption)] : []));
+        break;
+      case "quote":
+        out.push(
+          ...markdownInline(block.text)
+            .split("\n")
+            .map((line) => `> ${line}`),
+          ...(block.author ? [`> — ${block.author}`] : []),
+        );
+        break;
+      case "code":
+        out.push(`\`\`\`${block.language ?? ""}`, block.code, "\`\`\`");
+        break;
+      case "boundary_note":
+        out.push("## Межі й застереження", "", markdownInline(block.text));
+        break;
+      case "faq_block":
+        block.items.forEach((item) =>
+          out.push(`### ${markdownInline(item.question)}`, "", markdownInline(item.answer), ""),
+        );
+        break;
       case "table":
         if (block.title) out.push(`### ${markdownInline(block.title)}`, "");
         {
-          const head = block.head ?? block.rows[0].map((_, index) => `Колонка ${index + 1}`);
+          // A table with no head names its columns after the first row's width;
+          // a table with neither head nor rows has no columns to name.
+          const head = block.head ?? block.rows[0]?.map((_, index) => `Колонка ${index + 1}`) ?? [];
           out.push(`| ${head.map(markdownInline).join(" | ")} |`, `| ${head.map(() => "---").join(" | ")} |`);
           out.push(...block.rows.map((row) => `| ${row.map(markdownInline).join(" | ")} |`));
         }
         break;
-      case "cta": out.push(`## ${block.label}`, ...(block.text ? ["", markdownInline(block.text)] : []), "", `[Перейти](${block.href})`); break;
+      case "cta":
+        out.push(
+          `## ${block.label}`,
+          ...(block.text ? ["", markdownInline(block.text)] : []),
+          "",
+          `[Перейти](${block.href})`,
+        );
+        break;
     }
   }
-  return `${out.join("\n").replace(/\n{3,}/g, "\n\n").trim()}\n`;
+  return `${out
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()}\n`;
 }
 
 export function lessonToText(lesson: Lesson): string {
-  return lessonToMarkdown(lesson)
-    .replace(/^<!--.*-->\n?/gm, "")
-    .replace(/^#{1,6}\s+/gm, "")
-    .replace(/^```[^\n]*\n?/gm, "")
-    .replace(/^>\s?/gm, "")
-    .replace(/^[-*+] \[[ xX]\]\s+/gm, "• ")
-    .replace(/^[-*+]\s+/gm, "• ")
-    .replace(/^\d+[.)]\s+/gm, "")
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, "$1 — $2")
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1 — $2")
-    .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/\*([^*]+)\*/g, "$1")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim() + "\n";
+  return (
+    lessonToMarkdown(lesson)
+      .replace(/^<!--.*-->\n?/gm, "")
+      .replace(/^#{1,6}\s+/gm, "")
+      .replace(/^```[^\n]*\n?/gm, "")
+      .replace(/^>\s?/gm, "")
+      .replace(/^[-*+] \[[ xX]\]\s+/gm, "• ")
+      .replace(/^[-*+]\s+/gm, "• ")
+      .replace(/^\d+[.)]\s+/gm, "")
+      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, "$1 — $2")
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1 — $2")
+      .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/\*([^*]+)\*/g, "$1")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim() + "\n"
+  );
 }
 
 function textRuns(value: InlineText): TextRun[] {
@@ -391,34 +463,93 @@ function lessonDocxParagraphs(lesson: Lesson): Paragraph[] {
   const heading = (text: string) => paragraphs.push(new Paragraph({ text, heading: HeadingLevel.HEADING_2 }));
   for (const block of flattenBlocks(lesson.blocks)) {
     switch (block.type) {
-      case "lesson_objective": heading("Мета уроку"); paragraphs.push(new Paragraph({ children: textRuns(block.text) })); break;
+      case "lesson_objective":
+        heading("Мета уроку");
+        paragraphs.push(new Paragraph({ children: textRuns(block.text) }));
+        break;
       case "rich_text":
         block.content.forEach((node) => {
           if (node.kind === "p") paragraphs.push(new Paragraph({ children: textRuns(node.text) }));
-          if (node.kind === "h3") paragraphs.push(new Paragraph({ children: textRuns(node.text), heading: HeadingLevel.HEADING_3 }));
+          if (node.kind === "h3")
+            paragraphs.push(new Paragraph({ children: textRuns(node.text), heading: HeadingLevel.HEADING_3 }));
           if (node.kind === "ul" || node.kind === "ol") {
-            node.items.forEach((item) => paragraphs.push(new Paragraph({
-              children: textRuns(item),
-              numbering: { reference: node.kind === "ul" ? "bullets" : "numbers", level: 0 },
-            })));
+            node.items.forEach((item) =>
+              paragraphs.push(
+                new Paragraph({
+                  children: textRuns(item),
+                  numbering: { reference: node.kind === "ul" ? "bullets" : "numbers", level: 0 },
+                }),
+              ),
+            );
           }
         });
         break;
-      case "protocol_step": heading(`Крок ${block.step}: ${inlineToPlainText(block.title)}`); if (block.timing) paragraphs.push(new Paragraph({ children: [new TextRun({ text: block.timing, italics: true })] })); if (block.text) paragraphs.push(new Paragraph({ children: textRuns(block.text) })); break;
-      case "practice_block": heading(`Практика: ${inlineToPlainText(block.title)}`); if (block.text) paragraphs.push(new Paragraph({ children: textRuns(block.text) })); if (block.durationMin) paragraphs.push(new Paragraph({ text: `Тривалість: ${block.durationMin} хв.` })); break;
-      case "checklist":
-        block.items.forEach((item) => paragraphs.push(new Paragraph({
-          children: [new TextRun("☐ "), ...textRuns(item.text)],
-        })));
+      case "protocol_step":
+        heading(`Крок ${block.step}: ${inlineToPlainText(block.title)}`);
+        if (block.timing)
+          paragraphs.push(new Paragraph({ children: [new TextRun({ text: block.timing, italics: true })] }));
+        if (block.text) paragraphs.push(new Paragraph({ children: textRuns(block.text) }));
         break;
-      case "video": heading(block.title ? `Відео: ${inlineToPlainText(block.title)}` : "Відео"); paragraphs.push(new Paragraph({ text: `https://youtu.be/${block.videoId}` })); break;
-      case "image": paragraphs.push(new Paragraph({ text: `${block.alt}: ${block.src}` })); if (block.caption) paragraphs.push(new Paragraph({ children: textRuns(block.caption) })); break;
-      case "quote": paragraphs.push(new Paragraph({ children: [...textRuns(block.text), ...(block.author ? [new TextRun({ text: ` — ${block.author}`, italics: true })] : [])], indent: { left: 720 } })); break;
-      case "code": paragraphs.push(new Paragraph({ children: [new TextRun({ text: block.code, font: "Courier New" })], style: "Normal" })); break;
-      case "boundary_note": heading("Межі й застереження"); paragraphs.push(new Paragraph({ children: textRuns(block.text) })); break;
-      case "faq_block": block.items.forEach((item) => { paragraphs.push(new Paragraph({ children: textRuns(item.question), heading: HeadingLevel.HEADING_3 })); paragraphs.push(new Paragraph({ children: textRuns(item.answer) })); }); break;
-      case "table": if (block.title) paragraphs.push(new Paragraph({ children: textRuns(block.title), heading: HeadingLevel.HEADING_3 })); [...(block.head ? [block.head] : []), ...block.rows].forEach((row) => paragraphs.push(new Paragraph({ text: row.map(inlineToPlainText).join(" | ") }))); break;
-      case "cta": heading(block.label); if (block.text) paragraphs.push(new Paragraph({ children: textRuns(block.text) })); paragraphs.push(new Paragraph({ text: block.href })); break;
+      case "practice_block":
+        heading(`Практика: ${inlineToPlainText(block.title)}`);
+        if (block.text) paragraphs.push(new Paragraph({ children: textRuns(block.text) }));
+        if (block.durationMin) paragraphs.push(new Paragraph({ text: `Тривалість: ${block.durationMin} хв.` }));
+        break;
+      case "checklist":
+        block.items.forEach((item) =>
+          paragraphs.push(
+            new Paragraph({
+              children: [new TextRun("☐ "), ...textRuns(item.text)],
+            }),
+          ),
+        );
+        break;
+      case "video":
+        heading(block.title ? `Відео: ${inlineToPlainText(block.title)}` : "Відео");
+        paragraphs.push(new Paragraph({ text: `https://youtu.be/${block.videoId}` }));
+        break;
+      case "image":
+        paragraphs.push(new Paragraph({ text: `${block.alt}: ${block.src}` }));
+        if (block.caption) paragraphs.push(new Paragraph({ children: textRuns(block.caption) }));
+        break;
+      case "quote":
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              ...textRuns(block.text),
+              ...(block.author ? [new TextRun({ text: ` — ${block.author}`, italics: true })] : []),
+            ],
+            indent: { left: 720 },
+          }),
+        );
+        break;
+      case "code":
+        paragraphs.push(
+          new Paragraph({ children: [new TextRun({ text: block.code, font: "Courier New" })], style: "Normal" }),
+        );
+        break;
+      case "boundary_note":
+        heading("Межі й застереження");
+        paragraphs.push(new Paragraph({ children: textRuns(block.text) }));
+        break;
+      case "faq_block":
+        block.items.forEach((item) => {
+          paragraphs.push(new Paragraph({ children: textRuns(item.question), heading: HeadingLevel.HEADING_3 }));
+          paragraphs.push(new Paragraph({ children: textRuns(item.answer) }));
+        });
+        break;
+      case "table":
+        if (block.title)
+          paragraphs.push(new Paragraph({ children: textRuns(block.title), heading: HeadingLevel.HEADING_3 }));
+        [...(block.head ? [block.head] : []), ...block.rows].forEach((row) =>
+          paragraphs.push(new Paragraph({ text: row.map(inlineToPlainText).join(" | ") })),
+        );
+        break;
+      case "cta":
+        heading(block.label);
+        if (block.text) paragraphs.push(new Paragraph({ children: textRuns(block.text) }));
+        paragraphs.push(new Paragraph({ text: block.href }));
+        break;
     }
   }
   return paragraphs;
@@ -434,8 +565,30 @@ export async function exportLessonDocument(lesson: Lesson, format: LessonDocumen
   const document = new Document({
     numbering: {
       config: [
-        { reference: "bullets", levels: [{ level: 0, format: LevelFormat.BULLET, text: "•", alignment: "left", style: { paragraph: { indent: { left: 720, hanging: 360 } } } }] },
-        { reference: "numbers", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: "left", style: { paragraph: { indent: { left: 720, hanging: 360 } } } }] },
+        {
+          reference: "bullets",
+          levels: [
+            {
+              level: 0,
+              format: LevelFormat.BULLET,
+              text: "•",
+              alignment: "left",
+              style: { paragraph: { indent: { left: 720, hanging: 360 } } },
+            },
+          ],
+        },
+        {
+          reference: "numbers",
+          levels: [
+            {
+              level: 0,
+              format: LevelFormat.DECIMAL,
+              text: "%1.",
+              alignment: "left",
+              style: { paragraph: { indent: { left: 720, hanging: 360 } } },
+            },
+          ],
+        },
       ],
     },
     sections: [{ properties: {}, children: lessonDocxParagraphs(lesson) }],

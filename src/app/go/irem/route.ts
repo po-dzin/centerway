@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { normalizeEmail } from "@/lib/strings";
 import { issueOrReuseIremPersonalOffer } from "@/lib/landing/offers";
 
 export const runtime = "nodejs";
@@ -26,14 +27,6 @@ function readTrimmed(searchParams: URLSearchParams, ...keys: string[]): string |
 
 function buildRecipientKey(tgUserId: string): string {
   return `tg:${tgUserId}`;
-}
-
-function normalizeEmail(email: string): string | null {
-  const normalized = email.trim().toLowerCase();
-  if (!normalized || !normalized.includes("@")) {
-    return null;
-  }
-  return normalized;
 }
 
 function buildEmailRecipientKey(email: string): string {

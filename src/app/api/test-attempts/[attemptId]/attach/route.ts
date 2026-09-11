@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
-import { loadTestAttempt, syncCustomerDoshaTestTags } from "@/lib/doshaTestRepo";
-import type { DoshaResultType } from "@/lib/doshaTest";
+import { loadTestAttempt, syncCustomerDoshaTestTags } from "@/lib/dosha/doshaTestRepo";
+import type { DoshaResultType } from "@/lib/dosha/doshaTest";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 
 export const runtime = "nodejs";
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ attemptId: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ attemptId: string }> }) {
   const rl = await enforceRateLimit(req, { name: "test_attach", limit: 30, windowSeconds: 60 });
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
@@ -66,8 +63,11 @@ export async function POST(
         content_type: "lead",
         content_ids: [resultType],
         email: user.email ?? null,
+        /* Empty falls through, not just nullish: a present-but-blank
+           `x-forwarded-for` trims to `""`, which `??` would have kept and sent
+           to Meta as the address instead of reading `x-real-ip`. */
         ip_address:
-          req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? req.headers.get("x-real-ip") ?? null,
+          (req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null) ?? req.headers.get("x-real-ip") ?? null,
         user_agent: req.headers.get("user-agent"),
       };
       try {

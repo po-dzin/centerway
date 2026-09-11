@@ -5,15 +5,12 @@ import {
   loadAnswersForTestAttempt,
   loadTestAttempt,
   loadTestDefinitionBySlug,
-} from "@/lib/doshaTestRepo";
-import { DOSHA_TEST_SLUG } from "@/lib/doshaTest";
+} from "@/lib/dosha/doshaTestRepo";
+import { DOSHA_TEST_SLUG } from "@/lib/dosha/doshaTest";
 
 export const runtime = "nodejs";
 
-export async function GET(
-  _: Request,
-  { params }: { params: Promise<{ attemptId: string }> }
-) {
+export async function GET(_: Request, { params }: { params: Promise<{ attemptId: string }> }) {
   const { attemptId } = await params;
 
   try {

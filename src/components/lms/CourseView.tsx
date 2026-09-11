@@ -83,15 +83,15 @@ export function CourseView({
   const known = useSyncExternalStore(
     subscribeLibraryMemory,
     () => recall<CourseViewDto>(memo),
-    () => undefined
+    () => undefined,
   );
   const [failure, setFailure] = useState<LmsFailure | null>(null);
-  const state: { status: "loading" } | { status: "ready"; data: CourseViewDto } | { status: "error"; error: LmsFailure } =
-    known
-      ? { status: "ready", data: known }
-      : failure
-        ? { status: "error", error: failure }
-        : { status: "loading" };
+  const state:
+    { status: "loading" } | { status: "ready"; data: CourseViewDto } | { status: "error"; error: LmsFailure } = known
+    ? { status: "ready", data: known }
+    : failure
+      ? { status: "error", error: failure }
+      : { status: "loading" };
 
   const [restarting, setRestarting] = useState(false);
   /* The reader's own marks for this course — the map is where they are read
@@ -132,13 +132,13 @@ export function CourseView({
           type: "lesson.uncompleted" as const,
           lessonSlug: entry.slug,
           occurredAt: new Date().toISOString(),
-        }))
+        })),
       );
       setRestarting(false);
 
       if (result.ok) void load();
     },
-    [courseSlug, restarting, load, draftPreview]
+    [courseSlug, restarting, load, draftPreview],
   );
 
   useEffect(() => {
@@ -165,7 +165,11 @@ export function CourseView({
   if (state.status === "loading") {
     return (
       <main className={`${styles.wrap} ${styles.courseWrap}`} data-cw-platform-template="learn-course">
-        <PlatformLoadingState label="Бібліотека" title="Завантажуємо курс…" detail="Відновлюємо ваш прогрес і наступний урок." />
+        <PlatformLoadingState
+          label="Бібліотека"
+          title="Завантажуємо курс…"
+          detail="Відновлюємо ваш прогрес і наступний урок."
+        />
       </main>
     );
   }
@@ -288,21 +292,20 @@ export function CourseView({
       {reference.length > 0 ? (
         <section className={styles.referenceSection}>
           <h2 className={styles.referenceHeading}>Довідкові матеріали</h2>
-          <p className={styles.referenceLead}>
-            Не входять у проходження — відкривай, коли знадобиться.
-          </p>
+          <p className={styles.referenceLead}>Не входять у проходження — відкривай, коли знадобиться.</p>
           <ul className={styles.outline}>
             {reference.map((entry) => (
               <li key={entry.lessonId} className={styles.outlineItem}>
-                <MotionLink className={styles.outlineLink} href={href(`/learn/${course.slug}/${entry.slug}${previewQuery}`)}>
+                <MotionLink
+                  className={styles.outlineLink}
+                  href={href(`/learn/${course.slug}/${entry.slug}${previewQuery}`)}
+                >
                   <span className={styles.dayBadge} aria-hidden="true">
                     <Icon name="star" size={18} />
                   </span>
                   <div className={styles.outlineBody}>
                     <h3 className={styles.outlineTitle}>{entry.title}</h3>
-                    {entry.durationMin ? (
-                      <p className={styles.outlineMeta}>{entry.durationMin} хв</p>
-                    ) : null}
+                    {entry.durationMin ? <p className={styles.outlineMeta}>{entry.durationMin} хв</p> : null}
                   </div>
                   <Icon name="chevron-right" size={20} className={styles.outlineGlyph} />
                 </MotionLink>

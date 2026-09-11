@@ -17,12 +17,14 @@ function publishedCourse() {
 describe("immediatePublishedPatch", () => {
   it("allows only a cover and the private shelf order to change live", () => {
     const live = publishedCourse();
-    expect(immediatePublishedPatch(live, {
-      ...live,
-      cover: { src: "/cover.jpg", alt: "Обкладинка" },
-      sortOrder: 4,
-      version: live.version + 1,
-    })).toEqual({ cover: { src: "/cover.jpg", alt: "Обкладинка" }, sortOrder: 4, status: "published" });
+    expect(
+      immediatePublishedPatch(live, {
+        ...live,
+        cover: { src: "/cover.jpg", alt: "Обкладинка" },
+        sortOrder: 4,
+        version: live.version + 1,
+      }),
+    ).toEqual({ cover: { src: "/cover.jpg", alt: "Обкладинка" }, sortOrder: 4, status: "published" });
   });
 
   it.each([
@@ -38,11 +40,23 @@ describe("immediatePublishedPatch", () => {
     const live = publishedCourse();
     const lessonChanged = {
       ...live,
-      modules: live.modules.map((module, index) => index === 0
-        ? { ...module, lessons: module.lessons.map((lesson, lessonIndex) => lessonIndex === 0 ? { ...lesson, title: "Інший урок" } : lesson) }
-        : module),
+      modules: live.modules.map((module, index) =>
+        index === 0
+          ? {
+              ...module,
+              lessons: module.lessons.map((lesson, lessonIndex) =>
+                lessonIndex === 0 ? { ...lesson, title: "Інший урок" } : lesson,
+              ),
+            }
+          : module,
+      ),
     };
     expect(immediatePublishedPatch(live, lessonChanged)).toBeNull();
-    expect(immediatePublishedPatch(live, { ...live, entitlementProductCodes: [...live.entitlementProductCodes, "new-offer"] })).toBeNull();
+    expect(
+      immediatePublishedPatch(live, {
+        ...live,
+        entitlementProductCodes: [...live.entitlementProductCodes, "new-offer"],
+      }),
+    ).toBeNull();
   });
 });

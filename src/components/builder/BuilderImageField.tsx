@@ -284,12 +284,7 @@ export function BuilderImageField({
             one has to sit in a row with a text field without looking like a
             different application. */}
         <div className={styles.addRow}>
-          <button
-            className={styles.quietAction}
-            type="button"
-            disabled={busy}
-            onClick={() => input.current?.click()}
-          >
+          <button className={styles.quietAction} type="button" disabled={busy} onClick={() => input.current?.click()}>
             {busy ? "Завантажуємо…" : "Завантажити файл"}
           </button>
           <span className={styles.fieldHint}>

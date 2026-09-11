@@ -83,19 +83,19 @@ export function validateCourseTheme(input: unknown, path: string): asserts input
   if (input.palette !== undefined) {
     assert(
       (COURSE_PALETTES as readonly string[]).includes(input.palette as string),
-      `lms_course_unknown_palette:${path}`
+      `lms_course_unknown_palette:${path}`,
     );
   }
   if (input.headingFont !== undefined) {
     assert(
       (COURSE_HEADING_FONTS as readonly string[]).includes(input.headingFont as string),
-      `lms_course_unknown_heading_font:${path}`
+      `lms_course_unknown_heading_font:${path}`,
     );
   }
   if (input.scale !== undefined) {
     assert(
       (COURSE_TYPE_SCALES as readonly string[]).includes(input.scale as string),
-      `lms_course_unknown_scale:${path}`
+      `lms_course_unknown_scale:${path}`,
     );
   }
 }

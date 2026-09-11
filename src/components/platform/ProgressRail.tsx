@@ -115,21 +115,21 @@ export function ProgressRail({ value, total, label, className }: ProgressRailPro
         <Walker />
       </span>
       <div className={styles.rail}>
-      {Array.from({ length: total }, (_, i) => (
-        <span
-          key={i}
-          className={i < done ? styles.dashDone : styles.dash}
-          style={
-            {
-              // ±2.6° of tilt and a little length variance per dash: enough that
-              // the run reads as drawn, not printed, without any dash looking
-              // like a mistake.
-              "--cw-dash-tilt": `${(jitter(i, 1) - 0.5) * 5.2}deg`,
-              "--cw-dash-len": `${0.86 + jitter(i, 2) * 0.14}`,
-            } as React.CSSProperties
-          }
-        />
-      ))}
+        {Array.from({ length: total }, (_, i) => (
+          <span
+            key={i}
+            className={i < done ? styles.dashDone : styles.dash}
+            style={
+              {
+                // ±2.6° of tilt and a little length variance per dash: enough that
+                // the run reads as drawn, not printed, without any dash looking
+                // like a mistake.
+                "--cw-dash-tilt": `${(jitter(i, 1) - 0.5) * 5.2}deg`,
+                "--cw-dash-len": `${0.86 + jitter(i, 2) * 0.14}`,
+              } as React.CSSProperties
+            }
+          />
+        ))}
       </div>
     </div>
   );

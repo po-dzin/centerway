@@ -1,11 +1,5 @@
 export type CWThemeFamily =
-  | "quiet-mineral"
-  | "living-mineral"
-  | "warm-route"
-  | "warm-mineral"
-  | "natural-premium"
-  | "natural3"
-  | "curcuma";
+  "quiet-mineral" | "living-mineral" | "warm-route" | "warm-mineral" | "natural-premium" | "natural3" | "curcuma";
 export type CWMode = "consult" | "detox" | "herbs" | "lesson" | "dashboard" | "support" | "admin" | "platform";
 export type CWBranch = "consult" | "detox" | "herbs" | "short" | "irem" | "platform";
 export type CWSemanticFamily = "calm" | "method" | "guide" | "trust" | "progress" | "organic" | "embodied" | "boundary";
@@ -55,15 +49,9 @@ export type CWGeneratorConfig = {
   };
 };
 
-export type ScreenRouteKey =
-  | "consult"
-  | "detox"
-  | "herbs"
-  | "lesson-pilot";
+export type ScreenRouteKey = "consult" | "detox" | "herbs" | "lesson-pilot";
 
-export type RouteFamily =
-  | "funnel surface"
-  | "utility";
+export type RouteFamily = "funnel surface" | "utility";
 
 export type SemanticBlockManifest = {
   id: string;

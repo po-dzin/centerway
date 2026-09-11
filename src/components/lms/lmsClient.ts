@@ -9,7 +9,6 @@
  * a second implementation (docs/lms-research-2026-08-15.md §5A).
  */
 
-import { supabaseClient } from "@/lib/supabaseClient";
 import type {
   Annotation,
   AnnotationAnchor,
@@ -24,6 +23,7 @@ import type {
   InlineText,
   ProgressEventType,
 } from "@/lms-core";
+import { accessToken, authorizedFetch } from "@/components/auth/authorizedFetch";
 
 export type LmsFailure =
   | "unauthenticated"
@@ -149,25 +149,13 @@ export type ProgressAck = {
 
 export type LmsResult<T> = { ok: true; data: T } | { ok: false; error: LmsFailure; detail?: unknown };
 
-async function accessToken(): Promise<string | null> {
-  const { data } = await supabaseClient.auth.getSession();
-  return data.session?.access_token ?? null;
-}
-
 async function request<T>(path: string, init?: RequestInit): Promise<LmsResult<T>> {
   const token = await accessToken();
   if (!token) return { ok: false, error: "unauthenticated" };
 
   let response: Response;
   try {
-    response = await fetch(path, {
-      ...init,
-      headers: {
-        ...(init?.headers ?? {}),
-        Authorization: `Bearer ${token}`,
-        ...(init?.body ? { "Content-Type": "application/json" } : {}),
-      },
-    });
+    response = await authorizedFetch(path, init);
   } catch {
     return { ok: false, error: "network" };
   }
@@ -246,10 +234,14 @@ export function fetchCourse(slug: string, draftPreview = false): Promise<LmsResu
   return request<CourseViewDto>(`/api/lms/courses/${encodeURIComponent(slug)}${query}`);
 }
 
-export function fetchLesson(courseSlug: string, lessonSlug: string, draftPreview = false): Promise<LmsResult<LessonViewDto>> {
+export function fetchLesson(
+  courseSlug: string,
+  lessonSlug: string,
+  draftPreview = false,
+): Promise<LmsResult<LessonViewDto>> {
   const query = draftPreview ? "?preview=draft" : "";
   return request<LessonViewDto>(
-    `/api/lms/courses/${encodeURIComponent(courseSlug)}/lessons/${encodeURIComponent(lessonSlug)}${query}`
+    `/api/lms/courses/${encodeURIComponent(courseSlug)}/lessons/${encodeURIComponent(lessonSlug)}${query}`,
   );
 }
 
@@ -263,10 +255,7 @@ export type OutgoingProgressEvent = {
   payload?: { itemId?: string; checked?: boolean };
 };
 
-export function postProgress(
-  courseSlug: string,
-  events: OutgoingProgressEvent[]
-): Promise<LmsResult<ProgressAck>> {
+export function postProgress(courseSlug: string, events: OutgoingProgressEvent[]): Promise<LmsResult<ProgressAck>> {
   return request<ProgressAck>("/api/lms/progress", {
     method: "POST",
     body: JSON.stringify({ courseSlug, events }),
@@ -279,12 +268,7 @@ export function postProgress(
  * Stable per (lesson, kind, item) so a double tap or a retried request folds
  * into one event — the same guarantee an offline flush will need later.
  */
-export function progressClientId(parts: {
-  lessonId: string;
-  kind: string;
-  itemId?: string;
-  stamp?: string;
-}): string {
+export function progressClientId(parts: { lessonId: string; kind: string; itemId?: string; stamp?: string }): string {
   return ["cw", parts.lessonId, parts.kind, parts.itemId ?? "-", parts.stamp ?? ""].join(":");
 }
 
@@ -305,7 +289,7 @@ export function saveAnnotation(
     lessonSlug: string;
     anchor: AnnotationAnchor | null;
     note: string | null;
-  }
+  },
 ): Promise<LmsResult<{ annotation: Annotation }>> {
   return request<{ annotation: Annotation }>("/api/lms/annotations", {
     method: "POST",
@@ -316,7 +300,7 @@ export function saveAnnotation(
 export function deleteAnnotation(courseSlug: string, clientId: string): Promise<LmsResult<{ ok: true }>> {
   return request<{ ok: true }>(
     `/api/lms/annotations?courseSlug=${encodeURIComponent(courseSlug)}&clientId=${encodeURIComponent(clientId)}`,
-    { method: "DELETE" }
+    { method: "DELETE" },
   );
 }
 

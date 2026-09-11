@@ -44,7 +44,9 @@ function markerPrompt(value: string): string | undefined {
 export function RequiredMark() {
   return (
     <>
-      <span className={styles.fieldRequired} aria-hidden="true">*</span>
+      <span className={styles.fieldRequired} aria-hidden="true">
+        *
+      </span>
       <span className={styles.visuallyHidden}> — обов&apos;язково</span>
     </>
   );
@@ -140,9 +142,7 @@ export function FieldInput({
           value={number === undefined ? "" : String(number)}
           // Empty means ABSENT, not zero: an optional number written as 0 is a
           // different claim ("takes no time") from an unset one.
-          onChange={(event) =>
-            onChange(field.path, event.target.value === "" ? undefined : Number(event.target.value))
-          }
+          onChange={(event) => onChange(field.path, event.target.value === "" ? undefined : Number(event.target.value))}
           onKeyDown={closeOnEnter}
         />
         {out ? (
@@ -195,9 +195,7 @@ export function FieldInput({
   }
 
   if (field.kind === "youtube") {
-    return (
-      <YoutubeField field={field} value={typeof value === "string" ? value : ""} onChange={onChange} />
-    );
+    return <YoutubeField field={field} value={typeof value === "string" ? value : ""} onChange={onChange} />;
   }
 
   const text = typeof value === "string" ? value : "";
@@ -408,9 +406,7 @@ export function ChoiceSet<T extends string>({
               className={styles.choiceOption}
               type="button"
               aria-pressed={on}
-              onClick={() =>
-                write(on ? values.filter((one) => one !== option.value) : [...values, option.value])
-              }
+              onClick={() => write(on ? values.filter((one) => one !== option.value) : [...values, option.value])}
             >
               {option.label}
             </button>

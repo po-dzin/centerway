@@ -23,72 +23,71 @@ export const GRANT_SOURCES = ["manual", "bonus", "promotion"] as const;
 export type GrantSource = (typeof GRANT_SOURCES)[number];
 
 export function isGrantSource(value: unknown): value is GrantSource {
-    return typeof value === "string" && (GRANT_SOURCES as readonly string[]).includes(value);
+  return typeof value === "string" && (GRANT_SOURCES as readonly string[]).includes(value);
 }
 
 export type LearnerRow = {
-    enrollmentId: string;
-    courseId: string;
-    courseSlug: string;
-    courseTitle: string;
-    courseStatus: string;
-    authUserId: string;
-    email: string | null;
-    fullName: string | null;
-    avatarUrl: string | null;
-    source: string;
-    orderRef: string | null;
-    startedAt: string;
-    expiresAt: string | null;
-    /** Whether the door is open right now, and if not, why. Derived, never stored. */
-    access: AccessState;
-    /** Whole days left on the window; `null` when it has no end. */
-    daysLeft: number | null;
-    blockedReason: string | null;
-    lessonsTotal: number;
-    lessonsCompleted: number;
-    lastActivityAt: string | null;
-    status: LearnerStatus;
+  enrollmentId: string;
+  courseId: string;
+  courseSlug: string;
+  courseTitle: string;
+  courseStatus: string;
+  authUserId: string;
+  email: string | null;
+  fullName: string | null;
+  avatarUrl: string | null;
+  source: string;
+  orderRef: string | null;
+  startedAt: string;
+  expiresAt: string | null;
+  /** Whether the door is open right now, and if not, why. Derived, never stored. */
+  access: AccessState;
+  /** Whole days left on the window; `null` when it has no end. */
+  daysLeft: number | null;
+  blockedReason: string | null;
+  lessonsTotal: number;
+  lessonsCompleted: number;
+  lastActivityAt: string | null;
+  status: LearnerStatus;
 };
 
 export type CourseRow = {
-    id: string;
-    slug: string;
-    title: string;
-    status: string;
-    reviewStatus: "draft" | "in_review" | "changes_requested" | "approved";
-    reviewNote: string | null;
-    reviewEnabled: boolean;
-    /** A published release exists, while the displayed review state belongs to its next version. */
-    hasPendingRevision: boolean;
-    visibility: "hidden" | "unlisted" | "listed";
-    locale: string;
-    brand: string;
-    authorId: string | null;
-    authorEmail: string | null;
-    authorName: string | null;
-    authorProfileId: string | null;
-    learners: number;
-    updatedAt: string;
+  id: string;
+  slug: string;
+  title: string;
+  status: string;
+  reviewStatus: "draft" | "in_review" | "changes_requested" | "approved";
+  reviewNote: string | null;
+  reviewEnabled: boolean;
+  /** A published release exists, while the displayed review state belongs to its next version. */
+  hasPendingRevision: boolean;
+  visibility: "hidden" | "unlisted" | "listed";
+  locale: string;
+  brand: string;
+  authorId: string | null;
+  authorEmail: string | null;
+  authorName: string | null;
+  authorProfileId: string | null;
+  learners: number;
+  updatedAt: string;
 };
 
 export type AuthorProfileRow = {
-    id: string;
-    slug: string;
-    name: string;
+  id: string;
+  slug: string;
+  name: string;
 };
 
-
 export type RoleRow = {
-    authUserId: string;
-    email: string | null;
-    fullName: string | null;
-    avatarUrl: string | null;
-    role: string;
-    lastSignInAt: string | null;
-    updatedAt: string | null;
-    ownedCourses: number;
-    enrollments: number;
+  authUserId: string;
+  email: string | null;
+  fullName: string | null;
+  avatarUrl: string | null;
+  role: string;
+  lastSignInAt: string | null;
+  updatedAt: string | null;
+  ownedCourses: number;
+  enrollments: number;
 };
 
 /** Roles `user_roles` accepts — mirrors its CHECK, widened by the 2026-08-21 merge. */
@@ -110,7 +109,7 @@ export const PAYMENT_CURRENCIES = ["UAH", "USD", "EUR"] as const;
 export type PaymentCurrency = (typeof PAYMENT_CURRENCIES)[number];
 
 export function isPaymentCurrency(value: unknown): value is PaymentCurrency {
-    return typeof value === "string" && (PAYMENT_CURRENCIES as readonly string[]).includes(value);
+  return typeof value === "string" && (PAYMENT_CURRENCIES as readonly string[]).includes(value);
 }
 
 /** How stale an in-progress learner must be before the panel calls them stalled. */
@@ -125,20 +124,20 @@ export const STALLED_AFTER_DAYS = 7;
  * finished.
  */
 export function learnerStatusOf(
-    lessonsTotal: number,
-    lessonsCompleted: number,
-    lastActivityAt: string | null,
-    now: number = Date.now()
+  lessonsTotal: number,
+  lessonsCompleted: number,
+  lastActivityAt: string | null,
+  now: number = Date.now(),
 ): LearnerStatus {
-    if (lastActivityAt === null) return "not_started";
-    if (lessonsTotal > 0 && lessonsCompleted >= lessonsTotal) return "completed";
+  if (lastActivityAt === null) return "not_started";
+  if (lessonsTotal > 0 && lessonsCompleted >= lessonsTotal) return "completed";
 
-    const staleAfter = now - STALLED_AFTER_DAYS * 24 * 60 * 60 * 1000;
-    return new Date(lastActivityAt).getTime() < staleAfter ? "stalled" : "in_progress";
+  const staleAfter = now - STALLED_AFTER_DAYS * 24 * 60 * 60 * 1000;
+  return new Date(lastActivityAt).getTime() < staleAfter ? "stalled" : "in_progress";
 }
 
 export function isGrantableRole(value: unknown): value is GrantableRole {
-    return typeof value === "string" && (GRANTABLE_ROLES as readonly string[]).includes(value);
+  return typeof value === "string" && (GRANTABLE_ROLES as readonly string[]).includes(value);
 }
 
 /**
@@ -154,19 +153,19 @@ export function isGrantableRole(value: unknown): value is GrantableRole {
  * An empty string is a deliberate `null` — that is how the UI clears a deadline.
  */
 export function normalizeDeadline(raw: unknown): { ok: true; value: string | null } | { ok: false } {
-    if (raw === null || raw === undefined) return { ok: true, value: null };
-    if (typeof raw !== "string") return { ok: false };
+  if (raw === null || raw === undefined) return { ok: true, value: null };
+  if (typeof raw !== "string") return { ok: false };
 
-    const trimmed = raw.trim();
-    if (!trimmed) return { ok: true, value: null };
+  const trimmed = raw.trim();
+  if (!trimmed) return { ok: true, value: null };
 
-    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-        const endOfDay = new Date(`${trimmed}T23:59:59.999Z`);
-        return Number.isNaN(endOfDay.getTime()) ? { ok: false } : { ok: true, value: endOfDay.toISOString() };
-    }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const endOfDay = new Date(`${trimmed}T23:59:59.999Z`);
+    return Number.isNaN(endOfDay.getTime()) ? { ok: false } : { ok: true, value: endOfDay.toISOString() };
+  }
 
-    const parsed = new Date(trimmed);
-    return Number.isNaN(parsed.getTime()) ? { ok: false } : { ok: true, value: parsed.toISOString() };
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? { ok: false } : { ok: true, value: parsed.toISOString() };
 }
 
 /**
@@ -190,28 +189,28 @@ export function normalizeDeadline(raw: unknown): { ok: true; value: string | nul
  * from "forever" to "whatever this course is normally sold with".
  */
 export function grantDeadlineValue(forever: boolean, dateInput: string): string | null | undefined {
-    if (forever) return null;
-    return dateInput || undefined;
+  if (forever) return null;
+  return dateInput || undefined;
 }
 
 /** The `<input type="date">` value for a stored deadline, in UTC to match how it was written. */
 export function deadlineInputValue(expiresAt: string | null): string {
-    if (!expiresAt) return "";
-    const parsed = new Date(expiresAt);
-    return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
+  if (!expiresAt) return "";
+  const parsed = new Date(expiresAt);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
 }
 
 export type LearnerAccountRow = {
-    authUserId: string;
-    email: string | null;
-    fullName: string | null;
-    avatarUrl: string | null;
-    /** Every enrollment this person holds, newest first. Empty for an account with none. */
-    courses: LearnerRow[];
-    lessonsTotal: number;
-    lessonsCompleted: number;
-    lastActivityAt: string | null;
-    status: LearnerStatus;
+  authUserId: string;
+  email: string | null;
+  fullName: string | null;
+  avatarUrl: string | null;
+  /** Every enrollment this person holds, newest first. Empty for an account with none. */
+  courses: LearnerRow[];
+  lessonsTotal: number;
+  lessonsCompleted: number;
+  lastActivityAt: string | null;
+  status: LearnerStatus;
 };
 
 /**
@@ -227,42 +226,42 @@ export type LearnerAccountRow = {
  * here, not a gap.
  */
 export type PersonRow = LearnerAccountRow & {
-    /** Sign-in provider as recorded at sync; `manual` for an account the panel made. */
-    provider: string | null;
-    lastSignInAt: string | null;
-    /** `null` when there is no `user_roles` row at all, which is most people. */
-    role: string | null;
-    /** When that role was last written. */
-    roleUpdatedAt: string | null;
-    /** Paid orders reachable from this account, by link or by matching email. */
-    purchases: number;
-    /** Courses this person authors (`lms_courses.author_id`). */
-    ownedCourses: number;
-    /**
-     * PAID FOR, NEVER OPENED — and therefore invisible until now.
-     *
-     * `courses` above is enrollments, and an enrollment is created lazily, the
-     * first time somebody opens a course. So a buyer who paid and has not been
-     * back read as «Покупок: 1 · Курси: 0», which is indistinguishable from a
-     * payment that failed to deliver. On 2026-09-10, hours after a checkout bug
-     * had in fact failed to deliver, that was the worst possible ambiguity: the
-     * panel showed a zero where everything was fine.
-     *
-     * NOT folded into `courses`. Every per-course control in the panel —
-     * revoke, block, deadline — acts on an `enrollmentId`, and these have none.
-     * A synthetic row would be a button that cannot work; a separate field is
-     * the fact, stated as the fact.
-     */
-    entitledNotEnrolled: EntitledCourse[];
+  /** Sign-in provider as recorded at sync; `manual` for an account the panel made. */
+  provider: string | null;
+  lastSignInAt: string | null;
+  /** `null` when there is no `user_roles` row at all, which is most people. */
+  role: string | null;
+  /** When that role was last written. */
+  roleUpdatedAt: string | null;
+  /** Paid orders reachable from this account, by link or by matching email. */
+  purchases: number;
+  /** Courses this person authors (`lms_courses.author_id`). */
+  ownedCourses: number;
+  /**
+   * PAID FOR, NEVER OPENED — and therefore invisible until now.
+   *
+   * `courses` above is enrollments, and an enrollment is created lazily, the
+   * first time somebody opens a course. So a buyer who paid and has not been
+   * back read as «Покупок: 1 · Курси: 0», which is indistinguishable from a
+   * payment that failed to deliver. On 2026-09-10, hours after a checkout bug
+   * had in fact failed to deliver, that was the worst possible ambiguity: the
+   * panel showed a zero where everything was fine.
+   *
+   * NOT folded into `courses`. Every per-course control in the panel —
+   * revoke, block, deadline — acts on an `enrollmentId`, and these have none.
+   * A synthetic row would be a button that cannot work; a separate field is
+   * the fact, stated as the fact.
+   */
+  entitledNotEnrolled: EntitledCourse[];
 };
 
 /** A course this person has paid for and not yet opened. */
 export type EntitledCourse = {
-    slug: string;
-    title: string;
-    /** The order that bought it, so the operator can find the payment. */
-    orderRef: string;
-    paidAt: string | null;
+  slug: string;
+  title: string;
+  /** The order that bought it, so the operator can find the payment. */
+  orderRef: string;
+  paidAt: string | null;
 };
 
 /** Which people a listing wants: everybody, only those holding a course, or only those with none. */
@@ -277,10 +276,10 @@ export type AccessFacet = "" | "enrolled" | "none";
  * true thing about them.
  */
 export const ACCOUNT_STATUS_PRECEDENCE: readonly LearnerStatus[] = [
-    "stalled",
-    "in_progress",
-    "not_started",
-    "completed",
+  "stalled",
+  "in_progress",
+  "not_started",
+  "completed",
 ] as const;
 
 /**
@@ -291,48 +290,48 @@ export const ACCOUNT_STATUS_PRECEDENCE: readonly LearnerStatus[] = [
  * courses stay in that same order inside their row.
  */
 export function groupLearnersByAccount(rows: LearnerRow[]): LearnerAccountRow[] {
-    const byAccount = new Map<string, LearnerAccountRow>();
+  const byAccount = new Map<string, LearnerAccountRow>();
 
-    for (const row of rows) {
-        const existing = byAccount.get(row.authUserId);
-        if (existing) {
-            existing.courses.push(row);
-            continue;
-        }
-        byAccount.set(row.authUserId, {
-            authUserId: row.authUserId,
-            email: row.email,
-            fullName: row.fullName,
-            avatarUrl: row.avatarUrl,
-            courses: [row],
-            lessonsTotal: 0,
-            lessonsCompleted: 0,
-            lastActivityAt: null,
-            status: "not_started",
-        });
+  for (const row of rows) {
+    const existing = byAccount.get(row.authUserId);
+    if (existing) {
+      existing.courses.push(row);
+      continue;
+    }
+    byAccount.set(row.authUserId, {
+      authUserId: row.authUserId,
+      email: row.email,
+      fullName: row.fullName,
+      avatarUrl: row.avatarUrl,
+      courses: [row],
+      lessonsTotal: 0,
+      lessonsCompleted: 0,
+      lastActivityAt: null,
+      status: "not_started",
+    });
+  }
+
+  return [...byAccount.values()].map((account) => {
+    let lessonsTotal = 0;
+    let lessonsCompleted = 0;
+    let lastActivityAt: string | null = null;
+    const present = new Set<LearnerStatus>();
+
+    for (const course of account.courses) {
+      lessonsTotal += course.lessonsTotal;
+      lessonsCompleted += course.lessonsCompleted;
+      present.add(course.status);
+      if (course.lastActivityAt && (!lastActivityAt || course.lastActivityAt > lastActivityAt)) {
+        lastActivityAt = course.lastActivityAt;
+      }
     }
 
-    return [...byAccount.values()].map((account) => {
-        let lessonsTotal = 0;
-        let lessonsCompleted = 0;
-        let lastActivityAt: string | null = null;
-        const present = new Set<LearnerStatus>();
-
-        for (const course of account.courses) {
-            lessonsTotal += course.lessonsTotal;
-            lessonsCompleted += course.lessonsCompleted;
-            present.add(course.status);
-            if (course.lastActivityAt && (!lastActivityAt || course.lastActivityAt > lastActivityAt)) {
-                lastActivityAt = course.lastActivityAt;
-            }
-        }
-
-        return {
-            ...account,
-            lessonsTotal,
-            lessonsCompleted,
-            lastActivityAt,
-            status: ACCOUNT_STATUS_PRECEDENCE.find((status) => present.has(status)) ?? "not_started",
-        };
-    });
+    return {
+      ...account,
+      lessonsTotal,
+      lessonsCompleted,
+      lastActivityAt,
+      status: ACCOUNT_STATUS_PRECEDENCE.find((status) => present.has(status)) ?? "not_started",
+    };
+  });
 }

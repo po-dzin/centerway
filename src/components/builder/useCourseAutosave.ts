@@ -7,9 +7,7 @@ import { acknowledgeDurableCourseDraft, writeDurableCourseDraft } from "./course
 
 const AUTOSAVE_DELAY_MS = 1_500;
 
-export type AutosaveResult =
-  | { ok: true; message: string; generation: number }
-  | { ok: false; message: string };
+export type AutosaveResult = { ok: true; message: string; generation: number } | { ok: false; message: string };
 
 type AutosaveState = "idle" | "waiting" | "saving" | "saved" | "error";
 
@@ -73,11 +71,16 @@ export function useCourseAutosave({
   const markSavedRef = useRef(markSaved);
   const getDraftGenerationRef = useRef(getDraftGeneration);
   const snapshotIds = useRef(new WeakMap<Course, string>());
-  const durableEntries = useRef(new WeakMap<Course, {
-    generation: number | null;
-    snapshotId: string;
-    write: Promise<void>;
-  }>());
+  const durableEntries = useRef(
+    new WeakMap<
+      Course,
+      {
+        generation: number | null;
+        snapshotId: string;
+        write: Promise<void>;
+      }
+    >(),
+  );
   const durableChain = useRef(Promise.resolve());
   const writerId = useRef<string | null>(null);
   if (writerId.current === null) writerId.current = crypto.randomUUID();
@@ -97,31 +100,39 @@ export function useCourseAutosave({
     return created;
   }, []);
 
-  const preserveLocally = useCallback((snapshot: Course) => {
-    const existing = durableEntries.current.get(snapshot);
-    if (existing) return existing;
-    const generation = getDraftGenerationRef.current();
-    const snapshotId = durableIdentity(snapshot);
-    const write = generation === null
-      ? Promise.resolve()
-      : durableChain.current.then(() => writeDurableCourseDraft({
-          courseId: snapshot.id,
-          course: snapshot,
-          baseGeneration: generation,
-          snapshotId,
-          writerId: writerId.current!,
-          ownerId: ownerId ?? null,
-          updatedAt: Date.now(),
-        })).catch(() => undefined);
-    durableChain.current = write;
-    const entry = {
-      generation,
-      snapshotId,
-      write,
-    };
-    durableEntries.current.set(snapshot, entry);
-    return entry;
-  }, [durableIdentity, ownerId]);
+  const preserveLocally = useCallback(
+    (snapshot: Course) => {
+      const existing = durableEntries.current.get(snapshot);
+      if (existing) return existing;
+      const generation = getDraftGenerationRef.current();
+      const snapshotId = durableIdentity(snapshot);
+      const write =
+        generation === null
+          ? Promise.resolve()
+          : durableChain.current
+              .then(() =>
+                writeDurableCourseDraft({
+                  courseId: snapshot.id,
+                  course: snapshot,
+                  baseGeneration: generation,
+                  snapshotId,
+                  writerId: writerId.current!,
+                  ownerId: ownerId ?? null,
+                  updatedAt: Date.now(),
+                }),
+              )
+              .catch(() => undefined);
+      durableChain.current = write;
+      const entry = {
+        generation,
+        snapshotId,
+        write,
+      };
+      durableEntries.current.set(snapshot, entry);
+      return entry;
+    },
+    [durableIdentity, ownerId],
+  );
 
   useEffect(() => {
     // Strict Mode intentionally runs setup → cleanup → setup in development.
@@ -133,51 +144,60 @@ export function useCourseAutosave({
     };
   }, []);
 
-  const enqueue = useCallback((snapshot: Course): Promise<boolean> => {
-    const existing = queued.current.get(snapshot);
-    if (existing) return existing;
+  const enqueue = useCallback(
+    (snapshot: Course): Promise<boolean> => {
+      const existing = queued.current.get(snapshot);
+      if (existing) return existing;
 
-    pending.current += 1;
-    if (mounted.current) {
-      setState("saving");
-      setMessage("Зберігаємо зміни…");
-    }
-
-    const durable = preserveLocally(snapshot);
-    const request = chain.current.then(async () => {
-      await durable.write;
-      const result = await persistRef.current(snapshot).catch((): AutosaveResult => ({
-        ok: false,
-        message: "Не вдалося зберегти. Спробуйте ще раз.",
-      }));
-      if (result.ok) {
-        markSavedRef.current(snapshot);
-        if (durable.generation !== null) {
-          durableChain.current = durableChain.current.then(() => acknowledgeDurableCourseDraft({
-              courseId: snapshot.id,
-              writerId: writerId.current!,
-              snapshotId: durable.snapshotId,
-              previousGeneration: durable.generation!,
-              nextGeneration: result.generation,
-            })).catch(() => undefined);
-        }
+      pending.current += 1;
+      if (mounted.current) {
+        setState("saving");
+        setMessage("Зберігаємо зміни…");
       }
-      return result;
-    }).then((result) => {
-      pending.current -= 1;
-      queued.current.delete(snapshot);
-      if (mounted.current && pending.current === 0) {
-        setResultSnapshot(snapshot);
-        setState(result.ok ? "saved" : "error");
-        setMessage(result.message);
-      }
-      return result.ok;
-    });
 
-    chain.current = request;
-    queued.current.set(snapshot, request);
-    return request;
-  }, [preserveLocally]);
+      const durable = preserveLocally(snapshot);
+      const request = chain.current
+        .then(async () => {
+          await durable.write;
+          const result = await persistRef.current(snapshot).catch((): AutosaveResult => ({
+            ok: false,
+            message: "Не вдалося зберегти. Спробуйте ще раз.",
+          }));
+          if (result.ok) {
+            markSavedRef.current(snapshot);
+            if (durable.generation !== null) {
+              durableChain.current = durableChain.current
+                .then(() =>
+                  acknowledgeDurableCourseDraft({
+                    courseId: snapshot.id,
+                    writerId: writerId.current!,
+                    snapshotId: durable.snapshotId,
+                    previousGeneration: durable.generation!,
+                    nextGeneration: result.generation,
+                  }),
+                )
+                .catch(() => undefined);
+            }
+          }
+          return result;
+        })
+        .then((result) => {
+          pending.current -= 1;
+          queued.current.delete(snapshot);
+          if (mounted.current && pending.current === 0) {
+            setResultSnapshot(snapshot);
+            setState(result.ok ? "saved" : "error");
+            setMessage(result.message);
+          }
+          return result.ok;
+        });
+
+      chain.current = request;
+      queued.current.set(snapshot, request);
+      return request;
+    },
+    [preserveLocally],
+  );
 
   useEffect(() => {
     if (!course || !dirty || suspended) return;
@@ -248,11 +268,11 @@ export function useCourseAutosave({
   }, [dirty, state]);
 
   const waiting = Boolean(
-    course && dirty && !paused && state !== "saving" && !(state === "error" && resultSnapshot === course)
+    course && dirty && !paused && state !== "saving" && !(state === "error" && resultSnapshot === course),
   );
 
   return {
-    state: waiting ? "waiting" as const : state,
+    state: waiting ? ("waiting" as const) : state,
     message: waiting ? "Зміни збережуться автоматично" : message,
     saving: state === "saving",
     /** The last attempt came back refused, and the changes on screen are it. */

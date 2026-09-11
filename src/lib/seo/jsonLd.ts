@@ -204,11 +204,7 @@ export function productLd(facts: {
 }
 
 /** The catalogue, as a list — so «які програми є» has one node to answer from. */
-export function itemListLd(facts: {
-  path: string;
-  name: string;
-  items: { path: string; name: string }[];
-}): JsonLdNode {
+export function itemListLd(facts: { path: string; name: string; items: { path: string; name: string }[] }): JsonLdNode {
   return {
     "@type": "ItemList",
     "@id": `${abs(facts.path)}#list`,

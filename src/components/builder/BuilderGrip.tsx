@@ -16,7 +16,12 @@ import type { DragRef, RowDrag } from "./useRowDrag";
  */
 export function BuilderGrip({ drag, row, label }: { drag: RowDrag; row: DragRef; label: string }) {
   return (
-    <span className={styles.rowGrip} title={`Перетягніть, щоб переставити: ${label}`} aria-hidden="true" {...drag.handleProps(row)}>
+    <span
+      className={styles.rowGrip}
+      title={`Перетягніть, щоб переставити: ${label}`}
+      aria-hidden="true"
+      {...drag.handleProps(row)}
+    >
       <Icon name="grip" size={16} />
     </span>
   );

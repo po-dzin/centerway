@@ -132,10 +132,10 @@ export function CabinetHero({
           <img className={styles.plate} src={ROOM_PLATE} alt="" decoding="async" />
         </picture>
         <div className={styles.wash} aria-hidden="true" />
-      {/* The one drawn mark, on the line where the photograph becomes paper.
+        {/* The one drawn mark, on the line where the photograph becomes paper.
           The library's own vocabulary (see the depth prototype): brass line,
           no fill, no glow. One is a signature; two would be decoration. */}
-      <HandGraphic className={styles.seamMark} name="orbit" size={224} aria-hidden="true" />
+        <HandGraphic className={styles.seamMark} name="orbit" size={224} aria-hidden="true" />
 
         <div className={styles.room}>
           <div className={styles.identityMain}>
@@ -196,7 +196,7 @@ export function CabinetHero({
         </div>
 
         <div className={styles.shelf}>
-        {/* NO HEADING AND NO LINK OVER THE ROW. «Бібліотека» named what the
+          {/* NO HEADING AND NO LINK OVER THE ROW. «Бібліотека» named what the
             cards already are; «Усі мої курси» then stood above the whole
             composition as a fourth object, pointing at nothing next to it. The
             way onward is the last row of the column of courses now — where the

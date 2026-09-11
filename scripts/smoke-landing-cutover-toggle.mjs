@@ -14,13 +14,22 @@ const utilityRoutes = ["/reboot/thanks", "/irem/thanks.html", "/reboot/public-of
 const utilityAliasRoutes = ["/short/thanks", "/short/thanks.html", "/short/public-offer", "/short/public-offer.html"];
 const requiredNextSnippets = [
   'data-cw-runtime="next"',
-  '/shared/css/landing.bridge.css',
+  "/shared/css/landing.bridge.css",
   "/shared/js/landing-pixel.js",
   "/shared/js/landing-runtime.js",
 ];
 const forbiddenNextSnippets = ["cw_attrib", "Meta Pixel Code"];
 const landingContentFile = path.join(process.cwd(), "src/lib/landing/content.ts");
-const typedHeroKeys = ["badge", "title", "subtitle", "lead", "note", "ctaPrimaryLabel", "ctaStickyLabel", "priceCurrent"];
+const typedHeroKeys = [
+  "badge",
+  "title",
+  "subtitle",
+  "lead",
+  "note",
+  "ctaPrimaryLabel",
+  "ctaStickyLabel",
+  "priceCurrent",
+];
 
 function modePort(offset) {
   return portBase + offset;
@@ -69,7 +78,7 @@ function parseTypedHeroStringsByProduct() {
   for (const product of products) {
     const productBlockRegex = new RegExp(
       `${escapeRegExp(product)}\\s*:\\s*\\{[\\s\\S]*?hero\\s*:\\s*\\{([\\s\\S]*?)\\}\\s*,\\s*utility\\s*:`,
-      "m"
+      "m",
     );
     const productMatch = source.match(productBlockRegex);
     if (!productMatch) {
@@ -153,10 +162,7 @@ function assertPortAvailable(port) {
 
 function spawnNextDev(port, nextEnabled, typedHeroEnabled) {
   const state = { startupError: null };
-  const child = spawn(
-    "node",
-    ["node_modules/next/dist/bin/next", "dev", "-p", String(port), "--hostname", host],
-    {
+  const child = spawn("node", ["node_modules/next/dist/bin/next", "dev", "-p", String(port), "--hostname", host], {
     env: {
       ...process.env,
       HOSTNAME: host,
@@ -164,8 +170,7 @@ function spawnNextDev(port, nextEnabled, typedHeroEnabled) {
       CW_TYPED_HERO_SHORT_IREM: typedHeroEnabled ? "1" : "0",
     },
     stdio: "pipe",
-    }
-  );
+  });
 
   child.stdout?.on("data", (chunk) => {
     const text = String(chunk);
@@ -293,13 +298,13 @@ async function runMode(nextEnabled, typedHeroEnabled, portOffset) {
       throw new Error(
         `next dev failed to start for ${baseUrl} (next=${nextEnabled ? "on" : "off"}, typed=${
           typedHeroEnabled ? "on" : "off"
-        }): ${state.startupError ?? `exitCode=${server.exitCode}`}`
+        }): ${state.startupError ?? `exitCode=${server.exitCode}`}`,
       );
     }
     console.log(
       `Cutover mode check base URL: ${baseUrl} (next=${nextEnabled ? "on" : "off"}, typed=${
         typedHeroEnabled ? "on" : "off"
-      })`
+      })`,
     );
     return await assertMode(baseUrl, nextEnabled, typedHeroEnabled);
   } finally {

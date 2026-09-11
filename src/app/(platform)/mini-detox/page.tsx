@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   ...pageMetadata({
     title: "Reset Day: короткий практикум",
     description: describe(
-      "Один розвантажувальний день як три дні уваги: підготовка, сам день простого харчування і коректний вихід із поясненням сигналів тіла."
+      "Один розвантажувальний день як три дні уваги: підготовка, сам день простого харчування і коректний вихід із поясненням сигналів тіла.",
     ),
   }),
   // The funnel host owns this offer's public address; this alias only forwards.

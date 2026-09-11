@@ -27,7 +27,7 @@ const place: JournalPlace = {
 
 describe("the journal's entries", () => {
   it("names the course and the lesson, and links into the block", () => {
-    const [entry] = buildJournalEntries([mark()], [place]);
+    const entry = buildJournalEntries([mark()], [place])[0]!;
 
     expect(entry.course).toEqual({ slug: "way21", title: "Шлях 21", open: true });
     expect(entry.lesson).toEqual({ slug: "day-1", title: "День 1" });
@@ -35,10 +35,7 @@ describe("the journal's entries", () => {
   });
 
   it("links to the lesson itself when the mark is a bookmark", () => {
-    const [entry] = buildJournalEntries(
-      [mark({ kind: "bookmark", blockId: null, quote: null })],
-      [place]
-    );
+    const entry = buildJournalEntries([mark({ kind: "bookmark", blockId: null, quote: null })], [place])[0]!;
 
     expect(entry.path).toBe("/learn/way21/day-1");
   });
@@ -56,14 +53,14 @@ describe("the journal's entries", () => {
         }),
         mark({ clientId: "new", createdAt: "2026-09-09T08:00:00.000Z" }),
       ],
-      [place]
+      [place],
     );
 
     expect(entries.map((entry) => entry.clientId)).toEqual(["new", "middle", "old"]);
   });
 
   it("keeps a mark whose lesson can no longer be named, and only drops its link", () => {
-    const [entry] = buildJournalEntries([mark({ lessonId: "gone" })], [place]);
+    const entry = buildJournalEntries([mark({ lessonId: "gone" })], [place])[0]!;
 
     expect(entry.quote).toBe("теплої води вранці");
     expect(entry.lesson).toBeNull();
@@ -73,7 +70,7 @@ describe("the journal's entries", () => {
   });
 
   it("keeps a mark whose course is gone entirely", () => {
-    const [entry] = buildJournalEntries([mark()], []);
+    const entry = buildJournalEntries([mark()], [])[0]!;
 
     expect(entry.quote).toBe("теплої води вранці");
     expect(entry.course).toBeNull();
@@ -81,7 +78,7 @@ describe("the journal's entries", () => {
   });
 
   it("shows a closed window rather than hiding what was written inside it", () => {
-    const [entry] = buildJournalEntries([mark()], [{ ...place, open: false }]);
+    const entry = buildJournalEntries([mark()], [{ ...place, open: false }])[0]!;
 
     expect(entry.course?.open).toBe(false);
     // Access ended for the course, not for the reader's own words: the link
@@ -101,7 +98,7 @@ describe("the journal's entries", () => {
 
     const entries = buildJournalEntries(
       [mark({ clientId: "a", enrollmentId: "e1" }), mark({ clientId: "b", enrollmentId: "e2" })],
-      [place, second]
+      [place, second],
     );
 
     expect(entries.find((entry) => entry.clientId === "a")?.path).toBe("/learn/way21/day-1#block-b7");
@@ -117,13 +114,13 @@ describe("the journal's days", () => {
         mark({ clientId: "night", createdAt: "2026-09-10T21:30:00.000Z" }),
         mark({ clientId: "morning", createdAt: "2026-09-10T06:00:00.000Z" }),
       ],
-      [place]
+      [place],
     );
 
     const days = groupJournalByDay(entries, "Europe/Kyiv");
 
     expect(days.map((day) => day.date)).toEqual(["2026-09-11", "2026-09-10"]);
-    expect(days[0].entries.map((entry) => entry.clientId)).toEqual(["night"]);
+    expect(days[0]!.entries.map((entry) => entry.clientId)).toEqual(["night"]);
   });
 
   it("puts consecutive entries of one day in one group", () => {
@@ -132,13 +129,13 @@ describe("the journal's days", () => {
         mark({ clientId: "a", createdAt: "2026-09-10T06:00:00.000Z" }),
         mark({ clientId: "b", createdAt: "2026-09-10T07:00:00.000Z" }),
       ],
-      [place]
+      [place],
     );
 
     const days = groupJournalByDay(entries, "Europe/Kyiv");
 
     expect(days).toHaveLength(1);
-    expect(days[0].entries).toHaveLength(2);
+    expect(days[0]!.entries).toHaveLength(2);
   });
 
   it("keeps an entry whose timestamp cannot be read", () => {
@@ -146,7 +143,7 @@ describe("the journal's days", () => {
     const days = groupJournalByDay(entries, "Europe/Kyiv");
 
     expect(days).toHaveLength(1);
-    expect(days[0].date).toBe("");
-    expect(days[0].entries).toHaveLength(1);
+    expect(days[0]!.date).toBe("");
+    expect(days[0]!.entries).toHaveLength(1);
   });
 });

@@ -39,7 +39,17 @@ function isInternalHref(href: string) {
  * through the surface resolver and `next/link`; external ones open in a new tab,
  * since leaving a lesson by accident costs the reader their place.
  */
-function CtaBlock({ href, label, text, authoring = false }: { href: string; label: string; text?: InlineText; authoring?: boolean }) {
+function CtaBlock({
+  href,
+  label,
+  text,
+  authoring = false,
+}: {
+  href: string;
+  label: string;
+  text?: InlineText;
+  authoring?: boolean;
+}) {
   const surfaceHref = useSurfaceHref();
   const internal = isInternalHref(href);
 
@@ -110,11 +120,12 @@ function Inline({ value, path }: { value: InlineText | undefined; path?: (string
         if (target && references.courseSlug) {
           const fragment = target.kind === "block" ? `#block-${encodeURIComponent(target.blockId)}` : "";
           const path = `/${references.route}/${references.courseSlug}/${target.slug}${fragment}`;
-          node = references.route === "learn" ? (
-            <Link href={surfaceHref(path)}>{node}</Link>
-          ) : (
-            <Link href={path}>{node}</Link>
-          );
+          node =
+            references.route === "learn" ? (
+              <Link href={surfaceHref(path)}>{node}</Link>
+            ) : (
+              <Link href={path}>{node}</Link>
+            );
         } else if (span.href && !internalReference) {
           node = (
             <a href={span.href} rel="noopener noreferrer">
@@ -199,11 +210,27 @@ function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }
   const authoring = useContext(AuthoringContext);
   switch (block.type) {
     case "group":
-      return <div className={styles.compositeBlock}>{block.children.map((child, index) => (
-        <AuthoringContext.Provider key={child.id} value={authoring ? { field: (path, value) => authoring.field(["children", index, ...path], value) } : null}>
-          <div id={`block-${child.id}`}><BlockRendererBody block={child} checklist={checklist} onToggleChecklistItem={onToggleChecklistItem} disabled={disabled} /></div>
-        </AuthoringContext.Provider>
-      ))}</div>;
+      return (
+        <div className={styles.compositeBlock}>
+          {block.children.map((child, index) => (
+            <AuthoringContext.Provider
+              key={child.id}
+              value={
+                authoring ? { field: (path, value) => authoring.field(["children", index, ...path], value) } : null
+              }
+            >
+              <div id={`block-${child.id}`}>
+                <BlockRendererBody
+                  block={child}
+                  checklist={checklist}
+                  onToggleChecklistItem={onToggleChecklistItem}
+                  disabled={disabled}
+                />
+              </div>
+            </AuthoringContext.Provider>
+          ))}
+        </div>
+      );
     case "lesson_objective":
       return (
         <p className={styles.objective}>
@@ -299,14 +326,18 @@ function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }
           <iframe
             className={styles.media}
             src={`https://www.youtube-nocookie.com/embed/${block.videoId}`}
-            title={block.title ? toSpans(block.title).map((span) => span.text).join("") : "Відео уроку"}
+            title={
+              block.title
+                ? toSpans(block.title)
+                    .map((span) => span.text)
+                    .join("")
+                : "Відео уроку"
+            }
             allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
             loading="lazy"
           />
-          {block.durationMin ? (
-            <figcaption className={styles.caption}>{block.durationMin} хв</figcaption>
-          ) : null}
+          {block.durationMin ? <figcaption className={styles.caption}>{block.durationMin} хв</figcaption> : null}
         </figure>
       );
 

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { asString } from "@/lib/strings";
 import { adminClient } from "@/lib/auth/adminClient";
-import { classifyDosha, isValidScoreInvariant, DOSHA_TEST_SLUG } from "@/lib/doshaTest";
-import { DOSHA_PRIMARY_EXIT } from "@/lib/doshaRouting";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { classifyDosha, isValidScoreInvariant, DOSHA_TEST_SLUG } from "@/lib/dosha/doshaTest";
+import { DOSHA_PRIMARY_EXIT } from "@/lib/dosha/doshaRouting";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import {
   emitDoshaTestEvent,
   ensureDoshaTestSeed,
@@ -12,7 +13,7 @@ import {
   loadTestAttempt,
   loadTestDefinitionBySlug,
   syncCustomerDoshaTestTags,
-} from "@/lib/doshaTestRepo";
+} from "@/lib/dosha/doshaTestRepo";
 
 export const runtime = "nodejs";
 
@@ -21,16 +22,7 @@ type SubmitAnswerBody = {
   optionId?: unknown;
 };
 
-function asString(v: unknown): string | null {
-  if (typeof v !== "string") return null;
-  const s = v.trim();
-  return s || null;
-}
-
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ attemptId: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ attemptId: string }> }) {
   const rl = await enforceRateLimit(req, { name: "test_answer", limit: 120, windowSeconds: 60 });
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
@@ -98,7 +90,10 @@ export async function POST(
         return NextResponse.json({ error: insertAnswerError.message }, { status: 500 });
       }
 
-      const incrementPatch: Record<string, number> = {
+      /* Three named scores, not a bag of strings: the `Record<string, number>`
+         annotation threw away the fact that all three keys are present, which
+         is the one thing the increments below depend on. */
+      const incrementPatch = {
         score_vata: attempt.score_vata,
         score_pitta: attempt.score_pitta,
         score_kapha: attempt.score_kapha,

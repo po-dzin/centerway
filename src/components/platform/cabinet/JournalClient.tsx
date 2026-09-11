@@ -119,10 +119,7 @@ export function JournalClient() {
 
   const journal = loaded && loaded.userId === userId ? loaded.data : null;
 
-  const days = useMemo(
-    () => (journal ? groupJournalByDay(journal.entries, journal.timeZone) : []),
-    [journal]
-  );
+  const days = useMemo(() => (journal ? groupJournalByDay(journal.entries, journal.timeZone) : []), [journal]);
 
   const loadingView = (
     <main className={surfaceStyles.profileMain} data-cw-platform-template="loading">
@@ -180,7 +177,9 @@ export function JournalClient() {
           ) : (
             days.map((day) => (
               <section className={styles.day} key={day.date || "undated"}>
-                <h2 className={styles.dayHeading}>{formatDayKey(day.date, locale, journal?.timeZone ?? "") || cab.journalUndated}</h2>
+                <h2 className={styles.dayHeading}>
+                  {formatDayKey(day.date, locale, journal?.timeZone ?? "") || cab.journalUndated}
+                </h2>
 
                 <ul className={styles.entries}>
                   {day.entries.map((entry) => {

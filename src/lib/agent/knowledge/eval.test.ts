@@ -28,7 +28,14 @@ describe("retrieval over the labelled questions", () => {
     // is WHICH question and what came back instead, not "expected 1 to be 0.9".
     if (report.misses.length) {
       console.error(
-        ["", formatReport(report, 5), ...report.misses.map((miss) => `  ✗ «${miss.question}» → чекали ${miss.expectedDocId}, отримали ${miss.got.join(", ") || "нічого"}`)].join("\n"),
+        [
+          "",
+          formatReport(report, 5),
+          ...report.misses.map(
+            (miss) =>
+              `  ✗ «${miss.question}» → чекали ${miss.expectedDocId}, отримали ${miss.got.join(", ") || "нічого"}`,
+          ),
+        ].join("\n"),
       );
     }
     expect(report.misses).toEqual([]);
@@ -59,9 +66,7 @@ describe("retrieval over the labelled questions", () => {
     // A measurement that only exercises support answers would go green while
     // course and product retrieval rotted.
     const kinds = new Set(
-      cases
-        .map((testCase) => index.docs.find((doc) => doc.id === testCase.expectedDocId)?.kind)
-        .filter(Boolean),
+      cases.map((testCase) => index.docs.find((doc) => doc.id === testCase.expectedDocId)?.kind).filter(Boolean),
     );
     expect(kinds).toContain("support");
     expect(kinds).toContain("policy");

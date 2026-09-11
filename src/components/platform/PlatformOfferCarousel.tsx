@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Children,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { Children, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
 import styles from "./PlatformOfferCarousel.module.css";
@@ -81,7 +74,8 @@ export function PlatformOfferCarousel({
     const viewportStart = viewport.scrollLeft;
     const viewportEnd = viewportStart + viewport.clientWidth;
     const visible = cards.flatMap((card, index) => {
-      const overlap = Math.min(card.offsetLeft + card.offsetWidth, viewportEnd) - Math.max(card.offsetLeft, viewportStart);
+      const overlap =
+        Math.min(card.offsetLeft + card.offsetWidth, viewportEnd) - Math.max(card.offsetLeft, viewportStart);
       return overlap >= card.offsetWidth / 2 ? [index] : [];
     });
     const firstVisible = visible[0] ?? 0;
@@ -112,7 +106,7 @@ export function PlatformOfferCarousel({
       current.pages === next.pages &&
       current.page === next.page
         ? current
-        : next
+        : next,
     );
   }, []);
 
@@ -231,7 +225,9 @@ export function PlatformOfferCarousel({
         </span>
         {total > MAX_VISIBLE_OFFERS ? (
           <div className={styles.queueOverflow}>
-            <span className={styles.queueRange}>Показано {visibleCount} із {total}</span>
+            <span className={styles.queueRange}>
+              Показано {visibleCount} із {total}
+            </span>
           </div>
         ) : null}
       </footer>

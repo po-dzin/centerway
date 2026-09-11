@@ -1,4 +1,5 @@
 import { getLandingCriticalCss, getLandingPublicRouteName, getLandingShellAssets } from "@/lib/landing/config";
+import { escapeHtml } from "@/lib/strings";
 import type { LandingResolvedOffer } from "@/lib/landing/offers";
 import type { StaticLandingProduct } from "@/lib/landing/types";
 import { VERCEL_WEB_ANALYTICS_SNIPPET } from "@/lib/landing/vercelAnalytics";
@@ -10,14 +11,6 @@ type RenderEntryHtmlDocumentInput = {
   title?: string | null;
   description?: string | null;
 };
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
 
 function dataAttr(name: string, value: string | number | null | undefined): string {
   if (value === null || value === undefined || value === "") {
@@ -47,10 +40,10 @@ export function renderEntryHtmlDocument(input: RenderEntryHtmlDocumentInput): st
     dataAttr("data-cw-offer-id", offer?.offerId ?? undefined),
     dataAttr("data-cw-price-value", offer?.amount ?? undefined),
     dataAttr("data-cw-currency", offer?.currency ?? undefined),
-    dataAttr("data-cw-offer-token", offer?.offerApplied ? offer.offerToken ?? undefined : undefined),
+    dataAttr("data-cw-offer-token", offer?.offerApplied ? (offer.offerToken ?? undefined) : undefined),
     dataAttr(
       "data-cw-offer-state",
-      offer ? (offer.offerApplied ? "active" : offer.offerExpired ? "expired" : "base") : undefined
+      offer ? (offer.offerApplied ? "active" : offer.offerExpired ? "expired" : "base") : undefined,
     ),
     dataAttr("data-cw-offer-issued-at", offer?.issuedAt ?? undefined),
     dataAttr("data-cw-offer-expires-at", offer?.expiresAt ?? undefined),

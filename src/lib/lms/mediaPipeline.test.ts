@@ -21,16 +21,20 @@ async function photo(width: number, height: number): Promise<Buffer> {
 describe("prepareMedia", () => {
   // Decoding and re-encoding real megapixels is seconds, not the default five
   // milliseconds-per-assertion this suite is otherwise made of.
-  it("stores a phone-sized photograph as two renditions, both far smaller than the original", { timeout: 30_000 }, async () => {
-    const source = await photo(4032, 3024);
-    const result = await prepareMedia(source, "image/jpeg");
-    if (isPrepareFailure(result)) throw new Error(result.error);
+  it(
+    "stores a phone-sized photograph as two renditions, both far smaller than the original",
+    { timeout: 30_000 },
+    async () => {
+      const source = await photo(4032, 3024);
+      const result = await prepareMedia(source, "image/jpeg");
+      if (isPrepareFailure(result)) throw new Error(result.error);
 
-    expect(result.renditions.map((r) => r.name)).toEqual(["1600.webp", "640.webp"]);
-    expect(result.width).toBe(1600);
-    expect(result.height).toBe(1200);
-    expect(result.renditions[0].bytes.byteLength).toBeLessThan(source.byteLength);
-  });
+      expect(result.renditions.map((r) => r.name)).toEqual(["1600.webp", "640.webp"]);
+      expect(result.width).toBe(1600);
+      expect(result.height).toBe(1200);
+      expect(result.renditions[0]!.bytes!.byteLength).toBeLessThan(source.byteLength);
+    },
+  );
 
   it("does not enlarge a small original, and does not write a second rendition for it", async () => {
     const result = await prepareMedia(await photo(600, 400), "image/png");

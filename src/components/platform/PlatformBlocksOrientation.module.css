@@ -228,15 +228,19 @@
   content: "";
   --hero-scrim-ink: var(--cw-mat-scrim-ink);
   background:
-    linear-gradient(96deg,
+    linear-gradient(
+      96deg,
       color-mix(in srgb, var(--hero-scrim-ink) 84%, transparent) 0%,
       color-mix(in srgb, var(--hero-scrim-ink) 74%, transparent) 34%,
       color-mix(in srgb, var(--hero-scrim-ink) 48%, transparent) 54%,
-      transparent 74%),
-    linear-gradient(150deg,
+      transparent 74%
+    ),
+    linear-gradient(
+      150deg,
       color-mix(in srgb, var(--cw-sem-guide-strong) 5%, transparent),
       transparent 55%,
-      color-mix(in srgb, var(--cw-sem-warmth) 6%, transparent));
+      color-mix(in srgb, var(--cw-sem-warmth) 6%, transparent)
+    );
 }
 
 .heroFeatureContent {
@@ -363,12 +367,11 @@
      the same warm cream every section below the hero sits on ties the title to
      the page it opens, instead of floating on top of it. */
   color: var(--cw-sem-calm-bg);
-  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 38%, transparent), 0 10px 30px color-mix(in srgb, var(--cw-mat-scrim-ink) 28%, transparent);
+  text-shadow:
+    0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 38%, transparent),
+    0 10px 30px color-mix(in srgb, var(--cw-mat-scrim-ink) 28%, transparent);
   font-family: var(--cw-font-ui);
-  font-size: min(
-    var(--hero-title-size),
-    calc(var(--hero-title-room) / (var(--hero-title-word, 8) * 0.7))
-  );
+  font-size: min(var(--hero-title-size), calc(var(--hero-title-room) / (var(--hero-title-word, 8) * 0.7)));
   font-weight: 900;
   line-height: var(--ds-type-hero-line-height);
   letter-spacing: 0.02em;
@@ -387,7 +390,9 @@
   max-width: min(15ch, 100%);
   margin: 0;
   color: var(--cw-platform-accent-contrast);
-  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 38%, transparent), 0 10px 30px color-mix(in srgb, var(--cw-mat-scrim-ink) 28%, transparent);
+  text-shadow:
+    0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 38%, transparent),
+    0 10px 30px color-mix(in srgb, var(--cw-mat-scrim-ink) 28%, transparent);
   font-family: var(--cw-font-ui);
   font-size: var(--ds-type-hero-size);
   font-weight: 800;
@@ -710,7 +715,9 @@
   color: var(--cw-mat-inverse-text);
   background-color: var(--cw-mat-inverse-control);
   backdrop-filter: var(--cw-mat-filter);
-  transition: background-color 160ms ease, transform 160ms ease;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
 }
 
 .videoPoster:hover .videoPlayMark,

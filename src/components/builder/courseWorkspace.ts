@@ -11,7 +11,8 @@ export const COURSE_WORKSPACE_HASH: Record<WorkspaceMode, string> = {
 };
 
 export function courseWorkspaceModeFromHash(hash: string): WorkspaceMode {
-  return (Object.keys(COURSE_WORKSPACE_HASH) as WorkspaceMode[]).find(
-    (mode) => COURSE_WORKSPACE_HASH[mode] === hash,
-  ) ?? DEFAULT_COURSE_WORKSPACE_MODE;
+  return (
+    (Object.keys(COURSE_WORKSPACE_HASH) as WorkspaceMode[]).find((mode) => COURSE_WORKSPACE_HASH[mode] === hash) ??
+    DEFAULT_COURSE_WORKSPACE_MODE
+  );
 }

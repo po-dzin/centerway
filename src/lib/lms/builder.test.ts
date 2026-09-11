@@ -37,9 +37,7 @@ describe("deleteBuilderCourse", () => {
     const { adminClient } = await import("@/lib/auth/adminClient");
     const { deleteBuilderCourse } = await import("./builder");
 
-    vi.mocked(adminClient).mockImplementation(
-      mockAdminClientReturning({ id: "row-1", status: "published" }) as never,
-    );
+    vi.mocked(adminClient).mockImplementation(mockAdminClientReturning({ id: "row-1", status: "published" }) as never);
 
     await expect(deleteBuilderCourse("way21")).rejects.toThrow("lms_builder_delete_published:way21");
   });
@@ -55,9 +53,7 @@ describe("deleteBuilderCourse", () => {
     const { adminClient } = await import("@/lib/auth/adminClient");
     const { deleteBuilderCourse } = await import("./builder");
 
-    vi.mocked(adminClient).mockImplementation(
-      mockAdminClientReturning({ id: "row-1", status: "draft" }) as never,
-    );
+    vi.mocked(adminClient).mockImplementation(mockAdminClientReturning({ id: "row-1", status: "draft" }) as never);
 
     await expect(deleteBuilderCourse("way21")).rejects.toThrow("unexpected query against lms_enrollments");
   });
@@ -79,18 +75,24 @@ describe("nextDraftTitle", () => {
 describe("courseSlugCanChange", () => {
   it("allows only an unused hidden draft outside shipped snapshots", async () => {
     const { courseSlugCanChange } = await import("./builder");
-    expect(courseSlugCanChange({
-      course: { slug: "new-course-k7m4", status: "draft", visibility: "hidden" },
-      reviewStatus: "draft",
-    })).toBe(true);
-    expect(courseSlugCanChange({
-      course: { slug: "new-course-k7m4", status: "published", visibility: "hidden" },
-      reviewStatus: "approved",
-    })).toBe(false);
-    expect(courseSlugCanChange({
-      course: { slug: "way21", status: "draft", visibility: "hidden" },
-      reviewStatus: "draft",
-    })).toBe(false);
+    expect(
+      courseSlugCanChange({
+        course: { slug: "new-course-k7m4", status: "draft", visibility: "hidden" },
+        reviewStatus: "draft",
+      }),
+    ).toBe(true);
+    expect(
+      courseSlugCanChange({
+        course: { slug: "new-course-k7m4", status: "published", visibility: "hidden" },
+        reviewStatus: "approved",
+      }),
+    ).toBe(false);
+    expect(
+      courseSlugCanChange({
+        course: { slug: "way21", status: "draft", visibility: "hidden" },
+        reviewStatus: "draft",
+      }),
+    ).toBe(false);
   });
 });
 
@@ -109,25 +111,31 @@ describe("isDraftGeneration", () => {
 describe("writeRequiresPublishApproval", () => {
   it("allows an already-published course to be saved as a pending revision", async () => {
     const { writeRequiresPublishApproval } = await import("./builder");
-    expect(writeRequiresPublishApproval({
-      liveStatus: "published",
-      incomingStatus: "published",
-      reviewStatus: "draft",
-    })).toBe(false);
+    expect(
+      writeRequiresPublishApproval({
+        liveStatus: "published",
+        incomingStatus: "published",
+        reviewStatus: "draft",
+      }),
+    ).toBe(false);
   });
 
   it("still gates a draft becoming the live release", async () => {
     const { writeRequiresPublishApproval } = await import("./builder");
-    expect(writeRequiresPublishApproval({
-      liveStatus: "draft",
-      incomingStatus: "published",
-      reviewStatus: "draft",
-    })).toBe(true);
-    expect(writeRequiresPublishApproval({
-      liveStatus: "draft",
-      incomingStatus: "published",
-      reviewStatus: "approved",
-    })).toBe(false);
+    expect(
+      writeRequiresPublishApproval({
+        liveStatus: "draft",
+        incomingStatus: "published",
+        reviewStatus: "draft",
+      }),
+    ).toBe(true);
+    expect(
+      writeRequiresPublishApproval({
+        liveStatus: "draft",
+        incomingStatus: "published",
+        reviewStatus: "approved",
+      }),
+    ).toBe(false);
   });
 });
 
@@ -142,7 +150,9 @@ describe("autosave checkpoints", () => {
     const live = getSnapshotCourse("reset-day")!;
     const rows = courseRows(live);
     const db = new FakeSupabase({
-      lms_courses: [{ ...rows.course, status: "draft", author_id: "author-1", review_status: "draft", draft_generation: 0 }],
+      lms_courses: [
+        { ...rows.course, status: "draft", author_id: "author-1", review_status: "draft", draft_generation: 0 },
+      ],
       lms_modules: rows.modules,
       lms_lessons: rows.lessons,
     });
@@ -176,15 +186,18 @@ describe("autosave checkpoints", () => {
     const live = getSnapshotCourse("reset-day")!;
     const rows = courseRows(live);
     const db = new FakeSupabase({
-      lms_courses: [{ ...rows.course, status: "draft", author_id: "author-1", review_status: "draft", draft_generation: 0 }],
+      lms_courses: [
+        { ...rows.course, status: "draft", author_id: "author-1", review_status: "draft", draft_generation: 0 },
+      ],
       lms_modules: rows.modules,
       lms_lessons: rows.lessons,
     });
     db.journalMigrationApplied = false;
     vi.mocked(adminClient).mockImplementation(() => db as never);
 
-    await expect(saveBuilderCourse({ ...live, status: "draft", title: "Без журналу" }, 0, { actorId: "author-1" }))
-      .resolves.toMatchObject({ status: "draft" });
+    await expect(
+      saveBuilderCourse({ ...live, status: "draft", title: "Без журналу" }, 0, { actorId: "author-1" }),
+    ).resolves.toMatchObject({ status: "draft" });
     expect(db.rows("lms_course_revisions")).toHaveLength(0);
   });
 });
@@ -196,7 +209,9 @@ describe("journal links", () => {
     const live = getSnapshotCourse("reset-day")!;
     const rows = courseRows(live);
     const db = new FakeSupabase({
-      lms_courses: [{ ...rows.course, status: "draft", author_id: "author-1", review_status: "draft", draft_generation: 0 }],
+      lms_courses: [
+        { ...rows.course, status: "draft", author_id: "author-1", review_status: "draft", draft_generation: 0 },
+      ],
       lms_modules: rows.modules,
       lms_lessons: rows.lessons,
     });
@@ -233,8 +248,8 @@ describe("journal links", () => {
     await createCourseCheckpointOnce({ course: { ...live, title: "Друга" }, actorId: "author-1" });
 
     const entries = db.rows("lms_course_revisions");
-    expect(entries[0].parent_revision_id).toBeNull();
-    expect(entries[1].parent_revision_id).toBe(first.id);
+    expect(entries[0]!.parent_revision_id).toBeNull();
+    expect(entries[1]!.parent_revision_id).toBe(first.id);
   });
 });
 
@@ -245,32 +260,36 @@ describe("published course draft persistence", () => {
     const live = getSnapshotCourse("reset-day")!;
     const rows = courseRows(live);
     const db = new FakeSupabase({
-      lms_courses: [{
-        ...rows.course,
-        author_id: "author-1",
-        review_status: "approved",
-        review_note: null,
-        pending_content: null,
-        pending_review_status: null,
-        draft_generation: 0,
-        updated_at: "2026-08-24T00:00:00.000Z",
-      }],
+      lms_courses: [
+        {
+          ...rows.course,
+          author_id: "author-1",
+          review_status: "approved",
+          review_note: null,
+          pending_content: null,
+          pending_review_status: null,
+          draft_generation: 0,
+          updated_at: "2026-08-24T00:00:00.000Z",
+        },
+      ],
       lms_modules: rows.modules,
       lms_lessons: rows.lessons,
     });
     vi.mocked(adminClient).mockImplementation(() => db as never);
 
-    const editedTitle = `${live.modules[0].lessons[0].title} · чернетка`;
+    const editedTitle = `${live.modules[0]!.lessons![0]!.title} · чернетка`;
     const edited = {
       ...live,
-      modules: live.modules.map((module, moduleIndex) => moduleIndex === 0
-        ? {
-            ...module,
-            lessons: module.lessons.map((lesson, lessonIndex) => lessonIndex === 0
-              ? { ...lesson, title: editedTitle }
-              : lesson),
-          }
-        : module),
+      modules: live.modules.map((module, moduleIndex) =>
+        moduleIndex === 0
+          ? {
+              ...module,
+              lessons: module.lessons.map((lesson, lessonIndex) =>
+                lessonIndex === 0 ? { ...lesson, title: editedTitle } : lesson,
+              ),
+            }
+          : module,
+      ),
     };
 
     await expect(saveBuilderCourse(edited, 0)).resolves.toMatchObject({
@@ -280,9 +299,9 @@ describe("published course draft persistence", () => {
     });
 
     const storedRelease = db.rows("lms_courses")[0];
-    expect(storedRelease.title).toBe(live.title);
-    expect(storedRelease.status).toBe("published");
-    expect(storedRelease.pending_content).toMatchObject({ status: "draft" });
+    expect(storedRelease!.title).toBe(live.title);
+    expect(storedRelease!.status).toBe("published");
+    expect(storedRelease!.pending_content).toMatchObject({ status: "draft" });
 
     const reopened = await loadBuilderCourse(live.slug);
     expect(reopened).toMatchObject({
@@ -290,8 +309,8 @@ describe("published course draft persistence", () => {
       hasPendingRevision: true,
       draftGeneration: 1,
     });
-    expect(reopened?.liveCourse.modules[0].lessons[0].title).toBe(live.modules[0].lessons[0].title);
-    expect(reopened?.course.modules[0].lessons[0].title).toBe(editedTitle);
+    expect(reopened?.liveCourse.modules[0]!.lessons![0]!.title).toBe(live.modules[0]!.lessons![0]!.title);
+    expect(reopened?.course.modules[0]!.lessons![0]!.title).toBe(editedTitle);
   });
 });
 
@@ -312,17 +331,19 @@ describe("access code governance", () => {
     const live = getSnapshotCourse("reset-day")!;
     const rows = courseRows(live);
     const db = new FakeSupabase({
-      lms_courses: [{
-        ...rows.course,
-        entitlement_product_codes: ["reset-day", "mini-detox"],
-        author_id: "author-1",
-        review_status: "approved",
-        review_note: null,
-        pending_content: null,
-        pending_review_status: null,
-        draft_generation: 0,
-        updated_at: "2026-08-24T00:00:00.000Z",
-      }],
+      lms_courses: [
+        {
+          ...rows.course,
+          entitlement_product_codes: ["reset-day", "mini-detox"],
+          author_id: "author-1",
+          review_status: "approved",
+          review_note: null,
+          pending_content: null,
+          pending_review_status: null,
+          draft_generation: 0,
+          updated_at: "2026-08-24T00:00:00.000Z",
+        },
+      ],
       lms_modules: rows.modules,
       lms_lessons: rows.lessons,
     });
@@ -330,7 +351,7 @@ describe("access code governance", () => {
 
     await saveBuilderCourse({ ...live, entitlementProductCodes: codes }, 0, governance);
     const stored = db.rows("lms_courses")[0];
-    return (stored.pending_content as { entitlementProductCodes: string[] }).entitlementProductCodes;
+    return (stored!.pending_content as { entitlementProductCodes: string[] }).entitlementProductCodes;
   }
 
   it("keeps the stored codes when the writer may not govern them", async () => {

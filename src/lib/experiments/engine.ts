@@ -65,7 +65,8 @@ export function parseCookieHeader(rawCookieHeader: string | null): Map<string, s
   if (!rawCookieHeader) return out;
 
   for (const cookieChunk of rawCookieHeader.split(";")) {
-    const [rawName, ...rest] = cookieChunk.split("=");
+    // A string split always yields at least one element; the default never applies.
+    const [rawName = "", ...rest] = cookieChunk.split("=");
     const name = rawName.trim();
     if (!name) continue;
     const value = rest.join("=").trim();
@@ -81,7 +82,7 @@ export function parseCookieHeader(rawCookieHeader: string | null): Map<string, s
 
 export function resolveExperimentAssignments(input: ResolveExperimentInput): ResolveExperimentOutput {
   const routeExperiments = input.experiments.filter(
-    (experiment) => experiment.status === "active" && experiment.route_key === input.routeKey
+    (experiment) => experiment.status === "active" && experiment.route_key === input.routeKey,
   );
 
   const cookieMutations: Array<{ name: string; value: string }> = [];

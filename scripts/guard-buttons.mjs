@@ -73,7 +73,7 @@ const NOT_BUTTONS = new Map([
   [
     "completeToggle",
     "a CHECKBOX, not a button — marking a lesson done is a state you own and can " +
-      "undo. Deliberately shaped like the bar it composes; see docs \"One container per control\".",
+      'undo. Deliberately shaped like the bar it composes; see docs "One container per control".',
   ],
   [
     "courseRailLink",
@@ -92,7 +92,7 @@ const NOT_BUTTONS = new Map([
   [
     "menuButton",
     "a utility control (the burger). Utility chrome carries no label and runs its " +
-      "own square-ish --platform-utility-control-radius; see docs \"Utility controls carry no label\".",
+      'own square-ish --platform-utility-control-radius; see docs "Utility controls carry no label".',
   ],
 ]);
 
@@ -121,10 +121,18 @@ const OWNED = {
    and `font: inherit` is the honest way to say "take the surrounding type",
    so it is allowed while `font: 700 1rem/1.1 Manrope` is not. */
 const SHORTHANDS = [
-  { prop: "padding", axis: "padding-inline", token: "--ds-button-padding-inline",
-    carries: (v) => v.trim().split(/\s+/).length !== 1 || !/^var\(/.test(v.trim()) },
-  { prop: "font", axis: "font-size / font-weight", token: "--ds-button-font-size",
-    carries: (v) => v.trim() !== "inherit" },
+  {
+    prop: "padding",
+    axis: "padding-inline",
+    token: "--ds-button-padding-inline",
+    carries: (v) => v.trim().split(/\s+/).length !== 1 || !/^var\(/.test(v.trim()),
+  },
+  {
+    prop: "font",
+    axis: "font-size / font-weight",
+    token: "--ds-button-font-size",
+    carries: (v) => v.trim() !== "inherit",
+  },
 ];
 
 /* The accent ramp has exactly one home. */
@@ -145,9 +153,7 @@ function walk(dir, out = []) {
     be picked up as a selector, and matching on `}` boundaries instead would
     silently skip every second rule. */
 function rules(css) {
-  const flat = css
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/@[a-z-]+[^{]*\{/gi, "");
+  const flat = css.replace(/\/\*[\s\S]*?\*\//g, "").replace(/@[a-z-]+[^{]*\{/gi, "");
   const found = [];
   const re = /([^{}]+)\{([^{}]*)\}/g;
   let m;
@@ -302,9 +308,7 @@ for (const rel of NETWORK_SHEETS) {
       const norm = (v) => v.trim().replace(/(^|[\s(,])\.(\d)/g, "$10.$2");
       const got = m[1].trim();
       if (norm(got) === norm(expected)) continue;
-      violations.push(
-        `${rel}\n    var(${token}, ${got}) — the fallback disagrees with the token (${expected}).`,
-      );
+      violations.push(`${rel}\n    var(${token}, ${got}) — the fallback disagrees with the token (${expected}).`);
     }
   }
 }
@@ -334,6 +338,4 @@ if (violations.length > 0) {
   process.exit(1);
 }
 
-console.log(
-  `\n[PASS] Button contract guard — ${seen.length} platform rules, ${netChecked} network rules`,
-);
+console.log(`\n[PASS] Button contract guard — ${seen.length} platform rules, ${netChecked} network rules`);

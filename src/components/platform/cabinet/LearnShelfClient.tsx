@@ -24,13 +24,7 @@ import { asOneMovement } from "@/components/platform/viewTransition";
 import { cabinetGate } from "./CabinetGate";
 import { CourseCard, CourseRow, ShelfEmptyCard, ShelfErrorCard } from "./CourseCard";
 import { LearnRoomView } from "./LearnRoomView";
-import {
-  EMPTY_SHELF_QUERY,
-  ShelfFilter,
-  isShelfQueryEmpty,
-  matchesShelfQuery,
-  type ShelfQuery,
-} from "./ShelfFilter";
+import { EMPTY_SHELF_QUERY, ShelfFilter, isShelfQueryEmpty, matchesShelfQuery, type ShelfQuery } from "./ShelfFilter";
 import filterStyles from "./ShelfFilter.module.css";
 import { dateLocaleFor } from "./format";
 import { getCabinetCopy } from "./copy";
@@ -39,7 +33,6 @@ import styles from "./Cabinet.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { PlatformPageHead } from "@/components/platform/PlatformPageHead";
 import { ShelfPresentation, ShelfResultBar } from "./ShelfPresentation";
-
 
 /**
  * TWO SHAPES OF ONE SHELF, and the reader picks (2026-08-28).
@@ -133,15 +126,11 @@ export function LearnShelfClient() {
   }, [query]);
   const filtering = !isShelfQueryEmpty(query);
   const match = useCallback(
-    (course: { title: string; categories: readonly CourseCategory[] }) =>
-      matchesShelfQuery(course, query, cab),
-    [query, cab]
+    (course: { title: string; categories: readonly CourseCategory[] }) => matchesShelfQuery(course, query, cab),
+    [query, cab],
   );
   /* The flat views take the narrowed list; only the room takes the predicate. */
-  const visible = useMemo(
-    () => (filtering && shelf ? shelf.filter(match) : shelf ?? []),
-    [filtering, shelf, match]
-  );
+  const visible = useMemo(() => (filtering && shelf ? shelf.filter(match) : (shelf ?? [])), [filtering, shelf, match]);
 
   const href = useSurfaceHref();
   const programsHref = href("/programs");
@@ -245,9 +234,7 @@ export function LearnShelfClient() {
                   copy={cab}
                   match={filtering ? match : undefined}
                   category={query.categories.length === 1 ? query.categories[0] : "all"}
-                  onCategory={(next) =>
-                    setQuery((prev) => ({ ...prev, categories: next === "all" ? [] : [next] }))
-                  }
+                  onCategory={(next) => setQuery((prev) => ({ ...prev, categories: next === "all" ? [] : [next] }))}
                 />
               ) : visible.length === 0 ? (
                 <p className={filterStyles.noMatch}>{cab.shelfNoMatch}</p>
@@ -258,7 +245,7 @@ export function LearnShelfClient() {
                       <CourseRow key={course.slug} course={course} copy={cab} />
                     ) : (
                       <CourseCard key={course.slug} course={course} copy={cab} dateLocale={dateLocale} />
-                    )
+                    ),
                   )}
                 </div>
               )}

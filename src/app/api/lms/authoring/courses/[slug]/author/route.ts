@@ -31,49 +31,59 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  return withCourseAccess(req, slug, async (grant) => {
-    const [ownProfile, linkedAuthor, linkedAuthorId] = await Promise.all([
-      getAuthorProfileForUser(grant.identity.authUserId),
-      getCourseAuthor(slug),
-      getCourseAuthorProfileId(grant.courseId),
-    ]);
+  return withCourseAccess(
+    req,
+    slug,
+    async (grant) => {
+      const [ownProfile, linkedAuthor, linkedAuthorId] = await Promise.all([
+        getAuthorProfileForUser(grant.identity.authUserId),
+        getCourseAuthor(slug),
+        getCourseAuthorProfileId(grant.courseId),
+      ]);
 
-    return NextResponse.json({
-      eligible: ownProfile.eligible,
-      ownAuthor: ownProfile.author,
-      linkedAuthor,
-      linkedAuthorId,
-    });
-  }, LMS_AUTHORING_READ);
+      return NextResponse.json({
+        eligible: ownProfile.eligible,
+        ownAuthor: ownProfile.author,
+        linkedAuthor,
+        linkedAuthorId,
+      });
+    },
+    LMS_AUTHORING_READ,
+  );
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  return withCourseAccess(req, slug, async (grant) => {
-    const body = (await req.json().catch(() => null)) as { action?: unknown } | null;
-    const action = body?.action;
-    if (action !== "attach-self" && action !== "detach") {
-      return NextResponse.json({ error: "lms_author_link_invalid_action" }, { status: 400 });
-    }
-
-    const own = await getAuthorProfileForUser(grant.identity.authUserId);
-
-    let authorProfileId: string | null = null;
-    if (action === "attach-self") {
-      if (!own.author) {
-        return NextResponse.json({ error: "lms_author_profile_missing" }, { status: 422 });
+  return withCourseAccess(
+    req,
+    slug,
+    async (grant) => {
+      const body = (await req.json().catch(() => null)) as { action?: unknown } | null;
+      const action = body?.action;
+      if (action !== "attach-self" && action !== "detach") {
+        return NextResponse.json({ error: "lms_author_link_invalid_action" }, { status: 400 });
       }
-      authorProfileId = own.author.id;
-    }
 
-    const result = await linkCourseAuthorProfile(grant.courseId, authorProfileId);
-    if (!result.ok) return NextResponse.json({ error: result.error }, { status: 500 });
+      const own = await getAuthorProfileForUser(grant.identity.authUserId);
 
-    revalidateTag(courseTag(slug), PURGE);
-    revalidateTag(AUTHOR_LIST_TAG, PURGE);
+      let authorProfileId: string | null = null;
+      if (action === "attach-self") {
+        if (!own.author) {
+          return NextResponse.json({ error: "lms_author_profile_missing" }, { status: 422 });
+        }
+        authorProfileId = own.author.id;
+      }
 
-    const linkedAuthor = await getCourseAuthor(slug);
-    return NextResponse.json({ linkedAuthor, linkedAuthorId: authorProfileId });
-  }, LMS_COURSE_WRITE);
+      const result = await linkCourseAuthorProfile(grant.courseId, authorProfileId);
+      if (!result.ok) return NextResponse.json({ error: result.error }, { status: 500 });
+
+      revalidateTag(courseTag(slug), PURGE);
+      revalidateTag(AUTHOR_LIST_TAG, PURGE);
+
+      const linkedAuthor = await getCourseAuthor(slug);
+      return NextResponse.json({ linkedAuthor, linkedAuthorId: authorProfileId });
+    },
+    LMS_COURSE_WRITE,
+  );
 }

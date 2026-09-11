@@ -1,0 +1,63 @@
+export type CheckoutStartRequest = {
+  name?: unknown;
+  site?: unknown;
+  offer_id?: unknown;
+  event_id?: unknown;
+  email?: unknown;
+  phone?: unknown;
+  value?: unknown;
+  currency?: unknown;
+  product?: unknown;
+  product_code?: unknown;
+  utm_source?: unknown;
+  utm_medium?: unknown;
+  utm_campaign?: unknown;
+  utm_content?: unknown;
+  utm_term?: unknown;
+  fbclid?: unknown;
+  fbp?: unknown;
+  fbc?: unknown;
+  cr?: unknown;
+  lv?: unknown;
+  referrer?: unknown;
+  page_url?: unknown;
+  user_agent?: unknown;
+};
+
+function asCleanString(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const s = v.trim();
+  return s ? s : null;
+}
+
+export function checkoutLeadId(orderRef: string): string {
+  return `lead_${orderRef}`;
+}
+
+export function buildCheckoutEventPayload(body: CheckoutStartRequest) {
+  const raw = {
+    name: asCleanString(body.name),
+    site: asCleanString(body.site),
+    offer_id: asCleanString(body.offer_id),
+    event_id: asCleanString(body.event_id),
+    email: asCleanString(body.email),
+    phone: asCleanString(body.phone),
+    value: typeof body.value === "number" ? body.value : null,
+    currency: asCleanString(body.currency),
+    utm_source: asCleanString(body.utm_source),
+    utm_medium: asCleanString(body.utm_medium),
+    utm_campaign: asCleanString(body.utm_campaign),
+    utm_content: asCleanString(body.utm_content),
+    utm_term: asCleanString(body.utm_term),
+    fbclid: asCleanString(body.fbclid),
+    fbp: asCleanString(body.fbp),
+    fbc: asCleanString(body.fbc),
+    cr: asCleanString(body.cr),
+    lv: asCleanString(body.lv),
+    referrer: asCleanString(body.referrer),
+    page_url: asCleanString(body.page_url),
+    user_agent: asCleanString(body.user_agent),
+  };
+
+  return Object.fromEntries(Object.entries(raw).filter(([, value]) => value !== null && value !== ""));
+}

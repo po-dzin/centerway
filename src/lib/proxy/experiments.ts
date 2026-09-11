@@ -6,11 +6,7 @@ import {
   resolveExperimentAssignments,
 } from "@/lib/experiments/engine";
 import { getExperiments } from "@/lib/generator/registry";
-import {
-  CW_THEME_COOKIE,
-  CW_THEME_SELECTION_HEADER,
-  getThemeFromSearchParams,
-} from "@/lib/generator/theme";
+import { CW_THEME_COOKIE, CW_THEME_SELECTION_HEADER, getThemeFromSearchParams } from "@/lib/generator/theme";
 import type { ScreenRouteKey } from "@/lib/generator/types";
 import { resolveRequestBrand } from "@/lib/proxy/requestBrand";
 import { getProductSurfaceEntry } from "@/lib/surfaces/catalog";
@@ -75,7 +71,11 @@ function buildExperimentAssignmentContext(req: NextRequest, routeKey: ScreenRout
   };
 }
 
-function applyExperimentAssignmentCookies(req: NextRequest, res: NextResponse, context: ExperimentAssignmentContext): NextResponse {
+function applyExperimentAssignmentCookies(
+  req: NextRequest,
+  res: NextResponse,
+  context: ExperimentAssignmentContext,
+): NextResponse {
   const secure = req.nextUrl.protocol === "https:";
   for (const mutation of context.cookieMutations) {
     res.cookies.set(mutation.name, mutation.value, {
@@ -127,7 +127,7 @@ export function withExperimentAssignmentRewrite(
   req: NextRequest,
   pathname: string,
   routeKey: ScreenRouteKey,
-  extraRequestHeaders?: HeadersInit
+  extraRequestHeaders?: HeadersInit,
 ): NextResponse {
   const context = buildExperimentAssignmentContext(req, routeKey);
   const url = req.nextUrl.clone();

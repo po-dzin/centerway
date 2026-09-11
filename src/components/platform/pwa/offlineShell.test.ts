@@ -40,7 +40,7 @@ describe("offline.html stays self-contained", () => {
     const dasharrays = [...offlineHtml.matchAll(/stroke-dasharray="([^"]+)"/g)];
     expect(dasharrays).toHaveLength(3);
     for (const [, pattern] of dasharrays) {
-      expect(pattern.trim().split(/\s+/).length).toBeGreaterThan(2);
+      expect(pattern!.trim().split(/\s+/).length).toBeGreaterThan(2);
     }
   });
 

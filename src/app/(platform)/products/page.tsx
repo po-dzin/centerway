@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import { PlatformProductsIndexPage } from "@/components/platform/PlatformCatalogPages";
 import { describe } from "@/lib/brand/identity";
 import { pageMetadata } from "@/lib/seo/metadata";
-import { JsonLd } from "@/lib/seo/StructuredData";
+import { JsonLd } from "@/components/seo/StructuredData";
 import { breadcrumbLd, graph, itemListLd } from "@/lib/seo/jsonLd";
 import { platformProductOffers } from "@/lib/platform/content";
 
 export const metadata: Metadata = pageMetadata({
   title: "Продукти і природна підтримка",
   description: describe(
-    "Трав'яна та природна підтримка CenterWay: що це, кому доречно і як обирається за станом, ритмом та етапом відновлення, а не за списком симптомів."
+    "Трав'яна та природна підтримка CenterWay: що це, кому доречно і як обирається за станом, ритмом та етапом відновлення, а не за списком симптомів.",
   ),
   path: "/products",
 });
@@ -30,7 +30,7 @@ export default function ProductsIndexPage() {
           breadcrumbLd([
             { path: "/", name: "CenterWay" },
             { path: "/products", name: "Продукти" },
-          ])
+          ]),
         )}
       />
       <PlatformProductsIndexPage />

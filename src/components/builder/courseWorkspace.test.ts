@@ -2,11 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import {
-  COURSE_WORKSPACE_HASH,
-  DEFAULT_COURSE_WORKSPACE_MODE,
-  courseWorkspaceModeFromHash,
-} from "./courseWorkspace";
+import { COURSE_WORKSPACE_HASH, DEFAULT_COURSE_WORKSPACE_MODE, courseWorkspaceModeFromHash } from "./courseWorkspace";
 
 const read = (file: string) => fs.readFileSync(path.resolve(__dirname, "../../..", file), "utf8");
 const rule = (source: string, name: string) => new RegExp(`\\.${name}\\s*\\{([^}]+)}`).exec(source)?.[1] ?? "";
@@ -28,14 +24,17 @@ describe("Builder course workspace", () => {
     const view = read("src/components/builder/BuilderCourseView.tsx");
     expect(view).toContain("<ShelfPresentation<StructureView>");
     expect(view).toContain('label="Вигляд структури"');
-    expect(view).not.toContain('className={styles.viewOption}');
+    expect(view).not.toContain("className={styles.viewOption}");
     const css = read("src/components/platform/cabinet/ShelfPresentation.module.css");
     expect(rule(css, "viewOption")).toContain("base chromeBare square");
   });
 
   it("keeps the Page workspace expanded and unframed", () => {
     const settings = read("src/components/builder/BuilderCourseSettings.tsx");
-    const pageBranch = settings.slice(settings.indexOf('if (scope === "page")'), settings.indexOf("/* ──", settings.indexOf('if (scope === "page")')));
+    const pageBranch = settings.slice(
+      settings.indexOf('if (scope === "page")'),
+      settings.indexOf("/* ──", settings.indexOf('if (scope === "page")')),
+    );
     expect(pageBranch).toContain("coursePageForm");
     expect(pageBranch).toContain("courseSettingEditor");
     expect(pageBranch).not.toContain("<SettingsSection");

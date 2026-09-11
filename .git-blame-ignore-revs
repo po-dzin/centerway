@@ -1,0 +1,13 @@
+# Commits that moved whitespace and nothing else. `git blame` should walk
+# straight past them to the commit that actually wrote the line.
+#
+# Configure it once per clone:
+#     git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# GitHub reads this file by name and applies it automatically.
+#
+# A commit belongs here only if it changed no identifier, no string and no
+# comment prose. If you are unsure whether a reformat qualifies, it does not.
+
+# Prettier over the repository: 541 files, formatting only (2026-09-11)
+0ae017e361ba61dc22d013a16b7bd5b161401960

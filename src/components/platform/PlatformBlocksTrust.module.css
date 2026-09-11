@@ -19,7 +19,11 @@
   content: "";
   border-radius: 50%;
   opacity: 0.18;
-  background: repeating-radial-gradient(circle, transparent 0 0.52rem, color-mix(in srgb, var(--cw-platform-accent) 55%, transparent) 0.56rem 0.61rem);
+  background: repeating-radial-gradient(
+    circle,
+    transparent 0 0.52rem,
+    color-mix(in srgb, var(--cw-platform-accent) 55%, transparent) 0.56rem 0.61rem
+  );
   pointer-events: none;
 }
 
@@ -129,7 +133,10 @@
    into a panorama; long portraits crop inside their horizontal media slot. */
 .guideRail {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--ds-offer-card-width-desktop)), var(--ds-offer-card-width-desktop)));
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(100%, var(--ds-offer-card-width-desktop)), var(--ds-offer-card-width-desktop))
+  );
   gap: var(--cw-space-md);
 }
 
@@ -609,22 +616,29 @@
   border-radius: calc(var(--cw-card-radius) - var(--cw-radius-inset));
   background:
     var(--support-photo-image, linear-gradient(135deg, transparent, transparent)),
-    radial-gradient(circle at 23% 28%, color-mix(in srgb, var(--cw-platform-accent) 18%, transparent) 0 0.28rem, transparent 0.3rem),
-    radial-gradient(circle at 71% 62%, color-mix(in srgb, var(--cw-sem-embodied) 22%, transparent) 0 0.24rem, transparent 0.26rem),
-    repeating-linear-gradient(102deg, color-mix(in srgb, var(--cw-sem-warmth) 12%, transparent) 0 0.34rem, transparent 0.34rem 0.82rem),
-    linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-warmth) 14%, var(--cw-platform-surface)) 0%, color-mix(in srgb, var(--cw-platform-surface-muted) 74%, var(--cw-platform-surface) 26%) 52%, color-mix(in srgb, var(--cw-sem-guide-strong) 16%, var(--cw-platform-text)) 100%);
-  background-position:
-    var(--support-photo-position, center 24%),
-    center,
-    center,
-    center,
-    center;
-  background-size:
-    cover,
-    auto,
-    auto,
-    auto,
-    auto;
+    radial-gradient(
+      circle at 23% 28%,
+      color-mix(in srgb, var(--cw-platform-accent) 18%, transparent) 0 0.28rem,
+      transparent 0.3rem
+    ),
+    radial-gradient(
+      circle at 71% 62%,
+      color-mix(in srgb, var(--cw-sem-embodied) 22%, transparent) 0 0.24rem,
+      transparent 0.26rem
+    ),
+    repeating-linear-gradient(
+      102deg,
+      color-mix(in srgb, var(--cw-sem-warmth) 12%, transparent) 0 0.34rem,
+      transparent 0.34rem 0.82rem
+    ),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--cw-sem-warmth) 14%, var(--cw-platform-surface)) 0%,
+      color-mix(in srgb, var(--cw-platform-surface-muted) 74%, var(--cw-platform-surface) 26%) 52%,
+      color-mix(in srgb, var(--cw-sem-guide-strong) 16%, var(--cw-platform-text)) 100%
+    );
+  background-position: var(--support-photo-position, center 24%), center, center, center, center;
+  background-size: cover, auto, auto, auto, auto;
   background-repeat: no-repeat;
   box-shadow: var(--cw-mat-shadow-soft);
 }
@@ -634,8 +648,17 @@
   inset: 0;
   content: "";
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-surface) 5%, transparent) 0%, color-mix(in srgb, var(--cw-mat-scrim-ink) 24%, transparent) 100%),
-    linear-gradient(115deg, transparent 0 58%, color-mix(in srgb, var(--cw-mat-scrim-ink) 12%, transparent) 58.5% 60%, transparent 60.5%);
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cw-platform-surface) 5%, transparent) 0%,
+      color-mix(in srgb, var(--cw-mat-scrim-ink) 24%, transparent) 100%
+    ),
+    linear-gradient(
+      115deg,
+      transparent 0 58%,
+      color-mix(in srgb, var(--cw-mat-scrim-ink) 12%, transparent) 58.5% 60%,
+      transparent 60.5%
+    );
   pointer-events: none;
 }
 
@@ -643,8 +666,16 @@
   position: absolute;
   display: block;
   background:
-    radial-gradient(circle at 50% 14%, color-mix(in srgb, var(--cw-platform-accent) 62%, transparent) 0 0.08rem, transparent 0.1rem),
-    linear-gradient(180deg, color-mix(in srgb, var(--cw-sem-embodied) 34%, transparent), color-mix(in srgb, var(--cw-sem-guide-strong) 48%, transparent));
+    radial-gradient(
+      circle at 50% 14%,
+      color-mix(in srgb, var(--cw-platform-accent) 62%, transparent) 0 0.08rem,
+      transparent 0.1rem
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cw-sem-embodied) 34%, transparent),
+      color-mix(in srgb, var(--cw-sem-guide-strong) 48%, transparent)
+    );
   border-radius: var(--cw-radius-pill) var(--cw-radius-pill) 60% 60%;
   box-shadow: 0 10px 18px color-mix(in srgb, var(--cw-mat-scrim-ink) 10%, transparent);
   transform-origin: bottom center;
@@ -702,7 +733,6 @@
   object-fit: cover;
   object-position: center 42%;
 }
-
 
 @media (max-width: 560px) {
   /* A 16:9 strip is too thin to read as a room full of people once it is only

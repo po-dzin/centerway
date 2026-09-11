@@ -8,7 +8,13 @@ import { useZenPreview, type ZenPreviewNavigation } from "./ZenPreviewContext";
 import styles from "./Lms.module.css";
 
 /** One reading toolbar, including the author-only way back. No second bar. */
-export function ReaderChrome({ backHref, backLabel = "До курсу", tools, locked = false, preview: suppliedPreview }: {
+export function ReaderChrome({
+  backHref,
+  backLabel = "До курсу",
+  tools,
+  locked = false,
+  preview: suppliedPreview,
+}: {
   backHref?: string;
   backLabel?: string;
   tools?: ReactNode;

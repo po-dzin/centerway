@@ -66,10 +66,7 @@ export async function loadJournal(identity: LearnerIdentity, now = new Date()): 
   // The catalogue read is the cached one the shelf already warms, so a journal
   // costs no per-course lookup. It carries drafts too, which is what lets an
   // author's own unpublished course still name the marks made while writing it.
-  const [marks, courses] = await Promise.all([
-    listJournalMarks(enrollments.map((row) => row.id)),
-    listLiveCourses(),
-  ]);
+  const [marks, courses] = await Promise.all([listJournalMarks(enrollments.map((row) => row.id)), listLiveCourses()]);
 
   const courseById = new Map(courses.map((course) => [course.id, course]));
 
@@ -87,7 +84,7 @@ export async function loadJournal(identity: LearnerIdentity, now = new Date()): 
         open:
           accessStateOf(
             { status: row.status ?? "active", blockedAt: row.blocked_at, expiresAt: row.expires_at },
-            now
+            now,
           ) === "active",
         lessons: flattenLessons(course).map((entry) => ({
           id: entry.lesson.id,

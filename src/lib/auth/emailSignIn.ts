@@ -67,12 +67,7 @@ export function isCompleteOtpCode(code: string): boolean {
 }
 
 export type SignInFailure =
-  | "unavailable"
-  | "rate_limited"
-  | "invalid_code"
-  | "expired_code"
-  | "invalid_email"
-  | "unknown";
+  "unavailable" | "rate_limited" | "invalid_code" | "expired_code" | "invalid_email" | "unknown";
 
 /**
  * Read what Supabase actually said.
@@ -90,7 +85,10 @@ export function classifySignInError(error: { message?: string; status?: number }
     return "rate_limited";
   }
   if (message.includes("expired")) return "expired_code";
-  if (message.includes("invalid") && (message.includes("token") || message.includes("otp") || message.includes("code"))) {
+  if (
+    message.includes("invalid") &&
+    (message.includes("token") || message.includes("otp") || message.includes("code"))
+  ) {
     return "invalid_code";
   }
   if (message.includes("email") && (message.includes("invalid") || message.includes("valid"))) {

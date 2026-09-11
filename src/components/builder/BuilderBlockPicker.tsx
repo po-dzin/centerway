@@ -37,10 +37,7 @@ const GROUPS: Array<{ title: string; types: LessonBlockType[] }> = [
 function placeAgainst(anchor: DOMRect) {
   if (typeof window === "undefined") return null;
   const width = Math.min(WIDTH, window.innerWidth - EDGE * 2);
-  const left = Math.min(
-    Math.max(EDGE, anchor.left + anchor.width / 2 - width / 2),
-    window.innerWidth - width - EDGE
-  );
+  const left = Math.min(Math.max(EDGE, anchor.left + anchor.width / 2 - width / 2), window.innerWidth - width - EDGE);
   const below = window.innerHeight - anchor.bottom - GAP - EDGE;
   const above = anchor.top - GAP - EDGE;
   const flip = below < 220 && above > below;
@@ -98,13 +95,14 @@ export function BuilderBlockPicker({
 
   if (typeof document === "undefined" || !place) return null;
 
-
   const needle = query.trim().toLocaleLowerCase("uk");
   const groups = GROUPS.map((group) => ({
     ...group,
-    types: group.types.filter((type) => !excludedTypes.includes(type)).filter((type) =>
-      `${BLOCK_TYPE_LABELS[type]} ${BLOCK_TYPE_HINTS[type]}`.toLocaleLowerCase("uk").includes(needle)
-    ),
+    types: group.types
+      .filter((type) => !excludedTypes.includes(type))
+      .filter((type) =>
+        `${BLOCK_TYPE_LABELS[type]} ${BLOCK_TYPE_HINTS[type]}`.toLocaleLowerCase("uk").includes(needle),
+      ),
   })).filter((group) => group.types.length > 0);
 
   return createPortal(
@@ -152,6 +150,6 @@ export function BuilderBlockPicker({
         {groups.length === 0 ? <p className={styles.toolEmpty}>Нічого не знайдено.</p> : null}
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

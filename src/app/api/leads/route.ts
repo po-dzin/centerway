@@ -1,13 +1,14 @@
 import crypto from "crypto";
+import { asString } from "@/lib/strings";
 import { NextRequest, NextResponse } from "next/server";
-import { persistLeadBestEffort, type LeadRecord } from "@/lib/checkoutFlow";
+import { persistLeadBestEffort, type LeadRecord } from "@/lib/payments/checkoutFlow";
 import { normalizeProduct, type ProductCode } from "@/lib/products";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { upsertCustomerByContact } from "@/lib/platform/customerIdentity";
-import { applyDoshaTagsToCustomer, loadTestAttempt } from "@/lib/doshaTestRepo";
-import { isDoshaResultType, type DoshaResultType } from "@/lib/doshaTest";
-import { sendTelegramMessage } from "@/lib/tg";
+import { applyDoshaTagsToCustomer, loadTestAttempt } from "@/lib/dosha/doshaTestRepo";
+import { isDoshaResultType, type DoshaResultType } from "@/lib/dosha/doshaTest";
+import { sendTelegramMessage } from "@/lib/telegram/tg";
 
 export const runtime = "nodejs";
 
@@ -74,12 +75,6 @@ type LeadRequestBody = {
   dosha?: unknown;
 };
 
-function asString(v: unknown): string | null {
-  if (typeof v !== "string") return null;
-  const s = v.trim();
-  return s || null;
-}
-
 function cors(res: NextResponse) {
   res.headers.set("Access-Control-Allow-Origin", "*");
   res.headers.set("Access-Control-Allow-Methods", "POST,OPTIONS");
@@ -107,26 +102,22 @@ export async function POST(req: NextRequest) {
   const name = asString(body.name);
   const phone = asString(body.phone);
   const email = asString(body.email)?.toLowerCase() ?? null;
-  const product = normalizeProduct({
-    product: asString(body.product) ?? undefined,
-    product_code: asString(body.product_code) ?? undefined,
-  }) ?? "consult";
+  const product =
+    normalizeProduct({
+      product: asString(body.product) ?? undefined,
+      product_code: asString(body.product_code) ?? undefined,
+    }) ?? "consult";
 
   if (!name || (!phone && !email)) {
-    return cors(
-      NextResponse.json(
-        { ok: false, error: "contact_required" },
-        { status: 400 }
-      )
-    );
+    return cors(NextResponse.json({ ok: false, error: "contact_required" }, { status: 400 }));
   }
 
   const pageUrl = asString(body.page_url) ?? req.headers.get("referer") ?? null;
-  const clientIp =
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("cf-connecting-ip") ??
-    req.headers.get("x-real-ip") ??
-    null;
+  /* A blank `x-forwarded-for` is not an address: trimmed to `""` it is still
+     non-nullish, so `??` kept it and the lead was recorded from nowhere while
+     `cf-connecting-ip` went unread. Empty has to fall through. */
+  const forwardedIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const clientIp = (forwardedIp || null) ?? req.headers.get("cf-connecting-ip") ?? req.headers.get("x-real-ip") ?? null;
   const lead: LeadRecord = {
     order_ref: makeLeadRef(product),
     product_code: product,
@@ -194,12 +185,7 @@ export async function POST(req: NextRequest) {
   const mode = await persistLeadBestEffort(db, lead);
 
   if (mode === "skipped") {
-    return cors(
-      NextResponse.json(
-        { ok: false, error: "lead_persist_failed" },
-        { status: 500 }
-      )
-    );
+    return cors(NextResponse.json({ ok: false, error: "lead_persist_failed" }, { status: 500 }));
   }
 
   if (asString(body.event_id)) {

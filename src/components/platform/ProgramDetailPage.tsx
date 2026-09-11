@@ -1,3 +1,5 @@
+import { plural } from "@/lib/plural";
+import type { OfferSurface } from "@/lib/platform/offerSurface";
 import {
   PlatformOfferMetaList,
   PlatformOfferSurfaceTemplate,
@@ -15,57 +17,13 @@ import { CourseAuthorLink } from "@/components/platform/AuthorEntry";
 import { getSnapshotCourseByProgram } from "@/lib/lms/catalog";
 import { offerLandingUrl } from "@/lib/platform/offerLanding";
 import { resolveOfferCommerce, type OfferCommerce } from "@/lib/platform/offerCommerce";
-import type { PlatformOfferSurfaceType } from "@/lib/platform/content";
 import type { Author, Course } from "@/lms-core";
 import type { ReactNode } from "react";
 
-import { JsonLd } from "@/lib/seo/StructuredData";
+import { JsonLd } from "@/components/seo/StructuredData";
 import { breadcrumbLd, courseLd, graph } from "@/lib/seo/jsonLd";
 
-/**
- * What this page actually needs, declared instead of inferred.
- *
- * It used to be typed as `(typeof programs)[number]` — one of the six literals
- * in content.ts — which made "an offer page" and "an offer hard-coded in
- * TypeScript" the same thing. A course out of the builder is an offer too, and
- * it satisfies exactly these ten fields. The six still pass unchanged: this is
- * a narrowing of what is asked for, not a change to what they carry.
- */
-export type OfferSurface = {
-  slug: string;
-  title: string;
-  fullTitle: string;
-  /**
-   * The line between the name and the tagline: what kind of thing this is.
-   *
-   * Optional, and empty for most offers. It exists because a title written in
-   * the builder often carries two jobs in one string — «Розвантажувальний день
-   * — практикум з умовного голодування» — and the half after the dash is not
-   * noise, it just cannot be part of a name. The name is the h1, this is under
-   * it, the tagline is under that. See `offerSubtitle`.
-   */
-  subtitle?: string;
-  tag: string;
-  duration: string;
-  description: string;
-  longDescription: string;
-  results: readonly string[];
-  surfaceType: PlatformOfferSurfaceType;
-  artwork?: { desktop: string; desktopPosition?: string; mobilePosition?: string };
-  /**
-   * The offer surface proper (2026-08-26). Optional to a fault, and that is the
-   * point: these are the things the six hand-written pages said in prose only a
-   * developer could edit, and a course out of the builder says exactly as many
-   * of them as its author has filled in. A page prints what it has and stays
-   * quiet about the rest — never a heading over an empty list.
-   */
-  audience?: readonly string[];
-  format?: readonly string[];
-  /** The access promise printed beside the price — "доступ назавжди". */
-  accessNote?: string;
-  /** Why this author for this course. One sentence; the profile is joined separately. */
-  authorNote?: string;
-};
+export type { OfferSurface } from "@/lib/platform/offerSurface";
 
 /**
  * A platform offer page.
@@ -136,9 +94,7 @@ export function ProgramDetailPage({
   // lesson count for a marketing claim, not live content. A live read here
   // would turn a static page into a per-request query.
   const course = given ?? getSnapshotCourseByProgram(program.slug);
-  const lessonCount = course
-    ? course.modules.reduce((total, module) => total + module.lessons.length, 0)
-    : 0;
+  const lessonCount = course ? course.modules.reduce((total, module) => total + module.lessons.length, 0) : 0;
   const isMiniCourse = program.surfaceType === "mini-course";
 
   /* Where the thing you bought actually appears. Not one sentence for all of
@@ -187,7 +143,11 @@ export function ProgramDetailPage({
        re-deriving the condition keeps this true even if that fallback changes. */
     ...(course && lessonLabel !== program.duration ? [lessonLabel] : []),
     ...(course ? [] : [program.tag]),
-    isCheckout ? "оплата просто тут, без переходу на лендинг" : isFree ? "доступ без оплати" : "участь узгоджуємо в розмові",
+    isCheckout
+      ? "оплата просто тут, без переходу на лендинг"
+      : isFree
+        ? "доступ без оплати"
+        : "участь узгоджуємо в розмові",
   ];
 
   /* WHAT THE PANEL IS TITLED, now that the duration is the badge's.
@@ -291,7 +251,7 @@ export function ProgramDetailPage({
                   { path: "/", name: "CenterWay" },
                   { path: "/programs", name: "Програми" },
                   { path: `/programs/${program.slug}`, name: program.title },
-                ])
+                ]),
               )}
             />
             {/* `OwnedCourseNotice` used to sit here — a banner telling a buyer
@@ -360,14 +320,14 @@ export function ProgramDetailPage({
                       ? `Відкрити доступ до «${program.title}»`
                       : isFree
                         ? `Почати «${program.title}» без оплати`
-                      : `Записатися на «${program.title}»`}
+                        : `Записатися на «${program.title}»`}
                   </h2>
                   <p className={offerPanelStyles.lead}>
                     {isCheckout
                       ? `Оплата проходить тут, на платформі, без переходу на окремий лендинг: ${deliveryLine}.`
                       : isFree
                         ? `Це безкоштовний доступ до курсу: ${deliveryLine}. Увійдіть або створіть акаунт, щоб зберегти прогрес.`
-                      : "Цю програму ми узгоджуємо в розмові — щоб формат, темп і межі методу підходили саме вашому стану. Залиште контакт, і ми повернемося з деталями і способом оплати."}
+                        : "Цю програму ми узгоджуємо в розмові — щоб формат, темп і межі методу підходили саме вашому стану. Залиште контакт, і ми повернемося з деталями і способом оплати."}
                   </p>
                 </article>
                 {isCheckout ? (
@@ -402,29 +362,15 @@ export function ProgramDetailPage({
           />
         }
         trailing={
-          <OfferStickyBar
-            price={isCheckout || isFree ? commerce.price : null}
-            buyHref={buyHref}
-            buyLabel={buyLabel}
-          />
+          <OfferStickyBar price={isCheckout || isFree ? commerce.price : null} buyHref={buyHref} buyLabel={buyLabel} />
         }
         boundary={{
           label: "Межі методу",
           title: "Чесний формат без медичних обіцянок",
-          lead:
-            "CenterWay працює як освітня wellness-платформа і супровід практики. Програми не замінюють діагностику, лікування або рекомендації вашого лікаря; якщо є гострі стани, вагітність, хронічні захворювання або медикаментозна терапія, спочатку потрібна медична консультація.",
+          lead: "CenterWay працює як освітня wellness-платформа і супровід практики. Програми не замінюють діагностику, лікування або рекомендації вашого лікаря; якщо є гострі стани, вагітність, хронічні захворювання або медикаментозна терапія, спочатку потрібна медична консультація.",
         }}
         afterBoundary={nextStep}
       />
     </OfferAccessProvider>
   );
-}
-
-function plural(count: number, one: string, few: string, many: string): string {
-  const mod100 = count % 100;
-  if (mod100 >= 11 && mod100 <= 14) return many;
-  const mod10 = count % 10;
-  if (mod10 === 1) return one;
-  if (mod10 >= 2 && mod10 <= 4) return few;
-  return many;
 }

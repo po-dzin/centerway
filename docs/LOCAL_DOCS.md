@@ -13,9 +13,16 @@ It answers three questions:
 `RAverse/ReOS/Projects/CenterWay/**` remains the semantic and governance source of truth.
 This file only governs the local storage layer inside the repo.
 
-## Active Root Set
+## Index and decisions
 
-Keep only these files in the root of `docs/`:
+`docs/README.md` is the generated index of everything here (`npm run
+docs:index`; `docs:index:check` fails when it is stale). `docs/adr/` holds
+decisions, one file each, in the format its README gives.
+
+## Root Set
+
+The root of `docs/` holds dated notes (`<topic>-YYYY-MM-DD.md`), one per
+piece of work, and these standing files:
 
 - `docs/CANON.md`
 - `docs/LOCAL_DOCS.md`
@@ -29,10 +36,9 @@ Keep these root directories:
 - `docs/legacy/`
 - `docs/archive/`
 
-Everything else should either:
-
-- move to `docs/archive/**`, or
-- be promoted into RAverse if it becomes durable cross-project canon.
+A dated note that is superseded moves to `docs/archive/**`; a rule that
+outgrows one note becomes a decision in `docs/adr/`, and only from there,
+if it governs more than this repository, RAverse.
 
 ## Archive Layout
 

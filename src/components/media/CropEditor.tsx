@@ -27,18 +27,21 @@
  * and any future change to them reaches this editor without being retyped.
  */
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type PointerEvent,
+} from "react";
 import { createPortal } from "react-dom";
 
 import { Icon } from "@/components/Icon";
 import { CropZoom, cropKeyZoom, cropWheelZoom } from "@/components/media/CropZoom";
-import {
-  clampCropAxis,
-  containRect,
-  cropWindowPan,
-  cropWindowRect,
-  parseCssRatio,
-} from "@/lib/media/imageCrop";
+import { clampCropAxis, containRect, cropWindowPan, cropWindowRect, parseCssRatio } from "@/lib/media/imageCrop";
 import styles from "./CropEditor.module.css";
 
 export type CropEditorLabels = {
@@ -109,8 +112,8 @@ export function CropEditor({
     setPhoto(
       containRect(
         { width: box.width, height: box.height },
-        { width: image?.naturalWidth ?? 0, height: image?.naturalHeight ?? 0 }
-      )
+        { width: image?.naturalWidth ?? 0, height: image?.naturalHeight ?? 0 },
+      ),
     );
   }, []);
 
@@ -150,7 +153,7 @@ export function CropEditor({
       { x: origin.current.x, y: origin.current.y },
       { dx: event.clientX - origin.current.pointerX, dy: event.clientY - origin.current.pointerY },
       photo,
-      frame
+      frame,
     );
     onChange(next.x, next.y);
   };
@@ -190,14 +193,26 @@ export function CropEditor({
   if (typeof document === "undefined") return null;
 
   return createPortal(
-    <div className={styles.scrim} role="presentation" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
+    <div
+      className={styles.scrim}
+      role="presentation"
+      onPointerDown={(event) => event.target === event.currentTarget && onClose()}
+    >
       <div className={styles.panel} role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <div className={styles.head}>
           <div className={styles.headText}>
-            <h2 className={styles.title} id={titleId}>{title}</h2>
+            <h2 className={styles.title} id={titleId}>
+              {title}
+            </h2>
             {note ? <p className={styles.note}>{note}</p> : null}
           </div>
-          <button type="button" className={styles.action} onClick={onClose} aria-label={labels.done} title={labels.done}>
+          <button
+            type="button"
+            className={styles.action}
+            onClick={onClose}
+            aria-label={labels.done}
+            title={labels.done}
+          >
             <Icon name="close" size={18} />
           </button>
         </div>
@@ -232,15 +247,23 @@ export function CropEditor({
             <span className={styles.guides} />
           </div>
         </div>
-        <p className={styles.note} id={positionId} role="status">{labels.position(x, y)}</p>
+        <p className={styles.note} id={positionId} role="status">
+          {labels.position(x, y)}
+        </p>
         <div className={styles.foot}>
           <CropZoom className={styles.zoom} value={scale} onChange={onScaleChange} label={labels.zoom} />
-          <button type="button" className={styles.action} onClick={onReset} aria-label={labels.reset} title={labels.reset}>
+          <button
+            type="button"
+            className={styles.action}
+            onClick={onReset}
+            aria-label={labels.reset}
+            title={labels.reset}
+          >
             <Icon name="undo" size={20} />
           </button>
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

@@ -3,6 +3,24 @@ import { closeWonLeadsForPurchase } from "./leadStage";
 
 type Row = { id: string; email?: string | null; phone?: string | null; product_code: string; stage: string };
 
+/**
+ * The chain this fake has to answer, named rather than left as `any`: exactly
+ * the calls `closeWonLeadsForPurchase` makes, and nothing else. A method the
+ * code starts using and this fake has not grown is then a type error here
+ * rather than an `undefined is not a function` at run time.
+ */
+type LeadsBuilder = {
+  /** The `.in("id", …)` of a pending update, remembered until `then` runs it. */
+  _ids?: string[];
+  /** The pending `.update()` patch; its presence is what makes this a write. */
+  _patch?: Record<string, unknown>;
+  select(columns: string): LeadsBuilder;
+  in(column: string, values: readonly string[]): LeadsBuilder;
+  eq(column: "email" | "phone", value: string): LeadsBuilder;
+  update(patch: Record<string, unknown>): LeadsBuilder;
+  then(resolve: (value: { data: Row[]; error: null }) => unknown): unknown;
+};
+
 /** A `leads` table just real enough to exercise the filters this code builds. */
 function fakeDb(rows: Row[]) {
   const updates: Array<{ ids: string[]; patch: Record<string, unknown> }> = [];
@@ -12,14 +30,14 @@ function fakeDb(rows: Row[]) {
     from(table: string) {
       if (table !== "leads") throw new Error(`unexpected table ${table}`);
       let selected = rows;
-      const builder: any = {
+      const builder: LeadsBuilder = {
         select() {
           return builder;
         },
-        in(column: string, values: string[]) {
+        in(column: string, values: readonly string[]) {
           if (column === "stage") selected = selected.filter((row) => values.includes(row.stage));
           if (column === "id") {
-            builder._ids = values;
+            builder._ids = [...values];
           }
           return builder;
         },
@@ -32,14 +50,15 @@ function fakeDb(rows: Row[]) {
           return builder;
         },
         then(resolve: (value: { data: Row[]; error: null }) => unknown) {
-          if (builder._patch) {
+          const patch = builder._patch;
+          if (patch) {
             const ids: string[] = builder._ids ?? [];
             for (const row of rows) {
               if (ids.includes(row.id) && ["new", "in_progress"].includes(row.stage)) {
-                Object.assign(row, builder._patch);
+                Object.assign(row, patch);
               }
             }
-            updates.push({ ids, patch: builder._patch });
+            updates.push({ ids, patch });
             return resolve({ data: [], error: null });
           }
           return resolve({ data: selected, error: null });
@@ -60,7 +79,7 @@ describe("closeWonLeadsForPurchase", () => {
       scope: "same_product",
     });
     expect(result).toEqual({ closed: 1, reason: "closed" });
-    expect(db.rows[0].stage).toBe("won");
+    expect(db.rows[0]!.stage).toBe("won");
   });
 
   it("does NOT close a consultation request when the person self-serves a different product", async () => {
@@ -73,7 +92,7 @@ describe("closeWonLeadsForPurchase", () => {
       scope: "same_product",
     });
     expect(result.closed).toBe(0);
-    expect(db.rows[0].stage).toBe("new");
+    expect(db.rows[0]!.stage).toBe("new");
   });
 
   it("closes every open lead when a human recorded the sale", async () => {
@@ -85,7 +104,7 @@ describe("closeWonLeadsForPurchase", () => {
       scope: "all_open",
     });
     expect(result.closed).toBe(1);
-    expect(db.rows[0].stage).toBe("won");
+    expect(db.rows[0]!.stage).toBe("won");
   });
 
   it("folds the two spellings of one course, so a legacy lead still closes", async () => {
@@ -128,7 +147,7 @@ describe("closeWonLeadsForPurchase", () => {
       scope: "all_open",
     });
     expect(result).toEqual({ closed: 0, reason: "no_contact" });
-    expect(db.rows[0].stage).toBe("new");
+    expect(db.rows[0]!.stage).toBe("new");
   });
 
   it("does not touch other people's leads when the phone contains a plus", async () => {
@@ -166,16 +185,14 @@ describe("closing the wrong person's leads", () => {
   it("matches the contact exactly and never by prefix or substring", () => {
     // `.eq`, not `.ilike`: `ann@example.com` must not reach
     // `ann@example.com.attacker.tld`, which is a domain anybody can register.
-    const db = fakeDb([
-      { id: "victim", email: "ann@example.com", product_code: "consult", stage: "new" },
-    ]);
+    const db = fakeDb([{ id: "victim", email: "ann@example.com", product_code: "consult", stage: "new" }]);
     return closeWonLeadsForPurchase(db as never, {
       email: "ann@example.com.attacker.tld",
       productCode: "consult",
       scope: "all_open",
     }).then((result) => {
       expect(result.closed).toBe(0);
-      expect(db.rows[0].stage).toBe("new");
+      expect(db.rows[0]!.stage).toBe("new");
     });
   });
 
@@ -218,7 +235,7 @@ describe("closing the wrong person's leads", () => {
       scope: "same_product",
     });
     expect(result.closed).toBe(0);
-    expect(db.rows[0].stage).toBe("new");
+    expect(db.rows[0]!.stage).toBe("new");
   });
 
   it("treats a whitespace-only contact as no contact at all", async () => {
@@ -276,7 +293,7 @@ describe("failing safe", () => {
         email: "ann@example.com",
         productCode: "consult",
         scope: "all_open",
-      })
+      }),
     ).resolves.toEqual({ closed: 0, reason: "nothing_open" });
   });
 });

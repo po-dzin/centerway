@@ -35,7 +35,7 @@ type MotionLinkProps = ComponentPropsWithoutRef<typeof Link>;
 
 export const MotionLink = forwardRef<HTMLAnchorElement, MotionLinkProps>(function MotionLink(
   { href, onClick, target, ...rest },
-  ref
+  ref,
 ) {
   const router = useRouter();
 

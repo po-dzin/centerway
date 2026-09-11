@@ -30,6 +30,10 @@ function getCanonicalRebootAliasTarget(assetPath: string[]): string | null {
   }
 
   const [segment] = assetPath;
+  if (segment === undefined) {
+    return null;
+  }
+
   if (segment === "index.html") {
     return "/reboot";
   }
@@ -51,7 +55,7 @@ const getPreparedUtilityLandingHtml = unstable_cache(
     return prepared;
   },
   ["landing-managed-secondary-html-v1"],
-  { revalidate: 3600 }
+  { revalidate: 3600 },
 );
 
 export async function GET(req: Request, context: { params: Promise<{ brand: string; path: string[] }> }) {
@@ -80,10 +84,7 @@ export async function GET(req: Request, context: { params: Promise<{ brand: stri
   const staticProduct = resolveStaticLandingProduct(brand);
   if (staticProduct) {
     if (isNextLandingEnabled() && isEntryAssetPath(assetPath)) {
-      const offer =
-        staticProduct === "irem"
-          ? await resolveIremLandingOffer(new URL(req.url).searchParams)
-          : null;
+      const offer = staticProduct === "irem" ? await resolveIremLandingOffer(new URL(req.url).searchParams) : null;
       const prepared = await prepareLandingHtml({ product: staticProduct, pageKind: "entry", offer });
       const content = LANDING_CONTENT[staticProduct];
       return htmlResponse(
@@ -94,7 +95,7 @@ export async function GET(req: Request, context: { params: Promise<{ brand: stri
           title: content.title,
           description: content.description,
         }),
-        "public, max-age=0, s-maxage=0, must-revalidate"
+        "public, max-age=0, s-maxage=0, must-revalidate",
       );
     }
 

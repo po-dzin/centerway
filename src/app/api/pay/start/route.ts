@@ -2,12 +2,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { resolveIremLandingOffer } from "@/lib/landing/offers";
-import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { loadPayableOffer } from "@/lib/platform/offers";
-import {
-  createPaymentInvoice,
-  resolveLocaleFromRequest,
-} from "@/lib/paymentStart";
+import { createPaymentInvoice, resolveLocaleFromRequest } from "@/lib/payments/paymentStart";
 
 export const runtime = "nodejs";
 
@@ -31,6 +28,10 @@ export async function GET(req: NextRequest) {
   const format = url.searchParams.get("format"); // json | null
   const locale = resolveLocaleFromRequest(req.headers, url.searchParams);
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  /* A blank `x-forwarded-for` trims to `""`, which `??` treats as an answer.
+     The invoice then carried an empty client_ip to Meta instead of falling
+     through to `cf-connecting-ip`. Empty has to fall through. */
+  const forwardedIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
 
   const started = await createPaymentInvoice({
     offer,
@@ -61,10 +62,7 @@ export async function GET(req: NextRequest) {
     campaign: url.searchParams.get("utm_campaign") ?? undefined,
     event_id: url.searchParams.get("event_id") ?? undefined,
     client_ip:
-      req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-      req.headers.get("cf-connecting-ip") ??
-      req.headers.get("x-real-ip") ??
-      undefined,
+      (forwardedIp || null) ?? req.headers.get("cf-connecting-ip") ?? req.headers.get("x-real-ip") ?? undefined,
     client_ua: req.headers.get("user-agent") ?? undefined,
     page_url: req.headers.get("referer") ?? undefined,
     staff: req.cookies.get("cw_staff")?.value === "1",
@@ -80,7 +78,7 @@ export async function GET(req: NextRequest) {
         order_ref: started.order_ref,
         raw: started.raw,
       },
-      { status: started.status }
+      { status: started.status },
     );
   }
 

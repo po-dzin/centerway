@@ -92,13 +92,13 @@ describe("auditShelf", () => {
     // A module row from before the `reference` migration — the same class of
     // fault as a tightened field ceiling: valid-looking data the contract
     // refuses, and `listLiveCourses` silently skips.
-    delete (db.tables.lms_modules[0] as Row).reference;
+    delete (db.tables.lms_modules![0] as Row).reference;
 
     const audit = await auditShelf();
 
     expect(audit.faults).toHaveLength(1);
     expect(audit.faults[0]).toMatchObject({ slug: "reset-day", kind: "unrenderable" });
-    expect(audit.faults[0].detail).toMatch(/reference/);
+    expect(audit.faults[0]!.detail).toMatch(/reference/);
     expect(formatShelfAudit(audit)).toContain("reset-day");
   });
 
@@ -106,14 +106,14 @@ describe("auditShelf", () => {
     // Mid-edit material is not an incident, and a watcher that reports it
     // teaches its reader to dismiss the ones that matter.
     seed([courseRow({ status: "draft", visibility: "hidden" })], []);
-    delete (db.tables.lms_modules[0] as Row).reference;
+    delete (db.tables.lms_modules![0] as Row).reference;
 
     expect((await auditShelf()).faults).toEqual([]);
   });
 
   it("still reports a broken draft that is being SOLD", async () => {
     seed([courseRow({ status: "draft", visibility: "hidden" })], [offerRow()]);
-    delete (db.tables.lms_modules[0] as Row).reference;
+    delete (db.tables.lms_modules![0] as Row).reference;
 
     expect((await auditShelf()).faults[0]).toMatchObject({ kind: "unrenderable" });
   });

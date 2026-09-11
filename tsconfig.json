@@ -1,10 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "ES2022",
     "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
+    /* Every `arr[i]` and `obj[key]` yields `T | undefined`. Turned on
+       2026-09-11 after fixing the 513 places that had been assuming otherwise;
+       no non-null assertion was added to product code to get there. It found
+       real defects — an empty `x-forwarded-for` header resolving to the client
+       IP `""`, a Markdown export crashing on a table with no rows, an
+       `undefined` appended into authored lesson text as the literal word. */
+    "noUncheckedIndexedAccess": true,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
@@ -20,7 +26,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "allowJs": true
   },
   "include": [
     "next-env.d.ts",

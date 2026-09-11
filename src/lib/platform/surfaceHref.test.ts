@@ -30,9 +30,7 @@ describe("resolveSurfaceHref", () => {
   it("absolutises public links on a funnel host, as it always did", () => {
     // Those hosts are served by this same app through the proxy, so a relative
     // link there resolves to a landing 404.
-    expect(resolveSurfaceHref("/programs", "way21.centerway.net.ua")).toBe(
-      "https://www.centerway.net.ua/programs",
-    );
+    expect(resolveSurfaceHref("/programs", "way21.centerway.net.ua")).toBe("https://www.centerway.net.ua/programs");
   });
 
   it("leaves everything on paths where no second host exists", () => {
@@ -57,9 +55,7 @@ describe("resolveSurfaceHref", () => {
   });
 
   it("carries the query and hash across the crossing", () => {
-    expect(resolveSurfaceHref("/learn/way21?day=3#top", WWW)).toBe(
-      "https://my.centerway.net.ua/way21?day=3#top",
-    );
+    expect(resolveSurfaceHref("/learn/way21?day=3#top", WWW)).toBe("https://my.centerway.net.ua/way21?day=3#top");
   });
 });
 

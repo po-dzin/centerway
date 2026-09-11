@@ -12,8 +12,7 @@ import { flattenLessons, type Course } from "./course";
 import { inlineToPlainText } from "./inline";
 
 export type InternalReference =
-  | { kind: "lesson"; lessonId: string }
-  | { kind: "block"; lessonId: string; blockId: string };
+  { kind: "lesson"; lessonId: string } | { kind: "block"; lessonId: string; blockId: string };
 
 export type InternalReferenceTarget = InternalReference & {
   key: string;
@@ -126,7 +125,9 @@ function referenceBlockLabel(block: LessonBlock): string | null {
     case "quote":
       return `Цитата: ${short(inlineToPlainText(block.text))}`;
     case "image":
-      return block.caption ? `Зображення: ${short(inlineToPlainText(block.caption))}` : `Зображення: ${short(block.alt)}`;
+      return block.caption
+        ? `Зображення: ${short(inlineToPlainText(block.caption))}`
+        : `Зображення: ${short(block.alt)}`;
     case "video":
       return block.title ? `Відео: ${short(inlineToPlainText(block.title))}` : "Відео";
     case "table":

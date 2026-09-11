@@ -12,7 +12,7 @@ import { landingIndex } from "./useRowDrag";
 const move = (list: string[], from: number, to: number, edge: "before" | "after") => {
   const next = [...list];
   const [carried] = next.splice(from, 1);
-  next.splice(landingIndex(from, to, edge, true), 0, carried);
+  next.splice(landingIndex(from, to, edge, true), 0, carried!);
   return next.join("");
 };
 

@@ -130,7 +130,9 @@ for (const screen of herbsScreens) {
 const consultScreens = screens.manifests.filter((screen) => screen.route_key === "consult");
 for (const screen of consultScreens) {
   if (screen.route_path !== "/funnel-entry/consult") {
-    fail(`/consult invariant failed: ${screen.id} must stay on internal /funnel-entry/consult, got ${screen.route_path}`);
+    fail(
+      `/consult invariant failed: ${screen.id} must stay on internal /funnel-entry/consult, got ${screen.route_path}`,
+    );
   }
 }
 
@@ -170,7 +172,9 @@ if (herbsFunnelSource !== null) {
 }
 
 if (existsSync(path.join(root, "src", "app", "(platform)", "herbs", "page.tsx"))) {
-  fail("/herbs invariant failed: src/app/(platform)/herbs/page.tsx must not exist — the platform route group would wrap the funnel entry in the platform layout");
+  fail(
+    "/herbs invariant failed: src/app/(platform)/herbs/page.tsx must not exist — the platform route group would wrap the funnel entry in the platform layout",
+  );
 }
 
 // The catalogue page is a separate surface and must still exist at its own

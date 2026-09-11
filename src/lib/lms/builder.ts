@@ -28,6 +28,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import type { TablesUpdate } from "@/lib/db/database.types";
 import { courseFromRows, writeCourseStructure } from "./authoring";
 import { getSnapshotCourse } from "./catalog";
 import { immediatePublishedPatch } from "./publishedEditPolicy";
@@ -89,14 +90,10 @@ async function readCourseRow(slug: string): Promise<CourseRow | null> {
  * way; content validity is a separate question with a separate answer (422).
  */
 export async function readCourseOwnership(
-  slug: string
+  slug: string,
 ): Promise<{ id: string; slug: string; authorId: string | null } | null> {
   const db = adminClient();
-  const { data, error } = await db
-    .from("lms_courses")
-    .select("id, slug, author_id")
-    .eq("slug", slug)
-    .maybeSingle();
+  const { data, error } = await db.from("lms_courses").select("id, slug, author_id").eq("slug", slug).maybeSingle();
   if (error) throw new Error(`lms_builder_course_read_failed:${error.message}`);
   if (!data) return null;
   const row = data as CourseRow;
@@ -114,9 +111,7 @@ export async function readCourseOwnership(
  * `lms:seed` mirrors a file into the database, and a course authored in git but
  * never seeded exists in one place and not the other.
  */
-export async function loadBuilderCourse(
-  slug: string
-): Promise<{
+export async function loadBuilderCourse(slug: string): Promise<{
   course: Course;
   /** The relational release currently served to learners. */
   liveCourse: Course;
@@ -164,7 +159,8 @@ export async function loadBuilderCourse(
     updatedAt: (courseRow.updated_at as string | null) ?? null,
     reviewStatus: hasPendingRevision
       ? ((courseRow.pending_review_status as CourseReviewStatus | undefined) ?? "draft")
-      : ((courseRow.review_status as CourseReviewStatus | undefined) ?? (courseRow.status === "published" ? "approved" : "draft")),
+      : ((courseRow.review_status as CourseReviewStatus | undefined) ??
+        (courseRow.status === "published" ? "approved" : "draft")),
     reviewNote: hasPendingRevision
       ? ((courseRow.pending_review_note as string | null) ?? null)
       : ((courseRow.review_note as string | null) ?? null),
@@ -244,7 +240,7 @@ export async function listBuilderCourses(filter: { authorId?: string }): Promise
            reader can ask `.includes()` without asking `?.` first. */
         categories: Array.isArray(row.categories) ? (row.categories as CourseCategory[]) : [],
       };
-    })
+    }),
   );
 
   // The author's own order first; anything they have never placed sorts after
@@ -284,10 +280,12 @@ export function courseSlugCanChange(input: {
   course: Pick<Course, "slug" | "status" | "visibility">;
   reviewStatus: CourseReviewStatus;
 }): boolean {
-  return input.course.status === "draft"
-    && (input.course.visibility ?? "hidden") === "hidden"
-    && input.reviewStatus === "draft"
-    && getSnapshotCourse(input.course.slug) === null;
+  return (
+    input.course.status === "draft" &&
+    (input.course.visibility ?? "hidden") === "hidden" &&
+    input.reviewStatus === "draft" &&
+    getSnapshotCourse(input.course.slug) === null
+  );
 }
 
 /** The UI promise includes the learner check; the pure predicate above stays
@@ -309,7 +307,7 @@ export async function builderCourseSlugCanChange(input: {
 export async function renameBuilderCourseSlug(currentSlug: string, requestedSlug: string): Promise<{ slug: string }> {
   const loaded = await loadBuilderCourse(currentSlug);
   if (!loaded) throw new Error("lms_builder_course_not_found");
-  if (!await builderCourseSlugCanChange({ course: loaded.course, reviewStatus: loaded.reviewStatus })) {
+  if (!(await builderCourseSlugCanChange({ course: loaded.course, reviewStatus: loaded.reviewStatus }))) {
     throw new Error("lms_builder_slug_locked");
   }
 
@@ -355,7 +353,7 @@ export async function renameBuilderCourseSlug(currentSlug: string, requestedSlug
 async function assertNestedIdsAreOwned(
   db: ReturnType<typeof adminClient>,
   course: Course,
-  ownerCourseId: string
+  ownerCourseId: string,
 ): Promise<void> {
   const moduleIds = course.modules.map((module) => module.id);
   const lessonIds = course.modules.flatMap((module) => module.lessons.map((lesson) => lesson.id));
@@ -407,9 +405,7 @@ export function writeRequiresPublishApproval(input: {
   incomingStatus: Course["status"];
   reviewStatus: CourseReviewStatus;
 }): boolean {
-  return input.liveStatus !== "published"
-    && input.incomingStatus === "published"
-    && input.reviewStatus !== "approved";
+  return input.liveStatus !== "published" && input.incomingStatus === "published" && input.reviewStatus !== "approved";
 }
 
 /**
@@ -481,8 +477,7 @@ export async function saveBuilderCourse(
     : {
         ...submitted,
         entitlementProductCodes:
-          loaded?.course.entitlementProductCodes
-          ?? ((existing.entitlement_product_codes as string[] | null) ?? []),
+          loaded?.course.entitlementProductCodes ?? (existing.entitlement_product_codes as string[] | null) ?? [],
       };
   const nextVersion = existing ? Number(existing.version ?? 1) + 1 : incoming.version;
 
@@ -494,11 +489,14 @@ export async function saveBuilderCourse(
   const ownerCourseId = existing ? (existing.id as string) : incoming.id;
 
   const reviewEnabled = Boolean(existing && "review_status" in existing);
-  if (reviewEnabled && writeRequiresPublishApproval({
-    liveStatus: loaded?.liveStatus ?? "draft",
-    incomingStatus: incoming.status,
-    reviewStatus: (existing?.review_status as CourseReviewStatus | undefined) ?? "draft",
-  })) {
+  if (
+    reviewEnabled &&
+    writeRequiresPublishApproval({
+      liveStatus: loaded?.liveStatus ?? "draft",
+      incomingStatus: incoming.status,
+      reviewStatus: (existing?.review_status as CourseReviewStatus | undefined) ?? "draft",
+    })
+  ) {
     throw new Error("lms_builder_review_required");
   }
 
@@ -512,9 +510,11 @@ export async function saveBuilderCourse(
   if (loaded?.liveStatus === "published" && reviewEnabled) {
     if (!loaded.revisionEnabled) throw new Error("lms_builder_revision_migration_required");
 
-    const direct = !loaded.hasPendingRevision ? immediatePublishedPatch(loaded.liveCourse ?? loaded.course, incoming) : null;
+    const direct = !loaded.hasPendingRevision
+      ? immediatePublishedPatch(loaded.liveCourse ?? loaded.course, incoming)
+      : null;
     if (direct) {
-      const values: Record<string, unknown> = {
+      const values: TablesUpdate<"lms_courses"> = {
         cover: direct.cover,
         sort_order: direct.sortOrder,
         status: direct.status,
@@ -523,11 +523,22 @@ export async function saveBuilderCourse(
       // Taking a course offline is an explicit release decision. It must not
       // retain the approval that applied to the previous public release.
       if (direct.status === "draft" && existing?.review_status !== "draft") {
-        Object.assign(values, { review_status: "draft", review_note: null, submitted_at: null, approved_at: null, approved_by: null });
+        Object.assign(values, {
+          review_status: "draft",
+          review_note: null,
+          submitted_at: null,
+          approved_at: null,
+          approved_by: null,
+        });
       }
       const { error } = await db.from("lms_courses").update(values).eq("id", ownerCourseId);
       if (error) throw new Error(`lms_builder_live_metadata_write_failed:${error.message}`);
-      return { slug: incoming.slug, status: direct.status, blockers: courseReadiness(incoming).blockers, draftGeneration };
+      return {
+        slug: incoming.slug,
+        status: direct.status,
+        blockers: courseReadiness(incoming).blockers,
+        draftGeneration,
+      };
     }
 
     const revision: Course = {
@@ -540,16 +551,25 @@ export async function saveBuilderCourse(
       version: Number(existing?.version ?? loaded.liveCourse.version) + 1,
     };
     await assertNestedIdsAreOwned(db, revision, ownerCourseId);
-    const { error } = await db.from("lms_courses").update({
-      pending_content: revision,
-      pending_review_status: "draft",
-      pending_review_note: null,
-      pending_submitted_at: null,
-      pending_updated_at: new Date().toISOString(),
-    }).eq("id", ownerCourseId);
+    const { error } = await db
+      .from("lms_courses")
+      .update({
+        pending_content: revision,
+        pending_review_status: "draft",
+        pending_review_note: null,
+        pending_submitted_at: null,
+        pending_updated_at: new Date().toISOString(),
+      })
+      .eq("id", ownerCourseId);
     if (error) throw new Error(`lms_builder_revision_write_failed:${error.message}`);
     await checkpointAutosave({ courseId: ownerCourseId, course: revision, actorId: governance.actorId ?? null });
-    return { slug: revision.slug, status: "draft", blockers: courseReadiness(revision).blockers, staged: true, draftGeneration };
+    return {
+      slug: revision.slug,
+      status: "draft",
+      blockers: courseReadiness(revision).blockers,
+      staged: true,
+      draftGeneration,
+    };
   }
 
   await assertNestedIdsAreOwned(db, incoming, ownerCourseId);
@@ -559,27 +579,34 @@ export async function saveBuilderCourse(
   // rather than a Promise, which satisfies the contract at runtime and not the
   // type — the same cast the CLI does implicitly by being untyped JS.
   const writer = db as unknown as Parameters<typeof writeCourseStructure>[0];
-  const result = await writeCourseStructure(writer, {
-    ...incoming,
-    id: ownerCourseId,
-    version: nextVersion,
-    // Catalogue visibility is governed in admin, never accepted from an
-    // authoring payload even if a stale client still sends it.
-    visibility: (existing?.visibility as Course["visibility"] | undefined) ?? "hidden",
-  }, {
-    // The author had the storefront form in front of them: a field they left
-    // empty is a field they meant to clear, so this write speaks for those
-    // columns. Every other caller keeps the safe default.
-    optionalColumns: "authoritative",
-  });
+  const result = await writeCourseStructure(
+    writer,
+    {
+      ...incoming,
+      id: ownerCourseId,
+      version: nextVersion,
+      // Catalogue visibility is governed in admin, never accepted from an
+      // authoring payload even if a stale client still sends it.
+      visibility: (existing?.visibility as Course["visibility"] | undefined) ?? "hidden",
+    },
+    {
+      // The author had the storefront form in front of them: a field they left
+      // empty is a field they meant to clear, so this write speaks for those
+      // columns. Every other caller keeps the safe default.
+      optionalColumns: "authoritative",
+    },
+  );
   if (reviewEnabled && incoming.status === "draft" && existing?.review_status !== "draft") {
-    const { error } = await db.from("lms_courses").update({
-      review_status: "draft",
-      review_note: null,
-      submitted_at: null,
-      approved_at: null,
-      approved_by: null,
-    }).eq("id", ownerCourseId);
+    const { error } = await db
+      .from("lms_courses")
+      .update({
+        review_status: "draft",
+        review_note: null,
+        submitted_at: null,
+        approved_at: null,
+        approved_by: null,
+      })
+      .eq("id", ownerCourseId);
     if (error) throw new Error(`lms_builder_review_reset_failed:${error.message}`);
   }
   /* Точка восстановления берётся ПОСЛЕ успешной записи и намеренно не входит в
@@ -699,7 +726,13 @@ export async function restoreBuilderCourseRevision(input: {
   slug: string;
   revisionId: string;
   actorId: string | null;
-}): Promise<{ slug: string; status: Course["status"]; staged: boolean; draftGeneration: number; restoredFrom: number }> {
+}): Promise<{
+  slug: string;
+  status: Course["status"];
+  staged: boolean;
+  draftGeneration: number;
+  restoredFrom: number;
+}> {
   const loaded = await loadBuilderCourse(input.slug);
   if (!loaded) throw new Error("lms_builder_course_not_found");
   const courseRow = await readCourseRow(input.slug);
@@ -748,7 +781,13 @@ export async function restoreBuilderCourseRevision(input: {
       },
       journal,
     });
-    return { slug: restored.slug, status: "draft", staged: true, draftGeneration, restoredFrom: snapshot.revisionNumber };
+    return {
+      slug: restored.slug,
+      status: "draft",
+      staged: true,
+      draftGeneration,
+      restoredFrom: snapshot.revisionNumber,
+    };
   }
 
   await writeCourseRelease({
@@ -758,7 +797,13 @@ export async function restoreBuilderCourseRevision(input: {
     optionalColumns: "authoritative",
     journal,
   });
-  return { slug: restored.slug, status: "draft", staged: false, draftGeneration, restoredFrom: snapshot.revisionNumber };
+  return {
+    slug: restored.slug,
+    status: "draft",
+    staged: false,
+    draftGeneration,
+    restoredFrom: snapshot.revisionNumber,
+  };
 }
 
 export async function createBuilderCourse(input: {
@@ -784,7 +829,10 @@ export async function createBuilderCourse(input: {
     // The address is derived from the title and receives a numeric suffix on a
     // collision. It remains explicitly editable only while the draft has no
     // public or learner-facing dependencies.
-    const slug = uniqueSlug(title, existing.map((row) => row.slug));
+    const slug = uniqueSlug(
+      title,
+      existing.map((row) => row.slug),
+    );
 
     const course = newCourseFromTemplate(input.ids, {
       slug,
@@ -937,8 +985,17 @@ export async function reorderBuilderCourses(slugs: string[], allowed: (slug: str
   if (unauthorized.length > 0) throw new Error(`lms_builder_reorder_forbidden:${unauthorized[0]}`);
 
   const db = adminClient();
-  for (let index = 0; index < slugs.length; index += 1) {
-    const { error } = await db.from("lms_courses").update({ sort_order: index + 1 }).eq("slug", slugs[index]);
-    if (error) throw new Error(`lms_builder_reorder_failed:${error.message}`);
-  }
+  // The updates are independent rows; issue them together rather than one
+  // round trip after another. Not a transaction — it never was — and a partial
+  // failure still surfaces as the first error.
+  const results = await Promise.all(
+    slugs.map((slug, index) =>
+      db
+        .from("lms_courses")
+        .update({ sort_order: index + 1 })
+        .eq("slug", slug),
+    ),
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw new Error(`lms_builder_reorder_failed:${failed.error.message}`);
 }

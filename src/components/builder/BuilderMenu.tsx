@@ -92,8 +92,12 @@ function groupItems(items: MenuItem[]): { section?: string; entries: Entry[] }[]
   items.forEach((item, index) => {
     const current = groups[groups.length - 1];
     const opens = !current || current.section !== item.section;
-    if (opens) groups.push({ section: item.section, entries: [] });
-    groups[groups.length - 1].entries.push({
+    let group = current;
+    if (opens || !group) {
+      group = { section: item.section, entries: [] };
+      groups.push(group);
+    }
+    group.entries.push({
       item,
       index,
       opensSection: opens && item.section !== undefined,

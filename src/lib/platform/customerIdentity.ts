@@ -19,14 +19,16 @@
  * on the spine does not.
  */
 
+import type { Db } from "@/lib/db/server";
+
 export type CustomerContact = {
   email?: string | null;
   phone?: string | null;
 };
 
-type SupabaseLike = {
-  from: (table: string) => any;
-};
+/* Only `.from` is ever used; taking just that keeps the tests' fake table
+   honest — it must satisfy the real builder's shape, not `any`. */
+type SupabaseLike = Pick<Db, "from">;
 
 export function normalizeCustomerEmail(email: string | null | undefined): string | null {
   if (!email) return null;
@@ -43,7 +45,7 @@ export function normalizeCustomerPhone(phone: string | null | undefined): string
 async function findCustomerIdBy(
   sb: SupabaseLike,
   column: "email" | "phone",
-  value: string
+  value: string,
 ): Promise<{ id: string; created_at: string | null } | null> {
   const { data, error } = await sb
     .from("customers")
@@ -51,10 +53,13 @@ async function findCustomerIdBy(
     .eq(column, value)
     .order("created_at", { ascending: true })
     .limit(1);
-  if (error || !data?.[0]?.id) return null;
+  /* Bound once: `noUncheckedIndexedAccess` means a guard on `data?.[0]` does
+     not narrow a second `data[0]`, and the old `as string` was hiding that. */
+  const row = data?.[0];
+  if (error || !row?.id) return null;
   return {
-    id: data[0].id as string,
-    created_at: typeof data[0].created_at === "string" ? data[0].created_at : null,
+    id: row.id,
+    created_at: typeof row.created_at === "string" ? row.created_at : null,
   };
 }
 
@@ -87,7 +92,7 @@ export type UpsertCustomerResult = {
  */
 export async function upsertCustomerByContact(
   sb: SupabaseLike,
-  contact: CustomerContact
+  contact: CustomerContact,
 ): Promise<UpsertCustomerResult> {
   const email = normalizeCustomerEmail(contact.email);
   const phone = normalizeCustomerPhone(contact.phone);
@@ -104,9 +109,7 @@ export async function upsertCustomerByContact(
   }
 
   const foundId =
-    candidates
-      .sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? ""))
-      .map((row) => row.id)[0] ?? null;
+    candidates.sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? "")).map((row) => row.id)[0] ?? null;
 
   if (foundId) {
     /* PATCH WHAT THE CALLER CARRIED, AND ONLY THAT. This used to write both

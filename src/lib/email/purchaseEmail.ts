@@ -18,8 +18,9 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
-import { fulfilmentDestination } from "@/lib/fulfilmentDestination";
-import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
+import { escapeHtml } from "@/lib/strings";
+import { fulfilmentDestination } from "@/lib/payments/fulfilmentDestination";
+import { SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
 import type { ProductFulfilment } from "@/lib/products";
 import { sendEmail } from "./resend";
 
@@ -42,14 +43,6 @@ function formatAmount(amount: number | null, currency: string): string | null {
   if (amount == null || !Number.isFinite(amount)) return null;
   const rounded = Number.isInteger(amount) ? String(amount) : amount.toFixed(2);
   return `${rounded} ${currency.toUpperCase()}`;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 /**
@@ -155,9 +148,7 @@ export type SendPurchaseEmailResult = {
  * recorded and an exception here would be a completed purchase reported as a
  * failure.
  */
-export async function sendPurchaseEmail(
-  input: PurchaseEmailInput
-): Promise<SendPurchaseEmailResult> {
+export async function sendPurchaseEmail(input: PurchaseEmailInput): Promise<SendPurchaseEmailResult> {
   try {
     if (!input.email) return { sent: false, reason: "no_email" };
     if (await purchaseEmailSent(input.orderRef)) return { sent: false, reason: "already_sent" };
@@ -175,7 +166,11 @@ export async function sendPurchaseEmail(
     });
 
     if (!result.sent) {
-      console.warn("[purchase-email] not sent", { orderRef: input.orderRef, reason: result.reason, detail: result.detail });
+      console.warn("[purchase-email] not sent", {
+        orderRef: input.orderRef,
+        reason: result.reason,
+        detail: result.detail,
+      });
       return { sent: false, reason: result.reason };
     }
 

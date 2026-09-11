@@ -33,10 +33,28 @@ import type { Course, CourseModule, Lesson } from "./course";
  * `courseRevisionHash`.
  */
 const COURSE_FIELDS = [
-  "title", "summary", "tagline", "pretitle", "posttitle", "kind", "categories",
-  "results", "audience", "format", "durationDays", "accessNote", "authorNote",
-  "schedule", "theme", "cover", "status", "visibility", "entitlementProductCodes",
-  "slug", "programSlug", "locale",
+  "title",
+  "summary",
+  "tagline",
+  "pretitle",
+  "posttitle",
+  "kind",
+  "categories",
+  "results",
+  "audience",
+  "format",
+  "durationDays",
+  "accessNote",
+  "authorNote",
+  "schedule",
+  "theme",
+  "cover",
+  "status",
+  "visibility",
+  "entitlementProductCodes",
+  "slug",
+  "programSlug",
+  "locale",
 ] as const;
 
 export type CourseFieldName = (typeof COURSE_FIELDS)[number];
@@ -172,10 +190,13 @@ function lessonsById(course: Course): Map<string, LessonSlot> {
  * ревизия), `after` — та, что сравниваем с ней.
  */
 export function diffCourses(before: Course, after: Course): CourseDiff {
-  const fields = COURSE_FIELDS.filter((field) => !same(
-    (before as unknown as Record<string, unknown>)[field],
-    (after as unknown as Record<string, unknown>)[field],
-  ));
+  const fields = COURSE_FIELDS.filter(
+    (field) =>
+      !same(
+        (before as unknown as Record<string, unknown>)[field],
+        (after as unknown as Record<string, unknown>)[field],
+      ),
+  );
 
   const beforeModules = new Map(before.modules.map((unit) => [unit.id, unit]));
   const afterModules = new Map(after.modules.map((unit) => [unit.id, unit]));
