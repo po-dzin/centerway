@@ -492,16 +492,9 @@
     <circle cx="3.4" cy="18.8" r="1.15" fill="currentColor"/>
     <circle cx="32.6" cy="17.6" r="0.8" fill="currentColor"/>
   </symbol>
-  <!-- The RULE: the same ink, drawn straight. `cw-ink-stroke` carries a hand's
-       drift of ~1.9 units across its length, which `scaleY` multiplies with the
-       weight — at the thickness a selected row needs, that drift reads as a
-       line that slopes. This one holds one y for the whole span and keeps the
-       pressed-in dots at both ends, so it is still a drawn mark and not a
-       border. Both label variants use it: the thick selection stroke and the
-       thin link rule differ by weight and colour, not by shape. -->
   <symbol id="cw-ink-rule" viewBox="0 0 36 36">
-    <g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-      <path d="M3.5 18.4H32.5"/>
+    <g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3.5 18.4C3.67 18.4 4.19 18.4 4.54 18.4C4.88 18.4 5.23 18.4 5.57 18.4C5.92 18.4 6.26 18.4 6.61 18.4C6.95 18.4 7.3 18.4 7.64 18.4C7.99 18.4 8.33 18.4 8.68 18.4C9.02 18.4 9.37 18.4 9.71 18.4C10.06 18.4 10.4 18.4 10.75 18.4C11.1 18.4 11.44 18.4 11.79 18.4C12.13 18.4 12.48 18.4 12.82 18.4C13.17 18.4 13.51 18.4 13.86 18.4C14.2 18.4 14.55 18.4 14.89 18.4C15.24 18.4 15.58 18.4 15.93 18.4C16.27 18.4 16.62 18.4 16.96 18.4C17.31 18.4 17.65 18.4 18 18.4C18.35 18.4 18.69 18.4 19.04 18.4C19.38 18.4 19.73 18.4 20.07 18.4C20.42 18.4 20.76 18.4 21.11 18.4C21.45 18.4 21.8 18.4 22.14 18.4C22.49 18.4 22.83 18.4 23.18 18.4C23.52 18.4 23.87 18.4 24.21 18.4C24.56 18.4 24.9 18.4 25.25 18.4C25.6 18.4 25.94 18.4 26.29 18.4C26.63 18.4 26.98 18.4 27.32 18.4C27.67 18.4 28.01 18.4 28.36 18.4C28.7 18.4 29.05 18.4 29.39 18.4C29.74 18.4 30.08 18.4 30.43 18.4C30.77 18.4 31.12 18.4 31.46 18.4C31.81 18.4 32.33 18.4 32.5 18.4"/>
     </g>
     <circle cx="3.4" cy="18.4" r="1.1" fill="currentColor"/>
     <circle cx="32.6" cy="18.4" r="0.8" fill="currentColor"/>
