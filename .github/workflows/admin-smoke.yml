@@ -17,7 +17,7 @@ jobs:
       SMOKE_ADMIN_BEARER: ${{ secrets.SMOKE_ADMIN_BEARER }}
       SMOKE_USER_BEARER: ${{ secrets.SMOKE_USER_BEARER }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Version comes from .nvmrc so CI and local dev cannot drift apart.
       # They already did: node 20 ships npm 10, local dev runs npm 11, and the
