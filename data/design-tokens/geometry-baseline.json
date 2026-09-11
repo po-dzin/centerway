@@ -62,7 +62,6 @@
     "src/landing-static/short-b/css/short-b.theme.css": 2
   },
   "landingOffScaleSpacing": {
-    "src/landing-static/shared/css/funnel-network.css": 1,
     "src/landing-static/shared/css/landing.bridge.css": 4,
     "src/landing-static/shared/css/landing.css": 1,
     "src/landing-static/shared/css/network-nav.css": 1,

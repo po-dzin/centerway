@@ -237,8 +237,8 @@ for (const file of walk(componentsDir)) {
    are bound to it in network-tokens.css.
 
    Fallbacks are allowed and expected: `var(--ds-button-min-height, 3rem)`. Some
-   of these sheets are self-contained by design (funnel-network.css is the
-   generator runtime; pages.css serves the thin utility pages), so the literal
+   of these sheets are self-contained by design (pages.css serves the thin
+   utility pages), so the literal
    after the comma is the only thing standing between a stale cache and a broken
    control. It must agree with the token — which is what CONTRACT_VALUES checks.
 
@@ -247,7 +247,6 @@ for (const file of walk(componentsDir)) {
 const NETWORK_SHEETS = [
   "src/landing-static/shared/css/landing.css",
   "src/landing-static/shared/css/network-tokens.css",
-  "src/landing-static/shared/css/funnel-network.css",
   "src/landing-static/shared/css/pages.css",
   "src/landing-static/shared/css/landing.bridge.css",
   "src/landing-static/way21/page.css",

@@ -567,7 +567,7 @@ The lesson generalised, and then took the role with it: a plate whose legibility
 
 The pill is the one worth naming: the doc had said "soft rect everywhere, never pill" since the type-and-shape migration, and a live generator surface had been running a 999px CTA the whole time. A rule nothing checks is a rule that is already broken somewhere.
 
-Fallbacks are expected in these sheets — `funnel-network.css` and `pages.css` are self-contained by design — so `guard:buttons` also asserts that **every fallback agrees with the token it stands in for**. A fallback that disagrees renders correctly in dev and wrong behind a stale cache.
+Fallbacks are expected in these sheets — `pages.css` is self-contained by design (so was `funnel-network.css`, deleted as dead on 2026-09-11) — so `guard:buttons` also asserts that **every fallback agrees with the token it stands in for**. A fallback that disagrees renders correctly in dev and wrong behind a stale cache.
 
 **Still not covered:** Short and IREM. Different authors, isolated themes — a separate product surface, not this system's coverage. They share `pages.css` and `tokens.css`, so the touch-target correction reaches them; nothing else does.
 

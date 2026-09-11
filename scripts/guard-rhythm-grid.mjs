@@ -14,14 +14,16 @@
  * lives in data/design-tokens/rhythm-baseline.json where it can be read,
  * lowered, and argued with.
  *
- * WHAT IS LEFT, and why none of it is obviously wrong: the nine are `2.4rem`,
- * `3.2rem`, `1.7rem`, `2.6rem`, `1.3rem` and three `0.625rem`. Every one is a
- * round number in rem and an odd one in px, and six of them are the floor or
- * the ceiling of a `clamp()` whose middle term is a `vw` — so the value that
- * actually renders is fluid and lands on no grid at any viewport. Snapping them
- * would move live pages by a pixel and a half to satisfy an arithmetic the
- * rendered page does not obey. That is a design decision about whether the grid
- * is stated in rem or in px, and it is not this guard's to make.
+ * The history above was measured against funnel-network.css, which the five
+ * landings no longer load and which is now deleted; the target is landing.css,
+ * the component sheet they all render from. What is left there is five values,
+ * and none of them is obviously wrong for the same reason the old nine were
+ * not: each is a round number in rem and an odd one in px, and most sit at the
+ * floor or ceiling of a `clamp()` whose middle term is a `vw` — so what renders
+ * is fluid and lands on no grid at any viewport. Snapping them would move live
+ * pages by a pixel and a half to satisfy an arithmetic the rendered page does
+ * not obey. That is a decision about whether the grid is stated in rem or in
+ * px, and it is not this guard's to make.
  *
  * Usage:
  *   node scripts/guard-rhythm-grid.mjs                 # check against the baseline
@@ -33,7 +35,14 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const ROOT = process.cwd();
-const DEFAULT_TARGET = path.join(ROOT, "src", "landing-static", "shared", "css", "funnel-network.css");
+/* The target moved to landing.css on 2026-09-11. The guard was written against
+   funnel-network.css, which the five landings stopped loading when they moved
+   onto the shared component sheet; that file was deleted as dead, and a guard
+   pointed at nothing counts nothing. landing.css is where the network's
+   vertical rhythm actually lives now, so that is what the ratchet measures. Its
+   baseline was recorded at the five it had on arrival, not driven to zero —
+   same ratchet, new subject. */
+const DEFAULT_TARGET = path.join(ROOT, "src", "landing-static", "shared", "css", "landing.css");
 const BASELINE_FILE = path.join(ROOT, "data", "design-tokens", "rhythm-baseline.json");
 const STEP_PX = 4;
 

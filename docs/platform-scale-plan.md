@@ -109,7 +109,7 @@ Deliver `reset-day` first (3 days, small content), then `way21` (21 days, 3 phas
 | Platform app | `--cw-*` semantic layer in `src/app/globals.css` (+ `--ds-*` primitives) | canonical |
 | short/irem landings | `--ds-*` public contract (`shared/css/tokens.css`) + landing bridge | canonical-adjacent |
 | way21/reset-day | local vars (`--ink`, `--cta`, …) with a partial semantic alias layer (`--landing-color-*`) | intentional isolation, documented |
-| dosha/consult/herbs | `--cw-*` names in `funnel-network.css` with **different values** than the platform's `--cw-*` | namespace fork — the real debt |
+| dosha/consult/herbs | ~~`--cw-*` names in `funnel-network.css` with **different values** than the platform's~~ — resolved 2026-09-11: the sheet was dead and is deleted; these three read `--cw-net-*` from `network-tokens.css` | closed |
 
 The last row is the hazard: same names, different meanings. They never load together today, but the fork will bite the first time a platform component is embedded on a funnel page.
 
@@ -123,7 +123,7 @@ The last row is the hazard: same names, different meanings. They never load toge
 ### Rollout steps
 
 1. **Done in this change:** first shared component recipe — `shared/css/network-nav.css` (`--cw-nav-*` tokens, per-landing mapping blocks, one markup + `network-nav.js` behavior on all five nodes; mirrors the platform shell's burger pattern).
-2. Rename the funnel dialect: `funnel-network.css` `--cw-*` → `--cwf-*` (or fold into `--cw-sem-*` values from `cw.tokens.json`), killing the namespace fork. Mechanical, page-scoped, guarded by `guard:ds-contract`.
+2. ~~Rename the funnel dialect~~ **Done differently (2026-09-11):** the namespace fork died with `funnel-network.css`, which nothing had loaded since the three landings moved onto `landing.css` + `network-tokens.css`.
 3. Promote way21/reset-day `--landing-color-*` aliases to the canonical `--cw-{group}-{name}` form; local primitives stay, semantics unify.
 4. Component recipes next in line: card, offer/pricing block, FAQ accordion, lead form (the form markup is already identical on consult/herbs — extract to a shared partial the same way as the nav).
 5. Gate every step with `npm run ds:qa` (canon guard → tokens build → ds-contract → generator checks → lint → build); promote the final token ontology change to ReOS canon once stable.
