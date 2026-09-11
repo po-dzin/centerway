@@ -40,13 +40,24 @@ import {
 import { createPortal } from "react-dom";
 
 import { Icon } from "@/components/Icon";
-import { CropZoom, cropKeyZoom, cropWheelZoom } from "@/components/media/CropZoom";
-import { clampCropAxis, containRect, cropWindowPan, cropWindowRect, parseCssRatio } from "@/lib/media/imageCrop";
+import { cropKeyZoom, cropWheelZoom } from "@/components/media/CropZoom";
+import {
+  CROP_PAN_EPSILON,
+  CROP_SCALE_MAX,
+  CROP_SCALE_MIN,
+  clampCropAxis,
+  clampCropScale,
+  containRect,
+  cropWindowPan,
+  cropWindowRect,
+  parseCssRatio,
+} from "@/lib/media/imageCrop";
 import styles from "./CropEditor.module.css";
 
 export type CropEditorLabels = {
   /** Names the stage for a screen reader — "Frame. Drag the window…". */
   stage: string;
+  /** Names the keyboard path to the size, now that the slider is gone. */
   zoom: string;
   reset: string;
   done: string;
@@ -55,6 +66,23 @@ export type CropEditorLabels = {
 };
 
 const EMPTY_RECT = { left: 0, top: 0, width: 0, height: 0 };
+
+/**
+ * THE WINDOW IS RESIZED BY ITS OWN CORNERS (2026-09-11), and that is the only
+ * way it is resized.
+ *
+ * It had a slider under the stage. A slider is a number; the thing the number
+ * described was on screen the whole time, with four corners asking to be
+ * pulled — and pulling them did nothing, which is the same "the control that
+ * looks like the control is inert" this editor was built to end. So the corners
+ * do the work and the slider is gone rather than kept as a second way in.
+ *
+ * The ratio never changes: a window is the shape the page will print, so a
+ * corner scales it and never reshapes it. The OPPOSITE corner is the anchor, so
+ * the edge under the other hand stays where the eye left it.
+ */
+const CORNERS = ["nw", "ne", "sw", "se"] as const;
+type Corner = (typeof CORNERS)[number];
 
 export function CropEditor({
   src,
@@ -111,6 +139,12 @@ export function CropEditor({
      a rounding drift across a long drag. */
   const origin = useRef({ pointerX: 0, pointerY: 0, x: 50, y: 50 });
   const [dragging, setDragging] = useState(false);
+  /* THE CORNER THAT STAYS PUT while its opposite is dragged, in photo-space
+     pixels, plus which corner is in the hand. Set on pointer-down and read on
+     every move, so a resize is anchored rather than integrated — the same
+     reason the pan keeps its own origin. */
+  const resizing = useRef<{ corner: Corner; anchorX: number; anchorY: number } | null>(null);
+  const [resizingCorner, setResizingCorner] = useState<Corner | null>(null);
   /* The drawn photograph inside the stage — measured rather than assumed: the
      stage is fluid and the photograph arrives late. */
   const [photo, setPhoto] = useState(EMPTY_RECT);
@@ -168,6 +202,72 @@ export function CropEditor({
       frame,
     );
     onChange(axis === "y" ? x : next.x, next.y);
+  };
+
+  /* The largest window this ratio can take on this photograph — the size at
+     scale 1, which is what `cropWindowRect` divides by. Resizing is the same
+     arithmetic read backwards: a width chosen by the hand IS a scale. */
+  const inscribed = cropWindowRect(photo, shape, CROP_SCALE_MIN, { x: 0, y: 0 });
+
+  const pointerInPhoto = (event: PointerEvent<Element>) => {
+    const box = stageRef.current?.getBoundingClientRect();
+    if (!box) return null;
+    return { x: event.clientX - box.left - photo.left, y: event.clientY - box.top - photo.top };
+  };
+
+  const beginResize = (corner: Corner) => (event: PointerEvent<HTMLSpanElement>) => {
+    /* The stage would read this as the start of a pan, and the window would
+       both move and grow under one finger. */
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    /* NOT `activePointer` — that one belongs to the pan. Sharing it meant the
+       stage's own move handler recognised this pointer as its drag, so a
+       resize also panned, and the pan wrote last: the window shrank AND
+       jumped to the corner. Two gestures, two ids. */
+    resizing.current = {
+      corner,
+      anchorX: corner === "nw" || corner === "sw" ? frame.left + frame.width : frame.left,
+      anchorY: corner === "nw" || corner === "ne" ? frame.top + frame.height : frame.top,
+    };
+    setResizingCorner(corner);
+  };
+
+  const resizeTo = (event: PointerEvent<HTMLSpanElement>) => {
+    event.stopPropagation();
+    const grip = resizing.current;
+    const point = pointerInPhoto(event);
+    if (!grip || !point || inscribed.width <= 0) return;
+
+    /* One number decides the size, and it is the bolder of the two the hand
+       offers: a corner pulled mostly sideways should still grow, and a ratio
+       cannot honour both axes at once. */
+    const byWidth = Math.abs(point.x - grip.anchorX);
+    const byHeight = Math.abs(point.y - grip.anchorY) * shape;
+    const width = Math.max(inscribed.width / CROP_SCALE_MAX, Math.min(inscribed.width, Math.max(byWidth, byHeight)));
+    const height = width / shape;
+
+    /* The anchor holds: the window grows away from the corner nobody is
+       touching, then is pushed back inside the photograph if it ran past an
+       edge. Clamping the POSITION rather than refusing the size is what keeps
+       a drag into the corner from stalling. */
+    const left = grip.corner === "nw" || grip.corner === "sw" ? grip.anchorX - width : grip.anchorX;
+    const top = grip.corner === "nw" || grip.corner === "ne" ? grip.anchorY - height : grip.anchorY;
+    const slackX = photo.width - width;
+    const slackY = photo.height - height;
+
+    onScaleChange(clampCropScale(inscribed.width / width));
+    onChange(
+      axis === "y" || slackX <= CROP_PAN_EPSILON
+        ? x
+        : clampCropAxis((Math.min(Math.max(left, 0), slackX) / slackX) * 100),
+      slackY <= CROP_PAN_EPSILON ? y : clampCropAxis((Math.min(Math.max(top, 0), slackY) / slackY) * 100),
+    );
+  };
+
+  const endResize = (event: PointerEvent<HTMLSpanElement>) => {
+    event.stopPropagation();
+    resizing.current = null;
+    setResizingCorner(null);
   };
 
   const beginDrag = (event: PointerEvent<HTMLDivElement>) => {
@@ -254,16 +354,31 @@ export function CropEditor({
               height: `${frame.height}px`,
               borderRadius: radius,
             }}
-            aria-hidden="true"
+            data-resizing={resizingCorner ?? undefined}
           >
-            <span className={styles.guides} />
+            <span className={styles.guides} aria-hidden="true" />
+            {CORNERS.map((corner) => (
+              <span
+                key={corner}
+                className={styles.grip}
+                data-corner={corner}
+                aria-hidden="true"
+                onPointerDown={beginResize(corner)}
+                onPointerMove={resizeTo}
+                onPointerUp={endResize}
+                onPointerCancel={endResize}
+              />
+            ))}
           </div>
         </div>
         <p className={styles.note} id={positionId} role="status">
           {labels.position(x, y)}
         </p>
+        {/* WHERE THE SLIDER WAS, a sentence instead. The gesture that replaced
+            it is on screen — four corners on the window — but a gesture with no
+            words is a gesture half the readers never find. */}
+        <p className={styles.note}>{labels.zoom}</p>
         <div className={styles.foot}>
-          <CropZoom className={styles.zoom} value={scale} onChange={onScaleChange} label={labels.zoom} />
           <button
             type="button"
             className={styles.action}

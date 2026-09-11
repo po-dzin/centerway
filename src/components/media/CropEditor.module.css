@@ -105,7 +105,65 @@
   box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--cw-mat-scrim-ink) 66%, transparent);
   outline: 2px solid color-mix(in srgb, var(--cw-platform-accent-contrast) 88%, transparent);
   outline-offset: -1px;
+  /* The window itself still lets the drag through to the stage beneath it —
+     only its grips take the pointer. */
   pointer-events: none;
+}
+
+/* THE CORNERS ARE THE SIZE CONTROL (2026-09-11), and they replaced a slider.
+   Set INSIDE the window rather than centred on its corner: a grip that hangs
+   outside sits over the discarded part of the photograph, which is the one
+   place a crop window must not put anything. They are square, because the
+   thing being resized is a rectangle and a round grip would be the ring
+   primitive saying something it does not mean. */
+.grip {
+  position: absolute;
+  width: 1.25rem;
+  height: 1.25rem;
+  pointer-events: auto;
+  touch-action: none;
+  /* Two edges each, so the mark reads as the corner it holds rather than as a
+     box floating near it. */
+  border: 3px solid var(--cw-platform-accent-contrast);
+}
+
+.grip[data-corner="nw"] {
+  top: 0;
+  left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  cursor: nwse-resize;
+}
+
+.grip[data-corner="ne"] {
+  top: 0;
+  right: 0;
+  border-left: 0;
+  border-bottom: 0;
+  cursor: nesw-resize;
+}
+
+.grip[data-corner="sw"] {
+  bottom: 0;
+  left: 0;
+  border-right: 0;
+  border-top: 0;
+  cursor: nesw-resize;
+}
+
+.grip[data-corner="se"] {
+  bottom: 0;
+  right: 0;
+  border-left: 0;
+  border-top: 0;
+  cursor: nwse-resize;
+}
+
+/* A touch target the finger can find, without a mark the eye has to ignore. */
+.grip::after {
+  content: "";
+  position: absolute;
+  inset: -0.5rem;
 }
 
 /* The thirds, inside the window and only while the hand is down — the same
@@ -134,7 +192,10 @@
 }
 
 .stage[data-dragging] .guides,
-.stage:focus-visible .guides {
+.stage:focus-visible .guides,
+/* A resize is the other moment the composition is being decided, so the thirds
+   come up for it too — the window is changing size around the same subject. */
+.window[data-resizing] .guides {
   opacity: 1;
 }
 
