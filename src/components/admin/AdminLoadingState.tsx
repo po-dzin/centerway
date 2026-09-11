@@ -33,7 +33,13 @@ export function AdminLoadingState({
                     React components cross that line all day — this file's
                     neighbours already mount the platform's account menu, its
                     chrome and its ink labels. */}
-                <LogoMark size={32} animate="wait" tone="brand" aria-hidden="true" />
+                {/* THE SAME SIZE AS EVERY OTHER WAIT (see `.cw-wait-mark`). This was
+                    `size={32}` — a speck, which is the exact complaint the
+                    platform's own loading card had already fixed and written
+                    down; the number simply never crossed into the panel. The
+                    `size` prop stays as the intrinsic viewBox; the class is
+                    what the reader sees. */}
+                <LogoMark className="cw-wait-mark" size={32} animate="wait" tone="brand" aria-hidden="true" />
                 {text ? <span className="text-sm font-medium cw-muted">{text}</span> : null}
             </div>
         );

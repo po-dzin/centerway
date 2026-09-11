@@ -102,6 +102,19 @@
     --cw-platform-visual-mountain-mid: #314740;
     --cw-platform-visual-mountain-end: #102622;
     --cw-platform-visual-sand-button-base: #f7efe3;
+    --cw-motion-tap: 120ms;
+    --cw-motion-state: 160ms;
+    --cw-motion-surface: 180ms;
+    --cw-motion-enter: 400ms;
+    --cw-motion-tone: 320ms;
+    --cw-press-settle: 1px;
+    --cw-haptic-tap: 12ms;
+    --cw-ink-stroke-length: 29.46;
+    --cw-ink-drawn-rest: 0;
+    --cw-ink-drawn-hover: 0.8;
+    --cw-ease-state: cubic-bezier(0.22, 0.61, 0.24, 1);
+    --cw-ease-surface: cubic-bezier(0.16, 1, 0.3, 1);
+    --cw-ease-network: cubic-bezier(0.2, 0.8, 0.2, 1);
     /* CW_BASE_LIGHT_END */
 
     /* CW_RUNTIME_TOKENS_START */
@@ -163,6 +176,8 @@
     --cw-sem-symbol-body: radial-gradient(circle at 32% 34%, color-mix(in srgb, var(--cw-sem-embodied) 22%, transparent), transparent 44%), radial-gradient(circle at 70% 68%, color-mix(in srgb, var(--cw-sem-embodied) 16%, transparent), transparent 48%);
     --cw-sem-symbol-cleansing: linear-gradient(180deg, color-mix(in srgb, var(--cw-sem-calm-surface) 62%, transparent), color-mix(in srgb, var(--cw-sem-calm-bg) 88%, transparent));
     --cw-sem-symbol-integration: linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-warmth) 16%, transparent), color-mix(in srgb, var(--cw-sem-calm-surface-muted) 92%, transparent));
+    --cw-ink-rule-weight: 2.9;
+    --cw-ink-rest-scale: 0.9;
     --cw-platform-bg: var(--cw-sem-calm-bg);
     --cw-platform-surface: var(--cw-sem-calm-surface);
     --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
@@ -360,28 +375,16 @@
      whole file exists to prevent, introduced by the fix for it.
 
      Written by scripts/generate-design-tokens.mjs from
-     `delivery.dsAliasPointerFine`, and carried into the Claude Design mirror by
-     ds-export.mjs. It was NOT, when it first shipped: the five values lived in
-     this file alone, between markers that claim codegen, which is why
-     `mirror -> code` drifted and `design-gates` went red on main (2026-09-10).
-
-     THE FIVE LANDINGS DO NOT RECEIVE THIS HALF YET. This comment used to say
-     they did — "so a CTA does not come out 48px there and 40px here" — and
-     cw-tokens.generated.css shows otherwise: the network still takes
-     `--ds-touch-target-min: 3rem` at its root and has no pointer-fine block at
-     all. So on a mouse a landing's CTA IS 48px while the platform's is 40px.
-     Giving the network the same half is a one-line change in buildNetworkCss
-     now that the values are in the token source — but it moves five shipped
-     landing pages, so it is a call to make on purpose, not a side effect of
-     closing a drift. */
+     `delivery.dsAliasPointerFine`. The five landings receive the same half, so
+     a CTA does not come out 48px there and 40px here. */
   @media (hover: hover) and (pointer: fine) {
     :root {
       /* DS_ALIAS_POINTER_FINE_START */
-      --ds-touch-target-min: 2.25rem;
-      --ds-button-min-height: 2.5rem;
-      --ds-button-min-width: 9rem;
-      --ds-button-padding-inline: 1rem;
-      --ds-button-font-size: var(--ds-type-body-sm-size);
+    --ds-touch-target-min: 2.25rem;
+    --ds-button-min-height: 2.5rem;
+    --ds-button-min-width: 9rem;
+    --ds-button-padding-inline: 1rem;
+    --ds-button-font-size: var(--ds-type-body-sm-size);
     /* DS_ALIAS_POINTER_FINE_END */
     }
   }
@@ -2396,6 +2399,36 @@ body {
   .cw-page-btn:focus-visible {
     outline: none;
     box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+  }
+
+  /* THE WAITING MARK, AT ONE SIZE FOR THE WHOLE PRODUCT.
+     `LogoMark animate="wait"` is the product's only spinner, and every surface
+     that mounted it picked its own number: 30 on the platform card, 32 in the
+     admin, 36 in the dosha test. The platform learned the lesson first and
+     wrote it down in `PlatformComponents.module.css` — at 30px against a
+     three-line block «the one animated thing on the card read as a speck and
+     the brand arrived as punctuation» — but the number stayed inside that
+     module, so the panel and the test kept their specks. It lives here now,
+     once, and the surfaces read it.
+
+     4.5rem is the 72px that copy block measures on the built page. The phone
+     step is measured, not guessed: at 375px a 72px mark leaves the text 250px
+     and the detail wraps to 117px, while at 56px the block is 93px — and 56 is
+     the LARGEST mark that costs the copy no extra line (48 and 30 measure the
+     same 93). So the phone gets the biggest mark the sentence can afford.
+     560px is the platform's own narrow bound (`PlatformResponsive.module.css`),
+     not a number chosen here. */
+  .cw-wait-mark {
+    flex: none;
+    inline-size: 4.5rem;
+    block-size: 4.5rem;
+  }
+
+  @media (max-width: 560px) {
+    .cw-wait-mark {
+      inline-size: 3.5rem;
+      block-size: 3.5rem;
+    }
   }
 
   .cw-skeleton-row {

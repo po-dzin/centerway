@@ -853,7 +853,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                         places still drawing a rotating circle, which is a
                         borrowed glyph that says «something is happening» without
                         saying what, next to a heading that says exactly what. */}
-                    <LogoMark size={36} animate="wait" tone="brand" aria-hidden="true" />
+                    <LogoMark className="cw-wait-mark" size={36} animate="wait" tone="brand" aria-hidden="true" />
                     <h2 className={styles.title}>Аналізуємо ваш профіль...</h2>
                     <p className={styles.lead}>Формуємо практичний вектор і наступний крок у платформі.</p>
                   </div>

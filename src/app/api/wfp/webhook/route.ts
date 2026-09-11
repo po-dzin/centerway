@@ -3,6 +3,8 @@ import { sendConfirmedSaleTelegramReport } from "@/lib/reporting/analyticsReport
 import { sendPurchaseEmail } from "@/lib/email/purchaseEmail";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { normalizeCustomerEmail, upsertCustomerByContact } from "@/lib/platform/customerIdentity";
+import { closeWonLeadsForPurchase } from "@/lib/platform/leadStage";
 import { extractPaymentMeta } from "@/lib/paymentMeta";
 import {
   buildWfpAcceptResponse,
@@ -73,17 +75,10 @@ function guardStatus<T extends { not(column: string, operator: string, value: st
   return query.not("status", "in", `(${protectedStatuses.join(",")})`);
 }
 
-function normEmail(email: string | null): string | null {
-  if (!email) return null;
-  const e = email.trim().toLowerCase();
-  return e ? e : null;
-}
-
-function normPhone(phone: string | null): string | null {
-  if (!phone) return null;
-  const p = phone.trim();
-  return p ? p : null;
-}
+/* One normalisation, shared with the resolver that uses it to match rows —
+   a webhook that lower-cased differently from the lookup would create a second
+   customer for the same person. */
+const normEmail = normalizeCustomerEmail;
 
 function parseUnixSeconds(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -127,98 +122,6 @@ function resolvePaymentEventTime(payload: Payload): number {
   }
 
   return Math.floor(Date.now() / 1000);
-}
-
-async function upsertCustomer(
-  sb: ReturnType<typeof supabaseAdmin>,
-  email: string | null,
-  phone: string | null
-): Promise<string | null> {
-  const e = normEmail(email);
-  const p = normPhone(phone);
-  if (!e && !p) return null;
-
-  // 1) find by both keys (if present), prefer earliest created record.
-  const candidates: Array<{ id: string; created_at: string | null }> = [];
-
-  if (e) {
-    const { data, error } = await sb
-      .from("customers")
-      .select("id,created_at")
-      .eq("email", e)
-      .order("created_at", { ascending: true })
-      .limit(1);
-    if (!error && data?.[0]?.id) {
-      candidates.push({
-        id: data[0].id,
-        created_at: typeof data[0].created_at === "string" ? data[0].created_at : null,
-      });
-    }
-  }
-
-  if (p) {
-    const { data, error } = await sb
-      .from("customers")
-      .select("id,created_at")
-      .eq("phone", p)
-      .order("created_at", { ascending: true })
-      .limit(1);
-    if (!error && data?.[0]?.id) {
-      candidates.push({
-        id: data[0].id,
-        created_at: typeof data[0].created_at === "string" ? data[0].created_at : null,
-      });
-    }
-  }
-
-  const foundId =
-    candidates
-      .sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? ""))
-      .map((x) => x.id)[0] ?? null;
-  if (foundId) {
-    /* PATCH WHAT THE CALLBACK CARRIED, AND ONLY THAT. This used to write both
-       columns unconditionally, so a callback that quoted an email and no phone
-       wrote NULL over the stored phone. That is not a cosmetic loss: the match
-       above can find a customer BY phone, so the erased column was, for older
-       purchases made before we collected emails, the only key tying a person to
-       what they had bought. */
-    const patch: { email?: string; phone?: string } = {};
-    if (e) patch.email = e;
-    if (p) patch.phone = p;
-    if (Object.keys(patch).length > 0) {
-      const { error } = await sb.from("customers").update(patch).eq("id", foundId);
-      if (error) throw error;
-    }
-    return foundId;
-  }
-
-  const { error } = await sb.from("customers").insert({ email: e, phone: p });
-  if (error) {
-    // In race conditions with unique indexes, another request may create the same customer first.
-    const code = (error as { code?: string }).code;
-    if (code !== "23505") throw error;
-  }
-
-  // fetch id of the just-created customer
-  if (e) {
-    const { data } = await sb
-      .from("customers")
-      .select("id")
-      .eq("email", e)
-      .order("created_at", { ascending: true })
-      .limit(1);
-    if (data?.[0]?.id) return data[0].id;
-  }
-  if (p) {
-    const { data } = await sb
-      .from("customers")
-      .select("id")
-      .eq("phone", p)
-      .order("created_at", { ascending: true })
-      .limit(1);
-    if (data?.[0]?.id) return data[0].id;
-  }
-  return null;
 }
 
 async function enqueueTelegramSaleReport(
@@ -395,7 +298,7 @@ export async function POST(req: NextRequest) {
     // 3) customers: материализуем email/phone из платежа
 
     try {
-      const customerId = await upsertCustomer(sb, meta.email ?? null, meta.phone ?? null);
+      const customerId = await upsertCustomerByContact(sb, { email: meta.email ?? null, phone: meta.phone ?? null });
       if (customerId && !order?.customer_id) {
         const { error: ocErr } = await sb
           .from("orders")
@@ -463,6 +366,28 @@ export async function POST(req: NextRequest) {
     // Paid webhook work stays on the queue.
     // The request path only persists the payment signal and enqueues follow-up delivery.
     if (paid && !staffOrder) {
+      /* A lead this person is still waiting on is now answered by the money.
+         `same_product` scope on purpose: a self-serve checkout says only that
+         they bought THIS thing, so a consultation request they are still owed
+         an answer to stays open. A staff QA order never gets here, which is
+         correct — a fake purchase must not close a real request.
+
+         Fully wrapped and never awaited for its result: money has already
+         moved by this line, and no bookkeeping write may endanger that. */
+      try {
+        const closed = await closeWonLeadsForPurchase(sb, {
+          email: meta.email ?? null,
+          phone: meta.phone ?? null,
+          productCode: order?.product_code ?? null,
+          scope: "same_product",
+        });
+        if (closed.closed > 0) {
+          console.log("[wfp webhook] leads closed as won", { orderRef, closed: closed.closed });
+        }
+      } catch (e: any) {
+        console.warn("[wfp webhook] lead close failed", { orderRef, error: String(e?.message || e) });
+      }
+
       try {
         const { data: existingPurchaseJob } = await sb
           .from("jobs")

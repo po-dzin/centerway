@@ -95,7 +95,20 @@
       "--cw-platform-visual-mountain-start": "#213d36",
       "--cw-platform-visual-mountain-mid": "#314740",
       "--cw-platform-visual-mountain-end": "#102622",
-      "--cw-platform-visual-sand-button-base": "#f7efe3"
+      "--cw-platform-visual-sand-button-base": "#f7efe3",
+      "--cw-motion-tap": "120ms",
+      "--cw-motion-state": "160ms",
+      "--cw-motion-surface": "180ms",
+      "--cw-motion-enter": "400ms",
+      "--cw-motion-tone": "320ms",
+      "--cw-press-settle": "1px",
+      "--cw-haptic-tap": "12ms",
+      "--cw-ink-stroke-length": "29.46",
+      "--cw-ink-drawn-rest": "0",
+      "--cw-ink-drawn-hover": "0.8",
+      "--cw-ease-state": "cubic-bezier(0.22, 0.61, 0.24, 1)",
+      "--cw-ease-surface": "cubic-bezier(0.16, 1, 0.3, 1)",
+      "--cw-ease-network": "cubic-bezier(0.2, 0.8, 0.2, 1)"
     }
   },
   "layers": {
@@ -178,7 +191,9 @@
       "--cw-sem-symbol-path": "linear-gradient(110deg, transparent 8%, color-mix(in srgb, var(--cw-sem-warmth) 78%, transparent) 9% 11%, transparent 12% 44%, color-mix(in srgb, var(--cw-sem-warmth) 62%, transparent) 45% 47%, transparent 48%)",
       "--cw-sem-symbol-body": "radial-gradient(circle at 32% 34%, color-mix(in srgb, var(--cw-sem-embodied) 22%, transparent), transparent 44%), radial-gradient(circle at 70% 68%, color-mix(in srgb, var(--cw-sem-embodied) 16%, transparent), transparent 48%)",
       "--cw-sem-symbol-cleansing": "linear-gradient(180deg, color-mix(in srgb, var(--cw-sem-calm-surface) 62%, transparent), color-mix(in srgb, var(--cw-sem-calm-bg) 88%, transparent))",
-      "--cw-sem-symbol-integration": "linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-warmth) 16%, transparent), color-mix(in srgb, var(--cw-sem-calm-surface-muted) 92%, transparent))"
+      "--cw-sem-symbol-integration": "linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-warmth) 16%, transparent), color-mix(in srgb, var(--cw-sem-calm-surface-muted) 92%, transparent))",
+      "--cw-ink-rule-weight": "2.9",
+      "--cw-ink-rest-scale": "0.9"
     },
     "modeOverrides": {
       "platform": {
@@ -475,13 +490,11 @@
       }
     },
     "dsAliasPointerFine": {
-      "light": {
-        "--ds-touch-target-min": "2.25rem",
-        "--ds-button-min-height": "2.5rem",
-        "--ds-button-min-width": "9rem",
-        "--ds-button-padding-inline": "1rem",
-        "--ds-button-font-size": "var(--ds-type-body-sm-size)"
-      }
+      "--ds-touch-target-min": "2.25rem",
+      "--ds-button-min-height": "2.5rem",
+      "--ds-button-min-width": "9rem",
+      "--ds-button-padding-inline": "1rem",
+      "--ds-button-font-size": "var(--ds-type-body-sm-size)"
     }
   }
 }

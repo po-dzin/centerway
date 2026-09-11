@@ -19,6 +19,7 @@ import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
 import { annotationLabel, type Annotation } from "@/lms-core";
+import { JOURNAL_HREF } from "@/lib/platform/content";
 import type { CourseOutlineEntryDto } from "./lmsClient";
 import styles from "./Lms.module.css";
 
@@ -54,7 +55,14 @@ export function CourseNotes({
     <section className={styles.notesSection}>
       <h2 className={styles.referenceHeading}>Мої позначки</h2>
       <p className={styles.referenceLead}>
-        Закладки, виділення і нотатки на полях. Бачите тільки ви.
+        Закладки, виділення і нотатки на полях. Бачите тільки ви.{" "}
+        {/* The way out to every course at once. It belongs HERE rather than in
+            the personal navigation bar: a reader asking «where was that» is
+            already one step from asking «what else have I written», and the bar
+            names applications, not rooms inside them. */}
+        <Link className={styles.notesJournalLink} href={href(JOURNAL_HREF)}>
+          Увесь журнал
+        </Link>
       </p>
 
       {groups.map(({ entry, items }) => (

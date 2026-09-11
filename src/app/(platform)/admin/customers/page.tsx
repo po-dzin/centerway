@@ -9,6 +9,8 @@ import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
+import { AdminTabs } from "@/components/admin/AdminTabs";
+import { LeadsPanel } from "@/components/admin/LeadsPanel";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/adminLocale";
@@ -47,6 +49,11 @@ export default function CustomersPage() {
     const { lang, t } = useI18n();
     const isUk = lang === "uk";
     const locale = getAdminLocale(lang);
+    /* TWO VIEWS OF THE SAME PEOPLE. A lead is now a `customers` row like any
+       other — the form writes to the spine — so the request that produced it
+       belongs beside the person, not in a section of its own. The nav stays at
+       seven. */
+    const [view, setView] = useState<"people" | "leads">("people");
     const [q, setQ] = useState("");
     const [debouncedQ, setDebouncedQ] = useState("");
     const [data, setData] = useState<Identity[]>([]);
@@ -142,6 +149,19 @@ export default function CustomersPage() {
                 </p>
             </div>
 
+            <AdminTabs
+                items={[
+                    { key: "people", label: t("customers_tab_people") },
+                    { key: "leads", label: t("customers_tab_leads") },
+                ]}
+                activeKey={view}
+                onChange={(key) => setView(key as "people" | "leads")}
+            />
+
+            {view === "leads" && <LeadsPanel />}
+
+            {view === "people" && (
+            <div className="space-y-6">
             {/* Search bar */}
             <AdminSearchInput
                 value={q}
@@ -253,6 +273,8 @@ export default function CustomersPage() {
                     onPrev={() => setPage((p) => Math.max(0, p - 1))}
                     onNext={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 />
+            )}
+            </div>
             )}
         </div>
     );

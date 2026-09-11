@@ -259,7 +259,7 @@ function AdminShell({ children }: { children: ReactNode }) {
             <PlatformOrgans
                 scope="mobile"
                 reveal="always"
-                label="Адмінка"
+                label={t("admin_aria_panel")}
                 left={<PlatformMarkOrgan />}
                 right={(
                     /* TWO CONTROLS, NOT ONE (2026-09-06). These seven sections
@@ -270,7 +270,7 @@ function AdminShell({ children }: { children: ReactNode }) {
                        The burger carries them, exactly as the bar's did. */
                     <span className={chromeOrgans.pair}>
                         <PlatformRouteMenu
-                            label="Розділи адмінки"
+                            label={t("admin_aria_sections")}
                             routes={(close) => (
                                 <>
                                     {navItems.map(({ key, href, active }) => {
