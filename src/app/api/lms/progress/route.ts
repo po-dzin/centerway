@@ -25,6 +25,11 @@ import {
 
 export const runtime = "nodejs";
 
+// `lesson.opened` is deliberately absent. A return is observed by the server
+// when it serves the lesson, never claimed by the client, so accepting it here
+// would only offer a way to inflate the engagement numbers the split was made
+// to make honest. No client emits it today either — the browser sends
+// completions and checklist ticks, nothing else.
 const ALLOWED_TYPES: ProgressEventType[] = [
   "lesson.started",
   "lesson.completed",

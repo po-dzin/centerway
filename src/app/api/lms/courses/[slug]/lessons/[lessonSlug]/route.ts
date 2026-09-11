@@ -103,16 +103,25 @@ export async function GET(
         }
       : null;
 
-  // Every successful lesson open is real course activity, including a return
-  // to an already started or completed lesson. A fresh id keeps that visit in
-  // the append-only log; the fold preserves the original `startedAt` and never
-  // un-completes a lesson, while advancing `lastActivityAt` for the dashboard.
+  // Every successful lesson open is real course activity, including a return to
+  // an already started or completed lesson — so every open is still recorded.
+  // What changed on 2026-09-11 is that the two are no longer the same event.
+  //
+  // The first open is `lesson.started` under a DETERMINISTIC client id, so the
+  // unique index on (enrollment_id, client_id) collapses a double request into
+  // one row. Every later visit is `lesson.opened` under a fresh id, because a
+  // return is a new fact and must not be deduplicated away. The fold treats both
+  // identically: `startedAt` is preserved, a completed lesson is not re-opened,
+  // and `lastActivityAt` advances for the dashboard.
   if (!draftPreview) {
+    const firstOpen = lessonProgress.status === "not_started";
     await recordProgressEvent({
       enrollmentId: enrollment.id,
       lessonId: found.lesson.id,
-      type: "lesson.started",
-      clientId: `srv:open:${found.lesson.id}:${crypto.randomUUID()}`,
+      type: firstOpen ? "lesson.started" : "lesson.opened",
+      clientId: firstOpen
+        ? `srv:start:${found.lesson.id}`
+        : `srv:open:${found.lesson.id}:${crypto.randomUUID()}`,
       occurredAt: now.toISOString(),
     });
   }
