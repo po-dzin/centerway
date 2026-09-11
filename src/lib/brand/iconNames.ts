@@ -2,7 +2,7 @@
 // Geometry source: scripts/lib/icon-glyphs.mjs
 
 // Cache key for the sprite URL — see spriteVersion() in scripts/icons-bake.mjs.
-export const CW_SPRITE_VERSION = "965096be";
+export const CW_SPRITE_VERSION = "5d291fad";
 
 export const CW_ICON_NAMES = [
   "arrow-right",
@@ -19,6 +19,7 @@ export const CW_ICON_NAMES = [
   "day",
   "phase",
   "week",
+  "calendar",
   "clock",
   "check",
   "shield-check",
@@ -38,6 +39,7 @@ export const CW_ICON_NAMES = [
   "guide",
   "plus",
   "import",
+  "copy",
   "export",
   "unpublish",
   "question",

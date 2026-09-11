@@ -140,6 +140,18 @@ export const ICONS = {
       { cx: 20.8, cy: 12, r: 0.95 },
     ],
   },
+  /* A DATE, AS OPPOSED TO A TIME OR A SUNRISE (2026-09-11). `day` is the
+     sunrise and `clock` is the hour; neither is the thing a date field opens,
+     and the admin had therefore drawn its own calendar twice — once in the
+     analytics range picker, once in AdminDateField — at two different stroke
+     weights. The marked day is a dot rather than a filled cell: a dot is a node
+     in this language, and a filled rectangle inside a stroked frame would be
+     the only solid in the set that is not a reader's own mark. */
+  calendar: {
+    group: "Rhythm",
+    d: ["M4.4 6.6h15.2v13.4H4.4z", "M4.4 10.8h15.2", "M8.6 4.2v4.4", "M15.4 4.2v4.4"],
+    dots: [{ cx: 9, cy: 15.2, r: 1 }],
+  },
   clock: {
     group: "Rhythm",
     d: ["M12 3.6a8.4 8.4 0 1 0 0 16.8 8.4 8.4 0 0 0 0-16.8z", "M12 7.4V12l3.4 2.2"],
@@ -247,6 +259,14 @@ export const ICONS = {
   import: {
     group: "Authoring",
     d: ["M12 3.8v10.4", "M7.8 10 12 14.2l4.2-4.2", "M5 17v2.8h14V17"],
+  },
+  /* Two sheets, the one behind opened as an L — the universal "this text is now
+     also on your clipboard". It is in Authoring rather than Meta because that is
+     what it acts on: the admin copies landing URLs and order refs out of lists,
+     and before this it drew that with Lucide's own geometry at stroke 2. */
+  copy: {
+    group: "Authoring",
+    d: ["M9 4.4h10.6V15", "M4.4 9h10.6v10.6H4.4z"],
   },
   // A document leaving the workspace, distinct from importing into a tray.
   export: {
