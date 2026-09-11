@@ -98,6 +98,16 @@ describe("the subtitle", () => {
     expect(toOfferSurface(course({ title: "Розвантажувальний день — практикум" })).subtitle).toBe("практикум");
   });
 
+  /* The pair the offer page is built on: the short name goes on cards, crumbs
+     and buttons; the offer page has room for the line the author wrote and
+     prints it whole. Both were the trimmed string until 2026-09-11, so the one
+     surface with space for the full title was the one showing the least. */
+  it("keeps the author's whole line for the page that has room for it", () => {
+    const surface = toOfferSurface(course({ title: "Ритуал душі — короткий вхід" }));
+    expect(surface.title).toBe("Ритуал душі");
+    expect(surface.fullTitle).toBe("Ритуал душі — короткий вхід");
+  });
+
   it("says nothing when there is nothing to say", () => {
     expect(toOfferSurface(course({ title: "Шлях 21" })).subtitle).toBeUndefined();
   });
