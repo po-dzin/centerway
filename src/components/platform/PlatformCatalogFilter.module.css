@@ -115,9 +115,11 @@
     box-shadow 180ms ease;
 }
 
-.bandField:hover {
-  border-color: var(--cw-nav-marker);
-  background: var(--cw-mat-surface);
+@media (hover: hover) {
+  .bandField:hover {
+    border-color: var(--cw-nav-marker);
+    background: var(--cw-mat-surface);
+  }
 }
 
 .bandField:focus-within {

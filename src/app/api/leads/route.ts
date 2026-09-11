@@ -5,6 +5,9 @@ import { persistLeadBestEffort, type LeadRecord } from "@/lib/payments/checkoutF
 import { normalizeProduct, type ProductCode } from "@/lib/products";
 import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { upsertCustomerByContact } from "@/lib/platform/customerIdentity";
+import { applyDoshaTagsToCustomer, loadTestAttempt } from "@/lib/dosha/doshaTestRepo";
+import { isDoshaResultType, type DoshaResultType } from "@/lib/dosha/doshaTest";
 import { sendTelegramMessage } from "@/lib/telegram/tg";
 
 export const runtime = "nodejs";
@@ -29,6 +32,7 @@ async function notifyLeadToGroup(lead: LeadRecord): Promise<void> {
     line("Тел", lead.phone),
     line("Email", lead.email),
     line("Джерело", lead.source),
+    line("Доша", payload.dosha_result_type),
     line("Сторінка", payload.page_url),
     line("UTM", [payload.utm_source, payload.utm_campaign].filter(Boolean).join(" / ")),
     payload.message ? `\n${String(payload.message).slice(0, 800)}` : null,
@@ -67,6 +71,8 @@ type LeadRequestBody = {
   fbc?: unknown;
   fbclid?: unknown;
   event_id?: unknown;
+  attempt_id?: unknown;
+  dosha?: unknown;
 };
 
 function cors(res: NextResponse) {
@@ -143,6 +149,39 @@ export async function POST(req: NextRequest) {
   };
 
   const db = supabaseAdmin();
+
+  /* THE TEST THE PERSON JUST TOOK, CARRIED INTO THE FORM.
+     The consultation door already receives `?dosha=X` from the result screen,
+     but that only ever reached `utm_content` — a string in an analytics field,
+     attached to nobody. The attempt id is what makes it an identity: it names a
+     row we can verify rather than a label the page can claim. An id that does
+     not resolve, or resolves to an unfinished run, is simply not used — the
+     form still submits, because a lead is never worth losing over a decoration. */
+  const attemptId = asString(body.attempt_id);
+  let doshaResultType: DoshaResultType | null = null;
+  if (attemptId) {
+    try {
+      const attempt = await loadTestAttempt(db, attemptId);
+      const resultType = attempt?.result_type ?? null;
+      if (attempt?.status === "completed" && isDoshaResultType(resultType)) {
+        doshaResultType = resultType;
+      }
+    } catch {
+      // a lead is never lost over a test lookup
+    }
+  }
+  /* The screen's own `?dosha=` is a fallback only, and only when it agrees with
+     the vocabulary — it is reader-supplied, so it labels the lead but never
+     tags the customer. */
+  const claimedDosha = asString(body.dosha);
+  if (!doshaResultType && isDoshaResultType(claimedDosha)) {
+    lead.payload.dosha_claimed = claimedDosha;
+  }
+  if (doshaResultType) {
+    lead.payload.dosha_result_type = doshaResultType;
+    lead.payload.dosha_attempt_id = attemptId;
+  }
+
   const mode = await persistLeadBestEffort(db, lead);
 
   if (mode === "skipped") {
@@ -171,6 +210,44 @@ export async function POST(req: NextRequest) {
         user_agent: req.headers.get("user-agent"),
       },
     });
+  }
+
+  /* ON THE SPINE, NOT BESIDE IT (journey map, P1: «Лид пишет в customers тем
+     же upsertCustomer, что и вебхук»).
+     A form submission used to end at the `leads` table, so a person who asked
+     for a consultation existed nowhere the rest of the product looks: not in
+     the admin's customer list, not reachable by the notification layer, not
+     joinable to the test they had just taken. The same resolver the payment
+     webhook uses now runs here, which also means a lead from someone who has
+     bought before lands on their EXISTING row instead of starting a second
+     identity beside it.
+
+     Best-effort on purpose: the lead is already stored and the group is already
+     going to be told. A spine write that fails must not turn a captured lead
+     into a 500 for the person who filled the form. */
+  try {
+    const { id: customerId, created } = await upsertCustomerByContact(db, { email, phone });
+    if (customerId && created) {
+      /* PROFILE FIELDS ONLY ON A ROW THIS SUBMISSION CREATED.
+         This endpoint is public, unauthenticated and CORS-open, and it upserts
+         on whatever contact was typed. Submitting a stranger's email resolves —
+         correctly — to that stranger's existing customer row, and writing a name
+         or a dosha tag from the same request would be an unauthenticated edit of
+         somebody else's record. So an existing customer keeps their profile
+         exactly as it was; the claim still reaches us, in the lead row, which is
+         where an unverified claim belongs.
+
+         A person we have never seen has no history to corrupt, so their name and
+         their test result go straight on. */
+      if (doshaResultType) {
+        await applyDoshaTagsToCustomer(db, { customerId, resultType: doshaResultType });
+      }
+      if (name) {
+        await db.from("customers").update({ display_name: name }).eq("id", customerId);
+      }
+    }
+  } catch {
+    // fire-and-forget: the lead itself is already persisted
   }
 
   await notifyLeadToGroup(lead);

@@ -67,6 +67,31 @@ export type CabinetCopy = {
   learningLoadingLead: string;
   learningEmptyTitle: string;
   learningEmptyLead: string;
+
+  /* The journal — the reader's own writing, gathered across every course
+     (`JournalClient`). It is a LIBRARY page, so it borrows `learningLabel` for
+     its kicker rather than announcing a fourth application. */
+  journalTitle: string;
+  journalLead: string;
+  /** The cabinet's one line about it, and the words on the way in. */
+  journalEntry: string;
+  journalEntryLead: string;
+  /** The way back to the journal from a course's own list of marks. */
+  journalFromCourse: string;
+  journalLoadingTitle: string;
+  journalLoadingLead: string;
+  journalEmptyTitle: string;
+  journalEmptyLead: string;
+  journalErrorTitle: string;
+  journalErrorLead: string;
+  /** A bookmark has no passage to quote; this is what its row says instead. */
+  journalBookmark: string;
+  /** The course window has closed. Stated on the entry, never enforced by it. */
+  journalClosed: string;
+  /** The lesson behind the mark can no longer be named. The text still stands. */
+  journalDetached: string;
+  /** A heading for entries whose timestamp could not be read at all. */
+  journalUndated: string;
   browsePrograms: string;
   /** The empty PRODUCTS fold's way out. Not `browsePrograms`: that fold is
       about products, and offering programmes from it answered a question the
@@ -174,6 +199,23 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       learningLoadingLead: "Restoring access, progress and your next lesson.",
       learningEmptyTitle: "No materials in this profile yet",
       learningEmptyLead: "Once a program is purchased, it opens here — with lessons, progress and the next step.",
+
+      journalTitle: "My journal",
+      journalLead:
+        "Everything you have marked and written down, from every course, in the order you wrote it. Only you can see it.",
+      journalEntry: "My journal",
+      journalEntryLead: "Your notes and marks from every course, day by day.",
+      journalFromCourse: "The whole journal",
+      journalLoadingTitle: "Gathering your entries…",
+      journalLoadingLead: "Marks and notes from every course you are taking.",
+      journalEmptyTitle: "Your journal is empty for now",
+      journalEmptyLead: "Mark a line in any lesson, or write a note beside it — it appears here, and stays yours.",
+      journalErrorTitle: "Could not load the journal",
+      journalErrorLead: "Nothing has been lost — the entries are stored. Try loading them again.",
+      journalBookmark: "Bookmark on the lesson",
+      journalClosed: "access closed",
+      journalDetached: "this lesson can no longer be found",
+      journalUndated: "Without a date",
       browsePrograms: "Browse programs",
       browseProducts: "See products",
 
@@ -258,6 +300,23 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     learningLoadingLead: "Відновлюємо доступ, прогрес і ваш наступний урок.",
     learningEmptyTitle: "У кабінеті ще немає матеріалів",
     learningEmptyLead: "Після придбання програма відкривається тут — з уроками, прогресом і наступним уроком.",
+
+    journalTitle: "Мій журнал",
+    journalLead: "Усе, що ви позначили й записали, з усіх курсів — у порядку, в якому писали. Бачите тільки ви.",
+    journalEntry: "Мій журнал",
+    journalEntryLead: "Ваші нотатки й позначки з усіх курсів, день за днем.",
+    journalFromCourse: "Увесь журнал",
+    journalLoadingTitle: "Збираємо ваші записи…",
+    journalLoadingLead: "Позначки й нотатки з усіх ваших курсів.",
+    journalEmptyTitle: "Журнал поки порожній",
+    journalEmptyLead:
+      "Позначте в будь-якому уроці рядок або напишіть нотатку поруч — вона з’явиться тут і лишиться вашою.",
+    journalErrorTitle: "Не вдалося завантажити журнал",
+    journalErrorLead: "Нічого не втрачено — записи збережені. Спробуйте завантажити ще раз.",
+    journalBookmark: "Закладка на урок",
+    journalClosed: "доступ закрито",
+    journalDetached: "цей урок більше не знайти",
+    journalUndated: "Без дати",
     browsePrograms: "Подивитися програми",
     browseProducts: "Подивитися продукти",
 

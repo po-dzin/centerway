@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react";
 
+import surfaces from "@/components/admin/AdminSurfaces.module.css";
+
 interface AdminErrorStateProps {
   title: ReactNode;
   message: ReactNode;
@@ -11,7 +13,7 @@ interface AdminErrorStateProps {
 
 export function AdminErrorState({ title, message, action, className = "" }: AdminErrorStateProps) {
   return (
-    <div className={`cw-panel p-6 ${className}`.trim()}>
+    <div className={`${surfaces.plate} ${className}`.trim()}>
       <div className="flex items-start gap-3">
         <div className="mt-0.5 w-7 h-7 rounded-full cw-status-failed-soft-bg flex items-center justify-center">
           <svg

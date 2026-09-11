@@ -14,6 +14,7 @@ import { normalizePixelEventNameStrict } from "@/lib/analytics/pixelEvents";
 import { unstable_cache } from "next/cache";
 import { adminClient } from "@/lib/auth/adminClient";
 import { normalizeTrackingString, resolveFbc } from "@/lib/tracking/metaClickIds";
+import { canonicalProductKey, resolveProductTitles } from "@/lib/analytics/productIdentity";
 
 type CapiEventName = "ViewContent" | "InitiateCheckout" | "Purchase";
 
@@ -141,8 +142,13 @@ type CampaignBreakdownRow = {
   currency: string;
 };
 
+/* `product_code` is the CANONICAL key (see `canonicalProductKey`), not the
+   raw `orders.product_code` — one row per course rather than one per
+   historical spelling of it. `product_title` is the course's own title out
+   of `lms_courses`, null for a code that delivers no course. */
 type ProductBreakdownRow = {
   product_code: string;
+  product_title: string | null;
   total_orders: number;
   paid_orders: number;
   total_revenue: number;
@@ -162,11 +168,9 @@ type MetaBreakdownInputRow = {
 type FunnelDailyRow = {
   date: string;
   leads_count: number;
-  unique_lead_phones: number;
   orders_created: number;
   orders_paid: number;
   total_revenue: number;
-  conversion_rate_percent: string;
 };
 
 type PixelTotals = {
@@ -374,23 +378,31 @@ function toFunnelDailyRow(raw: unknown): FunnelDailyRow | null {
   return {
     date,
     leads_count: asFiniteNumber(row.leads_count),
-    unique_lead_phones: asFiniteNumber(row.unique_lead_phones),
     orders_created: asFiniteNumber(row.orders_created),
     orders_paid: asFiniteNumber(row.orders_paid),
     total_revenue: asFiniteNumber(row.total_revenue),
-    conversion_rate_percent:
-      typeof row.conversion_rate_percent === "string"
-        ? row.conversion_rate_percent
-        : String(asFiniteNumber(row.conversion_rate_percent).toFixed(2)),
   };
 }
 
-function buildFunnelSeries(range: DateRange, rows: unknown[]): FunnelDailyRow[] {
+function buildFunnelSeries(range: DateRange, rows: unknown[], leadsByDay?: Map<string, number>): FunnelDailyRow[] {
   const byDate = new Map<string, FunnelDailyRow>();
   for (const raw of rows) {
     const row = toFunnelDailyRow(raw);
     if (!row) continue;
     byDate.set(row.date, row);
+  }
+  for (const [day, count] of leadsByDay ?? []) {
+    const existing = byDate.get(day);
+    byDate.set(day, {
+      ...(existing ?? {
+        date: day,
+        leads_count: 0,
+        orders_created: 0,
+        orders_paid: 0,
+        total_revenue: 0,
+      }),
+      leads_count: count,
+    });
   }
 
   const from = new Date(`${range.from}T00:00:00.000Z`);
@@ -410,11 +422,9 @@ function buildFunnelSeries(range: DateRange, rows: unknown[]): FunnelDailyRow[] 
     result.push({
       date: day,
       leads_count: 0,
-      unique_lead_phones: 0,
       orders_created: 0,
       orders_paid: 0,
       total_revenue: 0,
-      conversion_rate_percent: "0.00",
     });
   }
 
@@ -643,23 +653,208 @@ async function getCapiEventStatsMap(
   return result;
 }
 
+type AdminDb = ReturnType<typeof adminClient>;
+
+/** The stages that mean somebody is still owed an answer. */
+const OPEN_LEAD_STAGES = ["new", "in_progress"] as const;
+
+type LearningSummary = {
+  granted_in_period: number;
+  started_in_period: number;
+  started_percent: number;
+  active_total: number;
+  expiring_14d: number;
+  expired_total: number;
+};
+
+type EnrollmentSummaryRow = {
+  id: string;
+  status: string | null;
+  expires_at: string | null;
+  created_at: string | null;
+};
+
+/**
+ * How many paid orders in the window actually reached their buyer.
+ *
+ * Either witness counts: an enrollment materialized against the order, or the
+ * receipt with the access link having been sent for it.
+ */
+async function countAccessDelivered(db: AdminDb, range: DateRange): Promise<number> {
+  const { data: paidOrderRefRows, error: paidOrderRefsErr } = await db
+    .from("orders")
+    .select("order_ref")
+    .gte("created_at", range.fromTs)
+    .lt("created_at", range.toExclusiveTs)
+    .in("status", ["paid", "completed"])
+    .limit(20000);
+  if (paidOrderRefsErr) {
+    console.error("Analytics paid order refs error:", paidOrderRefsErr);
+    throw new Error(paidOrderRefsErr.message);
+  }
+  const paidOrderRefsInRange = ((paidOrderRefRows ?? []) as Array<{ order_ref: string | null }>)
+    .map((row) => row.order_ref)
+    .filter((ref): ref is string => Boolean(ref));
+  if (paidOrderRefsInRange.length === 0) return 0;
+
+  const [{ data: enrolledOrderRows, error: enrolledErr }, { data: emailedOrderRows, error: emailedErr }] =
+    await Promise.all([
+      db.from("lms_enrollments").select("order_ref").in("order_ref", paidOrderRefsInRange),
+      db.from("events").select("order_ref").eq("type", "purchase_email_sent").in("order_ref", paidOrderRefsInRange),
+    ]);
+  if (enrolledErr) {
+    console.error("Analytics access-granted enrollment error:", enrolledErr);
+    throw new Error(enrolledErr.message);
+  }
+  if (emailedErr) {
+    console.error("Analytics access-granted email error:", emailedErr);
+    throw new Error(emailedErr.message);
+  }
+
+  const reachedOrderRefs = new Set<string>();
+  for (const row of (enrolledOrderRows ?? []) as Array<{ order_ref: string | null }>) {
+    if (row.order_ref) reachedOrderRefs.add(row.order_ref);
+  }
+  for (const row of (emailedOrderRows ?? []) as Array<{ order_ref: string | null }>) {
+    if (row.order_ref) reachedOrderRefs.add(row.order_ref);
+  }
+  return reachedOrderRefs.size;
+}
+
+/**
+ * The one learning row on the dashboard: granted and started inside the window,
+ * plus the standing facts — how much access is live, and what runs out soon.
+ *
+ * GRANTS ARE PERIOD-SCOPED, EXPIRIES ARE NOT. A deadline is a fact about now,
+ * not about the window someone happens to be looking at: an access ending on
+ * Friday matters whether or not the picker says "last 7 days".
+ */
+async function computeLearningSummary(db: AdminDb, range: DateRange): Promise<LearningSummary> {
+  const empty: LearningSummary = {
+    granted_in_period: 0,
+    started_in_period: 0,
+    started_percent: 0,
+    active_total: 0,
+    expiring_14d: 0,
+    expired_total: 0,
+  };
+
+  const { data: enrollmentData, error: enrollmentError } = await db
+    .from("lms_enrollments")
+    .select("id, status, expires_at, created_at");
+  if (enrollmentError || !enrollmentData) return empty;
+  const enrollmentRows = enrollmentData as EnrollmentSummaryRow[];
+
+  const nowMs = Date.now();
+  const horizonMs = nowMs + 14 * 24 * 60 * 60 * 1000;
+  const fromMs = Date.parse(`${range.from}T00:00:00Z`);
+  const toMs = Date.parse(`${range.to}T23:59:59Z`);
+
+  const isActive = (row: EnrollmentSummaryRow) => (row.status ?? "active") === "active";
+  const expiryMs = (row: EnrollmentSummaryRow): number | null => {
+    const parsed = row.expires_at ? Date.parse(row.expires_at) : NaN;
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const inPeriod = enrollmentRows.filter((row) => {
+    const ts = Date.parse(row.created_at ?? "");
+    return Number.isFinite(ts) && ts >= fromMs && ts <= toMs;
+  });
+
+  /* "Started" is the same signal `/admin/access` uses to tell `not_started`
+     from `in_progress`: at least one progress event under that enrollment.
+     Read by enrollment id, because that is the only key
+     `lms_progress_events` has. */
+  const periodIds = inPeriod.map((row) => row.id).filter(Boolean);
+  const startedIds = new Set<string>();
+  if (periodIds.length > 0) {
+    const { data: progressRows } = await db
+      .from("lms_progress_events")
+      .select("enrollment_id")
+      .in("enrollment_id", periodIds);
+    for (const row of (progressRows ?? []) as Array<{ enrollment_id: string | null }>) {
+      if (row.enrollment_id) startedIds.add(row.enrollment_id);
+    }
+  }
+
+  const activeRows = enrollmentRows.filter((row) => {
+    if (!isActive(row)) return false;
+    const ends = expiryMs(row);
+    return ends === null || ends > nowMs;
+  });
+
+  const startedCount = periodIds.filter((id) => startedIds.has(id)).length;
+
+  return {
+    granted_in_period: inPeriod.length,
+    started_in_period: startedCount,
+    started_percent: Number(safeDivide(startedCount * 100, inPeriod.length).toFixed(1)),
+    active_total: activeRows.length,
+    expiring_14d: activeRows.filter((row) => {
+      const ends = expiryMs(row);
+      return ends !== null && ends > nowMs && ends <= horizonMs;
+    }).length,
+    expired_total: enrollmentRows.filter((row) => {
+      if (!isActive(row)) return false;
+      const ends = expiryMs(row);
+      return ends !== null && ends <= nowMs;
+    }).length,
+  };
+}
+
 export async function computeAnalyticsPayload(range: DateRange, campaignLevel: CampaignBreakdownLevel) {
   const db = adminClient();
 
-  // 1. Fetch Funnel
-  const { data: funnelDataRaw, error: funnelErr } = await db
-    .from("mv_funnel_daily")
-    .select("*")
-    .gte("date", range.from)
-    .lte("date", range.to)
-    .order("date", { ascending: true })
-    .limit(366);
+  /* 1. The daily series.
+     THIS USED TO READ `mv_funnel_daily`, AND ALMOST NOTHING OF WHAT IT
+     RETURNED SURVIVED. Every numeric column that view supplied except
+     `leads_count` was overwritten a hundred lines below with figures
+     recomputed from `orders` on Kyiv-local days, and the three it supplied
+     that were not overwritten — `unique_lead_phones`,
+     `conversion_rate_percent`, and the `avgConversionRate` derived from them
+     — were carried through the payload, typed on the client, and never
+     rendered anywhere. A whole materialized view, and a cron refresh to keep
+     it warm, existed to deliver one number.
 
-  if (funnelErr) {
-    console.error("Analytics Funnel error:", funnelErr);
-    throw new Error(funnelErr.message);
+     And that number counted rows in a table nothing wrote to: `leads` held
+     two rows, both smoke tests, while the form that should have filled it
+     ended at its own table until the spine was wired up.
+
+     The view carries a trap worth recording on the way out, even though it
+     was not firing: its date series is generated from
+     `min(created_at) FROM leads` (2026-04-24 in production), while the first
+     order is 2026-02-03. Any consumer trusting its order columns would have
+     silently lost two and a half months. This engine did not, because it
+     rebuilt every order column itself — the bug was masked by the same
+     redundancy that made the view pointless.
+
+     Read `leads` directly instead: a small table, and a meaningful one now
+     that the form writes to it and every stage transition is recorded. */
+  const { data: leadRowsRaw, error: leadsErr } = await db
+    .from("leads")
+    .select("id, stage, stage_changed_at, created_at")
+    .gte("created_at", `${range.from}T00:00:00.000Z`)
+    .lte("created_at", `${range.to}T23:59:59.999Z`);
+
+  if (leadsErr) {
+    console.error("Analytics leads error:", leadsErr);
+    throw new Error(leadsErr.message);
   }
-  let funnelData = buildFunnelSeries(range, funnelDataRaw ?? []);
+
+  const leadRows = (leadRowsRaw ?? []) as Array<{
+    id: string;
+    stage: string | null;
+    stage_changed_at: string | null;
+    created_at: string | null;
+  }>;
+  const leadsByDay = new Map<string, number>();
+  for (const row of leadRows) {
+    const createdAt = row.created_at;
+    const day = createdAt ? getIsoDateInTimeZone(new Date(createdAt), ANALYTICS_TZ) : null;
+    if (day) leadsByDay.set(day, (leadsByDay.get(day) ?? 0) + 1);
+  }
+
+  let funnelData = buildFunnelSeries(range, [], leadsByDay);
 
   // 2. Fetch Revenue source breakdown in the selected period
   const { data: revenueOrders, error: revErr } = await db
@@ -836,7 +1031,7 @@ export async function computeAnalyticsPayload(range: DateRange, campaignLevel: C
       knownMetaIds,
     });
     const source = resolveMetaCanonicalName(rawSource) ?? rawSource;
-    const productCode = normalizeCampaignSource(row.product_code, "unknown");
+    const productCode = canonicalProductKey(row.product_code);
     const existing = resolveRowByAliases([source]) ?? {
       source_campaign: source,
       total_orders: 0,
@@ -850,6 +1045,7 @@ export async function computeAnalyticsPayload(range: DateRange, campaignLevel: C
     };
     const productExisting = productMap.get(productCode) ?? {
       product_code: productCode,
+      product_title: null,
       total_orders: 0,
       paid_orders: 0,
       total_revenue: 0,
@@ -926,9 +1122,14 @@ export async function computeAnalyticsPayload(range: DateRange, campaignLevel: C
       return b.total_orders - a.total_orders;
     })
     .slice(0, 20);
+  /* Titles last, in one query for the whole breakdown: the rows are already
+     folded onto canonical keys by now, so this asks `lms_courses` for each
+     course once rather than once per order. */
+  const productTitles = await resolveProductTitles(db, productMap.keys());
   const productData = Array.from(productMap.values())
     .map((row) => ({
       ...row,
+      product_title: productTitles.get(row.product_code) ?? null,
       share_revenue_percent: Number(safeDivide(row.total_revenue * 100, paidRevenueFact).toFixed(2)),
     }))
     .sort((a, b) => {
@@ -1150,20 +1351,12 @@ export async function computeAnalyticsPayload(range: DateRange, campaignLevel: C
   // written in. Business-fact totals stay exact and must not inherit the 50k
   // row cap used for breakdown/detail datasets.
   const [
-    { count: accessGrantedCount, error: accessErr },
     { count: ordersCreatedCount, error: ordersCreatedErr },
     { count: paidOrdersCount, error: paidErr },
     { count: scrollDepth50Count, error: scrollErr },
     { data: firstScrollDepthRow, error: firstScrollErr },
     { count: localViewContentCount, error: localViewErr },
   ] = await Promise.all([
-    // Access granted proxy (token consumed)
-    db
-      .from("events")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", range.fromTs)
-      .lt("created_at", range.toExclusiveTs)
-      .eq("type", "token_consumed"),
     db
       .from("orders")
       .select("id", { count: "exact", head: true })
@@ -1195,10 +1388,6 @@ export async function computeAnalyticsPayload(range: DateRange, campaignLevel: C
       .gte("created_at", range.fromTs)
       .lt("created_at", range.toExclusiveTs),
   ]);
-  if (accessErr) {
-    console.error("Analytics access count error:", accessErr);
-    throw new Error(accessErr.message);
-  }
   if (ordersCreatedErr) {
     console.error("Analytics orders created count error:", ordersCreatedErr);
     throw new Error(ordersCreatedErr.message);
@@ -1218,6 +1407,28 @@ export async function computeAnalyticsPayload(range: DateRange, campaignLevel: C
     console.error("Analytics local view content count error:", localViewErr);
     throw new Error(localViewErr.message);
   }
+  // 7.1 Access granted — the buyer actually received it, not merely paid for it.
+  //
+  // This used to count `events.type = 'token_consumed'`, a signal from the
+  // retired magic-link delivery model. Nothing has written that event type
+  // since the account+enrollment model replaced it, so this metric read
+  // ZERO by construction — regardless of how many buyers actually got their
+  // course — on every dashboard load since that migration. First noticed
+  // 2026-09-10, on the funnel screen itself, showing "Access Granted: 0"
+  // beside "Purchase: 2" for a period with at least one confirmed, working
+  // delivery.
+  //
+  // Real access today has two independent witnesses, either of which counts:
+  //   - `lms_enrollments.order_ref` — the buyer signed in and the entitlement
+  //     materialized into a real enrollment. This is "зайшов на платформу".
+  //   - `events.type = 'purchase_email_sent'` for the order — we delivered
+  //     the receipt with the access link, whether or not they have opened it
+  //     yet. This is "отримав лист із лінком".
+  // A paid order counts as delivered if EITHER fired; an order can show one
+  // without the other (a buyer who has the email but has not signed in yet;
+  // an enrollment granted before the receipt path existed).
+  const accessGrantedCount = await countAccessDelivered(db, range);
+
   const ordersCreatedTotal = ordersCreatedCount ?? 0;
   const paidOrdersTotal = paidOrdersCount ?? 0;
   const firstScrollDepthAt = (firstScrollDepthRow as { created_at?: string } | null)?.created_at ?? null;
@@ -1626,12 +1837,47 @@ export async function computeAnalyticsPayload(range: DateRange, campaignLevel: C
 
   const toFixed2 = (value: number) => Number(value.toFixed(2));
 
+  /* 9. WHAT HAPPENED AFTER THE MONEY.
+     Everything above this line is about reaching a purchase; nothing above it
+     knows whether the thing bought was ever opened. The dashboard has read
+     `orders`, `events` and five Meta tables since it was built for a business
+     running on paid traffic, and not one `lms_*` table — so the product the
+     company now actually is has been invisible on its own front page.
+
+     This is deliberately ONE ROW, not a section. The question here is «все ли
+     в порядке»: how many people hold access, how many of them ever opened the
+     course, and whose access runs out soon. Anything more specific — which
+     course, which learner, why stalled — is `/admin/access`, which already
+     computes exactly that and must stay the one place that does. */
+  const learning = await computeLearningSummary(db, range);
+
+  /* The lead figures the dashboard can actually stand behind: how many
+     requests arrived in this window, how many of them are still waiting on
+     somebody, and how many turned into money. `open_total` deliberately
+     ignores the period — a request nobody has answered is a fact about now,
+     like an expiring access, and hiding it behind a date filter is how a
+     queue stops being worked. */
+  const wonInPeriod = leadRows.filter((row) => row.stage === "won").length;
+  const { count: openLeadsCount } = await db
+    .from("leads")
+    .select("id", { count: "exact", head: true })
+    .in("stage", [...OPEN_LEAD_STAGES]);
+  const leadsSummary = {
+    new_in_period: leadRows.length,
+    won_in_period: wonInPeriod,
+    lost_in_period: leadRows.filter((row) => row.stage === "lost").length,
+    open_total: openLeadsCount ?? 0,
+    conversion_percent: Number(safeDivide(wonInPeriod * 100, leadRows.length).toFixed(1)),
+  };
+
   return {
     period: {
       from: range.from,
       to: range.to,
     },
     campaigns_level: campaignLevel,
+    learning,
+    leads: leadsSummary,
     funnel: funnelData,
     campaigns: revenueData,
     products: productData,
@@ -1640,7 +1886,12 @@ export async function computeAnalyticsPayload(range: DateRange, campaignLevel: C
       totalOrders: ordersCreatedCount,
       totalPaidOrders,
       totalRevenue,
-      avgConversionRate: totalLeads > 0 ? ((totalPaidOrders / totalLeads) * 100).toFixed(2) : 0,
+      /* `avgConversionRate` lived here as paid orders ÷ leads, which with
+         276 paid orders against 2 recorded leads read 13800%. It was never
+         rendered, so nobody ever saw it say so. The honest lead conversion is
+         `leads.conversion_percent` — won leads out of leads received — and it
+         lives with the other lead figures. */
+      avgConversionRate: leadsSummary.conversion_percent.toFixed(2),
     },
     capi_events: [viewContentStats, initiateCheckoutStats, purchaseStats],
     capi_overview: {
@@ -1668,7 +1919,7 @@ export async function computeAnalyticsPayload(range: DateRange, campaignLevel: C
       view_content: viewContentSource,
       initiate_checkout: "orders_created",
       purchase: "paid_orders",
-      access_granted: "token_consumed",
+      access_granted: "access_delivered",
     },
     engagement,
     marketing_inputs: marketingInputs,

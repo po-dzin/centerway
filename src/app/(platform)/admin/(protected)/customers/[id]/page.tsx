@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { useI18n } from "@/components/I18nProvider";
+import surfaces from "@/components/admin/AdminSurfaces.module.css";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/admin/adminLocale";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
@@ -32,12 +33,29 @@ interface TimelineItem {
   sub: string | null;
   id: string;
   ref?: string;
+  status?: string;
+  product_code?: string | null;
+}
+
+interface CustomerEnrollment {
+  id: string;
+  course_slug: string | null;
+  course_title: string | null;
+  source: string;
+  status: string | null;
+  order_ref: string | null;
+  expires_at: string | null;
+  expired: boolean;
+  last_activity_at: string | null;
+  started: boolean;
+  created_at: string;
 }
 
 interface CustomerOrder {
   id: string;
   order_ref: string;
   product_code: string | null;
+  product_title: string | null;
   amount: number | null;
   currency: string | null;
   status: string;
@@ -54,6 +72,7 @@ interface CustomerEvent {
 
 interface ProfileData {
   customer: Customer;
+  enrollments: CustomerEnrollment[];
   orders: CustomerOrder[];
   events: CustomerEvent[];
   timeline: TimelineItem[];
@@ -108,13 +127,13 @@ function Avatar({ name, url, size = 12 }: { name?: string | null; url?: string |
       width={pixelSize}
       height={pixelSize}
       unoptimized
-      className="rounded-2xl object-cover shrink-0"
+      className="rounded-full object-cover shrink-0"
       style={{ width: pixelSize, height: pixelSize }}
       referrerPolicy="no-referrer"
     />
   ) : (
     <div
-      className="rounded-2xl cw-surface-2 flex items-center justify-center text-xl font-bold cw-muted shrink-0"
+      className="rounded-full cw-surface-2 flex items-center justify-center text-xl font-bold cw-muted shrink-0"
       style={{ width: pixelSize, height: pixelSize }}
     >
       {initial}
@@ -131,7 +150,7 @@ const orderStatusColor: Record<string, string> = {
 
 function ContactRow({ label, value, badge }: { label: string; value: string; badge?: boolean }) {
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl cw-panel">
+    <div className={`${surfaces.tile} flex items-center gap-3`}>
       <span className="text-[10px] font-medium px-1.5 py-0.5 rounded cw-surface-2 cw-muted uppercase tracking-wide shrink-0">
         {label}
       </span>
@@ -190,8 +209,11 @@ export default function CustomerProfilePage() {
     return (
       <div className="space-y-4 animate-pulse">
         <div className="h-5 w-36 cw-skeleton-row" />
-        <div className="h-32 rounded-2xl cw-skeleton-row" />
-        <div className="h-72 rounded-2xl cw-skeleton-row" />
+        {/* The radius a card LOADS INTO, not one of its own: these
+            stand in for plate cards at `rounded-xl`, and at 28px they
+            made every load end with the corners stepping in. */}
+        <div className="h-32 rounded-xl cw-skeleton-row" />
+        <div className="h-72 rounded-xl cw-skeleton-row" />
       </div>
     );
   }
@@ -205,6 +227,7 @@ export default function CustomerProfilePage() {
   }
 
   const { customer, orders, timeline } = profile;
+  const enrollments = profile.enrollments ?? [];
   const displayName = customer.display_name ?? customer.email ?? customer.phone ?? t("customers_no_name");
   const ordersCountLabel = (() => {
     const value = orders.length;
@@ -237,7 +260,7 @@ export default function CustomerProfilePage() {
       </nav>
 
       {/* Profile card */}
-      <div className="p-6 cw-panel">
+      <div className={surfaces.plate}>
         <div className="flex items-start gap-5">
           <Avatar name={displayName} url={customer.avatar_url} size={14} />
           <div className="flex-1 min-w-0">
@@ -294,12 +317,60 @@ export default function CustomerProfilePage() {
             )}
           </div>
 
+          {/* WHAT THEY CAN OPEN. Above the orders on purpose: an order is
+              what happened, access is what is true now, and the operator
+              opening this card is almost always asking the second question. */}
+          {enrollments.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold cw-text">{t("customers_profile_access")}</h3>
+              {enrollments.map((e) => (
+                <div key={e.id} className={surfaces.tile}>
+                  <p className="text-sm font-medium cw-text">
+                    {e.course_title ?? e.course_slug ?? t("customers_profile_access_unknown_course")}
+                  </p>
+                  <div className="flex items-center gap-2 flex-wrap mt-1">
+                    <span className={`text-xs font-semibold ${e.started ? "cw-status-success-badge" : "cw-muted"}`}>
+                      {e.started ? t("access_status_in_progress") : t("access_status_not_started")}
+                    </span>
+                    {e.expires_at && (
+                      <span className={`text-xs ${e.expired ? "cw-status-failed-badge" : "cw-muted"}`}>
+                        {e.expired ? t("customers_profile_access_expired") : t("customers_profile_access_until")}{" "}
+                        {new Date(e.expires_at).toLocaleDateString(locale, {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </span>
+                    )}
+                  </div>
+                  {e.last_activity_at && (
+                    <p className="text-[10px] cw-muted mt-1">
+                      {t("customers_profile_access_last_seen")}{" "}
+                      {new Date(e.last_activity_at).toLocaleDateString(locale, {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* A buyer who has never signed in has no account to hang access on.
+              That is an ordinary state, not a fault, and saying so beats an
+              empty column. */}
+          {enrollments.length === 0 && !customer.auth_user_id && orders.some((o) => o.status === "paid") && (
+            <p className="text-xs cw-muted">{t("customers_profile_access_no_account")}</p>
+          )}
+
           {/* Orders summary */}
           {orders.length > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-semibold cw-text">{t("orders_title")}</h3>
               {orders.map((o) => (
-                <div key={o.id} className="p-3 rounded-xl cw-panel">
+                <div key={o.id} className={surfaces.tile}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-mono cw-muted truncate">{o.order_ref}</span>
                     <span className={`text-xs font-semibold ${orderStatusColor[o.status] ?? "cw-muted"}`}>
@@ -311,7 +382,7 @@ export default function CustomerProfilePage() {
                       {o.amount} <span className="text-xs font-normal cw-muted">{o.currency}</span>
                     </p>
                   )}
-                  <p className="text-[10px] cw-muted mt-1">{o.product_code}</p>
+                  <p className="text-[10px] cw-muted mt-1">{o.product_title ?? o.product_code}</p>
                 </div>
               ))}
             </div>
@@ -337,8 +408,18 @@ export default function CustomerProfilePage() {
                       {typeIcons[item.type]}
                     </div>
                     <div className="flex-1 min-w-0 pt-0.5">
-                      <p className="text-sm font-medium cw-text leading-tight">{item.label}</p>
+                      {/* The server sends facts; the sentence is written here,
+                          in the reader's language. It used to arrive
+                          pre-assembled as a Russian string. */}
+                      <p className="text-sm font-medium cw-text leading-tight">
+                        {item.type === "order" ? `${t("customers_profile_timeline_order")}: ${item.label}` : item.label}
+                      </p>
                       <div className="flex items-center gap-2 mt-1">
+                        {item.type === "order" && item.status && (
+                          <span className={`text-xs font-semibold ${orderStatusColor[item.status] ?? "cw-muted"}`}>
+                            {orderStatusLabel[item.status] ?? item.status}
+                          </span>
+                        )}
                         {item.sub && <span className="text-xs cw-muted">{item.sub}</span>}
                         <span className="text-[10px] cw-muted">
                           {new Date(item.ts).toLocaleString(locale, {

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  JOURNAL_PATH_PREFIX,
   LEARNING_PATH_PREFIX,
   PROFILE_PATH_PREFIX,
   PUBLIC_ROOT_SEGMENTS,
@@ -23,11 +24,12 @@ describe("public root segments", () => {
     const routed = readdirSync(dir, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
-      /* Two directories in this tree are NOT public. `/learn` is the internal
-         prefix the personal host rewrites onto, and `/profile` is the cabinet,
-         which moved to that host on 2026-08-27 — both are routes here and
-         addresses on `my`. */
-      .filter((name) => ![LEARNING_PATH_PREFIX, PROFILE_PATH_PREFIX].includes(`/${name}`))
+      /* Three directories in this tree are NOT public. `/learn` is the internal
+         prefix the personal host rewrites onto, `/profile` is the cabinet,
+         which moved to that host on 2026-08-27, and `/journal` is the reader's
+         own writing (2026-09-10) — all three are routes here and addresses on
+         `my`. */
+      .filter((name) => ![LEARNING_PATH_PREFIX, PROFILE_PATH_PREFIX, JOURNAL_PATH_PREFIX].includes(`/${name}`))
       .sort();
 
     expect(routed).toEqual([...PUBLIC_ROOT_SEGMENTS].sort());
@@ -56,6 +58,14 @@ describe("the personal address ↔ route pair", () => {
     // Same rule as the builder: `my/profile` IS the address.
     expect(canonicalPersonalPath("/profile")).toBe("/profile");
     expect(personalRouteFor("/profile")).toBe("/profile");
+  });
+
+  it("leaves the journal's prefix alone in both directions", () => {
+    /* The trap this guards: without the registration, `personalRouteFor`
+       sends `/journal` under the learner tree and `my/journal` resolves as a
+       COURSE with that slug rather than as the reader's own page. */
+    expect(canonicalPersonalPath("/journal")).toBe("/journal");
+    expect(personalRouteFor("/journal")).toBe("/journal");
   });
 
   it("leaves the builder's prefix alone in both directions", () => {

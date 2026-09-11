@@ -7,6 +7,7 @@
 
 import { adminClient } from "@/lib/auth/adminClient";
 import { sendPurchaseEmail } from "@/lib/email/purchaseEmail";
+import { closeWonLeadsForPurchase } from "@/lib/platform/leadStage";
 import { accessRuleOf, accessWindowEnd, courseOfferCode } from "@/lms-core";
 import type { GrantSource } from "@/lib/admin/accessTypes";
 import type { PaymentCurrency } from "@/lib/admin/accessTypes";
@@ -60,6 +61,19 @@ export async function recordManualPayment(input: {
     created_at: paidAt,
   });
   if (error) throw new AccessError(error.message, 500);
+
+  /* THE CONCIERGE CASE, which is the one this product actually runs on: a
+     request came in, the founder answered it, talked to the person and sold
+     them something — often something other than the thing the form named.
+     `all_open` rather than `same_product` for exactly that reason: whoever
+     pressed this button knows the conversation ended, and the gateway never
+     does. Best-effort — the sale is already recorded and must stand whatever
+     happens to a stage. */
+  try {
+    await closeWonLeadsForPurchase(db, { email, productCode, scope: "all_open" });
+  } catch {
+    // a recorded sale is never undone by a lead stage
+  }
 
   await writeAudit(db, {
     actorId: input.actorId,

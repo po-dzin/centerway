@@ -17,6 +17,7 @@ import type {
   CourseCategory,
   CourseTheme,
   InternalReferenceTarget,
+  JournalEntry,
   LessonAvailability,
   LessonBlock,
   InlineText,
@@ -99,6 +100,13 @@ export type LearnerShelfCourseDto = {
 };
 
 export type LearnerShelfDto = { courses: LearnerShelfCourseDto[] };
+
+/**
+ * The journal, as the wire carries it: entries newest first, plus the zone the
+ * client cuts them into days with. The cut is not done on the server because
+ * the same payload has to serve a reader who travels.
+ */
+export type LearnerJournalDto = { entries: JournalEntry[]; timeZone: string };
 
 export type LessonNeighbour = { slug: string; title: string; available: boolean } | null;
 
@@ -215,6 +223,10 @@ export async function ensureTimeZoneSynced(): Promise<void> {
 
 export function fetchMyCourses(): Promise<LmsResult<LearnerShelfDto>> {
   return request<LearnerShelfDto>("/api/lms/me/courses");
+}
+
+export function fetchMyJournal(): Promise<LmsResult<LearnerJournalDto>> {
+  return request<LearnerJournalDto>("/api/lms/me/journal");
 }
 
 export function fetchCourse(slug: string, draftPreview = false): Promise<LmsResult<CourseViewDto>> {

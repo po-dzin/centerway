@@ -93,11 +93,11 @@ export const PRODUCTS = {
   },
   irem: {
     heading: {
-      uk: "IREM gymnastics — онлайн-система",
+      uk: "ІВЕМ-гімнастика — онлайн-система",
       en: "IREM gymnastics — online system",
     },
     description: {
-      uk: 'Оплата онлайн-системи "IREM gymnastics" від Centerway. Після успішної оплати система відкриється у вашому кабінеті на платформі - там уроки, розбори вправ і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
+      uk: 'Оплата онлайн-системи "ІВЕМ-гімнастика" від Centerway. Після успішної оплати система відкриється у вашому кабінеті на платформі - там уроки, розбори вправ і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
       en: "Online system payment by Centerway. After successful payment the system opens in your account on the platform, with its lessons, exercise breakdowns and next steps. Support: if you have questions, message us and we will help quickly.",
     },
     amount: 3950,

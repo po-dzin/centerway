@@ -60,6 +60,20 @@
     }
   },
   {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/leads"
+  },
+  {
+    "kind": "mutate",
+    "method": "PATCH",
+    "path": "/api/admin/leads",
+    "body": {
+      "id": "00000000-0000-0000-0000-000000000000",
+      "stage": "in_progress"
+    }
+  },
+  {
     "kind": "mutate",
     "method": "POST",
     "path": "/api/admin/system/pulse"

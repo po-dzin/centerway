@@ -21,7 +21,7 @@ export function PlatformLoadingState({ label, title, detail }: { label?: string;
       aria-busy="true"
     >
       <div className={styles.platformLoadingSignal}>
-        <LogoMark className={styles.platformLoadingMark} size={30} animate="wait" tone="brand" />
+        <LogoMark className="cw-wait-mark" size={30} animate="wait" tone="brand" />
         <div className={styles.platformLoadingCopy}>
           {label ? <p className={styles.platformLoadingLabel}>{label}</p> : null}
           <p className={styles.platformLoadingTitle}>{title}</p>

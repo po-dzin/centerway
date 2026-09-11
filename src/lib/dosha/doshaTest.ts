@@ -11,6 +11,17 @@ export const DOSHA_RESULT_TYPES = [
 ] as const;
 
 export type DoshaResultType = (typeof DOSHA_RESULT_TYPES)[number];
+
+/**
+ * Whether an outside string is one of the seven result types.
+ *
+ * Needed wherever a result arrives from something we do not control — a query
+ * parameter on the consultation door, a stored column read back — so that a
+ * label can never widen the vocabulary just by being written down.
+ */
+export function isDoshaResultType(value: unknown): value is DoshaResultType {
+  return typeof value === "string" && (DOSHA_RESULT_TYPES as readonly string[]).includes(value);
+}
 export type BaseDosha = "vata" | "pitta" | "kapha";
 
 export type DoshaTestOptionSeed = {

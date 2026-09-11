@@ -1,3 +1,4 @@
+import { orIlikeFilter } from "@/lib/api/searchFilter";
 import { serviceClient } from "@/lib/db/server";
 
 /**
@@ -22,6 +23,8 @@ export type CustomersPage = { data: CustomerListItem[]; count: number };
 
 const COLUMNS = "id, email, phone, display_name, avatar_url, tags, created_at, tg_id, google_id";
 
+const SEARCH_COLUMNS = ["email", "phone", "display_name", "tg_id", "google_id"] as const;
+
 export async function listCustomers(input: { q?: string; limit: number; offset: number }): Promise<CustomersPage> {
   const q = input.q?.trim() ?? "";
   let query = serviceClient()
@@ -29,10 +32,13 @@ export async function listCustomers(input: { q?: string; limit: number; offset: 
     .select(COLUMNS, { count: "exact" })
     .range(input.offset, input.offset + input.limit - 1)
     .order("created_at", { ascending: false });
-  if (q) {
-    query = query.or(
-      `email.ilike.%${q}%,phone.ilike.%${q}%,display_name.ilike.%${q}%,tg_id.ilike.%${q}%,google_id.ilike.%${q}%`,
-    );
+  /* The search box must not be able to edit the query's grammar: a comma 400s
+     the request and a `)` silently drops the filter and returns every customer.
+     `orIlikeFilter` quotes the value, so the worst a typist can do is find
+     nothing. */
+  const filter = orIlikeFilter(SEARCH_COLUMNS, q);
+  if (filter) {
+    query = query.or(filter);
   }
   const { data, error, count } = await query;
   if (error) throw new Error(error.message);

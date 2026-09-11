@@ -9,6 +9,8 @@ import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
+import { AdminTabs } from "@/components/admin/AdminTabs";
+import { LeadsPanel } from "@/components/admin/LeadsPanel";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/admin/adminLocale";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
@@ -43,6 +45,11 @@ export function CustomersList({ initial }: { initial: CustomersPage }) {
   const { lang, t } = useI18n();
   const isUk = lang === "uk";
   const locale = getAdminLocale(lang);
+  /* TWO VIEWS OF THE SAME PEOPLE. A lead is now a `customers` row like any
+     other — the form writes to the spine — so the request that produced it
+     belongs beside the person, not in a section of its own. The nav stays at
+     seven. */
+  const [view, setView] = useState<"people" | "leads">("people");
   const [q, setQ] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
   const [data, setData] = useState<Identity[]>(initial.data);
@@ -141,141 +148,156 @@ export function CustomersList({ initial }: { initial: CustomersPage }) {
         <p className="cw-page-subtitle">{t("customers_subtitle")}</p>
       </div>
 
-      {/* Search bar */}
-      <AdminSearchInput
-        value={q}
-        onChange={setQ}
-        placeholder={t("customers_search_placeholder")}
-        onClear={q ? () => setQ("") : undefined}
+      <AdminTabs
+        items={[
+          { key: "people", label: t("customers_tab_people") },
+          { key: "leads", label: t("customers_tab_leads") },
+        ]}
+        activeKey={view}
+        onChange={(key) => setView(key as "people" | "leads")}
       />
 
-      {/* Results header */}
-      {!loading && (
-        <p className="text-xs cw-muted">
-          {getResultsLabel(count)}
-          {querySuffix}
-        </p>
-      )}
+      {view === "leads" && <LeadsPanel />}
 
-      {/* State: loading */}
-      {loading && <AdminLoadingState variant="skeleton" rows={5} rowClassName="h-16" />}
+      {view === "people" && (
+        <div className="space-y-6">
+          {/* Search bar */}
+          <AdminSearchInput
+            value={q}
+            onChange={setQ}
+            placeholder={t("customers_search_placeholder")}
+            onClear={q ? () => setQ("") : undefined}
+          />
 
-      {/* State: error */}
-      {error && !loading && (
-        <AdminErrorState
-          title={t("customers_loading_error")}
-          message={error}
-          action={
-            <button
-              type="button"
-              onClick={() => fetchCustomers(debouncedQ, page)}
-              className="px-4 py-2 cw-btn cw-surface-2"
-            >
-              {t("analytics_retry")}
-            </button>
-          }
-        />
-      )}
+          {/* Results header */}
+          {!loading && (
+            <p className="text-xs cw-muted">
+              {getResultsLabel(count)}
+              {querySuffix}
+            </p>
+          )}
 
-      {/* State: empty */}
-      {!loading && !error && data.length === 0 && (
-        <AdminEmptyState
-          className="py-16"
-          icon={
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="cw-muted"
-            >
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-          }
-          description={debouncedQ ? t("customers_not_found") : t("customers_empty")}
-        />
-      )}
+          {/* State: loading */}
+          {loading && <AdminLoadingState variant="skeleton" rows={5} rowClassName="h-16" />}
 
-      {/* Customer list */}
-      {!loading && !error && data.length > 0 && (
-        <div className="space-y-1.5">
-          {data.map((identity) => (
-            <Link
-              key={identity.id}
-              href={`/admin/customers/${identity.id}`}
-              className="cw-list-item flex items-center gap-4 p-4 group"
-            >
-              <Avatar name={identity.display_name ?? identity.email ?? identity.phone} url={identity.avatar_url} />
+          {/* State: error */}
+          {error && !loading && (
+            <AdminErrorState
+              title={t("customers_loading_error")}
+              message={error}
+              action={
+                <button
+                  type="button"
+                  onClick={() => fetchCustomers(debouncedQ, page)}
+                  className="px-4 py-2 cw-btn cw-surface-2"
+                >
+                  {t("analytics_retry")}
+                </button>
+              }
+            />
+          )}
 
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium cw-text truncate">
-                  {identity.display_name ?? identity.email ?? identity.phone ?? (
-                    <span className="cw-muted italic">{t("customers_no_name")}</span>
+          {/* State: empty */}
+          {!loading && !error && data.length === 0 && (
+            <AdminEmptyState
+              className="py-16"
+              icon={
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="cw-muted"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              }
+              description={debouncedQ ? t("customers_not_found") : t("customers_empty")}
+            />
+          )}
+
+          {/* Customer list */}
+          {!loading && !error && data.length > 0 && (
+            <div className="space-y-1.5">
+              {data.map((identity) => (
+                <Link
+                  key={identity.id}
+                  href={`/admin/customers/${identity.id}`}
+                  className="cw-list-item flex items-center gap-4 p-4 group"
+                >
+                  <Avatar name={identity.display_name ?? identity.email ?? identity.phone} url={identity.avatar_url} />
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium cw-text truncate">
+                      {identity.display_name ?? identity.email ?? identity.phone ?? (
+                        <span className="cw-muted italic">{t("customers_no_name")}</span>
+                      )}
+                    </p>
+                    {identity.matched_link ? (
+                      <p className="text-xs cw-muted truncate">
+                        <span className="font-mono cw-surface-2 px-1 py-0.5 rounded text-[10px] mr-1">
+                          {identity.matched_link.type}
+                        </span>
+                        {identity.matched_link.value}
+                      </p>
+                    ) : (
+                      <p className="text-xs cw-muted">
+                        {new Date(identity.created_at).toLocaleDateString(locale, {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
+                    )}
+                  </div>
+
+                  {identity.tags?.length > 0 && (
+                    <div className="hidden sm:flex gap-1 flex-wrap justify-end max-w-[200px]">
+                      {identity.tags.slice(0, 3).map((tag) => (
+                        <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full cw-surface-2 cw-muted">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   )}
-                </p>
-                {identity.matched_link ? (
-                  <p className="text-xs cw-muted truncate">
-                    <span className="font-mono cw-surface-2 px-1 py-0.5 rounded text-[10px] mr-1">
-                      {identity.matched_link.type}
-                    </span>
-                    {identity.matched_link.value}
-                  </p>
-                ) : (
-                  <p className="text-xs cw-muted">
-                    {new Date(identity.created_at).toLocaleDateString(locale, {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </p>
-                )}
-              </div>
 
-              {identity.tags?.length > 0 && (
-                <div className="hidden sm:flex gap-1 flex-wrap justify-end max-w-[200px]">
-                  {identity.tags.slice(0, 3).map((tag) => (
-                    <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full cw-surface-2 cw-muted">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="cw-link-hover flex-shrink-0"
+                  >
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </Link>
+              ))}
+            </div>
+          )}
 
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="cw-link-hover flex-shrink-0"
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </Link>
-          ))}
+          {/* Pagination */}
+          {!loading && !error && count > 0 && (
+            <AdminPagination
+              page={page}
+              totalPages={totalPages}
+              onPrev={() => setPage((p) => Math.max(0, p - 1))}
+              onNext={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            />
+          )}
         </div>
-      )}
-
-      {/* Pagination */}
-      {!loading && !error && count > 0 && (
-        <AdminPagination
-          page={page}
-          totalPages={totalPages}
-          onPrev={() => setPage((p) => Math.max(0, p - 1))}
-          onNext={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-        />
       )}
     </div>
   );

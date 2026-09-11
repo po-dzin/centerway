@@ -17,7 +17,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { HandGraphic } from "@/components/Icon";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { READER_SCALE_STEPS } from "./readerSettings";
 import styles from "./Lms.module.css";
 
@@ -65,6 +65,12 @@ export function ReaderTextSize({ value, onChange }: { value: string; onChange: (
               type="button"
               role="menuitemradio"
               aria-checked={step.id === value}
+              /* The shared hover/focus ink rules in globals.css are scoped to
+                 `:is(.cw-tab, .cw-nav-link, [data-cw-ink-control])`. Without
+                 this attribute the mark below would only ever show its active
+                 strength — the row would answer «this is the one» and say
+                 nothing at all under the pointer. */
+              data-cw-ink-control
               onClick={() => {
                 onChange(step.id);
                 setOpen(false);
@@ -73,12 +79,19 @@ export function ReaderTextSize({ value, onChange }: { value: string; onChange: (
               <span aria-hidden="true" style={{ fontSize: `${step.scale}rem` }}>
                 Аа
               </span>
-              {/* The row's own ink, the same mark the account menu uses: faint
-                  under the pointer, full on the size in force. */}
-              <span className={styles.sizeInkLabel}>
+              {/* The account menu's own gesture, not a copy of it. This used to
+                  hand-roll the label/mark pair and reach for its geometry through
+                  `composes: menuInkLabel/menuInkMark`, two classes that had not
+                  existed since `aac33b76` — so the mark arrived with no position,
+                  no height and no colour, and rendered as a bare 36px graphic
+                  inside the row instead of a stroke under the word.
+                  `InteractionInkLabel` is the only platform entry point for
+                  baked ink (AGENTS.md preflight), and `variant="menu"` is the
+                  canonical mark for a selected label inside a compound control,
+                  which is exactly what a menuitemradio is. */}
+              <InteractionInkLabel variant="tab" active={step.id === value}>
                 <span className={styles.sizeLabel}>{step.label}</span>
-                <HandGraphic className={styles.sizeInkMark} name="ink-stroke" size={36} />
-              </span>
+              </InteractionInkLabel>
             </button>
           ))}
         </div>

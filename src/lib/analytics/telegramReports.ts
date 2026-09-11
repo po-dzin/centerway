@@ -8,6 +8,7 @@ import {
   getIsoDateInTimeZone,
   localMidnightUtcIso,
 } from "@/lib/analytics/helpers";
+import { canonicalProductKey, resolveProductTitles } from "@/lib/analytics/productIdentity";
 import { sendTelegramMessageWithToken } from "@/lib/telegram/tg";
 
 const REPORTS_TIME_ZONE = process.env.ANALYTICS_REPORTS_TIMEZONE || "Europe/Kyiv";
@@ -104,12 +105,39 @@ function toPercent(numerator: number, denominator: number): string {
   return `${formatNumber(safeDivide(numerator * 100, denominator))}%`;
 }
 
-function productLabel(productCode: string | null | undefined): string {
-  switch ((productCode ?? "").trim()) {
-    case "short":
-      return "Short Reboot";
-    case "irem":
-      return "IREM";
+/**
+ * The reader-facing label for a product code.
+ *
+ * WHY THIS WAS WRONG FOR EVERY COURSE SOLD OUT OF THE BUILDER. The switch
+ * below is a fixed vocabulary from before `course:<slug>` existed as a
+ * product-code shape (see `src/lms-core/offerCode.ts`), and it was never
+ * taught the new one. So `course:natural-body` — a real, priced, sold course —
+ * fell to `default` and printed as "Невідомий продукт" in the sale
+ * notification and the product breakdown, on every single builder-course sale
+ * since courses started selling on 2026-08-26. First caught on 2026-09-10,
+ * live, in the operator's own Telegram group, on the very order this session
+ * was already reconciling.
+ *
+ * `courseTitles` is the batch lookup from `resolveProductTitles`, the shared
+ * vocabulary in `productIdentity.ts`; a caller with one order (the sale
+ * notification) passes a one-entry map rather than threading a whole batch
+ * through for a single row. Lookups go through `canonicalProductKey`, so the
+ * two spellings of one course — the landing's `short` and the platform's
+ * `course:short` — both land on that course's title instead of on two
+ * different labels, which is what split the digest's product totals.
+ *
+ * The fallback is the raw code, not "Невідомий продукт" — an actually unknown
+ * code is now visibly itself instead of indistinguishable from a real course
+ * whose title just didn't load. Worse copy, never a false "nothing to see".
+ */
+function productLabel(productCode: string | null | undefined, courseTitles: Map<string, string>): string {
+  const code = (productCode ?? "").trim();
+  /* Canonical first: `short` and `course:short` are one course, so the legacy
+     landing code finds the title the platform code stored. */
+  const courseTitle = courseTitles.get(canonicalProductKey(code));
+  if (courseTitle) return courseTitle;
+
+  switch (code) {
     case "consult":
       return "Consult";
     case "natural-body":
@@ -120,7 +148,7 @@ function productLabel(productCode: string | null | undefined): string {
     case "platform":
       return "Платформа";
     default:
-      return "Невідомий продукт";
+      return code || "Невідомий продукт";
   }
 }
 
@@ -583,9 +611,11 @@ export async function sendConfirmedSaleTelegramReport(orderRef: string): Promise
       }).format(new Date(order.created_at))
     : "невідомо";
 
+  const courseTitles = await resolveProductTitles(db, [order.product_code]);
+
   const text = [
     "Підтверджено продаж",
-    `Продукт: ${productLabel(order.product_code)}`,
+    `Продукт: ${productLabel(order.product_code, courseTitles)}`,
     `Сума: ${formatCurrency(asFiniteNumber(order.amount), typeof order.currency === "string" && order.currency ? order.currency : "UAH")}`,
     `Замовлення: ${order.order_ref}`,
     `Кампанія: ${escapeTelegramText(campaign)}`,
@@ -676,9 +706,14 @@ async function buildPeriodicReport(window: ReportWindow): Promise<PeriodicReport
   let totalRevenue = 0;
   let currency = "UAH";
 
+  const courseTitles = await resolveProductTitles(
+    db,
+    (ordersResult.data ?? []).map((row) => (typeof row.product_code === "string" ? row.product_code : null)),
+  );
+
   for (const row of ordersResult.data ?? []) {
     totalOrders += 1;
-    const productCode = productLabel(typeof row.product_code === "string" ? row.product_code : null);
+    const productCode = productLabel(typeof row.product_code === "string" ? row.product_code : null, courseTitles);
     const totals = productTotals.get(productCode) ?? { totalOrders: 0, paidOrders: 0, revenue: 0 };
     totals.totalOrders += 1;
 

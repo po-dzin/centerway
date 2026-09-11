@@ -18,6 +18,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/components/I18nProvider";
+import surfaces from "@/components/admin/AdminSurfaces.module.css";
 import { useToast } from "@/components/ToastProvider";
 import { AdminDateField } from "@/components/admin/AdminDateField";
 import { AdminModal } from "@/components/admin/AdminModal";
@@ -767,7 +768,7 @@ function PeopleTab({
       {summary ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {STATUS_KEYS.map((key) => (
-            <div key={key} className="cw-panel p-3">
+            <div key={key} className={surfaces.tile}>
               <div className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${STATUS_DOT[key]}`} />
                 <p className="text-xs cw-muted truncate">{t(STATUS_LABEL_KEY[key])}</p>

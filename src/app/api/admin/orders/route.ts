@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
+import { closeWonLeadsForPurchase } from "@/lib/platform/leadStage";
 import {
   badRequestResponse,
   parseLimitOffset,
@@ -120,6 +121,29 @@ export async function PATCH(req: NextRequest) {
     status === "paid" && before.status !== "paid"
       ? await sendReconciledReceipt(db, order_ref, before.product_code, before.customer_id)
       : null;
+
+  /* Same transition, same reasoning as the receipt: only on the way INTO
+     paid, so re-confirming an order does not re-close leads a person has
+     since reopened by hand. `all_open`, because an admin marking an order
+     paid is a human who knows what was actually sold — see leadStage.ts. */
+  if (status === "paid" && before.status !== "paid") {
+    try {
+      const { data: buyer } =
+        typeof before.customer_id === "string" && before.customer_id
+          ? await db.from("customers").select("email, phone").eq("id", before.customer_id).maybeSingle()
+          : { data: null };
+      if (buyer) {
+        await closeWonLeadsForPurchase(db, {
+          email: buyer.email ?? null,
+          phone: buyer.phone ?? null,
+          productCode: typeof before.product_code === "string" ? before.product_code : null,
+          scope: "all_open",
+        });
+      }
+    } catch {
+      // a reconciled order is never undone by a lead stage
+    }
+  }
 
   return NextResponse.json({ data, receipt });
 }

@@ -114,14 +114,31 @@ export function proxy(req: NextRequest) {
 }
 
 /**
- * What the proxy never sees. `isInfraBypassPath` already passed `/cw/`,
- * `/shared/`, `/_next/` and `/_vercel/` straight through, and `/fonts/`
- * is nothing but woff2 — so every font, icon and image request was a
- * middleware invocation whose whole work was to say "not mine". Naming them
- * here means the invocation never happens. Not `/api/`: that path is bypassed
+ * WHAT THE PROXY IS ALLOWED TO SEE, and the cheapest request is the one that
+ * never reaches it.
+ *
+ * Every path this matcher admits invokes a function — including the ones whose
+ * only outcome is `isInfraBypassPath` returning true and the proxy answering
+ * `NextResponse.next()`. That is a billed invocation and a cold-path CPU slice
+ * spent to decide to do nothing, and it was being spent on static bytes:
+ * measured 2026-09-10, a platform page pulls ~26 assets that the old matcher
+ * admitted (11 woff2, the `/cw/` icon sprite, brand mark and hero art, the
+ * worker and the manifest), against ~4 that actually need routing.
+ *
+ * So the file roots under `public/` are excluded here as well as bypassed in
+ * `isInfraBypassPath`. THE TWO ARE NOT REDUNDANT: this list decides whether the
+ * function runs, the bypass decides what it does once it has. Keeping both means
+ * narrowing one can never turn a static asset into a brand-resolution 404 again
+ * — which is the failure `/fonts/` was living in until today.
+ *
+ * `_next/static` and `_next/image` were already here and stay. `/shared/` is
+ * deliberately NOT here: it is a landing-bundle path, not a `public/` root, and
+ * its first segment is also a brand name. Neither is `/api/`: it is bypassed
  * too, but only AFTER the canonical-host redirect, and taking it out of the
  * matcher would serve API calls on the apex instead of forwarding them.
  */
 export const config = {
-  matcher: ["/((?!_next/|_vercel/|fonts/|cw/|shared/|sitemap.xml|robots.txt).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|sitemap\.xml|robots\.txt|fonts/|cw/|sw\.js|offline\.html|favicon\.ico|manifest\.webmanifest|icon\.svg|apple-icon\.png).*)",
+  ],
 };

@@ -16,6 +16,17 @@ export const platformHomeHref = "/";
  */
 export const LEARNING_SHELF_HREF = "/learn";
 
+/**
+ * The reader's journal.
+ *
+ * NOT in `personalNav`. The bar on `my` names APPLICATIONS — the library and
+ * the workshop — and the journal is a room inside the library, reached from the
+ * cabinet and from a course's own list of marks. Putting it in the bar would
+ * make the personal host's navigation answer two different questions at once,
+ * which is the failure the cabinet's five hash-sections were unwound to fix.
+ */
+export const JOURNAL_HREF = "/journal";
+
 export type NavItem = { label: string; href: string; match: "exact" | "prefix" };
 
 /** The public platform bar. `Головна` is intentionally explicit here. */

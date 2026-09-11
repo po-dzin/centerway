@@ -142,6 +142,8 @@
   --cw-sem-symbol-body: radial-gradient(circle at 32% 34%, color-mix(in srgb, var(--cw-sem-embodied) 22%, transparent), transparent 44%), radial-gradient(circle at 70% 68%, color-mix(in srgb, var(--cw-sem-embodied) 16%, transparent), transparent 48%);
   --cw-sem-symbol-cleansing: linear-gradient(180deg, color-mix(in srgb, var(--cw-sem-calm-surface) 62%, transparent), color-mix(in srgb, var(--cw-sem-calm-bg) 88%, transparent));
   --cw-sem-symbol-integration: linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-warmth) 16%, transparent), color-mix(in srgb, var(--cw-sem-calm-surface-muted) 92%, transparent));
+  --cw-ink-rule-weight: 2.9;
+  --cw-ink-rest-scale: 0.9;
 
   /* platform mode */
   --cw-platform-bg: var(--cw-sem-calm-bg);

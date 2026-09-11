@@ -64,7 +64,25 @@ export const LEARNING_PATH_PREFIX = "/learn";
  */
 export const PROFILE_PATH_PREFIX = "/profile";
 
-export const PERSONAL_PATH_PREFIXES = [LEARNING_PATH_PREFIX, BUILDER_PATH_PREFIX, PROFILE_PATH_PREFIX] as const;
+/**
+ * The journal's prefix, a real address on the personal host: `my/journal`.
+ *
+ * It keeps its segment for the same reason `/profile` and `/build` keep theirs:
+ * it is a place a reader returns to directly, not a container to be stripped.
+ *
+ * REGISTERING IT HERE IS NOT OPTIONAL. On this host an unclaimed path is a
+ * COURSE — `my/way21` is a course — so a `/journal` page that is not named in
+ * this list and in `personalRouteFor` below does not 404 and does not serve the
+ * journal: it resolves as a course with the slug `journal`, which nobody owns.
+ */
+export const JOURNAL_PATH_PREFIX = "/journal";
+
+export const PERSONAL_PATH_PREFIXES = [
+  LEARNING_PATH_PREFIX,
+  BUILDER_PATH_PREFIX,
+  PROFILE_PATH_PREFIX,
+  JOURNAL_PATH_PREFIX,
+] as const;
 
 /** True for a path owned by the personal host, prefix-exact. */
 export function isPersonalPath(path: string): boolean {
@@ -140,9 +158,9 @@ export function isPublicRootPath(pathname: string): boolean {
  * the proxy, which is the only place that has to go this direction.
  */
 export function personalRouteFor(pathname: string): string {
-  /* The two prefixes that are addresses in their own right. Everything else on
+  /* The prefixes that are addresses in their own right. Everything else on
      this host is a course, so it goes under the learner tree. */
-  for (const prefix of [BUILDER_PATH_PREFIX, PROFILE_PATH_PREFIX]) {
+  for (const prefix of [BUILDER_PATH_PREFIX, PROFILE_PATH_PREFIX, JOURNAL_PATH_PREFIX]) {
     if (pathname === prefix || pathname.startsWith(`${prefix}/`)) return pathname;
   }
   return pathname === "/" ? LEARNING_PATH_PREFIX : `${LEARNING_PATH_PREFIX}${pathname}`;

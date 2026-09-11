@@ -139,7 +139,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
       <PlatformOrgans
         scope="mobile"
         reveal="always"
-        label="Адмінка"
+        label={t("admin_aria_panel")}
         left={<PlatformMarkOrgan />}
         right={
           /* TWO CONTROLS, NOT ONE (2026-09-06). These seven sections
@@ -150,7 +150,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                        The burger carries them, exactly as the bar's did. */
           <span className={chromeOrgans.pair}>
             <PlatformRouteMenu
-              label="Розділи адмінки"
+              label={t("admin_aria_sections")}
               routes={(close) => (
                 <>
                   {navItems.map(({ key, href, active }) => {
@@ -158,7 +158,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                     if (!active) {
                       return (
                         <span key={key} aria-disabled="true" data-disabled="true">
-                          <InteractionInkLabel variant="menu">{t(key)}</InteractionInkLabel>
+                          <InteractionInkLabel variant="tab">{t(key)}</InteractionInkLabel>
                         </span>
                       );
                     }
@@ -171,7 +171,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                         aria-current={current ? "page" : undefined}
                         data-current={current || undefined}
                       >
-                        <InteractionInkLabel variant="menu" active={current}>
+                        <InteractionInkLabel variant="tab" active={current}>
                           {t(key)}
                         </InteractionInkLabel>
                       </Link>
@@ -236,7 +236,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                     </InteractionInkIcon>
                   )}
                   <span className={styles.railLabel}>
-                    <InteractionInkLabel>{t(key)}</InteractionInkLabel>
+                    <InteractionInkLabel variant="tab">{t(key)}</InteractionInkLabel>
                   </span>
                   {/* Tooltip when collapsed */}
                   {!expanded && (

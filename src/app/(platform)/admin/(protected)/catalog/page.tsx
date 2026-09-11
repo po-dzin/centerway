@@ -30,6 +30,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useI18n } from "@/components/I18nProvider";
+import surfaces from "@/components/admin/AdminSurfaces.module.css";
 import { useToast } from "@/components/ToastProvider";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
@@ -526,7 +527,7 @@ function DeleteCourseAction({ row, onChanged }: { row: CatalogRow; onChanged: ()
     }
   }
   return open ? (
-    <div className="cw-panel p-4 space-y-3" role="group" aria-label={t("catalog_delete")}>
+    <div className={`${surfaces.plate} space-y-3`} role="group" aria-label={t("catalog_delete")}>
       <p className="text-sm cw-text">
         {t("catalog_delete_warning")} {t("access_course_learners")}: {row.learners}.
       </p>

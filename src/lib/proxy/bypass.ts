@@ -4,7 +4,23 @@ import { LANDING_STATIC_BRANDS } from "@/lib/landing/contracts";
 // They must never enter brand resolution: an asset request carries the embedding page
 // as its referer, so a page whose path maps to a funnel brand (/consult, /dosha-test,
 // /tests/dosha) turned its own images into disabled-surface 404s.
-const INFRA_BYPASS_PREFIXES = ["/api/", "/_next/", "/_vercel/", "/pay/return", "/go/", "/cw/", "/shared/"] as const;
+const INFRA_BYPASS_PREFIXES = [
+  "/api/",
+  "/_next/",
+  "/_vercel/",
+  "/pay/return",
+  "/go/",
+  "/cw/",
+  "/shared/",
+  /* Self-hosted woff2, and it was missing here rather than never needed. `/cw/`
+     and `/shared/` were added for exactly this failure and `/fonts/` was not,
+     so on every funnel host and on the personal host a font request fell
+     through to brand resolution and answered 404 — the platform typeface
+     silently degraded to a system fallback everywhere except `www`. Measured
+     2026-09-10: every `/fonts/platform/*.woff2` returned 404 on irem, resetday,
+     way21 and my, and 200 on www. */
+  "/fonts/",
+] as const;
 
 const LANDING_BRAND_PREFIXES = Array.from(LANDING_STATIC_BRANDS, (brand) => `/${brand}/`);
 

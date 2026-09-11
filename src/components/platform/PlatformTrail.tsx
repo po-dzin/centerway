@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 
-import { HandGraphic, Icon } from "@/components/Icon";
+import { Icon } from "@/components/Icon";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "./PlatformTrail.module.css";
 
 /**
@@ -90,11 +91,17 @@ export function PlatformTrail({
         <span className={styles.back}>
           <Icon className={styles.backIcon} name="arrow-left" size={16} />
           {back.onNavigate ? (
-            <button className={styles.crumbLink} type="button" onClick={back.onNavigate} title={back.label}>
+            <button
+              className={styles.crumbLink}
+              data-cw-ink-control
+              type="button"
+              onClick={back.onNavigate}
+              title={back.label}
+            >
               <TrailInkLabel>{back.label}</TrailInkLabel>
             </button>
           ) : (
-            <Link className={styles.crumbLink} href={back.href ?? "#"} title={back.label}>
+            <Link className={styles.crumbLink} data-cw-ink-control href={back.href ?? "#"} title={back.label}>
               <TrailInkLabel>{back.label}</TrailInkLabel>
             </Link>
           )}
@@ -104,11 +111,17 @@ export function PlatformTrail({
         <span className={styles.step} key={`${step.label}-${index}`}>
           {index > 0 ? <Icon className={styles.sep} name="chevron-right" size={14} /> : null}
           {step.onNavigate ? (
-            <button className={styles.crumbLink} type="button" onClick={step.onNavigate} title={step.label}>
+            <button
+              className={styles.crumbLink}
+              data-cw-ink-control
+              type="button"
+              onClick={step.onNavigate}
+              title={step.label}
+            >
               <TrailInkLabel>{step.label}</TrailInkLabel>
             </button>
           ) : step.href ? (
-            <Link className={styles.crumbLink} href={step.href} title={step.label}>
+            <Link className={styles.crumbLink} data-cw-ink-control href={step.href} title={step.label}>
               <TrailInkLabel>{step.label}</TrailInkLabel>
             </Link>
           ) : (
@@ -126,10 +139,13 @@ export function PlatformTrail({
 }
 
 function TrailInkLabel({ children, current = false }: { children: string; current?: boolean }) {
+  // The trail used to carry its own copy of the stroke recipe — box, offset,
+  // dasharray, three state rules. It now asks for the shared rounded ink edge
+  // instead, so the crumb you are on is marked the same way the bar and the
+  // tabs mark the thing you are on.
   return (
-    <span className={styles.inkLabel} data-current={current || undefined}>
-      <span className={styles.inkText}>{children}</span>
-      <HandGraphic className={styles.inkMark} name="ink-stroke" size={36} />
-    </span>
+    <InteractionInkLabel variant="tab" active={current}>
+      {children}
+    </InteractionInkLabel>
   );
 }

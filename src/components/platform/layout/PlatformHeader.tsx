@@ -9,6 +9,7 @@ import { isPersonalHost } from "@/lib/platform/surfaceHref";
 import { currentAppKey, type PlatformAppKey } from "@/lib/platform/apps";
 import styles from "@/components/platform/PlatformShellStyles";
 import { HandGraphic, Icon } from "@/components/Icon";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { PlatformAccountIdentity, PlatformAccountMenu } from "./PlatformAccountMenu";
 import { useChromeReveal } from "./useChromeReveal";
 import { useHeaderTone } from "./headerTone";
@@ -262,12 +263,12 @@ export function PlatformHeader({
         {homeIsOffOrigin ? (
           <a className={styles.brand} href={homeHref} onClick={closeMenu} aria-label="CenterWay">
             <span className={styles.brandSymbol} aria-hidden="true" />
-            <span className={styles.brandWordmark} aria-hidden="true" />
+            <span className={styles.brandText}>CENTERWAY</span>
           </a>
         ) : (
           <Link className={styles.brand} href={homeHref} onClick={closeMenu} aria-label="CenterWay">
             <span className={styles.brandSymbol} aria-hidden="true" />
-            <span className={styles.brandWordmark} aria-hidden="true" />
+            <span className={styles.brandText}>CENTERWAY</span>
           </Link>
         )}
         {mode === "workspace" && workspaceContent ? (
@@ -294,11 +295,9 @@ export function PlatformHeader({
                     href={item.resolvedHref}
                     onClick={closeMenu}
                     aria-current={isActive(item.href, item.match) ? "page" : undefined}
+                    data-cw-ink-control
                   >
-                    <span className={styles.navText}>
-                      {item.label}
-                      <HandGraphic className={styles.navInkMark} name="ink-stroke" size={36} />
-                    </span>
+                    <InteractionInkLabel variant="tab">{item.label}</InteractionInkLabel>
                   </Link>
                 ))}
               </nav>
