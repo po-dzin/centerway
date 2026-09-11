@@ -208,6 +208,7 @@
     --cw-mat-tint-hover: color-mix(in srgb, var(--cw-mat-surface) 84%, transparent);
     --cw-mat-tint-media: color-mix(in srgb, var(--cw-mat-surface) 82%, transparent);
     --cw-mat-tint-chrome: color-mix(in srgb, var(--cw-mat-surface) 30%, transparent);
+    --cw-mat-tint-opaque: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
     --cw-mat-tint-floor: 76%;
     --cw-mat-tint-media-floor: 82%;
     --cw-mat-tint-chrome-floor: 30%;
@@ -450,6 +451,7 @@
     --cw-mat-tint-hover: color-mix(in srgb, var(--cw-mat-surface) 84%, transparent);
     --cw-mat-tint-media: color-mix(in srgb, var(--cw-mat-surface) 82%, transparent);
     --cw-mat-tint-chrome: color-mix(in srgb, var(--cw-mat-surface) 30%, transparent);
+    --cw-mat-tint-opaque: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
     --cw-mat-tint-floor: 76%;
     --cw-mat-tint-media-floor: 82%;
     --cw-mat-tint-chrome-floor: 30%;
@@ -1167,14 +1169,14 @@ body {
 
 @supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
   [data-cw-scrim="chrome"] {
-    background-color: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
+    background-color: var(--cw-mat-tint-opaque);
   }
 }
 
 @media (prefers-reduced-transparency: reduce) {
   [data-cw-scrim="chrome"] {
     backdrop-filter: none;
-    background-color: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
+    background-color: var(--cw-mat-tint-opaque);
   }
 }
 

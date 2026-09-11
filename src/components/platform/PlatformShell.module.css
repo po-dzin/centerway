@@ -164,6 +164,20 @@
   }
 }
 
+/* THE BAR IS THE MOST TRANSPARENT SURFACE IN THE SYSTEM — the chrome tint is
+   30% of the surface, against 76% for a panel — and it was the one that never
+   answered `prefers-reduced-transparency`. Everything under it showed through
+   the navigation for a reader who had asked the system for the opposite. The
+   band paints from `--platform-header-band-bg`, but the override is written on
+   the element rather than on the custom property because four states redefine
+   that property and a property set on `.header` would lose to every one. */
+@media (prefers-reduced-transparency: reduce) {
+  .header[data-cw-glass="shell"]::before {
+    backdrop-filter: none;
+    background-color: var(--cw-mat-tint-opaque);
+  }
+}
+
 .header[data-cw-glass="shell"]::after {
   content: none;
 }
@@ -879,9 +893,22 @@
   overscroll-behavior: contain;
 }
 
+/* MISSING BLUR AND REFUSED BLUR ARE THE SAME ANSWER, and until 2026-09-11 this
+   panel only knew the first one. A browser without `backdrop-filter` got the
+   opaque paper; a reader who had asked the system to reduce transparency kept
+   the 76% tint with the page showing through it — the one setting that says
+   "I cannot read text over a backdrop" was the one the menu ignored. The
+   topbar's scrim in globals.css answers both; the menus answer both now too. */
 @supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
   .profileMenu {
-    background-color: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
+    background-color: var(--cw-mat-tint-opaque);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .profileMenu {
+    backdrop-filter: none;
+    background-color: var(--cw-mat-tint-opaque);
   }
 }
 
@@ -965,7 +992,16 @@
 
 @supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
   .profileMenu[data-form="organs"] {
-    background-color: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
+    background-color: var(--cw-mat-tint-opaque);
+  }
+}
+
+/* Repeated per form because each form sets its own background one specificity
+   step above the base rule — the base `@media` block above cannot reach it. */
+@media (prefers-reduced-transparency: reduce) {
+  .profileMenu[data-form="organs"] {
+    backdrop-filter: none;
+    background-color: var(--cw-mat-tint-opaque);
   }
 }
 
@@ -992,7 +1028,14 @@
 
 @supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
   .profileMenu[data-form="sheet"] {
-    background-color: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
+    background-color: var(--cw-mat-tint-opaque);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .profileMenu[data-form="sheet"] {
+    backdrop-filter: none;
+    background-color: var(--cw-mat-tint-opaque);
   }
 }
 

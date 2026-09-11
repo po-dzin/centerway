@@ -759,10 +759,24 @@
      this density the page's own copy reads straight through it. Blur is missing
      in more places than old browsers — reduce-transparency settings, some
      in-app webviews — so this is what those users actually get. Mirrors the
-     same fallback in shared/css/network-nav.css. */
+     same fallback in shared/css/network-nav.css.
+
+     Both cases are written out, because the sentence above was true and only
+     half of it was implemented until 2026-09-11: `@supports` caught the browser
+     that cannot blur, and the reader who asked the system for less transparency
+     kept the see-through band. `[data-cw-material]` surfaces get both from
+     globals.css; this legacy `data-cw-glass="shell"` band is outside that
+     selector, which is exactly why it was missed. */
   @supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
     .header[data-cw-glass="shell"]::before {
-      background-color: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
+      background-color: var(--cw-mat-tint-opaque);
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .header[data-cw-glass="shell"]::before {
+      backdrop-filter: none;
+      background-color: var(--cw-mat-tint-opaque);
     }
   }
 

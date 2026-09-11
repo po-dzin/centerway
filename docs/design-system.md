@@ -1109,7 +1109,11 @@ It is not decoration and not a divider — `--cw-mat-stroke` (the light top edge
 
 **What it is deliberately not used for: state.** An outlined chip was tried for the cabinet's active tab and removed the same day — the strip sits straight on the page ground, so outlining the chosen tab turned a quiet row into five objects. "You are here" stays the foreground at full weight plus the marker.
 
-Degradation is part of the contract: `@supports not (backdrop-filter)` and `prefers-reduced-transparency: reduce` both fall back to the opaque `--cw-mat-surface`, whose contrast is strictly better than the glass it replaces. One glass depth only — never nest glass in glass.
+Degradation is part of the contract: `@supports not (backdrop-filter)` and `prefers-reduced-transparency: reduce` both fall back to **`--cw-mat-tint-opaque`** (`--cw-mat-surface` at 94%), whose contrast is strictly better than the glass it replaces. One glass depth only — never nest glass in glass.
+
+**Both halves of that sentence are now implemented for chrome, and only for chrome (2026-09-11).** `@supports not (backdrop-filter)` was written in six places; `prefers-reduced-transparency` in two. Every surface a reader navigates by — the topbar band, the account popover and both of its drawer forms, the mobile shell band — answered the browser that cannot blur and ignored the reader who asked for less transparency, which is the stronger signal of the two: one is a capability, the other is a person telling the system they cannot read text over a backdrop. The bar was the worst of them, at 30% tint. What is still open is the content layer — the offer tile's category chips, the hero badge, the pill controls in `PlatformComponents`/`PlatformButtons` — which paint their own translucent backgrounds and carry neither `[data-cw-material]` nor a fallback of their own. They sit over photographs, so the fix is not a shared selector; each needs its own opaque answer.
+
+That fallback is a token because it is a contract, not a value. It is what a reader sees whenever the blur is missing — an old browser, an in-app webview, a reduce-transparency setting — and it was written out by hand in six places across `globals.css`, `PlatformShell` and `PlatformResponsive` (2026-09-11). Six copies of the number that decides how readable those users' chrome is, each free to drift on its own. The landing network keeps its own copy under `--cw-net-*` on purpose: that CSS is served raw, without the platform's tokens.
 
 ### The chrome tint, and why the topbar is not held to the media floor
 
