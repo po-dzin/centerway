@@ -595,6 +595,34 @@ export const GRAPHICS = {
   },
   /* Hover/selection for icon-only controls. It is intentionally open at the
      upper-right edge, with one tiny drop where a pen would leave the paper. */
+  /* A RULE, AND WHY IT IS NOT `ink-stroke` AT A LOWER WEIGHT.
+
+     `ink-stroke` slopes on purpose — it rises 1.2 units across its run, which
+     is a pen underlining a word rather than a ruler. Borrow it as a separator
+     and that slope is the first thing the eye finds, because a separator has
+     nothing but its own straightness to be judged against.
+
+     SO THIS ONE HOLDS ITS LINE, and it holds it literally: the hand pass is
+     switched off (`scale: 0`) rather than merely quietened. That is not a
+     style preference, it is what was already shipped — the symbol reached the
+     sprite by hand on 2026-09-11 as a bare `M3.5 18.4H32.5`, and this entry
+     reproduces it through the generator so the artifact stops being
+     hand-authored. A drawn variant at this weight was baked beside it and
+     compared at five times size before choosing; the difference at the size
+     this renders is not visible, and a hotfix is the wrong place to spend a
+     visual change. The generator now supports `hand` and `strokeWidth` per
+     glyph, so switching to a drawn line later is one line here.
+
+     What keeps it a drawn mark and not a border is what is left: the round pen
+     tips and the ink pressed in at both ends — heavier where the pen lands,
+     lighter where it lifts. */
+  "ink-rule": {
+    group: "Graphics",
+    d: ["M3.5 18.4C13.2 18.4 22.8 18.4 32.5 18.4"],
+    hand: { frequency: 0, scale: 0, seed: 0 },
+    strokeWidth: 1.5,
+    dots: [{ cx: 3.4, cy: 18.4, r: 1.1 }, { cx: 32.6, cy: 18.4, r: 0.8 }],
+  },
   "ink-ring": {
     group: "Graphics",
     d: [

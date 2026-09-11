@@ -38,7 +38,6 @@ function bakeInPage(job) {
   // fractalNoise sums `octaves` of it (lacunarity 2, persistence .5); without
   // the second octave a 24-grid glyph gets a near-uniform nudge instead of a
   // living contour, which is exactly what the approved study looked like.
-  const period = preset.frequency > 0 ? 1 / preset.frequency : 0;
   const octaves = preset.octaves ?? 2;
   const fractal = (x, y, seed) => {
     let sum = 0;
@@ -52,14 +51,15 @@ function bakeInPage(job) {
     }
     return 0.5 + sum / norm;
   };
-  const displace = (pt) => {
-    if (!period || !preset.scale) return pt;
-    const nx = fractal(pt.x / period, pt.y / period, preset.seed);
-    const ny = fractal(pt.x / period, pt.y / period, preset.seed + 101);
+  const displaceWith = (pt, hand) => {
+    const period = hand.frequency > 0 ? 1 / hand.frequency : 0;
+    if (!period || !hand.scale) return pt;
+    const nx = fractal(pt.x / period, pt.y / period, hand.seed);
+    const ny = fractal(pt.x / period, pt.y / period, hand.seed + 101);
     // feDisplacementMap maps channel 0..1 to -scale/2..+scale/2.
     return {
-      x: pt.x + (nx - 0.5) * preset.scale,
-      y: pt.y + (ny - 0.5) * preset.scale,
+      x: pt.x + (nx - 0.5) * hand.scale,
+      y: pt.y + (ny - 0.5) * hand.scale,
     };
   };
 
@@ -94,7 +94,7 @@ function bakeInPage(job) {
   host.appendChild(probe);
 
   /** Resample one path's data, displaced. Subpaths are split on M commands. */
-  const bakePath = (data) => {
+  const bakePath = (data, hand) => {
     const subpaths = data
       .split(/(?=[Mm])/)
       .map((s) => s.trim())
@@ -110,7 +110,7 @@ function bakeInPage(job) {
       const count = closed ? steps : steps + 1;
       for (let i = 0; i < count; i += 1) {
         const at = total * (closed ? i / steps : i / steps);
-        pts.push(displace(probe.getPointAtLength(Math.min(at, total))));
+        pts.push(displaceWith(probe.getPointAtLength(Math.min(at, total)), hand));
       }
       out.push(toPathData(pts, closed));
     }
@@ -123,24 +123,25 @@ function bakeInPage(job) {
 
   const result = {};
   for (const item of items) {
+    const hand = item.hand ?? preset;
     const paths = [];
     for (const entry of item.d ?? []) {
       const data = typeof entry === "string" ? entry : entry.path;
       const dash = typeof entry === "string" ? null : (entry.dash ?? null);
-      for (const baked of bakePath(data)) paths.push({ d: baked, dash });
+      for (const baked of bakePath(data, hand)) paths.push({ d: baked, dash });
     }
     const rings = [];
     const dots = [];
     for (const dot of item.dots ?? []) {
       if (dot.ring || dot.stroke) {
-        for (const baked of bakePath(circleToPath(dot.cx, dot.cy, dot.r))) {
+        for (const baked of bakePath(circleToPath(dot.cx, dot.cy, dot.r), hand)) {
           rings.push({ d: baked, accent: Boolean(dot.accent) });
         }
       } else {
         dots.push({ cx: round(dot.cx), cy: round(dot.cy), r: round(dot.r), accent: Boolean(dot.accent) });
       }
     }
-    result[item.name] = { paths, rings, dots, filled: Boolean(item.filled) };
+    result[item.name] = { paths, rings, dots, filled: Boolean(item.filled), strokeWidth: item.strokeWidth ?? null };
   }
   host.remove();
   return result;
@@ -148,6 +149,7 @@ function bakeInPage(job) {
 
 function symbolMarkup(name, baked, viewBox, strokeWidth) {
   const lines = [`  <symbol id="cw-${name}" viewBox="${viewBox}">`];
+  const weight = baked.strokeWidth ?? strokeWidth;
   /* `filled` is the ONE exception to "no fills except accent dots", and it
      exists so a glyph can carry a binary state in its own shape — a bookmark
      that is set, drawn solid, beside the same outline when it is not. It is a
@@ -155,7 +157,7 @@ function symbolMarkup(name, baked, viewBox, strokeWidth) {
      shadow tree past a presentation attribute, so an outline symbol cannot be
      filled from the page and the pair has to be baked. */
   const open = [
-    `    <g fill="${baked.filled ? "currentColor" : "none"}" stroke="currentColor" stroke-width="${strokeWidth}"`,
+    `    <g fill="${baked.filled ? "currentColor" : "none"}" stroke="currentColor" stroke-width="${weight}"`,
     `stroke-linecap="round" stroke-linejoin="round">`,
   ].join(" ");
   lines.push(open);
