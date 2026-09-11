@@ -90,7 +90,7 @@ describe("groupLearnersByAccount", () => {
     ]);
 
     expect(rows.map((row) => row.authUserId)).toEqual(["b", "a"]);
-    expect(rows[0].courses.map((course) => course.courseSlug)).toEqual(["way21", "reset-day"]);
+    expect(rows[0]!.courses!.map((course) => course.courseSlug)).toEqual(["way21", "reset-day"]);
   });
 
   it("adds up lessons and takes the newest activity across courses", () => {
@@ -119,16 +119,16 @@ describe("groupLearnersByAccount", () => {
       enrollment("a", "way21", "completed"),
       enrollment("a", "reset-day", "stalled"),
     ]);
-    expect(stalled[0].status).toBe("stalled");
+    expect(stalled[0]!.status).toBe("stalled");
 
     const working = groupLearnersByAccount([
       enrollment("a", "way21", "completed"),
       enrollment("a", "reset-day", "in_progress"),
     ]);
-    expect(working[0].status).toBe("in_progress");
+    expect(working[0]!.status).toBe("in_progress");
 
     const done = groupLearnersByAccount([enrollment("a", "way21", "completed")]);
-    expect(done[0].status).toBe("completed");
+    expect(done[0]!.status).toBe("completed");
   });
 });
 

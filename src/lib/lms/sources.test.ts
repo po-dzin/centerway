@@ -19,8 +19,8 @@ describe("course sources", () => {
     const { db, module } = await withDatabase();
     await module.registerCourseSource({ ...BASE, extractedText: "тіло документа" });
     expect(db.tables.lms_course_sources).toHaveLength(1);
-    expect(db.tables.lms_course_sources[0].course_id).toBe("course-1");
-    expect(db.tables.lms_course_sources[0].uploaded_by).toBe("author-1");
+    expect(db.tables.lms_course_sources![0]!.course_id).toBe("course-1");
+    expect(db.tables.lms_course_sources![0]!.uploaded_by).toBe("author-1");
   });
 
   it("refuses a kind the table's CHECK constraint would refuse, with a code the caller can read", async () => {
@@ -80,7 +80,7 @@ describe("course sources", () => {
       },
     ]);
     const [summary] = await module.listCourseSources("course-1");
-    expect(summary.extractedChars).toBe(5);
+    expect(summary!.extractedChars).toBe(5);
     expect(summary).not.toHaveProperty("extractedText");
   });
 });

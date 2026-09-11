@@ -112,8 +112,10 @@ export function AuthorMediaSlot({
   onRemove,
 }: {
   src: string | undefined;
-  previewClassName: string;
-  emptyClassName: string;
+  /* Both come straight from a CSS module, whose lookups are `string |
+     undefined`; React treats a missing className the same as an absent one. */
+  previewClassName: string | undefined;
+  emptyClassName: string | undefined;
   uploadLabel: string;
   replaceLabel: string;
   removeLabel: string;

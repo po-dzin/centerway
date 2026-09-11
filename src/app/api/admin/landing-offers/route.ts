@@ -107,13 +107,14 @@ export async function POST(req: NextRequest) {
   try {
     const db = adminClient();
     const batchId = crypto.randomUUID();
-    if (entries.length === 1) {
+    const [soleEntry] = entries;
+    if (entries.length === 1 && soleEntry) {
       const issued = await issueIremPersonalOffer({
         product: "irem",
-        recipientKey: entries[0].recipientKey,
-        channel: entries[0].channel,
-        campaign: entries[0].campaign,
-        note: entries[0].note,
+        recipientKey: soleEntry.recipientKey,
+        channel: soleEntry.channel,
+        campaign: soleEntry.campaign,
+        note: soleEntry.note,
         batchId,
       });
 
@@ -125,10 +126,10 @@ export async function POST(req: NextRequest) {
         metadata: {
           product: issued.product,
           offer_id: issued.offerId,
-          recipient_key: entries[0].recipientKey,
+          recipient_key: soleEntry.recipientKey,
           status: issued.status,
-          channel: entries[0].channel,
-          campaign: entries[0].campaign,
+          channel: soleEntry.channel,
+          campaign: soleEntry.campaign,
           batch_id: batchId,
         },
       });

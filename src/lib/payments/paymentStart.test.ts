@@ -85,7 +85,7 @@ function stubDeps() {
 }
 
 function wfpBody(fetchFn: ReturnType<typeof vi.fn>) {
-  return JSON.parse((fetchFn.mock.calls[0][1] as RequestInit).body as string);
+  return JSON.parse((fetchFn.mock.calls[0]![1] as RequestInit).body as string);
 }
 
 describe("createPaymentInvoice", () => {
@@ -125,8 +125,8 @@ describe("createPaymentInvoice", () => {
     expect(body.amount).toBe(790);
     expect(body.productPrice).toEqual([790]);
     expect(body.currency).toBe("UAH");
-    expect(inserted[0].product_code).toBe("course:my-course");
-    expect(inserted[0].amount).toBe(790);
+    expect(inserted[0]!.product_code).toBe("course:my-course");
+    expect(inserted[0]!.amount).toBe(790);
   });
 
   it("reports the offer's agreed label to Meta, not the invoice heading", async () => {
@@ -180,7 +180,7 @@ describe("createPaymentInvoice", () => {
       deps,
     );
 
-    expect(inserted[0].product_code).toBe("reset-day");
+    expect(inserted[0]!.product_code).toBe("reset-day");
     expect(wfpBody(fetchFn).orderReference).toBe("reset-day_20260822_ab12cd34");
   });
 });

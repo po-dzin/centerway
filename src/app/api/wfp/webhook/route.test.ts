@@ -112,7 +112,7 @@ describe("POST /api/wfp/webhook", () => {
     const res = await post(callback({}, { sign: false }));
     expect(res.status).toBe(403);
     expect(db.tables.payments).toHaveLength(0);
-    expect(db.tables.orders[0].status).toBe("created");
+    expect(db.tables.orders![0]!.status).toBe("created");
     expect(dispatchCapiEventInline).not.toHaveBeenCalled();
     expect(sendPurchaseEmail).not.toHaveBeenCalled();
   });
@@ -133,24 +133,24 @@ describe("POST /api/wfp/webhook", () => {
     expect(typeof body.signature).toBe("string");
 
     expect(db.tables.payments).toHaveLength(1);
-    expect(db.tables.payments[0]).toMatchObject({
+    expect(db.tables.payments![0]).toMatchObject({
       provider: "wfp",
       order_ref: ORDER,
       status: "paid",
       provider_tx_id: "rrn-1",
     });
-    expect(db.tables.orders[0].status).toBe("paid");
+    expect(db.tables.orders![0]!.status).toBe("paid");
 
     expect(db.tables.customers).toHaveLength(1);
-    expect(db.tables.customers[0]).toMatchObject({ email: "buyer@example.com", phone: "+380501112233" });
-    expect(db.tables.orders[0].customer_id).toBe(db.tables.customers[0].id);
+    expect(db.tables.customers![0]).toMatchObject({ email: "buyer@example.com", phone: "+380501112233" });
+    expect(db.tables.orders![0]!.customer_id).toBe(db.tables.customers![0]!.id);
 
     expect(db.tables.events).toHaveLength(1);
-    expect(db.tables.events[0]).toMatchObject({ type: "payment_paid", order_ref: ORDER });
+    expect(db.tables.events![0]).toMatchObject({ type: "payment_paid", order_ref: ORDER });
 
-    const purchase = db.tables.jobs.filter((j) => j.type === "meta:capi");
+    const purchase = db.tables.jobs!.filter((j) => j.type === "meta:capi");
     expect(purchase).toHaveLength(1);
-    expect(purchase[0].payload).toMatchObject({
+    expect(purchase[0]!.payload).toMatchObject({
       event_name: "Purchase",
       order_ref: ORDER,
       value: 4100,
@@ -160,7 +160,7 @@ describe("POST /api/wfp/webhook", () => {
     expect(dispatchCapiEventInline).toHaveBeenCalledTimes(1);
 
     expect(sendPurchaseEmail).toHaveBeenCalledTimes(1);
-    expect(sendPurchaseEmail.mock.calls[0][0]).toMatchObject({
+    expect(sendPurchaseEmail.mock.calls[0]![0]).toMatchObject({
       email: "buyer@example.com",
       productTitle: "Way21 Detox",
       amount: 4100,
@@ -175,7 +175,7 @@ describe("POST /api/wfp/webhook", () => {
     expect(res.status).toBe(200);
     expect(db.tables.payments).toHaveLength(1);
     expect(db.tables.events).toHaveLength(1);
-    expect(db.tables.jobs.filter((j) => j.type === "meta:capi")).toHaveLength(1);
+    expect(db.tables.jobs!.filter((j) => j.type === "meta:capi")).toHaveLength(1);
     expect(db.tables.customers).toHaveLength(1);
     expect(dispatchCapiEventInline).toHaveBeenCalledTimes(1);
   });
@@ -184,23 +184,23 @@ describe("POST /api/wfp/webhook", () => {
     await post(callback());
     const res = await post(callback({ transactionStatus: "Declined", reasonCode: "1105", rrn: "rrn-2" }));
     expect(res.status).toBe(200);
-    expect(db.tables.orders[0].status).toBe("paid");
-    expect(db.tables.payments[0].status).toBe("paid");
+    expect(db.tables.orders![0]!.status).toBe("paid");
+    expect(db.tables.payments![0]!.status).toBe("paid");
   });
 
   it("moves the payment row forward when a decline is followed by a success on the same invoice", async () => {
     // The four production orders of 2026-04/06: `orders` said paid, `payments`
     // stayed at the first callback's decline, and revenue never saw the sale.
     await post(callback({ transactionStatus: "Declined", reasonCode: "1105", rrn: "rrn-declined" }));
-    expect(db.tables.orders[0].status).toBe("created");
-    expect(db.tables.payments[0].status).toBe("created");
+    expect(db.tables.orders![0]!.status).toBe("created");
+    expect(db.tables.payments![0]!.status).toBe("created");
     expect(dispatchCapiEventInline).not.toHaveBeenCalled();
 
     const res = await post(callback({ rrn: "rrn-approved" }));
     expect(res.status).toBe(200);
     expect(db.tables.payments).toHaveLength(1);
-    expect(db.tables.payments[0].status).toBe("paid");
-    expect(db.tables.orders[0].status).toBe("paid");
+    expect(db.tables.payments![0]!.status).toBe("paid");
+    expect(db.tables.orders![0]!.status).toBe("paid");
     expect(dispatchCapiEventInline).toHaveBeenCalledTimes(1);
   });
 
@@ -208,7 +208,7 @@ describe("POST /api/wfp/webhook", () => {
     isStaffOrder.mockResolvedValue(true);
     const res = await post(callback());
     expect(res.status).toBe(200);
-    expect(db.tables.jobs.filter((j) => j.type === "meta:capi")).toHaveLength(0);
+    expect(db.tables.jobs!.filter((j) => j.type === "meta:capi")).toHaveLength(0);
     expect(dispatchCapiEventInline).not.toHaveBeenCalled();
     expect(sendPurchaseEmail).toHaveBeenCalledTimes(1);
     expect(sendConfirmedSaleTelegramReport).toHaveBeenCalledTimes(1);

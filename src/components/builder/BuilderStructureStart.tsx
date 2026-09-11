@@ -44,9 +44,9 @@ import styles from "./Builder.module.css";
 export function isPristineStructure(course: Course): boolean {
   if (course.modules.length !== 1) return false;
   const [only] = course.modules;
-  if (only.lessons.length !== 1) return false;
+  if (!only || only.lessons.length !== 1) return false;
   const [lesson] = only.lessons;
-  if (lesson.blocks.length > 1) return false;
+  if (!lesson || lesson.blocks.length > 1) return false;
   const written = [only.title, lesson.title, lesson.summary ?? ""].join(" ");
   return written.includes(PLACEHOLDER_MARKER) || /^(Модуль|Урок)\s*\d+$/.test(only.title.trim());
 }

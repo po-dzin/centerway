@@ -27,7 +27,7 @@ describe("platform consultation page contract", () => {
      dropdown's options rather than as the page talking. */
   it("sets every expectation as a sentence", () => {
     for (const line of consultationExpectations) {
-      expect(line[0]).toBe(line[0].toUpperCase());
+      expect(line[0]).toBe(line[0]!.toUpperCase());
     }
   });
 

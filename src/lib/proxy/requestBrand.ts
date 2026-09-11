@@ -4,7 +4,10 @@ import { getProductKeyByAlias } from "@/lib/surfaces/catalog";
 
 function normalizedHost(rawHost: string | null): string {
   if (!rawHost) return "";
-  return rawHost.split(":")[0].trim().toLowerCase();
+  // A string split always yields at least one element, so the port-stripped
+  // head is the whole host when there is no ":" — the default never applies.
+  const [hostWithoutPort = ""] = rawHost.split(":");
+  return hostWithoutPort.trim().toLowerCase();
 }
 
 function isPlatformRootRoute(pathname: string): boolean {

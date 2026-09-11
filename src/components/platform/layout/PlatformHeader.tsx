@@ -148,12 +148,12 @@ export function PlatformHeader({
       const focusable = Array.from(header.querySelectorAll<HTMLElement>(MODAL_FOCUSABLE)).filter(
         (element) => element.getClientRects().length > 0,
       );
-      if (focusable.length === 0) {
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (!first || !last) {
         event.preventDefault();
         return;
       }
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
       if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
         last.focus();
@@ -222,8 +222,8 @@ export function PlatformHeader({
        the ADDRESS is `/`, and which of the two `pathname` carries depends on
        whether this render is the server's or the browser's — so comparing raw
        would light the wrong item for exactly as long as hydration takes. */
-    const path = canonicalPersonalPath(href.split("#")[0]);
-    const here = canonicalPersonalPath((pathname ?? "").split("#")[0]);
+    const path = canonicalPersonalPath(href.split("#")[0] ?? "");
+    const here = canonicalPersonalPath((pathname ?? "").split("#")[0] ?? "");
     if (match === "exact") return here === path;
     return here === path || here.startsWith(`${path}/`);
   }

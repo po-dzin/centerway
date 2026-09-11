@@ -19,12 +19,12 @@ describe("captureQuestion", () => {
       source: "bot_support",
     });
 
-    const [row] = db.tables.agent_questions;
-    expect(row.text).toBe("Оплатив з пошти [пошта], доступу немає");
-    expect(row.text).not.toContain("ivan@gmail.com");
+    const [row] = db.tables.agent_questions!;
+    expect(row!.text).toBe("Оплатив з пошти [пошта], доступу немає");
+    expect(row!.text).not.toContain("ivan@gmail.com");
     // The kinds that were removed, so the redactor's reach is auditable —
     // without the table holding what it caught.
-    expect(row.redacted).toEqual(["email"]);
+    expect(row!.redacted).toEqual(["email"]);
   });
 
   it("stores nothing identifying beside the question", async () => {
@@ -35,7 +35,7 @@ describe("captureQuestion", () => {
 
     // `id` is the fake's own primary key; everything else is what the module
     // actually wrote.
-    const written = Object.keys(db.tables.agent_questions[0]).filter((column) => column !== "id");
+    const written = Object.keys(db.tables.agent_questions![0]!).filter((column) => column !== "id");
     expect(written.sort()).toEqual(["redacted", "source", "text"]);
   });
 

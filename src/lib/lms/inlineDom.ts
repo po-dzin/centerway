@@ -85,9 +85,10 @@ export function nodesToInline(nodes: MarkupNode[]): InlineText {
 
   nodes.forEach((node, index) => walk(node, {}, index));
 
-  if (spans.length === 0) return "";
-  if (spans.length === 1 && !spans[0].bold && !spans[0].italic && !spans[0].href) {
-    return spans[0].text;
+  const [only] = spans;
+  if (!only) return "";
+  if (spans.length === 1 && !only.bold && !only.italic && !only.href) {
+    return only.text;
   }
   return spans;
 }

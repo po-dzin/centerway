@@ -284,10 +284,11 @@ function stripInlineTracking(html: string): string {
 
 function extractBody(html: string, product: StaticLandingProduct): string {
   const match = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-  if (!match) {
+  const body = match?.[1];
+  if (body === undefined) {
     throw new Error(`Unable to extract <body> from ${product} landing source`);
   }
-  return match[1];
+  return body;
 }
 
 function toProductAssetPath(product: StaticLandingProduct, url: string): string {

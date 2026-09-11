@@ -54,7 +54,10 @@ import {
 import { isPersonalHost as hostIsPersonal, servesEveryPath } from "@/lib/platform/surfaceHref";
 
 function requestHost(req: NextRequest): string {
-  return (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "").split(":")[0].trim().toLowerCase();
+  const raw = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
+  // A string split always yields at least one element; the default never applies.
+  const [hostWithoutPort = ""] = raw.split(":");
+  return hostWithoutPort.trim().toLowerCase();
 }
 
 export function isPersonalHost(req: NextRequest): boolean {

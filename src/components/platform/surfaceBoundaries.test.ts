@@ -40,7 +40,7 @@ describe("shared surface boundaries", () => {
       ["src/components/builder/Builder.module.css", ".coverPill"],
       ["src/components/builder/Builder.module.css", ".coverPillPublished"],
     ]) {
-      expect(block(read(file), selector)).toContain("composes: mediaBadge");
+      expect(block(read(file!), selector!)).toContain("composes: mediaBadge");
     }
     expect(read("src/components/platform/cabinet/CourseCard.tsx")).not.toContain(
       "className={styles.draftBadgeChip} {...glassMedia}",
@@ -109,7 +109,7 @@ describe("shared surface boundaries", () => {
       ["page", page],
       ["editor", editor],
     ] as const) {
-      const shaped = frames.filter((rule) => rule.includes("aspect-ratio"));
+      const shaped = frames.filter((rule) => rule!.includes("aspect-ratio"));
       // Exactly one rule per side states the shape, and it states it as the token.
       expect(shaped, `${side}: one rule should set the ratio`).toHaveLength(1);
       expect(shaped[0]).toContain("aspect-ratio: var(--ds-author-banner-ratio)");

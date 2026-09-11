@@ -44,10 +44,12 @@ export function getManagedLandingPageByFile(fileName: string): ManagedLandingPag
 }
 
 export function getUtilityPageFromAssetPath(assetPath: string[]): UtilityPage | null {
-  if (assetPath.length !== 1) {
+  // Destructured first so the single segment is a string rather than a lookup
+  // the compiler cannot prove; `rest` empty is the old length check.
+  const [segment, ...rest] = assetPath;
+  if (segment === undefined || rest.length > 0) {
     return null;
   }
-  const [segment] = assetPath;
   if (segment in UTILITY_FILE_BY_PAGE) {
     return segment as UtilityPage;
   }
@@ -55,10 +57,12 @@ export function getUtilityPageFromAssetPath(assetPath: string[]): UtilityPage | 
 }
 
 export function getManagedLandingPageFromAssetPath(assetPath: string[]): ManagedLandingPage | null {
-  if (assetPath.length !== 1) {
+  // Destructured first so the single segment is a string rather than a lookup
+  // the compiler cannot prove; `rest` empty is the old length check.
+  const [segment, ...rest] = assetPath;
+  if (segment === undefined || rest.length > 0) {
     return null;
   }
-  const [segment] = assetPath;
   if (segment in MANAGED_LANDING_FILE_BY_PAGE) {
     return segment as ManagedLandingPage;
   }

@@ -115,14 +115,15 @@ function parseInline(source: string): InlineText {
     const index = match.index ?? 0;
     mergeSpan(spans, { text: source.slice(cursor, index) });
     if (match[2] && match[3]) mergeSpan(spans, { text: match[2], href: match[3] });
-    else if (match[4] || match[5]) mergeSpan(spans, { text: match[4] ?? match[5], bold: true });
-    else mergeSpan(spans, { text: match[6] ?? match[7], italic: true });
+    else if (match[4] || match[5]) mergeSpan(spans, { text: match[4] ?? match[5] ?? "", bold: true });
+    else mergeSpan(spans, { text: match[6] ?? match[7] ?? "", italic: true });
     cursor = index + match[0].length;
   }
   mergeSpan(spans, { text: source.slice(cursor) });
   const cleaned = spans.filter((span) => span.text.trim().length > 0 || spans.length === 1);
-  return cleaned.length === 1 && !cleaned[0].bold && !cleaned[0].italic && !cleaned[0].href
-    ? cleaned[0].text.trim()
+  const [only] = cleaned;
+  return only && cleaned.length === 1 && !only.bold && !only.italic && !only.href
+    ? only.text.trim()
     : cleaned.map((span) => ({ ...span, text: span.text.replace(/\\([\\`*_{}\[\]()#+.!-])/g, "$1") }));
 }
 
@@ -142,14 +143,15 @@ function parseMarkdown(source: string, fallbackTitle: string): { title: string; 
     .replace(/^\uFEFF/, "")
     .replace(/\r\n?/g, "\n")
     .split("\n");
+  /** The line at `at`, or "" past the end — the loops below only ever read inside the array. */
+  const lineAt = (at: number) => lines[at] ?? "";
   const units: ParsedUnit[] = [];
   let title = fallbackTitle;
   let cursor = 0;
   let titleTaken = false;
 
   while (cursor < lines.length) {
-    const raw = lines[cursor];
-    const line = raw.trim();
+    const line = lineAt(cursor).trim();
     if (!line || /^<!--.*-->$/.test(line) || /^---+$/.test(line)) {
       cursor += 1;
       continue;
@@ -157,11 +159,12 @@ function parseMarkdown(source: string, fallbackTitle: string): { title: string; 
 
     const heading = /^(#{1,6})\s+(.+)$/.exec(line);
     if (heading) {
-      if (heading[1].length === 1 && !titleTaken) {
-        title = inlineToPlainText(parseInline(heading[2]));
+      const [, hashes = "", headingText = ""] = heading;
+      if (hashes.length === 1 && !titleTaken) {
+        title = inlineToPlainText(parseInline(headingText));
         titleTaken = true;
       } else {
-        units.push({ kind: "rich", node: { kind: "h3", text: parseInline(heading[2]) } });
+        units.push({ kind: "rich", node: { kind: "h3", text: parseInline(headingText) } });
       }
       cursor += 1;
       continue;
@@ -169,7 +172,8 @@ function parseMarkdown(source: string, fallbackTitle: string): { title: string; 
 
     const image = /^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)\s*$/.exec(line);
     if (image) {
-      units.push({ kind: "image", alt: image[1].trim() || "Зображення уроку", src: image[2] });
+      const [, alt = "", src = ""] = image;
+      units.push({ kind: "image", alt: alt.trim() || "Зображення уроку", src });
       cursor += 1;
       continue;
     }
@@ -178,16 +182,17 @@ function parseMarkdown(source: string, fallbackTitle: string): { title: string; 
     if (fence) {
       const code: string[] = [];
       cursor += 1;
-      while (cursor < lines.length && !/^```\s*$/.test(lines[cursor].trim())) code.push(lines[cursor++]);
+      while (cursor < lines.length && !/^```\s*$/.test(lineAt(cursor).trim())) code.push(lineAt(cursor++));
       if (cursor < lines.length) cursor += 1;
-      if (code.join("\n").trim()) units.push({ kind: "code", code: code.join("\n"), language: fence[1] || undefined });
+      const [, language = ""] = fence;
+      if (code.join("\n").trim()) units.push({ kind: "code", code: code.join("\n"), language: language || undefined });
       continue;
     }
 
     if (/^>\s?/.test(line)) {
       const quote: string[] = [];
-      while (cursor < lines.length && /^>\s?/.test(lines[cursor].trim())) {
-        quote.push(lines[cursor].trim().replace(/^>\s?/, ""));
+      while (cursor < lines.length && /^>\s?/.test(lineAt(cursor).trim())) {
+        quote.push(lineAt(cursor).trim().replace(/^>\s?/, ""));
         cursor += 1;
       }
       units.push({ kind: "quote", text: parseInline(quote.join(" ")) });
@@ -197,8 +202,10 @@ function parseMarkdown(source: string, fallbackTitle: string): { title: string; 
     if (/^[-*+]\s+/.test(line)) {
       const items: InlineText[] = [];
       let checklist = false;
-      while (cursor < lines.length && /^[-*+]\s+/.test(lines[cursor].trim())) {
-        const item = lines[cursor].trim().replace(/^[-*+]\s+/, "");
+      while (cursor < lines.length && /^[-*+]\s+/.test(lineAt(cursor).trim())) {
+        const item = lineAt(cursor)
+          .trim()
+          .replace(/^[-*+]\s+/, "");
         checklist ||= /^\[[ xX]\]\s+/.test(item);
         items.push(parseInline(item.replace(/^\[[ xX]\]\s+/, "")));
         cursor += 1;
@@ -209,8 +216,14 @@ function parseMarkdown(source: string, fallbackTitle: string): { title: string; 
 
     if (/^\d+[.)]\s+/.test(line)) {
       const items: InlineText[] = [];
-      while (cursor < lines.length && /^\d+[.)]\s+/.test(lines[cursor].trim())) {
-        items.push(parseInline(lines[cursor].trim().replace(/^\d+[.)]\s+/, "")));
+      while (cursor < lines.length && /^\d+[.)]\s+/.test(lineAt(cursor).trim())) {
+        items.push(
+          parseInline(
+            lineAt(cursor)
+              .trim()
+              .replace(/^\d+[.)]\s+/, ""),
+          ),
+        );
         cursor += 1;
       }
       units.push({ kind: "rich", node: { kind: "ol", items } });
@@ -219,8 +232,8 @@ function parseMarkdown(source: string, fallbackTitle: string): { title: string; 
 
     const paragraph = [line];
     cursor += 1;
-    while (cursor < lines.length && lines[cursor].trim() && !isSpecial(lines[cursor].trim())) {
-      paragraph.push(lines[cursor].trim());
+    while (cursor < lines.length && lineAt(cursor).trim() && !isSpecial(lineAt(cursor).trim())) {
+      paragraph.push(lineAt(cursor).trim());
       cursor += 1;
     }
     units.push({ kind: "rich", node: { kind: "p", text: parseInline(paragraph.join(" ")) } });
@@ -396,7 +409,9 @@ export function lessonToMarkdown(lesson: Lesson): string {
       case "table":
         if (block.title) out.push(`### ${markdownInline(block.title)}`, "");
         {
-          const head = block.head ?? block.rows[0].map((_, index) => `Колонка ${index + 1}`);
+          // A table with no head names its columns after the first row's width;
+          // a table with neither head nor rows has no columns to name.
+          const head = block.head ?? block.rows[0]?.map((_, index) => `Колонка ${index + 1}`) ?? [];
           out.push(`| ${head.map(markdownInline).join(" | ")} |`, `| ${head.map(() => "---").join(" | ")} |`);
           out.push(...block.rows.map((row) => `| ${row.map(markdownInline).join(" | ")} |`));
         }

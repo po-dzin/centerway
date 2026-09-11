@@ -363,8 +363,9 @@ export function moveItem<T>(items: T[], from: number, to: number): T[] {
   const target = Math.min(Math.max(to, 0), items.length - 1);
   if (target === from) return items;
   const next = [...items];
-  const [moved] = next.splice(from, 1);
-  next.splice(target, 0, moved);
+  const moved = next.splice(from, 1);
+  if (moved.length === 0) return items;
+  next.splice(target, 0, ...moved);
   return next;
 }
 

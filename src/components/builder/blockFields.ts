@@ -331,6 +331,8 @@ export function writePath<T>(source: T, path: (string | number)[], value: unknow
   if (path.length === 0) return value as T;
 
   const [key, ...rest] = path;
+  // `path` is not empty (checked above), so the head is always there.
+  if (key === undefined) return source;
 
   if (Array.isArray(source)) {
     const next = [...source];

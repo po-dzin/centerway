@@ -165,11 +165,17 @@ export async function prepareMedia(input: Buffer, contentType: string): Promise<
 
   // Two renditions of the same width are one rendition: a 700px original asked
   // for 1600 and got 700, and the 640 would be within a hair of it.
-  const deduped = renditions.filter(
-    (rendition, index) => index === 0 || rendition.width < renditions[index - 1].width * 0.9,
-  );
+  const deduped = renditions.filter((rendition, index, all) => {
+    const wider = all[index - 1];
+    return !wider || rendition.width < wider.width * 0.9;
+  });
 
-  const stored = deduped[0];
+  const [stored] = deduped;
+  if (!stored) {
+    // FULL_WIDTH is always wanted, so this is unreachable — but an empty result
+    // is a failure, not a zero-sized image written into the lesson.
+    return { error: "media_no_renditions" };
+  }
   return {
     renditions: deduped,
     width: stored.width,

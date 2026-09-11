@@ -286,20 +286,21 @@ export async function listLessonRevisions(
   const ordered = [...rows].reverse();
   const entries: LessonRevisionEntry[] = [];
 
-  for (let index = 0; index < ordered.length; index += 1) {
-    const row = ordered[index];
-    const previous = ordered[index - 1];
-    if (!previous) continue;
+  let previous: (typeof ordered)[number] | undefined;
+  for (const row of ordered) {
+    const before = previous;
+    previous = row;
+    if (!before) continue;
 
     // Читаем чужие сохранённые документы: потолок контракта только на записи.
     try {
       validateCourse(row.content, "course_revision", "stored");
-      validateCourse(previous.content, "course_revision", "stored");
+      validateCourse(before.content, "course_revision", "stored");
     } catch {
       continue;
     }
 
-    const diff = diffCourses(previous.content as Course, row.content as Course);
+    const diff = diffCourses(before.content as Course, row.content as Course);
     const change = diff.lessons.find((entry) => entry.lessonId === lessonId);
     if (change) entries.push({ revision: summarize(row), change });
   }

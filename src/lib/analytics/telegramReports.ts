@@ -3,6 +3,7 @@ import {
   asFiniteNumber,
   safeDivide,
   isoDateFromParts,
+  isoDateParts,
   shiftIsoDate,
   getIsoDateInTimeZone,
   localMidnightUtcIso,
@@ -70,7 +71,7 @@ function formatNumber(amount: number): string {
 }
 
 function formatDateLabel(isoDate: string): string {
-  const [year, month, day] = isoDate.split("-").map(Number);
+  const { year, month, day } = isoDateParts(isoDate);
   return new Intl.DateTimeFormat("uk-UA", {
     timeZone: REPORTS_TIME_ZONE,
     day: "2-digit",
@@ -207,20 +208,20 @@ function buildConclusionLine(input: {
 }
 
 function startOfMonth(isoDate: string): string {
-  const [year, month] = isoDate.split("-").map(Number);
+  const { year, month } = isoDateParts(isoDate);
   return isoDateFromParts({ year, month, day: 1 });
 }
 
 function previousMonthStart(isoDate: string): string {
-  const [yearRaw, monthRaw] = isoDate.split("-").map(Number);
+  const { year: yearRaw, month: monthRaw } = isoDateParts(isoDate);
   const year = monthRaw === 1 ? yearRaw - 1 : yearRaw;
   const month = monthRaw === 1 ? 12 : monthRaw - 1;
   return isoDateFromParts({ year, month, day: 1 });
 }
 
 function getKyivWeekday(isoDate: string): number {
-  const [y, m, d] = isoDate.split("-").map(Number);
-  const utcDay = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  const { year, month, day } = isoDateParts(isoDate);
+  const utcDay = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
   return utcDay === 0 ? 7 : utcDay;
 }
 
@@ -398,10 +399,11 @@ function allocateCampaignRevenue(
   campaigns: CampaignSummary[],
 ): void {
   const matches = resolveCampaignRevenueMatches(sourceCampaign, campaigns);
-  if (matches.length === 0) return;
+  const [firstMatch] = matches;
+  if (!firstMatch) return;
 
   if (matches.length === 1) {
-    matches[0].revenue += totals.revenue;
+    firstMatch.revenue += totals.revenue;
     return;
   }
 
@@ -412,8 +414,7 @@ function allocateCampaignRevenue(
     let remainingRevenue = totals.revenue;
     let remainingWeight = purchaseWeight;
 
-    for (let index = 0; index < matches.length; index += 1) {
-      const campaign = matches[index];
+    for (const [index, campaign] of matches.entries()) {
       const weight = Math.max(campaign.purchases, 0);
       if (weight <= 0) continue;
 
@@ -434,8 +435,7 @@ function allocateCampaignRevenue(
     let remainingRevenue = totals.revenue;
     let remainingWeight = spendWeight;
 
-    for (let index = 0; index < matches.length; index += 1) {
-      const campaign = matches[index];
+    for (const [index, campaign] of matches.entries()) {
       const weight = Math.max(campaign.spend, 0);
       if (weight <= 0) continue;
 
@@ -451,7 +451,7 @@ function allocateCampaignRevenue(
     return;
   }
 
-  matches[0].revenue += totals.revenue;
+  firstMatch.revenue += totals.revenue;
 }
 
 function allocateCampaignRevenueByAliases(
@@ -471,19 +471,20 @@ function allocateCampaignRevenueByAliases(
     grouped.set(match.campaign, bucket);
   }
 
-  const groups = Array.from(grouped.entries())
-    .map(([campaign, stats]) => ({
-      campaign,
-      summary: campaignLookup.get(campaign) ?? null,
-      spend: stats.spend,
-      purchases: stats.purchases,
-    }))
-    .filter((item) => item.summary);
+  // flatMap rather than map+filter: dropping the unmatched rows inside the
+  // mapping is what lets `summary` stay a summary instead of a maybe-null that
+  // every use below has to assert away.
+  const groups = Array.from(grouped.entries()).flatMap(([campaign, stats]) => {
+    const summary = campaignLookup.get(campaign);
+    if (!summary) return [];
+    return [{ campaign, summary, spend: stats.spend, purchases: stats.purchases }];
+  });
 
-  if (groups.length === 0) return false;
+  const [firstGroup] = groups;
+  if (!firstGroup) return false;
 
   if (groups.length === 1) {
-    groups[0].summary!.revenue += totals.revenue;
+    firstGroup.summary.revenue += totals.revenue;
     return true;
   }
 
@@ -492,8 +493,7 @@ function allocateCampaignRevenueByAliases(
     let remainingRevenue = totals.revenue;
     let remainingWeight = purchaseWeight;
 
-    for (let index = 0; index < groups.length; index += 1) {
-      const group = groups[index];
+    for (const [index, group] of groups.entries()) {
       const weight = Math.max(group.purchases, 0);
       if (weight <= 0) continue;
 
@@ -502,7 +502,7 @@ function allocateCampaignRevenueByAliases(
           ? remainingRevenue
           : Math.round((remainingRevenue * weight) / remainingWeight);
 
-      group.summary!.revenue += allocatedRevenue;
+      group.summary.revenue += allocatedRevenue;
       remainingRevenue -= allocatedRevenue;
       remainingWeight -= weight;
     }
@@ -514,8 +514,7 @@ function allocateCampaignRevenueByAliases(
     let remainingRevenue = totals.revenue;
     let remainingWeight = spendWeight;
 
-    for (let index = 0; index < groups.length; index += 1) {
-      const group = groups[index];
+    for (const [index, group] of groups.entries()) {
       const weight = Math.max(group.spend, 0);
       if (weight <= 0) continue;
 
@@ -524,14 +523,14 @@ function allocateCampaignRevenueByAliases(
           ? remainingRevenue
           : Math.round((remainingRevenue * weight) / remainingWeight);
 
-      group.summary!.revenue += allocatedRevenue;
+      group.summary.revenue += allocatedRevenue;
       remainingRevenue -= allocatedRevenue;
       remainingWeight -= weight;
     }
     return true;
   }
 
-  groups[0].summary!.revenue += totals.revenue;
+  firstGroup.summary.revenue += totals.revenue;
   return true;
 }
 export async function sendConfirmedSaleTelegramReport(orderRef: string): Promise<{

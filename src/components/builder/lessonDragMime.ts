@@ -26,7 +26,7 @@ export const BUILDER_BLOCK_MIME = "application/x-centerway-block";
 export function carryChip(event: DragEvent<HTMLElement>, label: string) {
   if (typeof document === "undefined") return;
   const chip = document.createElement("div");
-  chip.className = styles.dragChip;
+  chip.className = styles.dragChip ?? "";
   chip.textContent = label;
   document.body.append(chip);
   event.dataTransfer.setDragImage(chip, 12, 16);

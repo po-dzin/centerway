@@ -115,7 +115,7 @@ function trailingMentionRange(root: HTMLElement): { query: string; range: Range 
       const range = document.createRange();
       range.setStart(node, Math.max(0, atOffset - consumed));
       range.setEnd(caret.endContainer, caret.endOffset);
-      return { query: match[1], range };
+      return { query: match[1] ?? "", range };
     }
     consumed += length;
     node = walker.nextNode();
@@ -415,7 +415,7 @@ export function BuilderInlineEditor({
     // and the text is written through — so a slash inside a sentence is a slash.
     const slash = commands && commands.length > 0 ? /^\/([^\s/]*)$/.exec(raw) : null;
     if (slash) {
-      setQuery(slash[1]);
+      setQuery(slash[1] ?? "");
       setReferenceQuery(null);
       referenceRange.current = null;
       setCursor(0);
@@ -500,7 +500,8 @@ export function BuilderInlineEditor({
             }
             if (event.key === "Enter" || event.key === "Tab") {
               event.preventDefault();
-              runReference(referenceMatches[active]);
+              const option = referenceMatches[active];
+              if (option) runReference(option);
               return;
             }
             if (event.key === "Escape") {
@@ -523,7 +524,8 @@ export function BuilderInlineEditor({
             }
             if (event.key === "Enter" || event.key === "Tab") {
               event.preventDefault();
-              runCommand(matches[active].id);
+              const command = matches[active];
+              if (command) runCommand(command.id);
               return;
             }
             if (event.key === "Escape") {

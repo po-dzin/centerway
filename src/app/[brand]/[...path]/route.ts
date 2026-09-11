@@ -30,6 +30,10 @@ function getCanonicalRebootAliasTarget(assetPath: string[]): string | null {
   }
 
   const [segment] = assetPath;
+  if (segment === undefined) {
+    return null;
+  }
+
   if (segment === "index.html") {
     return "/reboot";
   }

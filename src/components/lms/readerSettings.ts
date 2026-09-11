@@ -91,12 +91,12 @@ export function resolveMarkOffset(mark: ReaderMark, currentHeight: number): numb
 export type ReaderScaleStep = { id: string; label: string; scale: number };
 
 /** Four steps, one setting. The middle one is the design's own size. */
-export const READER_SCALE_STEPS: readonly ReaderScaleStep[] = [
+export const READER_SCALE_STEPS = [
   { id: "s", label: "Дрібний", scale: 0.92 },
   { id: "m", label: "Звичайний", scale: 1 },
   { id: "l", label: "Великий", scale: 1.15 },
   { id: "xl", label: "Дуже великий", scale: 1.32 },
-];
+] as const satisfies readonly ReaderScaleStep[];
 
 export const DEFAULT_READER_SCALE_ID = "m";
 

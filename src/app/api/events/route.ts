@@ -62,9 +62,19 @@ function asNumber(v: unknown): number | undefined {
   return undefined;
 }
 
+/* An EMPTY FORWARDED-FOR IS NOT AN ADDRESS. `?.split(",")[0].trim() ?? next`
+   only falls through when the header is absent: a header that is present and
+   blank — or a leading comma — trimmed to `""`, which `??` happily kept, and
+   the event was attributed to no one while `cf-connecting-ip` sat unread right
+   below it. Falsy has to fall through here, not just nullish. */
+function firstForwardedIp(value: string | null): string | null {
+  const first = value?.split(",")[0]?.trim();
+  return first ? first : null;
+}
+
 function clientIpFromHeaders(headers: Headers): string | null {
   return (
-    headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    firstForwardedIp(headers.get("x-forwarded-for")) ??
     headers.get("cf-connecting-ip") ??
     headers.get("x-real-ip") ??
     null

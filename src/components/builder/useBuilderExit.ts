@@ -27,10 +27,11 @@ import { clearDurableCourseDraft } from "./courseDraftStore";
 
 /** `/build/<this course>/…` — the editor's own territory, at any depth. */
 export function staysInCourse(href: string, slug: string): boolean {
-  const [path] = href.split(/[?#]/);
+  const [path = ""] = href.split(/[?#]/);
   const segments = path.split("/").filter(Boolean);
-  if (segments[0] !== "build" || segments.length < 2) return false;
-  return decodeURIComponent(segments[1]) === slug;
+  const [head, courseSlug] = segments;
+  if (head !== "build" || !courseSlug) return false;
+  return decodeURIComponent(courseSlug) === slug;
 }
 
 export type BuilderExitPromptState = {

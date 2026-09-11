@@ -62,7 +62,7 @@ describe("course catalog", () => {
       expect(days[0], `course ${course.slug} does not start on day 1`).toBe(1);
       for (let index = 1; index < days.length; index += 1) {
         expect(
-          days[index] > days[index - 1],
+          days[index]! > days[index - 1]!,
           `course ${course.slug}: day ${days[index]} does not follow day ${days[index - 1]}`,
         ).toBe(true);
       }

@@ -90,8 +90,10 @@ export function lessonAvailability(
     const index = walk.findIndex((entry) => entry.lesson.id === lesson.id);
     if (index <= 0) return { available: true };
 
-    const previous = walk[index - 1].lesson;
-    if (isLessonCompleted(progress, previous.id)) return { available: true };
+    // `index > 0` from the line above, so there is always a previous entry; the
+    // fallback keeps the lesson open rather than locking it on an impossibility.
+    const previous = walk[index - 1]?.lesson;
+    if (!previous || isLessonCompleted(progress, previous.id)) return { available: true };
 
     if (!hardGate) {
       return { available: true, ahead: { reason: "before_sequence", requiresLessonId: previous.id } };
@@ -161,7 +163,8 @@ export function resolveCurrentLesson(course: Course, progress: CourseProgress, c
     firstOpenAhead ??= entry.lesson;
   }
 
-  return firstOpenAhead ?? walk[walk.length - 1].lesson;
+  // `walk` is non-empty from the guard at the top, so the last entry is there.
+  return firstOpenAhead ?? walk.at(-1)?.lesson ?? null;
 }
 
 export type CourseOutlineEntry = {
@@ -260,13 +263,13 @@ export function decideUnstartedReminder(
   const dayNumber = enrollmentDayNumber(context.purchasedAt, context.now, zone);
   const sent = new Set(context.sentNudgeNumbers);
 
-  for (let index = 0; index < UNSTARTED_NUDGE_DAYS.length; index += 1) {
+  for (const [index, dueOnDay] of UNSTARTED_NUDGE_DAYS.entries()) {
     const nudgeNumber = index + 1;
     if (sent.has(nudgeNumber)) continue;
 
     // `>=`, not `===`: a cron hour missed to a deploy or an outage must delay
     // the nudge to the next day, not drop it for good.
-    if (dayNumber >= UNSTARTED_NUDGE_DAYS[index]) {
+    if (dayNumber >= dueOnDay) {
       return { send: true, nudgeNumber, dayNumber };
     }
 

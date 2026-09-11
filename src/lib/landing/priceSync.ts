@@ -57,8 +57,16 @@ const CHECKOUT_TRIGGER_ATTR = /\sdata-cw-checkout(="[^"]*")?/i;
 /** Every product code the markup asks about, so the caller knows what to load. */
 export function collectPriceCodes(html: string): string[] {
   const codes = new Set<string>();
-  for (const match of html.matchAll(PRICED_ELEMENT)) codes.add(match[3]);
-  for (const match of html.matchAll(PRICE_VALUE_ATTR)) codes.add(match[2]);
+  // Both groups are mandatory in their pattern, so a match always carries one;
+  // a code that somehow came back empty is skipped rather than collected blank.
+  for (const match of html.matchAll(PRICED_ELEMENT)) {
+    const code = match[3];
+    if (code) codes.add(code);
+  }
+  for (const match of html.matchAll(PRICE_VALUE_ATTR)) {
+    const code = match[2];
+    if (code) codes.add(code);
+  }
   return [...codes];
 }
 

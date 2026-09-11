@@ -75,7 +75,7 @@ describe("GET /api/cron/shelf-check", () => {
 
     await expect(response.json()).resolves.toMatchObject({ success: true, reported: "sent" });
     expect(sendTelegramMessage).toHaveBeenCalledTimes(1);
-    expect(sendTelegramMessage.mock.calls[0][1]).toContain("reset-day");
+    expect(sendTelegramMessage.mock.calls[0]![1]).toContain("reset-day");
   });
 
   it("does not die of its own alarm when Telegram refuses", async () => {

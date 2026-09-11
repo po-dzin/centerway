@@ -89,7 +89,7 @@ describe("writeCourseStructure", () => {
     expect(statusStep, "status must be an UPDATE, not a partial upsert").toBeGreaterThan(-1);
     // Last, so a publish never advertises content that failed to land.
     expect(statusStep).toBeGreaterThan(db.log.indexOf("upsert lms_lessons x16"));
-    expect(db.rows.lms_courses[0]).toMatchObject({ slug: "way21", status: "published" });
+    expect(db.rows.lms_courses![0]).toMatchObject({ slug: "way21", status: "published" });
   });
 
   /**
@@ -120,7 +120,7 @@ describe("writeCourseStructure", () => {
       const db = fakeWriter();
       await writeCourseStructure(db, partial);
 
-      const written = db.rows.lms_courses[0];
+      const written = db.rows.lms_courses![0]!;
       expect(Object.keys(written)).not.toContain("tagline");
       expect(Object.keys(written)).not.toContain("audience");
       expect(Object.keys(written)).not.toContain("access_note");
@@ -130,7 +130,7 @@ describe("writeCourseStructure", () => {
       const db = fakeWriter();
       await writeCourseStructure(db, stored);
 
-      expect(db.rows.lms_courses[0]).toMatchObject({
+      expect(db.rows.lms_courses![0]).toMatchObject({
         tagline: "Двадцять один день",
         audience: ["Для тих, хто починає"],
         access_note: "Доступ на рік",
@@ -141,7 +141,7 @@ describe("writeCourseStructure", () => {
       const db = fakeWriter();
       await writeCourseStructure(db, partial, { optionalColumns: "authoritative" });
 
-      expect(db.rows.lms_courses[0]).toMatchObject({
+      expect(db.rows.lms_courses![0]).toMatchObject({
         tagline: null,
         audience: null,
         access_note: null,
@@ -167,7 +167,7 @@ describe("writeCourseStructure", () => {
     const tablesTouched = db.log.map((entry) => entry.split(" ")[1]);
     expect(tablesTouched).not.toContain("lms_course_offers");
     expect(Object.keys(db.rows)).not.toContain("lms_course_offers");
-    expect(Object.keys(db.rows.lms_courses[0])).toEqual(
+    expect(Object.keys(db.rows.lms_courses![0]!)).toEqual(
       expect.not.arrayContaining(["amount", "price", "offer", "list_amount", "currency"]),
     );
   });
@@ -195,12 +195,12 @@ describe("writeCourseStructure", () => {
     // Module 0 has exactly one lesson — removing it would empty the module,
     // which `validateCourse` refuses before this code is ever reached. Module 1
     // has four, so removing its first lesson leaves a valid course behind.
-    const touchedLesson = course.modules[1].lessons[0];
+    const touchedLesson = course.modules[1]!.lessons![0];
     const withLessonRemoved: Course = {
       ...course,
       modules: [
-        course.modules[0],
-        { ...course.modules[1], lessons: course.modules[1].lessons.slice(1) },
+        course.modules[0]!,
+        { ...course.modules[1]!, lessons: course.modules[1]!.lessons!.slice(1) },
         ...course.modules.slice(2),
       ],
     };
@@ -239,7 +239,7 @@ describe("writeCourseStructure", () => {
           if (table === "lms_progress_events") {
             return {
               select: () => ({
-                in: async () => ({ data: [{ lesson_id: touchedLesson.id }], error: null }),
+                in: async () => ({ data: [{ lesson_id: touchedLesson!.id }], error: null }),
               }),
             };
           }
@@ -287,7 +287,7 @@ describe("builder → rows → builder", () => {
     const db = fakeWriter();
     await writeCourseStructure(db, edited);
 
-    expect(db.rows.lms_courses[0]).toMatchObject({
+    expect(db.rows.lms_courses![0]).toMatchObject({
       theme: { palette: "herbs", headingFont: "ui", scale: "generous" },
       cover: { src: "/cw/platform/programs/reset-day-card-v1.png", alt: "Обкладинка курсу" },
       sort_order: 3,
@@ -300,16 +300,16 @@ describe("builder → rows → builder", () => {
     const db = fakeWriter();
     await writeCourseStructure(db, edited);
 
-    const materials = db.rows.lms_modules.find((row) => row.slug === "materials");
+    const materials = db.rows.lms_modules!.find((row) => row.slug === "materials");
     expect(materials?.reference).toBe(true);
-    expect(db.rows.lms_modules.filter((row) => row.reference === true)).toHaveLength(1);
+    expect(db.rows.lms_modules!.filter((row) => row.reference === true)).toHaveLength(1);
   });
 
   it("reads back as exactly the course that was written", async () => {
     const db = fakeWriter();
     await writeCourseStructure(db, edited);
 
-    const restored = courseFromRows(db.rows.lms_courses[0], db.rows.lms_modules, db.rows.lms_lessons);
+    const restored = courseFromRows(db.rows.lms_courses![0]!, db.rows.lms_modules!, db.rows.lms_lessons!);
 
     // The `$`-prefixed keys are annotations on the FILE, not fields of the
     // course, and the database has no column for them — see
@@ -327,7 +327,7 @@ describe("builder → rows → builder", () => {
     // and what was decided about publishing it.
     const db = fakeWriter();
     await writeCourseStructure(db, edited);
-    const restored = courseFromRows(db.rows.lms_courses[0], db.rows.lms_modules, db.rows.lms_lessons);
+    const restored = courseFromRows(db.rows.lms_courses![0]!, db.rows.lms_modules!, db.rows.lms_lessons!);
 
     const merged = preserveFileAnnotations(shipped as unknown as Record<string, unknown>, restored);
 
@@ -365,7 +365,7 @@ describe("builder → rows → builder", () => {
 
     const db = fakeWriter();
     await writeCourseStructure(db, unconfigured);
-    const restored = courseFromRows(db.rows.lms_courses[0], db.rows.lms_modules, db.rows.lms_lessons);
+    const restored = courseFromRows(db.rows.lms_courses![0]!, db.rows.lms_modules!, db.rows.lms_lessons!);
 
     expect("theme" in restored).toBe(false);
     expect("cover" in restored).toBe(false);

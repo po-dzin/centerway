@@ -155,7 +155,8 @@ export function currentAppKey(
   host: string | null | undefined,
   pathname: string | null | undefined,
 ): PlatformAppKey | null {
-  const path = (pathname ?? "").split("?")[0];
+  // A string split always yields at least one element; the default never applies.
+  const [path = ""] = (pathname ?? "").split("?");
   if (isPersonalHost(host) && (path === "/" || path === "")) return "learn";
 
   const inside = (prefix: string) => path === prefix || path.startsWith(`${prefix}/`);

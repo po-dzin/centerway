@@ -570,5 +570,5 @@ async function paidOrdersByCustomer(db: Db, customerIds: string[]): Promise<Map<
 function courseSlugFromProductCode(productCode: string | null): string | null {
   if (!productCode) return null;
   const match = /^course:(.+)$/.exec(productCode.trim());
-  return match ? match[1] : null;
+  return match?.[1] ?? null;
 }

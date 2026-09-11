@@ -397,11 +397,12 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   /** `/build/<this course>/<lesson>` — and only that — is an in-course move. */
   const lessonSlugIn = useCallback(
     (href: string) => {
-      const [path] = href.split(/[?#]/);
+      const [path = ""] = href.split(/[?#]/);
       const segments = path.split("/").filter(Boolean);
-      if (segments.length !== 3 || segments[0] !== "build") return null;
-      if (decodeURIComponent(segments[1]) !== slug) return null;
-      return decodeURIComponent(segments[2]);
+      const [head, courseSlug, lessonSlug] = segments;
+      if (segments.length !== 3 || head !== "build" || !courseSlug || !lessonSlug) return null;
+      if (decodeURIComponent(courseSlug) !== slug) return null;
+      return decodeURIComponent(lessonSlug);
     },
     [slug],
   );
@@ -521,17 +522,17 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     );
   }
 
-  if (!course || !located) {
+  // Not named `module`: Next forbids shadowing the CommonJS global.
+  const holder = course && located ? course.modules[located.moduleIndex] : undefined;
+  const lesson = holder && located ? holder.lessons[located.lessonIndex] : undefined;
+
+  if (!course || !located || !holder || !lesson) {
     return (
       <BuilderShell trail={trail}>
         <BuilderNotice title="Урок не знайдено" text={`У курсі немає уроку «${activeSlug}».`} />
       </BuilderShell>
     );
   }
-
-  // Not named `module`: Next forbids shadowing the CommonJS global.
-  const holder = course.modules[located.moduleIndex];
-  const lesson = holder.lessons[located.lessonIndex] as Lesson;
 
   /* The author's walk through the course — every lesson in stored order,
      reference modules included — used to be computed here for one thing only:
@@ -540,7 +541,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
      outline itself is what answers «where am I», and it answers with the
      lesson's name rather than with its index. */
   const selectedBlockIndex = lesson.blocks.findIndex((block) => block.id === selectedBlockId);
-  const selectedBlock = selectedBlockIndex >= 0 ? lesson.blocks[selectedBlockIndex] : null;
+  const selectedBlock = selectedBlockIndex >= 0 ? (lesson.blocks[selectedBlockIndex] ?? null) : null;
   const readiness = courseReadiness(course);
   const referenceTargets = buildInternalReferenceTargets(course);
   const referenceOptions = internalReferenceOptions(referenceTargets, lesson.id, holder.id);
@@ -888,8 +889,8 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
 }
 
 function locateLesson(course: Course, lessonSlug: string): { moduleIndex: number; lessonIndex: number } | null {
-  for (let moduleIndex = 0; moduleIndex < course.modules.length; moduleIndex += 1) {
-    const lessonIndex = course.modules[moduleIndex].lessons.findIndex((lesson) => lesson.slug === lessonSlug);
+  for (const [moduleIndex, holder] of course.modules.entries()) {
+    const lessonIndex = holder.lessons.findIndex((lesson) => lesson.slug === lessonSlug);
     if (lessonIndex >= 0) return { moduleIndex, lessonIndex };
   }
   return null;

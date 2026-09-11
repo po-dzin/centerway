@@ -25,9 +25,24 @@ export function isoDateFromParts(parts: { year: number; month: number; day: numb
   return `${y}-${m}-${d}`;
 }
 
+/**
+ * Splits a `YYYY-MM-DD` date into its three numbers.
+ *
+ * Every caller is handed a date this code built itself, so a string of another
+ * shape is a programming error rather than data: it throws instead of letting a
+ * missing part become `NaN` and travel on as an "Invalid Date".
+ */
+export function isoDateParts(isoDate: string): { year: number; month: number; day: number } {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  if (year === undefined || month === undefined || day === undefined) {
+    throw new Error(`Expected an ISO YYYY-MM-DD date, received "${isoDate}"`);
+  }
+  return { year, month, day };
+}
+
 export function shiftIsoDate(isoDate: string, days: number): string {
-  const [y, m, d] = isoDate.split("-").map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d));
+  const { year, month, day } = isoDateParts(isoDate);
+  const dt = new Date(Date.UTC(year, month - 1, day));
   dt.setUTCDate(dt.getUTCDate() + days);
   return dt.toISOString().slice(0, 10);
 }
@@ -67,12 +82,12 @@ export function getIsoDateInTimeZone(date: Date, timeZone: string): string {
 }
 
 export function localMidnightUtcIso(isoDate: string, timeZone: string): string {
-  const [y, m, d] = isoDate.split("-").map(Number);
-  let ts = Date.UTC(y, m - 1, d, 0, 0, 0, 0);
+  const { year, month, day } = isoDateParts(isoDate);
+  let ts = Date.UTC(year, month - 1, day, 0, 0, 0, 0);
   // Iterate to handle DST boundaries correctly.
   for (let i = 0; i < 3; i += 1) {
     const offsetMs = getTimeZoneOffsetMs(new Date(ts), timeZone);
-    const next = Date.UTC(y, m - 1, d, 0, 0, 0, 0) - offsetMs;
+    const next = Date.UTC(year, month - 1, day, 0, 0, 0, 0) - offsetMs;
     if (next === ts) break;
     ts = next;
   }

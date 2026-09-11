@@ -67,10 +67,10 @@ describe("diffCourses", () => {
   it("поднимает флаг, когда переписан блок «межі»", () => {
     const after = course([
       {
-        ...base().modules[0],
+        ...base().modules[0]!,
         lessons: [
-          { ...base().modules[0].lessons[0], blocks: [prose("b1", "Текст"), boundary("b2", "Підходить усім")] },
-          base().modules[0].lessons[1],
+          { ...base().modules[0]!.lessons![0]!, blocks: [prose("b1", "Текст"), boundary("b2", "Підходить усім")] },
+          base().modules[0]!.lessons![1]!,
         ],
       },
     ]);
@@ -85,8 +85,11 @@ describe("diffCourses", () => {
   it("замечает удаление блока «межі», а не только правку", () => {
     const after = course([
       {
-        ...base().modules[0],
-        lessons: [{ ...base().modules[0].lessons[0], blocks: [prose("b1", "Текст")] }, base().modules[0].lessons[1]],
+        ...base().modules[0]!,
+        lessons: [
+          { ...base().modules[0]!.lessons![0]!, blocks: [prose("b1", "Текст")] },
+          base().modules[0]!.lessons![1]!,
+        ],
       },
     ]);
     const diff = diffCourses(base(), after);
@@ -97,13 +100,13 @@ describe("diffCourses", () => {
   /* Сравнение по id, а не по позиции: иначе один сдвиг на курсе из двадцати
      уроков выглядел бы как двадцать правок и прятал бы настоящую. */
   it("видит перемещение как перемещение, а не как удаление и добавление", () => {
-    const [first, second] = base().modules[0].lessons;
+    const [first, second] = base().modules[0]!.lessons;
     const after = course([
       {
-        ...base().modules[0],
+        ...base().modules[0]!,
         lessons: [
-          { ...second, order: 1 },
-          { ...first, order: 2 },
+          { ...second!, order: 1 },
+          { ...first!, order: 2 },
         ],
       },
     ]);
@@ -120,9 +123,9 @@ describe("diffCourses", () => {
   it("различает добавленный и удалённый урок и называет их модуль", () => {
     const after = course([
       {
-        ...base().modules[0],
+        ...base().modules[0]!,
         lessons: [
-          base().modules[0].lessons[0],
+          base().modules[0]!.lessons![0]!,
           { id: "l3", slug: "l-3", title: "Новий урок", order: 2, blocks: [prose("b9", "Нове")] },
         ],
       },
@@ -149,13 +152,13 @@ describe("diffCourses", () => {
     const grouped = (text: string) =>
       course([
         {
-          ...base().modules[0],
+          ...base().modules[0]!,
           lessons: [
             {
-              ...base().modules[0].lessons[0],
+              ...base().modules[0]!.lessons![0]!,
               blocks: [{ id: "g1", type: "group" as const, children: [boundary("b2", text)] }],
             },
-            base().modules[0].lessons[1],
+            base().modules[0]!.lessons![1]!,
           ],
         },
       ]);

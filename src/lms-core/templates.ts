@@ -60,7 +60,7 @@ function module(
   };
 }
 
-export const COURSE_TEMPLATES: CourseTemplate[] = [
+export const COURSE_TEMPLATES: [CourseTemplate, ...CourseTemplate[]] = [
   {
     id: "blank",
     title: "Порожній",

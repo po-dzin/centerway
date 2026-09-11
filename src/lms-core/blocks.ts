@@ -119,7 +119,7 @@ export function youtubeIdFrom(input: string): string | null {
 
   for (const pattern of patterns) {
     const found = pattern.exec(value);
-    if (found) return found[1];
+    if (found?.[1]) return found[1];
   }
 
   return null;

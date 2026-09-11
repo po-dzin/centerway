@@ -22,14 +22,19 @@ export const dynamic = "force-dynamic";
 type QueueDepth = { pending: number; failed: number; running: number };
 
 async function readQueueDepth(sb: ReturnType<typeof supabaseAdmin>): Promise<QueueDepth | null> {
-  const counts = await Promise.all(
-    (["pending", "failed", "running"] as const).map((status) =>
-      sb.from("jobs").select("id", { count: "exact", head: true }).eq("status", status),
-    ),
-  );
-  if (counts.some((result) => result.error)) return null;
-  const [pending, failed, running] = counts.map((result) => result.count ?? 0);
-  return { pending, failed, running };
+  /* A tuple, not a mapped array: three named questions asked at once, and the
+     three answers destructured by position. The mapped form compiled but the
+     compiler could not see that it had three elements, so `running` was only
+     ever a number by coincidence of the literal above it. */
+  const countJobs = (status: "pending" | "failed" | "running") =>
+    sb.from("jobs").select("id", { count: "exact", head: true }).eq("status", status);
+  const [pending, failed, running] = await Promise.all([
+    countJobs("pending"),
+    countJobs("failed"),
+    countJobs("running"),
+  ]);
+  if (pending.error || failed.error || running.error) return null;
+  return { pending: pending.count ?? 0, failed: failed.count ?? 0, running: running.count ?? 0 };
 }
 
 export async function GET(req: Request) {

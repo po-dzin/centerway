@@ -32,7 +32,7 @@ describe("prepareMedia", () => {
       expect(result.renditions.map((r) => r.name)).toEqual(["1600.webp", "640.webp"]);
       expect(result.width).toBe(1600);
       expect(result.height).toBe(1200);
-      expect(result.renditions[0].bytes.byteLength).toBeLessThan(source.byteLength);
+      expect(result.renditions[0]!.bytes!.byteLength).toBeLessThan(source.byteLength);
     },
   );
 

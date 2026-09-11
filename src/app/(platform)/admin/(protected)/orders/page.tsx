@@ -256,17 +256,19 @@ function parseCsvEntries(fileText: string): CsvImportedOfferEntry[] {
     .map((line) => line.trim())
     .filter(Boolean);
 
-  if (lines.length === 0) {
+  const [firstLine] = lines;
+  if (!firstLine) {
     return [];
   }
 
-  const firstRow = parseCsvLine(lines[0]).map((value) => value.toLowerCase());
+  const firstCells = parseCsvLine(firstLine);
+  const firstRow = firstCells.map((value) => value.toLowerCase());
   const hasHeader = firstRow.includes("recipient_key") || firstRow.includes("recipientkey");
   const dataLines = hasHeader ? lines.slice(1) : lines;
   const headerIndex = new Map<string, number>();
 
   if (hasHeader) {
-    parseCsvLine(lines[0]).forEach((value, index) => {
+    firstCells.forEach((value, index) => {
       headerIndex.set(value.trim().toLowerCase(), index);
     });
   }
@@ -493,8 +495,9 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
       setIssuedSummary(response.summary);
       setIssuedBatchId(response.batchId);
 
-      if (response.offers.length === 1) {
-        await copyLandingUrl(response.offers[0].landingUrl);
+      const [soleOffer] = response.offers;
+      if (response.offers.length === 1 && soleOffer) {
+        await copyLandingUrl(soleOffer.landingUrl);
         toast.success(labels.issueSuccess);
       } else {
         await copyAllLandingUrls(response.offers);

@@ -139,14 +139,14 @@ describe("listCatalog", () => {
       learners: 1,
       blockers: [],
     });
-    expect(rows[0].offer).toMatchObject({ amount: 795, accessDays: 30, accessLifetime: false });
+    expect(rows[0]!.offer).toMatchObject({ amount: 795, accessDays: 30, accessLifetime: false });
   });
 
   it("treats a course from before the review columns as approved, not as pending forever", async () => {
     seed([course({ review_status: null })], [offerOf()]);
 
     const rows = await listCatalog();
-    expect(rows[0].reviewStatus).toBe("approved");
+    expect(rows[0]!.reviewStatus).toBe("approved");
   });
 });
 
@@ -160,7 +160,7 @@ describe("saveOffer", () => {
     const row = db.rows("lms_course_offers")[0];
     expect(row).toMatchObject({ amount: 990, access_days: 90, access_lifetime: false, active: true });
     // The Meta label defaults to the course title on creation.
-    expect(row.pixel_content_name).toBe("Reset Day");
+    expect(row!.pixel_content_name).toBe("Reset Day");
   });
 
   it("accepts zero as an explicit free offer", async () => {
@@ -216,7 +216,7 @@ describe("saveOffer", () => {
 
     await saveOffer({ courseId: "course-reset", actorId: ADMIN, amount: 1200, accessDays: 30 });
 
-    expect(db.rows("lms_course_offers")[0].pixel_content_name).toBe("Reset Day");
+    expect(db.rows("lms_course_offers")[0]!.pixel_content_name).toBe("Reset Day");
   });
 });
 
@@ -225,7 +225,7 @@ describe("setOfferActive", () => {
     await setOfferActive({ courseId: "course-reset", active: false, actorId: ADMIN });
 
     expect(db.rows("lms_course_offers")).toHaveLength(1);
-    expect(db.rows("lms_course_offers")[0].active).toBe(false);
+    expect(db.rows("lms_course_offers")[0]!.active).toBe(false);
   });
 
   it("refuses a course that was never priced", async () => {

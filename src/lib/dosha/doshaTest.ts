@@ -406,13 +406,18 @@ function roundPp(value: number): number {
  * tridosha achievable at 4/4/4 alone and gave a softer verdict to the more
  * lopsided of two neighbouring splits.
  */
+type DoshaRank = { key: BaseDosha; score: number };
+
 export function classifyDosha(vata: number, pitta: number, kapha: number): DoshaClassification {
   const total = vata + pitta + kapha;
-  const ranked = [
-    { key: "vata" as const, score: vata },
-    { key: "pitta" as const, score: pitta },
-    { key: "kapha" as const, score: kapha },
-  ].sort((a, b) => b.score - a.score);
+  // Annotated as a fixed triple: there are exactly three doshas, so sorting
+  // cannot change the length and every position below is occupied.
+  const ranked: [DoshaRank, DoshaRank, DoshaRank] = [
+    { key: "vata", score: vata },
+    { key: "pitta", score: pitta },
+    { key: "kapha", score: kapha },
+  ];
+  ranked.sort((a, b) => b.score - a.score);
 
   const [leader, second, third] = ranked;
 
@@ -521,7 +526,12 @@ function shuffleWithSeed<T>(items: T[], seed: number): T[] {
   for (let i = out.length - 1; i > 0; i -= 1) {
     state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
     const j = state % (i + 1);
-    [out[i], out[j]] = [out[j], out[i]];
+    // 0 <= j <= i < out.length from the loop bounds directly above, so both
+    // reads are in range; the cast restores what an index signature cannot say.
+    const atI = out[i] as T;
+    const atJ = out[j] as T;
+    out[i] = atJ;
+    out[j] = atI;
   }
   return out;
 }

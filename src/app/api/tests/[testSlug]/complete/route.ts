@@ -169,8 +169,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tes
       answer_order: number;
     }> = [];
 
-    for (let idx = 0; idx < answers.length; idx += 1) {
-      const answer = answers[idx];
+    for (const [idx, answer] of answers.entries()) {
       const question = await findTestQuestionById(db, answer.questionId, test.id);
       if (!question) {
         return NextResponse.json({ error: "question_not_in_test", questionId: answer.questionId }, { status: 400 });
@@ -276,7 +275,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tes
       content_type: userId ? "lead" : "product",
       content_ids: [resultType],
       email: user?.email ?? null,
-      ip_address: req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? req.headers.get("x-real-ip") ?? null,
+      /* Empty falls through, not just nullish: a present-but-blank
+         `x-forwarded-for` trims to `""`, which `??` would have kept and sent to
+         Meta as the address instead of reading `x-real-ip`. */
+      ip_address:
+        (req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null) ?? req.headers.get("x-real-ip") ?? null,
       user_agent: req.headers.get("user-agent"),
     };
     try {

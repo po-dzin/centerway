@@ -88,7 +88,7 @@ describe("path writes", () => {
     const original = { items: [{ text: "one" }, { text: "two" }] };
     const next = writePath(original, ["items", 1, "text"], "changed");
     expect(Array.isArray(next.items)).toBe(true);
-    expect(next.items[1].text).toBe("changed");
+    expect(next.items[1]!.text).toBe("changed");
     expect(next.items[0]).toBe(original.items[0]);
   });
 

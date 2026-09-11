@@ -88,6 +88,7 @@ export function RichTextEditor({
 
   const runCommand = (index: number, id: string, clearSlash = false, itemIndex = 0) => {
     const current = block.content[index];
+    if (!current) return;
     const commandNode: RichTextNode | undefined = clearSlash
       ? current.kind === "ul" || current.kind === "ol"
         ? { ...current, items: current.items.map((item, i) => (i === itemIndex ? "" : item)) }
@@ -117,7 +118,11 @@ export function RichTextEditor({
     // empty node had never been there.
     const target = Math.max(0, index - 1);
     const previous = block.content[target];
-    setFocus(previous.kind === "ul" || previous.kind === "ol" ? `${target}:${previous.items.length - 1}` : `${target}`);
+    setFocus(
+      previous && (previous.kind === "ul" || previous.kind === "ol")
+        ? `${target}:${previous.items.length - 1}`
+        : `${target}`,
+    );
   };
 
   /* What the second half of every node menu acts on, said in the block's own

@@ -357,6 +357,7 @@ function attentionSvg(ci: number, W: number, H: number, inkW: number): string {
       const q = run[i];
       const prev = run[Math.max(0, i - 1)];
       const next = run[Math.min(L - 1, i + 1)];
+      if (!q || !prev || !next) continue;
       const dx = next[0] - prev[0];
       const dy = next[1] - prev[1];
       const len = Math.sqrt(dx * dx + dy * dy) || 1;
@@ -498,7 +499,7 @@ const LADDER = [
   { bw: 12, per: 7 },
   { bw: 10, per: 6 },
   { bw: 8, per: 6 },
-];
+] as const;
 
 type Section = {
   ci: number;
@@ -555,7 +556,7 @@ function layoutRoom(cases: RoomCase[], W: number, H: number, narrow: boolean): N
     const groups: Group[] = [];
     let list: Section[] = [];
     cases.forEach((data, ci) => {
-      const bw = Math.max(5, step.bw * facet[ci].size);
+      const bw = Math.max(5, step.bw * (facet[ci]?.size ?? 1));
       const gap = Math.max(3, Math.round(bw * 0.34));
       const pad = Math.max(5, Math.round(bw * 0.34));
       const unit = Math.max(46, Math.min(170, Math.round(bw * 4.7)));
@@ -641,8 +642,8 @@ function layoutRoom(cases: RoomCase[], W: number, H: number, narrow: boolean): N
 
   let secs = sectionsFor(LADDER[0]);
   let packed = pack(secs);
-  for (let si = 0; si < LADDER.length; si++) {
-    secs = sectionsFor(LADDER[si]);
+  for (const rung of LADDER) {
+    secs = sectionsFor(rung);
     packed = pack(secs);
     if (packed.height <= band.h) break;
   }
@@ -677,6 +678,7 @@ function layoutRoom(cases: RoomCase[], W: number, H: number, narrow: boolean): N
   secs.list.forEach((sec) => {
     const data = cases[sec.ci];
     const f = facet[sec.ci];
+    if (!data || !f) return;
     const cw = Math.max(28, Math.round(sec.w));
     const ch = Math.max(34, Math.round(sec.h));
     const cut = Math.max(3, Math.min(22, Math.min(cw, ch) * (0.1 + f.t * 0.1)));
@@ -1113,8 +1115,10 @@ export function LearnRoomView({
                   }}
                   aria-label={copy.roomEnter(cases.find((one) => one.ci === n.ci)?.label ?? "")}
                   onClick={() => {
+                    const category = CATEGORY_ORDER[n.ci];
+                    if (!category) return;
                     focusBackAfterOpen.current = true;
-                    onCategory(CATEGORY_ORDER[n.ci]);
+                    onCategory(category);
                   }}
                   onMouseEnter={() => setHot(n.books[0]?.slug ?? null)}
                 />

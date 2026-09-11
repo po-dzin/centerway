@@ -90,7 +90,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ att
         return NextResponse.json({ error: insertAnswerError.message }, { status: 500 });
       }
 
-      const incrementPatch: Record<string, number> = {
+      /* Three named scores, not a bag of strings: the `Record<string, number>`
+         annotation threw away the fact that all three keys are present, which
+         is the one thing the increments below depend on. */
+      const incrementPatch = {
         score_vata: attempt.score_vata,
         score_pitta: attempt.score_pitta,
         score_kapha: attempt.score_kapha,

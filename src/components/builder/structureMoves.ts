@@ -26,6 +26,8 @@ export function moveModuleTo(modules: CourseModule[], from: DragRef, to: DragRef
   const next = clone(modules);
   const insert = landingIndex(from.index, to.index, edge, true);
   const [moved] = next.splice(from.index, 1);
+  // An index outside the list is not a move: leave the original untouched.
+  if (!moved) return modules;
   next.splice(insert, 0, moved);
   return next;
 }
@@ -48,6 +50,7 @@ export function moveLessonTo(modules: CourseModule[], from: DragRef, to: DragRef
 
   const insert = landingIndex(from.index, to.index, edge, source === target);
   const [moved] = source.lessons.splice(from.index, 1);
+  if (!moved) return modules;
   target.lessons.splice(insert, 0, moved);
   return next;
 }
@@ -62,6 +65,7 @@ export function stepModule(modules: CourseModule[], index: number, delta: number
   if (target < 0 || target >= modules.length) return null;
   const next = clone(modules);
   const [moved] = next.splice(index, 1);
+  if (!moved) return null;
   next.splice(target, 0, moved);
   return next;
 }
@@ -84,6 +88,7 @@ export function stepLesson(
 
   if (target >= 0 && target < from.lessons.length) {
     const [moved] = from.lessons.splice(lessonIndex, 1);
+    if (!moved) return null;
     from.lessons.splice(target, 0, moved);
     return next;
   }
@@ -94,6 +99,7 @@ export function stepLesson(
 
   const [moved] = from.lessons.splice(lessonIndex, 1);
   const neighbour = next[neighbourIndex];
+  if (!moved || !neighbour) return null;
   neighbour.lessons.splice(delta > 0 ? 0 : neighbour.lessons.length, 0, moved);
   return next;
 }

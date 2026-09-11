@@ -58,5 +58,5 @@ const MESSAGES: Record<string, string> = {
 
 export function courseSaveFailureCopy(detail: string | undefined, fallback: string): string {
   if (!detail) return fallback;
-  return MESSAGES[detail.split(":")[0]] ?? fallback;
+  return MESSAGES[detail.split(":")[0] ?? detail] ?? fallback;
 }

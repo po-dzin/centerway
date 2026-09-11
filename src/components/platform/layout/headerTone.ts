@@ -21,11 +21,13 @@ function parseCssColor(value: string) {
   if (normalized.startsWith("#")) {
     const hex = normalized.slice(1);
     if (hex.length === 3 || hex.length === 4) {
+      const [h0, h1, h2, h3] = hex;
+      if (!h0 || !h1 || !h2) return null;
       return {
-        r: parseInt(hex[0] + hex[0], 16),
-        g: parseInt(hex[1] + hex[1], 16),
-        b: parseInt(hex[2] + hex[2], 16),
-        a: hex.length === 4 ? parseInt(hex[3] + hex[3], 16) / 255 : 1,
+        r: parseInt(h0 + h0, 16),
+        g: parseInt(h1 + h1, 16),
+        b: parseInt(h2 + h2, 16),
+        a: h3 ? parseInt(h3 + h3, 16) / 255 : 1,
       };
     }
 
@@ -43,12 +45,12 @@ function parseCssColor(value: string) {
 }
 
 function luminanceFromColor(color: { r: number; g: number; b: number }) {
-  const channels = [color.r, color.g, color.b].map((value) => {
+  const toChannel = (value: number) => {
     const channel = value / 255;
     return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-  });
+  };
 
-  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+  return toChannel(color.r) * 0.2126 + toChannel(color.g) * 0.7152 + toChannel(color.b) * 0.0722;
 }
 
 function resolveExplicitTopbarTone(sampleY: number): HeaderTone | null {
@@ -287,6 +289,7 @@ export function useHeaderTone(initialTone: HeaderTone = "light", watchKey?: stri
          speak for the whole thing. The bar reads three columns of its own 64px;
          the sheet reads the same three across four rows of its own height. */
       const level = median(luminances);
+      if (level === undefined) return;
       const current = toneRef.current;
       commitTone(current === "dark" ? (level > ENTER_LIGHT ? "light" : "dark") : level < ENTER_DARK ? "dark" : "light");
     };

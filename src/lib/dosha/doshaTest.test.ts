@@ -80,7 +80,9 @@ describe("classifyDosha", () => {
         if (second < 1 || lead < second || second < third) continue;
         const before = shape(calculateDoshaResult(lead, second, third));
         const after = shape(calculateDoshaResult(lead + 1, second - 1, third));
-        expect(after, `${lead}/${second}/${third} → ${lead + 1}/${second - 1}/${third}`).toBeGreaterThanOrEqual(before);
+        expect(after, `${lead}/${second}/${third} → ${lead + 1}/${second - 1}/${third}`).toBeGreaterThanOrEqual(
+          before!,
+        );
       }
     }
   });
@@ -140,7 +142,7 @@ describe("presentQuestionsForSession", () => {
     const presented = presentQuestionsForSession(source, "session-a");
     expect(presented.map((q) => q.code)).toEqual(source.map((q) => q.code));
     for (const [index, question] of presented.entries()) {
-      expect([...question.options].map((o) => o.id).sort()).toEqual(source[index].options.map((o) => o.id).sort());
+      expect([...question.options].map((o) => o.id).sort()).toEqual(source[index]!.options.map((o) => o.id).sort());
       // The order field is the position on screen, not the seed order.
       expect(question.options.map((o) => o.order)).toEqual([1, 2, 3]);
     }
@@ -160,14 +162,14 @@ describe("presentQuestionsForSession", () => {
 
     for (let i = 0; i < 200; i += 1) {
       for (const question of presentQuestionsForSession(source, `session-${i}`)) {
-        const dosha = keyByOptionId.get(question.options[0].id)!;
-        firstPlace[dosha] += 1;
+        const dosha = keyByOptionId.get(question.options[0]!.id)!;
+        firstPlace[dosha]! += 1;
       }
     }
 
     const total = Object.values(firstPlace).reduce((a, b) => a + b, 0);
     for (const dosha of ["vata", "pitta", "kapha"]) {
-      const share = firstPlace[dosha] / total;
+      const share = firstPlace[dosha]! / total;
       expect(share, `${dosha} leads ${(share * 100).toFixed(1)} % of questions`).toBeGreaterThan(0.28);
       expect(share).toBeLessThan(0.39);
     }

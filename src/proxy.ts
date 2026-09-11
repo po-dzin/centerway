@@ -39,10 +39,10 @@ const PLATFORM_APEX_HOST = "centerway.net.ua";
 const PLATFORM_CANONICAL_HOST = `www.${PLATFORM_APEX_HOST}`;
 
 function retiredHostRedirect(req: NextRequest): NextResponse | null {
-  const host = (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "")
-    .split(":")[0]
-    .trim()
-    .toLowerCase();
+  const rawHost = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
+  // A string split always yields at least one element; the default never applies.
+  const [hostWithoutPort = ""] = rawHost.split(":");
+  const host = hostWithoutPort.trim().toLowerCase();
 
   // Exact match only: every funnel host ends in this domain and must not be
   // dragged to www.

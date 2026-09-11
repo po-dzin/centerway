@@ -47,7 +47,7 @@ describe("newBlock", () => {
   it("gives a checklist item its own id, not the block's", () => {
     const block = newBlock("checklist", counter());
     if (block.type !== "checklist") throw new Error("wrong type");
-    expect(block.items[0].id).not.toBe(block.id);
+    expect(block.items[0]!.id).not.toBe(block.id);
   });
 
   it("builds a table that is not ragged", () => {
@@ -113,7 +113,7 @@ describe("renumber", () => {
     const modules = [newModule(ids, { order: 7 }), newModule(ids, { order: 2 })];
     const renumbered = renumber(modules);
     expect(renumbered.map((module) => module.order)).toEqual([1, 2]);
-    expect(renumbered[0].lessons[0].order).toBe(1);
+    expect(renumbered[0]!.lessons![0]!.order).toBe(1);
   });
 });
 
@@ -144,7 +144,7 @@ describe("nextDayIndex", () => {
   });
 
   it("ignores reference material, which holds no day", () => {
-    expect(gapped.modules[1].lessons[0].dayIndex).toBeUndefined();
+    expect(gapped.modules[1]!.lessons![0]!.dayIndex).toBeUndefined();
   });
 
   it("answers nothing at all on a non-daily course", () => {
@@ -170,27 +170,27 @@ describe("pruneEmptyProse", () => {
         ]),
       ]),
     );
-    expect(pruned.modules[0].lessons[0].blocks[0]).toMatchObject({
+    expect(pruned.modules[0]!.lessons![0]!.blocks![0]).toMatchObject({
       content: [{ kind: "p", text: "Написане" }],
     });
   });
 
   it("drops empty list items and keeps the ones with words in them", () => {
     const pruned = pruneEmptyProse(course([rich([{ kind: "ul", items: ["Перший", "", "Третій"] }])]));
-    expect(pruned.modules[0].lessons[0].blocks[0]).toMatchObject({
+    expect(pruned.modules[0]!.lessons![0]!.blocks![0]).toMatchObject({
       content: [{ kind: "ul", items: ["Перший", "Третій"] }],
     });
   });
 
   it("drops a block emptied of every node", () => {
     const pruned = pruneEmptyProse(course([rich([{ kind: "p", text: "" }])]));
-    expect(pruned.modules[0].lessons[0].blocks).toEqual([]);
+    expect(pruned.modules[0]!.lessons![0]!.blocks).toEqual([]);
   });
 
   it("leaves every other block type exactly as it found it", () => {
     const video = { id: "v1", type: "video", youtubeId: "abc" } as unknown as LessonBlock;
     const pruned = pruneEmptyProse(course([video]));
-    expect(pruned.modules[0].lessons[0].blocks[0]).toBe(video);
+    expect(pruned.modules[0]!.lessons![0]!.blocks![0]).toBe(video);
   });
 
   it("counts whitespace as nothing written", () => {
@@ -202,7 +202,7 @@ describe("pruneEmptyProse", () => {
         ]),
       ]),
     );
-    expect(pruned.modules[0].lessons[0].blocks[0]).toMatchObject({ content: [{ kind: "p", text: "Є" }] });
+    expect(pruned.modules[0]!.lessons![0]!.blocks![0]).toMatchObject({ content: [{ kind: "p", text: "Є" }] });
   });
 });
 

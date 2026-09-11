@@ -47,6 +47,7 @@ export function mapBlockText(block: HTMLElement): BlockTextMap {
     const value = node.nodeValue ?? "";
     for (let i = 0; i < value.length; i += 1) {
       const char = value[i];
+      if (char === undefined) continue;
       if (WHITESPACE.test(char)) {
         // One space per run, and never a leading one.
         if (text.length === 0 || text.endsWith(" ")) continue;
@@ -79,9 +80,10 @@ export function mapBlockText(block: HTMLElement): BlockTextMap {
  */
 function indexOfPosition(map: BlockTextMap, node: Node, offset: number): number {
   let last = -1;
-  for (let i = 0; i < map.nodes.length; i += 1) {
-    if (map.nodes[i] !== node) continue;
-    if (map.offsets[i] >= offset) return i;
+  for (const [i, candidate] of map.nodes.entries()) {
+    if (candidate !== node) continue;
+    const at = map.offsets[i];
+    if (at !== undefined && at >= offset) return i;
     last = i;
   }
   return last >= 0 ? last + 1 : -1;
@@ -145,9 +147,14 @@ export function anchorFromSelection(selection: Selection, root: HTMLElement): Se
 /** Stored offsets → a live Range, or null when the passage is no longer there. */
 export function rangeFromOffsets(map: BlockTextMap, start: number, end: number): Range | null {
   if (start < 0 || end > map.nodes.length || end <= start) return null;
+  const startNode = map.nodes[start];
+  const startOffset = map.offsets[start];
+  const endNode = map.nodes[end - 1];
+  const endOffset = map.offsets[end - 1];
+  if (!startNode || !endNode || startOffset === undefined || endOffset === undefined) return null;
   const range = document.createRange();
-  range.setStart(map.nodes[start], map.offsets[start]);
-  range.setEnd(map.nodes[end - 1], map.offsets[end - 1] + 1);
+  range.setStart(startNode, startOffset);
+  range.setEnd(endNode, endOffset + 1);
   return range;
 }
 

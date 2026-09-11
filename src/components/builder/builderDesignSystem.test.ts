@@ -102,14 +102,14 @@ describe("motion is named by its job", () => {
    * the same rule `guard:buttons` applies to the network's own fallbacks.
    */
   it("gives portalled surfaces a fallback that agrees with the token", () => {
-    const tool = /--builder-motion-tool:\s*([^;]+);/.exec(code)?.[1].trim();
-    const ease = /--builder-ease-tool:\s*([^;]+);/.exec(code)?.[1].trim();
+    const tool = /--builder-motion-tool:\s*([^;]+);/.exec(code)?.[1]!.trim();
+    const ease = /--builder-ease-tool:\s*([^;]+);/.exec(code)?.[1]!.trim();
     expect(tool).toBeTruthy();
     expect(ease).toBeTruthy();
 
     const portalled = [...code.matchAll(/animation:[^;]*var\(--builder-motion-tool,\s*([^)]+)\)/g)];
     expect(portalled.length).toBeGreaterThanOrEqual(3);
-    for (const [, fallback] of portalled) expect(fallback.trim()).toBe(tool);
+    for (const [, fallback] of portalled) expect(fallback!.trim()).toBe(tool);
   });
 
   /**
@@ -140,7 +140,7 @@ describe("layering", () => {
    */
   it("expresses every overlay layer against --ds-z-sticky", () => {
     const overlays = [...code.matchAll(/z-index:\s*([^;]+);/g)]
-      .map((m) => m[1].trim())
+      .map((m) => m[1]!.trim())
       .filter((value) => value !== "auto" && !/^[12]$/.test(value));
 
     expect(overlays.length).toBeGreaterThan(0);
@@ -150,7 +150,7 @@ describe("layering", () => {
   it("keeps the block picker on the row menu's rung", () => {
     const picker = /\.pickerPanel\s*\{([\s\S]*?)\}/.exec(code)?.[1] ?? "";
     const menu = /\.menuList\s*\{([\s\S]*?)\}/.exec(code)?.[1] ?? "";
-    const z = (rule: string) => /z-index:\s*([^;]+);/.exec(rule)?.[1].trim();
+    const z = (rule: string) => /z-index:\s*([^;]+);/.exec(rule)?.[1]!.trim();
 
     expect(z(picker)).toBeTruthy();
     expect(z(picker)).toBe(z(menu));
@@ -183,7 +183,7 @@ describe("icons sit on the scale", () => {
     const offScale: string[] = [];
     for (const { name, source } of builderTsx) {
       for (const [, size] of source.matchAll(/<Icon[^>]*?\bsize=\{(\d+)\}/g)) {
-        if (!["16", "18", "20"].includes(size)) offScale.push(`${name}: ${size}`);
+        if (!["16", "18", "20"].includes(size!)) offScale.push(`${name}: ${size}`);
       }
     }
     expect(offScale).toEqual([]);

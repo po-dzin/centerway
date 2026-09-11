@@ -82,7 +82,7 @@ describe("composite block contracts", () => {
     expect(() => validateLessonBlock(group, "group")).not.toThrow();
     expect(collectRequiredChecklistItemIds([group])).toEqual(["item"]);
     expect(flattenBlocks(renumberSteps([group]))[0]).toMatchObject({ step: 1 });
-    expect(addressedBlocks([group])[1].path).toBe("blocks[0].children[0]");
+    expect(addressedBlocks([group])[1]!.path).toBe("blocks[0].children[0]");
   });
   it("rejects empty and excessively nested composites", () => {
     expect(() => validateLessonBlock({ ...group, children: [] }, "group")).toThrow("empty_group");
@@ -93,13 +93,13 @@ describe("composite block contracts", () => {
   it("keeps nested boundaries, export text and fresh import identities", () => {
     const course = newCourse(ids(), { slug: "test", title: "Курс", programSlug: "test" });
     course.title = "Курс";
-    const lesson = course.modules[0].lessons[0];
-    lesson.blocks = [group];
+    const lesson = course.modules[0]!.lessons![0];
+    lesson!.blocks = [group];
     expect(courseReadiness(course).blockers.some((b) => b.code === "lms_ready_missing_boundary")).toBe(false);
-    expect(lessonToMarkdown(lesson)).toContain("**Важливе**");
+    expect(lessonToMarkdown(lesson!)).toContain("**Важливе**");
     const copy = preparePortableCourse(course, { takenSlugs: [], ids: ids() }).course;
-    expect(collectRequiredChecklistItemIds(copy.modules[0].lessons[0].blocks)).not.toContain("item");
-    lesson.blocks = [
+    expect(collectRequiredChecklistItemIds(copy.modules[0]!.lessons![0]!.blocks)).not.toContain("item");
+    lesson!.blocks = [
       {
         id: "empty-group",
         type: "group",
@@ -107,6 +107,6 @@ describe("composite block contracts", () => {
       },
       group,
     ];
-    expect(pruneEmptyProse(course).modules[0].lessons[0].blocks).toEqual([group]);
+    expect(pruneEmptyProse(course).modules[0]!.lessons![0]!.blocks).toEqual([group]);
   });
 });

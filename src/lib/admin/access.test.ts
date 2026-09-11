@@ -269,7 +269,7 @@ describe("listPeople — the enrollment side", () => {
   it("filters by status after folding, and paginates the filtered set", async () => {
     const stalled = await listPeople({ status: "stalled", limit: 50, offset: 0 });
     expect(stalled.total).toBe(1);
-    expect(stalled.items[0].email).toBe("stalled@example.com");
+    expect(stalled.items[0]!.email).toBe("stalled@example.com");
     // The summary still describes the whole set, not the filtered slice.
     expect(stalled.summary.in_progress).toBe(1);
 
@@ -281,7 +281,7 @@ describe("listPeople — the enrollment side", () => {
   });
 
   it("keeps a learner visible when their course row is missing", async () => {
-    db.tables.lms_enrollments.push({
+    db.tables.lms_enrollments!.push({
       id: "enr-orphan",
       course_id: "course-gone",
       auth_user_id: "auth-1",
@@ -296,7 +296,7 @@ describe("listPeople — the enrollment side", () => {
   });
 
   it("gives one person one row, however many courses they hold", async () => {
-    db.tables.lms_enrollments.push({
+    db.tables.lms_enrollments!.push({
       id: "enr-4",
       course_id: "course-way21",
       auth_user_id: "auth-1",
@@ -321,7 +321,7 @@ describe("listPeople — the enrollment side", () => {
   });
 
   it("matches a person when any one of their courses is in the filtered status", async () => {
-    db.tables.lms_enrollments.push({
+    db.tables.lms_enrollments!.push({
       id: "enr-4",
       course_id: "course-way21",
       auth_user_id: "auth-1",
@@ -444,7 +444,7 @@ describe("listPeople — the account side", () => {
   it("carries what a person authors, which used to live only in the Roles table", async () => {
     const { items } = await listPeople({ limit: 50, offset: 0, role: "coach" });
     expect(items[0]).toMatchObject({ role: "coach", ownedCourses: 1 });
-    expect(items[0].courses).toEqual([]);
+    expect(items[0]!.courses).toEqual([]);
   });
 
   it("answers an empty page — not an error — when nobody holds the role", async () => {
@@ -459,7 +459,7 @@ describe("listPeople — the account side", () => {
   });
 
   it("carries the role, the course count and the purchase count", async () => {
-    db.tables.orders.push(
+    db.tables.orders!.push(
       { order_ref: "ord-a", product_code: "reset-day", status: "paid", customer_id: "cus-1", created_at: daysAgo(9) },
       // Not paid: an abandoned checkout is not a purchase.
       {
@@ -487,8 +487,8 @@ describe("listPeople — the account side", () => {
   it("counts a purchase made before the account existed, matched by email", async () => {
     // `customers.auth_user_id` is NULL until the buyer signs in; counting
     // only linked rows would report 0 for the very people support looks up.
-    db.tables.customers.push({ id: "cus-2", email: "fresh@example.com", auth_user_id: null, created_at: daysAgo(20) });
-    db.tables.orders.push({
+    db.tables.customers!.push({ id: "cus-2", email: "fresh@example.com", auth_user_id: null, created_at: daysAgo(20) });
+    db.tables.orders!.push({
       order_ref: "ord-c",
       product_code: "way21",
       status: "paid",
@@ -501,13 +501,13 @@ describe("listPeople — the account side", () => {
   });
 
   it("leaves a customer row that belongs to another account alone", async () => {
-    db.tables.customers.push({
+    db.tables.customers!.push({
       id: "cus-3",
       email: "fresh@example.com",
       auth_user_id: "auth-someone-else",
       created_at: daysAgo(20),
     });
-    db.tables.orders.push({
+    db.tables.orders!.push({
       order_ref: "ord-d",
       product_code: "way21",
       status: "paid",
@@ -995,7 +995,7 @@ describe("course moderation and admin deletion", () => {
     expect(journaled).toHaveLength(1);
     expect(journaled[0]).toMatchObject({ kind: "published", created_by: ADMIN });
     // The document itself, not a pointer to a row that has since moved on.
-    expect((journaled[0].content as { title: string }).title).toBe("Точний перевірений документ");
+    expect((journaled[0]!.content as { title: string }).title).toBe("Точний перевірений документ");
     expect(db.rows("lms_courses").find((item) => item.id === "course-reset")!.pending_content).toBeNull();
   });
 
@@ -1117,7 +1117,7 @@ describe("setCourseAuthor", () => {
 
 describe("setCourseAuthorProfile", () => {
   it("lists available profiles by name for the admin selector", async () => {
-    db.tables.lms_authors.push({ id: "profile-2", slug: "anna", name: "Анна", auth_user_id: "auth-anna" });
+    db.tables.lms_authors!.push({ id: "profile-2", slug: "anna", name: "Анна", auth_user_id: "auth-anna" });
     await expect(listAuthorProfiles()).resolves.toEqual([
       { id: "profile-1", slug: "coach", name: "Coach" },
       { id: "profile-2", slug: "anna", name: "Анна" },

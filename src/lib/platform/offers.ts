@@ -54,10 +54,16 @@ import { offerEyebrow } from "@/lib/platform/offerPreview";
 function coverCard(src: string): string | undefined {
   const set = mediaSources(src).srcSet;
   if (!set) return undefined;
-  return set
-    .split(", ")
-    .map((candidate) => candidate.split(" ")[0])
-    .find((url) => url.endsWith("/640.webp"));
+  return (
+    set
+      .split(", ")
+      // A string split always yields at least one element; the default never applies.
+      .map((candidate) => {
+        const [url = ""] = candidate.split(" ");
+        return url;
+      })
+      .find((url) => url.endsWith("/640.webp"))
+  );
 }
 import {
   courseOfferCode,

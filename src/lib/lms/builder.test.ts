@@ -248,8 +248,8 @@ describe("journal links", () => {
     await createCourseCheckpointOnce({ course: { ...live, title: "Друга" }, actorId: "author-1" });
 
     const entries = db.rows("lms_course_revisions");
-    expect(entries[0].parent_revision_id).toBeNull();
-    expect(entries[1].parent_revision_id).toBe(first.id);
+    expect(entries[0]!.parent_revision_id).toBeNull();
+    expect(entries[1]!.parent_revision_id).toBe(first.id);
   });
 });
 
@@ -277,7 +277,7 @@ describe("published course draft persistence", () => {
     });
     vi.mocked(adminClient).mockImplementation(() => db as never);
 
-    const editedTitle = `${live.modules[0].lessons[0].title} · чернетка`;
+    const editedTitle = `${live.modules[0]!.lessons![0]!.title} · чернетка`;
     const edited = {
       ...live,
       modules: live.modules.map((module, moduleIndex) =>
@@ -299,9 +299,9 @@ describe("published course draft persistence", () => {
     });
 
     const storedRelease = db.rows("lms_courses")[0];
-    expect(storedRelease.title).toBe(live.title);
-    expect(storedRelease.status).toBe("published");
-    expect(storedRelease.pending_content).toMatchObject({ status: "draft" });
+    expect(storedRelease!.title).toBe(live.title);
+    expect(storedRelease!.status).toBe("published");
+    expect(storedRelease!.pending_content).toMatchObject({ status: "draft" });
 
     const reopened = await loadBuilderCourse(live.slug);
     expect(reopened).toMatchObject({
@@ -309,8 +309,8 @@ describe("published course draft persistence", () => {
       hasPendingRevision: true,
       draftGeneration: 1,
     });
-    expect(reopened?.liveCourse.modules[0].lessons[0].title).toBe(live.modules[0].lessons[0].title);
-    expect(reopened?.course.modules[0].lessons[0].title).toBe(editedTitle);
+    expect(reopened?.liveCourse.modules[0]!.lessons![0]!.title).toBe(live.modules[0]!.lessons![0]!.title);
+    expect(reopened?.course.modules[0]!.lessons![0]!.title).toBe(editedTitle);
   });
 });
 
@@ -351,7 +351,7 @@ describe("access code governance", () => {
 
     await saveBuilderCourse({ ...live, entitlementProductCodes: codes }, 0, governance);
     const stored = db.rows("lms_courses")[0];
-    return (stored.pending_content as { entitlementProductCodes: string[] }).entitlementProductCodes;
+    return (stored!.pending_content as { entitlementProductCodes: string[] }).entitlementProductCodes;
   }
 
   it("keeps the stored codes when the writer may not govern them", async () => {

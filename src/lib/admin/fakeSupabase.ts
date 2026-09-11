@@ -143,6 +143,7 @@ class FakeQuery implements PromiseLike<{
   or(expression: string) {
     const clauses = expression.split(",").map((clause) => {
       const [column, operator, ...rest] = clause.split(".");
+      if (column === undefined) throw new Error(`fake: unparseable or(${clause})`);
       if (operator !== "ilike") throw new Error(`fake: unsupported or(${operator})`);
       const re = ilikeToRegExp(rest.join("."));
       return (row: Row) => typeof row[column] === "string" && re.test(row[column] as string);
@@ -366,12 +367,14 @@ export class FakeSupabase {
       this.tables[table] = existing;
     };
 
-    const journal = (kind: unknown = args.p_kind) => {
+    // Annotated as a one-element tuple: the body below returns exactly one
+    // entry, and the release path reads that entry by position.
+    const journal = (kind: unknown = args.p_kind): [Row] => {
       const rows = this.rows("lms_course_revisions");
       const mine = rows.filter((row) => row.course_id === args.p_course_id);
       // Родителем становится предыдущая запись журнала этого курса —
       // так же, как это делает сама функция в базе.
-      const parent = mine.length > 0 ? mine[mine.length - 1].id : null;
+      const parent = mine.at(-1)?.id ?? null;
       const entry: Row = {
         id: this.nextId("revision"),
         course_id: args.p_course_id,

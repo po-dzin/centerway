@@ -18,7 +18,8 @@ function eventId() {
 function readCookie(name: string) {
   if (typeof document === "undefined") return "";
   const match = document.cookie.match(new RegExp(`(^|;\\s*)${name}=([^;]+)`));
-  return match ? decodeURIComponent(match[2]) : "";
+  const value = match?.[2];
+  return value ? decodeURIComponent(value) : "";
 }
 
 function paramsFromLocation() {

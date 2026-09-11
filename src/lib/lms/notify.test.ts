@@ -48,23 +48,23 @@ describe("learner notifications", () => {
     expect(sent).toHaveLength(1);
     // The PERSONAL origin: lessons live on `my`, and a reminder that named
     // `www` would spend a 308 on the way to the lesson it points at.
-    expect(sent[0].text).toContain("https://my.centerway.net.ua/way21/day-3");
-    expect(sent[0].text).not.toMatch(/\n\/learn/);
+    expect(sent[0]!.text).toContain("https://my.centerway.net.ua/way21/day-3");
+    expect(sent[0]!.text).not.toMatch(/\n\/learn/);
   });
 
   it("leaves an already-absolute link alone", async () => {
     await notifyLearner({ authUserId: "user-1", text: "Тест", href: "https://example.com/x" });
-    expect(sent[0].text).toContain("https://example.com/x");
-    expect(sent[0].text).not.toContain("centerway.net.ua/https");
+    expect(sent[0]!.text).toContain("https://example.com/x");
+    expect(sent[0]!.text).not.toContain("centerway.net.ua/https");
   });
 
   it("sends the body unchanged when there is no link", async () => {
     await notifyLearner({ authUserId: "user-1", text: "Без посилання" });
-    expect(sent[0].text).toBe("Без посилання");
+    expect(sent[0]!.text).toBe("Без посилання");
   });
 
   it("addresses the chat id resolved from the profile", async () => {
     await notifyLearner({ authUserId: "user-1", text: "Тест" });
-    expect(sent[0].chatId).toBe("555");
+    expect(sent[0]!.chatId).toBe("555");
   });
 });

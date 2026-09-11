@@ -125,11 +125,11 @@ export function resolveEntitlement(input: EntitlementInput): Entitlement {
     .filter((order) => accepted.has(normalizeCode(order.productCode)))
     .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
 
-  if (paidOrders.length === 0) return { entitled: false, reason: "no_paid_order" };
-
   // The earliest accepted purchase is the grant. No token is consulted: see the
   // note on EntitlementInput for why one ever was, and what it cost.
   const [first] = paidOrders;
+  if (!first) return { entitled: false, reason: "no_paid_order" };
+
   return { entitled: true, source: "order", grantedAt: first.createdAt, orderRef: first.orderRef };
 }
 
@@ -306,10 +306,11 @@ export function planAccess(input: AccessPlanInput): AccessPlan {
   );
 
   const fresh = paid.filter((order) => Date.parse(order.createdAt) > spentUntil);
-  if (fresh.length === 0) return { grant: false, reason: "no_new_purchase" };
+  const [earliestFresh] = fresh;
+  const last = fresh.at(-1);
+  if (!earliestFresh || !last) return { grant: false, reason: "no_new_purchase" };
 
   const rule = input.rule ?? { lifetime: true as const };
-  const last = fresh[fresh.length - 1];
 
   if (rule.lifetime) {
     return {
@@ -327,7 +328,7 @@ export function planAccess(input: AccessPlanInput): AccessPlan {
     input.existing && input.existing.status !== "revoked" && !isEnrollmentExpired(input.existing.expiresAt, input.now);
 
   let end =
-    stillOpen && input.existing?.expiresAt ? Date.parse(input.existing.expiresAt) : Date.parse(fresh[0].createdAt);
+    stillOpen && input.existing?.expiresAt ? Date.parse(input.existing.expiresAt) : Date.parse(earliestFresh.createdAt);
 
   if (!Number.isFinite(end)) end = input.now.getTime();
 

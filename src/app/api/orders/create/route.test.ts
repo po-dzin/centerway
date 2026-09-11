@@ -74,7 +74,7 @@ describe("POST /api/orders/create", () => {
     expect(String(body.order_ref)).toMatch(/^way21_\d{8}_[0-9a-f]{8}$/);
 
     expect(db.tables.orders).toHaveLength(1);
-    expect(db.tables.orders[0]).toMatchObject({
+    expect(db.tables.orders![0]).toMatchObject({
       order_ref: body.order_ref,
       product_code: "way21",
       amount: 4100,
@@ -86,8 +86,8 @@ describe("POST /api/orders/create", () => {
     });
 
     expect(db.tables.jobs).toHaveLength(1);
-    expect(db.tables.jobs[0]).toMatchObject({ type: "meta:capi", status: "pending" });
-    expect(db.tables.jobs[0].payload).toMatchObject({
+    expect(db.tables.jobs![0]).toMatchObject({ type: "meta:capi", status: "pending" });
+    expect(db.tables.jobs![0]!.payload).toMatchObject({
       event_name: "InitiateCheckout",
       event_id: "evt-1",
       order_ref: body.order_ref,
@@ -104,11 +104,11 @@ describe("POST /api/orders/create", () => {
   it("derives the event id from the order when the browser sent none, so the Purchase later dedupes against it", async () => {
     const res = await post({ product_code: "way21" });
     const body = (await res.json()) as { order_ref: string };
-    expect(db.tables.jobs[0].payload).toMatchObject({ event_id: `checkout_${body.order_ref}` });
+    expect(db.tables.jobs![0]!.payload).toMatchObject({ event_id: `checkout_${body.order_ref}` });
   });
 
   it("does not file a second InitiateCheckout for an event id it already has", async () => {
-    db.tables.jobs.push({
+    db.tables.jobs!.push({
       id: "j0",
       type: "meta:capi",
       payload: { event_name: "InitiateCheckout", event_id: "evt-dup" },
@@ -125,7 +125,7 @@ describe("POST /api/orders/create", () => {
       attrib: { fbp: null, fbc: 42, utm_campaign: "   ", client_ip: undefined },
     });
     expect(res.status).toBe(200);
-    expect(db.tables.orders[0]).toMatchObject({ fbp: null, campaign: null, client_ip: null });
+    expect(db.tables.orders![0]).toMatchObject({ fbp: null, campaign: null, client_ip: null });
   });
 
   it("refuses an unknown product with 404 rather than falling back to a default", async () => {

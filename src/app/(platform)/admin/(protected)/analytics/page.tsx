@@ -386,6 +386,7 @@ function funnelSourceLabel(
 function isoToDate(value: string): Date | null {
   if (!isIsoDateInput(value)) return null;
   const [year, month, day] = value.split("-").map(Number);
+  if (year === undefined || month === undefined || day === undefined) return null;
   const date = new Date(year, month - 1, day);
   if (
     Number.isNaN(date.getTime()) ||

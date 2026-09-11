@@ -359,7 +359,8 @@ function PeopleTab({
   }, [q]);
 
   useEffect(() => {
-    if (!grantCourse && courses.length > 0) setGrantCourse(courses[0].slug);
+    const [firstCourse] = courses;
+    if (!grantCourse && firstCourse) setGrantCourse(firstCourse.slug);
   }, [courses, grantCourse]);
 
   const load = useCallback(async () => {

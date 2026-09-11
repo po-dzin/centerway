@@ -100,8 +100,9 @@ function formatNotification(body: SpWebhookBody): string {
   // named variable is a plain user write-in → treat it as a support request
   // ("звернення") so it reads correctly in the обращення thread.
   let header: string;
-  if (captured.length === 1) {
-    header = `${captured[0].icon} SP: ${captured[0].label}`;
+  const [soleCapture] = captured;
+  if (captured.length === 1 && soleCapture) {
+    header = `${soleCapture.icon} SP: ${soleCapture.label}`;
   } else if (captured.length === 0 && messageText) {
     header = "🆘 SP: Звернення";
   } else {

@@ -246,14 +246,14 @@ describe("course validation", () => {
   it("requires a dayIndex on every lesson of a daily course", () => {
     const course = dailyCourse() as unknown as Record<string, unknown>;
     const modules = course.modules as Array<{ lessons: Array<Record<string, unknown>> }>;
-    delete modules[0].lessons[1].dayIndex;
+    delete modules[0]!.lessons![1]!.dayIndex;
     expect(() => validateCourse(course)).toThrow(/lms_lesson_missing_day_index/);
   });
 
   it("rejects duplicate lesson slugs across modules", () => {
     const course = dailyCourse() as unknown as Record<string, unknown>;
     const modules = course.modules as Array<{ lessons: Array<Record<string, unknown>> }>;
-    modules[0].lessons[1].slug = "day-1";
+    modules[0]!.lessons![1]!.slug = "day-1";
     expect(() => validateCourse(course)).toThrow(/lms_lesson_duplicate_slug/);
   });
 
@@ -312,8 +312,8 @@ describe("progress fold", () => {
 
   it("folds events into lesson state", () => {
     const progress = foldProgress(events);
-    expect(progress.lessons.l1.status).toBe("completed");
-    expect(progress.lessons.l1.checklist.c1).toBe(true);
+    expect(progress.lessons.l1!.status).toBe("completed");
+    expect(progress.lessons.l1!.checklist!.c1).toBe(true);
     expect(progress.completedLessonIds).toEqual(["l1"]);
   });
 
@@ -330,7 +330,7 @@ describe("progress fold", () => {
       ...events,
       { clientId: "e4", type: "lesson.started", lessonId: "l1", occurredAt: "2026-08-16T06:00:00Z" },
     ]);
-    expect(progress.lessons.l1.status).toBe("completed");
+    expect(progress.lessons.l1!.status).toBe("completed");
   });
 
   it("un-completes on an explicit event, keeping the checklist intact", () => {
@@ -338,11 +338,11 @@ describe("progress fold", () => {
       ...events,
       { clientId: "e5", type: "lesson.uncompleted", lessonId: "l1", occurredAt: "2026-08-16T06:00:00Z" },
     ]);
-    expect(progress.lessons.l1.status).toBe("started");
-    expect(progress.lessons.l1.completedAt).toBeNull();
+    expect(progress.lessons.l1!.status).toBe("started");
+    expect(progress.lessons.l1!.completedAt).toBeNull();
     expect(progress.completedLessonIds).toEqual([]);
     // Un-ticking the step must not silently discard the learner's answers.
-    expect(progress.lessons.l1.checklist.c1).toBe(true);
+    expect(progress.lessons.l1!.checklist!.c1).toBe(true);
   });
 
   it("re-completes after un-completing, and re-stamps completedAt", () => {
@@ -351,9 +351,9 @@ describe("progress fold", () => {
       { clientId: "e5", type: "lesson.uncompleted", lessonId: "l1", occurredAt: "2026-08-16T06:00:00Z" },
       { clientId: "e6", type: "lesson.completed", lessonId: "l1", occurredAt: "2026-08-17T06:00:00Z" },
     ]);
-    expect(progress.lessons.l1.status).toBe("completed");
+    expect(progress.lessons.l1!.status).toBe("completed");
     // The second pass reports when IT finished, not when the first one did.
-    expect(progress.lessons.l1.completedAt).toBe("2026-08-17T06:00:00Z");
+    expect(progress.lessons.l1!.completedAt).toBe("2026-08-17T06:00:00Z");
   });
 
   it("resolves completion by occurredAt, not by arrival order", () => {
@@ -382,7 +382,7 @@ describe("progress fold", () => {
         payload: { itemId: "c1", checked: false },
       },
     ]);
-    expect(progress.lessons.l1.checklist.c1).toBe(false);
+    expect(progress.lessons.l1!.checklist!.c1).toBe(false);
   });
 
   it("treats an empty requirement list as satisfied", () => {
@@ -402,8 +402,8 @@ describe("drip availability", () => {
     const progress = foldProgress([]);
     const [day1, day2] = flattenLessons(course).map((entry) => entry.lesson);
 
-    expect(lessonAvailability(course, day1, progress, context)).toEqual({ available: true });
-    expect(lessonAvailability(course, day2, progress, context)).toEqual({
+    expect(lessonAvailability(course, day1!, progress, context)).toEqual({ available: true });
+    expect(lessonAvailability(course, day2!, progress, context)).toEqual({
       available: true,
       ahead: { reason: "before_day", scheduledDay: 2, daysAhead: 1 },
     });
@@ -415,8 +415,8 @@ describe("drip availability", () => {
     const progress = foldProgress([]);
     const [day1, day2] = flattenLessons(strict).map((entry) => entry.lesson);
 
-    expect(lessonAvailability(strict, day1, progress, context).available).toBe(true);
-    expect(lessonAvailability(strict, day2, progress, context)).toEqual({
+    expect(lessonAvailability(strict, day1!, progress, context).available).toBe(true);
+    expect(lessonAvailability(strict, day2!, progress, context)).toEqual({
       available: false,
       reason: "locked_by_day",
       unlocksOnDay: 2,
@@ -450,13 +450,13 @@ describe("drip availability", () => {
       timeZone: "Europe/Kyiv",
       now: new Date("2026-08-16T06:00:00Z"),
     };
-    const day2 = flattenLessons(course)[1].lesson;
-    expect(lessonAvailability(course, day2, foldProgress([]), context).available).toBe(true);
+    const day2 = flattenLessons(course)[1]!.lesson;
+    expect(lessonAvailability(course, day2!, foldProgress([]), context).available).toBe(true);
   });
 
   it("blocks completion until required checklist items are ticked", () => {
     const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
-    const day1 = flattenLessons(course)[0].lesson;
+    const day1 = flattenLessons(course)[0]!.lesson;
 
     expect(canCompleteLesson(course, day1, foldProgress([]), context)).toEqual({
       allowed: false,
@@ -491,13 +491,13 @@ describe("drip availability", () => {
     const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
     const outline = buildOutline(course, foldProgress([]), context);
     expect(outline).toHaveLength(2);
-    expect(outline[0].availability).toEqual({ available: true });
-    expect(outline[1].availability.available).toBe(true);
-    expect(outline[1].availability.available && outline[1].availability.ahead?.reason).toBe("before_day");
+    expect(outline[0]!.availability).toEqual({ available: true });
+    expect(outline[1]!.availability!.available).toBe(true);
+    expect(outline[1]!.availability!.available && outline[1]!.availability!.ahead?.reason).toBe("before_day");
   });
 
   it("collects checklist items that gate completion", () => {
-    const day1 = flattenLessons(course)[0].lesson;
+    const day1 = flattenLessons(course)[0]!.lesson;
     expect(collectRequiredChecklistItemIds(day1.blocks)).toEqual(["c1", "c2"]);
   });
 });

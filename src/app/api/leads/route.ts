@@ -107,11 +107,11 @@ export async function POST(req: NextRequest) {
   }
 
   const pageUrl = asString(body.page_url) ?? req.headers.get("referer") ?? null;
-  const clientIp =
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("cf-connecting-ip") ??
-    req.headers.get("x-real-ip") ??
-    null;
+  /* A blank `x-forwarded-for` is not an address: trimmed to `""` it is still
+     non-nullish, so `??` kept it and the lead was recorded from nowhere while
+     `cf-connecting-ip` went unread. Empty has to fall through. */
+  const forwardedIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const clientIp = (forwardedIp || null) ?? req.headers.get("cf-connecting-ip") ?? req.headers.get("x-real-ip") ?? null;
   const lead: LeadRecord = {
     order_ref: makeLeadRef(product),
     product_code: product,

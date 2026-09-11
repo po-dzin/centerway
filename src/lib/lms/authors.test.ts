@@ -57,7 +57,7 @@ describe("upsertAuthorProfile", () => {
     const result = await module.upsertAuthorProfile("user-1", { name: "Іван Петренко" });
     expect(result.ok).toBe(true);
     expect(db.tables.lms_authors).toHaveLength(1);
-    expect(db.tables.lms_authors[0]).toMatchObject({ auth_user_id: "user-1", slug: "ivan-petrenko" });
+    expect(db.tables.lms_authors![0]).toMatchObject({ auth_user_id: "user-1", slug: "ivan-petrenko" });
   });
 
   it("never lets the request body pick a different auth_user_id", async () => {
@@ -66,7 +66,7 @@ describe("upsertAuthorProfile", () => {
     });
     // @ts-expect-error — deliberately smuggling a field the type does not carry.
     await module.upsertAuthorProfile("user-1", { name: "Іван", auth_user_id: "someone-else" });
-    expect(db.tables.lms_authors[0].auth_user_id).toBe("user-1");
+    expect(db.tables.lms_authors![0]!.auth_user_id).toBe("user-1");
   });
 
   it("suffixes the slug on a collision with another author", async () => {
@@ -76,7 +76,7 @@ describe("upsertAuthorProfile", () => {
     });
     const result = await module.upsertAuthorProfile("user-2", { name: "Іван Петренко" });
     expect(result.ok).toBe(true);
-    expect(db.tables.lms_authors.find((row) => row.auth_user_id === "user-2")?.slug).toBe("ivan-petrenko-2");
+    expect(db.tables.lms_authors!.find((row) => row.auth_user_id === "user-2")?.slug).toBe("ivan-petrenko-2");
   });
 
   it("updates the caller's own row on a second save rather than creating a second one", async () => {
@@ -86,7 +86,7 @@ describe("upsertAuthorProfile", () => {
     await module.upsertAuthorProfile("user-1", { name: "Іван Петренко" });
     await module.upsertAuthorProfile("user-1", { name: "Іван Петренко", bio: "Оновлена біографія." });
     expect(db.tables.lms_authors).toHaveLength(1);
-    expect(db.tables.lms_authors[0].bio).toBe("Оновлена біографія.");
+    expect(db.tables.lms_authors![0]!.bio).toBe("Оновлена біографія.");
   });
 
   it("rejects a photo without alt text", async () => {
@@ -110,7 +110,7 @@ describe("upsertAuthorProfile", () => {
       background: { src: "https://example.com/background.webp" },
     });
     expect(result).toMatchObject({ ok: true, author: { background: { src: "https://example.com/background.webp" } } });
-    expect(db.tables.lms_authors[0]).toMatchObject({ background: { src: "https://example.com/background.webp" } });
+    expect(db.tables.lms_authors![0]).toMatchObject({ background: { src: "https://example.com/background.webp" } });
   });
 
   it("requires both public-card badges before listing a profile", async () => {
@@ -150,7 +150,7 @@ describe("upsertAuthorProfile", () => {
     ];
     const result = await module.upsertAuthorProfile("user-1", { name: "Іван", profileBlocks });
     expect(result).toMatchObject({ ok: true, author: { profileBlocks } });
-    expect(db.tables.lms_authors[0].profile_blocks).toEqual(profileBlocks);
+    expect(db.tables.lms_authors![0]!.profile_blocks).toEqual(profileBlocks);
   });
 });
 

@@ -18,8 +18,9 @@ const PORTRAIT_MEDIA = "(max-width: 560px)";
 type PlatformHeroPhotoProps = {
   artwork?: PlatformOfferArtwork;
   alt: string;
-  /** The hero photo class of the calling surface, usually styles.expertImage. */
-  className: string;
+  /** The hero photo class of the calling surface, usually styles.expertImage.
+      A CSS-module lookup, so `undefined` is a shape the callers really have. */
+  className: string | undefined;
   /** Above-the-fold heroes should not lazy-load. */
   eager?: boolean;
 };

@@ -97,7 +97,7 @@ describe("POST /api/sp/webhook", () => {
     await expect(res.json()).resolves.toEqual({ ok: true, forwarded: true });
 
     expect(sendTelegramMessage).toHaveBeenCalledTimes(1);
-    const [chatId, text, opts] = sendTelegramMessage.mock.calls[0];
+    const [chatId, text, opts] = sendTelegramMessage.mock.calls[0]!;
     expect(chatId).toBe("1001234567890");
     expect(opts).toEqual({ messageThreadId: 42 });
     const lines = text.split("\n");
@@ -110,7 +110,7 @@ describe("POST /api/sp/webhook", () => {
 
     await settle();
     expect(db.tables.events).toHaveLength(1);
-    expect(db.tables.events[0]).toMatchObject({
+    expect(db.tables.events![0]).toMatchObject({
       type: "sp_chatbot_webhook",
       payload: { contact_id: "c1", bot_id: "b1", flow_id: "f1" },
     });
@@ -118,7 +118,7 @@ describe("POST /api/sp/webhook", () => {
 
   it("treats a free-text message with no named variable as a support request", async () => {
     await post({ contact: { name: "Іван" }, message: { type: "text", text: "Не приходить лист" } });
-    const text = sendTelegramMessage.mock.calls[0][1];
+    const text = sendTelegramMessage.mock.calls[0]![1];
     expect(text.startsWith("🆘 SP: Звернення")).toBe(true);
     expect(text.endsWith("Не приходить лист")).toBe(true);
   });

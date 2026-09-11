@@ -101,7 +101,7 @@ describe("история одного урока", () => {
 
   it("говорит, что именно случилось с уроком", async () => {
     const [entry] = await listLessonRevisions("c1", "l2");
-    expect(entry.change).toMatchObject({ kind: "changed", lessonId: "l2", blocks: { edited: 1 } });
+    expect(entry!.change).toMatchObject({ kind: "changed", lessonId: "l2", blocks: { edited: 1 } });
   });
 
   it("возвращает пустую историю для урока, которого не касались", async () => {

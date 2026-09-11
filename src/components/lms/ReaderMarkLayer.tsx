@@ -359,8 +359,9 @@ function caretIndex(block: HTMLElement, x: number, y: number): number | null {
   if (!node || !block.contains(node)) return null;
 
   const map = mapBlockText(block);
-  for (let i = 0; i < map.nodes.length; i += 1) {
-    if (map.nodes[i] === node && map.offsets[i] >= offset) return i;
+  for (const [i, candidate] of map.nodes.entries()) {
+    const at = map.offsets[i];
+    if (candidate === node && at !== undefined && at >= offset) return i;
   }
   return null;
 }

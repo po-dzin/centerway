@@ -68,7 +68,9 @@ export const PERSONAL_PATH_PREFIXES = [LEARNING_PATH_PREFIX, BUILDER_PATH_PREFIX
 
 /** True for a path owned by the personal host, prefix-exact. */
 export function isPersonalPath(path: string): boolean {
-  const pathname = path.split("?")[0].split("#")[0];
+  // A string split always yields at least one element; the defaults never apply.
+  const [withoutQuery = ""] = path.split("?");
+  const [pathname = ""] = withoutQuery.split("#");
   return PERSONAL_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
@@ -85,7 +87,8 @@ export function isPersonalPath(path: string): boolean {
  * on localhost and preview, also the address.
  */
 export function canonicalPersonalPath(path: string): string {
-  const [pathname, ...rest] = path.split(/(?=[?#])/);
+  // A string split always yields at least one element; the default never applies.
+  const [pathname = "", ...rest] = path.split(/(?=[?#])/);
   if (pathname !== LEARNING_PATH_PREFIX && !pathname.startsWith(`${LEARNING_PATH_PREFIX}/`)) {
     return path;
   }
@@ -311,7 +314,9 @@ for (const entry of Object.values(PRODUCT_SURFACE_REGISTRY)) {
 
 export function normalizeHost(raw: string | null | undefined): string {
   if (!raw) return "";
-  return raw.split(":")[0].trim().toLowerCase();
+  // A string split always yields at least one element; the default never applies.
+  const [hostWithoutPort = ""] = raw.split(":");
+  return hostWithoutPort.trim().toLowerCase();
 }
 
 export function getProductSurfaceRegistry() {
