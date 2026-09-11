@@ -163,6 +163,24 @@ file for each rule and requires the complaint, and writes the clean cases the
 old line-regex guards used to reject. A rule that cannot be shown to fail is
 not a rule, and config is easy to break in silence.
 
+## Formatting Rule
+
+Prettier owns formatting: `npm run format` writes, `npm run format:check`
+decides, and `verify:guards` runs the check. Do not hand-wrap code to taste —
+the whole repository was formatted in one pass on 2026-09-11 and the only way
+that stays true is that nobody re-wraps by hand.
+
+What Prettier does not own is written in `.prettierignore` with the reason:
+codegen output (formatting it puts the file out of step with the script that
+writes it, and the check that compares the two then fails on whitespace),
+`src/landing-static` (hand-written documents that three guards read by line),
+and prose.
+
+That one pass touched 541 files, so `.git-blame-ignore-revs` lists it. Run
+`git config blame.ignoreRevsFile .git-blame-ignore-revs` once per clone and
+blame walks past it to the commit that wrote the line. A commit goes in that
+file only if it changed no identifier, no string and no comment prose.
+
 ## Script Rule
 
 A script's prefix says what kind of thing it is, and there are four kinds:

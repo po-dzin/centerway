@@ -26,8 +26,32 @@ import { spawnSync } from "node:child_process";
 
 const only = process.argv.slice(2).filter((argument) => !argument.startsWith("-"));
 
+/*
+ * NOT IN THIS LIST, and each for a reason, so the list does not read as
+ * complete when it is not (all four were failing on 2026-09-11):
+ *
+ *   icons:check         the sprite and src/lib/brand/iconNames.ts no longer
+ *                       match what icons-bake produces — a glyph changed
+ *                       without a rebake.
+ *   guard:carriers      way21's "how" block carries a photo and an arrow icon
+ *                       at once, which is what that guard exists to refuse.
+ *   guard:rhythm        off-grid values in the landing network CSS.
+ *   generator:language  broken, not failing: it pulls "string literals" out of
+ *                       TSX with a regex, swallows a JSX block, and reports
+ *                       every Latin word inside it as mixed language.
+ *
+ * Add one back the moment it is green. A red gate kept out of the runner is
+ * a gate nobody will ever fix.
+ */
+
 /** `npm run <script>` — with the reason it exists, where the reason is not obvious. */
 const gates = [
+  {
+    script: "format:check",
+    title: "Formatting is Prettier's",
+    // The repo was formatted in one pass on 2026-09-11. Without this line the
+    // next hand-wrapped line starts the drift back, one file at a time.
+  },
   {
     script: "tokens:check",
     title: "Tokens are generated, not typed",
