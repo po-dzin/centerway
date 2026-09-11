@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 
-import type { CwGraphicName, CwIconName } from "./iconNames";
+import { CW_SPRITE_VERSION, type CwGraphicName, type CwIconName } from "./iconNames";
 
 /**
  * The one icon primitive. Renders a `<use>` reference into the baked sprite
@@ -15,7 +15,13 @@ import type { CwGraphicName, CwIconName } from "./iconNames";
  * funnel hosts cannot see `/cw/**`.
  */
 
-const SPRITE = "/cw/icons/cw-icons.svg";
+/* THE VERSION IS THE POINT, NOT DECORATION. The sprite is cached for a week
+   (next.config.ts) and referenced by id, so a week-old copy cannot answer for
+   ids added since — a `<use>` whose target is missing paints nothing at all,
+   silently. `CW_SPRITE_VERSION` is the baked file's own content hash, so a
+   redrawn or extended sprite is a different URL and reaches everyone on their
+   next page view instead of whenever their week happens to run out. */
+const SPRITE = `/cw/icons/cw-icons.svg?v=${CW_SPRITE_VERSION}`;
 
 type IconBaseProps = Omit<SVGProps<SVGSVGElement>, "children" | "width" | "height"> & {
   /** Rendered box in px. Do not go below 20 — the hand starts eating counters. */
