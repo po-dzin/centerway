@@ -968,48 +968,34 @@ export default function AnalyticsPage() {
             </h4>
             {qualitySeries.length > 0 ? (
               <div className={surfaces.subPlate}>
-                <table className="min-w-full text-xs md:text-sm">
-                  <thead className="cw-surface-2 border-b cw-border">
+                <table className={surfaces.tableDense}>
+                  <thead className={surfaces.tableHead}>
                     <tr>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_col_date")}</th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_col_paid")}</th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">
-                        {t("analytics_quality_missing_fbc_raw")}
-                      </th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">
-                        {t("analytics_quality_recoverable_fbc")}
-                      </th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">
-                        {t("analytics_quality_truly_missing_fbc")}
-                      </th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">
-                        {t("analytics_quality_missing_fbclid")}
-                      </th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_fbp")}</th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">
-                        {t("analytics_quality_missing_page_url")}
-                      </th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">
-                        {t("analytics_quality_missing_client_ip")}
-                      </th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">
-                        {t("analytics_quality_missing_client_ua")}
-                      </th>
+                      <th className={surfaces.thDense}>{t("analytics_col_date")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_col_paid")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_quality_missing_fbc_raw")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_quality_recoverable_fbc")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_quality_truly_missing_fbc")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_quality_missing_fbclid")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_quality_missing_fbp")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_quality_missing_page_url")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_quality_missing_client_ip")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_quality_missing_client_ua")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {qualitySeries.map((row) => (
-                      <tr key={row.date} className="border-t cw-border">
-                        <td className="px-3 py-2 cw-text">{row.date}</td>
-                        <td className="px-3 py-2 cw-text">{row.paid_orders}</td>
-                        <td className="px-3 py-2 cw-muted">{row.missing_fbc_raw}</td>
-                        <td className="px-3 py-2 cw-muted">{row.recoverable_fbc_from_fbclid}</td>
-                        <td className="px-3 py-2 cw-muted">{row.truly_missing_fbc}</td>
-                        <td className="px-3 py-2 cw-muted">{row.missing_fbclid}</td>
-                        <td className="px-3 py-2 cw-muted">{row.missing_fbp}</td>
-                        <td className="px-3 py-2 cw-muted">{row.missing_page_url}</td>
-                        <td className="px-3 py-2 cw-muted">{row.missing_client_ip}</td>
-                        <td className="px-3 py-2 cw-muted">{row.missing_client_ua}</td>
+                      <tr key={row.date} className={surfaces.row}>
+                        <td className={`${surfaces.tdDense} cw-text`}>{row.date}</td>
+                        <td className={`${surfaces.tdDense} cw-text`}>{row.paid_orders}</td>
+                        <td className={`${surfaces.tdDense} cw-muted`}>{row.missing_fbc_raw}</td>
+                        <td className={`${surfaces.tdDense} cw-muted`}>{row.recoverable_fbc_from_fbclid}</td>
+                        <td className={`${surfaces.tdDense} cw-muted`}>{row.truly_missing_fbc}</td>
+                        <td className={`${surfaces.tdDense} cw-muted`}>{row.missing_fbclid}</td>
+                        <td className={`${surfaces.tdDense} cw-muted`}>{row.missing_fbp}</td>
+                        <td className={`${surfaces.tdDense} cw-muted`}>{row.missing_page_url}</td>
+                        <td className={`${surfaces.tdDense} cw-muted`}>{row.missing_client_ip}</td>
+                        <td className={`${surfaces.tdDense} cw-muted`}>{row.missing_client_ua}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1334,42 +1320,44 @@ export default function AnalyticsPage() {
           </div>
 
           <div className={surfaces.subPlate}>
-            <table className="min-w-full text-sm">
-              <thead className="cw-surface-2 border-b cw-border">
+            <table className={surfaces.tableDense}>
+              <thead className={surfaces.tableHead}>
                 <tr>
-                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">{t("analytics_col_event")}</th>
-                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">{t("analytics_col_total")}</th>
-                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">
-                    {t("analytics_col_conversion_from_prev")}
-                  </th>
+                  <th className={surfaces.thDense}>{t("analytics_col_event")}</th>
+                  <th className={surfaces.thDense}>{t("analytics_col_total")}</th>
+                  <th className={surfaces.thDense}>{t("analytics_col_conversion_from_prev")}</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-t cw-border">
-                  <td className="px-4 py-3 cw-text font-medium">{t("analytics_event_unique_impressions")}</td>
-                  <td className="px-4 py-3 cw-text">{uniqueImpressions}</td>
-                  <td className="px-4 py-3 cw-muted">—</td>
+                <tr className={surfaces.row}>
+                  <td className={`${surfaces.tdDense} cw-text font-medium`}>
+                    {t("analytics_event_unique_impressions")}
+                  </td>
+                  <td className={`${surfaces.tdDense} cw-text`}>{uniqueImpressions}</td>
+                  <td className={`${surfaces.tdDense} cw-muted`}>—</td>
                 </tr>
-                <tr className="border-t cw-border">
-                  <td className="px-4 py-3 cw-text font-medium">{t("analytics_event_view_content")}</td>
-                  <td className="px-4 py-3 cw-text">{funnelChain?.view_content ?? 0}</td>
-                  <td className="px-4 py-3 cw-muted">{viewContentFromReachPercent}%</td>
+                <tr className={surfaces.row}>
+                  <td className={`${surfaces.tdDense} cw-text font-medium`}>{t("analytics_event_view_content")}</td>
+                  <td className={`${surfaces.tdDense} cw-text`}>{funnelChain?.view_content ?? 0}</td>
+                  <td className={`${surfaces.tdDense} cw-muted`}>{viewContentFromReachPercent}%</td>
                 </tr>
-                <tr className="border-t cw-border">
-                  <td className="px-4 py-3 cw-text font-medium">{t("analytics_event_initiate_checkout")}</td>
-                  <td className="px-4 py-3 cw-text">{funnelChain?.initiate_checkout ?? 0}</td>
-                  <td className="px-4 py-3 cw-muted">{funnelChain?.view_to_checkout_percent ?? 0}%</td>
+                <tr className={surfaces.row}>
+                  <td className={`${surfaces.tdDense} cw-text font-medium`}>
+                    {t("analytics_event_initiate_checkout")}
+                  </td>
+                  <td className={`${surfaces.tdDense} cw-text`}>{funnelChain?.initiate_checkout ?? 0}</td>
+                  <td className={`${surfaces.tdDense} cw-muted`}>{funnelChain?.view_to_checkout_percent ?? 0}%</td>
                 </tr>
-                <tr className="border-t cw-border">
-                  <td className="px-4 py-3 cw-text font-medium">{t("analytics_event_purchase")}</td>
-                  <td className="px-4 py-3 cw-text">{funnelChain?.purchase ?? 0}</td>
-                  <td className="px-4 py-3 cw-muted">{funnelChain?.checkout_to_purchase_percent ?? 0}%</td>
+                <tr className={surfaces.row}>
+                  <td className={`${surfaces.tdDense} cw-text font-medium`}>{t("analytics_event_purchase")}</td>
+                  <td className={`${surfaces.tdDense} cw-text`}>{funnelChain?.purchase ?? 0}</td>
+                  <td className={`${surfaces.tdDense} cw-muted`}>{funnelChain?.checkout_to_purchase_percent ?? 0}%</td>
                 </tr>
                 {funnelUiSettings.mode === "access" || funnelUiSettings.showAccessGrantedCard ? (
-                  <tr className="border-t cw-border">
-                    <td className="px-4 py-3 cw-text font-medium">{t("analytics_event_access_granted")}</td>
-                    <td className="px-4 py-3 cw-text">{funnelChain?.access_granted ?? 0}</td>
-                    <td className="px-4 py-3 cw-muted">{funnelChain?.purchase_to_access_percent ?? 0}%</td>
+                  <tr className={surfaces.row}>
+                    <td className={`${surfaces.tdDense} cw-text font-medium`}>{t("analytics_event_access_granted")}</td>
+                    <td className={`${surfaces.tdDense} cw-text`}>{funnelChain?.access_granted ?? 0}</td>
+                    <td className={`${surfaces.tdDense} cw-muted`}>{funnelChain?.purchase_to_access_percent ?? 0}%</td>
                   </tr>
                 ) : null}
               </tbody>
@@ -1382,26 +1370,30 @@ export default function AnalyticsPage() {
         <div className={`${surfaces.plate} space-y-4`}>
           <h2 className="text-lg font-semibold cw-text">{t("analytics_tab_capi")}</h2>
           <div className={surfaces.subPlate}>
-            <table className="min-w-full text-sm">
-              <thead className="cw-surface-2 border-b cw-border">
+            <table className={surfaces.tableDense}>
+              <thead className={surfaces.tableHead}>
                 <tr>
-                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">{t("analytics_col_event")}</th>
-                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">{t("analytics_col_capi_success")}</th>
-                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">{t("analytics_col_capi_pending")}</th>
-                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">{t("analytics_col_capi_failed")}</th>
-                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">{t("analytics_col_last_seen")}</th>
+                  <th className={surfaces.thDense}>{t("analytics_col_event")}</th>
+                  <th className={surfaces.thDense}>{t("analytics_col_capi_success")}</th>
+                  <th className={surfaces.thDense}>{t("analytics_col_capi_pending")}</th>
+                  <th className={surfaces.thDense}>{t("analytics_col_capi_failed")}</th>
+                  <th className={surfaces.thDense}>{t("analytics_col_last_seen")}</th>
                 </tr>
               </thead>
               <tbody>
                 {(["ViewContent", "InitiateCheckout", "Purchase"] as CapiEventName[]).map((eventName) => {
                   const row = eventByName.get(eventName);
                   return (
-                    <tr key={eventName} className="border-t cw-border">
-                      <td className="px-4 py-3 cw-text font-medium">{t(metricEventLabelKey(eventName) as never)}</td>
-                      <td className="px-4 py-3 cw-status-success-text">{row?.success ?? 0}</td>
-                      <td className="px-4 py-3 cw-status-pending-text">{(row?.pending ?? 0) + (row?.running ?? 0)}</td>
-                      <td className="px-4 py-3 cw-status-failed-text">{row?.failed ?? 0}</td>
-                      <td className="px-4 py-3 cw-muted">
+                    <tr key={eventName} className={surfaces.row}>
+                      <td className={`${surfaces.tdDense} cw-text font-medium`}>
+                        {t(metricEventLabelKey(eventName) as never)}
+                      </td>
+                      <td className={`${surfaces.tdDense} cw-status-success-text`}>{row?.success ?? 0}</td>
+                      <td className={`${surfaces.tdDense} cw-status-pending-text`}>
+                        {(row?.pending ?? 0) + (row?.running ?? 0)}
+                      </td>
+                      <td className={`${surfaces.tdDense} cw-status-failed-text`}>{row?.failed ?? 0}</td>
+                      <td className={`${surfaces.tdDense} cw-muted`}>
                         {row?.last_seen_at ? new Date(row.last_seen_at).toLocaleString() : "—"}
                       </td>
                     </tr>
@@ -1587,106 +1579,82 @@ export default function AnalyticsPage() {
 
             return (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y" style={{ borderColor: "var(--cw-border)" }}>
-                  <thead className="cw-surface-2">
+                <table className={surfaces.table}>
+                  <thead className={surfaces.tableHead}>
                     <tr>
-                      <th
-                        scope="col"
-                        className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                      >
+                      <th scope="col" className={surfaces.th}>
                         {sourceColumnLabel}
                       </th>
-                      <th
-                        scope="col"
-                        className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                      >
+                      <th scope="col" className={surfaces.th}>
                         {t("analytics_metric_view_content")}
                       </th>
-                      <th
-                        scope="col"
-                        className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                      >
+                      <th scope="col" className={surfaces.th}>
                         {t("analytics_col_orders")}
                       </th>
-                      <th
-                        scope="col"
-                        className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                      >
+                      <th scope="col" className={surfaces.th}>
                         {t("analytics_col_paid")}
                       </th>
                       {showRevenueCol ? (
-                        <th
-                          scope="col"
-                          className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                        >
+                        <th scope="col" className={surfaces.th}>
                           {t("analytics_col_revenue")}
                         </th>
                       ) : null}
                       {showSpendCol ? (
-                        <th
-                          scope="col"
-                          className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                        >
+                        <th scope="col" className={surfaces.th}>
                           {t("analytics_metric_spend")}
                         </th>
                       ) : null}
                       {showReachCol ? (
-                        <th
-                          scope="col"
-                          className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                        >
+                        <th scope="col" className={surfaces.th}>
                           {t("analytics_metric_reach")}
                         </th>
                       ) : null}
                       {showImpressionsCol ? (
-                        <th
-                          scope="col"
-                          className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                        >
+                        <th scope="col" className={surfaces.th}>
                           {t("analytics_metric_impressions")}
                         </th>
                       ) : null}
                     </tr>
                   </thead>
-                  <tbody className="cw-surface" style={{ borderColor: "var(--cw-border)" }}>
+                  <tbody className="cw-surface">
                     {campaigns.length === 0 ? (
                       <tr>
-                        <td colSpan={totalColumns} className="px-4 md:px-6 py-4 text-center text-sm cw-muted">
+                        <td colSpan={totalColumns} className={`${surfaces.td} text-center cw-muted`}>
                           {t("analytics_no_campaign_data")}
                         </td>
                       </tr>
                     ) : (
                       campaigns.map((camp, idx) => (
-                        <tr key={idx} className="border-t cw-border cw-row-hover">
-                          <td className="px-4 md:px-6 py-4 text-sm font-medium cw-text">
+                        <tr key={idx} className={surfaces.row}>
+                          <td className={`${surfaces.td} cw-text font-medium`}>
                             {resolveCampaignSource(camp.source_campaign)}
                           </td>
-                          <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                          <td className={`${surfaces.td} whitespace-nowrap cw-muted`}>
                             {(camp.view_content ?? 0).toLocaleString()}
                           </td>
-                          <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                          <td className={`${surfaces.td} whitespace-nowrap cw-muted`}>
                             {camp.total_orders.toLocaleString()}
                           </td>
-                          <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                          <td className={`${surfaces.td} whitespace-nowrap cw-muted`}>
                             {camp.paid_orders.toLocaleString()}
                           </td>
                           {showRevenueCol ? (
-                            <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">
+                            <td className={`${surfaces.td} whitespace-nowrap cw-text font-medium`}>
                               {camp.total_revenue.toLocaleString()} ₴
                             </td>
                           ) : null}
                           {showSpendCol ? (
-                            <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                            <td className={`${surfaces.td} whitespace-nowrap cw-muted`}>
                               {formatCampaignSpend(camp.spend ?? 0, camp.currency)}
                             </td>
                           ) : null}
                           {showReachCol ? (
-                            <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                            <td className={`${surfaces.td} whitespace-nowrap cw-muted`}>
                               {(camp.reach ?? 0).toLocaleString()}
                             </td>
                           ) : null}
                           {showImpressionsCol ? (
-                            <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                            <td className={`${surfaces.td} whitespace-nowrap cw-muted`}>
                               {(camp.impressions ?? 0).toLocaleString()}
                             </td>
                           ) : null}
@@ -1724,64 +1692,49 @@ export default function AnalyticsPage() {
               <p className="text-sm cw-muted mt-1">{t("analytics_products_breakdown_subtitle")}</p>
             </div>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y" style={{ borderColor: "var(--cw-border)" }}>
-                <thead className="cw-surface-2">
+              <table className={surfaces.table}>
+                <thead className={surfaces.tableHead}>
                   <tr>
-                    <th
-                      scope="col"
-                      className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                    >
+                    <th scope="col" className={surfaces.th}>
                       {t("analytics_col_product")}
                     </th>
-                    <th
-                      scope="col"
-                      className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                    >
+                    <th scope="col" className={surfaces.th}>
                       {t("analytics_col_orders")}
                     </th>
-                    <th
-                      scope="col"
-                      className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                    >
+                    <th scope="col" className={surfaces.th}>
                       {t("analytics_col_paid")}
                     </th>
-                    <th
-                      scope="col"
-                      className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                    >
+                    <th scope="col" className={surfaces.th}>
                       {t("analytics_col_revenue")}
                     </th>
-                    <th
-                      scope="col"
-                      className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                    >
+                    <th scope="col" className={surfaces.th}>
                       {t("analytics_col_revenue_share")}
                     </th>
                   </tr>
                 </thead>
-                <tbody className="cw-surface" style={{ borderColor: "var(--cw-border)" }}>
+                <tbody className="cw-surface">
                   {products.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-4 md:px-6 py-4 text-center text-sm cw-muted">
+                      <td colSpan={5} className={`${surfaces.td} text-center cw-muted`}>
                         {t("analytics_no_product_data")}
                       </td>
                     </tr>
                   ) : (
                     products.map((product) => (
-                      <tr key={product.product_code} className="border-t cw-border cw-row-hover">
-                        <td className="px-4 md:px-6 py-4 text-sm font-medium cw-text">
+                      <tr key={product.product_code} className={surfaces.row}>
+                        <td className={`${surfaces.td} cw-text font-medium`}>
                           {formatProductName(product, t("analytics_product_unknown"))}
                         </td>
-                        <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                        <td className={`${surfaces.td} whitespace-nowrap cw-muted`}>
                           {product.total_orders.toLocaleString()}
                         </td>
-                        <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                        <td className={`${surfaces.td} whitespace-nowrap cw-muted`}>
                           {product.paid_orders.toLocaleString()}
                         </td>
-                        <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">
+                        <td className={`${surfaces.td} whitespace-nowrap cw-text font-medium`}>
                           {product.total_revenue.toLocaleString()} ₴
                         </td>
-                        <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                        <td className={`${surfaces.td} whitespace-nowrap cw-muted`}>
                           {product.share_revenue_percent.toLocaleString()}%
                         </td>
                       </tr>
@@ -1866,18 +1819,14 @@ export default function AnalyticsPage() {
                   <p className="text-xs cw-muted mt-1">{t("analytics_dosha_cta_legend")}</p>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead className="cw-surface-2 border-b cw-border">
+                  <table className={surfaces.tableDense}>
+                    <thead className={surfaces.tableHead}>
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">
-                          {t("analytics_dosha_col_type")}
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">
-                          {t("analytics_dosha_col_tests")}
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">Primary</th>
-                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">Secondary</th>
-                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">CTR</th>
+                        <th className={surfaces.thDense}>{t("analytics_dosha_col_type")}</th>
+                        <th className={surfaces.thDense}>{t("analytics_dosha_col_tests")}</th>
+                        <th className={surfaces.thDense}>Primary</th>
+                        <th className={surfaces.thDense}>Secondary</th>
+                        <th className={surfaces.thDense}>CTR</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1885,12 +1834,12 @@ export default function AnalyticsPage() {
                         const completions =
                           doshaData.completions_by_type.find((c) => c.result_type === row.result_type)?.count ?? 0;
                         return (
-                          <tr key={row.result_type} className="border-t cw-border">
-                            <td className="px-4 py-3 cw-text">{row.result_type.replace(/_/g, " + ")}</td>
-                            <td className="px-4 py-3 cw-muted">{completions}</td>
-                            <td className="px-4 py-3 cw-text">{row.primary_clicks}</td>
-                            <td className="px-4 py-3 cw-muted">{row.secondary_clicks}</td>
-                            <td className="px-4 py-3 cw-muted">{row.click_through_percent}%</td>
+                          <tr key={row.result_type} className={surfaces.row}>
+                            <td className={`${surfaces.tdDense} cw-text`}>{row.result_type.replace(/_/g, " + ")}</td>
+                            <td className={`${surfaces.tdDense} cw-muted`}>{completions}</td>
+                            <td className={`${surfaces.tdDense} cw-text`}>{row.primary_clicks}</td>
+                            <td className={`${surfaces.tdDense} cw-muted`}>{row.secondary_clicks}</td>
+                            <td className={`${surfaces.tdDense} cw-muted`}>{row.click_through_percent}%</td>
                           </tr>
                         );
                       })}
@@ -1903,22 +1852,20 @@ export default function AnalyticsPage() {
                 <div className={`${surfaces.plate} space-y-3`}>
                   <h3 className="text-sm font-semibold cw-text">{t("analytics_dosha_daily")}</h3>
                   <div className="cw-surface rounded-xl border cw-border overflow-x-auto">
-                    <table className="min-w-full text-xs">
-                      <thead className="cw-surface-2 border-b cw-border">
+                    <table className={surfaces.tableDense}>
+                      <thead className={surfaces.tableHead}>
                         <tr>
-                          <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_col_date")}</th>
-                          <th className="px-3 py-2 text-left cw-muted uppercase">
-                            {t("analytics_dosha_col_completed")}
-                          </th>
+                          <th className={surfaces.thDense}>{t("analytics_col_date")}</th>
+                          <th className={surfaces.thDense}>{t("analytics_dosha_col_completed")}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {doshaData.daily
                           .filter((row) => row.completions > 0)
                           .map((row) => (
-                            <tr key={row.date} className="border-t cw-border">
-                              <td className="px-3 py-2 cw-text">{row.date}</td>
-                              <td className="px-3 py-2 cw-text">{row.completions}</td>
+                            <tr key={row.date} className={surfaces.row}>
+                              <td className={`${surfaces.tdDense} cw-text`}>{row.date}</td>
+                              <td className={`${surfaces.tdDense} cw-text`}>{row.completions}</td>
                             </tr>
                           ))}
                       </tbody>

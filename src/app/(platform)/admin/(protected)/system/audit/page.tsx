@@ -118,35 +118,35 @@ export default function AuditLogPage() {
       ) : (
         <div className={`${surfaces.plateFlush} transition-colors duration-300`}>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left cw-muted">
-              <thead className="text-xs uppercase cw-surface-2 cw-muted border-b cw-border transition-colors duration-300">
+            <table className={surfaces.table}>
+              <thead className={surfaces.tableHead}>
                 <tr>
-                  <th className="px-6 py-4 font-medium">{t("audit_col_time")}</th>
-                  <th className="px-6 py-4 font-medium">{t("audit_col_actor")}</th>
-                  <th className="px-6 py-4 font-medium">{t("audit_col_action")}</th>
-                  <th className="px-6 py-4 font-medium">{t("audit_col_entity")}</th>
-                  <th className="px-6 py-4 font-medium">{t("audit_col_details")}</th>
+                  <th className={surfaces.th}>{t("audit_col_time")}</th>
+                  <th className={surfaces.th}>{t("audit_col_actor")}</th>
+                  <th className={surfaces.th}>{t("audit_col_action")}</th>
+                  <th className={surfaces.th}>{t("audit_col_entity")}</th>
+                  <th className={surfaces.th}>{t("audit_col_details")}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y" style={{ borderColor: "var(--cw-border)" }}>
+              <tbody>
                 {logs.map((log) => (
-                  <tr key={log.id} className="cw-row-hover">
-                    <td className="px-6 py-4 whitespace-nowrap cw-muted font-mono text-xs">
+                  <tr key={log.id} className={surfaces.row}>
+                    <td className={`${surfaces.td} whitespace-nowrap cw-muted font-mono text-xs`}>
                       {new Date(log.created_at).toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap font-mono text-xs" title={log.actor_id}>
+                    <td className={`${surfaces.td} whitespace-nowrap font-mono text-xs`} title={log.actor_id}>
                       {log.actor_id.substring(0, 8)}...
                     </td>
-                    <td className="px-6 py-4 font-medium cw-text">
+                    <td className={`${surfaces.td} cw-text font-medium`}>
                       <span className="cw-surface-2 px-2 py-1 rounded text-xs transition-colors duration-300">
                         {log.action}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className={surfaces.td}>
                       {log.entity_type}{" "}
                       {log.entity_id ? <span className="cw-muted text-xs">#{log.entity_id}</span> : ""}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className={surfaces.td}>
                       <pre className="text-[10px] cw-muted font-mono max-w-xs overflow-hidden truncate">
                         {JSON.stringify(log.metadata)}
                       </pre>
