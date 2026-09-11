@@ -24,7 +24,7 @@ jobs:
       # two disagree on how nested optional deps are hoisted — so a lock
       # regenerated locally was rejected here by npm ci. Node 24 is LTS and
       # ships npm 11, which puts both sides on the same resolver.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: ".nvmrc"
           cache: "npm"
