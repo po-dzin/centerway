@@ -4,6 +4,15 @@ module.exports = {
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    /* NOT THE GUARD'S PROBES. `guard:eslint` writes a handful of throwaway
+       files under `src/**` to prove each rule bites, then deletes them. A dev
+       server running at the time catches them in this scan, remembers the
+       paths, and every later CSS build fails with `ENOENT __guard_probe.ts` —
+       which arrives looking like broken styles, because what it breaks is
+       `globals.css`. Twice in one session. Tailwind never needed them: a probe
+       has no class names in it. */
+    "!./src/**/__guard_probe*",
+    "!./src/**/__guard_probe*/**",
   ],
   darkMode: "class",
   theme: {
