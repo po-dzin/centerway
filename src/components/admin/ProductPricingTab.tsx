@@ -39,9 +39,7 @@ import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
 import { Icon } from "@/components/Icon";
 
 function EmptyIcon() {
-  return (
-    <Icon className="cw-muted" name="price" size={20} />
-  );
+  return <Icon className="cw-muted" name="price" size={20} />;
 }
 
 export function ProductPricingTab({

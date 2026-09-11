@@ -60,9 +60,7 @@ const BLOCKER_KEY: Record<SaleBlocker, string> = {
 };
 
 function EmptyIcon() {
-  return (
-    <Icon className="cw-muted" name="list" size={20} />
-  );
+  return <Icon className="cw-muted" name="list" size={20} />;
 }
 
 export default function CatalogPage() {

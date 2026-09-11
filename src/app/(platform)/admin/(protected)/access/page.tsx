@@ -65,15 +65,11 @@ async function fetchCourses(): Promise<{ items: CourseRow[]; canGrant: boolean }
 }
 
 function EmptyIcon() {
-  return (
-    <Icon className="cw-muted" name="lock" size={20} />
-  );
+  return <Icon className="cw-muted" name="lock" size={20} />;
 }
 
 function PlusGlyph() {
-  return (
-    <Icon name="plus" size={16} />
-  );
+  return <Icon name="plus" size={16} />;
 }
 
 function ChevronIcon({ open }: { open: boolean }) {

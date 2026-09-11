@@ -166,9 +166,7 @@ export function JobsList({ initial }: { initial: JobsPage }) {
         <AdminEmptyState
           className="py-20"
           iconWrapperClassName="w-12 h-12 rounded-full"
-          icon={
-            <Icon className="cw-muted" name="clock" size={20} />
-          }
+          icon={<Icon className="cw-muted" name="clock" size={20} />}
           title={t("jobs_not_found")}
           description={q || activeStatus ? t("jobs_try_filters") : t("jobs_queue_empty")}
         />

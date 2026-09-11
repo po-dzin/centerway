@@ -202,9 +202,7 @@ export function CustomersList({ initial }: { initial: CustomersPage }) {
           {!loading && !error && data.length === 0 && (
             <AdminEmptyState
               className="py-16"
-              icon={
-                <Icon className="cw-muted" name="user" size={20} />
-              }
+              icon={<Icon className="cw-muted" name="user" size={20} />}
               description={debouncedQ ? t("customers_not_found") : t("customers_empty")}
             />
           )}

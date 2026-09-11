@@ -27,9 +27,7 @@ import surfaces from "@/components/admin/AdminSurfaces.module.css";
 import { Icon } from "@/components/Icon";
 
 function EmptyIcon() {
-  return (
-    <Icon className="cw-muted" name="lock" size={20} />
-  );
+  return <Icon className="cw-muted" name="lock" size={20} />;
 }
 
 export function CourseAuthorshipTab({

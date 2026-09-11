@@ -187,11 +187,7 @@ function ResendAccessButton({
       className="shrink-0 cw-icon-btn opacity-0 group-hover:opacity-100"
     >
       <InteractionInkIcon>
-        {copied ? (
-          <Icon className="cw-status-success-text" name="check" size={16} />
-        ) : (
-          <Icon name="link" size={16} />
-        )}
+        {copied ? <Icon className="cw-status-success-text" name="check" size={16} /> : <Icon name="link" size={16} />}
       </InteractionInkIcon>
     </button>
   );
@@ -984,9 +980,7 @@ export default function OrdersPage() {
           {!loading && !error && data.length === 0 && (
             <AdminEmptyState
               className="py-16"
-              icon={
-                <Icon className="cw-muted" name="document" size={20} />
-              }
+              icon={<Icon className="cw-muted" name="document" size={20} />}
               description={t("orders_empty")}
             />
           )}

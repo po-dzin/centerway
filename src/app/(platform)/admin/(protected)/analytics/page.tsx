@@ -267,11 +267,7 @@ function AnalyticsCollapsePanel(props: {
           title={open ? collapseLabel : expandLabel}
         >
           <InteractionInkIcon>
-            <Icon
-              className={`transition-transform ${open ? "rotate-180" : ""}`}
-              name="chevron-down"
-              size={16}
-            />
+            <Icon className={`transition-transform ${open ? "rotate-180" : ""}`} name="chevron-down" size={16} />
           </InteractionInkIcon>
         </span>
       </button>
