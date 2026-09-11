@@ -27,21 +27,24 @@ import { spawnSync } from "node:child_process";
 const only = process.argv.slice(2).filter((argument) => !argument.startsWith("-"));
 
 /*
- * NOT IN THIS LIST, and each for a reason, so the list does not read as
- * complete when it is not (all four were failing on 2026-09-11):
+ * ONE GATE IS NOT IN THIS LIST, and it is named rather than quietly omitted:
  *
- *   icons:check         the sprite and src/lib/brand/iconNames.ts no longer
- *                       match what icons-bake produces — a glyph changed
- *                       without a rebake.
- *   guard:carriers      way21's "how" block carries a photo and an arrow icon
- *                       at once, which is what that guard exists to refuse.
- *   guard:rhythm        off-grid values in the landing network CSS.
- *   generator:language  broken, not failing: it pulls "string literals" out of
- *                       TSX with a regex, swallows a JSX block, and reports
- *                       every Latin word inside it as mixed language.
+ *   icons:check   the committed sprite and src/lib/brand/iconNames.ts carry a
+ *                 `cw-ink-rule` symbol that scripts/lib/icon-glyphs.mjs does
+ *                 not define, so the bake cannot reproduce them. It is not a
+ *                 stale output — the glyph ships and InteractionInk.tsx renders
+ *                 it. Running `npm run icons:build` today DELETES a live
+ *                 interaction primitive, which is the real danger here. The
+ *                 geometry is being written on another branch, along with the
+ *                 straight-line exception the bake needs (a rule has to hold
+ *                 its line, and the hand bake wobbles every path). This goes
+ *                 back in the list the day that lands.
  *
- * Add one back the moment it is green. A red gate kept out of the runner is
- * a gate nobody will ever fix.
+ * The other three that sat here on 2026-09-11 are in the list now: the carrier
+ * guard was missing `arrow-down` from its chrome set, the rhythm guard became a
+ * ratchet after two months of never once being green, and the language guard
+ * was reading markup as copy through a regex that could not tell an apostrophe
+ * in Ukrainian from the start of a string.
  */
 
 /** `npm run <script>` — with the reason it exists, where the reason is not obvious. */
@@ -90,7 +93,30 @@ const gates = [
     // already counted. See docs/design-system/geometry-audit-2026-09-07.md.
   },
   { script: "generator:validate", title: "Generated screens" },
+  {
+    script: "generator:determinism",
+    title: "The generator gives the same answer twice",
+  },
+  {
+    script: "generator:language",
+    title: "One language per string",
+    // Ukrainian or English, never both in one line. Proper nouns are exempt.
+  },
   { script: "guard:semantic", title: "Semantic architecture" },
+  {
+    script: "guard:carriers",
+    title: "One carrier per block",
+    // A block says something with a photograph, a document, an icon or a hand
+    // graphic — one of them. Two compete and the reader cannot tell which is
+    // the point. way21's phase cards once opened with four at once.
+  },
+  {
+    script: "guard:rhythm",
+    title: "Landing rhythm on the 4px grid",
+    // A ratchet against data/design-tokens/rhythm-baseline.json: the next
+    // off-grid value fails, the nine already counted do not.
+  },
+  { script: "guard:bands", title: "Landing bands" },
   {
     script: "docs:index:check",
     title: "Docs index is current",

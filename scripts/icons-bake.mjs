@@ -18,10 +18,18 @@
  * and the displaced samples are re-emitted as smooth cubics. Same character,
  * real vector output, deterministic across runs.
  *
+ * A WRITE NEVER DROPS A SYMBOL BY ACCIDENT (2026-09-11). The sprite on disk
+ * carried `cw-ink-rule`, which had no definition left in icon-glyphs.mjs — so
+ * `npm run icons:build` would have quietly removed a symbol that ships and that
+ * InteractionInk.tsx renders, and nothing would have said so until the mark
+ * stopped drawing in production. Losing a glyph is a refusal now, with the
+ * names in it. `--allow-drop` is how you say you meant it.
+ *
  * Usage:
  *   node scripts/icons-bake.mjs                 # bake preset hand2, write sprites
  *   node scripts/icons-bake.mjs --preset hand1
  *   node scripts/icons-bake.mjs --check         # fail if output differs from disk
+ *   node scripts/icons-bake.mjs --allow-drop    # write even if a symbol disappears
  */
 
 import fs from "node:fs/promises";
@@ -39,10 +47,11 @@ const TARGETS = [
 ];
 
 function parseArgs(argv) {
-  const args = { preset: DEFAULT_PRESET, check: false };
+  const args = { preset: DEFAULT_PRESET, check: false, allowDrop: false };
   for (let i = 2; i < argv.length; i += 1) {
     if (argv[i] === "--preset") args.preset = argv[++i];
     else if (argv[i] === "--check") args.check = true;
+    else if (argv[i] === "--allow-drop") args.allowDrop = true;
     else throw new Error(`unknown argument: ${argv[i]}`);
   }
   if (!HAND_PRESETS[args.preset]) {
@@ -72,9 +81,42 @@ export type CwGraphicName = (typeof CW_GRAPHIC_NAMES)[number];
 `;
 }
 
+const symbolIds = (svg) => new Set([...svg.matchAll(/<symbol id="([^"]+)"/g)].map((match) => match[1]));
+
+/**
+ * Every symbol the sprite on disk has and the fresh bake does not.
+ *
+ * A missing definition and a deliberate deletion look identical in the output;
+ * they are told apart by whether the author says so. Defaulting to "this is a
+ * mistake" is right because the mistake ships and the deletion is one flag away.
+ */
+async function droppedSymbols(sprite) {
+  const dropped = new Set();
+  const baked = symbolIds(sprite);
+  for (const target of TARGETS) {
+    const existing = await fs.readFile(target, "utf8").catch(() => null);
+    if (!existing) continue;
+    for (const id of symbolIds(existing)) if (!baked.has(id)) dropped.add(id);
+  }
+  return [...dropped].sort();
+}
+
 async function main() {
   const args = parseArgs(process.argv);
   const { sprite } = (await bakeSprites([args.preset])).get(args.preset);
+
+  if (!args.check && !args.allowDrop) {
+    const dropped = await droppedSymbols(sprite);
+    if (dropped.length > 0) {
+      console.error(
+        `refusing to write: the bake would remove ${dropped.length} symbol(s) the sprite ships — ` +
+          `${dropped.join(", ")}.\n` +
+          "Either the geometry is missing from scripts/lib/icon-glyphs.mjs, or the glyph was retired.\n" +
+          "Check what still renders it, then re-run with --allow-drop if the removal is intended.",
+      );
+      process.exit(1);
+    }
+  }
 
   const outputs = [
     ...TARGETS.map((target) => ({ target, content: sprite })),
