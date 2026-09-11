@@ -371,6 +371,28 @@ export async function upsertAuthorProfile(
   return { ok: true, author: authorFromRow(data as Row) };
 }
 
+/** One line per author profile, enough to name and pick one. */
+export type AuthorProfileOption = { id: string; slug: string; name: string; listed: boolean };
+
+/**
+ * Every author profile, listed or not, for the admin's byline picker.
+ *
+ * Uncached and unfiltered on purpose: this is not a directory, it is the set
+ * of people a course's byline can be handed BACK to. The gate is the caller's
+ * — only an admin route may ask for it (see the author route's PATCH).
+ */
+export async function listAuthorProfiles(): Promise<AuthorProfileOption[]> {
+  const db = adminClient();
+  const { data, error } = await db.from("lms_authors").select("id, slug, name, listed").order("name");
+  if (error || !data) return [];
+  return (data as Row[]).map((row) => ({
+    id: row.id as string,
+    slug: row.slug as string,
+    name: row.name as string,
+    listed: row.listed === true,
+  }));
+}
+
 /** The raw `author_profile_id` on a course row, for the builder — no join, no cache. */
 export async function getCourseAuthorProfileId(courseId: string): Promise<string | null> {
   const db = adminClient();
@@ -381,11 +403,10 @@ export async function getCourseAuthorProfileId(courseId: string): Promise<string
 /**
  * Sets or clears the byline on one course.
  *
- * Deliberately the only write path into `author_profile_id` — the builder
- * route that calls this never accepts an arbitrary id from the request body,
- * only "the caller's own profile" or "none" (see the route's own comment).
- * Anything richer than that (crediting a co-author, a ghost-written course) is
- * a picker this product does not have yet.
+ * Deliberately the only write path into `author_profile_id`. The builder route
+ * that calls this accepts an arbitrary id from the request body ONLY from an
+ * admin (see the route's own comment); an ordinary author may still say no
+ * more than "my own profile" or "none".
  */
 export async function linkCourseAuthorProfile(
   courseId: string,

@@ -69,7 +69,11 @@ export function saleBlockersOf(input: {
   if (input.onShelf === false) blockers.push("not_renderable");
 
   if (input.status !== "published") blockers.push("not_published");
-  else if (input.reviewStatus !== "approved") blockers.push("not_approved");
+  // Only while hidden: approval gates the visibility write, not the sale —
+  // see `SaleBlocker.not_approved`. A course already on the shelf is selling
+  // whatever its review column says, and saying otherwise sent an operator
+  // hunting for a fault that was not there.
+  else if (input.reviewStatus !== "approved" && input.visibility === "hidden") blockers.push("not_approved");
 
   if (input.visibility === "hidden") blockers.push("hidden");
 

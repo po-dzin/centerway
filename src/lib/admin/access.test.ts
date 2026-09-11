@@ -1052,6 +1052,47 @@ describe("course moderation and admin deletion", () => {
     expect(db.rows("lms_course_revisions")).toHaveLength(0);
   });
 
+  /* THE CORNER FROM THE OTHER SIDE. `short` and `irem-gymnastics` were
+     published, listed and never approved, with a merely SAVED draft on top —
+     and an unsubmitted draft used to remove the approve path entirely, so
+     the live publication could never be approved and its visibility could
+     never be changed again. */
+  it("approves the live publication while an unsubmitted revision waits, and leaves the draft alone", async () => {
+    const row = db.rows("lms_courses").find((item) => item.id === "course-reset")!;
+    Object.assign(row, {
+      status: "published",
+      review_status: "draft",
+      visibility: "listed",
+      pending_content: { title: "Чернетка автора" },
+      pending_review_status: "draft",
+    });
+
+    await moderateCourse({ courseId: "course-reset", actorId: ADMIN, action: "approve" });
+
+    expect(row.review_status).toBe("approved");
+    expect(row.pending_content).toEqual({ title: "Чернетка автора" });
+    expect(row.pending_review_status).toBe("draft");
+  });
+
+  it("still approves a submitted-but-unpublished course, which has no revision at all", async () => {
+    const row = db.rows("lms_courses").find((item) => item.id === "course-reset")!;
+    Object.assign(row, { status: "draft", review_status: "in_review", visibility: "hidden", pending_content: null });
+
+    await moderateCourse({ courseId: "course-reset", actorId: ADMIN, action: "approve" });
+
+    expect(row.review_status).toBe("approved");
+    expect(row.status).toBe("draft");
+  });
+
+  it("refuses to approve a course that is neither published nor submitted", async () => {
+    const row = db.rows("lms_courses").find((item) => item.id === "course-reset")!;
+    Object.assign(row, { status: "draft", review_status: "draft", visibility: "hidden", pending_content: null });
+
+    await expect(moderateCourse({ courseId: "course-reset", actorId: ADMIN, action: "approve" })).rejects.toMatchObject(
+      { message: "course_not_in_review", status: 409 },
+    );
+  });
+
   it("lists an approved live version while its next revision is still in review", async () => {
     const row = db.rows("lms_courses").find((item) => item.id === "course-reset")!;
     Object.assign(row, {

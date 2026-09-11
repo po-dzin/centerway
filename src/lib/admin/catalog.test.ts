@@ -101,12 +101,30 @@ describe("saleBlockersOf", () => {
 
   /* The corner that had no exit: published by the author, never reviewed,
        so invisible — and nothing said so. */
+  /* The corner that had no exit: published by the author, never reviewed,
+     so invisible — and nothing said so. Approval belongs in the list HERE,
+     because the visibility write below it is refused until it lands. */
   it("names approval and visibility for a course published straight from the builder", () => {
     expect(saleBlockersOf({ status: "published", reviewStatus: "draft", visibility: "hidden", offer: null })).toEqual([
       "not_approved",
       "hidden",
       "no_offer",
     ]);
+  });
+
+  /* WHAT THIS SCREEN SPENT WEEKS LYING ABOUT. `short` and `irem-gymnastics`
+     are published, listed, priced and unapproved — and they sell, because no
+     part of the buying path reads `review_status`. Calling that «не
+     продається» sent an operator looking for a fault that was not there. */
+  it("says nothing about approval for a course that is already on the shelf", () => {
+    expect(
+      saleBlockersOf({
+        status: "published",
+        reviewStatus: "draft",
+        visibility: "listed",
+        offer: { accessDays: 30, accessLifetime: false, active: true } as never,
+      }),
+    ).toEqual([]);
   });
 
   it("does not nag about approval before the author has published at all", () => {

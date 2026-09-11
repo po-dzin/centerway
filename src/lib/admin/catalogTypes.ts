@@ -31,7 +31,30 @@ export type SaleBlocker =
    * продажу». A screen that claims a course is on sale has to be reading
    * the same shelf a buyer does.
    */
-  "not_renderable" | "not_published" | "not_approved" | "hidden" | "no_offer" | "offer_withdrawn" | "no_access_rule";
+  | "not_renderable"
+  | "not_published"
+  /**
+   * Approval, and ONLY while the course is still hidden.
+   *
+   * Nothing on the buying path reads `review_status`: the storefront asks
+   * `isPublicCourse` (published + visibility) and then for an offer, and the
+   * checkout asks the same. What approval really gates is the VISIBILITY
+   * WRITE — `moderateCourse` refuses `listed`/`unlisted` on an unapproved
+   * course — so it stands between a hidden course and a buyer, and behind a
+   * course that is already public it stands between nothing and nobody.
+   *
+   * Printed as a blocker in both cases, this read as a lie: `short` and
+   * `irem-gymnastics` went on selling for weeks while this screen called
+   * them «не продається» (rows created after the 2026-08-23 backfill, so
+   * they kept the column's `draft` default). A course that is not approved
+   * and not hidden is still SAID so — see `reviewStatus` on the row — just
+   * not under «Не продається».
+   */
+  | "not_approved"
+  | "hidden"
+  | "no_offer"
+  | "offer_withdrawn"
+  | "no_access_rule";
 
 export type CatalogRow = {
   courseId: string;

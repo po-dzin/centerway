@@ -379,6 +379,22 @@ function Blockers({ row }: { row: CatalogRow }) {
   );
 }
 
+/**
+ * «Не проходив модерацію» — said quietly, and said separately.
+ *
+ * An unapproved course that is already on the shelf sells: nothing on the
+ * buying path reads `review_status` (see `SaleBlocker.not_approved`). What it
+ * cannot do is have its visibility changed, so the fact is worth printing —
+ * just not in the red line that claims the course is not selling, which is
+ * where it spent weeks being wrong about `short` and `irem-gymnastics`.
+ */
+function ModerationNote({ row }: { row: CatalogRow }) {
+  const { t } = useI18n();
+  if (row.reviewStatus === "approved" || row.blockers.includes("not_approved")) return null;
+
+  return <p className="text-xs cw-muted">{t("catalog_not_moderated")}</p>;
+}
+
 function PublicationRow({
   row,
   canEdit,
@@ -425,10 +441,15 @@ function PublicationRow({
   };
 
   const inReview = (row.hasPendingRevision ? row.pendingReviewStatus : row.reviewStatus) === "in_review";
-  // Already-published material an admin may wave through: the corner that
-  // used to have no exit. A pending revision is NOT this case.
-  const approvable =
-    inReview || (!row.hasPendingRevision && row.status === "published" && row.reviewStatus !== "approved");
+  /* Mirrors `moderateCourse`, which is the authority: a revision SUBMITTED
+     for review is approved as a release; otherwise the live publication can
+     be approved on its own — including with an unsubmitted draft sitting on
+     top of it, which used to remove the button entirely and leave a public
+     course permanently unapprovable. */
+  const revisionInReview = row.hasPendingRevision && row.pendingReviewStatus === "in_review";
+  const approvesLive =
+    !revisionInReview && row.reviewStatus !== "approved" && (row.reviewStatus === "in_review" || row.status === "published");
+  const approvable = revisionInReview || approvesLive;
 
   return (
     <div className="cw-list-item p-4 space-y-3">
@@ -445,6 +466,7 @@ function PublicationRow({
             <span>{new Date(row.updatedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}</span>
           </div>
           <Blockers row={row} />
+          <ModerationNote row={row} />
           <PendingChanges row={row} />
           <CourseLinks row={row} />
         </div>
@@ -468,7 +490,7 @@ function PublicationRow({
                 disabled={busy}
                 onClick={() => void moderate("approve")}
               >
-                {t("catalog_approve")}
+                {approvesLive && row.hasPendingRevision ? t("catalog_approve_live") : t("catalog_approve")}
               </button>
               {inReview ? (
                 <button

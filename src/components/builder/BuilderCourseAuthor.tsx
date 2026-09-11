@@ -17,6 +17,14 @@
  * The author who owns the course controls its profile link: they may attach
  * their own profile or remove it. Admin may set the initial/fallback link, but
  * cannot turn the author's course into a read-only relationship.
+ *
+ * DISPLACING SOMEONE ELSE'S BYLINE IS A QUESTION, NOT A BUTTON. «Показувати
+ * мій профіль» on a course that already prints another person reads as "add
+ * me" and does "replace them" — and for an admin, who can open every course,
+ * that is one stray click away on any course in the product. So the move is
+ * confirmed in a `BuilderDecision` that names the person being taken off the
+ * page, and an admin is offered the way back (the roster below) in the same
+ * breath — until `attach-profile` existed there wasn't one.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -25,7 +33,13 @@ import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
 import { authorProfileCompletion, type Course } from "@/lms-core";
-import { loadCourseAuthorLink, setCourseAuthorLink, type CourseAuthorLinkDto } from "./builderClient";
+import {
+  loadCourseAuthorLink,
+  setCourseAuthorLink,
+  type CourseAuthorLinkDto,
+  type CourseAuthorLinkMove,
+} from "./builderClient";
+import { BuilderDecision } from "./BuilderDecision";
 import { FieldInput } from "./BuilderFields";
 import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
 import styles from "./Builder.module.css";
@@ -49,6 +63,9 @@ export function BuilderCourseAuthor({
 }) {
   const [read, setRead] = useState<Read>({ slug: null, data: null, failed: false });
   const [busy, setBusy] = useState(false);
+  /** The move waiting on an answer, with the name it would take off the page. */
+  const [pending, setPending] = useState<{ move: CourseAuthorLinkMove; displaced: string } | null>(null);
+  const [picked, setPicked] = useState("");
   const toast = useToast();
 
   const refresh = useCallback(async () => {
@@ -78,10 +95,11 @@ export function BuilderCourseAuthor({
     };
   }, [refresh]);
 
-  async function apply(action: "attach-self" | "detach") {
+  async function apply(move: CourseAuthorLinkMove) {
     setBusy(true);
-    const result = await setCourseAuthorLink(slug, action);
+    const result = await setCourseAuthorLink(slug, move);
     setBusy(false);
+    setPending(null);
     if (result.ok) {
       setRead((prev) =>
         prev.data
@@ -95,8 +113,20 @@ export function BuilderCourseAuthor({
             }
           : prev,
       );
-      toast.success(action === "attach-self" ? "Профіль прив’язано до курсу" : "Профіль відв’язано від курсу");
+      setPicked("");
+      toast.success(move.action === "detach" ? "Профіль відв’язано від курсу" : "Профіль прив’язано до курсу");
     } else toast.error("Не вдалося змінити автора курсу");
+  }
+
+  /**
+   * Every write goes through here. A move that replaces a byline belonging to
+   * somebody other than the caller stops for an answer first; anything else —
+   * filling an empty byline, attaching or removing your own — goes straight
+   * through, because there is nobody to displace.
+   */
+  function request(move: CourseAuthorLinkMove, displaced: string | null) {
+    if (displaced) setPending({ move, displaced });
+    else void apply(move);
   }
 
   const data = read.slug === slug ? read.data : null;
@@ -105,6 +135,12 @@ export function BuilderCourseAuthor({
   const linked = data?.linkedAuthor ?? null;
   const isSelf = Boolean(data?.ownAuthor && data?.linkedAuthorId === data?.ownAuthor?.id);
   const completion = linked ? authorProfileCompletion(linked) : null;
+  /* Someone else's name is on the page — the only state in which a change here
+     takes something away from a person who is not the one clicking. */
+  const displaced = linked && !isSelf ? linked.name : null;
+  const roster = (data?.mayAssign ? (data.assignableAuthors ?? []) : []).filter(
+    (author) => author.id !== data?.linkedAuthorId,
+  );
 
   return (
     <div className={styles.settingsForm}>
@@ -185,7 +221,7 @@ export function BuilderCourseAuthor({
                   className={styles.quietAction}
                   type="button"
                   disabled={busy}
-                  onClick={() => void apply("attach-self")}
+                  onClick={() => request({ action: "attach-self" }, displaced)}
                 >
                   {linked ? "Показувати мій профіль" : "Прив’язати свій профіль"}
                 </button>
@@ -197,13 +233,84 @@ export function BuilderCourseAuthor({
               </p>
             )}
             {isSelf ? (
-              <button className={styles.quietAction} type="button" disabled={busy} onClick={() => void apply("detach")}>
+              <button
+                className={styles.quietAction}
+                type="button"
+                disabled={busy}
+                onClick={() => request({ action: "detach" }, null)}
+              >
                 Прибрати автора з курсу
               </button>
             ) : null}
           </div>
         ) : null}
+
+        {/* THE WAY BACK. Only an admin sees it, because only an admin may send
+            the byline to a profile that is not their own — and only they can
+            reach a course whose author they are not, which is the situation
+            that needs undoing. */}
+        {roster.length > 0 ? (
+          <div className={styles.authorLinkActions}>
+            <label className={styles.readOnlyNote} htmlFor="course-author-assign">
+              Передати авторство іншому профілю
+            </label>
+            <select
+              className={styles.input}
+              id="course-author-assign"
+              value={picked}
+              disabled={busy}
+              onChange={(event) => setPicked(event.target.value)}
+            >
+              <option value="">Оберіть автора…</option>
+              {roster.map((author) => (
+                <option key={author.id} value={author.id}>
+                  {author.name}
+                  {author.listed ? "" : " (профіль не публічний)"}
+                </option>
+              ))}
+            </select>
+            <button
+              className={styles.quietAction}
+              type="button"
+              disabled={busy || !picked}
+              onClick={() => request({ action: "attach-profile", authorProfileId: picked }, displaced)}
+            >
+              Призначити автором
+            </button>
+          </div>
+        ) : null}
       </section>
+
+      <BuilderDecision
+        open={pending !== null}
+        title="Замінити автора курсу?"
+        onDismiss={() => setPending(null)}
+        actions={
+          <>
+            <button
+              className={styles.dangerAction}
+              type="button"
+              disabled={busy}
+              onClick={() => pending && void apply(pending.move)}
+            >
+              {busy ? "Змінюємо…" : "Замінити"}
+            </button>
+            <button className={styles.quietAction} type="button" disabled={busy} onClick={() => setPending(null)}>
+              Скасувати
+            </button>
+          </>
+        }
+      >
+        <p className={styles.panelText}>
+          Зараз на сторінці курсу стоїть {pending?.displaced}. Після заміни ім’я, фото й посилання на профіль
+          зміняться всюди, де показується цей курс.
+        </p>
+        <p className={styles.readOnlyNote}>
+          {data?.mayAssign
+            ? "Повернути попереднього автора можна тут же — через «Передати авторство іншому профілю»."
+            : "Повернути попереднього автора самостійно ви не зможете: це робить адміністратор."}
+        </p>
+      </BuilderDecision>
 
       <section className={styles.courseSettingSection}>
         {/* NO SUMMARY OVER A SINGLE FIELD. The section held four lines of
