@@ -7,10 +7,24 @@
  * "Record ordinary local work in docs/** first"). Keeping a second copy would let
  * the two drift. This script generates the CLI-shaped copy from the canonical one.
  *
- * Why one file at a time — IMPORTANT:
- * `supabase db push` applies EVERY file in supabase/migrations/, so staging the
- * whole folder would re-run historical migrations against production. Stage
- * deliberately, one change at a time.
+ * Why one file at a time:
+ * This used to say that `supabase db push` applies EVERY file in
+ * supabase/migrations/, so staging the whole folder would re-run historical
+ * migrations against production. THAT IS NO LONGER TRUE and was checked on
+ * 2026-09-11: production now has 76 recorded versions, and push applies only
+ * what is absent from that table — its own `--include-all` flag reads "Include
+ * all migrations not found on remote history table". Nothing gets re-run.
+ *
+ * Staging one file at a time therefore survives as a habit, not as a
+ * safeguard. Whether to keep it is an open decision recorded in
+ * docs/migration/README.md; until it is taken, keep staging one at a time so
+ * the folder's contents stay predictable.
+ *
+ * NOTE this script CLEARS the staging directory on every run. Anything whose
+ * only copy sits there is lost the next time someone stages something else —
+ * which is how `author_profile_background` came to be live in production with
+ * no SQL anywhere in the repo. The canonical file goes in docs/migration/sql/
+ * FIRST; see the Publish Rhythm Rule in AGENTS.md.
  *
  * TWO THINGS THAT ARE NO LONGER TRUE / WERE NEVER SAID (noted 2026-08-22):
  *
@@ -97,6 +111,11 @@ clearStage();
 fs.copyFileSync(sourcePath, path.join(stageDir, stagedName));
 
 console.log(`db:stage — staged supabase/migrations/${stagedName}`);
+// `db push` is printed nowhere on purpose: it refuses while staging holds one
+// file, which is always. Printing it sent people to a dead end.
 console.log("\nNext:");
-console.log('  supabase db push --db-url "$SUPABASE_DB_URL" --dry-run');
-console.log('  supabase db push --db-url "$SUPABASE_DB_URL"');
+console.log("  npm run db:local:reset            # rehearse against populated tables");
+console.log("  # apply in the Supabase SQL editor, then record the version:");
+console.log(`  insert into supabase_migrations.schema_migrations (version) values ('${stamp}');`);
+console.log("  npm run check:migration-drift     # confirm the repo and production agree");
+console.log("\n  docs/migration/README.md explains why `db push` is not in this list.");
