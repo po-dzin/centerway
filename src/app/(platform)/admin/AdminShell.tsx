@@ -113,7 +113,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const isSelectedNav = (href: string) => (href === "/admin" ? pathname === "/admin" : pathname?.startsWith(href));
 
   return (
-    <div className="cw-admin-theme flex h-dvh md:h-screen flex-col overflow-hidden font-sans transition-colors duration-300">
+    <div className={styles.frame}>
       {/* One workspace topbar owns the whole frame: brand, wordmark and
                 account behave exactly as they do in the library and Builder.
                 The admin rail begins BELOW it, so there is no false seam where
@@ -186,7 +186,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
       />
       <PlatformHeader surface="personal" mode="workspace" scope="desktop" />
 
-      <div className="flex flex-1 min-h-0">
+      <div className={styles.body}>
         {/* Sidebar — the same chrome material, now a rail below the shared
                 bar rather than a competing top panel.
 
@@ -204,10 +204,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 `AdminLayout.module.css` — 68px, not 244. */}
         <aside
           data-cw-material="chrome"
-          className={`${styles.rail} ${expanded ? "" : styles.railCompact} shrink-0 h-full`}
+          className={`${styles.rail} ${styles.railAside} ${expanded ? "" : styles.railCompact}`}
         >
           {/* Nav */}
-          <nav className={`${styles.railNav} flex flex-col gap-0.5`} aria-label={t("sidebar_title")}>
+          <nav className={`${styles.railNav} ${styles.railNavList}`} aria-label={t("sidebar_title")}>
             {navItems.map(({ key, href, icon, active }) => {
               const isSelected = isSelectedNav(href);
 
@@ -218,15 +218,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
                   prefetch={false}
                   title={t(key)}
                   aria-current={active && isSelected ? "page" : undefined}
-                  className={`cw-nav-link ${styles.railLink} px-3 py-2.5 rounded-lg text-sm group relative
-                                    ${
-                                      active
-                                        ? isSelected
-                                          ? "cw-nav-link-active"
-                                          : ""
-                                        : "cw-muted opacity-40 cursor-not-allowed pointer-events-none"
-                                    }
-                                `}
+                  className={`${styles.railRow} ${
+                    active ? (isSelected ? "cw-nav-link-active" : "") : styles.railRowDisabled
+                  }`}
                 >
                   {expanded ? (
                     <Icon name={icon} size={20} />
@@ -239,11 +233,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                     <InteractionInkLabel variant="tab">{t(key)}</InteractionInkLabel>
                   </span>
                   {/* Tooltip when collapsed */}
-                  {!expanded && (
-                    <span className="pointer-events-none absolute left-full ml-3 z-50 whitespace-nowrap rounded-md cw-surface border cw-border cw-text text-xs font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 cw-shadow">
-                      {t(key)}
-                    </span>
-                  )}
+                  {!expanded && <span className={styles.railTip}>{t(key)}</span>}
                 </Link>
               );
             })}
@@ -263,27 +253,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
         </aside>
 
         {/* Main */}
-        <main className="flex-1 flex flex-col min-w-0 min-h-0">
-          {/* `pt-[5.25rem]` re-states the room the hidden bar used to hold
-                    open, in the islands' own terms — the row's inset plus one
-                    touch target plus air, 20 + 48 + 16 — the same arithmetic as
-                    the platform shell and the workshop, written in Tailwind
-                    because this frame is — and `md:pt-8` hands it back at the
-                    width where the bar returns. The scroll pane is what needs
-                    it: the island floats over this column's top-right corner.
-
-                    THE SIDES ARE THE PRODUCT'S GUTTER (2026-09-07), not this
-                    panel's own guess at one. They were `px-3` / `sm:px-4` — 12
-                    then 16px, against the platform's 20 — so the admin was the
-                    narrowest margin in the product and the one place a card
-                    reached closer to the edge than the same card anywhere else.
-                    `--cw-page-gutter` is the token every public page and the
-                    shelf already read; `md:p-8` still takes over at the width
-                    where this frame becomes a desktop panel. */}
-          <div
-            data-admin-scroll
-            className="custom-scrollbar flex-1 px-[var(--cw-page-gutter)] pt-[5.25rem] pb-4 md:p-8 md:pt-8 overflow-y-auto overflow-x-hidden w-full min-h-0"
-          >
+        <main className={styles.main}>
+          <div data-admin-scroll className={styles.scroll}>
             {/* One content column for every tab, on the platform's own
                         guide — see `.cw-admin-content`. The scroll viewport stays
                         the outer element: AdminPagination scrolls it by
