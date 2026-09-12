@@ -1924,6 +1924,12 @@ body {
        carved out of the padding box's bottom, which is where a `bottom`-ish
        background would otherwise land. */
     background-origin: content-box;
+    /* THE STRIP'S OWN BEHAVIOUR, not its caller's (2026-09-12). `overflow-x`
+       arrived as a utility on the one element that mounts this class, which
+       meant the bar scrolled because AdminTabs remembered to say so. It is the
+       tab strip: it scrolls sideways and clips vertically, and both belong
+       here beside the rail recipe that paints the bar. */
+    overflow-x: auto;
     overflow-y: hidden;
     min-height: var(--ds-touch-target-min);
     /* The bar itself comes from the one scrollbar recipe further down this

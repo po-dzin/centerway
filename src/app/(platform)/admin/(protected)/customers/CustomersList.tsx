@@ -179,7 +179,7 @@ export function CustomersList({ initial }: { initial: CustomersPage }) {
           )}
 
           {/* State: loading */}
-          {loading && <AdminLoadingState variant="skeleton" rows={5} rowClassName="h-16" />}
+          {loading && <AdminLoadingState variant="skeleton" rows={5} />}
 
           {/* State: error */}
           {error && !loading && (
@@ -201,7 +201,6 @@ export function CustomersList({ initial }: { initial: CustomersPage }) {
           {/* State: empty */}
           {!loading && !error && data.length === 0 && (
             <AdminEmptyState
-              className="py-16"
               icon={<Icon className="cw-muted" name="user" size={20} />}
               description={debouncedQ ? t("customers_not_found") : t("customers_empty")}
             />

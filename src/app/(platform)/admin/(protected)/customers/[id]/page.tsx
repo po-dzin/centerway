@@ -10,6 +10,7 @@ import surfaces from "@/components/admin/AdminSurfaces.module.css";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/admin/adminLocale";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
+import { Icon } from "@/components/Icon";
 
 interface Customer {
   id: string;
@@ -84,37 +85,8 @@ const typeColors: Record<string, string> = {
 };
 
 const typeIcons: Record<string, ReactNode> = {
-  order: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <line x1="12" y1="1" x2="12" y2="23" />
-      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-    </svg>
-  ),
-  event: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-    </svg>
-  ),
+  order: <Icon name="price" size={16} />,
+  event: <Icon name="chart" size={16} />,
 };
 
 function Avatar({ name, url, size = 12 }: { name?: string | null; url?: string | null; size?: number }) {
@@ -155,22 +127,7 @@ function ContactRow({ label, value, badge }: { label: string; value: string; bad
         {label}
       </span>
       <p className="text-xs font-medium cw-text truncate flex-1">{value}</p>
-      {badge && (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="11"
-          height="11"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="cw-status-success-text shrink-0"
-        >
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      )}
+      {badge && <Icon className="cw-status-success-text shrink-0" name="check" size={16} />}
     </div>
   );
 }

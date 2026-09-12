@@ -111,14 +111,7 @@ export function CourseAuthorshipTab({
   };
 
   if (courses.length === 0) {
-    return (
-      <AdminEmptyState
-        className="py-16"
-        iconWrapperClassName="w-12 h-12 rounded-full"
-        icon={<EmptyIcon />}
-        description={t("access_empty_courses")}
-      />
-    );
+    return <AdminEmptyState icon={<EmptyIcon />} description={t("access_empty_courses")} />;
   }
 
   return (

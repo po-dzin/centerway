@@ -1,0 +1,122 @@
+/*
+ * THE PANEL'S SHARED CONTROLS: the search field and the dialog.
+ *
+ * Second file out of Tailwind (2026-09-12). Same rule as AdminStates: a class
+ * is named for what the element IS here, material composes from the global
+ * layer, and the local declarations are the ones the guards can only see if
+ * they live under `src/components/**`.
+ */
+
+.search {
+  position: relative;
+}
+
+/* The lens sits inside the field's own left inset, which is why the input's
+   padding below is the inset plus the glyph plus a gap — written as arithmetic
+   so that resizing the glyph does not silently overlap the text. */
+.searchGlyph {
+  composes: cw-muted from global;
+  position: absolute;
+  inset-block: 0;
+  left: var(--cw-space-sm);
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.searchField {
+  composes: cw-input from global;
+  width: 100%;
+  padding-block: var(--cw-space-xs);
+  padding-inline: calc(var(--cw-space-sm) + 1rem + var(--cw-space-xs));
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.searchClear {
+  composes: cw-link-hover from global;
+  position: absolute;
+  inset-block: 0;
+  right: var(--cw-space-sm);
+  display: flex;
+  align-items: center;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+/* ── The dialog ─────────────────────────────────────────────────────────── */
+
+.overlay {
+  composes: cw-overlay from global;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--cw-space-md);
+  overflow-y: auto;
+}
+
+@media (min-width: 640px) {
+  .overlay {
+    align-items: center;
+  }
+}
+
+.dialog {
+  composes: cw-surface-solid cw-border cw-shadow from global;
+  width: 100%;
+  max-width: 32rem;
+  margin-block: auto;
+  border-width: 1px;
+  border-style: solid;
+  /* A dialog is a sheet: the plate step, the same one AdminSurfaces gives the
+     panels it floats over. */
+  border-radius: var(--cw-radius-xl);
+}
+
+.dialogWide {
+  composes: dialog;
+  max-width: 42rem;
+}
+
+.dialogHead {
+  padding: var(--cw-space-lg) var(--cw-space-lg) var(--cw-space-sm);
+}
+
+.dialogTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-size);
+  font-weight: 600;
+}
+
+.dialogNote {
+  composes: cw-page-subtitle from global;
+  margin-top: var(--cw-space-2xs);
+}
+
+.dialogBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+  padding: 0 var(--cw-space-lg) var(--cw-space-lg);
+}
+
+/* Reversed on a phone so the confirming action sits under the thumb and the
+   way out sits above it, then read left-to-right once there is a row. */
+.dialogFoot {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-md) var(--cw-space-lg);
+  border-top: 1px solid var(--cw-border);
+}
+
+@media (min-width: 640px) {
+  .dialogFoot {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}

@@ -227,12 +227,7 @@ export default function CatalogPage() {
           ) : filtered === null ? (
             <AdminLoadingState variant="skeleton" />
           ) : filtered.length === 0 ? (
-            <AdminEmptyState
-              className="py-16"
-              iconWrapperClassName="w-12 h-12 rounded-full"
-              icon={<EmptyIcon />}
-              description={t("catalog_empty")}
-            />
+            <AdminEmptyState icon={<EmptyIcon />} description={t("catalog_empty")} />
           ) : (
             <div className="space-y-1.5">
               {filtered.map((row) =>

@@ -2,6 +2,7 @@
 
 import { Icon } from "@/components/Icon";
 import { useI18n } from "@/components/I18nProvider";
+import controls from "@/components/admin/AdminControls.module.css";
 
 interface AdminSearchInputProps {
   value: string;
@@ -15,8 +16,8 @@ export function AdminSearchInput({ value, onChange, placeholder, onClear, classN
   const { t } = useI18n();
 
   return (
-    <div className={`relative ${className}`.trim()}>
-      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none cw-muted">
+    <div className={`${controls.search} ${className}`.trim()}>
+      <div className={controls.searchGlyph}>
         <Icon name="lens" size={16} />
       </div>
       <input
@@ -24,7 +25,7 @@ export function AdminSearchInput({ value, onChange, placeholder, onClear, classN
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="cw-input w-full pl-10 pr-10 py-2.5 text-sm"
+        className={controls.searchField}
       />
       {onClear && value && (
         <button
@@ -35,7 +36,7 @@ export function AdminSearchInput({ value, onChange, placeholder, onClear, classN
              the search that is filtering the table — is unreadable. */
           aria-label={t("common_clear_search")}
           title={t("common_clear_search")}
-          className="absolute inset-y-0 right-3 flex items-center cw-link-hover"
+          className={controls.searchClear}
         >
           <Icon name="close" size={16} />
         </button>

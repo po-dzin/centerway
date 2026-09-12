@@ -957,7 +957,7 @@ export default function OrdersPage() {
           {!loading && <p className="text-xs cw-muted">{getOrdersCountLabel(count)}</p>}
 
           {/* Loading skeletons */}
-          {loading && <AdminLoadingState variant="skeleton" rows={6} rowClassName="h-[72px]" />}
+          {loading && <AdminLoadingState variant="skeleton" rows={6} />}
 
           {/* Error */}
           {error && !loading && (
@@ -979,7 +979,6 @@ export default function OrdersPage() {
           {/* Empty */}
           {!loading && !error && data.length === 0 && (
             <AdminEmptyState
-              className="py-16"
               icon={<Icon className="cw-muted" name="document" size={20} />}
               description={t("orders_empty")}
             />

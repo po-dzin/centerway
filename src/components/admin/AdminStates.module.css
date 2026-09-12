@@ -1,0 +1,157 @@
+/*
+ * WHAT A PANEL SHOWS INSTEAD OF DATA: empty, loading, failed.
+ *
+ * THE ADMIN IS LEAVING TAILWIND (2026-09-12), and these three are the first
+ * files out. They are the right ones to start with because they are shared:
+ * eight call sites between them, and every one of those call sites was passing
+ * layout in as a prop — `className="py-16"` on all eight, plus
+ * `iconWrapperClassName="w-12 h-12 rounded-full"` on six. A component whose
+ * padding is decided by whoever mounts it is not a component, it is a snippet;
+ * and the two that did NOT pass the shape got a different one, which is how
+ * the admin came to have two icon badges for one purpose.
+ *
+ * So the props are gone and the roles are named here. The rule this file
+ * follows is the platform's: a class is named for what the element IS in this
+ * component, material is composed from the global layer rather than restated,
+ * and only geometry and type are local. See AdminSurfaces.module.css for the
+ * same argument applied to the boxes, including the part that matters most —
+ * `guard:geometry` reads `src/components/**` and never page files.
+ */
+
+.empty {
+  composes: cw-empty-state from global;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Was `py-16` at every call site and `py-20` at one. One value: this is the
+     same box on every tab, and it looked it everywhere but the job queue. */
+  padding-block: var(--cw-space-3xl);
+  text-align: center;
+}
+
+/* Round, because six of the eight call sites asked for round and because the
+   admin's own row badge (the coloured dot behind a job's status) is round. The
+   two squircles were the component's default, which nobody had chosen.
+
+   NAMED A BADGE, and not for tidiness: `guard:geometry` refused `.emptyIcon`
+   at pill on a 48px box, which is the correct refusal — the radius ladder says
+   a box that size takes `md`. A disc holding a glyph is the guard's third
+   carve-out, and the carve-out is keyed on the NAME, so a thing that wants the
+   exception has to say what it is. It is the same object as `.failureBadge`
+   below, which passed for exactly that reason. */
+.emptyBadge {
+  composes: cw-empty-icon from global;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: var(--cw-space-md);
+  border-radius: var(--cw-radius-pill);
+}
+
+.emptyTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 500;
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+.emptyText {
+  composes: cw-muted from global;
+  margin: 0;
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+/* Under a title the line is a second thought rather than the whole message, so
+   it gets air above it and a measure narrow enough to read as a caption. */
+.emptyTextUnderTitle {
+  composes: emptyText;
+  max-width: 20rem;
+  margin-top: var(--cw-space-2xs);
+}
+
+.waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cw-space-md);
+  padding-block: var(--cw-space-3xl);
+}
+
+.waitingText {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 500;
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+}
+
+/* ONE ROW HEIGHT (2026-09-12). It was a prop, and the three lists that use it
+   passed three different numbers — 64, 80 and an arbitrary 72 typed as
+   `h-[72px]`. A placeholder that is a different height from the row it stands
+   in for makes the page jump when the data lands, so the answer is not a
+   fourth number: it is that the admin's list rows should be one height, and
+   until they are this is the middle one, which is also on the spacing scale. */
+.skeletonRow {
+  composes: cw-skeleton-row from global;
+  height: var(--cw-space-3xl);
+}
+
+.failure {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cw-space-sm);
+}
+
+.failureBadge {
+  composes: cw-status-failed-soft-bg from global;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  /* Sits with the first line of the title beside it rather than with the top of
+     its box — the smallest step on the scale, which is what that nudge is. */
+  margin-top: var(--cw-space-2xs);
+  border-radius: var(--cw-radius-pill);
+}
+
+.failureBody {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.failureTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+.failureMessage {
+  composes: cw-muted from global;
+  margin: var(--cw-space-2xs) 0 0;
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+.failureAction {
+  margin-top: var(--cw-space-sm);
+}
+
+/* The current page, lifted out of the quiet "Page 3 of 9" line around it. */
+.pageNumber {
+  color: var(--cw-platform-text);
+  font-weight: 500;
+}

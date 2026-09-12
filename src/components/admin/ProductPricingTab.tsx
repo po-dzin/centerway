@@ -56,14 +56,7 @@ export function ProductPricingTab({
   const { t } = useI18n();
 
   if (products.length === 0) {
-    return (
-      <AdminEmptyState
-        className="py-16"
-        iconWrapperClassName="w-12 h-12 rounded-full"
-        icon={<EmptyIcon />}
-        description={t("catalog_empty")}
-      />
-    );
+    return <AdminEmptyState icon={<EmptyIcon />} description={t("catalog_empty")} />;
   }
 
   return (

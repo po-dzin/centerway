@@ -8,6 +8,7 @@ import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
+import { Icon } from "@/components/Icon";
 
 interface AuditLogEntry {
   id: string;
@@ -90,31 +91,9 @@ export default function AuditLogPage() {
           }
         />
       ) : logs.length === 0 ? (
-        <AdminEmptyState
-          className={`${surfaces.plateFlush} py-16`}
-          icon={
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="cw-muted"
-            >
-              <path d="M8 6h13" />
-              <path d="M8 12h13" />
-              <path d="M8 18h13" />
-              <path d="M3 6h.01" />
-              <path d="M3 12h.01" />
-              <path d="M3 18h.01" />
-            </svg>
-          }
-          description={t("audit_empty")}
-        />
+        <div className={surfaces.plateFlush}>
+          <AdminEmptyState icon={<Icon className="cw-muted" name="list" size={20} />} description={t("audit_empty")} />
+        </div>
       ) : (
         <div className={`${surfaces.plateFlush} transition-colors duration-300`}>
           <div className="overflow-x-auto">

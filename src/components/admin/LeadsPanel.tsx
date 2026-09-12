@@ -154,7 +154,7 @@ export function LeadsPanel() {
         }}
       />
 
-      {loading && <AdminLoadingState variant="skeleton" rows={5} rowClassName="h-20" />}
+      {loading && <AdminLoadingState variant="skeleton" rows={5} />}
 
       {error && !loading && (
         <AdminErrorState
@@ -170,7 +170,6 @@ export function LeadsPanel() {
 
       {!loading && !error && rows.length === 0 && (
         <AdminEmptyState
-          className="py-16"
           /* The sprite, not a hand-drawn outline: this panel is new,
                        and new surfaces start on the system's own hand. */
           icon={<Icon name="mail" size={22} />}

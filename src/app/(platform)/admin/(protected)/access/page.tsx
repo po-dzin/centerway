@@ -825,12 +825,7 @@ function PeopleTab({
           }
         />
       ) : items.length === 0 ? (
-        <AdminEmptyState
-          className="py-16"
-          iconWrapperClassName="w-12 h-12 rounded-full"
-          icon={<EmptyIcon />}
-          description={t("access_empty_accounts")}
-        />
+        <AdminEmptyState icon={<EmptyIcon />} description={t("access_empty_accounts")} />
       ) : (
         <div className="space-y-1.5">
           {items.map((account) => {
