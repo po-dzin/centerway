@@ -187,11 +187,7 @@ export function JobsList({ initial }: { initial: JobsPage }) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <p className="text-sm font-medium cw-text font-mono break-all line-clamp-1">{job.type}</p>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${JOB_STATUS_BADGE_CLASS[job.status]}`}
-                  >
-                    {statusLabels[job.status]}
-                  </span>
+                  <span className={JOB_STATUS_BADGE_CLASS[job.status]}>{statusLabels[job.status]}</span>
                 </div>
                 <div className="text-xs cw-muted flex items-center gap-3">
                   <span className="truncate max-w-[200px] font-mono opacity-60">{job.id}</span>

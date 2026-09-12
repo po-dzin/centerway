@@ -1037,9 +1037,7 @@ export default function OrdersPage() {
                           <span className="text-sm font-mono font-medium cw-text break-words min-w-0">
                             {order.order_ref}
                           </span>
-                          <span
-                            className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${ORDER_STATUS_BADGE_CLASS[order.status] ?? "cw-surface-2 cw-muted"}`}
-                          >
+                          <span className={ORDER_STATUS_BADGE_CLASS[order.status] ?? "cw-surface-2 cw-muted"}>
                             {statusLabel[order.status] ?? order.status}
                           </span>
                         </div>

@@ -1385,6 +1385,29 @@ body {
     border: 1px solid color-mix(in srgb, var(--cw-status-running) 30%, transparent);
   }
 
+  /* A STATUS BADGE IS A SHAPE AS WELL AS A COLOUR (2026-09-12).
+     These four classes carried the colour and nothing else, so every call site
+     typed the shape — and typed it differently: `text-[10px] px-1.5 py-0.5
+     rounded-full` in the job list, `text-[10px] px-2 py-0.5 rounded-full` in
+     orders, `text-sm px-2 py-0.5 rounded-md` in the job dialog, and nothing at
+     all once the dialog moved onto the shared one, which is how a cramped badge
+     with a border hugging its letters got noticed in the first place. A caller
+     that has to remember the shape is a caller that will get it wrong.
+
+     `pill` at this size is the guard's own carve-out: text in a capsule cannot
+     be expressed by the radius bands without ceasing to be a capsule. */
+  .cw-status-pending-badge,
+  .cw-status-running-badge,
+  .cw-status-success-badge,
+  .cw-status-failed-badge {
+    display: inline-block;
+    padding: 0.125rem var(--cw-space-xs);
+    border-radius: var(--cw-radius-pill);
+    font-size: var(--ds-type-label-size);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
   .cw-status-pending-badge {
     color: var(--cw-status-pending);
     background-color: var(--cw-status-pending-soft);

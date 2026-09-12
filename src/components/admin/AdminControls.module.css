@@ -120,3 +120,131 @@
     justify-content: flex-end;
   }
 }
+
+/* ── Actions ───────────────────────────────────────────────────────────────
+ *
+ * `.cw-btn` in globals.css carries the border, the touch floor and the radius
+ * and stops there, so every call site was adding its own `px-4 py-2 text-sm
+ * font-semibold disabled:opacity-50` — which is how the panel came to have
+ * buttons at four paddings and three type steps. The metrics are here; the
+ * COLOUR stays at the call site, where `cw-btn-muted` and the status fills
+ * already live, because that is the part that genuinely varies by what the
+ * button does.
+ *
+ * No vertical padding on purpose: `.cw-btn` sets `min-height` to the touch
+ * floor, and padding on top of a min-height is how a button ends up taller than
+ * the floor it was measured against.
+ */
+.action {
+  composes: cw-btn from global;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cw-space-2xs);
+  padding-inline: var(--cw-space-md);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* The one the dialog is actually for, given the width. */
+.actionPrimary {
+  composes: action;
+  flex: 1 1 auto;
+}
+
+/* ── Inside a dialog ───────────────────────────────────────────────────────
+ * A block of facts about the thing being acted on. Not a table: two or three
+ * label/value pairs read better as rows than as a grid with one column of
+ * headings.
+ */
+.facts {
+  composes: cw-surface-2 from global;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.factRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
+.factLabel {
+  composes: cw-muted from global;
+}
+
+.factValue {
+  color: var(--cw-platform-text);
+  font-weight: 500;
+}
+
+/* A label over a block rather than beside it — the uppercase step the panel
+   uses for a field name everywhere else. */
+.fieldLabel {
+  composes: cw-muted from global;
+  display: block;
+  margin-bottom: var(--cw-space-xs);
+  font-size: var(--ds-type-label-size);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.note {
+  composes: cw-surface cw-border cw-text from global;
+  width: 100%;
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-md);
+  font-size: var(--ds-type-body-sm-size);
+  resize: none;
+}
+
+.note::placeholder {
+  color: var(--cw-muted);
+}
+
+/* Machine text — a payload, a stack, an id. The data face, not Tailwind's mono
+   stack, which is a different set of letters from the one the product uses for
+   numbers and codes everywhere else. */
+.code {
+  composes: cw-surface-2 cw-border from global;
+  display: block;
+  max-height: 40vh;
+  margin: 0;
+  padding: var(--cw-space-sm);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-md);
+  overflow: auto;
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+.codeFailed {
+  composes: code;
+  composes: cw-alert-failed from global;
+  white-space: pre-wrap;
+}
+
+.mono {
+  font-family: var(--cw-font-data);
+}
+
+.dialogError {
+  composes: cw-status-failed-text from global;
+  margin: 0;
+  font-size: var(--ds-type-label-size);
+}
