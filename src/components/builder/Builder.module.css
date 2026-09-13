@@ -257,8 +257,17 @@
    pointer, full on the current row. That is the whole point: a highlight plate
    used for both makes the selected row read as stuck hover the moment the
    pointer rests on it, which is what it did. Any row that can be pointed at or
-   chosen composes `inkRow` and renders an `InkLabel`; nothing in the builder
-   is allowed to invent a second answer. */
+   chosen composes `inkRow`, renders an `InkLabel` and carries
+   `data-cw-ink-control`; nothing in the builder is allowed to invent a second
+   answer.
+
+   THE STROKE IS NOT DRAWN HERE (2026-09-11). It is `InteractionInk`'s baked
+   graphic, positioned and timed by globals.css from the same `--cw-ink-*`
+   tokens as the topbar and the menus — which is why this file no longer holds
+   an opacity, a transform or a radius for it. The attribute is what hands a
+   builder row to that contract; `aria-current` is what says which row is the
+   one. A module that keeps its own copy of a mark is a module that will still
+   be drawing last month's mark. */
 /* A row that carries a grip. The grip is revealed by THIS row and no other:
    `.dragRow:hover` used to do it, and a module block is a drag row containing
    every one of its lesson rows — so pointing at one lesson lit the module's
@@ -297,25 +306,6 @@
 .inkRow:focus-visible {
   outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
   outline-offset: var(--ds-focus-ring-offset);
-}
-
-.inkRow:focus-visible .inkMark {
-  opacity: var(--cw-ink-hover-opacity);
-  transform: scale(0.98);
-}
-
-@media (hover: hover) {
-  .inkRow:hover .inkMark {
-    opacity: var(--cw-ink-hover-opacity);
-    transform: scale(0.98);
-  }
-}
-
-/* Full ink: this row IS the thing being edited. */
-.inkRow[aria-current="page"] .inkMark,
-.inkRow[data-selected] .inkMark {
-  opacity: 1;
-  transform: scale(1);
 }
 
 /* ── Bar ──────────────────────────────────────────── */
@@ -1076,8 +1066,13 @@
   border-color: var(--cw-platform-accent);
 }
 
+/* THE SELECTED BLOCK IS MARKED ONCE, by `::before` — the system's dashed
+   contour, drawn from `--cw-contour-*` further down this file. This rule
+   recoloured the card's own solid border on top of it, so a chosen block
+   carried two lines saying the same thing: the canonical contour in its margin
+   and a brass edge on the card itself. Removed 2026-09-11 with the builder's
+   other local marks. */
 .blockCard[data-selected] {
-  border-color: var(--cw-nav-marker);
   outline: 0;
 }
 
@@ -3697,8 +3692,12 @@
   white-space: nowrap;
 }
 
+/* THE CHOSEN OPTION IS MARKED BY ITS LABEL'S STROKE, not by a tinted plate
+   (2026-09-11). A filled chip is the plate idiom this builder removed from its
+   lists two weeks earlier and kept here — so the same question, «which of
+   these is selected», was answered one way in the outline and another way in a
+   field. `aria-pressed` is already a state the shared ink CSS reads. */
 .choiceOption[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--cw-platform-accent) 22%, var(--cw-mat-surface));
   color: var(--cw-platform-text);
 }
 
@@ -3834,16 +3833,21 @@
   gap: var(--cw-space-2xs);
 }
 
+/* A BUTTON NOW, NOT A DRAG SURFACE (2026-09-11). The frame stopped being the
+   editor and became the way into one, so it carries a button's reset and a
+   pointer rather than a grab cursor: what happens here is a press. */
 .coverPreviewLandscape,
 .coverPreviewWide,
 .coverPreviewPortrait {
   position: relative;
+  display: block;
   width: 100%;
+  padding: 0;
+  border: 0;
   overflow: hidden;
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
-  cursor: grab;
-  touch-action: none;
+  cursor: pointer;
   user-select: none;
 }
 
@@ -3855,7 +3859,6 @@
    the frame reads as a band rather than a second full picker. */
 .coverPreviewWide {
   aspect-ratio: 21 / 9;
-  cursor: ns-resize;
 }
 
 .coverPreviewPortrait {
@@ -3864,15 +3867,12 @@
   margin-inline: auto;
 }
 
-/* Grabbing, not crosshair — these frames pan the picture now rather than
-   placing a point where you click. */
-.coverPreviewLandscape[data-dragging],
-.coverPreviewPortrait[data-dragging] {
-  cursor: grabbing;
-}
-
-.coverPreviewWide[data-dragging] {
-  cursor: ns-resize;
+@media (hover: hover) {
+  .coverPreviewLandscape:hover,
+  .coverPreviewWide:hover,
+  .coverPreviewPortrait:hover {
+    box-shadow: var(--cw-mat-active-shadow);
+  }
 }
 
 .coverPreviewLandscape:focus-visible,
@@ -3880,6 +3880,25 @@
 .coverPreviewPortrait:focus-visible {
   outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
   outline-offset: var(--ds-focus-ring-offset);
+}
+
+/* THE SAME MARK THE CABINET'S FRAMES CARRY, and deliberately the same one:
+   both say "this picture opens an editor", and a lens that means it here and a
+   pencil that means it there is how one gesture becomes two. Geometry mirrors
+   `.photoCropOpen` in Cabinet.module.css. */
+.coverCropOpen {
+  position: absolute;
+  left: var(--cw-space-2xs);
+  bottom: var(--cw-space-2xs);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--cw-radius-md);
+  background: color-mix(in srgb, var(--cw-mat-scrim-ink) 62%, transparent);
+  color: var(--cw-platform-accent-contrast);
+  pointer-events: none;
 }
 
 .coverPreviewLandscape img,
@@ -3893,9 +3912,10 @@
   pointer-events: none;
 }
 
-/* Thirds while the hand is down, and nothing otherwise — the same guides
-   `.guides` draws in CropEditor.module.css, on a frame that likewise has
-   nothing to grab but the picture. */
+/* THE GUIDES WENT WITH THE DRAG (2026-09-11). Thirds belong on the stage where
+   the crop is chosen — `.guides` in CropEditor.module.css draws them there —
+   and this frame no longer chooses anything: it shows the result and opens the
+   editor. Kept declared because the rule is shared vocabulary, unused here. */
 .coverCropGuides {
   position: absolute;
   inset: 0;
@@ -3919,9 +3939,6 @@
   pointer-events: none;
 }
 
-.coverPreviewLandscape[data-dragging] .coverCropGuides,
-.coverPreviewWide[data-dragging] .coverCropGuides,
-.coverPreviewPortrait[data-dragging] .coverCropGuides,
 .coverPreviewLandscape:focus-visible .coverCropGuides,
 .coverPreviewWide:focus-visible .coverCropGuides,
 .coverPreviewPortrait:focus-visible .coverCropGuides {
@@ -4594,10 +4611,30 @@
   border-block-start: 0;
 }
 
+/* THE WHOLE HEAD OPENS THE SECTION, not the 44px the chevron occupies.
+   A disclosure head is a title, a summary of what is set, and a chevron — and
+   only the chevron answered the press, so an author aiming at the words
+   «Надзаголовок і підзаголовок не додані» hit nothing and had to go back for
+   the arrow. The chevron is a PICTURE of the control, not the control.
+
+   Done as a stretched overlay rather than by wrapping the head in a button:
+   the title is an `<h3>` that `aria-labelledby` points at, and flow content
+   cannot live inside a button. The overlay therefore sits over the copy — a
+   collapsed summary trades text selection for being pressable, which is the
+   right way round for a line whose whole job is to be opened. A head that ever
+   gains a second control must lift it above the overlay. */
 .courseSettingHead {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: var(--cw-space-sm);
+}
+
+.courseSettingEdit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
 }
 
 .courseSettingCopy {
@@ -4740,8 +4777,14 @@
 }
 
 /* The choice still owns a full touch target, but no longer draws a large pill
-   around every word. On the manuscript surface the active underline is enough
-   to say which of the neighbouring values is selected. */
+   around every word. On the manuscript surface the mark under the label is
+   enough to say which of the neighbouring values is selected.
+
+   THAT MARK IS THE INK STROKE NOW (2026-09-11). It was `border-block-end` — a
+   straight 1px CSS rule, drawn by this file, in the one product that has a
+   hand-drawn stroke for exactly this. Nothing here draws it any more: the
+   label renders `InkLabel` and `aria-pressed` is one of the states the shared
+   ink CSS already reads. */
 .courseSettingEditor .choiceOption {
   padding-inline: var(--cw-space-sm);
   border-color: transparent;
@@ -4749,16 +4792,9 @@
   background: transparent;
 }
 
-.courseSettingEditor .choiceOption[aria-pressed="true"] {
-  border-block-end-color: var(--cw-platform-text);
+.courseSettingEditor .choiceOption[aria-pressed="true"],
+.courseSettingEditor .choiceOption:hover:not(:disabled) {
   background: transparent;
-}
-
-@media (hover: hover) {
-  .courseSettingEditor .choiceOption:hover:not(:disabled) {
-    border-block-end-color: var(--cw-platform-text);
-    background: transparent;
-  }
 }
 
 .courseSettingsAdvanced {
@@ -5761,27 +5797,6 @@
   text-overflow: ellipsis;
 }
 
-/* THE BUILDER'S MARK IS A ROUNDED EDGE NOW (2026-09-10).
-   It was the stroke recipe copied into this module — offset, weight, tilt,
-   dasharray, the lot. The whole product moved to marking «this is the one»
-   with a rounded ink edge around the label rather than a line under it, so
-   this follows, and drops the stroke's five geometry values for a border and
-   a radius. The DOM did not move: the mark is still `.inkLabel > .inkMark`,
-   so every layout rule in this file that reaches for either still lands.
-   Strengths and timing stay on the shared tokens they were already on. */
-.inkMark {
-  position: absolute;
-  inset: calc(-1 * var(--cw-space-2xs)) calc(-1 * var(--cw-space-xs));
-  border: 1.5px solid var(--cw-nav-marker);
-  border-radius: var(--cw-radius-pill);
-  pointer-events: none;
-  opacity: 0;
-  transform: scale(0.94);
-  transition:
-    opacity var(--builder-motion-ink) ease,
-    transform var(--builder-motion-ink) ease;
-}
-
 .courseMobileNavItem:focus-visible,
 .courseMobileNavItem[aria-current="page"] {
   color: var(--cw-platform-text);
@@ -5791,23 +5806,6 @@
   .courseMobileNavItem:hover {
     color: var(--cw-platform-text);
   }
-}
-
-.courseMobileNavItem:focus-visible .inkMark {
-  opacity: var(--cw-ink-hover-opacity);
-  transform: scale(0.98);
-}
-
-@media (hover: hover) {
-  .courseMobileNavItem:hover .inkMark {
-    opacity: var(--cw-ink-hover-opacity);
-    transform: scale(0.98);
-  }
-}
-
-.courseMobileNavItem[aria-current="page"] .inkMark {
-  opacity: 1;
-  transform: scale(1);
 }
 
 .courseRail {
@@ -5859,23 +5857,6 @@
   .courseRailLink:hover {
     color: var(--cw-platform-text);
   }
-}
-
-.courseRailLink:focus-visible .inkMark {
-  opacity: var(--cw-ink-hover-opacity);
-  transform: scale(0.98);
-}
-
-@media (hover: hover) {
-  .courseRailLink:hover .inkMark {
-    opacity: var(--cw-ink-hover-opacity);
-    transform: scale(0.98);
-  }
-}
-
-.courseRailLink[aria-current="page"] .inkMark {
-  opacity: 1;
-  transform: scale(1);
 }
 
 .courseRailStatus {

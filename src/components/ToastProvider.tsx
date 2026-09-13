@@ -101,3 +101,15 @@ export function useToast() {
   if (!context) throw new Error("useToast must be used within ToastProvider");
   return context;
 }
+
+/**
+ * The same channel for surfaces that may render outside a provider.
+ *
+ * The sign-in door is the reason this exists: it is mounted inside the platform
+ * shell today, but it is also the one component a route group could reuse
+ * before it has a toast viewport, and a door that throws instead of opening is
+ * worse than a door with no notifications.
+ */
+export function useOptionalToast() {
+  return useContext(ToastContext);
+}

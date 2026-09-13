@@ -138,6 +138,7 @@ export function BuilderBlockPicker({
               <button
                 key={type}
                 className={styles.pickerOption}
+                data-cw-ink-control=""
                 type="button"
                 title={BLOCK_TYPE_HINTS[type]}
                 onClick={() => onPick(type)}

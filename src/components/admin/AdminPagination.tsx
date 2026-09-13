@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/components/I18nProvider";
+import styles from "@/components/admin/AdminStates.module.css";
 import { Icon } from "@/components/Icon";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 
@@ -43,8 +44,8 @@ export function AdminPagination({ page, totalPages, onPrev, onNext }: AdminPagin
       </button>
 
       <div className="cw-page-subtitle">
-        {t("common_page")} <span className="font-medium cw-text">{page + 1}</span> {t("common_of")}{" "}
-        <span className="font-medium cw-text">{totalPages}</span>
+        {t("common_page")} <span className={styles.pageNumber}>{page + 1}</span> {t("common_of")}{" "}
+        <span className={styles.pageNumber}>{totalPages}</span>
       </div>
 
       <button
@@ -55,7 +56,7 @@ export function AdminPagination({ page, totalPages, onPrev, onNext }: AdminPagin
         title={t("common_next")}
       >
         <InteractionInkIcon>
-          <Icon name="chevron-right" size={20} />
+          <Icon name="arrow-right" size={20} />
         </InteractionInkIcon>
       </button>
     </div>

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 
+import { HandGraphic } from "@/components/Icon";
 import styles from "./Builder.module.css";
 
 /**
@@ -20,16 +21,22 @@ import styles from "./Builder.module.css";
  * The mark is one object at two strengths instead — faint under the pointer,
  * full when the row is current — so the states cannot collapse into each other.
  *
- * IT IS A ROUNDED EDGE AROUND THE LABEL, NOT A PLATE BEHIND IT (2026-09-10).
- * The paragraph above used to end by rejecting contours outright, on the
- * grounds that a rectangle around a row makes a list of names look like a list
- * of buttons. That objection was about the PLATE — a filled rect the width of
- * the row. This edge is drawn around the label's own width and carries no
- * fill, which is why it reads as the hand marking a word rather than as a
- * button appearing under the pointer. Decided across the product, not here:
- * the bar, the trail, the tabs and the menus all mark «this is the one» this
- * way now, and a builder that kept the underline would be the one surface
- * disagreeing.
+ * IT IS THE PLATFORM'S STROKE, NOT A LOCAL DRAWING (2026-09-11). For one day
+ * this module drew a rounded ink edge around the label instead — a border and a
+ * radius, in place of the stroke's five geometry values. The platform had tried
+ * the same shape, under the name `tab`, and took it back out the same week: on
+ * screen it read as a second, unrelated "selected" idiom sitting on top of the
+ * stroke, a ring around the row you last touched. The builder's copy did not
+ * come out with it, and shipped. That is what this reverts.
+ *
+ * There is no builder recipe any more, which is the point. The mark is
+ * `InteractionInk`'s baked `ink-rule` graphic, positioned and timed by the same
+ * `--cw-ink-*` tokens as the topbar, the trail, the account menu and the admin
+ * rail. A surface cannot drift from a contract it does not hold a copy of.
+ *
+ * The builder's own classes stay on the wrapper because layout rules in
+ * `Builder.module.css` reach for them: a compact rail hides `.inkLabel`, a rail
+ * row pads it. Those say where the label sits, not what the mark looks like.
  */
 export function InkLabel({
   children,
@@ -43,9 +50,9 @@ export function InkLabel({
 }) {
   const Text = strong ? "strong" : "span";
   return (
-    <span className={className ? `${styles.inkLabel} ${className}` : styles.inkLabel}>
-      <Text className={styles.inkText}>{children}</Text>
-      <span className={styles.inkMark} aria-hidden="true" />
+    <span className={`cw-ink-label ${styles.inkLabel}${className ? ` ${className}` : ""}`} data-cw-ink-variant="tab">
+      <Text className={`cw-ink-label-text ${styles.inkText}`}>{children}</Text>
+      <HandGraphic className="cw-ink-label-mark" name="ink-rule" size={36} />
     </span>
   );
 }

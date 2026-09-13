@@ -1,10 +1,33 @@
 @import "./platform-fonts.css";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* ─────────────────────────────────────────────────────────────────────────────
+   NO TAILWIND (2026-09-13).
 
-@layer base {
+   This file used to open with Tailwind's three directives (base, components,
+   utilities) and wrap most of itself in three matching layer blocks. Tailwind
+   compiled those layers away and, in doing so, PURGED every rule in them whose
+   class name it could not find in a .tsx file. That was survivable while the
+   admin typed `cw-surface` into class strings; the moment those names moved
+   into CSS modules as `composes: … from global`, the scan stopped seeing them
+   and 23 rules vanished from the served stylesheet — `cw-surface`, `cw-border`,
+   `cw-shadow`, `cw-list-item`, `cw-overlay`, `cw-page-title` among them — with
+   every class still sitting on its element.
+
+   What is below is what Tailwind used to EMIT, in the order it emitted it, so
+   the cascade is unchanged: its reset (preflight, resolved and inlined — MIT,
+   from tailwindcss 3.4), then the former base layer, the former components
+   layer, the former utilities layer, then the rest of the file as it was.
+   Nothing here is purged any more, because nothing reads it but the browser.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Reset (Tailwind preflight, resolved) ─────────────────────────────────── */
+
+
+/*
+! tailwindcss v3.4.19 | MIT License | https://tailwindcss.com
+*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}
+
+/* ── Former base layer ─────────────────────────────────────────────────── */
   :root {
     /* CW_BASE_LIGHT_START */
     --background: var(--cw-platform-bg);
@@ -208,6 +231,7 @@
     --cw-mat-tint-hover: color-mix(in srgb, var(--cw-mat-surface) 84%, transparent);
     --cw-mat-tint-media: color-mix(in srgb, var(--cw-mat-surface) 82%, transparent);
     --cw-mat-tint-chrome: color-mix(in srgb, var(--cw-mat-surface) 30%, transparent);
+    --cw-mat-tint-opaque: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
     --cw-mat-tint-floor: 76%;
     --cw-mat-tint-media-floor: 82%;
     --cw-mat-tint-chrome-floor: 30%;
@@ -451,6 +475,7 @@
     --cw-mat-tint-hover: color-mix(in srgb, var(--cw-mat-surface) 84%, transparent);
     --cw-mat-tint-media: color-mix(in srgb, var(--cw-mat-surface) 82%, transparent);
     --cw-mat-tint-chrome: color-mix(in srgb, var(--cw-mat-surface) 30%, transparent);
+    --cw-mat-tint-opaque: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
     --cw-mat-tint-floor: 76%;
     --cw-mat-tint-media-floor: 82%;
     --cw-mat-tint-chrome-floor: 30%;
@@ -868,429 +893,70 @@
     --cw-course-heading-scale: 1.12;
     --cw-course-block-gap: var(--cw-space-xl);
   }
-}
-
-/* Reserves the scrollbar's width permanently, on every page, whether or not
-   that page currently scrolls.
-
-   Without it, a `position: fixed` element sized in `%` (the platform topbar,
-   `min(100% - 2rem, var(--cw-max-width))`) and an in-flow one sized the exact
-   same way (`.container`, same formula) measure two DIFFERENT basises on a
-   system with a classic reserved-space scrollbar: the fixed element's percent
-   resolves against the initial containing block, which is the full viewport;
-   the in-flow element's resolves against `<body>`'s content box, which the
-   scrollbar has already narrowed. Same formula, same variables, and still a
-   few pixels apart — the topbar reads as wider than the page under it, on
-   Windows and on any desktop with "always show scrollbars" on, invisible on a
-   Mac's overlay one. `scrollbar-gutter: stable` makes the width the scrollbar
-   takes constant and equal for both — present even when there is nothing to
-   scroll — so the two formulas agree everywhere instead of only where the
-   discrepancy happens not to show. */
-html {
-  scrollbar-gutter: stable;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: var(--cw-font-ui), "Manrope", sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* The body is the sheet BEHIND the shell, and on a public page that is the
-   platform's ground, not the app chrome's. `--background` is an alias of
-   `--cw-platform-bg` now, so it follows the theme on its own; this rule stays
-   because the body also has to carry the ink, and because the strip a reader
-   hits when they overscroll past the end is painted from it. */
-[data-cw-theme="dark"] body {
-  color: var(--cw-platform-text);
-  background: var(--cw-platform-bg);
-}
-
-/* ── The rule ─────────────────────────────────────────────────────────────────
-   A DRAWN LINE, NOT A TABLE EDGE. A hairline that runs the full width and stops
-   dead at both ends is the edge of a CELL: it says "this box ends here", and a
-   column of titles under a stack of them stops reading as a list and starts
-   reading as a grid. A separator owes less than that — only where one row ends
-   and the next begins — so it lives inside the row's own measure and fades out
-   before the margin.
-
-   This was already written down as owed: `Builder.module.css` says a real
-   drafted line, weight varying along its length, "belongs in the design system
-   at art-direction level, not in one module". Here it is, at that level.
-
-   TWO PARTS, AND THE SPLIT IS THE POINT. `--cw-rule-ink` is the colour, and a
-   consumer re-points it on its own scope (the builder points it at
-   `--builder-rule`). `--cw-rule-fade-x` / `-y` are the shape, and they read
-   that colour, so one gradient serves every surface without any of them
-   restating the geometry.
-
-   Taken as `border-image` rather than a pseudo-element on purpose: the rule
-   stays a BORDER, so it costs no element, shifts no layout, and there is
-   nothing extra for a hover or a selected state to clean up. The price is that
-   `border-image` outranks `border-color`, so a rule that CHANGES colour with
-   state drops the fade in that state and takes the full line — which is the
-   right reading anyway: a field's underline should show how far the field runs
-   exactly when the field is in use.
-
-   Eight percent at each end is about one gutter: the line stops where the row
-   has nothing in it. Do not use these on a box that has borders on more than
-   one side — `border-image` paints all four, and a bordered card is an edge,
-   not a rule. */
-:root {
-  /* Shared desktop workspace geometry. Builder is the source layout: a wide
-     panel keeps its reading context, a compact rail leaves the icons intact,
-     and one named easing carries the panel and its labels together. */
-  --cw-workspace-side-panel-width: clamp(15.25rem, 22vw, 21.25rem);
-  --cw-workspace-mode-rail-width: 4.25rem;
-  --cw-workspace-panel-pad-inline: var(--cw-space-lg);
-  --cw-workspace-panel-pad-block: var(--cw-space-lg);
-  /* These two were the product's only named motion for months, and they are
-     now aliases: the surface step and its curve are the design system's, not
-     the workspace's. Same values, so nothing moves differently — the source
-     changed, not the timing. */
-  --cw-workspace-panel-motion: var(--cw-motion-surface);
-  --cw-workspace-panel-ease: var(--cw-ease-surface);
-  --cw-rule-ink: var(--cw-platform-border);
-  --cw-rule-fade-x: linear-gradient(90deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
-  --cw-rule-fade-y: linear-gradient(180deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
-}
-
-/* Top level, OUTSIDE every `@layer`, and that is load-bearing. Tailwind
-   purges anything inside `@layer` whose class name it cannot find in the
-   content scan — and `composes: cw-role-primary from global` injects the
-   name at build time, so it appears in no TSX file and never survived the
-   scan. The rule was on disk, absent from the served sheet, and the
-   property resolved to the empty string with the class sitting right
-   there in `classList`. Unlayered rules are not purged. */
-/* THE ROLE, READABLE FROM OUTSIDE CSS (2026-09-10).
-
-   `haptics.ts` fires a tick on the press of a `primary` control and on
-   nothing else — «the one action that advances money or progress», which is
-   that role's definition rather than a list of call sites someone maintains.
-   It needs a handle in the DOM to recognise one, and the three obvious
-   handles are all worse: a hashed CSS-module class name is not stable across
-   a build, a `data-` attribute has to be added and kept at every call site,
-   and a hardcoded list in the listener is the drift this design system exists
-   to prevent.
-
-   So the role composes this, the property is declared here where token
-   definitions belong (canon:guard forbids them in component CSS, and it was
-   right to — see the two lines it rejected on the way to this), and the
-   property INHERITS, which is what lets the listener read it from whatever
-   child the finger actually landed on. The class travels into the markup
-   literally, so `classList` works too.
-
-   One role has a consumer today. The others are declared for the same reason
-   the button contract names all six: a set with a hole in it is a set someone
-   will complete wrongly. */
-.cw-role-primary {
-  --cw-control-role: primary;
-}
-
-.cw-role-secondary {
-  --cw-control-role: secondary;
-}
-
-.cw-role-chrome {
-  --cw-control-role: chrome;
-}
-
-.cw-role-on-media {
-  --cw-control-role: on-media;
-}
-
-.cw-role-text {
-  --cw-control-role: text;
-}
 
 
-/* WHICH INK, DECLARED AS A SCOPE (2026-08-28).
-   `--cw-rule-ink` defaults to the page's border, which is right for a rule
-   drawn on the page and wrong everywhere else: on a photograph it disappears,
-   and on the topbar's sheet — whose tone flips independently of the theme — it
-   is simply the wrong colour. Consumers used to re-point the ink in their own
-   module, which the platform canon forbids for good reason (a token defined in
-   fifteen files is fifteen tokens). So the variants live here, named, and a
-   component states which surface its rule is drawn on:
-
-     data-cw-rule="inverse"   over a photograph — cream ink that does not flip
-     data-cw-rule="chrome"    on the topbar sheet — follows the bar's own tone
-     data-cw-rule="inner"     inside a card — the material's inner hairline
-
-   The SHAPE is never restated. One gradient, three inks. */
-[data-cw-rule="inverse"] {
-  --cw-rule-ink: color-mix(in srgb, var(--cw-mat-inverse-text) 22%, transparent);
-}
-
-[data-cw-rule="chrome"] {
-  --cw-rule-ink: color-mix(in srgb, var(--platform-header-fg, var(--cw-platform-text)) 13%, transparent);
-}
-
-[data-cw-rule="inner"] {
-  --cw-rule-ink: var(--cw-mat-stroke-inner);
-}
-
-/* THE CHROME SCOPE, WHEN THE CHROME IS PORTALLED (2026-09-10).
-   `chrome` reads `--platform-header-fg`, which is the bar's own ink — correct
-   for a rule drawn INSIDE the bar, and unavailable to the account popover,
-   which is portalled to `document.body` precisely because the header is
-   `overflow: clip`. Out of that scope the variable falls back to
-   `--cw-platform-text`, so the menu's top rule came out as the THEME's ink on
-   a plate whose tone had already flipped away from the theme: a bright white
-   line across the top of the menu on the light theme over a dark hero, with a
-   properly receding `.profileMenuDivider` four rows below it drawn from the
-   same design system.
-
-   The tone is the one thing a portalled plate knows about its ground, so the
-   tone supplies the ink — and it supplies the same white 16% the divider
-   already uses, which is what makes the menu's two separators one separator
-   again. Here rather than in the module because a token re-pointed in a
-   component stylesheet is a token defined in fifteen files, which is what
-   `canon:guard` refuses and why these scopes live together. */
-[data-cw-header-tone="dark"] [data-cw-rule="chrome"],
-[data-cw-rule="chrome"][data-cw-header-tone="dark"] {
-  --cw-rule-ink: color-mix(in srgb, white 16%, transparent);
-}
-
-/* THE SHAPE IS RESTATED ON EVERY SCOPE, OR NO SCOPE WORKS (2026-09-13).
-   A custom property that reads another one is resolved where it is DECLARED,
-   and `--cw-rule-fade-x` / `-y` were declared on `:root` alone. So they took
-   `:root`'s ink — the theme's opaque `--cw-platform-border` — and every
-   element below inherited that finished gradient, whatever `--cw-rule-ink` it
-   set for itself. All three scopes above changed a variable nobody read: the
-   account menu's top rule came out beige-opaque on the light theme (reading as
-   white on the dark plate) and grey-opaque on the dark one, four rows above a
-   divider drawing the white 16% this file intends.
-
-   Same gradient, same numbers — declared again where the ink changes, so the
-   shape resolves against that element's own ink. Still one shape. */
-[data-cw-rule] {
-  --cw-rule-fade-x: linear-gradient(90deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
-  --cw-rule-fade-y: linear-gradient(180deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
-}
-
-/* ── Material (M0 matte / M1 glass) ───────────────────────────────────────────
-   The tactile surface layer. Values come from cw.tokens.json → layers.material
-   (light in :root, dark in the theme scope); this recipe is the hand-maintained shape of
-   the material, not its palette. Nothing renders it until a component opts in
-   with data-cw-material, so adding it changes no existing surface.
-
-     data-cw-material="matte"       M0 — opaque warm ground. Reading surfaces,
-                                    forms, dense text. No blur, no cost.
-     data-cw-material="glass"       M1 over the page canvas. Topbar, cards,
-                                    chips. Carries body and muted text.
-     data-cw-material="glass-media" M1 over a photo. Higher tint floor; muted
-                                    text here must be large/semibold
-                                    (see scripts/guard-contrast.mjs).
-     data-cw-material="chrome"      the TOPBAR's own depth. Thinner than
-                                    "glass" and shadowed as chrome, so an
-                                    internal surface with its own bar (the
-                                    admin panel) is made of the same thing as
-                                    the platform's — see the note on it below.
-     data-cw-material="inverse"     the dark mineral panel (offer blocks) —
-                                    same material, night side.
-
-   Rules that keep it honest: one glass depth only (no nesting glass in glass),
-   and every glass degrades to its own opaque tint when the browser can't blur
-   or the reader asked for less transparency. */
-[data-cw-material] {
-  position: relative;
-  isolation: isolate;
-  border: 1px solid var(--cw-mat-stroke);
-  box-shadow: var(--cw-mat-shadow-soft);
-}
-
-[data-cw-material="matte"] {
-  background-color: var(--cw-mat-surface);
-}
-
-[data-cw-material="glass"] {
-  backdrop-filter: var(--cw-mat-filter);
-  background-color: var(--cw-mat-tint);
-}
-
-/* GLASS OVER A PHOTOGRAPH IS NOT GLASS OVER PAPER, and the difference is not
-   only the tint floor (2026-08-28). A panel on the cabinet's room read as an
-   opaque slab beside the topbar's own glass, and the reason it did is worth
-   stating: the tint has to stay high here — muted text over a photograph is
-   asserted against a WHITE worst case in `guard-contrast.mjs`, and the plate's
-   own baked paper edge makes that worst case real rather than theoretical, so
-   82% is the floor and there is no honest way past it. What CAN carry the
-   material is the filter under it. A deeper blur and more saturation let the
-   room's colour and structure move through the panel at the same opacity, which
-   is what the eye reads as glass; a heavier drop shadow does the opposite,
-   darkening the picture around the panel until it reads as a cut-out, so this
-   surface takes the soft shadow the rest of the material takes. */
-[data-cw-material="glass-media"] {
-  backdrop-filter: var(--cw-mat-filter-media);
-  background-color: var(--cw-mat-tint-media);
-}
-
-/* ONE TOPBAR, WHOEVER RENDERS IT (2026-08-29). The platform's bar is a floating
-   pill of chrome-tinted glass; the admin panel had its own bar written in
-   utility classes — an opaque sunk surface with a hairline under it — and the
-   two read as two products the moment a visitor crossed between them. This is
-   the platform bar's material, named so a surface that cannot mount
-   PlatformHeader can still be made of it.
-
-   It spans its column rather than floating, so it is flush: square on all four
-   corners, exactly like the workspace bar. A curve belongs to a sheet that
-   OPENS out of the bar, never to the shut bar itself — a bar already curved
-   while shut shows two notches of page at its lower corners.
-
-   NO SEPARATE BORDER: chrome is bounded by its own shadow, and a line under a
-   bar that already casts one is the bar drawn twice. But the shadow has to
-   contain that line, and for a while it did not — `--cw-mat-shadow-chrome` was
-   reduced to a single 18/40px lift, which is a halo and not a contour, so the
-   builder's flush bar ended in nothing at all and the storefront's pill lost
-   its edge. The token now carries both parts explicitly: `0 0 0 1px
-   var(--cw-mat-stroke-chrome)` is the contour and the blur is the lift.
-
-   A RING, NOT AN UNDERLINE, so one declaration serves both silhouettes: it
-   follows the radius of the floating storefront pill on all four sides, and on
-   a flush full-width bar the vertical edges fall outside the viewport, leaving
-   exactly the bottom line. That is why neither shape needs a `border` of its
-   own — and why the workspace bar's old hairline, written once as
-   `color-mix(text 13%)` at desktop and once as `--cw-mat-stroke-inner` at
-   mobile, could be dropped rather than reconciled: two spellings of one line
-   became one token. `--cw-mat-stroke-chrome` is that token, and the builder's
-   rails read it too (`--builder-rule`), so the frame's edges and the panel
-   edges inside it are one system. */
-[data-cw-material="chrome"] {
-  border: 0;
-  border-radius: 0;
-  backdrop-filter: var(--cw-mat-filter);
-  background-color: var(--cw-mat-tint-chrome);
-  box-shadow: var(--cw-mat-shadow-chrome);
-}
-
-[data-cw-material="chrome"]::before {
-  box-shadow: none;
-}
-
-/* THE SHIELD UNDER A DRAWER (2026-08-29). Every modal sheet in this product
-   hangs off a bar, and what it lays over the page is the BAR'S material
-   continued — never a black dim; the platform darkens nothing with raw ink,
-   and a dim reads differently in the two themes while a tint does not. Three
-   consumers so far: the burger drawer, the account drawer, and the admin
-   panel's navigation drawer. One recipe, so they cannot drift.
-
-   Geometry stays with the consumer — each of them positions its own shield. */
-[data-cw-scrim="chrome"] {
-  background-color: var(--cw-mat-tint-chrome);
-  backdrop-filter: var(--cw-mat-filter);
-}
-
-@supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
-  [data-cw-scrim="chrome"] {
-    background-color: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
+/* ── Former components layer ──────────────────────────────────────────── */
+  .cw-admin-theme * {
+    accent-color: var(--cw-accent);
   }
-}
 
-@media (prefers-reduced-transparency: reduce) {
-  [data-cw-scrim="chrome"] {
-    backdrop-filter: none;
-    background-color: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
+  .cw-admin-theme .border {
+    border-width: var(--cw-border-width) !important;
   }
-}
 
-[data-cw-material="glass"]:where(a, button):focus-visible {
-  background-color: var(--cw-mat-tint-hover);
-}
-
-@media (hover: hover) {
-  [data-cw-material="glass"]:where(a, button):hover {
-    background-color: var(--cw-mat-tint-hover);
+  .cw-admin-theme .border-2 {
+    border-width: var(--cw-border-width) !important;
   }
-}
 
-[data-cw-material="inverse"] {
-  background: var(--cw-mat-inverse-bg);
-  border-color: var(--cw-mat-inverse-stroke);
-  box-shadow: var(--cw-mat-shadow-raised);
-  color: var(--cw-mat-inverse-text);
-}
-
-/* Grain — what reads as "matte" rather than "plastic". Sits above the surface
-   and below the content, never intercepts pointer events. */
-[data-cw-material]::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  background-image: var(--cw-mat-grain-image);
-  box-shadow: inset 0 0 0 1px var(--cw-mat-stroke-inner);
-}
-
-[data-cw-material] > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* Edge is a separate semantic axis from material. Collection objects and
-   loading states keep their grain/elevation without nested decorative rings.
-   Structural panels retain the default edge; chrome retains its own recipe. */
-[data-cw-material][data-cw-edge="none"] {
-  border-color: transparent;
-}
-
-[data-cw-material][data-cw-edge="none"]::before {
-  box-shadow: none;
-}
-
-/* Degrade to the opaque tint wherever the blur can't be paid for or isn't
-   wanted. The tint floors are chosen so text contrast holds either way. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  [data-cw-material="glass"],
-  [data-cw-material="glass-media"],
-  [data-cw-material="chrome"] {
-    background-color: var(--cw-mat-surface);
+  .cw-admin-theme .border-b,
+  .cw-admin-theme .border-b-2 {
+    border-bottom-width: var(--cw-border-width) !important;
   }
-}
 
-@media (prefers-reduced-transparency: reduce) {
-  [data-cw-material="glass"],
-  [data-cw-material="glass-media"],
-  [data-cw-material="chrome"] {
-    backdrop-filter: none;
-    background-color: var(--cw-mat-surface);
+  .cw-admin-theme .border-t,
+  .cw-admin-theme .border-t-2 {
+    border-top-width: var(--cw-border-width) !important;
   }
-}
 
-/* ── Legacy shell glass ───────────────────────────────────────────────────────
-   Superseded by [data-cw-material]. What remains is the sheen and the stacking
-   contract for the two surfaces still carrying data-cw-glass="shell" (header,
-   mobile menu); both now paint their band from the material tokens.
+  .cw-admin-theme .border-l,
+  .cw-admin-theme .border-l-2 {
+    border-left-width: var(--cw-border-width) !important;
+  }
 
-   Removed 2026-08-15 as verified-dead code: the [data-cw-glass="menu"] rules
-   (no markup ever set that value) and the frost-image layer — a blurred copy of
-   a photo pinned behind the header. It was a workaround for backdrop-filter not
-   rendering, and its ::after was already cancelled on every consumer, so it had
-   stopped drawing anything long ago. The real cause is fixed in
-   PlatformShell.module.css; see the note on .header. */
-[data-cw-glass] {
-  position: relative;
-}
+  .cw-admin-theme .border-r,
+  .cw-admin-theme .border-r-2 {
+    border-right-width: var(--cw-border-width) !important;
+  }
 
-[data-cw-glass="shell"]::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  border-radius: inherit;
-}
+  .cw-admin-theme .text-transparent.bg-clip-text {
+    color: var(--cw-text) !important;
+    -webkit-text-fill-color: var(--cw-text) !important;
+    background-image: none !important;
+  }
 
-[data-cw-glass] > * {
-  position: relative;
-  z-index: 2;
-}
+  .cw-admin-theme [class*="bg-gradient-to-"],
+  .cw-admin-theme [class*="from-"],
+  .cw-admin-theme [class*="to-"],
+  .cw-admin-theme [class*="via-"] {
+    background-image: none !important;
+  }
 
-@layer utilities {
+  .cw-admin-theme input,
+  .cw-admin-theme textarea,
+  .cw-admin-theme select {
+    color: var(--cw-text) !important;
+    border-color: var(--cw-border) !important;
+    background-color: var(--cw-surface) !important;
+  }
+
+  .cw-admin-theme input::placeholder,
+  .cw-admin-theme textarea::placeholder {
+    color: var(--cw-muted) !important;
+  }
+
+
+
+/* ── Former utilities layer ────────────────────────────────────────────── */
   .cw-admin-theme {
     color: var(--cw-text);
     background-color: var(--cw-bg);
@@ -1399,6 +1065,29 @@ body {
     color: var(--cw-status-running);
     background-color: var(--cw-status-running-soft);
     border: 1px solid color-mix(in srgb, var(--cw-status-running) 30%, transparent);
+  }
+
+  /* A STATUS BADGE IS A SHAPE AS WELL AS A COLOUR (2026-09-12).
+     These four classes carried the colour and nothing else, so every call site
+     typed the shape — and typed it differently: `text-[10px] px-1.5 py-0.5
+     rounded-full` in the job list, `text-[10px] px-2 py-0.5 rounded-full` in
+     orders, `text-sm px-2 py-0.5 rounded-md` in the job dialog, and nothing at
+     all once the dialog moved onto the shared one, which is how a cramped badge
+     with a border hugging its letters got noticed in the first place. A caller
+     that has to remember the shape is a caller that will get it wrong.
+
+     `pill` at this size is the guard's own carve-out: text in a capsule cannot
+     be expressed by the radius bands without ceasing to be a capsule. */
+  .cw-status-pending-badge,
+  .cw-status-running-badge,
+  .cw-status-success-badge,
+  .cw-status-failed-badge {
+    display: inline-block;
+    padding: 0.125rem var(--cw-space-xs);
+    border-radius: var(--cw-radius-pill);
+    font-size: var(--ds-type-label-size);
+    font-weight: 500;
+    white-space: nowrap;
   }
 
   .cw-status-pending-badge {
@@ -2023,6 +1712,12 @@ body {
        carved out of the padding box's bottom, which is where a `bottom`-ish
        background would otherwise land. */
     background-origin: content-box;
+    /* THE STRIP'S OWN BEHAVIOUR, not its caller's (2026-09-12). `overflow-x`
+       arrived as a utility on the one element that mounts this class, which
+       meant the bar scrolled because AdminTabs remembered to say so. It is the
+       tab strip: it scrolls sideways and clips vertically, and both belong
+       here beside the rail recipe that paints the bar. */
+    overflow-x: auto;
     overflow-y: hidden;
     min-height: var(--ds-touch-target-min);
     /* The bar itself comes from the one scrollbar recipe further down this
@@ -2716,7 +2411,429 @@ body {
     width: 0;
     height: 0;
   }
+
+
+/* ── The rest of the file, in its original order ───────────────────────── */
+
+
+
+/* Reserves the scrollbar's width permanently, on every page, whether or not
+   that page currently scrolls.
+
+   Without it, a `position: fixed` element sized in `%` (the platform topbar,
+   `min(100% - 2rem, var(--cw-max-width))`) and an in-flow one sized the exact
+   same way (`.container`, same formula) measure two DIFFERENT basises on a
+   system with a classic reserved-space scrollbar: the fixed element's percent
+   resolves against the initial containing block, which is the full viewport;
+   the in-flow element's resolves against `<body>`'s content box, which the
+   scrollbar has already narrowed. Same formula, same variables, and still a
+   few pixels apart — the topbar reads as wider than the page under it, on
+   Windows and on any desktop with "always show scrollbars" on, invisible on a
+   Mac's overlay one. `scrollbar-gutter: stable` makes the width the scrollbar
+   takes constant and equal for both — present even when there is nothing to
+   scroll — so the two formulas agree everywhere instead of only where the
+   discrepancy happens not to show. */
+html {
+  scrollbar-gutter: stable;
 }
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--cw-font-ui), "Manrope", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* The body is the sheet BEHIND the shell, and on a public page that is the
+   platform's ground, not the app chrome's. `--background` is an alias of
+   `--cw-platform-bg` now, so it follows the theme on its own; this rule stays
+   because the body also has to carry the ink, and because the strip a reader
+   hits when they overscroll past the end is painted from it. */
+[data-cw-theme="dark"] body {
+  color: var(--cw-platform-text);
+  background: var(--cw-platform-bg);
+}
+
+/* ── The rule ─────────────────────────────────────────────────────────────────
+   A DRAWN LINE, NOT A TABLE EDGE. A hairline that runs the full width and stops
+   dead at both ends is the edge of a CELL: it says "this box ends here", and a
+   column of titles under a stack of them stops reading as a list and starts
+   reading as a grid. A separator owes less than that — only where one row ends
+   and the next begins — so it lives inside the row's own measure and fades out
+   before the margin.
+
+   This was already written down as owed: `Builder.module.css` says a real
+   drafted line, weight varying along its length, "belongs in the design system
+   at art-direction level, not in one module". Here it is, at that level.
+
+   TWO PARTS, AND THE SPLIT IS THE POINT. `--cw-rule-ink` is the colour, and a
+   consumer re-points it on its own scope (the builder points it at
+   `--builder-rule`). `--cw-rule-fade-x` / `-y` are the shape, and they read
+   that colour, so one gradient serves every surface without any of them
+   restating the geometry.
+
+   Taken as `border-image` rather than a pseudo-element on purpose: the rule
+   stays a BORDER, so it costs no element, shifts no layout, and there is
+   nothing extra for a hover or a selected state to clean up. The price is that
+   `border-image` outranks `border-color`, so a rule that CHANGES colour with
+   state drops the fade in that state and takes the full line — which is the
+   right reading anyway: a field's underline should show how far the field runs
+   exactly when the field is in use.
+
+   Eight percent at each end is about one gutter: the line stops where the row
+   has nothing in it. Do not use these on a box that has borders on more than
+   one side — `border-image` paints all four, and a bordered card is an edge,
+   not a rule. */
+:root {
+  /* Shared desktop workspace geometry. Builder is the source layout: a wide
+     panel keeps its reading context, a compact rail leaves the icons intact,
+     and one named easing carries the panel and its labels together. */
+  --cw-workspace-side-panel-width: clamp(15.25rem, 22vw, 21.25rem);
+  --cw-workspace-mode-rail-width: 4.25rem;
+  --cw-workspace-panel-pad-inline: var(--cw-space-lg);
+  --cw-workspace-panel-pad-block: var(--cw-space-lg);
+  /* These two were the product's only named motion for months, and they are
+     now aliases: the surface step and its curve are the design system's, not
+     the workspace's. Same values, so nothing moves differently — the source
+     changed, not the timing. */
+  --cw-workspace-panel-motion: var(--cw-motion-surface);
+  --cw-workspace-panel-ease: var(--cw-ease-surface);
+  --cw-rule-ink: var(--cw-platform-border);
+  --cw-rule-fade-x: linear-gradient(90deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
+  --cw-rule-fade-y: linear-gradient(180deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
+}
+
+/* This was placed outside every layer block to survive Tailwind's purge, which
+   dropped any layered rule whose class name appeared in no .tsx file. There is
+   no Tailwind and no purge now (see the note at the top of this file); the
+   rule stays where it is because its position in the cascade is unchanged. */
+/* THE ROLE, READABLE FROM OUTSIDE CSS (2026-09-10).
+
+   `haptics.ts` fires a tick on the press of a `primary` control and on
+   nothing else — «the one action that advances money or progress», which is
+   that role's definition rather than a list of call sites someone maintains.
+   It needs a handle in the DOM to recognise one, and the three obvious
+   handles are all worse: a hashed CSS-module class name is not stable across
+   a build, a `data-` attribute has to be added and kept at every call site,
+   and a hardcoded list in the listener is the drift this design system exists
+   to prevent.
+
+   So the role composes this, the property is declared here where token
+   definitions belong (canon:guard forbids them in component CSS, and it was
+   right to — see the two lines it rejected on the way to this), and the
+   property INHERITS, which is what lets the listener read it from whatever
+   child the finger actually landed on. The class travels into the markup
+   literally, so `classList` works too.
+
+   One role has a consumer today. The others are declared for the same reason
+   the button contract names all six: a set with a hole in it is a set someone
+   will complete wrongly. */
+.cw-role-primary {
+  --cw-control-role: primary;
+}
+
+.cw-role-secondary {
+  --cw-control-role: secondary;
+}
+
+.cw-role-chrome {
+  --cw-control-role: chrome;
+}
+
+.cw-role-on-media {
+  --cw-control-role: on-media;
+}
+
+.cw-role-text {
+  --cw-control-role: text;
+}
+
+
+/* WHICH INK, DECLARED AS A SCOPE (2026-08-28).
+   `--cw-rule-ink` defaults to the page's border, which is right for a rule
+   drawn on the page and wrong everywhere else: on a photograph it disappears,
+   and on the topbar's sheet — whose tone flips independently of the theme — it
+   is simply the wrong colour. Consumers used to re-point the ink in their own
+   module, which the platform canon forbids for good reason (a token defined in
+   fifteen files is fifteen tokens). So the variants live here, named, and a
+   component states which surface its rule is drawn on:
+
+     data-cw-rule="inverse"   over a photograph — cream ink that does not flip
+     data-cw-rule="chrome"    on the topbar sheet — follows the bar's own tone
+     data-cw-rule="inner"     inside a card — the material's inner hairline
+
+   The SHAPE is never restated. One gradient, three inks. */
+[data-cw-rule="inverse"] {
+  --cw-rule-ink: color-mix(in srgb, var(--cw-mat-inverse-text) 22%, transparent);
+}
+
+[data-cw-rule="chrome"] {
+  --cw-rule-ink: color-mix(in srgb, var(--platform-header-fg, var(--cw-platform-text)) 13%, transparent);
+}
+
+[data-cw-rule="inner"] {
+  --cw-rule-ink: var(--cw-mat-stroke-inner);
+}
+
+/* THE CHROME SCOPE, WHEN THE CHROME IS PORTALLED (2026-09-10).
+   `chrome` reads `--platform-header-fg`, which is the bar's own ink — correct
+   for a rule drawn INSIDE the bar, and unavailable to the account popover,
+   which is portalled to `document.body` precisely because the header is
+   `overflow: clip`. Out of that scope the variable falls back to
+   `--cw-platform-text`, so the menu's top rule came out as the THEME's ink on
+   a plate whose tone had already flipped away from the theme: a bright white
+   line across the top of the menu on the light theme over a dark hero, with a
+   properly receding `.profileMenuDivider` four rows below it drawn from the
+   same design system.
+
+   The tone is the one thing a portalled plate knows about its ground, so the
+   tone supplies the ink — and it supplies the same white 16% the divider
+   already uses, which is what makes the menu's two separators one separator
+   again. Here rather than in the module because a token re-pointed in a
+   component stylesheet is a token defined in fifteen files, which is what
+   `canon:guard` refuses and why these scopes live together. */
+[data-cw-header-tone="dark"] [data-cw-rule="chrome"],
+[data-cw-rule="chrome"][data-cw-header-tone="dark"] {
+  --cw-rule-ink: color-mix(in srgb, white 16%, transparent);
+}
+
+/* THE SHAPE IS RESTATED ON EVERY SCOPE, OR NO SCOPE WORKS (2026-09-13).
+   A custom property that reads another one is resolved where it is DECLARED,
+   and `--cw-rule-fade-x` / `-y` were declared on `:root` alone. So they took
+   `:root`'s ink — the theme's opaque `--cw-platform-border` — and every
+   element below inherited that finished gradient, whatever `--cw-rule-ink` it
+   set for itself. All three scopes above changed a variable nobody read: the
+   account menu's top rule came out beige-opaque on the light theme (reading as
+   white on the dark plate) and grey-opaque on the dark one, four rows above a
+   divider drawing the white 16% this file intends.
+
+   Same gradient, same numbers — declared again where the ink changes, so the
+   shape resolves against that element's own ink. Still one shape. */
+[data-cw-rule] {
+  --cw-rule-fade-x: linear-gradient(90deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
+  --cw-rule-fade-y: linear-gradient(180deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
+}
+
+/* ── Material (M0 matte / M1 glass) ───────────────────────────────────────────
+   The tactile surface layer. Values come from cw.tokens.json → layers.material
+   (light in :root, dark in the theme scope); this recipe is the hand-maintained shape of
+   the material, not its palette. Nothing renders it until a component opts in
+   with data-cw-material, so adding it changes no existing surface.
+
+     data-cw-material="matte"       M0 — opaque warm ground. Reading surfaces,
+                                    forms, dense text. No blur, no cost.
+     data-cw-material="glass"       M1 over the page canvas. Topbar, cards,
+                                    chips. Carries body and muted text.
+     data-cw-material="glass-media" M1 over a photo. Higher tint floor; muted
+                                    text here must be large/semibold
+                                    (see scripts/guard-contrast.mjs).
+     data-cw-material="chrome"      the TOPBAR's own depth. Thinner than
+                                    "glass" and shadowed as chrome, so an
+                                    internal surface with its own bar (the
+                                    admin panel) is made of the same thing as
+                                    the platform's — see the note on it below.
+     data-cw-material="inverse"     the dark mineral panel (offer blocks) —
+                                    same material, night side.
+
+   Rules that keep it honest: one glass depth only (no nesting glass in glass),
+   and every glass degrades to its own opaque tint when the browser can't blur
+   or the reader asked for less transparency. */
+[data-cw-material] {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid var(--cw-mat-stroke);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+[data-cw-material="matte"] {
+  background-color: var(--cw-mat-surface);
+}
+
+[data-cw-material="glass"] {
+  backdrop-filter: var(--cw-mat-filter);
+  background-color: var(--cw-mat-tint);
+}
+
+/* GLASS OVER A PHOTOGRAPH IS NOT GLASS OVER PAPER, and the difference is not
+   only the tint floor (2026-08-28). A panel on the cabinet's room read as an
+   opaque slab beside the topbar's own glass, and the reason it did is worth
+   stating: the tint has to stay high here — muted text over a photograph is
+   asserted against a WHITE worst case in `guard-contrast.mjs`, and the plate's
+   own baked paper edge makes that worst case real rather than theoretical, so
+   82% is the floor and there is no honest way past it. What CAN carry the
+   material is the filter under it. A deeper blur and more saturation let the
+   room's colour and structure move through the panel at the same opacity, which
+   is what the eye reads as glass; a heavier drop shadow does the opposite,
+   darkening the picture around the panel until it reads as a cut-out, so this
+   surface takes the soft shadow the rest of the material takes. */
+[data-cw-material="glass-media"] {
+  backdrop-filter: var(--cw-mat-filter-media);
+  background-color: var(--cw-mat-tint-media);
+}
+
+/* ONE TOPBAR, WHOEVER RENDERS IT (2026-08-29). The platform's bar is a floating
+   pill of chrome-tinted glass; the admin panel had its own bar written in
+   utility classes — an opaque sunk surface with a hairline under it — and the
+   two read as two products the moment a visitor crossed between them. This is
+   the platform bar's material, named so a surface that cannot mount
+   PlatformHeader can still be made of it.
+
+   It spans its column rather than floating, so it is flush: square on all four
+   corners, exactly like the workspace bar. A curve belongs to a sheet that
+   OPENS out of the bar, never to the shut bar itself — a bar already curved
+   while shut shows two notches of page at its lower corners.
+
+   NO SEPARATE BORDER: chrome is bounded by its own shadow, and a line under a
+   bar that already casts one is the bar drawn twice. But the shadow has to
+   contain that line, and for a while it did not — `--cw-mat-shadow-chrome` was
+   reduced to a single 18/40px lift, which is a halo and not a contour, so the
+   builder's flush bar ended in nothing at all and the storefront's pill lost
+   its edge. The token now carries both parts explicitly: `0 0 0 1px
+   var(--cw-mat-stroke-chrome)` is the contour and the blur is the lift.
+
+   A RING, NOT AN UNDERLINE, so one declaration serves both silhouettes: it
+   follows the radius of the floating storefront pill on all four sides, and on
+   a flush full-width bar the vertical edges fall outside the viewport, leaving
+   exactly the bottom line. That is why neither shape needs a `border` of its
+   own — and why the workspace bar's old hairline, written once as
+   `color-mix(text 13%)` at desktop and once as `--cw-mat-stroke-inner` at
+   mobile, could be dropped rather than reconciled: two spellings of one line
+   became one token. `--cw-mat-stroke-chrome` is that token, and the builder's
+   rails read it too (`--builder-rule`), so the frame's edges and the panel
+   edges inside it are one system. */
+[data-cw-material="chrome"] {
+  border: 0;
+  border-radius: 0;
+  backdrop-filter: var(--cw-mat-filter);
+  background-color: var(--cw-mat-tint-chrome);
+  box-shadow: var(--cw-mat-shadow-chrome);
+}
+
+[data-cw-material="chrome"]::before {
+  box-shadow: none;
+}
+
+/* THE SHIELD UNDER A DRAWER (2026-08-29). Every modal sheet in this product
+   hangs off a bar, and what it lays over the page is the BAR'S material
+   continued — never a black dim; the platform darkens nothing with raw ink,
+   and a dim reads differently in the two themes while a tint does not. Three
+   consumers so far: the burger drawer, the account drawer, and the admin
+   panel's navigation drawer. One recipe, so they cannot drift.
+
+   Geometry stays with the consumer — each of them positions its own shield. */
+[data-cw-scrim="chrome"] {
+  background-color: var(--cw-mat-tint-chrome);
+  backdrop-filter: var(--cw-mat-filter);
+}
+
+@supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
+  [data-cw-scrim="chrome"] {
+    background-color: var(--cw-mat-tint-opaque);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  [data-cw-scrim="chrome"] {
+    backdrop-filter: none;
+    background-color: var(--cw-mat-tint-opaque);
+  }
+}
+
+[data-cw-material="glass"]:where(a, button):focus-visible {
+  background-color: var(--cw-mat-tint-hover);
+}
+
+@media (hover: hover) {
+  [data-cw-material="glass"]:where(a, button):hover {
+    background-color: var(--cw-mat-tint-hover);
+  }
+}
+
+[data-cw-material="inverse"] {
+  background: var(--cw-mat-inverse-bg);
+  border-color: var(--cw-mat-inverse-stroke);
+  box-shadow: var(--cw-mat-shadow-raised);
+  color: var(--cw-mat-inverse-text);
+}
+
+/* Grain — what reads as "matte" rather than "plastic". Sits above the surface
+   and below the content, never intercepts pointer events. */
+[data-cw-material]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background-image: var(--cw-mat-grain-image);
+  box-shadow: inset 0 0 0 1px var(--cw-mat-stroke-inner);
+}
+
+[data-cw-material] > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Edge is a separate semantic axis from material. Collection objects and
+   loading states keep their grain/elevation without nested decorative rings.
+   Structural panels retain the default edge; chrome retains its own recipe. */
+[data-cw-material][data-cw-edge="none"] {
+  border-color: transparent;
+}
+
+[data-cw-material][data-cw-edge="none"]::before {
+  box-shadow: none;
+}
+
+/* Degrade to the opaque tint wherever the blur can't be paid for or isn't
+   wanted. The tint floors are chosen so text contrast holds either way. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-cw-material="glass"],
+  [data-cw-material="glass-media"],
+  [data-cw-material="chrome"] {
+    background-color: var(--cw-mat-surface);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  [data-cw-material="glass"],
+  [data-cw-material="glass-media"],
+  [data-cw-material="chrome"] {
+    backdrop-filter: none;
+    background-color: var(--cw-mat-surface);
+  }
+}
+
+/* ── Legacy shell glass ───────────────────────────────────────────────────────
+   Superseded by [data-cw-material]. What remains is the sheen and the stacking
+   contract for the two surfaces still carrying data-cw-glass="shell" (header,
+   mobile menu); both now paint their band from the material tokens.
+
+   Removed 2026-08-15 as verified-dead code: the [data-cw-glass="menu"] rules
+   (no markup ever set that value) and the frost-image layer — a blurred copy of
+   a photo pinned behind the header. It was a workaround for backdrop-filter not
+   rendering, and its ::after was already cancelled on every consumer, so it had
+   stopped drawing anything long ago. The real cause is fixed in
+   PlatformShell.module.css; see the note on .header. */
+[data-cw-glass] {
+  position: relative;
+}
+
+[data-cw-glass="shell"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+[data-cw-glass] > * {
+  position: relative;
+  z-index: 2;
+}
+
 
 @media (prefers-reduced-motion: reduce) {
   .cw-admin-theme *,
@@ -2729,66 +2846,6 @@ body {
   }
 }
 
-@layer components {
-  .cw-admin-theme * {
-    accent-color: var(--cw-accent);
-  }
-
-  .cw-admin-theme .border {
-    border-width: var(--cw-border-width) !important;
-  }
-
-  .cw-admin-theme .border-2 {
-    border-width: var(--cw-border-width) !important;
-  }
-
-  .cw-admin-theme .border-b,
-  .cw-admin-theme .border-b-2 {
-    border-bottom-width: var(--cw-border-width) !important;
-  }
-
-  .cw-admin-theme .border-t,
-  .cw-admin-theme .border-t-2 {
-    border-top-width: var(--cw-border-width) !important;
-  }
-
-  .cw-admin-theme .border-l,
-  .cw-admin-theme .border-l-2 {
-    border-left-width: var(--cw-border-width) !important;
-  }
-
-  .cw-admin-theme .border-r,
-  .cw-admin-theme .border-r-2 {
-    border-right-width: var(--cw-border-width) !important;
-  }
-
-  .cw-admin-theme .text-transparent.bg-clip-text {
-    color: var(--cw-text) !important;
-    -webkit-text-fill-color: var(--cw-text) !important;
-    background-image: none !important;
-  }
-
-  .cw-admin-theme [class*="bg-gradient-to-"],
-  .cw-admin-theme [class*="from-"],
-  .cw-admin-theme [class*="to-"],
-  .cw-admin-theme [class*="via-"] {
-    background-image: none !important;
-  }
-
-  .cw-admin-theme input,
-  .cw-admin-theme textarea,
-  .cw-admin-theme select {
-    color: var(--cw-text) !important;
-    border-color: var(--cw-border) !important;
-    background-color: var(--cw-surface) !important;
-  }
-
-  .cw-admin-theme input::placeholder,
-  .cw-admin-theme textarea::placeholder {
-    color: var(--cw-muted) !important;
-  }
-
-}
 
 /* ── ONE NAVIGATION, DRAWN AS ONE MOVEMENT ──────────────────────────────
    The browser's own cross-fade between two routes, tuned to the platform's

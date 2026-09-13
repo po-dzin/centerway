@@ -594,7 +594,7 @@ The lesson generalised, and then took the role with it: a plate whose legibility
 
 The pill is the one worth naming: the doc had said "soft rect everywhere, never pill" since the type-and-shape migration, and a live generator surface had been running a 999px CTA the whole time. A rule nothing checks is a rule that is already broken somewhere.
 
-Fallbacks are expected in these sheets — `funnel-network.css` and `pages.css` are self-contained by design — so `guard:buttons` also asserts that **every fallback agrees with the token it stands in for**. A fallback that disagrees renders correctly in dev and wrong behind a stale cache.
+Fallbacks are expected in these sheets — `pages.css` is self-contained by design (so was `funnel-network.css`, deleted as dead on 2026-09-11) — so `guard:buttons` also asserts that **every fallback agrees with the token it stands in for**. A fallback that disagrees renders correctly in dev and wrong behind a stale cache.
 
 **Still not covered:** Short and IREM. Different authors, isolated themes — a separate product surface, not this system's coverage. They share `pages.css` and `tokens.css`, so the touch-target correction reaches them; nothing else does.
 
@@ -1002,6 +1002,23 @@ to the selection stroke, exactly as `menu` does — the call sites across the
 topbar, the account and apps menus, the admin rail and route menu, breadcrumbs,
 the reader's text-size control and the Builder's rows keep working unedited.
 
+**The builder did not come back with it, and shipped the edge (fixed 2026-09-11).**
+The sentence above — "the Builder's rows keep working unedited" — was true of
+the call sites and false of the drawing. The builder did not call
+`InteractionInkLabel`: it had its own `InkLabel` and its own `.inkMark`, a
+border and a pill radius written into `Builder.module.css`, so reverting the
+experiment on the platform left the rail, the outline, the block palette and
+the lesson tools marking selection with a capsule. A reader of the two files
+could not see the disagreement; only a reader of the two screens could.
+
+The builder now holds no mark of its own. `InkLabel` renders the primitive's
+graphic, rows carry `data-cw-ink-control` so the shared hover rules reach them,
+and `aria-current` / `aria-pressed` say which one is the one — including the
+closed lists in the course settings, whose selected option was a 1px
+`border-block-end` drawn by that same module. The contract test in
+`interactionLayering.test.ts` now asks the builder the same question it asks the
+topbar and the trail: **do you declare a mark?** The answer must stay no.
+
 **The stroke is full length in every state.** States differ in opacity, weight
 and colour, never in how much of the word is covered. A progressive draw —
 `stroke-dasharray`/`stroke-dashoffset` over a measured path length — is a
@@ -1136,7 +1153,11 @@ It is not decoration and not a divider — `--cw-mat-stroke` (the light top edge
 
 **What it is deliberately not used for: state.** An outlined chip was tried for the cabinet's active tab and removed the same day — the strip sits straight on the page ground, so outlining the chosen tab turned a quiet row into five objects. "You are here" stays the foreground at full weight plus the marker.
 
-Degradation is part of the contract: `@supports not (backdrop-filter)` and `prefers-reduced-transparency: reduce` both fall back to the opaque `--cw-mat-surface`, whose contrast is strictly better than the glass it replaces. One glass depth only — never nest glass in glass.
+Degradation is part of the contract: `@supports not (backdrop-filter)` and `prefers-reduced-transparency: reduce` both fall back to **`--cw-mat-tint-opaque`** (`--cw-mat-surface` at 94%), whose contrast is strictly better than the glass it replaces. One glass depth only — never nest glass in glass.
+
+**Both halves of that sentence are now implemented for chrome, and only for chrome (2026-09-11).** `@supports not (backdrop-filter)` was written in six places; `prefers-reduced-transparency` in two. Every surface a reader navigates by — the topbar band, the account popover and both of its drawer forms, the mobile shell band — answered the browser that cannot blur and ignored the reader who asked for less transparency, which is the stronger signal of the two: one is a capability, the other is a person telling the system they cannot read text over a backdrop. The bar was the worst of them, at 30% tint. What is still open is the content layer — the offer tile's category chips, the hero badge, the pill controls in `PlatformComponents`/`PlatformButtons` — which paint their own translucent backgrounds and carry neither `[data-cw-material]` nor a fallback of their own. They sit over photographs, so the fix is not a shared selector; each needs its own opaque answer.
+
+That fallback is a token because it is a contract, not a value. It is what a reader sees whenever the blur is missing — an old browser, an in-app webview, a reduce-transparency setting — and it was written out by hand in six places across `globals.css`, `PlatformShell` and `PlatformResponsive` (2026-09-11). Six copies of the number that decides how readable those users' chrome is, each free to drift on its own. The landing network keeps its own copy under `--cw-net-*` on purpose: that CSS is served raw, without the platform's tokens.
 
 **That sentence was true of `[data-cw-material]` and of nothing else (2026-09-11).** The fallback is written against the attribute, so it reaches a surface only if the surface *declares* the material. Four content-layer elements painted their own translucent ground and their own `backdrop-filter` instead, and so degraded to nothing at all: the offer tile's kind chip and its category chips (`PlatformBlocksOffer.module.css`), the diagnostic step chip (`PlatformComponents.module.css`), and the `onMedia` button role (`PlatformButtons.module.css`). Where the chrome sheets had been given their own fallback by hand, these had not, which is why the gap was invisible — the surfaces everyone looks at were correct.
 

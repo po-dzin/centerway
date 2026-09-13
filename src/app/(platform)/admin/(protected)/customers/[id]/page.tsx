@@ -7,9 +7,13 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { useI18n } from "@/components/I18nProvider";
 import surfaces from "@/components/admin/AdminSurfaces.module.css";
+import profileStyles from "@/components/admin/AdminProfile.module.css";
+import pageStyles from "@/components/admin/AdminPage.module.css";
+import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/admin/adminLocale";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
+import { Icon } from "@/components/Icon";
 
 interface Customer {
   id: string;
@@ -78,66 +82,32 @@ interface ProfileData {
   timeline: TimelineItem[];
 }
 
-const typeColors: Record<string, string> = {
-  order: "cw-status-success-badge",
-  event: "cw-status-running-badge",
+/* The timeline marker's colour, by what kind of thing happened. Not the badge
+   classes: those are capsules, and a marker is a square. */
+const typeMark: Record<string, string | undefined> = {
+  order: profileStyles.eventMarkOrder,
+  event: profileStyles.eventMarkEvent,
 };
 
 const typeIcons: Record<string, ReactNode> = {
-  order: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <line x1="12" y1="1" x2="12" y2="23" />
-      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-    </svg>
-  ),
-  event: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-    </svg>
-  ),
+  order: <Icon name="price" size={16} />,
+  event: <Icon name="chart" size={16} />,
 };
 
-function Avatar({ name, url, size = 12 }: { name?: string | null; url?: string | null; size?: number }) {
+function Avatar({ name, url }: { name?: string | null; url?: string | null }) {
   const initial = (name ?? "?").charAt(0).toUpperCase();
-  const pixelSize = size * 4;
   return url ? (
     <Image
       src={url}
       alt={name ?? "avatar"}
-      width={pixelSize}
-      height={pixelSize}
+      width={56}
+      height={56}
       unoptimized
-      className="rounded-full object-cover shrink-0"
-      style={{ width: pixelSize, height: pixelSize }}
+      className={profileStyles.avatar}
       referrerPolicy="no-referrer"
     />
   ) : (
-    <div
-      className="rounded-full cw-surface-2 flex items-center justify-center text-xl font-bold cw-muted shrink-0"
-      style={{ width: pixelSize, height: pixelSize }}
-    >
-      {initial}
-    </div>
+    <div className={profileStyles.avatarFallback}>{initial}</div>
   );
 }
 
@@ -150,27 +120,12 @@ const orderStatusColor: Record<string, string> = {
 
 function ContactRow({ label, value, badge }: { label: string; value: string; badge?: boolean }) {
   return (
-    <div className={`${surfaces.tile} flex items-center gap-3`}>
-      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded cw-surface-2 cw-muted uppercase tracking-wide shrink-0">
-        {label}
-      </span>
-      <p className="text-xs font-medium cw-text truncate flex-1">{value}</p>
-      {badge && (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="11"
-          height="11"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="cw-status-success-text shrink-0"
-        >
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      )}
+    <div className={profileStyles.contact}>
+      <span className={profileStyles.contactKindTag}>{label}</span>
+      <p className={profileStyles.contactValue} title={value}>
+        {value}
+      </p>
+      {badge && <Icon className={`cw-status-success-text ${profileStyles.contactMark}`} name="check" size={16} />}
     </div>
   );
 }
@@ -207,23 +162,16 @@ export default function CustomerProfilePage() {
 
   if (loading) {
     return (
-      <div className="space-y-4 animate-pulse">
-        <div className="h-5 w-36 cw-skeleton-row" />
-        {/* The radius a card LOADS INTO, not one of its own: these
-            stand in for plate cards at `rounded-xl`, and at 28px they
-            made every load end with the corners stepping in. */}
-        <div className="h-32 rounded-xl cw-skeleton-row" />
-        <div className="h-72 rounded-xl cw-skeleton-row" />
+      <div className={profileStyles.loading}>
+        <div className={profileStyles.skeletonLine} />
+        <div className={profileStyles.skeletonCard} />
+        <div className={profileStyles.skeletonBody} />
       </div>
     );
   }
 
   if (error || !profile) {
-    return (
-      <div className="p-6 text-sm cw-status-failed-text">
-        {t("common_error")}: {error ?? t("customers_not_found")}
-      </div>
-    );
+    return <AdminErrorState title={t("common_error")} message={error ?? t("customers_not_found")} />;
   }
 
   const { customer, orders, timeline } = profile;
@@ -249,59 +197,56 @@ export default function CustomerProfilePage() {
   const hasContacts = customer.email || customer.phone || customer.tg_id || customer.google_id || customer.auth_user_id;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-xs cw-muted">
-        <Link href="/admin/customers" className="cw-link-hover">
+    <div className={pageStyles.page}>
+      <nav className={profileStyles.crumbs}>
+        <Link href="/admin/customers" className={profileStyles.crumbLink}>
           {t("customers_title")}
         </Link>
         <span>/</span>
-        <span className="cw-muted truncate max-w-[240px]">{displayName}</span>
+        <span className={profileStyles.crumbCurrent}>{displayName}</span>
       </nav>
 
       {/* Profile card */}
       <div className={surfaces.plate}>
-        <div className="flex items-start gap-5">
-          <Avatar name={displayName} url={customer.avatar_url} size={14} />
-          <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-bold cw-text truncate">{displayName}</h2>
-            <p className="text-xs cw-muted mt-0.5 font-mono">{customer.id}</p>
+        <div className={profileStyles.head}>
+          <Avatar name={displayName} url={customer.avatar_url} />
+          <div className={profileStyles.identity}>
+            <h2 className={profileStyles.name}>{displayName}</h2>
+            <p className={profileStyles.id}>{customer.id}</p>
 
             {customer.tags?.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-3">
+              <div className={profileStyles.tags}>
                 {customer.tags.map((tag) => (
-                  <span key={tag} className="text-xs px-2 py-0.5 rounded-full cw-surface-2 cw-muted">
+                  <span key={tag} className={profileStyles.tagChip}>
                     {tag}
                   </span>
                 ))}
               </div>
             )}
-            {customer.notes && <p className="mt-3 text-sm cw-page-subtitle italic">{customer.notes}</p>}
+            {customer.notes && <p className={profileStyles.notes}>{customer.notes}</p>}
           </div>
-          <div className="text-right shrink-0">
-            <p className="text-xs cw-muted">{t("customers_profile_created")}</p>
-            <p className="text-xs font-medium cw-muted mt-0.5">
+          <div className={profileStyles.facts}>
+            <p className={profileStyles.factLine}>{t("customers_profile_created")}</p>
+            <p className={profileStyles.factStrong}>
               {new Date(customer.created_at).toLocaleDateString(locale, {
                 day: "2-digit",
                 month: "short",
                 year: "numeric",
               })}
             </p>
-            <p className="text-xs cw-muted mt-2">{ordersCountLabel}</p>
+            <p className={profileStyles.factGap}>{ordersCountLabel}</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Sidebar: customer links + orders summary */}
-        <div className="lg:col-span-1 space-y-5">
-          {/* Contacts */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-semibold cw-text">{t("customers_profile_contacts")}</h3>
+      <div className={profileStyles.layout}>
+        <div className={profileStyles.side}>
+          <div className={profileStyles.group}>
+            <h3 className={profileStyles.groupTitle}>{t("customers_profile_contacts")}</h3>
             {!hasContacts ? (
-              <p className="text-xs cw-muted">{t("customers_profile_contacts_empty")}</p>
+              <p className={profileStyles.note}>{t("customers_profile_contacts_empty")}</p>
             ) : (
-              <div className="space-y-2">
+              <div className={profileStyles.group}>
                 {customer.email && (
                   <ContactRow label={t("customers_contact_email")} value={customer.email} badge={true} />
                 )}
@@ -321,19 +266,19 @@ export default function CustomerProfilePage() {
               what happened, access is what is true now, and the operator
               opening this card is almost always asking the second question. */}
           {enrollments.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold cw-text">{t("customers_profile_access")}</h3>
+            <div className={profileStyles.group}>
+              <h3 className={profileStyles.groupTitle}>{t("customers_profile_access")}</h3>
               {enrollments.map((e) => (
                 <div key={e.id} className={surfaces.tile}>
-                  <p className="text-sm font-medium cw-text">
+                  <p className={profileStyles.tileTitle}>
                     {e.course_title ?? e.course_slug ?? t("customers_profile_access_unknown_course")}
                   </p>
-                  <div className="flex items-center gap-2 flex-wrap mt-1">
-                    <span className={`text-xs font-semibold ${e.started ? "cw-status-success-badge" : "cw-muted"}`}>
+                  <div className={profileStyles.tileMeta}>
+                    <span className={e.started ? "cw-status-success-badge" : profileStyles.stateMuted}>
                       {e.started ? t("access_status_in_progress") : t("access_status_not_started")}
                     </span>
                     {e.expires_at && (
-                      <span className={`text-xs ${e.expired ? "cw-status-failed-badge" : "cw-muted"}`}>
+                      <span className={e.expired ? "cw-status-failed-badge" : profileStyles.note}>
                         {e.expired ? t("customers_profile_access_expired") : t("customers_profile_access_until")}{" "}
                         {new Date(e.expires_at).toLocaleDateString(locale, {
                           day: "2-digit",
@@ -344,7 +289,7 @@ export default function CustomerProfilePage() {
                     )}
                   </div>
                   {e.last_activity_at && (
-                    <p className="text-[10px] cw-muted mt-1">
+                    <p className={profileStyles.tileFoot}>
                       {t("customers_profile_access_last_seen")}{" "}
                       {new Date(e.last_activity_at).toLocaleDateString(locale, {
                         day: "2-digit",
@@ -362,27 +307,27 @@ export default function CustomerProfilePage() {
               That is an ordinary state, not a fault, and saying so beats an
               empty column. */}
           {enrollments.length === 0 && !customer.auth_user_id && orders.some((o) => o.status === "paid") && (
-            <p className="text-xs cw-muted">{t("customers_profile_access_no_account")}</p>
+            <p className={profileStyles.note}>{t("customers_profile_access_no_account")}</p>
           )}
 
           {/* Orders summary */}
           {orders.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold cw-text">{t("orders_title")}</h3>
+            <div className={profileStyles.group}>
+              <h3 className={profileStyles.groupTitle}>{t("orders_title")}</h3>
               {orders.map((o) => (
                 <div key={o.id} className={surfaces.tile}>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-mono cw-muted truncate">{o.order_ref}</span>
-                    <span className={`text-xs font-semibold ${orderStatusColor[o.status] ?? "cw-muted"}`}>
+                  <div className={profileStyles.orderHead}>
+                    <span className={profileStyles.orderRef}>{o.order_ref}</span>
+                    <span className={`${profileStyles.orderState} ${orderStatusColor[o.status] ?? "cw-muted"}`}>
                       {orderStatusLabel[o.status] ?? o.status}
                     </span>
                   </div>
                   {o.amount && (
-                    <p className="text-sm font-bold cw-text mt-1">
-                      {o.amount} <span className="text-xs font-normal cw-muted">{o.currency}</span>
+                    <p className={profileStyles.orderAmount}>
+                      {o.amount} <span className={profileStyles.orderCurrency}>{o.currency}</span>
                     </p>
                   )}
-                  <p className="text-[10px] cw-muted mt-1">{o.product_title ?? o.product_code}</p>
+                  <p className={profileStyles.tileFoot}>{o.product_title ?? o.product_code}</p>
                 </div>
               ))}
             </div>
@@ -390,38 +335,36 @@ export default function CustomerProfilePage() {
         </div>
 
         {/* Timeline */}
-        <div className="lg:col-span-2 space-y-4">
-          <h3 className="text-sm font-semibold cw-text">
-            {t("customers_profile_timeline")} <span className="font-normal cw-muted">({timeline.length})</span>
+        <div className={profileStyles.main}>
+          <h3 className={profileStyles.groupTitle}>
+            {t("customers_profile_timeline")} <span className={profileStyles.groupCount}>({timeline.length})</span>
           </h3>
 
           {timeline.length === 0 ? (
-            <p className="text-xs cw-muted py-4">{t("customers_profile_no_events")}</p>
+            <p className={profileStyles.noteSpaced}>{t("customers_profile_no_events")}</p>
           ) : (
-            <div className="space-y-3">
+            <div className={profileStyles.timeline}>
               {timeline.map((item, i) => (
                 <div key={`${item.id}-${i}`}>
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`relative z-10 shrink-0 w-9 h-9 rounded-lg border flex items-center justify-center ${typeColors[item.type]}`}
-                    >
-                      {typeIcons[item.type]}
-                    </div>
-                    <div className="flex-1 min-w-0 pt-0.5">
+                  <div className={profileStyles.event}>
+                    <div className={typeMark[item.type] ?? profileStyles.eventMark}>{typeIcons[item.type]}</div>
+                    <div className={profileStyles.eventBody}>
                       {/* The server sends facts; the sentence is written here,
                           in the reader's language. It used to arrive
                           pre-assembled as a Russian string. */}
-                      <p className="text-sm font-medium cw-text leading-tight">
+                      <p className={profileStyles.eventTitle}>
                         {item.type === "order" ? `${t("customers_profile_timeline_order")}: ${item.label}` : item.label}
                       </p>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className={profileStyles.eventMeta}>
                         {item.type === "order" && item.status && (
-                          <span className={`text-xs font-semibold ${orderStatusColor[item.status] ?? "cw-muted"}`}>
+                          <span
+                            className={`${profileStyles.orderState} ${orderStatusColor[item.status] ?? "cw-muted"}`}
+                          >
                             {orderStatusLabel[item.status] ?? item.status}
                           </span>
                         )}
-                        {item.sub && <span className="text-xs cw-muted">{item.sub}</span>}
-                        <span className="text-[10px] cw-muted">
+                        {item.sub && <span className={profileStyles.eventAside}>{item.sub}</span>}
+                        <span className={profileStyles.eventAside}>
                           {new Date(item.ts).toLocaleString(locale, {
                             day: "2-digit",
                             month: "short",
@@ -432,7 +375,7 @@ export default function CustomerProfilePage() {
                       </div>
                     </div>
                   </div>
-                  {i < timeline.length - 1 && <div className="ml-[18px] mt-1 h-3 w-px border-l cw-border" />}
+                  {i < timeline.length - 1 && <div className={profileStyles.eventLink} />}
                 </div>
               ))}
             </div>

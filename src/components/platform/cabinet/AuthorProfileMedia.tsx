@@ -80,9 +80,16 @@ export function PhotoCropPreview({
       <img src={src} alt={alt} style={cropStyle({ x, y, scale }, { x: 50, y: 50 })} draggable={false} />
       {/* The affordance, in the one corner the replace/remove pair never takes.
           A frame that opens an editor has to say so: without a mark it is a
-          photograph, and photographs are not usually buttons. */}
+          photograph, and photographs are not usually buttons.
+
+          A LENS, NOT A PENCIL (2026-09-11). It was a pencil, and so was the
+          replace control two centimetres away in the opposite corner — one
+          glyph for «choose what this picture shows» and «swap this picture for
+          another one», on the same photograph. Reported as two identical
+          pencils, which is exactly what it was. The lens says look closer; the
+          replace control now says what it does, which is take a file. */}
       <span className={styles.photoCropOpen} aria-hidden="true">
-        <Icon name="edit" size={15} />
+        <Icon name="lens" size={16} />
       </span>
     </button>
   );
@@ -180,7 +187,10 @@ export function AuthorMediaSlot({
               disabled={uploading}
               onChange={pick}
             />
-            <Icon name="edit" size={18} />
+            {/* `import`, the same glyph the empty slot shows: both open the
+                file picker, and the only difference is whether something is
+                there already. */}
+            <Icon name="import" size={18} />
           </label>
           <button
             type="button"

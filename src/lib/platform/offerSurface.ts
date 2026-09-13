@@ -23,6 +23,18 @@ export type OfferSurface = {
    * it, the tagline is under that. See `offerSubtitle`.
    */
   subtitle?: string;
+  /**
+   * The author's own line ABOVE the name, when they wrote one.
+   *
+   * The mirror of `subtitle`, and a different thing from `tag`: `tag` says what
+   * kind of object this is and is the system's word, this is the author's, and
+   * it is the one line of the three they write that had nowhere to go. It has
+   * reached the catalogue card since the field existed — `StorefrontCard.
+   * pretitle`, in the card's eyebrow — while the offer page, the surface with
+   * the most room for it, printed the card's version of the name and none of
+   * its frame.
+   */
+  pretitle?: string;
   tag: string;
   duration: string;
   description: string;

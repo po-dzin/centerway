@@ -23,6 +23,10 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Icon } from "@/components/Icon";
+import { useI18n } from "@/components/I18nProvider";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
+import cal from "@/components/admin/AdminCalendar.module.css";
 
 /**
  * Some Monday, derived rather than asserted.
@@ -91,6 +95,7 @@ export function AdminDateField({
   className?: string;
   id?: string;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState(() => toDisplay(value));
   const [month, setMonth] = useState(() => startOfMonth(value || null));
@@ -173,8 +178,8 @@ export function AdminDateField({
   };
 
   return (
-    <div ref={root} className={`relative ${className}`.trim()}>
-      <div className="flex items-stretch">
+    <div ref={root} className={`${cal.anchor} ${className}`.trim()}>
+      <div className={cal.field}>
         <input
           id={id}
           type="text"
@@ -192,7 +197,7 @@ export function AdminDateField({
               setOpen(false);
             }
           }}
-          className="cw-input px-3 py-2 text-sm w-full rounded-r-none disabled:opacity-40"
+          className={cal.fieldInput}
         />
         <button
           type="button"
@@ -203,37 +208,45 @@ export function AdminDateField({
             setMonth(startOfMonth(value || null));
             setOpen((wasOpen) => !wasOpen);
           }}
-          className="cw-input cw-btn px-2.5 rounded-l-none border-l-0 shrink-0 disabled:opacity-40"
+          className={cal.fieldButton}
         >
           <CalendarGlyph />
         </button>
       </div>
 
       {open ? (
-        <div className="absolute z-40 mt-1 p-3 w-[17.5rem] cw-surface-solid border cw-border rounded-xl cw-shadow">
-          <div className="flex items-center justify-between mb-2">
+        <div className={cal.popoverUnderField}>
+          <div className={cal.head}>
+            {/* THE SAME STEP AS THE PERIOD PICKER (2026-09-13). This was a bare
+                `‹` and `›` announced to a screen reader as "←" and "→", while
+                the analytics calendar stepped with the sprite's arrows inside
+                the ink ring. One calendar, one way to change the month. */}
             <button
               type="button"
               onClick={() => setMonth(new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth() - 1, 1)))}
-              className="cw-btn cw-btn-sm px-2"
-              aria-label="←"
+              className="cw-icon-btn"
+              aria-label={t("common_prev_month")}
             >
-              ‹
+              <InteractionInkIcon>
+                <Icon name="arrow-left" size={16} />
+              </InteractionInkIcon>
             </button>
-            <span className="text-sm font-medium cw-text capitalize">{monthLabel}</span>
+            <span className={cal.monthLabel}>{monthLabel}</span>
             <button
               type="button"
               onClick={() => setMonth(new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth() + 1, 1)))}
-              className="cw-btn cw-btn-sm px-2"
-              aria-label="→"
+              className="cw-icon-btn"
+              aria-label={t("common_next_month")}
             >
-              ›
+              <InteractionInkIcon>
+                <Icon name="arrow-right" size={16} />
+              </InteractionInkIcon>
             </button>
           </div>
 
-          <div className="grid grid-cols-7 gap-0.5 mb-1">
+          <div className={cal.grid}>
             {[0, 1, 2, 3, 4, 5, 6].map((offset) => (
-              <span key={offset} className="text-[10px] cw-muted text-center uppercase py-1">
+              <span key={offset} className={cal.weekday}>
                 {weekdayName.format(
                   new Date(Date.UTC(MONDAY.getUTCFullYear(), MONDAY.getUTCMonth(), MONDAY.getUTCDate() + offset)),
                 )}
@@ -241,7 +254,7 @@ export function AdminDateField({
             ))}
           </div>
 
-          <div className="grid grid-cols-7 gap-0.5">
+          <div className={cal.grid}>
             {weeks.flat().map((date, index) => {
               if (!date) return <span key={`pad-${index}`} />;
               const dayIso = iso(date);
@@ -254,19 +267,7 @@ export function AdminDateField({
                   onClick={() => pick(date)}
                   aria-current={isToday ? "date" : undefined}
                   aria-pressed={selected}
-                  /* The primary-button RECIPE is deliberately
-                                       not reused here: it carries a lifted
-                                       `0 8px 20px` shadow and its own radius, so
-                                       thirty-one day cells would each read as a
-                                       floating button. Its COLOUR tokens are the
-                                       right ones, and they are what is taken. */
-                  className={`h-8 rounded-lg text-xs tabular-nums transition-colors ${
-                    selected
-                      ? "font-semibold bg-[var(--cw-btn-primary-bg)] text-[var(--cw-btn-primary-text)]"
-                      : isToday
-                        ? "cw-surface-2 cw-text font-medium"
-                        : "cw-text hover:bg-[var(--cw-surface-2)]"
-                  }`}
+                  className={[cal.day, selected ? cal.daySelected : isToday ? cal.dayToday : ""].join(" ").trim()}
                 >
                   {date.getUTCDate()}
                 </button>
@@ -274,18 +275,18 @@ export function AdminDateField({
             })}
           </div>
 
-          <div className="flex justify-between mt-2 pt-2 border-t cw-border">
+          <div className={cal.foot}>
             <button
               type="button"
               onClick={() => {
                 onChange("");
                 setOpen(false);
               }}
-              className="cw-btn cw-btn-sm px-2 cw-muted"
+              className={cal.footActionQuiet}
             >
               {labels.clear}
             </button>
-            <button type="button" onClick={() => pick(new Date())} className="cw-btn cw-btn-sm px-2">
+            <button type="button" onClick={() => pick(new Date())} className={cal.footAction}>
               {labels.today}
             </button>
           </div>
@@ -296,19 +297,5 @@ export function AdminDateField({
 }
 
 function CalendarGlyph() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <rect x="3" y="5" width="18" height="16" rx="2.5" />
-      <path d="M3 10h18M8 3v4M16 3v4" />
-    </svg>
-  );
+  return <Icon name="calendar" size={16} />;
 }

@@ -39,6 +39,11 @@ import {
   PAYMENT_CURRENCIES,
 } from "@/lib/admin/accessTypes";
 import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
+import { Icon } from "@/components/Icon";
+import pageStyles from "@/components/admin/AdminPage.module.css";
+import controls from "@/components/admin/AdminControls.module.css";
+import lists from "@/components/admin/AdminLists.module.css";
+import access from "@/components/admin/AdminAccess.module.css";
 
 const LIMIT = 50;
 
@@ -64,59 +69,20 @@ async function fetchCourses(): Promise<{ items: CourseRow[]; canGrant: boolean }
 }
 
 function EmptyIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="cw-muted"
-    >
-      <rect x="3" y="11" width="18" height="11" rx="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  );
+  return <Icon className="cw-muted" name="lock" size={20} />;
 }
 
 function PlusGlyph() {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  );
+  return <Icon name="plus" size={16} />;
 }
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className={`cw-muted shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
-    >
-      <path d="m6 9 6 6 6-6" />
-    </svg>
+    <Icon
+      className={`cw-muted ${access.statusDotFixed} ${open ? controls.disclosureChevronOpen : controls.disclosureChevron}`}
+      name="chevron-down"
+      size={16}
+    />
   );
 }
 
@@ -170,10 +136,10 @@ export default function AccessPage() {
   }, [coursesToken, toast, errorText]);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div>
-        <h2 className="cw-page-title mb-1">{t("access_title")}</h2>
-        <p className="cw-page-subtitle">{t("access_subtitle")}</p>
+    <div className={pageStyles.page}>
+      <div className={pageStyles.heading}>
+        <h2 className={pageStyles.title}>{t("access_title")}</h2>
+        <p className={pageStyles.subtitle}>{t("access_subtitle")}</p>
       </div>
 
       {/* NO TAB BAR. There were four: three views of PEOPLE and one of
@@ -584,19 +550,15 @@ function PeopleTab({
   const totalPages = Math.ceil(total / LIMIT);
 
   return (
-    <div className="space-y-4">
+    <div className={lists.panel}>
       {/* THE FORM IS BEHIND A BUTTON NOW. It is the rarest thing on this
                 screen — most visits are to read the list or to fix one seat —
                 and it was the first and largest thing on it: eight fields and
                 two checkboxes pushing the learners it is about below the fold.
                 A dialog also gives it room to breathe, which a strip crammed
                 into twelve columns never had. */}
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={() => setGrantOpen(true)}
-          className="px-4 py-2 cw-btn cw-surface-2 text-sm inline-flex items-center gap-2"
-        >
+      <div className={controls.iconActions}>
+        <button type="button" onClick={() => setGrantOpen(true)} className={`${controls.action} cw-surface-2`}>
           <PlusGlyph />
           {t("access_grant_open")}
         </button>
@@ -610,14 +572,14 @@ function PeopleTab({
           onClose={() => setGrantOpen(false)}
           footer={
             <>
-              <button type="button" onClick={() => setGrantOpen(false)} className="px-4 py-2 cw-btn text-sm">
+              <button type="button" onClick={() => setGrantOpen(false)} className={controls.action}>
                 {t("common_close")}
               </button>
               <button
                 type="button"
                 onClick={grant}
                 disabled={granting || !grantEmail.trim() || !grantCourse}
-                className="px-4 py-2 cw-btn cw-surface-2 text-sm disabled:opacity-50"
+                className={`${controls.actionPrimary} cw-surface-2`}
               >
                 {t("access_grant_submit")}
               </button>
@@ -628,26 +590,26 @@ function PeopleTab({
                     track rather than a row of flex-1 fields: an email needs
                     room, a date does not, and stretching them equally is what
                     made the panel read as a wall. */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+          <div className={access.grantWho}>
             <input
               type="email"
               value={grantEmail}
               onChange={(e) => setGrantEmail(e.target.value)}
               placeholder={t("access_grant_email")}
-              className="cw-input px-3 py-2 text-sm sm:col-span-5"
+              className={`${controls.input} ${access.spanEmail}`}
             />
             <input
               type="text"
               value={grantName}
               onChange={(e) => setGrantName(e.target.value)}
               placeholder={t("access_grant_name")}
-              className="cw-input px-3 py-2 text-sm sm:col-span-3"
+              className={`${controls.input} ${access.spanName}`}
             />
             <select
               value={grantCourse}
               onChange={(e) => setGrantCourse(e.target.value)}
               aria-label={t("access_grant_course")}
-              className="cw-input cw-select pl-3 py-2 text-sm sm:col-span-4"
+              className={`${controls.select} ${access.spanCourse}`}
             >
               {courses.map((course) => (
                 <option key={course.id} value={course.slug}>
@@ -657,22 +619,22 @@ function PeopleTab({
             </select>
           </div>
 
-          <p className="text-xs cw-muted">{t("access_grant_payment_hint")}</p>
-          <p className="text-xs cw-muted">{t("access_grant_deadline_hint")}</p>
+          <p className={controls.hint}>{t("access_grant_payment_hint")}</p>
+          <p className={controls.hint}>{t("access_grant_deadline_hint")}</p>
 
           {/* Deadline and money — the two optional halves, on one line.
                     A bare date input says nothing about which date it is, so
                     this row keeps its captions; the fields above do not need
                     them, their placeholders say it. */}
-          <div className="grid grid-cols-2 sm:grid-cols-12 gap-2">
+          <div className={access.grantMore}>
             {/* Two labels, not one wrapping both: a <label> binds to its
                         first labelable descendant, so nesting the checkbox under
                         the date's label would make "Безстроково" focus the date
                         field instead of ticking the box, and read the two out as
                         one name. */}
-            <div className="col-span-2 sm:col-span-3 flex flex-col gap-1">
-              <div className="flex flex-col gap-1">
-                <span className="text-xs cw-muted">{t("access_grant_deadline")}</span>
+            <div className={`${controls.field} ${access.spanFull} ${access.spanDeadline}`}>
+              <div className={controls.field}>
+                <span className={controls.fieldCaption}>{t("access_grant_deadline")}</span>
                 <AdminDateField
                   value={grantExpiresAt}
                   onChange={setGrantExpiresAt}
@@ -681,18 +643,18 @@ function PeopleTab({
                   labels={dateLabels}
                 />
               </div>
-              <label className="flex items-center gap-1.5 text-xs cw-muted">
+              <label className={access.check}>
                 <input
                   type="checkbox"
                   checked={grantForever}
                   onChange={(e) => setGrantForever(e.target.checked)}
-                  className="shrink-0"
+                  className={access.checkBox}
                 />
                 {t("access_grant_forever")}
               </label>
             </div>
-            <label className="sm:col-span-2 flex flex-col gap-1">
-              <span className="text-xs cw-muted">{t("access_grant_amount")}</span>
+            <label className={`${controls.field} ${access.spanAmount}`}>
+              <span className={controls.fieldCaption}>{t("access_grant_amount")}</span>
               <input
                 type="number"
                 min="0"
@@ -700,15 +662,15 @@ function PeopleTab({
                 inputMode="decimal"
                 value={grantAmount}
                 onChange={(e) => setGrantAmount(e.target.value)}
-                className="cw-input px-3 py-2 text-sm"
+                className={controls.input}
               />
             </label>
-            <label className="sm:col-span-2 flex flex-col gap-1">
-              <span className="text-xs cw-muted">{t("access_grant_currency")}</span>
+            <label className={`${controls.field} ${access.spanCurrency}`}>
+              <span className={controls.fieldCaption}>{t("access_grant_currency")}</span>
               <select
                 value={grantCurrency}
                 onChange={(e) => setGrantCurrency(e.target.value)}
-                className="cw-input cw-select pl-3 py-2 text-sm"
+                className={controls.select}
               >
                 {PAYMENT_CURRENCIES.map((currency) => (
                   <option key={currency} value={currency}>
@@ -717,24 +679,24 @@ function PeopleTab({
                 ))}
               </select>
             </label>
-            <label className="col-span-2 sm:col-span-5 flex flex-col gap-1">
-              <span className="text-xs cw-muted">{t("access_grant_note")}</span>
+            <label className={`${controls.field} ${access.spanFull} ${access.spanNote}`}>
+              <span className={controls.fieldCaption}>{t("access_grant_note")}</span>
               <input
                 type="text"
                 value={grantNote}
                 onChange={(e) => setGrantNote(e.target.value)}
-                className="cw-input px-3 py-2 text-sm"
+                className={controls.input}
               />
             </label>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
-            <label className="flex items-start gap-2 text-xs cw-muted flex-1">
+          <div className={access.grantFoot}>
+            <label className={access.checkLong}>
               <input
                 type="checkbox"
                 checked={grantCreateAccount}
                 onChange={(e) => setGrantCreateAccount(e.target.checked)}
-                className="mt-0.5 shrink-0"
+                className={access.checkBoxTop}
               />
               <span>{t("access_grant_create_account")}</span>
             </label>
@@ -745,13 +707,9 @@ function PeopleTab({
                         Admin-only — the roles API refuses `support`, and a
                         control that 403s is worse than no control. */}
             {canGrantRoles ? (
-              <label className="flex items-center gap-2 text-xs cw-muted shrink-0">
+              <label className={access.roleInline}>
                 <span>{t("access_grant_role")}</span>
-                <select
-                  value={grantRole}
-                  onChange={(e) => setGrantRole(e.target.value)}
-                  className="cw-input cw-select pl-3 py-2 text-sm"
-                >
+                <select value={grantRole} onChange={(e) => setGrantRole(e.target.value)} className={controls.select}>
                   {GRANTABLE_ROLES.map((value) => (
                     <option key={value} value={value}>
                       {value === "user" ? t("access_grant_role_none") : value}
@@ -766,14 +724,14 @@ function PeopleTab({
 
       {/* Summary */}
       {summary ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className={access.summary}>
           {STATUS_KEYS.map((key) => (
             <div key={key} className={surfaces.tile}>
-              <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${STATUS_DOT[key]}`} />
-                <p className="text-xs cw-muted truncate">{t(STATUS_LABEL_KEY[key])}</p>
+              <div className={access.summaryHead}>
+                <span className={`${access.statusDotTiny} ${STATUS_DOT[key]}`} />
+                <p className={access.summaryLabel}>{t(STATUS_LABEL_KEY[key])}</p>
               </div>
-              <p className="text-xl font-semibold cw-text tabular-nums mt-1">{summary[key]}</p>
+              <p className={access.summaryValue}>{summary[key]}</p>
             </div>
           ))}
         </div>
@@ -786,19 +744,18 @@ function PeopleTab({
           setStatus(key as LearnerStatus | "");
           setPage(0);
         }}
-        className="overflow-x-auto no-scrollbar"
       />
 
       {/* THE FACETS, in the order a question is usually asked: who, then
                 what they hold, then which course. Each resets the page — page 3
                 of "everybody" is not page 3 of "coaches". */}
-      <div className="flex flex-col sm:flex-row gap-2">
+      <div className={controls.fields}>
         <AdminSearchInput
           value={q}
           onChange={setQ}
           placeholder={t("access_search_learners")}
           onClear={q ? () => setQ("") : undefined}
-          className="flex-1"
+          className={controls.grow}
         />
         <select
           value={roleFilter}
@@ -807,7 +764,7 @@ function PeopleTab({
             setPage(0);
           }}
           aria-label={t("access_filter_role")}
-          className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-44"
+          className={`${controls.select} ${access.facet}`}
         >
           <option value="">{t("access_filter_role_all")}</option>
           <option value="staff">{t("access_filter_role_staff")}</option>
@@ -824,7 +781,7 @@ function PeopleTab({
             setPage(0);
           }}
           aria-label={t("access_filter_access")}
-          className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-44"
+          className={`${controls.select} ${access.facet}`}
         >
           <option value="">{t("access_filter_access_all")}</option>
           <option value="enrolled">{t("access_filter_access_enrolled")}</option>
@@ -837,7 +794,7 @@ function PeopleTab({
             setPage(0);
           }}
           aria-label={t("access_grant_course")}
-          className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-56"
+          className={`${controls.select} ${access.facetWide}`}
         >
           <option value="">{t("access_all_courses")}</option>
           {courses.map((course) => (
@@ -848,7 +805,7 @@ function PeopleTab({
         </select>
       </div>
 
-      {truncated ? <p className="text-xs cw-muted">{t("access_truncated")}</p> : null}
+      {truncated ? <p className={controls.hint}>{t("access_truncated")}</p> : null}
 
       {loading ? (
         <AdminLoadingState variant="spinner" text={t("access_loading")} />
@@ -857,54 +814,47 @@ function PeopleTab({
           title={t("common_error")}
           message={error}
           action={
-            <button type="button" onClick={() => void load()} className="px-4 py-2 cw-btn cw-surface-2">
+            <button type="button" onClick={() => void load()} className={`${controls.action} cw-surface-2`}>
               {t("analytics_retry")}
             </button>
           }
         />
       ) : items.length === 0 ? (
-        <AdminEmptyState
-          className="py-16"
-          iconWrapperClassName="w-12 h-12 rounded-full"
-          icon={<EmptyIcon />}
-          description={t("access_empty_accounts")}
-        />
+        <AdminEmptyState icon={<EmptyIcon />} description={t("access_empty_accounts")} />
       ) : (
-        <div className="space-y-1.5">
+        <div className={lists.list}>
           {items.map((account) => {
             const open = expanded.has(account.authUserId);
             return (
-              <div key={account.authUserId} className="cw-list-item p-4">
+              <div key={account.authUserId} className={lists.item}>
                 <button
                   type="button"
                   onClick={() => toggle(account.authUserId)}
                   aria-expanded={open}
                   aria-label={t("access_toggle_courses")}
-                  className="w-full flex items-center gap-4 text-left"
+                  className={access.toggle}
                 >
                   <span
-                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${STATUS_DOT[account.status]}`}
+                    className={`${lists.statusDot} ${access.statusDotFixed} ${STATUS_DOT[account.status]}`}
                     title={t(STATUS_LABEL_KEY[account.status])}
                   />
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-medium cw-text truncate">{account.email ?? account.authUserId}</p>
+                  <div className={lists.itemBody}>
+                    <div className={lists.orderIdentity}>
+                      <p className={lists.itemTitle}>{account.email ?? account.authUserId}</p>
                       {/* Only an elevated role is worth a badge — `user` is everyone. */}
                       {account.role && account.role !== "user" ? (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">
-                          {account.role}
-                        </span>
+                        <span className={lists.tag}>{account.role}</span>
                       ) : null}
                       {account.authUserId === selfId ? (
-                        <span className="text-[10px] cw-muted uppercase tracking-wide">{t("access_role_self")}</span>
+                        <span className={access.selfMark}>{t("access_role_self")}</span>
                       ) : null}
                     </div>
-                    <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+                    <div className={lists.itemMeta}>
                       <span>
                         {t("access_col_courses")}: {account.courses.length}
                       </span>
-                      {account.fullName ? <span className="truncate">{account.fullName}</span> : null}
+                      {account.fullName ? <span className={access.metaClip}>{account.fullName}</span> : null}
                       {account.ownedCourses > 0 ? (
                         <span>
                           {t("access_role_owned_courses")}: {account.ownedCourses}
@@ -956,23 +906,23 @@ function PeopleTab({
                 </button>
 
                 {open ? (
-                  <div className="mt-3 pt-3 border-t border-[var(--cw-border)] space-y-2">
+                  <div className={access.fold}>
                     {account.courses.map((row) => {
                       const stored = deadlineInputValue(row.expiresAt);
                       const draft = deadlineDraft[row.enrollmentId] ?? stored;
                       const closed = row.access !== "active";
 
                       return (
-                        <div key={row.enrollmentId} className="space-y-2">
-                          <div className="flex items-center gap-3">
+                        <div key={row.enrollmentId} className={access.seat}>
+                          <div className={access.seatRow}>
                             <span
-                              className={`w-2 h-2 rounded-full shrink-0 ${STATUS_DOT[row.status]}`}
+                              className={`${access.statusDotTiny} ${STATUS_DOT[row.status]}`}
                               title={t(STATUS_LABEL_KEY[row.status])}
                             />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm cw-text truncate">{row.courseTitle}</p>
-                              <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
-                                <span className="font-mono">{row.courseSlug}</span>
+                            <div className={lists.itemBody}>
+                              <p className={access.seatTitle}>{row.courseTitle}</p>
+                              <div className={lists.itemMeta}>
+                                <span className={lists.itemCode}>{row.courseSlug}</span>
                                 <span>{sourceLabel(row.source)}</span>
                                 <span>
                                   {t("access_col_started")}:{" "}
@@ -996,17 +946,17 @@ function PeopleTab({
                                 ) : null}
                               </div>
                             </div>
-                            <p className="text-sm cw-text tabular-nums shrink-0 hidden sm:block">
+                            <p className={access.seatProgress}>
                               {row.lessonsTotal > 0
                                 ? `${row.lessonsCompleted}/${row.lessonsTotal}`
                                 : t("access_no_lessons")}
                             </p>
-                            <div className="flex items-center gap-2 shrink-0">
+                            <div className={access.seatActions}>
                               {row.access === "blocked" ? (
                                 <button
                                   type="button"
                                   onClick={() => void seatAction(row, "unblock")}
-                                  className="px-3 py-1.5 cw-btn cw-surface-2 text-xs"
+                                  className={`${controls.actionCompact} cw-surface-2`}
                                 >
                                   {t("access_unblock")}
                                 </button>
@@ -1016,7 +966,7 @@ function PeopleTab({
                                     <button
                                       type="button"
                                       onClick={() => void seatAction(row, "reactivate")}
-                                      className="px-3 py-1.5 cw-btn cw-surface-2 text-xs"
+                                      className={`${controls.actionCompact} cw-surface-2`}
                                     >
                                       {t("access_reactivate")}
                                     </button>
@@ -1024,7 +974,7 @@ function PeopleTab({
                                     <button
                                       type="button"
                                       onClick={() => void seatAction(row, "revoke", "access_revoke_confirm")}
-                                      className="px-3 py-1.5 cw-btn cw-btn-muted text-xs"
+                                      className={`${controls.actionCompact} cw-btn-muted`}
                                     >
                                       {t("access_revoke")}
                                     </button>
@@ -1032,7 +982,7 @@ function PeopleTab({
                                   <button
                                     type="button"
                                     onClick={() => void seatAction(row, "block", "access_block_confirm")}
-                                    className="px-3 py-1.5 cw-btn cw-btn-muted text-xs"
+                                    className={`${controls.actionCompact} cw-btn-muted`}
                                   >
                                     {t("access_block")}
                                   </button>
@@ -1041,20 +991,20 @@ function PeopleTab({
                             </div>
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-2 pl-5">
-                            <span className="text-xs cw-muted">{t("access_deadline_label")}</span>
+                          <div className={access.seatLine}>
+                            <span className={controls.fieldCaption}>{t("access_deadline_label")}</span>
                             <AdminDateField
                               value={draft}
                               onChange={(next) => setDeadlineDraft((prev) => ({ ...prev, [row.enrollmentId]: next }))}
                               locale={locale}
                               labels={dateLabels}
-                              className="w-44"
+                              className={access.deadlineField}
                             />
                             <button
                               type="button"
                               onClick={() => void saveDeadline(row.enrollmentId, draft)}
                               disabled={savingDeadline === row.enrollmentId || draft === stored}
-                              className="px-3 py-1.5 cw-btn cw-surface-2 text-xs disabled:opacity-50"
+                              className={`${controls.actionCompact} cw-surface-2`}
                             >
                               {t("access_deadline_save")}
                             </button>
@@ -1066,12 +1016,12 @@ function PeopleTab({
                                   void saveDeadline(row.enrollmentId, "");
                                 }}
                                 disabled={savingDeadline === row.enrollmentId}
-                                className="px-3 py-1.5 cw-btn cw-btn-muted text-xs disabled:opacity-50"
+                                className={`${controls.actionCompact} cw-btn-muted`}
                               >
                                 {t("access_deadline_clear")}
                               </button>
                             ) : (
-                              <span className="text-xs cw-muted">{t("access_deadline_none")}</span>
+                              <span className={controls.hint}>{t("access_deadline_none")}</span>
                             )}
                           </div>
                         </div>
@@ -1106,14 +1056,14 @@ function PeopleTab({
                                             a 409, and a control that cannot work
                                             should not be offered. */}
                     {canGrantRoles && account.email && account.authUserId !== selfId ? (
-                      <div className="flex flex-wrap items-center gap-2 pl-5 pt-1">
-                        <span className="text-xs cw-muted">{t("access_filter_role")}</span>
+                      <div className={access.seatLineSpaced}>
+                        <span className={controls.fieldCaption}>{t("access_filter_role")}</span>
                         <select
                           value={account.role ?? "user"}
                           disabled={grantingTo === account.authUserId}
                           onChange={(e) => void setPersonRole(account, e.target.value)}
                           aria-label={t("access_filter_role")}
-                          className="cw-input cw-select pl-3 py-1.5 text-xs disabled:opacity-50"
+                          className={access.selectCompact}
                         >
                           {GRANTABLE_ROLES.map((role) => (
                             <option key={role} value={role}>
@@ -1122,7 +1072,7 @@ function PeopleTab({
                           ))}
                         </select>
                         {account.roleUpdatedAt && account.role && account.role !== "user" ? (
-                          <span className="text-xs cw-muted">
+                          <span className={controls.hint}>
                             {new Date(account.roleUpdatedAt).toLocaleDateString(locale, {
                               day: "2-digit",
                               month: "short",
@@ -1185,17 +1135,17 @@ function AddCourseRow({
   if (!email) return null;
 
   if (available.length === 0) {
-    return <p className="text-xs cw-muted pl-5 pt-1">{t("access_add_course_all")}</p>;
+    return <p className={access.seatNote}>{t("access_add_course_all")}</p>;
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 pl-5 pt-1">
-      <span className="text-xs cw-muted">{t("access_add_course")}</span>
+    <div className={access.seatLineSpaced}>
+      <span className={controls.fieldCaption}>{t("access_add_course")}</span>
       <select
         value={selected}
         onChange={(e) => setSlug(e.target.value)}
         aria-label={t("access_add_course")}
-        className="cw-input cw-select pl-3 py-1.5 text-xs"
+        className={access.selectCompact}
       >
         {available.map((course) => (
           <option key={course.id} value={course.slug}>
@@ -1207,7 +1157,7 @@ function AddCourseRow({
         type="button"
         disabled={busy || !selected}
         onClick={() => onGrant(selected)}
-        className="px-3 py-1.5 cw-btn cw-surface-2 text-xs disabled:opacity-50"
+        className={`${controls.actionCompact} cw-surface-2`}
       >
         {t("access_add_course_submit")}
       </button>

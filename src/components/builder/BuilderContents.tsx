@@ -119,7 +119,12 @@ export function BuilderContents({
   return (
     <nav className={styles.contentsPanel} aria-label="Уроки курсу">
       <div className={styles.contentsHeader}>
-        <button className={styles.contentsBack} type="button" onClick={() => onNavigate(`/build/${course.slug}`)}>
+        <button
+          className={styles.contentsBack}
+          data-cw-ink-control=""
+          type="button"
+          onClick={() => onNavigate(`/build/${course.slug}`)}
+        >
           <Icon name="arrow-left" size={18} />
           <InkLabel>Структура курсу</InkLabel>
         </button>
@@ -148,6 +153,7 @@ export function BuilderContents({
                 )}
                 <button
                   className={styles.contentsModuleToggle}
+                  data-cw-ink-control=""
                   type="button"
                   aria-expanded={!closed}
                   onClick={() => toggleModule(entry.id)}
@@ -219,6 +225,7 @@ export function BuilderContents({
                             modified click is left to the browser. */}
                         <a
                           className={styles.contentsLink}
+                          data-cw-ink-control=""
                           href={`/build/${course.slug}/${item.slug}`}
                           aria-current={item.slug === currentSlug ? "page" : undefined}
                           title={item.title}

@@ -38,6 +38,7 @@ import {
   loadCourse,
   renameCourseSlug,
   saveCourse,
+  publishCourseNow,
   submitCourseForReview,
   type BuilderCourseDto,
   type BuilderFailure,
@@ -46,7 +47,6 @@ import { BuilderHistory } from "./BuilderHistory";
 import { BuilderEditableTitle } from "./BuilderEditableTitle";
 import { BuilderRecordField } from "./BuilderRecordField";
 import { BuilderRevisionNotice } from "./BuilderRevisionNotice";
-import { FieldInput } from "./BuilderFields";
 import { useCourseHistory } from "./useCourseHistory";
 import { useCourseAutosave } from "./useCourseAutosave";
 import { rememberZenPreviewReturn, zenPreviewHref } from "@/components/lms/ZenPreviewShell";
@@ -56,7 +56,7 @@ import { writePath } from "./blockFields";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { usePlatformSession } from "@/components/platform/layout/usePlatformSession";
-import { courseSaveFailureCopy } from "./courseSaveCopy";
+import { courseSaveFailureCopy, SAVE_COPY } from "./courseSaveCopy";
 import { lessonDocumentFailureCopy } from "./lessonDocumentCopy";
 import { clearDurableCourseDraft, inspectDurableCourseDraft, type DurableCourseDraft } from "./courseDraftStore";
 import { BuilderDraftRecovery } from "./BuilderDraftRecovery";
@@ -369,15 +369,12 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   const persistCourse = useCallback(
     async (snapshot: Course) => {
       if (draftGeneration.current === null) {
-        return { ok: false as const, message: "Курс ще завантажується. Спробуйте за мить." };
+        return { ok: false as const, message: SAVE_COPY.notReady };
       }
       const result = await saveCourse(slug, courseForSave(snapshot), draftGeneration.current);
       if (!result.ok) {
         if (result.failure === "conflict") {
-          return {
-            ok: false as const,
-            message: "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку, щоб не втратити чужі зміни.",
-          };
+          return { ok: false as const, message: SAVE_COPY.staleReload };
         }
         /* The server's `detail` is an assertion id, not a sentence — see
          `courseSaveCopy`. It used to be printed raw, so a course whose cover
@@ -385,7 +382,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
          `lms_course_cover_missing_alt:builder`. */
         return {
           ok: false as const,
-          message: courseSaveFailureCopy(result.detail, "Не вдалося зберегти. Спробуйте ще раз."),
+          message: courseSaveFailureCopy(result.detail, SAVE_COPY.failed),
         };
       }
       draftGeneration.current = result.data.draftGeneration;
@@ -445,6 +442,29 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   });
   const { pendingHref, navigate, route } = exit;
 
+  /* A BLOCKER THAT LIVES ON THIS PAGE IS A TAB, NOT A NAVIGATION. Every
+     course-level hole — no subject, no cover description, nothing said about
+     what is included — resolves to this same course at another hash, and the
+     arrow pushed it through the router. The router changes the address without
+     firing `hashchange`, which is the only thing the tab state listens to, so
+     pressing the arrow moved the address bar and left the author looking at
+     the release panel they pressed it from. Same page: switch the tab.
+     Anywhere else — a lesson, a block inside one — is a real move, and still
+     goes through `navigate` so an unsaved draft is saved on the way out. */
+  const openBlocker = useCallback(
+    (href: string) => {
+      const [path, hash] = href.split("#");
+      if (hash && path === `/build/${encodeURIComponent(slug)}`) {
+        setWorkspaceMode(courseWorkspaceModeFromHash(`#${hash}`));
+        window.history.replaceState(null, "", `#${hash}`);
+        window.scrollTo({ top: 0, behavior: "auto" });
+        return;
+      }
+      navigate(href);
+    },
+    [navigate, slug],
+  );
+
   const autosave = useCourseAutosave({
     course,
     dirty,
@@ -496,17 +516,19 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     // make the button a second, silent save with a different gate.
     if (draftGeneration.current === null) {
       setBusy(false);
-      toast.warning("Курс ще завантажується. Спробуйте за мить.");
+      toast.warning(SAVE_COPY.notReady);
       return;
     }
     const result = await saveCourse(slug, { ...state.data.course, status: next }, draftGeneration.current);
     setBusy(false);
 
     if (!result.ok) {
+      /* Publishing went through `result.detail` raw until 2026-09-11, so this
+         one path still answered with `lms_course_cover_missing_alt:builder`
+         while the save bar two functions up had been saying it in Ukrainian
+         for months. Same refusal, same sentence, wherever it is met. */
       toast.error(
-        result.failure === "conflict"
-          ? "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку."
-          : (result.detail ?? "Не вдалося зберегти. Спробуйте ще раз."),
+        result.failure === "conflict" ? SAVE_COPY.staleReload : courseSaveFailureCopy(result.detail, SAVE_COPY.failed),
       );
       return;
     }
@@ -526,6 +548,25 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       return;
     }
     toast.success("Курс надіслано адміністратору на перевірку.");
+    await load();
+  }
+
+  /* STAFF PUBLISH, EVERYONE ELSE SUBMITS. Same button position, same moment,
+     different verb — because for an admin the queue had exactly one reader and
+     it was them: submit here, walk to the admin panel, approve your own edit.
+     The server refuses this path for an author, so the two are not two ways of
+     doing the same thing; they are two different acts that happen to sit in
+     the same place. */
+  async function publishNow() {
+    if (working || dirty) return;
+    setBusy(true);
+    const result = await publishCourseNow(slug);
+    setBusy(false);
+    if (!result.ok) {
+      toast.error(result.detail ?? "Не вдалося опублікувати оновлення.");
+      return;
+    }
+    toast.success("Оновлення опубліковано. Учні бачать нову версію.");
     await load();
   }
 
@@ -557,14 +598,14 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     if (state.status !== "ready" || !draftDecision) return;
     history.recover(state.data.course, draftDecision.draft.course);
     setDraftDecision(null);
-    toast.success("Локальну копію відновлено. Вона збережеться як поточна версія.");
+    toast.success(SAVE_COPY.draftRestored);
   };
 
   const discardDraft = () => {
     if (!draftDecision) return;
     void clearDurableCourseDraft(draftDecision.draft.courseId).catch(() => undefined);
     setDraftDecision(null);
-    toast.success("Залишено актуальну серверну версію.");
+    toast.success(SAVE_COPY.draftDiscarded);
   };
 
   const trail = [{ label: "Курси", href: "/build" }];
@@ -706,6 +747,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       <nav className={styles.courseMobileNav} aria-label="Розділи курсу">
         <a
           className={styles.courseMobileNavItem}
+          data-cw-ink-control=""
           href="#course-overview"
           aria-current={workspaceMode === "course" ? "page" : undefined}
           onClick={(event) => {
@@ -717,6 +759,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         </a>
         <a
           className={styles.courseMobileNavItem}
+          data-cw-ink-control=""
           href="#course-structure"
           aria-current={workspaceMode === "content" ? "page" : undefined}
           onClick={(event) => {
@@ -728,6 +771,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         </a>
         <a
           className={styles.courseMobileNavItem}
+          data-cw-ink-control=""
           href="#course-offer"
           aria-current={workspaceMode === "offer" ? "page" : undefined}
           onClick={(event) => {
@@ -739,6 +783,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         </a>
         <a
           className={styles.courseMobileNavItem}
+          data-cw-ink-control=""
           href="#course-author"
           aria-current={workspaceMode === "author" ? "page" : undefined}
           onClick={(event) => {
@@ -750,6 +795,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         </a>
         <a
           className={styles.courseMobileNavItem}
+          data-cw-ink-control=""
           href="#course-release"
           aria-current={workspaceMode === "release" ? "page" : undefined}
           onClick={(event) => {
@@ -1060,7 +1106,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             <span className={styles.panelStatus}>{reviewStatusLabel(state.data)}</span>
           </div>
         </header>
-        <BuilderBlockers course={course} blockers={readiness.blockers} onNavigate={navigate} />
+        <BuilderBlockers course={course} blockers={readiness.blockers} onNavigate={openBlocker} />
         {/* THE ACCESS RULE, WHERE THE RELEASE DECISIONS ARE (2026-09-06).
 
             It used to be the only control inside a fold called «Додатково» on
@@ -1081,41 +1127,28 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           <p className={styles.panelText}>
             Оплати з цими кодами відкривають курс. Власний код курсу приймається завжди — тут лише старі назви лійок.
           </p>
-          {state.data.accessCodesEditable ? (
-            <FieldInput
-              field={{
-                path: [],
-                label: "Коди продуктів",
-                kind: "text",
-                hint: "Через кому. Порожньо — приймається лише власний код курсу.",
-              }}
-              value={course.entitlementProductCodes.join(", ")}
-              onChange={(_path, value) =>
-                editCourse(
-                  ["entitlementProductCodes"],
-                  typeof value === "string"
-                    ? value
-                        .split(",")
-                        .map((code) => code.trim())
-                        .filter(Boolean)
-                    : [],
-                )
-              }
-            />
-          ) : (
-            <p className={styles.noticeLine}>
-              {course.entitlementProductCodes.length > 0
-                ? `Коди: ${course.entitlementProductCodes.join(", ")}. Змінює власник платформи.`
-                : "Додаткових кодів немає. Змінює власник платформи."}
-            </p>
-          )}
+          {/* READ-ONLY FOR EVERYONE, INCLUDING THE OWNER (2026-09-11). The
+              control was editable for staff, which put a governance decision —
+              whose paid order opens this course — on the surface an author
+              works on, next to their cover and their lesson list. Nobody
+              authors an entitlement; it is set once, for the whole catalogue,
+              from the admin panel. Showing it here still earns its place: the
+              author can see what opens their course without being able to
+              change it. */}
+          <p className={styles.noticeLine}>
+            {course.entitlementProductCodes.length > 0
+              ? `Коди: ${course.entitlementProductCodes.join(", ")}. Змінює адміністратор.`
+              : "Додаткових кодів немає. Змінює адміністратор."}
+          </p>
         </section>
 
         <section className={styles.releaseSection}>
           <h3 className={styles.panelTitle}>Дія публікації</h3>
           <p className={styles.panelText}>
             {state.data.hasPendingRevision
-              ? "Ви редагуєте наступну версію. Учні поки бачать опублікований курс; надішліть оновлення на перевірку, коли воно готове."
+              ? state.data.canPublishDirectly
+                ? "Ви редагуєте наступну версію. Учні поки бачать опубліковану; ваші зміни поїдуть до них, щойно ви опублікуєте оновлення."
+                : "Ви редагуєте наступну версію. Учні поки бачать опублікований курс; надішліть оновлення на перевірку, коли воно готове."
               : state.data.review.enabled
                 ? "Збережіть готову структуру й надішліть її на перевірку. Після схвалення курс можна відкрити учням; видимість у каталозі окремо визначає адміністратор."
                 : "Контур модерації ще не активовано в базі. Поточне ручне тестування публікації залишається доступним."}
@@ -1127,7 +1160,16 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           <div className={styles.panelActions}>
             {published ? (
               state.data.hasPendingRevision ? (
-                state.data.review.status === "in_review" ? null : (
+                state.data.canPublishDirectly ? (
+                  <button
+                    className={styles.commitAction}
+                    type="button"
+                    onClick={() => void publishNow()}
+                    disabled={working || dirty || !readiness.ready}
+                  >
+                    Опублікувати оновлення
+                  </button>
+                ) : state.data.review.status === "in_review" ? null : (
                   <button
                     className={styles.commitAction}
                     type="button"

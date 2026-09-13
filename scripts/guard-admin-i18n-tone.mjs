@@ -106,7 +106,7 @@ async function checkNoHardcodedStrings() {
     return;
   }
   fail(
-    `admin display strings written in source instead of src/lib/i18n.ts (${offenders.length}):\n  ` +
+    `admin display strings written in source instead of src/lib/i18n/ (${offenders.length}):\n  ` +
       offenders.join("\n  "),
   );
 }
@@ -124,38 +124,59 @@ function shouldCheckKey(key) {
   return ADMIN_KEY_PREFIXES.some((prefix) => key.startsWith(prefix));
 }
 
-function parseTranslations(fileContent) {
-  const startMarker = "export const translations =";
-  const endMarker = "} as const;";
-  const start = fileContent.indexOf(startMarker);
-  const end = fileContent.lastIndexOf(endMarker);
-  if (start === -1 || end === -1) {
-    throw new Error("Unable to find translations object in src/lib/i18n.ts");
+/* READ THE SOURCE, NOT THE BUILT MODULE. The dictionary moved to paired
+   entries in `src/lib/i18n/*.ts` (2026-09-11), so this reads each area file's
+   literal rather than one `translations` object. Evaluating the literal keeps
+   the guard free of a TypeScript loader — it runs on a checkout with nothing
+   built, which is the point of a guard. */
+const I18N_DIR = "src/lib/i18n";
+
+async function parseTranslations() {
+  const files = readdirSync(I18N_DIR).filter((name) => name.endsWith(".ts"));
+  if (files.length === 0) throw new Error(`No dictionary files found in ${I18N_DIR}`);
+
+  const entries = {};
+  for (const file of files) {
+    const source = await readFile(path.join(I18N_DIR, file), "utf8");
+    const start = source.indexOf("{");
+    const end = source.lastIndexOf("} as const;");
+    if (start === -1 || end === -1) throw new Error(`Unable to read the dictionary literal in ${file}`);
+    const area = Function(`"use strict"; return (${source.slice(start, end + 1)});`)();
+    for (const [key, pair] of Object.entries(area)) {
+      if (key in entries) fail(`key "${key}" is declared in two area files`);
+      entries[key] = pair;
+    }
   }
-  const objectSource = fileContent.slice(start + startMarker.length, end + 1).trim();
-  return Function(`"use strict"; return (${objectSource});`)();
+  return entries;
 }
 
-function checkKeyParity(translations) {
-  const uk = translations.uk ?? {};
-  const en = translations.en ?? {};
-  const ukKeys = Object.keys(uk).filter(shouldCheckKey);
-  const enKeys = Object.keys(en).filter(shouldCheckKey);
+/* Parity is structural now — a pair is one object — so what is left to check is
+   that both halves are actually there and non-empty. A `{ uk }` with no `en` is
+   a type error at the entry; a `{ uk, en: "" }` is not. */
+function checkKeyParity(entries) {
+  const broken = Object.entries(entries)
+    .filter(([key]) => shouldCheckKey(key))
+    .filter(([, pair]) => !isFilled(pair?.uk) || !isFilled(pair?.en))
+    .map(([key]) => key);
 
-  const ukMissing = ukKeys.filter((key) => !(key in en));
-  const enMissing = enKeys.filter((key) => !(key in uk));
-
-  if (ukMissing.length === 0 && enMissing.length === 0) {
+  if (broken.length === 0) {
     pass("admin i18n key parity UK/EN is consistent");
     return;
   }
-  if (ukMissing.length > 0) fail(`admin keys missing in EN: ${ukMissing.join(", ")}`);
-  if (enMissing.length > 0) fail(`admin keys missing in UK: ${enMissing.join(", ")}`);
+  fail(`admin keys missing or empty in one locale: ${broken.join(", ")}`);
 }
 
-function checkTone(translations) {
-  const uk = translations.uk ?? {};
-  const en = translations.en ?? {};
+function isFilled(value) {
+  return typeof value === "string" && value.trim() !== "";
+}
+
+function localeView(entries, lang) {
+  return Object.fromEntries(Object.entries(entries).map(([key, pair]) => [key, pair?.[lang]]));
+}
+
+function checkTone(entries) {
+  const uk = localeView(entries, "uk");
+  const en = localeView(entries, "en");
 
   for (const [key, value] of Object.entries(uk)) {
     if (!shouldCheckKey(key) || typeof value !== "string") continue;
@@ -180,10 +201,9 @@ function checkTone(translations) {
 
 async function main() {
   console.log("Admin i18n/tone guard started");
-  const source = await readFile("src/lib/i18n.ts", "utf8");
-  const translations = parseTranslations(source);
-  checkKeyParity(translations);
-  checkTone(translations);
+  const entries = await parseTranslations();
+  checkKeyParity(entries);
+  checkTone(entries);
   await checkNoHardcodedStrings();
   if (process.exitCode) process.exit(process.exitCode);
   console.log("Admin i18n/tone guard passed");

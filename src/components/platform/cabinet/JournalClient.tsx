@@ -137,7 +137,6 @@ export function JournalClient() {
     lang,
     loading: sessionLoading,
     session,
-    homeHref: href("/"),
     onSignIn: () => void signInWithGoogle(),
     loadingFallback: loadingView,
   });

@@ -11,41 +11,16 @@
  * a release.
  */
 
-import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { SignInOptions } from "@/components/auth/SignInOptions";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
+import { StatePanel } from "./StatePanel";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import type { ProfileLang } from "@/components/platform/profile/types";
 import { isAuthEnabled } from "./useCabinet";
-
-function StatePanel({
-  label,
-  title,
-  lead,
-  children,
-}: {
-  label: string;
-  title: string;
-  lead: string;
-  children?: ReactNode;
-}) {
-  return (
-    <main className={surfaceStyles.profileEmptyMain} data-cw-platform-template="profile-empty">
-      <section className={`${surfaceStyles.container} ${surfaceStyles.section} ${surfaceStyles.profileEmptySection}`}>
-        <article className={`${surfaceStyles.panel} ${surfaceStyles.profileEmptyPanel}`}>
-          <p className={surfaceStyles.label}>{label}</p>
-          <h1 className={surfaceStyles.title}>{title}</h1>
-          <p className={surfaceStyles.lead}>{lead}</p>
-          {children}
-        </article>
-      </section>
-    </main>
-  );
-}
 
 /**
  * Returns the panel to render instead of the page, or null when the page may
@@ -56,7 +31,6 @@ export function cabinetGate({
   loading,
   session,
   error,
-  homeHref,
   onSignIn,
   loadingCopy,
   loadingFallback,
@@ -65,7 +39,6 @@ export function cabinetGate({
   loading: boolean;
   session: Session | null;
   error?: string | null;
-  homeHref: string;
   onSignIn: () => void;
   loadingCopy?: { label?: string; title: string; lead?: string };
   /** Route-owned loading geometry. The gate resolves session state, but the
@@ -97,19 +70,15 @@ export function cabinetGate({
     /* THE DOOR A BUYER ARRIVES AT. The receipt sends them here and tells them
        to use the address they paid with, because that address is what links the
        purchase to an account. Offering only Google made that instruction
-       impossible to follow for anyone whose mail is not Google — so the email
-       form leads, and Google sits below it for the accounts that already exist. */
+       impossible to follow for anyone whose mail is not Google — so email is
+       the second way in, one step behind at `/signin/email`.
+
+       No way back below the door: the mark in the header and the menu already
+       lead home, and a third copy of the same link reads as the panel's own
+       conclusion rather than as navigation. */
     return (
-      <StatePanel label={copy.profile} title={copy.authTitle} lead={copy.authLead}>
-        <SignInOptions
-          googleLabel={copy.signIn}
-          onGoogle={onSignIn}
-          footer={
-            <Link className={surfaceStyles.secondaryButton} href={homeHref}>
-              {copy.returnHome}
-            </Link>
-          }
-        />
+      <StatePanel label={copy.profile} title={copy.authTitle} lead={copy.authLead} compact>
+        <SignInOptions googleLabel={copy.signIn} onGoogle={onSignIn} />
       </StatePanel>
     );
   }

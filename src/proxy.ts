@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isInfraBypassPath, shouldBypassProxy } from "@/lib/proxy/bypass";
-import { resolveExperimentAssignmentRouteForRequest, withExperimentAssignmentNext } from "@/lib/proxy/experiments";
 import { rewritePersonalHostRequest } from "@/lib/proxy/personal";
 import { rewriteFunnelHostRequest, rewriteLegacyLandingEntryRequest } from "@/lib/proxy/landing";
 import { PERSONAL_HOST } from "@/lib/surfaces/catalog";
@@ -103,11 +102,6 @@ export function proxy(req: NextRequest) {
   const landingRewriteResponse = rewriteFunnelHostRequest(req);
   if (landingRewriteResponse) {
     return landingRewriteResponse;
-  }
-
-  const experimentRoute = resolveExperimentAssignmentRouteForRequest(req);
-  if (experimentRoute) {
-    return withExperimentAssignmentNext(req, experimentRoute);
   }
 
   return NextResponse.next();

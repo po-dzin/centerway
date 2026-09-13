@@ -25,6 +25,13 @@ const SHARED_STYLES = [
   "/shared/css/foundation.css",
   "/shared/css/pages.css",
   "/shared/css/landing.bridge.css",
+  /* The selection stroke, shared with the five `.cwn` landings. `short` and
+     `irem` build their head from THIS list rather than from their own file's
+     <link> tags, so a stylesheet that is not named here does not reach them —
+     which is the same trap the tokens note above describes. Their nav rows
+     carry the ink markup now; without this they would carry it and draw
+     nothing. */
+  "/shared/css/ink.css",
 ];
 
 const SHARED_SCRIPTS = ["/shared/js/landing-pixel.js", "/shared/js/landing-runtime.js"];
@@ -76,7 +83,6 @@ export function getLandingShellAssets(product: StaticLandingProduct) {
     scripts,
     pixelScript: SHARED_SCRIPTS[0],
     runtimeScript: SHARED_SCRIPTS[1],
-    bridgeStylesheet: SHARED_STYLES[3],
   };
 }
 

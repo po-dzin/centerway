@@ -72,8 +72,8 @@ const platformDarkMap = buildMap(
 //
 // Only pairs that actually render as text-on-surface are asserted. The
 // `.cw-btn-primary` label/fill IS a rendered pair in both themes (the class is
-// defined in globals.css from --cw-btn-primary-*, consumed by RouteAuthGate
-// and the dosha test), so it is checked below at body AA — its label is 14px
+// defined in globals.css from --cw-btn-primary-*, consumed by the dosha test
+// and the sign-in gates), so it is checked below at body AA — its label is 14px
 // semibold, which is not WCAG "large", so 4.5 applies.
 const AA_BODY = 4.5;
 const AA_LARGE = 3.0;
@@ -176,7 +176,7 @@ const pairs = [
     context: "doorway title on scrim",
   },
   { theme: "light", fg: "--cw-sem-warmth", bg: "--cw-mat-scrim-ink", min: AA_BODY, context: "doorway lead on scrim" },
-  // .cw-btn-primary — rendered primary button (RouteAuthGate, dosha test), 14px semibold label => body AA
+  // .cw-btn-primary — rendered primary button (dosha test, sign-in gates), 14px semibold label => body AA
   {
     theme: "light",
     fg: "--cw-btn-primary-text",

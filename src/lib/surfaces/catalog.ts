@@ -77,11 +77,27 @@ export const PROFILE_PATH_PREFIX = "/profile";
  */
 export const JOURNAL_PATH_PREFIX = "/journal";
 
+/**
+ * The door, and why it is a personal address rather than a public one.
+ *
+ * Signing in produces a session, and a session is what every personal surface
+ * is for — the shelf, the player, the cabinet, the builder. The wall that
+ * offers the door is only ever rendered on those surfaces, so the door itself
+ * belongs on the origin they live on: run it on `www` and the OAuth callback
+ * would land on the public host and the person would arrive back at a page
+ * that has nothing of theirs on it.
+ *
+ * Like `/profile` and `/build`, and unlike the learner tree, it keeps its
+ * segment: `my/signin/email` IS the address.
+ */
+export const SIGNIN_PATH_PREFIX = "/signin";
+
 export const PERSONAL_PATH_PREFIXES = [
   LEARNING_PATH_PREFIX,
   BUILDER_PATH_PREFIX,
   PROFILE_PATH_PREFIX,
   JOURNAL_PATH_PREFIX,
+  SIGNIN_PATH_PREFIX,
 ] as const;
 
 /** True for a path owned by the personal host, prefix-exact. */
@@ -160,7 +176,7 @@ export function isPublicRootPath(pathname: string): boolean {
 export function personalRouteFor(pathname: string): string {
   /* The prefixes that are addresses in their own right. Everything else on
      this host is a course, so it goes under the learner tree. */
-  for (const prefix of [BUILDER_PATH_PREFIX, PROFILE_PATH_PREFIX, JOURNAL_PATH_PREFIX]) {
+  for (const prefix of [BUILDER_PATH_PREFIX, PROFILE_PATH_PREFIX, JOURNAL_PATH_PREFIX, SIGNIN_PATH_PREFIX]) {
     if (pathname === prefix || pathname.startsWith(`${prefix}/`)) return pathname;
   }
   return pathname === "/" ? LEARNING_PATH_PREFIX : `${LEARNING_PATH_PREFIX}${pathname}`;

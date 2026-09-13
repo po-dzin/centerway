@@ -21,7 +21,6 @@
     "src/components/platform/PlatformShell.module.css .menuFold summary": "48px box takes md 16, this says radius-sm",
     "src/components/platform/PlatformShell.module.css .profileWrapMobile button": "48px box takes md 16, this says radius-sm",
     "src/components/platform/cabinet/Cabinet.module.css .authorPhotoPreview": "208px box takes xl 28, this says radius-md",
-    "src/components/platform/cabinet/Cabinet.module.css .photoCropOpen": "28px box takes md 16, this says radius-sm",
     "src/components/platform/cabinet/Cabinet.module.css .authorBackgroundEmpty": "112px box takes lg 20, this says radius-md"
   },
   "offScaleSpacing": {
@@ -63,7 +62,6 @@
     "src/landing-static/short-b/css/short-b.theme.css": 2
   },
   "landingOffScaleSpacing": {
-    "src/landing-static/shared/css/funnel-network.css": 1,
     "src/landing-static/shared/css/landing.bridge.css": 4,
     "src/landing-static/shared/css/landing.css": 1,
     "src/landing-static/shared/css/network-nav.css": 1,

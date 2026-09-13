@@ -134,7 +134,6 @@ export function LearnShelfClient() {
 
   const href = useSurfaceHref();
   const programsHref = href("/programs");
-  const homeHref = href("/");
 
   /* Loading states answer only «the current content is loading». They must not
      preview the page's eventual title: Builder already uses this exact shared
@@ -156,7 +155,6 @@ export function LearnShelfClient() {
     lang,
     loading,
     session,
-    homeHref,
     onSignIn: () => void signInWithGoogle(),
     loadingFallback: shelfLoading,
   });

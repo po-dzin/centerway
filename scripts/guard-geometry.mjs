@@ -37,8 +37,9 @@
  *        · text in a capsule — chips and badges — takes `pill`, because a
  *          chip's radius is `height / 2` by construction and therefore is not a
  *          step on any scale.
- *   4. One vocabulary. `tailwind.config.js` must map its `borderRadius` scale
- *      onto `--cw-radius-*`, or the Control Panel silently runs Tailwind's own
+ *   4. One vocabulary. No Tailwind config and no `@tailwind` directive may
+ *      return (the admin left Tailwind on 2026-09-13); before that, the config
+ *      had to map its `borderRadius` scale onto `--cw-radius-*`, or the panel silently ran Tailwind's own
  *      6/8/12/16/24 underneath the platform's 6/12/16/20/28 — which is where
  *      `lg` came to mean two different numbers in one product.
  *   5. Spacing is a RATCHET, not a wall. 279 off-scale values cannot be fixed
@@ -255,27 +256,31 @@ for (const file of cssFiles()) {
   }
 }
 
-/* 4. One vocabulary: the panel's Tailwind classes must resolve to our steps. */
-const tailwind = fs.readFileSync(path.join(repoRoot, "tailwind.config.js"), "utf8");
-const tailwindRadius = /borderRadius:\s*\{([^}]*)\}/.exec(tailwind)?.[1] ?? "";
-const tailwindValues = [...tailwindRadius.matchAll(/:\s*"([^"]+)"/g)].map((m) => m[1]);
-if (!tailwindValues.length) {
-  failures.push({
-    kind: "second radius vocabulary",
-    file: "tailwind.config.js",
-    selector: "theme.extend.borderRadius",
-    detail: "unset — the Control Panel falls back to Tailwind's own 6/8/12/16/24 scale",
-  });
-} else {
-  for (const value of tailwindValues) {
-    if (value !== "0" && !value.includes("--cw-radius-")) {
-      failures.push({
-        kind: "second radius vocabulary",
-        file: "tailwind.config.js",
-        selector: "theme.extend.borderRadius",
-        detail: `${value} is not a --cw-radius-* step`,
-      });
-    }
+/* 4. One vocabulary, and it cannot come back.
+   This used to require `tailwind.config.js` to map Tailwind's radius names onto
+   `--cw-radius-*`, because the admin ran on Tailwind and a second radius scale
+   was one missing line away. The admin left Tailwind on 2026-09-13 and the
+   config went with it, so the check now guards the door instead of the room:
+   no Tailwind config, and no `@tailwind` directive in the global stylesheet. */
+for (const name of ["tailwind.config.js", "tailwind.config.ts", "tailwind.config.mjs", "tailwind.config.cjs"]) {
+  if (fs.existsSync(path.join(repoRoot, name))) {
+    failures.push({
+      kind: "second radius vocabulary",
+      file: name,
+      selector: "(file)",
+      detail: "a Tailwind config is back — the product runs one scale, --cw-radius-*, through CSS modules",
+    });
+  }
+}
+{
+  const globals = fs.readFileSync(path.join(repoRoot, "src", "app", "globals.css"), "utf8");
+  if (/^\s*@tailwind\b/m.test(globals)) {
+    failures.push({
+      kind: "second radius vocabulary",
+      file: "src/app/globals.css",
+      selector: "@tailwind",
+      detail: "a @tailwind directive is back in the global stylesheet",
+    });
   }
 }
 

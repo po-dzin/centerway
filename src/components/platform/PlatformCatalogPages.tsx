@@ -131,11 +131,17 @@ export async function PlatformProgramsIndexPage() {
         <section className={`${offerStyles.container} ${offerStyles.section} ${offerStyles.sectionFlow}`}>
           <article className={offerStyles.panel}>
             <p className={offerStyles.label}>Як обирати</p>
+            {/* A heading, not just the eyebrow (2026-09-13): the panel was the
+                only section on this page that answered its question with a
+                label alone, so a reader scanning headings skipped it. Each
+                point is its own sentence — they are four separate answers, not
+                one list-sentence broken by semicolons. */}
+            <h2 className={offerStyles.sectionTitle}>Короткий вхід чи глибока програма</h2>
             <ul className={offerStyles.timeline}>
-              <li>міні-курси — для короткого входу без довгого зобов&apos;язання;</li>
-              <li>програми — для глибшої роботи з тілом, харчуванням, рухом і ритмом;</li>
-              <li>продукти винесені в окремий агрегатор, бо це інший тип поверхні і рішення;</li>
-              <li>якщо стан неясний, спочатку тест доши або консультація.</li>
+              <li>Міні-курси — для короткого входу без довгого зобов&apos;язання.</li>
+              <li>Програми — для глибшої роботи з тілом, харчуванням, рухом і ритмом.</li>
+              <li>Продукти зібрані окремо: це інший формат і інше рішення.</li>
+              <li>Якщо стан неясний, почніть із тесту доші або консультації.</li>
             </ul>
           </article>
         </section>

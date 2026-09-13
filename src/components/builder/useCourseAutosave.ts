@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Course } from "@/lms-core";
 import { acknowledgeDurableCourseDraft, writeDurableCourseDraft } from "./courseDraftStore";
+import { SAVE_COPY } from "./courseSaveCopy";
 
 const AUTOSAVE_DELAY_MS = 1_500;
 
@@ -161,7 +162,7 @@ export function useCourseAutosave({
           await durable.write;
           const result = await persistRef.current(snapshot).catch((): AutosaveResult => ({
             ok: false,
-            message: "Не вдалося зберегти. Спробуйте ще раз.",
+            message: SAVE_COPY.failed,
           }));
           if (result.ok) {
             markSavedRef.current(snapshot);

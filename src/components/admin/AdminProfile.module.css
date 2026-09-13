@@ -1,0 +1,439 @@
+/*
+ * ONE CUSTOMER: who they are, how to reach them, what they can open, what they
+ * bought, and what happened, in that order.
+ *
+ * Out of Tailwind on 2026-09-13. Three decisions came with it that were not
+ * renames:
+ *
+ *  - The timeline's markers were the four status BADGE classes, which only
+ *    carried colour. Badges are capsules now (shape and colour together), so a
+ *    36px square marker wearing one would turn into a pill. The marker takes
+ *    the status tokens directly instead — same colours, its own shape.
+ *  - The connector between two events was `ml-[18px]`, half the marker typed
+ *    as a number off the spacing scale. It is drawn centred in a box the width
+ *    of the marker, so it stays under the marker whatever the marker becomes.
+ *  - The loading skeleton's corners follow the radius ladder for each box, as
+ *    everything else does. The note that used to sit on it argued from the old
+ *    Tailwind radius mapping, which this file is part of retiring.
+ */
+
+/* ── Where you are ─────────────────────────────────────────────────────── */
+
+.crumbs {
+  composes: cw-muted from global;
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  font-size: var(--ds-type-label-size);
+}
+
+.crumbLink {
+  composes: cw-link-hover from global;
+}
+
+.crumbCurrent {
+  max-width: 15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Who they are ──────────────────────────────────────────────────────── */
+
+/* THE FACTS WRAP UNDER THE NAME ON A PHONE (2026-09-13). Side by side at 375px
+   the identity column got what the avatar and the facts left over: the name
+   ellipsised to «Оксана …» and the UUID broke into four lines. Below 640px the
+   facts take their own row, left-aligned, so the name has the card's width. */
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--cw-space-sm) var(--cw-space-lg);
+}
+
+.avatar {
+  flex: 0 0 auto;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--cw-radius-pill);
+  object-fit: cover;
+}
+
+.avatarFallback {
+  composes: avatar;
+  composes: cw-surface-2 cw-muted from global;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--ds-type-lead-size);
+  font-weight: 700;
+}
+
+.identity {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.name {
+  margin: 0;
+  overflow: hidden;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-display-size);
+  font-weight: 700;
+  line-height: var(--ds-type-display-line-height);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.id {
+  composes: cw-muted from global;
+  margin: var(--cw-space-2xs) 0 0;
+  overflow: hidden;
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+  margin-top: var(--cw-space-sm);
+}
+
+.tagChip {
+  composes: cw-surface-2 cw-muted from global;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+  font-size: var(--ds-type-label-size);
+}
+
+.notes {
+  composes: cw-page-subtitle from global;
+  margin: var(--cw-space-sm) 0 0;
+  font-size: var(--ds-type-body-sm-size);
+  font-style: italic;
+}
+
+.identity {
+  flex-basis: calc(100% - 3.5rem - var(--cw-space-lg));
+}
+
+.facts {
+  flex: 1 0 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--cw-space-xs);
+  padding-left: calc(3.5rem + var(--cw-space-lg));
+}
+
+.facts > * {
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .identity {
+    flex-basis: auto;
+  }
+
+  .facts {
+    flex: 0 0 auto;
+    display: block;
+    padding-left: 0;
+    text-align: right;
+  }
+
+  .factStrong,
+  .factGap {
+    margin-top: var(--cw-space-2xs);
+  }
+}
+
+.factLine {
+  composes: cw-muted from global;
+  margin: 0;
+  font-size: var(--ds-type-label-size);
+}
+
+.factStrong {
+  composes: factLine;
+  margin-top: var(--cw-space-2xs);
+  font-weight: 500;
+}
+
+.factGap {
+  composes: factLine;
+  margin-top: var(--cw-space-xs);
+}
+
+/* ── The two columns ───────────────────────────────────────────────────── */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-lg);
+}
+
+@media (min-width: 1024px) {
+  .layout {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .main {
+    grid-column: span 2;
+  }
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-lg);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-md);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+}
+
+.groupTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+}
+
+.groupCount {
+  composes: cw-muted from global;
+  font-weight: 400;
+}
+
+.note {
+  composes: cw-muted from global;
+  margin: 0;
+  font-size: var(--ds-type-label-size);
+}
+
+.noteSpaced {
+  composes: note;
+  padding-block: var(--cw-space-md);
+}
+
+/* ── Contacts, access, orders ──────────────────────────────────────────── */
+
+.contact {
+  composes: tile from "./AdminSurfaces.module.css";
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+}
+
+.contactKindTag {
+  composes: cw-surface-2 cw-muted from global;
+  flex: 0 0 auto;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+  font-size: var(--ds-type-label-size);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.contactValue {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-label-size);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contactMark {
+  flex: 0 0 auto;
+}
+
+.tileTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 500;
+}
+
+.tileMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  margin-top: var(--cw-space-2xs);
+}
+
+.stateMuted {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+}
+
+.tileFoot {
+  composes: cw-muted from global;
+  margin: var(--cw-space-2xs) 0 0;
+  font-size: var(--ds-type-label-size);
+}
+
+.orderHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+}
+
+.orderRef {
+  composes: cw-muted from global;
+  overflow: hidden;
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.orderState {
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+}
+
+.orderAmount {
+  margin: var(--cw-space-2xs) 0 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 700;
+}
+
+.orderCurrency {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+  font-weight: 400;
+}
+
+/* ── What happened ─────────────────────────────────────────────────────── */
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+}
+
+.event {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cw-space-sm);
+}
+
+.eventMark {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid transparent;
+  border-radius: var(--cw-radius-md);
+}
+
+.eventMarkOrder {
+  composes: eventMark;
+  border-color: color-mix(in srgb, var(--cw-status-success) 30%, transparent);
+  background-color: var(--cw-status-success-soft);
+  color: var(--cw-status-success);
+}
+
+.eventMarkEvent {
+  composes: eventMark;
+  border-color: color-mix(in srgb, var(--cw-status-running) 30%, transparent);
+  background-color: var(--cw-status-running-soft);
+  color: var(--cw-status-running);
+}
+
+.eventBody {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-top: var(--cw-space-2xs);
+}
+
+.eventTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.eventMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  margin-top: var(--cw-space-2xs);
+}
+
+.eventAside {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+}
+
+.eventLink {
+  width: 2.25rem;
+  height: var(--cw-space-sm);
+  margin-top: var(--cw-space-2xs);
+  background: linear-gradient(var(--cw-border), var(--cw-border)) center / 1px 100% no-repeat;
+}
+
+/* ── Waiting ───────────────────────────────────────────────────────────── */
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-md);
+  animation: profileWait 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes profileWait {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading {
+    animation: none;
+  }
+}
+
+.skeletonLine {
+  composes: cw-skeleton-row from global;
+  width: 9rem;
+  height: 1.25rem;
+}
+
+/* The ladder decides, not the card it stands in for: `guard:geometry` refused
+   `xl` on a 128px box, and the radius is a function of the box. */
+.skeletonCard {
+  composes: cw-skeleton-row from global;
+  height: 8rem;
+  border-radius: var(--cw-radius-lg);
+}
+
+.skeletonBody {
+  composes: cw-skeleton-row from global;
+  height: 18rem;
+  border-radius: var(--cw-radius-xl);
+}

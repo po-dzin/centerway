@@ -83,6 +83,19 @@ describe("the duration", () => {
   });
 });
 
+describe("the pretitle", () => {
+  /* The mirror of the subtitle, and the one of the author's three lines that
+     had nowhere to go: it reached the catalogue card and stopped there, so a
+     card said more about an offer than the offer's own page did. */
+  it("carries the author's line above the name, as written", () => {
+    expect(toOfferSurface(course({ pretitle: "Авторський курс" })).pretitle).toBe("Авторський курс");
+  });
+
+  it("stays absent when the author wrote none — there is nothing to parse it out of", () => {
+    expect(toOfferSurface(course({})).pretitle).toBeUndefined();
+  });
+});
+
 describe("the subtitle", () => {
   it("prefers the field over the dash the parser used to look for", () => {
     const surface = toOfferSurface(
@@ -96,6 +109,16 @@ describe("the subtitle", () => {
 
   it("keeps parsing the dash for courses written before the field", () => {
     expect(toOfferSurface(course({ title: "Розвантажувальний день — практикум" })).subtitle).toBe("практикум");
+  });
+
+  /* The pair the offer page is built on: the short name goes on cards, crumbs
+     and buttons; the offer page has room for the line the author wrote and
+     prints it whole. Both were the trimmed string until 2026-09-11, so the one
+     surface with space for the full title was the one showing the least. */
+  it("keeps the author's whole line for the page that has room for it", () => {
+    const surface = toOfferSurface(course({ title: "Ритуал душі — короткий вхід" }));
+    expect(surface.title).toBe("Ритуал душі");
+    expect(surface.fullTitle).toBe("Ритуал душі — короткий вхід");
   });
 
   it("says nothing when there is nothing to say", () => {

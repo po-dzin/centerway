@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -67,20 +67,40 @@ async function checkNoClickableDivs() {
   console.log(hits);
 }
 
-async function checkDialogSemantics() {
-  const modalFiles = [
-    "src/components/admin/modals/ReconcileModal.tsx",
-    "src/components/admin/modals/JobDetailsModal.tsx",
-  ];
+/* A DIALOG EITHER CARRIES THE SEMANTICS OR DELEGATES TO THE ONE THAT DOES.
+ *
+ * This used to demand `role="dialog"` and `aria-modal="true"` in each named
+ * modal file, which was right while each of them built its own overlay and
+ * wrong the moment they stopped. On 2026-09-12 both moved onto `AdminModal` —
+ * which is where the focus trap, the Escape listener on `document`, the scroll
+ * lock and the return of focus to the opener live — and this guard failed them
+ * for it, i.e. it asked for the markup to be copied back out. A guard that
+ * punishes the fix is worse than no guard.
+ *
+ * So: `AdminModal` itself must carry the attributes, and a modal file passes by
+ * carrying them OR by mounting `AdminModal`. The list is discovered rather than
+ * typed, so a third dialog added tomorrow is checked without editing this. */
+const DIALOG_HOST = "src/components/admin/AdminModal.tsx";
 
+async function checkDialogSemantics() {
+  const host = await readFile(DIALOG_HOST, "utf8");
   let ok = true;
+  if (!host.includes('role="dialog"') || !host.includes('aria-modal="true"')) {
+    ok = false;
+    fail(`${DIALOG_HOST}: the shared dialog must carry role="dialog" and aria-modal="true"`);
+  }
+
+  const modalFiles = (await readdir("src/components/admin/modals"))
+    .filter((name) => name.endsWith(".tsx"))
+    .map((name) => `src/components/admin/modals/${name}`);
+
   for (const file of modalFiles) {
     const content = await readFile(file, "utf8");
-    const hasDialogRole = content.includes('role="dialog"');
-    const hasAriaModal = content.includes('aria-modal="true"');
-    if (!hasDialogRole || !hasAriaModal) {
+    const carriesItself = content.includes('role="dialog"') && content.includes('aria-modal="true"');
+    const delegates = content.includes("AdminModal");
+    if (!carriesItself && !delegates) {
       ok = false;
-      fail(`${file}: missing role=\"dialog\" and/or aria-modal=\"true\"`);
+      fail(`${file}: neither carries role="dialog" + aria-modal="true" nor mounts AdminModal`);
     }
   }
   if (ok) pass("modal dialog semantics present");

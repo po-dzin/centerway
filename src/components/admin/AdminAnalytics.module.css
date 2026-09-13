@@ -1,0 +1,718 @@
+/*
+ * THE DASHBOARD: its head, its two switches, and the numbers it is made of.
+ *
+ * The last page out of Tailwind (2026-09-13), and the one with the most repeats
+ * in it: a label over a number was typed out as `text-xs cw-muted` over
+ * `text-lg font-semibold cw-text mt-1` fourteen times, and a headline figure as
+ * `text-sm font-medium cw-muted` over `text-3xl font-bold mt-2 cw-text` nine.
+ * Those are two roles, `figure` and `figureHeadline`, named once.
+ *
+ * TWO SWITCHES STOP BEING CAPSULES. The courses/traffic mode and the funnel's
+ * payment/access mode were bordered segments with a tinted fill on the chosen
+ * one — the "selected" idiom the rest of the product replaced with the ink
+ * stroke. They take the stroke now. The mode keeps its own row and its own
+ * smaller type, which is what its note above the tabs asks for: it must not
+ * read as a second tab strip nested on the first.
+ */
+
+/* ── The head ──────────────────────────────────────────────────────────── */
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+}
+
+@media (min-width: 1280px) {
+  .head {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .headText {
+    max-width: 24rem;
+  }
+
+  .headControls {
+    width: auto;
+  }
+}
+
+.headControls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+  width: 100%;
+}
+
+.source {
+  composes: cw-muted from global;
+  margin: var(--cw-space-xs) 0 0;
+  font-size: var(--ds-type-label-size);
+}
+
+.sourceTight {
+  composes: source;
+  margin-top: var(--cw-space-2xs);
+}
+
+/* ── The two switches ──────────────────────────────────────────────────── */
+
+.switches {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+  padding-top: var(--cw-space-2xs);
+}
+
+.modes {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: var(--cw-space-sm);
+}
+
+/* One of two or three named choices: marked by the ink stroke from
+   `[data-cw-ink-control]` + `[aria-pressed]` in globals.css, not by a fill. */
+.mode {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ds-touch-target-min);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--cw-muted);
+  font-size: var(--ds-type-body-sm-size);
+  cursor: pointer;
+}
+
+.mode[aria-pressed="true"] {
+  color: var(--cw-platform-text);
+}
+
+/* ── Section heads and settings ────────────────────────────────────────── */
+
+.sectionHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+}
+
+.sectionTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-lead-size);
+  font-weight: 600;
+}
+
+.plateStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-md);
+}
+
+.plateIntro {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 500;
+}
+
+.groupLabel {
+  composes: cw-muted from global;
+  margin: 0 0 var(--cw-space-xs);
+  font-size: var(--ds-type-label-size);
+}
+
+.checks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cw-space-xs);
+}
+
+@media (min-width: 768px) {
+  .checks {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.checksWide {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-xs);
+}
+
+@media (min-width: 768px) {
+  .checksWide {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.modesSpaced {
+  composes: modes;
+  margin-bottom: var(--cw-space-sm);
+}
+
+/* The manual marketing inputs: five numbers on one row once there is room. */
+.inputs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-sm);
+}
+
+@media (min-width: 768px) {
+  .inputs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .inputs {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.inputLabel {
+  composes: cw-muted from global;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+  font-size: var(--ds-type-label-size);
+}
+
+/* ── Figures ───────────────────────────────────────────────────────────── */
+
+.figureLabel {
+  composes: cw-muted from global;
+  margin: 0;
+  font-size: var(--ds-type-label-size);
+}
+
+.figure {
+  margin: var(--cw-space-2xs) 0 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-lead-size);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.figureSmall {
+  composes: figure;
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.figureHeadlineLabel {
+  composes: cw-muted from global;
+  margin: 0;
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 500;
+}
+
+.figureHeadline {
+  margin: var(--cw-space-xs) 0 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-display-size);
+  font-weight: 700;
+  line-height: var(--ds-type-display-line-height);
+  font-variant-numeric: tabular-nums;
+}
+
+.figureNote {
+  composes: cw-muted from global;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+  margin-top: var(--cw-space-xs);
+  font-size: var(--ds-type-label-size);
+}
+
+.strong {
+  color: var(--cw-platform-text);
+  font-weight: 500;
+}
+
+.strongPlain {
+  color: var(--cw-platform-text);
+}
+
+.emptyNote {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-body-sm-size);
+}
+
+/* ── Grids of tiles ────────────────────────────────────────────────────── */
+
+.tiles3 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-xs);
+}
+
+.tiles7,
+.tiles9 {
+  composes: tiles3;
+}
+
+@media (min-width: 768px) {
+  .tiles3,
+  .tiles7,
+  .tiles9 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tileSpanAll {
+    grid-column: span 2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .tiles3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .tiles7 {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .tiles9 {
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+  }
+
+  .tileSpanAll {
+    grid-column: span 3;
+  }
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-sm);
+}
+
+@media (min-width: 768px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--cw-space-md);
+  }
+}
+
+@media (min-width: 1024px) {
+  .kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.tileHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+}
+
+/* Data that has never arrived: a capsule in the shape of the status badges
+   beside it, without their colour, because "nothing yet" is not a state. */
+.freshnessEmptyBadge {
+  composes: cw-muted from global;
+  display: inline-block;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border: 1px solid var(--cw-border);
+  border-radius: var(--cw-radius-pill);
+  font-size: var(--ds-type-label-size);
+  white-space: nowrap;
+}
+
+.trend {
+  margin-top: var(--cw-space-md);
+}
+
+.trendTitle {
+  margin: 0 0 var(--cw-space-xs);
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.coverage {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+}
+
+.refreshNote {
+  composes: cw-muted from global;
+  margin: 0;
+  font-size: var(--ds-type-label-size);
+  text-align: right;
+}
+
+/* ── Figures, the middle step ──────────────────────────────────────────── */
+
+/* Three sizes of number on this page, and each is a DS type step rather than a
+   Tailwind one: a diagnostic tile reads at `lead`, a section's own figures at
+   the hero-subtitle step, a headline plate at `display`. They were
+   `text-lg` / `text-2xl` / `text-3xl`. */
+.figureMid {
+  margin: var(--cw-space-2xs) 0 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-hero-subtitle-size);
+  font-weight: 700;
+  line-height: var(--ds-type-hero-subtitle-line-height);
+  font-variant-numeric: tabular-nums;
+}
+
+.figureMidMuted {
+  composes: figureMid;
+  composes: cw-muted from global;
+}
+
+.figureAside {
+  composes: cw-muted from global;
+  margin: var(--cw-space-2xs) 0 0;
+  font-size: var(--ds-type-label-size);
+}
+
+.figureTitleCase {
+  text-transform: capitalize;
+}
+
+/* ── A section on a plate ──────────────────────────────────────────────── */
+
+.sectionRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+}
+
+@media (min-width: 640px) {
+  .sectionRow {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--cw-space-md);
+  }
+}
+
+.sectionSubtitle {
+  composes: cw-muted from global;
+  margin: 0;
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.sectionMeta {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+}
+
+/* The link's size lives on its own role, not on a class that composes the
+   link recipe: `guard:buttons` owns `font-size` on anything pressable, and this
+   is a text link beside a heading, not a button. */
+.sectionAside {
+  flex: 0 0 auto;
+  font-size: var(--ds-type-label-size);
+}
+
+.subTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+}
+
+/* The head of a flush plate (a table under it runs to the edge), so the head
+   carries the plate's own padding and a rule under it. */
+.flushHead {
+  padding: var(--cw-space-md);
+  border-bottom: 1px solid var(--cw-border);
+}
+
+@media (min-width: 768px) {
+  .flushHead {
+    padding: var(--cw-space-lg);
+  }
+}
+
+.flushHeadModes {
+  composes: modes;
+  margin-top: var(--cw-space-sm);
+}
+
+/* ── Grids of section figures ──────────────────────────────────────────── */
+
+.ledger,
+.chain {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-sm);
+}
+
+@media (min-width: 640px) {
+  .ledger,
+  .chain {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .ledger {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .ledger {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .chain {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.learning {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cw-space-sm);
+}
+
+@media (min-width: 1024px) {
+  .learning {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-sm);
+}
+
+@media (min-width: 768px) {
+  .pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.kpis3 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-sm);
+}
+
+@media (min-width: 640px) {
+  .kpis3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--cw-space-md);
+  }
+}
+
+/* Where each funnel number comes from — a row of small capsules. */
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+}
+
+.sourceTag {
+  composes: cw-surface-2 cw-muted from global;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border: 1px solid var(--cw-border);
+  border-radius: var(--cw-radius-pill);
+  font-size: var(--ds-type-label-size);
+}
+
+.overviewNote {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-body-sm-size);
+}
+
+/* ── The revenue chart ─────────────────────────────────────────────────── */
+
+.chartTitle {
+  margin: 0 0 var(--cw-space-md);
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-lead-size);
+  font-weight: 500;
+}
+
+@media (min-width: 768px) {
+  .chartTitle {
+    margin-bottom: var(--cw-space-lg);
+  }
+}
+
+.chartEmpty {
+  composes: cw-muted from global;
+  padding-block: var(--cw-space-xl);
+  font-size: var(--ds-type-body-sm-size);
+  text-align: center;
+}
+
+.chart {
+  position: relative;
+  overflow: visible;
+}
+
+/* Positioned by the bar under the pointer; the horizontal position stays an
+   inline style because it IS data. The ground is the solid surface, named, not
+   typed as an inline `backgroundColor`. */
+.chartTip {
+  composes: cw-surface-solid cw-border cw-shadow cw-text from global;
+  position: absolute;
+  top: calc(-1 * var(--cw-space-xs));
+  z-index: 40;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-sm);
+  font-size: var(--ds-type-label-size);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+}
+
+.chartTipDate {
+  font-weight: 600;
+}
+
+.chartTipLine {
+  composes: cw-muted from global;
+}
+
+.chartBody {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--cw-space-xs);
+}
+
+.chartAxis {
+  position: relative;
+  flex: 0 0 auto;
+  padding-right: var(--cw-space-2xs);
+}
+
+.chartAxisSvg {
+  position: absolute;
+  inset: 0;
+}
+
+.chartScroll {
+  composes: custom-scrollbar from global;
+  flex: 1 1 auto;
+  padding-bottom: var(--cw-space-xs);
+  overflow-x: auto;
+}
+
+.chartTrack {
+  position: relative;
+  min-width: 0;
+  padding-right: var(--cw-space-2xs);
+}
+
+.chartGrid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.chartBars {
+  position: absolute;
+  left: 0;
+  right: var(--cw-space-2xs);
+  display: flex;
+  align-items: flex-end;
+  gap: var(--cw-space-2xs);
+}
+
+.chartBarSlot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+.chartBar {
+  composes: cw-chart-bar from global;
+  width: 100%;
+  border-start-start-radius: var(--cw-radius-inset);
+  border-start-end-radius: var(--cw-radius-inset);
+}
+
+/* ── The dosha test ────────────────────────────────────────────────────── */
+
+.rowBetween {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
+.shareRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+}
+
+.shareRow {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+}
+
+.shareName {
+  flex: 0 0 auto;
+  width: 8rem;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+/* A share of the whole: a track and its fill. The fill's width is the data and
+   stays inline; the two colours are named here instead of typed as inline
+   `background`s. `pill` is the drawn-bar case, and `share` is not a control. */
+.shareTrackPill {
+  flex: 1 1 auto;
+  height: 1.25rem;
+  overflow: hidden;
+  border-radius: var(--cw-radius-pill);
+  background-color: var(--cw-border);
+}
+
+.shareFillPill {
+  height: 100%;
+  border-radius: var(--cw-radius-pill);
+  background-color: var(--cw-interactive-active-border);
+}
+
+.shareValue {
+  composes: cw-muted from global;
+  flex: 0 0 auto;
+  width: 6rem;
+  font-size: var(--ds-type-body-sm-size);
+  text-align: right;
+}
+
+.tableFrame {
+  composes: subPlate from "./AdminSurfaces.module.css";
+}
+
+.plateNote {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-body-sm-size);
+  text-align: center;
+}

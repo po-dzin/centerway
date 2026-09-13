@@ -305,8 +305,8 @@ export function PlatformAccountMenu({
      anything but a Google address needs the code form, not a redirect that
      skips straight past it. This control used to `preventDefault()` and call
      Google directly, from before that form existed — the two-door pattern
-     reached every other gate in the app (`RouteAuthGate`, `CabinetGate`,
-     `BuilderShell`) and missed the one in the header, so the fastest way in
+     reached every other gate in the app (`CabinetGate`, `BuilderShell`) and
+     missed the one in the header, so the fastest way in
      was quietly the one door that did not fit everyone.
 
      THE CONTROL IS NOW A POPOVER, LIKE THE SIGNED-IN ONE — not a bare link,

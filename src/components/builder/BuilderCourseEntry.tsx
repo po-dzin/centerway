@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { courseThemeAttributes } from "@/lms-core";
 import { BuilderMenu } from "./BuilderMenu";
+import { SAVE_COPY } from "./courseSaveCopy";
 import type { BuilderCourseSummary, BuilderFailure } from "./builderClient";
 import { MEDIA_SIZES, mediaSources } from "@/lib/lms/media";
 import styles from "./Builder.module.css";
@@ -315,7 +316,7 @@ export function deleteFailureCopy(status: BuilderCourseSummary["status"], detail
 /** Same shape as `deleteFailureCopy`: the server's refusal, in the author's words. */
 export function unpublishFailureCopy(result: { failure: BuilderFailure; detail?: string }): string {
   if (result.failure === "conflict") {
-    return "Цей курс уже змінили в іншій вкладці. Відкрийте його, щоб побачити актуальну версію.";
+    return SAVE_COPY.staleOpen;
   }
   if (result.failure === "not_found") {
     return "Курсу вже немає в базі. Оновіть список.";

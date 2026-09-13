@@ -14,8 +14,6 @@ import {
   HOW_IT_WORKS_STEPS,
   RESULT_COPY,
 } from "@/lib/dosha/doshaResultCopy";
-import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
-import { CW_THEME_QUERY_KEYS } from "@/lib/generator/theme";
 import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT, doshaExitHref } from "@/lib/dosha/doshaRouting";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { heroFraming } from "@/components/platform/heroFraming";
@@ -91,10 +89,14 @@ const SESSION_STORAGE_KEY = "centerway_dosha_test_session_id";
    say otherwise. sessionStorage is the right shelf — same tab, one journey. */
 const PENDING_SAVE_KEY = "centerway_dosha_test_pending_save";
 const DEFAULT_UI_VARIANT = "dosha_test_calm_route_v1";
+/* Left over from the retired screen generator, which offered a palette per
+   query parameter. Nothing serves those palettes any more, so the only job
+   left is to take the parameters back out of the address bar — a reader who
+   follows an old link should not carry a dead switch around with them. */
+const THEME_QUERY_KEYS = ["cw_theme", "theme", "palette"] as const;
 
 type DoshaTestClientProps = {
   uiVariant?: string;
-  generatorContext?: GeneratorAnalyticsContext;
 };
 
 function getCurrentQuestion(questions: TestQuestion[], currentQuestionIndex: number): TestQuestion | null {
@@ -102,7 +104,7 @@ function getCurrentQuestion(questions: TestQuestion[], currentQuestionIndex: num
   return questions[idx] ?? null;
 }
 
-export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, generatorContext }: DoshaTestClientProps) {
+export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT }: DoshaTestClientProps) {
   const [phase, setPhase] = useState<"intro" | "question" | "loading" | "result">("intro");
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [questions, setQuestions] = useState<TestQuestion[]>([]);
@@ -177,29 +179,17 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
         scores: payload.scores,
         completedAt: payload.completedAt,
         nextStep: payload.nextStep,
-        experimentKey: payload.experimentKey ?? generatorContext?.experiment_key ?? null,
-        variantKey: payload.variantKey ?? generatorContext?.variant_key ?? null,
-        manifestId: payload.manifestId ?? generatorContext?.manifest_id ?? null,
-        manifestVersion: payload.manifestVersion ?? generatorContext?.manifest_version ?? null,
-        recipeVersion: payload.recipeVersion ?? generatorContext?.recipe_version ?? null,
-        mode: payload.mode ?? generatorContext?.mode ?? null,
-        branch: payload.branch ?? generatorContext?.branch ?? null,
-        assignmentSource: payload.assignmentSource ?? generatorContext?.assignment_source ?? null,
+        experimentKey: payload.experimentKey ?? null,
+        variantKey: payload.variantKey ?? null,
+        manifestId: payload.manifestId ?? null,
+        manifestVersion: payload.manifestVersion ?? null,
+        recipeVersion: payload.recipeVersion ?? null,
+        mode: payload.mode ?? null,
+        branch: payload.branch ?? null,
+        assignmentSource: payload.assignmentSource ?? null,
       });
     },
-    [
-      attemptId,
-      generatorContext?.assignment_source,
-      generatorContext?.branch,
-      generatorContext?.experiment_key,
-      generatorContext?.manifest_id,
-      generatorContext?.manifest_version,
-      generatorContext?.mode,
-      generatorContext?.recipe_version,
-      generatorContext?.variant_key,
-      phase,
-      uiVariant,
-    ],
+    [attemptId, phase, uiVariant],
   );
 
   const signInWithGoogle = useCallback(async (pendingSave?: PendingSave) => {
@@ -443,7 +433,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     const url = new URL(window.location.href);
     let changed = false;
 
-    for (const key of CW_THEME_QUERY_KEYS) {
+    for (const key of THEME_QUERY_KEYS) {
       if (!url.searchParams.has(key)) continue;
       url.searchParams.delete(key);
       changed = true;

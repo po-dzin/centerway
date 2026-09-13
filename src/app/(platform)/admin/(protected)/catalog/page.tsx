@@ -47,6 +47,11 @@ import type { ProductOfferRow } from "@/lib/admin/productOfferTypes";
 import { ACCESS_TERM_PRESETS } from "@/lib/admin/catalogTypes";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
+import { Icon } from "@/components/Icon";
+import pageStyles from "@/components/admin/AdminPage.module.css";
+import controls from "@/components/admin/AdminControls.module.css";
+import lists from "@/components/admin/AdminLists.module.css";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 
 const BLOCKER_KEY: Record<SaleBlocker, string> = {
   not_renderable: "catalog_blocker_not_renderable",
@@ -59,22 +64,7 @@ const BLOCKER_KEY: Record<SaleBlocker, string> = {
 };
 
 function EmptyIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="cw-muted"
-    >
-      <path d="M3 7h18M3 12h18M3 17h12" />
-    </svg>
-  );
+  return <Icon className="cw-muted" name="list" size={20} />;
 }
 
 export default function CatalogPage() {
@@ -182,10 +172,10 @@ export default function CatalogPage() {
   }, [rows, q]);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div>
-        <h2 className="cw-page-title mb-1">{t("catalog_title")}</h2>
-        <p className="cw-page-subtitle">{t("catalog_subtitle")}</p>
+    <div className={pageStyles.page}>
+      <div className={pageStyles.heading}>
+        <h2 className={pageStyles.title}>{t("catalog_title")}</h2>
+        <p className={pageStyles.subtitle}>{t("catalog_subtitle")}</p>
       </div>
 
       <AdminTabs
@@ -202,7 +192,6 @@ export default function CatalogPage() {
           if (next === "authorship") void loadAuthorship();
           if (next === "products") void loadProductOffers();
         }}
-        className="overflow-x-auto no-scrollbar"
       />
 
       {/* Authorship brings its own list and its own read, so it stands in
@@ -233,7 +222,7 @@ export default function CatalogPage() {
               title={t("catalog_title")}
               message={error}
               action={
-                <button type="button" className="px-4 py-2 cw-btn cw-surface-2 text-sm" onClick={() => void load()}>
+                <button type="button" className={`${controls.action} cw-surface-2`} onClick={() => void load()}>
                   {t("analytics_retry")}
                 </button>
               }
@@ -241,14 +230,9 @@ export default function CatalogPage() {
           ) : filtered === null ? (
             <AdminLoadingState variant="skeleton" />
           ) : filtered.length === 0 ? (
-            <AdminEmptyState
-              className="py-16"
-              iconWrapperClassName="w-12 h-12 rounded-full"
-              icon={<EmptyIcon />}
-              description={t("catalog_empty")}
-            />
+            <AdminEmptyState icon={<EmptyIcon />} description={t("catalog_empty")} />
           ) : (
-            <div className="space-y-1.5">
+            <div className={lists.list}>
               {filtered.map((row) =>
                 tab === "publication" ? (
                   <PublicationRow
@@ -288,43 +272,72 @@ export default function CatalogPage() {
 function CourseLinks({ row }: { row: CatalogRow }) {
   const { t } = useI18n();
   const href = useSurfaceHref();
-  const link = "text-xs cw-link-hover underline underline-offset-2";
-
   return (
-    <div className="flex items-center gap-3 flex-wrap">
-      <a className={link} href={href(`/learn/${row.slug}`)} target="_blank" rel="noreferrer">
-        {t("catalog_open_course")}
+    <div className={lists.itemLinks}>
+      <a
+        className={lists.itemLink}
+        data-cw-ink-control
+        href={href(`/learn/${row.slug}`)}
+        target="_blank"
+        rel="noreferrer"
+      >
+        <InteractionInkLabel variant="link">{t("catalog_open_course")}</InteractionInkLabel>
       </a>
-      <a className={link} href={href(`/programs/${row.programSlug}`)} target="_blank" rel="noreferrer">
-        {t("catalog_open_offer")}
+      <a
+        className={lists.itemLink}
+        data-cw-ink-control
+        href={href(`/programs/${row.programSlug}`)}
+        target="_blank"
+        rel="noreferrer"
+      >
+        <InteractionInkLabel variant="link">{t("catalog_open_offer")}</InteractionInkLabel>
       </a>
     </div>
   );
 }
 
-/** The state chain a course walks, printed as chips so the stuck step is visible. */
+/** The state chain a course walks, printed as chips so the stuck step is visible.
+ *
+ * WORDS, NOT COLUMN VALUES (2026-09-13). The chips used to print the raw enum —
+ * «DRAFT DRAFT HIDDEN» — and the two drafts are different facts: the author has
+ * not published, and the review was never submitted. Each chip now names its
+ * axis, so the stuck step reads without knowing the schema. An unknown value
+ * falls back to itself rather than to a blank chip. */
 function StateChips({ row }: { row: CatalogRow }) {
   const { t } = useI18n();
-  const chip = "text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide";
+  const chip = lists.tag;
+
+  const statusLabel: Record<string, string> = {
+    draft: t("catalog_status_draft"),
+    published: t("catalog_status_published"),
+  };
+  const reviewLabel: Record<string, string> = {
+    draft: t("catalog_review_draft"),
+    in_review: t("catalog_review_in_review"),
+    changes_requested: t("catalog_review_changes_requested"),
+    approved: t("catalog_review_approved"),
+  };
+  const visibilityLabel: Record<CatalogRow["visibility"], string> = {
+    hidden: t("catalog_visibility_hidden"),
+    unlisted: t("catalog_visibility_unlisted"),
+    listed: t("catalog_visibility_listed"),
+  };
+  const pendingReview = row.pendingReviewStatus ?? "draft";
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      <span className={chip}>{row.status}</span>
+    <div className={lists.chipRow}>
+      <span className={chip}>{statusLabel[row.status] ?? row.status}</span>
       {/* THE CHIP SAYS WHAT THE BUTTONS BELOW OBEY. It used to print the
                 LIVE review status beside the «оновлення» word, so a returned
                 revision on an approved course read «ОНОВЛЕННЯ · APPROVED» —
                 the one state where there is nothing to approve. */}
       <span className={chip}>
         {row.hasPendingRevision
-          ? `${t("catalog_pending_revision")} · ${row.pendingReviewStatus ?? "draft"}`
-          : row.reviewStatus}
+          ? `${t("catalog_pending_revision")} · ${reviewLabel[pendingReview] ?? pendingReview}`
+          : (reviewLabel[row.reviewStatus] ?? row.reviewStatus)}
       </span>
-      <span className={chip}>{row.visibility}</span>
-      {row.blockers.length === 0 ? (
-        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-status-paid uppercase tracking-wide">
-          {t("catalog_on_sale")}
-        </span>
-      ) : null}
+      <span className={chip}>{visibilityLabel[row.visibility] ?? row.visibility}</span>
+      {row.blockers.length === 0 ? <span className={lists.tagOnSale}>{t("catalog_on_sale")}</span> : null}
     </div>
   );
 }
@@ -353,16 +366,14 @@ function PendingChanges({ row }: { row: CatalogRow }) {
     .map(([count, label]) => `${count} ${label}`);
 
   return (
-    <div className="text-xs space-y-0.5">
-      <p className="cw-muted">
+    <div className={lists.changes}>
+      <p className={lists.changesText}>
         {t("catalog_changes_vs_live")}: {parts.length > 0 ? parts.join(" · ") : t("catalog_changes_none")}
         {/* Підпис під відправкою — з журналу: колонка зберігала коли,
                     але ніколи не зберігала хто. */}
         {diff.submittedBy ? ` · ${t("catalog_submitted_by")}: ${diff.submittedBy}` : ""}
       </p>
-      {diff.boundaryTouched ? (
-        <p className="cw-status-failed-text font-medium">{t("catalog_changes_boundary")}</p>
-      ) : null}
+      {diff.boundaryTouched ? <p className={lists.changesAlert}>{t("catalog_changes_boundary")}</p> : null}
     </div>
   );
 }
@@ -373,7 +384,7 @@ function Blockers({ row }: { row: CatalogRow }) {
   if (row.blockers.length === 0) return null;
 
   return (
-    <p className="text-xs cw-status-failed-text">
+    <p className={lists.blockers}>
       {t("catalog_blocked_by")}: {row.blockers.map((blocker) => t(BLOCKER_KEY[blocker] as never)).join(" · ")}
     </p>
   );
@@ -395,7 +406,7 @@ function ModerationNote({ row }: { row: CatalogRow }) {
      above saying why — and printing «продається» under it would be false. */
   if (row.reviewStatus === "approved" || row.blockers.length > 0) return null;
 
-  return <p className="text-xs cw-muted">{t("catalog_not_moderated")}</p>;
+  return <p className={controls.hint}>{t("catalog_not_moderated")}</p>;
 }
 
 function PublicationRow({
@@ -457,13 +468,13 @@ function PublicationRow({
   const approvable = revisionInReview || approvesLive;
 
   return (
-    <div className="cw-list-item p-4 space-y-3">
-      <div className="flex items-start gap-3">
-        <div className="flex-1 min-w-0 space-y-1">
-          <p className="text-sm font-medium cw-text truncate">{row.title}</p>
+    <div className={lists.item}>
+      <div className={lists.itemRow}>
+        <div className={lists.itemBody}>
+          <p className={lists.itemTitle}>{row.title}</p>
           <StateChips row={row} />
-          <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5">
-            <span className="font-mono">{row.slug}</span>
+          <div className={lists.itemMeta}>
+            <span className={lists.itemCode}>{row.slug}</span>
             <span>
               {t("access_course_learners")}: {row.learners}
             </span>
@@ -478,12 +489,12 @@ function PublicationRow({
       </div>
 
       {canEdit ? (
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className={controls.fields}>
           {approvable ? (
             <>
               {inReview ? (
                 <input
-                  className="cw-input px-3 py-2 text-sm flex-1"
+                  className={controls.inputGrow}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder={t("catalog_note_placeholder")}
@@ -491,7 +502,7 @@ function PublicationRow({
               ) : null}
               <button
                 type="button"
-                className="px-4 py-2 cw-btn cw-surface-2 text-sm disabled:opacity-50"
+                className={`${controls.action} cw-surface-2`}
                 disabled={busy}
                 onClick={() => void moderate("approve")}
               >
@@ -500,7 +511,7 @@ function PublicationRow({
               {inReview ? (
                 <button
                   type="button"
-                  className="px-4 py-2 cw-btn cw-btn-muted text-sm disabled:opacity-50"
+                  className={`${controls.action} cw-btn-muted`}
                   disabled={busy}
                   onClick={() => void moderate("request_changes")}
                 >
@@ -514,7 +525,7 @@ function PublicationRow({
                         hiding is offered always — taking something off the
                         storefront must never be gated on how it got there. */}
           <select
-            className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-52"
+            className={`${controls.select} ${controls.selectNarrow}`}
             value={row.visibility}
             disabled={busy}
             onChange={(e) => void moderate("set_visibility", e.target.value as CatalogRow["visibility"])}
@@ -525,7 +536,7 @@ function PublicationRow({
           </select>
         </div>
       ) : (
-        <p className="text-xs cw-muted">{t("access_role_admin_only")}</p>
+        <p className={controls.hint}>{t("access_role_admin_only")}</p>
       )}
       {canEdit ? <DeleteCourseAction row={row} onChanged={onChanged} /> : null}
     </div>
@@ -554,24 +565,24 @@ function DeleteCourseAction({ row, onChanged }: { row: CatalogRow; onChanged: ()
     }
   }
   return open ? (
-    <div className={`${surfaces.plate} space-y-3`} role="group" aria-label={t("catalog_delete")}>
-      <p className="text-sm cw-text">
+    <div className={`${surfaces.plate} ${controls.confirmGroup}`} role="group" aria-label={t("catalog_delete")}>
+      <p className={controls.confirmText}>
         {t("catalog_delete_warning")} {t("access_course_learners")}: {row.learners}.
       </p>
-      <label className="block text-sm cw-text">
+      <label className={controls.confirmLabel}>
         {t("catalog_delete_confirm")} <strong>{row.slug}</strong>
         <input
-          className="cw-input w-full mt-2"
+          className={controls.confirmInput}
           value={confirmation}
           autoComplete="off"
           onChange={(event) => setConfirmation(event.target.value)}
           disabled={busy}
         />
       </label>
-      <div className="flex flex-wrap gap-2">
+      <div className={controls.actions}>
         <button
           type="button"
-          className="cw-btn cw-btn-muted px-4 py-2"
+          className={`${controls.action} cw-btn-muted`}
           disabled={busy || confirmation !== row.slug}
           onClick={() => void remove()}
         >
@@ -579,7 +590,7 @@ function DeleteCourseAction({ row, onChanged }: { row: CatalogRow; onChanged: ()
         </button>
         <button
           type="button"
-          className="cw-btn px-4 py-2"
+          className={controls.action}
           disabled={busy}
           onClick={() => {
             setOpen(false);
@@ -591,7 +602,7 @@ function DeleteCourseAction({ row, onChanged }: { row: CatalogRow; onChanged: ()
       </div>
     </div>
   ) : (
-    <button type="button" className="cw-btn cw-btn-muted px-4 py-2 text-sm" onClick={() => setOpen(true)}>
+    <button type="button" className={`${controls.action} cw-btn-muted`} onClick={() => setOpen(true)}>
       {t("catalog_delete")}
     </button>
   );
@@ -666,12 +677,12 @@ function PricingRow({
   };
 
   return (
-    <div className="cw-list-item p-4 space-y-3">
-      <div className="flex items-start gap-3">
-        <div className="flex-1 min-w-0 space-y-1">
-          <p className="text-sm font-medium cw-text truncate">{row.title}</p>
-          <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5">
-            <span className="font-mono">{row.slug}</span>
+    <div className={lists.item}>
+      <div className={lists.itemRow}>
+        <div className={lists.itemBody}>
+          <p className={lists.itemTitle}>{row.title}</p>
+          <div className={lists.itemMeta}>
+            <span className={lists.itemCode}>{row.slug}</span>
             {row.offer ? (
               <>
                 <span>
@@ -698,9 +709,9 @@ function PricingRow({
       </div>
 
       {canEdit ? (
-        <div className="flex flex-col sm:flex-row sm:items-end gap-2">
-          <label className="flex flex-col gap-1 flex-1">
-            <span className="text-xs cw-muted">{t("catalog_amount")}</span>
+        <div className={controls.fields}>
+          <label className={controls.field}>
+            <span className={controls.fieldCaption}>{t("catalog_amount")}</span>
             <input
               type="number"
               min={0}
@@ -708,11 +719,11 @@ function PricingRow({
               inputMode="numeric"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="cw-input px-3 py-2 text-sm"
+              className={controls.input}
             />
           </label>
-          <label className="flex flex-col gap-1 flex-1">
-            <span className="text-xs cw-muted">{t("catalog_list_amount")}</span>
+          <label className={controls.field}>
+            <span className={controls.fieldCaption}>{t("catalog_list_amount")}</span>
             <input
               type="number"
               min={1}
@@ -720,16 +731,12 @@ function PricingRow({
               inputMode="numeric"
               value={listAmount}
               onChange={(e) => setListAmount(e.target.value)}
-              className="cw-input px-3 py-2 text-sm"
+              className={controls.input}
             />
           </label>
-          <label className="flex flex-col gap-1 flex-1">
-            <span className="text-xs cw-muted">{t("catalog_term")}</span>
-            <select
-              value={term}
-              onChange={(e) => setTerm(e.target.value)}
-              className="cw-input cw-select pl-3 py-2 text-sm"
-            >
+          <label className={controls.field}>
+            <span className={controls.fieldCaption}>{t("catalog_term")}</span>
+            <select value={term} onChange={(e) => setTerm(e.target.value)} className={controls.select}>
               <option value="">{t("catalog_term_unset")}</option>
               {ACCESS_TERM_PRESETS.map((days) => (
                 <option key={days} value={String(days)}>
@@ -739,12 +746,12 @@ function PricingRow({
               <option value="lifetime">{t("catalog_term_lifetime")}</option>
             </select>
           </label>
-          <div className="flex gap-2">
+          <div className={controls.actions}>
             <button
               type="button"
               onClick={() => void save()}
               disabled={busy || !amount || !term}
-              className="px-4 py-2 cw-btn cw-surface-2 text-sm disabled:opacity-50"
+              className={`${controls.action} cw-surface-2`}
             >
               {t("catalog_save_offer")}
             </button>
@@ -753,7 +760,7 @@ function PricingRow({
                 type="button"
                 onClick={() => void toggleActive(!row.offer?.active)}
                 disabled={busy}
-                className="px-4 py-2 cw-btn cw-btn-muted text-sm disabled:opacity-50"
+                className={`${controls.action} cw-btn-muted`}
               >
                 {t(row.offer.active ? "catalog_withdraw_offer" : "catalog_resume_offer")}
               </button>
@@ -761,7 +768,7 @@ function PricingRow({
           </div>
         </div>
       ) : (
-        <p className="text-xs cw-muted">{t("access_role_admin_only")}</p>
+        <p className={controls.hint}>{t("access_role_admin_only")}</p>
       )}
     </div>
   );

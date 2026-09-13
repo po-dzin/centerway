@@ -45,7 +45,7 @@ export function AdminTabs({ items, activeKey, onChange, className = "" }: AdminT
   }, []);
 
   return (
-    <div ref={barRef} className={`cw-tabbar overflow-x-auto overflow-y-hidden ${className}`.trim()}>
+    <div ref={barRef} className={`cw-tabbar ${className}`.trim()}>
       {items.map((tab) => (
         <button
           key={tab.key}

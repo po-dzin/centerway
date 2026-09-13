@@ -61,6 +61,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
            A control that accepts a value the write then discards is worse than
            a control that says it is not yours. */
           accessCodesEditable: grant.identity.isAdmin,
+          /* Whether the release panel offers a publish or a queue. Same flag,
+             deliberately: the identity that may approve is the identity that
+             may skip the wait — see the `publish/` route beside this one. */
+          canPublishDirectly: grant.identity.isAdmin,
         });
       } catch (error) {
         const message = error instanceof Error ? error.message : "unknown_error";

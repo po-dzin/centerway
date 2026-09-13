@@ -39,6 +39,7 @@
   --cw-mat-tint-hover: color-mix(in srgb, var(--cw-mat-surface) 84%, transparent);
   --cw-mat-tint-media: color-mix(in srgb, var(--cw-mat-surface) 82%, transparent);
   --cw-mat-tint-chrome: color-mix(in srgb, var(--cw-mat-surface) 30%, transparent);
+  --cw-mat-tint-opaque: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
   --cw-mat-tint-floor: 76%;
   --cw-mat-tint-media-floor: 82%;
   --cw-mat-tint-chrome-floor: 30%;
@@ -125,6 +126,11 @@
   --cw-ease-state: cubic-bezier(0.22, 0.61, 0.24, 1);
   --cw-ease-surface: cubic-bezier(0.16, 1, 0.3, 1);
   --cw-ease-network: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --cw-ink-stroke-height: 0.85rem;
+  --cw-ink-stroke-weight: 3.4;
+  --cw-ink-stroke-tilt: 0deg;
+  --cw-ink-stroke-offset: -0.7rem;
+  --cw-ink-hover-opacity: 0.68;
 }
 
 [data-cw-theme="dark"] {
@@ -135,6 +141,7 @@
   --cw-mat-tint-hover: color-mix(in srgb, var(--cw-mat-surface) 84%, transparent);
   --cw-mat-tint-media: color-mix(in srgb, var(--cw-mat-surface) 82%, transparent);
   --cw-mat-tint-chrome: color-mix(in srgb, var(--cw-mat-surface) 30%, transparent);
+  --cw-mat-tint-opaque: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
   --cw-mat-tint-floor: 76%;
   --cw-mat-tint-media-floor: 82%;
   --cw-mat-tint-chrome-floor: 30%;

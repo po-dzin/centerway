@@ -81,15 +81,29 @@ export function toOfferSurface(course: Course): OfferSurface {
        would silently restore the four-line hero for every course written
        before the field did.
 
-       `fullTitle` is the same string on purpose. The six hand-written offers
-       genuinely carry two names (see content.ts); a builder course carries one,
-       and inventing a longer one for the hero would print the very line this
-       rule exists to remove. */
+       `fullTitle` NO LONGER IS the same string (2026-09-11). It was, on the
+       argument that a builder course carries one name and inventing a longer
+       one for the hero would print the very line this rule removes. Read on a
+       real page that argument loses: the author writes a whole title, the
+       offer page is the one surface with room for it, and it was the surface
+       showing the least. So the split is now what it says on the type — `title`
+       is the short name a card, a crumb and a button carry, `fullTitle` is the
+       author's line as written, and the hero prints it whole. The four-line
+       hero this rule was written against is back as a possibility; it is now a
+       typographic decision the author can see and shorten, rather than a
+       sentence the system silently removed from their page. */
     title: offerName(course.title),
-    fullTitle: offerName(course.title),
+    fullTitle: course.title,
     /* Where the tail went, and the field that replaced the guess. The dash-split
        of the title is what this had to infer before `posttitle` existed; the
-       author's own line wins, and the parse stays for courses written that way. */
+       author's own line wins, and the parse stays for courses written that way.
+       The hero drops this when its own title already ends in it — see
+       ProgramDetailPage — so nothing says the tail twice. */
+    /* The author's line above the name, carried as written. No fallback and no
+       parse: unlike `subtitle`, this was never inferred from anything — an
+       author either wrote a надзаголовок or did not, and a page that has none
+       prints none. */
+    ...(course.pretitle ? { pretitle: course.pretitle } : {}),
     ...(course.posttitle || offerSubtitle(course.title)
       ? { subtitle: course.posttitle ?? offerSubtitle(course.title) }
       : {}),

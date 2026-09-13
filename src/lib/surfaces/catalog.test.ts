@@ -7,6 +7,7 @@ import {
   LEARNING_PATH_PREFIX,
   PROFILE_PATH_PREFIX,
   PUBLIC_ROOT_SEGMENTS,
+  SIGNIN_PATH_PREFIX,
   canonicalPersonalPath,
   isPublicRootPath,
   personalRouteFor,
@@ -24,12 +25,16 @@ describe("public root segments", () => {
     const routed = readdirSync(dir, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
-      /* Three directories in this tree are NOT public. `/learn` is the internal
+      /* Four directories in this tree are NOT public. `/learn` is the internal
          prefix the personal host rewrites onto, `/profile` is the cabinet,
-         which moved to that host on 2026-08-27, and `/journal` is the reader's
-         own writing (2026-09-10) — all three are routes here and addresses on
+         which moved to that host on 2026-08-27, `/journal` is the reader's own
+         writing (2026-09-10), and `/signin` is the door that hands out the
+         session the others need — all four are routes here and addresses on
          `my`. */
-      .filter((name) => ![LEARNING_PATH_PREFIX, PROFILE_PATH_PREFIX, JOURNAL_PATH_PREFIX].includes(`/${name}`))
+      .filter(
+        (name) =>
+          ![LEARNING_PATH_PREFIX, PROFILE_PATH_PREFIX, JOURNAL_PATH_PREFIX, SIGNIN_PATH_PREFIX].includes(`/${name}`),
+      )
       .sort();
 
     expect(routed).toEqual([...PUBLIC_ROOT_SEGMENTS].sort());
@@ -66,6 +71,14 @@ describe("the personal address ↔ route pair", () => {
        COURSE with that slug rather than as the reader's own page. */
     expect(canonicalPersonalPath("/journal")).toBe("/journal");
     expect(personalRouteFor("/journal")).toBe("/journal");
+  });
+
+  it("leaves the door's prefix alone in both directions", () => {
+    // A session is minted at an address, not at a container: `my/signin/email`
+    // is where the person is, and stripping it would send them to the shelf
+    // they have not signed into yet.
+    expect(canonicalPersonalPath("/signin/email")).toBe("/signin/email");
+    expect(personalRouteFor("/signin/email")).toBe("/signin/email");
   });
 
   it("leaves the builder's prefix alone in both directions", () => {

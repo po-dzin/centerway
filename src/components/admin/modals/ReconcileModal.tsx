@@ -4,6 +4,8 @@ import { useState } from "react";
 import { getErrorMessage } from "@/lib/errors";
 import { ORDER_STATUS_BADGE_CLASS } from "@/lib/admin/adminStatusStyles";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
+import { AdminModal } from "@/components/admin/AdminModal";
+import controls from "@/components/admin/AdminControls.module.css";
 
 interface Order {
   order_ref: string;
@@ -13,6 +15,16 @@ interface Order {
   status: string;
 }
 
+/**
+ * Marking an order paid or refunded by hand.
+ *
+ * IT BUILT ITS OWN DIALOG until 2026-09-12, and `AdminModal`'s own note had
+ * already written down what that cost: Escape bound to the overlay, so it only
+ * fired once focus was already inside; nothing moving focus into the box, so a
+ * keyboard user opened it and stayed outside; Tab walking the page behind; and
+ * the page under the scrim still scrolling. None of that was visible, which is
+ * why it survived two passes over this file.
+ */
 export function ReconcileModal({
   order,
   onClose,
@@ -58,81 +70,62 @@ export function ReconcileModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center cw-overlay"
-      onClick={onClose}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
-      }}
-    >
-      <div
-        className="cw-surface-solid border cw-border rounded-2xl cw-shadow p-6 w-full max-w-md mx-4"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label={labels.title}
-        tabIndex={-1}
-      >
-        <h3 className="text-lg font-semibold cw-text mb-1">{labels.title}</h3>
-        <p className="cw-page-subtitle mb-4">
-          {labels.order} <span className="font-mono text-xs cw-surface-2 px-1.5 py-0.5 rounded">{order.order_ref}</span>
-        </p>
-
-        <div className="space-y-3 mb-4">
-          <div className="p-3 rounded-xl cw-surface-2 text-sm">
-            <div className="flex justify-between">
-              <span className="cw-muted">{labels.product}</span>
-              <span className="font-medium cw-text">{order.product_code}</span>
-            </div>
-            <div className="flex justify-between mt-1">
-              <span className="cw-muted">{labels.amount}</span>
-              <span className="font-medium cw-text">
-                {order.amount} {order.currency}
-              </span>
-            </div>
-            <div className="flex justify-between mt-1">
-              <span className="cw-muted">{labels.status}</span>
-              <span
-                className={`text-xs px-2 py-0.5 rounded-full font-medium ${ORDER_STATUS_BADGE_CLASS[order.status] ?? "cw-surface-2 cw-muted"}`}
-              >
-                {statusLabels[order.status] ?? order.status}
-              </span>
-            </div>
-          </div>
-
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={labels.notePlaceholder}
-            rows={2}
-            className="w-full text-sm px-3 py-2 rounded-xl border cw-border cw-surface cw-text placeholder:text-[var(--cw-muted)] focus:outline-none resize-none"
-          />
-        </div>
-
-        {error && <p className="text-xs cw-status-failed-text mb-3">{error}</p>}
-
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => handle("paid")}
-            disabled={loading || order.status === "paid"}
-            className="flex-1 py-2.5 px-4 rounded-xl cw-btn-status-success disabled:opacity-40 text-sm font-semibold transition-colors"
-          >
-            {labels.confirmPaid}
+    <AdminModal
+      title={labels.title}
+      description={`${labels.order} ${order.order_ref}`}
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" onClick={onClose} className={`${controls.action} cw-btn-muted`}>
+            {labels.cancel}
           </button>
           <button
             type="button"
             onClick={() => handle("refunded")}
             disabled={loading}
-            className="py-2.5 px-3 text-sm cw-btn cw-btn-muted"
+            className={`${controls.action} cw-btn-muted`}
           >
             {labels.refund}
           </button>
-          <button type="button" onClick={onClose} className="py-2.5 px-3 text-sm cw-btn cw-btn-muted">
-            {labels.cancel}
+          <button
+            type="button"
+            onClick={() => handle("paid")}
+            disabled={loading || order.status === "paid"}
+            className={`${controls.actionPrimary} cw-btn-status-success`}
+          >
+            {labels.confirmPaid}
           </button>
+        </>
+      }
+    >
+      <div className={controls.facts}>
+        <div className={controls.factRow}>
+          <span className={controls.factLabel}>{labels.product}</span>
+          <span className={controls.factValue}>{order.product_code}</span>
+        </div>
+        <div className={controls.factRow}>
+          <span className={controls.factLabel}>{labels.amount}</span>
+          <span className={controls.factValue}>
+            {order.amount} {order.currency}
+          </span>
+        </div>
+        <div className={controls.factRow}>
+          <span className={controls.factLabel}>{labels.status}</span>
+          <span className={ORDER_STATUS_BADGE_CLASS[order.status] ?? "cw-surface-2 cw-muted"}>
+            {statusLabels[order.status] ?? order.status}
+          </span>
         </div>
       </div>
-    </div>
+
+      <textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder={labels.notePlaceholder}
+        rows={2}
+        className={controls.note}
+      />
+
+      {error ? <p className={controls.dialogError}>{error}</p> : null}
+    </AdminModal>
   );
 }

@@ -1,0 +1,540 @@
+/*
+ * THE PANEL'S SHARED CONTROLS: the search field and the dialog.
+ *
+ * Second file out of Tailwind (2026-09-12). Same rule as AdminStates: a class
+ * is named for what the element IS here, material composes from the global
+ * layer, and the local declarations are the ones the guards can only see if
+ * they live under `src/components/**`.
+ */
+
+.search {
+  position: relative;
+}
+
+/* The lens sits inside the field's own left inset, which is why the input's
+   padding below is the inset plus the glyph plus a gap — written as arithmetic
+   so that resizing the glyph does not silently overlap the text. */
+.searchGlyph {
+  composes: cw-muted from global;
+  position: absolute;
+  inset-block: 0;
+  left: var(--cw-space-sm);
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.searchField {
+  composes: cw-input from global;
+  width: 100%;
+  padding-block: var(--cw-space-xs);
+  padding-inline: calc(var(--cw-space-sm) + 1rem + var(--cw-space-xs));
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.searchClear {
+  composes: cw-link-hover from global;
+  position: absolute;
+  inset-block: 0;
+  right: var(--cw-space-sm);
+  display: flex;
+  align-items: center;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+/* ── The dialog ─────────────────────────────────────────────────────────── */
+
+.overlay {
+  composes: cw-overlay from global;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--cw-space-md);
+  overflow-y: auto;
+}
+
+@media (min-width: 640px) {
+  .overlay {
+    align-items: center;
+  }
+}
+
+.dialog {
+  composes: cw-surface-solid cw-border cw-shadow from global;
+  width: 100%;
+  max-width: 32rem;
+  margin-block: auto;
+  border-width: 1px;
+  border-style: solid;
+  /* A dialog is a sheet: the plate step, the same one AdminSurfaces gives the
+     panels it floats over. */
+  border-radius: var(--cw-radius-xl);
+}
+
+.dialogWide {
+  composes: dialog;
+  max-width: 42rem;
+}
+
+.dialogHead {
+  padding: var(--cw-space-lg) var(--cw-space-lg) var(--cw-space-sm);
+}
+
+.dialogTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-size);
+  font-weight: 600;
+}
+
+.dialogNote {
+  composes: cw-page-subtitle from global;
+  margin-top: var(--cw-space-2xs);
+}
+
+.dialogBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+  padding: 0 var(--cw-space-lg) var(--cw-space-lg);
+}
+
+/* Reversed on a phone so the confirming action sits under the thumb and the
+   way out sits above it, then read left-to-right once there is a row. */
+.dialogFoot {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-md) var(--cw-space-lg);
+  border-top: 1px solid var(--cw-border);
+}
+
+@media (min-width: 640px) {
+  .dialogFoot {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+/* ── Actions ───────────────────────────────────────────────────────────────
+ *
+ * `.cw-btn` in globals.css carries the border, the touch floor and the radius
+ * and stops there, so every call site was adding its own `px-4 py-2 text-sm
+ * font-semibold disabled:opacity-50` — which is how the panel came to have
+ * buttons at four paddings and three type steps. The metrics are here; the
+ * COLOUR stays at the call site, where `cw-btn-muted` and the status fills
+ * already live, because that is the part that genuinely varies by what the
+ * button does.
+ *
+ * No vertical padding on purpose: `.cw-btn` sets `min-height` to the touch
+ * floor, and padding on top of a min-height is how a button ends up taller than
+ * the floor it was measured against.
+ */
+.action {
+  composes: cw-btn from global;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cw-space-2xs);
+  padding-inline: var(--cw-space-md);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* The one the dialog is actually for, given the width. */
+.actionPrimary {
+  composes: action;
+  flex: 1 1 auto;
+}
+
+/* ── Inside a dialog ───────────────────────────────────────────────────────
+ * A block of facts about the thing being acted on. Not a table: two or three
+ * label/value pairs read better as rows than as a grid with one column of
+ * headings.
+ */
+.facts {
+  composes: cw-surface-2 from global;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.factRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
+.factLabel {
+  composes: cw-muted from global;
+}
+
+.factValue {
+  color: var(--cw-platform-text);
+  font-weight: 500;
+}
+
+/* A label over a block rather than beside it — the uppercase step the panel
+   uses for a field name everywhere else. */
+.fieldLabel {
+  composes: cw-muted from global;
+  display: block;
+  margin-bottom: var(--cw-space-xs);
+  font-size: var(--ds-type-label-size);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.note {
+  composes: cw-surface cw-border cw-text from global;
+  width: 100%;
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-md);
+  font-size: var(--ds-type-body-sm-size);
+  resize: none;
+}
+
+.note::placeholder {
+  color: var(--cw-muted);
+}
+
+/* Machine text — a payload, a stack, an id. The data face, not Tailwind's mono
+   stack, which is a different set of letters from the one the product uses for
+   numbers and codes everywhere else. */
+.code {
+  composes: cw-surface-2 cw-border from global;
+  display: block;
+  max-height: 40vh;
+  margin: 0;
+  padding: var(--cw-space-sm);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-md);
+  overflow: auto;
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+.codeFailed {
+  composes: code;
+  composes: cw-alert-failed from global;
+  white-space: pre-wrap;
+}
+
+.mono {
+  font-family: var(--cw-font-data);
+}
+
+.dialogError {
+  composes: cw-status-failed-text from global;
+  margin: 0;
+  font-size: var(--ds-type-label-size);
+}
+
+/* ── A disclosure ──────────────────────────────────────────────────────────
+ * A heading that opens what is under it. The whole head is the button, as it
+ * is on every chevron block in the product — see the pressable-head rule in
+ * Builder.module.css — and the chevron is its picture, not a second control:
+ * it used to carry its own `aria-label` on a span inside the button, which a
+ * screen reader never announces and which named a control that does not exist.
+ */
+.disclosureHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.disclosureTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+}
+
+.disclosureNote {
+  composes: cw-muted from global;
+  margin: var(--cw-space-2xs) 0 0;
+  font-size: var(--ds-type-label-size);
+}
+
+.disclosureMark {
+  composes: cw-icon-btn from global;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+}
+
+.disclosureChevron {
+  transition: transform var(--cw-motion-state) ease;
+}
+
+.disclosureChevronOpen {
+  composes: disclosureChevron;
+  transform: rotate(180deg);
+}
+
+.disclosureBody {
+  margin-top: var(--cw-space-sm);
+}
+
+/* ── Forms inside a row ────────────────────────────────────────────────────
+ * The catalogue tabs edit a price or an author in place, inside the list row
+ * that shows it. A column of fields on a phone, a row aligned on its baselines
+ * from 640px — the same breakpoint the dialog's foot turns at.
+ */
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+}
+
+@media (min-width: 640px) {
+  .fields {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+}
+
+.fieldStack {
+  display: grid;
+  gap: var(--cw-space-xs);
+}
+
+.field {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+.fieldCaption {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+}
+
+.input {
+  composes: cw-input from global;
+  width: 100%;
+  min-width: 0;
+  padding-inline: var(--cw-space-sm);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.inputGrow {
+  composes: input;
+  flex: 1 1 auto;
+}
+
+.select {
+  composes: cw-input cw-select from global;
+  width: 100%;
+  padding-inline-start: var(--cw-space-sm);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+/* One width for a select that sits in a row of actions. Authorship had it at
+   12rem and publication at 13rem; it is the longest visibility label that sets
+   it, and that label is the same word on both tabs. */
+@media (min-width: 640px) {
+  .selectNarrow {
+    width: 13rem;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+}
+
+.hint {
+  composes: cw-muted from global;
+  margin: 0;
+  font-size: var(--ds-type-label-size);
+}
+
+/* ── A confirmation you have to type ─────────────────────────────────────
+ * Deleting a course with history asks for its slug. The group is a plate of
+ * its own so the destructive question does not read as one more field of the
+ * row above it.
+ */
+.confirmGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+}
+
+.confirmText {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.confirmLabel {
+  display: block;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.confirmInput {
+  composes: input;
+  margin-top: var(--cw-space-xs);
+}
+
+/* ── A longer form on a plate ──────────────────────────────────────────────
+ * The personal-offer issuer: a mode, recipients, settings, a note, a preview
+ * and two actions. Same fields as everywhere else in the panel; these are only
+ * the containers a longer form needs.
+ */
+.formStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-md);
+}
+
+.formHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+}
+
+.formNote {
+  composes: cw-muted from global;
+  margin: 0;
+  font-size: var(--ds-type-body-sm-size);
+}
+
+/* A value the operator cannot change, shown in the field's own frame so it
+   reads as part of the form rather than as a caption. */
+.inputStatic {
+  composes: input;
+  composes: cw-muted from global;
+  display: flex;
+  align-items: center;
+}
+
+.textarea {
+  composes: input;
+  min-height: 7rem;
+  padding-block: var(--cw-space-xs);
+  resize: vertical;
+}
+
+.textareaShort {
+  composes: textarea;
+  min-height: 5.5rem;
+}
+
+.fieldsTwo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-sm);
+}
+
+@media (min-width: 768px) {
+  .fieldsTwo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.fileRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+}
+
+@media (min-width: 768px) {
+  .fileRow {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.formFooter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+}
+
+@media (min-width: 1024px) {
+  .formFooter {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+/* Two equal actions side by side at the foot of a form, the width of the pair
+   rather than of the page once there is room. */
+.actionPair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cw-space-xs);
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .actionPair {
+    width: 20rem;
+    margin-left: auto;
+  }
+}
+
+.actionFill {
+  composes: action;
+  width: 100%;
+}
+
+.iconActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--cw-space-xs);
+}
+
+.inlineActions {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+/* A control that takes the rest of its row — the search field beside a set of
+   facet selects. */
+.grow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* A smaller action inside a dense row: a seat's unblock, a deadline's save.
+   Still the touch floor tall — `.cw-btn` sets that — only quieter in type. */
+.actionCompact {
+  composes: action;
+  font-size: var(--ds-type-label-size);
+}

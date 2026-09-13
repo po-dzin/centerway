@@ -1,0 +1,596 @@
+/*
+ * THE PANEL'S LISTS: a column of rows, each row a small card of facts.
+ *
+ * Leads, orders, customers and jobs are all this shape, and each wrote it out
+ * in utilities — `cw-list-item p-4 space-y-3` twelve times, `space-y-2` in the
+ * leads panel, a title at `text-sm font-medium` next to a subline at `text-xs`
+ * with or without `truncate`. Named here so the four lists are one list.
+ */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-md);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+}
+
+.item {
+  composes: cw-list-item from global;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-md);
+}
+
+.itemHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
+.itemIdentity {
+  min-width: 0;
+}
+
+.itemTitle {
+  margin: 0;
+  overflow: hidden;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemSub {
+  composes: cw-muted from global;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--ds-type-label-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemControls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+.itemMeta {
+  composes: cw-muted from global;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  font-size: var(--ds-type-label-size);
+}
+
+.itemMetaStrong {
+  color: var(--cw-platform-text);
+}
+
+.itemNote {
+  composes: cw-muted from global;
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--ds-type-label-size);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.stage {
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+}
+
+/* A native select, kept native — it is the operator's fastest way through four
+   stages with a keyboard — and dressed only as far as the field it sits in. */
+.select {
+  composes: cw-surface-2 cw-border cw-text from global;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-md);
+  font-size: var(--ds-type-label-size);
+}
+
+.itemRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cw-space-sm);
+}
+
+.itemBody {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+.itemTitleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-width: 0;
+}
+
+/* A code, a slug, an order ref: the data face the product sets codes in, not
+   Tailwind's mono stack, which is a different set of letters. */
+.itemCode {
+  font-family: var(--cw-font-data);
+}
+
+/* A short uppercase word in a capsule — a status or a review state. `tag` is
+   the name the geometry guard's capsule carve-out reads. */
+.tag {
+  composes: cw-surface-2 cw-text from global;
+  flex: 0 0 auto;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+  font-size: var(--ds-type-label-size);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Who owns the row, at the row's far edge. Off on a phone, where the column is
+   too narrow for a second identity beside the first and the author is edited
+   in the form below anyway. */
+.itemAside {
+  display: none;
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+@media (min-width: 640px) {
+  .itemAside {
+    display: block;
+  }
+}
+
+.itemAsideText {
+  max-width: 13.75rem;
+  margin: 0;
+  overflow: hidden;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── A row that opens something ────────────────────────────────────────────
+ * Jobs open a dialog and customers open a profile, so their whole row is the
+ * control: one horizontal line of badge, identity, and a trailing fact. The
+ * same card as `.item`, laid out as a row.
+ */
+.itemPress {
+  composes: item;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--cw-space-md);
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* The disc a job's status dot sits in. It lifts to the plate's own ground on
+   hover, so the row answers the pointer even where the card itself does not
+   change. `status` in the name is the geometry guard's capsule carve-out. */
+.statusDisc {
+  composes: cw-surface-2 from global;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--cw-radius-pill);
+  transition:
+    background-color var(--cw-motion-state) ease,
+    border-color var(--cw-motion-state) ease;
+}
+
+@media (hover: hover) {
+  .itemPress:hover .statusDisc {
+    background-color: var(--cw-surface);
+    border-color: var(--cw-border);
+  }
+}
+
+.statusDot {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: var(--cw-radius-pill);
+}
+
+/* A running job breathes. This was Tailwind's `animate-pulse`, which is one of
+   the few animations Tailwind ships itself, so unlike `animate-in` it did run. */
+.statusDotLive {
+  composes: statusDot;
+  animation: adminStatusPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes adminStatusPulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .statusDotLive {
+    animation: none;
+  }
+}
+
+.itemTypeCode {
+  margin: 0;
+  overflow: hidden;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemIdFaint {
+  max-width: 12.5rem;
+  overflow: hidden;
+  font-family: var(--cw-font-data);
+  opacity: 0.6;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The failure reason, beside the id, where there is room for it. */
+.itemError {
+  composes: cw-status-failed-text from global;
+  display: none;
+  max-width: 12.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+  .itemError {
+    display: inline-block;
+  }
+}
+
+.itemWhen {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.itemWhenTime {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.itemWhenDate {
+  composes: cw-muted from global;
+  margin: var(--cw-space-2xs) 0 0;
+  font-size: var(--ds-type-label-size);
+}
+
+.itemEnd {
+  flex: 0 0 auto;
+}
+
+.itemTitleMissing {
+  composes: cw-muted from global;
+  font-style: italic;
+}
+
+/* ── A person ──────────────────────────────────────────────────────────── */
+
+.avatar {
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--cw-radius-pill);
+  object-fit: cover;
+}
+
+.avatarFallback {
+  composes: avatar;
+  composes: cw-surface-2 cw-muted from global;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+}
+
+/* How this person was matched — `email`, `phone`, `telegram` — ahead of the
+   value itself. */
+.linkKindTag {
+  composes: cw-surface-2 from global;
+  margin-right: var(--cw-space-2xs);
+  padding: 0 var(--cw-space-2xs);
+  border-radius: var(--cw-radius-pill);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+}
+
+.chips {
+  display: none;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--cw-space-2xs);
+  max-width: 12.5rem;
+}
+
+@media (min-width: 640px) {
+  .chips {
+    display: flex;
+  }
+}
+
+.chipTag {
+  composes: cw-surface-2 cw-muted from global;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+  font-size: var(--ds-type-label-size);
+}
+
+/* ── A course in the catalogue ─────────────────────────────────────────── */
+
+/* The two doors into the course from the row that decides its fate. Links in
+   running copy, so they take the ink link rule — the text's own colour at rest
+   — instead of a browser underline at a hand-set offset. */
+.itemLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  font-size: var(--ds-type-label-size);
+}
+
+.itemLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+.tagOnSale {
+  composes: tag;
+  composes: cw-status-paid from global;
+}
+
+.changes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+  font-size: var(--ds-type-label-size);
+}
+
+.changesText {
+  composes: cw-muted from global;
+  margin: 0;
+}
+
+/* The mandatory boundary block was touched after review. Said in the failure
+   colour and weight because approving past it is the one mistake this screen
+   exists to stop. */
+.changesAlert {
+  composes: cw-status-failed-text from global;
+  margin: 0;
+  font-weight: 500;
+}
+
+.blockers {
+  composes: cw-status-failed-text from global;
+  margin: 0;
+  font-size: var(--ds-type-label-size);
+}
+
+/* ── An order ──────────────────────────────────────────────────────────────
+ * The row stacks and the reference is never truncated: see the long note on
+ * the row in orders/page.tsx. These are the same decisions, named.
+ */
+.orderRow {
+  composes: item;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--cw-space-md);
+}
+
+/* Beside the first line, not the row's centre: a status mark qualifies the
+   identifier, and the row's height changes with the viewport. */
+.statusDotSmall {
+  flex: 0 0 auto;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+}
+
+.orderBody {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .orderBody {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--cw-space-md);
+  }
+}
+
+.orderMain {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.orderIdentity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+.orderRef {
+  min-width: 0;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.orderSub {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  min-width: 0;
+  margin-top: var(--cw-space-2xs);
+  font-size: var(--ds-type-label-size);
+}
+
+.orderSubMuted {
+  composes: cw-muted from global;
+}
+
+/* The truncation lives on its own role, not on the link: `guard:buttons` owns
+   `max-width` on anything that composes a pressable recipe, and a customer's
+   name in an order row is a text link that happens to need a measure. */
+.orderCustomerMeasure {
+  max-width: 11.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.orderCustomer {
+  composes: orderCustomerMeasure;
+  composes: cw-muted from global;
+}
+
+.orderAmount {
+  flex: 0 0 auto;
+}
+
+@media (min-width: 640px) {
+  .orderAmount {
+    text-align: right;
+  }
+}
+
+.orderSum {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+}
+
+.orderCurrency {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+  font-weight: 400;
+}
+
+.orderWhen {
+  composes: cw-muted from global;
+  margin: var(--cw-space-2xs) 0 0;
+  font-size: var(--ds-type-label-size);
+}
+
+/* A ROW ACTION THAT A FINGER CAN FIND (2026-09-13).
+   It was `opacity-0 group-hover:opacity-100`: invisible until a pointer
+   hovered the row. A phone has no hover, so on a phone the manual-reconcile
+   and resend-access buttons were permanently invisible — still tappable, if you
+   already knew where they were — and a keyboard user tabbing onto one focused a
+   control they could not see. The fade stays on devices that can hover; it
+   also lifts for keyboard focus; everywhere else the action is simply shown. */
+.rowAction {
+  flex: 0 0 auto;
+}
+
+@media (hover: hover) {
+  .rowAction {
+    opacity: 0;
+    transition: opacity var(--cw-motion-state) ease;
+  }
+
+  .orderRow:hover .rowAction,
+  .orderRow:focus-within .rowAction,
+  .rowAction:focus-visible {
+    opacity: 1;
+  }
+}
+
+/* ── Issued personal offers ────────────────────────────────────────────── */
+
+.issued {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+}
+
+.issuedEntry {
+  padding-bottom: var(--cw-space-sm);
+  border-bottom: 1px solid var(--cw-border);
+}
+
+.issuedEntry:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.issuedHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+}
+
+@media (min-width: 1024px) {
+  .issuedHead {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+}
+
+.issuedUrl {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-sm-size);
+  overflow-wrap: anywhere;
+}
+
+.itemMetaSpaced {
+  composes: itemMeta;
+  margin-top: var(--cw-space-xs);
+}

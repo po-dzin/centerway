@@ -36,26 +36,12 @@ import { useToast } from "@/components/ToastProvider";
 import { getErrorMessage } from "@/lib/errors";
 import type { ProductOfferRow } from "@/lib/admin/productOfferTypes";
 import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
+import { Icon } from "@/components/Icon";
+import controls from "@/components/admin/AdminControls.module.css";
+import lists from "@/components/admin/AdminLists.module.css";
 
 function EmptyIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="cw-muted"
-    >
-      <path d="M12 2 2 7l10 5 10-5-10-5Z" />
-      <path d="M2 17l10 5 10-5" />
-      <path d="M2 12l10 5 10-5" />
-    </svg>
-  );
+  return <Icon className="cw-muted" name="price" size={20} />;
 }
 
 export function ProductPricingTab({
@@ -72,18 +58,11 @@ export function ProductPricingTab({
   const { t } = useI18n();
 
   if (products.length === 0) {
-    return (
-      <AdminEmptyState
-        className="py-16"
-        iconWrapperClassName="w-12 h-12 rounded-full"
-        icon={<EmptyIcon />}
-        description={t("catalog_empty")}
-      />
-    );
+    return <AdminEmptyState icon={<EmptyIcon />} description={t("catalog_empty")} />;
   }
 
   return (
-    <div className="space-y-1.5">
+    <div className={lists.list}>
       {products.map((row) => (
         <ProductPricingRow key={row.code} row={row} canEdit={canEdit} errorText={errorText} onChanged={onChanged} />
       ))}
@@ -149,12 +128,12 @@ function ProductPricingRow({
   };
 
   return (
-    <div className="cw-list-item p-4 space-y-3">
-      <div className="flex items-start gap-3">
-        <div className="flex-1 min-w-0 space-y-1">
-          <p className="text-sm font-medium cw-text truncate">{row.title}</p>
-          <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5">
-            <span className="font-mono">{row.code}</span>
+    <div className={lists.item}>
+      <div className={lists.itemRow}>
+        <div className={lists.itemBody}>
+          <p className={lists.itemTitle}>{row.title}</p>
+          <div className={lists.itemMeta}>
+            <span className={lists.itemCode}>{row.code}</span>
             {row.offer && row.offer.amount != null ? (
               <span>
                 {row.offer.amount} {row.offer.currency}
@@ -168,16 +147,16 @@ function ProductPricingRow({
               <span className="cw-status-failed-text">{t("products_inactive")}</span>
             ) : null}
           </div>
-          <p className="text-xs cw-muted">
+          <p className={controls.hint}>
             {t(row.expectedKind === "lead" ? "products_offer_lead" : "products_offer_checkout")}
           </p>
         </div>
       </div>
 
       {canEdit ? (
-        <div className="flex flex-col sm:flex-row sm:items-end gap-2">
-          <label className="flex flex-col gap-1 flex-1">
-            <span className="text-xs cw-muted">{t("products_amount")}</span>
+        <div className={controls.fields}>
+          <label className={controls.field}>
+            <span className={controls.fieldCaption}>{t("products_amount")}</span>
             <input
               type="number"
               min={1}
@@ -186,11 +165,11 @@ function ProductPricingRow({
               placeholder={t("products_price_on_request")}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="cw-input px-3 py-2 text-sm"
+              className={controls.input}
             />
           </label>
-          <label className="flex flex-col gap-1 flex-1">
-            <span className="text-xs cw-muted">{t("products_list_amount")}</span>
+          <label className={controls.field}>
+            <span className={controls.fieldCaption}>{t("products_list_amount")}</span>
             <input
               type="number"
               min={1}
@@ -198,26 +177,26 @@ function ProductPricingRow({
               inputMode="numeric"
               value={listAmount}
               onChange={(e) => setListAmount(e.target.value)}
-              className="cw-input px-3 py-2 text-sm"
+              className={controls.input}
             />
           </label>
-          <label className="flex flex-col gap-1 flex-1">
-            <span className="text-xs cw-muted">{t("products_kind")}</span>
+          <label className={controls.field}>
+            <span className={controls.fieldCaption}>{t("products_kind")}</span>
             <select
               value={kind}
               onChange={(e) => setKind(e.target.value === "checkout" ? "checkout" : "lead")}
-              className="cw-input cw-select pl-3 py-2 text-sm"
+              className={controls.select}
             >
               <option value="checkout">{t("products_kind_checkout")}</option>
               <option value="lead">{t("products_kind_lead")}</option>
             </select>
           </label>
-          <div className="flex gap-2">
+          <div className={controls.actions}>
             <button
               type="button"
               onClick={() => void save()}
               disabled={busy}
-              className="px-4 py-2 cw-btn cw-surface-2 text-sm disabled:opacity-50"
+              className={`${controls.action} cw-surface-2`}
             >
               {t("products_save")}
             </button>
@@ -226,7 +205,7 @@ function ProductPricingRow({
                 type="button"
                 onClick={() => void toggleActive(!row.offer?.active)}
                 disabled={busy}
-                className="px-4 py-2 cw-btn cw-btn-muted text-sm disabled:opacity-50"
+                className={`${controls.action} cw-btn-muted`}
               >
                 {t(row.offer.active ? "products_withdraw" : "products_resume")}
               </button>
@@ -234,9 +213,9 @@ function ProductPricingRow({
           </div>
         </div>
       ) : (
-        <p className="text-xs cw-muted">{t("access_role_admin_only")}</p>
+        <p className={controls.hint}>{t("access_role_admin_only")}</p>
       )}
-      <p className="text-[11px] cw-muted">{t("products_amount_hint")}</p>
+      <p className={controls.hint}>{t("products_amount_hint")}</p>
     </div>
   );
 }

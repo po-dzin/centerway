@@ -85,3 +85,152 @@
   border-radius: var(--cw-radius-lg);
   padding: var(--cw-space-sm);
 }
+
+/* ── Tables ────────────────────────────────────────────────────────────────
+ *
+ * THE SAME THREE DECISIONS, TYPED SEVEN WAYS (2026-09-11).
+ *
+ * The admin has eight tables and seven of them are on one page, which is how
+ * this stayed invisible: nothing ever showed two of them side by side. Between
+ * them they carried FOUR head-cell recipes, FIVE cell paddings and TWO row
+ * recipes — and two of the four head cells were the same declarations in a
+ * different word order (`px-4 py-2 text-left cw-muted uppercase text-xs` and
+ * `px-4 py-2 text-left text-xs cw-muted uppercase`), which is the clearest
+ * proof available that nobody was choosing: they were copying whatever
+ * neighbour was nearest.
+ *
+ * Two densities, because two is what the content asks for: a table of products
+ * or campaigns is read a row at a time and is given room, while a diagnostics
+ * table is scanned as a block and is not. Nothing else varies — the type step,
+ * the head's ground, the rule between rows and the hover are one decision each.
+ *
+ * A HEAD CELL AND ITS COLUMN SHARE THEIR HORIZONTAL PADDING, always, or the
+ * heading stops sitting over the column it names. That is why the pairs are
+ * named together here and why a table moves density as a whole.
+ *
+ * The row hover used to be on two of the seven. It is a reading aid on a wide
+ * row, not a promise that the row is clickable — none of them are — so it is on
+ * all of them now rather than on the two that happened to get it.
+ */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.tableDense {
+  composes: table;
+}
+
+/* The head is a ground, not a border: the rule under it comes from the first
+   row's own top rule, so a table with no rows does not draw a line to nowhere. */
+.tableHead {
+  composes: cw-surface-2 from global;
+}
+
+/* The colour is composed rather than restated, the way every other role in
+   this file composes its material: a head cell is muted text, and if the admin
+   ever retunes what muted means it retunes here too. `composes` cannot sit on a
+   grouped selector, which is why the two densities carry the shared type
+   treatment in a third class instead of sharing a selector. */
+.thType {
+  font-size: var(--ds-type-label-size);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  line-height: var(--ds-type-label-line-height);
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.th {
+  composes: cw-muted from global;
+  composes: thType;
+  padding: var(--cw-space-sm) var(--cw-space-md);
+}
+
+@media (min-width: 768px) {
+  .th {
+    padding-inline: var(--cw-space-lg);
+  }
+}
+
+.thDense {
+  composes: cw-muted from global;
+  composes: thType;
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+}
+
+.td {
+  padding: var(--cw-space-md);
+}
+
+@media (min-width: 768px) {
+  .td {
+    padding-inline: var(--cw-space-lg);
+  }
+}
+
+.tdDense {
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+}
+
+.row {
+  composes: cw-row-hover from global;
+  border-top: 1px solid var(--cw-border);
+}
+
+/* ── Cells that hold machine text ──────────────────────────────────────── */
+
+.scrollX {
+  overflow-x: auto;
+}
+
+.tdCode {
+  composes: td;
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  white-space: nowrap;
+}
+
+.tdCodeMuted {
+  composes: tdCode;
+  composes: cw-muted from global;
+}
+
+.tdStrong {
+  composes: td;
+  composes: cw-text from global;
+  font-weight: 500;
+}
+
+/* The verb an audit row records, in a capsule so a column of them reads as a
+   list of actions rather than of sentences. */
+.actionTag {
+  composes: cw-surface-2 from global;
+  display: inline-block;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+  font-size: var(--ds-type-label-size);
+}
+
+.entityRef {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+}
+
+.metadata {
+  composes: cw-muted from global;
+  max-width: 20rem;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A cell whose value must stay on one line: counts, sums, dates. */
+.nowrap {
+  white-space: nowrap;
+}

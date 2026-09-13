@@ -49,6 +49,8 @@ export type BuilderCourseDto = {
   slugEditable: boolean;
   /** True only for an owner: the access codes are governed, not authored. */
   accessCodesEditable: boolean;
+  /** True for staff, who would be the ones clearing the review queue anyway. */
+  canPublishDirectly: boolean;
 };
 
 export type CourseImportPreview = {
@@ -116,6 +118,11 @@ export function createCourse(): Promise<BuilderResult<{ slug: string }>> {
 
 export function submitCourseForReview(slug: string): Promise<BuilderResult<{ status: "in_review" }>> {
   return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/review`, { method: "POST" });
+}
+
+/** Submit and approve in one move — refused by the server for anyone but staff. */
+export function publishCourseNow(slug: string): Promise<BuilderResult<{ status: "published" }>> {
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/publish`, { method: "POST" });
 }
 
 export function previewCourseImport(course: unknown): Promise<BuilderResult<{ preview: CourseImportPreview }>> {

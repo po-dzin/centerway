@@ -23,7 +23,13 @@
      marker carries weight instead of colour). On the light tone the two are the
      same value — there is nothing to fix there. */
   --cw-nav-active-ink: #1f2e24;
-  --cw-nav-active-bg: #f0ece2;
+  /* The selection stroke's colour, and the only place the network says it.
+     It follows --cw-nav-active-ink rather than --cw-nav-accent for the reason
+     stated just above: a mark has to clear 3:1 against the bar's own glass,
+     and the gold accent does not on the light chrome tint. On the night tone
+     the ground inverts and the marker goes brass with it — see the dark-tone
+     block below, which is the same split --cw-nav-marker makes in globals.css. */
+  --cw-nav-marker: var(--cw-nav-active-ink);
   --cw-nav-border: var(--cw-net-mat-stroke, rgb(34 53 46 / 0.12));
   --cw-nav-panel: #fff8ef;
   --cw-nav-shadow: var(--cw-net-mat-shadow-raised, 0 18px 48px rgb(23 38 31 / 0.14));
@@ -263,7 +269,6 @@
   --cw-nav-ink: var(--cw-ink);
   --cw-nav-text: var(--cw-ink);
   --cw-nav-accent: var(--cw-accent-strong);
-  --cw-nav-active-bg: var(--cw-accent-soft);
   --cw-nav-border: color-mix(in srgb, var(--cw-accent) 16%, transparent);
   --cw-nav-panel: var(--cw-surface-strong, #ffffff);
   --cw-nav-shadow: var(--cw-shadow-card, 0 18px 48px rgb(23 38 31 / 0.14));
@@ -275,7 +280,6 @@
   --cw-nav-ink: var(--ink);
   --cw-nav-text: var(--ink);
   --cw-nav-accent: var(--indigo);
-  --cw-nav-active-bg: var(--chip-soft);
   --cw-nav-border: var(--line);
   --cw-nav-panel: var(--surface, #ffffff);
   --cw-nav-shadow: var(--shadow-med, 0 18px 48px rgb(23 48 39 / 0.14));
@@ -334,7 +338,11 @@
   --cw-nav-accent: var(--cw-net-hero-accent, #e5ae65);
   /* Full-strength ink, not the gold accent: see --cw-nav-active-ink above. */
   --cw-nav-active-ink: var(--cw-net-hero-ink, #ffffff);
-  --cw-nav-active-bg: color-mix(in srgb, var(--cw-net-hero-ink, #fff) 12%, transparent);
+  /* Brass on the night sheet, matching the platform's own dark marker. The
+     accent is barred from LIVE TEXT here (see the brand note below, 4.46 on
+     the thinned tint) and this is not text: a graphic is held to 3:1, which
+     gold clears comfortably against the declared dark grounds. */
+  --cw-nav-marker: var(--cw-nav-accent);
   --cw-nav-border: color-mix(in srgb, var(--cw-net-hero-ink, #fff) 18%, transparent);
   --cw-nav-panel: color-mix(in srgb, var(--cw-net-hero-scrim, #173027) 52%, transparent);
 }
@@ -426,16 +434,15 @@
   align-items: center;
   min-height: 2.75rem;
   padding: var(--cw-space-xs) var(--cw-space-md);
-  border: 1px solid transparent;
-  border-radius: var(--cw-radius-pill);
+  /* No border and no radius: what used to need them was the capsule, and the
+     capsule is gone. The box is now only a touch target. */
   color: var(--cw-nav-text);
   text-decoration: none;
-  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
+  transition: color 160ms ease;
 }
 
 .cwn__menu a:hover {
   color: var(--cw-nav-active-ink);
-  border-color: var(--cw-nav-border);
 }
 
 .cwn__menu a:focus-visible,
@@ -444,11 +451,25 @@
   outline-offset: 2px;
 }
 
+/* ── the selection stroke ──────────────────────────────────────────────
+   THE NETWORK MARKS «YOU ARE HERE» THE WAY THE PRODUCT DOES (2026-09-11).
+
+   This bar used to answer it with a tinted capsule: `background` +
+   `border-color` + `font-weight: 700`, and a border on hover besides. That is
+   the idiom the platform removed everywhere — a ring around the row you last
+   touched, stacked on top of the one mark the product already uses — and the
+   landings were the last place still drawing it. They kept it for a dull
+   reason rather than a design one: the stroke's geometry had never been
+   emitted to the network, so a capsule was the only thing this file could
+   build out of tokens it actually had.
+
+   The recipe itself is NOT here. It is `/shared/css/ink.css`, shared with the
+   three `.cw-nav` landings, which do not load this file — see the note at the
+   top of it. What stays here is the one thing the recipe cannot know: which
+   colour the mark takes on this bar, declared per tone as `--cw-nav-marker`
+   with the rest of the nav's dialect. */
 .cwn__menu a[aria-current="page"] {
   color: var(--cw-nav-active-ink);
-  background: var(--cw-nav-active-bg);
-  border-color: color-mix(in srgb, var(--cw-nav-active-ink) 30%, transparent);
-  font-weight: 700;
 }
 
 /* Burger toggle — hidden on topbar widths. */
@@ -608,7 +629,6 @@
   .cwn__menu a {
     min-height: 3rem;
     padding: var(--cw-space-sm) var(--cw-space-md);
-    border-radius: var(--cw-radius-sm);
     font-size: 1rem;
   }
 }

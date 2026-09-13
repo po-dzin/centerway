@@ -143,3 +143,146 @@
     display: none;
   }
 }
+
+/* ── The frame ─────────────────────────────────────────────────────────────
+ *
+ * OUT OF TAILWIND (2026-09-12). What was left at the call site was the shape of
+ * the whole panel — the viewport frame, the rail-plus-main row, the scroll pane
+ * and its gutters — written as utilities in the one file that already had a
+ * module sitting next to it holding the rail. Two places to look for one
+ * layout, and the rail's own note in layout.tsx is about exactly that kind of
+ * split: the markup claimed `hidden md:grid` while the module said `display:
+ * grid`, and the markup lost.
+ */
+
+.frame {
+  composes: cw-admin-theme from global;
+  display: flex;
+  flex-direction: column;
+  /* `dvh` on a phone so the browser's own chrome does not push the rail's foot
+     under the fold; `vh` above, where there is no collapsing toolbar and `dvh`
+     would make the frame resize as one scrolls. */
+  height: 100dvh;
+  overflow: hidden;
+  transition: background-color var(--cw-motion-tone) ease;
+}
+
+@media (min-width: 768px) {
+  .frame {
+    height: 100vh;
+  }
+}
+
+.body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.railAside {
+  flex: 0 0 auto;
+  height: 100%;
+}
+
+.railNavList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+}
+
+/* A row in the rail. The control step for the radius, the same one the panel's
+   rows and controls take — see the ladder in tailwind.config.js, which this is
+   part of retiring. */
+.railRow {
+  composes: cw-nav-link from global;
+  composes: railLink;
+  /* The tip below is positioned against this row. It used to be `relative` as a
+     utility, which is the kind of declaration that gets dropped by whoever
+     edits the class string next and then nobody knows why the tooltip is in the
+     corner of the page. */
+  position: relative;
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+/* A section that is not built yet: still listed, because the rail is the map of
+   the panel, and still unreachable. */
+.railRowDisabled {
+  composes: cw-muted from global;
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* The label the compact rail cannot show, restored on hover as a tip beside the
+   icon. Not a title attribute alone: the row has one, and a native tooltip
+   arrives after a second of stillness, which is too slow to help someone
+   scanning seven icons. */
+.railTip {
+  composes: cw-surface cw-border cw-text cw-shadow from global;
+  position: absolute;
+  left: 100%;
+  z-index: 50;
+  margin-left: var(--cw-space-sm);
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-sm);
+  font-size: var(--ds-type-label-size);
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--cw-motion-state) ease;
+}
+
+.railRow:hover .railTip {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .railTip {
+    transition: none;
+  }
+}
+
+.main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* THE SCROLL PANE, and the two numbers on it that are not arbitrary.
+ *
+ * The top inset re-states the room the hidden bar used to hold open, in the
+ * islands' own terms — the row's inset plus one touch target plus air — because
+ * the island floats over this column's top-right corner. It is arithmetic
+ * rather than the 5.25rem it used to be typed as, so that a change to the
+ * island's own inset or to the touch floor carries here instead of leaving a
+ * number that was correct once.
+ *
+ * The sides are the PRODUCT'S gutter, not this panel's guess at one: they were
+ * 12 and 16px against the platform's 20, so the admin was the narrowest margin
+ * in the product and the one place a card reached closer to the edge than the
+ * same card anywhere else.
+ */
+.scroll {
+  composes: custom-scrollbar from global;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  padding-inline: var(--cw-page-gutter);
+  padding-top: calc(var(--cw-space-lg) + var(--ds-touch-target-min) + var(--cw-space-md));
+  padding-bottom: var(--cw-space-md);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+@media (min-width: 768px) {
+  .scroll {
+    padding: var(--cw-space-xl);
+  }
+}

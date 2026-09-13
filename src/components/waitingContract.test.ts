@@ -40,7 +40,15 @@ describe("waiting", () => {
      known — a table that is about to have rows. The mark is for everything
      whose shape is not known yet. */
   it("keeps the skeleton where the shape of what is coming is known", () => {
-    expect(read("src/components/admin/AdminLoadingState.tsx")).toContain("cw-skeleton-row");
+    /* The row moved from a class string in the component to a named role in its
+       module (2026-09-12, the admin leaving Tailwind). The contract is the same
+       one — the skeleton is the shared recipe, not a local grey box — so it is
+       checked where the recipe now arrives: the component renders the role, and
+       the role composes the global row. */
+    expect(read("src/components/admin/AdminLoadingState.tsx")).toContain("states.skeletonRow");
+    expect(read("src/components/admin/AdminStates.module.css")).toMatch(
+      /\.skeletonRow\s*\{[^}]*composes:\s*cw-skeleton-row from global/,
+    );
   });
 });
 

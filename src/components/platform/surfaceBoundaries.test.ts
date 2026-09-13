@@ -3,6 +3,13 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const read = (file: string) => fs.readFileSync(path.resolve(__dirname, "../../..", file), "utf8");
+
+/** The author form: the fold and the section files it was split into. */
+const authorFoldFiles = () =>
+  fs
+    .readdirSync(path.resolve(__dirname, "cabinet"))
+    .filter((name) => /^(AuthorProfileFold|AuthorSection\w+)\.tsx$/.test(name))
+    .map((name) => `src/components/platform/cabinet/${name}`);
 const block = (source: string, selector: string) => {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`${escaped}\\s*\\{([\\s\\S]*?)\\}`).exec(source)?.[1] ?? "";
@@ -60,7 +67,8 @@ describe("shared surface boundaries", () => {
     ]) {
       expect(read(file)).toContain('data-cw-edge="none"');
     }
-    expect(read("src/components/platform/cabinet/AuthorProfileFold.tsx")).not.toContain('data-cw-edge="none"');
+    // The fold was split into sections (2026-09-13); the rule holds for all of them.
+    for (const file of authorFoldFiles()) expect(read(file), file).not.toContain('data-cw-edge="none"');
   });
 
   it("distinguishes quiet command boundaries from the strong checkbox state", () => {

@@ -105,17 +105,21 @@ export function ProgramDetailPage({
      that makes a cabinet delivery possible in the first place. */
   const deliveryLine = course
     ? isFree
-      ? "курс відкриється у вашому кабінеті одразу після старту"
-      : "курс відкриється у вашому кабінеті одразу після оплати"
-    : "доступ приходить одразу після оплати — на сторінці підтвердження буде вхід у Telegram-бот";
+      ? "Курс відкриється у вашому кабінеті одразу після старту"
+      : "Курс відкриється у вашому кабінеті одразу після оплати"
+    : "Доступ приходить одразу після оплати — на сторінці підтвердження буде вхід у Telegram-бот";
 
+  /* SENTENCE CASE THROUGHOUT (2026-09-11). These lines are list items, and
+     every other list on the page — what the reader gets, who it is for, what it
+     is made of — is written by the author in sentence case. Lowercase here made
+     the platform's own lines read as a footnote beside them. */
   const includes = [
     course
       ? `${lessonCount} ${plural(lessonCount, "урок", "уроки", "уроків")} у ${course.modules.length} ${plural(course.modules.length, "модулі", "модулях", "модулях")}`
       : `${program.duration} за структурою автора`,
     deliveryLine,
-    isFree ? "без оплати, підписки й автоплатежів" : "разова оплата, без підписки і автоплатежів",
-    "проходити можна з телефона і з компʼютера",
+    isFree ? "Без оплати, підписки й автоплатежів" : "Разова оплата, без підписки і автоплатежів",
+    "Проходити можна з телефона і з компʼютера",
   ];
 
   /* ONE FACT, ONE PLACE (2026-09-08).
@@ -143,11 +147,15 @@ export function ProgramDetailPage({
        re-deriving the condition keeps this true even if that fallback changes. */
     ...(course && lessonLabel !== program.duration ? [lessonLabel] : []),
     ...(course ? [] : [program.tag]),
+    /* Sentence case, like every other line in this list. These three were
+       written lowercase back when they were pills inside a row; as items of a
+       list they sat beside «6 уроків» and «Чек-лист» and read as a different
+       voice on the same card. */
     isCheckout
-      ? "оплата просто тут, без переходу на лендинг"
+      ? "Оплата просто тут, без переходу на лендинг"
       : isFree
-        ? "доступ без оплати"
-        : "участь узгоджуємо в розмові",
+        ? "Доступ без оплати"
+        : "Участь узгоджуємо в розмові",
   ];
 
   /* WHAT THE PANEL IS TITLED, now that the duration is the badge's.
@@ -188,7 +196,15 @@ export function ProgramDetailPage({
         trail={[{ label: "Програми", href: "/programs" }, { label: program.title }]}
         hero={{
           title: program.fullTitle,
-          ...(program.subtitle ? { subtitle: program.subtitle } : {}),
+          /* The author's line above the name, when they wrote one. It reaches
+             the catalogue card already; this is the page that card previews. */
+          ...(program.pretitle ? { pretitle: program.pretitle } : {}),
+          /* The hero prints the author's whole title, and for a course written
+             as «Ім'я — пояснення» the subtitle IS that explanation, parsed back
+             out of the same string. Printed under a title that already ends in
+             it, it reads as a stutter rather than as a second line. An explicit
+             `posttitle` that says something the title does not still shows. */
+          ...(program.subtitle && !program.fullTitle.includes(program.subtitle) ? { subtitle: program.subtitle } : {}),
           description: program.description,
           badge: `${program.tag} · ${program.duration}`,
           artwork: program.artwork,

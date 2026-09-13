@@ -5,19 +5,22 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { flushSync } from "react-dom";
 import { accessToken, authorizedFetch } from "@/components/auth/authorizedFetch";
-import type { AnalyticsPayload } from "@/lib/analytics/dashboard";
-import type { DoshaAnalyticsPayload } from "@/lib/analytics/dosha";
 import { useI18n } from "@/components/I18nProvider";
 import { getErrorMessage } from "@/lib/errors";
 import { useToast } from "@/components/ToastProvider";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
-import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import surfaces from "@/components/admin/AdminSurfaces.module.css";
 /* The mode's rules live outside this file because they are the part that can
    actually be wrong, and the admin is behind a Google sign-in — it cannot be
-   verified by opening it, only by testing it. See dashboardMode.ts. */
+   verified by opening it, only by testing it. See dashboardMode.ts.
+
+   THE SAME ARGUMENT, APPLIED TO THE REST OF IT (2026-09-11). This file was
+   2583 lines: the payload types, the date arithmetic, the metric catalogue, a
+   215-line calendar and a disclosure panel, all sitting above the component
+   that uses them and all unreachable from a test. They are four files now, and
+   what is left here is the page — its state, its fetch, and its sections. */
 import {
   DASHBOARD_MODES,
   DEFAULT_DASHBOARD_MODE,
@@ -27,702 +30,58 @@ import {
   type AnalyticsSection,
   type DashboardMode,
 } from "@/lib/admin/dashboardMode";
-
-type FunnelData = {
-  date: string;
-  leads_count: number;
-  orders_created: number;
-  orders_paid: number;
-  total_revenue: number;
-};
-
-type CampaignData = {
-  source_campaign: string;
-  total_orders: number;
-  paid_orders: number;
-  total_revenue: number;
-  view_content: number;
-  impressions: number;
-  reach: number;
-  spend: number;
-  currency: string;
-};
-
-type ProductData = {
-  product_code: string;
-  product_title: string | null;
-  total_orders: number;
-  paid_orders: number;
-  total_revenue: number;
-  share_revenue_percent: number;
-};
-
-/* Derived from the engine: the route sends totalOrders as number | null and
-   avgConversionRate as string | number, which the hand-written copy narrowed. */
-type AnalyticsSummary = AnalyticsPayload["summary"];
-
-type CapiEventName = "ViewContent" | "InitiateCheckout" | "Purchase";
-
-type CapiEventStats = {
-  event_name: CapiEventName;
-  total: number;
-  success: number;
-  pending: number;
-  running: number;
-  failed: number;
-  last_seen_at: string | null;
-};
-
-type CapiOverview = {
-  total: number;
-  success: number;
-  pending: number;
-  running: number;
-  failed: number;
-};
-
-type FunnelChain = {
-  view_content: number;
-  initiate_checkout: number;
-  purchase: number;
-  access_granted: number;
-  view_to_checkout_percent: number;
-  checkout_to_purchase_percent: number;
-  purchase_to_access_percent: number;
-};
-
-type MarketingInputs = {
-  reach: number;
-  impressions: number;
-  clicks: number;
-  spend: number;
-  currency: string;
-  period_label: string | null;
-  updated_at: string | null;
-  source?: "meta" | "manual";
-};
-
-type UnifiedKpis = {
-  cpa: number;
-  cpc: number;
-  ctr_percent: number;
-  roas: number;
-  roi_percent: number;
-};
-
-type QualityGaps = {
-  snapshot_date: string;
-  paid_missing_fbc_raw: number;
-  paid_recoverable_fbc_from_fbclid: number;
-  paid_truly_missing_fbc: number;
-  paid_missing_fbclid: number;
-  paid_missing_fbp: number;
-  paid_missing_page_url: number;
-  paid_missing_client_ip: number;
-  paid_missing_client_ua: number;
-};
-
-type AnalyticsFreshness = {
-  local_view_content_last_at: string | null;
-  local_scroll_depth_50_last_at: string | null;
-  orders_created_last_at: string | null;
-  orders_paid_last_at: string | null;
-  capi_last_sent_at: string | null;
-  meta_last_synced_at: string | null;
-  pixel_daily_last_synced_at: string | null;
-  quality_snapshot_date: string | null;
-};
-
-type QualitySeriesRow = {
-  date: string;
-  paid_orders: number;
-  missing_fbc_raw: number;
-  recoverable_fbc_from_fbclid: number;
-  truly_missing_fbc: number;
-  missing_fbclid: number;
-  missing_fbp: number;
-  missing_page_url: number;
-  missing_client_ip: number;
-  missing_client_ua: number;
-};
-
-type PurchaseTransport = {
-  total_paid_orders: number;
-  success: number;
-  pending: number;
-  running: number;
-  failed: number;
-  missing_job: number;
-  stale_pending: number;
-  client_signal: number;
-  missing_client_signal: number;
-  last_success_at: string | null;
-};
-
-type DiagnosticsPanelKey = "freshness" | "quality" | "purchase_transport";
-
-type DoshaAnalytics = DoshaAnalyticsPayload;
-
-type LeadsSummary = {
-  new_in_period: number;
-  won_in_period: number;
-  lost_in_period: number;
-  open_total: number;
-  conversion_percent: number;
-};
-
-type LearningSummary = {
-  granted_in_period: number;
-  started_in_period: number;
-  started_percent: number;
-  active_total: number;
-  expiring_14d: number;
-  expired_total: number;
-};
-
-/* The engine's own payload type, not a copy of it: a field the route stops
-   sending fails here at compile time instead of rendering as undefined.
-   `learning` and `leads` are the two sections the dashboard route adds on top
-   of it — optional on both sides, so a route that has not shipped them yet
-   simply renders nothing rather than a zero it invented. */
-type AnalyticsResponse = AnalyticsPayload & {
-  learning?: LearningSummary;
-  leads?: LeadsSummary;
-};
-
-type DateRange = {
-  from: string;
-  to: string;
-};
-
-type FunnelMode = "payment" | "access";
-
-type FunnelUiSettings = {
-  mode: FunnelMode;
-  showAccessGrantedCard: boolean;
-};
-
-type MetricFieldKey =
-  "revenue" | "reach" | "impressions" | "frequency" | "clicks" | "spend" | "cpa" | "cpc" | "roas" | "roi";
-
-type MetricDef = {
-  key: MetricFieldKey;
-  labelKey: string;
-};
-
-const PRIMARY_METRIC_FIELDS: MetricDef[] = [
-  { key: "spend", labelKey: "analytics_metric_spend" },
-  { key: "revenue", labelKey: "analytics_metric_revenue" },
-  { key: "roas", labelKey: "analytics_metric_roas" },
-  { key: "cpa", labelKey: "analytics_metric_cpa" },
-  { key: "roi", labelKey: "analytics_metric_roi" },
-];
-
-const OPTIONAL_METRIC_FIELDS: MetricDef[] = [
-  { key: "reach", labelKey: "analytics_metric_reach" },
-  { key: "impressions", labelKey: "analytics_metric_impressions" },
-  { key: "frequency", labelKey: "analytics_metric_frequency" },
-  { key: "clicks", labelKey: "analytics_metric_clicks" },
-  { key: "cpc", labelKey: "analytics_metric_cpc" },
-];
-
-const METRIC_FIELDS: MetricDef[] = [...PRIMARY_METRIC_FIELDS, ...OPTIONAL_METRIC_FIELDS];
-
-const METRIC_VISIBILITY_KEY = "cw_analytics_visible_metrics";
-const FUNNEL_UI_SETTINGS_KEY = "cw_analytics_funnel_ui_settings";
-const DASHBOARD_MODE_KEY = "cw_analytics_dashboard_mode";
-
-function metricEventLabelKey(eventName: CapiEventName): string {
-  if (eventName === "ViewContent") return "analytics_event_view_content";
-  if (eventName === "InitiateCheckout") return "analytics_event_initiate_checkout";
-  return "analytics_event_purchase";
-}
-
-function AnalyticsCollapsePanel(props: {
-  title: string;
-  note?: string;
-  open: boolean;
-  onToggle: () => void;
-  expandLabel: string;
-  collapseLabel: string;
-  children: React.ReactNode;
-}) {
-  const { title, note, open, onToggle, expandLabel, collapseLabel, children } = props;
-  return (
-    <div className={surfaces.plate}>
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-start justify-between gap-3 text-left"
-        aria-expanded={open}
-      >
-        <div>
-          <h3 className="text-sm font-semibold cw-text">{title}</h3>
-          {note ? <p className="text-xs cw-muted mt-1">{note}</p> : null}
-        </div>
-        <span
-          className="cw-icon-btn shrink-0 inline-flex items-center justify-center"
-          aria-label={open ? collapseLabel : expandLabel}
-          title={open ? collapseLabel : expandLabel}
-        >
-          <InteractionInkIcon>
-            <svg
-              className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
-              viewBox="0 0 20 20"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.75"
-              aria-hidden="true"
-            >
-              <path d="M5 8l5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </InteractionInkIcon>
-        </span>
-      </button>
-      {open ? <div className="mt-3">{children}</div> : null}
-    </div>
-  );
-}
-
-function toNumberInput(value: string): number {
-  const num = Number(value);
-  return Number.isFinite(num) && num >= 0 ? num : 0;
-}
-
-function pad2(value: number): string {
-  return String(value).padStart(2, "0");
-}
-
-function formatDateLocal(date: Date): string {
-  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
-}
-
-function shiftedDate(daysBack: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - daysBack);
-  return formatDateLocal(d);
-}
-
-function clampIsoToToday(value: string): string {
-  const todayIso = formatDateLocal(new Date());
-  return value > todayIso ? todayIso : value;
-}
-
-function isIsoDateInput(value: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value);
-}
-
-function formatCompactTick(value: number, locale: string): string {
-  if (value <= 0) return "0";
-  return new Intl.NumberFormat(locale, {
-    notation: "compact",
-    maximumFractionDigits: value >= 1000 ? 1 : 0,
-  }).format(value);
-}
-
-/**
- * THE SERVER NAMES THE PRODUCT NOW (see `productIdentity.ts`).
- *
- * This used to be a three-name switch — `short`/`reboot` → "Short Reboot",
- * `irem` → "IREM Gymnastics", everything else raw — written before the builder
- * sold anything. Every course that shipped after 2026-08-26 fell through it and
- * rendered as its own product code, and a course renamed by its author kept the
- * old name here until someone edited this file.
- *
- * `product_title` arrives resolved from `lms_courses`, so the only judgement
- * left on this side is what to print when a code delivers no course at all.
- */
-function formatProductName(
-  product: { product_code: string; product_title?: string | null },
-  unknownLabel: string,
-): string {
-  if (product.product_title) return product.product_title;
-  const normalized = product.product_code.trim().toLowerCase();
-  if (!normalized || normalized === "unknown") return unknownLabel;
-  return product.product_code;
-}
-
-function buildNiceScale(maxValue: number, tickCount = 5): { scaleMax: number; ticks: number[] } {
-  if (!Number.isFinite(maxValue) || maxValue <= 0 || tickCount < 2) {
-    return { scaleMax: 1, ticks: [0, 0.25, 0.5, 0.75, 1] };
-  }
-
-  const rawStep = maxValue / (tickCount - 1);
-  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
-  const residual = rawStep / magnitude;
-  const niceResidual = residual <= 1 ? 1 : residual <= 2 ? 2 : residual <= 2.5 ? 2.5 : residual <= 5 ? 5 : 10;
-  const step = niceResidual * magnitude;
-  const scaleMax = Math.ceil(maxValue / step) * step;
-  const ticks = Array.from({ length: tickCount }, (_, index) => index * step);
-
-  return { scaleMax, ticks };
-}
-
-function normalizeDateRange(range: DateRange): DateRange {
-  const clampedFromDate = clampIsoToToday(range.from);
-  const clampedToDate = clampIsoToToday(range.to);
-  const from = clampedFromDate <= clampedToDate ? clampedFromDate : clampedToDate;
-  const to = clampedToDate >= clampedFromDate ? clampedToDate : clampedFromDate;
-  return { from, to };
-}
-
-type RangePresetKey = "7d" | "30d" | "mtd" | "90d" | "1y";
-
-function buildPresetRange(preset: RangePresetKey): DateRange {
-  if (preset === "mtd") {
-    const now = new Date();
-    return {
-      from: `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-01`,
-      to: formatDateLocal(now),
-    };
-  }
-
-  const days = preset === "7d" ? 7 : preset === "30d" ? 30 : preset === "90d" ? 90 : 365;
-  return {
-    from: shiftedDate(days - 1),
-    to: formatDateLocal(new Date()),
-  };
-}
-
-function detectActivePreset(range: DateRange): RangePresetKey | null {
-  const normalized = normalizeDateRange(range);
-  const presets: RangePresetKey[] = ["7d", "30d", "mtd", "90d", "1y"];
-  for (const preset of presets) {
-    const candidate = normalizeDateRange(buildPresetRange(preset));
-    if (candidate.from === normalized.from && candidate.to === normalized.to) {
-      return preset;
-    }
-  }
-  return null;
-}
-
-function freshnessStatus(isoTs: string | null, staleAfterHours: number): "ok" | "warn" | "empty" {
-  if (!isoTs) return "empty";
-  const ts = Date.parse(isoTs);
-  if (!Number.isFinite(ts)) return "empty";
-  const diffMs = Date.now() - ts;
-  const staleMs = staleAfterHours * 60 * 60 * 1000;
-  return diffMs <= staleMs ? "ok" : "warn";
-}
-
-function funnelSourceLabel(
-  t: (key: never) => string,
-  source:
-    | "local_events"
-    | "local_events_floored"
-    | "pixel_daily_stats"
-    | "pixel_stats_reference"
-    | "pixel_fallback"
-    | "capi_fallback"
-    | "meta_daily"
-    | "manual_input"
-    | "orders_created"
-    | "paid_orders"
-    | "access_delivered",
-): string {
-  if (source === "local_events") return t("analytics_source_local_events" as never);
-  if (source === "local_events_floored") return t("analytics_source_local_events_floored" as never);
-  if (source === "pixel_daily_stats") return t("analytics_source_pixel_daily_stats" as never);
-  if (source === "pixel_stats_reference") return t("analytics_source_pixel_stats_reference" as never);
-  if (source === "pixel_fallback") return t("analytics_source_pixel_fallback" as never);
-  if (source === "capi_fallback") return t("analytics_source_capi_fallback" as never);
-  if (source === "meta_daily") return t("analytics_source_meta_daily" as never);
-  if (source === "manual_input") return t("analytics_source_manual_input" as never);
-  if (source === "orders_created") return t("analytics_source_orders_created" as never);
-  if (source === "paid_orders") return t("analytics_source_paid_orders" as never);
-  /* `token_consumed` was retired when access stopped being proved by a token:
-     the engine now counts an enrolment or a sent receipt and labels the source
-     `access_delivered`. The branch outlived its dictionary key by one merge,
-     which would have printed the key itself into the admin. */
-  return t("analytics_source_access_delivered" as never);
-}
-
-function isoToDate(value: string): Date | null {
-  if (!isIsoDateInput(value)) return null;
-  const [year, month, day] = value.split("-").map(Number);
-  if (year === undefined || month === undefined || day === undefined) return null;
-  const date = new Date(year, month - 1, day);
-  if (
-    Number.isNaN(date.getTime()) ||
-    date.getFullYear() !== year ||
-    date.getMonth() !== month - 1 ||
-    date.getDate() !== day
-  ) {
-    return null;
-  }
-  return date;
-}
-
-function buildMonthGrid(viewMonth: Date): Date[] {
-  const monthStart = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1);
-  const weekDayMondayFirst = (monthStart.getDay() + 6) % 7;
-  const gridStart = new Date(monthStart);
-  gridStart.setDate(monthStart.getDate() - weekDayMondayFirst);
-
-  return Array.from({ length: 42 }, (_, idx) => {
-    const day = new Date(gridStart);
-    day.setDate(gridStart.getDate() + idx);
-    return day;
-  });
-}
-
-type DateRangePickerProps = {
-  value: DateRange;
-  onApply: (next: DateRange) => Promise<void> | void;
-  applyLabel: string;
-  locale: string;
-  className?: string;
-};
-
-function DateRangePicker({ value, onApply, applyLabel, locale, className = "" }: DateRangePickerProps) {
-  const [open, setOpen] = useState(false);
-  const [selectingEnd, setSelectingEnd] = useState(false);
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const [draftRange, setDraftRange] = useState<DateRange>(() => normalizeDateRange(value));
-  const selectedFromDate = useMemo(() => isoToDate(draftRange.from), [draftRange.from]);
-  const [viewMonth, setViewMonth] = useState<Date>(() => selectedFromDate ?? new Date());
-
-  useEffect(() => {
-    if (!open) {
-      setDraftRange(normalizeDateRange(value));
-      setSelectingEnd(false);
-    }
-  }, [open, value]);
-
-  useEffect(() => {
-    if (open && selectedFromDate) {
-      setViewMonth(new Date(selectedFromDate.getFullYear(), selectedFromDate.getMonth(), 1));
-    }
-  }, [open, selectedFromDate]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-    const onEsc = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onEsc);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onEsc);
-    };
-  }, [open]);
-
-  const monthLabel = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(viewMonth);
-  const dayNames = useMemo(() => {
-    const monday = new Date(Date.UTC(2024, 0, 1)); // Monday
-    return Array.from({ length: 7 }, (_, idx) => {
-      const date = new Date(monday);
-      date.setUTCDate(monday.getUTCDate() + idx);
-      return new Intl.DateTimeFormat(locale, { weekday: "short" }).format(date);
-    });
-  }, [locale]);
-  const days = useMemo(() => buildMonthGrid(viewMonth), [viewMonth]);
-  const todayIso = formatDateLocal(new Date());
-  const activePreset = detectActivePreset(draftRange);
-
-  const formatDisplayDate = (iso: string) => {
-    const date = isoToDate(iso);
-    if (!date) return "YYYY-MM-DD";
-    return date.toLocaleDateString(locale, { day: "2-digit", month: "2-digit", year: "numeric" });
-  };
-
-  const selectDate = (iso: string) => {
-    if (iso > todayIso) return;
-    if (!selectingEnd) {
-      setDraftRange({ from: iso, to: iso });
-      setSelectingEnd(true);
-      return;
-    }
-    const next = normalizeDateRange({ from: draftRange.from, to: iso });
-    setDraftRange(next);
-    setSelectingEnd(false);
-  };
-
-  const applyRange = async () => {
-    const normalized = normalizeDateRange(draftRange);
-    setDraftRange(normalized);
-    setSelectingEnd(false);
-    setOpen(false);
-    await onApply(normalized);
-  };
-
-  const applyPresetQuick = async (preset: RangePresetKey) => {
-    const next = normalizeDateRange(buildPresetRange(preset));
-    setDraftRange(next);
-    setSelectingEnd(false);
-    setOpen(false);
-    await onApply(next);
-  };
-
-  const renderMonth = (monthDays: Date[], monthDate: Date) => (
-    <div className="w-full">
-      <div className="grid grid-cols-7 gap-0.5 mb-0.5">
-        {dayNames.map((name) => (
-          <div
-            key={`${monthDate.getMonth()}-${name}`}
-            className="h-6 text-[10px] cw-muted flex items-center justify-center uppercase"
-          >
-            {name}
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 auto-rows-[32px] gap-0">
-        {monthDays.map((day) => {
-          const iso = formatDateLocal(day);
-          const isCurrentMonth = day.getMonth() === monthDate.getMonth();
-          const isFuture = iso > todayIso;
-          const isStart = draftRange.from === iso;
-          const isEnd = draftRange.to === iso;
-          const isSingle = isStart && isEnd;
-          const inRange = iso >= draftRange.from && iso <= draftRange.to;
-          const isToday = iso === todayIso;
-          const rangeShapeClass = isSingle
-            ? "rounded-md border-[var(--cw-interactive-active-border)]"
-            : isStart
-              ? "rounded-l-md rounded-r-none border-r-0 border-[var(--cw-interactive-active-border)]"
-              : isEnd
-                ? "rounded-r-md rounded-l-none border-l-0 border-[var(--cw-interactive-active-border)]"
-                : "rounded-none border-transparent";
-
-          return (
-            <button
-              key={`${monthDate.getMonth()}-${iso}`}
-              type="button"
-              disabled={isFuture}
-              onClick={() => selectDate(iso)}
-              className={`h-8 border text-xs transition-colors ${
-                isFuture
-                  ? "border-transparent cw-muted opacity-35 cursor-not-allowed"
-                  : inRange
-                    ? `cw-text bg-[var(--cw-interactive-active-bg)] ${rangeShapeClass}`
-                    : isCurrentMonth
-                      ? "border-transparent cw-text hover:bg-[var(--cw-interactive-hover-bg)] rounded-md"
-                      : "border-transparent cw-muted opacity-65 hover:bg-[var(--cw-interactive-hover-bg)] rounded-md"
-              } ${isToday && !inRange && !isFuture ? "border cw-border" : ""} ${isSingle || isStart || isEnd ? "font-semibold" : ""}`}
-            >
-              {day.getDate()}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-
-  return (
-    <div ref={rootRef} className={`relative w-full sm:w-[340px] ${className}`.trim()}>
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className="cw-input w-full h-10 px-3 text-sm flex items-center justify-between gap-2"
-      >
-        <span className="cw-text truncate">
-          {formatDisplayDate(draftRange.from)} - {formatDisplayDate(draftRange.to)}
-        </span>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="cw-muted"
-        >
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-          <line x1="16" y1="2" x2="16" y2="6" />
-          <line x1="8" y1="2" x2="8" y2="6" />
-          <line x1="3" y1="10" x2="21" y2="10" />
-        </svg>
-      </button>
-
-      {open && (
-        <div className="absolute top-full right-0 mt-2 z-40 w-full cw-surface-solid border cw-border rounded-xl cw-shadow p-2.5 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setViewMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
-              className="cw-icon-btn"
-              aria-label="Previous month"
-            >
-              <InteractionInkIcon>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-              </InteractionInkIcon>
-            </button>
-            <div className="text-sm font-semibold cw-text capitalize">{monthLabel}</div>
-            <button
-              type="button"
-              onClick={() => setViewMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
-              className="cw-icon-btn"
-              aria-label="Next month"
-            >
-              <InteractionInkIcon>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </InteractionInkIcon>
-            </button>
-          </div>
-
-          {renderMonth(days, viewMonth)}
-
-          <div className="flex items-center gap-1.5 border-t cw-border pt-2">
-            <div className="flex items-center gap-0.5 flex-1 min-w-0">
-              {(["7d", "30d", "mtd", "90d", "1y"] as RangePresetKey[]).map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => {
-                    void applyPresetQuick(preset);
-                  }}
-                  className={`h-7 min-w-9 px-1.5 text-[11px] rounded-md border transition-colors ${
-                    activePreset === preset
-                      ? "cw-text border-[var(--cw-interactive-active-border)] bg-[var(--cw-interactive-active-bg)]"
-                      : "cw-btn-muted border-[var(--cw-border)] hover:bg-[var(--cw-interactive-hover-bg)]"
-                  }`}
-                >
-                  {preset.toUpperCase()}
-                </button>
-              ))}
-            </div>
-            <button type="button" onClick={applyRange} className="h-8 px-2.5 text-sm font-medium cw-btn shrink-0">
-              {applyLabel}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+import { AnalyticsCollapsePanel } from "@/components/admin/analytics/AnalyticsCollapsePanel";
+import { DateRangePicker } from "@/components/admin/analytics/DateRangePicker";
+import pageStyles from "@/components/admin/AdminPage.module.css";
+import controls from "@/components/admin/AdminControls.module.css";
+import dash from "@/components/admin/AdminAnalytics.module.css";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
+import {
+  buildNiceScale,
+  formatCompactTick,
+  formatDateLocal,
+  formatProductName,
+  freshnessStatus,
+  funnelSourceLabel,
+  isIsoDateInput,
+  normalizeDateRange,
+  shiftedDate,
+  toNumberInput,
+} from "@/lib/admin/analytics/format";
+import {
+  DASHBOARD_MODE_KEY,
+  FUNNEL_UI_SETTINGS_KEY,
+  METRIC_FIELDS,
+  METRIC_VISIBILITY_KEY,
+  OPTIONAL_METRIC_FIELDS,
+  PRIMARY_METRIC_FIELDS,
+  metricEventLabelKey,
+  type MetricFieldKey,
+} from "@/lib/admin/analytics/metricFields";
+import type {
+  AnalyticsFreshness,
+  AnalyticsResponse,
+  AnalyticsSummary,
+  CampaignData,
+  CapiEventStats,
+  CapiEventName,
+  CapiOverview,
+  DateRange,
+  DiagnosticsPanelKey,
+  DoshaAnalytics,
+  FunnelChain,
+  FunnelData,
+  FunnelMode,
+  FunnelUiSettings,
+  LeadsSummary,
+  LearningSummary,
+  MarketingInputs,
+  ProductData,
+  PurchaseTransport,
+  QualityGaps,
+  QualitySeriesRow,
+  UnifiedKpis,
+} from "@/lib/admin/analytics/types";
 
 export default function AnalyticsPage() {
   const { t, lang } = useI18n();
@@ -1141,7 +500,7 @@ export default function AnalyticsPage() {
         title={t("analytics_load_error")}
         message={errorType === "sql" ? `${error}. ${t("analytics_sql_reminder")}` : error}
         action={
-          <button onClick={() => fetchAnalytics()} className="px-4 py-2 cw-btn cw-surface-2">
+          <button onClick={() => fetchAnalytics()} className={`${controls.action} cw-surface-2`}>
             {t("analytics_retry")}
           </button>
         }
@@ -1246,21 +605,21 @@ export default function AnalyticsPage() {
   const sourceColumnLabel = campaignsLevel === "ad" ? t("analytics_col_source_ad") : t("analytics_col_source_adset");
   const activeBar = hovered ?? selectedBar;
   return (
-    <div className="space-y-4 md:space-y-6">
-      <div className={`flex flex-col xl:flex-row xl:items-start xl:justify-between gap-3 md:gap-4 ${surfaces.plate}`}>
-        <div className="xl:max-w-sm">
-          <h1 className="text-xl sm:text-2xl font-bold cw-text">{t("analytics_title")}</h1>
-          <p className="text-xs cw-muted mt-2">
+    <div className={pageStyles.page}>
+      <div className={`${surfaces.plate} ${dash.head}`}>
+        <div className={dash.headText}>
+          <h1 className={pageStyles.title}>{t("analytics_title")}</h1>
+          <p className={dash.source}>
             {t("analytics_data_source")}:{" "}
             {marketingInputs?.source === "meta" ? t("analytics_data_source_meta") : t("analytics_data_source_manual")}
           </p>
           {marketingInputs?.updated_at ? (
-            <p className="text-xs cw-muted mt-1">
+            <p className={dash.sourceTight}>
               {t("analytics_last_update")}: {new Date(marketingInputs.updated_at).toLocaleString()}
             </p>
           ) : null}
         </div>
-        <div className="w-full xl:w-auto flex flex-col gap-2">
+        <div className={dash.headControls}>
           <DateRangePicker
             value={{ from: fromDate, to: toDate }}
             onApply={applyPeriod}
@@ -1269,7 +628,7 @@ export default function AnalyticsPage() {
             applyLabel={t("common_apply")}
             locale={dateLocale}
           />
-          {isRefreshing ? <p className="text-[11px] cw-muted text-right">{t("analytics_loading")}</p> : null}
+          {isRefreshing ? <p className={dash.refreshNote}>{t("analytics_loading")}</p> : null}
         </div>
       </div>
 
@@ -1277,23 +636,20 @@ export default function AnalyticsPage() {
           does not select a view, it selects which views exist. Two controls of
           the same shape stacked on each other would read as one nested strip
           and nobody would know which row they were on. */}
-      <div className="pt-1 flex flex-col gap-3">
-        <div
-          className="inline-flex self-start rounded-lg border cw-border overflow-hidden"
-          role="group"
-          aria-label={t("analytics_mode_label")}
-        >
-          {DASHBOARD_MODES.map((mode, index) => (
+      <div className={dash.switches}>
+        <div className={dash.modes} role="group" aria-label={t("analytics_mode_label")}>
+          {DASHBOARD_MODES.map((mode) => (
             <button
               key={mode}
               type="button"
+              data-cw-ink-control
               aria-pressed={dashboardMode === mode}
               onClick={() => handleDashboardModeChange(mode)}
-              className={`px-3 py-1.5 text-sm ${index > 0 ? "border-l cw-border" : ""} ${
-                dashboardMode === mode ? "cw-surface-2 cw-text" : "cw-btn-muted cw-muted"
-              }`}
+              className={dash.mode}
             >
-              {mode === "courses" ? t("analytics_mode_courses") : t("analytics_mode_traffic")}
+              <InteractionInkLabel>
+                {mode === "courses" ? t("analytics_mode_courses") : t("analytics_mode_traffic")}
+              </InteractionInkLabel>
             </button>
           ))}
         </div>
@@ -1301,10 +657,10 @@ export default function AnalyticsPage() {
       </div>
 
       {analyticsSection === "inputs_quality" && (
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold cw-text">{t("analytics_inputs_title")}</h2>
-          <div className="flex flex-wrap gap-2">
-            <button onClick={() => fetchAnalytics()} className="px-4 py-2 text-sm font-medium cw-btn">
+        <div className={dash.sectionHead}>
+          <h2 className={dash.sectionTitle}>{t("analytics_inputs_title")}</h2>
+          <div className={controls.actions}>
+            <button type="button" onClick={() => fetchAnalytics()} className={controls.action}>
               {t("analytics_refresh")}
             </button>
           </div>
@@ -1313,13 +669,13 @@ export default function AnalyticsPage() {
 
       {analyticsSection === "inputs_quality" && (
         <div className={surfaces.plate}>
-          <p className="text-sm font-medium cw-text mb-3">{t("analytics_edit_fields_hint")}</p>
-          <div className="space-y-4">
+          <p className={dash.plateIntro}>{t("analytics_edit_fields_hint")}</p>
+          <div className={dash.plateStack}>
             <div>
-              <p className="text-xs cw-muted mb-2">{t("analytics_primary_fields")}</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <p className={dash.groupLabel}>{t("analytics_primary_fields")}</p>
+              <div className={dash.checks}>
                 {PRIMARY_METRIC_FIELDS.map((field) => (
-                  <label key={field.key} className="flex items-center gap-2 text-sm cw-text">
+                  <label key={field.key} className={dash.check}>
                     <input
                       type="checkbox"
                       checked={visibleFields.includes(field.key)}
@@ -1331,10 +687,10 @@ export default function AnalyticsPage() {
               </div>
             </div>
             <div>
-              <p className="text-xs cw-muted mb-2">{t("analytics_optional_fields")}</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <p className={dash.groupLabel}>{t("analytics_optional_fields")}</p>
+              <div className={dash.checks}>
                 {OPTIONAL_METRIC_FIELDS.map((field) => (
-                  <label key={field.key} className="flex items-center gap-2 text-sm cw-text">
+                  <label key={field.key} className={dash.check}>
                     <input
                       type="checkbox"
                       checked={visibleFields.includes(field.key)}
@@ -1346,13 +702,13 @@ export default function AnalyticsPage() {
               </div>
             </div>
             <div>
-              <p className="text-xs cw-muted mb-2">{t("analytics_funnel_settings")}</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+              <p className={dash.groupLabel}>{t("analytics_funnel_settings")}</p>
+              <div className={dash.modesSpaced} role="group" aria-label={t("analytics_funnel_settings")}>
                 <button
                   type="button"
-                  className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
-                    funnelUiSettings.mode === "payment" ? "cw-border cw-surface-2 cw-text" : "cw-btn cw-btn-muted"
-                  }`}
+                  data-cw-ink-control
+                  aria-pressed={funnelUiSettings.mode === "payment"}
+                  className={dash.mode}
                   onClick={() =>
                     setFunnelUiSettings((prev) => ({
                       ...prev,
@@ -1360,13 +716,13 @@ export default function AnalyticsPage() {
                     }))
                   }
                 >
-                  {t("analytics_mode_payment")}
+                  <InteractionInkLabel>{t("analytics_mode_payment")}</InteractionInkLabel>
                 </button>
                 <button
                   type="button"
-                  className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
-                    funnelUiSettings.mode === "access" ? "cw-border cw-surface-2 cw-text" : "cw-btn cw-btn-muted"
-                  }`}
+                  data-cw-ink-control
+                  aria-pressed={funnelUiSettings.mode === "access"}
+                  className={dash.mode}
                   onClick={() =>
                     setFunnelUiSettings((prev) => ({
                       ...prev,
@@ -1374,11 +730,11 @@ export default function AnalyticsPage() {
                     }))
                   }
                 >
-                  {t("analytics_mode_access")}
+                  <InteractionInkLabel>{t("analytics_mode_access")}</InteractionInkLabel>
                 </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <label className="flex items-center gap-2 text-sm cw-text">
+              <div className={dash.checksWide}>
+                <label className={dash.check}>
                   <input
                     type="checkbox"
                     checked={funnelUiSettings.showAccessGrantedCard}
@@ -1398,40 +754,40 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "inputs_quality" && (
-        <div className={`${surfaces.plate} space-y-4`}>
-          <p className="text-sm font-medium cw-text">{t("analytics_edit_inputs_hint")}</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-            <label className="text-xs cw-muted flex flex-col gap-1">
+        <div className={`${surfaces.plate} ${dash.plateStack}`}>
+          <p className={dash.plateIntro}>{t("analytics_edit_inputs_hint")}</p>
+          <div className={dash.inputs}>
+            <label className={dash.inputLabel}>
               {t("analytics_metric_reach")}
               <input
                 type="number"
                 min={0}
                 value={draftReach}
                 onChange={(e) => setDraftReach(e.target.value)}
-                className="cw-input px-3 py-2"
+                className={controls.input}
               />
             </label>
-            <label className="text-xs cw-muted flex flex-col gap-1">
+            <label className={dash.inputLabel}>
               {t("analytics_metric_impressions")}
               <input
                 type="number"
                 min={0}
                 value={draftImpressions}
                 onChange={(e) => setDraftImpressions(e.target.value)}
-                className="cw-input px-3 py-2"
+                className={controls.input}
               />
             </label>
-            <label className="text-xs cw-muted flex flex-col gap-1">
+            <label className={dash.inputLabel}>
               {t("analytics_metric_clicks")}
               <input
                 type="number"
                 min={0}
                 value={draftClicks}
                 onChange={(e) => setDraftClicks(e.target.value)}
-                className="cw-input px-3 py-2"
+                className={controls.input}
               />
             </label>
-            <label className="text-xs cw-muted flex flex-col gap-1">
+            <label className={dash.inputLabel}>
               {t("analytics_metric_spend")}
               <input
                 type="number"
@@ -1439,26 +795,22 @@ export default function AnalyticsPage() {
                 step="0.01"
                 value={draftSpend}
                 onChange={(e) => setDraftSpend(e.target.value)}
-                className="cw-input px-3 py-2"
+                className={controls.input}
               />
             </label>
-            <label className="text-xs cw-muted flex flex-col gap-1">
+            <label className={dash.inputLabel}>
               {t("analytics_period_label")}
               <input
                 type="text"
                 value={draftPeriodLabel}
                 onChange={(e) => setDraftPeriodLabel(e.target.value)}
                 placeholder={t("analytics_period_label_placeholder")}
-                className="cw-input px-3 py-2"
+                className={controls.input}
               />
             </label>
           </div>
-          <div className="flex justify-end">
-            <button
-              disabled={savingMarketing}
-              onClick={saveMarketingInputs}
-              className="px-4 py-2 text-sm font-medium cw-btn disabled:opacity-50"
-            >
+          <div className={controls.iconActions}>
+            <button type="button" disabled={savingMarketing} onClick={saveMarketingInputs} className={controls.action}>
               {savingMarketing ? t("analytics_saving") : t("analytics_save")}
             </button>
           </div>
@@ -1475,7 +827,7 @@ export default function AnalyticsPage() {
           collapseLabel={t("common_collapse")}
         >
           {freshness ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            <div className={dash.tiles3}>
               {[
                 {
                   key: "local_view_content_last_at",
@@ -1523,16 +875,16 @@ export default function AnalyticsPage() {
                 const status = freshnessStatus(item.value, item.staleHours);
                 return (
                   <div key={item.key} className={surfaces.tile}>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs cw-muted">{item.label}</p>
+                    <div className={dash.tileHead}>
+                      <p className={dash.figureLabel}>{item.label}</p>
                       <span
-                        className={`text-[11px] rounded-full px-2 py-0.5 border ${
+                        className={
                           status === "ok"
                             ? "cw-status-success-badge"
                             : status === "warn"
                               ? "cw-status-pending-badge"
-                              : "cw-muted border cw-border"
-                        }`}
+                              : dash.freshnessEmptyBadge
+                        }
                       >
                         {status === "ok"
                           ? t("analytics_freshness_status_ok")
@@ -1541,18 +893,18 @@ export default function AnalyticsPage() {
                             : t("analytics_freshness_status_empty")}
                       </span>
                     </div>
-                    <p className="text-sm cw-text mt-2">{item.value ? new Date(item.value).toLocaleString() : "—"}</p>
+                    <p className={dash.figureSmall}>{item.value ? new Date(item.value).toLocaleString() : "—"}</p>
                   </div>
                 );
               })}
 
-              <div className={`${surfaces.tile} md:col-span-2 lg:col-span-3`}>
-                <p className="text-xs cw-muted">{t("analytics_freshness_quality_snapshot")}</p>
-                <p className="text-sm cw-text mt-2">{freshness.quality_snapshot_date ?? "—"}</p>
+              <div className={`${surfaces.tile} ${dash.tileSpanAll}`}>
+                <p className={dash.figureLabel}>{t("analytics_freshness_quality_snapshot")}</p>
+                <p className={dash.figureSmall}>{freshness.quality_snapshot_date ?? "—"}</p>
               </div>
             </div>
           ) : (
-            <div className="text-sm cw-muted">{t("analytics_freshness_no_data")}</div>
+            <div className={dash.emptyNote}>{t("analytics_freshness_no_data")}</div>
           )}
         </AnalyticsCollapsePanel>
       )}
@@ -1567,101 +919,83 @@ export default function AnalyticsPage() {
           collapseLabel={t("common_collapse")}
         >
           {qualityGaps ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-2">
+            <div className={dash.tiles7}>
               <div className={surfaces.tile}>
-                <p className="text-xs cw-muted">{t("analytics_quality_missing_fbc_raw")}</p>
-                <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_missing_fbc_raw ?? 0}</p>
+                <p className={dash.figureLabel}>{t("analytics_quality_missing_fbc_raw")}</p>
+                <p className={dash.figure}>{qualityGaps.paid_missing_fbc_raw ?? 0}</p>
               </div>
               <div className={surfaces.tile}>
-                <p className="text-xs cw-muted">{t("analytics_quality_recoverable_fbc")}</p>
-                <p className="text-lg font-semibold cw-text mt-1">
-                  {qualityGaps.paid_recoverable_fbc_from_fbclid ?? 0}
-                </p>
+                <p className={dash.figureLabel}>{t("analytics_quality_recoverable_fbc")}</p>
+                <p className={dash.figure}>{qualityGaps.paid_recoverable_fbc_from_fbclid ?? 0}</p>
               </div>
               <div className={surfaces.tile}>
-                <p className="text-xs cw-muted">{t("analytics_quality_truly_missing_fbc")}</p>
-                <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_truly_missing_fbc ?? 0}</p>
+                <p className={dash.figureLabel}>{t("analytics_quality_truly_missing_fbc")}</p>
+                <p className={dash.figure}>{qualityGaps.paid_truly_missing_fbc ?? 0}</p>
               </div>
               <div className={surfaces.tile}>
-                <p className="text-xs cw-muted">{t("analytics_quality_missing_fbclid")}</p>
-                <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_missing_fbclid ?? 0}</p>
+                <p className={dash.figureLabel}>{t("analytics_quality_missing_fbclid")}</p>
+                <p className={dash.figure}>{qualityGaps.paid_missing_fbclid ?? 0}</p>
               </div>
               <div className={surfaces.tile}>
-                <p className="text-xs cw-muted">{t("analytics_quality_missing_fbp")}</p>
-                <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_missing_fbp ?? 0}</p>
+                <p className={dash.figureLabel}>{t("analytics_quality_missing_fbp")}</p>
+                <p className={dash.figure}>{qualityGaps.paid_missing_fbp ?? 0}</p>
               </div>
               <div className={surfaces.tile}>
-                <p className="text-xs cw-muted">{t("analytics_quality_missing_page_url")}</p>
-                <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_missing_page_url ?? 0}</p>
+                <p className={dash.figureLabel}>{t("analytics_quality_missing_page_url")}</p>
+                <p className={dash.figure}>{qualityGaps.paid_missing_page_url ?? 0}</p>
               </div>
               <div className={surfaces.tile}>
-                <p className="text-xs cw-muted">{t("analytics_quality_missing_client_ip")}</p>
-                <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_missing_client_ip ?? 0}</p>
+                <p className={dash.figureLabel}>{t("analytics_quality_missing_client_ip")}</p>
+                <p className={dash.figure}>{qualityGaps.paid_missing_client_ip ?? 0}</p>
               </div>
               <div className={surfaces.tile}>
-                <p className="text-xs cw-muted">{t("analytics_quality_missing_client_ua")}</p>
-                <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_missing_client_ua ?? 0}</p>
+                <p className={dash.figureLabel}>{t("analytics_quality_missing_client_ua")}</p>
+                <p className={dash.figure}>{qualityGaps.paid_missing_client_ua ?? 0}</p>
               </div>
             </div>
           ) : (
-            <div className="text-sm cw-muted">{t("analytics_quality_no_data")}</div>
+            <div className={dash.emptyNote}>{t("analytics_quality_no_data")}</div>
           )}
 
-          <div className="mt-4">
-            <h4 className="text-xs font-semibold cw-text uppercase tracking-wide mb-2">
-              {t("analytics_quality_trend_title")}
-            </h4>
+          <div className={dash.trend}>
+            <h4 className={dash.trendTitle}>{t("analytics_quality_trend_title")}</h4>
             {qualitySeries.length > 0 ? (
               <div className={surfaces.subPlate}>
-                <table className="min-w-full text-xs md:text-sm">
-                  <thead className="cw-surface-2 border-b cw-border">
+                <table className={surfaces.tableDense}>
+                  <thead className={surfaces.tableHead}>
                     <tr>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_col_date")}</th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_col_paid")}</th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">
-                        {t("analytics_quality_missing_fbc_raw")}
-                      </th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">
-                        {t("analytics_quality_recoverable_fbc")}
-                      </th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">
-                        {t("analytics_quality_truly_missing_fbc")}
-                      </th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">
-                        {t("analytics_quality_missing_fbclid")}
-                      </th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_fbp")}</th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">
-                        {t("analytics_quality_missing_page_url")}
-                      </th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">
-                        {t("analytics_quality_missing_client_ip")}
-                      </th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">
-                        {t("analytics_quality_missing_client_ua")}
-                      </th>
+                      <th className={surfaces.thDense}>{t("analytics_col_date")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_col_paid")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_quality_missing_fbc_raw")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_quality_recoverable_fbc")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_quality_truly_missing_fbc")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_quality_missing_fbclid")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_quality_missing_fbp")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_quality_missing_page_url")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_quality_missing_client_ip")}</th>
+                      <th className={surfaces.thDense}>{t("analytics_quality_missing_client_ua")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {qualitySeries.map((row) => (
-                      <tr key={row.date} className="border-t cw-border">
-                        <td className="px-3 py-2 cw-text">{row.date}</td>
-                        <td className="px-3 py-2 cw-text">{row.paid_orders}</td>
-                        <td className="px-3 py-2 cw-muted">{row.missing_fbc_raw}</td>
-                        <td className="px-3 py-2 cw-muted">{row.recoverable_fbc_from_fbclid}</td>
-                        <td className="px-3 py-2 cw-muted">{row.truly_missing_fbc}</td>
-                        <td className="px-3 py-2 cw-muted">{row.missing_fbclid}</td>
-                        <td className="px-3 py-2 cw-muted">{row.missing_fbp}</td>
-                        <td className="px-3 py-2 cw-muted">{row.missing_page_url}</td>
-                        <td className="px-3 py-2 cw-muted">{row.missing_client_ip}</td>
-                        <td className="px-3 py-2 cw-muted">{row.missing_client_ua}</td>
+                      <tr key={row.date} className={surfaces.row}>
+                        <td className={`${surfaces.tdDense} cw-text`}>{row.date}</td>
+                        <td className={`${surfaces.tdDense} cw-text`}>{row.paid_orders}</td>
+                        <td className={`${surfaces.tdDense} cw-muted`}>{row.missing_fbc_raw}</td>
+                        <td className={`${surfaces.tdDense} cw-muted`}>{row.recoverable_fbc_from_fbclid}</td>
+                        <td className={`${surfaces.tdDense} cw-muted`}>{row.truly_missing_fbc}</td>
+                        <td className={`${surfaces.tdDense} cw-muted`}>{row.missing_fbclid}</td>
+                        <td className={`${surfaces.tdDense} cw-muted`}>{row.missing_fbp}</td>
+                        <td className={`${surfaces.tdDense} cw-muted`}>{row.missing_page_url}</td>
+                        <td className={`${surfaces.tdDense} cw-muted`}>{row.missing_client_ip}</td>
+                        <td className={`${surfaces.tdDense} cw-muted`}>{row.missing_client_ua}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             ) : (
-              <div className="text-sm cw-muted">{t("analytics_quality_trend_no_data")}</div>
+              <div className={dash.emptyNote}>{t("analytics_quality_trend_no_data")}</div>
             )}
           </div>
         </AnalyticsCollapsePanel>
@@ -1677,62 +1011,62 @@ export default function AnalyticsPage() {
           collapseLabel={t("common_collapse")}
         >
           {purchaseTransport ? (
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-9 gap-2">
+            <div className={dash.stack}>
+              <div className={dash.tiles9}>
                 <div className={surfaces.tile}>
-                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_paid_total")}</p>
-                  <p className="text-lg font-semibold cw-text mt-1">{purchaseTransport.total_paid_orders}</p>
+                  <p className={dash.figureLabel}>{t("analytics_purchase_transport_paid_total")}</p>
+                  <p className={dash.figure}>{purchaseTransport.total_paid_orders}</p>
                 </div>
                 <div className={surfaces.tile}>
-                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_success")}</p>
-                  <p className="text-lg font-semibold cw-status-success-text mt-1">{purchaseTransport.success}</p>
+                  <p className={dash.figureLabel}>{t("analytics_purchase_transport_success")}</p>
+                  <p className={`${dash.figure} cw-status-success-text`}>{purchaseTransport.success}</p>
                 </div>
                 <div className={surfaces.tile}>
-                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_pending")}</p>
-                  <p className="text-lg font-semibold cw-status-pending-text mt-1">
+                  <p className={dash.figureLabel}>{t("analytics_purchase_transport_pending")}</p>
+                  <p className={`${dash.figure} cw-status-pending-text`}>
                     {purchaseTransport.pending + purchaseTransport.running}
                   </p>
                 </div>
                 <div className={surfaces.tile}>
-                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_failed")}</p>
-                  <p className="text-lg font-semibold cw-status-failed-text mt-1">{purchaseTransport.failed}</p>
+                  <p className={dash.figureLabel}>{t("analytics_purchase_transport_failed")}</p>
+                  <p className={`${dash.figure} cw-status-failed-text`}>{purchaseTransport.failed}</p>
                 </div>
                 <div className={surfaces.tile}>
-                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_missing_job")}</p>
-                  <p className="text-lg font-semibold cw-text mt-1">{purchaseTransport.missing_job}</p>
+                  <p className={dash.figureLabel}>{t("analytics_purchase_transport_missing_job")}</p>
+                  <p className={dash.figure}>{purchaseTransport.missing_job}</p>
                 </div>
                 <div className={surfaces.tile}>
-                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_stale_pending")}</p>
-                  <p className="text-lg font-semibold cw-text mt-1">{purchaseTransport.stale_pending}</p>
+                  <p className={dash.figureLabel}>{t("analytics_purchase_transport_stale_pending")}</p>
+                  <p className={dash.figure}>{purchaseTransport.stale_pending}</p>
                 </div>
                 <div className={surfaces.tile}>
-                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_client_signal")}</p>
-                  <p className="text-lg font-semibold cw-text mt-1">{purchaseTransport.client_signal}</p>
+                  <p className={dash.figureLabel}>{t("analytics_purchase_transport_client_signal")}</p>
+                  <p className={dash.figure}>{purchaseTransport.client_signal}</p>
                 </div>
                 <div className={surfaces.tile}>
-                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_missing_client_signal")}</p>
-                  <p className="text-lg font-semibold cw-text mt-1">{purchaseTransport.missing_client_signal}</p>
+                  <p className={dash.figureLabel}>{t("analytics_purchase_transport_missing_client_signal")}</p>
+                  <p className={dash.figure}>{purchaseTransport.missing_client_signal}</p>
                 </div>
                 <div className={surfaces.tile}>
-                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_last_success")}</p>
-                  <p className="text-sm font-semibold cw-text mt-1">
+                  <p className={dash.figureLabel}>{t("analytics_purchase_transport_last_success")}</p>
+                  <p className={dash.figureSmall}>
                     {purchaseTransport.last_success_at
                       ? new Date(purchaseTransport.last_success_at).toLocaleString()
                       : "—"}
                   </p>
                 </div>
               </div>
-              <div className="text-xs cw-muted">
+              <div className={dash.coverage}>
                 {t("analytics_purchase_transport_coverage")}{" "}
-                <span className="cw-text font-medium">
+                <span className={dash.strong}>
                   {purchaseTransport.total_paid_orders > 0
                     ? `${Math.round((purchaseTransport.success / purchaseTransport.total_paid_orders) * 100)}%`
                     : "0%"}
                 </span>
               </div>
-              <div className="text-xs cw-muted">
+              <div className={dash.coverage}>
                 {t("analytics_purchase_transport_client_signal_coverage")}{" "}
-                <span className="cw-text font-medium">
+                <span className={dash.strong}>
                   {purchaseTransport.total_paid_orders > 0
                     ? `${Math.round((purchaseTransport.client_signal / purchaseTransport.total_paid_orders) * 100)}%`
                     : "0%"}
@@ -1740,7 +1074,7 @@ export default function AnalyticsPage() {
               </div>
             </div>
           ) : (
-            <div className="text-sm cw-muted">{t("analytics_purchase_transport_no_data")}</div>
+            <div className={dash.emptyNote}>{t("analytics_purchase_transport_no_data")}</div>
           )}
         </AnalyticsCollapsePanel>
       )}
@@ -1748,7 +1082,7 @@ export default function AnalyticsPage() {
       {/* Requests, purchases, conversion: the business row, nothing to do with
           which channel they arrived through. */}
       {analyticsSection === "overview" && dashboardMode === "courses" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className={dash.kpis}>
           {/* This card showed one number — `count(*)` over a table that, until the
             form was wired to it, held two smoke-test rows — and it showed it
             with no way to tell a request nobody has answered from one that
@@ -1770,56 +1104,56 @@ export default function AnalyticsPage() {
             from the mode where its subject does not exist is not a setting.
             Found by opening the page — no test would have seen it. */}
           <div className={surfaces.plate}>
-            <div className="text-sm font-medium cw-muted">{t("analytics_leads")}</div>
-            <div className="text-3xl font-bold mt-2 cw-text">{leads?.new_in_period ?? summary.totalLeads}</div>
+            <div className={dash.figureHeadlineLabel}>{t("analytics_leads")}</div>
+            <div className={dash.figureHeadline}>{leads?.new_in_period ?? summary.totalLeads}</div>
             {leads ? (
-              <div className="text-xs cw-muted mt-2 space-y-0.5">
+              <div className={dash.figureNote}>
                 <div>
-                  {t("analytics_leads_won")}: <span className="cw-text">{leads.won_in_period}</span>
+                  {t("analytics_leads_won")}: <span className={dash.strongPlain}>{leads.won_in_period}</span>
                   {leads.new_in_period > 0 ? ` · ${leads.conversion_percent}%` : ""}
                 </div>
                 <div>
                   {t("analytics_leads_open")}:{" "}
-                  <span className={leads.open_total > 0 ? "cw-text" : ""}>{leads.open_total}</span>
+                  <span className={leads.open_total > 0 ? dash.strongPlain : undefined}>{leads.open_total}</span>
                 </div>
               </div>
             ) : null}
           </div>
           <div className={surfaces.plate}>
-            <div className="text-sm font-medium cw-muted">{t("analytics_purchases")}</div>
-            <div className="text-3xl font-bold mt-2 cw-text">{summary.totalPaidOrders}</div>
+            <div className={dash.figureHeadlineLabel}>{t("analytics_purchases")}</div>
+            <div className={dash.figureHeadline}>{summary.totalPaidOrders}</div>
           </div>
           <div className={surfaces.plate}>
-            <div className="text-sm font-medium cw-muted">{primaryConversionLabel}</div>
-            <div className="text-3xl font-bold mt-2 cw-text">{primaryConversion}%</div>
+            <div className={dash.figureHeadlineLabel}>{primaryConversionLabel}</div>
+            <div className={dash.figureHeadline}>{primaryConversion}%</div>
           </div>
           <div className={surfaces.plate}>
-            <div className="text-sm font-medium cw-muted">{t("analytics_revenue_period")}</div>
-            <div className="text-3xl font-bold mt-2 cw-text">{summary.totalRevenue.toLocaleString()} ₴</div>
+            <div className={dash.figureHeadlineLabel}>{t("analytics_revenue_period")}</div>
+            <div className={dash.figureHeadline}>{summary.totalRevenue.toLocaleString()} ₴</div>
           </div>
         </div>
       )}
 
       {/* Spend, ROAS, CPA, CPC, CTR — the ad ledger. */}
       {analyticsSection === "overview" && dashboardMode === "traffic" && (
-        <div className={`${surfaces.plate} space-y-4 md:space-y-5`}>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
-            <div>
-              <h2 className="text-lg font-semibold cw-text">{t("analytics_unified_kpi_title")}</h2>
-              <p className="text-sm cw-muted">{t("analytics_unified_kpi_subtitle")}</p>
+        <div className={`${surfaces.plate} ${dash.plateStack}`}>
+          <div className={dash.sectionRow}>
+            <div className={dash.sectionHead}>
+              <h2 className={dash.sectionTitle}>{t("analytics_unified_kpi_title")}</h2>
+              <p className={dash.sectionSubtitle}>{t("analytics_unified_kpi_subtitle")}</p>
             </div>
             {marketingInputs?.updated_at ? (
-              <span className="text-xs cw-muted">
+              <span className={dash.sectionMeta}>
                 {t("analytics_last_update")}: {new Date(marketingInputs.updated_at).toLocaleString()}
               </span>
             ) : null}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className={dash.ledger}>
             {METRIC_FIELDS.filter((field) => visibleFields.includes(field.key)).map((field) => (
               <div key={field.key} className={surfaces.tile}>
-                <div className="text-xs cw-muted">{t(field.labelKey as never)}</div>
-                <div className="text-lg font-semibold cw-text mt-1">{renderMetricValue(field.key)}</div>
+                <div className={dash.figureLabel}>{t(field.labelKey as never)}</div>
+                <div className={dash.figure}>{renderMetricValue(field.key)}</div>
               </div>
             ))}
           </div>
@@ -1834,39 +1168,39 @@ export default function AnalyticsPage() {
           is `/admin/access`, and the link goes there rather than growing a
           second answer here. */}
       {analyticsSection === "overview" && dashboardMode === "courses" && learning && (
-        <div className={`${surfaces.plate} space-y-4`}>
-          <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
-            <div>
-              <h2 className="text-lg font-semibold cw-text">{t("analytics_learning_title")}</h2>
-              <p className="text-sm cw-muted">{t("analytics_learning_subtitle")}</p>
+        <div className={`${surfaces.plate} ${dash.plateStack}`}>
+          <div className={dash.sectionRow}>
+            <div className={dash.sectionHead}>
+              <h2 className={dash.sectionTitle}>{t("analytics_learning_title")}</h2>
+              <p className={dash.sectionSubtitle}>{t("analytics_learning_subtitle")}</p>
             </div>
-            <Link href="/admin/access" prefetch={false} className="text-xs cw-link-hover shrink-0">
+            <Link href="/admin/access" prefetch={false} className={`cw-link-hover ${dash.sectionAside}`}>
               {t("analytics_learning_open_access")}
             </Link>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className={dash.learning}>
             <div className={surfaces.tile}>
-              <div className="text-xs cw-muted">{t("analytics_learning_granted")}</div>
-              <div className="text-2xl font-bold cw-text mt-1">{learning.granted_in_period.toLocaleString()}</div>
+              <div className={dash.figureLabel}>{t("analytics_learning_granted")}</div>
+              <div className={dash.figureMid}>{learning.granted_in_period.toLocaleString()}</div>
             </div>
             <div className={surfaces.tile}>
-              <div className="text-xs cw-muted">{t("analytics_learning_started")}</div>
-              <div className="text-2xl font-bold cw-text mt-1">{learning.started_in_period.toLocaleString()}</div>
-              <div className="text-xs cw-muted mt-1">{learning.started_percent}%</div>
+              <div className={dash.figureLabel}>{t("analytics_learning_started")}</div>
+              <div className={dash.figureMid}>{learning.started_in_period.toLocaleString()}</div>
+              <div className={dash.figureAside}>{learning.started_percent}%</div>
             </div>
             <div className={surfaces.tile}>
-              <div className="text-xs cw-muted">{t("analytics_learning_active")}</div>
-              <div className="text-2xl font-bold cw-text mt-1">{learning.active_total.toLocaleString()}</div>
+              <div className={dash.figureLabel}>{t("analytics_learning_active")}</div>
+              <div className={dash.figureMid}>{learning.active_total.toLocaleString()}</div>
             </div>
             {/* A deadline is a fact about now, not about the picker's window —
               so this one card deliberately ignores the period. */}
             <div className={surfaces.tile}>
-              <div className="text-xs cw-muted">{t("analytics_learning_expiring")}</div>
-              <div className={`text-2xl font-bold mt-1 ${learning.expiring_14d > 0 ? "cw-text" : "cw-muted"}`}>
+              <div className={dash.figureLabel}>{t("analytics_learning_expiring")}</div>
+              <div className={learning.expiring_14d > 0 ? dash.figureMid : dash.figureMidMuted}>
                 {learning.expiring_14d.toLocaleString()}
               </div>
               {learning.expired_total > 0 && (
-                <div className="text-xs cw-muted mt-1">
+                <div className={dash.figureAside}>
                   {t("analytics_learning_expired")}: {learning.expired_total}
                 </div>
               )}
@@ -1878,20 +1212,20 @@ export default function AnalyticsPage() {
       {/* Scroll depth and scroll-to-checkout describe how a PAGE performs, which
           is a traffic question. */}
       {analyticsSection === "overview" && dashboardMode === "traffic" && (
-        <div className={`${surfaces.plate} space-y-4`}>
-          <div>
-            <h2 className="text-lg font-semibold cw-text">{t("analytics_engagement_title")}</h2>
-            <p className="text-sm cw-muted">{t("analytics_engagement_subtitle")}</p>
+        <div className={`${surfaces.plate} ${dash.plateStack}`}>
+          <div className={dash.sectionHead}>
+            <h2 className={dash.sectionTitle}>{t("analytics_engagement_title")}</h2>
+            <p className={dash.sectionSubtitle}>{t("analytics_engagement_subtitle")}</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className={dash.pair}>
             <div className={surfaces.tile}>
-              <div className="text-xs cw-muted">{t("analytics_metric_scroll_depth_50")}</div>
-              <div className="text-2xl font-bold cw-text mt-1">{scrollDepth50.toLocaleString()}</div>
+              <div className={dash.figureLabel}>{t("analytics_metric_scroll_depth_50")}</div>
+              <div className={dash.figureMid}>{scrollDepth50.toLocaleString()}</div>
             </div>
             <div className={surfaces.tile}>
-              <div className="text-xs cw-muted">{t("analytics_scroll50_to_checkout_percent")}</div>
-              <div className="text-2xl font-bold cw-text mt-1">{scroll50ToCheckoutPercent}%</div>
-              <div className="text-xs cw-muted mt-1">
+              <div className={dash.figureLabel}>{t("analytics_scroll50_to_checkout_percent")}</div>
+              <div className={dash.figureMid}>{scroll50ToCheckoutPercent}%</div>
+              <div className={dash.figureAside}>
                 {t("analytics_event_initiate_checkout")}: {engagementInitiateAligned}
                 {engagementAlignedFrom
                   ? ` • ${t("analytics_period_from")} ${new Date(engagementAlignedFrom).toLocaleDateString(dateLocale)}`
@@ -1903,10 +1237,10 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "funnel" && (
-        <div className={`${surfaces.plate} space-y-4`}>
-          <h2 className="text-lg font-semibold cw-text">{t("analytics_chain_title")}</h2>
+        <div className={`${surfaces.plate} ${dash.plateStack}`}>
+          <h2 className={dash.sectionTitle}>{t("analytics_chain_title")}</h2>
           {funnelSources ? (
-            <div className="flex flex-wrap gap-2">
+            <div className={dash.sources}>
               {[
                 {
                   key: "unique_impressions",
@@ -1930,48 +1264,45 @@ export default function AnalyticsPage() {
                     ]
                   : []),
               ].map((item) => (
-                <span
-                  key={item.key}
-                  className="text-xs cw-muted border cw-border rounded-full px-2.5 py-1 cw-surface-2"
-                >
+                <span key={item.key} className={dash.sourceTag}>
                   {item.label}: {funnelSourceLabel(t, item.value as Parameters<typeof funnelSourceLabel>[1])}
                 </span>
               ))}
             </div>
           ) : null}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className={dash.chain}>
             <div className={surfaces.tile}>
-              <div className="text-xs cw-muted">{t("analytics_event_unique_impressions")}</div>
-              <div className="text-2xl font-bold cw-text mt-1">{uniqueImpressions.toLocaleString()}</div>
-              <div className="text-xs cw-muted mt-1">{t("analytics_chain_from_prev")}: —</div>
+              <div className={dash.figureLabel}>{t("analytics_event_unique_impressions")}</div>
+              <div className={dash.figureMid}>{uniqueImpressions.toLocaleString()}</div>
+              <div className={dash.figureAside}>{t("analytics_chain_from_prev")}: —</div>
             </div>
             <div className={surfaces.tile}>
-              <div className="text-xs cw-muted">{t("analytics_event_view_content")}</div>
-              <div className="text-2xl font-bold cw-text mt-1">{funnelChain?.view_content ?? 0}</div>
-              <div className="text-xs cw-muted mt-1">
+              <div className={dash.figureLabel}>{t("analytics_event_view_content")}</div>
+              <div className={dash.figureMid}>{funnelChain?.view_content ?? 0}</div>
+              <div className={dash.figureAside}>
                 {t("analytics_chain_from_prev")}: {viewContentFromReachPercent}%
               </div>
             </div>
             <div className={surfaces.tile}>
-              <div className="text-xs cw-muted">{t("analytics_event_initiate_checkout")}</div>
-              <div className="text-2xl font-bold cw-text mt-1">{funnelChain?.initiate_checkout ?? 0}</div>
-              <div className="text-xs cw-muted mt-1">
+              <div className={dash.figureLabel}>{t("analytics_event_initiate_checkout")}</div>
+              <div className={dash.figureMid}>{funnelChain?.initiate_checkout ?? 0}</div>
+              <div className={dash.figureAside}>
                 {t("analytics_chain_from_prev")}: {funnelChain?.view_to_checkout_percent ?? 0}%
               </div>
             </div>
             <div className={surfaces.tile}>
-              <div className="text-xs cw-muted">{t("analytics_event_purchase")}</div>
-              <div className="text-2xl font-bold cw-text mt-1">{funnelChain?.purchase ?? 0}</div>
-              <div className="text-xs cw-muted mt-1">
+              <div className={dash.figureLabel}>{t("analytics_event_purchase")}</div>
+              <div className={dash.figureMid}>{funnelChain?.purchase ?? 0}</div>
+              <div className={dash.figureAside}>
                 {t("analytics_chain_from_prev")}: {funnelChain?.checkout_to_purchase_percent ?? 0}%
               </div>
             </div>
             {funnelUiSettings.showAccessGrantedCard || funnelUiSettings.mode === "access" ? (
               <div className={surfaces.tile}>
-                <div className="text-xs cw-muted">{t("analytics_event_access_granted")}</div>
-                <div className="text-2xl font-bold cw-text mt-1">{funnelChain?.access_granted ?? 0}</div>
-                <div className="text-xs cw-muted mt-1">
+                <div className={dash.figureLabel}>{t("analytics_event_access_granted")}</div>
+                <div className={dash.figureMid}>{funnelChain?.access_granted ?? 0}</div>
+                <div className={dash.figureAside}>
                   {t("analytics_chain_from_prev")}: {funnelChain?.purchase_to_access_percent ?? 0}%
                 </div>
               </div>
@@ -1979,42 +1310,40 @@ export default function AnalyticsPage() {
           </div>
 
           <div className={surfaces.subPlate}>
-            <table className="min-w-full text-sm">
-              <thead className="cw-surface-2 border-b cw-border">
+            <table className={surfaces.tableDense}>
+              <thead className={surfaces.tableHead}>
                 <tr>
-                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">{t("analytics_col_event")}</th>
-                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">{t("analytics_col_total")}</th>
-                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">
-                    {t("analytics_col_conversion_from_prev")}
-                  </th>
+                  <th className={surfaces.thDense}>{t("analytics_col_event")}</th>
+                  <th className={surfaces.thDense}>{t("analytics_col_total")}</th>
+                  <th className={surfaces.thDense}>{t("analytics_col_conversion_from_prev")}</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-t cw-border">
-                  <td className="px-4 py-3 cw-text font-medium">{t("analytics_event_unique_impressions")}</td>
-                  <td className="px-4 py-3 cw-text">{uniqueImpressions}</td>
-                  <td className="px-4 py-3 cw-muted">—</td>
+                <tr className={surfaces.row}>
+                  <td className={`${surfaces.tdDense} ${dash.strong}`}>{t("analytics_event_unique_impressions")}</td>
+                  <td className={`${surfaces.tdDense} cw-text`}>{uniqueImpressions}</td>
+                  <td className={`${surfaces.tdDense} cw-muted`}>—</td>
                 </tr>
-                <tr className="border-t cw-border">
-                  <td className="px-4 py-3 cw-text font-medium">{t("analytics_event_view_content")}</td>
-                  <td className="px-4 py-3 cw-text">{funnelChain?.view_content ?? 0}</td>
-                  <td className="px-4 py-3 cw-muted">{viewContentFromReachPercent}%</td>
+                <tr className={surfaces.row}>
+                  <td className={`${surfaces.tdDense} ${dash.strong}`}>{t("analytics_event_view_content")}</td>
+                  <td className={`${surfaces.tdDense} cw-text`}>{funnelChain?.view_content ?? 0}</td>
+                  <td className={`${surfaces.tdDense} cw-muted`}>{viewContentFromReachPercent}%</td>
                 </tr>
-                <tr className="border-t cw-border">
-                  <td className="px-4 py-3 cw-text font-medium">{t("analytics_event_initiate_checkout")}</td>
-                  <td className="px-4 py-3 cw-text">{funnelChain?.initiate_checkout ?? 0}</td>
-                  <td className="px-4 py-3 cw-muted">{funnelChain?.view_to_checkout_percent ?? 0}%</td>
+                <tr className={surfaces.row}>
+                  <td className={`${surfaces.tdDense} ${dash.strong}`}>{t("analytics_event_initiate_checkout")}</td>
+                  <td className={`${surfaces.tdDense} cw-text`}>{funnelChain?.initiate_checkout ?? 0}</td>
+                  <td className={`${surfaces.tdDense} cw-muted`}>{funnelChain?.view_to_checkout_percent ?? 0}%</td>
                 </tr>
-                <tr className="border-t cw-border">
-                  <td className="px-4 py-3 cw-text font-medium">{t("analytics_event_purchase")}</td>
-                  <td className="px-4 py-3 cw-text">{funnelChain?.purchase ?? 0}</td>
-                  <td className="px-4 py-3 cw-muted">{funnelChain?.checkout_to_purchase_percent ?? 0}%</td>
+                <tr className={surfaces.row}>
+                  <td className={`${surfaces.tdDense} ${dash.strong}`}>{t("analytics_event_purchase")}</td>
+                  <td className={`${surfaces.tdDense} cw-text`}>{funnelChain?.purchase ?? 0}</td>
+                  <td className={`${surfaces.tdDense} cw-muted`}>{funnelChain?.checkout_to_purchase_percent ?? 0}%</td>
                 </tr>
                 {funnelUiSettings.mode === "access" || funnelUiSettings.showAccessGrantedCard ? (
-                  <tr className="border-t cw-border">
-                    <td className="px-4 py-3 cw-text font-medium">{t("analytics_event_access_granted")}</td>
-                    <td className="px-4 py-3 cw-text">{funnelChain?.access_granted ?? 0}</td>
-                    <td className="px-4 py-3 cw-muted">{funnelChain?.purchase_to_access_percent ?? 0}%</td>
+                  <tr className={surfaces.row}>
+                    <td className={`${surfaces.tdDense} ${dash.strong}`}>{t("analytics_event_access_granted")}</td>
+                    <td className={`${surfaces.tdDense} cw-text`}>{funnelChain?.access_granted ?? 0}</td>
+                    <td className={`${surfaces.tdDense} cw-muted`}>{funnelChain?.purchase_to_access_percent ?? 0}%</td>
                   </tr>
                 ) : null}
               </tbody>
@@ -2024,29 +1353,33 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "capi" && (
-        <div className={`${surfaces.plate} space-y-4`}>
-          <h2 className="text-lg font-semibold cw-text">{t("analytics_tab_capi")}</h2>
+        <div className={`${surfaces.plate} ${dash.plateStack}`}>
+          <h2 className={dash.sectionTitle}>{t("analytics_tab_capi")}</h2>
           <div className={surfaces.subPlate}>
-            <table className="min-w-full text-sm">
-              <thead className="cw-surface-2 border-b cw-border">
+            <table className={surfaces.tableDense}>
+              <thead className={surfaces.tableHead}>
                 <tr>
-                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">{t("analytics_col_event")}</th>
-                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">{t("analytics_col_capi_success")}</th>
-                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">{t("analytics_col_capi_pending")}</th>
-                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">{t("analytics_col_capi_failed")}</th>
-                  <th className="px-4 py-2 text-left cw-muted uppercase text-xs">{t("analytics_col_last_seen")}</th>
+                  <th className={surfaces.thDense}>{t("analytics_col_event")}</th>
+                  <th className={surfaces.thDense}>{t("analytics_col_capi_success")}</th>
+                  <th className={surfaces.thDense}>{t("analytics_col_capi_pending")}</th>
+                  <th className={surfaces.thDense}>{t("analytics_col_capi_failed")}</th>
+                  <th className={surfaces.thDense}>{t("analytics_col_last_seen")}</th>
                 </tr>
               </thead>
               <tbody>
                 {(["ViewContent", "InitiateCheckout", "Purchase"] as CapiEventName[]).map((eventName) => {
                   const row = eventByName.get(eventName);
                   return (
-                    <tr key={eventName} className="border-t cw-border">
-                      <td className="px-4 py-3 cw-text font-medium">{t(metricEventLabelKey(eventName) as never)}</td>
-                      <td className="px-4 py-3 cw-status-success-text">{row?.success ?? 0}</td>
-                      <td className="px-4 py-3 cw-status-pending-text">{(row?.pending ?? 0) + (row?.running ?? 0)}</td>
-                      <td className="px-4 py-3 cw-status-failed-text">{row?.failed ?? 0}</td>
-                      <td className="px-4 py-3 cw-muted">
+                    <tr key={eventName} className={surfaces.row}>
+                      <td className={`${surfaces.tdDense} ${dash.strong}`}>
+                        {t(metricEventLabelKey(eventName) as never)}
+                      </td>
+                      <td className={`${surfaces.tdDense} cw-status-success-text`}>{row?.success ?? 0}</td>
+                      <td className={`${surfaces.tdDense} cw-status-pending-text`}>
+                        {(row?.pending ?? 0) + (row?.running ?? 0)}
+                      </td>
+                      <td className={`${surfaces.tdDense} cw-status-failed-text`}>{row?.failed ?? 0}</td>
+                      <td className={`${surfaces.tdDense} cw-muted`}>
                         {row?.last_seen_at ? new Date(row.last_seen_at).toLocaleString() : "—"}
                       </td>
                     </tr>
@@ -2056,7 +1389,7 @@ export default function AnalyticsPage() {
             </table>
           </div>
           {capiOverview ? (
-            <div className="text-sm cw-muted">
+            <div className={dash.overviewNote}>
               {t("analytics_capi_overview")}: {t("analytics_col_total")} {capiOverview.total},{" "}
               {t("analytics_col_capi_success")} {capiOverview.success}, {t("analytics_col_capi_pending")}{" "}
               {capiOverview.pending + capiOverview.running}, {t("analytics_col_capi_failed")} {capiOverview.failed}
@@ -2069,38 +1402,37 @@ export default function AnalyticsPage() {
           both modes rather than to whichever felt more natural. */}
       {analyticsSection === "overview" && (
         <div className={surfaces.plate}>
-          <h2 className="text-lg font-medium mb-4 md:mb-6 cw-text">{t("analytics_daily_revenue")}</h2>
+          <h2 className={dash.chartTitle}>{t("analytics_daily_revenue")}</h2>
           {funnel.length === 0 ? (
-            <div className="text-center text-sm cw-muted py-10">{t("analytics_no_chart_data")}</div>
+            <div className={dash.chartEmpty}>{t("analytics_no_chart_data")}</div>
           ) : (
-            <div ref={chartContainerRef} className="relative overflow-visible">
+            <div ref={chartContainerRef} className={dash.chart}>
               {activeBar && (
                 <div
-                  className="absolute z-40 -top-2 -translate-x-1/2 -translate-y-full border cw-border cw-shadow cw-text text-xs rounded-md py-1.5 px-2.5 whitespace-nowrap pointer-events-none"
+                  className={dash.chartTip}
                   style={{
                     left: `${Math.max(64, Math.min(activeBar.x, (chartContainerRef.current?.clientWidth ?? activeBar.x) - 64))}px`,
-                    backgroundColor: "var(--cw-surface-solid)",
                   }}
                 >
-                  <div className="font-semibold">{activeBar.day.date}</div>
-                  <div className="cw-muted">
-                    {t("analytics_tooltip_revenue")}: <span className="cw-text">{activeBar.day.total_revenue} ₴</span>
+                  <div className={dash.chartTipDate}>{activeBar.day.date}</div>
+                  <div className={dash.chartTipLine}>
+                    {t("analytics_tooltip_revenue")}:{" "}
+                    <span className={dash.strongPlain}>{activeBar.day.total_revenue} ₴</span>
                   </div>
-                  <div className="cw-muted">
-                    {t("analytics_tooltip_paid")}: <span className="cw-text">{activeBar.day.orders_paid}</span>
+                  <div className={dash.chartTipLine}>
+                    {t("analytics_tooltip_paid")}: <span className={dash.strongPlain}>{activeBar.day.orders_paid}</span>
                   </div>
                 </div>
               )}
-              <div className="flex items-end gap-2">
+              <div className={dash.chartBody}>
                 <div
-                  className="relative shrink-0 pr-1"
+                  className={dash.chartAxis}
                   style={{
                     height: `${chartAreaHeight}px`,
                     width: `${yAxisWidthPx}px`,
-                    backgroundColor: "transparent",
                   }}
                 >
-                  <svg className="absolute inset-0" width={yAxisWidthPx} height={chartAreaHeight} aria-hidden="true">
+                  <svg className={dash.chartAxisSvg} width={yAxisWidthPx} height={chartAreaHeight} aria-hidden="true">
                     {tickLayout.map(({ tickValue, yPx }) => (
                       <text
                         key={tickValue}
@@ -2120,22 +1452,17 @@ export default function AnalyticsPage() {
                   </svg>
                 </div>
 
-                <div ref={chartScrollRef} className="flex-1 overflow-x-auto pb-2 custom-scrollbar">
+                <div ref={chartScrollRef} className={dash.chartScroll}>
                   <div
                     ref={chartWrapRef}
-                    className="relative min-w-0 pr-1"
+                    className={dash.chartTrack}
                     style={{
                       height: `${chartAreaHeight}px`,
                       width: barsTrackWidth,
                       minWidth: barsTrackWidth,
                     }}
                   >
-                    <svg
-                      className="absolute inset-0 pointer-events-none"
-                      width="100%"
-                      height={chartAreaHeight}
-                      aria-hidden="true"
-                    >
+                    <svg className={dash.chartGrid} width="100%" height={chartAreaHeight} aria-hidden="true">
                       {tickLayout.map(({ tickValue, yPx }) => (
                         <line
                           key={tickValue}
@@ -2150,7 +1477,7 @@ export default function AnalyticsPage() {
                       ))}
                     </svg>
                     <div
-                      className="absolute left-0 right-1 flex items-end gap-1"
+                      className={dash.chartBars}
                       style={{
                         top: `${chartTopPadding}px`,
                         bottom: `${chartBottomPadding}px`,
@@ -2163,7 +1490,7 @@ export default function AnalyticsPage() {
                           <div
                             key={idx}
                             ref={isLast ? lastBarRef : null}
-                            className="relative flex h-full flex-col items-center justify-end"
+                            className={dash.chartBarSlot}
                             style={{ flex: "1 1 0", minWidth: `${minBarWidth}px` }}
                             onMouseEnter={(e) => {
                               const containerRect = chartContainerRef.current?.getBoundingClientRect();
@@ -2183,7 +1510,7 @@ export default function AnalyticsPage() {
                               setSelectedBar((prev) => (prev?.idx === idx ? null : { day, x, idx }));
                             }}
                           >
-                            <div className="w-full cw-chart-bar rounded-t-sm" style={{ height: `${barHeight}px` }} />
+                            <div className={dash.chartBar} style={{ height: `${barHeight}px` }} />
                           </div>
                         );
                       })}
@@ -2198,23 +1525,27 @@ export default function AnalyticsPage() {
 
       {analyticsSection === "campaigns" && (
         <div className={surfaces.plateFlush}>
-          <div className="px-4 sm:px-5 md:px-6 py-4 md:py-5 border-b cw-border">
-            <h2 className="text-lg font-medium cw-text">{t("analytics_campaign_breakdown")}</h2>
-            <p className="text-sm cw-muted mt-1">{t("analytics_campaign_breakdown_subtitle")}</p>
-            <div className="mt-3 inline-flex rounded-lg border cw-border overflow-hidden">
+          <div className={`${dash.flushHead} ${dash.sectionHead}`}>
+            <h2 className={dash.sectionTitle}>{t("analytics_campaign_breakdown")}</h2>
+            <p className={dash.sectionSubtitle}>{t("analytics_campaign_breakdown_subtitle")}</p>
+            <div className={dash.flushHeadModes} role="group" aria-label={t("analytics_campaign_breakdown")}>
               <button
                 type="button"
-                className={`px-3 py-1.5 text-sm ${campaignsLevel === "adset" ? "cw-surface-2 cw-text" : "cw-btn-muted cw-muted"}`}
+                data-cw-ink-control
+                aria-pressed={campaignsLevel === "adset"}
+                className={dash.mode}
                 onClick={() => setCampaignsLevel("adset")}
               >
-                {t("analytics_level_adset")}
+                <InteractionInkLabel>{t("analytics_level_adset")}</InteractionInkLabel>
               </button>
               <button
                 type="button"
-                className={`px-3 py-1.5 text-sm border-l cw-border ${campaignsLevel === "ad" ? "cw-surface-2 cw-text" : "cw-btn-muted cw-muted"}`}
+                data-cw-ink-control
+                aria-pressed={campaignsLevel === "ad"}
+                className={dash.mode}
                 onClick={() => setCampaignsLevel("ad")}
               >
-                {t("analytics_level_ad")}
+                <InteractionInkLabel>{t("analytics_level_ad")}</InteractionInkLabel>
               </button>
             </div>
           </div>
@@ -2231,107 +1562,81 @@ export default function AnalyticsPage() {
               (showSpendCol ? 1 : 0);
 
             return (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y" style={{ borderColor: "var(--cw-border)" }}>
-                  <thead className="cw-surface-2">
+              <div className={surfaces.scrollX}>
+                <table className={surfaces.table}>
+                  <thead className={surfaces.tableHead}>
                     <tr>
-                      <th
-                        scope="col"
-                        className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                      >
+                      <th scope="col" className={surfaces.th}>
                         {sourceColumnLabel}
                       </th>
-                      <th
-                        scope="col"
-                        className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                      >
+                      <th scope="col" className={surfaces.th}>
                         {t("analytics_metric_view_content")}
                       </th>
-                      <th
-                        scope="col"
-                        className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                      >
+                      <th scope="col" className={surfaces.th}>
                         {t("analytics_col_orders")}
                       </th>
-                      <th
-                        scope="col"
-                        className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                      >
+                      <th scope="col" className={surfaces.th}>
                         {t("analytics_col_paid")}
                       </th>
                       {showRevenueCol ? (
-                        <th
-                          scope="col"
-                          className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                        >
+                        <th scope="col" className={surfaces.th}>
                           {t("analytics_col_revenue")}
                         </th>
                       ) : null}
                       {showSpendCol ? (
-                        <th
-                          scope="col"
-                          className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                        >
+                        <th scope="col" className={surfaces.th}>
                           {t("analytics_metric_spend")}
                         </th>
                       ) : null}
                       {showReachCol ? (
-                        <th
-                          scope="col"
-                          className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                        >
+                        <th scope="col" className={surfaces.th}>
                           {t("analytics_metric_reach")}
                         </th>
                       ) : null}
                       {showImpressionsCol ? (
-                        <th
-                          scope="col"
-                          className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                        >
+                        <th scope="col" className={surfaces.th}>
                           {t("analytics_metric_impressions")}
                         </th>
                       ) : null}
                     </tr>
                   </thead>
-                  <tbody className="cw-surface" style={{ borderColor: "var(--cw-border)" }}>
+                  <tbody>
                     {campaigns.length === 0 ? (
                       <tr>
-                        <td colSpan={totalColumns} className="px-4 md:px-6 py-4 text-center text-sm cw-muted">
+                        <td colSpan={totalColumns} className={`${surfaces.td} ${dash.plateNote}`}>
                           {t("analytics_no_campaign_data")}
                         </td>
                       </tr>
                     ) : (
                       campaigns.map((camp, idx) => (
-                        <tr key={idx} className="border-t cw-border cw-row-hover">
-                          <td className="px-4 md:px-6 py-4 text-sm font-medium cw-text">
-                            {resolveCampaignSource(camp.source_campaign)}
-                          </td>
-                          <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                        <tr key={idx} className={surfaces.row}>
+                          <td className={surfaces.tdStrong}>{resolveCampaignSource(camp.source_campaign)}</td>
+                          <td className={`${surfaces.td} ${surfaces.nowrap} cw-muted`}>
                             {(camp.view_content ?? 0).toLocaleString()}
                           </td>
-                          <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                          <td className={`${surfaces.td} ${surfaces.nowrap} cw-muted`}>
                             {camp.total_orders.toLocaleString()}
                           </td>
-                          <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                          <td className={`${surfaces.td} ${surfaces.nowrap} cw-muted`}>
                             {camp.paid_orders.toLocaleString()}
                           </td>
                           {showRevenueCol ? (
-                            <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">
+                            <td className={`${surfaces.tdStrong} ${surfaces.nowrap}`}>
                               {camp.total_revenue.toLocaleString()} ₴
                             </td>
                           ) : null}
                           {showSpendCol ? (
-                            <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                            <td className={`${surfaces.td} ${surfaces.nowrap} cw-muted`}>
                               {formatCampaignSpend(camp.spend ?? 0, camp.currency)}
                             </td>
                           ) : null}
                           {showReachCol ? (
-                            <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                            <td className={`${surfaces.td} ${surfaces.nowrap} cw-muted`}>
                               {(camp.reach ?? 0).toLocaleString()}
                             </td>
                           ) : null}
                           {showImpressionsCol ? (
-                            <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                            <td className={`${surfaces.td} ${surfaces.nowrap} cw-muted`}>
                               {(camp.impressions ?? 0).toLocaleString()}
                             </td>
                           ) : null}
@@ -2347,86 +1652,71 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "products" && (
-        <div className="space-y-4 md:space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+        <div className={pageStyles.section}>
+          <div className={dash.kpis3}>
             <div className={surfaces.plate}>
-              <div className="text-sm font-medium cw-muted">{t("analytics_col_orders")}</div>
-              <div className="text-3xl font-bold mt-2 cw-text">{(summary.totalOrders ?? 0).toLocaleString()}</div>
+              <div className={dash.figureHeadlineLabel}>{t("analytics_col_orders")}</div>
+              <div className={dash.figureHeadline}>{(summary.totalOrders ?? 0).toLocaleString()}</div>
             </div>
             <div className={surfaces.plate}>
-              <div className="text-sm font-medium cw-muted">{t("analytics_col_paid")}</div>
-              <div className="text-3xl font-bold mt-2 cw-text">{summary.totalPaidOrders.toLocaleString()}</div>
+              <div className={dash.figureHeadlineLabel}>{t("analytics_col_paid")}</div>
+              <div className={dash.figureHeadline}>{summary.totalPaidOrders.toLocaleString()}</div>
             </div>
             <div className={surfaces.plate}>
-              <div className="text-sm font-medium cw-muted">{t("analytics_revenue_period")}</div>
-              <div className="text-3xl font-bold mt-2 cw-text">{summary.totalRevenue.toLocaleString()} ₴</div>
+              <div className={dash.figureHeadlineLabel}>{t("analytics_revenue_period")}</div>
+              <div className={dash.figureHeadline}>{summary.totalRevenue.toLocaleString()} ₴</div>
             </div>
           </div>
 
           <div className={surfaces.plateFlush}>
-            <div className="px-4 sm:px-5 md:px-6 py-4 md:py-5 border-b cw-border">
-              <h2 className="text-lg font-medium cw-text">{t("analytics_products_breakdown")}</h2>
-              <p className="text-sm cw-muted mt-1">{t("analytics_products_breakdown_subtitle")}</p>
+            <div className={`${dash.flushHead} ${dash.sectionHead}`}>
+              <h2 className={dash.sectionTitle}>{t("analytics_products_breakdown")}</h2>
+              <p className={dash.sectionSubtitle}>{t("analytics_products_breakdown_subtitle")}</p>
             </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y" style={{ borderColor: "var(--cw-border)" }}>
-                <thead className="cw-surface-2">
+            <div className={surfaces.scrollX}>
+              <table className={surfaces.table}>
+                <thead className={surfaces.tableHead}>
                   <tr>
-                    <th
-                      scope="col"
-                      className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                    >
+                    <th scope="col" className={surfaces.th}>
                       {t("analytics_col_product")}
                     </th>
-                    <th
-                      scope="col"
-                      className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                    >
+                    <th scope="col" className={surfaces.th}>
                       {t("analytics_col_orders")}
                     </th>
-                    <th
-                      scope="col"
-                      className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                    >
+                    <th scope="col" className={surfaces.th}>
                       {t("analytics_col_paid")}
                     </th>
-                    <th
-                      scope="col"
-                      className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                    >
+                    <th scope="col" className={surfaces.th}>
                       {t("analytics_col_revenue")}
                     </th>
-                    <th
-                      scope="col"
-                      className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider"
-                    >
+                    <th scope="col" className={surfaces.th}>
                       {t("analytics_col_revenue_share")}
                     </th>
                   </tr>
                 </thead>
-                <tbody className="cw-surface" style={{ borderColor: "var(--cw-border)" }}>
+                <tbody>
                   {products.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-4 md:px-6 py-4 text-center text-sm cw-muted">
+                      <td colSpan={5} className={`${surfaces.td} ${dash.plateNote}`}>
                         {t("analytics_no_product_data")}
                       </td>
                     </tr>
                   ) : (
                     products.map((product) => (
-                      <tr key={product.product_code} className="border-t cw-border cw-row-hover">
-                        <td className="px-4 md:px-6 py-4 text-sm font-medium cw-text">
+                      <tr key={product.product_code} className={surfaces.row}>
+                        <td className={surfaces.tdStrong}>
                           {formatProductName(product, t("analytics_product_unknown"))}
                         </td>
-                        <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                        <td className={`${surfaces.td} ${surfaces.nowrap} cw-muted`}>
                           {product.total_orders.toLocaleString()}
                         </td>
-                        <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                        <td className={`${surfaces.td} ${surfaces.nowrap} cw-muted`}>
                           {product.paid_orders.toLocaleString()}
                         </td>
-                        <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">
+                        <td className={`${surfaces.tdStrong} ${surfaces.nowrap}`}>
                           {product.total_revenue.toLocaleString()} ₴
                         </td>
-                        <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">
+                        <td className={`${surfaces.td} ${surfaces.nowrap} cw-muted`}>
                           {product.share_revenue_percent.toLocaleString()}%
                         </td>
                       </tr>
@@ -2440,16 +1730,16 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "dosha" && (
-        <div className="space-y-4 md:space-y-5">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold cw-text">{t("analytics_dosha_title")}</h2>
+        <div className={pageStyles.section}>
+          <div className={dash.rowBetween}>
+            <h2 className={dash.sectionTitle}>{t("analytics_dosha_title")}</h2>
             <button
               type="button"
               onClick={() => {
                 void fetchDoshaAnalytics({ from: fromDate, to: toDate });
               }}
               disabled={doshaLoading}
-              className="px-4 py-2 text-sm font-medium cw-btn disabled:opacity-50"
+              className={controls.action}
             >
               {doshaLoading ? t("common_loading_short") : t("analytics_refresh")}
             </button>
@@ -2459,45 +1749,39 @@ export default function AnalyticsPage() {
             <AdminLoadingState variant="spinner" text={t("common_loading_short")} className={surfaces.plate} />
           ) : doshaData ? (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+              <div className={dash.kpis3}>
                 <div className={surfaces.plate}>
-                  <div className="text-sm font-medium cw-muted">{t("analytics_dosha_completed")}</div>
-                  <div className="text-3xl font-bold mt-2 cw-text">{doshaData.total_completions}</div>
+                  <div className={dash.figureHeadlineLabel}>{t("analytics_dosha_completed")}</div>
+                  <div className={dash.figureHeadline}>{doshaData.total_completions}</div>
                 </div>
                 <div className={surfaces.plate}>
-                  <div className="text-sm font-medium cw-muted">{t("analytics_dosha_cta_clicks")}</div>
-                  <div className="text-3xl font-bold mt-2 cw-text">{doshaData.total_cta_clicks}</div>
-                  <div className="text-xs cw-muted mt-1">
+                  <div className={dash.figureHeadlineLabel}>{t("analytics_dosha_cta_clicks")}</div>
+                  <div className={dash.figureHeadline}>{doshaData.total_cta_clicks}</div>
+                  <div className={dash.figureAside}>
                     {t("analytics_dosha_click_through")}: {doshaData.cta_click_through_percent}%
                   </div>
                 </div>
                 <div className={surfaces.plate}>
-                  <div className="text-sm font-medium cw-muted">{t("analytics_dosha_top_type")}</div>
-                  <div className="text-3xl font-bold mt-2 cw-text capitalize">
+                  <div className={dash.figureHeadlineLabel}>{t("analytics_dosha_top_type")}</div>
+                  <div className={`${dash.figureHeadline} ${dash.figureTitleCase}`}>
                     {doshaData.top_type?.replace("_", " + ") ?? "—"}
                   </div>
                 </div>
               </div>
 
-              <div className={`${surfaces.plate} space-y-4`}>
-                <h3 className="text-sm font-semibold cw-text">{t("analytics_dosha_by_type")}</h3>
-                <div className="space-y-2">
+              <div className={`${surfaces.plate} ${dash.plateStack}`}>
+                <h3 className={dash.subTitle}>{t("analytics_dosha_by_type")}</h3>
+                <div className={dash.shareRows}>
                   {doshaData.completions_by_type.map((row) => (
-                    <div key={row.result_type} className="flex items-center gap-3">
-                      <div className="w-32 text-sm cw-text shrink-0">{row.result_type.replace(/_/g, " + ")}</div>
-                      <div
-                        className="flex-1 h-5 rounded-full overflow-hidden"
-                        style={{ background: "var(--cw-border)" }}
-                      >
+                    <div key={row.result_type} className={dash.shareRow}>
+                      <div className={dash.shareName}>{row.result_type.replace(/_/g, " + ")}</div>
+                      <div className={dash.shareTrackPill}>
                         <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${Math.max(row.share_percent, row.count > 0 ? 2 : 0)}%`,
-                            background: "var(--cw-interactive-active-border)",
-                          }}
+                          className={dash.shareFillPill}
+                          style={{ width: `${Math.max(row.share_percent, row.count > 0 ? 2 : 0)}%` }}
                         />
                       </div>
-                      <div className="w-24 text-right text-sm cw-muted shrink-0">
+                      <div className={dash.shareValue}>
                         {row.count} ({row.share_percent}%)
                       </div>
                     </div>
@@ -2506,23 +1790,19 @@ export default function AnalyticsPage() {
               </div>
 
               <div className={surfaces.plateFlush}>
-                <div className="px-4 sm:px-5 md:px-6 py-4 border-b cw-border">
-                  <h3 className="text-sm font-semibold cw-text">{t("analytics_dosha_cta_by_type")}</h3>
-                  <p className="text-xs cw-muted mt-1">{t("analytics_dosha_cta_legend")}</p>
+                <div className={`${dash.flushHead} ${dash.sectionHead}`}>
+                  <h3 className={dash.subTitle}>{t("analytics_dosha_cta_by_type")}</h3>
+                  <p className={dash.figureLabel}>{t("analytics_dosha_cta_legend")}</p>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead className="cw-surface-2 border-b cw-border">
+                <div className={surfaces.scrollX}>
+                  <table className={surfaces.tableDense}>
+                    <thead className={surfaces.tableHead}>
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">
-                          {t("analytics_dosha_col_type")}
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">
-                          {t("analytics_dosha_col_tests")}
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">Primary</th>
-                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">Secondary</th>
-                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">CTR</th>
+                        <th className={surfaces.thDense}>{t("analytics_dosha_col_type")}</th>
+                        <th className={surfaces.thDense}>{t("analytics_dosha_col_tests")}</th>
+                        <th className={surfaces.thDense}>Primary</th>
+                        <th className={surfaces.thDense}>Secondary</th>
+                        <th className={surfaces.thDense}>CTR</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2530,12 +1810,12 @@ export default function AnalyticsPage() {
                         const completions =
                           doshaData.completions_by_type.find((c) => c.result_type === row.result_type)?.count ?? 0;
                         return (
-                          <tr key={row.result_type} className="border-t cw-border">
-                            <td className="px-4 py-3 cw-text">{row.result_type.replace(/_/g, " + ")}</td>
-                            <td className="px-4 py-3 cw-muted">{completions}</td>
-                            <td className="px-4 py-3 cw-text">{row.primary_clicks}</td>
-                            <td className="px-4 py-3 cw-muted">{row.secondary_clicks}</td>
-                            <td className="px-4 py-3 cw-muted">{row.click_through_percent}%</td>
+                          <tr key={row.result_type} className={surfaces.row}>
+                            <td className={`${surfaces.tdDense} cw-text`}>{row.result_type.replace(/_/g, " + ")}</td>
+                            <td className={`${surfaces.tdDense} cw-muted`}>{completions}</td>
+                            <td className={`${surfaces.tdDense} cw-text`}>{row.primary_clicks}</td>
+                            <td className={`${surfaces.tdDense} cw-muted`}>{row.secondary_clicks}</td>
+                            <td className={`${surfaces.tdDense} cw-muted`}>{row.click_through_percent}%</td>
                           </tr>
                         );
                       })}
@@ -2545,36 +1825,34 @@ export default function AnalyticsPage() {
               </div>
 
               {doshaData.daily.some((row) => row.completions > 0) && (
-                <div className={`${surfaces.plate} space-y-3`}>
-                  <h3 className="text-sm font-semibold cw-text">{t("analytics_dosha_daily")}</h3>
-                  <div className="cw-surface rounded-xl border cw-border overflow-x-auto">
-                    <table className="min-w-full text-xs">
-                      <thead className="cw-surface-2 border-b cw-border">
+                <div className={`${surfaces.plate} ${dash.stack}`}>
+                  <h3 className={dash.subTitle}>{t("analytics_dosha_daily")}</h3>
+                  <div className={dash.tableFrame}>
+                    <table className={surfaces.tableDense}>
+                      <thead className={surfaces.tableHead}>
                         <tr>
-                          <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_col_date")}</th>
-                          <th className="px-3 py-2 text-left cw-muted uppercase">
-                            {t("analytics_dosha_col_completed")}
-                          </th>
+                          <th className={surfaces.thDense}>{t("analytics_col_date")}</th>
+                          <th className={surfaces.thDense}>{t("analytics_dosha_col_completed")}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {doshaData.daily
                           .filter((row) => row.completions > 0)
                           .map((row) => (
-                            <tr key={row.date} className="border-t cw-border">
-                              <td className="px-3 py-2 cw-text">{row.date}</td>
-                              <td className="px-3 py-2 cw-text">{row.completions}</td>
+                            <tr key={row.date} className={surfaces.row}>
+                              <td className={`${surfaces.tdDense} cw-text`}>{row.date}</td>
+                              <td className={`${surfaces.tdDense} cw-text`}>{row.completions}</td>
                             </tr>
                           ))}
                       </tbody>
                     </table>
                   </div>
-                  <p className="text-xs cw-muted">{t("analytics_dosha_cac_note")}</p>
+                  <p className={dash.figureLabel}>{t("analytics_dosha_cac_note")}</p>
                 </div>
               )}
             </>
           ) : (
-            <div className={`${surfaces.plate} text-center text-sm cw-muted`}>{t("analytics_dosha_press_refresh")}</div>
+            <div className={`${surfaces.plate} ${dash.plateNote}`}>{t("analytics_dosha_press_refresh")}</div>
           )}
         </div>
       )}

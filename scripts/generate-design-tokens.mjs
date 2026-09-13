@@ -209,6 +209,29 @@ const NETWORK_MOTION_TOKENS = [
   "--cw-ease-network",
 ];
 
+/* THE SELECTION STROKE'S OWN GEOMETRY (2026-09-11). The landings mark the
+   current nav item, and until now they marked it the one way the platform had
+   already stopped marking anything — a tinted capsule with a border — because
+   the stroke's numbers had never been delivered to them. The mark itself was
+   already there (`cw-ink-rule` is baked into the network sprite); what was
+   missing was the four numbers that say how thick it is, how far under the word
+   it sits, and how firmly it comes up on hover. Emitting them is what lets
+   network-nav.css reference the same stroke the topbar draws rather than
+   re-deciding a weight and an offset of its own, which is how the capsule got
+   there in the first place.
+
+   --cw-ink-rest-opacity is deliberately absent: a nav mark rests at nothing and
+   appears on hover, so the only strengths the network needs are hover and full.
+   The colour is not here either — it is `--cw-nav-marker`, a per-tone decision
+   the landings make from their own skin. */
+const NETWORK_INK_TOKENS = [
+  "--cw-ink-stroke-height",
+  "--cw-ink-stroke-weight",
+  "--cw-ink-stroke-tilt",
+  "--cw-ink-stroke-offset",
+  "--cw-ink-hover-opacity",
+];
+
 function pickListedTokens(names, label, ...maps) {
   const merged = Object.assign({}, ...maps.map((m) => m ?? {}));
   const out = {};
@@ -234,6 +257,10 @@ function pickMotionTokens(...maps) {
   return pickListedTokens(NETWORK_MOTION_TOKENS, "Motion contract", ...maps);
 }
 
+function pickInkTokens(...maps) {
+  return pickListedTokens(NETWORK_INK_TOKENS, "Ink contract", ...maps);
+}
+
 function buildNetworkCss(tokens) {
   const layers = tokens.layers ?? {};
   const light = {
@@ -244,6 +271,7 @@ function buildNetworkCss(tokens) {
     ...pickButtonTokens(tokens.base?.light, tokens.delivery?.dsAlias?.light),
     ...pickSpaceTokens(tokens.base?.light),
     ...pickMotionTokens(tokens.base?.light),
+    ...pickInkTokens(layers.semanticAliases),
   };
   const dark = pickNetworkTokens(layers.material?.dark ?? {});
   /* The landings receive the fine-pointer half too, so an icon control is the

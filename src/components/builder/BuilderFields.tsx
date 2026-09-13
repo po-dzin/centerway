@@ -18,6 +18,7 @@ import { inlineToMarkup } from "@/lib/lms/inlineMarkup";
 import { PLACEHOLDER_MARKER, youtubeIdFrom, type InlineText } from "@/lms-core";
 import { BuilderImageField } from "./BuilderImageField";
 import { BuilderInlineEditor } from "./BuilderInlineEditor";
+import { InkLabel } from "./BuilderInkLabel";
 import type { BlockField } from "./blockFields";
 import styles from "./Builder.module.css";
 
@@ -347,12 +348,13 @@ export function ChoiceRow<T extends string>({
               className={styles.choiceOption}
               type="button"
               aria-pressed={on}
+              data-cw-ink-control=""
               onClick={() => onChange(on && clearable ? undefined : option.value)}
             >
               {option.swatch ? (
                 <span className={styles.choiceSwatch} data-cw-pack={option.swatch} aria-hidden="true" />
               ) : null}
-              {option.label}
+              <InkLabel>{option.label}</InkLabel>
             </button>
           );
         })}
@@ -406,9 +408,10 @@ export function ChoiceSet<T extends string>({
               className={styles.choiceOption}
               type="button"
               aria-pressed={on}
+              data-cw-ink-control=""
               onClick={() => write(on ? values.filter((one) => one !== option.value) : [...values, option.value])}
             >
-              {option.label}
+              <InkLabel>{option.label}</InkLabel>
             </button>
           );
         })}

@@ -21,6 +21,7 @@
 
 import { useCallback, useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import controls from "@/components/admin/AdminControls.module.css";
 
 export function AdminModal({
   title,
@@ -101,7 +102,7 @@ export function AdminModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto p-4 cw-overlay"
+      className={controls.overlay}
       onMouseDown={(event) => {
         // `mousedown` on the scrim ITSELF: a click that starts on a field
         // and ends on the scrim (a drag while selecting text) is not a
@@ -116,20 +117,16 @@ export function AdminModal({
         aria-label={title}
         tabIndex={-1}
         onKeyDown={trap}
-        className={`cw-surface-solid border cw-border rounded-2xl cw-shadow w-full my-auto ${size === "lg" ? "max-w-2xl" : "max-w-lg"}`}
+        className={size === "lg" ? controls.dialogWide : controls.dialog}
       >
-        <div className="p-5 pb-3">
-          <h3 className="text-base font-semibold cw-text">{title}</h3>
-          {description ? <p className="cw-page-subtitle mt-1">{description}</p> : null}
+        <div className={controls.dialogHead}>
+          <h3 className={controls.dialogTitle}>{title}</h3>
+          {description ? <p className={controls.dialogNote}>{description}</p> : null}
         </div>
 
-        <div className="px-5 pb-5 space-y-3">{children}</div>
+        <div className={controls.dialogBody}>{children}</div>
 
-        {footer ? (
-          <div className="px-5 py-4 border-t cw-border flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-            {footer}
-          </div>
-        ) : null}
+        {footer ? <div className={controls.dialogFoot}>{footer}</div> : null}
       </div>
     </div>,
     document.body,

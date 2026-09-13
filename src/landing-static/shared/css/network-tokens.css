@@ -13,10 +13,10 @@
         ▼
      local dialects map onto --cw-net-*:
         · way21 / reset-day page.css : --ink/--indigo/--cta/… → var(--cw-net-*)
-        · funnel-network.css (dosha/consult/herbs) : --cw-accent/--cw-gold/… → var(--cw-net-*)
+        (dosha / consult / herbs carry no page.css — they read --cw-net-* directly)
 
    Change a value here → all five landings move together, and the whole network
-   stays traceable to platform canon. Loaded before funnel-network.css / page.css
+   stays traceable to platform canon. Loaded before landing.css / page.css
    on every landing. Custom properties resolve at use-time, so file order only
    needs to keep this before the consumers for clarity.
 

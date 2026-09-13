@@ -94,7 +94,12 @@ describe("author portrait", () => {
   });
 
   it("does not name the shape in the crop editor's copy", () => {
-    const fold = read("src/components/platform/cabinet/AuthorProfileFold.tsx");
+    // The fold and every section split out of it (2026-09-13) — the copy can live in any of them.
+    const fold = fs
+      .readdirSync(path.resolve(__dirname, "cabinet"))
+      .filter((name) => /^(AuthorProfileFold|AuthorSection\w+|useAuthor\w+)\.tsx?$/.test(name))
+      .map((name) => read(`src/components/platform/cabinet/${name}`))
+      .join("\n");
     expect(fold).not.toContain('photoCropAvatarTitle: "Кругла');
     expect(fold).not.toContain('photoCropAvatarTitle: "Round');
   });
