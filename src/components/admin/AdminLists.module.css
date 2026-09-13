@@ -410,3 +410,187 @@
   margin: 0;
   font-size: var(--ds-type-label-size);
 }
+
+/* ── An order ──────────────────────────────────────────────────────────────
+ * The row stacks and the reference is never truncated: see the long note on
+ * the row in orders/page.tsx. These are the same decisions, named.
+ */
+.orderRow {
+  composes: item;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--cw-space-md);
+}
+
+/* Beside the first line, not the row's centre: a status mark qualifies the
+   identifier, and the row's height changes with the viewport. */
+.statusDotSmall {
+  flex: 0 0 auto;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+}
+
+.orderBody {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .orderBody {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--cw-space-md);
+  }
+}
+
+.orderMain {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.orderIdentity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+.orderRef {
+  min-width: 0;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.orderSub {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  min-width: 0;
+  margin-top: var(--cw-space-2xs);
+  font-size: var(--ds-type-label-size);
+}
+
+.orderSubMuted {
+  composes: cw-muted from global;
+}
+
+/* The truncation lives on its own role, not on the link: `guard:buttons` owns
+   `max-width` on anything that composes a pressable recipe, and a customer's
+   name in an order row is a text link that happens to need a measure. */
+.orderCustomerMeasure {
+  max-width: 11.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.orderCustomer {
+  composes: orderCustomerMeasure;
+  composes: cw-muted from global;
+}
+
+.orderAmount {
+  flex: 0 0 auto;
+}
+
+@media (min-width: 640px) {
+  .orderAmount {
+    text-align: right;
+  }
+}
+
+.orderSum {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+}
+
+.orderCurrency {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+  font-weight: 400;
+}
+
+.orderWhen {
+  composes: cw-muted from global;
+  margin: var(--cw-space-2xs) 0 0;
+  font-size: var(--ds-type-label-size);
+}
+
+/* A ROW ACTION THAT A FINGER CAN FIND (2026-09-13).
+   It was `opacity-0 group-hover:opacity-100`: invisible until a pointer
+   hovered the row. A phone has no hover, so on a phone the manual-reconcile
+   and resend-access buttons were permanently invisible — still tappable, if you
+   already knew where they were — and a keyboard user tabbing onto one focused a
+   control they could not see. The fade stays on devices that can hover; it
+   also lifts for keyboard focus; everywhere else the action is simply shown. */
+.rowAction {
+  flex: 0 0 auto;
+}
+
+@media (hover: hover) {
+  .rowAction {
+    opacity: 0;
+    transition: opacity var(--cw-motion-state) ease;
+  }
+
+  .orderRow:hover .rowAction,
+  .orderRow:focus-within .rowAction,
+  .rowAction:focus-visible {
+    opacity: 1;
+  }
+}
+
+/* ── Issued personal offers ────────────────────────────────────────────── */
+
+.issued {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+}
+
+.issuedEntry {
+  padding-bottom: var(--cw-space-sm);
+  border-bottom: 1px solid var(--cw-border);
+}
+
+.issuedEntry:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.issuedHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+}
+
+@media (min-width: 1024px) {
+  .issuedHead {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+}
+
+.issuedUrl {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-sm-size);
+  overflow-wrap: anywhere;
+}
+
+.itemMetaSpaced {
+  composes: itemMeta;
+  margin-top: var(--cw-space-xs);
+}

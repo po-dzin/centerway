@@ -408,3 +408,119 @@
   composes: input;
   margin-top: var(--cw-space-xs);
 }
+
+/* ── A longer form on a plate ──────────────────────────────────────────────
+ * The personal-offer issuer: a mode, recipients, settings, a note, a preview
+ * and two actions. Same fields as everywhere else in the panel; these are only
+ * the containers a longer form needs.
+ */
+.formStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-md);
+}
+
+.formHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+}
+
+.formNote {
+  composes: cw-muted from global;
+  margin: 0;
+  font-size: var(--ds-type-body-sm-size);
+}
+
+/* A value the operator cannot change, shown in the field's own frame so it
+   reads as part of the form rather than as a caption. */
+.inputStatic {
+  composes: input;
+  composes: cw-muted from global;
+  display: flex;
+  align-items: center;
+}
+
+.textarea {
+  composes: input;
+  min-height: 7rem;
+  padding-block: var(--cw-space-xs);
+  resize: vertical;
+}
+
+.textareaShort {
+  composes: textarea;
+  min-height: 5.5rem;
+}
+
+.fieldsTwo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-sm);
+}
+
+@media (min-width: 768px) {
+  .fieldsTwo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.fileRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+}
+
+@media (min-width: 768px) {
+  .fileRow {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.formFooter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+}
+
+@media (min-width: 1024px) {
+  .formFooter {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+/* Two equal actions side by side at the foot of a form, the width of the pair
+   rather than of the page once there is room. */
+.actionPair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cw-space-xs);
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .actionPair {
+    width: 20rem;
+    margin-left: auto;
+  }
+}
+
+.actionFill {
+  composes: action;
+  width: 100%;
+}
+
+.iconActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--cw-space-xs);
+}
+
+.inlineActions {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}

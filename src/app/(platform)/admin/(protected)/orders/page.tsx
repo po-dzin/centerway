@@ -18,6 +18,9 @@ import { ORDER_STATUS_BADGE_CLASS } from "@/lib/admin/adminStatusStyles";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
 import { Icon } from "@/components/Icon";
+import pageStyles from "@/components/admin/AdminPage.module.css";
+import controls from "@/components/admin/AdminControls.module.css";
+import lists from "@/components/admin/AdminLists.module.css";
 
 interface Order {
   id: string;
@@ -184,7 +187,8 @@ function ResendAccessButton({
     <button
       onClick={handle}
       title={copied ? labels.copied : labels.copyLink}
-      className="shrink-0 cw-icon-btn opacity-0 group-hover:opacity-100"
+      aria-label={copied ? labels.copied : labels.copyLink}
+      className={`cw-icon-btn ${lists.rowAction}`}
     >
       <InteractionInkIcon>
         {copied ? <Icon className="cw-status-success-text" name="check" size={16} /> : <Icon name="link" size={16} />}
@@ -483,115 +487,110 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
   };
 
   return (
-    <div className={`${surfaces.plate} space-y-4`}>
-      <div className="flex flex-col gap-1">
-        <h3 className="text-sm font-semibold cw-text">{labels.title}</h3>
-        <p className="text-sm cw-muted">{labels.subtitle}</p>
+    <div className={`${surfaces.plate} ${controls.formStack}`}>
+      <div className={controls.formHead}>
+        <h3 className={controls.disclosureTitle}>{labels.title}</h3>
+        <p className={controls.formNote}>{labels.subtitle}</p>
       </div>
 
       <AdminTabs items={MODE_TABS} activeKey={activeMode} onChange={setActiveMode} />
 
-      <div className="cw-list-item p-4 space-y-3">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs cw-muted">{labels.productLabel}</span>
-          <div className="cw-input px-3 py-2.5 text-sm cw-muted">{labels.productValue}</div>
+      <div className={lists.item}>
+        <label className={controls.field}>
+          <span className={controls.fieldCaption}>{labels.productLabel}</span>
+          <div className={controls.inputStatic}>{labels.productValue}</div>
         </label>
         {activeMode === "single" ? (
-          <div className="space-y-2">
-            <p className="text-xs cw-muted">{labels.modeSingleHint}</p>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs cw-muted">{labels.recipientLabel}</span>
+          <div className={controls.fieldStack}>
+            <p className={controls.hint}>{labels.modeSingleHint}</p>
+            <label className={controls.field}>
+              <span className={controls.fieldCaption}>{labels.recipientLabel}</span>
               <input
                 type="text"
                 value={recipientKey}
                 onChange={(event) => setRecipientKey(event.target.value)}
                 placeholder={labels.recipientPlaceholder}
-                className="cw-input px-3 py-2.5 text-sm"
+                className={controls.input}
               />
             </label>
           </div>
         ) : null}
         {activeMode === "bulk" ? (
-          <div className="space-y-2">
-            <p className="text-xs cw-muted">{labels.modeBulkHint}</p>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs cw-muted">{labels.bulkLabel}</span>
+          <div className={controls.fieldStack}>
+            <p className={controls.hint}>{labels.modeBulkHint}</p>
+            <label className={controls.field}>
+              <span className={controls.fieldCaption}>{labels.bulkLabel}</span>
               <textarea
                 value={bulkRecipients}
                 onChange={(event) => setBulkRecipients(event.target.value)}
                 placeholder={labels.bulkPlaceholder}
-                className="cw-input min-h-[112px] px-3 py-2.5 text-sm resize-y"
+                className={controls.textarea}
               />
             </label>
           </div>
         ) : null}
         {activeMode === "csv" ? (
-          <div className="space-y-2">
-            <p className="text-xs cw-muted">{labels.modeCsvHint}</p>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs cw-muted">{labels.csvLabel}</span>
-              <div className="flex flex-col gap-2 md:flex-row md:items-center">
-                <input
-                  type="file"
-                  accept=".csv,text/csv"
-                  onChange={handleCsvUpload}
-                  className="cw-input px-3 py-2.5 text-sm"
-                />
+          <div className={controls.fieldStack}>
+            <p className={controls.hint}>{labels.modeCsvHint}</p>
+            <label className={controls.field}>
+              <span className={controls.fieldCaption}>{labels.csvLabel}</span>
+              <div className={controls.fileRow}>
+                <input type="file" accept=".csv,text/csv" onChange={handleCsvUpload} className={controls.input} />
                 {csvFileName ? (
-                  <span className="text-xs cw-muted">
+                  <span className={controls.hint}>
                     {labels.csvLoaded}: {csvFileName}
                   </span>
                 ) : null}
               </div>
-              <p className="text-xs cw-muted">{labels.csvHelper}</p>
+              <p className={controls.hint}>{labels.csvHelper}</p>
             </label>
           </div>
         ) : null}
       </div>
 
-      <div className="cw-list-item p-4 space-y-3">
-        <div className="space-y-1">
-          <p className="text-sm font-medium cw-text">{labels.settingsTitle}</p>
-          <p className="text-xs cw-muted">{labels.settingsSubtitle}</p>
+      <div className={lists.item}>
+        <div className={controls.formHead}>
+          <p className={lists.itemTitle}>{labels.settingsTitle}</p>
+          <p className={controls.hint}>{labels.settingsSubtitle}</p>
         </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs cw-muted">{labels.channelLabel}</span>
+        <div className={controls.fieldsTwo}>
+          <label className={controls.field}>
+            <span className={controls.fieldCaption}>{labels.channelLabel}</span>
             <input
               type="text"
               value={channel}
               onChange={(event) => setChannel(event.target.value)}
               placeholder={labels.channelPlaceholder}
-              className="cw-input px-3 py-2.5 text-sm"
+              className={controls.input}
             />
           </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs cw-muted">{labels.campaignLabel}</span>
+          <label className={controls.field}>
+            <span className={controls.fieldCaption}>{labels.campaignLabel}</span>
             <input
               type="text"
               value={campaign}
               onChange={(event) => setCampaign(event.target.value)}
               placeholder={labels.campaignPlaceholder}
-              className="cw-input px-3 py-2.5 text-sm"
+              className={controls.input}
             />
           </label>
         </div>
       </div>
 
-      <label className="flex flex-col gap-1.5">
-        <span className="text-xs cw-muted">{labels.noteLabel}</span>
+      <label className={controls.field}>
+        <span className={controls.fieldCaption}>{labels.noteLabel}</span>
         <textarea
           value={note}
           onChange={(event) => setNote(event.target.value)}
           placeholder={labels.notePlaceholder}
-          className="cw-input min-h-[88px] px-3 py-2.5 text-sm resize-y"
+          className={controls.textareaShort}
         />
       </label>
 
-      <div className="cw-list-item p-4 space-y-2">
-        <p className="text-sm font-medium cw-text">{labels.previewTitle}</p>
-        <p className="text-xs cw-muted">{labels.previewReady}</p>
-        <div className="flex flex-wrap gap-3 text-xs cw-muted">
+      <div className={lists.item}>
+        <p className={lists.itemTitle}>{labels.previewTitle}</p>
+        <p className={controls.hint}>{labels.previewReady}</p>
+        <div className={lists.itemMeta}>
           <span>
             {labels.previewMode}: {currentModeLabel}
           </span>
@@ -606,27 +605,23 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
           </span>
         </div>
         {csvEntries.length > 0 ? (
-          <p className="text-xs cw-muted">
+          <p className={controls.hint}>
             {labels.csvLoaded}: {csvFileName}
           </p>
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <p className="text-xs cw-muted">{labels.helper}</p>
-        <div className="grid w-full grid-cols-2 gap-2 lg:ml-auto lg:w-[320px]">
-          <button
-            type="button"
-            onClick={clearAllInputs}
-            className="cw-btn cw-surface-2 min-h-[44px] w-full px-4 py-2 text-sm"
-          >
+      <div className={controls.formFooter}>
+        <p className={controls.hint}>{labels.helper}</p>
+        <div className={controls.actionPair}>
+          <button type="button" onClick={clearAllInputs} className={`${controls.actionFill} cw-surface-2`}>
             {labels.clear}
           </button>
           <button
             type="button"
             onClick={handleIssue}
             disabled={loading}
-            className="cw-btn cw-surface-2 min-h-[44px] w-full px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+            className={`${controls.actionFill} cw-surface-2`}
           >
             {loading ? labels.submitting : labels.submit}
           </button>
@@ -634,13 +629,11 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
       </div>
 
       {issuedOffers.length > 0 && (
-        <div className="cw-list-item p-4 space-y-3">
-          <div className="flex flex-col gap-1">
-            <p className="text-sm font-medium cw-text">
-              {issuedOffers.length > 1 ? labels.latestBatch : labels.latest}
-            </p>
+        <div className={lists.item}>
+          <div className={controls.formHead}>
+            <p className={lists.itemTitle}>{issuedOffers.length > 1 ? labels.latestBatch : labels.latest}</p>
             {issuedSummary ? (
-              <div className="flex flex-wrap gap-3 text-xs cw-muted">
+              <div className={lists.itemMeta}>
                 <span>
                   {labels.previewRecipients}: {issuedSummary.totalIssued}
                 </span>
@@ -656,7 +649,7 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
             ) : null}
           </div>
           {issuedOffers.length > 1 ? (
-            <div className="flex justify-end gap-2">
+            <div className={controls.iconActions}>
               <button
                 type="button"
                 onClick={() => copyAllLandingUrls(issuedOffers)}
@@ -681,14 +674,12 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
               </button>
             </div>
           ) : null}
-          <div className="space-y-3">
+          <div className={lists.issued}>
             {issuedOffers.slice(0, 24).map((offer) => (
-              <div key={offer.offerToken} className="border-b cw-border last:border-b-0 pb-3 last:pb-0">
-                <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-mono cw-text break-all">{offer.landingUrl}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
+              <div key={offer.offerToken} className={lists.issuedEntry}>
+                <div className={lists.issuedHead}>
+                  <p className={lists.issuedUrl}>{offer.landingUrl}</p>
+                  <div className={controls.inlineActions}>
                     <button
                       type="button"
                       onClick={() => copyLandingUrl(offer.landingUrl)}
@@ -718,7 +709,7 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
                     </a>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-3 text-xs cw-muted mt-2">
+                <div className={lists.itemMetaSpaced}>
                   <span>
                     {labels.price}: {offer.amount.toLocaleString("uk-UA")} {offer.currency}
                   </span>
@@ -920,19 +911,18 @@ export default function OrdersPage() {
   const totalPages = Math.ceil(count / LIMIT);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="cw-page-title mb-1">{t("orders_title")}</h2>
-          <p className="cw-page-subtitle">{t("orders_subtitle")}</p>
+    <div className={pageStyles.page}>
+      <div className={pageStyles.header}>
+        <div className={pageStyles.heading}>
+          <h2 className={pageStyles.title}>{t("orders_title")}</h2>
+          <p className={pageStyles.subtitle}>{t("orders_subtitle")}</p>
         </div>
         {!loading && data.length > 0 && activeStatus !== "created" && activeStatus !== "offers" && (
-          <div className="text-right">
-            <p className="text-xs cw-muted">{t("orders_total_paid")}</p>
-            <p className="text-xl font-bold cw-text mt-0.5">
+          <div className={pageStyles.headerFigure}>
+            <p className={pageStyles.headerFigureLabel}>{t("orders_total_paid")}</p>
+            <p className={pageStyles.headerFigureValue}>
               {totalPaid.toLocaleString(locale)}{" "}
-              <span className="text-sm font-normal cw-muted">{t("common_currency_uah")}</span>
+              <span className={pageStyles.headerFigureUnit}>{t("common_currency_uah")}</span>
             </p>
           </div>
         )}
@@ -954,7 +944,7 @@ export default function OrdersPage() {
           />
 
           {/* Count */}
-          {!loading && <p className="text-xs cw-muted">{getOrdersCountLabel(count)}</p>}
+          {!loading && <p className={pageStyles.resultsNote}>{getOrdersCountLabel(count)}</p>}
 
           {/* Loading skeletons */}
           {loading && <AdminLoadingState variant="skeleton" rows={6} />}
@@ -968,7 +958,7 @@ export default function OrdersPage() {
                 <button
                   type="button"
                   onClick={() => fetchOrders(debouncedQ, activeStatus, page)}
-                  className="px-4 py-2 cw-btn cw-surface-2"
+                  className={`${controls.action} cw-surface-2`}
                 >
                   {t("analytics_retry")}
                 </button>
@@ -986,7 +976,7 @@ export default function OrdersPage() {
 
           {/* Orders table */}
           {!loading && !error && data.length > 0 && (
-            <div className="space-y-1.5">
+            <div className={lists.list}>
               {data.map((order) => {
                 const customer = order.customers;
                 const customerLabel = customer?.display_name ?? customer?.email ?? customer?.phone ?? null;
@@ -1018,10 +1008,10 @@ export default function OrdersPage() {
                                beside the identifier it qualifies, not beside
                                whatever happens to be the middle of a row whose
                                height now changes with the viewport. */
-                  <div key={order.id} className="cw-list-item flex items-start gap-4 p-4 group">
+                  <div key={order.id} className={lists.orderRow}>
                     {/* Status dot */}
                     <div
-                      className={`shrink-0 w-2 h-2 rounded-full mt-1.5 ${
+                      className={`${lists.statusDotSmall} ${
                         order.status === "paid"
                           ? "cw-status-success-dot"
                           : order.status === "refunded"
@@ -1030,31 +1020,29 @@ export default function OrdersPage() {
                       }`}
                     />
 
-                    <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-2">
+                    <div className={lists.orderBody}>
                       {/* Main info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-mono font-medium cw-text break-words min-w-0">
-                            {order.order_ref}
-                          </span>
+                      <div className={lists.orderMain}>
+                        <div className={lists.orderIdentity}>
+                          <span className={lists.orderRef}>{order.order_ref}</span>
                           <span className={ORDER_STATUS_BADGE_CLASS[order.status] ?? "cw-surface-2 cw-muted"}>
                             {statusLabel[order.status] ?? order.status}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 mt-0.5">
-                          <span className="text-xs cw-muted">{order.product_code}</span>
+                        <div className={lists.orderSub}>
+                          <span className={lists.orderSubMuted}>{order.product_code}</span>
                           {customerLabel && (
                             <>
-                              <span className="cw-muted">·</span>
+                              <span className={lists.orderSubMuted}>·</span>
                               {order.customer_id ? (
                                 <Link
                                   href={`/admin/customers/${order.customer_id}`}
-                                  className="text-xs cw-link-hover truncate max-w-[180px]"
+                                  className={`cw-link-hover ${lists.orderCustomerMeasure}`}
                                 >
                                   {customerLabel}
                                 </Link>
                               ) : (
-                                <span className="text-xs cw-muted truncate max-w-[180px]">{customerLabel}</span>
+                                <span className={lists.orderCustomer}>{customerLabel}</span>
                               )}
                             </>
                           )}
@@ -1062,14 +1050,14 @@ export default function OrdersPage() {
                       </div>
 
                       {/* Amount */}
-                      <div className="shrink-0 sm:text-right">
+                      <div className={lists.orderAmount}>
                         {order.amount != null && (
-                          <p className="text-sm font-semibold cw-text">
+                          <p className={lists.orderSum}>
                             {order.amount.toLocaleString(locale)}{" "}
-                            <span className="text-xs font-normal cw-muted">{order.currency}</span>
+                            <span className={lists.orderCurrency}>{order.currency}</span>
                           </p>
                         )}
-                        <p className="text-[10px] cw-muted mt-0.5">
+                        <p className={lists.orderWhen}>
                           {new Date(order.created_at).toLocaleDateString(locale, {
                             day: "2-digit",
                             month: "short",
@@ -1083,9 +1071,11 @@ export default function OrdersPage() {
                     {/* Actions */}
                     {order.status !== "paid" ? (
                       <button
+                        type="button"
                         onClick={() => setReconcileOrder(order)}
                         title={t("orders_manual_reconcile")}
-                        className="shrink-0 cw-icon-btn opacity-0 group-hover:opacity-100"
+                        aria-label={t("orders_manual_reconcile")}
+                        className={`cw-icon-btn ${lists.rowAction}`}
                       >
                         <InteractionInkIcon>
                           <Icon name="check" size={16} />
