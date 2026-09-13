@@ -223,14 +223,25 @@
   height: 1rem;
 }
 
-/* Step controls: back on the left, forward on the right, forward twice the
-   weight. On a phone they share the row rather than stacking — the pair is one
-   decision, and splitting it over two lines reads as two. */
+/* Step controls: back on the left, forward on the right, one row on every
+   width — the pair is one decision, and splitting it over two lines reads as
+   two. Equal columns, not `auto 1fr`: that let "До опису" hug its label while
+   "Далі" took the rest, and the width jumped between question one and two as
+   the label changed. The primary fill carries the weight, not the size. */
 .diagnosticStepActions {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
   gap: var(--cw-space-xs);
+}
+
+/* Each button spans its column. The secondary role reserves the contract's
+   standalone width (`wide`), which on a phone is wider than half the row and
+   pushed "Назад" past its column while "Далі" shrank to fit; capping that
+   reservation at the column keeps it on desktop and gives it up on a phone. */
+.diagnosticStepActions > button {
+  width: 100%;
+  min-width: min(100%, var(--ds-button-min-width));
 }
 
 .diagnosticStepActions button:disabled {
