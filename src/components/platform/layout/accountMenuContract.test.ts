@@ -187,3 +187,113 @@ describe("chrome sheets hold the chrome they hang from", () => {
     expect(topButton).toMatch(/useChromeReveal\(true, undefined, \{ anchorsSheets: false \}\)/);
   });
 });
+
+describe("a portalled sheet supplies the focus order the document cannot", () => {
+  /**
+   * THE BUG THIS PINS. `createPortal` puts the panel at the end of
+   * `document.body`, so sequential focus — which follows DOM order — steps
+   * over it. Measured on /programs: one Tab from the avatar trigger landed on
+   * the hero's call to action, not on the first row of the open menu.
+   */
+  it("moves focus into the sheet when it opens", () => {
+    expect(sheetSource).toMatch(/focusStopsIn\(menu\)\[0\]\?\.focus\(\);/);
+  });
+
+  it("circles Tab inside the sheet instead of letting it walk into the page", () => {
+    expect(sheetSource).toContain('if (event.key !== "Tab") return;');
+    expect(sheetSource).toContain("event.preventDefault();");
+    expect(sheetSource).toMatch(/nextStop\(stops\.length, stops\.indexOf/);
+    expect(sheetSource).toMatch(/event\.shiftKey \? -1 : 1/);
+  });
+
+  it("recomputes the ring per keystroke, because the install row is a disclosure", () => {
+    /* Caching the stops when the sheet opens strands focus on whatever the
+       fold added after it. */
+    expect(sheetSource).toMatch(/const stops = focusStopsIn\(menu\);/);
+  });
+
+  it("returns focus to the trigger only when the sheet was holding it", () => {
+    /* Escape and a chosen row leave focus inside; an outside click does not,
+       and pulling focus back to the avatar then would take something the
+       reader did not give. */
+    expect(sheetSource).toMatch(/let held = menu\.contains\(document\.activeElement\);/);
+    expect(sheetSource).toContain('document.addEventListener("focusin", onFocusIn);');
+    expect(sheetSource).toMatch(/if \(held\) trigger\?\.focus\(\);/);
+  });
+
+  it("keeps Escape and the outside click as the ways out", () => {
+    /* The focus ring must not have replaced dismissal. */
+    expect(sheetSource).toMatch(/if \(event\.key === "Escape"\) close\(\);/);
+    expect(sheetSource).toContain('document.addEventListener("pointerdown", onPointer);');
+  });
+
+  it("leaves the shield out of the order", () => {
+    expect(sheetSource).toContain("tabIndex={-1}");
+  });
+
+  it("defers to a sibling sheet that is holding the focus", () => {
+    /* The burger and the avatar are separate sheets. A pointer keeps them
+       exclusive only by accident — opening one lands a `pointerdown` outside
+       the other — and from the keyboard nothing does, so both can stand open
+       with both rings listening on `document`. Each has to recognise focus
+       that belongs to the other, or Tab stops meaning "next". */
+    expect(sheetSource).toContain('data-cw-chrome-sheet=""');
+    expect(sheetSource).toMatch(/\.closest\?\.\("\[data-cw-chrome-sheet\]"\)/);
+    expect(sheetSource).toMatch(/if \(owner && owner !== menu\) return;/);
+  });
+});
+
+describe("the island stops reading the page once it lands on the sheet", () => {
+  const organsCss = read("src/components/platform/layout/ChromeOrgans.module.css");
+
+  /**
+   * THE OVERRIDE THAT WAS DEAD THE DAY IT WAS WRITTEN. Both scopes carry the
+   * same specificity — `.row` plus one attribute plus one class — so the later
+   * declaration wins. The sheet-open rules sat ABOVE the three tone rules, and
+   * the tone won every time: on a light gamma over the home hero the island
+   * reported `tone="dark"`, the sheet it had opened was a cream plate, and its
+   * glyphs came out `rgb(255,248,239)` on `rgb(253,244,231)` — 1.04:1, an
+   * absent control rather than a faint one. After the move: 14.42:1.
+   */
+  it("declares the sheet-open ink after the tone it has to overrule", () => {
+    const lastTone = organsCss.lastIndexOf('.row[data-cw-header-tone="dark"]');
+    const sheetInk = organsCss.lastIndexOf('.row[data-cw-organs-sheet="open"] .mark');
+    expect(lastTone).toBeGreaterThan(-1);
+    expect(sheetInk).toBeGreaterThan(lastTone);
+  });
+
+  it("returns the mark and the glyphs to the plate's own tokens", () => {
+    const at = organsCss.lastIndexOf('.row[data-cw-organs-sheet="open"] .mark {');
+    expect(organsCss.slice(at, organsCss.indexOf("}", at))).toContain("var(--cw-brand-mark-color)");
+    const organAt = organsCss.lastIndexOf('.row[data-cw-organs-sheet="open"] .organ {');
+    expect(organsCss.slice(organAt, organsCss.indexOf("}", organAt))).toContain("var(--cw-platform-text)");
+  });
+});
+
+describe("the install offer is a crossing, not a fold", () => {
+  const menu = read("src/components/platform/layout/PlatformAccountMenu.tsx");
+
+  it("sends the reader to the cabinet's install row instead of unfolding prose", () => {
+    /* A lead sentence and a numbered list inside a column of two-word
+       destinations turned the menu into a place rather than a list of them —
+       and the fold's caption ink made it the one row quieter than its
+       neighbours. */
+    expect(menu).toContain("#app-install");
+    expect(menu).not.toContain("<details");
+    expect(menu).not.toContain("IOS_INSTALL_STEPS");
+  });
+
+  it("keeps the real prompt where a real prompt exists", () => {
+    /* Only Safari has nothing to fire; Chrome's row must still install. */
+    expect(menu).toContain("if (install.canPrompt)");
+    expect(menu).toContain("void install.install()");
+  });
+
+  it("leaves no dead fold recipe behind in the shell", () => {
+    expect(read("src/components/platform/PlatformShell.module.css")).not.toContain("menuFold");
+  });
+
+  it("still points at an anchor the cabinet actually renders", () => {
+    expect(read("src/components/platform/cabinet/PwaInstallCard.tsx")).toContain('id="app-install"');
+  });
+});

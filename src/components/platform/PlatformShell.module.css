@@ -981,8 +981,7 @@
 /* The inset the panel gave up, restated on what it holds. Direct children
    only: the theme control's three seats are buttons too, and they are inside a
    row rather than being one. */
-.profileMenu[data-form="organs"] > :is(a, button, .menuIdentity, .menuSetting),
-.profileMenu[data-form="organs"] .menuFold summary {
+.profileMenu[data-form="organs"] > :is(a, button, .menuIdentity, .menuSetting) {
   padding-inline: var(--cw-space-md);
 }
 
@@ -1303,110 +1302,6 @@
   content: none;
 }
 
-/* THE INSTALL FOLD. Safari fires no prompt, so the one thing the menu can offer
-   an iPhone is the two taps that do it by hand — and two lines of instruction
-   are not a row. The summary borrows the row's metrics so the closed state is
-   indistinguishable from the buttons around it; the steps under it are caption
-   ink, the same weight the address line at the top of the menu carries.
-
-   No marker: the default triangle is the one glyph in this bar that is not from
-   the sprite, and a row that grows when tapped needs no arrow to say so. */
-.menuFold summary {
-  min-height: var(--ds-touch-target-min);
-  display: flex;
-  align-items: center;
-  padding: 0 var(--cw-space-sm);
-  border-radius: var(--cw-radius-sm);
-  color: var(--cw-platform-muted);
-  font-weight: 720;
-  cursor: pointer;
-  list-style: none;
-  transition: color 160ms ease;
-}
-
-.menuFold summary::-webkit-details-marker {
-  display: none;
-}
-
-.menuFold summary:focus-visible {
-  color: var(--cw-platform-text);
-  outline: none;
-}
-
-@media (hover: hover) {
-  .menuFold summary:hover {
-    color: var(--cw-platform-text);
-    outline: none;
-  }
-}
-
-.menuFoldLead,
-.menuFoldSteps {
-  margin: 0;
-  color: var(--cw-platform-muted);
-  font-size: var(--ds-type-label-size);
-  line-height: var(--ds-type-label-line-height);
-}
-
-.menuFoldLead {
-  padding: 0.35rem 0.65rem var(--cw-space-2xs);
-}
-
-.menuFoldSteps {
-  padding: 0 0.65rem var(--cw-space-xs) 1.6rem;
-  display: grid;
-  gap: var(--cw-space-2xs);
-}
-
-/* Inside the burger sheet the ground is the dark plate, so the ink is the
-   header's, not the global one — the same swap `.profileWrapMobile` makes for
-   its own rows, and at the sheet's left edge rather than the popover's. */
-.profileWrapMobile .menuFold summary {
-  padding: 0 var(--cw-space-md);
-  color: var(--platform-header-fg);
-}
-
-.profileWrapMobile .menuFoldLead,
-.profileWrapMobile .menuFoldSteps {
-  color: color-mix(in srgb, var(--platform-header-fg) 72%, transparent);
-}
-
-.profileWrapMobile .menuFoldLead {
-  padding-inline: var(--cw-space-md);
-}
-
-.profileWrapMobile .menuFoldSteps {
-  padding-inline: 1.85rem var(--cw-space-md);
-}
-
-@media (hover: hover) {
-  .profileMenu a:hover,
-  .profileMenu button:hover {
-    color: var(--cw-platform-text);
-    background: transparent;
-  }
-}
-
-.profileMenu a:focus-visible,
-.profileMenu button:focus-visible {
-  color: var(--cw-platform-text);
-  background: transparent;
-  outline: none;
-}
-
-/* HOVER IS A POINTER STATE, AND A PHONE HAS NO POINTER.
-
-   On touch, `:hover` latches onto the last element tapped and stays there —
-   so opening this menu from the cabinet showed TWO gold marks: the full one
-   under «Кабінет», which is where you are, and a 42% one under whichever row
-   the last tap happened to land near. Two marks in one menu is two answers to
-   «which one am I in», and the reader has no way to tell which of the two is
-   the claim and which is the residue.
-
-   `@media (hover: hover)` is the whole fix: a device that cannot hover never
-   paints the hover mark, and the current row is the only thing lit. Focus is
-   deliberately NOT inside the query — a keyboard has no pointer either, and
-   its ring must survive on every device. */
 /* "You are here": the mark run to full, plus the weight. Both, because weight
    alone is not a mark — five rows in one type family with one of them a notch
    bolder is a difference you have to hunt for — and because a mark alone is

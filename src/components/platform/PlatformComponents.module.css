@@ -136,6 +136,26 @@
   text-transform: uppercase;
 }
 
+/* THE CHIP IS GLASS, SO IT DEGRADES LIKE GLASS (2026-09-11). It draws the
+   canvas tint by hand instead of declaring `[data-cw-material="glass"]`, which
+   is why the base rule's fallback in globals.css never reached it: the same
+   76% with no blur behind it, sitting on the diagnostic stage panel's own
+   copy. The fallback is the one the material contract already names for this
+   tint — the opaque surface — so the chip lands on exactly what every other
+   glass object in the product lands on when the blur is gone. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .diagnosticStepChip {
+    background-color: var(--cw-mat-surface);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .diagnosticStepChip {
+    backdrop-filter: none;
+    background-color: var(--cw-mat-surface);
+  }
+}
+
 .diagnosticProgressRow {
   display: grid;
   gap: var(--cw-space-xs);
@@ -564,7 +584,16 @@
   cursor: pointer;
 }
 
-.footer a:hover,
+/* THE `:not()` THAT WAS ON THE BASE AND NOT ON THE HOVER (2026-09-10).
+   Two rules up, the resting colour deliberately excludes `.footerTextLink` —
+   a text link is not a quiet button and does not take the muted ink. This one
+   did not carry the exclusion, and it is the MORE specific of the two
+   (`.footer a:hover` beats `.footerTextLink:hover` by an element), so it won
+   the hover regardless of order: every text link in the footer lit to
+   `--cw-platform-text`, which on the night ground is the cream. Pointing at a
+   link in the footer turned it WHITE while the same gesture anywhere else in
+   the product turned it brass. */
+.footer a:not(.footerTextLink):hover,
 .footer button:hover {
   color: var(--cw-platform-text);
 }
@@ -580,14 +609,34 @@
    was visible, and it was the one nobody designed. The stroke is the mark now
    — at rest, on hover and when current — so this rule keeps the colour change
    and hands the line back. */
+/* A LINK IN A SENTENCE HAS TO ANNOUNCE ITSELF (2026-09-10). The mark is drawn
+   in `currentColor` — that is the link rule's whole idea, so the line belongs
+   to the sentence and moves with the word — and this link rested in the same
+   muted grey as the prose around it. On graphite that put a 62% grey line
+   under grey text: measured `rgb(163,163,161)` at 0.62 over `rgb(25,25,24)`
+   composites to about `rgb(111,111,110)`, DIMMER than the text it underlines,
+   which is why the stroke read as missing rather than as quiet.
+
+   The rest colour is the marker, not the paragraph's: ink on a pale ground,
+   brass on a dark one. The word and its line take it together, and the state
+   that follows is the line running to full — which is the link rule's own
+   model, states differing in strength rather than in colour. */
 .footer a.footerTextLink {
+  color: var(--cw-nav-marker);
   text-decoration: none;
   transition: color 0.16s ease;
 }
 
+/* THE MARKER, NOT THE ACCENT — the duality, in the one token that states it.
+   `--cw-platform-accent` is the brass in BOTH gammas, so a footer link lit
+   gold on cream, where every other interactive mark in the product is ink.
+   `--cw-nav-marker` is the pair the system already keeps for exactly this
+   question — ink on a pale ground, brass on a dark one — and it is what the
+   ink label's own hover rule reads, so the word and the line under it move
+   together instead of resolving two different colours. */
 .footerTextLink:hover,
 .footerTextLink:focus-visible {
-  color: var(--cw-platform-accent);
+  color: var(--cw-nav-marker);
 }
 
 /* THE WORDMARK IS SET, NOT DRAWN — this footer spells CENTERWAY in the data

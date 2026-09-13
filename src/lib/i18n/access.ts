@@ -135,6 +135,11 @@ export const access = {
   catalog_blocker_offer_withdrawn: { uk: "офер знято з продажу", en: "offer withdrawn" },
   catalog_blocker_no_access_rule: { uk: "не задано строк доступу", en: "no access term" },
   catalog_approve: { uk: "Затвердити", en: "Approve" },
+  catalog_approve_live: { uk: "Затвердити поточну версію", en: "Approve the live version" },
+  catalog_not_moderated: {
+    uk: "Не проходив модерацію — продається, але змінити видимість не вийде, доки не затвердите",
+    en: "Never went through review — it still sells, but visibility cannot be changed until you approve it",
+  },
   catalog_return: { uk: "Повернути автору", en: "Return to author" },
   catalog_approved: { uk: "Курс затверджено", en: "Course approved" },
   catalog_returned: { uk: "Курс повернено автору", en: "Course returned to the author" },

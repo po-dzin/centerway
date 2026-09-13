@@ -256,3 +256,71 @@ describe("platform interaction layers", () => {
     expect(missing).toEqual([]);
   });
 });
+
+describe("the footer's interactive ink follows the gamma, not a fixed brass", () => {
+  /* Comments stripped: these rules are discussed in prose right above
+     themselves, and a plain `indexOf` finds the sentence, not the rule. */
+  const componentsCss = read("src/components/platform/PlatformComponents.module.css").replace(/\/\*[\s\S]*?\*\//g, "");
+
+  it("keeps the text links out of the quiet-button hover", () => {
+    /* `.footer a:hover` is one element more specific than `.footerTextLink:hover`,
+       so without the exclusion it wins the cascade whatever the order — and
+       lights every footer link to the page ink, which on the night ground is
+       cream. Pointing at a link turned it white while the same gesture
+       elsewhere turned it brass. */
+    expect(componentsCss).toContain(".footer a:not(.footerTextLink):hover");
+    expect(componentsCss).not.toMatch(/^\.footer a:hover,$/m);
+  });
+
+  it("lights a footer link with the marker, which is ink on cream and brass on graphite", () => {
+    const at = componentsCss.indexOf(".footerTextLink:hover");
+    const declarations = componentsCss.slice(at, componentsCss.indexOf("}", at));
+    expect(declarations).toContain("var(--cw-nav-marker)");
+    /* The accent is the same brass in both gammas; using it here put a gold
+       hover on a cream page, against the one rule the marker exists to state. */
+    expect(declarations).not.toContain("--cw-platform-accent");
+  });
+
+  it("keeps the marker itself as the two-sided token it claims to be", () => {
+    const globalsCss = read("src/app/globals.css").replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(globalsCss).toMatch(/:root\s*\{[\s\S]*?--cw-nav-marker: var\(--cw-platform-text\);/);
+    expect(globalsCss).toMatch(
+      /\[data-cw-theme="dark"\],\s*\n\s*\[data-cw-header-tone="dark"\]\s*\{\s*\n\s*--cw-nav-marker: var\(--cw-platform-accent\);/,
+    );
+  });
+});
+
+describe("the footer's own addresses", () => {
+  it("sends the Telegram row to the support bot, not to a person's inbox", () => {
+    /* It sat beside three channels and read as a fourth, but it was a direct
+       message to the founder — no queue, no history, no second reader. */
+    const content = read("src/lib/platform/content.ts");
+    expect(content).not.toContain("telegram.me/E_Koriakin");
+    expect(content).toContain('network: "telegram", href: SUPPORT_BOT_URL');
+  });
+
+  it("keeps the bot's address in a leaf module, out of the import cycle", () => {
+    /* `tgSupportBotCopy` reads LEARNING_SHELF_HREF from `platform/content`, so
+       importing the URL back from it closed a cycle: at module evaluation
+       CABINET_URL reached for a constant that had not initialised and the
+       platform layout threw on the first request. `tsc` does not see this. */
+    const leaf = read("src/lib/supportBotUrl.ts");
+    expect(leaf).toContain('export const SUPPORT_BOT_URL = "https://telegram.me/centerway_support_bot"');
+    /* No import STATEMENT — the prose above it explains the cycle and names
+       the word, which a bare substring check would trip over. */
+    expect(leaf).not.toMatch(/^\s*import\s/m);
+    expect(read("src/lib/platform/content.ts")).toContain('from "@/lib/supportBotUrl"');
+    expect(read("src/lib/telegram/tgSupportBotCopy.ts")).toContain("export { SUPPORT_BOT_URL }");
+  });
+});
+
+describe("the account menu does not offer a door the bar already carries", () => {
+  it("hides the way back to the storefront while on the storefront", () => {
+    /* Gated on the home PAGE, every other www route carried «На головну» while
+       the navigation three centimetres above it already read «Головна». */
+    const menu = read("src/components/platform/layout/PlatformAccountMenu.tsx");
+    expect(menu).toContain("const onPublicSite = !inPersonalApp;");
+    expect(menu).toContain("{onPublicSite ? null : (");
+    expect(menu).not.toContain("onPublicHome");
+  });
+});

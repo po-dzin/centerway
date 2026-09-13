@@ -1,3 +1,4 @@
+import { SUPPORT_BOT_URL } from "@/lib/supportBotUrl";
 import type { CwIconName } from "@/lib/brand/iconNames";
 import { getFunnelHostUrl, getPlatformRoute } from "@/lib/surfaces/catalog";
 
@@ -65,7 +66,13 @@ export const learningNavItem = {
 
 export const socialLinks = [
   { label: "YouTube", network: "youtube", href: "https://www.youtube.com/channel/UC0VPHLWTIXD3Rad5XkcyliA" },
-  { label: "Telegram", network: "telegram", href: "https://telegram.me/E_Koriakin" },
+  /* THE BOT, NOT THE FOUNDER'S OWN ACCOUNT (2026-09-10). This row sat beside
+     three channels and read as a fourth, but it was a direct message to one
+     person — so every «where do I ask about my order» in the footer arrived in
+     a private inbox that has no queue, no history and no second reader. The
+     support bot is the address the product already gives everywhere else it
+     offers help. */
+  { label: "Telegram", network: "telegram", href: SUPPORT_BOT_URL },
   {
     label: "Facebook",
     network: "facebook",
