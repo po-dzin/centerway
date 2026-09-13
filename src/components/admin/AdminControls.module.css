@@ -524,3 +524,17 @@
   align-items: center;
   gap: var(--cw-space-xs);
 }
+
+/* A control that takes the rest of its row — the search field beside a set of
+   facet selects. */
+.grow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* A smaller action inside a dense row: a seat's unblock, a deadline's save.
+   Still the touch floor tall — `.cw-btn` sets that — only quieter in type. */
+.actionCompact {
+  composes: action;
+  font-size: var(--ds-type-label-size);
+}

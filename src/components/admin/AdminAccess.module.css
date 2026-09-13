@@ -1,0 +1,296 @@
+/*
+ * WHO HOLDS WHAT: the access tab — people, their seats, their roles, and the
+ * form that gives someone a course.
+ *
+ * Out of Tailwind on 2026-09-13. The shared parts (fields, actions, rows,
+ * chips) come from AdminControls and AdminLists; what is here is only what this
+ * tab alone is shaped like: the grant form's twelve-column tracks, the summary
+ * tiles, the fold under a person, and the indent that lines a seat's controls
+ * up under its title.
+ */
+
+/* ── The grant form ────────────────────────────────────────────────────── */
+
+/* Who and what on one line at desktop width. A twelve-column track rather than
+   equal fields: an email needs room, a date does not, and stretching them
+   equally is what made the old strip read as a wall. */
+.grantWho {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-xs);
+}
+
+.grantMore {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cw-space-xs);
+}
+
+.spanFull {
+  grid-column: span 2;
+}
+
+@media (min-width: 640px) {
+  .grantWho,
+  .grantMore {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .spanEmail {
+    grid-column: span 5;
+  }
+
+  .spanName,
+  .spanDeadline {
+    grid-column: span 3;
+  }
+
+  .spanCourse {
+    grid-column: span 4;
+  }
+
+  .spanAmount,
+  .spanCurrency {
+    grid-column: span 2;
+  }
+
+  .spanNote {
+    grid-column: span 5;
+  }
+}
+
+.grantFoot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+  padding-top: var(--cw-space-2xs);
+}
+
+@media (min-width: 640px) {
+  .grantFoot {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.check {
+  composes: cw-muted from global;
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  font-size: var(--ds-type-label-size);
+}
+
+.checkLong {
+  composes: cw-muted from global;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: flex-start;
+  gap: var(--cw-space-xs);
+  font-size: var(--ds-type-label-size);
+}
+
+.checkBox {
+  flex: 0 0 auto;
+}
+
+.checkBoxTop {
+  composes: checkBox;
+  margin-top: var(--cw-space-2xs);
+}
+
+.roleInline {
+  composes: cw-muted from global;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  font-size: var(--ds-type-label-size);
+}
+
+/* ── The summary ───────────────────────────────────────────────────────── */
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cw-space-xs);
+}
+
+@media (min-width: 640px) {
+  .summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.summaryHead {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+.summaryLabel {
+  composes: cw-muted from global;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--ds-type-label-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summaryValue {
+  margin: var(--cw-space-2xs) 0 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-lead-size);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Facets ────────────────────────────────────────────────────────────── */
+
+@media (min-width: 640px) {
+  .facet {
+    width: 11rem;
+  }
+
+  /* Course titles run longer than a role or an access state. */
+  .facetWide {
+    width: 14rem;
+  }
+}
+
+/* ── A person, and the fold under them ─────────────────────────────────── */
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-md);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* `status` in the name is the geometry guard's capsule carve-out: these are
+   state dots, not boxes. */
+.statusDotTiny {
+  flex: 0 0 auto;
+  width: var(--seat-dot, 0.5rem);
+  height: var(--seat-dot, 0.5rem);
+  border-radius: var(--cw-radius-pill);
+}
+
+.statusDotFixed {
+  flex: 0 0 auto;
+}
+
+.selfMark {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.metaClip {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fold {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+  margin-top: var(--cw-space-sm);
+  padding-top: var(--cw-space-sm);
+  border-top: 1px solid var(--cw-border);
+}
+
+/* A seat: one course a person holds. The dot's width is named once so the
+   seat's own controls can be indented to exactly the start of its title. */
+.seat {
+  --seat-dot: var(--cw-space-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+}
+
+.seatRow {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+}
+
+.seatTitle {
+  margin: 0;
+  overflow: hidden;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seatProgress {
+  display: none;
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 640px) {
+  .seatProgress {
+    display: block;
+  }
+}
+
+.seatActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+/* Under the title, not under the dot: the dot plus the row's gap. It was
+   `pl-5` — 20px, correct only while the dot stayed 8px and the gap 12px. */
+.seatLine {
+  --seat-dot: var(--cw-space-xs);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  padding-left: calc(var(--seat-dot) + var(--cw-space-sm));
+}
+
+.seatLineSpaced {
+  composes: seatLine;
+  padding-top: var(--cw-space-2xs);
+}
+
+.seatNote {
+  --seat-dot: var(--cw-space-xs);
+  composes: cw-muted from global;
+  margin: 0;
+  padding-top: var(--cw-space-2xs);
+  padding-left: calc(var(--seat-dot) + var(--cw-space-sm));
+  font-size: var(--ds-type-label-size);
+}
+
+.deadlineField {
+  width: 11rem;
+}
+
+.selectCompact {
+  composes: select from "./AdminControls.module.css";
+  font-size: var(--ds-type-label-size);
+}
+
+.selectCompact:disabled {
+  opacity: 0.5;
+}
