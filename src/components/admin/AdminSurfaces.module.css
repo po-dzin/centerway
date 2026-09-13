@@ -229,3 +229,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* A cell whose value must stay on one line: counts, sums, dates. */
+.nowrap {
+  white-space: nowrap;
+}
