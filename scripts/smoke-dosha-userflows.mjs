@@ -147,11 +147,12 @@ async function main() {
     await assertVisible(page, "12 питань", "intro promise");
     await assertVisible(page, "Як це працює", "intro how-it-works");
     await assertVisible(page, "Почати тест", "intro primary cta");
-    await assertVisible(page, "Що таке доша?", "intro secondary link");
-    await page.getByRole("button", { name: "Що таке доша?" }).click({ timeout: timeoutMs });
-    await assertVisible(page, "не є медичним діагнозом", "dosha info disclaimer");
-    const closeDoshaInfoButton = page.getByRole("button", { name: /Сховати опис доші|Що таке доша\?/i }).first();
-    await closeDoshaInfoButton.click({ timeout: timeoutMs });
+    await assertVisible(page, "Що таке доша і межі методу", "intro secondary link");
+    // A details/summary disclosure, not a button: the same summary opens and closes it.
+    const doshaInfoSummary = page.locator("summary", { hasText: "Що таке доша і межі методу" }).first();
+    await doshaInfoSummary.click({ timeout: timeoutMs });
+    await assertVisible(page, "не медичний діагноз", "dosha info disclaimer");
+    await doshaInfoSummary.click({ timeout: timeoutMs });
 
     const hasEnglishQuestion = await page.getByText("Question ", { exact: false }).count();
     if (hasEnglishQuestion > 0) {
