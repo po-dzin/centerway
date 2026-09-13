@@ -100,15 +100,15 @@ export function EmailSignIn({
           /* A buyer who has never signed in HAS no account yet — the purchase
              was made against an email, not an account. Refusing to create one
              here would turn the fix back into the wall it replaces. */
-        shouldCreateUser: true,
-        /* Only used if the mail template also carries a link. The code is the
+          shouldCreateUser: true,
+          /* Only used if the mail template also carries a link. The code is the
              path this screen supports; this keeps a clicked link from landing
              somewhere unrelated. */
-        emailRedirectTo: typeof window !== "undefined" ? window.location.href : undefined,
-      },
-    });
+          emailRedirectTo: typeof window !== "undefined" ? window.location.href : undefined,
+        },
+      });
 
-    setBusy(false);
+      setBusy(false);
 
       const failure = classifySignInError(sendError);
       if (failure) {
@@ -120,7 +120,7 @@ export function EmailSignIn({
       setCooldown(RESEND_COOLDOWN_SECONDS);
       return true;
     },
-    [report]
+    [report],
   );
 
   const onSubmitEmail = useCallback(
@@ -134,7 +134,7 @@ export function EmailSignIn({
       setEmail(address);
       await sendCode(address);
     },
-    [email, report, sendCode]
+    [email, report, sendCode],
   );
 
   const verify = useCallback(
@@ -165,7 +165,7 @@ export function EmailSignIn({
          re-renders into the page the person was trying to reach. */
       onSignedIn?.();
     },
-    [email, onSignedIn, report]
+    [email, onSignedIn, report],
   );
 
   /* THE SIXTH DIGIT IS THE SUBMIT. There is nothing left to decide once the
@@ -180,7 +180,7 @@ export function EmailSignIn({
       setCode(next);
       if (!busy && isCompleteOtpCode(next)) void verify(next);
     },
-    [busy, verify]
+    [busy, verify],
   );
 
   if (step === "code") {

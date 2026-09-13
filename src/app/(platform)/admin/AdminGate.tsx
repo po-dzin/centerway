@@ -80,10 +80,7 @@ export function AdminGate({ signedInAs }: { signedInAs: string | null }) {
           <p className={gate.cardNote}>{t("login_card_subtitle")}</p>
         </div>
 
-        <SignInOptions
-          googleLabel={t("login_btn")}
-          onGoogle={() => void handleSignIn()}
-        />
+        <SignInOptions googleLabel={t("login_btn")} onGoogle={() => void handleSignIn()} />
       </div>
     </div>
   );
