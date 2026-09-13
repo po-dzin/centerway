@@ -312,6 +312,30 @@ function reset() {
     if (file === "010_schema.sql") psql(LOCAL_DB_URL, ["-c", grants]);
   }
 
+  /* THE INVENTED ACCOUNTS HAVE TO BE SIGN-IN-ABLE (2026-09-13). The inserts in
+     030 and 040 name only the columns a person has, and leave GoTrue's token
+     columns NULL. GoTrue scans those as Go strings, so the first code request
+     for any of these accounts died with «converting NULL to string is
+     unsupported» — a 500 the sign-in form shows as «не вдалося увійти». Empty
+     strings are what GoTrue itself writes. */
+  psql(LOCAL_SUPERUSER_URL, [
+    "-c",
+    "update auth.users set " +
+      [
+        "confirmation_token",
+        "recovery_token",
+        "email_change_token_new",
+        "email_change_token_current",
+        "email_change",
+        "phone_change",
+        "phone_change_token",
+        "reauthentication_token",
+      ]
+        .map((column) => `${column} = coalesce(${column}, '')`)
+        .join(", ") +
+      ";",
+  ]);
+
   // Last, and against populated tables — see ORDER OF ASSEMBLY above.
   for (const name of staged) {
     console.log(`  pending migration: ${name}`);
