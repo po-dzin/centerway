@@ -44,8 +44,18 @@ import { PROFILE_PATH_PREFIX } from "@/lib/surfaces/catalog";
 function nextDestination(): string {
   if (typeof window === "undefined") return PROFILE_PATH_PREFIX;
   const raw = new URLSearchParams(window.location.search).get("next");
-  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return PROFILE_PATH_PREFIX;
-  return raw;
+  if (!raw || !raw.startsWith("/")) return PROFILE_PATH_PREFIX;
+  /* THE STRING CHECK WAS NOT ENOUGH (2026-09-13). `/\evil.example` starts with
+     one slash and not two, and a URL parser reads the backslash as a slash —
+     so it passed and led off-origin. The candidate is resolved the way the
+     browser will resolve it and kept only if it lands on this origin. */
+  try {
+    const target = new URL(raw, window.location.origin);
+    if (target.origin !== window.location.origin) return PROFILE_PATH_PREFIX;
+    return `${target.pathname}${target.search}${target.hash}`;
+  } catch {
+    return PROFILE_PATH_PREFIX;
+  }
 }
 
 /* The destination does not change while this screen is mounted: leaving it is

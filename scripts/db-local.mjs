@@ -399,16 +399,25 @@ function reset() {
       const reason = String(error.stderr ?? error.message)
         .split("\n")
         .find((line) => line.includes("ERROR"));
-      refused.push(name);
-      // With a journal this is a real failure worth reading; without one it is
-      // almost always a file the dump already contains.
+      /* WITHOUT A JOURNAL, ONLY "IT IS ALREADY THERE" IS A SKIP (2026-09-13).
+         Accepting every refusal turned a genuinely pending migration that
+         breaks on real data into a green rehearsal. An error that names an
+         existing object is the dump holding this file; anything else fails
+         the reset, journal or not. */
+      const alreadyThere = !applied && /already exists|duplicate key value/i.test(reason ?? "");
+      if (!alreadyThere) refused.push(name);
       console.log(
-        `  ${applied ? "FAILED" : "skipped (already in dump?)"}: ${name}${reason ? ` — ${reason.trim()}` : ""}`,
+        `  ${alreadyThere ? "skipped (already in dump)" : "FAILED"}: ${name}${reason ? ` — ${reason.trim()}` : ""}`,
       );
     }
   }
-  if (applied && refused.length > 0) {
-    throw new Error(`${refused.length} pending migration(s) failed against the local copy: ${refused.join(", ")}`);
+  if (refused.length > 0) {
+    throw new Error(
+      `${refused.length} migration(s) failed against the local copy: ${refused.join(", ")}` +
+        (applied
+          ? ""
+          : " — with no journal, a file the dump already holds can also fail this way; run `db:local:sync`"),
+    );
   }
 
   for (const view of MATVIEWS) {
@@ -419,9 +428,7 @@ function reset() {
   }
 
   const courses = query(LOCAL_DB_URL, "select count(*) from public.lms_courses");
-  console.log(
-    `\nlocal database rebuilt — ${courses} courses, ${staged.length - refused.length} pending migration(s) applied`,
-  );
+  console.log(`\nlocal database rebuilt — ${courses} courses, ${staged.length} pending migration(s) run`);
 }
 
 /**
