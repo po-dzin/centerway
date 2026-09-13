@@ -8,7 +8,17 @@ const baseUrl = (process.env.SMOKE_UI_BASE_URL || process.env.SMOKE_BASE_URL || 
 const timeoutMs = Number.parseInt(process.env.SMOKE_TIMEOUT_MS || "20000", 10);
 const useMockApi = process.env.SMOKE_DOSHA_MOCK !== "0";
 
-const componentPath = "src/components/dosha-test/DoshaTestClient.tsx";
+/* The client was split into a composition, a state hook and one view per phase
+   on 2026-09-13; the copy and CTA markers below now live across those files,
+   so the static check reads them together as the component. */
+const componentPaths = [
+  "src/components/dosha-test/DoshaTestClient.tsx",
+  "src/components/dosha-test/useDoshaAttempt.ts",
+  "src/components/dosha-test/DoshaIntro.tsx",
+  "src/components/dosha-test/DoshaQuestionStep.tsx",
+  "src/components/dosha-test/DoshaLoadingStep.tsx",
+  "src/components/dosha-test/DoshaResult.tsx",
+];
 const contractPath = "docs/legacy/product/dosha_test_ui_contract_v1.md";
 const specPath = "docs/legacy/product/center_way_dosha_test_spec_agent_ready.md";
 
@@ -39,11 +49,12 @@ function addSection(name, points, maxPoints, details) {
 }
 
 async function checkStaticContract() {
-  const [component, contract, spec] = await Promise.all([
-    readFile(componentPath, "utf8"),
+  const [componentSources, contract, spec] = await Promise.all([
+    Promise.all(componentPaths.map((file) => readFile(file, "utf8"))),
     readFile(contractPath, "utf8"),
     readFile(specPath, "utf8"),
   ]);
+  const component = componentSources.join("\n");
 
   const surfaceStyles = await Promise.all(surfaceStylePaths.map((file) => readFile(file, "utf8")));
   const surface = [component, ...surfaceStyles].join("\n");

@@ -4,6 +4,18 @@ import { describe, expect, it } from "vitest";
 
 const read = (file: string) => fs.readFileSync(path.resolve(__dirname, "../..", file), "utf8");
 
+/* The dosha test was one file until 2026-09-13, when it was split into a
+   composition, a hook and one view per phase. A contract that read only
+   DoshaTestClient.tsx would stop seeing a string the moment it moved into an
+   extracted view, so the test is read as the whole directory's source. */
+const readDoshaTest = () =>
+  fs
+    .readdirSync(path.resolve(__dirname, "dosha-test"))
+    .filter((name) => /\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name))
+    .sort()
+    .map((name) => read(`src/components/dosha-test/${name}`))
+    .join("\n");
+
 /**
  * ONE WAY TO WAIT, AND ONE WAY TO SAY WHERE THE LAYER IS.
  *
@@ -18,17 +30,18 @@ describe("waiting", () => {
   it("is the mark gaining density, never a rotating ring", () => {
     for (const file of [
       "src/components/admin/AdminLoadingState.tsx",
-      "src/components/dosha-test/DoshaTestClient.tsx",
       "src/components/platform/PlatformLoadingState.tsx",
     ]) {
       expect(read(file)).toContain('animate="wait"');
     }
+    // DoshaTestClient.tsx and the files split out of it.
+    expect(readDoshaTest()).toContain('animate="wait"');
     /* No rotating ring anywhere — the class that drew every one of them. The
        source files above name it only in prose, so the check reads the JSX. */
     const spinning = ["src/components/admin/modals/JobDetailsModal.tsx"];
     for (const file of spinning) expect(read(file)).not.toContain("animate-spin");
     expect(read("src/components/admin/AdminLoadingState.tsx")).not.toContain('className="animate-spin');
-    expect(read("src/components/dosha-test/DoshaTestClient.tsx")).not.toContain("diagnosticSpinner");
+    expect(readDoshaTest()).not.toContain("diagnosticSpinner");
     // The CSS ring and its keyframes are gone, and so is the reduced-motion
     // rule that existed only to stop it.
     const components = read("src/components/platform/PlatformComponents.module.css");
