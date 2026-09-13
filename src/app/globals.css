@@ -1196,17 +1196,15 @@
      keyboard covering the way back — the reported «фокус ломает зум и всё
      вылазит за экран».
 
-     Every one of the 34 field call sites in the panel types a Tailwind size,
-     and every one of them is below the line: 32 × `text-sm` (14px) and
-     2 × `text-xs` (12px). Measured in the browser before this rule, all four
-     shapes — input, select, textarea and the search field — computed to 14px
-     or 12px.
+     The panel's fields were measured below the line when this was written —
+     34 call sites at 14px or 12px — and the fields that replaced them on the
+     panel's own modules size themselves from the type scale, which can land
+     under 16px again.
 
-     THE FLOOR BELONGS HERE, not at 34 call sites, because the next one will
-     type `text-sm` too. It is qualified by element rather than raised with
-     `!important`: `input.cw-input` outweighs `.text-sm` on specificity, so it
-     holds wherever Tailwind's utilities happen to land in the layer order,
-     which a bare `.cw-input` did not.
+     THE FLOOR BELONGS HERE, not at every call site, because the next field
+     will take a small step too. It is qualified by element rather than raised
+     with `!important`: `input.cw-input` outweighs a single module class on
+     specificity, so it holds whatever size the field's own module sets.
 
      The alternative fix — `maximum-scale=1` on the viewport — is the one this
      product will not take: it disables pinch zoom for everyone, permanently, to
