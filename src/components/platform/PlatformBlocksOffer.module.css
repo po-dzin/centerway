@@ -212,6 +212,30 @@
   box-shadow: var(--cw-mat-shadow-raised);
 }
 
+/* WITHOUT THE BLUR THE 12% IS A HOLE, NOT A MATERIAL (2026-09-11). The chip is
+   already the most opaque thing on this card for the reason stated above — no
+   scrim reaches the top-left corner — and the remaining 12% is texture, paid
+   for by the blur softening whatever photograph shows through it. Take the
+   blur away and that 12% is a clear window onto an arbitrary pixel, directly
+   under a 0.72rem uppercase label: the one place where a highlight in the
+   image lands inside the letterforms. So it closes. `accent-strong` at full
+   strength is the same colour the chip already reads as, and the grain stays,
+   which is what the note above means by "what changes is texture, not
+   transparency" — here the transparency was the texture, so it is the grain
+   alone that carries the material. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .programTileKind {
+    background-color: var(--cw-platform-accent-strong);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .programTileKind {
+    backdrop-filter: none;
+    background-color: var(--cw-platform-accent-strong);
+  }
+}
+
 /* The sections, under the name. A row, wrapping, because a course with three of
    them must not push the description out of the tile's fixed height — the two
    text rows below are clamped and this one has to behave like them.
@@ -241,6 +265,38 @@
   border-radius: var(--cw-radius-sm);
   background: color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent);
   backdrop-filter: var(--cw-mat-filter);
+}
+
+/* WHAT THE BLUR WAS DOING HERE WAS THE STEP, NOT THE GROUND (2026-09-11).
+   Worth doing the arithmetic before choosing a number, because it is not the
+   case this chip has a photograph behind it: it composites over the body's
+   guaranteed 78% scrim, so 42% ink lands at ~87% of `--cw-mat-scrim-ink` and
+   only 13% of the cover survives underneath. Contrast was never at risk — the
+   resting pair measures 8.33 and is pinned below.
+
+   What IS at risk is the chip reading as an object. Its whole separation from
+   the row around it is 87% against 78%: nine points, which the blur was
+   carrying by settling the cover's detail on one side of the edge and not the
+   other. Take the blur away and nine points of ink is not an edge, and the row
+   falls back to what this rule was written to replace — a border with the card
+   showing through it.
+
+   So the step is restored in ink rather than by drawing anything new: 68%
+   composites to ~93%, fifteen points clear of the scrim, which reads as a
+   plate. It moves in the safe direction for the label too — `--program-tile-copy`
+   is light ink, so more ink under it is more contrast — and both states are
+   pinned in `scripts/guard-contrast.mjs` against a white cover pixel. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .programTileCategories li {
+    background: color-mix(in srgb, var(--cw-mat-scrim-ink) 68%, transparent);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .programTileCategories li {
+    backdrop-filter: none;
+    background: color-mix(in srgb, var(--cw-mat-scrim-ink) 68%, transparent);
+  }
 }
 
 .offerHeroVisualCard {

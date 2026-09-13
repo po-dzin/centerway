@@ -336,6 +336,34 @@
   backdrop-filter: var(--cw-mat-filter);
 }
 
+/* THE CHROME FLOOR IS A CHROME NUMBER, AND THIS IS NOT CHROME (2026-09-11).
+   30% is affordable on the topbar because `headerTone` samples the backdrop
+   and bounds it, and affordable on `.heroBadge` because that badge is always
+   inside `.heroPhotoLayer::after`'s guaranteed scrim. This control borrows the
+   tint from both and the guarantee from neither: it is `onMedia`, placed
+   wherever a consumer puts a control over a picture. While the blur runs, the
+   70% showing through is at least averaged. Without it, a light label stands
+   on 70% of an arbitrary photograph.
+
+   So it takes the same 94% the chrome sheets fall back to in
+   PlatformShell.module.css — not the fully opaque surface, because a control
+   over photography that goes solid stops reading as a control resting on the
+   image and starts reading as a plate cut out of it. The label is
+   `--cw-platform-accent-contrast` on near-opaque night: strictly deeper than
+   the pair `guard:contrast` already asserts for this recipe at the 30% floor. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .onMedia {
+    background-color: color-mix(in srgb, var(--cw-mat-surface-night) 94%, transparent);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .onMedia {
+    backdrop-filter: none;
+    background-color: color-mix(in srgb, var(--cw-mat-surface-night) 94%, transparent);
+  }
+}
+
 /* ── text ────────────────────────────────────────── */
 
 /* A control that presents as a sentence, not an object: no plate, no
