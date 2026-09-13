@@ -2225,13 +2225,34 @@
 .courseCard > .menuRoot > .menuTrigger::before {
   content: "";
   position: absolute;
-  inset: 50% auto auto 50%;
-  inline-size: var(--cw-ink-hover-paint-size);
-  block-size: var(--cw-ink-hover-paint-size);
-  transform: translate(-50%, -50%);
+  inset: 0;
   border-radius: 50%;
   background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent);
   pointer-events: none;
+  transition: background-color var(--builder-motion-ink) ease;
+}
+
+/* A DISC THE SIZE OF THE CONTROL, AND THE DISC IS THE STATE (2026-09-13).
+   The scrim above was cut to the ring's optical diameter — about 29px inside a
+   36–48px target — and hover then drew the ink ring around that coin: a small
+   dark dot with a thin circle appearing at its edge, which read as a glitch
+   rather than as a control answering. On a photograph the scrim is the box, and
+   a box marks itself (see «Ink marks text; a box marks itself» in
+   docs/design-system.md): the disc fills the control, deepens on hover, focus
+   and while its menu is open, and the ring is not drawn here. */
+.courseCard > .menuRoot > .menuTrigger .inkRing {
+  display: none;
+}
+
+.courseCard > .menuRoot > .menuTrigger:focus-visible::before,
+.courseCard > .menuRoot > .menuTrigger[aria-expanded="true"]::before {
+  background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 64%, transparent);
+}
+
+@media (hover: hover) {
+  .courseCard > .menuRoot > .menuTrigger:hover:not(:disabled)::before {
+    background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 64%, transparent);
+  }
 }
 
 /* See above: positioned only so it outranks the scrim pseudo-element. Harmless

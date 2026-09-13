@@ -617,12 +617,13 @@
    composites to about `rgb(111,111,110)`, DIMMER than the text it underlines,
    which is why the stroke read as missing rather than as quiet.
 
-   The rest colour is the marker, not the paragraph's: ink on a pale ground,
-   brass on a dark one. The word and its line take it together, and the state
-   that follows is the line running to full — which is the link rule's own
-   model, states differing in strength rather than in colour. */
+   The rest colour is the page's full ink, not the paragraph's muted one, so the
+   stroke has something to be seen against. NOT THE MARKER (2026-09-13): the
+   marker is brass on the night ground, and brass is the colour of a link being
+   pointed at, focused or current — a footer that rested gold had nothing left
+   to change into. Brass arrives on hover and focus, below. */
 .footer a.footerTextLink {
-  color: var(--cw-nav-marker);
+  color: var(--cw-platform-text);
   text-decoration: none;
   transition: color 0.16s ease;
 }

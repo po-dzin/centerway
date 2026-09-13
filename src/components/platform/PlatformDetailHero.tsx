@@ -119,7 +119,7 @@ export function PlatformDetailHero({
             {utility}
           </div>
         ) : null}
-        <p className={styles.heroBadge}>
+        <p className={styles.heroBadge} data-cw-header-tone="dark">
           <span>{badge}</span>
         </p>
         <h1 className={styles.detailHeroTitle}>{title}</h1>

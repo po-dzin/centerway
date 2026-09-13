@@ -97,9 +97,6 @@
 @media (hover: hover) and (pointer: fine) {
   :root {
     --ds-touch-target-min: 2.25rem;
-    --ds-button-min-height: 2.5rem;
-    --ds-button-min-width: 9rem;
-    --ds-button-padding-inline: 1rem;
-    --ds-button-font-size: var(--ds-type-body-sm-size);
+    --ds-button-min-height: 3rem;
   }
 }
