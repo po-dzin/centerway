@@ -85,6 +85,14 @@ const CATEGORY_LABELS: Record<CourseCategory, string> = {
   cleansing: "Очищення",
 };
 
+/**
+ * The words an author picks from for «Термін доступу», not free text any
+ * more (2026-09-13). Still prose stored in `accessNote` — see the note below
+ * — but a closed list so the storefront always prints one of a few phrases a
+ * buyer has actually seen before, instead of whatever an author typed.
+ */
+const ACCESS_NOTE_OPTIONS = ["30 днів", "60 днів", "90 днів", "Пів року", "Рік", "Назавжди"] as const;
+
 const VISIBILITY_LABELS: Record<CourseVisibility, string> = {
   hidden: "Ніхто",
   unlisted: "За посиланням",
@@ -329,12 +337,18 @@ export function BuilderCourseSettings({
         />
         {/* Prose, not policy. What actually cuts access off is the expiry on the
             grant itself, set when the seat is sold; this is the promise printed
-            beside the price. They are free to differ on purpose — «доступ
-            назавжди» is still compatible with revoking a refunded seat. */}
-        <FieldInput
-          field={{ path: ["accessNote"], label: "Термін доступу", kind: "text", required: showcase, hint: "Що обіцяємо покупцю: «доступ назавжди», «30 днів після покупки»." }}
-          value={course.accessNote}
-          onChange={onChange}
+            beside the price. They are free to differ on purpose — «Назавжди»
+            is still compatible with revoking a refunded seat. Closed list, not
+            free text (2026-09-13): the storefront prints exactly what is
+            chosen here, so the choice is the words a buyer reads. */}
+        <ChoiceRow
+          label="Термін доступу"
+          required={showcase}
+          clearable
+          hint="Що обіцяємо покупцю. Друкується на сторінці курсу поряд з ціною."
+          options={ACCESS_NOTE_OPTIONS.map((value) => ({ value, label: value }))}
+          value={course.accessNote as (typeof ACCESS_NOTE_OPTIONS)[number] | undefined}
+          onChange={(next) => onChange(["accessNote"], next)}
         />
         {/* `authorNote` moved to its own tab (2026-08-28) — see
             `BuilderCourseAuthor.tsx`. It sits beside the byline it modifies
