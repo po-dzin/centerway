@@ -63,7 +63,7 @@ export function HubHero() {
         />
       </div>
       <div className={styles.heroFeatureContent}>
-        <p className={styles.heroBadge}>
+        <p className={styles.heroBadge} data-cw-header-tone="dark">
           <span>Тіло · Ритм · Опора</span>
         </p>
         <h1 className={styles.heroFeatureTitle} style={heroTitleFit("CenterWay")}>

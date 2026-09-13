@@ -274,10 +274,10 @@ function buildNetworkCss(tokens) {
     ...pickInkTokens(layers.semanticAliases),
   };
   const dark = pickNetworkTokens(layers.material?.dark ?? {});
-  /* The landings receive the fine-pointer half too. Without it a desktop
-     landing would keep the finger's 48px button while the platform moved to
-     40 — the exact "same control, two sizes, one product" split the button
-     contract exists to prevent, reintroduced at the network boundary. */
+  /* The landings receive the fine-pointer half too, so an icon control is the
+     same 36px box on a desktop landing as on the platform. Buttons are not in
+     it since 2026-09-13: their size follows the container (`.compact` in
+     PlatformButtons.module.css), never the pointer. */
   const pointerFine = tokens.delivery?.dsAliasPointerFine ?? {};
 
   return [

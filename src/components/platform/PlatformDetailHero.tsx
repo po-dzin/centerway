@@ -132,7 +132,7 @@ export function PlatformDetailHero({
             {utility}
           </div>
         ) : null}
-        <p className={styles.heroBadge}>
+        <p className={styles.heroBadge} data-cw-header-tone="dark">
           <span>{badge}</span>
         </p>
         {pretitle ? <p className={styles.detailHeroPretitle}>{pretitle}</p> : null}

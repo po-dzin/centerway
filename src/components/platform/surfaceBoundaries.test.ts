@@ -16,16 +16,19 @@ const block = (source: string, selector: string) => {
 };
 
 describe("shared surface boundaries", () => {
-  it("keeps the media-menu paint at the optical hover size, not the touch target", () => {
+  it("paints the media menu as a disc the size of its control, and the disc is the state", () => {
+    /* 2026-09-13: the scrim used to be cut to the ink ring's optical diameter
+       (~29px in a 36–48px target) with the ring drawn around it on hover, which
+       read as a glitch. On a photograph the scrim is the box, and a box marks
+       itself: full size, deeper on hover/focus/open, no ring. */
     const css = read("src/components/builder/Builder.module.css");
     const paint = block(css, ".courseCard > .menuRoot > .menuTrigger::before");
-    expect(paint).toContain("inline-size: var(--cw-ink-hover-paint-size)");
-    expect(paint).toContain("block-size: var(--cw-ink-hover-paint-size)");
-    expect(paint).toContain("translate(-50%, -50%)");
-    expect(paint).not.toContain("inset: 0;");
-    const tokens = read("data/design-tokens/cw.tokens.json");
-    expect(tokens).toContain(
-      "calc(var(--cw-ink-ring-size) * var(--cw-ink-hover-scale) * var(--cw-ink-ring-optical-ratio))",
+    expect(paint).toContain("inset: 0;");
+    expect(paint).toContain("border-radius: 50%");
+    expect(paint).not.toContain("--cw-ink-hover-paint-size");
+    expect(block(css, ".courseCard > .menuRoot > .menuTrigger .inkRing")).toContain("display: none");
+    expect(css).toMatch(
+      /\.courseCard > \.menuRoot > \.menuTrigger\[aria-expanded="true"\]::before \{\s*background-color: color-mix\(in srgb, var\(--cw-mat-scrim-ink\) 64%/,
     );
   });
 

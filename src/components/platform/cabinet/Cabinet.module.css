@@ -79,6 +79,7 @@
    different lengths put their buttons at three different heights — the row read
    as three cards nudged out of line rather than as a shelf. */
 .card {
+  composes: compact from "../PlatformButtons.module.css";
   display: flex;
   flex-direction: column;
   gap: var(--cw-space-sm);
@@ -371,6 +372,7 @@
    grid the auto margin has no free space in its track to eat, so the cards came
    out the same height with their buttons at four different heights. */
 .shelfCard {
+  composes: compact from "../PlatformButtons.module.css";
   display: flex;
   flex-direction: column;
   gap: var(--cw-space-xs);
@@ -605,6 +607,7 @@
    handed each button half a wide card and then capped it at 22rem — two 352px
    slabs with a canyon between them, on a card whose text ran 60 characters. */
 .actions {
+  composes: compact from "../PlatformButtons.module.css";
   composes: row from "../PlatformButtons.module.css";
   margin-top: auto;
   padding-top: var(--cw-space-2xs);

@@ -278,7 +278,11 @@ export function PlatformAccountMenu({
      one of them hidden behind an avatar. The row answers «how do I get back to
      the public site», which is a question only the personal apps and the panel
      can ask. */
-  const onPublicSite = !inPersonalApp;
+  /* AND THE PANEL IS ONE OF THEM (2026-09-13). The paragraph above names it,
+     the condition did not: `/admin` is on `www` but it is not the storefront —
+     no main navigation, no «Головна» — so narrowing to `!inPersonalApp` took
+     the panel's only way back to the public site away with the duplicate. */
+  const onPublicSite = !(inPersonalApp || here === "admin");
 
   /* No close-on-pathname effect. Every row in the menu closes it in its own
      handler, and anything outside the menu is an outside pointerdown, which the

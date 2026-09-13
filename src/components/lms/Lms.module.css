@@ -69,6 +69,7 @@
 /* ── State / feedback ─────────────────────────────── */
 
 .notice {
+  composes: compact from "../platform/PlatformButtons.module.css";
   border: 0;
   border-radius: var(--cw-card-radius);
   background: var(--cw-mat-surface);
@@ -141,6 +142,7 @@
 /* ── Restart (a finished, repeatable protocol) ────── */
 
 .restartRow {
+  composes: compact from "../platform/PlatformButtons.module.css";
   display: grid;
   gap: var(--cw-space-xs);
   margin-bottom: var(--cw-space-xl);
@@ -1074,6 +1076,7 @@
 }
 
 .ctaBlock {
+  composes: compact from "../platform/PlatformButtons.module.css";
   display: grid;
   gap: var(--cw-space-xs);
 }
@@ -1352,6 +1355,7 @@
 }
 
 .noteActions {
+  composes: compact from "../platform/PlatformButtons.module.css";
   display: flex;
   align-items: center;
   justify-content: space-between;

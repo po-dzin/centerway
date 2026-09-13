@@ -532,6 +532,7 @@
    questions at once. The note under it says where the link goes, so leaving the
    platform is a choice and not a surprise. */
 .outlineMore {
+  composes: compact from "./PlatformButtons.module.css";
   display: grid;
   gap: var(--cw-space-sm);
   justify-items: start;

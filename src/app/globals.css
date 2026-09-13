@@ -315,13 +315,18 @@
     --ds-touch-target-min: 3rem;
     --ds-icon-control-ratio: 0.53;
     --ds-icon-in-control: calc(var(--ds-touch-target-min) * var(--ds-icon-control-ratio));
-    --ds-button-min-height: var(--ds-touch-target-min);
+    --ds-button-min-height: 3rem;
     --ds-button-padding-inline: 1.15rem;
     --ds-button-min-width: 10.5rem;
     --ds-button-max-width: 22rem;
     --ds-button-radius: var(--cw-radius-btn);
     --ds-button-font-weight: 700;
     --ds-button-font-size: 1rem;
+    --ds-button-compact-min-height: 2.5rem;
+    --ds-button-compact-min-width: 9rem;
+    --ds-button-compact-padding-inline: 1rem;
+    --ds-button-compact-font-size: var(--ds-type-body-sm-size);
+    --ds-button-hit-min: 3rem;
     --ds-button-gap: 0.5rem;
     --ds-button-lift: -1px;
     --ds-field-sm: 8rem;
@@ -405,10 +410,6 @@
     :root {
       /* DS_ALIAS_POINTER_FINE_START */
     --ds-touch-target-min: 2.25rem;
-    --ds-button-min-height: 2.5rem;
-    --ds-button-min-width: 9rem;
-    --ds-button-padding-inline: 1rem;
-    --ds-button-font-size: var(--ds-type-body-sm-size);
     /* DS_ALIAS_POINTER_FINE_END */
     }
   }
@@ -1261,6 +1262,60 @@
     background-size: 0.3rem 0.3rem;
     background-repeat: no-repeat;
     transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+  }
+
+  /* THE LIST OPENS UNDER THE FIELD (2026-09-13). A native select on macOS lays
+     its menu OVER the field, aligned so the current option sits where the
+     value was — so a field showing its last option opened upwards, covering
+     the row above it. That is the platform's rule and no attribute changes it.
+
+     `appearance: base-select` is: the list becomes a popover anchored to the
+     field, laid out below it and flipped above only when there is no room
+     under it. Engines without it keep the native menu, which still works. The
+     field keeps its own ink chevron; the browser's second icon is hidden. */
+  @supports (appearance: base-select) {
+    .cw-select,
+    .cw-select::picker(select),
+    .cw-admin-theme select,
+    .cw-admin-theme select::picker(select) {
+      appearance: base-select;
+    }
+
+    .cw-select::picker-icon {
+      display: none;
+    }
+
+    .cw-select::picker(select),
+    .cw-admin-theme select::picker(select) {
+      position-try-order: normal;
+      position-try-fallbacks: flip-block;
+      margin-block: var(--cw-space-2xs);
+      padding: var(--cw-space-2xs);
+      border: 1px solid var(--cw-border);
+      border-radius: var(--cw-radius-md);
+      color: var(--cw-text);
+      background-color: var(--cw-surface);
+      box-shadow: var(--cw-mat-shadow-raised);
+    }
+
+    .cw-select option,
+    .cw-admin-theme select option {
+      padding: var(--cw-space-2xs) var(--cw-space-sm);
+      border-radius: var(--cw-radius-sm);
+    }
+
+    .cw-select option:focus-visible,
+    .cw-admin-theme select option:focus-visible {
+      background-color: var(--cw-mat-hover-bg);
+      outline: none;
+    }
+
+    @media (hover: hover) {
+      .cw-select option:hover,
+      .cw-admin-theme select option:hover {
+        background-color: var(--cw-mat-hover-bg);
+      }
+    }
   }
 
   /* The field answers the way every other row in the system answers: one ink
@@ -2541,6 +2596,23 @@ body {
 [data-cw-header-tone="dark"] [data-cw-rule="chrome"],
 [data-cw-rule="chrome"][data-cw-header-tone="dark"] {
   --cw-rule-ink: color-mix(in srgb, white 16%, transparent);
+}
+
+/* THE SHAPE IS RESTATED ON EVERY SCOPE, OR NO SCOPE WORKS (2026-09-13).
+   A custom property that reads another one is resolved where it is DECLARED,
+   and `--cw-rule-fade-x` / `-y` were declared on `:root` alone. So they took
+   `:root`'s ink — the theme's opaque `--cw-platform-border` — and every
+   element below inherited that finished gradient, whatever `--cw-rule-ink` it
+   set for itself. All three scopes above changed a variable nobody read: the
+   account menu's top rule came out beige-opaque on the light theme (reading as
+   white on the dark plate) and grey-opaque on the dark one, four rows above a
+   divider drawing the white 16% this file intends.
+
+   Same gradient, same numbers — declared again where the ink changes, so the
+   shape resolves against that element's own ink. Still one shape. */
+[data-cw-rule] {
+  --cw-rule-fade-x: linear-gradient(90deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
+  --cw-rule-fade-y: linear-gradient(180deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
 }
 
 /* ── Material (M0 matte / M1 glass) ───────────────────────────────────────────
