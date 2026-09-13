@@ -1,0 +1,22 @@
+/*
+ * The UA/EN toggle in the topbar — the last element in the product that was
+ * written in Tailwind utilities.
+ *
+ * `.cw-btn`'s own `min-height` is the touch-target rule, sized for a row of
+ * running text; next to the icon buttons either side of it in the same toolbar
+ * it read as a stretched pill. So it takes the icon buttons' own box instead,
+ * and the three controls sit as one set. The label is the DS label step rather
+ * than the `text-[11px]` it was typed as.
+ */
+.button {
+  composes: cw-icon-btn from global;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: var(--ds-type-label-size);
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+}
