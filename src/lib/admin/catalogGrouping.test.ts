@@ -82,7 +82,9 @@ describe("groupCatalogRows", () => {
 
   it("reads a pending revision's review state before the live one", () => {
     expect(
-      effectiveReviewStatus(row({ slug: "x", reviewStatus: "approved", hasPendingRevision: true, pendingReviewStatus: "in_review" })),
+      effectiveReviewStatus(
+        row({ slug: "x", reviewStatus: "approved", hasPendingRevision: true, pendingReviewStatus: "in_review" }),
+      ),
     ).toBe("in_review");
   });
 
@@ -119,7 +121,10 @@ describe("groupCatalogRows", () => {
   });
 
   it("keeps «updated» as one headerless list, newest first", () => {
-    const rows = [row({ slug: "a", updatedAt: "2026-09-01T00:00:00Z" }), row({ slug: "b", updatedAt: "2026-09-09T00:00:00Z" })];
+    const rows = [
+      row({ slug: "a", updatedAt: "2026-09-01T00:00:00Z" }),
+      row({ slug: "b", updatedAt: "2026-09-09T00:00:00Z" }),
+    ];
     expect(groupCatalogRows(rows, "updated", labels, "uk")).toEqual([
       { key: "all", label: null, rows: [rows[1], rows[0]] },
     ]);

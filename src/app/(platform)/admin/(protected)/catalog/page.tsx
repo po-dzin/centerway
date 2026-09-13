@@ -52,6 +52,15 @@ import pageStyles from "@/components/admin/AdminPage.module.css";
 import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
+import {
+  CATALOG_GROUPINGS,
+  filterCatalogRows,
+  groupCatalogRows,
+  type CatalogCategoryFilter,
+  type CatalogGrouping,
+} from "@/lib/admin/catalogGrouping";
+import { coverCardStyle } from "@/lib/lms/courseCover";
+import { COURSE_CATEGORIES, type CourseCategory } from "@/lms-core";
 
 const BLOCKER_KEY: Record<SaleBlocker, string> = {
   not_renderable: "catalog_blocker_not_renderable",
@@ -62,6 +71,45 @@ const BLOCKER_KEY: Record<SaleBlocker, string> = {
   offer_withdrawn: "catalog_blocker_offer_withdrawn",
   no_access_rule: "catalog_blocker_no_access_rule",
 };
+
+const CATEGORY_KEY: Record<CourseCategory, string> = {
+  movement: "catalog_category_movement",
+  nutrition: "catalog_category_nutrition",
+  cleansing: "catalog_category_cleansing",
+};
+
+const GROUPING_KEY: Record<CatalogGrouping, string> = {
+  submitted: "catalog_group_submitted",
+  alphabet: "catalog_group_alphabet",
+  status: "catalog_group_status",
+  updated: "catalog_group_updated",
+};
+
+function initialsOf(title: string): string {
+  return title
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word.charAt(0).toUpperCase())
+    .join("");
+}
+
+/* THE ROW'S THUMBNAIL — the card system's row size in the admin
+   (`--ds-card-thumb-width-compact`, docs/card-system-2026-09-13.md). A title
+   in a list of forty is read; a cover is recognised, which is what an operator
+   narrowing the list with a search or a filter is doing. */
+function CourseThumb({ row }: { row: CatalogRow }) {
+  return (
+    <span className={lists.itemThumb} aria-hidden="true">
+      {row.cover ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={row.cover.src} alt="" loading="lazy" decoding="async" style={coverCardStyle(row.cover)} />
+      ) : (
+        initialsOf(row.title)
+      )}
+    </span>
+  );
+}
 
 function EmptyIcon() {
   return <Icon className="cw-muted" name="list" size={20} />;
@@ -88,6 +136,10 @@ export default function CatalogPage() {
   const [canEdit, setCanEdit] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [category, setCategory] = useState<CatalogCategoryFilter>("all");
+  /* Newest submissions first: «what is waiting for me?» is the question this
+     page is opened with more often than any other. */
+  const [grouping, setGrouping] = useState<CatalogGrouping>("submitted");
 
   const errorText = useCallback(
     (message: string) => {
@@ -164,12 +216,28 @@ export default function CatalogPage() {
     };
   }, [load]);
 
-  const filtered = useMemo(() => {
-    if (!rows) return null;
-    const needle = q.trim().toLowerCase();
-    if (!needle) return rows;
-    return rows.filter((row) => row.title.toLowerCase().includes(needle) || row.slug.toLowerCase().includes(needle));
-  }, [rows, q]);
+  const filtered = useMemo(() => (rows ? filterCatalogRows(rows, { text: q, category }) : null), [rows, q, category]);
+
+  const groups = useMemo(
+    () =>
+      filtered
+        ? groupCatalogRows(
+            filtered,
+            grouping,
+            {
+              inReview: t("catalog_section_in_review"),
+              changesRequested: t("catalog_section_changes_requested"),
+              rest: t("catalog_section_rest"),
+              listed: t("catalog_section_listed"),
+              unlisted: t("catalog_section_unlisted"),
+              hidden: t("catalog_section_hidden"),
+              draft: t("catalog_section_draft"),
+            },
+            locale,
+          )
+        : null,
+    [filtered, grouping, t, locale],
+  );
 
   return (
     <div className={pageStyles.page}>
@@ -217,6 +285,46 @@ export default function CatalogPage() {
         <>
           <AdminSearchInput value={q} onChange={setQ} placeholder={t("catalog_search")} />
 
+          {rows && rows.length > 1 ? (
+            <div className={lists.toolbar}>
+              <label className={lists.toolbarField}>
+                <span className={controls.fieldCaption}>{t("catalog_filter_category")}</span>
+                <select
+                  className={controls.select}
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as CatalogCategoryFilter)}
+                >
+                  <option value="all">{t("catalog_category_all")}</option>
+                  {COURSE_CATEGORIES.map((code) => (
+                    <option key={code} value={code}>
+                      {t(CATEGORY_KEY[code] as never)}
+                    </option>
+                  ))}
+                  <option value="none">{t("catalog_category_none")}</option>
+                </select>
+              </label>
+              <label className={lists.toolbarField}>
+                <span className={controls.fieldCaption}>{t("catalog_group_by")}</span>
+                <select
+                  className={controls.select}
+                  value={grouping}
+                  onChange={(e) => setGrouping(e.target.value as CatalogGrouping)}
+                >
+                  {CATALOG_GROUPINGS.map((key) => (
+                    <option key={key} value={key}>
+                      {t(GROUPING_KEY[key] as never)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {filtered && filtered.length !== rows.length ? (
+                <p className={lists.toolbarCount}>
+                  {t("catalog_shown_of")} {filtered.length} / {rows.length}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
           {error ? (
             <AdminErrorState
               title={t("catalog_title")}
@@ -227,26 +335,44 @@ export default function CatalogPage() {
                 </button>
               }
             />
-          ) : filtered === null ? (
+          ) : filtered === null || groups === null ? (
             <AdminLoadingState variant="skeleton" />
           ) : filtered.length === 0 ? (
             <AdminEmptyState icon={<EmptyIcon />} description={t("catalog_empty")} />
           ) : (
-            <div className={lists.list}>
-              {filtered.map((row) =>
-                tab === "publication" ? (
-                  <PublicationRow
-                    key={row.courseId}
-                    row={row}
-                    canEdit={canEdit}
-                    locale={locale}
-                    errorText={errorText}
-                    onChanged={load}
-                  />
-                ) : (
-                  <PricingRow key={row.courseId} row={row} canEdit={canEdit} errorText={errorText} onChanged={load} />
-                ),
-              )}
+            <div className={lists.groups}>
+              {groups.map((group) => (
+                <section key={group.key} className={lists.group} aria-label={group.label ?? undefined}>
+                  {group.label ? (
+                    <h3 className={lists.groupHead}>
+                      {group.label}
+                      <span className={lists.groupCount}>{group.rows.length}</span>
+                    </h3>
+                  ) : null}
+                  <div className={lists.list}>
+                    {group.rows.map((row) =>
+                      tab === "publication" ? (
+                        <PublicationRow
+                          key={row.courseId}
+                          row={row}
+                          canEdit={canEdit}
+                          locale={locale}
+                          errorText={errorText}
+                          onChanged={load}
+                        />
+                      ) : (
+                        <PricingRow
+                          key={row.courseId}
+                          row={row}
+                          canEdit={canEdit}
+                          errorText={errorText}
+                          onChanged={load}
+                        />
+                      ),
+                    )}
+                  </div>
+                </section>
+              ))}
             </div>
           )}
         </>
@@ -470,6 +596,7 @@ function PublicationRow({
   return (
     <div className={lists.item}>
       <div className={lists.itemRow}>
+        <CourseThumb row={row} />
         <div className={lists.itemBody}>
           <p className={lists.itemTitle}>{row.title}</p>
           <StateChips row={row} />
@@ -480,6 +607,12 @@ function PublicationRow({
             </span>
             <span>{row.authorEmail ?? t("access_author_house")}</span>
             <span>{new Date(row.updatedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}</span>
+            {inReview && row.submittedAt ? (
+              <span className={lists.itemMetaStrong}>
+                {t("catalog_submitted_on")}:{" "}
+                {new Date(row.submittedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
+              </span>
+            ) : null}
           </div>
           <Blockers row={row} />
           <ModerationNote row={row} />
@@ -679,6 +812,7 @@ function PricingRow({
   return (
     <div className={lists.item}>
       <div className={lists.itemRow}>
+        <CourseThumb row={row} />
         <div className={lists.itemBody}>
           <p className={lists.itemTitle}>{row.title}</p>
           <div className={lists.itemMeta}>

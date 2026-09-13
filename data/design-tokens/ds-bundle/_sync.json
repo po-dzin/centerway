@@ -1,12 +1,12 @@
 {
   "formatVersion": 1,
   "generator": "scripts/ds-export.mjs",
-  "sourceCommit": "e25372b5",
-  "tokensSource": "1622ab90c4306122",
+  "sourceCommit": "9b79b759",
+  "tokensSource": "b109d84f602bd171",
   "files": {
     "styles.css": "683617531c30ce2f",
     "tokens/colors.css": "4edeeb22d80fc7ed",
-    "tokens/delivery.css": "9ffc778757021281",
+    "tokens/delivery.css": "4a991fe579dd4795",
     "tokens/geometry.css": "4e64df3d903960c3",
     "tokens/material.css": "3b04c9d44d00c445",
     "tokens/motion.css": "b38469025437b4f9",

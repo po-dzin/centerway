@@ -926,92 +926,17 @@ const glassPairs = [
   // blocks, and the opacity each falls back to is pinned here — otherwise the
   // number is a guess that nothing would catch if it were thinned later.
   //
-  // The resting states of the two tile chips were never asserted either, so
-  // both halves are below: the translucent one that renders with blur, and the
-  // opaque one that replaces it without. `.diagnosticStepChip` needs no entry —
-  // it falls back to bare `--cw-mat-surface`, which the M1 pairs above already
-  // hold.
+  // `.diagnosticStepChip` needs no entry — it falls back to bare
+  // `--cw-mat-surface`, which the M1 pairs above already hold.
   //
-  // Worst case for all of them is a white photo pixel, because none of these
-  // sit on a tone sampler: the tile chips are on a card cover, and `.onMedia`
-  // is placed over whatever picture a consumer hands it.
-  {
-    theme: "light",
-    fg: "--cw-platform-accent-contrast",
-    glass: { tint: "--cw-platform-accent-strong", alpha: 0.88, over: "#ffffff" },
-    min: AA_BODY,
-    context: "offer tile kind chip label on its 88% accent ground over a white cover pixel",
-  },
-  {
-    theme: "light",
-    fg: "--cw-platform-accent-contrast",
-    glass: { plain: "--cw-platform-accent-strong" },
-    min: AA_BODY,
-    context: "offer tile kind chip label on the opaque no-blur fallback",
-  },
-  {
-    theme: "platform-dark",
-    fg: "--cw-platform-accent-contrast",
-    glass: { tint: "--cw-platform-accent-strong", alpha: 0.88, over: "#ffffff" },
-    min: AA_BODY,
-    context: "offer tile kind chip label on its 88% accent ground over a white cover pixel",
-  },
-  {
-    theme: "platform-dark",
-    fg: "--cw-platform-accent-contrast",
-    glass: { plain: "--cw-platform-accent-strong" },
-    min: AA_BODY,
-    context: "offer tile kind chip label on the opaque no-blur fallback",
-  },
-  // The category chips are two composites deep — chip ink over the body scrim
-  // over the cover — and the glass helper does one, so the backdrop is the
-  // scrim already resolved over a white pixel, the same shape the network photo
-  // hero's badge pair uses. Their label is translucent too (82% of the contrast
-  // ink), which `flattenTranslucent` composites over the chip.
-  {
-    theme: "light",
-    fg: "color-mix(in srgb, var(--cw-platform-accent-contrast) 82%, transparent)",
-    glass: {
-      tint: "--cw-mat-scrim-ink",
-      alpha: 0.42,
-      over: "color-mix(in srgb, var(--cw-mat-scrim-ink) 78%, #ffffff 22%)",
-    },
-    min: AA_BODY,
-    context: "offer tile category chip label on its 42% ink over the body scrim over a white cover pixel",
-  },
-  {
-    theme: "light",
-    fg: "color-mix(in srgb, var(--cw-platform-accent-contrast) 82%, transparent)",
-    glass: {
-      tint: "--cw-mat-scrim-ink",
-      alpha: 0.68,
-      over: "color-mix(in srgb, var(--cw-mat-scrim-ink) 78%, #ffffff 22%)",
-    },
-    min: AA_BODY,
-    context: "offer tile category chip label on the deepened no-blur fallback",
-  },
-  {
-    theme: "platform-dark",
-    fg: "color-mix(in srgb, var(--cw-platform-accent-contrast) 82%, transparent)",
-    glass: {
-      tint: "--cw-mat-scrim-ink",
-      alpha: 0.42,
-      over: "color-mix(in srgb, var(--cw-mat-scrim-ink) 78%, #ffffff 22%)",
-    },
-    min: AA_BODY,
-    context: "offer tile category chip label on its 42% ink over the body scrim over a white cover pixel",
-  },
-  {
-    theme: "platform-dark",
-    fg: "color-mix(in srgb, var(--cw-platform-accent-contrast) 82%, transparent)",
-    glass: {
-      tint: "--cw-mat-scrim-ink",
-      alpha: 0.68,
-      over: "color-mix(in srgb, var(--cw-mat-scrim-ink) 78%, #ffffff 22%)",
-    },
-    min: AA_BODY,
-    context: "offer tile category chip label on the deepened no-blur fallback",
-  },
+  // The offer tile's kind and category chips were pinned here while they sat
+  // on a photograph and a scrim. Since 2026-09-13 the kind badge is the
+  // canonical `mediaBadge` (the `.onMedia` recipe asserted below) and the
+  // categories are paper chips on the card's own surface (the M1 pairs above)
+  // — see docs/card-system-2026-09-13.md. Nothing tile-specific is left to pin.
+  //
+  // Worst case for `.onMedia` is a white photo pixel, because it sits on no
+  // tone sampler: it is placed over whatever picture a consumer hands it.
   // `.onMedia` at rest is the hero badge's recipe and is asserted above against
   // the hero scrim, which is the guarantee THAT badge has. This control has no
   // such guarantee — it is a role any consumer can put on any picture — so its

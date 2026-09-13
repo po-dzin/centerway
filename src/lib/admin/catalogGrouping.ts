@@ -93,9 +93,7 @@ function initialOf(title: string, locale: string): string {
   return first.toLocaleUpperCase(locale);
 }
 
-function sections(
-  entries: readonly { key: string; label: string; rows: CatalogRow[] }[],
-): CatalogGroup[] {
+function sections(entries: readonly { key: string; label: string; rows: CatalogRow[] }[]): CatalogGroup[] {
   return entries.filter((entry) => entry.rows.length > 0);
 }
 

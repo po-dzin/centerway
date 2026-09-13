@@ -376,7 +376,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--cw-space-xs);
-  padding: var(--cw-space-md);
+  padding: var(--ds-card-inset);
   border-radius: var(--cw-radius-lg);
 }
 
@@ -847,6 +847,71 @@
 /* The canonical course-media object: the same framed 16:9 crop used by the
    builder and public catalogue. It remains inside the panel at every width so
    purchase does not turn one cover into a different composition. */
+/* ── The card system on the shelf (2026-09-13) ─────────
+
+   The cover lies in the card's FIELD, `--ds-card-inset` from every edge, and
+   everything under it indents past that by `--ds-card-body-inline` — the same
+   geometry as the builder's card and the public offer card
+   (docs/card-system-2026-09-13.md). The card used to put 1.5rem of paper
+   around its cover, the builder 1rem and the catalogue none; one course on
+   three shelves looked like three different objects.
+
+   A class beside `.card` / `.cardMuted` rather than a change to them: `.card`
+   is also «Контакти», «Нагадування» and the install card, which are panels
+   with text in them, not collection objects with a picture. Declared after
+   both, so at equal specificity the field wins by source order. */
+.courseCardFrame {
+  padding: var(--ds-card-inset);
+}
+
+.courseCardFrame > :not(.coverFrame, .cardOverlay),
+.shelfCard > :not(.cover, .coverFallback, .cardOverlay) {
+  margin-inline: var(--ds-card-body-inline);
+}
+
+.courseCardFrame > :last-child,
+.shelfCard > :last-child {
+  margin-block-end: var(--ds-card-body-inline);
+}
+
+/* The row size: the cover as a thumbnail at `--ds-card-thumb-width`, then the
+   title and where you stopped, then the ring when there is a run to show. */
+.shelfRow {
+  composes: glance;
+  grid-template-columns: var(--ds-card-thumb-width) minmax(0, 1fr) auto;
+  gap: var(--cw-space-sm);
+  padding: var(--ds-card-inset);
+  padding-inline-end: var(--cw-space-sm);
+}
+
+.coverThumb,
+.coverThumbFallback {
+  width: var(--ds-card-thumb-width);
+  aspect-ratio: var(--ds-card-media-ratio);
+  border-radius: calc(var(--cw-radius-md) - var(--ds-card-inset));
+  object-fit: cover;
+  background: var(--cw-mat-surface-sunk);
+}
+
+.coverThumbFallback {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--cw-sem-guide-primary) 20%, var(--cw-mat-surface-sunk)),
+    var(--cw-mat-surface-sunk)
+  );
+  color: var(--cw-platform-ink-strong);
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-body-size);
+  font-weight: 500;
+}
+
+.coverThumb[data-dimmed],
+.coverThumbFallback[data-dimmed] {
+  opacity: 0.5;
+}
+
 /* THE FRAME THE DRAFT BADGE PINS TO. `.cover`/`.coverFallback` keep their own
    margin so the frame costs nothing when there is no badge to place — it is a
    positioning context, not a second box around the picture. */
@@ -859,8 +924,8 @@
   width: 100%;
   max-width: 100%;
   margin: 0 0 var(--cw-space-2xs);
-  aspect-ratio: 16 / 9;
-  border-radius: var(--cw-radius-md);
+  aspect-ratio: var(--ds-card-media-ratio);
+  border-radius: var(--ds-card-media-radius);
   object-fit: cover;
   background: var(--cw-mat-surface-sunk);
 }
@@ -1929,7 +1994,7 @@
   user-select: none;
 }
 
-/* Same ratio as `.guideCard` at its desktop measure — the frame the author's
+/* The person's frame, `--ds-card-portrait-ratio` — the same token `.guideMedia` reads, so the frame the author's
    photo fills wherever `AuthorCard` renders it.
 
    NO WIDTH CAP ON A PHONE. `max-width: 16rem` left a 256px portrait in a
@@ -1938,8 +2003,8 @@
    at 561px, where this frame shares its row with the avatar — see the tablet
    band below. */
 .photoCropCard {
-  aspect-ratio: 24 / 29;
-  border-radius: var(--cw-radius-md);
+  aspect-ratio: var(--ds-card-portrait-ratio);
+  border-radius: var(--ds-card-media-radius);
 }
 
 /* THE AVATAR'S OWN FRAME — the author's page and a course's byline. Square

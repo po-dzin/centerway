@@ -110,6 +110,87 @@
   gap: var(--cw-space-sm);
 }
 
+/* ── The catalogue's row size (2026-09-13) ─────────────
+   The card system's thumbnail at `--ds-card-thumb-width-compact`: the course's
+   own cover, cropped the way the builder frames it, before its title. */
+.itemThumb {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: var(--ds-card-thumb-width-compact);
+  aspect-ratio: var(--ds-card-media-ratio);
+  overflow: hidden;
+  border-radius: var(--cw-radius-inset);
+  /* Flat, not the shelf's tinted fallback: the admin draws no gradients. */
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-ink-strong);
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 500;
+}
+
+.itemThumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Narrow first, then group: two labelled selects on one wrapping row under the
+   search, and the «shown of» count only while something is narrowing. */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--cw-space-sm);
+}
+
+.toolbarField {
+  display: grid;
+  flex: 1 1 12rem;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+  max-width: 18rem;
+}
+
+.toolbarCount {
+  composes: cw-muted from global;
+  margin: 0;
+  align-self: center;
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+}
+
+.groups {
+  display: grid;
+  gap: var(--cw-space-lg);
+}
+
+.group {
+  display: grid;
+  gap: var(--cw-space-xs);
+}
+
+/* A section label, not a heading of the page: the data face at label size,
+   with the row count beside it so an empty-looking section is never a guess. */
+.groupHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--cw-space-xs);
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.groupCount {
+  composes: cw-muted from global;
+  font-weight: 500;
+}
+
 .itemBody {
   display: flex;
   flex: 1 1 auto;

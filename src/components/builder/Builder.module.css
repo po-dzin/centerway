@@ -2108,11 +2108,51 @@
   flex: 1 1 auto;
   min-width: 0;
   display: grid;
-  gap: var(--cw-space-2xs);
+  grid-template-columns: var(--ds-card-thumb-width) minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--cw-space-sm);
   min-height: var(--ds-touch-target-min);
-  align-content: center;
   color: inherit;
   text-decoration: none;
+}
+
+/* THE ROW'S THUMBNAIL — the card system's row size. The same cover the card
+   draws, at `--ds-card-thumb-width`, so a list narrowed by a search still shows
+   which course each line is before its title is read. Radius: the row's own
+   corner less its padding, the same concentric rule as the card's field. */
+.courseRowThumb {
+  display: grid;
+  place-items: center;
+  width: var(--ds-card-thumb-width);
+  aspect-ratio: var(--ds-card-media-ratio);
+  overflow: hidden;
+  border-radius: calc(var(--cw-radius-lg) - var(--cw-space-sm));
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--cw-sem-guide-primary) 22%, var(--cw-mat-surface-sunk)),
+    var(--cw-mat-surface-sunk)
+  );
+  color: var(--cw-platform-ink-strong);
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-body-size);
+  font-weight: 500;
+}
+
+.courseRowThumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.courseRow[data-course-status="draft"] .courseRowThumb {
+  opacity: 0.82;
+}
+
+.courseRowText {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
 }
 
 /* Status and counts on one line under the title: they qualify the course, they
@@ -2174,7 +2214,9 @@
   grid-template-rows: minmax(0, 1fr);
   justify-items: stretch;
   gap: var(--cw-space-xs);
-  padding: var(--cw-space-md);
+  /* The card system's field (docs/card-system-2026-09-13.md): the cover lies
+     `--ds-card-inset` from every edge, the body indents past it. */
+  padding: var(--ds-card-inset);
   border-radius: var(--cw-radius-lg);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-soft);
@@ -2199,8 +2241,8 @@
 /* The target stays 3rem; the paint follows the smaller optical hover circle. */
 .courseCard > .menuRoot {
   position: absolute;
-  inset-block-start: calc(var(--cw-space-md) - var(--cw-space-2xs));
-  inset-inline-end: calc(var(--cw-space-md) - var(--cw-space-2xs));
+  inset-block-start: calc(var(--ds-card-inset) - var(--cw-space-2xs));
+  inset-inline-end: calc(var(--ds-card-inset) - var(--cw-space-2xs));
   z-index: 2;
 }
 
@@ -2369,9 +2411,9 @@
 
 .courseCover {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: var(--ds-card-media-ratio);
   object-fit: cover;
-  border-radius: var(--cw-radius-md);
+  border-radius: var(--ds-card-media-radius);
   background: var(--cw-mat-surface-sunk);
 }
 
@@ -2439,8 +2481,8 @@
   display: grid;
   place-items: center;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: var(--cw-radius-md);
+  aspect-ratio: var(--ds-card-media-ratio);
+  border-radius: var(--ds-card-media-radius);
   background: linear-gradient(
     140deg,
     color-mix(in srgb, var(--cw-sem-guide-primary) 22%, var(--cw-mat-surface-sunk)),
@@ -2478,6 +2520,7 @@
 .courseCardBody {
   display: grid;
   gap: var(--cw-space-2xs);
+  padding: 0 var(--ds-card-body-inline) var(--ds-card-body-inline);
 }
 
 .courseTitleRow {

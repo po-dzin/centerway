@@ -102,10 +102,6 @@
     --program-photo-position: var(--program-photo-position-desktop, center 20%);
   }
 
-  .programTile[data-has-art="true"] {
-    --program-photo-position: var(--program-photo-position-desktop, center 20%);
-  }
-
   .heroFeatureContent {
     width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
   }
@@ -960,11 +956,6 @@
     min-height: clamp(26rem, 78svh, 36rem);
   }
 
-  .programTile[data-has-art="true"] {
-    --program-photo-active-image: var(--program-photo-image-mobile, var(--program-photo-image));
-    --program-photo-position: var(--program-photo-position-mobile, center 42%);
-  }
-
   .offerHeroVisualCard[data-has-art="true"] {
     --program-photo-image: var(--program-photo-image-mobile, var(--program-photo-image));
     --program-photo-position: var(--program-photo-position-mobile, center 42%);
@@ -1182,10 +1173,6 @@
     min-height: var(--ds-touch-target-min);
   }
 
-  .programLink {
-    width: 100%;
-  }
-
   .sectionTitle,
   .title {
     font-size: clamp(2rem, 10vw, 3.1rem);
@@ -1310,31 +1297,11 @@
     min-width: 0;
   }
 
-  .programTileBody {
-    padding: var(--cw-space-md);
-  }
-
-  /* The type step is set by the longest real name, not by the widest available
-     one. "Розвантажувальний" is a single 17-character word: at the old 8vw step
-     it measured 287px inside a 228px column and simply ran out of the card.
-     Ukrainian compounds are the normal case here, so the card sizes for them.
-
-     The preview reserves two lines at every width; the phone keeps the shared
-     card-title token rather than inventing a second scale. */
-  .programTileBody h3 {
-    font-size: var(--ds-offer-card-title-size);
-    line-height: var(--ds-offer-card-title-line-height);
-  }
-
   .offerHeroVisualCard {
     min-height: 17rem;
   }
 
   .offerHeroVisualCard[data-has-art="true"] {
-    --program-photo-position: var(--program-photo-position-mobile, center 40%);
-  }
-
-  .programTile[data-has-art="true"] {
     --program-photo-position: var(--program-photo-position-mobile, center 40%);
   }
 

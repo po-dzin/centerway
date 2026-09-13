@@ -35,7 +35,20 @@ function initialsOf(title: string): string {
     .join("");
 }
 
-export function CourseCover({ course, dimmed }: { course: LearnerShelfCourseDto; dimmed?: boolean }) {
+/**
+ * `card` — the cover in the card's field; `thumb` — the row size of the card
+ * system (docs/card-system-2026-09-13.md), the same picture at
+ * `--ds-card-thumb-width`.
+ */
+export function CourseCover({
+  course,
+  dimmed,
+  size = "card",
+}: {
+  course: LearnerShelfCourseDto;
+  dimmed?: boolean;
+  size?: "card" | "thumb";
+}) {
   if (course.cover) {
     // Plain <img>: the cover is an author-supplied path that may point
     // anywhere, and next/image would need every one of those hosts configured
@@ -46,12 +59,12 @@ export function CourseCover({ course, dimmed }: { course: LearnerShelfCourseDto;
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        className={styles.cover}
+        className={size === "thumb" ? styles.coverThumb : styles.cover}
         data-dimmed={dimmed || undefined}
         src={art.src}
         srcSet={art.srcSet}
         sizes={art.srcSet ? MEDIA_SIZES.card : undefined}
-        alt={course.cover.alt}
+        alt={size === "thumb" ? "" : course.cover.alt}
         loading="lazy"
         decoding="async"
         style={coverCardStyle(course.cover)}
@@ -60,7 +73,11 @@ export function CourseCover({ course, dimmed }: { course: LearnerShelfCourseDto;
   }
 
   return (
-    <span className={styles.coverFallback} data-dimmed={dimmed || undefined} aria-hidden="true">
+    <span
+      className={size === "thumb" ? styles.coverThumbFallback : styles.coverFallback}
+      data-dimmed={dimmed || undefined}
+      aria-hidden="true"
+    >
       {initialsOf(course.title)}
     </span>
   );

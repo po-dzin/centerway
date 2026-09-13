@@ -147,7 +147,6 @@
 .track > * {
   width: 100%;
   min-width: 0;
-  height: var(--ds-offer-card-height-rail);
   min-height: 0;
   scroll-snap-align: start;
 }

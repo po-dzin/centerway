@@ -68,19 +68,41 @@ type EntryProps = {
 export function CourseRow(props: EntryProps) {
   const { course } = props;
   return (
-    <li className={styles.courseRow} data-flip-key={course.slug} data-removing={props.removing || undefined}>
+    <li
+      className={styles.courseRow}
+      data-flip-key={course.slug}
+      data-removing={props.removing || undefined}
+      data-course-status={course.status}
+    >
       <Link className={styles.courseRowMain} href={`/build/${course.slug}`}>
-        <span className={styles.courseRowTitle}>{course.title}</span>
-        {/* One wrapping line, not three stacked ones. Status, size and what is
+        <span className={styles.courseRowThumb} aria-hidden="true">
+          {course.cover ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              {...mediaSources(course.cover.src)}
+              sizes="5rem"
+              alt=""
+              loading="lazy"
+              decoding="async"
+              style={coverCardStyle(course.cover)}
+            />
+          ) : (
+            initialsOf(course.title)
+          )}
+        </span>
+        <span className={styles.courseRowText}>
+          <span className={styles.courseRowTitle}>{course.title}</span>
+          {/* One wrapping line, not three stacked ones. Status, size and what is
             stopping a publish all qualify the same title; giving each its own
             row made a five-line card out of a list entry. */}
-        <span className={styles.courseRowMeta}>
-          <span className={course.status === "published" ? styles.pillPublished : styles.pill}>
-            {course.status === "published" ? "Опубліковано" : "Чернетка"}
-          </span>
-          <span className={styles.courseMeta}>
-            {course.moduleCount} {plural(course.moduleCount, "модуль", "модулі", "модулів")} · {course.lessonCount}{" "}
-            {plural(course.lessonCount, "урок", "уроки", "уроків")} · {blockerLine(course.blockerCount)}
+          <span className={styles.courseRowMeta}>
+            <span className={course.status === "published" ? styles.pillPublished : styles.pill}>
+              {course.status === "published" ? "Опубліковано" : "Чернетка"}
+            </span>
+            <span className={styles.courseMeta}>
+              {course.moduleCount} {plural(course.moduleCount, "модуль", "модулі", "модулів")} · {course.lessonCount}{" "}
+              {plural(course.lessonCount, "урок", "уроки", "уроків")} · {blockerLine(course.blockerCount)}
+            </span>
           </span>
         </span>
       </Link>
