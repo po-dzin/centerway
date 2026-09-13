@@ -119,17 +119,19 @@ export function ImportPanel({ onCancel, onImported }: { onCancel: () => void; on
         <span className={styles.panelStatus}>
           {ready ? "Перевірку пройдено; запис тільки як чернетка" : "Файл ще не записано"}
         </span>
-        <button className={styles.retreatAction} type="button" onClick={onCancel} disabled={waiting}>
-          Скасувати
-        </button>
-        <button
-          className={styles.commitAction}
-          type="button"
-          onClick={() => void commit()}
-          disabled={!ready || waiting}
-        >
-          {state.status === "committing" ? "Імпортуємо…" : "Імпортувати чернетку"}
-        </button>
+        <div className={styles.panelChoice}>
+          <button className={styles.retreatAction} type="button" onClick={onCancel} disabled={waiting}>
+            Скасувати
+          </button>
+          <button
+            className={styles.commitAction}
+            type="button"
+            onClick={() => void commit()}
+            disabled={!ready || waiting}
+          >
+            {state.status === "committing" ? "Імпортуємо…" : "Імпортувати чернетку"}
+          </button>
+        </div>
       </div>
     </div>
   );
