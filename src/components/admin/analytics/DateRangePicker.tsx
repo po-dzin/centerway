@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "@/components/Icon";
-import { InteractionInkIcon } from "@/components/platform/InteractionInk";
+import { InteractionInkIcon, InteractionInkLabel } from "@/components/platform/InteractionInk";
+import { useI18n } from "@/components/I18nProvider";
+import cal from "@/components/admin/AdminCalendar.module.css";
+import controls from "@/components/admin/AdminControls.module.css";
 import type { DateRange } from "@/lib/admin/analytics/types";
 import {
   buildMonthGrid,
@@ -28,6 +31,7 @@ type DateRangePickerProps = {
 };
 
 export function DateRangePicker({ value, onApply, applyLabel, locale, className = "" }: DateRangePickerProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [selectingEnd, setSelectingEnd] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -114,18 +118,15 @@ export function DateRangePicker({ value, onApply, applyLabel, locale, className 
   };
 
   const renderMonth = (monthDays: Date[], monthDate: Date) => (
-    <div className="w-full">
-      <div className="grid grid-cols-7 gap-0.5 mb-0.5">
+    <div>
+      <div className={cal.grid}>
         {dayNames.map((name) => (
-          <div
-            key={`${monthDate.getMonth()}-${name}`}
-            className="h-6 text-[10px] cw-muted flex items-center justify-center uppercase"
-          >
+          <div key={`${monthDate.getMonth()}-${name}`} className={cal.weekday}>
             {name}
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 auto-rows-[32px] gap-0">
+      <div className={cal.grid}>
         {monthDays.map((day) => {
           const iso = formatDateLocal(day);
           const isCurrentMonth = day.getMonth() === monthDate.getMonth();
@@ -135,13 +136,17 @@ export function DateRangePicker({ value, onApply, applyLabel, locale, className 
           const isSingle = isStart && isEnd;
           const inRange = iso >= draftRange.from && iso <= draftRange.to;
           const isToday = iso === todayIso;
-          const rangeShapeClass = isSingle
-            ? "rounded-md border-[var(--cw-interactive-active-border)]"
-            : isStart
-              ? "rounded-l-md rounded-r-none border-r-0 border-[var(--cw-interactive-active-border)]"
-              : isEnd
-                ? "rounded-r-md rounded-l-none border-l-0 border-[var(--cw-interactive-active-border)]"
-                : "rounded-none border-transparent";
+
+          const classes = [cal.day];
+          if (!isFuture && inRange) {
+            classes.push(cal.dayInRange);
+            if (isSingle) classes.push(cal.dayRangeSingle);
+            else if (isStart) classes.push(cal.dayRangeStart);
+            else if (isEnd) classes.push(cal.dayRangeEnd);
+          } else if (!isFuture && !isCurrentMonth) {
+            classes.push(cal.dayOutside);
+          }
+          if (isToday && !inRange && !isFuture) classes.push(cal.dayToday);
 
           return (
             <button
@@ -149,15 +154,7 @@ export function DateRangePicker({ value, onApply, applyLabel, locale, className 
               type="button"
               disabled={isFuture}
               onClick={() => selectDate(iso)}
-              className={`h-8 border text-xs transition-colors ${
-                isFuture
-                  ? "border-transparent cw-muted opacity-35 cursor-not-allowed"
-                  : inRange
-                    ? `cw-text bg-[var(--cw-interactive-active-bg)] ${rangeShapeClass}`
-                    : isCurrentMonth
-                      ? "border-transparent cw-text hover:bg-[var(--cw-interactive-hover-bg)] rounded-md"
-                      : "border-transparent cw-muted opacity-65 hover:bg-[var(--cw-interactive-hover-bg)] rounded-md"
-              } ${isToday && !inRange && !isFuture ? "border cw-border" : ""} ${isSingle || isStart || isEnd ? "font-semibold" : ""}`}
+              className={classes.join(" ")}
             >
               {day.getDate()}
             </button>
@@ -168,37 +165,33 @@ export function DateRangePicker({ value, onApply, applyLabel, locale, className 
   );
 
   return (
-    <div ref={rootRef} className={`relative w-full sm:w-[340px] ${className}`.trim()}>
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className="cw-input w-full h-10 px-3 text-sm flex items-center justify-between gap-2"
-      >
-        <span className="cw-text truncate">
+    <div ref={rootRef} className={`${cal.range} ${className}`.trim()}>
+      <button type="button" onClick={() => setOpen((prev) => !prev)} className={cal.trigger}>
+        <span className={cal.triggerText}>
           {formatDisplayDate(draftRange.from)} - {formatDisplayDate(draftRange.to)}
         </span>
         <Icon className="cw-muted" name="calendar" size={16} />
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-2 z-40 w-full cw-surface-solid border cw-border rounded-xl cw-shadow p-2.5 space-y-2.5">
-          <div className="flex items-center justify-between">
+        <div className={cal.popoverUnderTrigger}>
+          <div className={cal.head}>
             <button
               type="button"
               onClick={() => setViewMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
               className="cw-icon-btn"
-              aria-label="Previous month"
+              aria-label={t("common_prev_month")}
             >
               <InteractionInkIcon>
                 <Icon name="arrow-left" size={16} />
               </InteractionInkIcon>
             </button>
-            <div className="text-sm font-semibold cw-text capitalize">{monthLabel}</div>
+            <div className={cal.monthLabel}>{monthLabel}</div>
             <button
               type="button"
               onClick={() => setViewMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
               className="cw-icon-btn"
-              aria-label="Next month"
+              aria-label={t("common_next_month")}
             >
               <InteractionInkIcon>
                 <Icon name="arrow-right" size={16} />
@@ -208,26 +201,24 @@ export function DateRangePicker({ value, onApply, applyLabel, locale, className 
 
           {renderMonth(days, viewMonth)}
 
-          <div className="flex items-center gap-1.5 border-t cw-border pt-2">
-            <div className="flex items-center gap-0.5 flex-1 min-w-0">
+          <div className={cal.foot}>
+            <div className={cal.presets}>
               {(["7d", "30d", "mtd", "90d", "1y"] as RangePresetKey[]).map((preset) => (
                 <button
                   key={preset}
                   type="button"
+                  data-cw-ink-control
+                  aria-pressed={activePreset === preset}
                   onClick={() => {
                     void applyPresetQuick(preset);
                   }}
-                  className={`h-7 min-w-9 px-1.5 text-[11px] rounded-md border transition-colors ${
-                    activePreset === preset
-                      ? "cw-text border-[var(--cw-interactive-active-border)] bg-[var(--cw-interactive-active-bg)]"
-                      : "cw-btn-muted border-[var(--cw-border)] hover:bg-[var(--cw-interactive-hover-bg)]"
-                  }`}
+                  className={cal.preset}
                 >
-                  {preset.toUpperCase()}
+                  <InteractionInkLabel>{preset.toUpperCase()}</InteractionInkLabel>
                 </button>
               ))}
             </div>
-            <button type="button" onClick={applyRange} className="h-8 px-2.5 text-sm font-medium cw-btn shrink-0">
+            <button type="button" onClick={applyRange} className={controls.action}>
               {applyLabel}
             </button>
           </div>

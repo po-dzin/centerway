@@ -1,0 +1,105 @@
+/*
+ * THE PANEL'S LISTS: a column of rows, each row a small card of facts.
+ *
+ * Leads, orders, customers and jobs are all this shape, and each wrote it out
+ * in utilities — `cw-list-item p-4 space-y-3` twelve times, `space-y-2` in the
+ * leads panel, a title at `text-sm font-medium` next to a subline at `text-xs`
+ * with or without `truncate`. Named here so the four lists are one list.
+ */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-md);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+}
+
+.item {
+  composes: cw-list-item from global;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-md);
+}
+
+.itemHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
+.itemIdentity {
+  min-width: 0;
+}
+
+.itemTitle {
+  margin: 0;
+  overflow: hidden;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemSub {
+  composes: cw-muted from global;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--ds-type-label-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemControls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+.itemMeta {
+  composes: cw-muted from global;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  font-size: var(--ds-type-label-size);
+}
+
+.itemMetaStrong {
+  color: var(--cw-platform-text);
+}
+
+.itemNote {
+  composes: cw-muted from global;
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--ds-type-label-size);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.stage {
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+}
+
+/* A native select, kept native — it is the operator's fastest way through four
+   stages with a keyboard — and dressed only as far as the field it sits in. */
+.select {
+  composes: cw-surface-2 cw-border cw-text from global;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-md);
+  font-size: var(--ds-type-label-size);
+}

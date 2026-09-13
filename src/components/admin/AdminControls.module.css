@@ -248,3 +248,58 @@
   margin: 0;
   font-size: var(--ds-type-label-size);
 }
+
+/* ── A disclosure ──────────────────────────────────────────────────────────
+ * A heading that opens what is under it. The whole head is the button, as it
+ * is on every chevron block in the product — see the pressable-head rule in
+ * Builder.module.css — and the chevron is its picture, not a second control:
+ * it used to carry its own `aria-label` on a span inside the button, which a
+ * screen reader never announces and which named a control that does not exist.
+ */
+.disclosureHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.disclosureTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+}
+
+.disclosureNote {
+  composes: cw-muted from global;
+  margin: var(--cw-space-2xs) 0 0;
+  font-size: var(--ds-type-label-size);
+}
+
+.disclosureMark {
+  composes: cw-icon-btn from global;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+}
+
+.disclosureChevron {
+  transition: transform var(--cw-motion-state) ease;
+}
+
+.disclosureChevronOpen {
+  composes: disclosureChevron;
+  transform: rotate(180deg);
+}
+
+.disclosureBody {
+  margin-top: var(--cw-space-sm);
+}

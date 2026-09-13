@@ -17,6 +17,8 @@ export const auth = {
   loading: { uk: "Завантаження...", en: "Loading..." },
   common_prev: { uk: "Попередня", en: "Previous" },
   common_next: { uk: "Наступна", en: "Next" },
+  common_prev_month: { uk: "Попередній місяць", en: "Previous month" },
+  common_next_month: { uk: "Наступний місяць", en: "Next month" },
   common_page: { uk: "Сторінка", en: "Page" },
   common_of: { uk: "з", en: "of" },
   common_error: { uk: "Помилка", en: "Error" },

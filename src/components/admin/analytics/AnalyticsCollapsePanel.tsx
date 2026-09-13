@@ -2,6 +2,7 @@
 
 import { Icon } from "@/components/Icon";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
+import controls from "@/components/admin/AdminControls.module.css";
 import surfaces from "@/components/admin/AdminSurfaces.module.css";
 
 /* A diagnostics panel: a heading that opens what is under it. Three of them sit
@@ -22,24 +23,25 @@ export function AnalyticsCollapsePanel(props: {
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-start justify-between gap-3 text-left"
+        className={controls.disclosureHead}
         aria-expanded={open}
+        title={open ? collapseLabel : expandLabel}
       >
         <div>
-          <h3 className="text-sm font-semibold cw-text">{title}</h3>
-          {note ? <p className="text-xs cw-muted mt-1">{note}</p> : null}
+          <h3 className={controls.disclosureTitle}>{title}</h3>
+          {note ? <p className={controls.disclosureNote}>{note}</p> : null}
         </div>
-        <span
-          className="cw-icon-btn shrink-0 inline-flex items-center justify-center"
-          aria-label={open ? collapseLabel : expandLabel}
-          title={open ? collapseLabel : expandLabel}
-        >
+        <span className={controls.disclosureMark} aria-hidden="true">
           <InteractionInkIcon>
-            <Icon className={`transition-transform ${open ? "rotate-180" : ""}`} name="chevron-down" size={16} />
+            <Icon
+              className={open ? controls.disclosureChevronOpen : controls.disclosureChevron}
+              name="chevron-down"
+              size={16}
+            />
           </InteractionInkIcon>
         </span>
       </button>
-      {open ? <div className="mt-3">{children}</div> : null}
+      {open ? <div className={controls.disclosureBody}>{children}</div> : null}
     </div>
   );
 }

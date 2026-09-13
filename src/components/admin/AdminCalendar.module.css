@@ -1,0 +1,294 @@
+/*
+ * THE PANEL'S CALENDAR, ONCE (2026-09-13).
+ *
+ * The admin has two calendars and they were written without knowing about each
+ * other: AdminDateField for a single deadline, DateRangePicker for the analytics
+ * period. Between them they drew the same month grid twice — two cell heights'
+ * worth of utilities, two weekday rows (one at `text-[10px] py-1`, one at
+ * `h-6 text-[10px]`), two popovers at two radii and two ways to step a month:
+ * one with the sprite's arrows inside the ink ring, one with a bare `‹` and `›`
+ * labelled, for a screen reader, "←" and "→". Same object, two drawings.
+ *
+ * What stays different is only what the two genuinely do differently: one marks
+ * a day, the other marks a span. Everything else — the popover, the head, the
+ * weekday row, the cell and its states — is named here and shared.
+ *
+ * A SPAN IS A FILL, and that is the one place in this file a background marks
+ * a choice. A range cannot be drawn as a stroke under a word; it is a stretch of
+ * days. The presets beside it are the opposite case — five named choices of
+ * which one is current — and they take the ink stroke like every other choice
+ * in the product, which is why they are not the tinted capsules they used to be.
+ */
+
+.anchor {
+  position: relative;
+}
+
+.popover {
+  composes: cw-surface-solid cw-border cw-shadow from global;
+  position: absolute;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+  margin-top: var(--cw-space-2xs);
+  padding: var(--cw-space-sm);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-lg);
+}
+
+/* Under a text field: the width of seven day cells and their gaps, not of the
+   field, which may be a narrow column in a table row. */
+.popoverUnderField {
+  composes: popover;
+  width: 17.5rem;
+}
+
+/* Under the period control: as wide as the control it opened from. */
+.popoverUnderTrigger {
+  composes: popover;
+  top: 100%;
+  right: 0;
+  width: 100%;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+}
+
+.monthLabel {
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.weekday {
+  composes: cw-muted from global;
+  padding-block: var(--cw-space-2xs);
+  font-size: var(--ds-type-label-size);
+  letter-spacing: 0.03em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* ── The day ─────────────────────────────────────────────────────────────── */
+
+.day {
+  height: 2rem;
+  border: 1px solid transparent;
+  border-radius: var(--cw-radius-md);
+  background: none;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-label-size);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background-color var(--cw-motion-state) ease,
+    border-color var(--cw-motion-state) ease;
+}
+
+@media (hover: hover) {
+  .day:hover:not(:disabled) {
+    background-color: var(--cw-interactive-hover-bg);
+  }
+}
+
+.dayOutside {
+  composes: cw-muted from global;
+  opacity: 0.65;
+}
+
+.day:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.dayToday {
+  border-color: var(--cw-border);
+  font-weight: 500;
+}
+
+/* One chosen day. The primary button's COLOUR tokens, not its recipe: the
+   recipe carries a lifted shadow and its own radius, and thirty-one cells each
+   reading as a floating button is not a calendar. */
+.daySelected {
+  background-color: var(--cw-btn-primary-bg);
+  color: var(--cw-btn-primary-text);
+  font-weight: 600;
+}
+
+@media (hover: hover) {
+  .daySelected:hover:not(:disabled) {
+    background-color: var(--cw-btn-primary-bg-hover);
+  }
+}
+
+/* A span of days: one continuous fill, rounded only at its two ends, so the
+   eye reads a stretch rather than a row of separate chips. */
+.dayInRange {
+  border-radius: 0;
+  background-color: var(--cw-interactive-active-bg);
+}
+
+.dayRangeStart {
+  border-color: var(--cw-interactive-active-border);
+  border-inline-end-color: transparent;
+  border-start-start-radius: var(--cw-radius-md);
+  border-end-start-radius: var(--cw-radius-md);
+  font-weight: 600;
+}
+
+.dayRangeEnd {
+  border-color: var(--cw-interactive-active-border);
+  border-inline-start-color: transparent;
+  border-start-end-radius: var(--cw-radius-md);
+  border-end-end-radius: var(--cw-radius-md);
+  font-weight: 600;
+}
+
+.dayRangeSingle {
+  border-color: var(--cw-interactive-active-border);
+  border-radius: var(--cw-radius-md);
+  font-weight: 600;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+  padding-top: var(--cw-space-xs);
+  border-top: 1px solid var(--cw-border);
+}
+
+/* ── The single date field ─────────────────────────────────────────────── */
+
+.field {
+  display: flex;
+  align-items: stretch;
+}
+
+.fieldInput {
+  composes: cw-input from global;
+  width: 100%;
+  min-width: 0;
+  padding-inline: var(--cw-space-sm);
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+  font-size: var(--ds-type-body-sm-size);
+}
+
+/* A square glued to the field, not a button with a label: its width is the
+   touch floor it is measured against, which is also why it carries no inline
+   padding — `guard:buttons` owns padding on anything that composes `cw-btn`,
+   and a glyph cell has nothing to pad. */
+.fieldButton {
+  composes: cw-input cw-btn from global;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: var(--ds-touch-target-min);
+  padding-block: 0;
+  border-inline-start-width: 0;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  cursor: pointer;
+}
+
+.fieldInput:disabled,
+.fieldButton:disabled {
+  opacity: 0.4;
+}
+
+.footAction {
+  composes: cw-btn cw-btn-sm from global;
+  cursor: pointer;
+}
+
+.footActionQuiet {
+  composes: footAction;
+  composes: cw-muted from global;
+}
+
+/* ── The period control ────────────────────────────────────────────────── */
+
+.range {
+  composes: anchor;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .range {
+    width: 21.25rem;
+  }
+}
+
+.trigger {
+  composes: cw-input from global;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+  width: 100%;
+  min-height: var(--ds-touch-target-min);
+  padding-inline: var(--cw-space-sm);
+  font-size: var(--ds-type-body-sm-size);
+  cursor: pointer;
+}
+
+.triggerText {
+  overflow: hidden;
+  color: var(--cw-platform-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.presets {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  min-width: 0;
+}
+
+/* A preset is a choice among five, so it is marked the way every choice in the
+   product is: the ink stroke under the word, from `[data-cw-ink-control]` and
+   `[aria-pressed]` in globals.css. It used to be a bordered capsule with a
+   tinted fill for the current one — the idiom removed everywhere else. */
+.preset {
+  display: inline-flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: var(--ds-touch-target-min);
+  padding-inline: var(--cw-space-2xs);
+  border: 0;
+  background: none;
+  color: var(--cw-muted);
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+
+.preset[aria-pressed="true"] {
+  color: var(--cw-platform-text);
+}
+
+.refreshNote {
+  composes: cw-muted from global;
+  margin: 0;
+  font-size: var(--ds-type-label-size);
+  text-align: right;
+}

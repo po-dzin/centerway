@@ -12,6 +12,8 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import { getAdminLocale } from "@/lib/admin/adminLocale";
 import { getErrorMessage } from "@/lib/errors";
 import { useToast } from "@/components/ToastProvider";
+import controls from "@/components/admin/AdminControls.module.css";
+import lists from "@/components/admin/AdminLists.module.css";
 
 /* The four stages, in the order a lead travels them. Kept as data rather than
    as markup so the tab strip, the row control and the "is this closed" test all
@@ -144,7 +146,7 @@ export function LeadsPanel() {
     new Date(value).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" });
 
   return (
-    <div className="space-y-4">
+    <div className={lists.panel}>
       <AdminTabs
         items={tabs}
         activeKey={stage}
@@ -161,7 +163,7 @@ export function LeadsPanel() {
           title={t("leads_loading_error")}
           message={error}
           action={
-            <button type="button" onClick={() => void load()} className="px-4 py-2 cw-btn cw-surface-2">
+            <button type="button" onClick={() => void load()} className={`${controls.action} cw-surface-2`}>
               {t("analytics_retry")}
             </button>
           }
@@ -172,29 +174,27 @@ export function LeadsPanel() {
         <AdminEmptyState
           /* The sprite, not a hand-drawn outline: this panel is new,
                        and new surfaces start on the system's own hand. */
-          icon={<Icon name="mail" size={22} />}
+          icon={<Icon name="mail" size={20} />}
           description={t("leads_empty")}
         />
       )}
 
       {!loading && !error && rows.length > 0 && (
-        <div className="space-y-1.5">
+        <div className={lists.list}>
           {rows.map((lead) => (
-            <div key={lead.id} className="cw-list-item p-4 space-y-2">
-              <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium cw-text truncate">
-                    {lead.name ?? lead.email ?? lead.phone ?? lead.order_ref}
-                  </p>
-                  <p className="text-xs cw-muted truncate">{[lead.phone, lead.email].filter(Boolean).join(" · ")}</p>
+            <div key={lead.id} className={lists.item}>
+              <div className={lists.itemHead}>
+                <div className={lists.itemIdentity}>
+                  <p className={lists.itemTitle}>{lead.name ?? lead.email ?? lead.phone ?? lead.order_ref}</p>
+                  <p className={lists.itemSub}>{[lead.phone, lead.email].filter(Boolean).join(" · ")}</p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className={`text-xs font-semibold ${STAGE_TONE[lead.stage]}`}>
+                <div className={lists.itemControls}>
+                  <span className={`${lists.stage} ${STAGE_TONE[lead.stage]}`}>
                     {t(STAGE_LABEL_KEY[lead.stage] as never)}
                   </span>
                   <select
                     aria-label={t("leads_stage_change")}
-                    className="text-xs cw-surface-2 border cw-border rounded-lg px-2 py-1 cw-text"
+                    className={lists.select}
                     value={lead.stage}
                     disabled={savingId === lead.id}
                     onChange={(event) => void moveStage(lead, event.target.value as Stage)}
@@ -208,7 +208,7 @@ export function LeadsPanel() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap text-xs cw-muted">
+              <div className={lists.itemMeta}>
                 <span>{lead.product_title ?? lead.product_code}</span>
                 <span>·</span>
                 <span>{formatDate(lead.created_at)}</span>
@@ -216,7 +216,7 @@ export function LeadsPanel() {
                   <>
                     <span>·</span>
                     {/* A verified attempt, not a label the page claimed. */}
-                    <span className="cw-text">
+                    <span className={lists.itemMetaStrong}>
                       {t("leads_dosha")}: {lead.dosha_result_type}
                     </span>
                   </>
@@ -239,7 +239,7 @@ export function LeadsPanel() {
                 )}
               </div>
 
-              {lead.message && <p className="text-xs cw-muted line-clamp-2">{lead.message}</p>}
+              {lead.message && <p className={lists.itemNote}>{lead.message}</p>}
             </div>
           ))}
         </div>
