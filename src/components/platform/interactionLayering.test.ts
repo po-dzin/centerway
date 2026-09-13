@@ -246,10 +246,7 @@ describe("platform interaction layers", () => {
 describe("the footer's interactive ink follows the gamma, not a fixed brass", () => {
   /* Comments stripped: these rules are discussed in prose right above
      themselves, and a plain `indexOf` finds the sentence, not the rule. */
-  const componentsCss = read("src/components/platform/PlatformComponents.module.css").replace(
-    /\/\*[\s\S]*?\*\//g,
-    "",
-  );
+  const componentsCss = read("src/components/platform/PlatformComponents.module.css").replace(/\/\*[\s\S]*?\*\//g, "");
 
   it("keeps the text links out of the quiet-button hover", () => {
     /* `.footer a:hover` is one element more specific than `.footerTextLink:hover`,
@@ -273,7 +270,9 @@ describe("the footer's interactive ink follows the gamma, not a fixed brass", ()
   it("keeps the marker itself as the two-sided token it claims to be", () => {
     const globalsCss = read("src/app/globals.css").replace(/\/\*[\s\S]*?\*\//g, "");
     expect(globalsCss).toMatch(/:root\s*\{[\s\S]*?--cw-nav-marker: var\(--cw-platform-text\);/);
-    expect(globalsCss).toMatch(/\[data-cw-theme="dark"\],\s*\n\s*\[data-cw-header-tone="dark"\]\s*\{\s*\n\s*--cw-nav-marker: var\(--cw-platform-accent\);/);
+    expect(globalsCss).toMatch(
+      /\[data-cw-theme="dark"\],\s*\n\s*\[data-cw-header-tone="dark"\]\s*\{\s*\n\s*--cw-nav-marker: var\(--cw-platform-accent\);/,
+    );
   });
 });
 
@@ -297,7 +296,7 @@ describe("the footer's own addresses", () => {
        the word, which a bare substring check would trip over. */
     expect(leaf).not.toMatch(/^\s*import\s/m);
     expect(read("src/lib/platform/content.ts")).toContain('from "@/lib/supportBotUrl"');
-    expect(read("src/lib/tgSupportBotCopy.ts")).toContain("export { SUPPORT_BOT_URL }");
+    expect(read("src/lib/telegram/tgSupportBotCopy.ts")).toContain("export { SUPPORT_BOT_URL }");
   });
 });
 

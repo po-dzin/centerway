@@ -232,7 +232,8 @@ export function useChromeSheet(): ChromeSheet {
          ring: that is the case this whole effect exists for. */
       const owner = (document.activeElement as HTMLElement | null)?.closest?.("[data-cw-chrome-sheet]");
       if (owner && owner !== menu) return;
-      const target = stops[nextStop(stops.length, stops.indexOf(document.activeElement as HTMLElement), event.shiftKey ? -1 : 1)];
+      const target =
+        stops[nextStop(stops.length, stops.indexOf(document.activeElement as HTMLElement), event.shiftKey ? -1 : 1)];
       if (!target) return;
       event.preventDefault();
       target.focus();

@@ -1261,7 +1261,8 @@ export const translations = {
     catalog_blocker_no_access_rule: "no access term",
     catalog_approve: "Approve",
     catalog_approve_live: "Approve the live version",
-    catalog_not_moderated: "Never went through review — it still sells, but visibility cannot be changed until you approve it",
+    catalog_not_moderated:
+      "Never went through review — it still sells, but visibility cannot be changed until you approve it",
     catalog_return: "Return to author",
     catalog_approved: "Course approved",
     catalog_returned: "Course returned to the author",

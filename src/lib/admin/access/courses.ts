@@ -170,9 +170,9 @@ export async function moderateCourse(input: {
        course submitted from the builder and still unpublished
        (`review_status = 'in_review'`) is approved exactly as before. */
     const approvesLiveRelease =
-      !revisionInReview
-      && course.review_status !== "approved"
-      && (course.review_status === "in_review" || course.status === "published");
+      !revisionInReview &&
+      course.review_status !== "approved" &&
+      (course.review_status === "in_review" || course.status === "published");
     if (!revisionInReview && !approvesLiveRelease) throw new AccessError("course_not_in_review", 409);
     if (revisionInReview) {
       try {

@@ -41,12 +41,12 @@ describe("no field on any surface can be small enough to zoom iOS", () => {
     for (const rel of cssFiles) {
       const css = strip(read(rel));
       for (const match of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-        const selector = match[1].trim().replace(/\s+/g, " ");
+        const selector = (match[1] ?? "").trim().replace(/\s+/g, " ");
         if (!/\b(input|textarea|select)\b/.test(selector)) continue;
-        const size = /font-size:\s*([^;]+);/.exec(match[2]);
+        const size = /font-size:\s*([^;]+);/.exec(match[2] ?? "");
         if (!size) continue;
 
-        const value = size[1].trim();
+        const value = (size[1] ?? "").trim();
         /* Token- and max()-valued sizes are read through their own tests; what
            this catches is a literal typed under the threshold. */
         const literal = /^(\d*\.?\d+)(rem|px|em)$/.exec(value);

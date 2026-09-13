@@ -236,9 +236,7 @@ export function loadCourseAuthorLink(slug: string): Promise<BuilderResult<Course
 }
 
 export type CourseAuthorLinkMove =
-  | { action: "attach-self" }
-  | { action: "detach" }
-  | { action: "attach-profile"; authorProfileId: string };
+  { action: "attach-self" } | { action: "detach" } | { action: "attach-profile"; authorProfileId: string };
 
 export function setCourseAuthorLink(
   slug: string,

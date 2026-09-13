@@ -448,7 +448,9 @@ function PublicationRow({
      course permanently unapprovable. */
   const revisionInReview = row.hasPendingRevision && row.pendingReviewStatus === "in_review";
   const approvesLive =
-    !revisionInReview && row.reviewStatus !== "approved" && (row.reviewStatus === "in_review" || row.status === "published");
+    !revisionInReview &&
+    row.reviewStatus !== "approved" &&
+    (row.reviewStatus === "in_review" || row.status === "published");
   const approvable = revisionInReview || approvesLive;
 
   return (

@@ -302,8 +302,8 @@ export function BuilderCourseAuthor({
         }
       >
         <p className={styles.panelText}>
-          Зараз на сторінці курсу стоїть {pending?.displaced}. Після заміни ім’я, фото й посилання на профіль
-          зміняться всюди, де показується цей курс.
+          Зараз на сторінці курсу стоїть {pending?.displaced}. Після заміни ім’я, фото й посилання на профіль зміняться
+          всюди, де показується цей курс.
         </p>
         <p className={styles.readOnlyNote}>
           {data?.mayAssign
