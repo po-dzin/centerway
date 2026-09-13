@@ -122,7 +122,9 @@ function ContactRow({ label, value, badge }: { label: string; value: string; bad
   return (
     <div className={profileStyles.contact}>
       <span className={profileStyles.contactKindTag}>{label}</span>
-      <p className={profileStyles.contactValue}>{value}</p>
+      <p className={profileStyles.contactValue} title={value}>
+        {value}
+      </p>
       {badge && <Icon className={`cw-status-success-text ${profileStyles.contactMark}`} name="check" size={16} />}
     </div>
   );
