@@ -337,10 +337,15 @@
     --ds-rail-control-icon: var(--ds-icon-in-control);
     --ds-rail-control-overhang: 1rem;
     --ds-author-banner-ratio: 5 / 1;
-    --ds-offer-card-height-desktop: 29rem;
+    --ds-card-inset: var(--cw-space-xs);
+    --ds-card-body-inline: var(--cw-space-xs);
+    --ds-card-media-radius: calc(var(--cw-card-radius) - var(--ds-card-inset));
+    --ds-card-media-ratio: 16 / 9;
+    --ds-card-portrait-ratio: 4 / 5;
+    --ds-card-thumb-width: 5rem;
+    --ds-card-thumb-width-compact: 4rem;
     --ds-offer-card-min-height-tablet: 26rem;
     --ds-offer-card-min-height-mobile: 22rem;
-    --ds-offer-card-height-rail: 26rem;
     --ds-offer-card-width-desktop: 24rem;
     --ds-offer-card-width-tablet: 21rem;
     --ds-offer-card-width-mobile: min(82vw, 19rem);
