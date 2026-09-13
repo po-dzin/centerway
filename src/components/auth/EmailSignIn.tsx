@@ -60,10 +60,14 @@ type Step = "email" | "code";
 export function EmailSignIn({
   onSignedIn,
   onBack,
+  hint = copy.emailHint,
 }: {
   onSignedIn?: () => void;
   /** The way out of this door and back to the choice of doors. */
   onBack?: () => void;
+  /** The line under the field. Defaults to the buyer's — the receipt is why
+   *  most people arrive here — and the staff door passes its own. */
+  hint?: string;
 }) {
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
@@ -259,7 +263,7 @@ export function EmailSignIn({
         />
       </div>
 
-      <p className={styles.status}>{copy.emailHint}</p>
+      <p className={styles.status}>{hint}</p>
 
       {/* Primary here, unlike on the choice screen: this step is a screen of
           its own now, and the only thing on it to do. */}

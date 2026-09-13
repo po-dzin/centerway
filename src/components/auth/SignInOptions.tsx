@@ -31,6 +31,14 @@ const copy = {
   email: "Увійти через пошту",
 } as const;
 
+/* A DOOR THAT IS NOT THERE IS NOT OFFERED (2026-09-13). The local Supabase stack
+   has no Google provider, so the button led to a raw GoTrue page — «Unsupported
+   provider: provider is not enabled» — and it was the first thing anyone
+   testing the admin pressed. `npm run db:local:env` writes
+   NEXT_PUBLIC_AUTH_GOOGLE=off beside the local keys; production never sets it,
+   so the default stays "offered". */
+const googleOffered = process.env.NEXT_PUBLIC_AUTH_GOOGLE !== "off";
+
 /* Google's own mark, not a stand-in for it: the multicolour "G" is what says
    which account this is before a single word is read — which is why the label
    beside it is just «Увійти» and not the provider's name a second time. */
@@ -65,6 +73,16 @@ export function SignInOptions({ googleLabel, onGoogle }: { googleLabel: string; 
   const pathname = usePathname();
   const href = useSurfaceHref();
   const emailHref = href(`${SIGNIN_PATH_PREFIX}/email${pathname ? `?next=${encodeURIComponent(pathname)}` : ""}`);
+
+  if (!googleOffered) {
+    return (
+      <div className={styles.form}>
+        <Link className={styles.primaryButton} href={emailHref}>
+          {copy.email}
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.form}>

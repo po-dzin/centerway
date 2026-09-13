@@ -14,7 +14,7 @@
  * (`SIGNIN_PATH_PREFIX`, src/lib/surfaces/catalog.ts).
  */
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { EmailSignIn } from "@/components/auth/EmailSignIn";
@@ -56,6 +56,16 @@ export function EmailSignInScreen() {
 
   const leave = useCallback(() => router.replace(nextDestination()), [router]);
 
+  /* WHO IS AT THIS DOOR (2026-09-13). The hint under the field tells a buyer
+     to use the address they paid with — true for the receipt, wrong for staff
+     on their way to /admin, who never paid for anything. The destination says
+     which one this is. Read after mount, like `nextDestination`, so the server
+     render and the first client render agree. */
+  const [forStaff, setForStaff] = useState(false);
+  useEffect(() => {
+    setForStaff(nextDestination().startsWith("/admin"));
+  }, []);
+
   /* Already signed in — including the moment right after the code is
      accepted, which arrives here as an auth event rather than as a return
      value. One effect covers both, so there is a single way out of this
@@ -80,7 +90,7 @@ export function EmailSignInScreen() {
 
   return (
     <StatePanel label={copy.profile} title={copy.authEmailTitle} lead={copy.authEmailLead} compact>
-      <EmailSignIn onBack={leave} />
+      <EmailSignIn onBack={leave} hint={forStaff ? copy.authEmailStaffHint : undefined} />
     </StatePanel>
   );
 }

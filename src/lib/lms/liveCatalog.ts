@@ -103,17 +103,37 @@ async function readCourse(slug: string): Promise<LiveRead> {
   }
 }
 
+/* A FAILED READ IS NOT AN ANSWER TO KEEP (2026-09-13). `unstable_cache` stores
+   whatever the function returns, so an "unavailable" result was cached like a
+   course — and the snapshot kept being served for the whole revalidate window
+   after the database had come back. On the local stack that window outlived
+   the fix that caused it: the storefront showed yesterday's list and «Ціна за
+   запитом» minutes after the tables were readable. A throw is not cached, so
+   the failure is thrown inside and turned back into a value outside. */
 const cachedCourse = (slug: string) =>
-  unstable_cache(() => readCourse(slug), ["lms-live-course", slug], {
-    tags: [courseTag(slug), COURSE_LIST_TAG],
-    revalidate: REVALIDATE_SECONDS,
-  })();
+  unstable_cache(
+    async () => {
+      const read = await readCourse(slug);
+      if (read.kind === "unavailable") throw new Error(read.reason);
+      return read;
+    },
+    ["lms-live-course", slug],
+    {
+      tags: [courseTag(slug), COURSE_LIST_TAG],
+      revalidate: REVALIDATE_SECONDS,
+    },
+  )();
 
 /**
  * One course, live. Returns drafts too — the caller owns the status gate.
  */
 export async function getLiveCourse(slug: string): Promise<Course | null> {
-  const read = await cachedCourse(slug);
+  let read: LiveRead;
+  try {
+    read = await cachedCourse(slug);
+  } catch (error) {
+    read = { kind: "unavailable", reason: error instanceof Error ? error.message : "unknown_error" };
+  }
 
   if (read.kind === "course") return read.course;
   // A course the database does not have is a course that does not exist. The
@@ -163,10 +183,19 @@ async function readAll(): Promise<{ courses: Course[]; complete: boolean }> {
   }
 }
 
-const cachedAll = unstable_cache(readAll, ["lms-live-courses"], {
-  tags: [COURSE_LIST_TAG],
-  revalidate: REVALIDATE_SECONDS,
-});
+// Same rule as `cachedCourse`: an incomplete read throws, so it is never cached.
+const cachedAll = unstable_cache(
+  async () => {
+    const result = await readAll();
+    if (!result.complete) throw new Error("lms_live_list_incomplete");
+    return result;
+  },
+  ["lms-live-courses"],
+  {
+    tags: [COURSE_LIST_TAG],
+    revalidate: REVALIDATE_SECONDS,
+  },
+);
 
 /**
  * Every course, live. The snapshot answers only when the read itself failed —
@@ -178,11 +207,11 @@ const cachedAll = unstable_cache(readAll, ["lms-live-courses"], {
  * request, from a file.
  */
 export async function listLiveCourses(): Promise<Course[]> {
-  const { courses, complete } = await cachedAll();
-  if (!complete) {
+  try {
+    const { courses } = await cachedAll();
+    return courses;
+  } catch {
     console.warn("lms_live_list_unavailable — serving the shipped snapshot");
     return snapshotCourses();
   }
-
-  return courses;
 }
