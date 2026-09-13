@@ -25,6 +25,8 @@ import type { AuthorProfileRow, CourseRow } from "@/lib/admin/accessTypes";
 import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
 import surfaces from "@/components/admin/AdminSurfaces.module.css";
 import { Icon } from "@/components/Icon";
+import controls from "@/components/admin/AdminControls.module.css";
+import lists from "@/components/admin/AdminLists.module.css";
 
 function EmptyIcon() {
   return <Icon className="cw-muted" name="lock" size={20} />;
@@ -115,31 +117,29 @@ export function CourseAuthorshipTab({
   }
 
   return (
-    <div className="space-y-4">
-      <div className={surfaces.plate}>
-        <p className="text-sm font-semibold cw-text">{t("access_builder_title")}</p>
-        <p className="text-xs cw-muted mt-1">{t("access_builder_hint")}</p>
-        {!canGrant ? <p className="text-xs cw-muted mt-2">{t("access_role_admin_only")}</p> : null}
+    <div className={lists.panel}>
+      <div className={`${surfaces.plate} ${controls.fieldStack}`}>
+        <p className={controls.disclosureTitle}>{t("access_builder_title")}</p>
+        <p className={controls.hint}>{t("access_builder_hint")}</p>
+        {!canGrant ? <p className={controls.hint}>{t("access_role_admin_only")}</p> : null}
       </div>
 
-      <div className="space-y-1.5">
+      <div className={lists.list}>
         {courses.map((course) => (
-          <div key={course.id} className="cw-list-item p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium cw-text truncate">{course.title}</p>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">
-                    {course.status}
-                  </span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">
+          <div key={course.id} className={lists.item}>
+            <div className={lists.itemRow}>
+              <div className={lists.itemBody}>
+                <div className={lists.itemTitleRow}>
+                  <p className={lists.itemTitle}>{course.title}</p>
+                  <span className={lists.tag}>{course.status}</span>
+                  <span className={lists.tag}>
                     {course.hasPendingRevision
                       ? `${t("catalog_authorship_updated_at")} · ${course.reviewStatus}`
                       : course.reviewStatus}
                   </span>
                 </div>
-                <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
-                  <span className="font-mono">{course.slug}</span>
+                <div className={lists.itemMeta}>
+                  <span className={lists.itemCode}>{course.slug}</span>
                   <span>
                     {t("access_course_learners")}: {course.learners}
                   </span>
@@ -148,32 +148,30 @@ export function CourseAuthorshipTab({
                   </span>
                 </div>
               </div>
-              <div className="text-right shrink-0 hidden sm:block">
-                <p className="text-sm cw-text truncate max-w-[220px]">
-                  {course.authorEmail ?? t("access_author_house")}
-                </p>
+              <div className={lists.itemAside}>
+                <p className={lists.itemAsideText}>{course.authorEmail ?? t("access_author_house")}</p>
               </div>
             </div>
 
             {canGrant && course.reviewEnabled ? (
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className={controls.fields}>
                 {course.reviewStatus === "in_review" ? (
                   <>
                     <input
-                      className="cw-input px-3 py-2 text-sm flex-1"
+                      className={controls.inputGrow}
                       value={reviewNotes[course.id] ?? ""}
                       onChange={(e) => setReviewNotes((prev) => ({ ...prev, [course.id]: e.target.value }))}
                       placeholder={t("catalog_authorship_comment_placeholder")}
                     />
                     <button
-                      className="px-4 py-2 cw-btn cw-surface-2 text-sm"
+                      className={`${controls.action} cw-surface-2`}
                       disabled={savingId === course.id}
                       onClick={() => void moderate(course, "approve")}
                     >
                       {t("catalog_authorship_approve")}
                     </button>
                     <button
-                      className="px-4 py-2 cw-btn cw-btn-muted text-sm"
+                      className={`${controls.action} cw-btn-muted`}
                       disabled={savingId === course.id}
                       onClick={() => void moderate(course, "request_changes")}
                     >
@@ -182,7 +180,7 @@ export function CourseAuthorshipTab({
                   </>
                 ) : course.status === "published" && course.reviewStatus === "approved" ? (
                   <select
-                    className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-48"
+                    className={`${controls.select} ${controls.selectNarrow}`}
                     value={course.visibility}
                     disabled={savingId === course.id}
                     onChange={(e) => void moderate(course, "set_visibility", e.target.value as CourseRow["visibility"])}
@@ -192,17 +190,17 @@ export function CourseAuthorshipTab({
                     <option value="listed">{t("catalog_authorship_listed")}</option>
                   </select>
                 ) : (
-                  <p className="text-xs cw-muted">{t("catalog_authorship_listed_hint")}</p>
+                  <p className={controls.hint}>{t("catalog_authorship_listed_hint")}</p>
                 )}
               </div>
             ) : null}
 
             {canGrant ? (
-              <div className="grid gap-2">
-                <label className="grid gap-1">
-                  <span className="text-xs cw-muted">{t("access_author_profile")}</span>
+              <div className={controls.fieldStack}>
+                <label className={controls.field}>
+                  <span className={controls.fieldCaption}>{t("access_author_profile")}</span>
                   <select
-                    className="cw-input cw-select px-3 py-2 text-sm"
+                    className={controls.select}
                     value={course.authorProfileId ?? ""}
                     disabled={savingId === course.id}
                     onChange={(event) => void selectProfile(course, event.target.value || null)}
@@ -215,19 +213,19 @@ export function CourseAuthorshipTab({
                     ))}
                   </select>
                 </label>
-                <div className="flex flex-col sm:flex-row gap-2">
+                <div className={controls.fields}>
                   <input
                     type="email"
                     value={draft[course.id] ?? ""}
                     onChange={(e) => setDraft((prev) => ({ ...prev, [course.id]: e.target.value }))}
                     placeholder={t("access_author_email")}
-                    className="cw-input px-3 py-2 text-sm flex-1"
+                    className={controls.inputGrow}
                   />
                   <button
                     type="button"
                     onClick={() => save(course, (draft[course.id] ?? "").trim())}
                     disabled={savingId === course.id || !(draft[course.id] ?? "").trim()}
-                    className="px-4 py-2 cw-btn cw-surface-2 text-sm disabled:opacity-50"
+                    className={`${controls.action} cw-surface-2`}
                   >
                     {t("access_author_assign")}
                   </button>
@@ -236,7 +234,7 @@ export function CourseAuthorshipTab({
                       type="button"
                       onClick={() => save(course, null)}
                       disabled={savingId === course.id}
-                      className="px-4 py-2 cw-btn cw-btn-muted text-sm disabled:opacity-50"
+                      className={`${controls.action} cw-btn-muted`}
                     >
                       {t("access_author_clear")}
                     </button>

@@ -103,3 +103,69 @@
   border-radius: var(--cw-radius-md);
   font-size: var(--ds-type-label-size);
 }
+
+.itemRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cw-space-sm);
+}
+
+.itemBody {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+.itemTitleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-width: 0;
+}
+
+/* A code, a slug, an order ref: the data face the product sets codes in, not
+   Tailwind's mono stack, which is a different set of letters. */
+.itemCode {
+  font-family: var(--cw-font-data);
+}
+
+/* A short uppercase word in a capsule — a status or a review state. `tag` is
+   the name the geometry guard's capsule carve-out reads. */
+.tag {
+  composes: cw-surface-2 cw-text from global;
+  flex: 0 0 auto;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+  font-size: var(--ds-type-label-size);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Who owns the row, at the row's far edge. Off on a phone, where the column is
+   too narrow for a second identity beside the first and the author is edited
+   in the form below anyway. */
+.itemAside {
+  display: none;
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+@media (min-width: 640px) {
+  .itemAside {
+    display: block;
+  }
+}
+
+.itemAsideText {
+  max-width: 13.75rem;
+  margin: 0;
+  overflow: hidden;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

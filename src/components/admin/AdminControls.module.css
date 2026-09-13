@@ -303,3 +303,77 @@
 .disclosureBody {
   margin-top: var(--cw-space-sm);
 }
+
+/* ── Forms inside a row ────────────────────────────────────────────────────
+ * The catalogue tabs edit a price or an author in place, inside the list row
+ * that shows it. A column of fields on a phone, a row aligned on its baselines
+ * from 640px — the same breakpoint the dialog's foot turns at.
+ */
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+}
+
+@media (min-width: 640px) {
+  .fields {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+}
+
+.fieldStack {
+  display: grid;
+  gap: var(--cw-space-xs);
+}
+
+.field {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+.fieldCaption {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+}
+
+.input {
+  composes: cw-input from global;
+  width: 100%;
+  min-width: 0;
+  padding-inline: var(--cw-space-sm);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.inputGrow {
+  composes: input;
+  flex: 1 1 auto;
+}
+
+.select {
+  composes: cw-input cw-select from global;
+  width: 100%;
+  padding-inline-start: var(--cw-space-sm);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+@media (min-width: 640px) {
+  .selectNarrow {
+    width: 12rem;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+}
+
+.hint {
+  composes: cw-muted from global;
+  margin: 0;
+  font-size: var(--ds-type-label-size);
+}
