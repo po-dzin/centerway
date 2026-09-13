@@ -291,7 +291,14 @@
   padding: var(--cw-space-xs) var(--cw-space-sm);
   border: 0;
   border-radius: var(--cw-radius-pill);
-  /* The topbar's material, night side — the same tint token at the same chrome
+  /* ONE MATERIAL WITH THE BAR, INCLUDING ITS TONE (2026-09-13). Every badge
+     renders `data-cw-header-tone="dark"`, the scope the bar itself takes over a
+     photograph, so `--cw-mat-surface-night` resolves to the same graphite the
+     bar and the account menu wear there. Without it the light gamma's own night
+     surface answered — a green that no other chrome over the hero shows, and
+     which read as an opaque green chip beside a graphite bar.
+
+     The topbar's material, night side — the same tint token at the same chrome
      floor (55%), the same blur, the same grain. The badge is not tone-managed:
      headerTone samples what the bar floats over and swaps --cw-mat-surface for
      the whole bar, and the badge, sitting on the same photograph a few hundred

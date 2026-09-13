@@ -175,6 +175,7 @@
    image AS the card. The author card takes the second, so a portrait is never
    cropped into a short band that cuts the person off at the chin. */
 .guideCard {
+  composes: compact from "./PlatformButtons.module.css";
   position: relative;
   display: flex;
   align-items: flex-end;

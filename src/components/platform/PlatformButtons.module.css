@@ -113,6 +113,44 @@
              removed — that padding is sized for text beside a glyph and reads
              as a wide empty button without one. */
 
+/* TWO SIZES, AND THE CONTAINER CHOOSES (2026-09-13).
+
+   A button's size says where it sits in the page's hierarchy, not what the
+   reader points with. The one action a page exists for — the hero's CTA, buy,
+   continue — is the full 48px. A button NESTED in a card, a panel, a form row
+   or a tool surface is one of many and takes the compact 40px at 0.9rem: a grid
+   of cards whose every button is page-sized reads as a grid of CTAs.
+
+   So the size is a property of the container. A card composes `compact` on its
+   own root class and every role inside it resolves the compact tokens; no
+   button is sized one at a time, and no component stylesheet re-points a
+   `--ds-button-*` token itself. Until 2026-09-13 this was keyed on
+   `(pointer: fine)` instead, which shrank the hero's CTA on every desktop and
+   nested buttons not at all on a phone — both halves of the wrong question. */
+.compact {
+  --ds-button-min-height: var(--ds-button-compact-min-height);
+  --ds-button-min-width: var(--ds-button-compact-min-width);
+  --ds-button-padding-inline: var(--ds-button-compact-padding-inline);
+  --ds-button-font-size: var(--ds-button-compact-font-size);
+}
+
+/* THE FINGER KEEPS ITS 48px. On a coarse pointer a compact button's target is
+   widened past its visible edge by an invisible `::after` — the paint is 40px,
+   the hit area is `--ds-button-hit-min`. Zero specificity on purpose: a role or
+   a consumer that already positions the button, or draws its own `::after`,
+   wins without a fight and simply keeps its own box. */
+@media (pointer: coarse) {
+  :where(.compact .base) {
+    position: relative;
+  }
+
+  :where(.compact .base)::after {
+    content: "";
+    position: absolute;
+    inset: calc((var(--ds-button-min-height) - var(--ds-button-hit-min)) / 2) 0;
+  }
+}
+
 .hug {
   width: fit-content;
 }

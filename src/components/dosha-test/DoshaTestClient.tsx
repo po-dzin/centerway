@@ -613,7 +613,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
             <article className={`${styles.panel} ${styles.diagnosticHeroCard}`}>
               <div className={styles.panelStack}>
                 <div className={styles.panelIntro}>
-                  <p className={styles.heroBadge}>
+                  <p className={styles.heroBadge} data-cw-header-tone="dark">
                     <span>{topbarBadge}</span>
                   </p>
                   <h1 className={styles.title}>Тест доші</h1>

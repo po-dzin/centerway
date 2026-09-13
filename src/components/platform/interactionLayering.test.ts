@@ -267,6 +267,26 @@ describe("the footer's interactive ink follows the gamma, not a fixed brass", ()
     expect(declarations).not.toContain("--cw-platform-accent");
   });
 
+  it("rests a footer link in the page ink and saves the brass for hover and focus", () => {
+    const at = componentsCss.indexOf(".footer a.footerTextLink {");
+    const declarations = componentsCss.slice(at, componentsCss.indexOf("}", at));
+    expect(declarations).toContain("color: var(--cw-platform-text)");
+    expect(declarations).not.toContain("--cw-nav-marker");
+    expect(declarations).not.toContain("--cw-platform-accent");
+  });
+
+  it("restates the rule's shape on every ink scope, so the scope's ink is the one drawn", () => {
+    /* A custom property that reads another resolves where it is declared: on
+       `:root` alone, the fade took the theme border and ignored every scope. */
+    const globalsCss = read("src/app/globals.css").replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(globalsCss).toMatch(
+      /\[data-cw-rule\]\s*\{\s*--cw-rule-fade-x: linear-gradient\(90deg[^;]*var\(--cw-rule-ink\)/,
+    );
+    expect(globalsCss).toMatch(
+      /\[data-cw-rule\]\s*\{[^}]*--cw-rule-fade-y: linear-gradient\(180deg[^;]*var\(--cw-rule-ink\)/,
+    );
+  });
+
   it("keeps the marker itself as the two-sided token it claims to be", () => {
     const globalsCss = read("src/app/globals.css").replace(/\/\*[\s\S]*?\*\//g, "");
     expect(globalsCss).toMatch(/:root\s*\{[\s\S]*?--cw-nav-marker: var\(--cw-platform-text\);/);
@@ -305,8 +325,13 @@ describe("the account menu does not offer a door the bar already carries", () =>
     /* Gated on the home PAGE, every other www route carried «На головну» while
        the navigation three centimetres above it already read «Головна». */
     const menu = read("src/components/platform/layout/PlatformAccountMenu.tsx");
-    expect(menu).toContain("const onPublicSite = !inPersonalApp;");
+    expect(menu).toContain('const onPublicSite = !(inPersonalApp || here === "admin");');
     expect(menu).toContain("{onPublicSite ? null : (");
     expect(menu).not.toContain("onPublicHome");
+  });
+
+  it("keeps the way back in the admin panel, which has no storefront navigation", () => {
+    const menu = read("src/components/platform/layout/PlatformAccountMenu.tsx");
+    expect(menu).toMatch(/onPublicSite = !\(inPersonalApp \|\| here === "admin"\)/);
   });
 });
