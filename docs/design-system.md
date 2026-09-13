@@ -416,6 +416,33 @@ The same button had been written five times — platform shell, hero, cabinet, L
 
 That is the rule this section encodes: **an axis with no token is an axis that will diverge**, and a document alone does not stop it. Hence a contract file that owns the recipe, tokens for every axis, and a gate that fails the build when a component stylesheet reaches for one.
 
+### Two sizes, and the container chooses (2026-09-13)
+
+A button's size states its place in the page's hierarchy, not the reader's
+pointer. **Full** (48px, 1rem, `--ds-button-min-height`) is the action a page
+exists for: the hero CTA, buy, continue, the sticky action, the author profile's
+consultation. **Compact** (40px, 0.9rem, `--ds-button-compact-*`) is a button
+nested in a card, a panel, a form row or a tool surface — one of many, where a
+grid of page-sized buttons reads as a grid of CTAs.
+
+The container decides, in one place: its root class does
+`composes: compact from ".../PlatformButtons.module.css"`, which re-points the
+four size tokens for everything inside it. Today that is the author card, the
+program tile, the cabinet's shelf cards, cards and action rows, the LMS notice,
+lesson CTA, restart and note rows, both catalogue filters, the curriculum's
+"more" link and the whole builder shell. A component stylesheet never re-points
+a `--ds-button-*` token itself, and never sizes one button by hand.
+
+**The finger keeps 48px.** Under `(pointer: coarse)` a compact button's hit area
+is widened past its paint by a zero-specificity `::after` to
+`--ds-button-hit-min`. Visual size and target size are separate axes — the same
+split Material (40dp button, 48dp target) and Apple (44pt minimum target) make.
+
+This replaces the 2026-09-10 `(pointer: fine)` alias, which shrank every button
+on a desktop — the hero CTA included — and no nested button on a phone. The
+fine-pointer alias now carries only `--ds-touch-target-min`, the topbar's 36px
+icon controls, which are not buttons.
+
 ### `composes` does not chain — name `base` explicitly (2026-08-21)
 
 `.chromeBare` composed `chrome`, and `chrome` composes `base`. That transitive

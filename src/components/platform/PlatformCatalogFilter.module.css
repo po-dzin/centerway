@@ -21,6 +21,7 @@
  */
 
 .filter {
+  composes: compact from "./PlatformButtons.module.css";
   composes: filter from "./cabinet/ShelfFilter.module.css";
 }
 

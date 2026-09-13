@@ -18,6 +18,7 @@
    Breakpoints follow the canon — mobile ≤ 560, tablet 561–900, desktop ≥ 901. */
 
 .shell {
+  composes: compact from "../platform/PlatformButtons.module.css";
   --builder-topbar-height: calc(var(--ds-touch-target-min) + 0.25rem);
   --builder-side-panel-width: var(--cw-workspace-side-panel-width);
   /* Both mode rails, one value — they are the same object on opposite edges of

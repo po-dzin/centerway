@@ -44,13 +44,18 @@
   --ds-touch-target-min: 3rem;
   --ds-icon-control-ratio: 0.53;
   --ds-icon-in-control: calc(var(--ds-touch-target-min) * var(--ds-icon-control-ratio));
-  --ds-button-min-height: var(--ds-touch-target-min);
+  --ds-button-min-height: 3rem;
   --ds-button-padding-inline: 1.15rem;
   --ds-button-min-width: 10.5rem;
   --ds-button-max-width: 22rem;
   --ds-button-radius: var(--cw-radius-btn);
   --ds-button-font-weight: 700;
   --ds-button-font-size: 1rem;
+  --ds-button-compact-min-height: 2.5rem;
+  --ds-button-compact-min-width: 9rem;
+  --ds-button-compact-padding-inline: 1rem;
+  --ds-button-compact-font-size: var(--ds-type-body-sm-size);
+  --ds-button-hit-min: 3rem;
   --ds-button-gap: 0.5rem;
   --ds-button-lift: -1px;
   --ds-field-sm: 8rem;
@@ -97,6 +102,5 @@
 @media (hover: hover) and (pointer: fine) {
   :root {
     --ds-touch-target-min: 2.25rem;
-    --ds-button-min-height: 3rem;
   }
 }

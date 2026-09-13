@@ -144,6 +144,7 @@
 }
 
 .programTile {
+  composes: compact from "./PlatformButtons.module.css";
   --program-tile-fg: var(--cw-platform-accent-contrast);
   --program-tile-copy: color-mix(in srgb, var(--cw-platform-accent-contrast) 82%, transparent);
   --program-tile-button-bg: color-mix(in srgb, var(--cw-platform-accent) 76%, var(--cw-platform-accent-strong) 24%);
