@@ -353,3 +353,60 @@
   border-radius: var(--cw-radius-pill);
   font-size: var(--ds-type-label-size);
 }
+
+/* ── A course in the catalogue ─────────────────────────────────────────── */
+
+/* The two doors into the course from the row that decides its fate. Links in
+   running copy, so they take the ink link rule — the text's own colour at rest
+   — instead of a browser underline at a hand-set offset. */
+.itemLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  font-size: var(--ds-type-label-size);
+}
+
+.itemLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+.tagOnSale {
+  composes: tag;
+  composes: cw-status-paid from global;
+}
+
+.changes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+  font-size: var(--ds-type-label-size);
+}
+
+.changesText {
+  composes: cw-muted from global;
+  margin: 0;
+}
+
+/* The mandatory boundary block was touched after review. Said in the failure
+   colour and weight because approving past it is the one mistake this screen
+   exists to stop. */
+.changesAlert {
+  composes: cw-status-failed-text from global;
+  margin: 0;
+  font-weight: 500;
+}
+
+.blockers {
+  composes: cw-status-failed-text from global;
+  margin: 0;
+  font-size: var(--ds-type-label-size);
+}

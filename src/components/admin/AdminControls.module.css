@@ -360,9 +360,12 @@
   font-size: var(--ds-type-body-sm-size);
 }
 
+/* One width for a select that sits in a row of actions. Authorship had it at
+   12rem and publication at 13rem; it is the longest visibility label that sets
+   it, and that label is the same word on both tabs. */
 @media (min-width: 640px) {
   .selectNarrow {
-    width: 12rem;
+    width: 13rem;
   }
 }
 
@@ -376,4 +379,32 @@
   composes: cw-muted from global;
   margin: 0;
   font-size: var(--ds-type-label-size);
+}
+
+/* ── A confirmation you have to type ─────────────────────────────────────
+ * Deleting a course with history asks for its slug. The group is a plate of
+ * its own so the destructive question does not read as one more field of the
+ * row above it.
+ */
+.confirmGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+}
+
+.confirmText {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.confirmLabel {
+  display: block;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.confirmInput {
+  composes: input;
+  margin-top: var(--cw-space-xs);
 }
