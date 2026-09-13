@@ -83,7 +83,6 @@ export function AdminGate({ signedInAs }: { signedInAs: string | null }) {
         <SignInOptions
           googleLabel={t("login_btn")}
           onGoogle={() => void handleSignIn()}
-          onSignedIn={() => router.refresh()}
         />
       </div>
     </div>

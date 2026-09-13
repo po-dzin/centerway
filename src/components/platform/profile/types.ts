@@ -55,8 +55,9 @@ export type ProfileCopy = {
   loadingLead: string;
   authTitle: string;
   authLead: string;
+  authEmailTitle: string;
+  authEmailLead: string;
   signIn: string;
-  returnHome: string;
   takeDosha: string;
   badge: string;
   dosha: string;

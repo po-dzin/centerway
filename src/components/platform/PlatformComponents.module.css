@@ -842,3 +842,99 @@
   gap: var(--cw-space-xs);
   flex: 0 0 auto;
 }
+
+/* THE DOOR'S SECOND ROW (2026-09-10).
+
+   Asking for the code again and changing the address are both ways of saying
+   "that did not work" — they are repairs, not the act. As full-width secondary
+   buttons they were two more slabs under a panel that already had two, and the
+   screen read as a form with four choices instead of a door with one. Quiet
+   text, side by side, is the whole difference. */
+.signInQuietButton {
+  composes: text from "./PlatformButtons.module.css";
+  composes: hug from "./PlatformButtons.module.css";
+}
+
+.signInQuietRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-sm);
+  justify-content: center;
+}
+
+/* THE DOOR IS NOT A HEADLINE (2026-09-10). The other three states off
+   `StatePanel` — loading, error, disabled — are each seen once per visit and
+   earn the platform's full editorial voice: the largest heading step, a
+   paragraph lead. The sign-in door is seen every time someone who is not
+   signed in reaches `/learn` or `/profile`, and what it is for is the input
+   two lines down, not the sentence above it. `--ds-type-display-size` is the
+   step the rest of the platform already reaches for when a heading is present
+   but not the loudest thing on the page (`.videoDecisionTitle`,
+   PlatformBlocksOrientation.module.css) — reused here rather than a new size,
+   because a door does not need its own type step to be quieter than a title. */
+/* THE WORD BETWEEN TWO DOORS, AND THE TWO STROKES THAT HOLD IT (2026-09-10).
+
+   A hairline here would be the wrong language twice over. This panel's
+   separators are drawn marks and not borders — that is the whole of «the three
+   strengths of a stroke» in docs/design-system.md — and a hard rule laid across
+   a panel reads as the edge of a cell rather than as a pause between two
+   choices.
+
+   So it is the system's own `ink-stroke`, the same pen that underlines the nav
+   row you are on, taken at its quietest strength and laid flat either side of
+   the word. The recipe is not invented here and must not drift from the one in
+   globals.css: the box is `--cw-ink-stroke-height`, and the transform restates
+   `--cw-ink-stroke-weight` because the sprite is a 36-unit drawing squeezed
+   into a 0.85rem band and renders at about a third of its drawn weight without
+   it. The second stroke is the first one mirrored, so both pens land at the
+   outside and lift toward the word. */
+.signInOr {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--cw-space-sm);
+}
+
+/* The rule is `cw-ink-rule`, baked 2026-09-10 — the symbol
+   `docs/design-system.md` had been describing for a while and the sprite did
+   not have. It holds one y, carries a quieter hand than the rest of the sprite
+   and is drawn at 0.9 against the set's 1.5, so unlike `ink-stroke` it needs no
+   tilt taken out of it and no slope fought: what is left to do here is undo the
+   band squeeze.
+
+   THE SQUEEZE, AND WHY THE NUMBER IS NOT 1. The mark renders into a 0.85rem
+   box against a 36-unit drawing, so its intrinsic vertical scale is 0.378 —
+   a 0.9 stroke lands at a third of a pixel and reads as nothing.
+   `--cw-ink-rule-weight` (2.9) brings it back to about one. It is the same
+   correction `.cw-ink-label-mark` makes with `--cw-ink-stroke-weight`, and it
+   sits beside it in `cw.tokens.json` for the same reason: an axis with no
+   token is an axis that will diverge the moment a second consumer appears.
+
+   The mirror is not decoration: it puts the heavier landing dot at the outside
+   of both strokes, so the pair reads as two pens lifting toward the word rather
+   than as one line interrupted by it. */
+.signInOrMark {
+  width: 100%;
+  height: var(--cw-ink-stroke-height);
+  color: var(--cw-nav-marker);
+  opacity: 0.5;
+  transform: scaleY(var(--cw-ink-rule-weight));
+}
+
+.signInOrMark:last-child {
+  transform: scaleX(-1) scaleY(var(--cw-ink-rule-weight));
+}
+
+.profileDoorPanel {
+  gap: var(--cw-space-sm);
+}
+
+.profileDoorTitle {
+  font-size: var(--ds-type-display-size);
+  line-height: 1.08;
+  max-width: none;
+}
+
+.profileDoorLead {
+  max-width: 30rem;
+}

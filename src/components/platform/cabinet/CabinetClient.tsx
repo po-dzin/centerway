@@ -150,7 +150,6 @@ export function CabinetClient() {
   const productsHref = href("/products");
   const shelfHref = href(LEARNING_SHELF_HREF);
   const journalHref = href(JOURNAL_HREF);
-  const homeHref = href("/");
 
   const ownedCourses = useMemo(() => (shelf ?? []).filter((course) => course.access !== "locked"), [shelf]);
 
@@ -178,7 +177,6 @@ export function CabinetClient() {
     loading: sessionLoading || profileLoading,
     session,
     error,
-    homeHref,
     onSignIn: () => void signInWithGoogle(),
   });
   if (gate) return gate;

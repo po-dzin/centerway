@@ -16,6 +16,7 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import styles from "@/components/platform/PlatformSurfaceStyles";
+import { useOptionalToast } from "@/components/ToastProvider";
 import { supabaseClient } from "@/lib/supabaseClient";
 import {
   OTP_CODE_LENGTH,
@@ -31,17 +32,16 @@ const RESEND_COOLDOWN_SECONDS = 60;
 
 const copy = {
   emailLabel: "Електронна пошта",
-  emailHint: "Та сама адреса, яку ви вказали під час оплати.",
+  emailHint: "Та сама, що й під час оплати.",
   send: "Надіслати код",
   sending: "Надсилаємо...",
   codeLabel: `Код із листа (${OTP_CODE_LENGTH} цифр)`,
-  codeSentTo: (email: string) => `Ми надіслали код на ${email}. Лист іде до хвилини.`,
-  verify: "Увійти",
+  codeSentTo: (email: string) => `Код надіслано на ${email}. Немає листа — подивіться у спамі.`,
   verifying: "Перевіряємо...",
-  resend: "Надіслати код ще раз",
-  resendIn: (seconds: number) => `Надіслати ще раз можна через ${seconds} с`,
+  resend: "Надіслати ще раз",
+  resendIn: (seconds: number) => `Ще раз через ${seconds} с`,
   changeEmail: "Змінити адресу",
-  checkSpam: "Не бачите листа — перевірте теку зі спамом.",
+  back: "Назад",
 } as const;
 
 const failureCopy: Record<SignInFailure, string> = {
@@ -57,14 +57,26 @@ const INVALID_EMAIL_MESSAGE = failureCopy.invalid_email;
 
 type Step = "email" | "code";
 
-export function EmailSignIn({ onSignedIn }: { onSignedIn?: () => void }) {
+export function EmailSignIn({
+  onSignedIn,
+  onBack,
+}: {
+  onSignedIn?: () => void;
+  /** The way out of this door and back to the choice of doors. */
+  onBack?: () => void;
+}) {
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const codeInputRef = useRef<HTMLInputElement>(null);
+  /* Failures leave as notifications, not as a paragraph inside the panel. A
+     line that appears between the form and its button re-lays out the card
+     under the reader's thumb — the same reason every other surface on the
+     platform reports results through the toast viewport. */
+  const toast = useOptionalToast();
+  const report = useCallback((message: string) => toast?.error(message), [toast]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -78,14 +90,14 @@ export function EmailSignIn({ onSignedIn }: { onSignedIn?: () => void }) {
     if (step === "code") codeInputRef.current?.focus();
   }, [step]);
 
-  const sendCode = useCallback(async (address: string) => {
-    setBusy(true);
-    setError(null);
+  const sendCode = useCallback(
+    async (address: string) => {
+      setBusy(true);
 
-    const { error: sendError } = await supabaseClient.auth.signInWithOtp({
-      email: address,
-      options: {
-        /* A buyer who has never signed in HAS no account yet — the purchase
+      const { error: sendError } = await supabaseClient.auth.signInWithOtp({
+        email: address,
+        options: {
+          /* A buyer who has never signed in HAS no account yet — the purchase
              was made against an email, not an account. Refusing to create one
              here would turn the fix back into the wall it replaces. */
         shouldCreateUser: true,
@@ -98,43 +110,43 @@ export function EmailSignIn({ onSignedIn }: { onSignedIn?: () => void }) {
 
     setBusy(false);
 
-    const failure = classifySignInError(sendError);
-    if (failure) {
-      setError(failureCopy[failure]);
-      return false;
-    }
+      const failure = classifySignInError(sendError);
+      if (failure) {
+        report(failureCopy[failure]);
+        return false;
+      }
 
-    setStep("code");
-    setCooldown(RESEND_COOLDOWN_SECONDS);
-    return true;
-  }, []);
+      setStep("code");
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+      return true;
+    },
+    [report]
+  );
 
   const onSubmitEmail = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       const address = normalizeSignInEmail(email);
       if (!address) {
-        setError(INVALID_EMAIL_MESSAGE);
+        report(INVALID_EMAIL_MESSAGE);
         return;
       }
       setEmail(address);
       await sendCode(address);
     },
-    [email, sendCode],
+    [email, report, sendCode]
   );
 
-  const onSubmitCode = useCallback(
-    async (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
+  const verify = useCallback(
+    async (token: string) => {
       const address = normalizeSignInEmail(email);
-      if (!address || !isCompleteOtpCode(code)) return;
+      if (!address || !isCompleteOtpCode(token)) return;
 
       setBusy(true);
-      setError(null);
 
       const { error: verifyError } = await supabaseClient.auth.verifyOtp({
         email: address,
-        token: code,
+        token,
         type: "email",
       });
 
@@ -142,7 +154,7 @@ export function EmailSignIn({ onSignedIn }: { onSignedIn?: () => void }) {
 
       const failure = classifySignInError(verifyError);
       if (failure) {
-        setError(failureCopy[failure]);
+        report(failureCopy[failure]);
         setCode("");
         codeInputRef.current?.focus();
         return;
@@ -153,13 +165,28 @@ export function EmailSignIn({ onSignedIn }: { onSignedIn?: () => void }) {
          re-renders into the page the person was trying to reach. */
       onSignedIn?.();
     },
-    [code, email, onSignedIn],
+    [email, onSignedIn, report]
+  );
+
+  /* THE SIXTH DIGIT IS THE SUBMIT. There is nothing left to decide once the
+     code is complete — a button under it only asks the person to confirm that
+     they meant the digits they just typed, and on a phone that button sits
+     under the keyboard that typed them. This runs on the change that completes
+     the code, autofill included, and not from an effect watching the value:
+     the typing IS the submit event. */
+  const onChangeCode = useCallback(
+    (value: string) => {
+      const next = normalizeOtpCode(value);
+      setCode(next);
+      if (!busy && isCompleteOtpCode(next)) void verify(next);
+    },
+    [busy, verify]
   );
 
   if (step === "code") {
     return (
-      <form className={styles.form} onSubmit={onSubmitCode} noValidate>
-        <p className={styles.status}>{copy.codeSentTo(email)}</p>
+      <form className={styles.form} onSubmit={(event) => event.preventDefault()} noValidate>
+        <p className={styles.status}>{busy ? copy.verifying : copy.codeSentTo(email)}</p>
 
         <div className={styles.field}>
           <label htmlFor="cw-signin-code">{copy.codeLabel}</label>
@@ -177,22 +204,15 @@ export function EmailSignIn({ onSignedIn }: { onSignedIn?: () => void }) {
             enterKeyHint="go"
             maxLength={OTP_CODE_LENGTH}
             value={code}
-            onChange={(event) => setCode(normalizeOtpCode(event.target.value))}
+            disabled={busy}
+            onChange={(event) => onChangeCode(event.target.value)}
             required
           />
         </div>
 
-        {error ? <p className={`${styles.status} ${styles.error}`}>{error}</p> : null}
-
-        <button className={styles.primaryButton} type="submit" disabled={busy || !isCompleteOtpCode(code)}>
-          {busy ? copy.verifying : copy.verify}
-        </button>
-
-        <p className={styles.status}>{copy.checkSpam}</p>
-
-        <div className={styles.heroFooter}>
+        <div className={styles.signInQuietRow}>
           <button
-            className={styles.secondaryButton}
+            className={styles.signInQuietButton}
             type="button"
             disabled={busy || cooldown > 0}
             onClick={() => void sendCode(email)}
@@ -200,12 +220,12 @@ export function EmailSignIn({ onSignedIn }: { onSignedIn?: () => void }) {
             {cooldown > 0 ? copy.resendIn(cooldown) : copy.resend}
           </button>
           <button
-            className={styles.secondaryButton}
+            className={styles.signInQuietButton}
             type="button"
+            disabled={busy}
             onClick={() => {
               setStep("email");
               setCode("");
-              setError(null);
             }}
           >
             {copy.changeEmail}
@@ -241,11 +261,19 @@ export function EmailSignIn({ onSignedIn }: { onSignedIn?: () => void }) {
 
       <p className={styles.status}>{copy.emailHint}</p>
 
-      {error ? <p className={`${styles.status} ${styles.error}`}>{error}</p> : null}
-
+      {/* Primary here, unlike on the choice screen: this step is a screen of
+          its own now, and the only thing on it to do. */}
       <button className={styles.primaryButton} type="submit" disabled={busy}>
         {busy ? copy.sending : copy.send}
       </button>
+
+      {onBack ? (
+        <div className={styles.signInQuietRow}>
+          <button className={styles.signInQuietButton} type="button" onClick={onBack}>
+            {copy.back}
+          </button>
+        </div>
+      ) : null}
     </form>
   );
 }
