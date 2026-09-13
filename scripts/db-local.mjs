@@ -297,8 +297,22 @@ function reset() {
       : "drop schema if exists public cascade; create schema public;",
   ]);
 
-  const grants =
-    "grant usage on schema public to anon, authenticated, service_role; grant all on schema public to postgres;";
+  /* THE DUMP CARRIES NO ACL (2026-09-13). Only `postgres` could touch the 40
+     tables it creates, so the service-role client got «permission denied for
+     table user_roles» and the admin gate told a seeded admin it had no role.
+     These are the grants Supabase gives a fresh project; RLS still decides
+     what anon and authenticated see, exactly as on production. Default
+     privileges cover the tables 020/030/040 and later migrations create. */
+  const grants = [
+    "grant usage on schema public to anon, authenticated, service_role",
+    "grant all on schema public to postgres",
+    "grant all on all tables in schema public to anon, authenticated, service_role",
+    "grant all on all sequences in schema public to anon, authenticated, service_role",
+    "grant all on all functions in schema public to anon, authenticated, service_role",
+    "alter default privileges in schema public grant all on tables to anon, authenticated, service_role",
+    "alter default privileges in schema public grant all on sequences to anon, authenticated, service_role",
+    "alter default privileges in schema public grant all on functions to anon, authenticated, service_role",
+  ].join("; ");
 
   for (const file of ["010_schema.sql", "030_accounts.sql", "020_content.sql", "040_people.sql"]) {
     const full = path.join(localDir, file);
