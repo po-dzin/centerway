@@ -40,10 +40,15 @@
 
 /* ── Who they are ──────────────────────────────────────────────────────── */
 
+/* THE FACTS WRAP UNDER THE NAME ON A PHONE (2026-09-13). Side by side at 375px
+   the identity column got what the avatar and the facts left over: the name
+   ellipsised to «Оксана …» and the UUID broke into four lines. Below 640px the
+   facts take their own row, left-aligned, so the name has the card's width. */
 .head {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
-  gap: var(--cw-space-lg);
+  gap: var(--cw-space-sm) var(--cw-space-lg);
 }
 
 .avatar {
@@ -83,8 +88,11 @@
 .id {
   composes: cw-muted from global;
   margin: var(--cw-space-2xs) 0 0;
+  overflow: hidden;
   font-family: var(--cw-font-data);
   font-size: var(--ds-type-label-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tags {
@@ -108,9 +116,39 @@
   font-style: italic;
 }
 
+.identity {
+  flex-basis: calc(100% - 3.5rem - var(--cw-space-lg));
+}
+
 .facts {
-  flex: 0 0 auto;
-  text-align: right;
+  flex: 1 0 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--cw-space-xs);
+  padding-left: calc(3.5rem + var(--cw-space-lg));
+}
+
+.facts > * {
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .identity {
+    flex-basis: auto;
+  }
+
+  .facts {
+    flex: 0 0 auto;
+    display: block;
+    padding-left: 0;
+    text-align: right;
+  }
+
+  .factStrong,
+  .factGap {
+    margin-top: var(--cw-space-2xs);
+  }
 }
 
 .factLine {

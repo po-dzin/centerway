@@ -296,24 +296,47 @@ function CourseLinks({ row }: { row: CatalogRow }) {
   );
 }
 
-/** The state chain a course walks, printed as chips so the stuck step is visible. */
+/** The state chain a course walks, printed as chips so the stuck step is visible.
+ *
+ * WORDS, NOT COLUMN VALUES (2026-09-13). The chips used to print the raw enum —
+ * «DRAFT DRAFT HIDDEN» — and the two drafts are different facts: the author has
+ * not published, and the review was never submitted. Each chip now names its
+ * axis, so the stuck step reads without knowing the schema. An unknown value
+ * falls back to itself rather than to a blank chip. */
 function StateChips({ row }: { row: CatalogRow }) {
   const { t } = useI18n();
   const chip = lists.tag;
 
+  const statusLabel: Record<string, string> = {
+    draft: t("catalog_status_draft"),
+    published: t("catalog_status_published"),
+  };
+  const reviewLabel: Record<string, string> = {
+    draft: t("catalog_review_draft"),
+    in_review: t("catalog_review_in_review"),
+    changes_requested: t("catalog_review_changes_requested"),
+    approved: t("catalog_review_approved"),
+  };
+  const visibilityLabel: Record<CatalogRow["visibility"], string> = {
+    hidden: t("catalog_visibility_hidden"),
+    unlisted: t("catalog_visibility_unlisted"),
+    listed: t("catalog_visibility_listed"),
+  };
+  const pendingReview = row.pendingReviewStatus ?? "draft";
+
   return (
     <div className={lists.chipRow}>
-      <span className={chip}>{row.status}</span>
+      <span className={chip}>{statusLabel[row.status] ?? row.status}</span>
       {/* THE CHIP SAYS WHAT THE BUTTONS BELOW OBEY. It used to print the
                 LIVE review status beside the «оновлення» word, so a returned
                 revision on an approved course read «ОНОВЛЕННЯ · APPROVED» —
                 the one state where there is nothing to approve. */}
       <span className={chip}>
         {row.hasPendingRevision
-          ? `${t("catalog_pending_revision")} · ${row.pendingReviewStatus ?? "draft"}`
-          : row.reviewStatus}
+          ? `${t("catalog_pending_revision")} · ${reviewLabel[pendingReview] ?? pendingReview}`
+          : (reviewLabel[row.reviewStatus] ?? row.reviewStatus)}
       </span>
-      <span className={chip}>{row.visibility}</span>
+      <span className={chip}>{visibilityLabel[row.visibility] ?? row.visibility}</span>
       {row.blockers.length === 0 ? <span className={lists.tagOnSale}>{t("catalog_on_sale")}</span> : null}
     </div>
   );
