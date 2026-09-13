@@ -39,6 +39,12 @@ async function clickFirstEnabledOption(page) {
   return true;
 }
 
+// Choosing and moving on are separate acts: the pager button advances.
+async function clickForward(page) {
+  const forward = page.getByRole("button", { name: /^(Далі|Завершити тест)$/ }).first();
+  await forward.click({ timeout: timeoutMs });
+}
+
 async function readCurrentStep(page) {
   const progressLabel = page.getByText(/Питання\s+\d+\s+з\s+12/i).first();
   const count = await progressLabel.count();
@@ -125,8 +131,10 @@ async function main() {
   });
 
   try {
+    // networkidle, not domcontentloaded: on a dev build the intro is painted
+    // well before it hydrates, and a click on "Почати тест" before then is lost.
     const response = await page.goto(`${baseUrl}/tests/dosha`, {
-      waitUntil: "domcontentloaded",
+      waitUntil: "networkidle",
       timeout: timeoutMs,
     });
 
@@ -200,6 +208,23 @@ async function main() {
         fail(`step ${step}: no enabled option`);
         break;
       }
+
+      // Step 1 also takes a second mark: two are allowed, the third option waits.
+      if (step === 1) {
+        await page
+          .locator('button[data-dosha-option][aria-pressed="false"]:enabled')
+          .first()
+          .click({ timeout: timeoutMs });
+        const pressed = await page.locator('button[data-dosha-option][aria-pressed="true"]').count();
+        const unavailable = await page.locator('button[data-dosha-option][aria-pressed="false"]:disabled').count();
+        if (pressed === 2 && unavailable === 1) {
+          pass("step 1: two marks taken, third option unavailable");
+        } else {
+          fail(`step 1: expected 2 marks and 1 unavailable option, got ${pressed} and ${unavailable}`);
+        }
+      }
+
+      await clickForward(page);
 
       if (step < 12) {
         await page
