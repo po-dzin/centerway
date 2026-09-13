@@ -953,7 +953,10 @@
 
 /* The inset the panel gave up, restated on what it holds. Direct children
    only: the theme control's three seats are buttons too, and they are inside a
-   row rather than being one. *
+   row rather than being one. */
+.profileMenu[data-form="organs"] > :is(a, button, .menuIdentity, .menuSetting) {
+  padding-inline: var(--cw-space-md);
+}
 
 .profileMenu[data-form="organs"] > .profileMenuDivider {
   margin-inline: var(--cw-space-md);

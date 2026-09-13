@@ -390,7 +390,10 @@ function Blockers({ row }: { row: CatalogRow }) {
  */
 function ModerationNote({ row }: { row: CatalogRow }) {
   const { t } = useI18n();
-  if (row.reviewStatus === "approved" || row.blockers.includes("not_approved")) return null;
+  /* Only on a course that is actually selling. A draft, a hidden row, a row
+     the shelf cannot render or one without an offer already has the red line
+     above saying why — and printing «продається» under it would be false. */
+  if (row.reviewStatus === "approved" || row.blockers.length > 0) return null;
 
   return <p className="text-xs cw-muted">{t("catalog_not_moderated")}</p>;
 }

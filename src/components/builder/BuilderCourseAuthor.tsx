@@ -248,7 +248,12 @@ export function BuilderCourseAuthor({
         {/* THE WAY BACK. Only an admin sees it, because only an admin may send
             the byline to a profile that is not their own — and only they can
             reach a course whose author they are not, which is the situation
-            that needs undoing. */}
+            that needs undoing.
+
+            selection_family: contour — for the attach/detach buttons above as
+            well as the select and the assign/confirm buttons here. They are
+            field and `secondary` button recipes: state is their own border,
+            ground and focus ring, and no ink mark is drawn. */}
         {roster.length > 0 ? (
           <div className={styles.authorLinkActions}>
             <label className={styles.readOnlyNote} htmlFor="course-author-assign">
