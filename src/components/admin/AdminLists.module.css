@@ -169,3 +169,187 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ── A row that opens something ────────────────────────────────────────────
+ * Jobs open a dialog and customers open a profile, so their whole row is the
+ * control: one horizontal line of badge, identity, and a trailing fact. The
+ * same card as `.item`, laid out as a row.
+ */
+.itemPress {
+  composes: item;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--cw-space-md);
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* The disc a job's status dot sits in. It lifts to the plate's own ground on
+   hover, so the row answers the pointer even where the card itself does not
+   change. `status` in the name is the geometry guard's capsule carve-out. */
+.statusDisc {
+  composes: cw-surface-2 from global;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--cw-radius-pill);
+  transition:
+    background-color var(--cw-motion-state) ease,
+    border-color var(--cw-motion-state) ease;
+}
+
+@media (hover: hover) {
+  .itemPress:hover .statusDisc {
+    background-color: var(--cw-surface);
+    border-color: var(--cw-border);
+  }
+}
+
+.statusDot {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: var(--cw-radius-pill);
+}
+
+/* A running job breathes. This was Tailwind's `animate-pulse`, which is one of
+   the few animations Tailwind ships itself, so unlike `animate-in` it did run. */
+.statusDotLive {
+  composes: statusDot;
+  animation: adminStatusPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes adminStatusPulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .statusDotLive {
+    animation: none;
+  }
+}
+
+.itemTypeCode {
+  margin: 0;
+  overflow: hidden;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemIdFaint {
+  max-width: 12.5rem;
+  overflow: hidden;
+  font-family: var(--cw-font-data);
+  opacity: 0.6;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The failure reason, beside the id, where there is room for it. */
+.itemError {
+  composes: cw-status-failed-text from global;
+  display: none;
+  max-width: 12.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+  .itemError {
+    display: inline-block;
+  }
+}
+
+.itemWhen {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.itemWhenTime {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.itemWhenDate {
+  composes: cw-muted from global;
+  margin: var(--cw-space-2xs) 0 0;
+  font-size: var(--ds-type-label-size);
+}
+
+.itemEnd {
+  flex: 0 0 auto;
+}
+
+.itemTitleMissing {
+  composes: cw-muted from global;
+  font-style: italic;
+}
+
+/* ── A person ──────────────────────────────────────────────────────────── */
+
+.avatar {
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--cw-radius-pill);
+  object-fit: cover;
+}
+
+.avatarFallback {
+  composes: avatar;
+  composes: cw-surface-2 cw-muted from global;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+}
+
+/* How this person was matched — `email`, `phone`, `telegram` — ahead of the
+   value itself. */
+.linkKindTag {
+  composes: cw-surface-2 from global;
+  margin-right: var(--cw-space-2xs);
+  padding: 0 var(--cw-space-2xs);
+  border-radius: var(--cw-radius-pill);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+}
+
+.chips {
+  display: none;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--cw-space-2xs);
+  max-width: 12.5rem;
+}
+
+@media (min-width: 640px) {
+  .chips {
+    display: flex;
+  }
+}
+
+.chipTag {
+  composes: cw-surface-2 cw-muted from global;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+  font-size: var(--ds-type-label-size);
+}

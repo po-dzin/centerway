@@ -99,3 +99,16 @@
   margin: var(--cw-space-xs) 0 0;
   font-size: var(--ds-type-body-sm-size);
 }
+
+/* A page's own body under its header, at the same rhythm as the page. */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-lg);
+}
+
+.resultsNote {
+  composes: cw-muted from global;
+  margin: 0;
+  font-size: var(--ds-type-label-size);
+}

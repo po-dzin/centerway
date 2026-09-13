@@ -9,6 +9,8 @@ import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
 import { Icon } from "@/components/Icon";
+import pageStyles from "@/components/admin/AdminPage.module.css";
+import controls from "@/components/admin/AdminControls.module.css";
 
 interface AuditLogEntry {
   id: string;
@@ -72,10 +74,10 @@ export default function AuditLogPage() {
   const totalPages = Math.ceil(count / LIMIT);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div>
-        <h2 className="cw-page-title text-2xl mb-2">{t("audit_title")}</h2>
-        <p className="cw-page-subtitle">{t("audit_subtitle")}</p>
+    <div className={pageStyles.page}>
+      <div className={pageStyles.heading}>
+        <h2 className={pageStyles.title}>{t("audit_title")}</h2>
+        <p className={pageStyles.subtitle}>{t("audit_subtitle")}</p>
       </div>
 
       {loading ? (
@@ -85,7 +87,7 @@ export default function AuditLogPage() {
           title={t("common_error")}
           message={error}
           action={
-            <button type="button" onClick={() => fetchLogs(page)} className="px-4 py-2 cw-btn cw-surface-2">
+            <button type="button" onClick={() => fetchLogs(page)} className={`${controls.action} cw-surface-2`}>
               {t("analytics_retry")}
             </button>
           }
@@ -95,8 +97,8 @@ export default function AuditLogPage() {
           <AdminEmptyState icon={<Icon className="cw-muted" name="list" size={20} />} description={t("audit_empty")} />
         </div>
       ) : (
-        <div className={`${surfaces.plateFlush} transition-colors duration-300`}>
-          <div className="overflow-x-auto">
+        <div className={surfaces.plateFlush}>
+          <div className={surfaces.scrollX}>
             <table className={surfaces.table}>
               <thead className={surfaces.tableHead}>
                 <tr>
@@ -110,25 +112,19 @@ export default function AuditLogPage() {
               <tbody>
                 {logs.map((log) => (
                   <tr key={log.id} className={surfaces.row}>
-                    <td className={`${surfaces.td} whitespace-nowrap cw-muted font-mono text-xs`}>
-                      {new Date(log.created_at).toLocaleString()}
-                    </td>
-                    <td className={`${surfaces.td} whitespace-nowrap font-mono text-xs`} title={log.actor_id}>
+                    <td className={surfaces.tdCodeMuted}>{new Date(log.created_at).toLocaleString()}</td>
+                    <td className={surfaces.tdCode} title={log.actor_id}>
                       {log.actor_id.substring(0, 8)}...
                     </td>
-                    <td className={`${surfaces.td} cw-text font-medium`}>
-                      <span className="cw-surface-2 px-2 py-1 rounded text-xs transition-colors duration-300">
-                        {log.action}
-                      </span>
+                    <td className={surfaces.tdStrong}>
+                      <span className={surfaces.actionTag}>{log.action}</span>
                     </td>
                     <td className={surfaces.td}>
                       {log.entity_type}{" "}
-                      {log.entity_id ? <span className="cw-muted text-xs">#{log.entity_id}</span> : ""}
+                      {log.entity_id ? <span className={surfaces.entityRef}>#{log.entity_id}</span> : ""}
                     </td>
                     <td className={surfaces.td}>
-                      <pre className="text-[10px] cw-muted font-mono max-w-xs overflow-hidden truncate">
-                        {JSON.stringify(log.metadata)}
-                      </pre>
+                      <pre className={surfaces.metadata}>{JSON.stringify(log.metadata)}</pre>
                     </td>
                   </tr>
                 ))}

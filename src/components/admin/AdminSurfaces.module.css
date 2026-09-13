@@ -179,3 +179,53 @@
   composes: cw-row-hover from global;
   border-top: 1px solid var(--cw-border);
 }
+
+/* ── Cells that hold machine text ──────────────────────────────────────── */
+
+.scrollX {
+  overflow-x: auto;
+}
+
+.tdCode {
+  composes: td;
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  white-space: nowrap;
+}
+
+.tdCodeMuted {
+  composes: tdCode;
+  composes: cw-muted from global;
+}
+
+.tdStrong {
+  composes: td;
+  composes: cw-text from global;
+  font-weight: 500;
+}
+
+/* The verb an audit row records, in a capsule so a column of them reads as a
+   list of actions rather than of sentences. */
+.actionTag {
+  composes: cw-surface-2 from global;
+  display: inline-block;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+  font-size: var(--ds-type-label-size);
+}
+
+.entityRef {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+}
+
+.metadata {
+  composes: cw-muted from global;
+  max-width: 20rem;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

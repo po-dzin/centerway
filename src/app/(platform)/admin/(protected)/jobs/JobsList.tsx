@@ -15,6 +15,9 @@ import { JOB_STATUS_BADGE_CLASS } from "@/lib/admin/adminStatusStyles";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
 import type { JobListItem as Job, JobsPage } from "@/lib/admin/jobs";
 import { Icon } from "@/components/Icon";
+import pageStyles from "@/components/admin/AdminPage.module.css";
+import controls from "@/components/admin/AdminControls.module.css";
+import lists from "@/components/admin/AdminLists.module.css";
 
 /** Same shape as CustomersList: the first page arrives as a prop, the rest via the API. */
 export function JobsList({ initial }: { initial: JobsPage }) {
@@ -122,22 +125,14 @@ export function JobsList({ initial }: { initial: JobsPage }) {
   const totalPages = Math.ceil(count / LIMIT);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="cw-page-title mb-1">{t("jobs_title")}</h2>
-          <p className="cw-page-subtitle">{t("jobs_subtitle")}</p>
-        </div>
+    <div className={pageStyles.page}>
+      <div className={pageStyles.heading}>
+        <h2 className={pageStyles.title}>{t("jobs_title")}</h2>
+        <p className={pageStyles.subtitle}>{t("jobs_subtitle")}</p>
       </div>
 
       {/* Status tabs */}
-      <AdminTabs
-        items={STATUS_TABS}
-        activeKey={activeStatus}
-        onChange={handleStatusChange}
-        className="overflow-x-auto no-scrollbar"
-      />
+      <AdminTabs items={STATUS_TABS} activeKey={activeStatus} onChange={handleStatusChange} />
 
       <AdminSearchInput
         value={q}
@@ -156,7 +151,7 @@ export function JobsList({ initial }: { initial: JobsPage }) {
             <button
               type="button"
               onClick={() => fetchJobs(debouncedQ, activeStatus, page)}
-              className="px-4 py-2 cw-btn cw-surface-2"
+              className={`${controls.action} cw-surface-2`}
             >
               {t("analytics_retry")}
             </button>
@@ -169,41 +164,47 @@ export function JobsList({ initial }: { initial: JobsPage }) {
           description={q || activeStatus ? t("jobs_try_filters") : t("jobs_queue_empty")}
         />
       ) : (
-        <div className="space-y-1.5">
+        <div className={lists.list}>
           {data.map((job) => (
             <button
               key={job.id}
               type="button"
               onClick={() => setSelectedJob(job)}
-              className="cw-list-item w-full text-left flex items-center gap-4 p-4 cursor-pointer group"
+              className={lists.itemPress}
               title={t("jobs_details")}
             >
-              <div className="w-10 h-10 rounded-full cw-surface-2 flex items-center justify-center shrink-0 group-hover:bg-[var(--cw-surface)] transition-colors border border-transparent group-hover:border-[var(--cw-border)]">
+              <div className={lists.statusDisc}>
                 <span
-                  className={`w-2.5 h-2.5 rounded-full ${job.status === "success" ? "cw-status-success-dot" : job.status === "failed" ? "cw-status-failed-dot" : job.status === "running" ? "cw-status-running-dot animate-pulse" : "cw-status-pending-dot"}`}
+                  className={`${job.status === "running" ? lists.statusDotLive : lists.statusDot} ${
+                    job.status === "success"
+                      ? "cw-status-success-dot"
+                      : job.status === "failed"
+                        ? "cw-status-failed-dot"
+                        : job.status === "running"
+                          ? "cw-status-running-dot"
+                          : "cw-status-pending-dot"
+                  }`}
                 />
               </div>
 
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-sm font-medium cw-text font-mono break-all line-clamp-1">{job.type}</p>
+              <div className={lists.itemBody}>
+                <div className={lists.itemTitleRow}>
+                  <p className={lists.itemTypeCode}>{job.type}</p>
                   <span className={JOB_STATUS_BADGE_CLASS[job.status]}>{statusLabels[job.status]}</span>
                 </div>
-                <div className="text-xs cw-muted flex items-center gap-3">
-                  <span className="truncate max-w-[200px] font-mono opacity-60">{job.id}</span>
+                <div className={lists.itemMeta}>
+                  <span className={lists.itemIdFaint}>{job.id}</span>
                   {job.status === "failed" && job.error_text && (
-                    <span className="cw-status-failed-text truncate hidden sm:inline-block max-w-[200px]">
-                      {job.error_text}
-                    </span>
+                    <span className={lists.itemError}>{job.error_text}</span>
                   )}
                 </div>
               </div>
 
-              <div className="text-right shrink-0">
-                <p className="text-sm font-medium cw-text tabular-nums">
+              <div className={lists.itemWhen}>
+                <p className={lists.itemWhenTime}>
                   {new Date(job.created_at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
                 </p>
-                <p className="text-xs cw-muted mt-0.5">
+                <p className={lists.itemWhenDate}>
                   {new Date(job.created_at).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
                 </p>
               </div>
