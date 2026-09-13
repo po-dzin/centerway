@@ -56,6 +56,15 @@ const localDir = path.join(rootDir, "supabase", "local");
 // Hardcoded on purpose — see SAFETY above. Never read from the environment.
 const LOCAL_DB_URL = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 
+/* THE CONTENT LOAD NEEDS THE STACK'S SUPERUSER (2026-09-13). The content dump
+   is taken with `--disable-triggers`, which writes `ALTER TABLE … DISABLE
+   TRIGGER ALL` around each table so rows can land in any order past foreign
+   keys — and disabling a system trigger is a superuser act. In the local
+   Supabase image `postgres` is not a superuser (`rolsuper = f`); `supabase_admin`
+   is. Same host, same port, same fixed local password: this is still only ever
+   the stack on this machine, and `assertLocal()` has run before it is used. */
+const LOCAL_SUPERUSER_URL = "postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres";
+
 /**
  * Tables whose rows are content, not people. Everything not listed here is
  * either invented in 040_people.sql or left empty (events, jobs, audit_log,
@@ -241,9 +250,24 @@ function assertLocal() {
   } catch {
     throw new Error("no database on 127.0.0.1:54322 — start the stack first: supabase start");
   }
-  if (answer !== "54322") {
-    throw new Error(`127.0.0.1:54322 answered as port ${answer}; refusing to write`);
+  /* THE CONTAINER ANSWERS WITH ITS OWN PORT (2026-09-13). The stack runs
+     Postgres inside Docker on 5432 and publishes it on the host as 54322, so
+     `current_setting('port')` reports 5432 from the real local stack — and this
+     check refused the one database it exists to allow. It was never proving
+     "this is local" by the port anyway: what proves that is that the
+     connection above SUCCEEDED with the stack's fixed `postgres:postgres`
+     credentials on 127.0.0.1, which no production host accepts, and that the
+     CLI itself reports this exact URL as its database.
+
+     So a 5432 answer is accepted only when `supabase status` confirms the
+     stack owns 127.0.0.1:54322. Anything else still refuses. */
+  if (answer === "54322") return;
+  if (answer === "5432") {
+    const status = spawnSync("supabase", ["status", "-o", "env"], { encoding: "utf8" });
+    const reported = /^DB_URL="?([^"\n]+)"?$/m.exec(status.stdout ?? "")?.[1];
+    if (status.status === 0 && reported === LOCAL_DB_URL) return;
   }
+  throw new Error(`127.0.0.1:54322 answered as port ${answer} and is not the local stack; refusing to write`);
 }
 
 function reset() {
@@ -255,13 +279,26 @@ function reset() {
         .sort()
     : [];
 
+  /* THE DUMP MAY CREATE THE SCHEMA ITSELF (2026-09-13). A current `pg_dump
+     --schema=public` writes `CREATE SCHEMA public;` near its top, and this used
+     to create the schema first — so the rebuild died on line 30 with «schema
+     "public" already exists», after it had already dropped everything. The
+     schema is only pre-created when the dump does not do it, and the grants
+     move to after the dump, where the schema exists either way. */
+  const schemaFile = path.join(localDir, "010_schema.sql");
+  const dumpCreatesSchema =
+    fs.existsSync(schemaFile) && /^CREATE SCHEMA public;$/m.test(fs.readFileSync(schemaFile, "utf8"));
+
   console.log("dropping public schema");
   psql(LOCAL_DB_URL, [
     "-c",
-    "drop schema if exists public cascade; create schema public; " +
-      "grant usage on schema public to anon, authenticated, service_role; " +
-      "grant all on schema public to postgres;",
+    dumpCreatesSchema
+      ? "drop schema if exists public cascade;"
+      : "drop schema if exists public cascade; create schema public;",
   ]);
+
+  const grants =
+    "grant usage on schema public to anon, authenticated, service_role; grant all on schema public to postgres;";
 
   for (const file of ["010_schema.sql", "030_accounts.sql", "020_content.sql", "040_people.sql"]) {
     const full = path.join(localDir, file);
@@ -270,7 +307,9 @@ function reset() {
       continue;
     }
     console.log(`  ${file}`);
-    psql(LOCAL_DB_URL, ["-f", full], { stdio: ["ignore", "ignore", "inherit"] });
+    const target = file === "020_content.sql" ? LOCAL_SUPERUSER_URL : LOCAL_DB_URL;
+    psql(target, ["-f", full], { stdio: ["ignore", "ignore", "inherit"] });
+    if (file === "010_schema.sql") psql(LOCAL_DB_URL, ["-c", grants]);
   }
 
   // Last, and against populated tables — see ORDER OF ASSEMBLY above.
