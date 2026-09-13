@@ -859,12 +859,15 @@
    fragment and «Деталі програми» breaks inside its button. The card keeps what
    a reader compares on: the frame, the eyebrow, the name, the price, «Деталі». */
 @container (max-width: 14rem) {
-  .programTileDescription,
-  .programTileCategories,
-  .programTilePoints,
-  .programTilePretitle,
-  .programTilePosttitle,
-  .programTileMeta {
+  /* Doubled and element-qualified on purpose: the rules that SHOW these —
+     `.programTileBody p:not(.label)` (0,2,1) — outrank a single class, and every
+     one of these lines is a `p` inside the body, and a query that loses the cascade hides nothing. */
+  .programTileBody p.programTileDescription,
+  .programTileBody .programTileCategories,
+  .programTileBody .programTilePoints,
+  .programTileBody p.programTilePretitle,
+  .programTileBody p.programTilePosttitle,
+  .programTileBody p.programTileMeta {
     display: none;
   }
 
