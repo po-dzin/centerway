@@ -28,33 +28,33 @@ CREATE TABLE IF NOT EXISTS public.lms_course_revisions (
   CONSTRAINT lms_course_revisions_source_fk
     FOREIGN KEY (course_id, source_revision_id)
     REFERENCES public.lms_course_revisions(course_id, id)
-)
+);
 
 ALTER TABLE public.lms_courses
   ADD COLUMN IF NOT EXISTS revision_seq bigint NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS draft_generation bigint NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS published_revision_id uuid
+  ADD COLUMN IF NOT EXISTS published_revision_id uuid;
 
-ALTER TABLE public.lms_courses DROP CONSTRAINT IF EXISTS lms_courses_published_revision_fk
+ALTER TABLE public.lms_courses DROP CONSTRAINT IF EXISTS lms_courses_published_revision_fk;
 
 ALTER TABLE public.lms_courses ADD CONSTRAINT lms_courses_published_revision_fk
   FOREIGN KEY (id, published_revision_id)
   REFERENCES public.lms_course_revisions(course_id, id)
-  ON DELETE SET NULL
+  ON DELETE SET NULL;
 
 CREATE INDEX IF NOT EXISTS idx_lms_course_revisions_timeline
-  ON public.lms_course_revisions(course_id, revision_number DESC)
+  ON public.lms_course_revisions(course_id, revision_number DESC);
 
-ALTER TABLE public.lms_course_revisions ENABLE ROW LEVEL SECURITY
+ALTER TABLE public.lms_course_revisions ENABLE ROW LEVEL SECURITY;
 
-REVOKE ALL ON TABLE public.lms_course_revisions FROM anon, authenticated
+REVOKE ALL ON TABLE public.lms_course_revisions FROM anon, authenticated;
 
 -- Revisions are append-only even for the server role. Course deletion can
 -- still cascade through the foreign key; application code cannot rewrite or
 -- erase individual historical snapshots.
-REVOKE ALL ON TABLE public.lms_course_revisions FROM service_role
+REVOKE ALL ON TABLE public.lms_course_revisions FROM service_role;
 
-GRANT SELECT, INSERT ON TABLE public.lms_course_revisions TO service_role
+GRANT SELECT, INSERT ON TABLE public.lms_course_revisions TO service_role;
 
 CREATE OR REPLACE FUNCTION public.create_lms_course_revision(
   p_course_id uuid,
@@ -95,8 +95,8 @@ BEGIN
   RETURNING lms_course_revisions.id, lms_course_revisions.revision_number,
     lms_course_revisions.created_at;
 END;
-$$
+$$;
 
-REVOKE ALL ON FUNCTION public.create_lms_course_revision(uuid, text, jsonb, text, uuid, text, uuid, uuid) FROM PUBLIC, anon, authenticated
+REVOKE ALL ON FUNCTION public.create_lms_course_revision(uuid, text, jsonb, text, uuid, text, uuid, uuid) FROM PUBLIC, anon, authenticated;
 
-GRANT EXECUTE ON FUNCTION public.create_lms_course_revision(uuid, text, jsonb, text, uuid, text, uuid, uuid) TO service_role
+GRANT EXECUTE ON FUNCTION public.create_lms_course_revision(uuid, text, jsonb, text, uuid, text, uuid, uuid) TO service_role;
