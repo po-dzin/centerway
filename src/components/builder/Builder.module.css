@@ -2072,6 +2072,7 @@
 }
 
 .courseRow {
+  position: relative;
   display: flex;
   /* THE WRAP THE CONFIRMATION WAS ALREADY ASKING FOR. `.confirmRow` declares
      `flex: 1 1 100%` — "give me my own line" — and this container was
@@ -2126,6 +2127,23 @@
 .courseRowMain:focus-visible {
   outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
   outline-offset: var(--ds-focus-ring-offset);
+}
+
+/* THE WHOLE ROW OPENS THE COURSE, not only the title's box. The link's own
+   pseudo-element is stretched over the row, so it stays one target in the tab
+   order and the accessibility tree; the menu and a confirmation are lifted
+   above it and keep their own clicks. */
+.courseRowMain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+.courseRow > :not(.courseRowMain) {
+  position: relative;
+  z-index: 2;
 }
 
 .courseRowTitle {
@@ -2327,6 +2345,18 @@
 .courseCardFace:focus-visible {
   outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
   outline-offset: var(--ds-focus-ring-offset);
+}
+
+/* The face's link reaches the card's padding too: stretched over `.courseCard`
+   (which is positioned) under the corner menu (z-index 2) and the confirmation
+   that covers the card, so a click anywhere on the card opens the course and
+   the contour already says the whole card is the target. */
+.courseCardFace::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
 }
 
 /* The cover and the badge worn on it. Positioned so the badge has a corner to

@@ -423,8 +423,24 @@
    copy lengths still line their buttons up. */
 .shelfCardAction {
   composes: row from "../PlatformButtons.module.css";
+  position: relative;
+  z-index: 3;
   margin-top: auto;
   padding-top: var(--cw-space-2xs);
+}
+
+/* THE CARD OPENS WHAT ITS PRIMARY BUTTON OPENS. A pointer-only shortcut laid
+   over the card (the material makes it positioned): the visible buttons stay
+   the real links, lifted above it, so the tab order and the accessibility tree
+   still hold one target per destination — the overlay is hidden from both. */
+.cardOverlay {
+  position: absolute;
+  inset: 0;
+  /* 2, not 1: the material lifts every child of the card to z-index 1 to clear
+     its grain (`[data-cw-material] > *` in globals.css), and those children come
+     after the overlay in the markup, so at 1 they covered it. */
+  z-index: 2;
+  border-radius: inherit;
 }
 
 /* THE DOT, ON THE AVATAR — not a line under the row any more. Reachability is
@@ -609,6 +625,8 @@
 .actions {
   composes: compact from "../PlatformButtons.module.css";
   composes: row from "../PlatformButtons.module.css";
+  position: relative;
+  z-index: 3;
   margin-top: auto;
   padding-top: var(--cw-space-2xs);
 }

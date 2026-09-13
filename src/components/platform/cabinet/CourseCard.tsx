@@ -111,6 +111,8 @@ export function CourseCard({
 
   return (
     <article className={course.access === "locked" ? styles.cardMuted : styles.card} {...matte} data-cw-edge="none">
+      {/* The whole card opens what the primary button opens; see `.cardOverlay`. */}
+      <MotionLink className={styles.cardOverlay} href={href(action.href)} aria-hidden="true" tabIndex={-1} />
       {/* THE COVER'S OWN CORNER, NOT THE META ROW. A draft is a fact about the
           COURSE — it holds whether or not it has steps, a day, or any progress
           to report — and sitting it in `.chipRow` meant the row's shape changed
@@ -229,6 +231,7 @@ export function CompactCourseCard({
 
   return (
     <article className={styles.shelfCard} {...glassMedia}>
+      <MotionLink className={styles.cardOverlay} href={href(action.href)} aria-hidden="true" tabIndex={-1} />
       <CourseCover course={course} />
       <h3 className={styles.shelfCardTitle}>{course.title}</h3>
       {/* Where you stopped, or — for a course not started — what it costs to
