@@ -11,7 +11,7 @@ import { InteractionInkIcon } from "@/components/platform/InteractionInk";
  *
  *   lead      a thumbnail, avatar or status mark — optional
  *   body      one fixed line per fact, in this order:
- *               title · sub · badges · meta · note · links
+ *               title · sub · badges · meta · links · note
  *   controls  the row's standing decisions: a state select, icon actions.
  *             Right of the body from 900px, under it on a phone.
  *   footer    full width: edit forms and moderation.
@@ -27,7 +27,9 @@ import { InteractionInkIcon } from "@/components/platform/InteractionInk";
  *
  * `undefined` omits a slot; `null` keeps its line empty. A list whose rows only
  * sometimes have a note passes `null` for the rest, so the note line is held
- * and the rows stay the same height.
+ * and the rows stay the same height. The note is the LAST line for that reason:
+ * held empty at the foot of the body it reads as the card's own padding, where
+ * between the meta and the links it read as a hole (2026-09-14).
  *
  * Destructive actions are icons in the controls; their confirmation is a
  * dialog, never a form unfolding inside the row.
@@ -77,6 +79,11 @@ export function AdminRow({
             {meta}
           </div>
         ) : null}
+        {links !== undefined ? (
+          <div className={lists.rowLine} data-slot="links">
+            {links}
+          </div>
+        ) : null}
         {note !== undefined ? (
           <p
             className={lists.rowLine}
@@ -86,11 +93,6 @@ export function AdminRow({
           >
             {note}
           </p>
-        ) : null}
-        {links !== undefined ? (
-          <div className={lists.rowLine} data-slot="links">
-            {links}
-          </div>
         ) : null}
       </div>
       {controls ? <div className={lists.rowControls}>{controls}</div> : null}
