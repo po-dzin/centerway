@@ -169,6 +169,18 @@ describe("listCatalog", () => {
 });
 
 describe("saveOffer", () => {
+  it("writes the storefront words for the term it sets, so the page and the offer agree", async () => {
+    await saveOffer({ courseId: "course-reset", actorId: ADMIN, amount: 990, accessDays: 180 });
+    expect(db.rows("lms_courses")[0]).toMatchObject({ access_note: "Пів року" });
+
+    await saveOffer({ courseId: "course-reset", actorId: ADMIN, amount: 990, accessLifetime: true });
+    expect(db.rows("lms_courses")[0]).toMatchObject({ access_note: "Назавжди" });
+
+    // A catalogue term the author's presets do not offer still gets words.
+    await saveOffer({ courseId: "course-reset", actorId: ADMIN, amount: 990, accessDays: 14 });
+    expect(db.rows("lms_courses")[0]).toMatchObject({ access_note: "14 днів" });
+  });
+
   it("writes the price and the term together", async () => {
     seed([course()], []);
 

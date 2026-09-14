@@ -33,6 +33,7 @@ import {
   type CourseVisibility,
 } from "@/lms-core";
 import { BuilderCoverEditor } from "./BuilderCoverEditor";
+import { ACCESS_TERM_NOTES, type AccessTermNote } from "@/lib/lms/accessTerm";
 import { ChoiceRow, ChoiceSet, FieldInput, RequiredMark } from "./BuilderFields";
 import { PALETTE_LABELS } from "./coursePalettes";
 import styles from "./Builder.module.css";
@@ -86,12 +87,12 @@ const CATEGORY_LABELS: Record<CourseCategory, string> = {
 };
 
 /**
- * The words an author picks from for «Термін доступу», not free text any
- * more (2026-09-13). Still prose stored in `accessNote` — see the note below
- * — but a closed list so the storefront always prints one of a few phrases a
- * buyer has actually seen before, instead of whatever an author typed.
+ * The words an author picks from for «Термін доступу» — and, since 2026-09-14,
+ * the term the offer actually grants: the preset table lives in
+ * `lib/lms/accessTerm.ts`, shared with the save, the approval and the admin
+ * catalogue, so the page and the offer can no longer say different things.
  */
-const ACCESS_NOTE_OPTIONS = ["30 днів", "60 днів", "90 днів", "Пів року", "Рік", "Назавжди"] as const;
+const ACCESS_NOTE_OPTIONS = ACCESS_TERM_NOTES;
 
 const VISIBILITY_LABELS: Record<CourseVisibility, string> = {
   hidden: "Ніхто",
@@ -353,9 +354,9 @@ export function BuilderCourseSettings({
             label="Термін доступу"
             required={showcase}
             clearable
-            hint="Що обіцяємо покупцю. Друкується на сторінці курсу поряд з ціною."
+            hint="Скільки покупець має доступ до курсу. Друкується поряд з ціною і сам закриває доступ після терміну; для опублікованого курсу — після затвердження змін."
             options={ACCESS_NOTE_OPTIONS.map((value) => ({ value, label: value }))}
-            value={course.accessNote as (typeof ACCESS_NOTE_OPTIONS)[number] | undefined}
+            value={course.accessNote as AccessTermNote | undefined}
             onChange={(next) => onChange(["accessNote"], next)}
           />
           {/* `authorNote` moved to its own tab (2026-08-28) — see

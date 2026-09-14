@@ -963,6 +963,38 @@ describe("course moderation and admin deletion", () => {
     expect(Number(after.version)).toBe(13);
   });
 
+  /* ONE CHOICE, TWO CONSEQUENCES (2026-09-14). The author's «Термін доступу»
+     preset is a draft until approved; approving makes the words live, and the
+     offer has to grant what they now promise. */
+  it("carries the approved access-term preset onto the offer's real term", async () => {
+    db.tables.lms_lessons = [];
+    db.tables.lms_progress_events = [];
+    db.tables.lms_course_offers = [
+      {
+        id: "offer-reset",
+        course_id: "course-reset",
+        code: "course:reset-day",
+        access_days: 30,
+        access_lifetime: false,
+      },
+    ];
+
+    const snapshot = getSnapshotCourse("reset-day")!;
+    const row = db.rows("lms_courses").find((item) => item.id === "course-reset")!;
+    Object.assign(row, {
+      review_status: "approved",
+      visibility: "listed",
+      version: 12,
+      pending_content: { ...snapshot, id: "course-reset", slug: "reset-day", status: "draft", accessNote: "Рік" },
+      pending_review_status: "in_review",
+    });
+
+    await moderateCourse({ courseId: "course-reset", actorId: ADMIN, action: "approve" });
+
+    expect(db.rows("lms_course_offers")[0]).toMatchObject({ access_days: 365, access_lifetime: false });
+    expect(db.rows("audit_log").some((entry) => entry.action === "catalog.offer.term_from_course")).toBe(true);
+  });
+
   /* THE ARTIFACT THE REVIEW GATE NEVER LEFT. `pending_content` is nulled the
        moment an approval lands, so before the journal existed the only trace was
        an audit row saying an approval happened — with no way to answer WHAT was
