@@ -1,0 +1,969 @@
+<html lang="uk">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Картки: форма 1 проти форми 2 · 375</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Manrope:wght@300;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+/* ============================================================================
+   ЩО ТУТ ПОРІВНЮЄТЬСЯ
+
+   Форма 2 («фото — це картка, текст поверх») проти форми 1 («фото вкладене,
+   текст чорнилом на папері картки»). Обидві існують у ДС; питання не «яка
+   краща», а «яка з них для довільної обкладинки і для портрета».
+
+   Ліва колонка кожної пари — те, що зараз у продакшені, скопійоване з CSS
+   один в один, а не намальоване по пам'яті:
+
+     .programPhoto::after   linear-gradient(180deg, transparent 0 38%,
+                            scrim-ink 78% 100%)          → 62% плити затемнено
+     .guideMedia::after     6% / 24% на 30% / 76% на 58% /
+                            94% унизу                    → ~70% картки
+
+   Права — та сама картка у формі 1. Дані, фото, кроп і копія однакові.
+
+   ТОКЕНИ НЕ ВИГАДАНІ. Кожна змінна нижче — значення з src/app/globals.css на
+   2026-09-09, з іменем токена поруч. Прототип не має права мати власну гаму:
+   інакше порівнюються два різні аркуші, а не дві форми картки.
+   ========================================================================= */
+
+:root {
+  /* світлий бік — --cw-sem-calm-* / --cw-platform-* */
+  --paper:        #faefe0;  /* --cw-platform-bg            */
+  --surface:      #fff8ef;  /* --cw-platform-surface       */
+  --surface-muted:#f3e4d0;  /* --cw-platform-surface-muted */
+  --ink:          #18261d;  /* --cw-platform-text          */
+  --ink-soft:     #48544c;  /* --cw-sem-muted-ink          */
+  --accent:       #e5ae65;  /* --cw-platform-accent (warmth)      */
+  --accent-strong:#c8913f;  /* --cw-sem-warmth-strong             */
+  --guide-strong: #203126;  /* --cw-sem-guide-strong / accent-strong */
+  --contrast:     #fff8ef;  /* --cw-platform-accent-contrast      */
+  --inverse-text: #faefe0;  /* --cw-mat-inverse-text              */
+  --scrim-ink:    #171817;  /* --cw-mat-scrim-ink                 */
+  --boundary:     #b76045;  /* --cw-sem-boundary                  */
+  --on-accent:    #2a1e0c;  /* --cw-platform-on-accent            */
+
+  --mat-surface:      color-mix(in srgb, var(--surface) 94%, var(--accent) 6%);      /* --cw-mat-surface */
+  --mat-sunk:         color-mix(in srgb, var(--surface-muted) 62%, var(--mat-surface) 38%); /* --cw-mat-surface-sunk */
+  --mat-tone-proof:   color-mix(in srgb, var(--mat-surface) 62%, var(--surface-muted) 38%); /* --cw-mat-tone-proof */
+  --shadow-soft:  0 1px 2px rgba(35, 29, 20, 0.05), 0 10px 28px rgba(35, 29, 20, 0.07);
+  --shadow-raised:0 2px 6px rgba(35, 29, 20, 0.07), 0 24px 56px rgba(35, 29, 20, 0.12);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+
+  --r-card:  20px;  /* --cw-card-radius = --cw-radius-lg */
+  --r-md:    16px;  /* --cw-radius-md    */
+  --r-inset: 6px;   /* --cw-radius-inset */
+  --r-pill:  999px; /* --cw-radius-pill  */
+
+  --s-2xs: 0.25rem; --s-xs: 0.5rem; --s-sm: 0.75rem;
+  --s-md: 1rem;     --s-lg: 1.5rem; --s-xl: 2rem;
+
+  --font-ui: "Manrope", "Segoe UI", sans-serif;
+  --font-editorial: "Cormorant Garamond", "Times New Roman", serif;
+  --font-data: "IBM Plex Mono", ui-monospace, monospace;
+
+  --type-label: 0.75rem;   /* --ds-type-label-size   */
+  --type-sm: 0.9rem;       /* --ds-type-body-sm-size */
+  --type-body: 1rem;
+
+  /* Геометрія картки з --ds-offer-card-* */
+  --card-h-desktop: 29rem;
+  --card-w-mobile: min(82vw, 19rem);
+}
+
+[data-cw-theme="dark"] {
+  --paper:        #191918;
+  --surface:      #232322;
+  --surface-muted:#2e2e2c;
+  --ink:          #e4e4e1;
+  --ink-soft:     #a9a9a4;
+  --guide-strong: #0f0f0e;
+  --shadow-soft:  0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
+  --shadow-raised:0 2px 6px rgba(0, 0, 0, 0.35), 0 28px 60px rgba(0, 0, 0, 0.5);
+  --mat-surface:  color-mix(in srgb, var(--surface) 94%, var(--accent) 6%);
+  --mat-tone-proof: color-mix(in srgb, var(--mat-surface) 90%, #faefe0 10%);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0 0 4rem;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--type-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Обв'язка сторінки ──────────────────────────────────────────────────── */
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-sm);
+  padding: var(--s-sm) var(--s-md);
+  background: color-mix(in srgb, var(--paper) 86%, transparent);
+  backdrop-filter: blur(14px) saturate(1.1);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.top h1 { margin: 0; font-size: var(--type-sm); font-weight: 700; letter-spacing: 0.01em; }
+.top .sub { display: block; font-weight: 500; color: var(--ink-soft); font-size: var(--type-label); }
+
+.switches { display: flex; gap: var(--s-2xs); flex-shrink: 0; }
+
+.switch {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--ink);
+  font: 600 var(--type-label)/1 var(--font-ui);
+  padding: 0.45rem 0.6rem;
+  cursor: pointer;
+}
+.switch[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+section { padding: var(--s-xl) var(--s-md) 0; }
+
+h2 {
+  margin: 0 0 var(--s-2xs);
+  font-family: var(--font-editorial);
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.note {
+  margin: 0 0 var(--s-md);
+  max-width: 34rem;
+  color: var(--ink-soft);
+  font-size: var(--type-sm);
+  line-height: 1.55;
+}
+
+.measure {
+  display: inline-block;
+  margin: 0 0 var(--s-md);
+  padding: var(--s-2xs) var(--s-xs);
+  border-radius: var(--r-inset);
+  background: var(--mat-sunk);
+  color: var(--ink-soft);
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+}
+
+.caption {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-xs);
+  margin: var(--s-lg) 0 var(--s-xs);
+  font-size: var(--type-label);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.caption::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ink) 20%, transparent), transparent);
+}
+.caption b { color: var(--boundary); font-weight: 700; letter-spacing: 0.08em; }
+.caption i { color: var(--accent-strong); font-style: normal; font-weight: 700; letter-spacing: 0.08em; }
+
+/* Рейка як на платформі: вилазить у поля, ріжеться кромкою. */
+.rail {
+  display: flex;
+  gap: var(--s-sm);
+  margin-inline: calc(var(--s-md) * -1);
+  padding-inline: var(--s-md);
+  padding-bottom: var(--s-xs);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+.rail::-webkit-scrollbar { display: none; }
+.rail > * { flex: 0 0 var(--card-w-mobile); scroll-snap-align: start; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ФОРМА 2 — як зараз у продакшені
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.tile {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: var(--card-h-desktop);
+  overflow: hidden;
+  border-radius: var(--r-card);
+  color: var(--contrast);
+  background: var(--guide-strong);
+  box-shadow: var(--shadow-soft);
+}
+
+.tile .plate {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 20%;
+}
+
+/* .programPhoto::after — точна копія */
+.tile .plate::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(180deg, transparent 0 38%, color-mix(in srgb, var(--scrim-ink) 78%, transparent) 100%);
+}
+
+/* .guideMedia::after — точна копія */
+.tile[data-kind="author"] .plate::after {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--scrim-ink) 6%, transparent) 0%,
+    color-mix(in srgb, var(--scrim-ink) 24%, transparent) 30%,
+    color-mix(in srgb, var(--scrim-ink) 76%, transparent) 58%,
+    color-mix(in srgb, var(--scrim-ink) 94%, transparent) 100%
+  );
+}
+
+/* Лінійка, що показує, де починається затемнення. */
+body[data-rule="on"] .tile .plate::before {
+  position: absolute;
+  z-index: 1;
+  inset-inline: 0;
+  top: 38%;
+  content: "скрим 0% → 78%";
+  padding-left: 4px;
+  border-top: 1px dashed var(--boundary);
+  color: var(--boundary);
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  line-height: 1.4;
+}
+body[data-rule="on"] .tile[data-kind="author"] .plate::before {
+  top: 30%;
+  content: "скрим 24% → 94%";
+}
+
+.tile .kind {
+  position: absolute;
+  z-index: 2;
+  top: var(--s-sm);
+  left: var(--s-sm);
+  margin: 0;
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--r-pill);
+  background: var(--guide-strong);
+  background-image: var(--grain);
+  color: var(--inverse-text);
+  font-size: var(--type-label);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.tile .body {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: var(--s-xs);
+  width: 100%;
+  padding: var(--s-md);
+}
+
+.tile .eyebrow {
+  margin: 0;
+  color: color-mix(in srgb, var(--contrast) 78%, transparent);
+  font-size: var(--type-label);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tile h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.tile .desc {
+  margin: 0;
+  color: color-mix(in srgb, var(--contrast) 82%, transparent);
+  font-size: var(--type-sm);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tile .facts { display: grid; gap: var(--s-2xs); margin: 0; padding: 0; list-style: none; }
+.tile .facts li {
+  position: relative;
+  padding-left: var(--s-md);
+  color: color-mix(in srgb, var(--contrast) 88%, transparent);
+  font-size: var(--type-sm);
+  line-height: 1.35;
+}
+.tile .facts li::before {
+  position: absolute;
+  top: 0.52em;
+  left: 0;
+  width: 0.38rem;
+  height: 0.38rem;
+  content: "";
+  border-radius: var(--r-pill);
+  background: var(--accent);
+}
+
+.tile .price { display: flex; align-items: baseline; gap: var(--s-xs); margin: 0; }
+.tile .price strong { font-size: 1.05rem; }
+.tile .price s { color: color-mix(in srgb, var(--contrast) 60%, transparent); font-size: var(--type-sm); }
+
+.tile .cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  margin-top: var(--s-2xs);
+  padding: 0 var(--s-md);
+  border: 1px solid color-mix(in srgb, var(--contrast) 46%, transparent);
+  border-radius: var(--r-md);
+  color: var(--contrast);
+  font-size: var(--type-sm);
+  font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ФОРМА 1 — фото вкладене, текст чорнилом на папері картки
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.card {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+  border-radius: var(--r-card);
+  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  background: var(--mat-surface);
+  background-image: var(--grain);
+  box-shadow: var(--shadow-soft);
+  color: var(--ink);
+}
+
+/* Висота більше не задається числом. Фіксується співвідношення медіа, а
+   текстові рядки клампляться — ряд вирівнюється сам, і на телефоні теж. */
+.card .cover {
+  position: relative;
+  aspect-ratio: var(--cover-ratio, 4 / 5);
+  overflow: hidden;
+  background: var(--mat-tone-proof);
+}
+
+.card .cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--cover-focus, center 30%);
+}
+
+/* Єдина чорнильна лінія під фото — межа матеріалів, не рамка. */
+.card .cover::after {
+  position: absolute;
+  z-index: 1;
+  inset-inline: 0;
+  bottom: 0;
+  height: 1px;
+  content: "";
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.card .kind {
+  position: absolute;
+  z-index: 2;
+  top: var(--s-xs);
+  left: var(--s-xs);
+  margin: 0;
+  padding: 0.28rem 0.55rem;
+  border-radius: var(--r-pill);
+  background: var(--scrim-ink);
+  color: var(--inverse-text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.card .body {
+  display: grid;
+  align-content: start;
+  gap: var(--s-2xs);
+  padding: var(--s-sm) var(--s-sm) var(--s-md);
+}
+
+.card .eyebrow {
+  margin: 0 0 var(--s-2xs);
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.22;
+  /* «Перезавантаження» ширше за колонку 165 px. Клямп ріже РЯДКИ, а не
+     слова — без цього одне довге слово просто зникає за кромкою. */
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card .role,
+.card .desc {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--type-sm);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: var(--desc-lines, 2);
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card .meta {
+  margin: var(--s-2xs) 0 0;
+  color: var(--ink-soft);
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+}
+
+.card .price {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-xs);
+  margin-top: var(--s-xs);
+}
+.card .price strong { font-size: 1.05rem; font-weight: 700; }
+.card .price s { color: color-mix(in srgb, var(--ink-soft) 70%, transparent); font-size: var(--type-sm); }
+
+/* Не кнопка. Уся картка — це посилання, підпис тільки називає його. */
+.card .link {
+  margin-top: var(--s-xs);
+  color: var(--ink);
+  font-size: var(--type-sm);
+  font-weight: 700;
+  border-bottom: 1px solid var(--accent);
+  justify-self: start;
+  padding-bottom: 1px;
+}
+
+/* Ґрунт для картки без обкладинки: спокійна поверхня зі слідом матеріалу,
+   а не порожній прямокутник і не окремий арт-градієнт на кожен продукт. */
+.cover[data-empty] {
+  background:
+    repeating-linear-gradient(
+      118deg,
+      transparent 0 14px,
+      color-mix(in srgb, var(--ink) 4%, transparent) 14px 15px
+    ),
+    var(--mat-tone-proof);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ФОРМА 1б — фото в полях, без гострих кутів
+
+   У формі 1 фото притиснуте до верхньої кромки: зверху воно бере радіус
+   картки, а знизу впирається в текст прямим кутом. Тут фото — окремий об'єкт
+   усередині картки, з полем з усіх боків і з заокругленням на всіх чотирьох
+   кутах.
+
+   РАДІУС ВКЛАДЕНОГО = РАДІУС КАРТКИ − ПОЛЕ. Якщо дати фото той самий 20px,
+   що й картці, дві дуги на різній відстані від центру читаються як дві різні
+   кривизни, і в кутку утворюється товстий «серп» паперу. Концентричні дуги
+   тримають поле однаковим по всьому контуру.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.card[data-inset] {
+  --inset-pad: var(--s-xs);
+  padding: var(--inset-pad);
+  gap: 0;
+}
+
+.card[data-inset] .cover {
+  border-radius: calc(var(--r-card) - var(--inset-pad));
+  /* Край фото на папері — ледь помітна чорнильна лінія всередині кадру, щоб
+     світла обкладинка не зливалася з кремовою карткою. */
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+/* Лінія під фото була межею двох матеріалів; тепер межу малює саме поле. */
+.card[data-inset] .cover::after { display: none; }
+
+/* Тінь-обведення вище лежить під img, тож кадр отримує її поверх фото. */
+.card[data-inset] .cover::before {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  content: "";
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent);
+  pointer-events: none;
+}
+
+.card[data-inset] .kind { top: var(--s-xs); left: var(--s-xs); }
+
+/* Текст стоїть на тому ж лівому краї, що й фото: поле картки вже є, тому
+   тіло додає лише внутрішній відступ до краю кадру. */
+.card[data-inset] .body { padding: var(--s-sm) var(--s-2xs) var(--s-xs); }
+
+.grid2 .card[data-inset] { --inset-pad: 0.375rem; }
+.grid2 .card[data-inset] .body { padding: var(--s-xs) var(--s-2xs) var(--s-2xs); }
+
+/* ── Сітка агрегатора: дві колонки на телефоні ──────────────────────────── */
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-sm);
+}
+
+/* Картки одного ряду однакової висоти — інакше ряд читається як два різні
+   об'єкти. Ціна при цьому стоїть на підлозі картки, а не під заголовком. */
+.grid2 .card { --cover-ratio: 4 / 5; }
+.grid2 .card .body { align-content: start; }
+.grid2 .card .price { margin-top: auto; padding-top: var(--s-xs); }
+.grid2 .card h3 { font-size: 0.95rem; }
+.grid2 .card .desc { display: none; }
+
+/* Та сама сітка у формі 2, для порівняння. */
+.grid2 .tile { height: 17rem; }
+.grid2 .tile h3 { font-size: 1rem; }
+.grid2 .tile .desc,
+.grid2 .tile .cta { display: none; }
+.grid2 .tile .body { padding: var(--s-sm); gap: var(--s-2xs); }
+
+/* ── Рядок-список: третій варіант агрегатора ────────────────────────────── */
+
+.rows { display: grid; gap: var(--s-sm); }
+
+.row {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: var(--s-sm);
+  align-items: stretch;
+  padding: var(--s-xs);
+  border-radius: var(--r-md);
+  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  background: var(--mat-surface);
+  background-image: var(--grain);
+  box-shadow: var(--shadow-soft);
+}
+
+.row .cover {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: var(--r-inset);
+  background: var(--mat-tone-proof);
+}
+.row .cover img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
+
+.row .body { display: grid; align-content: center; gap: var(--s-2xs); padding-right: var(--s-2xs); }
+.row .eyebrow { margin: 0; color: var(--ink-soft); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }
+.row h3 { margin: 0; font-size: 1rem; font-weight: 700; line-height: 1.22; }
+.row .meta { margin: 0; color: var(--ink-soft); font-family: var(--font-data); font-size: 0.72rem; }
+.row .price { margin: var(--s-2xs) 0 0; font-weight: 700; }
+
+/* ── Автор у формі 1 ────────────────────────────────────────────────────── */
+
+.card[data-kind="author"] { --cover-ratio: 4 / 5; --cover-focus: center 18%; }
+.card[data-kind="author"] h3 { font-family: var(--font-ui); font-size: 1.15rem; }
+.card[data-kind="author"] .facts {
+  display: grid;
+  gap: var(--s-2xs);
+  margin: var(--s-2xs) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink-soft);
+  font-size: var(--type-sm);
+  line-height: 1.35;
+}
+.card[data-kind="author"] .facts li { position: relative; padding-left: var(--s-md); }
+.card[data-kind="author"] .facts li::before {
+  position: absolute;
+  top: 0.52em;
+  left: 0;
+  width: 0.35rem;
+  height: 0.35rem;
+  content: "";
+  border-radius: var(--r-pill);
+  background: var(--accent-strong);
+}
+
+/* Аватарний варіант картки автора: портрет вкладений як об'єкт, не як ґрунт. */
+.person {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--s-sm);
+  align-items: center;
+  padding: var(--s-sm);
+  border-radius: var(--r-md);
+  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  background: var(--mat-surface);
+  background-image: var(--grain);
+  box-shadow: var(--shadow-soft);
+}
+.person img {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: var(--r-pill);
+  object-fit: cover;
+  object-position: center 18%;
+}
+.person h3 { margin: 0; font-size: 1.05rem; font-weight: 700; }
+.person p { margin: 0.15rem 0 0; color: var(--ink-soft); font-size: var(--type-sm); line-height: 1.4; }
+
+.pair { display: grid; gap: var(--s-md); }
+@media (min-width: 760px) {
+  .pair { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+}
+@media (min-width: 1100px) {
+  .pair { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .rail > * { flex-basis: 19rem; }
+}
+</style>
+
+<div class="top">
+  <h1>Картка: форма 2 → 1 → 1б<span class="sub">375 · 2026-09-09</span></h1>
+  <div class="switches">
+    <button class="switch" id="theme" aria-pressed="false">Ніч</button>
+    <button class="switch" id="rule" aria-pressed="false">Скрим</button>
+  </div>
+</div>
+
+<section>
+  <h2>1 · Продукт: одна картка, три форми</h2>
+  <p class="note">
+    Обкладинка way21 — світла кремова сцена. Третя колонка — та сама форма 1,
+    але фото вкладене в поля картки і заокруглене на всіх кутах. У формі 2 білий заголовок тримається
+    тільки щільністю скриму, і від сцени лишається верхня третина. Натисніть
+    «Скрим», щоб побачити, де починається затемнення.
+  </p>
+  <p class="measure">форма 2: 62% плити під градієнтом · форма 1: 0%</p>
+
+  <div class="pair">
+    <div>
+      <p class="caption"><b>Зараз</b></p>
+      <div class="rail">
+        <article class="tile">
+          <div class="plate" style="background-image:url('assets/cards/way21-card-light-v5-960.webp')"></div>
+          <p class="kind">Курс</p>
+          <div class="body">
+            <p class="eyebrow">Програма · 21 день</p>
+            <h3>21 день шляху</h3>
+            <p class="desc">Щоденний ритм відновлення: харчування, очищення, практика і сон — по кроку на день, без ривків.</p>
+            <p class="price"><s>3 900 ₴</s><strong>2 900 ₴</strong></p>
+            <span class="cta">Деталі продукту</span>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div>
+      <p class="caption"><i>Пропозиція</i></p>
+      <div class="rail">
+        <article class="card">
+          <div class="cover">
+            <img src="assets/cards/way21-card-light-v5-960.webp" alt="">
+            <p class="kind">Курс</p>
+          </div>
+          <div class="body">
+            <p class="eyebrow">Програма · 21 день</p>
+            <h3>21 день шляху</h3>
+            <p class="desc">Щоденний ритм відновлення: харчування, очищення, практика і сон — по кроку на день.</p>
+            <p class="meta">21 урок · відео і практики</p>
+            <p class="price"><s>3 900 ₴</s><strong>2 900 ₴</strong></p>
+            <span class="link">Деталі продукту</span>
+          </div>
+        </article>
+      </div>
+    </div>
+    <div>
+      <p class="caption"><i>Пропозиція</i> · фото в полях</p>
+      <div class="rail">
+        <article class="card" data-inset>
+          <div class="cover">
+            <img src="assets/cards/way21-card-light-v5-960.webp" alt="">
+            <p class="kind">Курс</p>
+          </div>
+          <div class="body">
+            <p class="eyebrow">Програма · 21 день</p>
+            <h3>21 день шляху</h3>
+            <p class="desc">Щоденний ритм відновлення: харчування, очищення, практика і сон — по кроку на день.</p>
+            <p class="meta">21 урок · відео і практики</p>
+            <p class="price"><s>3 900 ₴</s><strong>2 900 ₴</strong></p>
+            <span class="link">Деталі продукту</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>2 · Автор</h2>
+  <p class="note">
+    Той самий портрет. У формі 2 градієнт іде знизу — тобто по шарфу, кардигану
+    і поставі: гаситься саме те, заради чого картка існує. Три факти по три рядки
+    плюс кнопка вимагають ~60% висоти, і скрим просто обслуговує цей блок.
+  </p>
+  <p class="measure">форма 2: ~70% картки під градієнтом, найщільніше — по корпусу</p>
+
+  <div class="pair">
+    <div>
+      <p class="caption"><b>Зараз</b></p>
+      <div class="rail">
+        <article class="tile" data-kind="author">
+          <div class="plate" style="background-image:url('assets/cards/author-a-4x5.webp'); background-position:center 22%"></div>
+          <div class="body">
+            <h3>Євгеній Корякін</h3>
+            <p class="desc" style="-webkit-line-clamp:1">Дослідник і практик аюрведи · засновник CenterWay</p>
+            <ul class="facts">
+              <li>12 років практики</li>
+              <li>Магістр комплементарної медицини та інтегративної психології</li>
+              <li>Інструктор з йоги та практикуючий йогін</li>
+            </ul>
+            <span class="cta">Більше про автора</span>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div>
+      <p class="caption"><i>Пропозиція</i></p>
+      <div class="rail">
+        <article class="card" data-kind="author">
+          <div class="cover"><img src="assets/cards/author-a-4x5.webp" alt=""></div>
+          <div class="body">
+            <h3>Євгеній Корякін</h3>
+            <p class="role">Дослідник і практик аюрведи · засновник CenterWay</p>
+            <ul class="facts">
+              <li>12 років практики</li>
+            </ul>
+            <span class="link">Більше про автора</span>
+          </div>
+        </article>
+        <article class="card" data-kind="author">
+          <div class="cover"><img src="assets/cards/author-b-13x16.webp" alt=""></div>
+          <div class="body">
+            <h3>Другий автор</h3>
+            <p class="role">Нутриціолог · веде «Ідеальне тіло»</p>
+            <ul class="facts">
+              <li>8 років практики</li>
+            </ul>
+            <span class="link">Більше про автора</span>
+          </div>
+        </article>
+      </div>
+    </div>
+    <div>
+      <p class="caption"><i>Пропозиція</i> · фото в полях</p>
+      <div class="rail">
+        <article class="card" data-inset data-kind="author">
+          <div class="cover"><img src="assets/cards/author-a-4x5.webp" alt=""></div>
+          <div class="body">
+            <h3>Євгеній Корякін</h3>
+            <p class="role">Дослідник і практик аюрведи · засновник CenterWay</p>
+            <ul class="facts">
+              <li>12 років практики</li>
+            </ul>
+            <span class="link">Більше про автора</span>
+          </div>
+        </article>
+        <article class="card" data-inset data-kind="author">
+          <div class="cover"><img src="assets/cards/author-b-13x16.webp" alt=""></div>
+          <div class="body">
+            <h3>Другий автор</h3>
+            <p class="role">Нутриціолог · веде «Ідеальне тіло»</p>
+            <ul class="facts">
+              <li>8 років практики</li>
+            </ul>
+            <span class="link">Більше про автора</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+
+  <p class="caption">Компактний варіант — портрет як об'єкт</p>
+  <p class="note">
+    Для довідників і рядків «автор курсу» портрет не мусить бути карткою взагалі.
+    Це та форма, якою людей показують Coursera, Maven і Substack.
+  </p>
+  <div class="rows">
+    <article class="person">
+      <img src="assets/cards/author-a-4x5.webp" alt="">
+      <div>
+        <h3>Євгеній Корякін</h3>
+        <p>Дослідник і практик аюрведи · 12 років практики</p>
+      </div>
+    </article>
+    <article class="person">
+      <img src="assets/cards/author-b-13x16.webp" alt="">
+      <div>
+        <h3>Другий автор</h3>
+        <p>Нутриціолог · веде «Ідеальне тіло»</p>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section>
+  <h2>3 · Агрегатор, дві колонки на 375</h2>
+  <p class="measure">375 − 32 поля − 12 проміжок = 165 px колонка · обкладинка 4:5 = 207 px</p>
+  <p class="note">
+    Дві колонки на телефоні — це рішення каталогу, а не рейки: рейка показує
+    добірку, сітка показує вибір. У формі 2 картка на 165 px стає майже суцільним
+    градієнтом: місця під текст стільки ж, а фото вдвічі менше.
+  </p>
+
+  <p class="caption"><b>Зараз</b> · форма 2, дві колонки</p>
+  <div class="grid2">
+    <article class="tile">
+      <div class="plate" style="background-image:url('assets/cards/way21-card-light-v5-960.webp')"></div>
+      <div class="body"><p class="eyebrow">Програма</p><h3>21 день шляху</h3><p class="price"><strong>2 900 ₴</strong></p></div>
+    </article>
+    <article class="tile">
+      <div class="plate" style="background-image:url('assets/cards/ideal-body-card-v1.webp')"></div>
+      <div class="body"><p class="eyebrow">Курс</p><h3>Ідеальне тіло</h3><p class="price"><strong>1 900 ₴</strong></p></div>
+    </article>
+    <article class="tile">
+      <div class="plate" style="background-image:url('assets/cards/reboot-card-v1-960.webp')"></div>
+      <div class="body"><p class="eyebrow">Міні-курс</p><h3>Перезавантаження</h3><p class="price"><strong>690 ₴</strong></p></div>
+    </article>
+    <article class="tile">
+      <div class="plate" style="background-image:url('assets/cards/irem-card-v1.webp')"></div>
+      <div class="body"><p class="eyebrow">Практика</p><h3>IREM · суглобова гімнастика</h3><p class="price"><strong>1 200 ₴</strong></p></div>
+    </article>
+  </div>
+
+  <p class="caption"><i>Пропозиція</i> · форма 1, дві колонки</p>
+  <div class="grid2">
+    <article class="card">
+      <div class="cover"><img src="assets/cards/way21-card-light-v5-960.webp" alt=""><p class="kind">Курс</p></div>
+      <div class="body"><p class="eyebrow">21 день</p><h3>21 день шляху</h3><p class="price"><s>3 900 ₴</s><strong>2 900 ₴</strong></p></div>
+    </article>
+    <article class="card">
+      <div class="cover"><img src="assets/cards/ideal-body-card-v1.webp" alt=""><p class="kind">Курс</p></div>
+      <div class="body"><p class="eyebrow">6 тижнів</p><h3>Ідеальне тіло</h3><p class="price"><strong>1 900 ₴</strong></p></div>
+    </article>
+    <article class="card">
+      <div class="cover"><img src="assets/cards/reboot-card-v1-960.webp" alt=""><p class="kind">Міні-курс</p></div>
+      <div class="body"><p class="eyebrow">7 днів</p><h3>Перезавантаження</h3><p class="price"><strong>690 ₴</strong></p></div>
+    </article>
+    <article class="card">
+      <div class="cover"><img src="assets/cards/irem-card-v1.webp" alt=""><p class="kind">Практика</p></div>
+      <div class="body"><p class="eyebrow">12 занять</p><h3>IREM · суглобова гімнастика</h3><p class="price"><strong>1 200 ₴</strong></p></div>
+    </article>
+    <article class="card">
+      <div class="cover"><img src="assets/cards/reset-day-card-v1.webp" alt=""><p class="kind">Курс</p></div>
+      <div class="body"><p class="eyebrow">3 дні</p><h3>День перезапуску</h3><p class="price"><strong>490 ₴</strong></p></div>
+    </article>
+    <article class="card">
+      <div class="cover" data-empty><p class="kind">Продукт</p></div>
+      <div class="body"><p class="eyebrow">підбір за станом</p><h3>Трав'яний збір</h3><p class="price"><strong>Ціна за запитом</strong></p></div>
+    </article>
+  </div>
+
+  <p class="caption"><i>Пропозиція</i> · фото в полях, дві колонки</p>
+  <div class="grid2">
+    <article class="card" data-inset>
+      <div class="cover"><img src="assets/cards/way21-card-light-v5-960.webp" alt=""><p class="kind">Курс</p></div>
+      <div class="body"><p class="eyebrow">21 день</p><h3>21 день шляху</h3><p class="price"><s>3 900 ₴</s><strong>2 900 ₴</strong></p></div>
+    </article>
+    <article class="card" data-inset>
+      <div class="cover"><img src="assets/cards/ideal-body-card-v1.webp" alt=""><p class="kind">Курс</p></div>
+      <div class="body"><p class="eyebrow">6 тижнів</p><h3>Ідеальне тіло</h3><p class="price"><strong>1 900 ₴</strong></p></div>
+    </article>
+    <article class="card" data-inset>
+      <div class="cover"><img src="assets/cards/reboot-card-v1-960.webp" alt=""><p class="kind">Міні-курс</p></div>
+      <div class="body"><p class="eyebrow">7 днів</p><h3>Перезавантаження</h3><p class="price"><strong>690 ₴</strong></p></div>
+    </article>
+    <article class="card" data-inset>
+      <div class="cover"><img src="assets/cards/irem-card-v1.webp" alt=""><p class="kind">Практика</p></div>
+      <div class="body"><p class="eyebrow">12 занять</p><h3>IREM · суглобова гімнастика</h3><p class="price"><strong>1 200 ₴</strong></p></div>
+    </article>
+    <article class="card" data-inset>
+      <div class="cover"><img src="assets/cards/reset-day-card-v1.webp" alt=""><p class="kind">Курс</p></div>
+      <div class="body"><p class="eyebrow">3 дні</p><h3>День перезапуску</h3><p class="price"><strong>490 ₴</strong></p></div>
+    </article>
+    <article class="card" data-inset>
+      <div class="cover" data-empty><p class="kind">Продукт</p></div>
+      <div class="body"><p class="eyebrow">підбір за станом</p><h3>Трав'яний збір</h3><p class="price"><strong>Ціна за запитом</strong></p></div>
+    </article>
+  </div>
+  <p class="note">
+    Остання картка — без обкладинки. У формі 1 порожнє фото стає спокійним
+    ґрунтом і ряд не ламається; у формі 2 воно було арт-градієнтом, тобто
+    окремим малюнком на кожну картку.
+  </p>
+</section>
+
+<section>
+  <h2>4 · Агрегатор рядком</h2>
+  <p class="note">
+    Третій варіант для каталогу з фільтрами: рядок замість плитки. Заголовок
+    отримує повну ширину екрана, тобто вміщає довгу назву без клампу — так
+    мобільний пошук малюють Udemy і Coursera. Дві колонки виграють у перегляді,
+    рядок — у порівнянні.
+  </p>
+  <div class="rows">
+    <article class="row">
+      <div class="cover"><img src="assets/cards/way21-card-light-v5-960.webp" alt=""></div>
+      <div class="body"><p class="eyebrow">Програма · 21 день</p><h3>21 день шляху</h3><p class="meta">21 урок · відео і практики</p><p class="price">2 900 ₴</p></div>
+    </article>
+    <article class="row">
+      <div class="cover"><img src="assets/cards/reset-day-card-v1.webp" alt=""></div>
+      <div class="body"><p class="eyebrow">Курс · 3 дні</p><h3>День перезапуску</h3><p class="meta">9 уроків</p><p class="price">490 ₴</p></div>
+    </article>
+    <article class="row">
+      <div class="cover"><img src="assets/cards/irem-card-v1.webp" alt=""></div>
+      <div class="body"><p class="eyebrow">12 занять</p><h3>IREM · суглобова гімнастика</h3><p class="price">1 200 ₴</p></div>
+    </article>
+  </div>
+</section>
+
+<script>
+  const body = document.body;
+  const theme = document.getElementById("theme");
+  const rule = document.getElementById("rule");
+
+  theme.addEventListener("click", () => {
+    const on = theme.getAttribute("aria-pressed") === "true";
+    theme.setAttribute("aria-pressed", String(!on));
+    document.documentElement.setAttribute("data-cw-theme", on ? "light" : "dark");
+  });
+
+  rule.addEventListener("click", () => {
+    const on = rule.getAttribute("aria-pressed") === "true";
+    rule.setAttribute("aria-pressed", String(!on));
+    body.setAttribute("data-rule", on ? "off" : "on");
+  });
+</script>

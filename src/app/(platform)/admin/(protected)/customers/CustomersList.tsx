@@ -19,6 +19,7 @@ import { Icon } from "@/components/Icon";
 import pageStyles from "@/components/admin/AdminPage.module.css";
 import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
+import { StateBadge } from "@/components/platform/StateBadge";
 
 function Avatar({ name, url }: { name?: string | null; url?: string | null }) {
   const initial = name?.charAt(0)?.toUpperCase() ?? "?";
@@ -221,8 +222,7 @@ export function CustomersList({ initial }: { initial: CustomersPage }) {
                     </p>
                     {identity.matched_link ? (
                       <p className={lists.itemSub}>
-                        <span className={lists.linkKindTag}>{identity.matched_link.type}</span>
-                        {identity.matched_link.value}
+                        <StateBadge>{identity.matched_link.type}</StateBadge> {identity.matched_link.value}
                       </p>
                     ) : (
                       <p className={lists.itemSub}>
@@ -238,9 +238,7 @@ export function CustomersList({ initial }: { initial: CustomersPage }) {
                   {identity.tags?.length > 0 && (
                     <div className={lists.chips}>
                       {identity.tags.slice(0, 3).map((tag) => (
-                        <span key={tag} className={lists.chipTag}>
-                          {tag}
-                        </span>
+                        <StateBadge key={tag}>{tag}</StateBadge>
                       ))}
                     </div>
                   )}

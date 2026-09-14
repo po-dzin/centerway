@@ -288,23 +288,47 @@ Three separate symptoms, one habit: a block laid out for the copy it had, with t
 
 The catalogue drew two cards: `compact` (24rem) for mini-courses, the default (29rem) for programmes, from a `size` prop on `PlatformOfferCard`. So /programs read as two catalogues stacked, and a reader weighing a mini-course against a programme was comparing two different objects — the smaller one looked like a smaller claim, which is not what "shorter" means.
 
-The phone rail had already settled this and said so in its own comment: *one height for every card on every rail*, fixed rather than min, because the card's three text rows are clamped to 1/1/3 lines and a card that grows is a card that stopped matching its row. The desktop kept the split. It now takes the same answer — `--ds-offer-card-height-desktop` (29rem), `height` not `min-height` — and the `compact` variant, its three tokens and the `size` prop are gone. A marketplace row is a row of one object at one size; the only thing that varies between two offers is what is printed inside them.
+The phone rail had already settled this and said so in its own comment: *one height for every card on every rail*, fixed rather than min, because the card's three text rows are clamped to 1/1/3 lines and a card that grows is a card that stopped matching its row. The desktop kept the split. It took the same answer — `--ds-offer-card-height-desktop` (29rem) — and the `compact` variant, its three tokens and the `size` prop are gone. A marketplace row is a row of one object at one size; the only thing that varies between two offers is what is printed inside them.
 
-### A photograph is inset, or it is the card (2026-09-02)
+**The height went with the scrim (2026-09-13).** A fixed height was the only way to hold cards whose text sat on a photograph that could not grow. Once the photograph lies inset on the paper (next section), the frame is a ratio, the lines are clamps, a row stretches its cells to the tallest and the button sits on the floor of each card: the row still reads as one object, with no number to keep in step. `--ds-offer-card-height-desktop` and `--ds-offer-card-height-rail` are removed.
 
-**There is no third form.** A picture on this platform is either a horizontal
-image seated INSIDE a card, with the copy on the card's own surface below it, or
-it is the ground of the whole card, with the copy over a scrim. Anything between
-the two is a portrait cropped into a short band — the shape the author cards used
-until this date, which cut a standing person off at the chin at one width and at
-the shoulders at another, and did it differently on the home page than on
-`/consult`.
+### One card, inset photograph (2026-09-13)
 
-The author card takes the second form: `.guideCard` is `position: relative` at
-`--ds-offer-card-height-desktop`, the portrait fills it with `object-fit: cover`,
-and the name, the facts and the way through to the profile sit at the bottom over
-`.guideMedia::after`. Product cards (`.programTile`) have always been drawn this
-way; the difference is that the rule is now written down.
+Supersedes «A photograph is inset, or it is the card» (2026-09-02). Full spec,
+preflight and device matrix: `docs/card-system-2026-09-13.md`; the research and
+the prototype it was decided from: `docs/design-system/references/card-conventions-2026-09-09.md`,
+`docs/design-system/prototypes/cards-2026-09-09.html`.
+
+**There is one card and the photograph lies in its field.** Paper, the picture
+inset `--ds-card-inset` from every edge with every corner rounded
+(`--ds-card-media-radius` = card radius − field, so the arcs are concentric),
+and the copy in the platform's ink on the paper below. The offer card, the
+author card, the library's course card and the builder's course card are the
+same geometry. Nothing on a card sits on the photograph except a status capsule
+(`mediaBadge`), which brings its own ground.
+
+The 2026-09-02 rule admitted a second form — the photograph as the ground of
+the whole card, copy over a scrim — and both the offer card and the author card
+took it. Measured on the prototype, that scrim darkened 62% of the offer plate
+(`transparent 0 38%` → 78% ink) and ~70% of the author card, darkest across the
+person's shoulders and hands; white type still failed on a light cover, which is
+most of this platform's photography. The market draws it the same way: the
+photograph-as-card lives only where the key art is shot for the type
+(MasterClass, Netflix) and carries a name and a line, never facts, a price and
+a button. That form now survives only in the offer page hero
+(`offerHeroVisualCard`), which is art-directed.
+
+**Two frames.** `--ds-card-media-ratio` (16:9) for a course, a programme, a
+product or a test — one horizontal cover on every surface; `--ds-card-portrait-ratio`
+(4:5) for a person. No photograph draws the canonical initials fallback.
+
+**Three sizes, and the carrier chooses.** The *showcase* (carousels and the
+author rail), the *grid* (aggregate catalogues three / two / two columns, the
+library and the builder by `auto-fit`) and the *row* (the library and builder
+lists, the admin catalogue) with the cover as a thumbnail at
+`--ds-card-thumb-width` or `--ds-card-thumb-width-compact`. The offer card asks
+its own width, not the screen's (`container-type: inline-size`): below 14rem it
+drops the description and prints «Деталі» in place of «Деталі програми».
 
 **Any object previewed on more than one page has one component.** The founder was
 drawn by three pieces of markup — the home block, `/consult`'s directory and
@@ -322,8 +346,10 @@ targets with one destination into the tab order.
 **Filling the card means the author gets to choose what fills it.** `AuthorProfileFold`
 carries the same crop editor `BuilderCoverEditor` gives a course cover — drag or
 arrow-key a focal point, two frames instead of three because a photo (not an
-authored cover) is only ever shown two shapes here: the card (`24 / 29`, the
-ratio `AuthorCard` fills everywhere) and the round avatar (`1 / 1`, the author's
+authored cover) is only ever shown two shapes here: the card
+(`--ds-card-portrait-ratio`, 4:5 — the token `AuthorCard`'s frame and the
+editor's card frame both read, so the frame an author aims in is the frame
+that ships) and the round avatar (`1 / 1`, the author's
 own page and a course's byline). The two points are independent — an avatar
 crop does not inherit the card's, the way `Course.cover.wideCropY` inherits its
 landscape crop — because a portrait and a square rarely want the same framing.
@@ -393,6 +419,41 @@ shape, which is what the paragraph above is protecting.
 ### A state and its action are one plate (2026-08-27)
 
 For a reader who owns the course, the closing block printed two cards side by side: «Ваш доступ» with the standing, and «Продовжити» / «Перейти до матеріалів» holding the button. Nothing separated them but the grid — the second card's label and heading only restated the button under them, three ways of saying *continue*. One panel now, spanning the support row, with the actions in a wrapping row at its foot. The hero already carries the same standing and the same verb for someone at the top of the page; this is where it lands for someone who has read to the bottom.
+
+### One state badge (2026-09-14)
+
+**A state is one badge, in one of five tones.** «Опубліковано» was printed by
+five recipes that agreed on nothing but the capsule: the admin's uppercase paper
+`.tag`, the builder's uppercase monospace `.pill` (gold when published), three
+one-off admin chips (`chipTag`, `actionTag`, `linkKindTag`), and the success
+badge the leads list used. The same word looked one way in the admin and
+another in the builder, and «good to go» was green in one and gold in the other.
+
+| Tone | Question it answers | Course states | Elsewhere |
+|---|---|---|---|
+| `neutral` | where is it? — nothing to do | Чернетка, Опубліковано; a visibility or a role | a customer tag, an audit action, a link kind, a lost lead |
+| `running` | is something under way? | Перевірка, Оновлення | a new or in-progress lead, a running job |
+| `pending` | does someone have to act? | Повернуто | a job waiting |
+| `failed` | is something wrong? | Неперевірено | an expired grant, a failed job |
+| `success` | is it good to go? | Продається | a won lead, a started enrolment |
+
+- **The recipe** is `globals.css` → `.cw-status-{neutral,running,pending,failed,success}-badge`:
+  label size, weight 500, sentence case, `2xs xs` padding, pill radius. The four
+  coloured tones read `--cw-status-*` with its `-soft` wash and a 30% contour;
+  `neutral` is `--cw-mat-surface-sunk` with the page's ink and no contour.
+- **The contour is an inset shadow, not a border**, so a coloured badge is the
+  height of the neutral one beside it.
+- **The word and the tone come from one place.** `src/lib/lms/courseState.ts`
+  holds `COURSE_STATE_LABELS` and `COURSE_STATE_TONES`; `CourseStateBadge` reads
+  both. Other surfaces pass a tone to `StateBadge` (`src/components/platform/StateBadge.tsx`);
+  class names live in `STATE_BADGE_CLASS` (`src/lib/platform/stateTone.ts`).
+- **Sentence case.** Uppercase with tracking took a third more width in a
+  phone's one-line badge row and shouted the most ordinary state in the tool.
+- **Not on a photograph.** A status over a cover stays `mediaBadge` (scrim floor,
+  inverse ink) — see «Boundary hierarchy across the three layers».
+- **Not a fact chip.** `Chip` (`platform/Chip.module.css`) is a short fact on a
+  card — «4 курси», «7 днів» — at body size; a state badge is smaller and says
+  where something stands.
 
 ### A list is text, not a stack of cards (2026-08-22)
 
@@ -2347,7 +2408,7 @@ rectangles. Material, boundary, elevation and selection are separate axes.
 
 | Object / user question | Resting boundary | State / source |
 |---|---|---|
-| Public offer card: is this the right program? | No new frame; photo, scrim, material and elevation | Existing offer recipe; no workspace chrome imposed |
+| Public offer card: is this the right program? | None; paper material, soft elevation, photograph inset in the field | `data-cw-material="matte"` + `data-cw-edge="none"`; no scrim, no workspace chrome imposed (2026-09-13) |
 | Library / workshop collection: which material? | None; warm material and soft shadow | Library `data-cw-edge="none"`; workshop existing borderless card. Any interactive state is independent of the resting edge |
 | Cabinet structural panel: what belongs together? | Existing moderate material edge | Keep panel structure; do not apply the borderless collection role to every panel |
 | Topbar / workspace shell: where am I? | Existing moderate chrome/faded boundary | Shared shell tokens; no extra nested ring |

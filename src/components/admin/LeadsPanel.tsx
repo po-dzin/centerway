@@ -14,6 +14,9 @@ import { getErrorMessage } from "@/lib/errors";
 import { useToast } from "@/components/ToastProvider";
 import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
+import { AdminRow } from "@/components/admin/AdminRow";
+import { StateBadge } from "@/components/platform/StateBadge";
+import type { StateTone } from "@/lib/platform/stateTone";
 
 /* The four stages, in the order a lead travels them. Kept as data rather than
    as markup so the tab strip, the row control and the "is this closed" test all
@@ -33,11 +36,11 @@ const STAGE_LABEL_KEY: Record<Stage, string> = {
 /* Ink, not colour-coding: a won lead reads as settled and a lost one as spent,
    which the platform says with weight and muting rather than with a green and a
    red badge. */
-const STAGE_TONE: Record<Stage, string> = {
-  new: "cw-status-running-badge",
-  in_progress: "cw-status-running-badge",
-  won: "cw-status-success-badge",
-  lost: "cw-muted",
+const STAGE_TONE: Record<Stage, StateTone> = {
+  new: "running",
+  in_progress: "running",
+  won: "success",
+  lost: "neutral",
 };
 
 type Lead = {
@@ -182,16 +185,45 @@ export function LeadsPanel() {
       {!loading && !error && rows.length > 0 && (
         <div className={lists.list}>
           {rows.map((lead) => (
-            <div key={lead.id} className={lists.item}>
-              <div className={lists.itemHead}>
-                <div className={lists.itemIdentity}>
-                  <p className={lists.itemTitle}>{lead.name ?? lead.email ?? lead.phone ?? lead.order_ref}</p>
-                  <p className={lists.itemSub}>{[lead.phone, lead.email].filter(Boolean).join(" · ")}</p>
-                </div>
-                <div className={lists.itemControls}>
-                  <span className={`${lists.stage} ${STAGE_TONE[lead.stage]}`}>
-                    {t(STAGE_LABEL_KEY[lead.stage] as never)}
-                  </span>
+            <AdminRow
+              key={lead.id}
+              title={lead.name ?? lead.email ?? lead.phone ?? lead.order_ref}
+              sub={[lead.phone, lead.email].filter(Boolean).join(" · ")}
+              meta={
+                <>
+                  <span>{lead.product_title ?? lead.product_code}</span>
+                  <span>·</span>
+                  <span>{formatDate(lead.created_at)}</span>
+                  {lead.dosha_result_type && (
+                    <>
+                      <span>·</span>
+                      {/* A verified attempt, not a label the page claimed. */}
+                      <span className={lists.itemMetaStrong}>
+                        {t("leads_dosha")}: {lead.dosha_result_type}
+                      </span>
+                    </>
+                  )}
+                  {!lead.dosha_result_type && lead.dosha_claimed && (
+                    <>
+                      <span>·</span>
+                      <span>
+                        {t("leads_dosha_claimed")}: {lead.dosha_claimed}
+                      </span>
+                    </>
+                  )}
+                  {CLOSED_STAGES.includes(lead.stage) && lead.stage_changed_at && (
+                    <>
+                      <span>·</span>
+                      <span>
+                        {t("leads_closed_at")} {formatDate(lead.stage_changed_at)}
+                      </span>
+                    </>
+                  )}
+                </>
+              }
+              controls={
+                <>
+                  <StateBadge tone={STAGE_TONE[lead.stage]}>{t(STAGE_LABEL_KEY[lead.stage] as never)}</StateBadge>
                   <select
                     aria-label={t("leads_stage_change")}
                     className={lists.select}
@@ -205,42 +237,10 @@ export function LeadsPanel() {
                       </option>
                     ))}
                   </select>
-                </div>
-              </div>
-
-              <div className={lists.itemMeta}>
-                <span>{lead.product_title ?? lead.product_code}</span>
-                <span>·</span>
-                <span>{formatDate(lead.created_at)}</span>
-                {lead.dosha_result_type && (
-                  <>
-                    <span>·</span>
-                    {/* A verified attempt, not a label the page claimed. */}
-                    <span className={lists.itemMetaStrong}>
-                      {t("leads_dosha")}: {lead.dosha_result_type}
-                    </span>
-                  </>
-                )}
-                {!lead.dosha_result_type && lead.dosha_claimed && (
-                  <>
-                    <span>·</span>
-                    <span>
-                      {t("leads_dosha_claimed")}: {lead.dosha_claimed}
-                    </span>
-                  </>
-                )}
-                {CLOSED_STAGES.includes(lead.stage) && lead.stage_changed_at && (
-                  <>
-                    <span>·</span>
-                    <span>
-                      {t("leads_closed_at")} {formatDate(lead.stage_changed_at)}
-                    </span>
-                  </>
-                )}
-              </div>
-
-              {lead.message && <p className={lists.itemNote}>{lead.message}</p>}
-            </div>
+                </>
+              }
+              note={lead.message}
+            />
           ))}
         </div>
       )}

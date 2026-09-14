@@ -2072,6 +2072,7 @@
 }
 
 .courseRow {
+  position: relative;
   display: flex;
   /* THE WRAP THE CONFIRMATION WAS ALREADY ASKING FOR. `.confirmRow` declares
      `flex: 1 1 100%` — "give me my own line" — and this container was
@@ -2107,11 +2108,51 @@
   flex: 1 1 auto;
   min-width: 0;
   display: grid;
-  gap: var(--cw-space-2xs);
+  grid-template-columns: var(--ds-card-thumb-width) minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--cw-space-sm);
   min-height: var(--ds-touch-target-min);
-  align-content: center;
   color: inherit;
   text-decoration: none;
+}
+
+/* THE ROW'S THUMBNAIL — the card system's row size. The same cover the card
+   draws, at `--ds-card-thumb-width`, so a list narrowed by a search still shows
+   which course each line is before its title is read. Radius: the row's own
+   corner less its padding, the same concentric rule as the card's field. */
+.courseRowThumb {
+  display: grid;
+  place-items: center;
+  width: var(--ds-card-thumb-width);
+  aspect-ratio: var(--ds-card-media-ratio);
+  overflow: hidden;
+  border-radius: calc(var(--cw-radius-lg) - var(--cw-space-sm));
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--cw-sem-guide-primary) 22%, var(--cw-mat-surface-sunk)),
+    var(--cw-mat-surface-sunk)
+  );
+  color: var(--cw-platform-ink-strong);
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-body-size);
+  font-weight: 500;
+}
+
+.courseRowThumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.courseRow[data-course-status="draft"] .courseRowThumb {
+  opacity: 0.82;
+}
+
+.courseRowText {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
 }
 
 /* Status and counts on one line under the title: they qualify the course, they
@@ -2126,6 +2167,23 @@
 .courseRowMain:focus-visible {
   outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
   outline-offset: var(--ds-focus-ring-offset);
+}
+
+/* THE WHOLE ROW OPENS THE COURSE, not only the title's box. The link's own
+   pseudo-element is stretched over the row, so it stays one target in the tab
+   order and the accessibility tree; the menu and a confirmation are lifted
+   above it and keep their own clicks. */
+.courseRowMain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+.courseRow > :not(.courseRowMain) {
+  position: relative;
+  z-index: 2;
 }
 
 .courseRowTitle {
@@ -2156,7 +2214,9 @@
   grid-template-rows: minmax(0, 1fr);
   justify-items: stretch;
   gap: var(--cw-space-xs);
-  padding: var(--cw-space-md);
+  /* The card system's field (docs/card-system-2026-09-13.md): the cover lies
+     `--ds-card-inset` from every edge, the body indents past it. */
+  padding: var(--ds-card-inset);
   border-radius: var(--cw-radius-lg);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-soft);
@@ -2181,8 +2241,8 @@
 /* The target stays 3rem; the paint follows the smaller optical hover circle. */
 .courseCard > .menuRoot {
   position: absolute;
-  inset-block-start: calc(var(--cw-space-md) - var(--cw-space-2xs));
-  inset-inline-end: calc(var(--cw-space-md) - var(--cw-space-2xs));
+  inset-block-start: calc(var(--ds-card-inset) - var(--cw-space-2xs));
+  inset-inline-end: calc(var(--ds-card-inset) - var(--cw-space-2xs));
   z-index: 2;
 }
 
@@ -2329,6 +2389,18 @@
   outline-offset: var(--ds-focus-ring-offset);
 }
 
+/* The face's link reaches the card's padding too: stretched over `.courseCard`
+   (which is positioned) under the corner menu (z-index 2) and the confirmation
+   that covers the card, so a click anywhere on the card opens the course and
+   the contour already says the whole card is the target. */
+.courseCardFace::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+
 /* The cover and the badge worn on it. Positioned so the badge has a corner to
    sit in; `grid` rather than `block` so the frame takes the cover's height
    exactly and the card's gap still measures from the picture's bottom edge. */
@@ -2339,9 +2411,9 @@
 
 .courseCover {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: var(--ds-card-media-ratio);
   object-fit: cover;
-  border-radius: var(--cw-radius-md);
+  border-radius: var(--ds-card-media-radius);
   background: var(--cw-mat-surface-sunk);
 }
 
@@ -2409,8 +2481,8 @@
   display: grid;
   place-items: center;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: var(--cw-radius-md);
+  aspect-ratio: var(--ds-card-media-ratio);
+  border-radius: var(--ds-card-media-radius);
   background: linear-gradient(
     140deg,
     color-mix(in srgb, var(--cw-sem-guide-primary) 22%, var(--cw-mat-surface-sunk)),
@@ -2448,6 +2520,7 @@
 .courseCardBody {
   display: grid;
   gap: var(--cw-space-2xs);
+  padding: 0 var(--ds-card-body-inline) var(--ds-card-body-inline);
 }
 
 .courseTitleRow {
@@ -2559,32 +2632,6 @@
   margin: 0;
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-body-sm-size);
-}
-
-/* ── Status pills ─────────────────────────────────── */
-
-.pill {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--cw-space-2xs) var(--cw-space-xs);
-  border-radius: var(--cw-radius-pill);
-  background: var(--cw-mat-surface-sunk);
-  color: var(--cw-platform-muted);
-  font-family: var(--cw-font-data);
-  font-size: var(--ds-type-label-size);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-/* Published is the only state that gets colour. A draft is the normal state of
-   a course being written, and colouring it would read as a warning about the
-   most ordinary thing in the tool. */
-.pillPublished {
-  composes: pill;
-  background: color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
-  color: var(--cw-platform-text);
 }
 
 /* One quiet summary replaces two full-width release panels. It answers the

@@ -110,7 +110,13 @@ export function CourseCard({
   const showsWindow = course.access !== "locked" && course.expiresAt !== null;
 
   return (
-    <article className={course.access === "locked" ? styles.cardMuted : styles.card} {...matte} data-cw-edge="none">
+    <article
+      className={`${course.access === "locked" ? styles.cardMuted : styles.card} ${styles.courseCardFrame}`}
+      {...matte}
+      data-cw-edge="none"
+    >
+      {/* The whole card opens what the primary button opens; see `.cardOverlay`. */}
+      <MotionLink className={styles.cardOverlay} href={href(action.href)} aria-hidden="true" tabIndex={-1} />
       {/* THE COVER'S OWN CORNER, NOT THE META ROW. A draft is a fact about the
           COURSE — it holds whether or not it has steps, a day, or any progress
           to report — and sitting it in `.chipRow` meant the row's shape changed
@@ -229,6 +235,7 @@ export function CompactCourseCard({
 
   return (
     <article className={styles.shelfCard} {...glassMedia}>
+      <MotionLink className={styles.cardOverlay} href={href(action.href)} aria-hidden="true" tabIndex={-1} />
       <CourseCover course={course} />
       <h3 className={styles.shelfCardTitle}>{course.title}</h3>
       {/* Where you stopped, or — for a course not started — what it costs to
@@ -284,12 +291,8 @@ export function CourseRow({ course, copy }: { course: LearnerShelfCourseDto; cop
   const running = course.access === "enrolled" && total > 0 && !course.standing?.isFinished;
 
   return (
-    <MotionLink className={styles.glance} href={href(action.href)} {...matte} data-cw-edge="none">
-      {running ? (
-        <ProgressRing className={styles.glanceRing} value={done} total={total} label={course.title} size={48} />
-      ) : (
-        <span className={styles.glanceRing} aria-hidden="true" />
-      )}
+    <MotionLink className={styles.shelfRow} href={href(action.href)} {...matte} data-cw-edge="none">
+      <CourseCover course={course} dimmed={course.access === "locked"} size="thumb" />
       <span className={styles.glanceText}>
         <span className={styles.glanceTitle}>{course.title}</span>
         <span className={styles.glanceNote}>
@@ -302,6 +305,11 @@ export function CourseRow({ course, copy }: { course: LearnerShelfCourseDto; cop
                 : copy.courseNotStarted}
         </span>
       </span>
+      {running ? (
+        <ProgressRing className={styles.glanceRing} value={done} total={total} label={course.title} size={48} />
+      ) : (
+        <span className={styles.glanceRing} aria-hidden="true" />
+      )}
     </MotionLink>
   );
 }

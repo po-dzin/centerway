@@ -1,3 +1,5 @@
+import type { Course, CourseCategory } from "@/lms-core";
+
 /**
  * Shapes the catalogue screen and its API agree on.
  *
@@ -84,6 +86,20 @@ export type CatalogRow = {
   updatedAt: string;
   offer: CatalogOffer | null;
   blockers: SaleBlocker[];
+  /**
+   * The course's own cover, so the row can show WHICH course it is before the
+   * title is read — the list is scanned by picture as much as by name, most of
+   * all while a search or a filter is narrowing it. Null draws the initials.
+   */
+  cover: Course["cover"] | null;
+  /** Category codes; empty for a course nobody categorised. Words live in i18n. */
+  categories: CourseCategory[];
+  /**
+   * When the review that is waiting was submitted: the pending revision's date
+   * when there is one, otherwise the course's own. Null when nothing was ever
+   * submitted — the «newest submissions» grouping sorts on this.
+   */
+  submittedAt: string | null;
 };
 
 /**

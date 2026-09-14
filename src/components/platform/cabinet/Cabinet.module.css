@@ -397,7 +397,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--cw-space-xs);
-  padding: var(--cw-space-md);
+  padding: var(--ds-card-inset);
   border-radius: var(--cw-radius-lg);
 }
 
@@ -444,8 +444,24 @@
    copy lengths still line their buttons up. */
 .shelfCardAction {
   composes: row from "../PlatformButtons.module.css";
+  position: relative;
+  z-index: 3;
   margin-top: auto;
   padding-top: var(--cw-space-2xs);
+}
+
+/* THE CARD OPENS WHAT ITS PRIMARY BUTTON OPENS. A pointer-only shortcut laid
+   over the card (the material makes it positioned): the visible buttons stay
+   the real links, lifted above it, so the tab order and the accessibility tree
+   still hold one target per destination — the overlay is hidden from both. */
+.cardOverlay {
+  position: absolute;
+  inset: 0;
+  /* 2, not 1: the material lifts every child of the card to z-index 1 to clear
+     its grain (`[data-cw-material] > *` in globals.css), and those children come
+     after the overlay in the markup, so at 1 they covered it. */
+  z-index: 2;
+  border-radius: inherit;
 }
 
 /* THE DOT, ON THE AVATAR — not a line under the row any more. Reachability is
@@ -637,6 +653,8 @@
 .actions {
   composes: compact from "../PlatformButtons.module.css";
   composes: row from "../PlatformButtons.module.css";
+  position: relative;
+  z-index: 3;
   margin-top: auto;
   padding-top: var(--cw-space-2xs);
 }
@@ -857,6 +875,71 @@
 /* The canonical course-media object: the same framed 16:9 crop used by the
    builder and public catalogue. It remains inside the panel at every width so
    purchase does not turn one cover into a different composition. */
+/* ── The card system on the shelf (2026-09-13) ─────────
+
+   The cover lies in the card's FIELD, `--ds-card-inset` from every edge, and
+   everything under it indents past that by `--ds-card-body-inline` — the same
+   geometry as the builder's card and the public offer card
+   (docs/card-system-2026-09-13.md). The card used to put 1.5rem of paper
+   around its cover, the builder 1rem and the catalogue none; one course on
+   three shelves looked like three different objects.
+
+   A class beside `.card` / `.cardMuted` rather than a change to them: `.card`
+   is also «Контакти», «Нагадування» and the install card, which are panels
+   with text in them, not collection objects with a picture. Declared after
+   both, so at equal specificity the field wins by source order. */
+.courseCardFrame {
+  padding: var(--ds-card-inset);
+}
+
+.courseCardFrame > :not(.coverFrame, .cardOverlay),
+.shelfCard > :not(.cover, .coverFallback, .cardOverlay) {
+  margin-inline: var(--ds-card-body-inline);
+}
+
+.courseCardFrame > :last-child,
+.shelfCard > :last-child {
+  margin-block-end: var(--ds-card-body-inline);
+}
+
+/* The row size: the cover as a thumbnail at `--ds-card-thumb-width`, then the
+   title and where you stopped, then the ring when there is a run to show. */
+.shelfRow {
+  composes: glance;
+  grid-template-columns: var(--ds-card-thumb-width) minmax(0, 1fr) auto;
+  gap: var(--cw-space-sm);
+  padding: var(--ds-card-inset);
+  padding-inline-end: var(--cw-space-sm);
+}
+
+.coverThumb,
+.coverThumbFallback {
+  width: var(--ds-card-thumb-width);
+  aspect-ratio: var(--ds-card-media-ratio);
+  border-radius: calc(var(--cw-radius-md) - var(--ds-card-inset));
+  object-fit: cover;
+  background: var(--cw-mat-surface-sunk);
+}
+
+.coverThumbFallback {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--cw-sem-guide-primary) 20%, var(--cw-mat-surface-sunk)),
+    var(--cw-mat-surface-sunk)
+  );
+  color: var(--cw-platform-ink-strong);
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-body-size);
+  font-weight: 500;
+}
+
+.coverThumb[data-dimmed],
+.coverThumbFallback[data-dimmed] {
+  opacity: 0.5;
+}
+
 /* THE FRAME THE DRAFT BADGE PINS TO. `.cover`/`.coverFallback` keep their own
    margin so the frame costs nothing when there is no badge to place — it is a
    positioning context, not a second box around the picture. */
@@ -869,8 +952,8 @@
   width: 100%;
   max-width: 100%;
   margin: 0 0 var(--cw-space-2xs);
-  aspect-ratio: 16 / 9;
-  border-radius: var(--cw-radius-md);
+  aspect-ratio: var(--ds-card-media-ratio);
+  border-radius: var(--ds-card-media-radius);
   object-fit: cover;
   background: var(--cw-mat-surface-sunk);
 }
@@ -1037,8 +1120,8 @@
    read as lines: every input, every textarea, every label. They all still end
    on one edge — the thing the settlement was for — and it is still `68ch` of
    the UI face. What changes is that the card is now as wide as the cabinet
-   gives it, and the bands that hold pictures (`.authorIdentity`,
-   `.authorProfileBlocksField`) are free to use that width. Two zones, and the
+   gives it, and a band that holds no text (`.authorProfileBlocksField`) is
+   free to use that width. Two zones, and the
    line between them is not a compromise: text has a measure, media has a
    frame, and neither has ever wanted the other's. */
 /* THE MEASURE IS NOT THIS FORM'S ANY MORE (2026-09-06).
@@ -1092,8 +1175,6 @@
 /* NOT TEXT, SO NOT A MEASURE. A photograph and a composite editor are not read
    along a line; a typographic cap on either is a typographic law applied to
    something that is not type. */
-.authorIdentity > .authorField,
-.authorBackgroundField,
 .authorProfileBlocksField {
   max-width: none;
 }
@@ -1120,6 +1201,26 @@
 .authorFieldRow > .authorField {
   flex: 1 1 var(--ds-field-sm);
   min-width: min(100%, 13rem);
+}
+
+/* THE ROW IS THE MEASURE, NOT ITS PHRASES (2026-09-14). Each phrase capped at
+   18rem plus the gap ran the row to 37rem — past the 35rem edge every other
+   field in the form ends on — and, stacked on a phone, left both inputs 6px
+   short of the column. The row takes the measure and splits it. */
+.authorFieldRow {
+  max-width: var(--ds-field-measure);
+}
+
+.authorFieldRow > .authorFieldPhrase {
+  max-width: none;
+}
+
+/* A lone phrase on a phone: the column is narrower than the step, and a field
+   6px short of every edge around it reads as a mistake, not as a size. */
+@media (max-width: 560px) {
+  .authorFieldPhrase {
+    max-width: none;
+  }
 }
 
 /* A BAND YOU CAN CLOSE, AND A LINE THAT SAYS WHERE IT STARTS. Five sections
@@ -1228,165 +1329,42 @@
   line-height: 1.45;
 }
 
-/* ── The section is shaped like the page it writes (2026-09-06) ──────────────
+/* ── «Ви»: three groups, one column (2026-09-14) ─────────────────────────────
 
-   WHAT THIS REPLACES, TWICE OVER. First a form whose text stopped at the
-   reading measure while its pictures ran the full width of the card — two right
-   edges and a dead half-screen. Then a two-zone grid, which squared the edges
-   and still left the author unable to tell what the page would look like: the
-   controls were tidy and the arrangement belonged to no surface.
+   IT WAS THE PAGE HEADER, LAID OUT AS A FORM. Band, portrait, the name beside
+   it — the composition of `/expert/[slug]` — and under it the course card as a
+   second copy of the same photograph. Right for a preview, wrong for a form:
+   three sizing systems met in one lockup (the band at 46rem, the phrases at
+   18rem, the card row at 35rem) and left four right edges, and one photograph
+   was split across two groups — its avatar in the header, its replace, remove
+   and required description beside the card only, so × on «Картка» took the
+   avatar with it.
 
-   So the arrangement is the page's. `/expert/[slug]` opens with a band, a round
-   portrait over its lower edge, and the name and role beside that portrait
-   (`AuthorProfileShowcase`). This section is that lockup, with the pictures
-   made draggable and the two lines made inputs. Nothing is previewed twice,
-   because the form is the preview.
-
-   The one thing kept out of the lockup is the course card: it is a different
-   surface — under every course, in the directory — and standing it inside the
-   page's own header would say it belongs there. */
-/* ONE WIDTH FOR THE LOCKUP. The band is media and takes a frame rather than a
-   measure, but a band that runs wider than the two lines beside the portrait
-   under it is not the page's header — it is a picture with a form under it.
-   The lockup is as wide as its own parts: the portrait's column, the interval,
-   and the measure the name and role are written on. */
-.authorHero {
-  display: grid;
-  min-width: 0;
-  max-width: calc(var(--ds-field-measure) + 10rem + var(--cw-space-md));
+   So the section is grouped by WHAT IS EDITED: who you are (name, role), your
+   photograph (one file, its two frames, its description), your page's
+   background. One column on the form's measure — one left edge, one right —
+   and the gap between groups (`lg`) is wider than any gap inside one. The
+   frames still draw the exact ratios and radii the page draws; that is what a
+   crop frame is for. They stopped pretending the form is the page. */
+.authorSectionBodyGroups {
+  gap: var(--cw-space-lg);
 }
 
-/* THE PORTRAIT SITS UNDER THE BAND, NOT ON IT — and that is a difference from
-   the page, taken deliberately. The page overlaps the two, and the first
-   version here did too; but in an editor the strip between the band and the
-   portrait is not empty, it holds the band's own zoom. Pulled up over it, the
-   portrait covered a control the author has to reach. The composition survives
-   the change (band, then portrait and the two lines beside it); a hidden
-   slider would not.
-
-   `align-items: start` keeps the two lines at the top of the row rather than
-   centred against a tall frame. */
-.authorHeroIdentity {
-  position: relative;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: var(--cw-space-md);
-  min-width: 0;
-  margin-block-start: var(--cw-space-xs);
-}
-
-.authorHeroAvatar {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  gap: var(--cw-space-2xs);
-  width: 10rem;
-  min-width: 0;
-}
-
-/* The frame's own name, under it — a heading above the portrait would sit on
-   the band the portrait is there to overlap. */
-.authorHeroCaptionRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--cw-space-2xs);
-  min-width: 0;
-}
-
-.authorHeroCaption {
-  margin: 0;
-  min-width: 0;
-  color: var(--cw-platform-muted);
-  font-size: var(--ds-type-label-size);
-  line-height: 1.4;
-}
-
-/* The two lines the portrait is read with, beside it — where the page prints
-   them. No top padding to fake an optical centre: they start where the
-   portrait starts, which is the alignment the page's own header has. */
-.authorHeroFields {
-  display: grid;
-  align-content: start;
-  gap: var(--cw-space-md);
-  min-width: 0;
-}
-
-/* The card, and the caption describing the photograph in it. */
-.authorCardRow {
-  display: grid;
-  gap: var(--cw-space-md);
-  align-items: start;
-  min-width: 0;
-}
-
-@media (min-width: 561px) {
-  .authorCardRow {
-    grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
-  }
-}
-
-/* A phone has no width for a 10rem circle beside two inputs, so the lockup
-   stacks. */
-@media (max-width: 560px) {
-  .authorHeroIdentity {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .authorHeroFields {
-    padding-block-start: 0;
-  }
-}
-
-/* The byline's own row: the photo's two frames, then the name and role that
-   print beside them. Stacked below 901px, where a phone has no width to put
-   a 26rem pair of crop frames next to a text column. */
-/* THE PORTRAIT AND THE GROUND IT PRINTS ON, SIDE BY SIDE. The two crop frames
-   and the backdrop are one decision — the portrait is read against that
-   backdrop on the author's own page — so on any width that can hold them they
-   sit in one band. Below the tablet line they stack, in the order the page
-   itself reads them: the person, then what is behind them. */
-.authorIdentity {
+/* A group: its label unit (label, hint, and the commands that act on the whole
+   group), then what it holds. */
+.authorMediaGroup {
   display: grid;
   gap: var(--cw-space-md);
   min-width: 0;
+  max-width: var(--ds-field-measure);
 }
 
-/* THE BACKDROP DROPS UNDER THE PORTRAITS (2026-09-06). It used to take a
-   column beside them, because the band was the full width of the card and had
-   a column to spare. Inside the media zone there is no spare column, and the
-   backdrop is the better neighbour of the two: it is a 6:1 band that wants
-   length, and under the frames it gets the whole zone rather than a third of
-   the card. The portrait is still read against it — they are still one band,
-   one above the other. */
-.authorIdentity {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-/* The backdrop is a wide, shallow plate; under the portraits it reads as the
-   ground they are printed on rather than as a field of its own. */
-.authorBackgroundField {
-  align-content: start;
-}
-
-/* AND IT FILLS THE ZONE IT SITS IN. Its slot is a fixed 20rem — chosen when
-   this field stood alone under a full-width card — and inside a 36rem media
-   column that left a thumbnail with dead paper beside it, which is the same
-   failure the portrait's own cap had on a phone. The frame takes the column
-   and the slot takes the frame; the 20rem stays as the floor for the narrow
-   band, where `min-width` is what keeps it honest.
-
-   The frame has to become a block first: it is `width: fit-content`, and a
-   child asking for `100%` of a shrink-to-fit parent is the circular size no
-   browser resolves to anything but zero — see the note on `.authorMediaFrame`. */
+/* The background's frame and empty slot take the group's full measure. The
+   slot's wrapper is shrink-to-fit by default (see `.authorMediaFrame`), and a
+   child asking for 100% of a shrink-to-fit parent resolves to zero — so the
+   wrapper becomes a block first. */
 .authorBackgroundField .authorMediaFrame {
   display: block;
-  width: 100%;
-}
-
-.authorBackgroundField .authorBackgroundEmpty,
-.authorBackgroundField .authorBackgroundPreview {
   width: 100%;
 }
 
@@ -1396,6 +1374,19 @@
   gap: var(--cw-space-2xs);
   font-size: var(--ds-type-body-sm-size);
   color: var(--cw-platform-muted);
+}
+
+/* ONE LABEL, ONE HINT, ONE CONTROL — the same three steps for every field in
+   the form (2026-09-14). The label and its hint were the same size in the same
+   muted grey, told apart only by their words; the label now carries the text
+   colour and a step of weight, and the hint (`.authorNotice`) drops to the
+   label size. `.authorFieldLabel` is the explicit form, for a label that has
+   to sit beside a `RequiredMark` rather than wrap it. */
+.authorField > span:first-child,
+.authorFieldHead > span:first-child,
+.authorFieldLabel {
+  color: var(--cw-platform-text);
+  font-weight: 600;
 }
 
 /* The label and the command that grows its list, on one row — the same
@@ -1470,8 +1461,8 @@
 
 .authorRequiredHint {
   max-width: 22rem;
-  margin-block: var(--cw-space-2xs);
   margin: 0;
+  font-weight: 400;
   padding: var(--cw-space-xs) var(--cw-space-sm);
   border: 1px solid var(--cw-mat-stroke-quiet, var(--cw-platform-border));
   border-radius: var(--cw-radius-md);
@@ -1535,7 +1526,6 @@
      under 16px, then does not zoom back out. On a form this long that is a
      zoom-in per field, with the page left magnified in between. `max()`
      keeps the token wherever the token is already big enough. */
-  font-size: max(1rem, var(--ds-type-body-sm-size));
   padding: var(--cw-space-xs) var(--cw-space-sm);
   border-radius: var(--cw-radius-md);
   border: 1px solid var(--cw-platform-border);
@@ -1543,6 +1533,11 @@
   color: var(--cw-platform-text);
   font: inherit;
   font-family: var(--cw-font-ui);
+  /* AFTER the `font` shorthand, which resets size. Declared above it, this
+     rule was dead and the inputs rendered at 14.4px — under the floor it
+     exists to hold (2026-09-14). */
+  font-size: max(1rem, var(--ds-type-body-sm-size));
+  font-weight: 400;
 }
 
 /* The prose measure is now the form's measure — see `.authorForm` — so a
@@ -1722,49 +1717,33 @@
     var(--cw-mat-shadow-soft);
 }
 
-/* Replace/remove for a photo that already has its two crop cards below it —
-   plain buttons beside the alt text, not icons floated on top of an image
-   that is no longer shown here at full size. Same square-secondary shape as
-   `.authorIconAction` (the credential row's own remove button); a distinct
-   class only because it needs the same hidden-input focus ring as
-   `.authorMediaAction` above, which a plain button never has to carry. */
-/* Replace and remove act on the whole field, so they sit in its heading with
-   the label — the same place every other action in this form lives. They used
-   to share a row with the alt-text input, which made that one input narrower
-   than every other input in the form: the ragged right edge. */
-/* The pair in the photo field's heading. `flex-end` so they sit against the
-   same right edge as every other head action in the form. */
+/* Replace and remove act on the whole file — for the photograph, both of its
+   frames — so they sit in the group's head beside its label, not on one frame.
+   On a frame they read as that frame's own commands, and × on the card took
+   the avatar with it (2026-09-14). */
 .authorPhotoActions {
   display: flex;
   align-items: center;
-  gap: var(--cw-space-xs);
+  gap: var(--cw-space-2xs);
 }
 
-/* ── An organ that sits ON a photograph takes the photograph's material,
-   not the theme's (2026-09-05) ────────────────────────────────────────────────
-   These controls stand on an image the author uploaded, and the theme knows
-   nothing about that image. Dressed in theme ink they invert exactly wrong
-   half the time: the light theme put dark glyphs on a near-black portrait, the
-   dark theme put light glyphs on a bright one, and in both cases the control
-   vanished into the picture it was there to command.
-
-   `--cw-mat-surface-night` is the answer the platform already had — a fixed
-   dark ground with `accent-contrast` on it, the same recipe `.onMedia` gives
-   the replace/remove pair on the background slot. It does not follow the
-   theme, because the thing under it does not either. */
-.authorPhotoToolbarAction {
-  composes: onMedia square from "../PlatformButtons.module.css";
+/* The form's quiet icon command (`.authorAddIcon`, `.authorIconAction`) on a
+   `<label>` wrapping a hidden file input, so the focus ring is reflected from
+   that input. */
+.authorFileAction {
+  composes: base chromeBare square from "../PlatformButtons.module.css";
   flex: none;
+  color: var(--cw-platform-muted);
   cursor: pointer;
 }
 
 @media (hover: hover) {
-  .authorPhotoToolbarAction:hover {
-    background-color: color-mix(in srgb, var(--cw-mat-surface-night) 88%, transparent);
+  .authorFileAction:hover {
+    color: var(--cw-platform-text);
   }
 }
 
-.authorPhotoToolbarAction:has(.visuallyHidden:focus-visible) {
+.authorFileAction:has(.visuallyHidden:focus-visible) {
   outline: none;
   box-shadow:
     0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 28%, transparent),
@@ -1832,97 +1811,32 @@
   outline-offset: 2px;
 }
 
-/* An empty slot at the portrait's own size, so the row does not jump the first
-   time an image lands in it. */
+/* An empty slot at the card frame's size and ratio, so the group does not jump
+   when the photograph lands. It was 13rem square — neither the 10rem avatar
+   nor the 16rem card it becomes. */
 .authorPhotoEmpty {
-  width: 13rem;
-  height: 13rem;
+  width: 16rem;
+  max-width: 100%;
+  aspect-ratio: var(--ds-card-portrait-ratio);
 }
 
-/* The photo's own crop, on the two frames it is actually shown through — the
-   builder's `BuilderCoverEditor` set the pattern for a course's cover. */
-/* No margin of its own — the field it sits in already spaces its own parts
-   with `.authorField`'s gap, and a margin on top of that gap is a second
-   answer to one question. */
+/* The photograph's two frames. Stacked on a phone; side by side from the
+   tablet line, where a 10rem avatar and a 16rem card fit the measure. */
 .photoCropGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--cw-space-md);
+  min-width: 0;
 }
 
-/* A label over a crop frame, not a plate around one — `.authorForm` is
-   already the matte card this sits inside, and a bordered surface here on
-   top of that read as a card inside a card inside a card. */
+/* One frame: its label unit, then the picture — the grammar of every field, so
+   «Аватарка» and «Картка» read as two fields of one group rather than as a
+   caption and a sub-section. */
 .photoCropPanel {
-  min-width: 0;
   display: grid;
   align-content: start;
   gap: var(--cw-space-sm);
-}
-
-/* The card frame plus the pair of actions that sit on it. `position:
-   relative` here rather than on the frame itself, because the frame is the
-   element with `overflow: hidden` — a corner overlay inside it would be
-   clipped by its own radius. */
-.photoCropFrame {
-  position: relative;
-  display: grid;
-  flex: 1 1 auto;
   min-width: 0;
-}
-
-/* BESIDE THE FRAME IT ACTS ON, at its vertical middle. Three placements were
-   tried: inside the frame (the round avatar's clip ate it), just outside the
-   frame's corner (it floated in the empty corner of a box with no drawn
-   edge), and in the panel heading with `space-between` (which pushed it to
-   the far end of the column, an inch of nothing between it and the picture).
-   Here it is adjacent to the picture in every band and for both shapes, and
-   `center` keeps it attached to a circle as readily as to a tall card. */
-.photoCropAside {
-  display: flex;
-  align-items: center;
-  gap: var(--cw-space-2xs);
-  min-width: 0;
-}
-
-/* The card frame takes the row; the avatar keeps its own 10rem circle. */
-.photoCropAside .photoCropCard {
-  min-width: 0;
-}
-
-/* Shrinkable, not fixed. `flex: none` on a 10rem circle beside a 3rem button
-   needs 212px that the tablet band's half-column does not always have — at
-   200% zoom (WCAG 1.4.4) it overflowed sideways. The card frame next to it
-   was already `1 1 auto`; this is the asymmetry, not a second rule.
-
-   It is the circle again, not a box around it: the frame-plus-slider stack this
-   used to size stopped existing when the zoom moved into the crop editor. */
-.photoCropAside > .photoCropAvatar {
-  flex: 0 1 auto;
-  max-width: 100%;
-}
-
-/* A token gap, not a margin under the title: `0.15rem` was 2.4px, off the 4px
-   rhythm grid, and the two font sizes (0.95rem / 0.78rem) were a type scale
-   of their own next to the one in the token file. */
-.photoCropHead {
-  display: grid;
-  gap: var(--cw-space-2xs);
-  min-width: 0;
-}
-
-.photoCropHead h4 {
-  margin: 0;
-  font-size: var(--ds-type-body-sm-size);
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.photoCropHead p {
-  margin: 0;
-  color: var(--cw-platform-muted);
-  font-size: var(--ds-type-label-size);
-  line-height: 1.45;
 }
 
 .photoCropCard,
@@ -1947,7 +1861,7 @@
   user-select: none;
 }
 
-/* Same ratio as `.guideCard` at its desktop measure — the frame the author's
+/* The person's frame, `--ds-card-portrait-ratio` — the same token `.guideMedia` reads, so the frame the author's
    photo fills wherever `AuthorCard` renders it.
 
    NO WIDTH CAP ON A PHONE. `max-width: 16rem` left a 256px portrait in a
@@ -1956,8 +1870,8 @@
    at 561px, where this frame shares its row with the avatar — see the tablet
    band below. */
 .photoCropCard {
-  aspect-ratio: 24 / 29;
-  border-radius: var(--cw-radius-md);
+  aspect-ratio: var(--ds-card-portrait-ratio);
+  border-radius: var(--ds-card-media-radius);
 }
 
 /* THE AVATAR'S OWN FRAME — the author's page and a course's byline. Square
@@ -2051,62 +1965,56 @@
    The guides, the grip and the zoom row that used to live here left with the
    gesture they explained — the aiming happens in `CropEditor` now, over the
    whole photograph rather than inside the kept part of it. */
+/* THE SAME BOX AS THE ACTIONS ON THE OTHER CORNER (2026-09-14). It was a 28px
+   tile beside 36px replace/remove squares — three sizes of square on one
+   photograph once the recentre glyph beside the frame was counted — so it read
+   as a smaller, lesser button rather than as the sign that the whole picture is
+   one. The mark now takes the on-media square itself; the frame stays the only
+   thing that is pressed, so this is `aria-hidden` and takes no pointer. */
 .photoCropOpen {
   position: absolute;
   left: var(--cw-space-2xs);
   bottom: var(--cw-space-2xs);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  /* md, because a 28px box takes md — the geometry law, and this rule was one
-     of the 22 exceptions the ratchet was carrying. Burnt down 2026-09-11 rather
-     than copied: the builder's cover frames took the same mark that day, and a
-     new file inheriting an old exemption is how a baseline stops shrinking. */
-  border-radius: var(--cw-radius-md);
-  background: color-mix(in srgb, var(--cw-mat-scrim-ink) 62%, transparent);
-  color: var(--cw-platform-accent-contrast);
+  display: flex;
   pointer-events: none;
 }
 
-/* 561px, the platform's tablet boundary — not 641px, which was a fourth
-   system on top of the three this file already reconciled (see the note over
-   the wider-viewport section below). The two frames go side by side for the
-   whole tablet band and stay there on desktop, where the media column is
-   still wide enough for both. */
+.photoCropOpenMark {
+  composes: onMedia square from "../PlatformButtons.module.css";
+}
+
+/* A circle has no bottom-left corner to stand in: centred on its lower edge
+   the mark stays inside the round clip. */
+.photoCropAvatar .photoCropOpen {
+  left: 50%;
+  translate: -50% 0;
+}
+
+/* 561px, the platform's tablet boundary. The two frames share a row, and their
+   label units share its first track through `subgrid`, so a note that wraps to
+   two lines under the narrow avatar does not drop that picture below the
+   card's. */
 @media (min-width: 561px) {
   .photoCropGrid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: 10rem minmax(0, 16rem);
+    grid-template-rows: auto auto;
     align-items: start;
   }
 
-  /* Two frames on one row: the card takes its own measure back, because at
-     half a tablet's width an unbounded 24:29 portrait is taller than the
-     viewport.
-
-     THE CAP GOES ON THE BOX, NOT ON THE PICTURE (2026-09-06). Capping the frame
-     alone left `.photoCropFrame` — the positioned parent of the replace/remove
-     pair — stretched to the whole column, so the two controls floated off the
-     card's right edge into the panel's empty half, and the zoom row under them
-     ran wider than the photograph it magnifies. The cap belongs to whichever
-     box the overlay measures itself against. Scoped to `.photoCropGrid`,
-     because the 6:1 backdrop below uses the same three classes and must keep
-     its whole row. */
-  .photoCropGrid .photoCropFrame,
-  .photoCropGrid .photoCropCard {
-    max-width: 16rem;
+  .photoCropPanel {
+    grid-row: span 2;
+    grid-template-rows: subgrid;
   }
 }
 
-/* A real length, not `width: 100%` — see the note on `.authorMediaFrame`
-   above. `max-width: 100%` still lets it shrink on a narrow phone; it just
-   never has to ask its shrink-to-fit parent what its own width is. */
+/* At the band's own ratio, so the empty slot is the frame it becomes and
+   nothing jumps when the image lands (it was 20rem × 7rem against a 5:1
+   frame). Its wrapper is a block — see `.authorBackgroundField
+   .authorMediaFrame` — so `100%` resolves. */
 .authorBackgroundPreview,
 .authorBackgroundEmpty {
-  width: 20rem;
-  max-width: 100%;
-  height: 7rem;
+  width: 100%;
+  aspect-ratio: var(--ds-author-banner-ratio);
   border-radius: var(--cw-radius-md);
 }
 
@@ -2140,8 +2048,9 @@
 .authorNotice {
   margin: 0;
   color: var(--cw-platform-muted);
-  font-size: var(--ds-type-body-sm-size);
-  line-height: 1.5;
+  font-size: var(--ds-type-label-size);
+  font-weight: 400;
+  line-height: 1.45;
 }
 
 /* Upload failures used to render through `.authorNotice` — the same muted

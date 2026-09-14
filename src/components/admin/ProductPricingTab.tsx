@@ -39,6 +39,7 @@ import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
 import { Icon } from "@/components/Icon";
 import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
+import { AdminRow } from "@/components/admin/AdminRow";
 
 function EmptyIcon() {
   return <Icon className="cw-muted" name="price" size={20} />;
@@ -128,94 +129,93 @@ function ProductPricingRow({
   };
 
   return (
-    <div className={lists.item}>
-      <div className={lists.itemRow}>
-        <div className={lists.itemBody}>
-          <p className={lists.itemTitle}>{row.title}</p>
-          <div className={lists.itemMeta}>
-            <span className={lists.itemCode}>{row.code}</span>
-            {row.offer && row.offer.amount != null ? (
-              <span>
-                {row.offer.amount} {row.offer.currency}
-                {row.offer.listAmount ? ` · ${t("catalog_quoted")} ${row.offer.listAmount}` : ""}
-              </span>
-            ) : (
-              <span>{t("products_price_on_request")}</span>
-            )}
-            <span>{t(row.expectedKind === "lead" ? "products_kind_lead" : "products_kind_checkout")}</span>
-            {row.offer && !row.offer.active ? (
-              <span className="cw-status-failed-text">{t("products_inactive")}</span>
-            ) : null}
-          </div>
-          <p className={controls.hint}>
-            {t(row.expectedKind === "lead" ? "products_offer_lead" : "products_offer_checkout")}
-          </p>
-        </div>
-      </div>
-
-      {canEdit ? (
-        <div className={controls.fields}>
-          <label className={controls.field}>
-            <span className={controls.fieldCaption}>{t("products_amount")}</span>
-            <input
-              type="number"
-              min={1}
-              step={1}
-              inputMode="numeric"
-              placeholder={t("products_price_on_request")}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className={controls.input}
-            />
-          </label>
-          <label className={controls.field}>
-            <span className={controls.fieldCaption}>{t("products_list_amount")}</span>
-            <input
-              type="number"
-              min={1}
-              step={1}
-              inputMode="numeric"
-              value={listAmount}
-              onChange={(e) => setListAmount(e.target.value)}
-              className={controls.input}
-            />
-          </label>
-          <label className={controls.field}>
-            <span className={controls.fieldCaption}>{t("products_kind")}</span>
-            <select
-              value={kind}
-              onChange={(e) => setKind(e.target.value === "checkout" ? "checkout" : "lead")}
-              className={controls.select}
-            >
-              <option value="checkout">{t("products_kind_checkout")}</option>
-              <option value="lead">{t("products_kind_lead")}</option>
-            </select>
-          </label>
-          <div className={controls.actions}>
-            <button
-              type="button"
-              onClick={() => void save()}
-              disabled={busy}
-              className={`${controls.action} cw-surface-2`}
-            >
-              {t("products_save")}
-            </button>
-            {row.offer ? (
-              <button
-                type="button"
-                onClick={() => void toggleActive(!row.offer?.active)}
-                disabled={busy}
-                className={`${controls.action} cw-btn-muted`}
-              >
-                {t(row.offer.active ? "products_withdraw" : "products_resume")}
-              </button>
-            ) : null}
-          </div>
-        </div>
-      ) : (
-        <p className={controls.hint}>{t("access_role_admin_only")}</p>
-      )}
-      <p className={controls.hint}>{t("products_amount_hint")}</p>
-    </div>
+    <AdminRow
+      title={row.title}
+      meta={
+        <>
+          <span className={lists.itemCode}>{row.code}</span>
+          {row.offer && row.offer.amount != null ? (
+            <span>
+              {row.offer.amount} {row.offer.currency}
+              {row.offer.listAmount ? ` · ${t("catalog_quoted")} ${row.offer.listAmount}` : ""}
+            </span>
+          ) : (
+            <span>{t("products_price_on_request")}</span>
+          )}
+          <span>{t(row.expectedKind === "lead" ? "products_kind_lead" : "products_kind_checkout")}</span>
+          {row.offer && !row.offer.active ? (
+            <span className="cw-status-failed-text">{t("products_inactive")}</span>
+          ) : null}
+        </>
+      }
+      footer={
+        <>
+          {canEdit ? (
+            <div className={controls.priceForm}>
+              <label className={controls.field}>
+                <span className={controls.fieldCaption}>{t("products_amount")}</span>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  inputMode="numeric"
+                  placeholder={t("products_price_on_request")}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className={controls.input}
+                />
+              </label>
+              <label className={controls.field}>
+                <span className={controls.fieldCaption}>{t("products_list_amount")}</span>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  inputMode="numeric"
+                  value={listAmount}
+                  onChange={(e) => setListAmount(e.target.value)}
+                  className={controls.input}
+                />
+              </label>
+              <label className={controls.field}>
+                <span className={controls.fieldCaption}>{t("products_kind")}</span>
+                <select
+                  value={kind}
+                  onChange={(e) => setKind(e.target.value === "checkout" ? "checkout" : "lead")}
+                  className={controls.select}
+                >
+                  <option value="checkout">{t("products_kind_checkout")}</option>
+                  <option value="lead">{t("products_kind_lead")}</option>
+                </select>
+              </label>
+              <div className={controls.priceActions}>
+                <button
+                  type="button"
+                  onClick={() => void save()}
+                  disabled={busy}
+                  className={`${controls.action} cw-surface-2`}
+                >
+                  {t("products_save")}
+                </button>
+                {row.offer ? (
+                  <button
+                    type="button"
+                    onClick={() => void toggleActive(!row.offer?.active)}
+                    disabled={busy}
+                    className={`${controls.action} cw-btn-muted`}
+                  >
+                    {t(row.offer.active ? "products_withdraw" : "products_resume")}
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <p className={controls.hint}>{t("access_role_admin_only")}</p>
+          )}
+          <p className={controls.hint}>{t("products_amount_hint")}</p>
+        </>
+      }
+      note={t(row.expectedKind === "lead" ? "products_offer_lead" : "products_offer_checkout")}
+    />
   );
 }

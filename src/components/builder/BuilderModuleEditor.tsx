@@ -21,6 +21,7 @@ import type { DragRef, RowDrag } from "./useRowDrag";
 import { LAST_LESSON_REFUSAL, removeLesson, removeModule, stepLesson, stepModule } from "./structureMoves";
 import styles from "./Builder.module.css";
 import { ids, trailTitle } from "./BuilderCourseView";
+import { COURSE_STATE_LABELS } from "@/lib/lms/courseState";
 
 export function BuilderCourseRail({
   published,
@@ -125,7 +126,7 @@ export function BuilderCourseRail({
       <div className={styles.courseRailStatus}>
         <span className={styles.courseRailStatusLine}>
           <HandGraphic className={styles.courseRailStatusDot} name="dot" size={12} />
-          {published ? "Опубліковано" : "Чернетка"}
+          {published ? COURSE_STATE_LABELS.published.uk : COURSE_STATE_LABELS.draft.uk}
         </span>
         <span className={styles.courseRailStatusLine}>
           <HandGraphic className={styles.courseRailStatusDotBoundary} name="dot" size={12} />

@@ -54,6 +54,16 @@ export function coverScale(crop: ImageCrop): number | undefined {
   return cropIsZoomed(crop.scale) ? crop.scale : undefined;
 }
 
+/**
+ * The cover in a TALL frame — the admin row's lead, which stands the full
+ * height of its row. It reads the portrait framing the author set for the
+ * phone hero, so a narrow upright slice shows what they chose to show rather
+ * than the middle of a landscape.
+ */
+export function coverPortraitStyle(cover: Cover | undefined): CSSProperties {
+  return cropStyle(coverPortraitCrop(cover), COVER_CROP_DEFAULT);
+}
+
 /** The full style for a cover drawn as an `<img>` — the cabinet and builder cards. */
 export function coverCardStyle(cover: Cover | undefined): CSSProperties {
   return cropStyle(coverLandscapeCrop(cover), COVER_CROP_DEFAULT);

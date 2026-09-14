@@ -19,7 +19,14 @@
 import { adminClient } from "@/lib/auth/adminClient";
 import { AccessError, writeAudit } from "@/lib/admin/access";
 import { courseFromRows } from "@/lib/lms/authoring";
-import { courseOfferCode, diffCourses, validateCourse, type Course } from "@/lms-core";
+import {
+  COURSE_CATEGORIES,
+  courseOfferCode,
+  diffCourses,
+  validateCourse,
+  type Course,
+  type CourseCategory,
+} from "@/lms-core";
 import { listLiveCourses } from "@/lib/lms/liveCatalog";
 import { noteForAccessRule } from "@/lib/lms/accessTerm";
 import type { CatalogOffer, CatalogRow, PendingDiff, SaleBlocker } from "@/lib/admin/catalogTypes";
@@ -89,6 +96,14 @@ export function saleBlockersOf(input: {
   return blockers;
 }
 
+/* The column is jsonb and the database checks nothing about what is inside it,
+   so the row keeps only the codes this build knows — an unknown one would reach
+   the filter as a category with no words. */
+function catalogCategories(value: unknown): CourseCategory[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((one): one is CourseCategory => (COURSE_CATEGORIES as readonly unknown[]).includes(one));
+}
+
 /** Every course with its offer and its readiness, newest activity first. */
 export async function listCatalog(): Promise<CatalogRow[]> {
   const db = adminClient();
@@ -96,7 +111,7 @@ export async function listCatalog(): Promise<CatalogRow[]> {
   const { data: courseRows, error } = await db
     .from("lms_courses")
     .select(
-      "id, slug, program_slug, title, status, review_status, pending_content, pending_review_status, visibility, author_id, updated_at",
+      "id, slug, program_slug, title, status, review_status, pending_content, pending_review_status, visibility, author_id, updated_at, cover, categories, submitted_at, pending_submitted_at",
     )
     .order("updated_at", { ascending: false });
   if (error) throw new AccessError(error.message, 500);
@@ -242,6 +257,12 @@ export async function listCatalog(): Promise<CatalogRow[]> {
       updatedAt: row.updated_at as string,
       offer,
       blockers: saleBlockersOf({ status: row.status as string, reviewStatus, visibility, offer, onShelf }),
+      cover: (row.cover as Course["cover"] | null) ?? null,
+      categories: catalogCategories(row.categories),
+      submittedAt:
+        ((row.pending_content ? row.pending_submitted_at : row.submitted_at) as string | null) ??
+        (row.submitted_at as string | null) ??
+        null,
     } satisfies CatalogRow;
   });
 }

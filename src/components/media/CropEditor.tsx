@@ -40,6 +40,7 @@ import {
 import { createPortal } from "react-dom";
 
 import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { cropKeyZoom, cropWheelZoom } from "@/components/media/CropZoom";
 import {
   CROP_PAN_EPSILON,
@@ -187,9 +188,19 @@ export function CropEditor({
 
   /* The stage takes the focus when it opens: the whole point of this overlay is
      the one control in it, and landing on the dialog's paper instead would make
-     the keyboard user hunt for it. */
+     the keyboard user hunt for it.
+
+     THE RING FOLLOWS HOW IT WAS OPENED (2026-09-14). Chrome treats a
+     programmatic focus after a click as keyboard-visible, so a pointer opening
+     drew the focus ring round the stage and the thirds inside the window, at
+     rest, before anyone touched anything. Suppressing it unconditionally hid
+     where focus landed for a keyboard opening too. The opener still holds focus
+     when this runs, and its own `:focus-visible` is the browser's answer to
+     which of the two it was. */
   useEffect(() => {
-    stageRef.current?.focus();
+    const opener = document.activeElement;
+    const byKeyboard = opener instanceof HTMLElement && opener.matches(":focus-visible");
+    stageRef.current?.focus({ preventScroll: true, focusVisible: byKeyboard } as FocusOptions);
   }, []);
 
   const frame = cropWindowRect(photo, shape, scale, { x, y });
@@ -320,12 +331,14 @@ export function CropEditor({
           </div>
           <button
             type="button"
-            className={styles.action}
+            className={styles.closeAction}
             onClick={onClose}
             aria-label={labels.done}
             title={labels.done}
           >
-            <Icon name="close" size={18} />
+            <InteractionInkIcon>
+              <Icon name="close" size={18} />
+            </InteractionInkIcon>
           </button>
         </div>
         <div
@@ -371,23 +384,31 @@ export function CropEditor({
             ))}
           </div>
         </div>
-        <p className={styles.note} id={positionId} role="status">
+        {/* THE PERCENTAGES ARE FOR THE EAR. «Фокус: 100% по горизонталі» sat
+            under the picture as a second caption, telling a sighted author in
+            numbers what the window above already shows them in place. The live
+            region stays — without eyes it is the only answer to a keypress. */}
+        <p className={styles.srOnly} id={positionId} role="status">
           {labels.position(x, y)}
         </p>
-        {/* WHERE THE SLIDER WAS, a sentence instead. The gesture that replaced
-            it is on screen — four corners on the window — but a gesture with no
-            words is a gesture half the readers never find. */}
-        <p className={styles.note}>{labels.zoom}</p>
+        {/* ONE FOOT, READ LEFT TO RIGHT: how to use the stage, then the two
+            ways out of it. The recentre used to stand alone under two captions
+            as an unlabelled glyph, the heaviest-looking thing in the dialog
+            while doing the least; «Готово» existed only as the corner cross. */}
         <div className={styles.foot}>
-          <button
-            type="button"
-            className={styles.action}
-            onClick={onReset}
-            aria-label={labels.reset}
-            title={labels.reset}
-          >
-            <Icon name="undo" size={20} />
-          </button>
+          {/* WHERE THE SLIDER WAS, a sentence instead. The gesture that replaced
+              it is the window's corners — but a gesture with no words is a
+              gesture half the readers never find. */}
+          <p className={styles.hint}>{labels.zoom}</p>
+          <div className={styles.footActions}>
+            <button type="button" className={styles.resetAction} onClick={onReset}>
+              <Icon name="center" size={18} />
+              {labels.reset}
+            </button>
+            <button type="button" className={styles.doneAction} onClick={onClose}>
+              {labels.done}
+            </button>
+          </div>
         </div>
       </div>
     </div>,

@@ -337,10 +337,15 @@
     --ds-rail-control-icon: var(--ds-icon-in-control);
     --ds-rail-control-overhang: 1rem;
     --ds-author-banner-ratio: 5 / 1;
-    --ds-offer-card-height-desktop: 29rem;
+    --ds-card-inset: var(--cw-space-xs);
+    --ds-card-body-inline: var(--cw-space-xs);
+    --ds-card-media-radius: calc(var(--cw-card-radius) - var(--ds-card-inset));
+    --ds-card-media-ratio: 16 / 9;
+    --ds-card-portrait-ratio: 4 / 5;
+    --ds-card-thumb-width: 5rem;
+    --ds-card-thumb-width-compact: 4rem;
     --ds-offer-card-min-height-tablet: 26rem;
     --ds-offer-card-min-height-mobile: 22rem;
-    --ds-offer-card-height-rail: 26rem;
     --ds-offer-card-width-desktop: 24rem;
     --ds-offer-card-width-tablet: 21rem;
     --ds-offer-card-width-mobile: min(82vw, 19rem);
@@ -1058,13 +1063,13 @@
   .cw-status-success-badge {
     color: var(--cw-status-success);
     background-color: var(--cw-status-success-soft);
-    border: 1px solid color-mix(in srgb, var(--cw-status-success) 30%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-status-success) 30%, transparent);
   }
 
   .cw-status-running-badge {
     color: var(--cw-status-running);
     background-color: var(--cw-status-running-soft);
-    border: 1px solid color-mix(in srgb, var(--cw-status-running) 30%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-status-running) 30%, transparent);
   }
 
   /* A STATUS BADGE IS A SHAPE AS WELL AS A COLOUR (2026-09-12).
@@ -1077,29 +1082,43 @@
      that has to remember the shape is a caller that will get it wrong.
 
      `pill` at this size is the guard's own carve-out: text in a capsule cannot
-     be expressed by the radius bands without ceasing to be a capsule. */
+     be expressed by the radius bands without ceasing to be a capsule.
+
+     ONE BADGE FOR EVERY STATE (2026-09-14) — docs/design-system.md → «One state
+     badge». A fifth tone, `neutral`, is the paper one: a fact about where
+     something is, with nothing to do about it («Чернетка», «Опубліковано»). It
+     has no contour, so the contour of the coloured four is an INSET shadow, not
+     a border: a border would make them 2px taller than the neutral badge beside
+     them. Read through `StateBadge` / `STATE_BADGE_CLASS`, never retyped. */
+  .cw-status-neutral-badge,
   .cw-status-pending-badge,
   .cw-status-running-badge,
   .cw-status-success-badge,
   .cw-status-failed-badge {
     display: inline-block;
-    padding: 0.125rem var(--cw-space-xs);
+    flex: 0 0 auto;
+    padding: var(--cw-space-2xs) var(--cw-space-xs);
     border-radius: var(--cw-radius-pill);
     font-size: var(--ds-type-label-size);
     font-weight: 500;
     white-space: nowrap;
   }
 
+  .cw-status-neutral-badge {
+    color: var(--cw-platform-text);
+    background-color: var(--cw-mat-surface-sunk);
+  }
+
   .cw-status-pending-badge {
     color: var(--cw-status-pending);
     background-color: var(--cw-status-pending-soft);
-    border: 1px solid color-mix(in srgb, var(--cw-status-pending) 30%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-status-pending) 30%, transparent);
   }
 
   .cw-status-failed-badge {
     color: var(--cw-status-failed);
     background-color: var(--cw-status-failed-soft);
-    border: 1px solid color-mix(in srgb, var(--cw-status-failed) 30%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-status-failed) 30%, transparent);
   }
 
   .cw-alert-failed {
@@ -1283,6 +1302,18 @@
       display: none;
     }
 
+    /* THE VALUE SITS ON THE FIELD'S MIDDLE. A base-select is laid out like a
+       button, not like the native control it replaces: its content flows from
+       the top of the box, so once `.cw-input` gave every field the 3rem touch
+       floor the chosen option rode up against the upper border — «Рух» and
+       «У каталозі» a line higher than the chevron beside them (2026-09-14). The
+       native select centred it for free; the customizable one has to be told. */
+    .cw-select,
+    .cw-admin-theme select {
+      display: inline-flex;
+      align-items: center;
+    }
+
     .cw-select::picker(select),
     .cw-admin-theme select::picker(select) {
       position-try-order: normal;
@@ -1292,7 +1323,13 @@
       border: 1px solid var(--cw-border);
       border-radius: var(--cw-radius-md);
       color: var(--cw-text);
-      background-color: var(--cw-surface);
+      /* PAPER, NOT THE SURFACE TINT (2026-09-14). `--cw-surface` is the glass
+         tint — 76% of the material — and a picker has no blur under it, so the
+         open list showed the rows of the page straight through its options. A
+         floating list is an object of its own: the opaque material, its grain
+         and the raised shadow. */
+      background-color: var(--cw-mat-surface);
+      background-image: var(--cw-mat-grain-image);
       box-shadow: var(--cw-mat-shadow-raised);
     }
 
@@ -1632,9 +1669,12 @@
     box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
   }
 
+  /* A list row is a card by its box — 57–200px on the short side takes `lg`
+     (geometry audit, 2026-09-07). It said `sm` 12 while the plates and dialogs
+     beside it said 28, so one admin page showed three corners (2026-09-14). */
   .cw-list-item {
     border: 1px solid var(--cw-border);
-    border-radius: var(--cw-radius-sm);
+    border-radius: var(--cw-card-radius);
     background-color: var(--cw-surface);
     transition: background-color 0.2s ease;
   }

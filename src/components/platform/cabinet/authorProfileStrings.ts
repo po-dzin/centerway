@@ -6,6 +6,7 @@
 
 export const STRINGS = {
   uk: {
+    label: "Авторство",
     title: "Профіль автора",
     lead: "Ім'я, фото і біографія тут — вони підуть на кожен ваш курс і, якщо публічний, на власну сторінку.",
     name: "Ім'я",
@@ -84,6 +85,7 @@ export const STRINGS = {
     photoCropAvatarTitle: "Аватарка",
     photoCropAvatarNote: "Сторінка автора · автор курсу",
     photoCropCenter: "По центру",
+    photoHint: "Одне фото у двох рамках. Натисніть на рамку, щоб обрати, що в ній видно.",
     background: "Фон публічної сторінки",
     backgroundHint: "Друкується тільки на вашій сторінці, під портретом.",
     backgroundUpload: "Завантажити фон",
@@ -100,6 +102,7 @@ export const STRINGS = {
     error: "Не вдалося зберегти. Перевірте поля і спробуйте ще раз.",
   },
   en: {
+    label: "Authorship",
     title: "Author profile",
     lead: "Name, photo and bio live here — they follow every course you write, and your own page if it's public.",
     name: "Name",
@@ -168,6 +171,7 @@ export const STRINGS = {
     photoCropAvatarTitle: "Avatar",
     photoCropAvatarNote: "Author's own page · course byline",
     photoCropCenter: "Centre",
+    photoHint: "One photograph in two frames. Press a frame to choose what it shows.",
     background: "Public page background",
     backgroundHint: "Prints on your own page only, behind the portrait.",
     backgroundUpload: "Upload background",

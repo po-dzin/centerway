@@ -170,54 +170,38 @@
   scroll-snap-align: start;
 }
 
-/* THE PHOTOGRAPH IS THE CARD — see `AuthorCard`. Two forms of picture are
-   allowed on this platform: a horizontal image seated inside a card, or the
-   image AS the card. The author card takes the second, so a portrait is never
-   cropped into a short band that cuts the person off at the chin. */
+/* THE PORTRAIT LIES IN A FIELD — see `AuthorCard` and
+   docs/card-system-2026-09-13.md. Paper, the photograph inset on every side in
+   the person's 4:5 frame, the copy in ink below. No fixed height: the frame is
+   a ratio, the facts are clamps, a rail stretches its cards to the tallest and
+   the button sits on the floor of each. */
 .guideCard {
   composes: compact from "./PlatformButtons.module.css";
   position: relative;
   display: flex;
-  align-items: flex-end;
-  height: var(--ds-offer-card-height-desktop);
+  flex-direction: column;
+  gap: var(--cw-space-sm);
   min-width: 0;
-  overflow: hidden;
+  padding: var(--ds-card-inset);
   border-radius: var(--cw-card-radius);
-  color: var(--cw-platform-accent-contrast);
-  background: var(--cw-platform-accent-strong);
+  color: var(--cw-platform-text);
   box-shadow: var(--cw-mat-shadow-soft);
 }
 
 .guideMedia {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  flex: 0 0 auto;
+  aspect-ratio: var(--ds-card-portrait-ratio);
   min-width: 0;
   overflow: hidden;
-  background: var(--cw-mat-tone-proof);
-}
-
-/* The ground under the text. A portrait is an arbitrary photograph, so the
-   copy carries its own contrast rather than trusting what was uploaded. */
-.guideMedia::after {
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  content: "";
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--cw-mat-scrim-ink) 6%, transparent) 0%,
-    color-mix(in srgb, var(--cw-mat-scrim-ink) 24%, transparent) 30%,
-    color-mix(in srgb, var(--cw-mat-scrim-ink) 76%, transparent) 58%,
-    color-mix(in srgb, var(--cw-mat-scrim-ink) 94%, transparent) 100%
-  );
-  pointer-events: none;
+  border-radius: var(--ds-card-media-radius);
+  background: var(--cw-mat-surface-sunk);
 }
 
 .guideBadges {
   position: absolute;
-  z-index: 1;
-  inset-inline-start: var(--cw-space-sm);
-  inset-block-start: var(--cw-space-sm);
+  inset-inline-start: var(--cw-space-2xs);
+  inset-block-start: var(--cw-space-2xs);
   display: flex;
   flex-wrap: wrap;
   gap: var(--cw-space-2xs);
@@ -243,8 +227,12 @@
   width: 100%;
   height: 100%;
   place-items: center;
-  color: var(--cw-mat-inverse-text);
-  background: var(--cw-platform-accent-strong);
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--cw-sem-guide-primary) 20%, var(--cw-mat-surface-sunk)),
+    var(--cw-mat-surface-sunk)
+  );
+  color: var(--cw-platform-ink-strong);
   font-family: var(--cw-font-display);
   font-size: clamp(3rem, 10vw, 5rem);
 }
@@ -258,20 +246,35 @@
 }
 
 .guideOverlay:focus-visible {
-  outline: 2px solid var(--cw-platform-accent-contrast);
-  outline-offset: -4px;
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset-inset);
+}
+
+/* The overlay covers the button, so the card drives the answer
+   `.secondary:hover` would give. Focus answers at every pointer; hover only
+   where a pointer can hover (docs/design-system.md → "Hover is a pointer
+   state"). */
+.guideCard:has(.guideOverlay:focus-visible) .guideLink {
+  transform: translateY(var(--ds-button-lift));
+  background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+@media (hover: hover) {
+  .guideCard:hover .guideLink {
+    transform: translateY(var(--ds-button-lift));
+    background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
+    box-shadow: var(--cw-mat-shadow-soft);
+  }
 }
 
 .guideBody {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  align-content: end;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
   gap: var(--cw-space-xs);
-  width: 100%;
-  padding: var(--cw-space-md);
   min-width: 0;
-  min-height: 0;
+  padding: 0 var(--ds-card-body-inline) var(--ds-card-body-inline);
 }
 
 .guideIdentity {
@@ -281,27 +284,27 @@
 
 .guideName {
   margin: 0;
-  color: var(--cw-platform-accent-contrast);
+  color: var(--cw-platform-text);
   font-family: var(--cw-font-ui);
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   font-weight: 700;
   line-height: 1.2;
 }
 
 .guideRole {
   margin: 0;
-  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 80%, transparent);
+  color: var(--cw-platform-muted);
   font-size: var(--ds-type-body-sm-size);
   line-height: 1.4;
   display: -webkit-box;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
 .guideNote {
   margin: 0;
-  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 84%, transparent);
+  color: var(--cw-platform-muted);
   font-size: var(--ds-type-body-sm-size);
   line-height: var(--ds-type-body-line-height);
   display: -webkit-box;
@@ -311,17 +314,14 @@
 }
 
 /* Text with a marker in the margin — the platform's one list recipe. Three
-   lines per fact: «Магістр комплементарної медицини та інтегративної
-   психології» is a real credential, it needs three lines inside a phone-width
-   card, and a clamp that cut it mid-word was the reason to measure at all.
-   Three facts still leave the photograph the top third of the card. */
+   lines per fact: a real credential needs them inside a phone-width card. */
 .guideFacts {
   display: grid;
   gap: var(--cw-space-2xs);
   margin: 0;
   padding: 0;
   list-style: none;
-  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 88%, transparent);
+  color: var(--cw-platform-muted);
   font-size: var(--ds-type-body-sm-size);
   line-height: 1.35;
 }
@@ -346,13 +346,13 @@
   background: var(--cw-platform-accent);
 }
 
-/* The card is the measure — see the button contract's `fill`. A guide card is
-   the same object at every count, so its action cannot be sized by its label.
-   A span, not a link: `.guideOverlay` above already routes the whole card. */
+/* The card is the measure — see the button contract's `fill`. A span, not a
+   link: `.guideOverlay` routes the whole card. Pinned to the floor so a rail of
+   authors with different facts lines its buttons up. */
 .guideLink {
   composes: secondary from "./PlatformButtons.module.css";
   composes: fill from "./PlatformButtons.module.css";
-  margin-top: var(--cw-space-2xs);
+  margin-top: auto;
 }
 
 @media (max-width: 900px) {
@@ -370,7 +370,6 @@
 
   .guideCard {
     flex: 0 0 var(--ds-offer-card-rail-width);
-    height: var(--ds-offer-card-height-rail);
     scroll-snap-align: start;
   }
 }

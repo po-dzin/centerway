@@ -30,7 +30,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useI18n } from "@/components/I18nProvider";
-import surfaces from "@/components/admin/AdminSurfaces.module.css";
 import { useToast } from "@/components/ToastProvider";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
@@ -52,6 +51,20 @@ import pageStyles from "@/components/admin/AdminPage.module.css";
 import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
+import { AdminRow, AdminRowIconAction } from "@/components/admin/AdminRow";
+import { AdminModal } from "@/components/admin/AdminModal";
+import { ModerationModal } from "@/components/admin/ModerationModal";
+import {
+  CATALOG_GROUPINGS,
+  filterCatalogRows,
+  groupCatalogRows,
+  type CatalogCategoryFilter,
+  type CatalogGrouping,
+} from "@/lib/admin/catalogGrouping";
+import { coverPortraitStyle } from "@/lib/lms/courseCover";
+import { courseStateKeys } from "@/lib/lms/courseState";
+import { CourseStateBadge, StateBadge } from "@/components/platform/StateBadge";
+import { COURSE_CATEGORIES, type CourseCategory } from "@/lms-core";
 
 const BLOCKER_KEY: Record<SaleBlocker, string> = {
   not_renderable: "catalog_blocker_not_renderable",
@@ -62,6 +75,45 @@ const BLOCKER_KEY: Record<SaleBlocker, string> = {
   offer_withdrawn: "catalog_blocker_offer_withdrawn",
   no_access_rule: "catalog_blocker_no_access_rule",
 };
+
+const CATEGORY_KEY: Record<CourseCategory, string> = {
+  movement: "catalog_category_movement",
+  nutrition: "catalog_category_nutrition",
+  cleansing: "catalog_category_cleansing",
+};
+
+const GROUPING_KEY: Record<CatalogGrouping, string> = {
+  submitted: "catalog_group_submitted",
+  alphabet: "catalog_group_alphabet",
+  status: "catalog_group_status",
+  updated: "catalog_group_updated",
+};
+
+function initialsOf(title: string): string {
+  return title
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word.charAt(0).toUpperCase())
+    .join("");
+}
+
+/* THE ROW'S THUMBNAIL — the card system's row size in the admin
+   (`--ds-card-thumb-width-compact`, docs/card-system-2026-09-13.md). A title
+   in a list of forty is read; a cover is recognised, which is what an operator
+   narrowing the list with a search or a filter is doing. */
+function CourseThumb({ row }: { row: CatalogRow }) {
+  return (
+    <span className={lists.itemThumb} aria-hidden="true">
+      {row.cover ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={row.cover.src} alt="" loading="lazy" decoding="async" style={coverPortraitStyle(row.cover)} />
+      ) : (
+        initialsOf(row.title)
+      )}
+    </span>
+  );
+}
 
 function EmptyIcon() {
   return <Icon className="cw-muted" name="list" size={20} />;
@@ -88,6 +140,10 @@ export default function CatalogPage() {
   const [canEdit, setCanEdit] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [category, setCategory] = useState<CatalogCategoryFilter>("all");
+  /* Newest submissions first: «what is waiting for me?» is the question this
+     page is opened with more often than any other. */
+  const [grouping, setGrouping] = useState<CatalogGrouping>("submitted");
 
   const errorText = useCallback(
     (message: string) => {
@@ -164,12 +220,28 @@ export default function CatalogPage() {
     };
   }, [load]);
 
-  const filtered = useMemo(() => {
-    if (!rows) return null;
-    const needle = q.trim().toLowerCase();
-    if (!needle) return rows;
-    return rows.filter((row) => row.title.toLowerCase().includes(needle) || row.slug.toLowerCase().includes(needle));
-  }, [rows, q]);
+  const filtered = useMemo(() => (rows ? filterCatalogRows(rows, { text: q, category }) : null), [rows, q, category]);
+
+  const groups = useMemo(
+    () =>
+      filtered
+        ? groupCatalogRows(
+            filtered,
+            grouping,
+            {
+              inReview: t("catalog_section_in_review"),
+              changesRequested: t("catalog_section_changes_requested"),
+              rest: t("catalog_section_rest"),
+              listed: t("catalog_section_listed"),
+              unlisted: t("catalog_section_unlisted"),
+              hidden: t("catalog_section_hidden"),
+              draft: t("catalog_section_draft"),
+            },
+            locale,
+          )
+        : null,
+    [filtered, grouping, t, locale],
+  );
 
   return (
     <div className={pageStyles.page}>
@@ -217,6 +289,46 @@ export default function CatalogPage() {
         <>
           <AdminSearchInput value={q} onChange={setQ} placeholder={t("catalog_search")} />
 
+          {rows && rows.length > 1 ? (
+            <div className={lists.toolbar}>
+              <label className={lists.toolbarField}>
+                <span className={controls.fieldCaption}>{t("catalog_filter_category")}</span>
+                <select
+                  className={controls.select}
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as CatalogCategoryFilter)}
+                >
+                  <option value="all">{t("catalog_category_all")}</option>
+                  {COURSE_CATEGORIES.map((code) => (
+                    <option key={code} value={code}>
+                      {t(CATEGORY_KEY[code] as never)}
+                    </option>
+                  ))}
+                  <option value="none">{t("catalog_category_none")}</option>
+                </select>
+              </label>
+              <label className={lists.toolbarField}>
+                <span className={controls.fieldCaption}>{t("catalog_group_by")}</span>
+                <select
+                  className={controls.select}
+                  value={grouping}
+                  onChange={(e) => setGrouping(e.target.value as CatalogGrouping)}
+                >
+                  {CATALOG_GROUPINGS.map((key) => (
+                    <option key={key} value={key}>
+                      {t(GROUPING_KEY[key] as never)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {filtered && filtered.length !== rows.length ? (
+                <p className={lists.toolbarCount}>
+                  {t("catalog_shown_of")} {filtered.length} / {rows.length}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
           {error ? (
             <AdminErrorState
               title={t("catalog_title")}
@@ -227,26 +339,44 @@ export default function CatalogPage() {
                 </button>
               }
             />
-          ) : filtered === null ? (
+          ) : filtered === null || groups === null ? (
             <AdminLoadingState variant="skeleton" />
           ) : filtered.length === 0 ? (
             <AdminEmptyState icon={<EmptyIcon />} description={t("catalog_empty")} />
           ) : (
-            <div className={lists.list}>
-              {filtered.map((row) =>
-                tab === "publication" ? (
-                  <PublicationRow
-                    key={row.courseId}
-                    row={row}
-                    canEdit={canEdit}
-                    locale={locale}
-                    errorText={errorText}
-                    onChanged={load}
-                  />
-                ) : (
-                  <PricingRow key={row.courseId} row={row} canEdit={canEdit} errorText={errorText} onChanged={load} />
-                ),
-              )}
+            <div className={lists.groups}>
+              {groups.map((group) => (
+                <section key={group.key} className={lists.group} aria-label={group.label ?? undefined}>
+                  {group.label ? (
+                    <h3 className={lists.groupHead}>
+                      {group.label}
+                      <span className={lists.groupCount}>{group.rows.length}</span>
+                    </h3>
+                  ) : null}
+                  <div className={lists.list}>
+                    {group.rows.map((row) =>
+                      tab === "publication" ? (
+                        <PublicationRow
+                          key={row.courseId}
+                          row={row}
+                          canEdit={canEdit}
+                          locale={locale}
+                          errorText={errorText}
+                          onChanged={load}
+                        />
+                      ) : (
+                        <PricingRow
+                          key={row.courseId}
+                          row={row}
+                          canEdit={canEdit}
+                          errorText={errorText}
+                          onChanged={load}
+                        />
+                      ),
+                    )}
+                  </div>
+                </section>
+              ))}
             </div>
           )}
         </>
@@ -303,58 +433,48 @@ function CourseLinks({ row }: { row: CatalogRow }) {
  * not published, and the review was never submitted. Each chip now names its
  * axis, so the stuck step reads without knowing the schema. An unknown value
  * falls back to itself rather than to a blank chip. */
-function StateChips({ row }: { row: CatalogRow }) {
-  const { t } = useI18n();
-  const chip = lists.tag;
-
-  const statusLabel: Record<string, string> = {
-    draft: t("catalog_status_draft"),
-    published: t("catalog_status_published"),
-  };
-  const reviewLabel: Record<string, string> = {
-    draft: t("catalog_review_draft"),
-    in_review: t("catalog_review_in_review"),
-    changes_requested: t("catalog_review_changes_requested"),
-    approved: t("catalog_review_approved"),
-  };
+/* `withVisibility={false}` where the row's own select already says it — the
+   same fact printed twice, once as a chip and once as the value beside it. */
+function StateChips({ row, withVisibility = true }: { row: CatalogRow; withVisibility?: boolean }) {
+  const { lang, t } = useI18n();
   const visibilityLabel: Record<CatalogRow["visibility"], string> = {
     hidden: t("catalog_visibility_hidden"),
     unlisted: t("catalog_visibility_unlisted"),
     listed: t("catalog_visibility_listed"),
   };
-  const pendingReview = row.pendingReviewStatus ?? "draft";
+  /* One word per state, from the vocabulary every surface shares — see
+     src/lib/lms/courseState.ts. «Автор: опубліковано» + «Перевірка:
+     затверджено» was two chips for the one fact the builder calls «Опубліковано». */
+  const keys = courseStateKeys({
+    status: row.status,
+    reviewStatus: row.reviewStatus,
+    hasPendingRevision: row.hasPendingRevision,
+    pendingReviewStatus: row.pendingReviewStatus,
+  });
 
   return (
     <div className={lists.chipRow}>
-      <span className={chip}>{statusLabel[row.status] ?? row.status}</span>
-      {/* THE CHIP SAYS WHAT THE BUTTONS BELOW OBEY. It used to print the
-                LIVE review status beside the «оновлення» word, so a returned
-                revision on an approved course read «ОНОВЛЕННЯ · APPROVED» —
-                the one state where there is nothing to approve. */}
-      <span className={chip}>
-        {row.hasPendingRevision
-          ? `${t("catalog_pending_revision")} · ${reviewLabel[pendingReview] ?? pendingReview}`
-          : (reviewLabel[row.reviewStatus] ?? row.reviewStatus)}
-      </span>
-      <span className={chip}>{visibilityLabel[row.visibility] ?? row.visibility}</span>
-      {row.blockers.length === 0 ? <span className={lists.tagOnSale}>{t("catalog_on_sale")}</span> : null}
+      {keys.map((key) => (
+        <CourseStateBadge key={key} state={key} lang={lang} />
+      ))}
+      {withVisibility ? <StateBadge>{visibilityLabel[row.visibility] ?? row.visibility}</StateBadge> : null}
+      {row.blockers.length === 0 ? <CourseStateBadge state="on_sale" lang={lang} /> : null}
     </div>
   );
 }
 
-/**
- * ЧТО ПРИНЕСЛИ НА ПРОВЕРКУ, до того как рецензент нажмёт «одобрить».
- *
- * Раньше он видел «оновлення · in_review» и ничего о содержании: одобрение было
- * вслепую, и подмена обязательного блока «межі» после прохождения проверки
- * ничем себя не выдавала. Числа отвечают на «во что смотреть», подробности —
- * в самом курсе; разница считается по запросу и нигде не хранится.
- */
-function PendingChanges({ row }: { row: CatalogRow }) {
-  const { t } = useI18n();
+type Translate = ReturnType<typeof useI18n>["t"];
+
+function blockersNote(row: CatalogRow, t: Translate): string | null {
+  if (row.blockers.length === 0) return null;
+  return `${t("catalog_blocked_by")}: ${row.blockers.map((blocker) => t(BLOCKER_KEY[blocker] as never)).join(" · ")}`;
+}
+
+/* The pending revision against the live course, and WHO submitted it — the
+   journal's answer, not the column's (see catalog.ts). */
+function pendingNote(row: CatalogRow, t: Translate): string | null {
   const diff = row.pendingDiff;
   if (!row.hasPendingRevision || !diff) return null;
-
   const parts = [
     [diff.fields, t("catalog_changes_fields")],
     [diff.modules, t("catalog_changes_modules")],
@@ -364,49 +484,24 @@ function PendingChanges({ row }: { row: CatalogRow }) {
   ]
     .filter(([count]) => (count as number) > 0)
     .map(([count, label]) => `${count} ${label}`);
-
-  return (
-    <div className={lists.changes}>
-      <p className={lists.changesText}>
-        {t("catalog_changes_vs_live")}: {parts.length > 0 ? parts.join(" · ") : t("catalog_changes_none")}
-        {/* Підпис під відправкою — з журналу: колонка зберігала коли,
-                    але ніколи не зберігала хто. */}
-        {diff.submittedBy ? ` · ${t("catalog_submitted_by")}: ${diff.submittedBy}` : ""}
-      </p>
-      {diff.boundaryTouched ? <p className={lists.changesAlert}>{t("catalog_changes_boundary")}</p> : null}
-    </div>
-  );
+  const changes = `${t("catalog_changes_vs_live")}: ${parts.length > 0 ? parts.join(" · ") : t("catalog_changes_none")}`;
+  return diff.submittedBy ? `${changes} · ${t("catalog_submitted_by")}: ${diff.submittedBy}` : changes;
 }
 
-/** What is missing, in the order it should be fixed. */
-function Blockers({ row }: { row: CatalogRow }) {
-  const { t } = useI18n();
-  if (row.blockers.length === 0) return null;
-
-  return (
-    <p className={lists.blockers}>
-      {t("catalog_blocked_by")}: {row.blockers.map((blocker) => t(BLOCKER_KEY[blocker] as never)).join(" · ")}
-    </p>
-  );
-}
-
-/**
- * «Не проходив модерацію» — said quietly, and said separately.
- *
- * An unapproved course that is already on the shelf sells: nothing on the
- * buying path reads `review_status` (see `SaleBlocker.not_approved`). What it
- * cannot do is have its visibility changed, so the fact is worth printing —
- * just not in the red line that claims the course is not selling, which is
- * where it spent weeks being wrong about `short` and `irem-gymnastics`.
- */
-function ModerationNote({ row }: { row: CatalogRow }) {
-  const { t } = useI18n();
-  /* Only on a course that is actually selling. A draft, a hidden row, a row
-     the shelf cannot render or one without an offer already has the red line
-     above saying why — and printing «продається» under it would be false. */
-  if (row.reviewStatus === "approved" || row.blockers.length > 0) return null;
-
-  return <p className={controls.hint}>{t("catalog_not_moderated")}</p>;
+/* ONE LINE, EVERYTHING THE ROW NEEDS TO SAY. It used to be three blocks —
+   blockers, the pending diff, «not moderated» — each on its own lines, so a row
+   with all three was twice the height of its neighbour. They are joined into
+   the note slot in order of urgency, the line ends in an ellipsis and the whole
+   sentence is on hover. It turns alert when anything in it stops a sale or
+   touches the course's boundaries. */
+function publicationNote(row: CatalogRow, t: Translate): { text: string; tone: "muted" | "alert" } | null {
+  const boundary = row.hasPendingRevision && row.pendingDiff?.boundaryTouched ? t("catalog_changes_boundary") : null;
+  const blocked = blockersNote(row, t);
+  const pending = pendingNote(row, t);
+  const unmoderated = row.reviewStatus !== "approved" && !blocked ? t("catalog_not_moderated") : null;
+  const text = [boundary, blocked, pending, unmoderated].filter(Boolean).join(" — ");
+  if (!text) return null;
+  return { text, tone: boundary || blocked ? "alert" : "muted" };
 }
 
 function PublicationRow({
@@ -425,17 +520,22 @@ function PublicationRow({
   const { t } = useI18n();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState("");
+  const [dialog, setDialog] = useState<"review" | "delete" | null>(null);
 
   const moderate = async (
     action: "approve" | "request_changes" | "set_visibility",
-    visibility?: CatalogRow["visibility"],
+    options: { visibility?: CatalogRow["visibility"]; note?: string } = {},
   ) => {
     setBusy(true);
     try {
       await authFetch("/api/admin/access/courses", {
         method: "PATCH",
-        body: JSON.stringify({ courseId: row.courseId, action, visibility, note }),
+        body: JSON.stringify({
+          courseId: row.courseId,
+          action,
+          visibility: options.visibility,
+          note: options.note ?? "",
+        }),
       });
       toast.success(
         t(
@@ -446,6 +546,7 @@ function PublicationRow({
               : "catalog_visibility_saved",
         ),
       );
+      setDialog(null);
       await onChanged();
     } catch (e) {
       toast.error(errorText(getErrorMessage(e)));
@@ -466,87 +567,115 @@ function PublicationRow({
     row.reviewStatus !== "approved" &&
     (row.reviewStatus === "in_review" || row.status === "published");
   const approvable = revisionInReview || approvesLive;
+  const rowNote = publicationNote(row, t);
 
   return (
-    <div className={lists.item}>
-      <div className={lists.itemRow}>
-        <div className={lists.itemBody}>
-          <p className={lists.itemTitle}>{row.title}</p>
-          <StateChips row={row} />
-          <div className={lists.itemMeta}>
+    <>
+      <AdminRow
+        lead={<CourseThumb row={row} />}
+        title={row.title}
+        badges={<StateChips row={row} withVisibility={!canEdit} />}
+        meta={
+          <>
             <span className={lists.itemCode}>{row.slug}</span>
             <span>
               {t("access_course_learners")}: {row.learners}
             </span>
             <span>{row.authorEmail ?? t("access_author_house")}</span>
             <span>{new Date(row.updatedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}</span>
-          </div>
-          <Blockers row={row} />
-          <ModerationNote row={row} />
-          <PendingChanges row={row} />
-          <CourseLinks row={row} />
-        </div>
-      </div>
-
-      {canEdit ? (
-        <div className={controls.fields}>
-          {approvable ? (
+            {inReview && row.submittedAt ? (
+              <span className={lists.itemMetaStrong}>
+                {t("catalog_submitted_on")}:{" "}
+                {new Date(row.submittedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
+              </span>
+            ) : null}
+          </>
+        }
+        links={<CourseLinks row={row} />}
+        note={rowNote?.text}
+        noteTone={rowNote?.tone}
+        controls={
+          canEdit ? (
             <>
-              {inReview ? (
-                <input
-                  className={controls.inputGrow}
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder={t("catalog_note_placeholder")}
-                />
-              ) : null}
-              <button
-                type="button"
-                className={`${controls.action} cw-surface-2`}
-                disabled={busy}
-                onClick={() => void moderate("approve")}
-              >
-                {approvesLive && row.hasPendingRevision ? t("catalog_approve_live") : t("catalog_approve")}
-              </button>
-              {inReview ? (
+              {approvable ? (
                 <button
                   type="button"
-                  className={`${controls.action} cw-btn-muted`}
+                  className={`${controls.actionCompact} cw-surface-2`}
+                  aria-haspopup="dialog"
                   disabled={busy}
-                  onClick={() => void moderate("request_changes")}
+                  onClick={() => setDialog("review")}
                 >
-                  {t("catalog_return")}
+                  {t("catalog_review_open")}
                 </button>
               ) : null}
+              {/* Hiding is offered always — taking something off the storefront
+                  must never be gated on how it got there. */}
+              <select
+                aria-label={t("catalog_visibility_label")}
+                className={controls.select}
+                value={row.visibility}
+                disabled={busy}
+                onChange={(e) =>
+                  void moderate("set_visibility", { visibility: e.target.value as CatalogRow["visibility"] })
+                }
+              >
+                <option value="hidden">{t("catalog_visibility_hidden")}</option>
+                <option value="unlisted">{t("catalog_visibility_unlisted")}</option>
+                <option value="listed">{t("catalog_visibility_listed")}</option>
+              </select>
             </>
-          ) : null}
-
-          {/* Visibility is offered whenever the course is approved, and
-                        hiding is offered always — taking something off the
-                        storefront must never be gated on how it got there. */}
-          <select
-            className={`${controls.select} ${controls.selectNarrow}`}
-            value={row.visibility}
-            disabled={busy}
-            onChange={(e) => void moderate("set_visibility", e.target.value as CatalogRow["visibility"])}
-          >
-            <option value="hidden">{t("catalog_visibility_hidden")}</option>
-            <option value="unlisted">{t("catalog_visibility_unlisted")}</option>
-            <option value="listed">{t("catalog_visibility_listed")}</option>
-          </select>
-        </div>
-      ) : (
-        <p className={controls.hint}>{t("access_role_admin_only")}</p>
-      )}
-      {canEdit ? <DeleteCourseAction row={row} onChanged={onChanged} /> : null}
-    </div>
+          ) : (
+            <p className={controls.hint}>{t("access_role_admin_only")}</p>
+          )
+        }
+        actions={
+          canEdit ? (
+            <AdminRowIconAction
+              icon="trash"
+              label={t("catalog_delete")}
+              danger
+              opensDialog
+              onClick={() => setDialog("delete")}
+            />
+          ) : null
+        }
+      />
+      {dialog === "review" ? (
+        <ModerationModal
+          title={t("catalog_review_title")}
+          description={row.title}
+          context={rowNote?.text}
+          approveLabel={approvesLive && row.hasPendingRevision ? t("catalog_approve_live") : t("catalog_approve")}
+          returnLabel={inReview ? t("catalog_return") : undefined}
+          notePlaceholder={t("catalog_note_placeholder")}
+          cancelLabel={t("catalog_modal_cancel")}
+          busy={busy}
+          onApprove={(note) => void moderate("approve", { note })}
+          onReturn={(note) => void moderate("request_changes", { note })}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
+      {dialog === "delete" ? (
+        <DeleteCourseModal row={row} onClose={() => setDialog(null)} onChanged={onChanged} />
+      ) : null}
+    </>
   );
 }
 
-function DeleteCourseAction({ row, onChanged }: { row: CatalogRow; onChanged: () => Promise<void> }) {
+/* THE DELETE IS A DIALOG, NOT A FORM UNFOLDING INSIDE THE ROW (2026-09-14).
+   The row's trash icon opens it; typing the slug is the step that makes the
+   delete deliberate. The list keeps its shape while the question is asked. */
+function DeleteCourseModal({
+  row,
+  onClose,
+  onChanged,
+}: {
+  row: CatalogRow;
+  onClose: () => void;
+  onChanged: () => Promise<void>;
+}) {
   const { t } = useI18n();
   const toast = useToast();
-  const [open, setOpen] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [busy, setBusy] = useState(false);
   async function remove() {
@@ -564,47 +693,44 @@ function DeleteCourseAction({ row, onChanged }: { row: CatalogRow; onChanged: ()
       setBusy(false);
     }
   }
-  return open ? (
-    <div className={`${surfaces.plate} ${controls.confirmGroup}`} role="group" aria-label={t("catalog_delete")}>
+  return (
+    <AdminModal
+      title={t("catalog_delete")}
+      description={row.title}
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className={controls.action} disabled={busy} onClick={onClose}>
+            {t("catalog_delete_cancel")}
+          </button>
+          <button
+            type="button"
+            className={`${controls.action} cw-btn-muted`}
+            disabled={busy || confirmation !== row.slug}
+            onClick={() => void remove()}
+          >
+            {t("catalog_delete")}
+          </button>
+        </>
+      }
+    >
+      <p className={controls.confirmText}>{t("catalog_delete_warning")}</p>
       <p className={controls.confirmText}>
-        {t("catalog_delete_warning")} {t("access_course_learners")}: {row.learners}.
+        {t("access_course_learners")}: <strong>{row.learners}</strong>
       </p>
-      <label className={controls.confirmLabel}>
-        {t("catalog_delete_confirm")} <strong>{row.slug}</strong>
+      <label className={controls.field}>
+        <span className={controls.fieldCaption}>
+          {t("catalog_delete_confirm")} <strong>{row.slug}</strong>
+        </span>
         <input
-          className={controls.confirmInput}
+          className={controls.input}
           value={confirmation}
           autoComplete="off"
           onChange={(event) => setConfirmation(event.target.value)}
           disabled={busy}
         />
       </label>
-      <div className={controls.actions}>
-        <button
-          type="button"
-          className={`${controls.action} cw-btn-muted`}
-          disabled={busy || confirmation !== row.slug}
-          onClick={() => void remove()}
-        >
-          {t("catalog_delete")}
-        </button>
-        <button
-          type="button"
-          className={controls.action}
-          disabled={busy}
-          onClick={() => {
-            setOpen(false);
-            setConfirmation("");
-          }}
-        >
-          {t("catalog_delete_cancel")}
-        </button>
-      </div>
-    </div>
-  ) : (
-    <button type="button" className={`${controls.action} cw-btn-muted`} onClick={() => setOpen(true)}>
-      {t("catalog_delete")}
-    </button>
+    </AdminModal>
   );
 }
 
@@ -677,99 +803,97 @@ function PricingRow({
   };
 
   return (
-    <div className={lists.item}>
-      <div className={lists.itemRow}>
-        <div className={lists.itemBody}>
-          <p className={lists.itemTitle}>{row.title}</p>
-          <div className={lists.itemMeta}>
-            <span className={lists.itemCode}>{row.slug}</span>
-            {row.offer ? (
-              <>
-                <span>
-                  {row.offer.amount} {row.offer.currency}
-                  {row.offer.listAmount ? ` · ${t("catalog_quoted")} ${row.offer.listAmount}` : ""}
-                </span>
-                <span>
-                  {row.offer.accessLifetime
-                    ? t("catalog_term_lifetime")
-                    : `${row.offer.accessDays} ${t("catalog_term_days")}`}
-                </span>
-                {!row.offer.active ? (
-                  <span className="cw-status-failed-text">{t("catalog_offer_inactive")}</span>
-                ) : null}
-              </>
-            ) : (
-              <span>{t("catalog_no_offer")}</span>
-            )}
-          </div>
-          <Blockers row={row} />
-          <PendingChanges row={row} />
-          <CourseLinks row={row} />
-        </div>
-      </div>
-
-      {canEdit ? (
-        <div className={controls.fields}>
-          <label className={controls.field}>
-            <span className={controls.fieldCaption}>{t("catalog_amount")}</span>
-            <input
-              type="number"
-              min={0}
-              step={1}
-              inputMode="numeric"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className={controls.input}
-            />
-          </label>
-          <label className={controls.field}>
-            <span className={controls.fieldCaption}>{t("catalog_list_amount")}</span>
-            <input
-              type="number"
-              min={1}
-              step={1}
-              inputMode="numeric"
-              value={listAmount}
-              onChange={(e) => setListAmount(e.target.value)}
-              className={controls.input}
-            />
-          </label>
-          <label className={controls.field}>
-            <span className={controls.fieldCaption}>{t("catalog_term")}</span>
-            <select value={term} onChange={(e) => setTerm(e.target.value)} className={controls.select}>
-              <option value="">{t("catalog_term_unset")}</option>
-              {ACCESS_TERM_PRESETS.map((days) => (
-                <option key={days} value={String(days)}>
-                  {days} {t("catalog_term_days")}
-                </option>
-              ))}
-              <option value="lifetime">{t("catalog_term_lifetime")}</option>
-            </select>
-          </label>
-          <div className={controls.actions}>
-            <button
-              type="button"
-              onClick={() => void save()}
-              disabled={busy || !amount || !term}
-              className={`${controls.action} cw-surface-2`}
-            >
-              {t("catalog_save_offer")}
-            </button>
-            {row.offer ? (
+    <AdminRow
+      lead={<CourseThumb row={row} />}
+      title={row.title}
+      meta={
+        <>
+          <span className={lists.itemCode}>{row.slug}</span>
+          {row.offer ? (
+            <>
+              <span>
+                {row.offer.amount} {row.offer.currency}
+                {row.offer.listAmount ? ` · ${t("catalog_quoted")} ${row.offer.listAmount}` : ""}
+              </span>
+              <span>
+                {row.offer.accessLifetime
+                  ? t("catalog_term_lifetime")
+                  : `${row.offer.accessDays} ${t("catalog_term_days")}`}
+              </span>
+              {!row.offer.active ? <span className="cw-status-failed-text">{t("catalog_offer_inactive")}</span> : null}
+            </>
+          ) : (
+            <span>{t("catalog_no_offer")}</span>
+          )}
+        </>
+      }
+      footer={
+        canEdit ? (
+          <div className={controls.priceForm}>
+            <label className={controls.field}>
+              <span className={controls.fieldCaption}>{t("catalog_amount")}</span>
+              <input
+                type="number"
+                min={0}
+                step={1}
+                inputMode="numeric"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className={controls.input}
+              />
+            </label>
+            <label className={controls.field}>
+              <span className={controls.fieldCaption}>{t("catalog_list_amount")}</span>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                inputMode="numeric"
+                value={listAmount}
+                onChange={(e) => setListAmount(e.target.value)}
+                className={controls.input}
+              />
+            </label>
+            <label className={controls.field}>
+              <span className={controls.fieldCaption}>{t("catalog_term")}</span>
+              <select value={term} onChange={(e) => setTerm(e.target.value)} className={controls.select}>
+                <option value="">{t("catalog_term_unset")}</option>
+                {ACCESS_TERM_PRESETS.map((days) => (
+                  <option key={days} value={String(days)}>
+                    {days} {t("catalog_term_days")}
+                  </option>
+                ))}
+                <option value="lifetime">{t("catalog_term_lifetime")}</option>
+              </select>
+            </label>
+            <div className={controls.priceActions}>
               <button
                 type="button"
-                onClick={() => void toggleActive(!row.offer?.active)}
-                disabled={busy}
-                className={`${controls.action} cw-btn-muted`}
+                onClick={() => void save()}
+                disabled={busy || !amount || !term}
+                className={`${controls.action} cw-surface-2`}
               >
-                {t(row.offer.active ? "catalog_withdraw_offer" : "catalog_resume_offer")}
+                {t("catalog_save_offer")}
               </button>
-            ) : null}
+              {row.offer ? (
+                <button
+                  type="button"
+                  onClick={() => void toggleActive(!row.offer?.active)}
+                  disabled={busy}
+                  className={`${controls.action} cw-btn-muted`}
+                >
+                  {t(row.offer.active ? "catalog_withdraw_offer" : "catalog_resume_offer")}
+                </button>
+              ) : null}
+            </div>
           </div>
-        </div>
-      ) : (
-        <p className={controls.hint}>{t("access_role_admin_only")}</p>
-      )}
-    </div>
+        ) : (
+          <p className={controls.hint}>{t("access_role_admin_only")}</p>
+        )
+      }
+      note={blockersNote(row, t)}
+      noteTone="alert"
+      links={<CourseLinks row={row} />}
+    />
   );
 }

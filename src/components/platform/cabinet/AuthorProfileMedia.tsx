@@ -89,7 +89,9 @@ export function PhotoCropPreview({
           pencils, which is exactly what it was. The lens says look closer; the
           replace control now says what it does, which is take a file. */}
       <span className={styles.photoCropOpen} aria-hidden="true">
-        <Icon name="lens" size={16} />
+        <span className={styles.photoCropOpenMark}>
+          <Icon name="lens" size={16} />
+        </span>
       </span>
     </button>
   );
@@ -187,10 +189,11 @@ export function AuthorMediaSlot({
               disabled={uploading}
               onChange={pick}
             />
-            {/* `import`, the same glyph the empty slot shows: both open the
-                file picker, and the only difference is whether something is
-                there already. */}
-            <Icon name="import" size={18} />
+            {/* THE PENCIL AGAIN (2026-09-14). It became `import` on 09-11
+                because the crop mark was a pencil too; that mark is the lens
+                now, so the pencil means one thing on the photograph again —
+                and `import` over a photo read as «download it». */}
+            <Icon name="edit" size={18} />
           </label>
           <button
             type="button"

@@ -57,6 +57,13 @@
 /* A plate whose content reaches its edge — a table, a chart, a row list. It
    keeps the plate's radius, so `overflow: hidden` is what makes the content
    take the corner instead of squaring it off. */
+/* A plate the size of a card — an intro or a note above a list — takes the
+   card's corner, not the surface's: the radius follows the box (geometry audit
+   2026-09-07). Used beside `.plate`, declared after it. */
+.plateCard {
+  border-radius: var(--cw-card-radius);
+}
+
 .plateFlush {
   composes: cw-surface cw-border cw-shadow from global;
   border-width: 1px;
@@ -202,16 +209,6 @@
   composes: td;
   composes: cw-text from global;
   font-weight: 500;
-}
-
-/* The verb an audit row records, in a capsule so a column of them reads as a
-   list of actions rather than of sentences. */
-.actionTag {
-  composes: cw-surface-2 from global;
-  display: inline-block;
-  padding: var(--cw-space-2xs) var(--cw-space-xs);
-  border-radius: var(--cw-radius-pill);
-  font-size: var(--ds-type-label-size);
 }
 
 .entityRef {

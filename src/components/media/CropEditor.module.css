@@ -14,10 +14,14 @@
   background: var(--cw-mat-scrim);
 }
 
+/* `compact`: a tool surface, so its labelled buttons take the 40px size the
+   contract gives a container that is one of many controls, not a CTA. */
 .panel {
+  composes: compact from "../platform/PlatformButtons.module.css";
+  position: relative;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: var(--cw-space-sm);
+  gap: var(--cw-space-md);
   width: min(46rem, 100%);
   max-height: 100%;
   padding: var(--cw-space-md);
@@ -29,7 +33,7 @@
 
 .head {
   display: flex;
-  align-items: start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--cw-space-sm);
   min-width: 0;
@@ -41,11 +45,13 @@
   min-width: 0;
 }
 
+/* The dialog's one heading, a step above the captions it heads — at the
+   caption's own size it read as one more label in a stack of labels. */
 .title {
   margin: 0;
-  font-size: var(--ds-type-body-sm-size);
+  font-size: var(--ds-type-body-size);
   font-weight: 700;
-  line-height: 1.35;
+  line-height: 1.3;
 }
 
 .note {
@@ -113,49 +119,43 @@
 /* THE CORNERS ARE THE SIZE CONTROL (2026-09-11), and they replaced a slider.
    Set INSIDE the window rather than centred on its corner: a grip that hangs
    outside sits over the discarded part of the photograph, which is the one
-   place a crop window must not put anything. They are square, because the
-   thing being resized is a rectangle and a round grip would be the ring
-   primitive saying something it does not mean. */
+   place a crop window must not put anything.
+
+   NO MARK ON THEM (2026-09-14). They were drawn as thick white L-brackets —
+   the camera-app corner — and inside a window already outlined in white they
+   were a second frame on the frame, the loudest thing over a photograph the
+   author came here to look at. The corner of the outline is the mark; the
+   resize cursor answers a mouse and the hint under the stage answers
+   everyone else. What stays is the target. */
 .grip {
   position: absolute;
   width: 1.25rem;
   height: 1.25rem;
   pointer-events: auto;
   touch-action: none;
-  /* Two edges each, so the mark reads as the corner it holds rather than as a
-     box floating near it. */
-  border: 3px solid var(--cw-platform-accent-contrast);
 }
 
 .grip[data-corner="nw"] {
   top: 0;
   left: 0;
-  border-right: 0;
-  border-bottom: 0;
   cursor: nwse-resize;
 }
 
 .grip[data-corner="ne"] {
   top: 0;
   right: 0;
-  border-left: 0;
-  border-bottom: 0;
   cursor: nesw-resize;
 }
 
 .grip[data-corner="sw"] {
   bottom: 0;
   left: 0;
-  border-right: 0;
-  border-top: 0;
   cursor: nesw-resize;
 }
 
 .grip[data-corner="se"] {
   bottom: 0;
   right: 0;
-  border-left: 0;
-  border-top: 0;
   cursor: nwse-resize;
 }
 
@@ -229,43 +229,59 @@
   }
 }
 
+/* How to use the stage on the left, the ways out on the right. On a phone the
+   actions wrap under the sentence and keep their own right edge. */
 .foot {
   display: flex;
   align-items: center;
-  gap: var(--cw-space-sm);
+  justify-content: space-between;
+  gap: var(--cw-space-sm) var(--cw-space-md);
   flex-wrap: wrap;
 }
 
-.zoom {
-  flex: 1 1 12rem;
+.hint {
+  flex: 1 1 14rem;
   min-width: 0;
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: 1.45;
 }
 
-/* The two glyph buttons this overlay owns — close and recentre. Not the button
-   contract's five roles: those are the product's own CTAs and this is chrome on
-   a picture, the same quiet square the cabinet's frames already carry. */
-.action {
-  display: inline-flex;
+.footActions {
+  display: flex;
   align-items: center;
-  justify-content: center;
+  gap: var(--cw-space-xs);
+  margin-inline-start: auto;
+}
+
+/* ALL THREE FROM THE CONTRACT (2026-09-14). This file used to draw its own
+   40px bordered square for close and recentre, beside cabinet frames drawing
+   theirs at the touch minimum in the on-media glass — two sizes and two
+   materials for the same kind of control, one screen apart. The dialog's
+   paper is not a photograph, so these take the paper roles: the cross is
+   icon-only chrome with its ink ring, recentre is a labelled chrome action,
+   and «Готово» is the plated one, because leaving is what the dialog is for. */
+.closeAction {
+  composes: base chromeBare square from "../platform/PlatformButtons.module.css";
   flex: none;
-  width: 2.5rem;
-  height: 2.5rem;
+}
+
+.resetAction {
+  composes: base chrome from "../platform/PlatformButtons.module.css";
+}
+
+.doneAction {
+  composes: base secondary wide from "../platform/PlatformButtons.module.css";
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
   padding: 0;
-  border: 1px solid var(--cw-platform-border);
-  border-radius: var(--cw-radius-sm);
-  background: var(--cw-mat-surface-sunk);
-  color: inherit;
-  cursor: pointer;
-}
-
-@media (hover: hover) {
-  .action:hover {
-    background: var(--cw-mat-surface);
-  }
-}
-
-.action:focus-visible {
-  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: var(--ds-focus-ring-offset);
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }

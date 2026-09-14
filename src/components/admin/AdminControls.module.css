@@ -375,6 +375,56 @@
   gap: var(--cw-space-xs);
 }
 
+/* ── A price form (2026-09-14) ───────────────────────────────────────────
+ * Two amounts, one choice, save and withdraw — the same four parts on «Ціни й
+ * доступ» and «Пакети». A column of four fields and two loose buttons was the
+ * tallest thing on a phone and left the buttons short of the card's right edge.
+ * On a phone the amounts share a line, the choice takes the next, and the
+ * buttons split the last line edge to edge. From 900px it is one line: three
+ * equal fields, then the buttons.
+ */
+.priceForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cw-space-xs);
+  align-items: end;
+}
+
+.priceForm > .field:nth-of-type(3),
+.priceActions {
+  grid-column: 1 / -1;
+}
+
+.priceActions {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: var(--cw-space-xs);
+}
+
+.priceActions > .action {
+  width: 100%;
+  max-width: none;
+  padding-inline: var(--cw-space-xs);
+  white-space: nowrap;
+}
+
+@media (min-width: 900px) {
+  .priceForm {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  }
+
+  .priceForm > .field:nth-of-type(3),
+  .priceActions {
+    grid-column: auto;
+  }
+
+  .priceActions > .action {
+    width: auto;
+    padding-inline: var(--cw-space-md);
+  }
+}
+
 .hint {
   composes: cw-muted from global;
   margin: 0;
