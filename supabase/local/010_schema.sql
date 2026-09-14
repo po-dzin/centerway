@@ -647,6 +647,23 @@ CREATE TABLE public.agent_messages (
 
 
 --
+-- Name: agent_questions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.agent_questions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    text text NOT NULL,
+    source text NOT NULL,
+    redacted text[] DEFAULT '{}'::text[] NOT NULL,
+    expected_doc_id text,
+    topic text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT agent_questions_source_check CHECK ((source = ANY (ARRAY['bot_fallback'::text, 'bot_support'::text, 'assistant'::text]))),
+    CONSTRAINT agent_questions_text_check CHECK (((length(text) >= 12) AND (length(text) <= 2000)))
+);
+
+
+--
 -- Name: agent_runs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -892,7 +909,10 @@ CREATE TABLE public.leads (
     client_ip text,
     client_ua text,
     page_url text,
-    fbc text
+    fbc text,
+    stage text DEFAULT 'new'::text NOT NULL,
+    stage_changed_at timestamp with time zone,
+    CONSTRAINT leads_stage_check CHECK ((stage = ANY (ARRAY['new'::text, 'in_progress'::text, 'won'::text, 'lost'::text])))
 );
 
 ALTER TABLE ONLY public.leads FORCE ROW LEVEL SECURITY;
@@ -1201,7 +1221,7 @@ CREATE TABLE public.lms_progress_events (
     client_id text NOT NULL,
     occurred_at timestamp with time zone DEFAULT now() NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT lms_progress_events_type_check CHECK ((type = ANY (ARRAY['lesson.started'::text, 'lesson.completed'::text, 'lesson.uncompleted'::text, 'checklist.toggled'::text])))
+    CONSTRAINT lms_progress_events_type_check CHECK ((type = ANY (ARRAY['lesson.started'::text, 'lesson.opened'::text, 'lesson.completed'::text, 'lesson.uncompleted'::text, 'checklist.toggled'::text])))
 );
 
 
@@ -1647,6 +1667,14 @@ ALTER TABLE ONLY public.access_tokens
 
 ALTER TABLE ONLY public.agent_messages
     ADD CONSTRAINT agent_messages_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: agent_questions agent_questions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_questions
+    ADD CONSTRAINT agent_questions_pkey PRIMARY KEY (id);
 
 
 --
@@ -2211,10 +2239,38 @@ CREATE INDEX events_order_ref_idx ON public.events USING btree (order_ref);
 
 
 --
+-- Name: events_payload_gin; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX events_payload_gin ON public.events USING gin (payload jsonb_path_ops);
+
+
+--
+-- Name: events_type_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX events_type_created_at_idx ON public.events USING btree (type, created_at DESC);
+
+
+--
 -- Name: idx_access_tokens_order_ref; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_access_tokens_order_ref ON public.access_tokens USING btree (order_ref);
+
+
+--
+-- Name: idx_agent_questions_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_questions_created ON public.agent_questions USING btree (created_at DESC);
+
+
+--
+-- Name: idx_agent_questions_unlabelled; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_questions_unlabelled ON public.agent_questions USING btree (created_at DESC) WHERE (expected_doc_id IS NULL);
 
 
 --
@@ -2411,6 +2467,13 @@ CREATE INDEX idx_jobs_status ON public.jobs USING btree (status);
 --
 
 CREATE INDEX idx_jobs_type ON public.jobs USING btree (type);
+
+
+--
+-- Name: idx_leads_stage_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_leads_stage_created_at ON public.leads USING btree (stage, created_at DESC);
 
 
 --
@@ -2761,6 +2824,13 @@ CREATE INDEX idx_test_attempts_user_id ON public.test_attempts USING btree (user
 --
 
 CREATE INDEX idx_test_attempts_user_test_completed_desc ON public.test_attempts USING btree (user_id, test_id, completed_at DESC, created_at DESC) WHERE ((status = 'completed'::text) AND (result_type IS NOT NULL));
+
+
+--
+-- Name: jobs_payload_gin; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX jobs_payload_gin ON public.jobs USING gin (payload jsonb_path_ops);
 
 
 --
@@ -3814,6 +3884,13 @@ CREATE POLICY "Readers can write own annotations" ON public.lms_annotations FOR 
 
 
 --
+-- Name: agent_questions Staff can label the question corpus; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Staff can label the question corpus" ON public.agent_questions FOR UPDATE USING ((public.get_my_role() = ANY (ARRAY['admin'::text, 'support'::text]))) WITH CHECK ((public.get_my_role() = ANY (ARRAY['admin'::text, 'support'::text])));
+
+
+--
 -- Name: lms_course_sources Staff can manage course sources; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -3832,6 +3909,13 @@ CREATE POLICY "Staff can read agent messages" ON public.agent_messages FOR SELEC
 --
 
 CREATE POLICY "Staff can read agent runs" ON public.agent_runs FOR SELECT USING ((public.get_my_role() = ANY (ARRAY['admin'::text, 'support'::text])));
+
+
+--
+-- Name: agent_questions Staff can read the question corpus; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Staff can read the question corpus" ON public.agent_questions FOR SELECT USING ((public.get_my_role() = ANY (ARRAY['admin'::text, 'support'::text])));
 
 
 --
@@ -3882,6 +3966,12 @@ ALTER TABLE public.access_tokens ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.agent_messages ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: agent_questions; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.agent_questions ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: agent_runs; Type: ROW SECURITY; Schema: public; Owner: -
