@@ -237,33 +237,31 @@
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  justify-content: flex-end;
-  gap: var(--cw-space-xs);
-  min-width: var(--ds-touch-target-min);
+  justify-content: center;
+  width: var(--ds-touch-target-min);
   height: var(--ds-touch-target-min);
-  /* The chevron keeps the spot it had centred in a 44px box; the dot, when there
-     is one, stands beside it instead of on top of it. */
-  padding-inline-end: calc((var(--ds-touch-target-min) - 18px) / 2);
   margin-inline-end: calc(-1 * var(--cw-space-sm));
   color: var(--cw-muted);
 }
 
-.rowDisclosure svg {
-  transition: transform var(--cw-motion-state) ease;
+/* Open: the «i» takes the text colour, the way a pressed control reads. */
+.row[data-open="true"] .rowDisclosure {
+  color: var(--cw-platform-text);
 }
 
-.row[data-open="true"] .rowDisclosure svg {
-  transform: rotate(180deg);
-}
-
-/* «There is a note inside»: a dot just before the chevron, red when the note is
-   why the course cannot be sold. */
+/* «There is a note inside»: a dot sitting on the «i» circle at 45°, up and to
+   the right — red when the note is why the course cannot be sold. The glyph is
+   18px, its circle r = 8.4/24 of that = 6.3px, so 45° is 6.3 × 0.707 ≈ 4.45px
+   from the centre on both axes. */
 .rowNoteDot {
-  flex: 0 0 auto;
-  width: var(--cw-space-xs);
-  height: var(--cw-space-xs);
+  position: absolute;
+  inset-block-start: calc(50% - 4.45px - 3px);
+  inset-inline-start: calc(50% + 4.45px - 3px);
+  width: 6px;
+  height: 6px;
   border-radius: var(--cw-radius-pill);
   background: var(--cw-muted);
+  box-shadow: 0 0 0 2px var(--cw-mat-surface);
 }
 
 .rowNoteDot[data-tone="alert"] {
@@ -313,12 +311,6 @@
 
 .rowNoteText[data-tone="alert"] {
   border-color: color-mix(in srgb, var(--cw-danger) 45%, var(--cw-mat-stroke-quiet));
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rowDisclosure svg {
-    transition: none;
-  }
 }
 
 .rowControls {

@@ -20,12 +20,12 @@ import { InteractionInkIcon } from "@/components/platform/InteractionInk";
  * ONE LINE PER FACT, ON EVERY SCREEN; THE ROW UNFOLDS ON DEMAND. Wrapping lines
  * kept a phone's slug and owner on the screen but made every card a different,
  * taller height. So a line is one line with an ellipsis at every width, and the
- * title line is a disclosure: tapping it lets every line wrap in place and shows
+ * title line is a disclosure with an «i» at its end: tapping it lets every line wrap in place and shows
  * the row's note. A list stays even; the full text is one tap away.
  *
  * THE NOTE LIVES INSIDE THE UNFOLDED ROW. It was an «i» at the head of the
- * controls, which pushed the select sideways on the rows that had one. Now a dot
- * on the disclosure says there is something to read — tinted when the note
+ * controls, which pushed the select sideways on the rows that had one. Now the
+ * «i» ends the title line, a dot at its upper-right says there is something to read — tinted when the note
  * stops a sale — and the sentence is a paragraph of the open row.
  *
  * Destructive actions are icons in the controls; their confirmation is a
@@ -71,7 +71,7 @@ export function AdminRow({
           <span className={lists.rowDisclosure} aria-hidden="true">
             {note ? <span className={lists.rowNoteDot} data-tone={noteTone} /> : null}
             <InteractionInkIcon>
-              <Icon name="chevron-down" size={18} />
+              <Icon name="info" size={18} />
             </InteractionInkIcon>
           </span>
         </button>
