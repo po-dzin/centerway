@@ -826,7 +826,7 @@ function PricingRow({
       }
       footer={
         canEdit ? (
-          <div className={controls.fields}>
+          <div className={controls.priceForm}>
             <label className={controls.field}>
               <span className={controls.fieldCaption}>{t("catalog_amount")}</span>
               <input
@@ -863,7 +863,7 @@ function PricingRow({
                 <option value="lifetime">{t("catalog_term_lifetime")}</option>
               </select>
             </label>
-            <div className={controls.actions}>
+            <div className={controls.priceActions}>
               <button
                 type="button"
                 onClick={() => void save()}

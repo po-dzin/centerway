@@ -151,7 +151,7 @@ function ProductPricingRow({
       footer={
         <>
           {canEdit ? (
-            <div className={controls.fields}>
+            <div className={controls.priceForm}>
               <label className={controls.field}>
                 <span className={controls.fieldCaption}>{t("products_amount")}</span>
                 <input
@@ -188,7 +188,7 @@ function ProductPricingRow({
                   <option value="lead">{t("products_kind_lead")}</option>
                 </select>
               </label>
-              <div className={controls.actions}>
+              <div className={controls.priceActions}>
                 <button
                   type="button"
                   onClick={() => void save()}

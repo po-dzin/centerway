@@ -1,9 +1,8 @@
 "use client";
 
-import { useId, type CSSProperties, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
-import { useI18n } from "@/components/I18nProvider";
 import type { CwIconName } from "@/components/iconNames";
 import lists from "@/components/admin/AdminLists.module.css";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
@@ -14,21 +13,20 @@ import { InteractionInkIcon } from "@/components/platform/InteractionInk";
  *
  *   lead      a thumbnail, avatar or status mark — optional
  *   body      one fact per line, in this order: title · sub · badges · meta · links
- *   controls  the row's standing decisions: the note's «i», a state select,
- *             icon actions. Right of the body from 900px, under it on a phone.
+ *   controls  the row's standing decisions: a state select, icon actions.
+ *             Right of the body from 900px, under it on a phone.
  *   footer    full width: fields every row has (a price form, a profile).
  *
- * THE NOTE IS AN «i», NOT A LINE. A blocker, a pending diff, a moderation hint
- * or an enquiry's message is something an operator reads on purpose, and it was
- * a line of its own — held empty on every other row to keep the list even, or
- * squeezed beside the links. It is a button in the controls now, tinted when the
- * note stops a sale, with the sentence in a popover anchored to it. A row with
- * nothing to say has no button and no line.
+ * ONE LINE PER FACT, ON EVERY SCREEN; THE ROW UNFOLDS ON DEMAND. Wrapping lines
+ * kept a phone's slug and owner on the screen but made every card a different,
+ * taller height. So a line is one line with an ellipsis at every width, and the
+ * title line is a disclosure: tapping it lets every line wrap in place and shows
+ * the row's note. A list stays even; the full text is one tap away.
  *
- * ONE LINE PER FACT FROM 900PX; ON A PHONE THE LINE WRAPS. A one-line row keeps
- * a desktop list even; at 375px the same rule cut the slug, the owner and the
- * badges off at the edge. Below 900px titles take two lines and meta and badges
- * wrap, so nothing important leaves the screen.
+ * THE NOTE LIVES INSIDE THE UNFOLDED ROW. It was an «i» at the head of the
+ * controls, which pushed the select sideways on the rows that had one. Now a dot
+ * on the disclosure says there is something to read — tinted when the note
+ * stops a sale — and the sentence is a paragraph of the open row.
  *
  * Destructive actions are icons in the controls; their confirmation is a
  * dialog, never a form unfolding inside the row.
@@ -56,15 +54,27 @@ export function AdminRow({
   controls?: ReactNode;
   footer?: ReactNode;
 }) {
-  const info = note ? <AdminRowNote note={note} tone={noteTone} /> : null;
+  const [open, setOpen] = useState(false);
 
   return (
-    <div className={lists.row} data-has-lead={lead ? "true" : undefined}>
+    <div className={lists.row} data-has-lead={lead ? "true" : undefined} data-open={open ? "true" : undefined}>
       {lead ? <div className={lists.rowLead}>{lead}</div> : null}
       <div className={lists.rowBody}>
-        <p className={lists.rowLine} data-slot="title" title={title}>
-          {title}
-        </p>
+        <button
+          type="button"
+          className={lists.rowHead}
+          aria-expanded={open}
+          title={title}
+          onClick={() => setOpen((value) => !value)}
+        >
+          <span className={lists.rowTitle}>{title}</span>
+          <span className={lists.rowDisclosure} aria-hidden="true">
+            {note ? <span className={lists.rowNoteDot} data-tone={noteTone} /> : null}
+            <InteractionInkIcon>
+              <Icon name="chevron-down" size={18} />
+            </InteractionInkIcon>
+          </span>
+        </button>
         {sub ? (
           <p className={lists.rowLine} data-slot="sub" title={sub}>
             {sub}
@@ -85,56 +95,15 @@ export function AdminRow({
             {links}
           </div>
         ) : null}
+        {open && note ? (
+          <p className={lists.rowNoteText} data-tone={noteTone}>
+            {note}
+          </p>
+        ) : null}
       </div>
-      {info || controls ? (
-        <div className={lists.rowControls}>
-          {info}
-          {controls}
-        </div>
-      ) : null}
+      {controls ? <div className={lists.rowControls}>{controls}</div> : null}
       {footer ? <div className={lists.rowFooter}>{footer}</div> : null}
     </div>
-  );
-}
-
-/**
- * The row's note behind an «i». A native popover, anchored per instance: an
- * `anchor-name` written once in a stylesheet would give every row's button the
- * same name, and each popover would open beside the last row's (the same trap
- * `RequiredMark` in the cabinet documents). Without anchor positioning the
- * popover opens centred in the top layer — reachable, just not adjacent.
- */
-function AdminRowNote({ note, tone }: { note: string; tone: "muted" | "alert" }) {
-  const { t } = useI18n();
-  const id = useId();
-  const anchor = `--cw-row-note-${id.replace(/[^a-zA-Z0-9]/g, "")}`;
-  const label = t("catalog_row_note" as never);
-
-  return (
-    <>
-      <button
-        type="button"
-        className={`${lists.rowIcon} ${lists.rowNote}`}
-        data-tone={tone}
-        style={{ anchorName: anchor } as CSSProperties}
-        popoverTarget={id}
-        aria-label={label}
-        title={label}
-      >
-        <InteractionInkIcon>
-          <Icon name="info" size={18} />
-        </InteractionInkIcon>
-      </button>
-      <p
-        className={lists.rowNotePopover}
-        data-tone={tone}
-        style={{ positionAnchor: anchor } as CSSProperties}
-        popover="auto"
-        id={id}
-      >
-        {note}
-      </p>
-    </>
   );
 }
 
