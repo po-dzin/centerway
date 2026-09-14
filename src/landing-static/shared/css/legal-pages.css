@@ -60,8 +60,10 @@ body[data-cw-page="public-offer"]{
   text-underline-offset:.16em;
 }
 
-[data-cw-landing] .public-offer a:hover,
-.refund-policy-link:hover{text-decoration-thickness:2px}
+@media (hover: hover) {
+  [data-cw-landing] .public-offer a:hover,
+  .refund-policy-link:hover{text-decoration-thickness:2px}
+}
 
 [data-cw-landing] .public-offer a:focus-visible,
 .refund-policy-link:focus-visible{outline:2px solid currentColor;outline-offset:3px}

@@ -297,8 +297,10 @@
   text-decoration: none;
 }
 
-.diagnosticBackLink:hover {
-  color: var(--cw-platform-text);
+@media (hover: hover) {
+  .diagnosticBackLink:hover {
+    color: var(--cw-platform-text);
+  }
 }
 
 /* NO SECOND UNDERLINE HERE. The `.text` role it composes already documents the
@@ -688,9 +690,11 @@
    `--cw-platform-text`, which on the night ground is the cream. Pointing at a
    link in the footer turned it WHITE while the same gesture anywhere else in
    the product turned it brass. */
-.footer a:not(.footerTextLink):hover,
-.footer button:hover {
-  color: var(--cw-platform-text);
+@media (hover: hover) {
+  .footer a:not(.footerTextLink):hover,
+  .footer button:hover {
+    color: var(--cw-platform-text);
+  }
 }
 
 /* Text links are reading affordances, not quiet buttons: the ink underline is
@@ -730,9 +734,14 @@
    question — ink on a pale ground, brass on a dark one — and it is what the
    ink label's own hover rule reads, so the word and the line under it move
    together instead of resolving two different colours. */
-.footerTextLink:hover,
 .footerTextLink:focus-visible {
   color: var(--cw-nav-marker);
+}
+
+@media (hover: hover) {
+  .footerTextLink:hover {
+    color: var(--cw-nav-marker);
+  }
 }
 
 /* THE WORDMARK IS SET, NOT DRAWN — this footer spells CENTERWAY in the data
@@ -827,9 +836,14 @@
   color: color-mix(in srgb, var(--cw-platform-accent) 82%, var(--cw-platform-bg) 18%);
 }
 
-:root[data-cw-theme="dark"] .footerSocialsRow a.footerSocialLink:hover,
 :root[data-cw-theme="dark"] .footerSocialsRow a.footerSocialLink:focus-visible {
   color: var(--cw-platform-accent);
+}
+
+@media (hover: hover) {
+  :root[data-cw-theme="dark"] .footerSocialsRow a.footerSocialLink:hover {
+    color: var(--cw-platform-accent);
+  }
 }
 
 .footerSocialIcon {

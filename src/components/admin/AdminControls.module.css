@@ -292,7 +292,7 @@
 }
 
 .disclosureChevron {
-  transition: transform var(--cw-motion-state) ease;
+  transition: transform var(--cw-motion-state) var(--cw-ease-state);
 }
 
 .disclosureChevronOpen {

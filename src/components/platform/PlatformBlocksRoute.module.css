@@ -33,9 +33,22 @@
     box-shadow 160ms ease;
 }
 
-.routeChoiceCard:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--cw-mat-shadow-raised);
+@media (hover: hover) {
+  .routeChoiceCard:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--cw-mat-shadow-raised);
+  }
+}
+
+/* PRESS IS THE STATE A FINGER HAS (2026-09-14). Hover is gated behind
+   `@media (hover: hover)` above, so on a phone this object used to receive a tap
+   and say nothing. While held it settles IN by `--cw-press-settle` — the mirror
+   of the lift it takes under a pointer. Deliberately outside the hover query:
+   a mouse presses too, and a press is the one state a touch device can produce.
+   Same idea as globals.css → "PRESS IS THE MARK RUN FULL". */
+.routeChoiceCard:active {
+  transform: translateY(var(--cw-press-settle));
+  box-shadow: var(--cw-mat-shadow-soft);
 }
 
 .routeChoiceCard strong,
@@ -257,4 +270,13 @@
     radial-gradient(circle at 38% 38%, var(--cw-platform-accent) 0 0.06rem, transparent 0.08rem),
     radial-gradient(circle at 64% 52%, var(--cw-platform-accent) 0 0.06rem, transparent 0.08rem),
     var(--cw-mat-tone-icon);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The press keeps its elevation change and loses the settle — the same
+     trade the button contract makes, so one gesture behaves one way wherever a
+     reader has asked for less movement. */
+  .routeChoiceCard:active {
+    transform: none;
+  }
 }

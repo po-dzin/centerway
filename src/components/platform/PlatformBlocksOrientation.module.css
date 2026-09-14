@@ -278,8 +278,10 @@
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
 }
 
-.heroUtilityLink:hover:not(:disabled) {
-  color: var(--cw-platform-accent-contrast);
+@media (hover: hover) {
+  .heroUtilityLink:hover:not(:disabled) {
+    color: var(--cw-platform-accent-contrast);
+  }
 }
 
 .heroBadge {
@@ -759,10 +761,16 @@
     transform 160ms ease;
 }
 
-.videoPoster:hover .videoPlayMark,
 .videoPoster:focus-visible .videoPlayMark {
   background-color: var(--cw-mat-inverse-control-hover);
   transform: scale(1.04);
+}
+
+@media (hover: hover) {
+  .videoPoster:hover .videoPlayMark {
+    background-color: var(--cw-mat-inverse-control-hover);
+    transform: scale(1.04);
+  }
 }
 
 .videoPoster:focus-visible {
@@ -775,9 +783,14 @@
     transition: none;
   }
 
-  .videoPoster:hover .videoPlayMark,
   .videoPoster:focus-visible .videoPlayMark {
     transform: none;
+  }
+
+  @media (hover: hover) {
+    .videoPoster:hover .videoPlayMark {
+      transform: none;
+    }
   }
 }
 
@@ -940,7 +953,9 @@
     transition: none;
   }
 
-  .heroPrimaryButton:hover {
-    transform: none;
+  @media (hover: hover) {
+    .heroPrimaryButton:hover {
+      transform: none;
+    }
   }
 }

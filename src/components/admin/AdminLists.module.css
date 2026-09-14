@@ -202,8 +202,8 @@
   border: 1px solid transparent;
   border-radius: var(--cw-radius-pill);
   transition:
-    background-color var(--cw-motion-state) ease,
-    border-color var(--cw-motion-state) ease;
+    background-color var(--cw-motion-state) var(--cw-ease-state),
+    border-color var(--cw-motion-state) var(--cw-ease-state);
 }
 
 @media (hover: hover) {
@@ -540,7 +540,7 @@
 @media (hover: hover) {
   .rowAction {
     opacity: 0;
-    transition: opacity var(--cw-motion-state) ease;
+    transition: opacity var(--cw-motion-state) var(--cw-ease-state);
   }
 
   .orderRow:hover .rowAction,

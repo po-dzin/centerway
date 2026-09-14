@@ -1421,10 +1421,16 @@
   text-underline-offset: 0.2em;
 }
 
-.notesJournalLink:hover,
 .notesJournalLink:focus-visible {
   color: var(--cw-platform-text);
   text-decoration-color: currentColor;
+}
+
+@media (hover: hover) {
+  .notesJournalLink:hover {
+    color: var(--cw-platform-text);
+    text-decoration-color: currentColor;
+  }
 }
 
 .notesList {

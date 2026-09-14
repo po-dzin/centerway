@@ -83,8 +83,8 @@
   transform-origin: left center;
   pointer-events: none;
   transition:
-    opacity var(--cw-motion-state, 160ms) ease,
-    color var(--cw-motion-state, 160ms) ease;
+    opacity var(--cw-motion-state, var(--cw-motion-state)) var(--cw-ease-state),
+    color var(--cw-motion-state, var(--cw-motion-state)) var(--cw-ease-state);
 }
 
 /* Hover is half the mark — and it is gated, because a phone cannot hover and

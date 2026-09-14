@@ -4803,9 +4803,14 @@
   background: transparent;
 }
 
-.courseSettingEditor .choiceOption[aria-pressed="true"],
-.courseSettingEditor .choiceOption:hover:not(:disabled) {
+.courseSettingEditor .choiceOption[aria-pressed="true"] {
   background: transparent;
+}
+
+@media (hover: hover) {
+  .courseSettingEditor .choiceOption:hover:not(:disabled) {
+    background: transparent;
+  }
 }
 
 .courseSettingsAdvanced {

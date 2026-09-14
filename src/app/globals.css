@@ -1968,12 +1968,17 @@
       rotate(var(--cw-ink-stroke-tilt));
   }
 
-  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover
-    .cw-ink-label[data-cw-ink-variant="link"],
   :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible
     .cw-ink-label[data-cw-ink-variant="link"],
   .cw-ink-label[data-cw-ink-variant="link"][data-cw-ink-active="true"] {
     color: var(--cw-nav-marker);
+  }
+
+  @media (hover: hover) {
+    :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover
+      .cw-ink-label[data-cw-ink-variant="link"] {
+      color: var(--cw-nav-marker);
+    }
   }
 
   /* The weight is restated, not inherited. The selection stroke's hover rule
@@ -1981,8 +1986,6 @@
      weight here a link would thicken into a selection stroke under the
      cursor, which is the one thing these two marks must never do to each
      other. This selector is the more specific of the two, so it holds. */
-  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover
-    .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark,
   :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible
     .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark,
   .cw-ink-label[data-cw-ink-variant="link"][data-cw-ink-active="true"] .cw-ink-label-mark {
@@ -1992,12 +1995,25 @@
       rotate(var(--cw-ink-stroke-tilt));
   }
 
+  /* The hover half of the rule above, behind the pointer query like every
+     other hover (docs → "Hover is a pointer state"). It still outranks the
+     selection stroke's hover copy below on specificity, so a pointed-at link
+     keeps its thin weight. */
+  @media (hover: hover) {
+    :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover
+      .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark {
+      opacity: 1;
+      transform:
+        scaleY(var(--cw-ink-link-weight))
+        rotate(var(--cw-ink-stroke-tilt));
+    }
+  }
+
   /* ── the selection stroke ───────────────────────────
      Thick and brass, absent until it means something. The weight is restated
      here rather than inherited: this selector and the variants' carry equal
      specificity and this one comes later, so leaving `scaleY` out made a
      pointed-at row go thin exactly while it was being pointed at. */
-  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover .cw-ink-label-mark,
   :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible .cw-ink-label-mark {
     opacity: var(--cw-ink-hover-opacity);
     transform:

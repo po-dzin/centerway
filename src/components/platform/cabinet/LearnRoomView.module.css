@@ -366,11 +366,18 @@
    міняє кольору, губа не золотиться, нічого не світиться і нічого не
    накладається зверху: полицю просто ОБВОДЯТЬ". So the cut deepens a little in
    its own shadow, and around it the room draws a frame — with the same pen. */
-.niche:hover .nicheBox,
 .niche[data-hot="true"] .nicheBox {
   box-shadow:
     var(--niche-depth),
     inset 0 26px 40px -14px var(--room-cast);
+}
+
+@media (hover: hover) {
+  .niche:hover .nicheBox {
+    box-shadow:
+      var(--niche-depth),
+      inset 0 26px 40px -14px var(--room-cast);
+  }
 }
 
 /* The mark lives in the ROOM, not in the shelf: it is drawn outside the cut,
@@ -393,9 +400,14 @@
   overflow: visible;
 }
 
-.niche:hover .nicheMark,
 .niche[data-hot="true"] .nicheMark {
   opacity: 1;
+}
+
+@media (hover: hover) {
+  .niche:hover .nicheMark {
+    opacity: 1;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -724,10 +736,16 @@
     border-color 220ms ease;
 }
 
-.back:hover,
 .back:focus-visible {
   color: var(--room-select-ink);
   border-block-end-color: var(--room-select-line);
+}
+
+@media (hover: hover) {
+  .back:hover {
+    color: var(--room-select-ink);
+    border-block-end-color: var(--room-select-line);
+  }
 }
 
 .back:focus-visible {
@@ -804,11 +822,17 @@
   border-block-end: 0;
 }
 
-.row:hover,
 .row:focus-visible,
 .row[data-hot="true"] {
   color: var(--room-ink);
   padding-inline-start: var(--cw-space-sm);
+}
+
+@media (hover: hover) {
+  .row:hover {
+    color: var(--room-ink);
+    padding-inline-start: var(--cw-space-sm);
+  }
 }
 
 .row:focus-visible {
@@ -883,11 +907,17 @@
   overflow: visible;
 }
 
-.row:hover .rowMark,
 .row:focus-visible .rowMark,
 .row[data-hot="true"] .rowMark {
   opacity: var(--cw-ink-hover-opacity, 0.42);
   transform: scaleX(var(--cw-ink-hover-scale, 0.74));
+}
+
+@media (hover: hover) {
+  .row:hover .rowMark {
+    opacity: var(--cw-ink-hover-opacity, 0.42);
+    transform: scaleX(var(--cw-ink-hover-scale, 0.74));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -907,10 +937,15 @@
 /* THE SELECT ON ONE ROW, AS ON ONE BOOK. Marking the count in every row that
    owns something marks nearly all of them, and the accent stops being one. What
    is being looked at lights; the rest is ink. */
-.row:hover .rowState[data-held="true"],
 .row:focus-visible .rowState[data-held="true"],
 .row[data-hot="true"] .rowState[data-held="true"] {
   color: var(--room-select-ink);
+}
+
+@media (hover: hover) {
+  .row:hover .rowState[data-held="true"] {
+    color: var(--room-select-ink);
+  }
 }
 
 /* A spine answers the column, and the column answers a spine — and it does it
@@ -918,8 +953,7 @@
    of them a glow laid over the drawing: the face takes ink, the edges are
    written at full weight, and the book steps forward out of its row with the
    shadow that implies. */
-.book[data-hot="true"],
-.book:hover {
+.book[data-hot="true"] {
   --face-front: var(--room-select-tint);
   --face-line: var(--room-select-line);
   z-index: 2;
@@ -927,20 +961,62 @@
   transform: translateZ(0) rotate(var(--tilt, 0deg)) translateY(-9px);
 }
 
-.book[data-hot="true"] .bookDraw :global(.plate),
-.book:hover .bookDraw :global(.plate) {
+@media (hover: hover) {
+  .book:hover {
+    --face-front: var(--room-select-tint);
+    --face-line: var(--room-select-line);
+    z-index: 2;
+    filter: drop-shadow(3px 5px 7px var(--room-cast));
+    transform: translateZ(0) rotate(var(--tilt, 0deg)) translateY(-9px);
+  }
+}
+
+/* PRESS IS THE STATE A FINGER HAS (2026-09-14). Hover is gated behind
+   `@media (hover: hover)` above, so on a phone this object used to receive a tap
+   and say nothing. While held it settles IN by `--cw-press-settle` — the mirror
+   of the lift it takes under a pointer. Deliberately outside the hover query:
+   a mouse presses too, and a press is the one state a touch device can produce.
+   Same idea as globals.css → "PRESS IS THE MARK RUN FULL". */
+/* The rotate has to be restated: a book stands at its own `--tilt`, and a
+   press that wrote `translateY` alone would drop that and stand the spine
+   straight up for as long as the finger was down. */
+.book:active {
+  --face-front: var(--room-select-tint);
+  --face-line: var(--room-select-line);
+  z-index: 2;
+  transform: translateZ(0) rotate(var(--tilt, 0deg)) translateY(var(--cw-press-settle));
+}
+
+.book[data-hot="true"] .bookDraw :global(.plate) {
   fill: color-mix(in srgb, var(--room-select-ink) 55%, transparent);
   stroke: var(--room-select-line);
 }
 
-.book[data-hot="true"] .bookDraw :global(.foot),
-.book:hover .bookDraw :global(.foot) {
+@media (hover: hover) {
+  .book:hover .bookDraw :global(.plate) {
+    fill: color-mix(in srgb, var(--room-select-ink) 55%, transparent);
+    stroke: var(--room-select-line);
+  }
+}
+
+.book[data-hot="true"] .bookDraw :global(.foot) {
   fill: var(--room-select-ink);
 }
 
-.book[data-hot="true"] .bookSpine,
-.book:hover .bookSpine {
+@media (hover: hover) {
+  .book:hover .bookDraw :global(.foot) {
+    fill: var(--room-select-ink);
+  }
+}
+
+.book[data-hot="true"] .bookSpine {
   color: var(--room-select-ink);
+}
+
+@media (hover: hover) {
+  .book:hover .bookSpine {
+    color: var(--room-select-ink);
+  }
 }
 
 /* On a phone the room is a header and the column is the page: the shelves keep
@@ -989,5 +1065,14 @@
 
   .rowState {
     font-size: var(--ds-type-label-size);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The press keeps its elevation change and loses the settle — the same
+     trade the button contract makes, so one gesture behaves one way wherever a
+     reader has asked for less movement. */
+  .book:active {
+    transform: translateZ(0) rotate(var(--tilt, 0deg));
   }
 }
