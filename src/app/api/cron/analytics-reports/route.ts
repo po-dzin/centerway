@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { requireCronAuth } from "@/lib/cron/auth";
 import { dispatchDueTelegramPeriodicReports } from "@/lib/analytics/telegramReports";
 
+export const runtime = "nodejs";
+
 export async function GET(req: Request) {
   const authError = requireCronAuth(req);
   if (authError) {

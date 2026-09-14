@@ -17,6 +17,62 @@ import { env } from "@/lib/env";
  */
 export type Db = SupabaseClient<Database>;
 
+const DB_FETCH_TIMEOUT_MS = Number(process.env.SUPABASE_FETCH_TIMEOUT_MS) || 20_000;
+const DB_FETCH_MAX_ATTEMPTS = 3;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryableMethod(method: string | undefined): boolean {
+  const verb = (method ?? "GET").toUpperCase();
+  return verb === "GET" || verb === "HEAD";
+}
+
+/**
+ * The `fetch` every PostgREST/GoTrue call on these clients goes through.
+ *
+ * Before this, a request to Supabase had no timeout at all: a stalled gateway
+ * or a slow query left the promise hanging until Vercel's own platform limit
+ * killed the function, surfacing only as `Gateway Timeout` with no retry and
+ * no clean stack — that is what `lms_builder_course_read_failed:Gateway
+ * Timeout` and `lms_live_list_incomplete` actually were. Bounding each
+ * request and retrying transient failures turns a silent hang into either a
+ * fast success or a real, loggable `Error`.
+ *
+ * Retries are GET/HEAD only. PostgREST writes (POST/PATCH/DELETE, including
+ * upsert) are not replayed automatically — a request that reached the server
+ * but lost its response on the way back must not be resubmitted blind.
+ */
+const fetchWithTimeout: typeof fetch = async (input, init) => {
+  const retryable = isRetryableMethod(init?.method);
+  const attempts = retryable ? DB_FETCH_MAX_ATTEMPTS : 1;
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const res = await fetch(input, { ...init, signal: AbortSignal.timeout(DB_FETCH_TIMEOUT_MS) });
+      if (retryable && attempt < attempts && (res.status === 502 || res.status === 503 || res.status === 504)) {
+        lastError = new Error(`Supabase gateway error ${res.status}`);
+        await sleep(300 * attempt);
+        continue;
+      }
+      return res;
+    } catch (err) {
+      const isTimeout = err instanceof Error && err.name === "TimeoutError";
+      const isNetworkError = err instanceof TypeError;
+      lastError = isTimeout ? new Error(`Supabase request timed out after ${DB_FETCH_TIMEOUT_MS}ms`) : err;
+      if (retryable && attempt < attempts && (isTimeout || isNetworkError)) {
+        await sleep(300 * attempt);
+        continue;
+      }
+      throw lastError;
+    }
+  }
+
+  throw lastError;
+};
+
 /**
  * The service-role client. Bypasses RLS; every read the app makes is this one.
  *
@@ -27,6 +83,7 @@ export function serviceClient(): Db {
   const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = env.supabaseService();
   return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false },
+    global: { fetch: fetchWithTimeout },
   });
 }
 
@@ -49,6 +106,7 @@ export async function verifyBearer(authHeader: string | null | undefined): Promi
     const { NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY } = env.supabasePublic();
     anonClient = createClient<Database>(NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, {
       auth: { persistSession: false },
+      global: { fetch: fetchWithTimeout },
     });
   }
 
