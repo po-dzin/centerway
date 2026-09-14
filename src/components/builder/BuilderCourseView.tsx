@@ -73,6 +73,7 @@ import {
   subscribeToStructureWidth,
   type StructureView,
 } from "./builderStructureView";
+import { COURSE_STATE_LABELS } from "@/lib/lms/courseState";
 
 type State =
   | { status: "loading" }
@@ -841,7 +842,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
               onChange={(value) => editCourse(["title"], value)}
             />
             <span className={published ? styles.pillPublished : styles.pill}>
-              {published ? "Опубліковано" : "Чернетка"}
+              {published ? COURSE_STATE_LABELS.published.uk : COURSE_STATE_LABELS.draft.uk}
             </span>
           </div>
           {/* One shared hard limit holds both the page and two catalogue lines on
@@ -1101,7 +1102,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           </div>
           <div className={styles.releaseSummary}>
             <span className={published ? styles.pillPublished : styles.pill}>
-              {published ? "Опубліковано" : "Чернетка"}
+              {published ? COURSE_STATE_LABELS.published.uk : COURSE_STATE_LABELS.draft.uk}
             </span>
             <span className={styles.panelStatus}>{reviewStatusLabel(state.data)}</span>
           </div>

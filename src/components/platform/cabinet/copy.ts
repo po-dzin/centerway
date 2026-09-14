@@ -9,6 +9,7 @@
 
 import type { CourseCategory } from "@/lms-core";
 import type { ProfileLang } from "../profile/types";
+import { COURSE_STATE_LABELS } from "@/lib/lms/courseState";
 
 export type CabinetCopy = {
   /* `continueTitle` and `continueLead` lived here for the resume card's kicker
@@ -225,7 +226,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       dayNumber: (day) => `Day ${day}`,
       courseFinished: "Completed",
       courseNotStarted: "Not started",
-      courseDraft: "Draft",
+      courseDraft: COURSE_STATE_LABELS.draft.en,
       courseLocked: "No access yet",
       courseExpired: "Access expired",
       nextStepLabel: "Next step",
@@ -326,7 +327,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     dayNumber: (day) => `День ${day}`,
     courseFinished: "Пройдено",
     courseNotStarted: "Ще не розпочато",
-    courseDraft: "Чернетка",
+    courseDraft: COURSE_STATE_LABELS.draft.uk,
     courseLocked: "Доступу поки немає",
     courseExpired: "Термін доступу минув",
     nextStepLabel: "Наступний урок",

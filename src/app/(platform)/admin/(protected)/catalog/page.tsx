@@ -62,6 +62,7 @@ import {
   type CatalogGrouping,
 } from "@/lib/admin/catalogGrouping";
 import { coverPortraitStyle } from "@/lib/lms/courseCover";
+import { courseStateKeys, courseStateLabel } from "@/lib/lms/courseState";
 import { COURSE_CATEGORIES, type CourseCategory } from "@/lms-core";
 
 const BLOCKER_KEY: Record<SaleBlocker, string> = {
@@ -434,52 +435,35 @@ function CourseLinks({ row }: { row: CatalogRow }) {
 /* `withVisibility={false}` where the row's own select already says it — the
    same fact printed twice, once as a chip and once as the value beside it. */
 function StateChips({ row, withVisibility = true }: { row: CatalogRow; withVisibility?: boolean }) {
-  const { t } = useI18n();
-  const chip = lists.tag;
-
-  const statusLabel: Record<string, string> = {
-    draft: t("catalog_status_draft"),
-    published: t("catalog_status_published"),
-  };
-  const reviewLabel: Record<string, string> = {
-    draft: t("catalog_review_draft"),
-    in_review: t("catalog_review_in_review"),
-    changes_requested: t("catalog_review_changes_requested"),
-    approved: t("catalog_review_approved"),
-  };
+  const { lang, t } = useI18n();
   const visibilityLabel: Record<CatalogRow["visibility"], string> = {
     hidden: t("catalog_visibility_hidden"),
     unlisted: t("catalog_visibility_unlisted"),
     listed: t("catalog_visibility_listed"),
   };
-  const pendingReview = row.pendingReviewStatus ?? "draft";
+  /* One word per state, from the vocabulary every surface shares — see
+     src/lib/lms/courseState.ts. «Автор: опубліковано» + «Перевірка:
+     затверджено» was two chips for the one fact the builder calls «Опубліковано». */
+  const keys = courseStateKeys({
+    status: row.status,
+    reviewStatus: row.reviewStatus,
+    hasPendingRevision: row.hasPendingRevision,
+    pendingReviewStatus: row.pendingReviewStatus,
+  });
 
   return (
     <div className={lists.chipRow}>
-      <span className={chip}>{statusLabel[row.status] ?? row.status}</span>
-      {/* THE CHIP SAYS WHAT THE BUTTONS BELOW OBEY. It used to print the
-                LIVE review status beside the «оновлення» word, so a returned
-                revision on an approved course read «ОНОВЛЕННЯ · APPROVED» —
-                the one state where there is nothing to approve. */}
-      <span className={chip}>
-        {row.hasPendingRevision
-          ? `${t("catalog_pending_revision")} · ${reviewLabel[pendingReview] ?? pendingReview}`
-          : (reviewLabel[row.reviewStatus] ?? row.reviewStatus)}
-      </span>
-      {withVisibility ? <span className={chip}>{visibilityLabel[row.visibility] ?? row.visibility}</span> : null}
-      {row.blockers.length === 0 ? <span className={lists.tagOnSale}>{t("catalog_on_sale")}</span> : null}
+      {keys.map((key) => (
+        <span key={key} className={lists.tag}>
+          {courseStateLabel(key, lang)}
+        </span>
+      ))}
+      {withVisibility ? <span className={lists.tag}>{visibilityLabel[row.visibility] ?? row.visibility}</span> : null}
+      {row.blockers.length === 0 ? <span className={lists.tagOnSale}>{courseStateLabel("on_sale", lang)}</span> : null}
     </div>
   );
 }
 
-/**
- * ЧТО ПРИНЕСЛИ НА ПРОВЕРКУ, до того как рецензент нажмёт «одобрить».
- *
- * Раньше он видел «оновлення · in_review» и ничего о содержании: одобрение было
- * вслепую, и подмена обязательного блока «межі» после прохождения проверки
- * ничем себя не выдавала. Числа отвечают на «во что смотреть», подробности —
- * в самом курсе; разница считается по запросу и нигде не хранится.
- */
 type Translate = ReturnType<typeof useI18n>["t"];
 
 function blockersNote(row: CatalogRow, t: Translate): string | null {

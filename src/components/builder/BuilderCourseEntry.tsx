@@ -19,6 +19,7 @@ import styles from "./Builder.module.css";
 import { ShelfPresentation } from "@/components/platform/cabinet/ShelfPresentation";
 import { PENDING_COPY, type PendingAction, type PendingKind } from "./BuilderCourseList";
 import type { CourseView } from "./builderShelfView";
+import { COURSE_STATE_LABELS } from "@/lib/lms/courseState";
 
 export function ViewSwitch({ view, onChange }: { view: CourseView; onChange: (next: CourseView) => void }) {
   return (
@@ -97,7 +98,7 @@ export function CourseRow(props: EntryProps) {
             row made a five-line card out of a list entry. */}
           <span className={styles.courseRowMeta}>
             <span className={course.status === "published" ? styles.pillPublished : styles.pill}>
-              {course.status === "published" ? "Опубліковано" : "Чернетка"}
+              {course.status === "published" ? COURSE_STATE_LABELS.published.uk : COURSE_STATE_LABELS.draft.uk}
             </span>
             <span className={styles.courseMeta}>
               {course.moduleCount} {plural(course.moduleCount, "модуль", "модулі", "модулів")} · {course.lessonCount}{" "}
@@ -150,7 +151,7 @@ export function CourseCard(props: EntryProps) {
             </span>
           )}
           <span className={course.status === "published" ? styles.coverPillPublished : styles.coverPill}>
-            {course.status === "published" ? "Опубліковано" : "Чернетка"}
+            {course.status === "published" ? COURSE_STATE_LABELS.published.uk : COURSE_STATE_LABELS.draft.uk}
           </span>
         </span>
         <span className={styles.courseCardBody}>

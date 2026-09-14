@@ -28,6 +28,7 @@ import { Icon } from "@/components/Icon";
 import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
 import { AdminRow, AdminRowIconAction } from "@/components/admin/AdminRow";
+import { courseStateKeys, courseStateLabel } from "@/lib/lms/courseState";
 import { AdminModal } from "@/components/admin/AdminModal";
 import { ModerationModal } from "@/components/admin/ModerationModal";
 
@@ -50,7 +51,7 @@ export function CourseAuthorshipTab({
   errorText: (message: string) => string;
   onChanged: () => void;
 }) {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
   const toast = useToast();
   const [savingId, setSavingId] = useState<string | null>(null);
   /* One dialog at a time, for one course: the builder owner or the review. */
@@ -145,12 +146,19 @@ export function CourseAuthorshipTab({
               title={course.title}
               badges={
                 <>
-                  <span className={lists.tag}>{course.status}</span>
-                  <span className={lists.tag}>
-                    {course.hasPendingRevision
-                      ? `${t("catalog_authorship_updated_at")} · ${course.reviewStatus}`
-                      : course.reviewStatus}
-                  </span>
+                  {/* The shared one-word vocabulary. This row's review state is
+                      the NEXT version's when a revision is pending, and the live
+                      course behind it is published. */}
+                  {courseStateKeys({
+                    status: course.status,
+                    reviewStatus: course.hasPendingRevision ? null : course.reviewStatus,
+                    hasPendingRevision: course.hasPendingRevision,
+                    pendingReviewStatus: course.hasPendingRevision ? course.reviewStatus : null,
+                  }).map((key) => (
+                    <span key={key} className={lists.tag}>
+                      {courseStateLabel(key, lang)}
+                    </span>
+                  ))}
                 </>
               }
               meta={
