@@ -105,37 +105,34 @@
 }
 
 /* ── One admin row (2026-09-14) ───────────────────────
-   See `AdminRow`. Grid areas rather than nested flex rows so the controls can
-   move from under the body (phone) to its right (900px+) without the markup
-   changing, and so a row with a lead and a row without one share every other
-   line. */
+   See `AdminRow`. The body sits in the first grid row; the controls and the footer take IMPLICIT
+   rows below it (full width), so a row that has neither ends at its body — a
+   declared-but-empty row still paid the grid gap, 12px of paper under every
+   card. From 900px the controls move up into the first row's last column. */
 .row {
   composes: cw-list-item from global;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas:
-    "body"
-    "controls"
-    "footer";
   gap: var(--cw-space-sm);
   padding: var(--cw-space-md);
 }
 
 .row[data-has-lead="true"] {
   grid-template-columns: auto minmax(0, 1fr);
-  grid-template-areas:
-    "lead body"
-    "controls controls"
-    "footer footer";
 }
 
 /* The lead stands the full height of the row. A thumbnail in it is an upright
    slice of the cover (portrait crop, see `CourseThumb`), so the picture — not an
    empty held line — is what fills a short row. */
 .rowLead {
-  grid-area: lead;
+  grid-column: 1;
+  grid-row: 1;
   display: flex;
   align-self: stretch;
+}
+
+.row[data-has-lead="true"] > .rowBody {
+  grid-column: 2;
 }
 
 .rowLead > .itemThumb {
@@ -146,7 +143,8 @@
 }
 
 .rowBody {
-  grid-area: body;
+  grid-column: 1;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
   gap: var(--cw-space-2xs);
@@ -240,7 +238,7 @@
 }
 
 .rowControls {
-  grid-area: controls;
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -255,7 +253,7 @@
 }
 
 .rowFooter {
-  grid-area: footer;
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   gap: var(--cw-space-xs);
@@ -265,20 +263,16 @@
 @media (min-width: 900px) {
   .row {
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "body controls"
-      "footer footer";
     column-gap: var(--cw-space-lg);
   }
 
   .row[data-has-lead="true"] {
     grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-areas:
-      "lead body controls"
-      "footer footer footer";
   }
 
   .rowControls {
+    grid-column: -2 / -1;
+    grid-row: 1;
     flex-wrap: nowrap;
     align-self: start;
     justify-content: flex-end;
