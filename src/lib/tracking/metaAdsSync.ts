@@ -297,7 +297,7 @@ export async function syncMetaAdsInsights(options?: {
   const token = process.env.META_ADS_ACCESS_TOKEN || process.env.META_ACCESS_TOKEN;
   const rawAccount = process.env.META_AD_ACCOUNT_ID;
   const rawPixelId = process.env.META_PIXEL_ID || process.env.META_AD_PIXEL_ID || process.env.META_PIXEL;
-  const apiVersion = process.env.META_GRAPH_API_VERSION || "v21.0";
+  const apiVersion = process.env.META_GRAPH_API_VERSION || "v26.0";
 
   if (!token) {
     throw new Error("META_ADS_ACCESS_TOKEN is not configured");

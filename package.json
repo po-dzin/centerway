@@ -78,6 +78,7 @@
     "media:sweep": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/media-sweep.mjs",
     "media:sweep:apply": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/media-sweep.mjs --apply",
     "admin:role": "node scripts/admin-role.mjs",
+    "meta": "node scripts/meta/cli.mjs",
     "admin:offer": "node scripts/course-offer.mjs",
     "media:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/media-refs-check.mjs",
     "shelf:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/shelf-check.mjs",
