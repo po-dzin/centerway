@@ -147,6 +147,10 @@
 .rowLine {
   display: block;
   min-width: 0;
+  /* An empty block has no line box, so a held slot (`null`) collapsed to 0 and
+     the row it was holding came out 24px shorter than its neighbours. The line
+     is the height whether or not there is text on it. */
+  min-height: 1.5rem;
   margin: 0;
   overflow: hidden;
   font-size: var(--ds-type-label-size);

@@ -156,6 +156,11 @@ export function CourseAuthorshipTab({
                   <span className={lists.itemMetaStrong}>{course.authorEmail ?? t("access_author_house")}</span>
                 </>
               }
+              note={
+                canGrant && course.reviewEnabled && !reviewing && !visibilityEditable
+                  ? t("catalog_authorship_listed_hint")
+                  : null
+              }
               controls={
                 canGrant && visibilityEditable ? (
                   <select
@@ -199,8 +204,6 @@ export function CourseAuthorshipTab({
                           </button>
                         </>
                       </div>
-                    ) : course.reviewEnabled && !visibilityEditable ? (
-                      <p className={controls.hint}>{t("catalog_authorship_listed_hint")}</p>
                     ) : null}
                     <div className={controls.fieldStack}>
                       <label className={controls.field}>
