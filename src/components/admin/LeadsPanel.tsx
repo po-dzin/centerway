@@ -239,7 +239,7 @@ export function LeadsPanel() {
                   </select>
                 </>
               }
-              note={lead.message ?? (rows.some((one) => one.message) ? null : undefined)}
+              note={lead.message}
             />
           ))}
         </div>

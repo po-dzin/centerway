@@ -136,7 +136,7 @@
 }
 
 .rowLead > .itemThumb {
-  width: var(--ds-card-thumb-width);
+  width: var(--ds-card-thumb-width-compact);
   height: 100%;
   min-height: var(--ds-card-thumb-width);
   aspect-ratio: auto;
@@ -151,90 +151,134 @@
   min-width: 0;
 }
 
-/* ONE LINE PER FACT. Each slot is exactly one line tall and never wraps, so a
-   row's height is its slot count — see `AdminRow`. `data-slot` sets the voice
-   of each line; the geometry is the same for all of them. */
+/* ONE FACT PER LINE — see `AdminRow`. Mobile first: on a phone a line WRAPS,
+   so the slug, the owner and the badges stay on the screen; the title keeps two
+   lines. From 900px, where the controls sit beside the body, every line is one
+   line with an ellipsis and the full text on hover, and a list reads even. */
 .rowLine {
-  display: block;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--cw-space-xs);
   min-width: 0;
-  /* An empty block has no line box, so a held slot (`null`) collapsed to 0 and
-     the row it was holding came out 24px shorter than its neighbours. The line
-     is the height whether or not there is text on it. */
   min-height: 1.5rem;
   margin: 0;
-  overflow: hidden;
   font-size: var(--ds-type-label-size);
   line-height: 1.5rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .rowLine[data-slot="title"] {
+  display: -webkit-box;
+  overflow: hidden;
   color: var(--cw-platform-text);
   font-size: var(--ds-type-body-sm-size);
   font-weight: 500;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .rowLine[data-slot="sub"],
-.rowLine[data-slot="meta"],
-.rowLine[data-slot="note"] {
+.rowLine[data-slot="meta"] {
   color: var(--cw-muted);
 }
 
-.rowLine[data-slot="note"][data-tone="alert"] {
-  color: var(--cw-status-failed);
-}
-
-/* Inline pieces of one line, spaced like the old flex row but able to end in
-   one ellipsis for the whole line. */
-.rowLine > * + * {
-  margin-inline-start: var(--cw-space-xs);
-}
-
-/* The links line also carries the row's note, to the right of the links and
-   ellipsed into whatever width is left — see `AdminRow`. */
 .rowLine[data-slot="links"] {
-  display: flex;
-  align-items: center;
-  gap: var(--cw-space-sm);
+  column-gap: var(--cw-space-sm);
 }
 
-.rowLine[data-slot="links"] > * + * {
-  margin-inline-start: 0;
-}
-
-.rowLine[data-slot="links"] > :not(.rowInlineNote) {
-  flex: 0 0 auto;
-}
-
-.rowInlineNote {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--cw-muted);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.rowInlineNote[data-tone="alert"] {
-  color: var(--cw-status-failed);
-}
-
-/* The badges keep their line by scrolling sideways instead of wrapping. */
 .rowBadges {
   composes: cw-scroll-none from global;
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--cw-space-xs);
+  gap: var(--cw-space-2xs) var(--cw-space-xs);
   min-width: 0;
-  height: 1.75rem;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
 }
 
-.rowBadges > * {
-  flex: 0 0 auto;
+@media (min-width: 900px) {
+  .rowLine {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rowLine > * + * {
+    margin-inline-start: var(--cw-space-xs);
+  }
+
+  .rowLine[data-slot="links"] > * + * {
+    margin-inline-start: var(--cw-space-sm);
+  }
+
+  .rowLine[data-slot="title"] {
+    display: block;
+    -webkit-line-clamp: none;
+  }
+
+  .rowBadges {
+    flex-wrap: nowrap;
+    height: 1.75rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .rowBadges > * {
+    flex: 0 0 auto;
+  }
+}
+
+/* The note's «i» takes the icon action's box; alert tints the glyph, because
+   the note it opens says why the course cannot be sold. */
+.rowNote[data-tone="alert"] {
+  color: var(--cw-danger);
+}
+
+/* The note itself: a small paper sheet on the raised shadow, the same material
+   as the cabinet's field hints. */
+.rowNotePopover {
+  max-width: min(22rem, calc(100vw - 2 * var(--cw-space-md)));
+  margin: 0;
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border: 1px solid var(--cw-mat-stroke-quiet);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  background-image: var(--cw-mat-grain-image);
+  box-shadow: var(--cw-mat-shadow-raised);
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.45;
+}
+
+.rowNotePopover[data-tone="alert"] {
+  border-color: color-mix(in srgb, var(--cw-danger) 45%, var(--cw-mat-stroke-quiet));
+}
+
+/* Under the «i», across the screen on a phone: anchored to the button's corner a
+   22rem sheet ran off the right edge at 375px, so below 640px it takes the width
+   of the screen less its margins, centred under the row. From 640px it hangs
+   from the button's corner. */
+@supports (anchor-name: --cw-row-note) {
+  .rowNotePopover {
+    position-area: block-end span-all;
+    position-try-fallbacks: block-start span-all;
+    justify-self: center;
+    width: calc(100vw - 2 * var(--cw-space-md));
+    max-width: none;
+    margin: var(--cw-space-2xs) 0 0;
+  }
+
+  @media (min-width: 640px) {
+    .rowNotePopover {
+      position-area: block-end span-inline-start;
+      position-try-fallbacks:
+        block-start span-inline-start,
+        block-end span-inline-end;
+      justify-self: auto;
+      width: auto;
+      max-width: min(22rem, calc(100vw - 2 * var(--cw-space-md)));
+    }
+  }
 }
 
 .rowControls {
@@ -261,6 +305,10 @@
 }
 
 @media (min-width: 900px) {
+  .rowLead > .itemThumb {
+    width: var(--ds-card-thumb-width);
+  }
+
   .row {
     grid-template-columns: minmax(0, 1fr) auto;
     column-gap: var(--cw-space-lg);
@@ -352,12 +400,20 @@
   gap: var(--cw-space-sm);
 }
 
+/* A filter takes the phone's width; from 640px two sit side by side at a
+   capped measure. */
 .toolbarField {
   display: grid;
-  flex: 1 1 12rem;
+  flex: 1 1 100%;
   gap: var(--cw-space-2xs);
   min-width: 0;
-  max-width: 18rem;
+}
+
+@media (min-width: 640px) {
+  .toolbarField {
+    flex: 1 1 12rem;
+    max-width: 18rem;
+  }
 }
 
 .toolbarCount {

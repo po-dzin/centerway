@@ -109,6 +109,7 @@ export const access = {
   catalog_filter_category: { uk: "Категорія", en: "Category" },
   catalog_visibility_label: { uk: "Видимість у каталозі", en: "Catalogue visibility" },
   catalog_review_open: { uk: "Розглянути", en: "Review" },
+  catalog_row_note: { uk: "Примітка", en: "Note" },
   catalog_review_title: { uk: "Модерація курсу", en: "Course review" },
   catalog_modal_cancel: { uk: "Скасувати", en: "Cancel" },
   access_owner_open: { uk: "Власник у білдері", en: "Builder owner" },

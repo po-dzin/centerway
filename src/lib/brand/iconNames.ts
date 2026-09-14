@@ -2,7 +2,7 @@
 // Geometry source: scripts/lib/icon-glyphs.mjs
 
 // Cache key for the sprite URL — see spriteVersion() in scripts/icons-bake.mjs.
-export const CW_SPRITE_VERSION = "8df504d1";
+export const CW_SPRITE_VERSION = "2bb4ae45";
 
 export const CW_ICON_NAMES = [
   "arrow-right",
@@ -43,6 +43,7 @@ export const CW_ICON_NAMES = [
   "export",
   "unpublish",
   "question",
+  "info",
   "boundary",
   "user",
   "lock",

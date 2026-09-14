@@ -1,6 +1,9 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useId, type CSSProperties, type ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
+import { useI18n } from "@/components/I18nProvider";
 import type { CwIconName } from "@/components/iconNames";
 import lists from "@/components/admin/AdminLists.module.css";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
@@ -10,29 +13,22 @@ import { InteractionInkIcon } from "@/components/platform/InteractionInk";
  * (docs/card-system-2026-09-13.md → «Admin row»).
  *
  *   lead      a thumbnail, avatar or status mark — optional
- *   body      one fixed line per fact, in this order:
- *               title · sub · badges · meta · links · note
- *   controls  the row's standing decisions: a state select, icon actions.
- *             Right of the body from 900px, under it on a phone.
- *   footer    full width: edit forms and moderation.
+ *   body      one fact per line, in this order: title · sub · badges · meta · links
+ *   controls  the row's standing decisions: the note's «i», a state select,
+ *             icon actions. Right of the body from 900px, under it on a phone.
+ *   footer    full width: fields every row has (a price form, a profile).
  *
- * EVERY FACT HAS ITS OWN LINE, AND EACH LINE IS ONE LINE (2026-09-14). The
- * first pass put the badges beside the title, so a short title pulled four
- * status chips up onto its line and a long one pushed them onto the next: two
- * rows of the same list, two shapes. Now the title is alone on the first line,
- * the badges have the second, the meta the third — and none of them wraps:
- * titles and meta end in an ellipsis with the full text on hover, badges scroll
- * sideways. A row's height is therefore the number of slots it has, which is
- * the same for every row a list renders.
+ * THE NOTE IS AN «i», NOT A LINE. A blocker, a pending diff, a moderation hint
+ * or an enquiry's message is something an operator reads on purpose, and it was
+ * a line of its own — held empty on every other row to keep the list even, or
+ * squeezed beside the links. It is a button in the controls now, tinted when the
+ * note stops a sale, with the sentence in a popover anchored to it. A row with
+ * nothing to say has no button and no line.
  *
- * `undefined` omits a slot; `null` keeps its line empty. A list whose rows only
- * sometimes have a note passes `null` for the rest, so the note line is held
- * and the rows stay the same height.
- *
- * A ROW WITH LINKS CARRIES ITS NOTE ON THE LINKS LINE (2026-09-14). Held on a
- * line of its own, an absent note was a strip of empty paper under every card
- * in a list where one row had something to say. Beside the links it takes the
- * rest of that line and ends in an ellipsis, so the row has no line to hold.
+ * ONE LINE PER FACT FROM 900PX; ON A PHONE THE LINE WRAPS. A one-line row keeps
+ * a desktop list even; at 375px the same rule cut the slug, the owner and the
+ * badges off at the edge. Below 900px titles take two lines and meta and badges
+ * wrap, so nothing important leaves the screen.
  *
  * Destructive actions are icons in the controls; their confirmation is a
  * dialog, never a form unfolding inside the row.
@@ -60,6 +56,8 @@ export function AdminRow({
   controls?: ReactNode;
   footer?: ReactNode;
 }) {
+  const info = note ? <AdminRowNote note={note} tone={noteTone} /> : null;
+
   return (
     <div className={lists.row} data-has-lead={lead ? "true" : undefined}>
       {lead ? <div className={lists.rowLead}>{lead}</div> : null}
@@ -67,8 +65,8 @@ export function AdminRow({
         <p className={lists.rowLine} data-slot="title" title={title}>
           {title}
         </p>
-        {sub !== undefined ? (
-          <p className={lists.rowLine} data-slot="sub" title={sub ?? undefined}>
+        {sub ? (
+          <p className={lists.rowLine} data-slot="sub" title={sub}>
             {sub}
           </p>
         ) : null}
@@ -85,26 +83,58 @@ export function AdminRow({
         {links !== undefined ? (
           <div className={lists.rowLine} data-slot="links">
             {links}
-            {note ? (
-              <span className={lists.rowInlineNote} data-tone={noteTone} title={note}>
-                {note}
-              </span>
-            ) : null}
           </div>
-        ) : note !== undefined ? (
-          <p
-            className={lists.rowLine}
-            data-slot="note"
-            data-tone={note ? noteTone : undefined}
-            title={note ?? undefined}
-          >
-            {note}
-          </p>
         ) : null}
       </div>
-      {controls ? <div className={lists.rowControls}>{controls}</div> : null}
+      {info || controls ? (
+        <div className={lists.rowControls}>
+          {info}
+          {controls}
+        </div>
+      ) : null}
       {footer ? <div className={lists.rowFooter}>{footer}</div> : null}
     </div>
+  );
+}
+
+/**
+ * The row's note behind an «i». A native popover, anchored per instance: an
+ * `anchor-name` written once in a stylesheet would give every row's button the
+ * same name, and each popover would open beside the last row's (the same trap
+ * `RequiredMark` in the cabinet documents). Without anchor positioning the
+ * popover opens centred in the top layer — reachable, just not adjacent.
+ */
+function AdminRowNote({ note, tone }: { note: string; tone: "muted" | "alert" }) {
+  const { t } = useI18n();
+  const id = useId();
+  const anchor = `--cw-row-note-${id.replace(/[^a-zA-Z0-9]/g, "")}`;
+  const label = t("catalog_row_note" as never);
+
+  return (
+    <>
+      <button
+        type="button"
+        className={`${lists.rowIcon} ${lists.rowNote}`}
+        data-tone={tone}
+        style={{ anchorName: anchor } as CSSProperties}
+        popoverTarget={id}
+        aria-label={label}
+        title={label}
+      >
+        <InteractionInkIcon>
+          <Icon name="info" size={18} />
+        </InteractionInkIcon>
+      </button>
+      <p
+        className={lists.rowNotePopover}
+        data-tone={tone}
+        style={{ positionAnchor: anchor } as CSSProperties}
+        popover="auto"
+        id={id}
+      >
+        {note}
+      </p>
+    </>
   );
 }
 
