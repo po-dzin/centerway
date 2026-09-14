@@ -226,14 +226,68 @@ function resolveSyncWindow(sinceInput?: string | null, untilInput?: string | nul
   return { since, until };
 }
 
+const META_FETCH_TIMEOUT_MS = Number(process.env.META_SYNC_FETCH_TIMEOUT_MS) || 20_000;
+const META_FETCH_MAX_ATTEMPTS = 3;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * A single Graph API page, bounded and retried.
+ *
+ * Before this, `fetch` here had no timeout: a hung Graph API connection ran
+ * until Vercel's own platform limit killed the whole function with a bare
+ * "Gateway Timeout" that never reached our try/catch, so it never got logged
+ * or alerted on — the cron just silently failed twice, two days apart, and
+ * nobody heard about it until the next Vercel health check. Bounding each
+ * page to `META_FETCH_TIMEOUT_MS` and retrying transient failures (timeouts,
+ * 5xx, rate limiting) lets a bad page fail fast into a real `Error` that the
+ * route handler's catch block can report, instead of hanging the invocation.
+ */
 async function fetchInsightsPage(url: string): Promise<MetaInsightsResponse> {
-  const res = await fetch(url, { method: "GET", headers: { "Content-Type": "application/json" } });
-  const json = (await res.json().catch(() => ({}))) as MetaInsightsResponse;
-  if (!res.ok) {
-    const msg = json?.error?.message || `Meta API error ${res.status}`;
-    throw new Error(msg);
+  let lastError: Error = new Error("Meta API request failed");
+
+  for (let attempt = 1; attempt <= META_FETCH_MAX_ATTEMPTS; attempt++) {
+    try {
+      const res = await fetch(url, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(META_FETCH_TIMEOUT_MS),
+      });
+      const json = (await res.json().catch(() => ({}))) as MetaInsightsResponse;
+
+      if (!res.ok) {
+        const msg = json?.error?.message || `Meta API error ${res.status}`;
+        const retryable = res.status >= 500 || res.status === 429;
+        if (retryable && attempt < META_FETCH_MAX_ATTEMPTS) {
+          lastError = new Error(msg);
+          await sleep(500 * attempt);
+          continue;
+        }
+        throw new Error(msg);
+      }
+
+      return json;
+    } catch (err) {
+      const isTimeout = err instanceof Error && err.name === "TimeoutError";
+      const message = isTimeout ? `Meta API request timed out after ${META_FETCH_TIMEOUT_MS}ms` : undefined;
+      if (message) {
+        lastError = new Error(message);
+      } else if (err instanceof Error) {
+        lastError = err;
+      }
+
+      const isNetworkError = err instanceof TypeError;
+      if ((isTimeout || isNetworkError) && attempt < META_FETCH_MAX_ATTEMPTS) {
+        await sleep(500 * attempt);
+        continue;
+      }
+      throw lastError;
+    }
   }
-  return json;
+
+  throw lastError;
 }
 
 export async function syncMetaAdsInsights(options?: {

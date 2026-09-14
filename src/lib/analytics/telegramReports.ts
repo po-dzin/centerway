@@ -297,7 +297,7 @@ async function reportEventExists(eventKey: string): Promise<boolean> {
     .limit(1)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return Boolean(data?.id);
 }
 
@@ -311,7 +311,7 @@ async function markReportSent(eventKey: string, payload: Record<string, unknown>
       ...payload,
     },
   });
-  if (error) throw error;
+  if (error) throw new Error(error.message);
 }
 
 async function saleNotificationSent(orderRef: string): Promise<boolean> {
@@ -324,7 +324,7 @@ async function saleNotificationSent(orderRef: string): Promise<boolean> {
     .limit(1)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return Boolean(data?.id);
 }
 
@@ -338,7 +338,7 @@ async function markSaleNotificationSent(orderRef: string): Promise<void> {
       sent_at: new Date().toISOString(),
     },
   });
-  if (error) throw error;
+  if (error) throw new Error(error.message);
 }
 
 function resolveCampaignSource(row: { campaign?: unknown; page_url?: unknown }): string {
@@ -583,7 +583,7 @@ export async function sendConfirmedSaleTelegramReport(orderRef: string): Promise
     .eq("order_ref", orderRef)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   if (!order) return { sent: false, reason: "order_not_found" };
   if (order.status !== "paid" && order.status !== "completed") {
     return { sent: false, reason: "order_not_confirmed" };
@@ -597,7 +597,7 @@ export async function sendConfirmedSaleTelegramReport(orderRef: string): Promise
       .select("email, phone")
       .eq("id", order.customer_id)
       .maybeSingle();
-    if (customerError) throw customerError;
+    if (customerError) throw new Error(customerError.message);
     customerEmail = customer?.email ?? null;
     customerPhone = customer?.phone ?? null;
   }
@@ -677,13 +677,13 @@ async function buildPeriodicReport(window: ReportWindow): Promise<PeriodicReport
       .limit(10000),
   ]);
 
-  if (ordersResult.error) throw ordersResult.error;
-  if (metaResult.error) throw metaResult.error;
-  if (campaignResult.error) throw campaignResult.error;
+  if (ordersResult.error) throw new Error(ordersResult.error.message);
+  if (metaResult.error) throw new Error(metaResult.error.message);
+  if (campaignResult.error) throw new Error(campaignResult.error.message);
 
   const adsetMissingTable = isMissingOptionalMetaBreakdown(adsetResult.error, "analytics_meta_adset_daily");
   if (adsetResult.error && !adsetMissingTable) {
-    throw adsetResult.error;
+    throw new Error(adsetResult.error.message);
   }
   if (adsetResult.error && adsetMissingTable) {
     console.warn("Analytics reports: adset breakdown skipped:", adsetResult.error.message);
@@ -692,7 +692,7 @@ async function buildPeriodicReport(window: ReportWindow): Promise<PeriodicReport
 
   const adMissingTable = isMissingOptionalMetaBreakdown(adResult.error, "analytics_meta_ad_daily");
   if (adResult.error && !adMissingTable) {
-    throw adResult.error;
+    throw new Error(adResult.error.message);
   }
   if (adResult.error && adMissingTable) {
     console.warn("Analytics reports: ad breakdown skipped:", adResult.error.message);
