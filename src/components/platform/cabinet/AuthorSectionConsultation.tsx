@@ -8,12 +8,18 @@
  * is unchanged.
  */
 
+import { useId } from "react";
 import { Icon } from "@/components/Icon";
 import styles from "./Cabinet.module.css";
 import { RequiredMark } from "./AuthorProfileMedia";
 import type { AuthorSectionProps } from "./authorProfileTypes";
 
 export function AuthorSectionConsultation({ draft, setDraft, t }: AuthorSectionProps) {
+  /* An explicit `for` beside each `RequiredMark` — a wrapping `<label>` labels
+     the mark's button, not the input it names. */
+  const titleId = useId();
+  const summaryId = useId();
+  const contactId = useId();
   return (
     <details className={`${styles.authorSection} ${styles.authorConsultationField}`} open>
       <summary className={styles.authorSectionHead}>
@@ -47,12 +53,13 @@ export function AuthorSectionConsultation({ draft, setDraft, t }: AuthorSectionP
                 generic toast. Labelled, marked, and required in the markup, which
                 also routes them through the form's `onInvalid` reopener in
                 AuthorProfileFold.tsx. */}
-            <label className={styles.authorField}>
-              <span>
-                {t.consultationTitleLabel}
+            <div className={styles.authorField}>
+              <span className={styles.authorFieldLabel}>
+                <label htmlFor={titleId}>{t.consultationTitleLabel}</label>
                 <RequiredMark tooltip={t.consultationRequired} />
               </span>
               <input
+                id={titleId}
                 className={styles.authorInput}
                 value={draft.consultation.title}
                 required
@@ -60,13 +67,14 @@ export function AuthorSectionConsultation({ draft, setDraft, t }: AuthorSectionP
                   setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, title: e.target.value } }))
                 }
               />
-            </label>
-            <label className={styles.authorField}>
-              <span>
-                {t.consultationSummaryLabel}
+            </div>
+            <div className={styles.authorField}>
+              <span className={styles.authorFieldLabel}>
+                <label htmlFor={summaryId}>{t.consultationSummaryLabel}</label>
                 <RequiredMark tooltip={t.consultationRequired} />
               </span>
               <textarea
+                id={summaryId}
                 className={styles.authorTextarea}
                 rows={3}
                 value={draft.consultation.summary}
@@ -78,7 +86,7 @@ export function AuthorSectionConsultation({ draft, setDraft, t }: AuthorSectionP
                   }))
                 }
               />
-            </label>
+            </div>
             <div className={styles.authorFieldHead}>
               <span>{t.consultationPoints}</span>
               {draft.consultation.points.length < 3 ? (
@@ -103,6 +111,7 @@ export function AuthorSectionConsultation({ draft, setDraft, t }: AuthorSectionP
               <div className={styles.authorCredentialRow} key={index}>
                 <input
                   className={styles.authorInput}
+                  aria-label={`${t.consultationPoints} ${index + 1}`}
                   value={line}
                   onChange={(e) =>
                     setDraft((prev) => {
@@ -133,12 +142,13 @@ export function AuthorSectionConsultation({ draft, setDraft, t }: AuthorSectionP
                 ) : null}
               </div>
             ))}
-            <label className={styles.authorField}>
-              <span>
-                {t.consultationContactLabel}
+            <div className={styles.authorField}>
+              <span className={styles.authorFieldLabel}>
+                <label htmlFor={contactId}>{t.consultationContactLabel}</label>
                 <RequiredMark tooltip={t.consultationRequired} />
               </span>
               <input
+                id={contactId}
                 className={styles.authorInput}
                 type="url"
                 inputMode="url"
@@ -151,7 +161,7 @@ export function AuthorSectionConsultation({ draft, setDraft, t }: AuthorSectionP
                   }))
                 }
               />
-            </label>
+            </div>
           </>
         ) : null}
       </div>

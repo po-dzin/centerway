@@ -7,12 +7,16 @@
  * is unchanged.
  */
 
+import { useId } from "react";
 import { Icon } from "@/components/Icon";
 import styles from "./Cabinet.module.css";
 import { RequiredMark } from "./AuthorProfileMedia";
 import type { AuthorSectionProps } from "./authorProfileTypes";
 
 export function AuthorSectionAbout({ draft, setDraft, t }: AuthorSectionProps) {
+  /* An explicit `for` wherever a `RequiredMark` sits by the label — a wrapping
+     `<label>` would label the mark's button, not the input. */
+  const badgeId = useId();
   return (
     <details className={styles.authorSection} open>
       <summary className={styles.authorSectionHead}>
@@ -64,6 +68,7 @@ export function AuthorSectionAbout({ draft, setDraft, t }: AuthorSectionProps) {
             <div className={styles.authorCredentialRow} key={index}>
               <input
                 className={styles.authorInput}
+                aria-label={`${t.facts} ${index + 1}`}
                 value={line}
                 required={index === 0 && draft.listed}
                 onChange={(e) =>
@@ -109,6 +114,7 @@ export function AuthorSectionAbout({ draft, setDraft, t }: AuthorSectionProps) {
             <div className={styles.authorCredentialRow} key={index}>
               <input
                 className={styles.authorInput}
+                aria-label={`${t.credentials} ${index + 1}`}
                 value={line}
                 required={index === 0 && draft.listed}
                 onChange={(e) =>
@@ -138,18 +144,19 @@ export function AuthorSectionAbout({ draft, setDraft, t }: AuthorSectionProps) {
             35rem input for «12 років практики» promises a paragraph the
             card has no room for. `--ds-field-md`, the same step the name
             and role take. */}
-        <label className={`${styles.authorField} ${styles.authorFieldPhrase}`}>
-          <span>
-            {t.experienceBadge}
+        <div className={`${styles.authorField} ${styles.authorFieldPhrase}`}>
+          <span className={styles.authorFieldLabel}>
+            <label htmlFor={badgeId}>{t.experienceBadge}</label>
             {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
           </span>
           <input
+            id={badgeId}
             className={styles.authorInput}
             value={draft.experienceBadge}
             required={draft.listed}
             onChange={(e) => setDraft((prev) => ({ ...prev, experienceBadge: e.target.value }))}
           />
-        </label>
+        </div>
       </div>
     </details>
   );

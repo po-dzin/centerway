@@ -99,8 +99,8 @@ export function AuthorProfileFold({
     if (!src) return;
     /* A NEW PICTURE, THE SAME AIM — as for the backdrop below. An author
        swapping one portrait for another has not said anything about where the
-       card should look; the recentre button beside each frame is one click
-       away when they have. */
+       card should look; «По центру» in the crop dialog is one click away
+       when they have. */
     setDraft((prev) => ({
       ...prev,
       photo: {
@@ -150,9 +150,13 @@ export function AuthorProfileFold({
     <details id="author" className={styles.fold} open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
       <summary className={styles.foldHead}>
         <div className={styles.foldText}>
-          {/* No eyebrow: `label` and `title` were the same string, byte for
-              byte, in both languages — the heading was being announced by a
-              smaller copy of itself. */}
+          {/* THE LABEL IS BACK, AND IT IS A DIFFERENT WORD (2026-09-14). It was
+              removed when it read «Профіль автора» over «Профіль автора» — the
+              heading announced by a smaller copy of itself. Its siblings in the
+              cabinet all carry one («Продукти», «Акаунт»), and a fold without
+              it read as belonging to some other list. «Авторство» names the
+              category the way theirs do, without repeating the title. */}
+          <span className={styles.sectionLabel}>{t.label}</span>
           <h2 className={styles.sectionTitle}>{t.title}</h2>
           <span className={styles.sectionLead}>{t.lead}</span>
         </div>

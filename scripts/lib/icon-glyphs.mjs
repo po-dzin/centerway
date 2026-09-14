@@ -394,6 +394,22 @@ export const ICONS = {
     group: "Meta",
     d: ["M10.4 5.8a4.6 4.6 0 1 0 0 9.2 4.6 4.6 0 0 0 0-9.2z", "M13.9 13.9 18.6 18.6"],
   },
+  /* Centre a crop again. It was `undo`, which says «take back my last step» —
+     and recentring is not a step back, it is a return to the middle at 1×,
+     whatever the author did before. A sight: a ring, four ticks on its axes
+     and the point they meet at. Same ring construction as `lens` (one closed
+     path), ticks kept outside it so they read as axes rather than spokes. */
+  center: {
+    group: "Meta",
+    d: [
+      "M12 6.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z",
+      "M12 3.2v2.4",
+      "M12 18.4v2.4",
+      "M3.2 12h2.4",
+      "M18.4 12h2.4",
+    ],
+    dots: [{ cx: 12, cy: 12, r: 1.3 }],
+  },
   "view-rows": {
     group: "Meta",
     d: ["M4.5 5.4 H19.5 V8.6 H4.5 Z", "M4.5 10.4 H19.5 V13.6 H4.5 Z", "M4.5 15.4 H19.5 V18.6 H4.5 Z"],

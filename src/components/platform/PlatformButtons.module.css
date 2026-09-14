@@ -196,9 +196,17 @@
   border-radius: 50%;
 }
 
+/* THE HEIGHT IS THE SQUARE'S TOO (2026-09-14). This rule set only the width
+   and trusted `aspect-ratio: 1` for the rest — but `base` gives every button a
+   `min-height` of `--ds-button-min-height` (48px, 40px compact), and a min-height
+   beats an aspect ratio. With a mouse `--ds-touch-target-min` is 36px, so every
+   icon-only control on a desktop came out 36×48 or 36×40: a tall rectangle
+   reported as «the buttons are still not square». Both axes are stated now. */
 .square {
   width: var(--ds-touch-target-min);
   min-width: var(--ds-touch-target-min);
+  height: var(--ds-touch-target-min);
+  min-height: var(--ds-touch-target-min);
   max-width: none;
   padding-inline: 0;
   aspect-ratio: 1;
