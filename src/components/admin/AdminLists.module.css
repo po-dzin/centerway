@@ -104,6 +104,129 @@
   font-size: var(--ds-type-label-size);
 }
 
+/* ── One admin row (2026-09-14) ───────────────────────
+   See `AdminRow`. Grid areas rather than nested flex rows so the controls can
+   move from under the body (phone) to its right (900px+) without the markup
+   changing, and so a row with a lead and a row without one share every other
+   line. */
+.row {
+  composes: cw-list-item from global;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "body"
+    "controls"
+    "footer";
+  gap: var(--cw-space-sm);
+  padding: var(--cw-space-md);
+}
+
+.row[data-has-lead="true"] {
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "lead body"
+    "controls controls"
+    "footer footer";
+}
+
+.rowLead {
+  grid-area: lead;
+}
+
+.rowBody {
+  grid-area: body;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+.rowTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-width: 0;
+}
+
+.rowControls {
+  grid-area: controls;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-width: 0;
+}
+
+/* A select in the controls takes the line on a phone, beside its icon. */
+.rowControls > select {
+  flex: 1 1 12rem;
+  width: auto;
+}
+
+.rowFooter {
+  grid-area: footer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "body controls"
+      "footer footer";
+    column-gap: var(--cw-space-lg);
+  }
+
+  .row[data-has-lead="true"] {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "lead body controls"
+      "footer footer footer";
+  }
+
+  .rowControls {
+    flex-wrap: nowrap;
+    align-self: start;
+    justify-content: flex-end;
+  }
+
+  .rowControls > select {
+    flex: 0 0 13rem;
+  }
+}
+
+/* The compact icon action: the touch floor as its box, the glyph's own ink as
+   its only state. */
+.rowIcon {
+  composes: cw-icon-btn from global;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--ds-touch-target-min);
+  min-height: var(--ds-touch-target-min);
+}
+
+.rowIcon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rowIconDanger:focus-visible,
+.rowIconDanger[aria-expanded="true"] {
+  color: var(--cw-danger);
+}
+
+@media (hover: hover) {
+  .rowIconDanger:hover:not(:disabled) {
+    color: var(--cw-danger);
+  }
+}
+
 .itemRow {
   display: flex;
   align-items: flex-start;

@@ -52,6 +52,7 @@ import pageStyles from "@/components/admin/AdminPage.module.css";
 import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
+import { AdminRow, AdminRowIconAction } from "@/components/admin/AdminRow";
 import {
   CATALOG_GROUPINGS,
   filterCatalogRows,
@@ -593,93 +594,118 @@ function PublicationRow({
     (row.reviewStatus === "in_review" || row.status === "published");
   const approvable = revisionInReview || approvesLive;
 
-  return (
-    <div className={lists.item}>
-      <div className={lists.itemRow}>
-        <CourseThumb row={row} />
-        <div className={lists.itemBody}>
-          <p className={lists.itemTitle}>{row.title}</p>
-          <StateChips row={row} />
-          <div className={lists.itemMeta}>
-            <span className={lists.itemCode}>{row.slug}</span>
-            <span>
-              {t("access_course_learners")}: {row.learners}
-            </span>
-            <span>{row.authorEmail ?? t("access_author_house")}</span>
-            <span>{new Date(row.updatedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}</span>
-            {inReview && row.submittedAt ? (
-              <span className={lists.itemMetaStrong}>
-                {t("catalog_submitted_on")}:{" "}
-                {new Date(row.submittedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
-              </span>
-            ) : null}
-          </div>
-          <Blockers row={row} />
-          <ModerationNote row={row} />
-          <PendingChanges row={row} />
-          <CourseLinks row={row} />
-        </div>
-      </div>
+  const [deleting, setDeleting] = useState(false);
 
-      {canEdit ? (
-        <div className={controls.fields}>
-          {approvable ? (
-            <>
-              {inReview ? (
-                <input
-                  className={controls.inputGrow}
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder={t("catalog_note_placeholder")}
-                />
-              ) : null}
-              <button
-                type="button"
-                className={`${controls.action} cw-surface-2`}
-                disabled={busy}
-                onClick={() => void moderate("approve")}
-              >
-                {approvesLive && row.hasPendingRevision ? t("catalog_approve_live") : t("catalog_approve")}
-              </button>
-              {inReview ? (
+  return (
+    <AdminRow
+      lead={<CourseThumb row={row} />}
+      title={row.title}
+      badges={<StateChips row={row} />}
+      meta={
+        <>
+          <span className={lists.itemCode}>{row.slug}</span>
+          <span>
+            {t("access_course_learners")}: {row.learners}
+          </span>
+          <span>{row.authorEmail ?? t("access_author_house")}</span>
+          <span>{new Date(row.updatedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}</span>
+          {inReview && row.submittedAt ? (
+            <span className={lists.itemMetaStrong}>
+              {t("catalog_submitted_on")}:{" "}
+              {new Date(row.submittedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
+            </span>
+          ) : null}
+        </>
+      }
+      controls={
+        canEdit ? (
+          <>
+            {/* Hiding is offered always — taking something off the storefront
+                must never be gated on how it got there. */}
+            <select
+              aria-label={t("catalog_visibility_label")}
+              className={controls.select}
+              value={row.visibility}
+              disabled={busy}
+              onChange={(e) => void moderate("set_visibility", e.target.value as CatalogRow["visibility"])}
+            >
+              <option value="hidden">{t("catalog_visibility_hidden")}</option>
+              <option value="unlisted">{t("catalog_visibility_unlisted")}</option>
+              <option value="listed">{t("catalog_visibility_listed")}</option>
+            </select>
+            <AdminRowIconAction
+              icon="trash"
+              label={t("catalog_delete")}
+              danger
+              expanded={deleting}
+              onClick={() => setDeleting((open) => !open)}
+            />
+          </>
+        ) : (
+          <p className={controls.hint}>{t("access_role_admin_only")}</p>
+        )
+      }
+      footer={
+        canEdit && (approvable || deleting) ? (
+          <>
+            {approvable ? (
+              <div className={controls.fields}>
+                {inReview ? (
+                  <input
+                    className={controls.inputGrow}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder={t("catalog_note_placeholder")}
+                  />
+                ) : null}
                 <button
                   type="button"
-                  className={`${controls.action} cw-btn-muted`}
+                  className={`${controls.action} cw-surface-2`}
                   disabled={busy}
-                  onClick={() => void moderate("request_changes")}
+                  onClick={() => void moderate("approve")}
                 >
-                  {t("catalog_return")}
+                  {approvesLive && row.hasPendingRevision ? t("catalog_approve_live") : t("catalog_approve")}
                 </button>
-              ) : null}
-            </>
-          ) : null}
-
-          {/* Visibility is offered whenever the course is approved, and
-                        hiding is offered always — taking something off the
-                        storefront must never be gated on how it got there. */}
-          <select
-            className={`${controls.select} ${controls.selectNarrow}`}
-            value={row.visibility}
-            disabled={busy}
-            onChange={(e) => void moderate("set_visibility", e.target.value as CatalogRow["visibility"])}
-          >
-            <option value="hidden">{t("catalog_visibility_hidden")}</option>
-            <option value="unlisted">{t("catalog_visibility_unlisted")}</option>
-            <option value="listed">{t("catalog_visibility_listed")}</option>
-          </select>
-        </div>
-      ) : (
-        <p className={controls.hint}>{t("access_role_admin_only")}</p>
-      )}
-      {canEdit ? <DeleteCourseAction row={row} onChanged={onChanged} /> : null}
-    </div>
+                {inReview ? (
+                  <button
+                    type="button"
+                    className={`${controls.action} cw-btn-muted`}
+                    disabled={busy}
+                    onClick={() => void moderate("request_changes")}
+                  >
+                    {t("catalog_return")}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+            {deleting ? (
+              <DeleteCourseConfirm row={row} onCancel={() => setDeleting(false)} onChanged={onChanged} />
+            ) : null}
+          </>
+        ) : null
+      }
+    >
+      <Blockers row={row} />
+      <ModerationNote row={row} />
+      <PendingChanges row={row} />
+      <CourseLinks row={row} />
+    </AdminRow>
   );
 }
 
-function DeleteCourseAction({ row, onChanged }: { row: CatalogRow; onChanged: () => Promise<void> }) {
+/* The confirmation the row's trash icon opens in its footer. Typing the slug is
+   the step that makes a delete deliberate; the icon only asks the question. */
+function DeleteCourseConfirm({
+  row,
+  onCancel,
+  onChanged,
+}: {
+  row: CatalogRow;
+  onCancel: () => void;
+  onChanged: () => Promise<void>;
+}) {
   const { t } = useI18n();
   const toast = useToast();
-  const [open, setOpen] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [busy, setBusy] = useState(false);
   async function remove() {
@@ -697,7 +723,7 @@ function DeleteCourseAction({ row, onChanged }: { row: CatalogRow; onChanged: ()
       setBusy(false);
     }
   }
-  return open ? (
+  return (
     <div className={`${surfaces.plate} ${controls.confirmGroup}`} role="group" aria-label={t("catalog_delete")}>
       <p className={controls.confirmText}>
         {t("catalog_delete_warning")} {t("access_course_learners")}: {row.learners}.
@@ -726,18 +752,14 @@ function DeleteCourseAction({ row, onChanged }: { row: CatalogRow; onChanged: ()
           className={controls.action}
           disabled={busy}
           onClick={() => {
-            setOpen(false);
             setConfirmation("");
+            onCancel();
           }}
         >
           {t("catalog_delete_cancel")}
         </button>
       </div>
     </div>
-  ) : (
-    <button type="button" className={`${controls.action} cw-btn-muted`} onClick={() => setOpen(true)}>
-      {t("catalog_delete")}
-    </button>
   );
 }
 
@@ -810,100 +832,98 @@ function PricingRow({
   };
 
   return (
-    <div className={lists.item}>
-      <div className={lists.itemRow}>
-        <CourseThumb row={row} />
-        <div className={lists.itemBody}>
-          <p className={lists.itemTitle}>{row.title}</p>
-          <div className={lists.itemMeta}>
-            <span className={lists.itemCode}>{row.slug}</span>
-            {row.offer ? (
-              <>
-                <span>
-                  {row.offer.amount} {row.offer.currency}
-                  {row.offer.listAmount ? ` · ${t("catalog_quoted")} ${row.offer.listAmount}` : ""}
-                </span>
-                <span>
-                  {row.offer.accessLifetime
-                    ? t("catalog_term_lifetime")
-                    : `${row.offer.accessDays} ${t("catalog_term_days")}`}
-                </span>
-                {!row.offer.active ? (
-                  <span className="cw-status-failed-text">{t("catalog_offer_inactive")}</span>
-                ) : null}
-              </>
-            ) : (
-              <span>{t("catalog_no_offer")}</span>
-            )}
-          </div>
-          <Blockers row={row} />
-          <PendingChanges row={row} />
-          <CourseLinks row={row} />
-        </div>
-      </div>
-
-      {canEdit ? (
-        <div className={controls.fields}>
-          <label className={controls.field}>
-            <span className={controls.fieldCaption}>{t("catalog_amount")}</span>
-            <input
-              type="number"
-              min={0}
-              step={1}
-              inputMode="numeric"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className={controls.input}
-            />
-          </label>
-          <label className={controls.field}>
-            <span className={controls.fieldCaption}>{t("catalog_list_amount")}</span>
-            <input
-              type="number"
-              min={1}
-              step={1}
-              inputMode="numeric"
-              value={listAmount}
-              onChange={(e) => setListAmount(e.target.value)}
-              className={controls.input}
-            />
-          </label>
-          <label className={controls.field}>
-            <span className={controls.fieldCaption}>{t("catalog_term")}</span>
-            <select value={term} onChange={(e) => setTerm(e.target.value)} className={controls.select}>
-              <option value="">{t("catalog_term_unset")}</option>
-              {ACCESS_TERM_PRESETS.map((days) => (
-                <option key={days} value={String(days)}>
-                  {days} {t("catalog_term_days")}
-                </option>
-              ))}
-              <option value="lifetime">{t("catalog_term_lifetime")}</option>
-            </select>
-          </label>
-          <div className={controls.actions}>
-            <button
-              type="button"
-              onClick={() => void save()}
-              disabled={busy || !amount || !term}
-              className={`${controls.action} cw-surface-2`}
-            >
-              {t("catalog_save_offer")}
-            </button>
-            {row.offer ? (
+    <AdminRow
+      lead={<CourseThumb row={row} />}
+      title={row.title}
+      meta={
+        <>
+          <span className={lists.itemCode}>{row.slug}</span>
+          {row.offer ? (
+            <>
+              <span>
+                {row.offer.amount} {row.offer.currency}
+                {row.offer.listAmount ? ` · ${t("catalog_quoted")} ${row.offer.listAmount}` : ""}
+              </span>
+              <span>
+                {row.offer.accessLifetime
+                  ? t("catalog_term_lifetime")
+                  : `${row.offer.accessDays} ${t("catalog_term_days")}`}
+              </span>
+              {!row.offer.active ? <span className="cw-status-failed-text">{t("catalog_offer_inactive")}</span> : null}
+            </>
+          ) : (
+            <span>{t("catalog_no_offer")}</span>
+          )}
+        </>
+      }
+      footer={
+        canEdit ? (
+          <div className={controls.fields}>
+            <label className={controls.field}>
+              <span className={controls.fieldCaption}>{t("catalog_amount")}</span>
+              <input
+                type="number"
+                min={0}
+                step={1}
+                inputMode="numeric"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className={controls.input}
+              />
+            </label>
+            <label className={controls.field}>
+              <span className={controls.fieldCaption}>{t("catalog_list_amount")}</span>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                inputMode="numeric"
+                value={listAmount}
+                onChange={(e) => setListAmount(e.target.value)}
+                className={controls.input}
+              />
+            </label>
+            <label className={controls.field}>
+              <span className={controls.fieldCaption}>{t("catalog_term")}</span>
+              <select value={term} onChange={(e) => setTerm(e.target.value)} className={controls.select}>
+                <option value="">{t("catalog_term_unset")}</option>
+                {ACCESS_TERM_PRESETS.map((days) => (
+                  <option key={days} value={String(days)}>
+                    {days} {t("catalog_term_days")}
+                  </option>
+                ))}
+                <option value="lifetime">{t("catalog_term_lifetime")}</option>
+              </select>
+            </label>
+            <div className={controls.actions}>
               <button
                 type="button"
-                onClick={() => void toggleActive(!row.offer?.active)}
-                disabled={busy}
-                className={`${controls.action} cw-btn-muted`}
+                onClick={() => void save()}
+                disabled={busy || !amount || !term}
+                className={`${controls.action} cw-surface-2`}
               >
-                {t(row.offer.active ? "catalog_withdraw_offer" : "catalog_resume_offer")}
+                {t("catalog_save_offer")}
               </button>
-            ) : null}
+              {row.offer ? (
+                <button
+                  type="button"
+                  onClick={() => void toggleActive(!row.offer?.active)}
+                  disabled={busy}
+                  className={`${controls.action} cw-btn-muted`}
+                >
+                  {t(row.offer.active ? "catalog_withdraw_offer" : "catalog_resume_offer")}
+                </button>
+              ) : null}
+            </div>
           </div>
-        </div>
-      ) : (
-        <p className={controls.hint}>{t("access_role_admin_only")}</p>
-      )}
-    </div>
+        ) : (
+          <p className={controls.hint}>{t("access_role_admin_only")}</p>
+        )
+      }
+    >
+      <Blockers row={row} />
+      <PendingChanges row={row} />
+      <CourseLinks row={row} />
+    </AdminRow>
   );
 }

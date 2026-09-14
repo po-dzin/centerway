@@ -1290,6 +1290,18 @@
       display: none;
     }
 
+    /* THE VALUE SITS ON THE FIELD'S MIDDLE. A base-select is laid out like a
+       button, not like the native control it replaces: its content flows from
+       the top of the box, so once `.cw-input` gave every field the 3rem touch
+       floor the chosen option rode up against the upper border — «Рух» and
+       «У каталозі» a line higher than the chevron beside them (2026-09-14). The
+       native select centred it for free; the customizable one has to be told. */
+    .cw-select,
+    .cw-admin-theme select {
+      display: inline-flex;
+      align-items: center;
+    }
+
     .cw-select::picker(select),
     .cw-admin-theme select::picker(select) {
       position-try-order: normal;

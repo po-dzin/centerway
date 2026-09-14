@@ -107,6 +107,7 @@ export const access = {
   catalog_tab_pricing: { uk: "Ціни й доступ", en: "Price and access" },
   catalog_search: { uk: "Пошук за назвою або slug", en: "Search by title or slug" },
   catalog_filter_category: { uk: "Категорія", en: "Category" },
+  catalog_visibility_label: { uk: "Видимість у каталозі", en: "Catalogue visibility" },
   catalog_category_all: { uk: "Усі категорії", en: "All categories" },
   catalog_category_none: { uk: "Без категорії", en: "No category" },
   catalog_category_movement: { uk: "Рух", en: "Movement" },

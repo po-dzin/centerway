@@ -27,6 +27,7 @@ import surfaces from "@/components/admin/AdminSurfaces.module.css";
 import { Icon } from "@/components/Icon";
 import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
+import { AdminRow } from "@/components/admin/AdminRow";
 
 function EmptyIcon() {
   return <Icon className="cw-muted" name="lock" size={20} />;
@@ -125,20 +126,26 @@ export function CourseAuthorshipTab({
       </div>
 
       <div className={lists.list}>
-        {courses.map((course) => (
-          <div key={course.id} className={lists.item}>
-            <div className={lists.itemRow}>
-              <div className={lists.itemBody}>
-                <div className={lists.itemTitleRow}>
-                  <p className={lists.itemTitle}>{course.title}</p>
+        {courses.map((course) => {
+          const reviewing = course.reviewEnabled && course.reviewStatus === "in_review";
+          const visibilityEditable =
+            course.reviewEnabled && course.status === "published" && course.reviewStatus === "approved";
+          return (
+            <AdminRow
+              key={course.id}
+              title={course.title}
+              badges={
+                <>
                   <span className={lists.tag}>{course.status}</span>
                   <span className={lists.tag}>
                     {course.hasPendingRevision
                       ? `${t("catalog_authorship_updated_at")} · ${course.reviewStatus}`
                       : course.reviewStatus}
                   </span>
-                </div>
-                <div className={lists.itemMeta}>
+                </>
+              }
+              meta={
+                <>
                   <span className={lists.itemCode}>{course.slug}</span>
                   <span>
                     {t("access_course_learners")}: {course.learners}
@@ -146,41 +153,14 @@ export function CourseAuthorshipTab({
                   <span>
                     {new Date(course.updatedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
                   </span>
-                </div>
-              </div>
-              <div className={lists.itemAside}>
-                <p className={lists.itemAsideText}>{course.authorEmail ?? t("access_author_house")}</p>
-              </div>
-            </div>
-
-            {canGrant && course.reviewEnabled ? (
-              <div className={controls.fields}>
-                {course.reviewStatus === "in_review" ? (
-                  <>
-                    <input
-                      className={controls.inputGrow}
-                      value={reviewNotes[course.id] ?? ""}
-                      onChange={(e) => setReviewNotes((prev) => ({ ...prev, [course.id]: e.target.value }))}
-                      placeholder={t("catalog_authorship_comment_placeholder")}
-                    />
-                    <button
-                      className={`${controls.action} cw-surface-2`}
-                      disabled={savingId === course.id}
-                      onClick={() => void moderate(course, "approve")}
-                    >
-                      {t("catalog_authorship_approve")}
-                    </button>
-                    <button
-                      className={`${controls.action} cw-btn-muted`}
-                      disabled={savingId === course.id}
-                      onClick={() => void moderate(course, "request_changes")}
-                    >
-                      {t("catalog_authorship_return")}
-                    </button>
-                  </>
-                ) : course.status === "published" && course.reviewStatus === "approved" ? (
+                  <span className={lists.itemMetaStrong}>{course.authorEmail ?? t("access_author_house")}</span>
+                </>
+              }
+              controls={
+                canGrant && visibilityEditable ? (
                   <select
-                    className={`${controls.select} ${controls.selectNarrow}`}
+                    aria-label={t("catalog_visibility_label")}
+                    className={controls.select}
                     value={course.visibility}
                     disabled={savingId === course.id}
                     onChange={(e) => void moderate(course, "set_visibility", e.target.value as CourseRow["visibility"])}
@@ -189,61 +169,90 @@ export function CourseAuthorshipTab({
                     <option value="unlisted">{t("catalog_authorship_unlisted")}</option>
                     <option value="listed">{t("catalog_authorship_listed")}</option>
                   </select>
-                ) : (
-                  <p className={controls.hint}>{t("catalog_authorship_listed_hint")}</p>
-                )}
-              </div>
-            ) : null}
-
-            {canGrant ? (
-              <div className={controls.fieldStack}>
-                <label className={controls.field}>
-                  <span className={controls.fieldCaption}>{t("access_author_profile")}</span>
-                  <select
-                    className={controls.select}
-                    value={course.authorProfileId ?? ""}
-                    disabled={savingId === course.id}
-                    onChange={(event) => void selectProfile(course, event.target.value || null)}
-                  >
-                    <option value="">{t("access_author_profile_none")}</option>
-                    {authorProfiles.map((profile) => (
-                      <option key={profile.id} value={profile.id}>
-                        {profile.name} · /expert/{profile.slug}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className={controls.fields}>
-                  <input
-                    type="email"
-                    value={draft[course.id] ?? ""}
-                    onChange={(e) => setDraft((prev) => ({ ...prev, [course.id]: e.target.value }))}
-                    placeholder={t("access_author_email")}
-                    className={controls.inputGrow}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => save(course, (draft[course.id] ?? "").trim())}
-                    disabled={savingId === course.id || !(draft[course.id] ?? "").trim()}
-                    className={`${controls.action} cw-surface-2`}
-                  >
-                    {t("access_author_assign")}
-                  </button>
-                  {course.authorId ? (
-                    <button
-                      type="button"
-                      onClick={() => save(course, null)}
-                      disabled={savingId === course.id}
-                      className={`${controls.action} cw-btn-muted`}
-                    >
-                      {t("access_author_clear")}
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        ))}
+                ) : null
+              }
+              footer={
+                canGrant ? (
+                  <>
+                    {reviewing ? (
+                      <div className={controls.fields}>
+                        <>
+                          <input
+                            className={controls.inputGrow}
+                            value={reviewNotes[course.id] ?? ""}
+                            onChange={(e) => setReviewNotes((prev) => ({ ...prev, [course.id]: e.target.value }))}
+                            placeholder={t("catalog_authorship_comment_placeholder")}
+                          />
+                          <button
+                            className={`${controls.action} cw-surface-2`}
+                            disabled={savingId === course.id}
+                            onClick={() => void moderate(course, "approve")}
+                          >
+                            {t("catalog_authorship_approve")}
+                          </button>
+                          <button
+                            className={`${controls.action} cw-btn-muted`}
+                            disabled={savingId === course.id}
+                            onClick={() => void moderate(course, "request_changes")}
+                          >
+                            {t("catalog_authorship_return")}
+                          </button>
+                        </>
+                      </div>
+                    ) : course.reviewEnabled && !visibilityEditable ? (
+                      <p className={controls.hint}>{t("catalog_authorship_listed_hint")}</p>
+                    ) : null}
+                    <div className={controls.fieldStack}>
+                      <label className={controls.field}>
+                        <span className={controls.fieldCaption}>{t("access_author_profile")}</span>
+                        <select
+                          className={controls.select}
+                          value={course.authorProfileId ?? ""}
+                          disabled={savingId === course.id}
+                          onChange={(event) => void selectProfile(course, event.target.value || null)}
+                        >
+                          <option value="">{t("access_author_profile_none")}</option>
+                          {authorProfiles.map((profile) => (
+                            <option key={profile.id} value={profile.id}>
+                              {profile.name} · /expert/{profile.slug}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <div className={controls.fields}>
+                        <input
+                          type="email"
+                          value={draft[course.id] ?? ""}
+                          onChange={(e) => setDraft((prev) => ({ ...prev, [course.id]: e.target.value }))}
+                          placeholder={t("access_author_email")}
+                          className={controls.inputGrow}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => save(course, (draft[course.id] ?? "").trim())}
+                          disabled={savingId === course.id || !(draft[course.id] ?? "").trim()}
+                          className={`${controls.action} cw-surface-2`}
+                        >
+                          {t("access_author_assign")}
+                        </button>
+                        {course.authorId ? (
+                          <button
+                            type="button"
+                            onClick={() => save(course, null)}
+                            disabled={savingId === course.id}
+                            className={`${controls.action} cw-btn-muted`}
+                          >
+                            {t("access_author_clear")}
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  </>
+                ) : null
+              }
+            />
+          );
+        })}
       </div>
     </div>
   );
