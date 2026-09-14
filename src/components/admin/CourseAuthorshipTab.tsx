@@ -30,12 +30,20 @@ import lists from "@/components/admin/AdminLists.module.css";
 import { AdminRow, AdminRowIconAction } from "@/components/admin/AdminRow";
 import { courseStateKeys, courseStateLabel } from "@/lib/lms/courseState";
 import { AdminModal } from "@/components/admin/AdminModal";
-import { ModerationModal } from "@/components/admin/ModerationModal";
 
 function EmptyIcon() {
   return <Icon className="cw-muted" name="lock" size={20} />;
 }
 
+/**
+ * AUTHORSHIP ONLY (2026-09-14). This tab used to be the access page's course
+ * list, and it came into the catalogue carrying its own review buttons and its
+ * own visibility select — the same controls, over the same courses, as the
+ * «Публікація» tab beside it. A course's STATE (review, visibility, delete) is
+ * decided in «Публікація»; this tab answers only who a course belongs to: the
+ * account that edits it in the builder, and the author profile printed on its
+ * page.
+ */
 export function CourseAuthorshipTab({
   courses,
   authorProfiles,
@@ -54,8 +62,8 @@ export function CourseAuthorshipTab({
   const { lang, t } = useI18n();
   const toast = useToast();
   const [savingId, setSavingId] = useState<string | null>(null);
-  /* One dialog at a time, for one course: the builder owner or the review. */
-  const [dialog, setDialog] = useState<{ kind: "owner" | "review"; courseId: string } | null>(null);
+  /* The builder-owner dialog, for one course at a time. */
+  const [dialog, setDialog] = useState<{ courseId: string } | null>(null);
 
   const save = async (course: CourseRow, email: string | null) => {
     setSavingId(course.id);
@@ -65,35 +73,6 @@ export function CourseAuthorshipTab({
         body: JSON.stringify({ courseId: course.id, email }),
       });
       toast.success(email ? t("access_author_set") : t("access_author_cleared"));
-      onChanged();
-      return true;
-    } catch (e) {
-      toast.error(errorText(getErrorMessage(e)));
-      return false;
-    } finally {
-      setSavingId(null);
-    }
-  };
-
-  const moderate = async (
-    course: CourseRow,
-    action: "approve" | "request_changes" | "set_visibility",
-    visibility?: CourseRow["visibility"],
-    note?: string,
-  ) => {
-    setSavingId(course.id);
-    try {
-      await authFetch("/api/admin/access/courses", {
-        method: "PATCH",
-        body: JSON.stringify({ courseId: course.id, action, visibility, note: note ?? "" }),
-      });
-      toast.success(
-        action === "approve"
-          ? t("catalog_authorship_approved")
-          : action === "request_changes"
-            ? t("catalog_authorship_returned")
-            : t("catalog_authorship_visibility_updated"),
-      );
       onChanged();
       return true;
     } catch (e) {
@@ -136,9 +115,6 @@ export function CourseAuthorshipTab({
 
       <div className={lists.list}>
         {courses.map((course) => {
-          const reviewing = course.reviewEnabled && course.reviewStatus === "in_review";
-          const visibilityEditable =
-            course.reviewEnabled && course.status === "published" && course.reviewStatus === "approved";
           const busy = savingId === course.id;
           return (
             <AdminRow
@@ -173,50 +149,15 @@ export function CourseAuthorshipTab({
                   <span className={lists.itemMetaStrong}>{course.authorEmail ?? t("access_author_house")}</span>
                 </>
               }
-              note={
-                canGrant && course.reviewEnabled && !reviewing && !visibilityEditable
-                  ? t("catalog_authorship_listed_hint")
-                  : null
-              }
               controls={
                 canGrant ? (
-                  <>
-                    {reviewing ? (
-                      <button
-                        type="button"
-                        className={`${controls.actionCompact} cw-surface-2`}
-                        aria-haspopup="dialog"
-                        disabled={busy}
-                        onClick={() => setDialog({ kind: "review", courseId: course.id })}
-                      >
-                        {t("catalog_review_open")}
-                      </button>
-                    ) : null}
-                    {visibilityEditable ? (
-                      <select
-                        aria-label={t("catalog_visibility_label")}
-                        className={controls.select}
-                        value={course.visibility}
-                        disabled={busy}
-                        onChange={(e) =>
-                          void moderate(course, "set_visibility", e.target.value as CourseRow["visibility"])
-                        }
-                      >
-                        <option value="hidden">{t("catalog_authorship_hidden")}</option>
-                        <option value="unlisted">{t("catalog_authorship_unlisted")}</option>
-                        <option value="listed">{t("catalog_authorship_listed")}</option>
-                      </select>
-                    ) : null}
-                    {/* Builder ownership is set rarely and was an empty email
-                        field on every course; it lives behind this icon now. */}
-                    <AdminRowIconAction
-                      icon="user"
-                      label={t("access_owner_open")}
-                      opensDialog
-                      disabled={busy}
-                      onClick={() => setDialog({ kind: "owner", courseId: course.id })}
-                    />
-                  </>
+                  <AdminRowIconAction
+                    icon="user"
+                    label={t("access_owner_open")}
+                    opensDialog
+                    disabled={busy}
+                    onClick={() => setDialog({ courseId: course.id })}
+                  />
                 ) : null
               }
               footer={
@@ -244,30 +185,12 @@ export function CourseAuthorshipTab({
         })}
       </div>
 
-      {dialogCourse && dialog?.kind === "owner" ? (
+      {dialogCourse ? (
         <OwnerModal
           course={dialogCourse}
           busy={savingId === dialogCourse.id}
           onAssign={(email) => void save(dialogCourse, email).then((ok) => ok && setDialog(null))}
           onClear={() => void save(dialogCourse, null).then((ok) => ok && setDialog(null))}
-          onClose={() => setDialog(null)}
-        />
-      ) : null}
-      {dialogCourse && dialog?.kind === "review" ? (
-        <ModerationModal
-          title={t("catalog_review_title")}
-          description={dialogCourse.title}
-          approveLabel={t("catalog_authorship_approve")}
-          returnLabel={t("catalog_authorship_return")}
-          notePlaceholder={t("catalog_authorship_comment_placeholder")}
-          cancelLabel={t("catalog_modal_cancel")}
-          busy={savingId === dialogCourse.id}
-          onApprove={(note) =>
-            void moderate(dialogCourse, "approve", undefined, note).then((ok) => ok && setDialog(null))
-          }
-          onReturn={(note) =>
-            void moderate(dialogCourse, "request_changes", undefined, note).then((ok) => ok && setDialog(null))
-          }
           onClose={() => setDialog(null)}
         />
       ) : null}

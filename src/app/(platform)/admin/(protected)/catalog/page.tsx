@@ -242,6 +242,17 @@ export default function CatalogPage() {
     [filtered, grouping, t, locale],
   );
 
+  /* The note line is held open only while some row in the list has a note —
+     then every row keeps the same height. When none has one, holding it was a
+     strip of empty paper at the foot of every card. */
+  const reserveNote = useMemo(
+    () =>
+      (filtered ?? []).some((row) =>
+        tab === "publication" ? publicationNote(row, t) !== null : blockersNote(row, t) !== null,
+      ),
+    [filtered, tab, t],
+  );
+
   return (
     <div className={pageStyles.page}>
       <div className={pageStyles.heading}>
@@ -358,6 +369,7 @@ export default function CatalogPage() {
                         <PublicationRow
                           key={row.courseId}
                           row={row}
+                          reserveNote={reserveNote}
                           canEdit={canEdit}
                           locale={locale}
                           errorText={errorText}
@@ -367,6 +379,7 @@ export default function CatalogPage() {
                         <PricingRow
                           key={row.courseId}
                           row={row}
+                          reserveNote={reserveNote}
                           canEdit={canEdit}
                           errorText={errorText}
                           onChanged={load}
@@ -507,12 +520,14 @@ function publicationNote(row: CatalogRow, t: Translate): { text: string; tone: "
 
 function PublicationRow({
   row,
+  reserveNote,
   canEdit,
   locale,
   errorText,
   onChanged,
 }: {
   row: CatalogRow;
+  reserveNote: boolean;
   canEdit: boolean;
   locale: string;
   errorText: (message: string) => string;
@@ -593,7 +608,7 @@ function PublicationRow({
           </>
         }
         links={<CourseLinks row={row} />}
-        note={rowNote?.text ?? null}
+        note={rowNote?.text ?? (reserveNote ? null : undefined)}
         noteTone={rowNote?.tone}
         controls={
           canEdit ? (
@@ -733,11 +748,13 @@ function DeleteCourseModal({
 
 function PricingRow({
   row,
+  reserveNote,
   canEdit,
   errorText,
   onChanged,
 }: {
   row: CatalogRow;
+  reserveNote: boolean;
   canEdit: boolean;
   errorText: (message: string) => string;
   onChanged: () => Promise<void>;
@@ -888,7 +905,7 @@ function PricingRow({
           <p className={controls.hint}>{t("access_role_admin_only")}</p>
         )
       }
-      note={blockersNote(row, t)}
+      note={blockersNote(row, t) ?? (reserveNote ? null : undefined)}
       noteTone="alert"
       links={<CourseLinks row={row} />}
     />
