@@ -8,6 +8,13 @@ const baseUrl = (process.env.SMOKE_UI_BASE_URL || process.env.SMOKE_BASE_URL || 
 const timeoutMs = Number.parseInt(process.env.SMOKE_TIMEOUT_MS || "20000", 10);
 const useMockApi = process.env.SMOKE_DOSHA_MOCK !== "0";
 
+/* Pathname predicates, not globs: a Playwright glob is matched against the
+   whole url, so a pattern ending in `api/tests/dosha-test` stopped matching
+   the moment the client added `?sessionId=`, and every run fell through to the
+   real endpoint. The full account is in scripts/smoke-dosha-userflows.mjs. */
+const isDoshaDefinitionRoute = (url) => url.pathname === "/api/tests/dosha-test";
+const isDoshaCompleteRoute = (url) => url.pathname === "/api/tests/dosha-test/complete";
+
 /* The client was split into a composition, a state hook and one view per phase
    on 2026-09-13; the copy and CTA markers below now live across those files,
    so the static check reads them together as the component. */
@@ -130,7 +137,17 @@ async function checkStaticContract() {
 
 async function checkRuntimeSemantics() {
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  /* A TOUCH TARGET IS MEASURED IN A TOUCH CONTEXT (2026-09-11).
+
+     This context was a 390px viewport and nothing else, so Chromium reported
+     `pointer: fine` and the design system handed the page its MOUSE step —
+     `--ds-button-min-height: 2.5rem` from the `(hover: hover) and
+     (pointer: fine)` block in globals.css. The check below then measured 40px
+     against a 44px threshold and reported the primary CTA as too small on a
+     phone it was never rendering for. `hasTouch` is what makes the 390 mean a
+     phone: the pointer goes coarse, the base 3rem applies, and the number this
+     script prints is the one a thumb actually meets. */
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
   const page = await context.newPage();
 
   let points = 0;
@@ -158,7 +175,7 @@ async function checkRuntimeSemantics() {
       await page.route("**/api/platform/users/sync", async (route) => {
         await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
       });
-      await page.route("**/api/tests/dosha-test", async (route) => {
+      await page.route(isDoshaDefinitionRoute, async (route) => {
         if (route.request().method() !== "GET") {
           await route.fallback();
           return;
@@ -174,7 +191,7 @@ async function checkRuntimeSemantics() {
           }),
         });
       });
-      await page.route("**/api/tests/dosha-test/complete", async (route) => {
+      await page.route(isDoshaCompleteRoute, async (route) => {
         activeAttemptId = `mock-attempt-${Date.now()}`;
         await route.fulfill({
           status: 200,
@@ -208,7 +225,12 @@ async function checkRuntimeSemantics() {
     const introPromiseText = page.getByText("12 питань", { exact: false }).first();
     await introPromiseText.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined);
 
-    const introChecks = ["12 питань", "Як це працює", "Почати тест", "Що таке доша?"];
+    const introChecks = [
+      "12 питань",
+      "Як це працює",
+      "Почати тест",
+      "Що таке доша і межі методу",
+    ];
 
     let introPass = 0;
     for (const phrase of introChecks) {
@@ -230,8 +252,11 @@ async function checkRuntimeSemantics() {
       details.push(`UA-first runtime copy: fail (${englishHits} EN marker hits)`);
     }
 
-    await page.getByRole("button", { name: "Що таке доша?" }).click({ timeout: timeoutMs });
-    const hasDisclosureDisclaimer = (await page.getByText("не є медичним діагнозом", { exact: false }).count()) > 0;
+    /* The boundary disclosure is a DS collapsible — `details` + `summary` — not a
+     button, and has been since the intro was rebuilt. `getByRole("button")`
+     could never match a `summary`, so this step timed out on every run. */
+    await page.locator("summary", { hasText: "Що таке доша" }).first().click({ timeout: timeoutMs });
+    const hasDisclosureDisclaimer = (await page.getByText("не медичний діагноз", { exact: false }).count()) > 0;
     if (hasDisclosureDisclaimer) {
       points += 10;
       details.push("dosha disclosure disclaimer: pass");

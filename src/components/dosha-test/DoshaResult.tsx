@@ -8,7 +8,8 @@ import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "@/components/platform/PlatformDiagnosticStyles";
-import type { DoshaResultType } from "@/lib/dosha/doshaTest";
+import type { BaseDosha, DoshaResultType } from "@/lib/dosha/doshaTest";
+import { DoshaMark } from "@/components/platform/DoshaMark";
 import { BOUNDARY_NOTE } from "@/lib/dosha/doshaResultCopy";
 import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT, doshaExitHref } from "@/lib/dosha/doshaRouting";
 import { TESTS_HUB_ROUTE } from "@/lib/platform/tests";
@@ -21,6 +22,26 @@ import type {
   EmitAttemptEvent,
   PendingSave,
 } from "./doshaTestTypes";
+
+/** The share row's fixed order — the order the doshas are always named in. */
+const DOSHA_SHARE_ORDER: { dosha: BaseDosha; label: string }[] = [
+  { dosha: "vata", label: "Вата" },
+  { dosha: "pitta", label: "Пітта" },
+  { dosha: "kapha", label: "Капха" },
+];
+
+/**
+ * The doshas the VERDICT names, in the verdict's own order.
+ *
+ * Not "the ones with the highest share": the classifier has already decided
+ * what this reading is, and a mark that disagreed with the heading beside it
+ * would be a second opinion on the same screen. `tridosha` names all three,
+ * because that is what the word means.
+ */
+function doshasOfType(type: DoshaResultType): BaseDosha[] {
+  if (type === "tridosha") return ["vata", "pitta", "kapha"];
+  return type.split("_") as BaseDosha[];
+}
 
 type DoshaResultProps = {
   topbarBadge: string;
@@ -77,7 +98,17 @@ export function DoshaResult({
 
       <div className={styles.card} data-tone="support">
         <p className={styles.label}>Ваш профіль</p>
-        <h2>{resultHeading}</h2>
+        {/* The mark says the verdict before the words do, and says
+            it in the dosha's own colour — one mark for a single
+            type, two for a pair, three for tridosha. */}
+        <div className={styles.doshaResultHead}>
+          <span className={styles.doshaMarkGroup}>
+            {doshasOfType(resultType).map((dosha) => (
+              <DoshaMark key={dosha} dosha={dosha} size={56} />
+            ))}
+          </span>
+          <h2>{resultHeading}</h2>
+        </div>
         {/* The summary is paragraphs, not one string: what the type
             IS, then what it looks like out of balance. Rendered as
             one <p> the break between them collapsed into a space
@@ -94,10 +125,15 @@ export function DoshaResult({
         {/* Percentages, because the verdict is drawn on percentages:
             the row used to show three near-equal counts under a
             headline that claimed one of them dominated. */}
-        <p className={styles.diagnosticScoreRow}>
-          Вата {profile.shares.vata}% • Пітта {profile.shares.pitta}% • Капха {profile.shares.kapha}%{" · "}
-          {confidenceCopy.label}
+        <p className={styles.doshaShareRow}>
+          {DOSHA_SHARE_ORDER.map(({ dosha, label }) => (
+            <span key={dosha} className={styles.doshaShare}>
+              <DoshaMark dosha={dosha} size={32} />
+              {label} <b>{profile.shares[dosha]}%</b>
+            </span>
+          ))}
         </p>
+        <p className={styles.diagnosticScoreRow}>{confidenceCopy.label}</p>
         {confidenceCopy.note ? <p>{confidenceCopy.note}</p> : null}
       </div>
 

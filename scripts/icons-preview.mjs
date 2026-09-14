@@ -86,7 +86,27 @@ li{margin:4px 0}
 .swatchrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
 .swatch{display:flex;align-items:center;gap:8px;padding:7px 12px 7px 8px;border-radius:999px;
   background:${TOKENS.light.surface};border:1px solid ${TOKENS.light.line};font-size:12px}
-.chip{width:15px;height:15px;border-radius:50%;border:1px solid ${TOKENS.light.line}}
+.chip{display:inline-block;width:15px;height:15px;border-radius:50%;border:1px solid ${TOKENS.light.line}}
+.dosha-row{display:flex;align-items:center;gap:26px;padding:10px 0}
+.dosha-cell{display:flex;flex-direction:column;align-items:center;gap:8px}
+.dosha-cell small{font:400 10px/1.2 "IBM Plex Mono",ui-monospace,monospace;color:${TOKENS.light.muted}}
+/* The ground: two stops of the SAME token, mixed against the surface rather
+   than declared as a second palette. Linear and not radial — a radial stop
+   placed off-centre is an inset highlight by another name, and this system
+   removed those everywhere in 2026-08 (docs/design-system.md → "No inset top
+   highlight"). 34% → 12% is where the CenterWay palette still reads as colour
+   at this size; the earth tones go grey below about 30%. */
+.dosha-mark{width:var(--mark);height:var(--mark);border-radius:50%;
+  display:grid;place-items:center;
+  background:linear-gradient(145deg,
+    color-mix(in srgb, var(--dosha) 34%, transparent),
+    color-mix(in srgb, var(--dosha) 12%, transparent))}
+.dosha-glyph{color:var(--dosha)}
+/* On a dark ground the token itself is too dark to sit on its own tint, so the
+   glyph lightens toward the surface ink while keeping the hue. Stated here
+   rather than left to the card's own .panel.dark rule, which wins on
+   specificity and would have silently turned all three the same grey. */
+.panel.dark .dosha-glyph{color:color-mix(in srgb, var(--dosha) 42%, #e7efe6)}
 @media (prefers-color-scheme:dark){
   body{background:${TOKENS.dark.bg};color:${TOKENS.dark.ink}}
   h2,p.lede,.cell small,.rowlabel,th,td{color:${TOKENS.dark.muted}}
@@ -204,6 +224,86 @@ function characterPage(baked) {
 Every glyph in a row carries the identical hand — that is the point, and the reason this is
 generated rather than drawn by hand 38 times.</p>
 ${rows}`,
+  });
+}
+
+// ── page: the three dosha marks ──────────────────────────────────────────────
+
+/* THE MARK IS THE GLYPH ON A GROUND, AND THE GROUND CARRIES THE COLOUR.
+
+   The three dosha glyphs are icons like every other glyph in the sprite:
+   `currentColor`, monoline, no fills. That contract is not negotiable here —
+   a gradient baked into a symbol is a colour the page cannot re-theme, and
+   `<use>` reaches into a shadow tree host CSS cannot paint.
+
+   So the colour is a layer BEHIND the glyph, not inside it: a soft disc mixed
+   from the dosha's own semantic token, with the element drawn on it in that
+   same token at full strength. Pastel is `color-mix` against the surface, not
+   a second set of hexes — which is what keeps the marks re-tinting with the
+   theme and out of `guard:contrast`'s way, since nothing here is text. */
+const DOSHA = [
+  { name: "vata", label: "Вата", element: "air", token: "--cw-sem-dosha-vata" },
+  { name: "pitta", label: "Пітта", element: "fire", token: "--cw-sem-dosha-pitta" },
+  { name: "kapha", label: "Капха", element: "water", token: "--cw-sem-dosha-kapha" },
+];
+
+function doshaPage(sprite) {
+  const mark = (d, size) => `
+    <div class="dosha-mark" style="--dosha: var(${d.token}); --mark: ${size}px">
+      ${use(d.name, Math.round(size * 0.46), "ico dosha-glyph")}
+    </div>`;
+
+  const row = (size, caption) => `
+    <div class="dosha-row">
+      ${DOSHA.map((d) => `<div class="dosha-cell">${mark(d, size)}<small>${d.label}</small></div>`).join("")}
+      <span class="rowlabel"><b>${size}px</b> · ${caption}</span>
+    </div>`;
+
+  const body = `
+<h1>Dosha marks — air, fire, water</h1>
+<p class="lede">Three elements, three grounds. The glyph is an icon like any other —
+<code>currentColor</code>, monoline, no fill. The colour lives in the disc behind it,
+mixed from the dosha's own semantic token, so the mark re-tints with the theme instead
+of carrying a second palette.</p>
+
+<h2>The mark</h2>
+<div class="panel">${row(88, "profile head, result screen")}${row(56, "list row, summary tile")}${row(32, "inline beside a label")}</div>
+
+<h2>Tokens</h2>
+<table>
+  <tr><th>mark</th><th>element</th><th>token</th><th>resolves to</th></tr>
+  ${DOSHA.map(
+    (d) => `<tr><td>${d.label}</td><td>${d.element}</td><td><code>${d.token}</code></td>
+      <td><span class="chip" style="background:var(${d.token})"></span></td></tr>`,
+  ).join("")}
+</table>
+
+<h2>Rules</h2>
+<ul>
+  <li>The disc is <code>color-mix</code> against the surface — <b>never a new hex</b>. Two stops,
+      34% to 12%, so it stays a tint and not a filled badge.</li>
+  <li>The glyph takes the dosha token at full strength; the ground takes it diluted.
+      One value, two roles. On a dark ground the glyph lightens toward the surface ink
+      and keeps the hue — the token alone is too dark to sit on its own tint.</li>
+  <li>Not a status and not a button. A dosha is a reading of a body, so the mark never
+      carries hover, pressed or selected state.</li>
+  <li>Under 32px the disc is dropped and the glyph stands alone — a 24px tint reads as
+      a smudge, not a ground.</li>
+</ul>
+
+<h2>Dark surface</h2>
+<div class="panel dark">${row(88, "the same mix, the darker ground")}</div>`;
+
+  return page({
+    card: {
+      group: "Brand",
+      viewport: "1080x900",
+      name: "Dosha marks",
+      subtitle: "air / fire / water on pastel grounds from --cw-sem-dosha-*",
+    },
+    title: "CenterWay dosha marks",
+    sprite,
+    body,
   });
 }
 
@@ -341,6 +441,7 @@ async function main() {
     "guidelines/icons-character.card.html": characterPage(baked),
     "guidelines/icons-contract.card.html": specPage(sprite),
     "guidelines/graphics-primitives.card.html": graphicsPage(sprite),
+    "guidelines/dosha-marks.card.html": doshaPage(sprite),
   };
 
   for (const [rel, content] of Object.entries(files)) {

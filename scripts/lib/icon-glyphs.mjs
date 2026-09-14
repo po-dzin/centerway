@@ -563,20 +563,52 @@ export const ICONS = {
   },
 
   // ── Dosha glyphs ───────────────────────────────────────────────────────
+  /* ── Dosha glyphs ──────────────────────────────────────────────────────
+
+     THE ELEMENT IS THE GLYPH (2026-09-11). All three used to be a circle with
+     something inside it: waves in a ring for vata, a flame in a ring for
+     pitta, a ring in a ring for kapha. At 24px the ring was the loudest shape
+     in each of them, so the set read as three badges of the same object rather
+     than as three different things — and kapha, whose whole content was a
+     second circle, said nothing at all.
+
+     The ring is gone and each glyph is now its element, which is what the
+     words already mean: moving air, fire, water. They are still one hand —
+     monoline, round caps, the same baked displacement pass — and they are
+     still legible at the set's smallest step, which the ring was eating. */
   vata: {
     group: "Dosha",
-    d: ["M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17z", "M4.6 9.5c4 2 11 2 15 0M4.6 14.5c4-2 11-2 15 0"],
+    /* Air is drawn by what it moves, so it is strokes and not a shape: three
+       lines of falling length, two of them curling back on themselves where a
+       gust turns. The curl is the vortex — a literal spiral was the other
+       option and it collides with the emblem, which is already concentric. */
+    d: [
+      "M3.4 7.6h7.6a2.8 2.8 0 1 0-2.8-2.8",
+      "M3.4 12.2h11.2a3 3 0 1 1-3 3",
+      "M3.4 16.8h5.2",
+    ],
   },
   pitta: {
     group: "Dosha",
+    /* Fire, and the second tongue is the whole glyph. A single closed outline
+       with one point on top IS the water drop next to it — the two shapes are
+       one control point apart, and drawn that way they came out as a pair of
+       siblings rather than as two elements. A flame has two tips, one tall and
+       one short, and at 22px that notch is the only thing that survives. */
     d: [
-      "M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17z",
-      "M12 6.5c2.6 3 3.8 4.8 3.8 6.6a3.8 3.8 0 1 1-7.6 0c0-1.8 1.2-3.6 3.8-6.6z",
+      "M12.8 2.6C12.8 5.5 11.5 6.9 10.1 8.4 9.6 7.6 9.3 6.7 9.2 5.8 7.4 7.7 6.3 10 6.3 12.6a5.7 5.7 0 0 0 11.4 0c0-2.6-1.2-4.6-2.7-6.3C13.5 5 12.8 4 12.8 2.6Z",
+      "M12.4 11.6C13.6 12.6 14.2 13.5 14.2 14.6a2.2 2.2 0 0 1-4.4 0c0-1.1.9-2.1 2.6-3Z",
     ],
   },
   kapha: {
     group: "Dosha",
-    d: ["M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17z", "M12 7.6a4.4 4.4 0 1 0 0 8.8 4.4 4.4 0 0 0 0-8.8z"],
+    /* Water: the drop, plus the short arc inside it that every drop glyph
+       carries. Without the arc the outline is a flame with no notch — the two
+       shapes are one control point apart, and these two sit side by side. */
+    d: [
+      "M12 3.2C15.2 6.9 17.3 9.6 17.3 12.3a5.3 5.3 0 0 1-10.6 0c0-2.7 2.1-5.4 5.3-9.1Z",
+      "M9.6 12.6a2.4 2.4 0 0 0 2.4 2.4",
+    ],
   },
 };
 

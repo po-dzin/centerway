@@ -92,7 +92,7 @@ export function DoshaIntro({ fontFamily, topbarBadge, error, isBusy, requestStar
                   void requestStartTest();
                 }}
                 disabled={isBusy}
-                className={styles.heroPrimaryButton}
+                className={styles.primaryButton}
               >
                 {isBusy ? "Запускаємо..." : "Почати тест"}
               </button>

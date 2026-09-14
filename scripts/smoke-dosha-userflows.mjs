@@ -8,6 +8,27 @@ const baseUrl = (process.env.SMOKE_UI_BASE_URL || process.env.SMOKE_BASE_URL || 
 const timeoutMs = Number.parseInt(process.env.SMOKE_TIMEOUT_MS || "20000", 10);
 const useMockApi = process.env.SMOKE_DOSHA_MOCK !== "0";
 
+/* THE MOCKS MATCH ON PATHNAME, NOT ON A GLOB (2026-09-11).
+
+   These two routes were globs ending in `api/tests/dosha-test` and the same
+   plus `/complete`, and the first one silently stopped matching the day the
+   client began sending `?sessionId=` with the definition request: a Playwright
+   glob is matched against the WHOLE url, query string included, so the pattern
+   missed and every run fell through to the real endpoint instead. On a machine
+   without Supabase credentials that endpoint answers 500, the flow never opens
+   its first question, and this script fails at "unable to resolve current
+   question step" while the UI it is testing is fine.
+
+   Worse, `smoke-dosha-brand-fit.mjs` kept scoring 97% and printing "question
+   flow opens without extra blocker" through all of it, because its own probe
+   passes before the questions are needed. A mock that can stop matching
+   without anything turning red is worse than having no mock at all.
+
+   A predicate on `pathname` cannot drift with the query string, and unlike a
+   trailing `**` it cannot accidentally swallow `/complete`. */
+const isDoshaDefinitionRoute = (url) => url.pathname === "/api/tests/dosha-test";
+const isDoshaCompleteRoute = (url) => url.pathname === "/api/tests/dosha-test/complete";
+
 function fail(message) {
   console.log(`FAIL ${message}`);
   process.exitCode = 1;
@@ -39,10 +60,20 @@ async function clickFirstEnabledOption(page) {
   return true;
 }
 
-// Choosing and moving on are separate acts: the pager button advances.
+/**
+ * Choosing an option does not advance the flow — the step pager does, and it is
+ * deliberate: the reader can go back through answered questions. This script
+ * used to select an option and then wait for the next question to appear on its
+ * own, so every run failed from step 1 onward against a UI that was working.
+ * The forward control is «Далі» through step 11 and «Завершити тест» on 12.
+ */
 async function clickForward(page) {
-  const forward = page.getByRole("button", { name: /^(Далі|Завершити тест)$/ }).first();
+  const forward = page
+    .getByRole("button", { name: /^(Далі|Завершити тест)$/ })
+    .first();
+  if ((await forward.count()) < 1) return false;
   await forward.click({ timeout: timeoutMs });
+  return true;
 }
 
 async function readCurrentStep(page) {
@@ -60,7 +91,15 @@ async function main() {
   console.log(`Dosha userflow smoke base URL: ${baseUrl}`);
 
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  /* 390 IS ONLY A WIDTH UNTIL `hasTouch` MAKES IT A PHONE. Without it Chromium
+     reports `pointer: fine`, and the design system branches on exactly that —
+     the whole `(hover: hover) and (pointer: fine)` block in globals.css hands
+     the page its mouse geometry: 40px controls instead of 48px, a tighter
+     inline padding, a smaller label. This script walks twelve taps through
+     that geometry, so without the flag it was walking the desktop one at a
+     phone's width. (`smoke-dosha-brand-fit.mjs` carries the same flag and the
+     longer account of what it was measuring wrongly.) */
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
   await context.addInitScript(() => {
     window.localStorage.removeItem("centerway_dosha_test_attempt_id");
     window.localStorage.removeItem("centerway_dosha_test_draft_v1");
@@ -92,7 +131,7 @@ async function main() {
     await page.route("**/api/test-attempts/**/events", async (route) => {
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
     });
-    await page.route("**/api/tests/dosha-test", async (route) => {
+    await page.route(isDoshaDefinitionRoute, async (route) => {
       if (route.request().method() !== "GET") {
         await route.fallback();
         return;
@@ -108,7 +147,7 @@ async function main() {
         }),
       });
     });
-    await page.route("**/api/tests/dosha-test/complete", async (route) => {
+    await page.route(isDoshaCompleteRoute, async (route) => {
       activeAttemptId = `mock-attempt-${Date.now()}`;
       await route.fulfill({
         status: 200,
@@ -155,9 +194,12 @@ async function main() {
     await assertVisible(page, "12 питань", "intro promise");
     await assertVisible(page, "Як це працює", "intro how-it-works");
     await assertVisible(page, "Почати тест", "intro primary cta");
+    /* The boundary disclosure is a DS collapsible — `details` + `summary` — and
+       has been since the intro was rebuilt; the same element opens and closes
+       it. `getByRole("button")` cannot match a `summary`, so these steps had
+       been timing out against a control that renders correctly. */
     await assertVisible(page, "Що таке доша і межі методу", "intro secondary link");
-    // A details/summary disclosure, not a button: the same summary opens and closes it.
-    const doshaInfoSummary = page.locator("summary", { hasText: "Що таке доша і межі методу" }).first();
+    const doshaInfoSummary = page.locator("summary", { hasText: "Що таке доша" }).first();
     await doshaInfoSummary.click({ timeout: timeoutMs });
     await assertVisible(page, "не медичний діагноз", "dosha info disclaimer");
     await doshaInfoSummary.click({ timeout: timeoutMs });
@@ -224,7 +266,11 @@ async function main() {
         }
       }
 
-      await clickForward(page);
+      const advanced = await clickForward(page);
+      if (!advanced) {
+        fail(`step ${step}: no forward control`);
+        break;
+      }
 
       if (step < 12) {
         await page

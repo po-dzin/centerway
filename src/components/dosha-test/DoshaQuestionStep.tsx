@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "@/components/platform/PlatformDiagnosticStyles";
+import { ProgressRail } from "@/components/platform/ProgressRail";
 import { DOSHA_MAX_CHOICES_PER_QUESTION } from "@/lib/dosha/doshaTest";
 import { TESTS_HUB_ROUTE } from "@/lib/platform/tests";
 import type { TestQuestion } from "./doshaTestApi";
@@ -66,14 +67,17 @@ export function DoshaQuestionStep({
           </span>
           <span>Прогрес {progress}%</span>
         </div>
-        <div className={styles.diagnosticProgressTrack}>
-          <div
-            className={styles.diagnosticProgressBar}
-            style={{
-              width: `${progress}%`,
-            }}
-          />
-        </div>
+        {/* THE STEP IS MARKED THE MOMENT IT OPENS. The filled bar
+            drew nothing on question one — zero answers is an empty
+            track — so the one thing a reader wants on arrival, "am
+            I anywhere yet", got no mark at all. The rail is the
+            system's answer for countable steps: one dash per question,
+            and a walker standing on the edge actually reached. */}
+        <ProgressRail
+          value={Object.keys(answers).length}
+          total={totalQuestions}
+          label={`Прогрес тесту: ${Object.keys(answers).length} з ${totalQuestions}`}
+        />
       </div>
 
       <div className={styles.diagnosticQuestionIntro}>
