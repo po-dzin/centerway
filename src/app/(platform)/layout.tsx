@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { preload } from "react-dom";
 import { RouteMotion } from "@/components/platform/RouteMotion";
 import { BfcacheRestore } from "@/components/platform/BfcacheRestore";
+import { PressHaptics } from "@/components/platform/PressHaptics";
 import { ToastProvider } from "@/components/ToastProvider";
 import { SessionProvider } from "@/components/auth/SessionProvider";
 import "../globals.css";
@@ -133,6 +134,7 @@ export default function RootLayout({
             bfcache after a trip to a funnel landing — see the component for
             why that trip is the one that breaks here. */}
         <BfcacheRestore />
+        <PressHaptics />
         <SessionProvider>
           <ToastProvider>{children}</ToastProvider>
         </SessionProvider>
