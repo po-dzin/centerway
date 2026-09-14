@@ -250,7 +250,7 @@ const DOSHA = [
 function doshaPage(sprite) {
   const mark = (d, size) => `
     <div class="dosha-mark" style="--dosha: var(${d.token}); --mark: ${size}px">
-      ${use(d.name, Math.round(size * 0.46), "ico dosha-glyph")}
+      ${svgUse(d.name, Math.round(size * 0.46), "ico dosha-glyph")}
     </div>`;
 
   const row = (size, caption) => `
