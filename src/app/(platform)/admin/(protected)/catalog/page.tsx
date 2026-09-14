@@ -53,6 +53,7 @@ import lists from "@/components/admin/AdminLists.module.css";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { AdminRow, AdminRowIconAction } from "@/components/admin/AdminRow";
 import { AdminModal } from "@/components/admin/AdminModal";
+import { ModerationModal } from "@/components/admin/ModerationModal";
 import {
   CATALOG_GROUPINGS,
   filterCatalogRows,
@@ -60,7 +61,7 @@ import {
   type CatalogCategoryFilter,
   type CatalogGrouping,
 } from "@/lib/admin/catalogGrouping";
-import { coverCardStyle } from "@/lib/lms/courseCover";
+import { coverPortraitStyle } from "@/lib/lms/courseCover";
 import { COURSE_CATEGORIES, type CourseCategory } from "@/lms-core";
 
 const BLOCKER_KEY: Record<SaleBlocker, string> = {
@@ -104,7 +105,7 @@ function CourseThumb({ row }: { row: CatalogRow }) {
     <span className={lists.itemThumb} aria-hidden="true">
       {row.cover ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={row.cover.src} alt="" loading="lazy" decoding="async" style={coverCardStyle(row.cover)} />
+        <img src={row.cover.src} alt="" loading="lazy" decoding="async" style={coverPortraitStyle(row.cover)} />
       ) : (
         initialsOf(row.title)
       )}
@@ -430,7 +431,9 @@ function CourseLinks({ row }: { row: CatalogRow }) {
  * not published, and the review was never submitted. Each chip now names its
  * axis, so the stuck step reads without knowing the schema. An unknown value
  * falls back to itself rather than to a blank chip. */
-function StateChips({ row }: { row: CatalogRow }) {
+/* `withVisibility={false}` where the row's own select already says it — the
+   same fact printed twice, once as a chip and once as the value beside it. */
+function StateChips({ row, withVisibility = true }: { row: CatalogRow; withVisibility?: boolean }) {
   const { t } = useI18n();
   const chip = lists.tag;
 
@@ -463,7 +466,7 @@ function StateChips({ row }: { row: CatalogRow }) {
           ? `${t("catalog_pending_revision")} · ${reviewLabel[pendingReview] ?? pendingReview}`
           : (reviewLabel[row.reviewStatus] ?? row.reviewStatus)}
       </span>
-      <span className={chip}>{visibilityLabel[row.visibility] ?? row.visibility}</span>
+      {withVisibility ? <span className={chip}>{visibilityLabel[row.visibility] ?? row.visibility}</span> : null}
       {row.blockers.length === 0 ? <span className={lists.tagOnSale}>{t("catalog_on_sale")}</span> : null}
     </div>
   );
@@ -534,17 +537,22 @@ function PublicationRow({
   const { t } = useI18n();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState("");
+  const [dialog, setDialog] = useState<"review" | "delete" | null>(null);
 
   const moderate = async (
     action: "approve" | "request_changes" | "set_visibility",
-    visibility?: CatalogRow["visibility"],
+    options: { visibility?: CatalogRow["visibility"]; note?: string } = {},
   ) => {
     setBusy(true);
     try {
       await authFetch("/api/admin/access/courses", {
         method: "PATCH",
-        body: JSON.stringify({ courseId: row.courseId, action, visibility, note }),
+        body: JSON.stringify({
+          courseId: row.courseId,
+          action,
+          visibility: options.visibility,
+          note: options.note ?? "",
+        }),
       });
       toast.success(
         t(
@@ -555,6 +563,7 @@ function PublicationRow({
               : "catalog_visibility_saved",
         ),
       );
+      setDialog(null);
       await onChanged();
     } catch (e) {
       toast.error(errorText(getErrorMessage(e)));
@@ -575,8 +584,6 @@ function PublicationRow({
     row.reviewStatus !== "approved" &&
     (row.reviewStatus === "in_review" || row.status === "published");
   const approvable = revisionInReview || approvesLive;
-
-  const [deleting, setDeleting] = useState(false);
   const rowNote = publicationNote(row, t);
 
   return (
@@ -584,7 +591,7 @@ function PublicationRow({
       <AdminRow
         lead={<CourseThumb row={row} />}
         title={row.title}
-        badges={<StateChips row={row} />}
+        badges={<StateChips row={row} withVisibility={!canEdit} />}
         meta={
           <>
             <span className={lists.itemCode}>{row.slug}</span>
@@ -601,17 +608,33 @@ function PublicationRow({
             ) : null}
           </>
         }
+        links={<CourseLinks row={row} />}
+        note={rowNote?.text ?? null}
+        noteTone={rowNote?.tone}
         controls={
           canEdit ? (
             <>
+              {approvable ? (
+                <button
+                  type="button"
+                  className={`${controls.actionCompact} cw-surface-2`}
+                  aria-haspopup="dialog"
+                  disabled={busy}
+                  onClick={() => setDialog("review")}
+                >
+                  {t("catalog_review_open")}
+                </button>
+              ) : null}
               {/* Hiding is offered always — taking something off the storefront
-                must never be gated on how it got there. */}
+                  must never be gated on how it got there. */}
               <select
                 aria-label={t("catalog_visibility_label")}
                 className={controls.select}
                 value={row.visibility}
                 disabled={busy}
-                onChange={(e) => void moderate("set_visibility", e.target.value as CatalogRow["visibility"])}
+                onChange={(e) =>
+                  void moderate("set_visibility", { visibility: e.target.value as CatalogRow["visibility"] })
+                }
               >
                 <option value="hidden">{t("catalog_visibility_hidden")}</option>
                 <option value="unlisted">{t("catalog_visibility_unlisted")}</option>
@@ -622,54 +645,32 @@ function PublicationRow({
                 label={t("catalog_delete")}
                 danger
                 opensDialog
-                onClick={() => setDeleting(true)}
+                onClick={() => setDialog("delete")}
               />
             </>
           ) : (
             <p className={controls.hint}>{t("access_role_admin_only")}</p>
           )
         }
-        footer={
-          canEdit && approvable ? (
-            <>
-              {approvable ? (
-                <div className={controls.fields}>
-                  {inReview ? (
-                    <input
-                      className={controls.inputGrow}
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      placeholder={t("catalog_note_placeholder")}
-                    />
-                  ) : null}
-                  <button
-                    type="button"
-                    className={`${controls.action} cw-surface-2`}
-                    disabled={busy}
-                    onClick={() => void moderate("approve")}
-                  >
-                    {approvesLive && row.hasPendingRevision ? t("catalog_approve_live") : t("catalog_approve")}
-                  </button>
-                  {inReview ? (
-                    <button
-                      type="button"
-                      className={`${controls.action} cw-btn-muted`}
-                      disabled={busy}
-                      onClick={() => void moderate("request_changes")}
-                    >
-                      {t("catalog_return")}
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
-            </>
-          ) : null
-        }
-        note={rowNote?.text ?? null}
-        noteTone={rowNote?.tone}
-        links={<CourseLinks row={row} />}
       />
-      {deleting ? <DeleteCourseModal row={row} onClose={() => setDeleting(false)} onChanged={onChanged} /> : null}
+      {dialog === "review" ? (
+        <ModerationModal
+          title={t("catalog_review_title")}
+          description={row.title}
+          context={rowNote?.text}
+          approveLabel={approvesLive && row.hasPendingRevision ? t("catalog_approve_live") : t("catalog_approve")}
+          returnLabel={inReview ? t("catalog_return") : undefined}
+          notePlaceholder={t("catalog_note_placeholder")}
+          cancelLabel={t("catalog_modal_cancel")}
+          busy={busy}
+          onApprove={(note) => void moderate("approve", { note })}
+          onReturn={(note) => void moderate("request_changes", { note })}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
+      {dialog === "delete" ? (
+        <DeleteCourseModal row={row} onClose={() => setDialog(null)} onChanged={onChanged} />
+      ) : null}
     </>
   );
 }
@@ -726,8 +727,9 @@ function DeleteCourseModal({
         </>
       }
     >
+      <p className={controls.confirmText}>{t("catalog_delete_warning")}</p>
       <p className={controls.confirmText}>
-        {t("catalog_delete_warning")} {t("access_course_learners")}: {row.learners}.
+        {t("access_course_learners")}: <strong>{row.learners}</strong>
       </p>
       <label className={controls.field}>
         <span className={controls.fieldCaption}>

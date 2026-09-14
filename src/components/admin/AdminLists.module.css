@@ -129,8 +129,20 @@
     "footer footer";
 }
 
+/* The lead stands the full height of the row. A thumbnail in it is an upright
+   slice of the cover (portrait crop, see `CourseThumb`), so the picture — not an
+   empty held line — is what fills a short row. */
 .rowLead {
   grid-area: lead;
+  display: flex;
+  align-self: stretch;
+}
+
+.rowLead > .itemThumb {
+  width: var(--ds-card-thumb-width);
+  height: 100%;
+  min-height: var(--ds-card-thumb-width);
+  aspect-ratio: auto;
 }
 
 .rowBody {

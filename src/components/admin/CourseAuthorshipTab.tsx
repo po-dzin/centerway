@@ -27,7 +27,9 @@ import surfaces from "@/components/admin/AdminSurfaces.module.css";
 import { Icon } from "@/components/Icon";
 import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
-import { AdminRow } from "@/components/admin/AdminRow";
+import { AdminRow, AdminRowIconAction } from "@/components/admin/AdminRow";
+import { AdminModal } from "@/components/admin/AdminModal";
+import { ModerationModal } from "@/components/admin/ModerationModal";
 
 function EmptyIcon() {
   return <Icon className="cw-muted" name="lock" size={20} />;
@@ -50,9 +52,9 @@ export function CourseAuthorshipTab({
 }) {
   const { t } = useI18n();
   const toast = useToast();
-  const [draft, setDraft] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
-  const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
+  /* One dialog at a time, for one course: the builder owner or the review. */
+  const [dialog, setDialog] = useState<{ kind: "owner" | "review"; courseId: string } | null>(null);
 
   const save = async (course: CourseRow, email: string | null) => {
     setSavingId(course.id);
@@ -62,10 +64,11 @@ export function CourseAuthorshipTab({
         body: JSON.stringify({ courseId: course.id, email }),
       });
       toast.success(email ? t("access_author_set") : t("access_author_cleared"));
-      setDraft((prev) => ({ ...prev, [course.id]: "" }));
       onChanged();
+      return true;
     } catch (e) {
       toast.error(errorText(getErrorMessage(e)));
+      return false;
     } finally {
       setSavingId(null);
     }
@@ -75,12 +78,13 @@ export function CourseAuthorshipTab({
     course: CourseRow,
     action: "approve" | "request_changes" | "set_visibility",
     visibility?: CourseRow["visibility"],
+    note?: string,
   ) => {
     setSavingId(course.id);
     try {
       await authFetch("/api/admin/access/courses", {
         method: "PATCH",
-        body: JSON.stringify({ courseId: course.id, action, visibility, note: reviewNotes[course.id] }),
+        body: JSON.stringify({ courseId: course.id, action, visibility, note: note ?? "" }),
       });
       toast.success(
         action === "approve"
@@ -90,8 +94,10 @@ export function CourseAuthorshipTab({
             : t("catalog_authorship_visibility_updated"),
       );
       onChanged();
+      return true;
     } catch (e) {
       toast.error(errorText(getErrorMessage(e)));
+      return false;
     } finally {
       setSavingId(null);
     }
@@ -117,6 +123,8 @@ export function CourseAuthorshipTab({
     return <AdminEmptyState icon={<EmptyIcon />} description={t("access_empty_courses")} />;
   }
 
+  const dialogCourse = dialog ? (courses.find((course) => course.id === dialog.courseId) ?? null) : null;
+
   return (
     <div className={lists.panel}>
       <div className={`${surfaces.plate} ${surfaces.plateCard} ${controls.fieldStack}`}>
@@ -130,6 +138,7 @@ export function CourseAuthorshipTab({
           const reviewing = course.reviewEnabled && course.reviewStatus === "in_review";
           const visibilityEditable =
             course.reviewEnabled && course.status === "published" && course.reviewStatus === "approved";
+          const busy = savingId === course.id;
           return (
             <AdminRow
               key={course.id}
@@ -162,101 +171,164 @@ export function CourseAuthorshipTab({
                   : null
               }
               controls={
-                canGrant && visibilityEditable ? (
-                  <select
-                    aria-label={t("catalog_visibility_label")}
-                    className={controls.select}
-                    value={course.visibility}
-                    disabled={savingId === course.id}
-                    onChange={(e) => void moderate(course, "set_visibility", e.target.value as CourseRow["visibility"])}
-                  >
-                    <option value="hidden">{t("catalog_authorship_hidden")}</option>
-                    <option value="unlisted">{t("catalog_authorship_unlisted")}</option>
-                    <option value="listed">{t("catalog_authorship_listed")}</option>
-                  </select>
+                canGrant ? (
+                  <>
+                    {reviewing ? (
+                      <button
+                        type="button"
+                        className={`${controls.actionCompact} cw-surface-2`}
+                        aria-haspopup="dialog"
+                        disabled={busy}
+                        onClick={() => setDialog({ kind: "review", courseId: course.id })}
+                      >
+                        {t("catalog_review_open")}
+                      </button>
+                    ) : null}
+                    {visibilityEditable ? (
+                      <select
+                        aria-label={t("catalog_visibility_label")}
+                        className={controls.select}
+                        value={course.visibility}
+                        disabled={busy}
+                        onChange={(e) =>
+                          void moderate(course, "set_visibility", e.target.value as CourseRow["visibility"])
+                        }
+                      >
+                        <option value="hidden">{t("catalog_authorship_hidden")}</option>
+                        <option value="unlisted">{t("catalog_authorship_unlisted")}</option>
+                        <option value="listed">{t("catalog_authorship_listed")}</option>
+                      </select>
+                    ) : null}
+                    {/* Builder ownership is set rarely and was an empty email
+                        field on every course; it lives behind this icon now. */}
+                    <AdminRowIconAction
+                      icon="user"
+                      label={t("access_owner_open")}
+                      opensDialog
+                      disabled={busy}
+                      onClick={() => setDialog({ kind: "owner", courseId: course.id })}
+                    />
+                  </>
                 ) : null
               }
               footer={
                 canGrant ? (
-                  <>
-                    {reviewing ? (
-                      <div className={controls.fields}>
-                        <>
-                          <input
-                            className={controls.inputGrow}
-                            value={reviewNotes[course.id] ?? ""}
-                            onChange={(e) => setReviewNotes((prev) => ({ ...prev, [course.id]: e.target.value }))}
-                            placeholder={t("catalog_authorship_comment_placeholder")}
-                          />
-                          <button
-                            className={`${controls.action} cw-surface-2`}
-                            disabled={savingId === course.id}
-                            onClick={() => void moderate(course, "approve")}
-                          >
-                            {t("catalog_authorship_approve")}
-                          </button>
-                          <button
-                            className={`${controls.action} cw-btn-muted`}
-                            disabled={savingId === course.id}
-                            onClick={() => void moderate(course, "request_changes")}
-                          >
-                            {t("catalog_authorship_return")}
-                          </button>
-                        </>
-                      </div>
-                    ) : null}
-                    <div className={controls.fieldStack}>
-                      <label className={controls.field}>
-                        <span className={controls.fieldCaption}>{t("access_author_profile")}</span>
-                        <select
-                          className={controls.select}
-                          value={course.authorProfileId ?? ""}
-                          disabled={savingId === course.id}
-                          onChange={(event) => void selectProfile(course, event.target.value || null)}
-                        >
-                          <option value="">{t("access_author_profile_none")}</option>
-                          {authorProfiles.map((profile) => (
-                            <option key={profile.id} value={profile.id}>
-                              {profile.name} · /expert/{profile.slug}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <div className={controls.fields}>
-                        <input
-                          type="email"
-                          value={draft[course.id] ?? ""}
-                          onChange={(e) => setDraft((prev) => ({ ...prev, [course.id]: e.target.value }))}
-                          placeholder={t("access_author_email")}
-                          className={controls.inputGrow}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => save(course, (draft[course.id] ?? "").trim())}
-                          disabled={savingId === course.id || !(draft[course.id] ?? "").trim()}
-                          className={`${controls.action} cw-surface-2`}
-                        >
-                          {t("access_author_assign")}
-                        </button>
-                        {course.authorId ? (
-                          <button
-                            type="button"
-                            onClick={() => save(course, null)}
-                            disabled={savingId === course.id}
-                            className={`${controls.action} cw-btn-muted`}
-                          >
-                            {t("access_author_clear")}
-                          </button>
-                        ) : null}
-                      </div>
-                    </div>
-                  </>
+                  <label className={controls.field}>
+                    <span className={controls.fieldCaption}>{t("access_author_profile")}</span>
+                    <select
+                      className={controls.select}
+                      value={course.authorProfileId ?? ""}
+                      disabled={busy}
+                      onChange={(event) => void selectProfile(course, event.target.value || null)}
+                    >
+                      <option value="">{t("access_author_profile_none")}</option>
+                      {authorProfiles.map((profile) => (
+                        <option key={profile.id} value={profile.id}>
+                          {profile.name} · /expert/{profile.slug}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 ) : null
               }
             />
           );
         })}
       </div>
+
+      {dialogCourse && dialog?.kind === "owner" ? (
+        <OwnerModal
+          course={dialogCourse}
+          busy={savingId === dialogCourse.id}
+          onAssign={(email) => void save(dialogCourse, email).then((ok) => ok && setDialog(null))}
+          onClear={() => void save(dialogCourse, null).then((ok) => ok && setDialog(null))}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
+      {dialogCourse && dialog?.kind === "review" ? (
+        <ModerationModal
+          title={t("catalog_review_title")}
+          description={dialogCourse.title}
+          approveLabel={t("catalog_authorship_approve")}
+          returnLabel={t("catalog_authorship_return")}
+          notePlaceholder={t("catalog_authorship_comment_placeholder")}
+          cancelLabel={t("catalog_modal_cancel")}
+          busy={savingId === dialogCourse.id}
+          onApprove={(note) =>
+            void moderate(dialogCourse, "approve", undefined, note).then((ok) => ok && setDialog(null))
+          }
+          onReturn={(note) =>
+            void moderate(dialogCourse, "request_changes", undefined, note).then((ok) => ok && setDialog(null))
+          }
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
     </div>
+  );
+}
+
+/* WHO EDITS THIS COURSE IN THE BUILDER — `lms_courses.author_id`, set by the
+   email of an account that has signed in at least once. Not the public byline
+   (that is the profile select on the row). It is an act done rarely, so it is a
+   dialog behind the row's person icon rather than an empty field on every
+   course. */
+function OwnerModal({
+  course,
+  busy,
+  onAssign,
+  onClear,
+  onClose,
+}: {
+  course: CourseRow;
+  busy: boolean;
+  onAssign: (email: string) => void;
+  onClear: () => void;
+  onClose: () => void;
+}) {
+  const { t } = useI18n();
+  const [email, setEmail] = useState("");
+
+  return (
+    <AdminModal
+      title={t("access_owner_title")}
+      description={course.title}
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className={controls.action} disabled={busy} onClick={onClose}>
+            {t("catalog_modal_cancel")}
+          </button>
+          {course.authorId ? (
+            <button type="button" className={`${controls.action} cw-btn-muted`} disabled={busy} onClick={onClear}>
+              {t("access_author_clear")}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className={`${controls.action} cw-surface-2`}
+            disabled={busy || !email.trim()}
+            onClick={() => onAssign(email.trim())}
+          >
+            {t("access_author_assign")}
+          </button>
+        </>
+      }
+    >
+      <p className={controls.hint}>{t("access_owner_hint")}</p>
+      <p className={controls.confirmText}>
+        {t("access_owner_current")}: <strong>{course.authorEmail ?? t("access_author_house")}</strong>
+      </p>
+      <label className={controls.field}>
+        <span className={controls.fieldCaption}>{t("access_author_email")}</span>
+        <input
+          type="email"
+          className={controls.input}
+          value={email}
+          autoComplete="off"
+          disabled={busy}
+          onChange={(event) => setEmail(event.target.value)}
+        />
+      </label>
+    </AdminModal>
   );
 }
