@@ -104,7 +104,10 @@ export async function ensureDoshaTestSeed(db: SupabaseAdmin): Promise<TestDefini
   }
 
   let test = existing as TestDefinitionRow | null;
-  if (test && !forceReseed) {
+  /* The hot path used to return before the version check, so a version bump
+     that changed no seeded row (v3 changed the instruction, not the questions)
+     took an env flag and a redeploy to reach new attempts. */
+  if (test && !forceReseed && test.version === DOSHA_TEST_VERSION) {
     // Hot path: test is already provisioned, avoid re-upserting the whole matrix per request.
     return test;
   }

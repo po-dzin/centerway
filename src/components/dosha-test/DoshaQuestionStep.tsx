@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "@/components/platform/PlatformDiagnosticStyles";
+import { DOSHA_MAX_CHOICES_PER_QUESTION } from "@/lib/dosha/doshaTest";
 import { TESTS_HUB_ROUTE } from "@/lib/platform/tests";
 import type { TestQuestion } from "./doshaTestApi";
 
@@ -15,7 +16,7 @@ type DoshaQuestionStepProps = {
   currentQuestionIndex: number;
   totalQuestions: number;
   progress: number;
-  answers: Record<string, string>;
+  answers: Record<string, string[]>;
   isBusy: boolean;
   error: string | null;
   isLastQuestion: boolean;
@@ -41,6 +42,9 @@ export function DoshaQuestionStep({
   goForward,
   backToIntro,
 }: DoshaQuestionStepProps) {
+  // Up to two marks per question — see `selectAnswer` in useDoshaAttempt.
+  const currentChoices = answers[currentQuestion.id] ?? [];
+
   return (
     <div className={styles.diagnosticFlowStack}>
       <div className={styles.diagnosticFlowHead}>
@@ -74,12 +78,15 @@ export function DoshaQuestionStep({
 
       <div className={styles.diagnosticQuestionIntro}>
         <h2 className={styles.title}>{currentQuestion.text}</h2>
-        <p className={styles.lead}>Оберіть варіант, який найточніше описує ваш поточний стан.</p>
+        <p className={styles.lead}>
+          Оберіть варіант, який найточніше описує ваш поточний стан. Якщо підходять два — позначте обидва.
+        </p>
       </div>
 
       <div className={styles.diagnosticOptionList}>
         {currentQuestion.options.map((option) => {
-          const selected = answers[currentQuestion.id] === option.id;
+          const selected = currentChoices.includes(option.id);
+          const atLimit = !selected && currentChoices.length >= DOSHA_MAX_CHOICES_PER_QUESTION;
 
           return (
             <button
@@ -87,7 +94,7 @@ export function DoshaQuestionStep({
               type="button"
               data-dosha-option={option.code}
               aria-pressed={selected}
-              disabled={isBusy}
+              disabled={isBusy || atLimit}
               onClick={() => {
                 selectAnswer(currentQuestion.id, option.id);
               }}
@@ -113,7 +120,7 @@ export function DoshaQuestionStep({
         <button
           type="button"
           onClick={goForward}
-          className={styles.heroPrimaryButton}
+          className={styles.primaryButton}
           /* Off until there is something to move on from — the
              button is the answer to "what now", and lighting up is
              how it says the question is done. */

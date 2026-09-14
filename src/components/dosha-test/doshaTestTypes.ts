@@ -29,7 +29,8 @@ export type PendingSave = {
 };
 
 export type DraftState = {
-  answers: Record<string, string>;
+  /* A plain string is a draft saved before a question could take two marks. */
+  answers: Record<string, string[] | string>;
   currentQuestionIndex: number;
   sessionId: string;
   updatedAt: string;

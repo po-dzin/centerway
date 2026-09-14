@@ -5,7 +5,7 @@
    what the phase views need to render and act. */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { classifyDosha, type DoshaResultType } from "@/lib/dosha/doshaTest";
+import { classifyDosha, DOSHA_MAX_CHOICES_PER_QUESTION, type DoshaResultType } from "@/lib/dosha/doshaTest";
 import { CONFIDENCE_COPY, RESULT_COPY } from "@/lib/dosha/doshaResultCopy";
 import { DOSHA_PRIMARY_EXIT } from "@/lib/dosha/doshaRouting";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
@@ -56,7 +56,7 @@ export function useDoshaAttempt(uiVariant: string) {
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [questions, setQuestions] = useState<TestQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(1);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string[]>>({});
   const [resultType, setResultType] = useState<DoshaResultType | null>(null);
   const [scores, setScores] = useState({ vata: 0, pitta: 0, kapha: 0 });
   const [completedAt, setCompletedAt] = useState<string | null>(null);
@@ -146,18 +146,18 @@ export function useDoshaAttempt(uiVariant: string) {
   );
 
   const completeTest = useCallback(
-    async (finalAnswers: Record<string, string>) => {
+    async (finalAnswers: Record<string, string[]>) => {
       if (questions.length === 0) return;
 
-      const orderedAnswers = questions.map((question) => ({
-        questionId: question.id,
-        optionId: finalAnswers[question.id] ?? null,
-      }));
-
-      if (orderedAnswers.some((item) => !item.optionId)) {
+      if (questions.some((question) => !finalAnswers[question.id]?.length)) {
         setError("Не всі відповіді заповнені. Перевірте питання і завершить тест.");
         return;
       }
+
+      // One row per mark: a question marked twice goes as two rows.
+      const orderedAnswers = questions.flatMap((question) =>
+        (finalAnswers[question.id] ?? []).map((optionId) => ({ questionId: question.id, optionId })),
+      );
 
       setIsBusy(true);
       setError(null);
@@ -326,10 +326,13 @@ export function useDoshaAttempt(uiVariant: string) {
 
         // Only answers whose question is still in the definition survive: a
         // test that changed under a draft must not resume half in the old one.
-        const valid: Record<string, string> = {};
+        const valid: Record<string, string[]> = {};
         for (const question of loaded) {
-          const chosen = resumeDraft.answers[question.id];
-          if (chosen && question.options.some((option) => option.id === chosen)) {
+          const saved = resumeDraft.answers[question.id];
+          const chosen = (Array.isArray(saved) ? saved : saved ? [saved] : [])
+            .filter((id) => question.options.some((option) => option.id === id))
+            .slice(0, DOSHA_MAX_CHOICES_PER_QUESTION);
+          if (chosen.length) {
             valid[question.id] = chosen;
           }
         }
@@ -424,11 +427,29 @@ export function useDoshaAttempt(uiVariant: string) {
      nothing else; the step moves when the reader says so, in either direction.
      Nothing reaches the server until the last answer — `completeTest` posts the
      whole set — so going back costs no request and no consistency problem. */
+  /* A tap toggles a mark. Up to two marks per question: a third option stays
+     unavailable until one is lifted, rather than silently dropping the older
+     mark — an answer should never change without the reader touching it. */
   const selectAnswer = useCallback(
     (questionId: string, optionId: string) => {
       if (isBusy) return;
 
-      const nextAnswers = { ...answers, [questionId]: optionId };
+      const current = answers[questionId] ?? [];
+      let chosen: string[];
+      if (current.includes(optionId)) {
+        chosen = current.filter((id) => id !== optionId);
+      } else if (current.length < DOSHA_MAX_CHOICES_PER_QUESTION) {
+        chosen = [...current, optionId];
+      } else {
+        return;
+      }
+
+      const nextAnswers = { ...answers };
+      if (chosen.length) {
+        nextAnswers[questionId] = chosen;
+      } else {
+        delete nextAnswers[questionId];
+      }
       setAnswers(nextAnswers);
       setError(null);
       saveDraft({
@@ -458,10 +479,11 @@ export function useDoshaAttempt(uiVariant: string) {
 
   const answeredCount = Object.keys(answers).length;
   const isLastQuestion = currentQuestionIndex >= totalQuestions;
-  const currentAnswered = currentQuestion ? Boolean(answers[currentQuestion.id]) : false;
+  const currentChoices = currentQuestion ? (answers[currentQuestion.id] ?? []) : [];
+  const currentAnswered = currentChoices.length > 0;
 
   const goForward = useCallback(() => {
-    if (!currentQuestion || !answers[currentQuestion.id]) return;
+    if (!currentQuestion || !answers[currentQuestion.id]?.length) return;
     if (isLastQuestion) {
       void completeTest(answers);
       return;

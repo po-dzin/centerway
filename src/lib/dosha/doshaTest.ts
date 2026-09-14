@@ -44,8 +44,12 @@ export type DoshaTestQuestionSeed = {
    from v1 and v2 are structurally comparable — but the wording a person read
    is not the same wording, and an attempt records which one it was. Codes are
    deliberately untouched: `test_answers` points at option rows by id, and new
-   codes would seed a second copy of the test beside the first. */
-export const DOSHA_TEST_VERSION = "v2";
+   codes would seed a second copy of the test beside the first.
+   `v3` keeps the v2 wording and changes the instruction: a reader who sees
+   themselves in two descriptions marks both, and the question's weight is
+   split between them (see `scoreDoshaChoices`). Scores move from one point per
+   question to six, which the share-based thresholds below do not notice. */
+export const DOSHA_TEST_VERSION = "v3";
 
 export const DOSHA_TEST_QUESTIONS: DoshaTestQuestionSeed[] = [
   {
@@ -575,6 +579,31 @@ export function presentQuestionsForSession(questions: SourceQuestion[], sessionI
 export function isValidScoreInvariant(scores: DoshaScores, expectedSum: number): boolean {
   const sum = scores.vata + scores.pitta + scores.kapha;
   return sum === expectedSum;
+}
+
+/* ONE QUESTION, ONE VOTE, HOWEVER MANY HANDS RAISED.
+   A reader may mark up to two options in a question. Counting each mark as a
+   point would give the questions someone marked twice more say than the rest,
+   and would pull whoever marks generously towards tridosha; so a question is
+   worth a fixed weight and the marks share it. Six divides by one, two and
+   three, which keeps every score an integer — the columns are integers — and
+   leaves room to allow a third mark without a migration of the arithmetic.
+   Three marks are not allowed today: they spread a question evenly over all
+   three doshas, which is the same as not answering it. */
+export const DOSHA_QUESTION_WEIGHT = 6;
+export const DOSHA_MAX_CHOICES_PER_QUESTION = 2;
+
+export function scoreDoshaChoices(choices: Array<{ questionId: string; mappedDosha: BaseDosha }>): DoshaScores {
+  const marksPerQuestion = new Map<string, number>();
+  for (const choice of choices) {
+    marksPerQuestion.set(choice.questionId, (marksPerQuestion.get(choice.questionId) ?? 0) + 1);
+  }
+
+  const scores: DoshaScores = { vata: 0, pitta: 0, kapha: 0 };
+  for (const choice of choices) {
+    scores[choice.mappedDosha] += DOSHA_QUESTION_WEIGHT / (marksPerQuestion.get(choice.questionId) ?? 1);
+  }
+  return scores;
 }
 
 export function doshaTagFromResult(result: DoshaResultType): string {

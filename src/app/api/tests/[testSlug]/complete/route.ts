@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { asString } from "@/lib/strings";
 import { adminClient } from "@/lib/auth/adminClient";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
-import { classifyDosha, DOSHA_TEST_SLUG, isValidScoreInvariant } from "@/lib/dosha/doshaTest";
+import {
+  classifyDosha,
+  DOSHA_MAX_CHOICES_PER_QUESTION,
+  DOSHA_QUESTION_WEIGHT,
+  DOSHA_TEST_SLUG,
+  isValidScoreInvariant,
+  scoreDoshaChoices,
+} from "@/lib/dosha/doshaTest";
 import { DOSHA_PRIMARY_EXIT } from "@/lib/dosha/doshaRouting";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
@@ -48,7 +55,8 @@ async function findIdempotentAttempt(
   params: {
     testId: string;
     sessionId: string;
-    expectedAnswers: Record<string, string>;
+    expectedAnswers: Map<string, Set<string>>;
+    expectedCount: number;
   },
 ): Promise<TestAttemptRow | null> {
   const threshold = new Date(Date.now() - 10 * 60 * 1000).toISOString();
@@ -68,11 +76,11 @@ async function findIdempotentAttempt(
 
   for (const row of (data ?? []) as TestAttemptRow[]) {
     const answers = await loadAnswersForTestAttempt(db, row.id);
-    if (answers.length !== Object.keys(params.expectedAnswers).length) continue;
+    if (answers.length !== params.expectedCount) continue;
 
     let matches = true;
     for (const answer of answers) {
-      if (params.expectedAnswers[answer.question_id] !== answer.option_id) {
+      if (!params.expectedAnswers.get(answer.question_id)?.has(answer.option_id)) {
         matches = false;
         break;
       }
@@ -110,19 +118,27 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tes
       return NextResponse.json({ error: "test_not_available" }, { status: 404 });
     }
 
-    if (answers.length !== test.questions.length) {
-      return NextResponse.json(
-        { error: "answers_count_mismatch", expected: test.questions.length, received: answers.length },
-        { status: 400 },
-      );
+    /* Rows, not questions: a question with two marks arrives as two rows. What
+       has to hold is that every question is covered, none more than the limit,
+       and no option twice. */
+    const expectedByQuestion = new Map<string, Set<string>>();
+    for (const answer of answers) {
+      const chosen = expectedByQuestion.get(answer.questionId) ?? new Set<string>();
+      if (chosen.has(answer.optionId)) {
+        return NextResponse.json({ error: "duplicate_option_answer" }, { status: 400 });
+      }
+      if (chosen.size >= DOSHA_MAX_CHOICES_PER_QUESTION) {
+        return NextResponse.json({ error: "too_many_choices", questionId: answer.questionId }, { status: 400 });
+      }
+      chosen.add(answer.optionId);
+      expectedByQuestion.set(answer.questionId, chosen);
     }
 
-    const expectedByQuestion: Record<string, string> = {};
-    for (const answer of answers) {
-      if (expectedByQuestion[answer.questionId]) {
-        return NextResponse.json({ error: "duplicate_question_answer" }, { status: 400 });
-      }
-      expectedByQuestion[answer.questionId] = answer.optionId;
+    if (expectedByQuestion.size !== test.questions.length) {
+      return NextResponse.json(
+        { error: "answers_count_mismatch", expected: test.questions.length, received: expectedByQuestion.size },
+        { status: 400 },
+      );
     }
 
     const user = await requireUserFromBearer(req.headers.get("authorization"));
@@ -132,6 +148,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tes
       testId: test.id,
       sessionId,
       expectedAnswers: expectedByQuestion,
+      expectedCount: answers.length,
     });
     if (idempotent && idempotent.result_type) {
       /* Re-read rather than re-stored: an attempt written before the profile
@@ -194,11 +211,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tes
       return NextResponse.json({ error: insertAnswersError.message }, { status: 500 });
     }
 
-    const vata = answerRows.filter((a) => a.mapped_dosha === "vata").length;
-    const pitta = answerRows.filter((a) => a.mapped_dosha === "pitta").length;
-    const kapha = answerRows.filter((a) => a.mapped_dosha === "kapha").length;
+    const { vata, pitta, kapha } = scoreDoshaChoices(
+      answerRows.map((row) => ({ questionId: row.question_id, mappedDosha: row.mapped_dosha })),
+    );
 
-    if (!isValidScoreInvariant({ vata, pitta, kapha }, test.questions.length)) {
+    if (!isValidScoreInvariant({ vata, pitta, kapha }, test.questions.length * DOSHA_QUESTION_WEIGHT)) {
       return NextResponse.json({ error: "score_invariant_failed" }, { status: 500 });
     }
 
