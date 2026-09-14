@@ -89,8 +89,10 @@
    apart by translucency. `secondary` lifts and lightens; the rail control also
    grows a step, because a 48px disc floating over photography reads its size
    before it reads its fill. */
-.control.control:hover:not(:disabled) {
-  transform: scale(1.07);
+@media (hover: hover) {
+  .control.control:hover:not(:disabled) {
+    transform: scale(1.07);
+  }
 }
 
 .control.control:active:not(:disabled) {
@@ -98,10 +100,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .control.control:hover:not(:disabled),
   .control.control:active:not(:disabled),
   .control.control:disabled {
     transform: none;
+  }
+
+  @media (hover: hover) {
+    .control.control:hover:not(:disabled) {
+      transform: none;
+    }
   }
 }
 
@@ -214,16 +221,35 @@
     opacity 160ms ease;
 }
 
-.queueDotButton:hover .queueDot {
-  opacity: 0.64;
+@media (hover: hover) {
+  .queueDotButton:hover .queueDot {
+    opacity: 0.64;
+  }
 }
 
-.queueDotButtonCurrent .queueDot,
-.queueDotButtonCurrent:hover .queueDot {
+/* The dot already runs the ink ladder by another name — 0.32 at rest, 0.64
+   under the pointer, 1 when current — so its press (2026-09-14) is the same
+   borrowing the label stroke makes: full, while held. No new value; the ladder
+   is the shape of the answer, not the numbers. Outside the hover query, because
+   on a phone this is the only state the dot can show. */
+.queueDotButton:active .queueDot {
+  opacity: 1;
+}
+
+.queueDotButtonCurrent .queueDot {
   width: 0.75rem;
   height: 0.75rem;
   background: var(--cw-platform-accent);
   opacity: 1;
+}
+
+@media (hover: hover) {
+  .queueDotButtonCurrent:hover .queueDot {
+    width: 0.75rem;
+    height: 0.75rem;
+    background: var(--cw-platform-accent);
+    opacity: 1;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

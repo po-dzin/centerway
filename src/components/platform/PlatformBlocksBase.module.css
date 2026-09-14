@@ -313,24 +313,39 @@
   color: var(--cw-platform-text);
 }
 
-.blockAction:hover:not(:disabled),
 .blockAction:focus-visible {
   color: var(--cw-sem-warmth-strong);
+}
+
+@media (hover: hover) {
+  .blockAction:hover:not(:disabled) {
+    color: var(--cw-sem-warmth-strong);
+  }
 }
 
 .blockActionArrow {
   transition: transform 160ms ease;
 }
 
-.blockAction:hover .blockActionArrow,
 .blockAction:focus-visible .blockActionArrow {
   transform: translateX(0.18rem);
 }
 
+@media (hover: hover) {
+  .blockAction:hover .blockActionArrow {
+    transform: translateX(0.18rem);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .blockAction:hover .blockActionArrow,
   .blockAction:focus-visible .blockActionArrow {
     transform: none;
+  }
+
+  @media (hover: hover) {
+    .blockAction:hover .blockActionArrow {
+      transform: none;
+    }
   }
 }
 

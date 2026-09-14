@@ -190,14 +190,17 @@ export function CropEditor({
      the one control in it, and landing on the dialog's paper instead would make
      the keyboard user hunt for it.
 
-     WITHOUT THE RING (2026-09-14). A pointer opened this dialog, and Chrome
-     treats a programmatic focus after a click as keyboard-visible — so every
-     opening drew the focus ring round the stage and the thirds inside the
-     window, at rest, before anyone touched anything. `focusVisible: false`
-     keeps the focus where the keyboard needs it and the paint for when the
-     keyboard is actually used. */
+     THE RING FOLLOWS HOW IT WAS OPENED (2026-09-14). Chrome treats a
+     programmatic focus after a click as keyboard-visible, so a pointer opening
+     drew the focus ring round the stage and the thirds inside the window, at
+     rest, before anyone touched anything. Suppressing it unconditionally hid
+     where focus landed for a keyboard opening too. The opener still holds focus
+     when this runs, and its own `:focus-visible` is the browser's answer to
+     which of the two it was. */
   useEffect(() => {
-    stageRef.current?.focus({ preventScroll: true, focusVisible: false } as FocusOptions);
+    const opener = document.activeElement;
+    const byKeyboard = opener instanceof HTMLElement && opener.matches(":focus-visible");
+    stageRef.current?.focus({ preventScroll: true, focusVisible: byKeyboard } as FocusOptions);
   }, []);
 
   const frame = cropWindowRect(photo, shape, scale, { x, y });

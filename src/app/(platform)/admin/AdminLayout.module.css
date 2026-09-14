@@ -164,7 +164,7 @@
      would make the frame resize as one scrolls. */
   height: 100dvh;
   overflow: hidden;
-  transition: background-color var(--cw-motion-tone) ease;
+  transition: background-color var(--cw-motion-tone) var(--cw-ease-state);
 }
 
 @media (min-width: 768px) {
@@ -234,11 +234,13 @@
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--cw-motion-state) ease;
+  transition: opacity var(--cw-motion-state) var(--cw-ease-state);
 }
 
-.railRow:hover .railTip {
-  opacity: 1;
+@media (hover: hover) {
+  .railRow:hover .railTip {
+    opacity: 1;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -9,6 +9,12 @@ describe("courseStateKeys", () => {
     ]);
   });
 
+  it("says a live course a moderator sent back is returned, not unreviewed", () => {
+    expect(
+      courseStateKeys({ status: "published", reviewStatus: "changes_requested", hasPendingRevision: false }),
+    ).toEqual(["returned"]);
+  });
+
   it("treats a course published before review existed as published", () => {
     expect(courseStateKeys({ status: "published", reviewStatus: null, hasPendingRevision: false })).toEqual([
       "published",

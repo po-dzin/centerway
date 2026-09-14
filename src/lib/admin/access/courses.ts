@@ -8,6 +8,7 @@
 import { adminClient } from "@/lib/auth/adminClient";
 import type { TablesUpdate } from "@/lib/db/database.types";
 import { writeCourseStructure } from "@/lib/lms/authoring";
+import { applyAccessTermToOffer } from "@/lib/lms/offerTerm";
 import { JOURNAL_MIGRATION_REQUIRED, writeCourseRelease } from "@/lib/lms/release";
 import { validateCourse, type Course } from "@/lms-core";
 import type { AuthorProfileRow, CourseRow } from "@/lib/admin/accessTypes";
@@ -236,6 +237,14 @@ export async function moderateCourse(input: {
         const writer = db as unknown as Parameters<typeof writeCourseStructure>[0];
         await writeCourseStructure(writer, released, { optionalColumns: "authoritative" });
       }
+      /* The approved words are live now, so the offer grants what they promise
+         — the author's «Термін доступу» preset, carried onto the real term. */
+      await applyAccessTermToOffer(db, {
+        courseId: course.id as string,
+        note: released.accessNote,
+        actorId: input.actorId,
+        source: "approval",
+      });
       values = approvalValues;
     } else {
       values = {

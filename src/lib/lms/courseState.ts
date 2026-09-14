@@ -80,7 +80,12 @@ export function courseStateKeys(input: CourseStateInput): CourseStateKey[] {
         ? "published"
         : input.reviewStatus === "in_review"
           ? "review"
-          : "unreviewed",
+          : /* A live course a moderator sent back: `moderateCourse` keeps
+               `status` published and sets `changes_requested`. That is an
+               explicit decision, and the catalogue groups it as returned. */
+            input.reviewStatus === "changes_requested"
+            ? "returned"
+            : "unreviewed",
     );
   } else {
     keys.push(

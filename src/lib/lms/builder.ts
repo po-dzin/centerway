@@ -31,6 +31,7 @@ import { adminClient } from "@/lib/auth/adminClient";
 import type { TablesUpdate } from "@/lib/db/database.types";
 import { courseFromRows, writeCourseStructure } from "./authoring";
 import { getSnapshotCourse } from "./catalog";
+import { applyAccessTermToOffer } from "./offerTerm";
 import { immediatePublishedPatch } from "./publishedEditPolicy";
 import { JOURNAL_MIGRATION_REQUIRED, checkpointAutosave, journalCourseState, writeCourseRelease } from "./release";
 import { loadCourseRevision } from "./revisions";
@@ -596,6 +597,15 @@ export async function saveBuilderCourse(
       optionalColumns: "authoritative",
     },
   );
+  /* The storefront columns just became the course's own words, so the offer's
+     real term follows the «Термін доступу» preset (see `offerTerm.ts`). Only on
+     this path: a published course's edit is a revision, aligned on approval. */
+  await applyAccessTermToOffer(db, {
+    courseId: ownerCourseId,
+    note: incoming.accessNote,
+    actorId: governance.actorId ?? null,
+    source: "builder",
+  });
   if (reviewEnabled && incoming.status === "draft" && existing?.review_status !== "draft") {
     const { error } = await db
       .from("lms_courses")

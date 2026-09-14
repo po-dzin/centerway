@@ -56,29 +56,13 @@
   composes: hug from "./PlatformButtons.module.css";
 }
 
-.diagnosticProgressTrack {
-  height: 0.5rem;
-  overflow: hidden;
-  border-radius: var(--cw-radius-pill);
-  background: var(--cw-mat-meter-track);
-}
-
-/* Brand greens, not status colours. The original ramp was
-   success → pending-mixed-with-success, which measured 2.75 and 2.65 against
-   this track — below the 3:1 a bar you have to read needs, and the reason the
-   same recipe rendered as a grey hairline in the cabinet. guide-primary →
-   guide-strong keeps the gradient and clears it at 4.92 / 11.26. */
-.diagnosticProgressBar {
-  height: 100%;
-  border-radius: var(--cw-radius-pill);
-  /* One meter fill for the system, and it changes with the theme. The green
-     ramp clears its track at 4.92 / 11.26 on cream and disappears on graphite —
-     a deep green on a near-black ground is not a low-contrast bar, it is no bar
-     at all. `--cw-platform-meter` carries the ramp each ground can show: the
-     green on light, the gold on dark. */
-  background: var(--cw-platform-meter);
-  transition: width 0.3s ease;
-}
+/* THE FILLED BAR AND ITS TRACK LIVED HERE. They answered "roughly how far",
+   and on the first question they answered it with nothing at all: zero of
+   twelve is an empty track, so the step a reader had just opened was the one
+   the bar refused to mark. `ProgressRail` is the system's answer for countable
+   steps — one dash per question, and a walker standing on the edge actually
+   reached, which is a mark from the first question onward. The dosha SCORE
+   bars stay solid: those are proportions of a whole, not steps. */
 
 .diagnosticHeroCard #what-is-dosha {
   gap: var(--cw-space-xs);
@@ -156,6 +140,114 @@
   }
 }
 
+/* THE DOSHA MARK — the element on a ground mixed from its own colour.
+
+   One value in two roles: the disc is the dosha's semantic token diluted, the
+   glyph is the same token at full strength. Nothing here is a new hex, so the
+   three marks move with the gamma instead of being re-tuned beside it.
+
+   LINEAR AND NOT RADIAL. A radial stop placed off-centre is an inset top
+   highlight under another name, and this system removed those from every
+   surface in 2026-08 (docs/design-system.md → "No inset top highlight"). The
+   sweep runs 145deg, and 34% → 12% is where the CenterWay earth tones still
+   read as colour at 32px; below about 30% they go grey.
+
+   The same two stops are drawn in the mirror's specimen
+   (`guidelines/dosha-marks.card.html`, from scripts/icons-preview.mjs). If one
+   moves, both move. */
+.doshaMark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: var(--cw-radius-pill);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--dosha-ink) 34%, transparent),
+    color-mix(in srgb, var(--dosha-ink) 12%, transparent)
+  );
+}
+
+/* Under 32px the ground is dropped: a tint that small is a smudge, not a disc. */
+.doshaMarkBare {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+}
+
+.doshaMarkGlyph {
+  color: var(--dosha-ink);
+}
+
+/* The three bindings, and the only place the mark meets a specific dosha. */
+:is(.doshaMark, .doshaMarkBare)[data-dosha="vata"] {
+  --dosha-ink: var(--cw-sem-dosha-vata);
+}
+
+:is(.doshaMark, .doshaMarkBare)[data-dosha="pitta"] {
+  --dosha-ink: var(--cw-sem-dosha-pitta);
+}
+
+:is(.doshaMark, .doshaMarkBare)[data-dosha="kapha"] {
+  --dosha-ink: var(--cw-sem-dosha-kapha);
+}
+
+/* On the dark theme the token alone is too dark to sit on its own tint, so the
+   glyph lightens toward the surface ink and keeps the hue. */
+:global([data-cw-theme="dark"]) .doshaMarkGlyph {
+  color: color-mix(in srgb, var(--dosha-ink) 42%, var(--cw-platform-text));
+}
+
+/* The verdict's head: marks, then the heading. They sit on one row while the
+   heading fits beside them and stack when it does not — a 56px mark and a
+   two-line heading side by side is a column of text against a dot. */
+.doshaResultHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-sm) var(--cw-space-md);
+}
+
+.doshaResultHead h2 {
+  margin: 0;
+}
+
+.doshaMarkGroup {
+  display: inline-flex;
+  align-items: center;
+  /* Overlapped, not spaced: a pair is ONE reading of a body, and two discs with
+     air between them read as two separate verdicts. */
+  gap: 0;
+}
+
+.doshaMarkGroup > * + * {
+  margin-inline-start: calc(var(--cw-space-sm) * -1);
+}
+
+/* THE SHARE ROW. Three marks and three numbers, in the order the test read
+   them — dominant first. It was one line of text with bullet separators, which
+   is where a verdict about a body was being delivered as a stat line. */
+.doshaShareRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-md);
+  align-items: center;
+  margin: 0;
+}
+
+.doshaShare {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+.doshaShare b {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .diagnosticProgressRow {
   display: grid;
   gap: var(--cw-space-xs);
@@ -205,8 +297,10 @@
   text-decoration: none;
 }
 
-.diagnosticBackLink:hover {
-  color: var(--cw-platform-text);
+@media (hover: hover) {
+  .diagnosticBackLink:hover {
+    color: var(--cw-platform-text);
+  }
 }
 
 /* NO SECOND UNDERLINE HERE. The `.text` role it composes already documents the
@@ -223,14 +317,25 @@
   height: 1rem;
 }
 
-/* Step controls: back on the left, forward on the right, forward twice the
-   weight. On a phone they share the row rather than stacking — the pair is one
-   decision, and splitting it over two lines reads as two. */
+/* Step controls: back on the left, forward on the right, one row on every
+   width — the pair is one decision, and splitting it over two lines reads as
+   two. Equal columns, not `auto 1fr`: that let "До опису" hug its label while
+   "Далі" took the rest, and the width jumped between question one and two as
+   the label changed. The primary fill carries the weight, not the size. */
 .diagnosticStepActions {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
   gap: var(--cw-space-xs);
+}
+
+/* Each button spans its column. The secondary role reserves the contract's
+   standalone width (`wide`), which on a phone is wider than half the row and
+   pushed "Назад" past its column while "Далі" shrank to fit; capping that
+   reservation at the column keeps it on desktop and gives it up on a phone. */
+.diagnosticStepActions > button {
+  width: 100%;
+  min-width: min(100%, var(--ds-button-min-width));
 }
 
 .diagnosticStepActions button:disabled {
@@ -319,14 +424,6 @@
 
 /* The rotating ring that used to be here is `LogoMark animate="wait"` now —
    see the note at its call site in DoshaTestClient. */
-
-@media (prefers-reduced-motion: reduce) {
-  /* The spinner's own reduced-motion rule went with it: `LogoMark` answers
-     that question for every one of its animations, in one place. */
-  .diagnosticProgressBar {
-    transition: none;
-  }
-}
 
 .diagnosticResultActions {
   display: grid;
@@ -593,9 +690,11 @@
    `--cw-platform-text`, which on the night ground is the cream. Pointing at a
    link in the footer turned it WHITE while the same gesture anywhere else in
    the product turned it brass. */
-.footer a:not(.footerTextLink):hover,
-.footer button:hover {
-  color: var(--cw-platform-text);
+@media (hover: hover) {
+  .footer a:not(.footerTextLink):hover,
+  .footer button:hover {
+    color: var(--cw-platform-text);
+  }
 }
 
 /* Text links are reading affordances, not quiet buttons: the ink underline is
@@ -635,9 +734,14 @@
    question — ink on a pale ground, brass on a dark one — and it is what the
    ink label's own hover rule reads, so the word and the line under it move
    together instead of resolving two different colours. */
-.footerTextLink:hover,
 .footerTextLink:focus-visible {
   color: var(--cw-nav-marker);
+}
+
+@media (hover: hover) {
+  .footerTextLink:hover {
+    color: var(--cw-nav-marker);
+  }
 }
 
 /* THE WORDMARK IS SET, NOT DRAWN — this footer spells CENTERWAY in the data
@@ -732,9 +836,14 @@
   color: color-mix(in srgb, var(--cw-platform-accent) 82%, var(--cw-platform-bg) 18%);
 }
 
-:root[data-cw-theme="dark"] .footerSocialsRow a.footerSocialLink:hover,
 :root[data-cw-theme="dark"] .footerSocialsRow a.footerSocialLink:focus-visible {
   color: var(--cw-platform-accent);
+}
+
+@media (hover: hover) {
+  :root[data-cw-theme="dark"] .footerSocialsRow a.footerSocialLink:hover {
+    color: var(--cw-platform-accent);
+  }
 }
 
 .footerSocialIcon {

@@ -260,6 +260,11 @@
    Both stops are asserted by guard:contrast. */
 .primary {
   composes: base;
+  /* THE ROLE SAYS ITS OWN NAME (2026-09-14), so something outside CSS can bind
+     to it. Composed from a global class rather than written here: see
+     globals.css → `.cw-role-*` for why the property lives there (canon:guard
+     forbids declaring `--cw-*` in a module) and which consumer reads it. */
+  composes: cw-role-primary from global;
   color: var(--cw-platform-on-accent);
   /* Vertical, not diagonal: a 135deg ramp reads as one corner lit and the
      opposite corner dark on a button this wide and short (mobile full-bleed
@@ -279,18 +284,20 @@
     0 0 22px color-mix(in srgb, var(--cw-platform-accent) 38%, transparent);
 }
 
-.primary:hover:not(:disabled) {
-  transform: translateY(var(--ds-button-lift));
-  background-image:
-    var(--cw-mat-grain-image),
-    linear-gradient(
-      180deg,
-      var(--cw-platform-accent-pressed),
-      color-mix(in srgb, var(--cw-platform-accent-pressed) 86%, var(--cw-platform-on-accent))
-    );
-  box-shadow:
-    0 20px 32px color-mix(in srgb, var(--cw-platform-accent) 24%, transparent),
-    0 0 28px color-mix(in srgb, var(--cw-platform-accent) 46%, transparent);
+@media (hover: hover) {
+  .primary:hover:not(:disabled) {
+    transform: translateY(var(--ds-button-lift));
+    background-image:
+      var(--cw-mat-grain-image),
+      linear-gradient(
+        180deg,
+        var(--cw-platform-accent-pressed),
+        color-mix(in srgb, var(--cw-platform-accent-pressed) 86%, var(--cw-platform-on-accent))
+      );
+    box-shadow:
+      0 20px 32px color-mix(in srgb, var(--cw-platform-accent) 24%, transparent),
+      0 0 28px color-mix(in srgb, var(--cw-platform-accent) 46%, transparent);
+  }
 }
 
 .primary:active:not(:disabled) {
@@ -305,16 +312,19 @@
    independently legible. No resting elevation or nested ink mark. */
 .secondary {
   composes: base;
+  composes: cw-role-secondary from global;
   border: 1px solid var(--cw-mat-stroke-quiet);
   color: var(--cw-platform-text);
   background-color: var(--cw-mat-surface-sunk);
   background-image: var(--cw-mat-grain-image);
 }
 
-.secondary:hover:not(:disabled) {
-  transform: translateY(var(--ds-button-lift));
-  background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
-  box-shadow: var(--cw-mat-shadow-soft);
+@media (hover: hover) {
+  .secondary:hover:not(:disabled) {
+    transform: translateY(var(--ds-button-lift));
+    background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
+    box-shadow: var(--cw-mat-shadow-soft);
+  }
 }
 
 .secondary:active:not(:disabled) {
@@ -328,6 +338,7 @@
    surface arrives on hover and focus, where it means something. */
 .chrome {
   composes: base;
+  composes: cw-role-chrome from global;
   min-width: var(--ds-touch-target-min);
   font-size: var(--ds-type-body-sm-size);
   color: var(--cw-platform-text);
@@ -335,9 +346,11 @@
   box-shadow: none;
 }
 
-.chrome:hover:not(:disabled) {
-  background: transparent;
-  box-shadow: none;
+@media (hover: hover) {
+  .chrome:hover:not(:disabled) {
+    background: transparent;
+    box-shadow: none;
+  }
 }
 
 /* Icon-only: the inline padding is sized for a label beside the glyph, and
@@ -358,9 +371,11 @@
 /* Icon-only chrome is guided by the baked ink ring supplied by its consumer.
    A pale material plate competes with that gesture and reads as a default
    browser highlight on the paper surface. */
-.chromeBare:hover:not(:disabled) {
-  background: transparent;
-  box-shadow: none;
+@media (hover: hover) {
+  .chromeBare:hover:not(:disabled) {
+    background: transparent;
+    box-shadow: none;
+  }
 }
 
 /* ── onMedia ──────────────────────────────────────── */
@@ -372,6 +387,7 @@
    control beside the gold CTA. */
 .onMedia {
   composes: base;
+  composes: cw-role-on-media from global;
   position: relative;
   overflow: hidden;
   isolation: isolate;
@@ -434,6 +450,7 @@
    so the two marks can never both be drawn. */
 .text {
   composes: base;
+  composes: cw-role-text from global;
   min-width: 0;
   /* A sentence, not a plate — capping it would wrap the label mid-phrase. */
   max-width: none;
@@ -451,7 +468,25 @@
   text-decoration: none;
 }
 
-.text:hover:not(:disabled) {
+@media (hover: hover) {
+  .text:hover:not(:disabled) {
+    color: var(--cw-platform-text);
+  }
+}
+
+/* PRESS ON THE ROLES WITH NO PLATE (2026-09-14). `primary` and `secondary`
+   answer a press by running the lift backwards. `chrome`/`chromeBare` carry
+   no plate to push down; their answer is the ink ring running full while held,
+   which arrives from globals.css → "PRESS IS THE MARK RUN FULL" — nothing is
+   needed here for those two.
+
+   `text` needs a line. Its resting colour is `--cw-platform-muted`, so the ink
+   alone would change the stroke under the words and leave the words unmoved,
+   which reads as the underline flickering rather than the link answering. It
+   takes the full text colour — what its hover does. On a mouse those are two
+   moments of one gesture; on a finger, with hover gated, the press is the only
+   one there is. */
+.text:active:not(:disabled) {
   color: var(--cw-platform-text);
 }
 
@@ -464,8 +499,13 @@
     transition: none;
   }
 
-  .base:hover,
   .base:active {
     transform: none;
+  }
+
+  @media (hover: hover) {
+    .base:hover {
+      transform: none;
+    }
   }
 }

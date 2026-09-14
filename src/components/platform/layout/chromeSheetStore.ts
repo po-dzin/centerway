@@ -64,6 +64,44 @@ export function isChromeSheetOpen() {
   return openCount > 0;
 }
 
+/* ONE SHEET AT A TIME, HANDED OVER RATHER THAN CLOSED AND REOPENED (2026-09-13).
+   The burger and the avatar are separate sheets with separate state, and they
+   were exclusive only by accident: the `pointerdown` that reached for the
+   second one landed outside the first and closed it, and the second opened on
+   the `click` that followed. Between those two events the browser painted
+   frames with no sheet at all — the scrim gone, the islands dropped back to
+   their row, the bar unlocked — and then the whole thing unfolded again. On
+   the admin panel and the storefront's phone chrome that read as the menu
+   blinking every time the reader moved from one control to the other.
+
+   So the sheets know about each other. A sheet that opens closes the others in
+   the SAME event handler, which React batches into one render — the open state
+   is handed over, never dropped. The outside click leaves a sibling's trigger
+   alone, because that trigger is about to do the closing itself. */
+const openSheets = new Map<symbol, () => void>();
+
+/** Registered by a sheet while it is open, with the way to close it. */
+export function registerOpenSheet(id: symbol, close: () => void): () => void {
+  openSheets.set(id, close);
+  return () => {
+    if (openSheets.get(id) === close) openSheets.delete(id);
+  };
+}
+
+/** Close every open sheet but `id`. Returns whether any was open. */
+export function closeOtherSheets(id: symbol): boolean {
+  let handed = false;
+  for (const [other, close] of openSheets) {
+    if (other === id) continue;
+    close();
+    handed = true;
+  }
+  return handed;
+}
+
+/** The marker a chrome control's trigger carries, so outside-clicks can tell. */
+export const CHROME_SHEET_TRIGGER = "data-cw-chrome-trigger";
+
 /** The server renders no sheet, so the bar is never locked there. */
 export function chromeSheetClosedOnServer() {
   return false;

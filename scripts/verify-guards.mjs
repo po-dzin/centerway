@@ -92,6 +92,20 @@ const gates = [
     // two ratchets that fail on the next new literal rather than on the ones
     // already counted. See docs/design-system/geometry-audit-2026-09-07.md.
   },
+  {
+    script: "guard:motion",
+    title: "Motion: no movement without a name",
+    // A ratchet against data/design-tokens/motion-baseline.json: a file may keep
+    // the literal timings it has and may not grow more. New timings use the
+    // --cw-motion-* / --cw-ease-* tokens. See docs "Movement".
+  },
+  {
+    script: "guard:pointer",
+    title: "Hover is a pointer state",
+    // A ratchet against data/design-tokens/pointer-baseline.json: every new
+    // :hover rule sits inside @media (hover: hover), because touch browsers
+    // latch hover onto the last thing tapped. See docs "Hover is a pointer state".
+  },
   { script: "generator:validate", title: "Generated screens" },
   {
     script: "generator:determinism",

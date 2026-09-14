@@ -441,8 +441,10 @@
   transition: color 160ms ease;
 }
 
-.cwn__menu a:hover {
-  color: var(--cw-nav-active-ink);
+@media (hover: hover) {
+  .cwn__menu a:hover {
+    color: var(--cw-nav-active-ink);
+  }
 }
 
 .cwn__menu a:focus-visible,

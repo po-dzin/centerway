@@ -712,13 +712,37 @@
   outline-offset: -4px;
 }
 
-/* The overlay sits over the button, so the button's own :hover never fires —
-   the card drives the same answer `.secondary:hover` gives, from one place. */
-.programTile:hover .programLink,
+/* The CTA is no longer the element the pointer or the keyboard lands on — the
+   overlay sits on top of it — so the card drives its states, with the same
+   answer `.secondary:hover` gives its own plate (the CTA composes that role).
+
+   `:has()` rather than a sibling combinator: the card is what reacts. Focus
+   answers at every pointer; hover only where a pointer can hover, the query
+   the button contract's own hover rules take. */
 .programTile:has(.programTileOverlay:focus-visible) .programLink {
   transform: translateY(var(--ds-button-lift));
   background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
   box-shadow: var(--cw-mat-shadow-soft);
+}
+
+@media (hover: hover) {
+  .programTile:hover .programLink {
+    transform: translateY(var(--ds-button-lift));
+    background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
+    box-shadow: var(--cw-mat-shadow-soft);
+  }
+}
+
+/* PRESS, ON THE CARD AND NOT ON THE BUTTON (2026-09-14), because the card is
+   what a finger lands on. `.programTileOverlay` is the click target and a child
+   of the tile, so `:active` reaches the tile the same way `:hover` does and the
+   tile's own CTA shows the answer: it settles by `--cw-press-settle` instead
+   of lifting. With hover gated to pointers, this is the only response the rail
+   gives on a phone. Outside the hover query on purpose. */
+.programTile:active .programLink {
+  transform: translateY(var(--cw-press-settle));
+  background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
+  box-shadow: none;
 }
 
 .programTilePrice {
@@ -849,7 +873,13 @@
     transition: none;
   }
 
-  .programLink:hover {
+  @media (hover: hover) {
+    .programLink:hover {
+      transform: none;
+    }
+  }
+
+  .programTile:active .programLink {
     transform: none;
   }
 }

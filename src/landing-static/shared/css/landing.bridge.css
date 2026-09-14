@@ -880,8 +880,10 @@ body.cw-nav-open .cw-nav__drawer { visibility: visible; pointer-events: auto; }
   min-height: var(--landing-size-cta-min-height, var(--ds-button-min-height, var(--ds-touch-target-min, 3rem)));
 }
 [data-cw-landing="short"] .cw-nav__cta .openModal::before { display: none; }
-[data-cw-landing="short"] .cw-nav__cta .openModal:hover {
-  background: var(--landing-color-primary-strong, #c90008);
+@media (hover: hover) {
+  [data-cw-landing="short"] .cw-nav__cta .openModal:hover {
+    background: var(--landing-color-primary-strong, #c90008);
+  }
 }
 
 body.cw-nav-open { overflow: hidden; }

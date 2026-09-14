@@ -259,9 +259,22 @@
   min-width: 0;
 }
 
-.glance:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--cw-mat-shadow-soft);
+@media (hover: hover) {
+  .glance:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--cw-mat-shadow-soft);
+  }
+}
+
+/* PRESS IS THE STATE A FINGER HAS (2026-09-14). Hover is gated behind
+   `@media (hover: hover)` above, so on a phone this object used to receive a tap
+   and say nothing. While held it settles IN by `--cw-press-settle` — the mirror
+   of the lift it takes under a pointer. Deliberately outside the hover query:
+   a mouse presses too, and a press is the one state a touch device can produce.
+   Same idea as globals.css → "PRESS IS THE MARK RUN FULL". */
+.glance:active {
+  transform: translateY(var(--cw-press-settle));
+  box-shadow: none;
 }
 
 .glance:focus-visible {
@@ -362,7 +375,15 @@
     transition: none;
   }
 
-  .glance:hover {
+  @media (hover: hover) {
+    .glance:hover {
+      transform: none;
+    }
+  }
+
+  /* The settle goes with the lift, and for the same reason: the state still
+     reads — the shadow changes — and only the movement is withheld. */
+  .glance:active {
     transform: none;
   }
 }
@@ -513,11 +534,18 @@
     transform 160ms ease;
 }
 
-.avatarNotice:hover .avatarNoticePop,
 .avatarNotice:focus-within .avatarNoticePop {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
+}
+
+@media (hover: hover) {
+  .avatarNotice:hover .avatarNoticePop {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1389,8 +1417,10 @@
   flex: none;
 }
 
-.authorAddIcon:hover:not(:disabled) {
-  color: var(--cw-platform-text);
+@media (hover: hover) {
+  .authorAddIcon:hover:not(:disabled) {
+    color: var(--cw-platform-text);
+  }
 }
 
 /* A dotted underline is the standard hint that a title attribute is behind a
@@ -1567,8 +1597,10 @@
   color: var(--cw-platform-muted);
 }
 
-.authorIconAction:hover:not(:disabled) {
-  color: var(--cw-platform-text);
+@media (hover: hover) {
+  .authorIconAction:hover:not(:disabled) {
+    color: var(--cw-platform-text);
+  }
 }
 
 .authorPhotoPreview {
@@ -1749,10 +1781,12 @@
     color 120ms ease;
 }
 
-.authorPhotoEmpty:hover,
-.authorBackgroundEmpty:hover {
-  border-color: var(--cw-mat-stroke-quiet, var(--cw-platform-border));
-  color: var(--cw-platform-text);
+@media (hover: hover) {
+  .authorPhotoEmpty:hover,
+  .authorBackgroundEmpty:hover {
+    border-color: var(--cw-mat-stroke-quiet, var(--cw-platform-border));
+    color: var(--cw-platform-text);
+  }
 }
 
 .authorPhotoEmpty:has(.visuallyHidden:focus-visible),

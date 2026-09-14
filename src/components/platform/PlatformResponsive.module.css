@@ -420,12 +420,18 @@
     backdrop-filter: none;
   }
 
-  .header .menuButton:hover,
   .header .menuButton:focus-visible,
-  .shellOverlay .menuButton:hover,
   .shellOverlay .menuButton:focus-visible {
     background: transparent;
     box-shadow: none;
+  }
+
+  @media (hover: hover) {
+    .header .menuButton:hover,
+    .shellOverlay .menuButton:hover {
+      background: transparent;
+      box-shadow: none;
+    }
   }
 
   /* Touch browsers keep :hover after a tap. The hand-drawn selector therefore
@@ -702,9 +708,14 @@
     border-radius: var(--cw-radius-sm);
   }
 
-  .profileEntryMobile:hover,
   .profileEntryMobile:focus-visible {
     background: var(--mobile-menu-item-hover-bg);
+  }
+
+  @media (hover: hover) {
+    .profileEntryMobile:hover {
+      background: var(--mobile-menu-item-hover-bg);
+    }
   }
 
   .profileEntryMobile[data-auth-state="guest"] {
@@ -713,10 +724,16 @@
     box-shadow: none;
   }
 
-  .profileEntryMobile[data-auth-state="guest"]:hover,
   .profileEntryMobile[data-auth-state="guest"]:focus-visible {
     background: var(--mobile-menu-item-hover-bg);
     filter: none;
+  }
+
+  @media (hover: hover) {
+    .profileEntryMobile[data-auth-state="guest"]:hover {
+      background: var(--mobile-menu-item-hover-bg);
+      filter: none;
+    }
   }
 
   .profileWrapMobile .profileMenu {
@@ -836,11 +853,18 @@
     content: none;
   }
 
-  .navLayer .nav a:hover,
   .navLayer .nav a:focus-visible {
     color: var(--platform-header-fg);
     background: transparent;
     outline: none;
+  }
+
+  @media (hover: hover) {
+    .navLayer .nav a:hover {
+      color: var(--platform-header-fg);
+      background: transparent;
+      outline: none;
+    }
   }
 
   .navLayer .nav a[aria-current="page"] {
@@ -858,10 +882,16 @@
     color: var(--platform-header-muted-fg);
   }
 
-  .shellOverlay .navLayer .nav a:hover,
   .shellOverlay .navLayer .nav a:focus-visible {
     color: var(--platform-header-fg);
     background: transparent;
+  }
+
+  @media (hover: hover) {
+    .shellOverlay .navLayer .nav a:hover {
+      color: var(--platform-header-fg);
+      background: transparent;
+    }
   }
 
   .shellOverlay .navLayer .nav a[aria-current="page"] {

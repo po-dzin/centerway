@@ -294,7 +294,9 @@ export function PlatformAccountMenu({
     /* A hard navigation, not a router push. Sign-out invalidates data every
        shell already has in memory — the role cache, the shelf, an open course —
        and the root of the current origin is the one destination that exists on
-       all three. */
+       all three. That is exactly what the lint rule steers away from, so it is
+       told so here rather than obeyed. */
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- sign-out must drop every in-memory cache
     if (typeof window !== "undefined") window.location.assign("/");
   };
 

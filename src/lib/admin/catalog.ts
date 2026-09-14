@@ -28,6 +28,7 @@ import {
   type CourseCategory,
 } from "@/lms-core";
 import { listLiveCourses } from "@/lib/lms/liveCatalog";
+import { noteForAccessRule } from "@/lib/lms/accessTerm";
 import type { CatalogOffer, CatalogRow, PendingDiff, SaleBlocker } from "@/lib/admin/catalogTypes";
 
 /* The shapes live in catalogTypes.ts so the screen can name them without
@@ -352,6 +353,15 @@ export async function saveOffer(input: SaveOfferInput) {
   const { error } = await db.from("lms_course_offers").upsert(payload, { onConflict: "course_id" });
   if (error) throw new AccessError(error.message, 500);
 
+  /* THE WORDS FOLLOW THE TERM (2026-09-14). The storefront prints
+     `access_note` beside the price, and the author picks it from the same
+     presets the term is made of (`accessTerm.ts`). A term set here that the
+     page did not repeat would be the old disagreement from the other side, so
+     the owner's choice rewrites the live note too. */
+  const accessNote = noteForAccessRule({ accessDays, accessLifetime: lifetime });
+  const { error: noteError } = await db.from("lms_courses").update({ access_note: accessNote }).eq("id", course.id);
+  if (noteError) throw new AccessError(noteError.message, 500);
+
   await writeAudit(db, {
     actorId: input.actorId,
     action: "catalog.offer.save",
@@ -364,6 +374,7 @@ export async function saveOffer(input: SaveOfferInput) {
       currency: payload.currency,
       access_days: payload.access_days,
       access_lifetime: payload.access_lifetime,
+      access_note: accessNote,
       created: !existing,
     },
   });

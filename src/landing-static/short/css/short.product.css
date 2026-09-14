@@ -268,9 +268,11 @@ button::before {
   transform: scale(0.95);
 }
 
-.openModal:hover {
-  background-color: var(--landing-color-primary-strong);
-  transform: scale(0.95);
+@media (hover: hover) {
+  .openModal:hover {
+    background-color: var(--landing-color-primary-strong);
+    transform: scale(0.95);
+  }
 }
 
 /* Directional cue on the hero CTA only — matches the arrow affordance already
@@ -280,8 +282,10 @@ button::before {
   margin-left: 0.3em;
   transition: transform 0.25s;
 }
-.openModal:hover .cta-arrow {
-  transform: translateX(3px);
+@media (hover: hover) {
+  .openModal:hover .cta-arrow {
+    transform: translateX(3px);
+  }
 }
 
 section {
@@ -1245,8 +1249,10 @@ img {
   transition: transform 0.3s ease;
 }
 
-#gridcon img:hover {
-  transform: scale(1.2);
+@media (hover: hover) {
+  #gridcon img:hover {
+    transform: scale(1.2);
+  }
 }
 
 #iframe {
@@ -1400,8 +1406,10 @@ img {
   text-decoration: none;
 }
 
-.footer-section ul li a:hover {
-  text-decoration: underline;
+@media (hover: hover) {
+  .footer-section ul li a:hover {
+    text-decoration: underline;
+  }
 }
 
 .footer #footer-right .item {
@@ -1698,11 +1706,13 @@ body.modal-open {
   background: var(--landing-color-primary);
 }
 
-.section-hero .openModal:hover,
-.section-offer .openModal:hover,
-.section-microcta .openModal:hover,
-[data-sticky-menu] .openModal:hover {
-  background: var(--landing-color-primary-strong);
+@media (hover: hover) {
+  .section-hero .openModal:hover,
+  .section-offer .openModal:hover,
+  .section-microcta .openModal:hover,
+  [data-sticky-menu] .openModal:hover {
+    background: var(--landing-color-primary-strong);
+  }
 }
 
 .section-proof {
@@ -2077,8 +2087,14 @@ body.modal-open {
   color: #fff !important;
 }
 
-.utility-status-actions a.btn.primary:hover,
 .utility-status-actions a.btn.primary:focus-visible {
   background: #a40006 !important; /* ds-allow-raw-hex: token chain is invalid here, see note above */
   border-color: #a40006 !important; /* ds-allow-raw-hex: token chain is invalid here, see note above */
+}
+
+@media (hover: hover) {
+  .utility-status-actions a.btn.primary:hover {
+    background: #a40006 !important; /* ds-allow-raw-hex: token chain is invalid here, see note above */
+    border-color: #a40006 !important; /* ds-allow-raw-hex: token chain is invalid here, see note above */
+  }
 }
