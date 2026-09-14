@@ -68,9 +68,7 @@ async function clickFirstEnabledOption(page) {
  * The forward control is «Далі» through step 11 and «Завершити тест» on 12.
  */
 async function clickForward(page) {
-  const forward = page
-    .getByRole("button", { name: /^(Далі|Завершити тест)$/ })
-    .first();
+  const forward = page.getByRole("button", { name: /^(Далі|Завершити тест)$/ }).first();
   if ((await forward.count()) < 1) return false;
   await forward.click({ timeout: timeoutMs });
   return true;

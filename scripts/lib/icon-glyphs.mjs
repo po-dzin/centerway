@@ -582,11 +582,7 @@ export const ICONS = {
        lines of falling length, two of them curling back on themselves where a
        gust turns. The curl is the vortex — a literal spiral was the other
        option and it collides with the emblem, which is already concentric. */
-    d: [
-      "M3.4 7.6h7.6a2.8 2.8 0 1 0-2.8-2.8",
-      "M3.4 12.2h11.2a3 3 0 1 1-3 3",
-      "M3.4 16.8h5.2",
-    ],
+    d: ["M3.4 7.6h7.6a2.8 2.8 0 1 0-2.8-2.8", "M3.4 12.2h11.2a3 3 0 1 1-3 3", "M3.4 16.8h5.2"],
   },
   pitta: {
     group: "Dosha",

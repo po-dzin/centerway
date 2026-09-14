@@ -225,12 +225,7 @@ async function checkRuntimeSemantics() {
     const introPromiseText = page.getByText("12 питань", { exact: false }).first();
     await introPromiseText.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined);
 
-    const introChecks = [
-      "12 питань",
-      "Як це працює",
-      "Почати тест",
-      "Що таке доша і межі методу",
-    ];
+    const introChecks = ["12 питань", "Як це працює", "Почати тест", "Що таке доша і межі методу"];
 
     let introPass = 0;
     for (const phrase of introChecks) {

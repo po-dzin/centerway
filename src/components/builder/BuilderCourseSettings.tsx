@@ -349,16 +349,16 @@ export function BuilderCourseSettings({
             is still compatible with revoking a refunded seat. Closed list, not
             free text (2026-09-13): the storefront prints exactly what is
             chosen here, so the choice is the words a buyer reads. */}
-        <ChoiceRow
-          label="Термін доступу"
-          required={showcase}
-          clearable
-          hint="Що обіцяємо покупцю. Друкується на сторінці курсу поряд з ціною."
-          options={ACCESS_NOTE_OPTIONS.map((value) => ({ value, label: value }))}
-          value={course.accessNote as (typeof ACCESS_NOTE_OPTIONS)[number] | undefined}
-          onChange={(next) => onChange(["accessNote"], next)}
-        />
-        {/* `authorNote` moved to its own tab (2026-08-28) — see
+          <ChoiceRow
+            label="Термін доступу"
+            required={showcase}
+            clearable
+            hint="Що обіцяємо покупцю. Друкується на сторінці курсу поряд з ціною."
+            options={ACCESS_NOTE_OPTIONS.map((value) => ({ value, label: value }))}
+            value={course.accessNote as (typeof ACCESS_NOTE_OPTIONS)[number] | undefined}
+            onChange={(next) => onChange(["accessNote"], next)}
+          />
+          {/* `authorNote` moved to its own tab (2026-08-28) — see
             `BuilderCourseAuthor.tsx`. It sits beside the byline it modifies
             rather than beside the rest of the storefront copy, now that the
             byline has a tab of its own to sit in. */}

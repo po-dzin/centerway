@@ -6,15 +6,9 @@ import { isThemeChoice, THEME_BOOT_SCRIPT, THEME_STORAGE_KEY, themeCookieAttribu
 // `auth/sessionCookie.test.ts` for the domain-scoping rule this reuses.
 describe("themeCookieAttributes", () => {
   it("scopes to the parent domain on the real site, so www/my/build share it", () => {
-    expect(themeCookieAttributes("www.centerway.net.ua", "https:")).toContain(
-      "domain=.centerway.net.ua",
-    );
-    expect(themeCookieAttributes("my.centerway.net.ua", "https:")).toContain(
-      "domain=.centerway.net.ua",
-    );
-    expect(themeCookieAttributes("way21.centerway.net.ua", "https:")).toContain(
-      "domain=.centerway.net.ua",
-    );
+    expect(themeCookieAttributes("www.centerway.net.ua", "https:")).toContain("domain=.centerway.net.ua");
+    expect(themeCookieAttributes("my.centerway.net.ua", "https:")).toContain("domain=.centerway.net.ua");
+    expect(themeCookieAttributes("way21.centerway.net.ua", "https:")).toContain("domain=.centerway.net.ua");
   });
 
   it("stays host-only off the real site", () => {
