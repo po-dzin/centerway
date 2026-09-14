@@ -237,9 +237,13 @@
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  justify-content: center;
-  width: var(--ds-touch-target-min);
+  justify-content: flex-end;
+  gap: var(--cw-space-xs);
+  min-width: var(--ds-touch-target-min);
   height: var(--ds-touch-target-min);
+  /* The chevron keeps the spot it had centred in a 44px box; the dot, when there
+     is one, stands beside it instead of on top of it. */
+  padding-inline-end: calc((var(--ds-touch-target-min) - 18px) / 2);
   margin-inline-end: calc(-1 * var(--cw-space-sm));
   color: var(--cw-muted);
 }
@@ -252,12 +256,10 @@
   transform: rotate(180deg);
 }
 
-/* «There is a note inside»: a dot on the chevron's shoulder, red when the note
-   is why the course cannot be sold. */
+/* «There is a note inside»: a dot just before the chevron, red when the note is
+   why the course cannot be sold. */
 .rowNoteDot {
-  position: absolute;
-  inset-block-start: var(--cw-space-sm);
-  inset-inline-end: var(--cw-space-xs);
+  flex: 0 0 auto;
   width: var(--cw-space-xs);
   height: var(--cw-space-xs);
   border-radius: var(--cw-radius-pill);
