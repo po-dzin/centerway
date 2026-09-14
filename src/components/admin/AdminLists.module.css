@@ -112,13 +112,13 @@
 .row {
   composes: cw-list-item from global;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--cw-space-sm);
   padding: var(--cw-space-md);
 }
 
 .row[data-has-lead="true"] {
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
 }
 
 /* The lead stands the full height of the row. A thumbnail in it is an upright
@@ -132,7 +132,7 @@
 }
 
 .row[data-has-lead="true"] > .rowBody {
-  grid-column: 2;
+  grid-column: 2 / -1;
 }
 
 .rowLead > .itemThumb {
@@ -143,7 +143,7 @@
 }
 
 .rowBody {
-  grid-column: 1;
+  grid-column: 1 / -1;
   grid-row: 1;
   display: flex;
   flex-direction: column;
@@ -152,8 +152,8 @@
 }
 
 /* ONE FACT PER LINE, ON EVERY SCREEN — see `AdminRow`. A line is one line with
-   an ellipsis at every width, so a list reads even on a phone too; the row's
-   disclosure (its title line) lets every line wrap in place. */
+   an ellipsis at every width, so a list reads even on a phone too; the «i» in
+   the corner opens every fact unclipped in a popover over the list. */
 .rowLine {
   display: block;
   overflow: hidden;
@@ -195,122 +195,155 @@
   flex: 0 0 auto;
 }
 
-/* The title line IS the disclosure. Its box is the touch floor, pulled back
-   into the 1.5rem line by a negative block margin, so the button is easy to hit
-   and the line keeps the height of every other line. */
-.rowHead {
-  display: flex;
-  align-items: center;
-  gap: var(--cw-space-2xs);
-  width: 100%;
-  min-width: 0;
-  min-height: var(--ds-touch-target-min);
-  margin-block: calc((1.5rem - var(--ds-touch-target-min)) / 2);
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--cw-platform-text);
-  font: inherit;
-  text-align: start;
-  cursor: pointer;
-}
-
-.rowHead:focus-visible {
-  border-radius: var(--cw-radius-md);
-  outline: none;
-  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
-}
-
 .rowTitle {
-  flex: 1 1 auto;
   overflow: hidden;
   min-width: 0;
+  margin: 0;
+  color: var(--cw-platform-text);
   font-size: var(--ds-type-body-sm-size);
   font-weight: 500;
   line-height: 1.5rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* Only the title line shares its width with the corner; the lines under it
+     run to the card's padding. Room for one icon, or two. */
+  padding-inline-end: calc(
+    var(--ds-touch-target-min) - (var(--ds-touch-target-min) - var(--ds-icon-in-control)) / 2 + var(--cw-space-xs)
+  );
 }
 
-.rowDisclosure {
-  position: relative;
-  display: inline-flex;
-  flex: 0 0 auto;
+.row:has(> .rowCorner > :nth-child(2)) .rowTitle {
+  padding-inline-end: calc(
+    2 * var(--ds-touch-target-min) - (var(--ds-touch-target-min) - var(--ds-icon-in-control)) / 2 + var(--cw-space-xs)
+  );
+}
+
+/* THE CORNER: the «i» and the icon actions, top-right at every width. Each box
+   is the touch floor, pulled up into the title's 1.5rem line and out to the
+   row's padding by negative margins, so the glyphs — not their invisible boxes —
+   line up with the title and with the card's edge. It lies over the body's
+   first line (the body spans its column too), so on a phone it costs the title
+   its width and nothing else — as a column of its own it squeezed every line
+   under it and wrapped the links onto a second line. */
+.rowCorner {
+  z-index: 1;
+  justify-self: end;
+  grid-column: -2 / -1;
+  grid-row: 1;
+  display: flex;
+  align-self: start;
   align-items: center;
-  justify-content: center;
-  width: var(--ds-touch-target-min);
-  height: var(--ds-touch-target-min);
-  margin-inline-end: calc(-1 * var(--cw-space-sm));
-  color: var(--cw-muted);
+  margin-block-start: calc((1.5rem - var(--ds-touch-target-min)) / 2);
+  margin-inline-end: calc((var(--ds-icon-in-control) - var(--ds-touch-target-min)) / 2);
 }
 
-/* Open: the «i» takes the text colour, the way a pressed control reads. */
-.row[data-open="true"] .rowDisclosure {
-  color: var(--cw-platform-text);
-}
-
-/* «There is a note inside»: a dot sitting on the «i» circle at 45°, up and to
-   the right — red when the note is why the course cannot be sold. The glyph is
-   18px, its circle r = 8.4/24 of that = 6.3px, so 45° is 6.3 × 0.707 ≈ 4.45px
-   from the centre on both axes. */
+/* «There is a note inside»: a dot on the «i» circle at 45°, up and to the right,
+   red when the note is why the course cannot be sold. The circle is r = 8.4 of
+   the glyph's 24 units, so 45° sits 0.35 × 0.707 ≈ 0.2475 of the glyph from its
+   centre on both axes — whatever size the canon gives the glyph. */
 .rowNoteDot {
+  --cw-row-dot: calc(var(--ds-icon-in-control) * 0.28);
+  --cw-row-dot-offset: calc(var(--ds-icon-in-control) * 0.2475);
   position: absolute;
-  inset-block-start: calc(50% - 4.45px - 3px);
-  inset-inline-start: calc(50% + 4.45px - 3px);
-  width: 6px;
-  height: 6px;
+  inset-block-start: calc(50% - var(--cw-row-dot-offset) - var(--cw-row-dot) / 2);
+  inset-inline-start: calc(50% + var(--cw-row-dot-offset) - var(--cw-row-dot) / 2);
+  width: var(--cw-row-dot);
+  height: var(--cw-row-dot);
   border-radius: var(--cw-radius-pill);
   background: var(--cw-muted);
   box-shadow: 0 0 0 2px var(--cw-mat-surface);
+  pointer-events: none;
 }
 
 .rowNoteDot[data-tone="alert"] {
   background: var(--cw-danger);
 }
 
-/* The open row: every line wraps, the badges wrap, the note is a paragraph. */
-.row[data-open="true"] .rowTitle,
-.row[data-open="true"] .rowLine {
-  overflow: visible;
-  overflow-wrap: anywhere;
-  white-space: normal;
-}
-
-/* An unfolded line wraps between facts, not inside one: «Веде платформа» stays
-   one piece. */
-.row[data-open="true"] .rowLine {
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: var(--cw-space-xs);
-}
-
-.row[data-open="true"] .rowLine[data-slot="links"] {
-  column-gap: var(--cw-space-sm);
-}
-
-.row[data-open="true"] .rowLine > * {
-  max-width: 100%;
-  margin-inline-start: 0;
-}
-
-.row[data-open="true"] .rowBadges {
-  flex-wrap: wrap;
-  height: auto;
-  overflow: visible;
-}
-
-.rowNoteText {
-  margin: var(--cw-space-2xs) 0 0;
-  padding: var(--cw-space-xs) var(--cw-space-sm);
+/* THE FULL ROW, OVER THE LIST: every fact unclipped and the note, on the paper
+   sheet of the cabinet's field hints. The list under it never moves. */
+.rowInfo {
+  max-width: min(24rem, calc(100vw - 2 * var(--cw-space-md)));
+  margin: 0;
+  padding: var(--cw-space-sm);
   border: 1px solid var(--cw-mat-stroke-quiet);
   border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  background-image: var(--cw-mat-grain-image);
+  box-shadow: var(--cw-mat-shadow-raised);
   color: var(--cw-platform-text);
   font-size: var(--ds-type-body-sm-size);
   line-height: 1.45;
 }
 
-.rowNoteText[data-tone="alert"] {
+/* `display` only while open: set on the bare class it would beat the UA's
+   `[popover]:not(:popover-open) { display: none }` and show every sheet. */
+.rowInfo:popover-open {
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.rowInfo[data-tone="alert"] {
   border-color: color-mix(in srgb, var(--cw-danger) 45%, var(--cw-mat-stroke-quiet));
+}
+
+.rowInfoTitle {
+  margin: 0;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+/* A fact wraps between facts, not inside one: «Веде платформа» stays one piece. */
+.rowInfoLine,
+.rowInfoBadges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-2xs) var(--cw-space-xs);
+  min-width: 0;
+  margin: 0;
+  color: var(--cw-muted);
+  font-size: var(--ds-type-label-size);
+  overflow-wrap: anywhere;
+}
+
+.rowInfoLine > * {
+  max-width: 100%;
+}
+
+.rowInfoNote {
+  margin: var(--cw-space-2xs) 0 0;
+  padding-block-start: var(--cw-space-xs);
+  border-block-start: 1px solid var(--cw-mat-stroke-quiet);
+}
+
+.rowInfoNote[data-tone="alert"] {
+  color: var(--cw-danger);
+}
+
+/* Under the «i», across the screen on a phone: anchored to the button a 24rem
+   sheet ran off a 375px screen, so below 640px it takes the width of the screen
+   less its margins. From 640px it hangs from the «i» toward the row's body. */
+@supports (anchor-name: --cw-row-info) {
+  .rowInfo {
+    position-area: block-end span-all;
+    position-try-fallbacks: block-start span-all;
+    justify-self: center;
+    width: calc(100vw - 2 * var(--cw-space-md));
+    max-width: none;
+    margin: var(--cw-space-2xs) 0;
+  }
+
+  @media (min-width: 640px) {
+    .rowInfo {
+      position-area: block-end span-inline-start;
+      position-try-fallbacks:
+        block-start span-inline-start,
+        block-end span-inline-end;
+      justify-self: auto;
+      width: auto;
+      max-width: min(24rem, calc(100vw - 2 * var(--cw-space-md)));
+    }
+  }
 }
 
 .rowControls {
@@ -328,24 +361,6 @@
   width: auto;
 }
 
-/* Controls that are only icons (no select) never take a line of their own: a
-   lone person icon under the body was 44px of empty row on a phone. They stand
-   top-right beside the body at every width, as all controls do from 900px. */
-.row:has(> .rowControls):not(:has(> .rowControls > select)) {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.row[data-has-lead="true"]:has(> .rowControls):not(:has(> .rowControls > select)) {
-  grid-template-columns: auto minmax(0, 1fr) auto;
-}
-
-.rowControls:not(:has(> select)) {
-  grid-column: -2 / -1;
-  grid-row: 1;
-  align-self: start;
-  margin-block-start: calc((1.5rem - var(--ds-touch-target-min)) / 2);
-}
-
 .rowFooter {
   grid-column: 1 / -1;
   display: flex;
@@ -359,21 +374,39 @@
     width: var(--ds-card-thumb-width);
   }
 
-  .row {
-    grid-template-columns: minmax(0, 1fr) auto;
+  .row:has(> .rowControls) {
+    grid-template-columns: minmax(0, 1fr) auto auto;
     column-gap: var(--cw-space-lg);
   }
 
-  .row[data-has-lead="true"] {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+  .row[data-has-lead="true"]:has(> .rowControls) {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
   }
 
+  .row:has(> .rowControls) > .rowBody {
+    grid-column: 1 / -3;
+  }
+
+  .row[data-has-lead="true"]:has(> .rowControls) > .rowBody {
+    grid-column: 2 / -3;
+  }
+
+  /* Beside the controls the title has its own column; no room to keep. */
+  .row:has(> .rowControls) .rowTitle {
+    padding-inline-end: 0;
+  }
+
+  /* The select is the row's main decision and sits before the corner. Its line
+     is the title's: a touch-floor box centred on the 1.5rem title line, the same
+     pull the corner takes, so select, «i» and delete share one centre line. */
   .rowControls {
-    grid-column: -2 / -1;
+    grid-column: -3 / -2;
     grid-row: 1;
     flex-wrap: nowrap;
     align-self: start;
     justify-content: flex-end;
+    min-height: var(--ds-touch-target-min);
+    margin-block-start: calc((1.5rem - var(--ds-touch-target-min)) / 2);
   }
 
   .rowControls > select {
@@ -389,8 +422,17 @@
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  min-width: var(--ds-touch-target-min);
-  min-height: var(--ds-touch-target-min);
+  position: relative;
+  width: var(--ds-touch-target-min);
+  height: var(--ds-touch-target-min);
+}
+
+/* THE CANON GLYPH: `--ds-icon-in-control` = the box × 0.53 — 48px box → 25px
+   glyph on touch, 36px → 19px with a mouse — the rule `.square` buttons and the
+   rail follow. The ink ring is not a glyph and keeps its own size. */
+.rowIcon :is(svg, img):not(:global(.cw-ink-icon-mark)) {
+  width: var(--ds-icon-in-control);
+  height: var(--ds-icon-in-control);
 }
 
 .rowIcon:disabled {

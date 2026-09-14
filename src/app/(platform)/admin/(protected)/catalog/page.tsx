@@ -624,17 +624,21 @@ function PublicationRow({
                 <option value="unlisted">{t("catalog_visibility_unlisted")}</option>
                 <option value="listed">{t("catalog_visibility_listed")}</option>
               </select>
-              <AdminRowIconAction
-                icon="trash"
-                label={t("catalog_delete")}
-                danger
-                opensDialog
-                onClick={() => setDialog("delete")}
-              />
             </>
           ) : (
             <p className={controls.hint}>{t("access_role_admin_only")}</p>
           )
+        }
+        actions={
+          canEdit ? (
+            <AdminRowIconAction
+              icon="trash"
+              label={t("catalog_delete")}
+              danger
+              opensDialog
+              onClick={() => setDialog("delete")}
+            />
+          ) : null
         }
       />
       {dialog === "review" ? (

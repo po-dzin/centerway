@@ -257,6 +257,7 @@ export const access = {
     en: "Product kind must be checkout or enquiry",
   },
   catalog_error_not_in_review: { uk: "Курс не в черзі на перевірку", en: "The course is not in the review queue" },
+  catalog_row_info: { uk: "Уся інформація", en: "Full details" },
   catalog_delete: { uk: "Видалити курс", en: "Delete course" },
   catalog_deleted: { uk: "Курс видалено", en: "Course deleted" },
   catalog_delete_failed: {

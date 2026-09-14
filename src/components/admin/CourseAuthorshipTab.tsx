@@ -149,7 +149,7 @@ export function CourseAuthorshipTab({
                   <span className={lists.itemMetaStrong}>{course.authorEmail ?? t("access_author_house")}</span>
                 </>
               }
-              controls={
+              actions={
                 canGrant ? (
                   <AdminRowIconAction
                     icon="user"

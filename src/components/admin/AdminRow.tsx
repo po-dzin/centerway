@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useId, type CSSProperties, type ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
+import { useI18n } from "@/components/I18nProvider";
 import type { CwIconName } from "@/components/iconNames";
 import lists from "@/components/admin/AdminLists.module.css";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
@@ -13,23 +14,23 @@ import { InteractionInkIcon } from "@/components/platform/InteractionInk";
  *
  *   lead      a thumbnail, avatar or status mark — optional
  *   body      one fact per line, in this order: title · sub · badges · meta · links
- *   controls  the row's standing decisions: a state select, icon actions.
+ *   controls  the row's standing decisions: a state select, a stage.
  *             Right of the body from 900px, under it on a phone.
+ *   corner    top-right at every width: the «i», then the icon `actions`
+ *             (delete, owner). An icon never takes a line of its own.
  *   footer    full width: fields every row has (a price form, a profile).
  *
- * ONE LINE PER FACT, ON EVERY SCREEN; THE ROW UNFOLDS ON DEMAND. Wrapping lines
- * kept a phone's slug and owner on the screen but made every card a different,
- * taller height. So a line is one line with an ellipsis at every width, and the
- * title line is a disclosure with an «i» at its end: tapping it lets every line wrap in place and shows
- * the row's note. A list stays even; the full text is one tap away.
+ * ONE LINE PER FACT, ON EVERY SCREEN; THE FULL TEXT OPENS OVER THE ROW. Wrapping
+ * lines made every card a different height, and unfolding the row in place made
+ * the tapped card grow and push the list. So a line is one line with an ellipsis
+ * at every width, and the «i» opens a popover over the list with every fact
+ * unclipped and the row's note. The list never moves.
  *
- * THE NOTE LIVES INSIDE THE UNFOLDED ROW. It was an «i» at the head of the
- * controls, which pushed the select sideways on the rows that had one. Now the
- * «i» ends the title line, a dot at its upper-right says there is something to read — tinted when the note
- * stops a sale — and the sentence is a paragraph of the open row.
+ * A dot on the «i» circle, at 45° up and to the right, says the row has a note —
+ * tinted when the note stops a sale.
  *
- * Destructive actions are icons in the controls; their confirmation is a
- * dialog, never a form unfolding inside the row.
+ * Destructive actions are icons in the corner; their confirmation is a dialog,
+ * never a form unfolding inside the row.
  */
 export function AdminRow({
   lead,
@@ -41,6 +42,7 @@ export function AdminRow({
   noteTone = "muted",
   links,
   controls,
+  actions,
   footer,
 }: {
   lead?: ReactNode;
@@ -52,29 +54,24 @@ export function AdminRow({
   noteTone?: "muted" | "alert";
   links?: ReactNode;
   controls?: ReactNode;
+  actions?: ReactNode;
   footer?: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const { t } = useI18n();
+  const id = useId();
+  /* Anchored per instance: an `anchor-name` written once in a stylesheet would
+     give every row's «i» the same name, and each popover would open beside the
+     last row's. Without anchor positioning it opens centred in the top layer. */
+  const anchor = `--cw-row-info-${id.replace(/[^a-zA-Z0-9]/g, "")}`;
+  const label = t("catalog_row_info");
 
   return (
-    <div className={lists.row} data-has-lead={lead ? "true" : undefined} data-open={open ? "true" : undefined}>
+    <div className={lists.row} data-has-lead={lead ? "true" : undefined}>
       {lead ? <div className={lists.rowLead}>{lead}</div> : null}
       <div className={lists.rowBody}>
-        <button
-          type="button"
-          className={lists.rowHead}
-          aria-expanded={open}
-          title={title}
-          onClick={() => setOpen((value) => !value)}
-        >
-          <span className={lists.rowTitle}>{title}</span>
-          <span className={lists.rowDisclosure} aria-hidden="true">
-            {note ? <span className={lists.rowNoteDot} data-tone={noteTone} /> : null}
-            <InteractionInkIcon>
-              <Icon name="info" size={18} />
-            </InteractionInkIcon>
-          </span>
-        </button>
+        <p className={lists.rowTitle} title={title}>
+          {title}
+        </p>
         {sub ? (
           <p className={lists.rowLine} data-slot="sub" title={sub}>
             {sub}
@@ -95,20 +92,48 @@ export function AdminRow({
             {links}
           </div>
         ) : null}
-        {open && note ? (
-          <p className={lists.rowNoteText} data-tone={noteTone}>
+      </div>
+      {controls ? <div className={lists.rowControls}>{controls}</div> : null}
+      <div className={lists.rowCorner}>
+        <button
+          type="button"
+          className={lists.rowIcon}
+          style={{ anchorName: anchor } as CSSProperties}
+          popoverTarget={id}
+          aria-label={label}
+          title={label}
+        >
+          <InteractionInkIcon>
+            <Icon name="info" size={24} />
+          </InteractionInkIcon>
+          {note ? <span className={lists.rowNoteDot} data-tone={noteTone} aria-hidden="true" /> : null}
+        </button>
+        {actions}
+      </div>
+      <div
+        className={lists.rowInfo}
+        data-tone={note ? noteTone : undefined}
+        style={{ positionAnchor: anchor } as CSSProperties}
+        popover="auto"
+        id={id}
+      >
+        <p className={lists.rowInfoTitle}>{title}</p>
+        {sub ? <p className={lists.rowInfoLine}>{sub}</p> : null}
+        {badges !== undefined ? <div className={lists.rowInfoBadges}>{badges}</div> : null}
+        {meta !== undefined ? <div className={lists.rowInfoLine}>{meta}</div> : null}
+        {note ? (
+          <p className={lists.rowInfoNote} data-tone={noteTone}>
             {note}
           </p>
         ) : null}
       </div>
-      {controls ? <div className={lists.rowControls}>{controls}</div> : null}
       {footer ? <div className={lists.rowFooter}>{footer}</div> : null}
     </div>
   );
 }
 
 /**
- * A compact icon action for the row's controls. Labelled for the screen reader
+ * A compact icon action for the row's corner. Labelled for the screen reader
  * and the pointer alike (`aria-label` + `title`). `danger` only tints the glyph
  * on hover and focus — the confirmation dialog is what carries the weight.
  */
@@ -138,7 +163,7 @@ export function AdminRowIconAction({
       onClick={onClick}
     >
       <InteractionInkIcon>
-        <Icon name={icon} size={18} />
+        <Icon name={icon} size={24} />
       </InteractionInkIcon>
     </button>
   );
