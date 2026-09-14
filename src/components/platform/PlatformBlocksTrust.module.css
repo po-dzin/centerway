@@ -251,12 +251,21 @@
 }
 
 /* The overlay covers the button, so the card drives the answer
-   `.secondary:hover` would give. */
-.guideCard:hover .guideLink,
+   `.secondary:hover` would give. Focus answers at every pointer; hover only
+   where a pointer can hover (docs/design-system.md → "Hover is a pointer
+   state"). */
 .guideCard:has(.guideOverlay:focus-visible) .guideLink {
   transform: translateY(var(--ds-button-lift));
   background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
   box-shadow: var(--cw-mat-shadow-soft);
+}
+
+@media (hover: hover) {
+  .guideCard:hover .guideLink {
+    transform: translateY(var(--ds-button-lift));
+    background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
+    box-shadow: var(--cw-mat-shadow-soft);
+  }
 }
 
 .guideBody {
