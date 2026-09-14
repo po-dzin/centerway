@@ -11,6 +11,7 @@ import { authorizedFetch } from "@/components/auth/authorizedFetch";
 import { Icon } from "@/components/Icon";
 import pageStyles from "@/components/admin/AdminPage.module.css";
 import controls from "@/components/admin/AdminControls.module.css";
+import { StateBadge } from "@/components/platform/StateBadge";
 
 interface AuditLogEntry {
   id: string;
@@ -117,7 +118,7 @@ export default function AuditLogPage() {
                       {log.actor_id.substring(0, 8)}...
                     </td>
                     <td className={surfaces.tdStrong}>
-                      <span className={surfaces.actionTag}>{log.action}</span>
+                      <StateBadge>{log.action}</StateBadge>
                     </td>
                     <td className={surfaces.td}>
                       {log.entity_type}{" "}

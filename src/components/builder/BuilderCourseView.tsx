@@ -73,7 +73,7 @@ import {
   subscribeToStructureWidth,
   type StructureView,
 } from "./builderStructureView";
-import { COURSE_STATE_LABELS } from "@/lib/lms/courseState";
+import { CourseStateBadge } from "@/components/platform/StateBadge";
 
 type State =
   | { status: "loading" }
@@ -841,9 +841,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
               maxLength={OFFER_TITLE_RAW_MAX}
               onChange={(value) => editCourse(["title"], value)}
             />
-            <span className={published ? styles.pillPublished : styles.pill}>
-              {published ? COURSE_STATE_LABELS.published.uk : COURSE_STATE_LABELS.draft.uk}
-            </span>
+            <CourseStateBadge state={published ? "published" : "draft"} lang="uk" />
           </div>
           {/* One shared hard limit holds both the page and two catalogue lines on
             the narrowest phone. The hint below only appears for an older
@@ -1101,9 +1099,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             </h2>
           </div>
           <div className={styles.releaseSummary}>
-            <span className={published ? styles.pillPublished : styles.pill}>
-              {published ? COURSE_STATE_LABELS.published.uk : COURSE_STATE_LABELS.draft.uk}
-            </span>
+            <CourseStateBadge state={published ? "published" : "draft"} lang="uk" />
             <span className={styles.panelStatus}>{reviewStatusLabel(state.data)}</span>
           </div>
         </header>

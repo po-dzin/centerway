@@ -88,11 +88,6 @@
   -webkit-line-clamp: 2;
 }
 
-.stage {
-  font-size: var(--ds-type-label-size);
-  font-weight: 600;
-}
-
 /* A native select, kept native — it is the operator's fastest way through four
    stages with a keyboard — and dressed only as far as the field it sits in. */
 .select {
@@ -567,20 +562,6 @@
   font-family: var(--cw-font-data);
 }
 
-/* A short uppercase word in a capsule — a status or a review state. `tag` is
-   the name the geometry guard's capsule carve-out reads. */
-.tag {
-  composes: cw-surface-2 cw-text from global;
-  flex: 0 0 auto;
-  padding: var(--cw-space-2xs) var(--cw-space-xs);
-  border-radius: var(--cw-radius-pill);
-  font-size: var(--ds-type-label-size);
-  font-weight: 500;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
 /* Who owns the row, at the row's far edge. Off on a phone, where the column is
    too narrow for a second identity beside the first and the author is edited
    in the form below anyway. */
@@ -758,17 +739,6 @@
   font-weight: 600;
 }
 
-/* How this person was matched — `email`, `phone`, `telegram` — ahead of the
-   value itself. */
-.linkKindTag {
-  composes: cw-surface-2 from global;
-  margin-right: var(--cw-space-2xs);
-  padding: 0 var(--cw-space-2xs);
-  border-radius: var(--cw-radius-pill);
-  font-family: var(--cw-font-data);
-  font-size: var(--ds-type-label-size);
-}
-
 .chips {
   display: none;
   flex-wrap: wrap;
@@ -781,13 +751,6 @@
   .chips {
     display: flex;
   }
-}
-
-.chipTag {
-  composes: cw-surface-2 cw-muted from global;
-  padding: var(--cw-space-2xs) var(--cw-space-xs);
-  border-radius: var(--cw-radius-pill);
-  font-size: var(--ds-type-label-size);
 }
 
 /* ── A course in the catalogue ─────────────────────────────────────────── */
@@ -813,19 +776,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--cw-space-xs);
-}
-
-/* «Продається» is the one state that says the course is good to go, so it wears
-   the success badge's recipe (globals.css → .cw-status-success-badge). It
-   composed `cw-status-paid`, a class nothing defines any more, and the second
-   `composes` also cost it the tag's own paper — the chip rendered as bare text.
-   The contour is an inset shadow, not a border: the chip stays the height of
-   the tags beside it. */
-.tagOnSale {
-  composes: tag;
-  background-color: var(--cw-status-success-soft);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-status-success) 30%, transparent);
-  color: var(--cw-status-success);
 }
 
 .changes {

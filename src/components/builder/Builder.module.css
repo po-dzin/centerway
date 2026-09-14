@@ -2634,32 +2634,6 @@
   font-size: var(--ds-type-body-sm-size);
 }
 
-/* ── Status pills ─────────────────────────────────── */
-
-.pill {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--cw-space-2xs) var(--cw-space-xs);
-  border-radius: var(--cw-radius-pill);
-  background: var(--cw-mat-surface-sunk);
-  color: var(--cw-platform-muted);
-  font-family: var(--cw-font-data);
-  font-size: var(--ds-type-label-size);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-/* Published is the only state that gets colour. A draft is the normal state of
-   a course being written, and colouring it would read as a warning about the
-   most ordinary thing in the tool. */
-.pillPublished {
-  composes: pill;
-  background: color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
-  color: var(--cw-platform-text);
-}
-
 /* One quiet summary replaces two full-width release panels. It answers the
    three status questions, then moves detail into the release drawer on demand.
 

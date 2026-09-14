@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { COURSE_STATE_LABELS, courseStateKeys, courseStateLabel } from "./courseState";
+import { COURSE_STATE_LABELS, COURSE_STATE_TONES, courseStateKeys, courseStateLabel } from "./courseState";
 
 describe("courseStateKeys", () => {
   it("names a live approved course once", () => {
@@ -56,6 +56,13 @@ describe("labels", () => {
     for (const label of Object.values(COURSE_STATE_LABELS)) {
       expect(label.uk.trim().split(/\s+/)).toHaveLength(1);
     }
+  });
+
+  it("gives every state a tone, and colour only to what asks something of the reader", () => {
+    expect(Object.keys(COURSE_STATE_TONES).sort()).toEqual(Object.keys(COURSE_STATE_LABELS).sort());
+    expect(COURSE_STATE_TONES.draft).toBe("neutral");
+    expect(COURSE_STATE_TONES.published).toBe("neutral");
+    expect(COURSE_STATE_TONES.on_sale).toBe("success");
   });
 
   it("falls back to Ukrainian for any language but English", () => {

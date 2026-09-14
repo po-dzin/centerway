@@ -44,6 +44,7 @@ import pageStyles from "@/components/admin/AdminPage.module.css";
 import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
 import access from "@/components/admin/AdminAccess.module.css";
+import { StateBadge } from "@/components/platform/StateBadge";
 
 const LIMIT = 50;
 
@@ -843,9 +844,7 @@ function PeopleTab({
                     <div className={lists.orderIdentity}>
                       <p className={lists.itemTitle}>{account.email ?? account.authUserId}</p>
                       {/* Only an elevated role is worth a badge — `user` is everyone. */}
-                      {account.role && account.role !== "user" ? (
-                        <span className={lists.tag}>{account.role}</span>
-                      ) : null}
+                      {account.role && account.role !== "user" ? <StateBadge>{account.role}</StateBadge> : null}
                       {account.authUserId === selfId ? (
                         <span className={access.selfMark}>{t("access_role_self")}</span>
                       ) : null}

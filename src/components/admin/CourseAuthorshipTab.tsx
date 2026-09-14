@@ -28,7 +28,8 @@ import { Icon } from "@/components/Icon";
 import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
 import { AdminRow, AdminRowIconAction } from "@/components/admin/AdminRow";
-import { courseStateKeys, courseStateLabel } from "@/lib/lms/courseState";
+import { courseStateKeys } from "@/lib/lms/courseState";
+import { CourseStateBadge } from "@/components/platform/StateBadge";
 import { AdminModal } from "@/components/admin/AdminModal";
 
 function EmptyIcon() {
@@ -131,9 +132,7 @@ export function CourseAuthorshipTab({
                     hasPendingRevision: course.hasPendingRevision,
                     pendingReviewStatus: course.hasPendingRevision ? course.reviewStatus : null,
                   }).map((key) => (
-                    <span key={key} className={lists.tag}>
-                      {courseStateLabel(key, lang)}
-                    </span>
+                    <CourseStateBadge key={key} state={key} lang={lang} />
                   ))}
                 </>
               }

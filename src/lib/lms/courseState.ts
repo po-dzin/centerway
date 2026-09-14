@@ -21,7 +21,15 @@
  *
  * Visibility (hidden / unlisted / listed) is not a lifecycle word: it is a
  * setting, and the row that can change it shows it in its own select.
+ *
+ * AND ONE TONE FOR EACH (2026-09-14), so the badge looks the same wherever the
+ * word is printed — see `StateBadge`. Draft and published are neutral: the
+ * normal state of a course being written, and the normal state of one that is
+ * live, are facts, not news. Colour is kept for what asks something of the
+ * reader (review, returned, unreviewed) and for the one «good to go» (on sale).
  */
+
+import type { StateTone } from "@/lib/platform/stateTone";
 
 export type CourseStateKey = "draft" | "review" | "returned" | "published" | "unreviewed" | "update" | "on_sale";
 
@@ -33,6 +41,16 @@ export const COURSE_STATE_LABELS: Record<CourseStateKey, { uk: string; en: strin
   unreviewed: { uk: "Неперевірено", en: "Unreviewed" },
   update: { uk: "Оновлення", en: "Update" },
   on_sale: { uk: "Продається", en: "On sale" },
+};
+
+export const COURSE_STATE_TONES: Record<CourseStateKey, StateTone> = {
+  draft: "neutral",
+  review: "running",
+  returned: "pending",
+  published: "neutral",
+  unreviewed: "failed",
+  update: "running",
+  on_sale: "success",
 };
 
 export function courseStateLabel(key: CourseStateKey, lang: string): string {

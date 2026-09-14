@@ -62,7 +62,8 @@ import {
   type CatalogGrouping,
 } from "@/lib/admin/catalogGrouping";
 import { coverPortraitStyle } from "@/lib/lms/courseCover";
-import { courseStateKeys, courseStateLabel } from "@/lib/lms/courseState";
+import { courseStateKeys } from "@/lib/lms/courseState";
+import { CourseStateBadge, StateBadge } from "@/components/platform/StateBadge";
 import { COURSE_CATEGORIES, type CourseCategory } from "@/lms-core";
 
 const BLOCKER_KEY: Record<SaleBlocker, string> = {
@@ -454,12 +455,10 @@ function StateChips({ row, withVisibility = true }: { row: CatalogRow; withVisib
   return (
     <div className={lists.chipRow}>
       {keys.map((key) => (
-        <span key={key} className={lists.tag}>
-          {courseStateLabel(key, lang)}
-        </span>
+        <CourseStateBadge key={key} state={key} lang={lang} />
       ))}
-      {withVisibility ? <span className={lists.tag}>{visibilityLabel[row.visibility] ?? row.visibility}</span> : null}
-      {row.blockers.length === 0 ? <span className={lists.tagOnSale}>{courseStateLabel("on_sale", lang)}</span> : null}
+      {withVisibility ? <StateBadge>{visibilityLabel[row.visibility] ?? row.visibility}</StateBadge> : null}
+      {row.blockers.length === 0 ? <CourseStateBadge state="on_sale" lang={lang} /> : null}
     </div>
   );
 }

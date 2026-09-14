@@ -211,16 +211,6 @@
   font-weight: 500;
 }
 
-/* The verb an audit row records, in a capsule so a column of them reads as a
-   list of actions rather than of sentences. */
-.actionTag {
-  composes: cw-surface-2 from global;
-  display: inline-block;
-  padding: var(--cw-space-2xs) var(--cw-space-xs);
-  border-radius: var(--cw-radius-pill);
-  font-size: var(--ds-type-label-size);
-}
-
 .entityRef {
   composes: cw-muted from global;
   font-size: var(--ds-type-label-size);

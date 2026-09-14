@@ -410,6 +410,41 @@ shape, which is what the paragraph above is protecting.
 
 For a reader who owns the course, the closing block printed two cards side by side: «Ваш доступ» with the standing, and «Продовжити» / «Перейти до матеріалів» holding the button. Nothing separated them but the grid — the second card's label and heading only restated the button under them, three ways of saying *continue*. One panel now, spanning the support row, with the actions in a wrapping row at its foot. The hero already carries the same standing and the same verb for someone at the top of the page; this is where it lands for someone who has read to the bottom.
 
+### One state badge (2026-09-14)
+
+**A state is one badge, in one of five tones.** «Опубліковано» was printed by
+five recipes that agreed on nothing but the capsule: the admin's uppercase paper
+`.tag`, the builder's uppercase monospace `.pill` (gold when published), three
+one-off admin chips (`chipTag`, `actionTag`, `linkKindTag`), and the success
+badge the leads list used. The same word looked one way in the admin and
+another in the builder, and «good to go» was green in one and gold in the other.
+
+| Tone | Question it answers | Course states | Elsewhere |
+|---|---|---|---|
+| `neutral` | where is it? — nothing to do | Чернетка, Опубліковано; a visibility or a role | a customer tag, an audit action, a link kind, a lost lead |
+| `running` | is something under way? | Перевірка, Оновлення | a new or in-progress lead, a running job |
+| `pending` | does someone have to act? | Повернуто | a job waiting |
+| `failed` | is something wrong? | Неперевірено | an expired grant, a failed job |
+| `success` | is it good to go? | Продається | a won lead, a started enrolment |
+
+- **The recipe** is `globals.css` → `.cw-status-{neutral,running,pending,failed,success}-badge`:
+  label size, weight 500, sentence case, `2xs xs` padding, pill radius. The four
+  coloured tones read `--cw-status-*` with its `-soft` wash and a 30% contour;
+  `neutral` is `--cw-mat-surface-sunk` with the page's ink and no contour.
+- **The contour is an inset shadow, not a border**, so a coloured badge is the
+  height of the neutral one beside it.
+- **The word and the tone come from one place.** `src/lib/lms/courseState.ts`
+  holds `COURSE_STATE_LABELS` and `COURSE_STATE_TONES`; `CourseStateBadge` reads
+  both. Other surfaces pass a tone to `StateBadge` (`src/components/platform/StateBadge.tsx`);
+  class names live in `STATE_BADGE_CLASS` (`src/lib/platform/stateTone.ts`).
+- **Sentence case.** Uppercase with tracking took a third more width in a
+  phone's one-line badge row and shouted the most ordinary state in the tool.
+- **Not on a photograph.** A status over a cover stays `mediaBadge` (scrim floor,
+  inverse ink) — see «Boundary hierarchy across the three layers».
+- **Not a fact chip.** `Chip` (`platform/Chip.module.css`) is a short fact on a
+  card — «4 курси», «7 днів» — at body size; a state badge is smaller and says
+  where something stands.
+
 ### A list is text, not a stack of cards (2026-08-22)
 
 `.timeline` (`PlatformBlocksBase.module.css`) is the platform's **one** plain

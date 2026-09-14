@@ -15,6 +15,8 @@ import { useToast } from "@/components/ToastProvider";
 import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
 import { AdminRow } from "@/components/admin/AdminRow";
+import { StateBadge } from "@/components/platform/StateBadge";
+import type { StateTone } from "@/lib/platform/stateTone";
 
 /* The four stages, in the order a lead travels them. Kept as data rather than
    as markup so the tab strip, the row control and the "is this closed" test all
@@ -34,11 +36,11 @@ const STAGE_LABEL_KEY: Record<Stage, string> = {
 /* Ink, not colour-coding: a won lead reads as settled and a lost one as spent,
    which the platform says with weight and muting rather than with a green and a
    red badge. */
-const STAGE_TONE: Record<Stage, string> = {
-  new: "cw-status-running-badge",
-  in_progress: "cw-status-running-badge",
-  won: "cw-status-success-badge",
-  lost: "cw-muted",
+const STAGE_TONE: Record<Stage, StateTone> = {
+  new: "running",
+  in_progress: "running",
+  won: "success",
+  lost: "neutral",
 };
 
 type Lead = {
@@ -221,9 +223,7 @@ export function LeadsPanel() {
               }
               controls={
                 <>
-                  <span className={`${lists.stage} ${STAGE_TONE[lead.stage]}`}>
-                    {t(STAGE_LABEL_KEY[lead.stage] as never)}
-                  </span>
+                  <StateBadge tone={STAGE_TONE[lead.stage]}>{t(STAGE_LABEL_KEY[lead.stage] as never)}</StateBadge>
                   <select
                     aria-label={t("leads_stage_change")}
                     className={lists.select}

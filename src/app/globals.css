@@ -1063,13 +1063,13 @@
   .cw-status-success-badge {
     color: var(--cw-status-success);
     background-color: var(--cw-status-success-soft);
-    border: 1px solid color-mix(in srgb, var(--cw-status-success) 30%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-status-success) 30%, transparent);
   }
 
   .cw-status-running-badge {
     color: var(--cw-status-running);
     background-color: var(--cw-status-running-soft);
-    border: 1px solid color-mix(in srgb, var(--cw-status-running) 30%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-status-running) 30%, transparent);
   }
 
   /* A STATUS BADGE IS A SHAPE AS WELL AS A COLOUR (2026-09-12).
@@ -1082,29 +1082,43 @@
      that has to remember the shape is a caller that will get it wrong.
 
      `pill` at this size is the guard's own carve-out: text in a capsule cannot
-     be expressed by the radius bands without ceasing to be a capsule. */
+     be expressed by the radius bands without ceasing to be a capsule.
+
+     ONE BADGE FOR EVERY STATE (2026-09-14) — docs/design-system.md → «One state
+     badge». A fifth tone, `neutral`, is the paper one: a fact about where
+     something is, with nothing to do about it («Чернетка», «Опубліковано»). It
+     has no contour, so the contour of the coloured four is an INSET shadow, not
+     a border: a border would make them 2px taller than the neutral badge beside
+     them. Read through `StateBadge` / `STATE_BADGE_CLASS`, never retyped. */
+  .cw-status-neutral-badge,
   .cw-status-pending-badge,
   .cw-status-running-badge,
   .cw-status-success-badge,
   .cw-status-failed-badge {
     display: inline-block;
-    padding: 0.125rem var(--cw-space-xs);
+    flex: 0 0 auto;
+    padding: var(--cw-space-2xs) var(--cw-space-xs);
     border-radius: var(--cw-radius-pill);
     font-size: var(--ds-type-label-size);
     font-weight: 500;
     white-space: nowrap;
   }
 
+  .cw-status-neutral-badge {
+    color: var(--cw-platform-text);
+    background-color: var(--cw-mat-surface-sunk);
+  }
+
   .cw-status-pending-badge {
     color: var(--cw-status-pending);
     background-color: var(--cw-status-pending-soft);
-    border: 1px solid color-mix(in srgb, var(--cw-status-pending) 30%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-status-pending) 30%, transparent);
   }
 
   .cw-status-failed-badge {
     color: var(--cw-status-failed);
     background-color: var(--cw-status-failed-soft);
-    border: 1px solid color-mix(in srgb, var(--cw-status-failed) 30%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-status-failed) 30%, transparent);
   }
 
   .cw-alert-failed {
