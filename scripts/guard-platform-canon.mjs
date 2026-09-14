@@ -268,8 +268,22 @@ if (!existsSync(path.join(repoRoot, platformCssRoot))) {
   failures.push(`No platform CSS files found under ${platformCssRoot}`);
 }
 
+/* COMMENTS ARE NOT CODE (2026-09-14), and this guard had been reading them as
+   code. Every character of a comment is replaced by a space except newlines, so
+   the line:col this reports still points at the real source position.
+
+   The case that found it: the button contract documents the role marker it
+   composes, and writing the property with its value — `--cw-control-role:
+   primary` — in that prose was reported as a local token definition. The rule
+   it was accused of breaking is one the file obeys: the property is declared in
+   globals.css precisely BECAUSE this guard forbids declaring it in a module.
+
+   This can only remove false failures, never hide real ones — a declaration
+   outside a comment is untouched. */
+const blankCssComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, " "));
+
 for (const absolute of platformCssFiles) {
-  const source = readFileSync(absolute, "utf8");
+  const source = blankCssComments(readFileSync(absolute, "utf8"));
   const localTokenDefinitions = collectMatches(source, /(--cw-[A-Za-z0-9_-]+)\s*:/g);
 
   for (const match of localTokenDefinitions) {

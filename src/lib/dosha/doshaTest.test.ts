@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  DOSHA_MAX_CHOICES_PER_QUESTION,
+  DOSHA_QUESTION_WEIGHT,
   DOSHA_RESULT_TYPES,
   DOSHA_TEST_QUESTIONS,
   calculateDoshaResult,
   classifyDosha,
   presentQuestionsForSession,
+  scoreDoshaChoices,
   type DoshaResultType,
 } from "@/lib/dosha/doshaTest";
 
@@ -111,6 +114,35 @@ describe("classifyDosha", () => {
 
   it("survives an empty score triple", () => {
     expect(classifyDosha(0, 0, 0)).toMatchObject({ type: "tridosha", confidence: "low" });
+  });
+});
+
+describe("scoreDoshaChoices", () => {
+  const single = (questionId: string, mappedDosha: "vata" | "pitta" | "kapha") => ({ questionId, mappedDosha });
+
+  it("gives a question its whole weight when one option is marked", () => {
+    expect(scoreDoshaChoices([single("q1", "vata")])).toEqual({ vata: DOSHA_QUESTION_WEIGHT, pitta: 0, kapha: 0 });
+  });
+
+  it("splits a question's weight between two marks instead of adding a vote", () => {
+    expect(scoreDoshaChoices([single("q1", "vata"), single("q1", "pitta")])).toEqual({ vata: 3, pitta: 3, kapha: 0 });
+  });
+
+  it("keeps the total at weight × questions however the marks fall", () => {
+    const choices = DOSHA_TEST_QUESTIONS.flatMap((question, index) =>
+      question.options
+        .slice(0, index % 2 === 0 ? 1 : DOSHA_MAX_CHOICES_PER_QUESTION)
+        .map((option) => single(question.code, option.mappedDosha)),
+    );
+    const scores = scoreDoshaChoices(choices);
+    expect(scores.vata + scores.pitta + scores.kapha).toBe(TOTAL * DOSHA_QUESTION_WEIGHT);
+    expect(Object.values(scores).every(Number.isInteger)).toBe(true);
+  });
+
+  it("reads single-mark answers exactly as the one-point scale did", () => {
+    const choices = [single("q1", "vata"), single("q2", "vata"), single("q3", "pitta")];
+    const scores = scoreDoshaChoices(choices);
+    expect(classifyDosha(scores.vata, scores.pitta, scores.kapha)).toEqual(classifyDosha(2, 1, 0));
   });
 });
 

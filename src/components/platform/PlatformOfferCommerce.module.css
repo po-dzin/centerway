@@ -513,16 +513,20 @@
   line-height: 1.5;
 }
 
+/* Side by side from 561px, in equal columns. Content-sized columns made the
+   pair two different shapes ("Перейти в кабінет" 161px beside "Написати в
+   підтримку" 190px); `inline-grid` with `1fr` tracks sizes both to the widest
+   label instead of stretching them over the panel. */
 @media (min-width: 561px) {
   .statusActions {
+    display: inline-grid;
     grid-auto-flow: column;
-    justify-content: start;
+    grid-auto-columns: minmax(var(--ds-button-min-width), 1fr);
   }
 
   .statusPrimaryAction,
   .statusSecondaryAction {
-    width: auto;
-    min-width: var(--ds-button-min-width);
+    width: 100%;
   }
 }
 

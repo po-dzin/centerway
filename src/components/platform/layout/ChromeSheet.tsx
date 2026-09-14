@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 
 import styles from "@/components/platform/PlatformShellStyles";
 import { focusStopsIn, nextStop } from "./focusRing";
-import { markChromeSheetOpen } from "./chromeSheetStore";
+import { CHROME_SHEET_TRIGGER, closeOtherSheets, markChromeSheetOpen, registerOpenSheet } from "./chromeSheetStore";
 
 /**
  * WHAT A CONTROL IN THE CHROME OPENS.
@@ -82,6 +82,10 @@ export function useChromeSheet(): ChromeSheet {
   const [menu, attachMenu] = useState<HTMLDivElement | null>(null);
   const [trigger, attachTrigger] = useState<HTMLButtonElement | null>(null);
 
+  /* This sheet's name in the registry of open sheets — state, not a ref, for
+     the same compiler reason the three elements are (see `ChromeSheet`). */
+  const [id] = useState(() => Symbol("chrome-sheet"));
+
   const close = useCallback(() => setOpen(false), []);
 
   /* PORTALLED AND MEASURED, and this is why: the header is `overflow: clip` —
@@ -141,8 +145,25 @@ export function useChromeSheet(): ChromeSheet {
 
   const toggle = useCallback(() => {
     measure();
-    setOpen((value) => !value);
-  }, [measure]);
+    /* OPENING HANDS OVER, IN THIS HANDLER (2026-09-13). Closing the sibling
+       here rather than on its own outside-click puts both state changes in one
+       event, which React commits as one render: the other sheet's panel, its
+       scrim and the islands' raised row give way to this one's without a frame
+       in which there is no sheet — the frame the menu used to blink through.
+       See `chromeSheetStore`. */
+    if (!open) closeOtherSheets(id);
+    setOpen(!open);
+  }, [measure, open, id]);
+
+  useEffect(() => {
+    if (!open) return;
+    return registerOpenSheet(id, close);
+  }, [open, id, close]);
+
+  /* The trigger says it is one, so a sibling's outside-click can leave it be. */
+  useEffect(() => {
+    trigger?.setAttribute(CHROME_SHEET_TRIGGER, "");
+  }, [trigger]);
 
   useEffect(() => {
     if (!open) return;
@@ -281,6 +302,10 @@ export function useChromeSheet(): ChromeSheet {
          `document.body`. Testing the wrapper alone would close the sheet on the
          first click INSIDE it. */
       if (wrap?.contains(target) || menu?.contains(target)) return;
+      /* Another chrome control's trigger will close this sheet itself, in the
+         same event that opens its own — closing it here, one event earlier,
+         is what left a painted frame with no sheet between the two. */
+      if (target instanceof Element && target.closest(`[${CHROME_SHEET_TRIGGER}]`)) return;
       close();
     };
 

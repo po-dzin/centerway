@@ -18,6 +18,22 @@ Shared canon lives outside this repository, under the paths listed in
 `AGENTS.md`. When local docs and that canon disagree, the canon is active
 authority unless local evidence shows it is out of date.
 
+## Publishing — read this before running `gh pr create`
+
+`AGENTS.md`'s **Publish Rhythm Rule** already says this; it is restated here
+because a session that skips "Start here" and goes straight to work has
+skipped it too, and that has actually happened.
+
+Do not open a pull request on your own initiative. "Show me", "check this",
+"does it work" mean run it locally and report — never push. A PR happens only
+when the user asks for one, in words, in this conversation.
+
+One branch, one PR, one merge — not a PR per commit and not one per mini-fix.
+Several small related fixes discovered in one session belong in one PR,
+opened once, when asked. See `AGENTS.md` → Publish Rhythm Rule / Safe Push
+Rule for the full local-first cycle (`npm run db:local:reset`, commit early
+and often locally, publish once).
+
 ## Validation
 
 `npm run verify` is the everyday gate: lint, typecheck, unit tests, build.

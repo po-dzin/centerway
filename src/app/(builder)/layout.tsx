@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { SurfaceHostProvider } from "@/components/platform/layout/SurfaceHost";
 import { BfcacheRestore } from "@/components/platform/BfcacheRestore";
+import { PressHaptics } from "@/components/platform/PressHaptics";
 import { ToastProvider } from "@/components/ToastProvider";
 import { SessionProvider } from "@/components/auth/SessionProvider";
 
@@ -55,6 +56,7 @@ export default async function BuilderRootLayout({ children }: Readonly<{ childre
         {/* Same dynamic-render, no-store shape as the platform root — see the
             component for why that makes Chrome's bfcache the one that misbehaves. */}
         <BfcacheRestore />
+        <PressHaptics />
         <SurfaceHostProvider host={host}>
           <SessionProvider>
             <ToastProvider>{children}</ToastProvider>

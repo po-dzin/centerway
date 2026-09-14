@@ -20,8 +20,17 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import ts from "typescript";
 
+/* The dosha test's copy was in one component until 2026-09-13, when it was
+   split into a composition, a state hook and one view per phase; every file
+   that carries its strings is listed, or the split would quietly shrink the
+   guard's reach. */
 const FILES = [
   "src/components/dosha-test/DoshaTestClient.tsx",
+  "src/components/dosha-test/useDoshaAttempt.ts",
+  "src/components/dosha-test/DoshaIntro.tsx",
+  "src/components/dosha-test/DoshaQuestionStep.tsx",
+  "src/components/dosha-test/DoshaLoadingStep.tsx",
+  "src/components/dosha-test/DoshaResult.tsx",
   "data/generator/funnel_content.json",
   "data/generator/screen_manifests.json",
   "data/generator/block_manifests.json",

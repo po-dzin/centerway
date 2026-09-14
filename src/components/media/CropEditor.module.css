@@ -259,8 +259,10 @@
   cursor: pointer;
 }
 
-.action:hover {
-  background: var(--cw-mat-surface);
+@media (hover: hover) {
+  .action:hover {
+    background: var(--cw-mat-surface);
+  }
 }
 
 .action:focus-visible {

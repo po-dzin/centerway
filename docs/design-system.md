@@ -129,7 +129,17 @@ Cards keep their own inset — that is a change of register, not a stray indent 
 
 Each dash takes a small tilt and length variance from a **seeded** function of its index — same principle as the icon bake, never `Math.random`, so the rail is identical on the server, on the client, and on every visit. Above 32 dashes it falls back to a repeating gradient: the per-dash hand is lost, but a 90-dash rail was never countable.
 
-In use on the course page and both cabinet course meters. The dosha score bars stay solid — they are proportions of a whole, not countable steps.
+In use on the course page, both cabinet course meters, and the dosha test's
+question flow (2026-09-09). The test is the case the rail was written for and
+had not been given: twelve countable steps, and a filled bar that drew *nothing*
+on question one — zero of twelve is an empty track, so the step a reader had
+just opened was the only thing on screen the progress indicator refused to mark.
+The walker is what fixes that, not the dashes: he stands on the edge actually
+reached, so position exists from the first question instead of starting at a
+length of zero.
+
+The dosha **score** bars stay solid — they are proportions of a whole, not
+countable steps.
 
 ### Utility chrome is transparent at rest (2026-08-20)
 
@@ -763,6 +773,7 @@ Target architecture is three layers (see roadmap stage 3). Current state, prefix
 | `--ds-*` | delivery alias | `cw.tokens.json` → `delivery.dsAlias` (full contract incl. type/button/offer-card scales; codegen-owned since 2026-07-03) | platform + landing bridge | guard:ds-contract (required-token list), tokens:check |
 | `--cw-sem-*` pack override | program/author pack | `cw.tokens.json` → `layers.packs.mineral` (codegen-owned: `CW_PACK_MINERAL`) | `.cw-pack-mineral` scopes | guard:canon (hex allowlist) |
 | `--cw-role-*`, `--cw-cta-*` | generator theme packs | `token_packs.json` | **none yet** — wired into `themeCatalog.ts`, zero CSS consumers; designated per-author theming mechanism, activation deferred until a second real theme exists | generator:validate |
+| `--cw-motion-*`, `--cw-ease-*` | **motion** (durations + curves) | `cw.tokens.json` → `base.light` (codegen-owned) | `--cw-workspace-panel-*` aliases; delivered to the five landings via the motion contract in `generate-design-tokens.mjs` | guard:motion (per-file ratchet on literals), tokens:check |
 | `--cw-net-*` | platform-author network skin | `shared/css/network-tokens.css` — **references** `--cw-sem-*` / `--cw-mat-*`, no longer copies their values | the five landings | tokens:check (drift of the generated source) |
 | `--landing-*`, `--product-*`, irem `--color-*` | isolated landing themes | `src/landing-static/**` (hand-maintained) | Short/IREM landings only | guard:ds-contract (cross-layer consumption bans) |
 
@@ -1733,6 +1744,34 @@ hand-authored side that moved alone (1), or a scope one side does not model
 and it is why the `brief -> code` pair stays on **watch** rather than gated: one
 of its sides is prose.
 
+### The fourth finding: the mirror could not say "on a mouse" (2026-09-10)
+
+> **Superseded 2026-09-13 by PR #268** (`0259ba76`, «Buttons take their size from the container, not the pointer»). A button's size is now chosen by its container, not by the pointer: full (48px, 1rem) is the default, and a container that composes `compact` from `PlatformButtons.module.css` re-points the four size tokens to `--ds-button-compact-*` (40px, 0.9rem), keeping a 48px hit area on coarse pointers through `--ds-button-hit-min`. `dsAliasPointerFine` no longer touches buttons — it carries only `--ds-touch-target-min`. The account below is kept as the history of why the pointer split was tried.
+
+The first pass where conflicts were NOT zero, and the probe was right. Five
+tokens disagreed — `--ds-touch-target-min` and the four `--ds-button-*` — with
+the mirror holding the finger values (3rem, 10.5rem, 1.15rem) and the code the
+mouse ones (2.25rem, 9rem, 1rem).
+
+Neither side was wrong about its own number. `delivery.dsAliasPointerFine` had
+been added to `cw.tokens.json` as a second, media-scoped set of the same five
+aliases — a 48px control on a finger, 40px on a pointer — and
+`generate-design-tokens.mjs` emitted it into `globals.css` under
+`@media (hover: hover) and (pointer: fine)`. `ds-export.mjs` did not emit it at
+all, so the mirror declared each token once and the probe, reading the last
+declaration on each side, compared a finger value against a mouse one.
+
+**The fix is in the exporter, not in the probe or the numbers.** A mirror that
+cannot express "the same token, one step down on a mouse" is not mirroring the
+contract, only half of it — and the half it kept was the one no desktop
+resolves. `tokens/delivery.css` now carries the media block after the `:root`
+one, the same shape `globals.css` has, and conflicts are back to zero.
+
+Worth stating because it generalises: an alias set that grows a second scope has
+TWO emitters to teach, and only one of them ships to a browser — which is why
+the one that does not is the one that quietly goes stale. This is the failure
+mode the gate exists for, and the first time it actually fired.
+
 ## Validation Stack
 
 `npm run verify:ds` = the design-system gates in order — guard:canon, guard:assets, tokens:check, ds:sync:check, brand:check, guard:ds-contract, guard:contrast, guard:buttons, guard:geometry, ds:drift:gate, generator:validate, guard:semantic — then lint and build. For the gates alone, without the build, `npm run verify:guards`.
@@ -1929,14 +1968,98 @@ have is a change to this canon, not a local recipe.
 
 | primitive | what it is | what it marks | entry point |
 | --- | --- | --- | --- |
-| **ink stroke** | a baked hand-drawn line under text (`ink-stroke` in `cw-icons.svg`) | a text choice: a link, a nav row, a tab, a selected label | `InteractionInkLabel` |
+| **ink mark under text** | a baked drawn line under text (`ink-rule` in `cw-icons.svg`, since 2026-09-09) in one of two weights — see "Two marks, one shape" below | a text choice: a link, a nav row, a tab, a selected label | `InteractionInkLabel` |
 | **ink ring** | a baked open loop around a glyph (`ink-ring`) | an icon-only choice: a mode, a toggle, a pressed utility | `InteractionInkIcon` |
 | **contour** | a dashed line on the object's own edge | a chosen or empty *object*: a selected block, a library cell, a slot with nothing in it | `--cw-contour-*` tokens |
 
-### The three strengths of a stroke
+### Two marks, one shape (2026-09-09)
 
-The ink graphic is one drawing at three strengths. Consumers read the tokens and
-never restate the numbers.
+**This supersedes the three strengths below.** One drawing at three strengths was
+the intention; four different underlines were the result. The mark *grew* — 0.72
+of the word at rest, 0.90 for a link, 0.96 on hover, 1.0 when current — so the
+same label wore a different line depending on where the cursor was, and none of
+those lines reached its last letter. It also sloped: `cw-ink-stroke` carries a
+hand's drift of about 1.9 units across its span, and `scaleY` multiplies that
+drift along with the weight, so at selection thickness the line visibly slid away
+from the word it belonged to.
+
+There are **two marks now, drawn from one shape**, and they differ in the two
+things a reader actually reads — how heavy the line is, and what colour it is:
+
+| mark | variant | weight | colour | when it is drawn |
+| --- | --- | --- | --- | --- |
+| **selection stroke** | `navigation`, `menu` | `--cw-ink-stroke-weight` (3.4) | the navigation marker's brass | absent at rest; `--cw-ink-hover-opacity` (0.68) under the pointer; full when this is the row you are on |
+| **link rule** | `link` | `--cw-ink-link-weight` (1.7) — about half | `currentColor` | always: `--cw-ink-link-rest-opacity` (0.62) at rest, opacity 1 when pointed at |
+
+Both are **level** (`--cw-ink-stroke-tilt` is `0deg`) and both run the **full
+word** plus the small overhang a drawn line has. The element was always
+`100% + 0.4rem`; what stopped is the scaling. A rule is the width of what it
+underlines.
+
+**Why the link rule is `currentColor`.** A brass line under ink-coloured words
+was the loudest thing in a paragraph and read as a highlight someone had left
+on. Worse, the two halves of one control changed state separately — the reported
+symptom was a word going gold on hover while its line stayed dark. The mark now
+reads the same colour the text does, so one declaration on the label carries the
+word and the rule together.
+
+**`menu` is not a third geometry.** It used to start at 0.38 of the word and grow,
+which is what made the account menu's mark read as a different object from the
+same mark in the bar above it. `menu` and `navigation` are one mark; the name
+survives only because call sites and `interactionLayering.test.ts` read it.
+
+**`cw-ink-rule` is a new symbol, not a repair of `cw-ink-stroke`.** The stroke's
+drift is its character, and five consumers still want it — the trail, the header's
+nav mark, the reader's text-size control, and two builder marks. The rule holds
+one y and keeps the pressed-in dots at both ends, so it is still a drawn mark and
+not a border.
+
+**Baked 2026-09-10, and what that took.** This paragraph described the symbol for
+weeks before the sprite had it — the first consumer that needed a rule reached
+for `ink-stroke` at a lower weight and got exactly the two failures above: the
+stroke's 1.2-unit rise read as a slope, and the vertical scale that recovers the
+weight in a 0.85rem band multiplied the baked wobble along with the ink. Three
+things in `icon-glyphs.mjs` separate the two marks, and none of them is a
+consumer's business:
+
+| | `ink-stroke` | `ink-rule` |
+| --- | --- | --- |
+| run | 18.8 → 17.6 (rises) | one y, held |
+| hand | the sprite's own preset (hand2, scale 2.4) | its own, `scale` 1.2 at a tighter frequency — under a fifth of a unit end to end |
+| weight | the set's 1.5 | 0.9 |
+
+The last two are new capabilities of the bake, added for this and additive by
+construction: a glyph that names neither is displaced and stroked exactly as
+before, which was checked by rebaking with no new glyph and diffing the sprites
+to zero. Both stretch (`HandGraphic`), because both are laid ALONG something
+rather than placed.
+
+**What consumes it.** The sign-in door's «АБО» divider, and so far only that. The
+correction a consumer still owes is the band squeeze and nothing else: at
+`--cw-ink-stroke-height` the intrinsic vertical scale is 0.378, so a 0.9 stroke
+lands at a third of a pixel and wants ≈2.9 to reach one. That number is written
+in `PlatformComponents.module.css` and belongs in `cw.tokens.json` as
+`--cw-ink-rule-weight` beside `--cw-ink-stroke-weight`; it is not there yet.
+`InteractionInkLabel` still renders `ink-stroke` for every variant — the rule is
+not a replacement for the selection mark and was never meant to become one.
+
+**The weight is restated in the link rules, not inherited.** The selection
+stroke's hover rule also matches a link's mark and carries `scaleY(3.4)`; without
+the thin weight restated on the more specific link selectors, a link would
+thicken into a selection stroke under the cursor — the one thing these two marks
+must never do to each other.
+
+**Loose end.** `--cw-ink-rest-opacity` (0.34) is still declared in
+`cw.tokens.json` and reaches `globals.css` and the bundle, but nothing consumes
+it any more: the link's rest strength moved to `--cw-ink-link-rest-opacity` and
+the selection stroke has no rest state at all. It should be retired from the
+token source in a pass of its own.
+
+### The three strengths of a stroke (superseded 2026-09-09)
+
+The model this replaced, kept for the reasoning it carries. The ink graphic was
+one drawing at three strengths; consumers read the tokens and never restated the
+numbers.
 
 | strength | token | drawn when |
 | --- | --- | --- |
@@ -1993,8 +2116,12 @@ status colour, opacity) and must not borrow the selection line.
 - **No browser default as a design.** `text-decoration`, `outline` and the
   native focus ring are fallbacks, not marks. Where a primitive applies, it
   replaces them.
-- **No new colour for a state.** States are the ink at three strengths and the
-  two contour roles. A state that needs a hue is a status, not an interaction.
+- **No new colour for a state.** States are the two ink marks — the selection
+  stroke in brass, the link rule in `currentColor` — and the two contour roles. A
+  state that needs a hue is a status, not an interaction.
+- **No mixing the two weights on one control.** A link does not thicken into a
+  selection stroke on hover, and a nav row does not thin into a link rule. The
+  weight is the mark's identity, not one of its states.
 
 ### Where each family goes (unchanged from 2026-08-30, restated with its mark)
 
@@ -2010,12 +2137,16 @@ status colour, opacity) and must not borrow the selection line.
 
 Ordinary inline and footer text links remain visibly marked at rest, so a link
 does not depend on hover or colour alone to announce itself. Since 2026-09-02
-that mark is the ink stroke at rest strength, not the browser underline — see
-"Ink and contour: the interaction primitives" above, which supersedes this
-paragraph's `text-decoration` recipe. On hover and keyboard focus the foreground
-moves to the warm guide accent and the stroke runs to the shared hover
-strength — not to full, which belongs to the current state. Do not apply this
-treatment to icon-only links or plated route actions.
+that mark is an ink mark, not the browser underline — see "Ink and contour: the
+interaction primitives" above, which supersedes this paragraph's
+`text-decoration` recipe. Since 2026-09-09 it is specifically the **link rule**:
+thin, `currentColor`, visible at `--cw-ink-link-rest-opacity`. On hover and
+keyboard focus the label as a whole moves to the warm guide accent — the word and
+its rule together, because the mark reads the text's own colour — and the rule
+goes to full opacity at its own thin weight. Full opacity on a *link* is not the
+current state; the two marks are told apart by weight and colour, not by how far
+the line has been drawn. Do not apply this treatment to icon-only links or plated
+route actions.
 
 Every interaction must declare one `selection_family` before code review. The
 family is a semantic choice, not a cosmetic preference:
@@ -2100,6 +2231,19 @@ The six roles answer what a button *is*. They never answered how wide it should 
 Compose exactly one alongside a role. The cap staying on `.base` is what makes `fill` safe at any container width: a lone action in a maximised window stops at 22rem instead of becoming a band, and the default offer tile (24rem less 2×1.25rem padding = 21.5rem) is spanned exactly — which is why a one-up and a three-up row draw the same button rather than three sizes of it.
 
 `.row` is the group container: `flex-wrap` with `flex: 1 1 var(--ds-button-min-width)` on the children, so a pair shares one line when both clear the minimum and each takes a full-width line when they do not. **A media query cannot answer this** — the same card is 326px in a three-up grid and 560px in a one-up at one viewport width, which is exactly how the `min-width: 48rem` override that used to sit in `Cabinet.module.css` came to strand 158px beside each button.
+
+**The diagnostic surface was the third place that answered it itself (2026-09-09).**
+The dosha test carried three group containers for what is one gesture — intro
+(`flex`, `sm` gap), the step pager (`grid: auto minmax(0, 1fr)`, `xs` gap) and
+the result pair (`grid: repeat(2, 1fr)`, `sm` gap, a `width: 100%` override on
+the children *and* a 640px media query). The pager's grid is the one a reader
+could see: `auto` hugged «Назад» to its label while `1fr` spanned «Далі» across
+the rest, so the two halves of one decision came out two shapes — and the pair
+mixed the fits as well, `wide` against `fill`. All three now compose `row`, both
+pager members take `wide`, and the two controls measure identically (334×48 on
+desktop, full-width lines on a phone). The same pass moved the intro and pager
+primaries off `heroPrimaryButton`: a hero recipe was dressing two controls that
+live inside cards.
 
 ### Offer cards carry their own context (2026-08-23)
 
@@ -2296,6 +2440,550 @@ Authoring family in `scripts/lib/icon-glyphs.mjs`. They use the same 24-grid,
 typed names are rebuilt together; no call-site paths or runtime SVG filters.
 
 Evidence and scope: `docs/notifications-and-menu-icons-2026-08-30.md`.
+
+## Movement (2026-09-09)
+
+Source: `cw.tokens.json` → `base.light` (`--cw-motion-*`, `--cw-ease-*`),
+`src/components/platform/viewTransition.ts` (the principle),
+`scripts/guard-motion.mjs` (the ratchet). Survey and the argument for the
+shape: `docs/design-system/references/motion-survey-2026-09-09.md`.
+
+**Movement explains a change. It never performs one.** That is the canon's own
+wording — `Генератор экранов.md` gives Motion four axes and one law
+("объясняет изменение, никогда не устраивает спектакль"), and the
+`Семиотический паспорт` gives it a character: slow, respectful, meaningful.
+`motion` has been one of the ten declared base token groups since the token
+canon was written. It was the only one of the ten with nothing behind it in
+code until this section existed.
+
+**One change is drawn as one movement.** `viewTransition.ts` is the working
+form: hand the browser a change that is already in hand and synchronous, and it
+holds the old frame, applies the change and cross-fades the difference. It is
+deliberately not a router wrapper — a transition freezes the page until its
+callback settles, and wrapping a navigation means holding the reader on the old
+frame until the next route has both loaded and painted. Getting that wrong does
+not look like a missing animation, it looks like the product hung.
+
+**Reduced motion is a refusal, not a shorter animation.** A reader who asked
+their system for less movement is asking for none of this, so the change is made
+plainly and the browser is never involved. The mark is the reference
+implementation: at `prefers-reduced-motion` `LogoMark` renders the finished
+mark, not the same draw at half speed.
+
+**What moves.** Opacity, ink colour, transform, border colour — and, where a
+panel genuinely changes size, width. Not shadow, not radius, not type. This was
+already true by habit in every module before it was written down here; the
+survey found 29 explicit `transition: none` against one `transition: padding`.
+
+### The scale
+
+| token | value | what it times |
+|---|---|---|
+| `--cw-motion-tap` | 120ms | direct manipulation under the pointer — crop handles, zoom |
+| `--cw-motion-state` | 160ms | the workhorse: a control repainting to say hover, focus or current |
+| `--cw-motion-surface` | 180ms | a surface that moves or resizes — panel, sheet, menu, filter row |
+| `--cw-motion-enter` | 400ms | something arriving that was not on screen at all |
+| `--cw-motion-tone` | 320ms | the topbar changing its mind about its own tone over a photograph |
+| `--cw-ease-state` | `cubic-bezier(0.22, 0.61, 0.24, 1)` | the platform's decelerate |
+| `--cw-ease-surface` | `cubic-bezier(0.16, 1, 0.3, 1)` | the harder settle a moving surface takes |
+| `--cw-ease-network` | `cubic-bezier(0.2, 0.8, 0.2, 1)` | the landings' own decelerate |
+
+`--cw-motion-tone` is the one entry that arrived with an argument rather than a
+tally: `PlatformShell.module.css` runs it on four properties and says why in
+place — the header's tone flips at real boundaries, and 320ms is what makes
+those flips read as the bar changing its mind rather than as a strobe. It was
+named on 2026-09-10, when splitting a hover rule duplicated the literal and the
+motion guard refused the growth. That is the ratchet working as intended: the
+cheapest way past it was to name the thing.
+
+**These were measured, not chosen.** 160ms is the product's de-facto duration —
+91 sites, 51 of them spelled `0.16s` and 40 spelled `160ms`, one number in two
+notations. 180ms is the next 32. The curves are the two that were hand-tuned
+more than once; `--cw-ease-network` is the landings' ease-out, typed
+`cubic-bezier(.2,.8,.2,1)` fourteen times and with spaces four more. Nothing in
+this table retimes anything: every value is what that thing already did.
+
+**`--cw-ease-network` is a separate name on purpose.** The landings decelerate
+harder than the platform does, and that is a real difference between two
+surfaces, not drift. A token layer that quietly folded eighteen landing sites
+into the platform's curve on the day it was introduced would be a visual change
+wearing a refactor's clothes. The name makes the existing answer sayable; whether
+the network keeps its own ease is a question for the day someone argues it.
+
+**Open, and deliberately not closed here: 160 and 180.** They are one number
+pretending to be two — nothing distinguishes a control repainting from a panel
+sliding except which afternoon each was typed. Collapsing them is probably
+right and it retimes 32 sites, so it wants its own pass with its own before and
+after, not a footnote in the pass that introduced the names.
+
+### The ratchet
+
+`npm run guard:motion` counts unnamed timings per file against
+`data/design-tokens/motion-baseline.json`: 347 across 31 files at the moment the
+tokens landed. A file may keep what it has and may not grow more; a new file
+starts at zero. Zero durations, the `0.01ms` reduced-motion idiom, `linear`
+(a real choice for a marquee or a progress fill) and anything already reaching a
+token are not counted.
+
+A gate that failed on all 347 is a gate nobody could turn on, and rewriting them
+in the same pass would have been a product-wide retiming with no argument
+attached to it. The baseline is a burn-down list, one `grep` from review — every
+number in it is a literal somebody still has to name. `--report` prints them per
+file, largest first; `--baseline` rewrites the line, and is for after the
+argument, not instead of it.
+
+### Not decided here
+
+Ink kinetics (giving the stroke/ring/contour primitives a time dimension),
+scroll-linked movement, procedural micro-scenes and sound all sit above this
+layer and none of them is settled. The survey argues for CSS scroll-driven
+animation (`animation-timeline: view()`) over JavaScript when that layer is
+built, and against pre-rendered video on scroll — a video takes neither the
+theme nor the tokens, which is the same defect class already recorded twice for
+static raster. Scroll-jacking remains out.
+
+## Hover is a pointer state (2026-09-10)
+
+Source: `scripts/guard-pointer.mjs`, `data/design-tokens/pointer-baseline.json`.
+The diagnosis this section generalises was written a year earlier, in
+`PlatformShell.module.css` → "HOVER IS A POINTER STATE, AND A PHONE HAS NO
+POINTER", and applied in exactly one place.
+
+**A touch device does not fail to hover. It latches.** iOS Safari keeps
+`:hover` on the last element tapped until the next tap lands somewhere else.
+Opening the account menu from the cabinet painted two gold marks — the full one
+under «Кабінет», which is where you are, and a 42% one under whichever row the
+last tap happened to be near. Two marks in one menu is two answers to "which am
+I in", and nothing tells the reader which is the claim and which is residue.
+
+**Every hover rule sits behind `@media (hover: hover)`.** All 215 of them, as of
+this date: 138 in the platform and the app, 77 across the five landings. Before
+that pass the count behind the query was two.
+
+**Tailwind was the hole a CSS scan cannot see.** `hover:` and `group-hover:`
+utilities are generated from class names in TSX, so no `.css` file in this repo
+contains them and the guard was blind to every one. Loading the home page on an
+emulated phone — `matchMedia("(hover: hover)").matches === false` — found 64
+authored rules correctly dead and **five Tailwind utilities still live**.
+`future.hoverOnlyWhenSupported: true` in `tailwind.config.js` closes it, and
+`guard:pointer` asserts the flag rather than trusting it: a config flag nothing
+checks is a comment.
+
+Tailwind's query is `(hover: hover) and (pointer: fine)`, one clause stricter
+than the authored rules' `(hover: hover)`. Verified, not assumed — a Tailwind
+build of a two-class fixture emits exactly that, for `hover:` and
+`group-hover:` alike. The gap it leaves is a device that hovers with a coarse
+pointer, where a utility would stay dark while an authored rule paints. No such
+device is in this product's traffic and the two are not being reconciled today;
+it is written down so the next person finds it as a known difference rather
+than as a mystery.
+
+**Focus is never inside the query, so a mixed rule is split, not wrapped.**
+A keyboard has no pointer either, and its ring has to survive on every device.
+75 of the 215 rules were `.x:hover, .x:focus-visible { … }` — wrapping those
+whole would have deleted the focus ring on every touch device, which is an
+accessibility regression wearing a bug fix's clothes. Each was split: the hover
+selector into the query, the focus selector left beside it with the same body.
+
+**What this does not do is give touch an answer.** Removing a state that was
+lying is not the same as adding the one that is missing: `:active` exists on
+three button roles and six other rules in the whole product, so a card, a tile,
+a filter chip, a menu row and a carousel arrow still report nothing at the
+moment they are pressed. Worse for the buttons that do have it — `:hover` lifts
+by `--ds-button-lift` and `:active` presses by the same amount, so before this
+pass a tapped button stayed lifted, showing a state that had no meaning on that
+device. Press feedback is the next piece and is not built here.
+
+### The guard
+
+`npm run guard:pointer` counts hover rules outside a `hover: hover` query, per
+file, in three scopes — `platform`, `app`, `network` — so a landing cannot hide
+behind the platform's number. The baseline is all zeros, which is what makes
+this a gate rather than a burn-down: any new unguarded rule fails on the file
+that introduced it. `--report` lists rule and line; `--baseline` rewrites.
+
+The two guards check each other, which is how `--cw-motion-tone` got its name.
+Splitting `.x:hover, .x:focus-visible` into two rules duplicates their shared
+body, so one `transition: color 0.32s ease` became two and `guard:motion`
+refused the file. Re-baselining would have been one keystroke; naming the
+duration was the right answer and removed four literals instead of adding two.
+
+Comments are blanked before the scan, every character replaced by a space
+except newlines so line numbers survive. This codebase argues about hover *in
+comments*, at length, and the first version of the guard reported five of its
+most carefully reasoned blocks — including the one documenting the latch bug —
+as violations of the rule they were explaining. A guard that cannot tell an
+argument from a selector gets switched off by the first person it accuses
+wrongly.
+
+## The stroke is drawn, not squashed (2026-09-10)
+
+Source: `src/app/globals.css` (`.cw-ink-label-mark` and its states),
+`--cw-ink-stroke-length` / `--cw-ink-drawn-rest` / `--cw-ink-drawn-hover` in
+`cw.tokens.json`, the four module marks (`navInkMark`, the trail's and the
+builder's `inkMark`, the room's `rowMark`). Specimen:
+`docs/design-system/prototypes/ink-draw-2026-09-10.html`.
+
+**The file already said what it wanted.** The comment on `.cw-ink-label-mark`
+has read "what still varies between rest, hover and current is what was always
+supposed to vary: how far the stroke has been drawn, and how firmly" since
+2026-09-06. The mechanism said something else: `scaleX` compressed the *whole*
+pen stroke — both end drops included — into a fraction of the box. Three
+strengths came out as three differently-sized marks rather than one line at
+three moments.
+
+Held side by side in the specimen the difference is not subtle. Squashed at 38%
+reads as a short thick dash under the first two letters; drawn at 38% reads as a
+line that has been drawn that far, because the round linecap is the pen's tip.
+
+**And at the old range the mechanism was invisible**, which is why this was
+never noticed: the global label ran 90 → 96 → 100%, and compressing a
+near-horizontal line by 10% looks identical to clipping it by 10%. The specimen
+shows both rows for exactly that reason. The change only means anything with
+real travel — which the topbar, the breadcrumbs, the builder and the room were
+already running at 38 / 58 / 72%.
+
+### Why a dash works here and not for the mark
+
+`ink-stroke` is **one stroked cubic** plus two filled drops — "the pen landing
+and leaving" (`scripts/lib/icon-glyphs.mjs`). `LogoMark`'s own note explains why
+it could not use a dash: a variable-width *filled outline* has no single dash
+direction, so it strokes centrelines inside a mask instead. That constraint does
+not apply to a single stroked path, and `stroke-linecap` is already `round` in
+the baked sprite — so the cut end is a pen tip for free.
+
+`stroke-dasharray` and `stroke-dashoffset` are **inherited** SVG properties, and
+that is what makes this reachable at all: the graphic arrives through
+`<use href="sprite.svg#cw-ink-stroke">`, whose contents live in a shadow tree
+host CSS cannot select into. Inheritance crosses that boundary. Two properties
+were available and they happened to be the right two.
+
+`--cw-ink-stroke-length: 29.46` is the path's measured `getTotalLength()`, not an
+estimate; the specimen prints it in its own title.
+
+**The leaving drop is a fill and a dash cannot clip it,** so it stays painted
+ahead of the tip. Checked rather than assumed: at the horizontal stretch these
+boxes run (`preserveAspectRatio="none"`, ~5× wider than tall) it is crushed to
+roughly 1.5px of height and reads as nothing.
+
+### One ladder, which `scaleX` made impossible
+
+A fraction of `scaleX` is a fraction of the **box**, so every surface whose mark
+box differed from its label had to hand-tune its own rest value — `0.38`, `0.58`,
+`0.72` and `0.9` were all live at once, for one stroke, plus two different hover
+values (`0.74` and a hardcoded `0.96`). A fraction of the dash is a fraction of
+the **stroke**, identical everywhere. So the ladder is now two tokens and a zero:
+
+| stop | value | drawn |
+|---|---|---|
+| rest | `--cw-ink-drawn-rest` | **0%** |
+| hover / focus | `--cw-ink-drawn-hover` | **80%** |
+| current / press | — | 100% (`stroke-dashoffset: 0`) |
+
+**The ladder starts at nothing.** It first shipped at 38% — the value the topbar
+and the builder already ran — and that was wrong for a reason worth writing
+down: a stroke already 38% drawn at rest spends the gesture before the gesture
+happens. Pointing at a nav item then *extends* something that was already
+there, which is a nudge and not a stroke. Nothing → 80% → full is the pen
+arriving, and it is what the topbar has always expressed anyway with
+`opacity: 0` at rest.
+
+24 `scaleX` declarations across five files were converted, and no ink mark
+carries one now.
+
+### The `link` variant is the exception, and it is a real one
+
+A link **inside prose** keeps the full length at every strength and varies only
+its force: faint at rest, full when pointed at. Thin, not short.
+
+That stroke *replaced* the browser's underline (the 2026-08-31 note), so it is
+the whole of how a link says it is a link, and the canon requires that without
+hover and without colour. At rest 0 a link in a sentence would be
+indistinguishable from the sentence — and a phone cannot hover, so on a
+handheld it would never announce itself at all.
+
+**Thin is expressed as opacity, never as weight.** The base rule's own comment
+says it: «one stroke, three forces — and the force is opacity and length, NEVER
+weight». Drawing a thinner line here would have meant a second `scaleY`, which
+is precisely the defect that comment exists to prevent.
+
+**The variant's length is pinned in a rule placed after every state rule.** Each
+state selector carries the same `(0,3,0)` specificity as the variant's, so a tie
+is broken by document order — without the pin, hovering a link would *shorten*
+its stroke to 80%, the ladder running backwards.
+
+**The two variants are not a style choice; they are the distinction the codebase
+already draws.** `PlatformFooter` uses `variant="link"` for the link inside its
+«if you found a bug, let us know» sentence, and the bare default (`navigation`)
+for its rows of links. A row of links announces itself by being a row; a link in
+a sentence cannot. Verified in the browser: seven `link` marks on the home page
+sit at 100% length and 0.34 opacity, three `navigation` marks at 0%.
+
+**The dash has to be in the transition,** or the stroke jumps to its new length
+instead of being drawn to it. All five mark transitions moved onto
+`--cw-motion-state` / `--cw-ease-state` at the same time, which burned 17
+literal timings out of the motion baseline (347 → 330).
+
+**And the dash PATTERN has to be declared, not only the offset.** The conversion
+gave every module mark its `stroke-dashoffset` and none of them a
+`stroke-dasharray`, whose computed value then defaults to `none` — no gaps, so
+the whole stroke paints and the offset beside it does nothing. The topbar, the
+breadcrumbs, the builder and the room were fully converted, read as converted,
+and drew nothing. It was caught by reading
+`getComputedStyle(mark).strokeDasharray` in the browser and by no guard at all,
+which is worth remembering the next time a CSS change "obviously" works.
+
+## Press is the state a finger has (2026-09-10)
+
+Source: `src/app/globals.css` (the ink press, in the `utilities` layer beside
+the other three strengths), `src/components/platform/PlatformButtons.module.css`
+(the roles), `--cw-press-settle` in `cw.tokens.json`,
+`scripts/guard-pointer.mjs --report` (the remainder).
+
+**Gating hover removed a state that was lying. It did not add the one that was
+missing.** Measured the same day: 153 selectors in the platform could paint a
+hover and **12** could paint a press. On a finger that means nothing happens
+between deciding to tap and the next screen — the interface receives the
+gesture and says so nowhere. Hover and press are the same question asked from
+two ends, and only one end had an answer.
+
+**A press is not a fourth strength. It is the current strength, borrowed.**
+The ink ladder is rest `0.34` → hover `0.68` → current `1`. A pressed control
+runs to full and releases when you release: the same stroke, the same value,
+no new token and no new graphic. The answer to "what does pressed look like"
+was already drawn — it had no selector.
+
+One rule in `globals.css` reaches every ink-carrying control at once, because
+they already share the selector family for the other three states:
+
+```
+:is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):active .cw-ink-label-mark
+```
+
+Nav items, tabs, builder rows, breadcrumbs, footer links, the library's niches,
+the reader's size options. The icon ring takes the same rule. The offer rail's
+page dots were already running the ladder under other names — `0.32` / `0.64` /
+`1` — so their press is the same borrowing, written in their own file.
+
+**And it is deliberately NOT inside a hover query.** That is the whole
+symmetry: hover had to be gated because a phone cannot hover and latches it
+instead; press is the one state a touch device unambiguously *has*.
+
+**An object that has no plate cannot be pushed down.** `primary` and
+`secondary` have reversed their lift since they were written, and `onMedia`
+now does too. `chrome` and `chromeBare` carry no plate at rest, so a lift there
+is a label jumping 2px for no stated reason — their answer arrives from the ink
+rule above, and the contract says so in place rather than growing a redundant
+rule. `text` is the exception that needed a line: it is a sentence whose resting
+colour is `--cw-platform-muted`, so ink alone leaves the *words* unmoved and
+reads as the underline flickering. It takes the full text colour.
+
+**`--cw-press-settle: 1px`** is the object-press for cards and rows — the
+mirror of the hover lift, one number, delivered to the landings too. Taken by
+`.outlineItem`, `.pagerLink`, `.routeChoiceCard`, `.glance`, `.book` and the
+offer tile's CTA. Under `prefers-reduced-motion` the settle is withheld and the
+elevation change stays: the same trade the button lift makes, so one gesture
+behaves one way everywhere a reader asked for less movement.
+
+### How to count this, and the trap in counting it
+
+**Count the rules, not the controls.** Five successive browser probes of "how
+many controls answer a press" returned 8, 18, 37, 8 and 20 on the same page,
+because each got the selector algebra wrong in a different way: splitting a
+selector list on commas destroys every `:is(...)`;
+`closest('[class*="programTile"]')` matches `programTileOverlay`, which is the
+pressed element and not the tile; walking five ancestors and calling
+`querySelector` on each answers "is there a press rule anywhere near this"
+rather than "does pressing this repaint anything"; and counting `.base:active`
+as an answer counts a `transform: none` that lives inside the reduced-motion
+block — a suppression read as a feature.
+
+The reliable measure is the rule census: every `:active` selector in the loaded
+CSS, with how many elements each can reach on the page.
+
+| rule | reaches |
+|---|---|
+| `:is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):active .cw-ink-label-mark` | 10 |
+| `.programTile:active .programLink` | 8 |
+| `.text:active` | 6 |
+| `.queueDotButton:active .queueDot` | 6 |
+| `.secondary:active` | 4 |
+| `.primary:active` | 2 |
+| `.control.control:active` | 2 |
+
+**What is still silent**, by elimination: the brand mark (twice — header and
+footer), the burger, «Увійти», the video poster, the torii glyph, the author
+link and the four social icons. Eleven controls, all utility chrome or plain
+links. Everything content-facing answers, the offer tiles included.
+
+`npm run guard:pointer --report` counts a different thing and says so: 210
+selectors with a hover and no press rule **in the same file**. It cannot see
+that an ink-carrying control answers through the shared family in `globals.css`,
+so it over-reports by design rather than claiming a number it cannot stand
+behind. It is a report and not a gate on purpose: whether a given object
+answers a press is a decision per object, and a number that failed the build
+would be answered by whatever silenced it fastest.
+
+## `fill` is a touch concept (2026-09-10)
+
+> **Superseded 2026-09-13 by PR #268** (`0259ba76`, «Buttons take their size from the container, not the pointer»). A button's size is now chosen by its container, not by the pointer: full (48px, 1rem) is the default, and a container that composes `compact` from `PlatformButtons.module.css` re-points the four size tokens to `--ds-button-compact-*` (40px, 0.9rem), keeping a 48px hit area on coarse pointers through `--ds-button-hit-min`. `dsAliasPointerFine` no longer touches buttons — it carries only `--ds-touch-target-min`. The account below is kept as the history of why the pointer split was tried.
+
+Source: `PlatformButtons.module.css` → the `fit` axis.
+
+**On a mouse, `fill` stops meaning "span".** On a phone a full-bleed CTA is
+right: one column, one thumb, and the container *is* the measure. On a desktop
+the container is a card, which is not a measure of anything — so "span it"
+handed the label whatever the grid happened to be, and `--ds-button-max-width`
+then decided the width. Measured on the home page at 1313px, before:
+
+| label | wants | rendered |
+|---|---|---|
+| «Тест доші» | 113px | **352px** (3.1×) |
+| «Почати шлях» | 139px | **352px** (2.5×) |
+
+Two different labels, one identical width, because both ran into the same
+ceiling — and that ceiling is the *phone's* full-bleed maximum doing a second
+job it was never sized for. Nothing about those buttons was decided by their
+content. That is the whole of "on desktop the composition looks strange".
+
+Under `(hover: hover) and (pointer: fine)`, `fill` becomes `width: max-content`
+with the contract's own `min-width` as a floor and the container as the only
+limit. Both CTAs now render at **168px**, the floor — content-driven where
+content is wide enough, level where it is not, which is the levelling `wide`
+exists to provide. The phone is untouched: 335px and 303px, full-bleed, 48px
+tall.
+
+**No new number was introduced.** `max-content` cannot exceed its own label, so
+the 1.5m gold band the cap was written to prevent cannot return either. The
+query is the pointer and not the viewport for the reason `.row` gives in the
+same file: the same card is 326px in a three-up grid and 560px in a one-up *at
+one viewport width*, so a width query cannot answer a container question. What
+actually differs is the pointer — a finger needs a thumb-sized band, a mouse
+does not.
+
+### And the sizes themselves, split by pointer
+
+> **Superseded 2026-09-13 by PR #268** (`0259ba76`, «Buttons take their size from the container, not the pointer»). A button's size is now chosen by its container, not by the pointer: full (48px, 1rem) is the default, and a container that composes `compact` from `PlatformButtons.module.css` re-points the four size tokens to `--ds-button-compact-*` (40px, 0.9rem), keeping a 48px hit area on coarse pointers through `--ds-button-hit-min`. `dsAliasPointerFine` no longer touches buttons — it carries only `--ds-touch-target-min`. The account below is kept as the history of why the pointer split was tried.
+
+`fill` fixed the width. The remaining numbers were the same story one level
+down: 48px tall, 168px of minimum width and a 1rem label are what a **finger**
+needs, and the desktop was given them because nobody had split them. The result
+reads as an interface designed for a phone and opened on a laptop — correct, and
+one size too large everywhere.
+
+The delivery layer now has a second half, `delivery.dsAliasPointerFine` in
+`cw.tokens.json`, emitted by the generator into a
+`@media (hover: hover) and (pointer: fine)` block in `globals.css` and into the
+network mirror. Same token names, re-pointed:
+
+| token | finger | mouse |
+|---|---|---|
+| `--ds-touch-target-min` | `3rem` (48) | `2.25rem` (36) |
+| `--ds-button-min-height` | `3rem` (48) | `2.5rem` (40) |
+| `--ds-button-min-width` | `10.5rem` (168) | `9rem` (144) |
+| `--ds-button-padding-inline` | `1.15rem` | `1rem` |
+| `--ds-button-font-size` | `1rem` | `var(--ds-type-body-sm-size)` |
+
+**Target and button decouple here, and that is the point of doing it in the
+token layer.** On touch they are the same `3rem`, because a finger needs one
+floor for everything it can hit. On a mouse an icon control is a *target*
+(36px — comfortably above the 24px WCAG 2.2 minimum and what desktop
+applications actually use) while a labelled button is a *button* (40px — below
+that a plate with a word in it starts reading as a chip). One number could not
+say both, which is why splitting them was a token change and not a CSS one.
+
+**The label size comes from the type scale, not from a number**, and
+`guard:geometry` is what insisted. This block first shipped a literal
+`0.9375rem` and the guard reported `globals.css` growing from one hand-typed
+font size to two. It was right: the scale already had the step
+(`--ds-type-body-sm-size`, which `chrome` and `text` have taken all along), so a
+second near-identical number would have been the exact drift this file exists to
+prevent, introduced by the fix for it.
+
+Measured, home page:
+
+| | finger (375) | mouse (1313), before | mouse (1313), after |
+|---|---|---|---|
+| «Почати шлях» | 335 × 48 | 352 × 48 | **144 × 40** |
+| «Тест доші» | 303 × 48 | 352 × 48 | **144 × 40** |
+| rail arrow | 48 | 48 | **36** |
+| label | 16px | 16px | **14.4px** |
+
+The five landings receive the same half, so a CTA does not come out 48px there
+and 40px here — that split would have reintroduced "one control, two sizes, one
+product" at the network boundary.
+
+### The census
+
+91 contracted controls, from `composes:` chains across `src/components` and
+`src/app`:
+
+| role | count | | fit | count |
+|---|---|---|---|---|
+| `chromeBare` | 29 | | `square` | 20 |
+| `secondary` | 22 | | (none) | 34 |
+| `primary` | 11 | | `fill` | 11 |
+| `text` | 11 | | `hug` | 9 |
+| `chrome` | 6 | | `row` | 5 |
+| `onMedia` | 3 | | `round` | 4 |
+
+Three controls compose `base` with no role at all — `.sizeOption`,
+`.sizeOptionCurrent`, `.programLink` — which means they take the contract's
+geometry and then decide their own colour and edge. That is the gap the role
+axis exists to close, and it is the next thing to close in this file.
+
+## Haptics (2026-09-10)
+
+Source: `src/components/platform/haptics.ts`, mounted by `PressHaptics.tsx` in
+the platform and builder layouts. `--cw-haptic-tap: 12ms`.
+
+**It is an Android decision, not a mobile one, and the docs say so because the
+platform changed recently.** `navigator.vibrate` is supported by Chrome and
+Firefox on Android and has never been supported by Safari on iOS — WebKit
+exposes no haptic API. The `<input type="checkbox" switch>` trick that produced
+Taptic feedback from iOS 17.4 was **closed by Apple in iOS 26.5**, so as of
+this date there is no way to fire an iOS haptic from a web page.
+
+That single fact decides the design. A tick is a layer whose *absence* changes
+nothing, and it can never be the only signal that something was accepted —
+roughly half the readers will not receive it. Every pressed control answers
+visually first; this arrives on top.
+
+**It binds to a role, not to call sites.** `primary` is already defined as "the
+one action that advances money or progress. Max one per view", which is exactly
+the set that deserves a tick — already written down, already guarded. So the
+contract declares `--cw-control-role: primary` on the role itself and
+`haptics.ts` listens for it. A hashed CSS-module class is not a stable handle
+from JS, and a `data-` attribute would have to be added and kept at every call
+site; a custom property is declared once, by the role, and inherits — which is
+what makes it readable from whatever child the finger actually landed on.
+Buying, starting a programme and the home page's gold CTAs are one rule, and a
+CTA added next month is included the moment it takes the role.
+
+**The marker rule must live outside every `@layer`,** and finding that out
+cost an hour. Tailwind purges anything inside `@layer` whose class name it
+cannot find in its content scan — and `composes: cw-role-primary from global`
+injects the name at build time, so it appears in no `.tsx` file and never
+survives the scan. The symptom was precise and misleading: the rule sat on disk
+in `globals.css`, the class sat in the element's `classList`, the served
+stylesheet contained neither, and `--cw-control-role` resolved to the empty
+string. Unlayered rules are not purged. Every other global class this codebase
+reaches through `composes` was checked against the served CSS afterwards —
+`cw-scroll*`, `custom-scrollbar`, `cw-tabbar`, the `cw-ink-*` family — and none
+of them is being lost.
+
+**`pointerdown`, not `click`.** The tick is the tactile half of the press
+state, not a receipt for the navigation: it says "the surface felt you" at the
+same instant the ink runs full and the plate settles in. Most of these controls
+are links, and a haptic on `click` fires while the page is already leaving —
+felt during a transition, which reads as noise. A press dragged away and
+abandoned will have buzzed for nothing, and that is the correct trade: the
+gesture *was* received.
+
+**`prefers-reduced-motion` silences it.** A buzz is movement applied directly
+to the hand, so the refusal covers it. Verified: 2 ticks with motion allowed, 0
+with reduced motion, and 0 from twelve non-`primary` controls pressed in the
+same run.
 
 ## Aspirational Ledger (not implemented)
 

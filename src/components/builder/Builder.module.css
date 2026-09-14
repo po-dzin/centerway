@@ -4057,6 +4057,17 @@
   margin-block-start: var(--cw-space-2xs);
 }
 
+/* A two-answer choice inside that row ("Скасувати" / "Імпортувати чернетку"):
+   equal columns side by side, one full-width column each when they do not fit,
+   so the pair is never two sizes. The status line beside it keeps its own
+   width. */
+.panelChoice {
+  flex: 1 1 calc(2 * var(--ds-button-min-width) + var(--cw-space-xs));
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--ds-button-min-width), 1fr));
+  gap: var(--cw-space-xs);
+}
+
 .panelStatus {
   flex: 1 1 8rem;
   min-width: 0;
@@ -4792,9 +4803,14 @@
   background: transparent;
 }
 
-.courseSettingEditor .choiceOption[aria-pressed="true"],
-.courseSettingEditor .choiceOption:hover:not(:disabled) {
+.courseSettingEditor .choiceOption[aria-pressed="true"] {
   background: transparent;
+}
+
+@media (hover: hover) {
+  .courseSettingEditor .choiceOption:hover:not(:disabled) {
+    background: transparent;
+  }
 }
 
 .courseSettingsAdvanced {
@@ -4994,11 +5010,18 @@
   }
 
   /* Answers side by side once they fit, first one first: it is the one the
-     author is most likely to want, and on both dialogues it is the safe one. */
+     author is most likely to want, and on both dialogues it is the safe one.
+     In equal columns, never below the contract's button width: a flex row sized
+     each answer to its label, so "Залишити серверну" and "Відновити локальну"
+     were two shapes for one question. Three answers stack instead — at 27rem
+     the third would wrap into half a row on its own. */
   .decisionActions {
-    display: flex;
-    flex-wrap: wrap;
+    grid-template-columns: repeat(auto-fit, minmax(var(--ds-button-min-width), 1fr));
     align-items: center;
+  }
+
+  .decisionActions:has(> :nth-child(3)) {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

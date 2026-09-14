@@ -9,4 +9,6 @@
 	border-radius: var(--cw-radius-inset);
 }
 .box-modal_close { position: absolute; right: 10px; top: 6px; font-size: 11px; line-height: 15px; color: #999; cursor: pointer; }
-.box-modal_close:hover { color: #666; }
+@media (hover: hover) {
+  .box-modal_close:hover { color: #666; }
+}

@@ -93,8 +93,8 @@
   font-variant-numeric: tabular-nums;
   cursor: pointer;
   transition:
-    background-color var(--cw-motion-state) ease,
-    border-color var(--cw-motion-state) ease;
+    background-color var(--cw-motion-state) var(--cw-ease-state),
+    border-color var(--cw-motion-state) var(--cw-ease-state);
 }
 
 @media (hover: hover) {

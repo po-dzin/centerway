@@ -1,10 +1,19 @@
 <!doctype html><meta charset="utf-8">
-<title>Бібліотека · кадр 375</title>
+<title>Кадр 375</title>
 <!-- Панель прев'ю не вміє емулювати вузький екран, а мобільну
      розкладку треба бачити, а не уявляти. Проста рамка 375×812:
-     всередині iframe у сторінки свій справжній viewport. -->
+     всередині iframe у сторінки свій справжній viewport.
+
+     Прототипів стало більше одного, тому рамка більше не зашита на
+     кімнату: `?src=` називає сторінку, а без параметра відкривається
+     та сама library-depth, що й раніше. -->
 <style>
   html, body { margin: 0; height: 100%; background: #555; display: grid; place-items: center; }
   iframe { width: 375px; height: 812px; border: 0; background: #fff; }
 </style>
-<iframe src="library-depth-2026-08-26.html"></iframe>
+<iframe id="f"></iframe>
+<script>
+  const src = new URLSearchParams(location.search).get("src") || "library-depth-2026-08-26.html";
+  /* Тільки сусідній файл у цій же теці: рамка не повинна вміти відкрити чужий origin. */
+  document.getElementById("f").src = /^[\w.-]+\.html$/.test(src) ? src : "library-depth-2026-08-26.html";
+</script>

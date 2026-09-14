@@ -125,11 +125,18 @@
   transition: color 160ms ease;
 }
 
-.control .option:hover,
 .control .option:focus-visible {
   color: var(--platform-header-fg, var(--cw-platform-text));
   background: transparent;
   outline: none;
+}
+
+@media (hover: hover) {
+  .control .option:hover {
+    color: var(--platform-header-fg, var(--cw-platform-text));
+    background: transparent;
+    outline: none;
+  }
 }
 
 /* The one focus ring the button contract gives every role. */
@@ -157,10 +164,16 @@
     transform 160ms ease;
 }
 
-.control .option:hover .ring,
 .control .option:focus-visible .ring {
   opacity: var(--cw-ink-hover-opacity);
   transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
+}
+
+@media (hover: hover) {
+  .control .option:hover .ring {
+    opacity: var(--cw-ink-hover-opacity);
+    transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
+  }
 }
 
 /* Current: the ring, and only the ring.

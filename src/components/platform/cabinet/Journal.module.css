@@ -126,9 +126,14 @@
 /* Hover is one ink stroke, at the strength the rest of the product uses for a
    pointer at rest on a row. No plate, no colour change to the accent — warmth
    is what this system spends when something is being acted on. */
-.placeLink:hover,
 .placeLink:focus-visible {
   color: var(--cw-platform-text);
+}
+
+@media (hover: hover) {
+  .placeLink:hover {
+    color: var(--cw-platform-text);
+  }
 }
 
 /* An entry whose lesson can no longer be named. It keeps its place in the day

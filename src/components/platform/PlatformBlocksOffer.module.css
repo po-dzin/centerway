@@ -1101,11 +1101,30 @@
    `:has()` rather than a sibling combinator: the card is what reacts, and
    reading it off the tile keeps hover and focus in one place instead of one
    rule that walks up and another that walks across. */
-.programTile:hover .programLink,
 .programTile:has(.programTileOverlay:focus-visible) .programLink {
   transform: translateY(var(--ds-button-lift));
   background: color-mix(in srgb, var(--program-tile-button-bg) 88%, var(--cw-platform-surface) 12%);
   box-shadow: 0 16px 28px color-mix(in srgb, var(--cw-mat-scrim-ink) 22%, transparent);
+}
+
+@media (hover: hover) {
+  .programTile:hover .programLink {
+    transform: translateY(var(--ds-button-lift));
+    background: color-mix(in srgb, var(--program-tile-button-bg) 88%, var(--cw-platform-surface) 12%);
+    box-shadow: 0 16px 28px color-mix(in srgb, var(--cw-mat-scrim-ink) 22%, transparent);
+  }
+}
+
+/* PRESS, ON THE CARD AND NOT ON THE BUTTON (2026-09-14), because the card is
+   what a finger lands on. `.programTileOverlay` is the click target and a child
+   of the tile, so `:active` reaches the tile the same way `:hover` does and the
+   tile's own CTA shows the answer: it settles by `--cw-press-settle` instead
+   of lifting. With hover now gated to pointers, this is the only response the
+   rail gives on a phone. Outside the hover query on purpose. */
+.programTile:active .programLink {
+  transform: translateY(var(--cw-press-settle));
+  background: color-mix(in srgb, var(--program-tile-button-bg) 88%, var(--cw-platform-surface) 12%);
+  box-shadow: 0 8px 16px color-mix(in srgb, var(--cw-mat-scrim-ink) 16%, transparent);
 }
 
 /* Tests hub: a tile can carry a format line and can describe a surface that does
@@ -1263,7 +1282,13 @@
     transition: none;
   }
 
-  .programLink:hover {
+  @media (hover: hover) {
+    .programLink:hover {
+      transform: none;
+    }
+  }
+
+  .programTile:active .programLink {
     transform: none;
   }
 }

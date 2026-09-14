@@ -33,6 +33,7 @@ import {
   type CourseVisibility,
 } from "@/lms-core";
 import { BuilderCoverEditor } from "./BuilderCoverEditor";
+import { ACCESS_TERM_NOTES, type AccessTermNote } from "@/lib/lms/accessTerm";
 import { ChoiceRow, ChoiceSet, FieldInput, RequiredMark } from "./BuilderFields";
 import { PALETTE_LABELS } from "./coursePalettes";
 import styles from "./Builder.module.css";
@@ -84,6 +85,14 @@ const CATEGORY_LABELS: Record<CourseCategory, string> = {
   nutrition: "Харчування",
   cleansing: "Очищення",
 };
+
+/**
+ * The words an author picks from for «Термін доступу» — and, since 2026-09-14,
+ * the term the offer actually grants: the preset table lives in
+ * `lib/lms/accessTerm.ts`, shared with the save, the approval and the admin
+ * catalogue, so the page and the offer can no longer say different things.
+ */
+const ACCESS_NOTE_OPTIONS = ACCESS_TERM_NOTES;
 
 const VISIBILITY_LABELS: Record<CourseVisibility, string> = {
   hidden: "Ніхто",
@@ -337,18 +346,18 @@ export function BuilderCourseSettings({
           />
           {/* Prose, not policy. What actually cuts access off is the expiry on the
             grant itself, set when the seat is sold; this is the promise printed
-            beside the price. They are free to differ on purpose — «доступ
-            назавжди» is still compatible with revoking a refunded seat. */}
-          <FieldInput
-            field={{
-              path: ["accessNote"],
-              label: "Термін доступу",
-              kind: "text",
-              required: showcase,
-              hint: "Що обіцяємо покупцю: «доступ назавжди», «30 днів після покупки».",
-            }}
-            value={course.accessNote}
-            onChange={onChange}
+            beside the price. They are free to differ on purpose — «Назавжди»
+            is still compatible with revoking a refunded seat. Closed list, not
+            free text (2026-09-13): the storefront prints exactly what is
+            chosen here, so the choice is the words a buyer reads. */}
+          <ChoiceRow
+            label="Термін доступу"
+            required={showcase}
+            clearable
+            hint="Скільки покупець має доступ до курсу. Друкується поряд з ціною і сам закриває доступ після терміну; для опублікованого курсу — після затвердження змін."
+            options={ACCESS_NOTE_OPTIONS.map((value) => ({ value, label: value }))}
+            value={course.accessNote as AccessTermNote | undefined}
+            onChange={(next) => onChange(["accessNote"], next)}
           />
           {/* `authorNote` moved to its own tab (2026-08-28) — see
             `BuilderCourseAuthor.tsx`. It sits beside the byline it modifies
