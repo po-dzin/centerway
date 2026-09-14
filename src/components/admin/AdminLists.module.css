@@ -815,9 +815,17 @@
   gap: var(--cw-space-xs);
 }
 
+/* «Продається» is the one state that says the course is good to go, so it wears
+   the success badge's recipe (globals.css → .cw-status-success-badge). It
+   composed `cw-status-paid`, a class nothing defines any more, and the second
+   `composes` also cost it the tag's own paper — the chip rendered as bare text.
+   The contour is an inset shadow, not a border: the chip stays the height of
+   the tags beside it. */
 .tagOnSale {
   composes: tag;
-  composes: cw-status-paid from global;
+  background-color: var(--cw-status-success-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-status-success) 30%, transparent);
+  color: var(--cw-status-success);
 }
 
 .changes {
