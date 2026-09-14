@@ -1311,7 +1311,13 @@
       border: 1px solid var(--cw-border);
       border-radius: var(--cw-radius-md);
       color: var(--cw-text);
-      background-color: var(--cw-surface);
+      /* PAPER, NOT THE SURFACE TINT (2026-09-14). `--cw-surface` is the glass
+         tint — 76% of the material — and a picker has no blur under it, so the
+         open list showed the rows of the page straight through its options. A
+         floating list is an object of its own: the opaque material, its grain
+         and the raised shadow. */
+      background-color: var(--cw-mat-surface);
+      background-image: var(--cw-mat-grain-image);
       box-shadow: var(--cw-mat-shadow-raised);
     }
 
@@ -1651,9 +1657,12 @@
     box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
   }
 
+  /* A list row is a card by its box — 57–200px on the short side takes `lg`
+     (geometry audit, 2026-09-07). It said `sm` 12 while the plates and dialogs
+     beside it said 28, so one admin page showed three corners (2026-09-14). */
   .cw-list-item {
     border: 1px solid var(--cw-border);
-    border-radius: var(--cw-radius-sm);
+    border-radius: var(--cw-card-radius);
     background-color: var(--cw-surface);
     transition: background-color 0.2s ease;
   }

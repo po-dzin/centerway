@@ -141,12 +141,57 @@
   min-width: 0;
 }
 
-.rowTitle {
+/* ONE LINE PER FACT. Each slot is exactly one line tall and never wraps, so a
+   row's height is its slot count — see `AdminRow`. `data-slot` sets the voice
+   of each line; the geometry is the same for all of them. */
+.rowLine {
+  display: block;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--ds-type-label-size);
+  line-height: 1.5rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowLine[data-slot="title"] {
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 500;
+}
+
+.rowLine[data-slot="sub"],
+.rowLine[data-slot="meta"],
+.rowLine[data-slot="note"] {
+  color: var(--cw-muted);
+}
+
+.rowLine[data-slot="note"][data-tone="alert"] {
+  color: var(--cw-status-failed);
+}
+
+/* Inline pieces of one line, spaced like the old flex row but able to end in
+   one ellipsis for the whole line. */
+.rowLine > * + * {
+  margin-inline-start: var(--cw-space-xs);
+}
+
+/* The badges keep their line by scrolling sideways instead of wrapping. */
+.rowBadges {
+  composes: cw-scroll-none from global;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: var(--cw-space-xs);
   min-width: 0;
+  height: 1.75rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.rowBadges > * {
+  flex: 0 0 auto;
 }
 
 .rowControls {

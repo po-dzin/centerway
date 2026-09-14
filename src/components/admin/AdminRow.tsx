@@ -9,53 +9,89 @@ import { InteractionInkIcon } from "@/components/platform/InteractionInk";
  * ONE ADMIN ROW (2026-09-14) — the admin's half of the card system
  * (docs/card-system-2026-09-13.md → «Admin row»).
  *
- * Every editable list in the panel — catalogue publication and prices,
- * packages, authorship, enquiries — drew the same four things in its own
- * markup: something to recognise the row by, what it is, what you can change
- * right now, and a form that opens underneath. The pieces drifted: one row
- * put its select under the text, one beside it, one in a hidden aside; «Видалити
- * курс» was a full-width button under every course. So there is one anatomy:
- *
  *   lead      a thumbnail, avatar or status mark — optional
- *   body      title (+ badges), sub, meta, notes
+ *   body      one fixed line per fact, in this order:
+ *               title · sub · badges · meta · note · links
  *   controls  the row's standing decisions: a state select, icon actions.
  *             Right of the body from 900px, under it on a phone.
- *   footer    full width: edit forms, moderation, confirmations.
+ *   footer    full width: edit forms and moderation.
  *
- * A destructive action is an icon, never a button the width of the row — its
- * confirmation opens in the footer, so the danger is one extra step away
- * rather than one misplaced tap.
+ * EVERY FACT HAS ITS OWN LINE, AND EACH LINE IS ONE LINE (2026-09-14). The
+ * first pass put the badges beside the title, so a short title pulled four
+ * status chips up onto its line and a long one pushed them onto the next: two
+ * rows of the same list, two shapes. Now the title is alone on the first line,
+ * the badges have the second, the meta the third — and none of them wraps:
+ * titles and meta end in an ellipsis with the full text on hover, badges scroll
+ * sideways. A row's height is therefore the number of slots it has, which is
+ * the same for every row a list renders.
+ *
+ * `undefined` omits a slot; `null` keeps its line empty. A list whose rows only
+ * sometimes have a note passes `null` for the rest, so the note line is held
+ * and the rows stay the same height.
+ *
+ * Destructive actions are icons in the controls; their confirmation is a
+ * dialog, never a form unfolding inside the row.
  */
 export function AdminRow({
   lead,
   title,
-  badges,
   sub,
+  badges,
   meta,
+  note,
+  noteTone = "muted",
+  links,
   controls,
   footer,
-  children,
 }: {
   lead?: ReactNode;
-  title: ReactNode;
+  title: string;
+  sub?: string | null;
   badges?: ReactNode;
-  sub?: ReactNode;
   meta?: ReactNode;
+  note?: string | null;
+  noteTone?: "muted" | "alert";
+  links?: ReactNode;
   controls?: ReactNode;
   footer?: ReactNode;
-  children?: ReactNode;
 }) {
   return (
     <div className={lists.row} data-has-lead={lead ? "true" : undefined}>
       {lead ? <div className={lists.rowLead}>{lead}</div> : null}
       <div className={lists.rowBody}>
-        <div className={lists.rowTitle}>
-          <p className={lists.itemTitle}>{title}</p>
-          {badges}
-        </div>
-        {sub ? <p className={lists.itemSub}>{sub}</p> : null}
-        {meta ? <div className={lists.itemMeta}>{meta}</div> : null}
-        {children}
+        <p className={lists.rowLine} data-slot="title" title={title}>
+          {title}
+        </p>
+        {sub !== undefined ? (
+          <p className={lists.rowLine} data-slot="sub" title={sub ?? undefined}>
+            {sub}
+          </p>
+        ) : null}
+        {badges !== undefined ? (
+          <div className={lists.rowBadges} data-slot="badges">
+            {badges}
+          </div>
+        ) : null}
+        {meta !== undefined ? (
+          <div className={lists.rowLine} data-slot="meta">
+            {meta}
+          </div>
+        ) : null}
+        {note !== undefined ? (
+          <p
+            className={lists.rowLine}
+            data-slot="note"
+            data-tone={note ? noteTone : undefined}
+            title={note ?? undefined}
+          >
+            {note}
+          </p>
+        ) : null}
+        {links !== undefined ? (
+          <div className={lists.rowLine} data-slot="links">
+            {links}
+          </div>
+        ) : null}
       </div>
       {controls ? <div className={lists.rowControls}>{controls}</div> : null}
       {footer ? <div className={lists.rowFooter}>{footer}</div> : null}
@@ -64,10 +100,9 @@ export function AdminRow({
 }
 
 /**
- * A compact icon action for the row's controls. Labelled for the screen
- * reader and the pointer alike (`aria-label` + `title`); `expanded` says
- * whether the thing it opens in the footer is open. `danger` only tints the
- * glyph on hover and focus — the confirmation is what carries the weight.
+ * A compact icon action for the row's controls. Labelled for the screen reader
+ * and the pointer alike (`aria-label` + `title`). `danger` only tints the glyph
+ * on hover and focus — the confirmation dialog is what carries the weight.
  */
 export function AdminRowIconAction({
   icon,
@@ -75,14 +110,14 @@ export function AdminRowIconAction({
   onClick,
   disabled,
   danger,
-  expanded,
+  opensDialog,
 }: {
   icon: CwIconName;
   label: string;
   onClick: () => void;
   disabled?: boolean;
   danger?: boolean;
-  expanded?: boolean;
+  opensDialog?: boolean;
 }) {
   return (
     <button
@@ -90,7 +125,7 @@ export function AdminRowIconAction({
       className={danger ? `${lists.rowIcon} ${lists.rowIconDanger}` : lists.rowIcon}
       aria-label={label}
       title={label}
-      aria-expanded={expanded}
+      aria-haspopup={opensDialog ? "dialog" : undefined}
       disabled={disabled}
       onClick={onClick}
     >

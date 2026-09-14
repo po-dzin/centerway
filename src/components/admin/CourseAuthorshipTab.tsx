@@ -119,7 +119,7 @@ export function CourseAuthorshipTab({
 
   return (
     <div className={lists.panel}>
-      <div className={`${surfaces.plate} ${controls.fieldStack}`}>
+      <div className={`${surfaces.plate} ${surfaces.plateCard} ${controls.fieldStack}`}>
         <p className={controls.disclosureTitle}>{t("access_builder_title")}</p>
         <p className={controls.hint}>{t("access_builder_hint")}</p>
         {!canGrant ? <p className={controls.hint}>{t("access_role_admin_only")}</p> : null}

@@ -215,10 +215,7 @@ function ProductPricingRow({
           <p className={controls.hint}>{t("products_amount_hint")}</p>
         </>
       }
-    >
-      <p className={controls.hint}>
-        {t(row.expectedKind === "lead" ? "products_offer_lead" : "products_offer_checkout")}
-      </p>
-    </AdminRow>
+      note={t(row.expectedKind === "lead" ? "products_offer_lead" : "products_offer_checkout")}
+    />
   );
 }

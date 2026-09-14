@@ -292,7 +292,10 @@ export const access = {
     en: "Builder access is course ownership, not a role: an author edits their own courses, an unowned course is platform-managed.",
   },
   access_author_house: { uk: "Веде платформа", en: "Platform-managed" },
-  access_author_email: { uk: "Email автора", en: "Author email" },
+  access_author_email: {
+    uk: "Email акаунта, що редагує курс у білдері",
+    en: "Email of the account that edits this course in the builder",
+  },
   access_author_assign: { uk: "Призначити", en: "Assign" },
   access_author_clear: { uk: "Повернути платформі", en: "Return to platform" },
   access_author_set: { uk: "Автора призначено", en: "Author assigned" },

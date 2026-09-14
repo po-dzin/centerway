@@ -30,7 +30,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useI18n } from "@/components/I18nProvider";
-import surfaces from "@/components/admin/AdminSurfaces.module.css";
 import { useToast } from "@/components/ToastProvider";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
@@ -53,6 +52,7 @@ import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { AdminRow, AdminRowIconAction } from "@/components/admin/AdminRow";
+import { AdminModal } from "@/components/admin/AdminModal";
 import {
   CATALOG_GROUPINGS,
   filterCatalogRows,
@@ -477,11 +477,18 @@ function StateChips({ row }: { row: CatalogRow }) {
  * ничем себя не выдавала. Числа отвечают на «во что смотреть», подробности —
  * в самом курсе; разница считается по запросу и нигде не хранится.
  */
-function PendingChanges({ row }: { row: CatalogRow }) {
-  const { t } = useI18n();
+type Translate = ReturnType<typeof useI18n>["t"];
+
+function blockersNote(row: CatalogRow, t: Translate): string | null {
+  if (row.blockers.length === 0) return null;
+  return `${t("catalog_blocked_by")}: ${row.blockers.map((blocker) => t(BLOCKER_KEY[blocker] as never)).join(" · ")}`;
+}
+
+/* The pending revision against the live course, and WHO submitted it — the
+   journal's answer, not the column's (see catalog.ts). */
+function pendingNote(row: CatalogRow, t: Translate): string | null {
   const diff = row.pendingDiff;
   if (!row.hasPendingRevision || !diff) return null;
-
   const parts = [
     [diff.fields, t("catalog_changes_fields")],
     [diff.modules, t("catalog_changes_modules")],
@@ -491,49 +498,24 @@ function PendingChanges({ row }: { row: CatalogRow }) {
   ]
     .filter(([count]) => (count as number) > 0)
     .map(([count, label]) => `${count} ${label}`);
-
-  return (
-    <div className={lists.changes}>
-      <p className={lists.changesText}>
-        {t("catalog_changes_vs_live")}: {parts.length > 0 ? parts.join(" · ") : t("catalog_changes_none")}
-        {/* Підпис під відправкою — з журналу: колонка зберігала коли,
-                    але ніколи не зберігала хто. */}
-        {diff.submittedBy ? ` · ${t("catalog_submitted_by")}: ${diff.submittedBy}` : ""}
-      </p>
-      {diff.boundaryTouched ? <p className={lists.changesAlert}>{t("catalog_changes_boundary")}</p> : null}
-    </div>
-  );
+  const changes = `${t("catalog_changes_vs_live")}: ${parts.length > 0 ? parts.join(" · ") : t("catalog_changes_none")}`;
+  return diff.submittedBy ? `${changes} · ${t("catalog_submitted_by")}: ${diff.submittedBy}` : changes;
 }
 
-/** What is missing, in the order it should be fixed. */
-function Blockers({ row }: { row: CatalogRow }) {
-  const { t } = useI18n();
-  if (row.blockers.length === 0) return null;
-
-  return (
-    <p className={lists.blockers}>
-      {t("catalog_blocked_by")}: {row.blockers.map((blocker) => t(BLOCKER_KEY[blocker] as never)).join(" · ")}
-    </p>
-  );
-}
-
-/**
- * «Не проходив модерацію» — said quietly, and said separately.
- *
- * An unapproved course that is already on the shelf sells: nothing on the
- * buying path reads `review_status` (see `SaleBlocker.not_approved`). What it
- * cannot do is have its visibility changed, so the fact is worth printing —
- * just not in the red line that claims the course is not selling, which is
- * where it spent weeks being wrong about `short` and `irem-gymnastics`.
- */
-function ModerationNote({ row }: { row: CatalogRow }) {
-  const { t } = useI18n();
-  /* Only on a course that is actually selling. A draft, a hidden row, a row
-     the shelf cannot render or one without an offer already has the red line
-     above saying why — and printing «продається» under it would be false. */
-  if (row.reviewStatus === "approved" || row.blockers.length > 0) return null;
-
-  return <p className={controls.hint}>{t("catalog_not_moderated")}</p>;
+/* ONE LINE, EVERYTHING THE ROW NEEDS TO SAY. It used to be three blocks —
+   blockers, the pending diff, «not moderated» — each on its own lines, so a row
+   with all three was twice the height of its neighbour. They are joined into
+   the note slot in order of urgency, the line ends in an ellipsis and the whole
+   sentence is on hover. It turns alert when anything in it stops a sale or
+   touches the course's boundaries. */
+function publicationNote(row: CatalogRow, t: Translate): { text: string; tone: "muted" | "alert" } | null {
+  const boundary = row.hasPendingRevision && row.pendingDiff?.boundaryTouched ? t("catalog_changes_boundary") : null;
+  const blocked = blockersNote(row, t);
+  const pending = pendingNote(row, t);
+  const unmoderated = row.reviewStatus !== "approved" && !blocked ? t("catalog_not_moderated") : null;
+  const text = [boundary, blocked, pending, unmoderated].filter(Boolean).join(" — ");
+  if (!text) return null;
+  return { text, tone: boundary || blocked ? "alert" : "muted" };
 }
 
 function PublicationRow({
@@ -595,113 +577,113 @@ function PublicationRow({
   const approvable = revisionInReview || approvesLive;
 
   const [deleting, setDeleting] = useState(false);
+  const rowNote = publicationNote(row, t);
 
   return (
-    <AdminRow
-      lead={<CourseThumb row={row} />}
-      title={row.title}
-      badges={<StateChips row={row} />}
-      meta={
-        <>
-          <span className={lists.itemCode}>{row.slug}</span>
-          <span>
-            {t("access_course_learners")}: {row.learners}
-          </span>
-          <span>{row.authorEmail ?? t("access_author_house")}</span>
-          <span>{new Date(row.updatedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}</span>
-          {inReview && row.submittedAt ? (
-            <span className={lists.itemMetaStrong}>
-              {t("catalog_submitted_on")}:{" "}
-              {new Date(row.submittedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
+    <>
+      <AdminRow
+        lead={<CourseThumb row={row} />}
+        title={row.title}
+        badges={<StateChips row={row} />}
+        meta={
+          <>
+            <span className={lists.itemCode}>{row.slug}</span>
+            <span>
+              {t("access_course_learners")}: {row.learners}
             </span>
-          ) : null}
-        </>
-      }
-      controls={
-        canEdit ? (
-          <>
-            {/* Hiding is offered always — taking something off the storefront
-                must never be gated on how it got there. */}
-            <select
-              aria-label={t("catalog_visibility_label")}
-              className={controls.select}
-              value={row.visibility}
-              disabled={busy}
-              onChange={(e) => void moderate("set_visibility", e.target.value as CatalogRow["visibility"])}
-            >
-              <option value="hidden">{t("catalog_visibility_hidden")}</option>
-              <option value="unlisted">{t("catalog_visibility_unlisted")}</option>
-              <option value="listed">{t("catalog_visibility_listed")}</option>
-            </select>
-            <AdminRowIconAction
-              icon="trash"
-              label={t("catalog_delete")}
-              danger
-              expanded={deleting}
-              onClick={() => setDeleting((open) => !open)}
-            />
+            <span>{row.authorEmail ?? t("access_author_house")}</span>
+            <span>{new Date(row.updatedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}</span>
+            {inReview && row.submittedAt ? (
+              <span className={lists.itemMetaStrong}>
+                {t("catalog_submitted_on")}:{" "}
+                {new Date(row.submittedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
+              </span>
+            ) : null}
           </>
-        ) : (
-          <p className={controls.hint}>{t("access_role_admin_only")}</p>
-        )
-      }
-      footer={
-        canEdit && (approvable || deleting) ? (
-          <>
-            {approvable ? (
-              <div className={controls.fields}>
-                {inReview ? (
-                  <input
-                    className={controls.inputGrow}
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    placeholder={t("catalog_note_placeholder")}
-                  />
-                ) : null}
-                <button
-                  type="button"
-                  className={`${controls.action} cw-surface-2`}
-                  disabled={busy}
-                  onClick={() => void moderate("approve")}
-                >
-                  {approvesLive && row.hasPendingRevision ? t("catalog_approve_live") : t("catalog_approve")}
-                </button>
-                {inReview ? (
+        }
+        controls={
+          canEdit ? (
+            <>
+              {/* Hiding is offered always — taking something off the storefront
+                must never be gated on how it got there. */}
+              <select
+                aria-label={t("catalog_visibility_label")}
+                className={controls.select}
+                value={row.visibility}
+                disabled={busy}
+                onChange={(e) => void moderate("set_visibility", e.target.value as CatalogRow["visibility"])}
+              >
+                <option value="hidden">{t("catalog_visibility_hidden")}</option>
+                <option value="unlisted">{t("catalog_visibility_unlisted")}</option>
+                <option value="listed">{t("catalog_visibility_listed")}</option>
+              </select>
+              <AdminRowIconAction
+                icon="trash"
+                label={t("catalog_delete")}
+                danger
+                opensDialog
+                onClick={() => setDeleting(true)}
+              />
+            </>
+          ) : (
+            <p className={controls.hint}>{t("access_role_admin_only")}</p>
+          )
+        }
+        footer={
+          canEdit && approvable ? (
+            <>
+              {approvable ? (
+                <div className={controls.fields}>
+                  {inReview ? (
+                    <input
+                      className={controls.inputGrow}
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      placeholder={t("catalog_note_placeholder")}
+                    />
+                  ) : null}
                   <button
                     type="button"
-                    className={`${controls.action} cw-btn-muted`}
+                    className={`${controls.action} cw-surface-2`}
                     disabled={busy}
-                    onClick={() => void moderate("request_changes")}
+                    onClick={() => void moderate("approve")}
                   >
-                    {t("catalog_return")}
+                    {approvesLive && row.hasPendingRevision ? t("catalog_approve_live") : t("catalog_approve")}
                   </button>
-                ) : null}
-              </div>
-            ) : null}
-            {deleting ? (
-              <DeleteCourseConfirm row={row} onCancel={() => setDeleting(false)} onChanged={onChanged} />
-            ) : null}
-          </>
-        ) : null
-      }
-    >
-      <Blockers row={row} />
-      <ModerationNote row={row} />
-      <PendingChanges row={row} />
-      <CourseLinks row={row} />
-    </AdminRow>
+                  {inReview ? (
+                    <button
+                      type="button"
+                      className={`${controls.action} cw-btn-muted`}
+                      disabled={busy}
+                      onClick={() => void moderate("request_changes")}
+                    >
+                      {t("catalog_return")}
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+            </>
+          ) : null
+        }
+        note={rowNote?.text ?? null}
+        noteTone={rowNote?.tone}
+        links={<CourseLinks row={row} />}
+      />
+      {deleting ? <DeleteCourseModal row={row} onClose={() => setDeleting(false)} onChanged={onChanged} /> : null}
+    </>
   );
 }
 
-/* The confirmation the row's trash icon opens in its footer. Typing the slug is
-   the step that makes a delete deliberate; the icon only asks the question. */
-function DeleteCourseConfirm({
+/* THE DELETE IS A DIALOG, NOT A FORM UNFOLDING INSIDE THE ROW (2026-09-14).
+   The row's trash icon opens it; typing the slug is the step that makes the
+   delete deliberate. The list keeps its shape while the question is asked. */
+function DeleteCourseModal({
   row,
-  onCancel,
+  onClose,
   onChanged,
 }: {
   row: CatalogRow;
-  onCancel: () => void;
+  onClose: () => void;
   onChanged: () => Promise<void>;
 }) {
   const { t } = useI18n();
@@ -724,42 +706,42 @@ function DeleteCourseConfirm({
     }
   }
   return (
-    <div className={`${surfaces.plate} ${controls.confirmGroup}`} role="group" aria-label={t("catalog_delete")}>
+    <AdminModal
+      title={t("catalog_delete")}
+      description={row.title}
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className={controls.action} disabled={busy} onClick={onClose}>
+            {t("catalog_delete_cancel")}
+          </button>
+          <button
+            type="button"
+            className={`${controls.action} cw-btn-muted`}
+            disabled={busy || confirmation !== row.slug}
+            onClick={() => void remove()}
+          >
+            {t("catalog_delete")}
+          </button>
+        </>
+      }
+    >
       <p className={controls.confirmText}>
         {t("catalog_delete_warning")} {t("access_course_learners")}: {row.learners}.
       </p>
-      <label className={controls.confirmLabel}>
-        {t("catalog_delete_confirm")} <strong>{row.slug}</strong>
+      <label className={controls.field}>
+        <span className={controls.fieldCaption}>
+          {t("catalog_delete_confirm")} <strong>{row.slug}</strong>
+        </span>
         <input
-          className={controls.confirmInput}
+          className={controls.input}
           value={confirmation}
           autoComplete="off"
           onChange={(event) => setConfirmation(event.target.value)}
           disabled={busy}
         />
       </label>
-      <div className={controls.actions}>
-        <button
-          type="button"
-          className={`${controls.action} cw-btn-muted`}
-          disabled={busy || confirmation !== row.slug}
-          onClick={() => void remove()}
-        >
-          {t("catalog_delete")}
-        </button>
-        <button
-          type="button"
-          className={controls.action}
-          disabled={busy}
-          onClick={() => {
-            setConfirmation("");
-            onCancel();
-          }}
-        >
-          {t("catalog_delete_cancel")}
-        </button>
-      </div>
-    </div>
+    </AdminModal>
   );
 }
 
@@ -920,10 +902,9 @@ function PricingRow({
           <p className={controls.hint}>{t("access_role_admin_only")}</p>
         )
       }
-    >
-      <Blockers row={row} />
-      <PendingChanges row={row} />
-      <CourseLinks row={row} />
-    </AdminRow>
+      note={blockersNote(row, t)}
+      noteTone="alert"
+      links={<CourseLinks row={row} />}
+    />
   );
 }

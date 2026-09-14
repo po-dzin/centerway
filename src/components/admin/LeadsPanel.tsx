@@ -239,9 +239,8 @@ export function LeadsPanel() {
                   </select>
                 </>
               }
-            >
-              {lead.message && <p className={lists.itemNote}>{lead.message}</p>}
-            </AdminRow>
+              note={lead.message ?? null}
+            />
           ))}
         </div>
       )}
