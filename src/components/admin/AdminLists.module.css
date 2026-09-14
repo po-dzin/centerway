@@ -193,6 +193,35 @@
   margin-inline-start: var(--cw-space-xs);
 }
 
+/* The links line also carries the row's note, to the right of the links and
+   ellipsed into whatever width is left — see `AdminRow`. */
+.rowLine[data-slot="links"] {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+}
+
+.rowLine[data-slot="links"] > * + * {
+  margin-inline-start: 0;
+}
+
+.rowLine[data-slot="links"] > :not(.rowInlineNote) {
+  flex: 0 0 auto;
+}
+
+.rowInlineNote {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--cw-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowInlineNote[data-tone="alert"] {
+  color: var(--cw-status-failed);
+}
+
 /* The badges keep their line by scrolling sideways instead of wrapping. */
 .rowBadges {
   composes: cw-scroll-none from global;

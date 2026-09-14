@@ -27,9 +27,12 @@ import { InteractionInkIcon } from "@/components/platform/InteractionInk";
  *
  * `undefined` omits a slot; `null` keeps its line empty. A list whose rows only
  * sometimes have a note passes `null` for the rest, so the note line is held
- * and the rows stay the same height. The note is the LAST line for that reason:
- * held empty at the foot of the body it reads as the card's own padding, where
- * between the meta and the links it read as a hole (2026-09-14).
+ * and the rows stay the same height.
+ *
+ * A ROW WITH LINKS CARRIES ITS NOTE ON THE LINKS LINE (2026-09-14). Held on a
+ * line of its own, an absent note was a strip of empty paper under every card
+ * in a list where one row had something to say. Beside the links it takes the
+ * rest of that line and ends in an ellipsis, so the row has no line to hold.
  *
  * Destructive actions are icons in the controls; their confirmation is a
  * dialog, never a form unfolding inside the row.
@@ -82,9 +85,13 @@ export function AdminRow({
         {links !== undefined ? (
           <div className={lists.rowLine} data-slot="links">
             {links}
+            {note ? (
+              <span className={lists.rowInlineNote} data-tone={noteTone} title={note}>
+                {note}
+              </span>
+            ) : null}
           </div>
-        ) : null}
-        {note !== undefined ? (
+        ) : note !== undefined ? (
           <p
             className={lists.rowLine}
             data-slot="note"
