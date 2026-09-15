@@ -126,8 +126,11 @@ export function PlatformShell({
               <span className={chromeOrgans.pair}>
                 {/* `learn` has no top-level route map by design — the lesson tree
                   is the page, not the chrome — so the burger is not rendered
-                  there at all rather than opening an empty sheet. */}
-                {headerMode === "learn" ? null : (
+                  there at all rather than opening an empty sheet. The personal
+                  host has none either (2026-09-15): its map is Бібліотека and
+                  Майстерня, and the account sheet beside it already lists both,
+                  so the burger was a second door to the same two rooms. */}
+                {headerMode === "learn" || personalSurface ? null : (
                   <PlatformRouteMenu routes={(close) => <PlatformRouteRows onNavigate={close} />} />
                 )}
                 <PlatformAccountMenu compact />

@@ -903,8 +903,13 @@
 }
 
 /* The row size: the cover as a thumbnail at `--ds-card-thumb-width`, then the
-   title and where you stopped, then the ring when there is a run to show. */
-.shelfRow {
+   title and where you stopped, then the ring when there is a run to show.
+
+   NOT `.shelfRow` (renamed 2026-09-15). That name is the cabinet's first-screen
+   grid, and a CSS module merges two rules of one name into one class — so this
+   rule's three columns and padding landed on the cabinet row below 901px and
+   laid the resume card, the library link and the dosha card over each other. */
+.shelfListRow {
   composes: glance;
   grid-template-columns: var(--ds-card-thumb-width) minmax(0, 1fr) auto;
   gap: var(--cw-space-sm);

@@ -291,7 +291,7 @@ export function CourseRow({ course, copy }: { course: LearnerShelfCourseDto; cop
   const running = course.access === "enrolled" && total > 0 && !course.standing?.isFinished;
 
   return (
-    <MotionLink className={styles.shelfRow} href={href(action.href)} {...matte} data-cw-edge="none">
+    <MotionLink className={styles.shelfListRow} href={href(action.href)} {...matte} data-cw-edge="none">
       <CourseCover course={course} dimmed={course.access === "locked"} size="thumb" />
       <span className={styles.glanceText}>
         <span className={styles.glanceTitle}>{course.title}</span>
