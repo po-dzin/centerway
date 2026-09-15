@@ -1,0 +1,4 @@
+# Contact exports carry personal data (ids, names, usernames). Never commit them.
+*
+!.gitignore
+!README.md
