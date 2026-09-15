@@ -1,0 +1,126 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Ink stroke: the ladder</title>
+<style>
+  :root {
+    --ink: #C8913F;
+    --paper: #FAEFE0;
+    --text: #31403E;
+    --weight: 3.4;
+    --tilt: -0.4deg;
+  }
+  body { margin: 0; padding: 3rem; background: var(--paper); color: var(--text);
+         font: 15px/1.5 "Manrope", system-ui, sans-serif; }
+  h1 { font: 600 1.1rem/1.3 system-ui; margin: 0 0 .25rem; }
+  p.note { max-width: 60ch; color: #6b6355; margin: 0 0 2.5rem; }
+  section { margin-bottom: 3.5rem; }
+  h2 { font: 600 .8rem/1 system-ui; letter-spacing: .08em; text-transform: uppercase;
+       color: #8b8172; margin: 0 0 1.25rem; }
+  .row { display: flex; align-items: flex-end; gap: 3rem; flex-wrap: wrap; }
+  .cell { position: relative; }
+  .cell b { display: block; font: 600 .7rem/1 system-ui; color: #8b8172; margin-bottom: .9rem; }
+  /* the product's own proportions, kept relative to the font so a big
+     specimen and a 15px nav item are the same object */
+  .label { position: relative; display: inline-block; font-size: var(--fs, 2.4rem);
+           font-weight: 700; line-height: 1; padding: 0 .2em; }
+  .mark { position: absolute; left: -.2em; right: -.2em; bottom: -.7em;
+          width: calc(100% + .4em); height: .85em; color: var(--ink);
+          transform-origin: left center; pointer-events: none; }
+  /* A — today: the whole graphic squashed horizontally */
+  .squash .mark { transform: scaleX(var(--f)) scaleY(var(--weight)) rotate(var(--tilt)); }
+  /* B — drawn: full-scale stroke, revealed along its own length */
+  .draw .mark { transform: scaleY(var(--weight)) rotate(var(--tilt));
+                stroke-dasharray: var(--L); stroke-dashoffset: calc(var(--L) * (1 - var(--f))); }
+  .scale { display: flex; gap: 2.2rem; align-items: flex-end; }
+  code { font: 12px/1 ui-monospace, monospace; color: #8b8172; }
+</style>
+<h1>Ink stroke — the ladder, as shipped 2026-09-10</h1>
+<p class="note">Same graphic, same weight and tilt, same three strengths. Left column compresses
+the whole pen stroke into a fraction of the box; right column keeps the stroke at true scale and
+reveals it along its own length, so the round linecap reads as the pen’s tip. Rendered at 2.4rem
+so the difference is visible; in the product this runs at 14–16px.</p>
+
+<section>
+  <h2>A · today's global label range (90 → 96 → 100%) — squashed</h2>
+  <div class="row" id="rowA"></div>
+</section>
+
+<section>
+  <h2>A′ · the same range, drawn. The mechanism is invisible at 10% of travel</h2>
+  <div class="row" id="rowA2"></div>
+</section>
+
+<section>
+  <h2>B · real travel (38 → 72 → 100%) — squashed. This is what the topbar and the builder already run</h2>
+  <div class="row" id="rowB"></div>
+</section>
+
+<section>
+  <h2>B′ · the same travel, drawn. Round linecap = the pen's tip</h2>
+  <div class="row" id="rowB2"></div>
+</section>
+
+<section>
+  <h2>C · at product size, drawn, real travel</h2>
+  <div class="row" id="rowC"></div>
+</section>
+
+<section>
+  <h2>E · SHIPPED: navigation, tabs, rows, press — nothing → 80% → full</h2>
+  <div class="row" id="rowE"></div>
+</section>
+
+<section>
+  <h2>F · SHIPPED: the <code>link</code> variant — full length immediately, faint force.
+      A link inside prose is announced by its own mark, because the sentence
+      around it is not a link — and a phone cannot hover, so rest 0 would leave
+      it with no affordance at all. Thin, not short.</h2>
+  <div class="row" id="rowF"></div>
+</section>
+
+<section>
+  <h2>D · the tail, inspected. The graphic carries a filled drop at BOTH ends —
+      the pen landing and leaving — and a dash cannot clip a fill. Does the
+      leaving drop read as a detached dot ahead of the tip?</h2>
+  <div class="row" id="rowD"></div>
+</section>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="ink-stroke" viewBox="0 0 36 36">
+    <g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path id="p" d="M3.5 19.3C3.66 19.27 4.15 19.19 4.48 19.15C4.8 19.1 5.13 19.06 5.46 19.02C5.79 18.98 6.11 18.95 6.44 18.92C6.77 18.89 7.1 18.86 7.43 18.84C7.76 18.81 8.1 18.79 8.43 18.76C8.77 18.74 9.11 18.72 9.45 18.7C9.79 18.67 10.13 18.65 10.48 18.63C10.82 18.61 11.17 18.6 11.51 18.58C11.86 18.57 12.21 18.56 12.56 18.55C12.91 18.54 13.26 18.54 13.61 18.53C13.97 18.53 14.32 18.52 14.67 18.52C15.02 18.52 15.38 18.52 15.73 18.52C16.08 18.52 16.44 18.52 16.79 18.53C17.14 18.53 17.49 18.53 17.85 18.54C18.2 18.54 18.55 18.55 18.9 18.55C19.25 18.56 19.6 18.56 19.95 18.57C20.3 18.57 20.65 18.57 21.01 18.57C21.37 18.57 21.73 18.56 22.09 18.55C22.46 18.54 22.82 18.53 23.19 18.51C23.56 18.49 23.93 18.47 24.3 18.45C24.67 18.43 25.05 18.4 25.42 18.37C25.79 18.34 26.16 18.31 26.53 18.28C26.9 18.24 27.27 18.21 27.63 18.17C28 18.13 28.36 18.09 28.73 18.05C29.09 18.01 29.44 17.96 29.8 17.92C30.15 17.87 30.5 17.82 30.84 17.77C31.18 17.72 31.52 17.67 31.86 17.61C32.19 17.55 32.68 17.46 32.85 17.43"/>
+    </g>
+    <circle cx="3.4" cy="18.8" r="1.15" fill="currentColor"/>
+    <circle cx="32.6" cy="17.6" r="0.8" fill="currentColor"/>
+  </symbol>
+</svg>
+
+<script>
+  const L = document.getElementById('p').getTotalLength();
+  document.title = 'ink-stroke L=' + L.toFixed(2);
+  const tight = [['rest', .9, .34], ['hover', .96, .68], ['current / press', 1, 1]];
+  const wide  = [['rest', .38, .34], ['hover', .72, .68], ['current / press', 1, 1]];
+  const svg = (op) => `<svg class="mark" viewBox="0 0 36 36" preserveAspectRatio="none" style="opacity:${op}"><use href="#ink-stroke" width="100%" height="100%"/></svg>`;
+  const cell = (name, f, op, word, mode, fs) =>
+    `<div class="cell ${mode}" style="--f:${f};--L:${L}${fs?`;--fs:${fs}`:''}">
+       <b>${name} · ${Math.round(f*100)}%</b>
+       <span class="label">${word}${svg(op)}</span>
+     </div>`;
+  const fill = (id, states, mode, fs) =>
+    document.getElementById(id).innerHTML = states.map(([n,f,o]) => cell(n,f,o,'Головна',mode,fs)).join('');
+  fill('rowA', tight, 'squash');
+  fill('rowA2', tight, 'draw');
+  fill('rowB', wide, 'squash');
+  fill('rowB2', wide, 'draw');
+  fill('rowC', wide, 'draw', '15px');
+  document.getElementById('rowE').innerHTML =
+    [['rest', 0, 0], ['hover / focus', .8, .68], ['current / press', 1, 1]]
+      .map(([n,f,o]) => cell(n, f, o, 'Головна', 'draw')).join('');
+  document.getElementById('rowF').innerHTML =
+    [['rest', 1, .34], ['hover / focus', 1, .68], ['current', 1, 1]]
+      .map(([n,f,o]) => cell(n, f, o, 'дайте нам знати', 'draw')).join('');
+  document.getElementById('rowD').innerHTML =
+    [['30%', .3], ['55%', .55], ['80%', .8], ['100%', 1]]
+      .map(([n,f]) => cell(n, f, 1, 'Головна', 'draw', '4.5rem')).join('');
+  document.body.insertAdjacentHTML('beforeend', `<p><code>path length = ${L.toFixed(2)} user units</code></p>`);
+</script>
