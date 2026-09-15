@@ -49,6 +49,8 @@ export type SendEmailInput = {
    * days later. The caller still needs its own record for that.
    */
   idempotencyKey?: string;
+  /** Extra MIME headers — the broadcast path sets List-Unsubscribe here. */
+  headers?: Record<string, string>;
 };
 
 export type SendEmailResult =
@@ -77,6 +79,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
         // access link has to survive a client that refuses to render HTML.
         text: input.text,
         ...(input.replyTo ? { reply_to: input.replyTo } : {}),
+        ...(input.headers ? { headers: input.headers } : {}),
       }),
     });
 
@@ -87,6 +90,90 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
 
     const body = (await response.json().catch(() => null)) as { id?: string } | null;
     return { sent: true, id: body?.id ?? "unknown" };
+  } catch (error) {
+    return {
+      sent: false,
+      reason: "network_error",
+      detail: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+export type BatchEmail = {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  from: string;
+  replyTo?: string;
+  headers?: Record<string, string>;
+};
+
+export type SendBatchResult =
+  | { sent: true; ids: string[] }
+  | {
+      sent: false;
+      reason: "missing_api_key" | "provider_error" | "network_error" | "rate_limited";
+      detail?: string;
+    };
+
+/** Resend's ceiling for one batch call. */
+export const RESEND_BATCH_MAX = 100;
+
+/**
+ * Up to 100 messages in one request — the broadcast path.
+ *
+ * Same no-throw contract as `sendEmail`. The result ids come back in the order
+ * the messages went in; that ordering is what lets the caller tie a provider id
+ * to a recipient row, so a response that does not carry one id per message is
+ * treated as a failure rather than guessed at.
+ *
+ * `rate_limited` is separated from other provider errors because the right
+ * answer to it is to stop this run and try later, not to mark anyone failed.
+ */
+export async function sendEmailBatch(emails: BatchEmail[], idempotencyKey?: string): Promise<SendBatchResult> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return { sent: false, reason: "missing_api_key" };
+  if (emails.length === 0) return { sent: true, ids: [] };
+  if (emails.length > RESEND_BATCH_MAX) {
+    return { sent: false, reason: "provider_error", detail: `batch_too_large:${emails.length}` };
+  }
+
+  try {
+    const response = await fetch(`${RESEND_ENDPOINT}/batch`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey.slice(0, 256) } : {}),
+      },
+      body: JSON.stringify(
+        emails.map((email) => ({
+          from: email.from,
+          to: [email.to],
+          subject: email.subject,
+          html: email.html,
+          text: email.text,
+          ...(email.replyTo ? { reply_to: email.replyTo } : {}),
+          ...(email.headers ? { headers: email.headers } : {}),
+        })),
+      ),
+    });
+
+    if (response.status === 429) {
+      return { sent: false, reason: "rate_limited", detail: await response.text().catch(() => "") };
+    }
+    if (!response.ok) {
+      const detail = await response.text().catch(() => "");
+      return { sent: false, reason: "provider_error", detail: `${response.status} ${detail.slice(0, 300)}` };
+    }
+
+    const body = (await response.json().catch(() => null)) as { data?: { id?: string }[] } | null;
+    const ids = (body?.data ?? []).map((entry) => entry?.id ?? "");
+    if (ids.length !== emails.length || ids.some((id) => !id)) {
+      return { sent: false, reason: "provider_error", detail: "batch_response_mismatch" };
+    }
+    return { sent: true, ids };
   } catch (error) {
     return {
       sent: false,

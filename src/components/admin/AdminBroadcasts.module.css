@@ -1,0 +1,202 @@
+/*
+ * BROADCASTS: the editor and the base.
+ *
+ * The shared parts (fields, actions, rows, tabs, dialogs) come from
+ * AdminControls and AdminLists. What is here is only what this section alone
+ * is shaped like: the editor beside its preview, the audience groups, the
+ * result tiles and the import box.
+ */
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+}
+
+.back {
+  composes: cw-muted from global;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  font-size: var(--ds-type-body-sm-size);
+  text-decoration: none;
+}
+
+/* The letter and how it will look. One column on a phone and a laptop; side by
+   side only where the preview can be as wide as a mail client's reading pane. */
+.editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-md);
+  align-items: start;
+}
+
+@media (min-width: 1200px) {
+  .editor {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 36rem);
+  }
+
+  .previewColumn {
+    position: sticky;
+    top: var(--cw-space-md);
+  }
+}
+
+.section {
+  display: grid;
+  gap: var(--cw-space-sm);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--ds-type-body-size);
+  font-weight: 600;
+}
+
+.body {
+  composes: note from "./AdminControls.module.css";
+  min-height: 18rem;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.55;
+}
+
+.importBox {
+  composes: note from "./AdminControls.module.css";
+  min-height: 8rem;
+  resize: vertical;
+  font-family: var(--cw-font-data);
+}
+
+.twoFields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-xs);
+}
+
+@media (min-width: 640px) {
+  .twoFields {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+/* ── Audience ──────────────────────────────────────────────────────────── */
+
+.groups {
+  display: grid;
+  gap: var(--cw-space-xs);
+}
+
+.group {
+  composes: cw-surface-2 from global;
+  display: grid;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+}
+
+.check {
+  display: flex;
+  align-items: baseline;
+  gap: var(--cw-space-xs);
+  font-size: var(--ds-type-body-sm-size);
+  cursor: pointer;
+}
+
+.check input {
+  flex: none;
+}
+
+.checkLabel {
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.checkHint {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+}
+
+/* The options under a group: indented to the label so they read as its own. */
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-2xs) var(--cw-space-sm);
+  padding-inline-start: var(--cw-space-lg);
+}
+
+.optionCount {
+  composes: cw-muted from global;
+  font-family: var(--cw-font-data);
+}
+
+.count {
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-size);
+  font-weight: 600;
+}
+
+/* ── Preview ───────────────────────────────────────────────────────────── */
+
+.previewFrame {
+  display: block;
+  width: 100%;
+  height: 40rem;
+  max-height: 70vh;
+  border: 0;
+  border-radius: var(--cw-radius-xl);
+  /* A letter is read on white in nearly every client; the preview says so
+     rather than inheriting the panel's ground. */
+  background: #fff;
+}
+
+.previewSubject {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* ── Results ───────────────────────────────────────────────────────────── */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cw-space-xs);
+}
+
+@media (min-width: 640px) {
+  .stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.stat {
+  composes: cw-surface-2 from global;
+  display: grid;
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+}
+
+.statValue {
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-lead-size);
+  font-weight: 600;
+}
+
+.statLabel {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+}
+
+.totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+}
+
+.rowStatus {
+  flex: none;
+}

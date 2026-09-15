@@ -1,4 +1,5 @@
 import { adminClient } from "@/lib/auth/adminClient";
+import { BROADCAST_JOB_TYPE, runBroadcastJob } from "@/lib/broadcasts/sender";
 import { sendConfirmedSaleTelegramReport } from "@/lib/analytics/telegramReports";
 import { sendCapiEvent } from "@/lib/tracking/capi";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
@@ -183,6 +184,9 @@ const handlers: Record<string, JobHandler> = {
   },
   "dosha:reminder": async (payload) => {
     await processDoshaReminderJob(payload);
+  },
+  [BROADCAST_JOB_TYPE]: async (payload) => {
+    await runBroadcastJob(payload);
   },
   "reporting:telegram-sale": async (payload) => {
     if (!isTelegramSaleReportJobPayload(payload)) {

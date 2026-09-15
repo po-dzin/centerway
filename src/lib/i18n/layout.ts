@@ -5,6 +5,7 @@
 export const layout = {
   sidebar_title: { uk: "CenterWay", en: "CenterWay" },
   nav_customers: { uk: "Клієнти", en: "Customers" },
+  nav_broadcasts: { uk: "Розсилки", en: "Broadcasts" },
   nav_orders: { uk: "Замовлення", en: "Orders" },
   nav_analytics: { uk: "Аналітика", en: "Analytics" },
   nav_operations: { uk: "Операції", en: "Operations" },
