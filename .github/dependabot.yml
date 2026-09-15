@@ -1,14 +1,23 @@
-# Dependency updates, weekly, grouped so the branch does not fill with one PR
+# Dependency updates, MONTHLY, grouped so the branch does not fill with one PR
 # per package. Each group is one PR; the CI on it is the same admin-smoke and
 # design-gates every other PR gets. Vercel builds are rate-limited on Hobby, so
 # fewer, larger PRs is deliberate — see docs on the build limit.
+#
+# WHY MONTHLY (2026-09-15). In the months this ran weekly, no version PR it
+# opened was merged — they sat green and went stale against a lockfile main had
+# moved. Keeping current is a monthly chore; the urgent case, a vulnerable
+# dependency, is not handled here at all. That is Dependabot SECURITY updates,
+# switched on in the repository settings (Settings → Advanced Security), which
+# open a fix PR when an advisory lands and do not wait for this schedule.
+# The miss that prompted this: sharp 0.34.5 carried libvips/libheif advisories
+# whose fix is 0.35 — a "major" by npm's 0.x rule, so the ignore below meant a
+# version PR for it would never have come.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
       time: "06:00"
       timezone: Europe/Kyiv
     open-pull-requests-limit: 2
@@ -28,3 +37,12 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    open-pull-requests-limit: 1
+    groups:
+      actions:
+        patterns: ["*"]
+    ignore:
+      # Same rule as npm: a major Actions upgrade (checkout/setup-node v4 → v7
+      # arrived 2026-09-11) is taken by hand with a smoke run, not by a bot.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
