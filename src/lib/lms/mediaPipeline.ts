@@ -115,7 +115,10 @@ export async function prepareMedia(input: Buffer, contentType: string): Promise<
     };
   }
 
-  let meta: sharp.Metadata;
+  /* Derived from the call rather than named as `sharp.Metadata`: sharp 0.35's
+     typings no longer expose that namespace through the default import, and a
+     type read off `metadata()` itself follows whatever the library returns. */
+  let meta: Awaited<ReturnType<ReturnType<typeof sharp>["metadata"]>>;
   try {
     meta = await sharp(input).metadata();
   } catch {
