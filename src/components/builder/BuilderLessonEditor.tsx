@@ -1,5 +1,6 @@
 "use client";
 
+import { BUILDER_COURSES_PATH } from "@/lib/surfaces/catalog";
 import { useToast } from "@/components/ToastProvider";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
@@ -499,7 +500,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   };
 
   const trail = [
-    { label: "Курси", href: "/build" },
+    { label: "Матеріали", href: BUILDER_COURSES_PATH },
     { label: slug, href: `/build/${slug}` },
   ];
 
@@ -629,7 +630,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   return (
     <BuilderShell
       trail={[
-        { label: "Курси", onNavigate: () => navigate("/build") },
+        { label: "Матеріали", onNavigate: () => navigate(BUILDER_COURSES_PATH) },
         { label: trailTitle(course.title, "Курс без назви"), onNavigate: () => navigate(`/build/${slug}`) },
         { label: trailTitle(holder.title, "Модуль без назви") },
         { label: trailTitle(lesson.title, "Урок без назви") },

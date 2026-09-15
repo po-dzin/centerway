@@ -1,10 +1,12 @@
 "use client";
 
+import { BUILDER_COURSES_PATH, BUILDER_PATH_PREFIX } from "@/lib/surfaces/catalog";
 import { useToast } from "@/components/ToastProvider";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { moveItem } from "@/lms-core";
 import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShell";
+import { BuilderWorkshopRail } from "./BuilderWorkshopRail";
 import { BuilderSheet } from "./BuilderSheet";
 import { Icon } from "@/components/Icon";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
@@ -323,9 +325,12 @@ export function BuilderCourseList() {
     toast.success(`Експортовано ${result.data.filename}`);
   }
 
+  /* One frame in every state — see the note on the ready shell below. */
+  const rail = <BuilderWorkshopRail current="courses" />;
+
   if (state.status === "loading") {
     return (
-      <BuilderShell>
+      <BuilderShell aside={rail}>
         <PlatformLoadingState
           label="Майстерня"
           title="Завантажуємо ваші курси…"
@@ -337,7 +342,7 @@ export function BuilderCourseList() {
 
   if (state.status === "failed") {
     return (
-      <BuilderShell>
+      <BuilderShell aside={rail}>
         <BuilderFailureNotice failure={state.failure} detail={state.detail} scope="shelf" />
       </BuilderShell>
     );
@@ -345,7 +350,7 @@ export function BuilderCourseList() {
 
   if (creating) {
     return (
-      <BuilderShell trail={[{ label: "Курси", href: "/build" }, { label: "Новий курс" }]}>
+      <BuilderShell trail={[{ label: "Матеріали", href: BUILDER_COURSES_PATH }, { label: "Новий курс" }]} aside={rail}>
         <PlatformLoadingState
           label="Майстерня"
           title="Створюємо чернетку…"
@@ -365,7 +370,16 @@ export function BuilderCourseList() {
     .filter(({ course }) => !filtering || matchesShelfQuery(course, query, SHELF_COPY));
 
   return (
-    <BuilderShell>
+    /* THE WAY BACK TO THE OVERVIEW. The shelf is no longer the workshop's root
+       — `/build` is — so it carries the two-step trail that says so, and on a
+       phone that same trail is what gives the leading island its back arrow. */
+    <BuilderShell
+      trail={[{ label: "Майстерня", href: BUILDER_PATH_PREFIX }, { label: "Матеріали" }]}
+      /* The same left track the overview and the course workspace stand in, so
+         the three screens share one axis rather than each centring itself in
+         whatever width it happens to have. */
+      aside={rail}
+    >
       {/* The platform's page head, the same component the learner's shelf runs.
           The two pages are one shelf seen from two sides — the courses you may
           read and the courses you may edit — and they were opening differently

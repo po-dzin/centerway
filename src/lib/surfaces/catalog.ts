@@ -34,6 +34,32 @@ export const PERSONAL_ORIGIN = `https://${PERSONAL_HOST}`;
 export const BUILDER_PATH_PREFIX = "/build";
 
 /**
+ * The workshop's materials shelf.
+ *
+ * `/build` itself is the author's DASHBOARD — the same split the personal app
+ * already makes between `/profile` (where am I) and `/learn` (what do I have).
+ * The shelf keeps its own address so the two words never trade meanings: the
+ * chrome says «Майстерня» for the application and «Матеріали» for the list, and
+ * neither label is used twice for two things.
+ */
+export const BUILDER_COURSES_PATH = `${BUILDER_PATH_PREFIX}/courses`;
+
+/**
+ * Segments under `/build` that a course slug may never take.
+ *
+ * A static route wins over `/build/[course]`, so a course slugged `courses`
+ * would be a course nobody could open — silently, with no error anywhere. The
+ * cheapest honest fix is to refuse the name at the two places a slug is chosen
+ * (creation/import derive one, rename asks for one) rather than to discover the
+ * collision from a support message.
+ */
+export const BUILDER_RESERVED_SLUGS = ["courses"] as const;
+
+export function isReservedBuilderSlug(slug: string): boolean {
+  return (BUILDER_RESERVED_SLUGS as readonly string[]).includes(slug);
+}
+
+/**
  * The learner routes' INTERNAL prefix.
  *
  * `/learn` is where the pages live in the router and nothing else. On the

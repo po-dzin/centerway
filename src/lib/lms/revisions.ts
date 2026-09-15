@@ -117,6 +117,54 @@ export async function listCourseRevisions(courseId: string): Promise<CourseRevis
   }));
 }
 
+/**
+ * The most recent journal entries across several courses.
+ *
+ * The author's overview asks «що я нещодавно змінював?», and the answer is
+ * whatever the append-only journal holds. Since the 2026-09-07 release journal
+ * that includes `review_submitted`, `published` and `restored`, written in the
+ * same transaction as the change they record (`release.ts`), alongside the
+ * `manual` checkpoints an author makes by hand. Nothing here synthesises an
+ * event from a timestamp: an empty journal renders as an empty journal.
+ *
+ * `content` is never selected. The timeline needs metadata, and one row of this
+ * table is a whole course document.
+ */
+export async function listRecentCourseRevisions(
+  courseIds: string[],
+  limit = 12,
+): Promise<(CourseRevisionSummary & { courseId: string })[]> {
+  if (courseIds.length === 0) return [];
+  const { data, error } = await adminClient()
+    .from("lms_course_revisions")
+    .select(
+      "id, course_id, revision_number, kind, content_hash, label, created_by, parent_revision_id, source_revision_id, created_at",
+    )
+    .in("course_id", courseIds)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(`lms_revision_list_failed:${error.message}`);
+
+  /* The same actor resolution `listCourseRevisions` does, so a line here and
+     the same line in the course's own version history name the same person. */
+  const rows = data ?? [];
+  const actors = await resolveActors(rows.map((row) => row.created_by as string | null).filter(Boolean) as string[]);
+
+  return rows.map((row) => ({
+    id: row.id as string,
+    courseId: row.course_id as string,
+    revisionNumber: Number(row.revision_number),
+    kind: row.kind as CourseRevisionKind,
+    contentHash: row.content_hash as string,
+    label: (row.label as string | null) ?? null,
+    createdBy: (row.created_by as string | null) ?? null,
+    actor: actors.get(row.created_by as string) ?? null,
+    parentRevisionId: (row.parent_revision_id as string | null) ?? null,
+    sourceRevisionId: (row.source_revision_id as string | null) ?? null,
+    createdAt: row.created_at as string,
+  }));
+}
+
 export async function loadCourseRevision(
   courseId: string,
   revisionId: string,
