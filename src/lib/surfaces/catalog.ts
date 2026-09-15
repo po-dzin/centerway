@@ -186,6 +186,7 @@ export const PUBLIC_ROOT_SEGMENTS = [
   "products",
   "programs",
   "tests",
+  "unsubscribe",
 ] as const;
 
 export function isPublicRootPath(pathname: string): boolean {
