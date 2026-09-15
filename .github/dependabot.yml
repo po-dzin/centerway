@@ -1,15 +1,14 @@
-# Dependency updates, WEEKLY for now, grouped so the branch does not fill with one PR
+# Dependency updates, MONTHLY, grouped so the branch does not fill with one PR
 # per package. Each group is one PR; the CI on it is the same admin-smoke and
 # design-gates every other PR gets. Vercel builds are rate-limited on Hobby, so
 # fewer, larger PRs is deliberate — see docs on the build limit.
 #
-# WEEKLY UNTIL SECURITY UPDATES ARE ON (2026-09-15). Few weekly version PRs
-# were ever merged, so the intended cadence is monthly. But until Dependabot
-# alerts and SECURITY updates are enabled in the repository settings
-# (Settings → Advanced Security) — which open a fix PR when an advisory lands,
-# without waiting for this schedule — this weekly run is the only frequent
-# automated path to a patched release. Switch `interval` to monthly in the same
-# change that confirms those settings are on.
+# MONTHLY, NOW THAT SECURITY UPDATES ARE ON (2026-09-15). Few weekly version
+# PRs were ever merged, so keeping current is a monthly chore. The urgent case —
+# a vulnerable dependency — is Dependabot alerts + SECURITY updates, enabled in
+# the repository settings (Settings → Advanced Security) on 2026-09-15; they open
+# a fix PR when an advisory lands and do not wait for this schedule. If those
+# settings are ever switched off, put this interval back to weekly.
 # The miss that prompted this: sharp 0.34.5 carried libvips/libheif advisories
 # whose fix is 0.35 — a "major" by npm's 0.x rule, so the ignore below meant a
 # version PR for it would never have come.
@@ -18,8 +17,7 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
       time: "06:00"
       timezone: Europe/Kyiv
     open-pull-requests-limit: 2
