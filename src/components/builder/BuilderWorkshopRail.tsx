@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 
-import { HandGraphic, Icon } from "@/components/Icon";
+import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { BUILDER_COURSES_PATH, BUILDER_PATH_PREFIX } from "@/lib/surfaces/catalog";
 import { InkLabel } from "./BuilderInkLabel";
 import styles from "./Builder.module.css";
@@ -27,32 +28,39 @@ import styles from "./Builder.module.css";
  *
  * `selection_family = ink`: a change of place on an unmaterialised panel, so the
  * current row is the shared stroke at full strength and the icon takes the
- * shared ring — the same two marks the course rail draws, from the same
- * components. No plate, no contour, no local geometry.
+ * shared ring (`InteractionInkIcon`). `cw-nav-link` puts the rows under the
+ * global no-selection and ink-state contract; `InkLabel` is the builder's thin
+ * wrapper over the shared stroke, kept because the compact rail hides it by
+ * class. Every row carries an `aria-label` because that compact rail shows only
+ * the icon. No plate, no contour, no local geometry.
  */
 export function BuilderWorkshopRail({ current }: { current: "overview" | "courses" }) {
   return (
     <div className={styles.courseRail}>
       <nav className={styles.courseRailNav} aria-label="Розділи майстерні">
         <Link
-          className={styles.courseRailLink}
+          className={`cw-nav-link ${styles.courseRailLink}`}
           href={BUILDER_PATH_PREFIX}
+          aria-label="Огляд"
           aria-current={current === "overview" ? "page" : undefined}
         >
           <span className={styles.courseRailIcon}>
-            <Icon name="lens" size={20} />
-            <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+            <InteractionInkIcon>
+              <Icon name="lens" size={20} />
+            </InteractionInkIcon>
           </span>
           <InkLabel>Огляд</InkLabel>
         </Link>
         <Link
-          className={styles.courseRailLink}
+          className={`cw-nav-link ${styles.courseRailLink}`}
           href={BUILDER_COURSES_PATH}
+          aria-label="Матеріали"
           aria-current={current === "courses" ? "page" : undefined}
         >
           <span className={styles.courseRailIcon}>
-            <Icon name="list" size={20} />
-            <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+            <InteractionInkIcon>
+              <Icon name="list" size={20} />
+            </InteractionInkIcon>
           </span>
           <InkLabel>Матеріали</InkLabel>
         </Link>

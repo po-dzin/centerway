@@ -71,9 +71,10 @@ type State =
   | {
       status: "ready";
       courses: BuilderCourseSummary[];
-      activity: BuilderActivityEntry[];
-      /** Counts per slug. Never an identity — see the audience route. */
-      audience: Record<string, BuilderCourseAudience>;
+      /** `null` when the journal did not load — not the same as an empty one. */
+      activity: BuilderActivityEntry[] | null;
+      /** Counts per slug, or `null` when they did not load. Never an identity — see the audience route. */
+      audience: Record<string, BuilderCourseAudience> | null;
     };
 
 function courseHref(slug: string, mode: keyof typeof COURSE_WORKSPACE_HASH): string {
@@ -106,13 +107,14 @@ export function BuilderDashboard() {
       setState({
         status: "ready",
         courses: courses.data.courses,
-        /* A JOURNAL THAT DID NOT LOAD IS AN EMPTY JOURNAL HERE, and that is a
-           deliberate asymmetry. The courses are the screen; the journal is one
-           section of it, and failing the whole dashboard because a history
-           query timed out would hide the three answers that did arrive. The
-           section states its own emptiness in words either way. */
-        activity: activity.ok ? activity.data.activity : [],
-        audience: audience.ok ? audience.data.audience : {},
+        /* A SECTION THAT DID NOT LOAD FAILS ALONE, and says so. The courses are
+           the screen; the journal and the audience are sections of it, and
+           failing the whole dashboard because one of those reads timed out
+           would hide the answers that did arrive. But an unread section is not
+           an empty one: «жоден курс не має учнів» after a 500 is a false zero,
+           so a failure stays `null` and the section names it. */
+        activity: activity.ok ? activity.data.activity : null,
+        audience: audience.ok ? audience.data.audience : null,
       });
     })();
     return () => {
@@ -157,7 +159,7 @@ export function BuilderDashboard() {
      have readers. A course whose seats have all lapsed still belongs here: that
      is a real fact about a real audience. */
   const withAudience = courses.flatMap((course) => {
-    const entry = audience[course.slug];
+    const entry = audience?.[course.slug];
     if (!entry || entry.learners + entry.lapsed === 0) return [];
     return [{ course, entry }];
   });
@@ -245,7 +247,16 @@ export function BuilderDashboard() {
               rendered, which is the annotation privacy rule held one level up.
               Money is NOT here and cannot be: the price lives in
               `lms_course_offers` behind an admin-only policy. */}
-          <OverviewSection title="Учні" empty={withAudience.length === 0 ? "Поки жоден курс не має учнів." : null}>
+          <OverviewSection
+            title="Учні"
+            empty={
+              audience === null
+                ? SECTION_UNAVAILABLE
+                : withAudience.length === 0
+                  ? "Поки жоден курс не має учнів."
+                  : null
+            }
+          >
             {withAudience.map(({ course, entry }) => (
               <OverviewEntry
                 key={course.slug}
@@ -274,12 +285,14 @@ export function BuilderDashboard() {
           <OverviewSection
             title="Останні зміни"
             empty={
-              activity.length === 0
-                ? "Журнал поки порожній. Тут з'являються надсилання на перевірку, публікації, відновлення та версії, збережені вручну."
-                : null
+              activity === null
+                ? SECTION_UNAVAILABLE
+                : activity.length === 0
+                  ? "Журнал поки порожній. Тут з'являються надсилання на перевірку, публікації, відновлення та версії, збережені вручну."
+                  : null
             }
           >
-            {activity.map((entry) => (
+            {(activity ?? []).map((entry) => (
               /* NO PILL HERE, unlike the three status sections above. The pill
                  is `white-space: nowrap` and the kind labels are phrases —
                  «Автоматична контрольна точка» is a 28-character capsule that
@@ -308,6 +321,9 @@ export function BuilderDashboard() {
     </BuilderShell>
   );
 }
+
+/** What a section says when its own read failed — never its empty sentence. */
+const SECTION_UNAVAILABLE = "Не вдалося завантажити цей розділ. Оновіть сторінку трохи згодом.";
 
 /**
  * One question, one answer.

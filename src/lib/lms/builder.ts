@@ -283,12 +283,15 @@ export async function listBuilderCourses(filter: { authorId?: string }): Promise
         // most needs to be able to open.
         blockerCount = -1;
       }
-      /* When the document could not be rebuilt, the row's own columns are all
-         there is, and they describe the RELEASE. Saying "no pending revision"
-         there is not a guess dressed as a fact: it is the narrowest claim the
-         evidence supports, and the course is already reported as broken by
-         `blockerCount === -1` beside it. */
-      const hasPending = loaded?.hasPendingRevision ?? false;
+      /* When the document could not be rebuilt, the row's own columns still
+         carry the pending revision's standing: the schema requires
+         `pending_review_status` to be set exactly when `pending_content` is.
+         Falling back to "no pending revision" would drop a version that is in
+         review from the review section precisely for the course that already
+         needs repair. */
+      const hasPending = loaded
+        ? loaded.hasPendingRevision
+        : row.pending_review_status !== null && row.pending_review_status !== undefined;
 
       return {
         id: row.id as string,
@@ -316,9 +319,10 @@ export async function listBuilderCourses(filter: { authorId?: string }): Promise
            rule, written twice would be one rule until the next edit. */
         reviewStatus:
           loaded?.reviewStatus ??
-          (row.review_status as CourseReviewStatus | null) ??
+          ((hasPending ? row.pending_review_status : row.review_status) as CourseReviewStatus | null) ??
           (row.status === "published" ? "approved" : "draft"),
-        reviewNote: loaded?.reviewNote ?? (row.review_note as string | null) ?? null,
+        reviewNote:
+          loaded?.reviewNote ?? ((hasPending ? row.pending_review_note : row.review_note) as string | null) ?? null,
         /* Absent column, not "hidden". `visibility` defaults to hidden in the
            database, and reading a missing value as hidden would be the shelf
            telling an author their public course is unseen. */
