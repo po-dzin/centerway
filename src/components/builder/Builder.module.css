@@ -6571,3 +6571,120 @@
   padding-inline-start: var(--cw-space-md);
   min-width: 0;
 }
+
+/* ── The author's overview (/build) ───────────────────
+
+   FOUR PANELS OF TEXT, and the text is the point. Each section is one question
+   with its answer under it; inside a panel every entry is a LINE — the name on
+   the ink stroke, the standing beneath it — because a plate per entry would
+   turn twenty short statements into twenty things that look pressable when only
+   the name is (docs/design-system.md, "A list is text, not a stack of cards").
+
+   The panels themselves stay `.panel`: they are level-0 objects on the page's
+   ground, which is the one place in the ladder where a radius and a soft shadow
+   belong.
+
+   MOBILE-FIRST AND LAST IN THE FILE. Everything here is the phone layout; the
+   only wider rule adds a second column at desktop. It sits at the end of the
+   stylesheet deliberately — a rule written above a media query loses to any
+   later top-level rule of the same specificity, which is how earlier builder
+   overrides came to be silently discarded. */
+
+.overviewSections {
+  display: grid;
+  gap: var(--cw-space-md);
+  margin-block-start: var(--cw-space-md);
+}
+
+.overviewList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  /* No gap: the entries carry their own rule and their own block padding, so a
+     gap here would double the space above every line but the first. */
+  gap: 0;
+}
+
+.overviewItem {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  justify-items: start;
+  padding-block: var(--cw-space-xs);
+  /* The name is the touch target and it is one line of text; the row is what
+     gives it a hand-sized height without the link claiming a button's box. */
+  min-height: var(--ds-touch-target-min);
+  align-content: center;
+  /* THE SYSTEM'S RULE, FADING AT BOTH ENDS. A separator inside a list is not
+     the edge of a cell, so it takes `--cw-rule-fade-x` — the one gradient every
+     other divider in this file already draws — and the builder's own rule ink.
+     NOT `data-cw-rule="inner"`: that scope is the material's inner hairline at
+     4% alpha, which is right for a card's own edge and invisible as a break
+     between two lines of text on the dark theme. Same object as the menu's
+     group break below, same recipe. */
+  --cw-rule-ink: var(--builder-rule);
+  border-block-start: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
+}
+
+/* THE RULE IS BETWEEN THE LINES, NOT AROUND THEM. A border above every entry
+   including the first would draw a line straight under the section's own
+   heading, where there is nothing to separate. */
+.overviewItem:first-child {
+  border-block-start: none;
+  border-image: none;
+}
+
+.overviewName {
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.overviewName:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset-tight);
+  border-radius: var(--cw-radius-sm);
+}
+
+.overviewItemState {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--cw-space-2xs);
+}
+
+.overviewItemLine {
+  color: var(--cw-platform-muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* The qualifying fact, one step quieter than the state it qualifies: a saved
+   next version, or the name an author gave a checkpoint. */
+.overviewItemNote {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* `base` is named explicitly beside `text`: `composes` does not chain, and a
+   role that only names `text` ships without the geometry and the focus ring
+   `base` owns. See docs/design-system.md, "`composes` does not chain". */
+.overviewShelfAction {
+  composes: base from "../platform/PlatformButtons.module.css";
+  composes: text from "../platform/PlatformButtons.module.css";
+  color: var(--cw-platform-text);
+}
+
+@media (min-width: 901px) {
+  /* TWO COLUMNS, AND THE ORDER STILL READS DOWN THE PAGE. The four sections are
+     independent answers rather than a sequence, so pairing them costs nothing
+     and saves a desktop reader a full screen of scrolling. */
+  .overviewSections {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}

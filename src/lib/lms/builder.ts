@@ -29,6 +29,7 @@
 
 import { adminClient } from "@/lib/auth/adminClient";
 import type { TablesUpdate } from "@/lib/db/database.types";
+import { BUILDER_RESERVED_SLUGS, isReservedBuilderSlug } from "@/lib/surfaces/catalog";
 import { courseFromRows, writeCourseStructure } from "./authoring";
 import { getSnapshotCourse } from "./catalog";
 import { applyAccessTermToOffer } from "./offerTerm";
@@ -69,6 +70,29 @@ export type BuilderCourseSummary = {
       that has not chosen yet; `categories` only becomes required on the way to
       publication (see `readiness.ts`). */
   categories: CourseCategory[];
+  /* ── What the author's dashboard asks, and the columns that answer it ──────
+     These four are not decoration on the shelf: they are the difference
+     between «опубліковано» and «опубліковано і його видно», and between «на
+     перевірці» and «на перевірці вже дев'ять днів». The shelf renders none of
+     them; it is the same read, so asking for them twice would mean loading
+     every author's whole course tree a second time. */
+  /** Effective review state — a pending revision's, when there is one. */
+  reviewStatus: CourseReviewStatus;
+  /** What the reviewer asked for, when they asked for changes. */
+  reviewNote: string | null;
+  /** Catalogue visibility. Governed in admin; the author may only read it. */
+  visibility: Course["visibility"];
+  /** A saved next version waiting behind the live release. */
+  hasPendingRevision: boolean;
+  /** When the thing currently under review was sent. Null when nothing is. */
+  submittedAt: string | null;
+  /** When the live release was approved. */
+  approvedAt: string | null;
+  /** The two review columns as stored, for `courseStateKeys` — the one place
+      that turns them into lifecycle words. `reviewStatus` above is their
+      folded answer for filtering; badges need both halves. */
+  liveReviewStatus: string | null;
+  pendingReviewStatus: string | null;
 };
 
 type CourseRow = Record<string, unknown>;
@@ -173,11 +197,43 @@ export async function loadBuilderCourse(slug: string): Promise<{
   };
 }
 
+/**
+ * Just the identities of the courses this filter can see.
+ *
+ * `listBuilderCourses` rebuilds every course to count its blockers, which is
+ * the right price for the shelf and the wrong price for "which ids am I allowed
+ * to read the journal for". Three columns, one query, no document.
+ */
+export async function listBuilderCourseIdentities(filter: {
+  authorId?: string;
+}): Promise<{ id: string; slug: string; title: string }[]> {
+  let query = adminClient().from("lms_courses").select("id, slug, title");
+  if (filter.authorId) query = query.eq("author_id", filter.authorId);
+  const { data, error } = await query;
+  if (error) throw new Error(`lms_builder_list_failed:${error.message}`);
+  return ((data ?? []) as CourseRow[]).map((row) => ({
+    id: row.id as string,
+    slug: row.slug as string,
+    title: row.title as string,
+  }));
+}
+
 export async function listBuilderCourses(filter: { authorId?: string }): Promise<BuilderCourseSummary[]> {
   const db = adminClient();
   let query = db
     .from("lms_courses")
-    .select("id, slug, title, status, author_id, updated_at, cover, theme, sort_order, categories");
+    /* NAMED COLUMNS, and `pending_content` is deliberately not among them.
+       It is a whole course document per row, and the dashboard only needs to
+       know THAT one exists — a fact `loadBuilderCourse` already establishes
+       below while it computes the blockers. Selecting the document here would
+       have pulled every author's every draft twice per page. */
+    /* ONE STRING LITERAL, not a concatenation: supabase-js infers the row type
+       from the literal text of this argument, and `"a," + "b"` erases it — the
+       result comes back as an error shape and every cast below stops meaning
+       anything. */
+    .select(
+      "id, slug, title, status, author_id, updated_at, cover, theme, sort_order, categories, review_status, review_note, submitted_at, approved_at, pending_review_status, pending_review_note, pending_submitted_at, visibility",
+    );
   if (filter.authorId) query = query.eq("author_id", filter.authorId);
 
   const { data, error } = await query;
@@ -212,8 +268,14 @@ export async function listBuilderCourses(filter: { authorId?: string }): Promise
     rows.map(async (row) => {
       const slug = row.slug as string;
       let blockerCount = 0;
+      /* ONE READ ANSWERS BOTH QUESTIONS. The blockers and «which version is in
+         review» are properties of the same document, and `loadBuilderCourse`
+         already resolves the pending-revision rule once. Re-deriving it from
+         columns here would be that rule written twice — one rule until the
+         next edit to either copy. */
+      let loaded: Awaited<ReturnType<typeof loadBuilderCourse>> = null;
       try {
-        const loaded = await loadBuilderCourse(slug);
+        loaded = await loadBuilderCourse(slug);
         blockerCount = loaded ? courseReadiness(loaded.course).blockers.length : 0;
       } catch {
         // A course whose rows do not currently form a valid structure must not
@@ -221,6 +283,15 @@ export async function listBuilderCourses(filter: { authorId?: string }): Promise
         // most needs to be able to open.
         blockerCount = -1;
       }
+      /* When the document could not be rebuilt, the row's own columns still
+         carry the pending revision's standing: the schema requires
+         `pending_review_status` to be set exactly when `pending_content` is.
+         Falling back to "no pending revision" would drop a version that is in
+         review from the review section precisely for the course that already
+         needs repair. */
+      const hasPending = loaded
+        ? loaded.hasPendingRevision
+        : row.pending_review_status !== null && row.pending_review_status !== undefined;
 
       return {
         id: row.id as string,
@@ -240,6 +311,29 @@ export async function listBuilderCourses(filter: { authorId?: string }): Promise
            draft may not have chosen yet — an empty list, never null, so every
            reader can ask `.includes()` without asking `?.` first. */
         categories: Array.isArray(row.categories) ? (row.categories as CourseCategory[]) : [],
+        /* THE PENDING REVISION SPEAKS FOR THE COURSE, exactly as it does in
+           `loadBuilderCourse`. An author looking at their dashboard is asking
+           about the thing they last sent, and while a next version is waiting
+           behind a live release it is that version that is in review — the
+           approved release's `review_status` is a fact about last month. One
+           rule, written twice would be one rule until the next edit. */
+        reviewStatus:
+          loaded?.reviewStatus ??
+          ((hasPending ? row.pending_review_status : row.review_status) as CourseReviewStatus | null) ??
+          (row.status === "published" ? "approved" : "draft"),
+        reviewNote:
+          loaded?.reviewNote ?? ((hasPending ? row.pending_review_note : row.review_note) as string | null) ?? null,
+        /* Absent column, not "hidden". `visibility` defaults to hidden in the
+           database, and reading a missing value as hidden would be the shelf
+           telling an author their public course is unseen. */
+        visibility: loaded?.liveCourse.visibility ?? (row.visibility as Course["visibility"] | null) ?? "hidden",
+        hasPendingRevision: hasPending,
+        submittedAt: hasPending
+          ? ((row.pending_submitted_at as string | null) ?? null)
+          : ((row.submitted_at as string | null) ?? null),
+        approvedAt: (row.approved_at as string | null) ?? null,
+        liveReviewStatus: (row.review_status as string | null) ?? null,
+        pendingReviewStatus: hasPending ? ((row.pending_review_status as string | null) ?? null) : null,
       };
     }),
   );
@@ -314,6 +408,10 @@ export async function renameBuilderCourseSlug(currentSlug: string, requestedSlug
 
   const nextSlug = slugify(requestedSlug);
   if (nextSlug === currentSlug) return { slug: currentSlug };
+  /* Refused, not silently suffixed. A rename is a name the author TYPED, and
+     answering it with `courses-2` would be the tool renaming their course to
+     something they did not ask for. */
+  if (isReservedBuilderSlug(nextSlug)) throw new Error("lms_builder_slug_reserved");
 
   const db = adminClient();
   const { data: collision, error: collisionError } = await db
@@ -839,10 +937,11 @@ export async function createBuilderCourse(input: {
     // The address is derived from the title and receives a numeric suffix on a
     // collision. It remains explicitly editable only while the draft has no
     // public or learner-facing dependencies.
-    const slug = uniqueSlug(
-      title,
-      existing.map((row) => row.slug),
-    );
+    /* The reserved segments join the taken set rather than being checked after
+       it: `uniqueSlug` already knows how to step around a name that is spoken
+       for, and a course called «Курси» should quietly become `courses-2`
+       instead of failing a create. See BUILDER_RESERVED_SLUGS. */
+    const slug = uniqueSlug(title, [...existing.map((row) => row.slug), ...BUILDER_RESERVED_SLUGS]);
 
     const course = newCourseFromTemplate(input.ids, {
       slug,
@@ -897,7 +996,7 @@ export async function previewBuilderCourseImport(input: unknown, ids: IdSource):
   const db = adminClient();
   const { data, error } = await db.from("lms_courses").select("slug");
   if (error) throw new Error(`lms_builder_list_failed:${error.message}`);
-  const takenSlugs = ((data ?? []) as { slug: string }[]).map((row) => row.slug);
+  const takenSlugs = [...((data ?? []) as { slug: string }[]).map((row) => row.slug), ...BUILDER_RESERVED_SLUGS];
   return preparePortableCourse(input, { takenSlugs, ids });
 }
 

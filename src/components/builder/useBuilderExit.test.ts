@@ -18,8 +18,12 @@ describe("staysInCourse", () => {
     expect(staysInCourse("/build/way21/day-1?zen=1", "way21")).toBe(true);
   });
 
-  it("treats the course list and another course as leaving", () => {
+  it("treats the overview, the shelf and another course as leaving", () => {
     expect(staysInCourse("/build", "way21")).toBe(false);
+    /* `/build/courses` is the materials shelf, not a course — the reserved
+       slug that makes the static route safe also has to read as "outside" to
+       the exit guard, or an unsaved lesson would leave without asking. */
+    expect(staysInCourse("/build/courses", "way21")).toBe(false);
     expect(staysInCourse("/build/other", "way21")).toBe(false);
   });
 

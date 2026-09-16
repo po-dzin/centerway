@@ -1,5 +1,6 @@
 "use client";
 
+import { BUILDER_COURSES_PATH } from "@/lib/surfaces/catalog";
 import { useToast } from "@/components/ToastProvider";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -609,7 +610,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     toast.success(SAVE_COPY.draftDiscarded);
   };
 
-  const trail = [{ label: "Курси", href: "/build" }];
+  const trail = [{ label: "Матеріали", href: BUILDER_COURSES_PATH }];
 
   if (state.status === "loading") {
     return (
@@ -655,7 +656,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   return (
     <BuilderShell
       trail={[
-        { label: "Курси", onNavigate: () => route("/build") },
+        { label: "Матеріали", onNavigate: () => route(BUILDER_COURSES_PATH) },
         { label: trailTitle(course.title, "Курс без назви") },
       ]}
       /* Two objects for the phone's capsule: the version drawer and the learner
