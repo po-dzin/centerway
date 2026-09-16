@@ -2238,11 +2238,15 @@
    different languages. It is a scrim now: see the "one surface, one mark" note
    in PlatformButtons.module.css for the rule this obeys, and for why the
    recipe lives here rather than as a composable class there. */
-/* The target stays 3rem; the paint follows the smaller optical hover circle. */
+/* The target stays 3rem; the paint follows the smaller optical hover circle.
+   Flush with the cover's own corner (2026-09-15), not past it: pulled outward
+   by `--cw-space-2xs` past `--ds-card-inset`, the trigger's corner sat beyond
+   the photo's own edge — over the card's bare padding gutter, not the cover —
+   so a chunk of the disc rendered off the picture it is supposed to sit on. */
 .courseCard > .menuRoot {
   position: absolute;
-  inset-block-start: calc(var(--ds-card-inset) - var(--cw-space-2xs));
-  inset-inline-end: calc(var(--ds-card-inset) - var(--cw-space-2xs));
+  inset-block-start: var(--ds-card-inset);
+  inset-inline-end: var(--ds-card-inset);
   z-index: 2;
 }
 
@@ -2281,20 +2285,30 @@
 .courseCard > .menuRoot > .menuTrigger::before {
   content: "";
   position: absolute;
-  inset: 0;
-  border-radius: 50%;
+  /* SMALLER THAN THE HIT TARGET, ON PURPOSE (2026-09-16). The touch minimum
+     — 36 to 48px — is the accessible box the FINGER needs; it is not a size
+     the plate has to fill. At the full box, `--cw-radius-btn` (16px, ~40-44%
+     of the box) still read round in a corner this small — a soft rect scaled
+     to a button's own proportions, not to a corner the size of a badge. The
+     paint pulls in from the edge and takes a shallower, fixed radius instead,
+     the way the card's own corner is a small fraction of the card's size
+     rather than a fraction of a control's. The hit area is untouched: it is
+     still the whole `.menuTrigger` box, unpainted margin included. */
+  inset: 0.3rem;
+  border-radius: 8px;
   background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent);
   pointer-events: none;
   transition: background-color var(--builder-motion-ink) ease;
 }
 
-/* A DISC THE SIZE OF THE CONTROL, AND THE DISC IS THE STATE (2026-09-13).
+/* A SOFT RECT THE SIZE OF THE CONTROL, AND THE PLATE IS THE STATE
+   (2026-09-13, corner geometry corrected 2026-09-16).
    The scrim above was cut to the ring's optical diameter — about 29px inside a
    36–48px target — and hover then drew the ink ring around that coin: a small
    dark dot with a thin circle appearing at its edge, which read as a glitch
    rather than as a control answering. On a photograph the scrim is the box, and
    a box marks itself (see «Ink marks text; a box marks itself» in
-   docs/design-system.md): the disc fills the control, deepens on hover, focus
+   docs/design-system.md): the plate fills the control, deepens on hover, focus
    and while its menu is open, and the ring is not drawn here. */
 .courseCard > .menuRoot > .menuTrigger .inkRing {
   display: none;
@@ -2309,6 +2323,20 @@
   .courseCard > .menuRoot > .menuTrigger:hover:not(:disabled)::before {
     background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 64%, transparent);
   }
+}
+
+/* CENTRED ON THE PLATE, NOT ON THE HIT TARGET. The button's own flex centring
+   answers to the full 36–48px box, and the plate above is inset from that box
+   by an equal margin on every side — so the two centres are the same point on
+   paper. Stated anyway, rather than left to arithmetic: `inset: 0.3rem` is a
+   fixed length and the box it is subtracted from is not, so a future change to
+   one side without the other is a silent, asymmetric plate with the glyph
+   still reporting dead centre of a box that no longer matches it. */
+.courseCard > .menuRoot > .menuTrigger .menuTriggerGlyph {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 /* See above: positioned only so it outranks the scrim pseudo-element. Harmless
@@ -2348,8 +2376,16 @@
 
    `:has` rather than a state prop: the trigger already reports `aria-expanded`
    for the screen reader, and reading it is one selector against threading an
-   open flag out of the menu and into the card. */
-.courseCard::after {
+   open flag out of the menu and into the card.
+
+   THE ROW GETS THE SAME MARK (2026-09-15). It never drew one: a row's only
+   feedback was the browser's own focus outline on the link inside it, so a
+   pointer resting on a row — or a row whose menu was open — looked identical
+   to one that was not. Same shape, same two strengths, the row's own corner
+   radius instead of the card's: one recipe for "this is the entry under the
+   pointer" in both views, not two. */
+.courseCard::after,
+.courseRow::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -2360,17 +2396,20 @@
   transition: opacity var(--builder-motion-tool) ease;
 }
 
-.courseCard:focus-within::after {
+.courseCard:focus-within::after,
+.courseRow:focus-within::after {
   opacity: var(--cw-ink-hover-opacity);
 }
 
 @media (hover: hover) {
-  .courseCard:hover::after {
+  .courseCard:hover::after,
+  .courseRow:hover::after {
     opacity: var(--cw-ink-hover-opacity);
   }
 }
 
-.courseCard:has(.menuTrigger[aria-expanded="true"])::after {
+.courseCard:has(.menuTrigger[aria-expanded="true"])::after,
+.courseRow:has(.menuTrigger[aria-expanded="true"])::after {
   opacity: 1;
 }
 
