@@ -111,6 +111,32 @@ const nextConfig: NextConfig = {
   distDir: isDev ? ".next-dev" : ".next",
 
   /**
+   * WHAT A FUNCTION CARRIES OF `src/landing-static`.
+   *
+   * The landing routes read that directory with `path.join(process.cwd(), …)`
+   * and a runtime segment, which the tracer cannot narrow — so it copied all
+   * 57 MB into every function that touches it, in every deployment. At ~130
+   * deployments kept, that alone was most of the 50 GB of Functions Storage
+   * that took the Hobby plan over its limit on 2026-09-15.
+   *
+   * `legacy/` is never served: `legacy` is not in `LANDING_STATIC_BRANDS`, so
+   * no request can reach it, and it was 35 MB of the 57. The funnel pages and
+   * their route handlers read one HTML file (`prepareLandingHtml`,
+   * `createStaticLandingGet`) and nothing else; their images, fonts, css and js
+   * are fetched by the browser through `[brand]/[...path]`, which is the one
+   * function that keeps them.
+   */
+  outputFileTracingExcludes: {
+    "/**/*": ["src/landing-static/legacy/**"],
+    ...Object.fromEntries(
+      ["/irem", "/reboot", "/reboot-b", "/herbs", "/reset-day", "/way21"].map((route) => [
+        route,
+        ["src/landing-static/**/*.{png,jpg,jpeg,gif,webp,mp4,svg,ico,woff,woff2,ttf,css,js,json,txt}"],
+      ]),
+    ),
+  },
+
+  /**
    * CACHING FOR `public/`, WHICH NEXT DOES NOT DO FOR YOU.
    *
    * Everything under `public/` ships with `Cache-Control: public, max-age=0,
