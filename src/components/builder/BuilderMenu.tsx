@@ -145,6 +145,16 @@ export function BuilderMenu({
 
   const open = origin !== null;
 
+  /* THE NATIVE TOOLTIP GETS THE SHORT FORM, `aria-label` KEEPS THE FULL ONE.
+     Every call site quotes the thing this menu acts on — «Дії з курсом
+     «‹title›»» — so a screen reader hears which course it opened this menu
+     on. The browser's own tooltip does not fit that sentence anywhere near
+     as gracefully: on a card in a grid, a long quoted title wrapped the
+     tooltip past the trigger and onto the NEXT card, cut mid-word. The
+     tooltip only has to answer "what does this button do" — the quoted name
+     is already legible on the object the trigger sits on. */
+  const shortLabel = label.replace(/\s*«.*$/, "").trim() || label;
+
   const close = useCallback(() => {
     setOrigin(null);
     setPlacement(null);
@@ -285,7 +295,7 @@ export function BuilderMenu({
         className={styles.menuTrigger}
         type="button"
         aria-label={label}
-        title={label}
+        title={shortLabel}
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => (open ? close() : openAtTrigger())}

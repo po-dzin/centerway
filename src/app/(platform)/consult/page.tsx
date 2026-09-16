@@ -16,7 +16,13 @@ export const metadata: Metadata = pageMetadata({
 });
 
 export default async function ConsultPage() {
-  const authors = await listListedAuthors();
+  /* `listListedAuthors()` is every author with a public page — the same set
+     `/experts` shows. This page is narrower: it invites a reader into a
+     conversation, and an author who never checked "Приймаю запити на
+     консультацію" has not agreed to have one. `ConsultantDirectory` itself
+     trusts whatever it is handed (see its own test), so the page is where
+     that consent has to be read. */
+  const authors = (await listListedAuthors()).filter((author) => author.consultation?.enabled);
   return (
     <>
       {/* A Service, not a Course: nothing is delivered as lessons, and no price
