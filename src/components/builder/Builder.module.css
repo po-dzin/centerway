@@ -7057,3 +7057,15 @@
     margin-inline: 0;
   }
 }
+
+/* ── ONE COLUMN, NOTHING TO ALIGN WITH (2026-09-17) ──
+
+   Same rule as the shelf card's: the fixed slots line a ROW up, and below
+   761px the workshop grid is a single column, so a held second title line is
+   an empty gap rather than an alignment. */
+@media (max-width: 760px) {
+  .courseCardBody > .courseTitle,
+  .courseCardBody > .courseMeta {
+    height: auto;
+  }
+}

@@ -2199,3 +2199,35 @@
     transition: none;
   }
 }
+
+/* ── ONE COLUMN, NOTHING TO ALIGN WITH (2026-09-17) ──
+
+   The slots above exist so cards in a ROW print their fields at one height.
+   Below 561px the shelf is a single column, where a reserved line has no
+   neighbour to line up with and reads as a hole — a draft with no summary, no
+   rail and no dates became a tall empty plate with a button at its foot. So the
+   phone releases the reservations and the card is as tall as what it says.
+   Last in the file: a rule above a media query loses to any later top-level
+   rule of the same specificity. */
+@media (max-width: 560px) {
+  .courseCardFrame .chipRow {
+    flex-wrap: wrap;
+    height: auto;
+  }
+
+  .courseCardFrame .courseCardTitle,
+  .courseCardFrame .courseCardSummary,
+  .courseCardFrame .metaList {
+    height: auto;
+  }
+
+  .courseCardFrame .metaList {
+    grid-template-rows: none;
+  }
+
+  /* The summary and the rail keep their elements — the slot is what goes. */
+  .courseCardFrame .courseCardSummary:empty,
+  .courseCardProgress:empty {
+    display: none;
+  }
+}
