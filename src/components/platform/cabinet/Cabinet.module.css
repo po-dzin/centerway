@@ -890,6 +890,59 @@
    both, so at equal specificity the field wins by source order. */
 .courseCardFrame {
   padding: var(--ds-card-inset);
+  /* The card system's one radius, so the inset frame's corners are concentric
+     (`--ds-card-media-radius` is computed from this, not from `xl`). */
+  border-radius: var(--cw-card-radius);
+}
+
+/* ── FIXED SLOTS (2026-09-17) ──
+
+   The admin row's rule, applied to the shelf card: every field has a height of
+   its own, set from type tokens and never from the copy, and a field a course
+   does not have keeps its slot. Before this a two-line title, a missing
+   summary or a missing rail moved everything below it, so the «Продовжити» row
+   and the «Наступний урок» line sat at different heights across one row. */
+.courseCardFrame > * {
+  flex: 0 0 auto;
+}
+
+.courseCardFrame .chipRow {
+  flex-wrap: nowrap;
+  height: 1.75rem;
+  overflow: hidden;
+}
+
+.courseCardFrame .courseCardTitle {
+  height: calc(2 * 1.3rem * 1.3);
+}
+
+.courseCardFrame .courseCardSummary {
+  /* `.cardText` sets the line at 1.6. */
+  height: calc(3 * 1.6 * 1em);
+}
+
+/* The rail's own box: its figure's air (1.15rem) and the dash line (0.75rem),
+   less the half it takes back out of the flow. Empty on a course without
+   lessons to count. */
+.courseCardProgress {
+  height: calc(1.15rem + 0.75rem - var(--cw-space-xs));
+}
+
+/* Three one-line facts: next lesson, start, access window. Each is cut with an
+   ellipsis; the course map holds the full lesson name. */
+.courseCardFrame .metaList {
+  grid-template-rows: repeat(3, calc(var(--ds-type-body-sm-size) * 1.5));
+  height: calc(3 * var(--ds-type-body-sm-size) * 1.5 + 2 * var(--cw-space-2xs));
+}
+
+.courseCardFrame .metaList li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.courseCardFrame > .actions {
+  margin-top: auto;
 }
 
 .courseCardFrame > :not(.coverFrame, .cardOverlay),

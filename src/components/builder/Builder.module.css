@@ -2217,7 +2217,7 @@
   /* The card system's field (docs/card-system-2026-09-13.md): the cover lies
      `--ds-card-inset` from every edge, the body indents past it. */
   padding: var(--ds-card-inset);
-  border-radius: var(--cw-radius-lg);
+  border-radius: var(--cw-card-radius);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-soft);
 }
@@ -2671,6 +2671,28 @@
   margin: 0;
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-body-sm-size);
+}
+
+/* FIXED SLOTS ON THE SHELF CARD (2026-09-17), the admin row's rule: two title
+   lines held whether the name needs them or not, and each meta fact on one line
+   with an ellipsis, so every card in a row prints its counts and its readiness
+   at the same height. */
+.courseCardBody > .courseTitle {
+  display: -webkit-box;
+  overflow: hidden;
+  height: calc(2 * 1.3rem * 1.25);
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.courseCardBody > .courseMeta {
+  display: block;
+  overflow: hidden;
+  height: calc(var(--ds-type-body-sm-size) * 1.5);
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* One quiet summary replaces two full-width release panels. It answers the

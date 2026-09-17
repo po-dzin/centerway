@@ -146,11 +146,16 @@ export function CourseCard({
       </div>
 
       <h3 className={styles.courseCardTitle}>{course.title}</h3>
-      {course.summary ? <p className={styles.courseCardSummary}>{course.summary}</p> : null}
+      {/* FIXED SLOTS (docs/card-system-2026-09-13.md, «Слоти»): the summary
+          and the progress rail keep their place when a course has neither, so
+          every card in a row prints its lines and buttons at the same height. */}
+      <p className={styles.courseCardSummary}>{course.summary ?? ""}</p>
 
-      {course.access === "enrolled" && total > 0 ? (
-        <ProgressRail value={done} total={total} label={course.title} />
-      ) : null}
+      <div className={styles.courseCardProgress}>
+        {course.access === "enrolled" && total > 0 ? (
+          <ProgressRail value={done} total={total} label={course.title} />
+        ) : null}
+      </div>
 
       <ul className={styles.metaList}>
         {course.currentLessonTitle && !course.standing?.isFinished ? (
