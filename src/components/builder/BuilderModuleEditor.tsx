@@ -8,6 +8,7 @@
 
 import { useRef, useState } from "react";
 import { HandGraphic, Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { newLesson, nextDayIndex, uniqueSlug, type Course, type CourseModule, type Lesson } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
 import { plural } from "@/lib/plural";
@@ -38,7 +39,7 @@ export function BuilderCourseRail({
     <div className={styles.courseRail}>
       <nav className={styles.courseRailNav} aria-label="Розділи курсу">
         <a
-          className={styles.courseRailLink}
+          className={`cw-nav-link ${styles.courseRailLink}`}
           data-cw-ink-control=""
           href="#course-overview"
           aria-label="Обкладинка"
@@ -49,13 +50,14 @@ export function BuilderCourseRail({
           }}
         >
           <span className={styles.courseRailIcon}>
-            <Icon name="display" size={20} />
-            <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+            <InteractionInkIcon>
+              <Icon name="display" size={20} />
+            </InteractionInkIcon>
           </span>
           <BuilderInkLabel>Обкладинка</BuilderInkLabel>
         </a>
         <a
-          className={styles.courseRailLink}
+          className={`cw-nav-link ${styles.courseRailLink}`}
           data-cw-ink-control=""
           href="#course-structure"
           aria-label="Зміст"
@@ -66,13 +68,14 @@ export function BuilderCourseRail({
           }}
         >
           <span className={styles.courseRailIcon}>
-            <Icon name="view-rows" size={20} />
-            <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+            <InteractionInkIcon>
+              <Icon name="view-rows" size={20} />
+            </InteractionInkIcon>
           </span>
           <BuilderInkLabel>Зміст</BuilderInkLabel>
         </a>
         <a
-          className={styles.courseRailLink}
+          className={`cw-nav-link ${styles.courseRailLink}`}
           data-cw-ink-control=""
           href="#course-offer"
           aria-label="Сторінка програми"
@@ -83,13 +86,14 @@ export function BuilderCourseRail({
           }}
         >
           <span className={styles.courseRailIcon}>
-            <Icon name="document" size={20} />
-            <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+            <InteractionInkIcon>
+              <Icon name="document" size={20} />
+            </InteractionInkIcon>
           </span>
           <BuilderInkLabel>Сторінка</BuilderInkLabel>
         </a>
         <a
-          className={styles.courseRailLink}
+          className={`cw-nav-link ${styles.courseRailLink}`}
           data-cw-ink-control=""
           href="#course-author"
           aria-label="Автор"
@@ -100,13 +104,14 @@ export function BuilderCourseRail({
           }}
         >
           <span className={styles.courseRailIcon}>
-            <Icon name="user" size={20} />
-            <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+            <InteractionInkIcon>
+              <Icon name="user" size={20} />
+            </InteractionInkIcon>
           </span>
           <BuilderInkLabel>Автор</BuilderInkLabel>
         </a>
         <a
-          className={styles.courseRailLink}
+          className={`cw-nav-link ${styles.courseRailLink}`}
           data-cw-ink-control=""
           href="#course-release"
           aria-label="Публікація"
@@ -117,8 +122,9 @@ export function BuilderCourseRail({
           }}
         >
           <span className={styles.courseRailIcon}>
-            <Icon name="shield-check" size={20} />
-            <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+            <InteractionInkIcon>
+              <Icon name="shield-check" size={20} />
+            </InteractionInkIcon>
           </span>
           <BuilderInkLabel>Публікація</BuilderInkLabel>
         </a>

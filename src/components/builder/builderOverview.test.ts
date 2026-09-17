@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  audienceLine,
-  audienceNote,
   blockerLine,
+  dayReadout,
+  formatShare,
+  journalWhen,
   overviewStateKeys,
-  visibilityLine,
+  summarizeAudience,
+  visibilityShort,
   waitingFor,
 } from "./builderOverview";
 
@@ -48,11 +50,11 @@ describe("waitingFor", () => {
   });
 });
 
-describe("visibilityLine", () => {
+describe("visibilityShort", () => {
   it("does not let a published course imply a visible one", () => {
-    expect(visibilityLine("listed")).toContain("У каталозі");
-    expect(visibilityLine("unlisted")).toContain("прямим посиланням");
-    expect(visibilityLine("hidden")).toContain("Приховано");
+    expect(visibilityShort("listed")).toBe("У каталозі");
+    expect(visibilityShort("unlisted")).toBe("За посиланням");
+    expect(visibilityShort("hidden")).toBe("Приховано");
   });
 });
 
@@ -70,27 +72,61 @@ describe("blockerLine", () => {
   });
 });
 
-describe("audienceLine / audienceNote", () => {
-  const base = { learners: 0, lapsed: 0, joinedRecently: 0, activeRecently: 0 };
+describe("summarizeAudience", () => {
+  const base = {
+    learners: 0,
+    lapsed: 0,
+    joinedRecently: 0,
+    activeRecently: 0,
+    notStarted: 0,
+    finished: 0,
+    completionsRecently: 0,
+    progressShare: null,
+  };
 
-  it("says an empty course is empty rather than reporting activity in it", () => {
-    expect(audienceLine({ ...base, lapsed: 4 })).toBe("0 учнів з відкритим доступом.");
+  it("has no progress when no course has anything to measure", () => {
+    expect(summarizeAudience([base, { ...base, learners: 3 }]).progressShare).toBeNull();
   });
 
-  it("puts the total and the active week in one sentence", () => {
-    expect(audienceLine({ ...base, learners: 42, activeRecently: 7 })).toBe("42 учні · 7 активних за тиждень.");
-    expect(audienceLine({ ...base, learners: 1, activeRecently: 1 })).toBe("1 учень · 1 активний за тиждень.");
-    expect(audienceLine({ ...base, learners: 5, activeRecently: 0 })).toBe("5 учнів · 0 активних за тиждень.");
+  /* A course of one reader at 100% must not pull forty readers at 10% up to 55%. */
+  it("weights progress by learners", () => {
+    const totals = summarizeAudience([
+      { ...base, learners: 1, progressShare: 1 },
+      { ...base, learners: 9, progressShare: 0 },
+    ]);
+    expect(totals.learners).toBe(10);
+    expect(totals.progressShare).toBeCloseTo(0.1);
+  });
+});
+
+describe("formatShare / dayReadout", () => {
+  it("prints a dash, not 0 %, where nothing was measured", () => {
+    expect(formatShare(null)).toBe("—");
+    expect(formatShare(0.43)).toMatch(/^43\s?%$/);
   });
 
-  it("adds nothing when there is nothing to add", () => {
-    expect(audienceNote({ ...base, learners: 3 })).toBeNull();
+  it("says a quiet day in words rather than as «0 учнів»", () => {
+    expect(dayReadout({ date: "2026-09-12", learners: 0 })).toContain("ніхто не відкривав");
+    expect(dayReadout({ date: "2026-09-12", learners: 3 })).toMatch(/^12 .* · 3 учні$/);
+  });
+});
+
+describe("journalWhen", () => {
+  const now = Date.parse("2026-09-13T12:00:00Z");
+
+  it("names today and yesterday in Kyiv time", () => {
+    expect(journalWhen("2026-09-13T16:52:00Z", now)).toBe("сьогодні, 19:52");
+    // 22:30 UTC on the 11th is 01:30 on the 12th in Kyiv — yesterday, not two days ago.
+    expect(journalWhen("2026-09-11T22:30:00Z", now)).toBe("учора, 01:30");
   });
 
-  it("names new arrivals and closed access together", () => {
-    expect(audienceNote({ ...base, learners: 3, joinedRecently: 2, lapsed: 1 })).toBe(
-      "+2 нові за 30 днів · 1 доступ закінчився",
-    );
+  it("drops the year inside the current one and keeps it otherwise", () => {
+    expect(journalWhen("2026-09-01T09:00:00Z", now)).not.toMatch(/2026/);
+    expect(journalWhen("2025-12-01T09:00:00Z", now)).toMatch(/2025/);
+  });
+
+  it("prints nothing for an unreadable timestamp", () => {
+    expect(journalWhen("not a date", now)).toBe("");
   });
 });
 

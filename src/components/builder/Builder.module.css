@@ -5949,6 +5949,21 @@
   padding-block: var(--cw-space-2xs);
 }
 
+/* A LABELLED ROW TAKES THE STROKE ONLY. The ring is the mark of an icon-only
+   choice (`docs/design-system.md`, the ink table), so it shows only in the
+   compact desktop rail, where the label is hidden and the icon is the row. */
+@media (max-width: 900px) {
+  .courseRailIcon :global(.cw-ink-icon-mark) {
+    display: none;
+  }
+}
+
+@media (min-width: 901px) {
+  .aside:not([data-compact]) .courseRailIcon :global(.cw-ink-icon-mark) {
+    display: none;
+  }
+}
+
 .courseRailIcon {
   position: relative;
   display: grid;
@@ -6613,35 +6628,266 @@
 
 /* ── The author's overview (/build) ───────────────────
 
-   FOUR PANELS OF TEXT, and the text is the point. Each section is one question
-   with its answer under it; inside a panel every entry is a LINE — the name on
-   the ink stroke, the standing beneath it — because a plate per entry would
-   turn twenty short statements into twenty things that look pressable when only
-   the name is (docs/design-system.md, "A list is text, not a stack of cards").
+   A DASHBOARD, READ TOP TO BOTTOM (2026-09-17). The first version was five
+   panels of sentences, and on real data it read as a wall: every course name
+   underlined, every fact a clause. It is now four kinds of object, each the
+   right shape for its data:
 
-   The panels themselves stay `.panel`: they are level-0 objects on the page's
-   ground, which is the one place in the ladder where a radius and a soft shadow
-   belong.
+   - tiles for the four numbers an author checks first, each with the comparison
+     that makes the number mean something («із 12», «+3 за 30 днів»);
+   - one bar chart for the one thing that changes over time;
+   - a table for the per-course facts, because «which course» is a row and
+     «which fact» is a column;
+   - a short ruled list for what needs the author, and a table for the journal.
+
+   The panels stay `.panel`: level-0 objects on the page's ground. Tiles are
+   panels too, not a new material. Numbers use the platform's data face.
 
    MOBILE-FIRST AND LAST IN THE FILE. Everything here is the phone layout; the
-   only wider rule adds a second column at desktop. It sits at the end of the
-   stylesheet deliberately — a rule written above a media query loses to any
-   later top-level rule of the same specificity, which is how earlier builder
+   wider rules come after. A rule written above a media query loses to any later
+   top-level rule of the same specificity, which is how earlier builder
    overrides came to be silently discarded. */
 
 .overviewSections {
   display: grid;
   gap: var(--cw-space-md);
   margin-block-start: var(--cw-space-md);
+  min-width: 0;
 }
+
+.overviewSectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs) var(--cw-space-md);
+}
+
+.overviewSectionLead {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+}
+
+/* ── Tiles ── */
+
+.overviewTiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cw-space-sm);
+  margin: 0;
+}
+
+.overviewTile {
+  composes: panel;
+  align-content: start;
+  gap: var(--cw-space-2xs);
+  /* Label, value, note share rows across the strip, so a label that wraps to
+     two lines does not push its number below its neighbours'. */
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+}
+
+.overviewTileLabel {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.35;
+}
+
+.overviewTileValue {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-display-size);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.overviewTileNote {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: 1.4;
+}
+
+/* ── Activity chart ──
+
+   One series, so no legend: the heading names it. Bars grow from a shared
+   baseline with rounded data ends and a surface gap between them; the grid is
+   one recessive rule at the maximum. The readout above the plot is the
+   tooltip — it names the day under the pointer and otherwise the latest day,
+   so the value never depends on hovering, and a visually hidden table carries
+   every day for a screen reader. */
+
+.overviewChartReadout {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-variant-numeric: tabular-nums;
+  min-height: 1.5em;
+}
+
+.overviewChart {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--cw-space-xs);
+  align-items: stretch;
+}
+
+.overviewChartPlot {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: 9rem;
+  border-block-end: 1px solid var(--builder-rule);
+}
+
+.overviewChartColumn {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  cursor: default;
+}
+
+.overviewChartBar {
+  width: 100%;
+  min-height: 2px;
+  /* The surface gap between neighbours, drawn by the bar's own transparent
+     sides rather than a gap in the row — so the plot stays on the spacing
+     scale and every column keeps the same width. */
+  border-inline: 1px solid transparent;
+  background-clip: padding-box;
+  border-radius: var(--cw-radius-inset) var(--cw-radius-inset) 0 0;
+  background-color: var(--cw-platform-accent-pressed);
+  opacity: 0.85;
+  transition: opacity var(--cw-motion-state) var(--cw-ease-state);
+}
+
+.overviewChartBar[data-empty] {
+  background-color: var(--builder-rule);
+  opacity: 1;
+}
+
+.overviewChartColumn[data-current] .overviewChartBar:not([data-empty]) {
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .overviewChartPlot:hover .overviewChartColumn:not(:hover) .overviewChartBar:not([data-empty]) {
+    opacity: 0.45;
+  }
+}
+
+.overviewChartScale {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.overviewChartAxis {
+  grid-column: 1;
+  display: flex;
+  justify-content: space-between;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Tables ── */
+
+/* The one element allowed to be wider than a phone, in its own scroller. */
+.overviewTableScroll {
+  overflow-x: auto;
+  min-width: 0;
+  margin-inline: calc(-1 * var(--cw-space-xs));
+}
+
+.overviewTable {
+  width: 100%;
+  min-width: 36rem;
+  border-collapse: collapse;
+  /* Fixed: the name column takes what the numbers leave, and a long title
+     truncates inside it instead of widening the table under its neighbours. */
+  table-layout: fixed;
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.overviewTable[data-table="courses"] th[data-numeric] {
+  width: 4.75rem;
+}
+
+.overviewTable[data-table="journal"] th:first-child,
+.overviewTable[data-table="journal"] th:last-child {
+  width: 9rem;
+}
+
+.overviewTable th,
+.overviewTable td {
+  padding: var(--cw-space-xs);
+  text-align: start;
+  vertical-align: top;
+}
+
+.overviewTable th {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* THE RULE IS BETWEEN THE ROWS, fading at both ends — a separator, not the
+   edge of a cell. `border-image` does not paint on a collapsed table's rows,
+   and on each cell it would fade five times across one line, so the row's own
+   background carries the same gradient `--cw-rule-fade-x` draws. None above
+   the header, none under the last row. */
+.overviewTable tbody tr {
+  background: linear-gradient(90deg, transparent 0, var(--builder-rule) 8%, var(--builder-rule) 92%, transparent 100%)
+    top / 100% 1px no-repeat;
+}
+
+.overviewTable [data-numeric] {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.overviewTable td[data-numeric] {
+  font-family: var(--cw-font-data);
+  color: var(--cw-platform-text);
+}
+
+.overviewTable td[data-muted] {
+  color: var(--cw-platform-muted);
+}
+
+.overviewTableWhen {
+  white-space: nowrap;
+  color: var(--cw-platform-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.overviewCourseCell {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  justify-items: start;
+  min-width: 0;
+}
+
+/* ── Lines (what needs the author) ── */
 
 .overviewList {
   margin: 0;
   padding: 0;
   list-style: none;
   display: grid;
-  /* No gap: the entries carry their own rule and their own block padding, so a
-     gap here would double the space above every line but the first. */
   gap: 0;
 }
 
@@ -6650,32 +6896,22 @@
   gap: var(--cw-space-2xs);
   justify-items: start;
   padding-block: var(--cw-space-xs);
-  /* The name is the touch target and it is one line of text; the row is what
-     gives it a hand-sized height without the link claiming a button's box. */
   min-height: var(--ds-touch-target-min);
   align-content: center;
-  /* THE SYSTEM'S RULE, FADING AT BOTH ENDS. A separator inside a list is not
-     the edge of a cell, so it takes `--cw-rule-fade-x` — the one gradient every
-     other divider in this file already draws — and the builder's own rule ink.
-     NOT `data-cw-rule="inner"`: that scope is the material's inner hairline at
-     4% alpha, which is right for a card's own edge and invisible as a break
-     between two lines of text on the dark theme. Same object as the menu's
-     group break below, same recipe. */
   --cw-rule-ink: var(--builder-rule);
   border-block-start: 1px solid transparent;
   border-image: var(--cw-rule-fade-x);
 }
 
-/* THE RULE IS BETWEEN THE LINES, NOT AROUND THEM. A border above every entry
-   including the first would draw a line straight under the section's own
-   heading, where there is nothing to separate. */
 .overviewItem:first-child {
   border-block-start: none;
   border-image: none;
 }
 
 .overviewName {
+  display: inline-flex;
   min-width: 0;
+  max-width: 100%;
   color: inherit;
   text-decoration: none;
   overflow-wrap: anywhere;
@@ -6696,15 +6932,14 @@
 
 .overviewItemLine {
   color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
-/* The qualifying fact, one step quieter than the state it qualifies: a saved
-   next version, or the name an author gave a checkpoint. */
 .overviewItemNote {
   color: var(--cw-platform-muted);
-  font-size: var(--ds-type-body-sm-size);
+  font-size: var(--ds-type-label-size);
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
@@ -6712,18 +6947,91 @@
 /* `base` is named explicitly beside `text`: `composes` does not chain, and a
    role that only names `text` ships without the geometry and the focus ring
    `base` owns. See docs/design-system.md, "`composes` does not chain". */
-.overviewShelfAction {
+.overviewTextAction {
   composes: base from "../platform/PlatformButtons.module.css";
   composes: text from "../platform/PlatformButtons.module.css";
   color: var(--cw-platform-text);
 }
 
+/* ── Phone: each row becomes a short block ──
+
+   Six columns do not fit 390px, and a sideways-scrolling table hides the one
+   number an author came for. In the phone band the header row is set aside
+   (kept for screen readers), the name takes the whole line, and each number
+   prints its column's name beside it. A dash has nothing to say there, so it
+   is dropped. */
+@media (max-width: 560px) {
+  .overviewTableScroll {
+    overflow: visible;
+    margin-inline: 0;
+  }
+
+  .overviewTable,
+  .overviewTable tbody {
+    display: block;
+    min-width: 0;
+  }
+
+  .overviewTable thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .overviewTable tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--cw-space-2xs) var(--cw-space-md);
+    padding-block: var(--cw-space-sm);
+  }
+
+  .overviewTable tbody tr:first-child {
+    background: none;
+  }
+
+  .overviewTable td {
+    display: block;
+    padding: 0;
+  }
+
+  .overviewTable td[data-cell="course"],
+  .overviewTable td[data-cell="event"] {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+
+  .overviewTable td[data-numeric] {
+    text-align: start;
+  }
+
+  .overviewTable td[data-numeric][data-muted] {
+    display: none;
+  }
+
+  .overviewTable td[data-label]::before {
+    content: attr(data-label) " ";
+    color: var(--cw-platform-muted);
+    font-family: var(--ds-font-family-base);
+    font-size: var(--ds-type-label-size);
+  }
+
+  .overviewTable td[data-cell="when"],
+  .overviewTable td[data-cell="who"] {
+    order: 1;
+    font-size: var(--ds-type-label-size);
+  }
+}
+
 @media (min-width: 901px) {
-  /* TWO COLUMNS, AND THE ORDER STILL READS DOWN THE PAGE. The four sections are
-     independent answers rather than a sequence, so pairing them costs nothing
-     and saves a desktop reader a full screen of scrolling. */
-  .overviewSections {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
+  .overviewTiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .overviewTableScroll {
+    margin-inline: 0;
   }
 }
