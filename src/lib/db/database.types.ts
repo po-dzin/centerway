@@ -620,6 +620,104 @@ export type Database = {
           },
         ]
       }
+      experience_offer_items: {
+        Row: {
+          created_at: string
+          experience_id: string
+          offer_id: string
+        }
+        Insert: {
+          created_at?: string
+          experience_id: string
+          offer_id: string
+        }
+        Update: {
+          created_at?: string
+          experience_id?: string
+          offer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experience_offer_items_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "experience_offer_items_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "experience_offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      experience_offers: {
+        Row: {
+          access_days: number | null
+          access_lifetime: boolean
+          active: boolean
+          amount: number | null
+          code: string
+          created_at: string
+          currency: string
+          experience_id: string
+          id: string
+          invoice_description: Json | null
+          invoice_heading: Json | null
+          list_amount: number | null
+          mode: string
+          pixel_content_name: string | null
+          share_pct: number | null
+          updated_at: string
+        }
+        Insert: {
+          access_days?: number | null
+          access_lifetime?: boolean
+          active?: boolean
+          amount?: number | null
+          code: string
+          created_at?: string
+          currency?: string
+          experience_id: string
+          id?: string
+          invoice_description?: Json | null
+          invoice_heading?: Json | null
+          list_amount?: number | null
+          mode: string
+          pixel_content_name?: string | null
+          share_pct?: number | null
+          updated_at?: string
+        }
+        Update: {
+          access_days?: number | null
+          access_lifetime?: boolean
+          active?: boolean
+          amount?: number | null
+          code?: string
+          created_at?: string
+          currency?: string
+          experience_id?: string
+          id?: string
+          invoice_description?: Json | null
+          invoice_heading?: Json | null
+          list_amount?: number | null
+          mode?: string
+          pixel_content_name?: string | null
+          share_pct?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experience_offers_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       experiences: {
         Row: {
           author_profile_id: string | null
@@ -1599,6 +1697,32 @@ export type Database = {
           },
         ]
       }
+      offer_aliases: {
+        Row: {
+          code: string
+          created_at: string
+          offer_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          offer_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          offer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_aliases_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "experience_offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           amount: number | null
@@ -1608,11 +1732,14 @@ export type Database = {
           created_at: string
           currency: string | null
           customer_id: string | null
+          experience_id: string | null
           fbc: string | null
           fbclid: string | null
           fbp: string | null
+          fulfilment_status: string | null
           id: string
           meta: Json | null
+          offer_id: string | null
           order_ref: string
           page_url: string | null
           payload: Json | null
@@ -1629,11 +1756,14 @@ export type Database = {
           created_at?: string
           currency?: string | null
           customer_id?: string | null
+          experience_id?: string | null
           fbc?: string | null
           fbclid?: string | null
           fbp?: string | null
+          fulfilment_status?: string | null
           id?: string
           meta?: Json | null
+          offer_id?: string | null
           order_ref: string
           page_url?: string | null
           payload?: Json | null
@@ -1650,11 +1780,14 @@ export type Database = {
           created_at?: string
           currency?: string | null
           customer_id?: string | null
+          experience_id?: string | null
           fbc?: string | null
           fbclid?: string | null
           fbp?: string | null
+          fulfilment_status?: string | null
           id?: string
           meta?: Json | null
+          offer_id?: string | null
           order_ref?: string
           page_url?: string | null
           payload?: Json | null
@@ -1669,6 +1802,20 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "experience_offers"
             referencedColumns: ["id"]
           },
         ]
