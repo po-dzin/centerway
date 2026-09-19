@@ -125,11 +125,13 @@ export async function listShelf(
   if (error) throw new Error(`experience_shelf_read_failed:${error.message}`);
   /* Ordered here, not in the query: a thing with no place yet goes to the END
      of the shelf, and the address breaks ties so the order is never arbitrary. */
-  return ((data ?? []) as ExperienceRow[]).map(fromRow).sort(
-    (a, b) =>
-      (a.sortOrder ?? Number.POSITIVE_INFINITY) - (b.sortOrder ?? Number.POSITIVE_INFINITY) ||
-      a.slug.localeCompare(b.slug),
-  );
+  return ((data ?? []) as ExperienceRow[])
+    .map(fromRow)
+    .sort(
+      (a, b) =>
+        (a.sortOrder ?? Number.POSITIVE_INFINITY) - (b.sortOrder ?? Number.POSITIVE_INFINITY) ||
+        a.slug.localeCompare(b.slug),
+    );
 }
 
 /**

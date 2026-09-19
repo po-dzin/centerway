@@ -25,10 +25,14 @@ const local = process.argv.includes("--local");
 
 let generated;
 try {
-  generated = execFileSync("supabase", ["gen", "types", "typescript", "--db-url", local ? LOCAL_DB_URL : poolerUrl(), "--schema", "public"], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "inherit"],
-  });
+  generated = execFileSync(
+    "supabase",
+    ["gen", "types", "typescript", "--db-url", local ? LOCAL_DB_URL : poolerUrl(), "--schema", "public"],
+    {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "inherit"],
+    },
+  );
 } catch (error) {
   // Never let the failure print the command line: it carries the password.
   const stdout = String(error?.stdout ?? "");

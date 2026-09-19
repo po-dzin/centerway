@@ -36,20 +36,16 @@ const PARENT_DOMAIN = "centerway.net.ua";
 export type Attribution = { ref: string | null; utm: UtmSet | null };
 
 function parseUtmCookie(value: string | undefined): UtmSet | null {
-  if (!value) return null;
-  try {
-    // Round-trips through the same reader a URL goes through, so a hand-edited
-    // cookie can carry nothing a query string could not.
-    return utmFromSearch(new URLSearchParams(decodeURIComponent(value)));
-  } catch {
-    return null;
-  }
+  // Round-trips through the same reader a URL goes through, so a hand-edited
+  // cookie can carry nothing a query string could not. The cookie API does the
+  // percent-encoding on both sides; the value here is a plain query string.
+  return value ? utmFromSearch(new URLSearchParams(value)) : null;
 }
 
 function serializeUtm(utm: UtmSet): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(utm)) params.set(`utm_${key}`, value);
-  return encodeURIComponent(params.toString());
+  return params.toString();
 }
 
 /** What this request knows about where the person came from: the URL first, then the cookies. */
@@ -62,7 +58,8 @@ export function readAttribution(req: NextRequest): Attribution {
 }
 
 function cookieDomain(req: NextRequest): string | undefined {
-  const host = (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "").split(":")[0]?.toLowerCase() ?? "";
+  const host =
+    (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "").split(":")[0]?.toLowerCase() ?? "";
   // The parent domain in production so `www.`, `my.` and the funnel hosts share
   // it; host-only on localhost and previews, where a Domain would be rejected.
   return host === PARENT_DOMAIN || host.endsWith(`.${PARENT_DOMAIN}`) ? `.${PARENT_DOMAIN}` : undefined;

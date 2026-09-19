@@ -226,7 +226,12 @@ describe("learners", () => {
       accountCreated: false,
       payment: null,
       account: { email: "a@b.c" },
-      grant: { created: true, enrollmentId: "enr-11", expiresAt: null, course: { slug: "way21", title: "Шлях 21", status: "published" } },
+      grant: {
+        created: true,
+        enrollmentId: "enr-11",
+        expiresAt: null,
+        course: { slug: "way21", title: "Шлях 21", status: "published" },
+      },
     });
 
     const res = await learners.POST(
@@ -247,7 +252,11 @@ describe("learners", () => {
   it("refuses a cohort date that is not a date and a ref that is not a tag", async () => {
     session.value = SUPPORT;
     const badDate = await learners.POST(
-      send("http://x/api/admin/access/learners", "POST", { email: "a@b.c", course: "way21", cohortStartsOn: "6 жовтня" }),
+      send("http://x/api/admin/access/learners", "POST", {
+        email: "a@b.c",
+        course: "way21",
+        cohortStartsOn: "6 жовтня",
+      }),
     );
     expect(await badDate.json()).toMatchObject({ error: "cohort_date_invalid" });
 

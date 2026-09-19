@@ -89,7 +89,10 @@ export async function grantCourse(input: {
     }
     if (input.ref && !existing.ref) patch.ref = input.ref;
     if (Object.keys(patch).length > 0) {
-      const { error: patchError } = await db.from("lms_enrollments").update(patch).eq("id", existing.id as string);
+      const { error: patchError } = await db
+        .from("lms_enrollments")
+        .update(patch)
+        .eq("id", existing.id as string);
       if (patchError) throw new AccessError(patchError.message, 500);
       await writeAudit(db, {
         actorId: input.actorId,
@@ -99,7 +102,8 @@ export async function grantCourse(input: {
         metadata: {
           course_slug: course.slug,
           cohort_before: (existing.cohort_starts_on as string | null) ?? null,
-          cohort_after: patch.cohort_starts_on === undefined ? (existing.cohort_starts_on ?? null) : patch.cohort_starts_on,
+          cohort_after:
+            patch.cohort_starts_on === undefined ? (existing.cohort_starts_on ?? null) : patch.cohort_starts_on,
           ...(patch.ref ? { ref: patch.ref } : {}),
         },
       });

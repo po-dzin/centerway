@@ -32,8 +32,14 @@ describe("dripAnchor", () => {
 
   it("puts the early sign-up and the late joiner on the same day", () => {
     const now = new Date("2026-10-08T10:00:00Z");
-    const early = dripAnchor({ startedAt: new Date("2026-09-28T08:00:00Z"), cohortStartsOn: "2026-10-06" }, "Europe/Kyiv");
-    const late = dripAnchor({ startedAt: new Date("2026-10-08T07:00:00Z"), cohortStartsOn: "2026-10-06" }, "Europe/Kyiv");
+    const early = dripAnchor(
+      { startedAt: new Date("2026-09-28T08:00:00Z"), cohortStartsOn: "2026-10-06" },
+      "Europe/Kyiv",
+    );
+    const late = dripAnchor(
+      { startedAt: new Date("2026-10-08T07:00:00Z"), cohortStartsOn: "2026-10-06" },
+      "Europe/Kyiv",
+    );
     expect(enrollmentDayNumber(early, now, "Europe/Kyiv")).toBe(3);
     expect(enrollmentDayNumber(late, now, "Europe/Kyiv")).toBe(3);
   });
@@ -49,10 +55,18 @@ describe("standing before a cohort's day 1", () => {
 
   it("says when it starts instead of a negative day", () => {
     const startedAt = dripAnchor({ startedAt: new Date(), cohortStartsOn: "2026-10-06" }, "Europe/Kyiv");
-    const before = summarizeStanding(course, progress, { startedAt, timeZone: "Europe/Kyiv", now: new Date("2026-10-03T10:00:00Z") });
+    const before = summarizeStanding(course, progress, {
+      startedAt,
+      timeZone: "Europe/Kyiv",
+      now: new Date("2026-10-03T10:00:00Z"),
+    });
     expect(before).toMatchObject({ currentDay: null, startsInDays: 3 });
 
-    const dayOne = summarizeStanding(course, progress, { startedAt, timeZone: "Europe/Kyiv", now: new Date("2026-10-06T05:00:00Z") });
+    const dayOne = summarizeStanding(course, progress, {
+      startedAt,
+      timeZone: "Europe/Kyiv",
+      now: new Date("2026-10-06T05:00:00Z"),
+    });
     expect(dayOne).toMatchObject({ currentDay: 1, startsInDays: null });
   });
 });

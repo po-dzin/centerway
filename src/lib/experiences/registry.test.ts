@@ -23,7 +23,13 @@ beforeEach(() => {
     experiences: [
       thing({}),
       thing({ id: "exp-reboot", kind: "mini", slug: "reboot", author_profile_id: null, sort_order: 1 }),
-      thing({ id: "exp-consult", kind: "consultation", slug: "consult", sort_order: null, title: "Особиста консультація" }),
+      thing({
+        id: "exp-consult",
+        kind: "consultation",
+        slug: "consult",
+        sort_order: null,
+        title: "Особиста консультація",
+      }),
       thing({ id: "exp-support", kind: "package", slug: "way21-support", listed: false, title: "Супровід" }),
     ],
     experience_aliases: [

@@ -33,14 +33,17 @@ describe("rememberAttribution", () => {
       }),
       NextResponse.next(),
     );
-    expect(decodeURIComponent(res.cookies.get(UTM_COOKIE)?.value ?? "")).toBe("utm_source=ig&utm_campaign=october");
+    expect(res.cookies.get(UTM_COOKIE)?.value).toBe("utm_source=ig&utm_campaign=october");
   });
 
   it("sets nothing on the ordinary request, and no Domain off the production hosts", () => {
-    expect(rememberAttribution(request("https://www.centerway.net.ua/programs"), NextResponse.next()).cookies.getAll()).toEqual(
-      [],
+    expect(
+      rememberAttribution(request("https://www.centerway.net.ua/programs"), NextResponse.next()).cookies.getAll(),
+    ).toEqual([]);
+    const local = rememberAttribution(
+      request("http://localhost:3000/way21?ref=olena", {}, "localhost:3000"),
+      NextResponse.next(),
     );
-    const local = rememberAttribution(request("http://localhost:3000/way21?ref=olena", {}, "localhost:3000"), NextResponse.next());
     expect(local.cookies.get(REF_COOKIE)?.domain).toBeUndefined();
   });
 });

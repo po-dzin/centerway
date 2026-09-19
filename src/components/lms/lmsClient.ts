@@ -63,7 +63,13 @@ export type CourseViewDto = {
     theme: CourseTheme | null;
   };
   enrollment: { startedAt: string; source: string; timeZone: string };
-  standing: { totalLessons: number; completedLessons: number; currentDay: number | null; startsInDays: number | null; isFinished: boolean };
+  standing: {
+    totalLessons: number;
+    completedLessons: number;
+    currentDay: number | null;
+    startsInDays: number | null;
+    isFinished: boolean;
+  };
   currentLessonSlug: string | null;
   outline: CourseOutlineEntryDto[];
 };

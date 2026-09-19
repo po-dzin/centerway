@@ -64,6 +64,8 @@ export const access = {
   access_grant_amount: { uk: "Сума", en: "Amount" },
   access_grant_currency: { uk: "Валюта", en: "Currency" },
   access_grant_note: { uk: "Коментар до оплати", en: "Payment note" },
+  access_grant_cohort: { uk: "Старт потоку", en: "Cohort starts" },
+  access_grant_ref: { uk: "Хто привів", en: "Referred by" },
   access_granted: { uk: "Доступ видано", en: "Access granted" },
   access_granted_with_payment: { uk: "Оплату записано, доступ видано", en: "Payment recorded, access granted" },
   access_account_created: { uk: "Акаунт створено", en: "Account created" },
@@ -333,6 +335,14 @@ export const access = {
   access_error_enrollment_not_found: {
     uk: "Запис на курс не знайдено — оновіть список",
     en: "Enrollment not found — reload the list",
+  },
+  access_error_cohort_date_invalid: {
+    uk: "Дата старту потоку має бути календарною датою.",
+    en: "The cohort start must be a calendar date.",
+  },
+  access_error_ref_invalid: {
+    uk: "Мітка «хто привів» — латиницею, без пробілів: olena, taras-k.",
+    en: "The referrer tag is plain Latin with no spaces: olena, taras-k.",
   },
   access_error_expires_at_invalid: {
     uk: "Не розібрали дату — потрібен формат РРРР-ММ-ДД",

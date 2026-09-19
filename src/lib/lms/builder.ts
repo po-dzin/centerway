@@ -431,7 +431,11 @@ export async function renameBuilderCourseSlug(currentSlug: string, requestedSlug
   if (programSlug !== loaded.course.programSlug) {
     const holder = await resolveExperience(db, programSlug);
     if (holder) {
-      const { data: own } = await db.from("lms_courses").select("experience_id").eq("id", loaded.course.id).maybeSingle();
+      const { data: own } = await db
+        .from("lms_courses")
+        .select("experience_id")
+        .eq("id", loaded.course.id)
+        .maybeSingle();
       if (holder.experience.id !== own?.experience_id) throw new Error("lms_builder_slug_conflict");
     }
   }
