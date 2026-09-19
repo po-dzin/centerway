@@ -1,8 +1,9 @@
 /**
  * GET /api/lms/authoring/audience — how many people are in the author's courses.
  *
- * FOUR INTEGERS PER COURSE AND NOTHING ELSE. No account, no name, no email, no
- * enrollment id crosses this boundary: an author learns that seven people opened
+ * COUNTS AND NOTHING ELSE: integers and one progress share per course, plus a
+ * daily count of distinct readers. No account, no name, no email, no enrollment
+ * id crosses this boundary: an author learns that seven people opened
  * the course this week, never which seven. That is the annotation privacy rule
  * (`docs/design-system.md`, and `lms_annotations` having no staff policy) held
  * one level up — aggregate is the author's, the person is not.
@@ -13,7 +14,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
-import { readCourseAudience } from "@/lib/lms/authorAudience";
+import { readAuthorAudience } from "@/lib/lms/authorAudience";
 import { listBuilderCourseIdentities } from "@/lib/lms/builder";
 import { courseFilterFor } from "@/lib/lms/builderAccess";
 import { withBuilderIdentity } from "@/lib/lms/courseAccess";
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
     async (identity) => {
       try {
         const courses = await listBuilderCourseIdentities(courseFilterFor(identity));
-        const audience = await readCourseAudience(courses.map((course) => course.id));
+        const { courses: audience, days } = await readAuthorAudience(courses.map((course) => course.id));
         return NextResponse.json({
           /* Keyed by SLUG, not by course id. The dashboard already holds the
            courses by slug and has no reason to learn a second identifier for
@@ -38,6 +39,7 @@ export async function GET(req: NextRequest) {
               return entry ? [[course.slug, entry] as const] : [];
             }),
           ),
+          days,
         });
       } catch (error) {
         const message = error instanceof Error ? error.message : "unknown_error";

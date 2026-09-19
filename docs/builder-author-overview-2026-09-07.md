@@ -17,28 +17,41 @@ for an author and `/build/courses` holds the shelf.
 | token_source | global app DS (`cw.tokens.json` → `globals.css`), `PlatformButtons.module.css` for every control, existing `Builder.module.css` recipes. No new palette, radius, shadow or type scale. |
 | content_source | `lms_courses` (status, `review_status`/`pending_review_status`, `visibility`, `submitted_at`/`pending_submitted_at`, `approved_at`), `courseReadiness` blockers, `lms_course_revisions`, and aggregate counts from `lms_enrollments` + `lms_progress_events` |
 | route_boundary | `/build` and `/build/courses` on the personal host; `GET /api/lms/authoring/{activity,audience}`. Isolated funnels and the admin panel are untouched. |
-| selection_family | no new control family. The head's route to the shelf and every entry name are `ink` text links (`InteractionInkLabel variant="link"`); status marks are non-interactive `.pill`s. Boundary role: **structural** for the four panels, **none** for the lists inside them. |
+| selection_family | no new control family. The head's route to the shelf and «Показати всі» are `ink` text controls (`InteractionInkLabel variant="link"`); course names are `ink` navigation (`variant="navigation"`: no mark at rest, stroke on hover and focus); state marks are the shared `CourseStateBadge`. Workshop and course rail rows are icon + label, so they take the stroke only — the `ink-ring` shows only in the compact desktop rail, where the icon is the row. Boundary role: **structural** for panels and tiles, **none** for lists and table rows. |
 
-## Five questions, and nothing else
+## Five blocks, each in the shape of its data (2026-09-17)
 
-1. **Перевірка** — what is out of the author's hands, and for how long.
-   `in_review` and `changes_requested` in one section, because they are two
-   positions in one cycle; the reviewer's own note is printed verbatim.
-2. **Опубліковані** — status and visibility are two switches and the section
-   says both. A published course at `visibility = hidden` is invisible to
-   everyone but its author, and the workshop never said so anywhere before.
-3. **Учні** — how many people are inside each course and how many of them are
-   still moving. See the section below: this is the author's own question about
-   their own work, and it stops at counts.
-4. **Що заважає опублікувати** — `courseReadiness` blockers per course, linking
-   to `#course-release`, where they are actually fixed.
-5. **Останні зміни** — the `lms_course_revisions` journal.
+The first version was five panels of sentences and refused a counter strip on
+principle. On real data it read as a wall: every course name underlined at rest,
+every fact a clause, the journal the longest block on the page. What survived of
+that principle is the part that was right — a number never stands without its
+comparison. The screen is now, top to bottom:
 
-There is no counter strip and no revenue figure. Prices and payouts live in
-`lms_course_offers` behind an admin-only policy
-(`docs/creator-contract-2026-08-22.md`), and an author who could read their own
-revenue reporting here would be reading a table the creator contract keeps on
-the house's side. Five true sections beat seven with two plausible zeros in them.
+1. **Потребує уваги** — courses in review (with how long they have waited),
+   returned ones (with the reviewer's note verbatim), and courses with
+   publication blockers. First, because it is the only block that asks the
+   author to act; one sentence when there is nothing.
+2. **Four tiles** — open seats (+ arrivals in 30 days), active in 7 days
+   (of how many), lessons completed in 7 days (+ how many finished a course),
+   mean progress (+ how many have not started). These are the numbers course
+   platforms (Teachable, Thinkific, Kajabi, Podia) lead with, cut down to what
+   our tables actually hold. Label, value and note share rows across the strip
+   (`subgrid`), so a wrapped label does not push its number down.
+3. **Активність учнів** — distinct people who opened a lesson, per Kyiv day,
+   over 30 days. One series, one axis, no legend; the readout line above the
+   plot is the tooltip (hovered day, else today), and a visually hidden table
+   carries every day. Bars use `--cw-platform-accent-pressed`; on the light
+   surface that is below 3:1, which the readout and the table relieve.
+4. **Курси** — one row per course: name, state badges, visibility (published
+   courses only), seats, active, mean progress, finished, blockers. A dash
+   where the fact does not apply — a draft nobody was given is not «0 учнів».
+5. **Останні зміни** — the journal as a table (коли · курс · подія · хто),
+   five rows, the rest behind «Показати всі». Dates are short and in Kyiv time:
+   «сьогодні, 19:52», «учора», «13 вер., 19:52», the year only when it differs.
+
+Still no revenue figure. Prices and payouts live in `lms_course_offers` behind an
+admin-only policy (`docs/creator-contract-2026-08-22.md`), and gross order sums
+per course are the owner's decision to expose, not this screen's.
 
 ## Audience: counts are the author's, people are not
 
@@ -50,9 +63,12 @@ ask an administrator for it turns the workshop into a place a thought cannot be
 finished in.
 
 Where the line actually falls is between the count and the person.
-`src/lib/lms/authorAudience.ts` returns four integers per course — open seats,
-lapsed seats, arrivals in 30 days, distinct learners active in 7 — and
-`GET /api/lms/authoring/audience` returns those integers keyed by slug. No
+`src/lib/lms/authorAudience.ts` returns counts per course — open and lapsed
+seats, arrivals in 30 days, distinct learners active in 7, seats never started,
+seats that finished, lesson completions in 7 days — plus a mean progress share,
+and one daily series of distinct readers. `GET /api/lms/authoring/audience`
+returns those keyed by slug. Account ids are read only to deduplicate the daily
+series and never leave the module. No
 account, name, email or enrollment id crosses that boundary. This is the rule
 `lms_annotations` already sets (an author does not see what a learner
 underlined) held one level up: the author learns that seven people opened the
@@ -77,11 +93,12 @@ out separately in `docs/author-learner-contact-2026-09-09.md`; nothing from it i
 built. Should the «Питання» rung there ever ship, this screen gains exactly one
 number — questions awaiting an answer, and how long they have waited.
 
-The one number deliberately absent is «завершили курс». Completion has exactly
-one definition in this codebase — `foldProgress` over the append-only event log
-— and honouring it per learner means folding every event of every enrollment on
-each dashboard load. It is worth doing behind a real aggregate; it is not worth
-approximating.
+Completion is **not approximated**: each open seat's events are folded with
+the player's own `foldProgress`, uncompletions included, and only lessons the
+course has now count towards finishing. The event read is paged (PostgREST caps
+a response at 1000 rows) and chunked by enrollment id. At today's volume that is
+a few hundred rows per load; if it grows, the fold moves behind an aggregate
+rather than into an approximation.
 
 ## What the journal contains
 
@@ -150,10 +167,12 @@ the course workspace.
 Mobile-first, and the overview's block is the last thing in
 `Builder.module.css` on purpose: a rule written above a media query loses to any
 later top-level rule of the same specificity, which is how earlier builder
-overrides came to be discarded without a word. Phone layout is one column of
-panels with ruled text lists; ≥901px pairs the four sections into two columns.
-Each entry row carries `min-height: var(--ds-touch-target-min)`, so the name is
-a hand-sized target without the link claiming a button's box.
+overrides came to be discarded without a word. Phone layout is one column: tiles
+two across, the chart full width, and each table row becomes a short block —
+the header is set aside for screen readers, the name takes the whole line, and
+each number prints its column name beside it (dashes are dropped). ≥901px puts
+the tiles four across and keeps real tables with a fixed layout, so a long
+title truncates instead of running under the numbers.
 
 The workshop rail is `display: none` below 901px, like every builder aside, and
 neither root surface mounts an opener for it — deliberately: the overview links

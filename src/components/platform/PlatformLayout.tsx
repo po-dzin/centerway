@@ -60,7 +60,8 @@ export function PlatformShell({
    * breadcrumb in flow on a phone: two affordances for one move, and the text
    * one was the wider of them.
    */
-  back?: { href: string; label: string };
+  /** `text` is the short visible word beside the phone's arrow — a level name, never a title. */
+  back?: { href: string; label: string; text?: string };
   /**
    * Route-owned application identity. Host detection remains the default for
    * public pages, but personal routes must also render correctly on localhost
@@ -114,7 +115,9 @@ export function PlatformShell({
             scope="mobile"
             reveal="gesture"
             label="Навігація"
-            left={back ? <PlatformBackOrgan href={back.href} label={back.label} /> : <PlatformMarkOrgan />}
+            left={
+              back ? <PlatformBackOrgan href={back.href} label={back.label} text={back.text} /> : <PlatformMarkOrgan />
+            }
             right={
               /* TWO CONTROLS IN THIS CORNER (2026-09-06): the map and the
                account. They were one for a day — the route rows folded into

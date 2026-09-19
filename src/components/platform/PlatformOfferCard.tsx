@@ -15,7 +15,14 @@ import type { PlatformOfferArtwork } from "@/lib/platform/content";
  * except the kind badge, and that badge brings its own ground.
  *
  * THE PREVIEW FORMAT, stated once here and enforced in CSS: an eyebrow of one
- * line, a name of two, two lines of description, the price, one button. The
+ * line, a name of two, two lines of description, the price, one button.
+ *
+ * FIXED SLOTS, THE ADMIN ROW'S RULE (2026-09-17). Every field has a height of
+ * its own that does not depend on the copy: the eyebrow one line (the author's
+ * pretitle continues it), the headline two name lines plus one subtitle line,
+ * the categories one chip row, the description two lines, the price one line.
+ * A field a card does not have keeps its slot empty, so in any row, rail or
+ * grid the same field sits at the same height on every card. The
  * strings are cut to fit before they arrive — see src/lib/platform/offerPreview.ts —
  * and the CSS ceilings catch the rest. The card has no fixed height: the frame
  * is a ratio, the lines are clamps, and a row stretches its cells to the tallest.
@@ -168,15 +175,16 @@ export function PlatformOfferCard({
           <h3>{title}</h3>
           {posttitle ? <p className={styles.programTilePosttitle}>{posttitle}</p> : null}
         </div>
-        {categories && categories.length > 0 ? (
-          <ul className={styles.programTileCategories}>
-            {categories.map((category) => (
-              <li className={styles.programTileCategory} key={category}>
-                {category}
-              </li>
-            ))}
-          </ul>
-        ) : null}
+        {/* ALWAYS RENDERED, empty or not: the categories are a slot, and a card
+            without them keeps the line so its description starts where its
+            neighbours' does (docs/card-system-2026-09-13.md, «Слоти»). */}
+        <ul className={styles.programTileCategories} aria-hidden={categories?.length ? undefined : true}>
+          {categories?.map((category) => (
+            <li className={styles.programTileCategory} key={category}>
+              {category}
+            </li>
+          ))}
+        </ul>
         {meta ? <p className={styles.programTileMeta}>{meta}</p> : null}
         <p className={styles.programTileDescription}>{description}</p>
         {points && points.length > 0 ? (

@@ -39,20 +39,6 @@ export function waitingFor(submittedAt: string | null, now: number = Date.now())
 }
 
 /**
- * Status and visibility are two switches, and this is the second one.
- *
- * `status: "published"` means the author finished it; `visibility` means the
- * house listed it. Collapsing them into one word is the confusion this line
- * exists to prevent — a published course sitting at `hidden` is invisible to
- * everyone but its author, and nothing in the workshop used to say so.
- */
-export function visibilityLine(visibility: BuilderCourseSummary["visibility"]): string {
-  if (visibility === "listed") return "У каталозі — курс видно всім.";
-  if (visibility === "unlisted") return "Лише за прямим посиланням — у каталозі його немає.";
-  return "Приховано з вітрини — сторонні його не бачать.";
-}
-
-/**
  * What is stopping a publish, counted.
  *
  * `-1` is not "minus one blocker": it is `listBuilderCourses` reporting that
@@ -65,37 +51,122 @@ export function blockerLine(blockerCount: number): string {
 }
 
 /**
- * «Скільки людей усередині, і скільки з них ще рухається».
+ * Status and visibility are two switches, and this is the second one.
  *
- * TWO NUMBERS IN ONE SENTENCE, and the second one is the honest half. A course
- * can hold forty people and be read by none of them; reporting only the total
- * would let an author mistake a list of buyers for an audience. Activity is
- * counted over `AUDIENCE_ACTIVE_DAYS` and only for seats whose access is still
- * open, so «7 активних» can never exceed the total beside it.
+ * `status: "published"` means the author finished it; `visibility` means the
+ * house listed it. Collapsing them into one word is the confusion this cell
+ * exists to prevent — a published course sitting at `hidden` is invisible to
+ * everyone but its author, and nothing in the workshop used to say so.
  */
-export function audienceLine(audience: BuilderCourseAudience): string {
-  const learners = `${audience.learners} ${plural(audience.learners, "учень", "учні", "учнів")}`;
-  if (audience.learners === 0) return `${learners} з відкритим доступом.`;
-  return `${learners} · ${audience.activeRecently} ${plural(audience.activeRecently, "активний", "активні", "активних")} за тиждень.`;
+export function visibilityShort(visibility: BuilderCourseSummary["visibility"]): string {
+  if (visibility === "listed") return "У каталозі";
+  if (visibility === "unlisted") return "За посиланням";
+  return "Приховано";
 }
 
+export type AudienceTotals = {
+  learners: number;
+  joinedRecently: number;
+  activeRecently: number;
+  completionsRecently: number;
+  notStarted: number;
+  finished: number;
+  /** Weighted by learners, so a course of one does not move the mean as much as a course of forty. */
+  progressShare: number | null;
+};
+
 /**
- * What qualifies the count: who arrived lately, and whose access has closed.
+ * The tiles' numbers: the per-course counts added up.
  *
- * Null when there is nothing to add — a note that always renders is a note that
- * stops being read.
+ * A person enrolled in two courses is two seats here — these are seats, and the
+ * tile says «учні» about seats the same way every course row does. The daily
+ * series is the one place people are deduplicated, and it says so.
  */
-export function audienceNote(audience: BuilderCourseAudience): string | null {
-  const parts: string[] = [];
-  if (audience.joinedRecently > 0) {
-    parts.push(`+${audience.joinedRecently} ${plural(audience.joinedRecently, "новий", "нові", "нових")} за 30 днів`);
+export function summarizeAudience(entries: BuilderCourseAudience[]): AudienceTotals {
+  const totals: AudienceTotals = {
+    learners: 0,
+    joinedRecently: 0,
+    activeRecently: 0,
+    completionsRecently: 0,
+    notStarted: 0,
+    finished: 0,
+    progressShare: null,
+  };
+  let weighted = 0;
+  let weight = 0;
+  for (const entry of entries) {
+    totals.learners += entry.learners;
+    totals.joinedRecently += entry.joinedRecently;
+    totals.activeRecently += entry.activeRecently;
+    totals.completionsRecently += entry.completionsRecently;
+    totals.notStarted += entry.notStarted;
+    totals.finished += entry.finished;
+    if (entry.progressShare !== null && entry.learners > 0) {
+      weighted += entry.progressShare * entry.learners;
+      weight += entry.learners;
+    }
   }
-  if (audience.lapsed > 0) {
-    parts.push(
-      `${audience.lapsed} ${plural(audience.lapsed, "доступ закінчився", "доступи закінчились", "доступів закінчились")}`,
-    );
-  }
-  return parts.length > 0 ? parts.join(" · ") : null;
+  totals.progressShare = weight > 0 ? weighted / weight : null;
+  return totals;
+}
+
+const percentFormat = new Intl.NumberFormat("uk-UA", { style: "percent", maximumFractionDigits: 0 });
+
+/** A share as a percentage, or a dash where there is nothing to measure. */
+export function formatShare(share: number | null): string {
+  return share === null ? "—" : percentFormat.format(share);
+}
+
+export function learnersCount(count: number): string {
+  return `${count} ${plural(count, "учень", "учні", "учнів")}`;
+}
+
+const shortDayFormat = new Intl.DateTimeFormat("uk-UA", { day: "numeric", month: "short", timeZone: "UTC" });
+
+/** «12 вер.» for a `YYYY-MM-DD` key — read as a calendar date, never shifted by a zone. */
+export function shortDay(dateKey: string): string {
+  const parsed = Date.parse(`${dateKey}T00:00:00Z`);
+  return Number.isNaN(parsed) ? dateKey : shortDayFormat.format(new Date(parsed));
+}
+
+/** One day of the chart, as the readout says it. */
+export function dayReadout(day: { date: string; learners: number }): string {
+  return `${shortDay(day.date)} · ${day.learners === 0 ? "ніхто не відкривав уроки" : learnersCount(day.learners)}`;
+}
+
+const kyivDayKey = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Europe/Kyiv",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+const kyivTime = new Intl.DateTimeFormat("uk-UA", { timeZone: "Europe/Kyiv", hour: "2-digit", minute: "2-digit" });
+const kyivDate = new Intl.DateTimeFormat("uk-UA", { timeZone: "Europe/Kyiv", day: "numeric", month: "short" });
+const kyivDateYear = new Intl.DateTimeFormat("uk-UA", {
+  timeZone: "Europe/Kyiv",
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+/**
+ * When a journal entry happened, as short as it can be and still be exact:
+ * «сьогодні, 19:52», «учора, 19:52», «13 вер., 19:52», and the year only when
+ * it is not this one. The long «13 вер. 2026 р., 19:52» on every row was most
+ * of what made the journal a wall.
+ */
+export function journalWhen(iso: string, now: number = Date.now()): string {
+  const at = Date.parse(iso);
+  if (Number.isNaN(at)) return "";
+  const date = new Date(at);
+  const key = kyivDayKey.format(date);
+  const today = kyivDayKey.format(new Date(now));
+  const yesterday = new Date(Date.parse(`${today}T00:00:00Z`) - DAY_MS).toISOString().slice(0, 10);
+  const time = kyivTime.format(date);
+  if (key === today) return `сьогодні, ${time}`;
+  if (key === yesterday) return `учора, ${time}`;
+  const sameYear = key.slice(0, 4) === today.slice(0, 4);
+  return `${(sameYear ? kyivDate : kyivDateYear).format(date)}, ${time}`;
 }
 
 /**

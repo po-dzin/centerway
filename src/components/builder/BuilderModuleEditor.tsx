@@ -7,7 +7,9 @@
  */
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { HandGraphic, Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { newLesson, nextDayIndex, uniqueSlug, type Course, type CourseModule, type Lesson } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
 import { plural } from "@/lib/plural";
@@ -22,6 +24,7 @@ import { LAST_LESSON_REFUSAL, removeLesson, removeModule, stepLesson, stepModule
 import styles from "./Builder.module.css";
 import { ids, trailTitle } from "./BuilderCourseView";
 import { COURSE_STATE_LABELS } from "@/lib/lms/courseState";
+import { BUILDER_COURSES_PATH } from "@/lib/surfaces/catalog";
 
 export function BuilderCourseRail({
   published,
@@ -36,9 +39,27 @@ export function BuilderCourseRail({
 }) {
   return (
     <div className={styles.courseRail}>
+      {/* THE WAY OUT, IN WORDS, WHERE THE HAND IS (2026-09-19). The breadcrumb
+          in the bar was the only way from a course back to the shelf — a
+          small target at the far top of the screen, beside the thing it is
+          furthest from. The lesson's contents panel already opens with
+          «← Структура курсу»; the course rail now opens the same way, one
+          level up. A link, so the shell's unsaved-changes guard catches it
+          like any other anchor. In the compact rail only the arrow stays. */}
+      <Link
+        className={`cw-nav-link ${styles.courseRailBack}`}
+        data-cw-ink-control=""
+        href={BUILDER_COURSES_PATH}
+        aria-label="До всіх матеріалів"
+      >
+        <span className={styles.courseRailIcon}>
+          <Icon name="arrow-left" size={18} />
+        </span>
+        <BuilderInkLabel>Матеріали</BuilderInkLabel>
+      </Link>
       <nav className={styles.courseRailNav} aria-label="Розділи курсу">
         <a
-          className={styles.courseRailLink}
+          className={`cw-nav-link ${styles.courseRailLink}`}
           data-cw-ink-control=""
           href="#course-overview"
           aria-label="Обкладинка"
@@ -49,13 +70,14 @@ export function BuilderCourseRail({
           }}
         >
           <span className={styles.courseRailIcon}>
-            <Icon name="display" size={20} />
-            <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+            <InteractionInkIcon>
+              <Icon name="display" size={20} />
+            </InteractionInkIcon>
           </span>
           <BuilderInkLabel>Обкладинка</BuilderInkLabel>
         </a>
         <a
-          className={styles.courseRailLink}
+          className={`cw-nav-link ${styles.courseRailLink}`}
           data-cw-ink-control=""
           href="#course-structure"
           aria-label="Зміст"
@@ -66,13 +88,14 @@ export function BuilderCourseRail({
           }}
         >
           <span className={styles.courseRailIcon}>
-            <Icon name="view-rows" size={20} />
-            <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+            <InteractionInkIcon>
+              <Icon name="view-rows" size={20} />
+            </InteractionInkIcon>
           </span>
           <BuilderInkLabel>Зміст</BuilderInkLabel>
         </a>
         <a
-          className={styles.courseRailLink}
+          className={`cw-nav-link ${styles.courseRailLink}`}
           data-cw-ink-control=""
           href="#course-offer"
           aria-label="Сторінка програми"
@@ -83,13 +106,14 @@ export function BuilderCourseRail({
           }}
         >
           <span className={styles.courseRailIcon}>
-            <Icon name="document" size={20} />
-            <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+            <InteractionInkIcon>
+              <Icon name="document" size={20} />
+            </InteractionInkIcon>
           </span>
           <BuilderInkLabel>Сторінка</BuilderInkLabel>
         </a>
         <a
-          className={styles.courseRailLink}
+          className={`cw-nav-link ${styles.courseRailLink}`}
           data-cw-ink-control=""
           href="#course-author"
           aria-label="Автор"
@@ -100,13 +124,14 @@ export function BuilderCourseRail({
           }}
         >
           <span className={styles.courseRailIcon}>
-            <Icon name="user" size={20} />
-            <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+            <InteractionInkIcon>
+              <Icon name="user" size={20} />
+            </InteractionInkIcon>
           </span>
           <BuilderInkLabel>Автор</BuilderInkLabel>
         </a>
         <a
-          className={styles.courseRailLink}
+          className={`cw-nav-link ${styles.courseRailLink}`}
           data-cw-ink-control=""
           href="#course-release"
           aria-label="Публікація"
@@ -117,8 +142,9 @@ export function BuilderCourseRail({
           }}
         >
           <span className={styles.courseRailIcon}>
-            <Icon name="shield-check" size={20} />
-            <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+            <InteractionInkIcon>
+              <Icon name="shield-check" size={20} />
+            </InteractionInkIcon>
           </span>
           <BuilderInkLabel>Публікація</BuilderInkLabel>
         </a>

@@ -56,7 +56,15 @@ export type BuilderCourseAudience = {
   lapsed: number;
   joinedRecently: number;
   activeRecently: number;
+  notStarted: number;
+  finished: number;
+  completionsRecently: number;
+  /** 0..1, or null when there is nobody to average or nothing to complete. */
+  progressShare: number | null;
 };
+
+/** One Kyiv day and how many distinct people opened a lesson in it. */
+export type BuilderAudienceDay = { date: string; learners: number };
 
 /** One line of the append-only course journal, named by its course. */
 export type BuilderActivityEntry = {
@@ -148,7 +156,9 @@ export function listCourses(): Promise<
 }
 
 /** Audience size per course slug — counts only; this route returns no people. */
-export function listAuthoringAudience(): Promise<BuilderResult<{ audience: Record<string, BuilderCourseAudience> }>> {
+export function listAuthoringAudience(): Promise<
+  BuilderResult<{ audience: Record<string, BuilderCourseAudience>; days: BuilderAudienceDay[] }>
+> {
   return request("/api/lms/authoring/audience");
 }
 

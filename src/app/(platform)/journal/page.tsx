@@ -25,7 +25,7 @@ export default function JournalPage() {
       footer={false}
       /* Beside the library rather than inside it: the journal is written FROM
          courses, so the way back leads to the materials it was written about. */
-      back={{ href: LEARNING_SHELF_HREF, label: "До моїх матеріалів" }}
+      back={{ href: LEARNING_SHELF_HREF, label: "До моїх матеріалів", text: "Бібліотека" }}
     >
       <JournalClient />
     </PlatformShell>

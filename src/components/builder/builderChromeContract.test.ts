@@ -28,7 +28,10 @@ describe("workshop chrome on a phone", () => {
     // Derived from the trail, so no surface can forget to pass it — and from
     // the nearest step that actually leads somewhere, because a lesson's parent
     // in the path is its module, which has no page of its own.
-    expect(shell).toContain(".find((step) => step.onNavigate || step.href) ?? null;");
+    expect(shell).toContain("leadingBack(trail)");
+    expect(read("src/components/builder/leadingBack.ts")).toContain(
+      ".find((candidate) => candidate.onNavigate || candidate.href) ?? null;",
+    );
     expect(shell).toContain("<PlatformMarkOrgan />");
   });
 
