@@ -83,6 +83,36 @@ export type Database = {
           },
         ]
       }
+      agent_questions: {
+        Row: {
+          created_at: string
+          expected_doc_id: string | null
+          id: string
+          redacted: string[]
+          source: string
+          text: string
+          topic: string | null
+        }
+        Insert: {
+          created_at?: string
+          expected_doc_id?: string | null
+          id?: string
+          redacted?: string[]
+          source: string
+          text: string
+          topic?: string | null
+        }
+        Update: {
+          created_at?: string
+          expected_doc_id?: string | null
+          id?: string
+          redacted?: string[]
+          source?: string
+          text?: string
+          topic?: string | null
+        }
+        Relationships: []
+      }
       agent_runs: {
         Row: {
           contour: string
@@ -561,6 +591,85 @@ export type Database = {
           },
         ]
       }
+      experience_aliases: {
+        Row: {
+          alias: string
+          created_at: string
+          experience_id: string
+          kind: string
+        }
+        Insert: {
+          alias: string
+          created_at?: string
+          experience_id: string
+          kind?: string
+        }
+        Update: {
+          alias?: string
+          created_at?: string
+          experience_id?: string
+          kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experience_aliases_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      experiences: {
+        Row: {
+          author_profile_id: string | null
+          cover: Json | null
+          created_at: string
+          id: string
+          kind: string
+          listed: boolean
+          slug: string
+          sort_order: number | null
+          summary: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_profile_id?: string | null
+          cover?: Json | null
+          created_at?: string
+          id?: string
+          kind: string
+          listed?: boolean
+          slug: string
+          sort_order?: number | null
+          summary?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_profile_id?: string | null
+          cover?: Json | null
+          created_at?: string
+          id?: string
+          kind?: string
+          listed?: boolean
+          slug?: string
+          sort_order?: number | null
+          summary?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experiences_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "lms_authors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           attempts: number | null
@@ -987,6 +1096,7 @@ export type Database = {
           draft_generation: number
           duration_days: number | null
           entitlement_product_codes: string[]
+          experience_id: string
           format: Json | null
           id: string
           kind: string | null
@@ -1033,6 +1143,7 @@ export type Database = {
           draft_generation?: number
           duration_days?: number | null
           entitlement_product_codes?: string[]
+          experience_id: string
           format?: Json | null
           id?: string
           kind?: string | null
@@ -1079,6 +1190,7 @@ export type Database = {
           draft_generation?: number
           duration_days?: number | null
           entitlement_product_codes?: string[]
+          experience_id?: string
           format?: Json | null
           id?: string
           kind?: string | null
@@ -1116,6 +1228,13 @@ export type Database = {
             columns: ["author_profile_id"]
             isOneToOne: false
             referencedRelation: "lms_authors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_courses_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
             referencedColumns: ["id"]
           },
           {
@@ -1901,6 +2020,7 @@ export type Database = {
       test_definitions: {
         Row: {
           created_at: string
+          experience_id: string | null
           id: string
           slug: string
           status: string
@@ -1910,6 +2030,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          experience_id?: string | null
           id?: string
           slug: string
           status?: string
@@ -1919,6 +2040,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          experience_id?: string | null
           id?: string
           slug?: string
           status?: string
@@ -1926,7 +2048,15 @@ export type Database = {
           updated_at?: string
           version?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "test_definitions_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       test_options: {
         Row: {
@@ -2216,6 +2346,7 @@ export type Database = {
         Args: { p_course_id: string; p_values: Json }
         Returns: undefined
       }
+      experience_refresh: { Args: { target: string }; Returns: undefined }
       get_my_role: { Args: never; Returns: string }
       journal_lms_course_state: {
         Args: {

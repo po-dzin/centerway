@@ -29,6 +29,7 @@
 
 import { adminClient } from "@/lib/auth/adminClient";
 import type { TablesUpdate } from "@/lib/db/database.types";
+import { resolveExperience, takenExperienceNames } from "@/lib/experiences/registry";
 import { BUILDER_RESERVED_SLUGS, isReservedBuilderSlug } from "@/lib/surfaces/catalog";
 import { courseFromRows, writeCourseStructure } from "./authoring";
 import { getSnapshotCourse } from "./catalog";
@@ -423,12 +424,27 @@ export async function renameBuilderCourseSlug(currentSlug: string, requestedSlug
   if (collision) throw new Error("lms_builder_slug_conflict");
 
   const programSlug = loaded.course.programSlug === currentSlug ? nextSlug : loaded.course.programSlug;
+  /* The address is one namespace across kinds. Taking a name that belongs to a
+     consultation, or to another thing's forwarding address, is the same
+     conflict as taking another course's slug. The course's OWN old addresses
+     are fine: renaming back is a move home, and the trigger retires the alias. */
+  if (programSlug !== loaded.course.programSlug) {
+    const holder = await resolveExperience(db, programSlug);
+    if (holder) {
+      const { data: own } = await db.from("lms_courses").select("experience_id").eq("id", loaded.course.id).maybeSingle();
+      if (holder.experience.id !== own?.experience_id) throw new Error("lms_builder_slug_conflict");
+    }
+  }
   const { error } = await db
     .from("lms_courses")
     .update({ slug: nextSlug, program_slug: programSlug })
     .eq("id", loaded.course.id);
   if (error) {
-    if (error.message.includes("duplicate key") || error.message.includes("unique constraint")) {
+    if (
+      error.message.includes("duplicate key") ||
+      error.message.includes("unique constraint") ||
+      error.message.includes("experience_slug_taken")
+    ) {
       throw new Error("lms_builder_slug_conflict");
     }
     throw new Error(`lms_builder_slug_write_failed:${error.message}`);
@@ -941,7 +957,16 @@ export async function createBuilderCourse(input: {
        it: `uniqueSlug` already knows how to step around a name that is spoken
        for, and a course called «Курси» should quietly become `courses-2`
        instead of failing a create. See BUILDER_RESERVED_SLUGS. */
-    const slug = uniqueSlug(title, [...existing.map((row) => row.slug), ...BUILDER_RESERVED_SLUGS]);
+    /* And so do the names of things that are not courses. A course's address
+       becomes its row in the registry, where `consult` and `herbs` are already
+       somebody — and where `detox` is a forwarding address old links depend on.
+       The database refuses the collision (`experience_slug_taken`); stepping
+       around it here keeps the create one click. */
+    const slug = uniqueSlug(title, [
+      ...existing.map((row) => row.slug),
+      ...BUILDER_RESERVED_SLUGS,
+      ...(await takenExperienceNames(db)),
+    ]);
 
     const course = newCourseFromTemplate(input.ids, {
       slug,
@@ -996,7 +1021,11 @@ export async function previewBuilderCourseImport(input: unknown, ids: IdSource):
   const db = adminClient();
   const { data, error } = await db.from("lms_courses").select("slug");
   if (error) throw new Error(`lms_builder_list_failed:${error.message}`);
-  const takenSlugs = [...((data ?? []) as { slug: string }[]).map((row) => row.slug), ...BUILDER_RESERVED_SLUGS];
+  const takenSlugs = [
+    ...((data ?? []) as { slug: string }[]).map((row) => row.slug),
+    ...BUILDER_RESERVED_SLUGS,
+    ...(await takenExperienceNames(db)),
+  ];
   return preparePortableCourse(input, { takenSlugs, ids });
 }
 

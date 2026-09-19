@@ -5,6 +5,11 @@
  * Read-only: introspection only, nothing is written to the database. Goes
  * through the session pooler (scripts/lib/db-url.mjs).
  *
+ * `--local` reads the local stack instead (npm run db:local:reset first). That
+ * is the form for a branch whose migration production has not seen yet: the
+ * local database is production's schema plus the pending migrations, so the
+ * types travel in the same commit as the migration that needs them.
+ *
  * NEEDS DOCKER. `supabase gen types` runs postgres-meta in a container even
  * against a remote database; with no daemon it fails with "error running
  * container". Start OrbStack/Docker first.
@@ -15,10 +20,12 @@ import { writeFileSync } from "node:fs";
 import { poolerUrl } from "./lib/db-url.mjs";
 
 const OUT = "src/lib/db/database.types.ts";
+const LOCAL_DB_URL = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+const local = process.argv.includes("--local");
 
 let generated;
 try {
-  generated = execFileSync("supabase", ["gen", "types", "typescript", "--db-url", poolerUrl(), "--schema", "public"], {
+  generated = execFileSync("supabase", ["gen", "types", "typescript", "--db-url", local ? LOCAL_DB_URL : poolerUrl(), "--schema", "public"], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "inherit"],
   });
