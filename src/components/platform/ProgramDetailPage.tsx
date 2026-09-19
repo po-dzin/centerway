@@ -97,17 +97,15 @@ export function ProgramDetailPage({
   const lessonCount = course ? course.modules.reduce((total, module) => total + module.lessons.length, 0) : 0;
   const isMiniCourse = program.surfaceType === "mini-course";
 
-  /* Where the thing you bought actually appears. Not one sentence for all of
-     them: reset-day and way21 open in the cabinet, reboot and irem still
-     deliver through the Telegram bot their funnels were built around, and
-     saying "у кабінеті" for those would be a promise the platform does not
-     keep. The course catalogue is the discriminator, because it is the thing
-     that makes a cabinet delivery possible in the first place. */
+  /* Where the thing you bought actually appears. Everything is delivered on the
+     platform now: since 2026-08-29 no bot issues a course, and the bots are
+     support and conversation only. A course opens in the library; a product
+     with no course behind it (the herbal blend) appears in the cabinet. */
   const deliveryLine = course
     ? isFree
       ? "Курс відкриється у вашому кабінеті одразу після старту"
       : "Курс відкриється у вашому кабінеті одразу після оплати"
-    : "Доступ приходить одразу після оплати — на сторінці підтвердження буде вхід у Telegram-бот";
+    : "Одразу після оплати замовлення зʼявиться у вашому кабінеті на платформі";
 
   /* SENTENCE CASE THROUGHOUT (2026-09-11). These lines are list items, and
      every other list on the page — what the reader gets, who it is for, what it

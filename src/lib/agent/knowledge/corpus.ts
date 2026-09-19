@@ -116,7 +116,7 @@ export function productDocs(): KnowledgeDoc[] {
         price === null ? "Ціна узгоджується окремо." : `Ціна: ${formatPrice(price, PRODUCTS[code].currency)}.`,
         fulfilment.kind === "course"
           ? "Доступ відкривається в кабінеті, у розділі «Бібліотека»."
-          : "Доступ відкривається в Telegram-боті продукту після оплати.",
+          : "Після оплати замовлення зʼявляється у вашому кабінеті на платформі.",
       ]),
       locale: "uk" as const,
       audience: "public" as const,
