@@ -81,7 +81,6 @@ const REVALIDATE_SECONDS = 300;
 export type CourseOffer = {
   /** The payable product code. Always `course:<slug>`. */
   code: string;
-  courseId: string;
   courseSlug: string;
   amount: number;
   /** What a page may QUOTE. Null means there is no agreed figure to print. */
@@ -102,7 +101,6 @@ type Row = Record<string, unknown>;
 function toOffer(row: Row, courseSlug: string): CourseOffer {
   return {
     code: row.code as string,
-    courseId: row.course_id as string,
     courseSlug,
     amount: Number(row.amount),
     listAmount: row.list_amount === null || row.list_amount === undefined ? null : Number(row.list_amount),
@@ -115,8 +113,13 @@ async function readOffer(slug: string): Promise<CourseOffer | null> {
   try {
     const db = supabaseAdmin();
     const { data, error } = await db
-      .from("lms_course_offers")
-      .select("code, course_id, amount, list_amount, currency, pixel_content_name, active, lms_courses!inner(slug)")
+      /* THE ONE TABLE OF PRICES (2026-09-20). The owner's catalogue still writes
+         `lms_course_offers`; a database trigger mirrors every such write here in
+         the same transaction, so this read is never behind it. Reading here
+         first is what lets the catalogue move later without this path noticing.
+         See `lib/experiences/offers.ts`. */
+      .from("experience_offers")
+      .select("code, amount, list_amount, currency, pixel_content_name, active")
       .eq("code", courseOfferCode(slug))
       .eq("active", true)
       .limit(1);

@@ -44,7 +44,6 @@ describe("resolveOfferCommerce", () => {
 describe("courseOfferCommerce", () => {
   const offer = (over: Partial<CourseOffer> = {}): CourseOffer => ({
     code: "course:reset-day",
-    courseId: "course-reset",
     courseSlug: "reset-day",
     amount: 0,
     listAmount: null,
