@@ -14,6 +14,7 @@ import {
 import { PlatformTrail, type TrailStep } from "@/components/platform/PlatformTrail";
 import { supabaseClient } from "@/lib/supabaseClient";
 import type { BuilderFailure } from "./builderClient";
+import { leadingBack } from "./leadingBack";
 import styles from "./Builder.module.css";
 
 /**
@@ -100,23 +101,10 @@ export function BuilderShell({
      the mark, a course shows the way back to the courses, a lesson shows the way
      back to its course. A control that leaves the APPLICATION from inside an
      unsaved lesson was the wrong answer to the only question that corner
-     answers.
-
-     THE NEAREST STEP THAT LEADS SOMEWHERE, not the one directly above. A
-     lesson's trail is «Курси / Курс / Модуль / Урок» and the MODULE is not a
-     place — it has no route, because there is no page for one. Reading
-     `length - 2` blindly found that dead step, fell through to the mark, and
-     the arrow never appeared on the one screen it matters most. */
-  const parent =
-    trail
-      .slice(0, -1)
-      .reverse()
-      .find((step) => step.onNavigate || step.href) ?? null;
-  /* The word beside the phone's arrow names the LEVEL, never the title
-     (`PlatformBackOrgan`): the workshop root's own name, and «До курсу» from
-     anything deeper — the only level between the root and a lesson is a
-     course, and the reader's back control already says it that way. */
-  const parentText = parent ? (trail.indexOf(parent) === 0 ? parent.label : "До курсу") : undefined;
+     answers. Which step, and which word — `leadingBack`. */
+  const back = leadingBack(trail);
+  const parent = back?.step ?? null;
+  const parentText = back?.text;
 
   /* Two ways to fold one panel, one thing the control has to say. `collapsed`
      empties the rail, `compact` narrows it to its icon column — but from the
