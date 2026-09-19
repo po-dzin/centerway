@@ -19,8 +19,10 @@ import {
   accessStateOf,
   acceptedPaidOrders,
   daysRemaining,
+  dripAnchor,
   foldProgress,
   isEnrollmentExpired,
+  parseCalendarDate,
   planAccess,
   resolveCurrentLesson,
   resolveEntitlement,
@@ -104,6 +106,8 @@ export type EnrollmentRecord = {
   id: string;
   courseId: string;
   startedAt: Date;
+  /** A cohort's shared day 1 (`YYYY-MM-DD`), or null for the self-paced rhythm. See `dripAnchor`. */
+  cohortStartsOn: string | null;
   /**
    * How the seat was come by. `manual`/`bonus`/`promotion` are the three the
    * admin grant screen can write (`GrantSource`, admin/accessTypes.ts) — this
@@ -272,13 +276,29 @@ async function readOfferAccess(course: Course): Promise<{ rule: AccessRule | nul
   };
 }
 
+/**
+ * The cohort date a course declares for itself, when it runs as one.
+ *
+ * `schedule.start: "date"` was a slot in the course model since 2026-08-15 —
+ * validated, never read. This is its reader: a course that names a start date
+ * puts everyone who joins on that date's day 1. Malformed or absent: null, and
+ * the learner keeps the self-paced rhythm rather than landing on a wrong day.
+ */
+function courseCohortDate(course: Course): string | null {
+  const schedule = course.schedule;
+  if (schedule?.mode !== "daily" || schedule.start !== "date") return null;
+  return parseCalendarDate(schedule.startDate) ? (schedule.startDate ?? null) : null;
+}
+
 /** The columns every enrollment read selects, so all of them fold the same way. */
-const ENROLLMENT_COLUMNS = "id, course_id, started_at, source, order_ref, expires_at, status, revoked_at, blocked_at";
+const ENROLLMENT_COLUMNS =
+  "id, course_id, started_at, cohort_starts_on, source, order_ref, expires_at, status, revoked_at, blocked_at";
 
 type EnrollmentRow = {
   id: string;
   course_id: string;
   started_at: string;
+  cohort_starts_on?: string | null;
   source: EnrollmentRecord["source"];
   order_ref: string | null;
   expires_at: string | null;
@@ -292,6 +312,7 @@ function toEnrollmentRecord(row: EnrollmentRow): EnrollmentRecord {
     id: row.id,
     courseId: row.course_id,
     startedAt: new Date(row.started_at),
+    cohortStartsOn: row.cohort_starts_on ?? null,
     source: row.source,
     orderRef: row.order_ref,
     expiresAt: row.expires_at ?? null,
@@ -453,6 +474,9 @@ export async function ensureEnrollment(
       // Day 1 is the day the learner FIRST OPENS the course, not the day they
       // paid — the deadline above is the half of this that follows the money.
       started_at: now.toISOString(),
+      // A course that runs as a cohort hands its date to everyone who joins it,
+      // early or late; the operator can still set another date per person.
+      cohort_starts_on: courseCohortDate(course),
       expires_at: expiresAt,
     })
     .select(ENROLLMENT_COLUMNS)
@@ -703,7 +727,14 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
 
       if (row && open) {
         const progress = await loadProgress(row.id);
-        const learner = { startedAt: new Date(row.started_at), timeZone: settings.timeZone, now };
+        const learner = {
+          startedAt: dripAnchor(
+            { startedAt: new Date(row.started_at), cohortStartsOn: row.cohort_starts_on },
+            settings.timeZone,
+          ),
+          timeZone: settings.timeZone,
+          now,
+        };
         const current = resolveCurrentLesson(course, progress, learner);
 
         return {

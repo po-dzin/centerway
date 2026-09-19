@@ -14,7 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { loadLearnerCourse } from "@/lib/lms/server";
 import { isDenied, resolveCourseAccess } from "@/lib/lms/courseAccess";
-import { buildOutline, foldProgress, resolveCurrentLesson, summarizeStanding } from "@/lms-core";
+import { buildOutline, dripAnchor, foldProgress, resolveCurrentLesson, summarizeStanding } from "@/lms-core";
 
 export const runtime = "nodejs";
 
@@ -64,7 +64,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   }
 
   const { course, enrollment, progress, timeZone } = context;
-  const learner = { startedAt: enrollment.startedAt, timeZone, now };
+  const learner = { startedAt: dripAnchor(enrollment, timeZone), timeZone, now };
   // Preview must let the author inspect every lesson regardless of drip or
   // sequence, while keeping the authored schedule mode visible in the DTO.
   const navigableCourse = draftPreview

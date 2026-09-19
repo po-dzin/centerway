@@ -9,7 +9,7 @@
 import { collectRequiredChecklistItemIds } from "./blocks";
 import { countLessons, flattenLessons, flattenSteps, isReferenceLesson, type Course, type Lesson } from "./course";
 import { checklistSatisfied, isLessonCompleted, type CourseProgress } from "./progress";
-import { enrollmentDayNumber, localHour, resolveTimeZone } from "./time";
+import { enrollmentDayNumber, instantOnCalendarDate, localHour, parseCalendarDate, resolveTimeZone } from "./time";
 
 /**
  * Where a lesson sits relative to the course's rhythm, when the learner is
@@ -24,6 +24,27 @@ export type LessonAvailability =
   | { available: true; ahead?: AheadOfSchedule }
   | { available: false; reason: "locked_by_sequence"; requiresLessonId: string }
   | { available: false; reason: "locked_by_day"; unlocksOnDay: number; daysRemaining: number };
+
+/**
+ * DAY 1, FOR THIS LEARNER.
+ *
+ * Two rhythms share one schedule. Self-paced: day 1 is the day the learner
+ * first opened the course (`startedAt`) — buying on Friday and starting on
+ * Sunday must not burn two days of a protocol. A cohort: day 1 is the same
+ * calendar date for everyone in it (`cohortStartsOn`), whether they signed up a
+ * week early or joined on day three.
+ *
+ * Every place that asks "which day is it" builds its context through here, so
+ * the two rhythms cannot drift apart between the course page, the lesson, the
+ * progress write and the reminder.
+ */
+export function dripAnchor<E extends { startedAt: Date; cohortStartsOn?: string | null }>(
+  enrollment: E,
+  timeZone: string,
+): Date {
+  const cohort = parseCalendarDate(enrollment.cohortStartsOn);
+  return cohort ? instantOnCalendarDate(cohort, timeZone) : enrollment.startedAt;
+}
 
 export type LearnerContext = {
   /** When the learner got access. UTC instant. */
@@ -192,7 +213,13 @@ export function buildOutline(course: Course, progress: CourseProgress, context: 
 export type CourseStandingSummary = {
   totalLessons: number;
   completedLessons: number;
+  /** The learner's day in a daily course. Null when not daily, and null before a cohort's day 1. */
   currentDay: number | null;
+  /**
+   * Days until a cohort's day 1, when it has not come yet. «День −3» is not a
+   * day of any protocol; before the start the page says when it starts instead.
+   */
+  startsInDays: number | null;
   isFinished: boolean;
 };
 
@@ -203,13 +230,15 @@ export function summarizeStanding(
 ): CourseStandingSummary {
   const total = countLessons(course);
   const completed = progress.completedLessonIds.length;
+  const day =
+    course.schedule.mode === "daily"
+      ? enrollmentDayNumber(context.startedAt, context.now, resolveTimeZone(context.timeZone))
+      : null;
   return {
     totalLessons: total,
     completedLessons: completed,
-    currentDay:
-      course.schedule.mode === "daily"
-        ? enrollmentDayNumber(context.startedAt, context.now, resolveTimeZone(context.timeZone))
-        : null,
+    currentDay: day !== null && day >= 1 ? day : null,
+    startsInDays: day !== null && day < 1 ? 1 - day : null,
     isFinished: total > 0 && completed >= total,
   };
 }

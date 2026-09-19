@@ -8,6 +8,7 @@
  * планом: день 8" — because a learner has to see week three to prepare for it.
  */
 
+import { plural } from "@/lib/plural";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { MotionLink } from "@/components/platform/MotionLink";
 
@@ -213,6 +214,13 @@ export function CourseView({
           {standing.completedLessons} з {standing.totalLessons} пройдено
         </span>
         {standing.currentDay !== null ? <span className={styles.chip}>День {standing.currentDay}</span> : null}
+        {standing.startsInDays ? (
+          <span className={styles.chip}>
+            {standing.startsInDays === 1
+              ? "Старт завтра"
+              : `Старт через ${standing.startsInDays} ${plural(standing.startsInDays, "день", "дні", "днів")}`}
+          </span>
+        ) : null}
         {standing.isFinished ? <span className={styles.chip}>Курс завершено</span> : null}
       </div>
 

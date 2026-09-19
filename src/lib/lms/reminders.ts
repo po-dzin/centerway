@@ -21,6 +21,7 @@ import {
   courseOfferCode,
   decideDailyReminder,
   decideUnstartedReminder,
+  dripAnchor,
   resolveTimeZone,
   type Course,
   type ReminderHourPolicy,
@@ -40,6 +41,7 @@ type EnrollmentRow = {
   course_id: string;
   auth_user_id: string;
   started_at: string;
+  cohort_starts_on?: string | null;
   expires_at?: string | null;
   status?: string | null;
   blocked_at?: string | null;
@@ -316,7 +318,7 @@ export async function runDailyReminders(
   const enrollments = await fetchAllRows<EnrollmentRow>(limit, (from, to) =>
     db
       .from("lms_enrollments")
-      .select("id, course_id, auth_user_id, started_at, expires_at, status, blocked_at")
+      .select("id, course_id, auth_user_id, started_at, cohort_starts_on, expires_at, status, blocked_at")
       .in("course_id", [...courses.keys()])
       .order("id", { ascending: true })
       .range(from, to),
@@ -349,7 +351,10 @@ export async function runDailyReminders(
     const progress = await loadProgress(enrollment.id);
 
     const decision = decideDailyReminder(course, progress, {
-      startedAt: new Date(enrollment.started_at),
+      startedAt: dripAnchor(
+        { startedAt: new Date(enrollment.started_at), cohortStartsOn: enrollment.cohort_starts_on },
+        timeZone,
+      ),
       timeZone,
       now,
       hourPolicy,

@@ -22,7 +22,7 @@ function course(
     daysLeft: null,
     source: "order",
     lastActivityAt,
-    standing: { totalLessons: 3, completedLessons: 1, currentDay: null, isFinished: false },
+    standing: { totalLessons: 3, completedLessons: 1, currentDay: null, startsInDays: null, isFinished: false },
     currentLessonSlug: "lesson-2",
     currentLessonTitle: "Lesson 2",
     cover: null,
@@ -49,7 +49,7 @@ describe("pickResumeCourse", () => {
 
   it("ignores finished courses and falls back to a paid unopened course", () => {
     const finished = course("finished", "2026-08-23T18:30:00.000Z", {
-      standing: { totalLessons: 3, completedLessons: 3, currentDay: null, isFinished: true },
+      standing: { totalLessons: 3, completedLessons: 3, currentDay: null, startsInDays: null, isFinished: true },
     });
     const available = course("available", null, {
       access: "available",
@@ -64,10 +64,10 @@ describe("pickResumeCourse", () => {
 
   it("uses the latest completed course when nothing can be started or resumed", () => {
     const older = course("older-finished", "2026-08-12T10:00:00.000Z", {
-      standing: { totalLessons: 3, completedLessons: 3, currentDay: null, isFinished: true },
+      standing: { totalLessons: 3, completedLessons: 3, currentDay: null, startsInDays: null, isFinished: true },
     });
     const latest = course("latest-finished", "2026-08-22T10:00:00.000Z", {
-      standing: { totalLessons: 3, completedLessons: 3, currentDay: null, isFinished: true },
+      standing: { totalLessons: 3, completedLessons: 3, currentDay: null, startsInDays: null, isFinished: true },
     });
 
     expect(pickResumeCourse([older, latest])?.slug).toBe("latest-finished");

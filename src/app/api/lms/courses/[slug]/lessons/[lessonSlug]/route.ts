@@ -12,10 +12,11 @@ import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { loadLearnerCourse, recordProgressEvent } from "@/lib/lms/server";
 import { isDenied, resolveCourseAccess } from "@/lib/lms/courseAccess";
 import {
-  buildOutline,
   buildInternalReferenceTargets,
+  buildOutline,
   canCompleteLesson,
   collectRequiredChecklistItemIds,
+  dripAnchor,
   findLesson,
   foldProgress,
   lessonAvailability,
@@ -76,7 +77,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const found = findLesson(navigableCourse, lessonSlug);
   if (!found) return NextResponse.json({ error: "lesson_not_found" }, { status: 404 });
 
-  const learner = { startedAt: enrollment.startedAt, timeZone, now };
+  const learner = { startedAt: dripAnchor(enrollment, timeZone), timeZone, now };
   const availability = lessonAvailability(navigableCourse, found.lesson, progress, learner);
 
   if (!availability.available) {

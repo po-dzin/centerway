@@ -183,6 +183,10 @@ export type ProvisionAccessInput = {
   payment?: { amount: number; currency: PaymentCurrency; note?: string | null } | null;
   /** Why this seat exists — `manual` unless the operator says bonus or promo. */
   source?: GrantSource;
+  /** `YYYY-MM-DD`: the cohort this seat joins. Absent leaves the rhythm alone. */
+  cohortStartsOn?: string | null;
+  /** Who brought this person (`?ref`). */
+  ref?: string | null;
   actorId: string;
 };
 
@@ -248,6 +252,8 @@ export async function provisionAccess(input: ProvisionAccessInput) {
     source: input.source ?? (payment ? "manual" : undefined),
     actorId: input.actorId,
     orderRef: payment?.orderRef ?? null,
+    cohortStartsOn: input.cohortStartsOn,
+    ref: input.ref,
   });
 
   /* ONLY FOR A SALE. A grant with no payment is a gift or a promo seat, and

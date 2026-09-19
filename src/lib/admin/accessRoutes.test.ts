@@ -220,6 +220,44 @@ describe("learners", () => {
     expect(access.provisionAccess).toHaveBeenCalledWith(expect.objectContaining({ expiresAt: null }));
   });
 
+  it("joins a seat to a cohort and remembers who brought the person", async () => {
+    session.value = SUPPORT;
+    access.provisionAccess.mockResolvedValue({
+      accountCreated: false,
+      payment: null,
+      account: { email: "a@b.c" },
+      grant: { created: true, enrollmentId: "enr-11", expiresAt: null, course: { slug: "way21", title: "Шлях 21", status: "published" } },
+    });
+
+    const res = await learners.POST(
+      send("http://x/api/admin/access/learners", "POST", {
+        email: "a@b.c",
+        course: "way21",
+        cohortStartsOn: "2026-10-06",
+        ref: "Olena",
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(access.provisionAccess).toHaveBeenCalledWith(
+      expect.objectContaining({ cohortStartsOn: "2026-10-06", ref: "olena" }),
+    );
+  });
+
+  it("refuses a cohort date that is not a date and a ref that is not a tag", async () => {
+    session.value = SUPPORT;
+    const badDate = await learners.POST(
+      send("http://x/api/admin/access/learners", "POST", { email: "a@b.c", course: "way21", cohortStartsOn: "6 жовтня" }),
+    );
+    expect(await badDate.json()).toMatchObject({ error: "cohort_date_invalid" });
+
+    const badRef = await learners.POST(
+      send("http://x/api/admin/access/learners", "POST", { email: "a@b.c", course: "way21", ref: "<x>" }),
+    );
+    expect(await badRef.json()).toMatchObject({ error: "ref_invalid" });
+    expect(access.provisionAccess).not.toHaveBeenCalled();
+  });
+
   it("carries a deadline, an account request and a payment through to the module", async () => {
     access.provisionAccess.mockResolvedValue({
       accountCreated: true,

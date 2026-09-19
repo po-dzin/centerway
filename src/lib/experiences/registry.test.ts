@@ -52,7 +52,7 @@ describe("resolveExperience", () => {
   });
 
   it("prefers the live address over a stale alias of the same name", async () => {
-    db.tables.experience_aliases.push({ alias: "consult", experience_id: "exp-way21", kind: "slug" });
+    db.tables.experience_aliases!.push({ alias: "consult", experience_id: "exp-way21", kind: "slug" });
     const found = await resolveExperience(db as never, "consult");
     expect(found).toMatchObject({ via: "slug", experience: { id: "exp-consult" } });
   });

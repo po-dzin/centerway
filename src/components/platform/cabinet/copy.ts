@@ -7,6 +7,7 @@
  * the learning shelf and its lesson links.
  */
 
+import { plural } from "@/lib/plural";
 import type { CourseCategory } from "@/lms-core";
 import type { ProfileLang } from "../profile/types";
 import { COURSE_STATE_LABELS } from "@/lib/lms/courseState";
@@ -103,6 +104,8 @@ export type CabinetCopy = {
   coursesCount: (count: number) => string;
   productsCount: (count: number) => string;
   dayNumber: (day: number) => string;
+  /** Before a cohort's day 1: the card says when it starts, not «День −3». */
+  startsIn: (days: number) => string;
   courseFinished: string;
   courseNotStarted: string;
   /** The draft badge on the cover corner — one word, the corner is small. */
@@ -224,6 +227,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       coursesCount: (count) => (count === 1 ? "1 course" : `${count} courses`),
       productsCount: (count) => (count === 1 ? "1 product" : `${count} products`),
       dayNumber: (day) => `Day ${day}`,
+      startsIn: (days) => (days === 1 ? "Starts tomorrow" : `Starts in ${days} days`),
       courseFinished: "Completed",
       courseNotStarted: "Not started",
       courseDraft: COURSE_STATE_LABELS.draft.en,
@@ -325,6 +329,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     coursesCount: (count) => `${count} ${ukPlural(count, "курс", "курси", "курсів")}`,
     productsCount: (count) => `${count} ${ukPlural(count, "продукт", "продукти", "продуктів")}`,
     dayNumber: (day) => `День ${day}`,
+    startsIn: (days) => (days === 1 ? "Старт завтра" : `Старт через ${days} ${plural(days, "день", "дні", "днів")}`),
     courseFinished: "Пройдено",
     courseNotStarted: "Ще не розпочато",
     courseDraft: COURSE_STATE_LABELS.draft.uk,

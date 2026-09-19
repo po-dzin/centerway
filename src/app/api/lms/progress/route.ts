@@ -17,6 +17,7 @@ import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import {
   buildOutline,
   canCompleteLesson,
+  dripAnchor,
   findLesson,
   lessonAvailability,
   summarizeStanding,
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { course, enrollment, progress, timeZone } = result.context;
-  const learner = { startedAt: enrollment.startedAt, timeZone, now };
+  const learner = { startedAt: dripAnchor(enrollment, timeZone), timeZone, now };
   const rejected: Array<{ clientId: string; reason: string }> = [];
   let accepted = 0;
 

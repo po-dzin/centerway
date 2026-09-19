@@ -1251,49 +1251,58 @@ export type Database = {
           auth_user_id: string
           blocked_at: string | null
           blocked_reason: string | null
+          cohort_starts_on: string | null
           course_id: string
           created_at: string
           expires_at: string | null
           granted_by: string | null
           id: string
           order_ref: string | null
+          ref: string | null
           revoked_at: string | null
           source: string
           started_at: string
           status: string
           updated_at: string
+          utm: Json | null
         }
         Insert: {
           auth_user_id: string
           blocked_at?: string | null
           blocked_reason?: string | null
+          cohort_starts_on?: string | null
           course_id: string
           created_at?: string
           expires_at?: string | null
           granted_by?: string | null
           id?: string
           order_ref?: string | null
+          ref?: string | null
           revoked_at?: string | null
           source?: string
           started_at?: string
           status?: string
           updated_at?: string
+          utm?: Json | null
         }
         Update: {
           auth_user_id?: string
           blocked_at?: string | null
           blocked_reason?: string | null
+          cohort_starts_on?: string | null
           course_id?: string
           created_at?: string
           expires_at?: string | null
           granted_by?: string | null
           id?: string
           order_ref?: string | null
+          ref?: string | null
           revoked_at?: string | null
           source?: string
           started_at?: string
           status?: string
           updated_at?: string
+          utm?: Json | null
         }
         Relationships: [
           {
@@ -1608,6 +1617,7 @@ export type Database = {
           page_url: string | null
           payload: Json | null
           product_code: string
+          ref: string | null
           status: string
           updated_at: string
         }
@@ -1628,6 +1638,7 @@ export type Database = {
           page_url?: string | null
           payload?: Json | null
           product_code: string
+          ref?: string | null
           status?: string
           updated_at?: string
         }
@@ -1648,6 +1659,7 @@ export type Database = {
           page_url?: string | null
           payload?: Json | null
           product_code?: string
+          ref?: string | null
           status?: string
           updated_at?: string
         }

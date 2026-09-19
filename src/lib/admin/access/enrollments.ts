@@ -30,6 +30,13 @@ export async function grantCourse(input: {
    * operator agreed is the window that stands.
    */
   orderRef?: string | null;
+  /**
+   * The cohort this seat joins: `YYYY-MM-DD`, the shared day 1. Absent leaves
+   * an existing seat's rhythm alone; `null` returns it to self-paced.
+   */
+  cohortStartsOn?: string | null;
+  /** Who brought this person, when somebody did (`?ref`). Never overwrites an earlier answer. */
+  ref?: string | null;
 }) {
   const db = adminClient();
   const account = await resolveAccountByEmail(db, input.email);
@@ -48,7 +55,7 @@ export async function grantCourse(input: {
 
   const { data: existing } = await db
     .from("lms_enrollments")
-    .select("id, source, started_at, expires_at, status, blocked_at")
+    .select("id, source, started_at, cohort_starts_on, ref, expires_at, status, blocked_at")
     .eq("course_id", course.id)
     .eq("auth_user_id", account.authUserId)
     .maybeSingle();
@@ -74,6 +81,29 @@ export async function grantCourse(input: {
         actorId: input.actorId,
       });
     }
+    // Same reasoning for the cohort: "put this person in the October flow" is
+    // half untrue while their seat still counts days from when they opened it.
+    const patch: TablesUpdate<"lms_enrollments"> = {};
+    if (input.cohortStartsOn !== undefined && input.cohortStartsOn !== (existing.cohort_starts_on ?? null)) {
+      patch.cohort_starts_on = input.cohortStartsOn;
+    }
+    if (input.ref && !existing.ref) patch.ref = input.ref;
+    if (Object.keys(patch).length > 0) {
+      const { error: patchError } = await db.from("lms_enrollments").update(patch).eq("id", existing.id as string);
+      if (patchError) throw new AccessError(patchError.message, 500);
+      await writeAudit(db, {
+        actorId: input.actorId,
+        action: "access.course.cohort",
+        entityType: "lms_enrollment",
+        entityId: existing.id as string,
+        metadata: {
+          course_slug: course.slug,
+          cohort_before: (existing.cohort_starts_on as string | null) ?? null,
+          cohort_after: patch.cohort_starts_on === undefined ? (existing.cohort_starts_on ?? null) : patch.cohort_starts_on,
+          ...(patch.ref ? { ref: patch.ref } : {}),
+        },
+      });
+    }
     return { created: false, course, account, enrollmentId: existing.id as string, expiresAt };
   }
 
@@ -90,6 +120,9 @@ export async function grantCourse(input: {
       ...(input.orderRef ? { order_ref: input.orderRef } : {}),
       // Day 1 starts now — same rule as `scripts/lms-grant.mjs`.
       started_at: new Date().toISOString(),
+      // …unless this seat joins a cohort, whose day 1 is shared (`dripAnchor`).
+      cohort_starts_on: input.cohortStartsOn ?? null,
+      ref: input.ref ?? null,
       expires_at: expiresAt,
     })
     .select("id")
@@ -109,6 +142,8 @@ export async function grantCourse(input: {
       grantee_auth_user_id: account.authUserId,
       source,
       expires_at: expiresAt,
+      cohort_starts_on: input.cohortStartsOn ?? null,
+      ...(input.ref ? { ref: input.ref } : {}),
     },
   });
 

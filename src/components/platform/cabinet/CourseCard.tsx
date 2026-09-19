@@ -142,6 +142,8 @@ export function CourseCard({
         ) : null}
         {course.standing?.currentDay ? (
           <span className={styles.chip}>{copy.dayNumber(course.standing.currentDay)}</span>
+        ) : course.standing?.startsInDays ? (
+          <span className={styles.chip}>{copy.startsIn(course.standing.startsInDays)}</span>
         ) : null}
       </div>
 
