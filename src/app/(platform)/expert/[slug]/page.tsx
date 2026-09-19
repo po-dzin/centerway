@@ -11,10 +11,8 @@
  * profile PAGE must refuse an unlisted author, even though a course page is
  * still allowed to print that same person's name as a byline.
  *
- * THE FOUNDER IS THE ONE EXCEPTION and redirects to `/consult` — see
- * `isFounderAuthorSlug`. Without this, listing his profile so the home page
- * can print it would also mint a second page about him, which is precisely
- * what the 2026-08-23 `/expert` → `/consult` merge existed to remove.
+ * Every listed author has this page, the founder included; the consultation is
+ * reached from it rather than instead of it.
  */
 
 import type { Metadata } from "next";

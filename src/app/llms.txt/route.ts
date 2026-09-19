@@ -18,6 +18,7 @@
  */
 
 import { BRAND, brandSummary } from "@/lib/brand/identity";
+import { authorHref, listListedAuthors } from "@/lib/lms/authors";
 import { programs } from "@/lib/platform/content";
 import { loadCourseOffer, listStorefrontCourses } from "@/lib/platform/offers";
 import { courseOfferCommerce, resolveOfferCommerce } from "@/lib/platform/offerCommerce";
@@ -70,6 +71,18 @@ export async function GET(): Promise<Response> {
    */
   const known = new Set(programs.map((program) => `/programs/${program.slug}`));
   const live = await listStorefrontCourses();
+  /* THE PEOPLE, FROM THE ROWS THEY WROTE. The section used to be one hand-written
+     line about the founder; the platform has had `lms_authors` and public
+     `/expert/<slug>` pages since August, and a second author would have been
+     invisible here. The brand constant stays as the floor for a read that
+     failed, which `listListedAuthors` reports as an empty list. */
+  const listedAuthors = await listListedAuthors();
+  const authorLines =
+    listedAuthors.length > 0
+      ? listedAuthors.map((author) =>
+          line(authorHref(author), author.name, [author.role, author.bio].filter(Boolean).join(". ")),
+        )
+      : [line(BRAND.founder.path, BRAND.founder.name, `${BRAND.founder.jobTitle}. ${BRAND.founder.description}`)];
   const liveOffers = await Promise.all(
     live
       .filter((course) => !known.has(course.href))
@@ -97,9 +110,9 @@ export async function GET(): Promise<Response> {
     BRAND.boundary,
     "Матеріали платформи — освітні. Рішення про лікування ухвалює лікар.",
     "",
-    "## Автор",
+    "## Автори",
     "",
-    line(BRAND.founder.path, BRAND.founder.name, `${BRAND.founder.jobTitle}. ${BRAND.founder.description}`),
+    ...authorLines,
     "",
     "## З чого почати",
     "",

@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 
+import { authorHref, listListedAuthors } from "@/lib/lms/authors";
 import { listStorefrontCourses } from "@/lib/platform/offers";
 import { getMainDomainSitemapRoutes } from "@/lib/surfaces/catalog";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
@@ -30,7 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: route === "/" ? 1 : 0.7,
   }));
 
-  const courses = await listStorefrontCourses();
+  const [courses, authors] = await Promise.all([listStorefrontCourses(), listListedAuthors()]);
   const known = new Set(staticRoutes.map((entry) => entry.url));
 
   const courseRoutes = courses
@@ -48,5 +49,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-  return [...staticRoutes, ...courseRoutes];
+  /* THE AUTHORS' OWN PAGES. Every listed author has `/expert/<slug>` and the
+     directory is `/experts`; neither was here, so the people the platform is
+     built around were the one kind of page a crawler was never told about.
+     Only `listed` — the same set the pages themselves agree to render. */
+  const authorRoutes = authors.length
+    ? [`${PLATFORM_ORIGIN}/experts`, ...authors.map((author) => `${PLATFORM_ORIGIN}${authorHref(author)}`)]
+        .filter((url) => !known.has(url))
+        .map((url) => ({ url, lastModified: now, changeFrequency: "monthly" as const, priority: 0.6 }))
+    : [];
+
+  return [...staticRoutes, ...courseRoutes, ...authorRoutes];
 }

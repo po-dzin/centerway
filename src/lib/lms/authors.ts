@@ -166,7 +166,7 @@ async function readListedAuthors(): Promise<Author[]> {
    rendered by the cabinet's editor now, which is a client component, and the
    import chain broke the build. Re-exported here so every existing caller
    keeps its import. */
-export { authorHref, isFounderAuthorSlug } from "./authorRoutes";
+export { authorHref } from "./authorRoutes";
 
 /** Every author with a public page, for the directory. */
 export async function listListedAuthors(): Promise<Author[]> {

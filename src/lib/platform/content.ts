@@ -300,9 +300,10 @@ export const platformEntryCards = [
    the same switch the products block uses) — not like a grid with the other
    three missing. When these come from `lms_authors`, only the source changes.
 
-   `href` is on the record rather than derived: the founder's profile is
-   `/consult` (see the `/expert` merge, 2026-08-23), and the next author's will
-   be `/expert/<slug>`. A rule that has one exception on day one is not a rule. */
+   THE BLOCK READS `lms_authors` NOW; this list is only its floor for a read
+   that failed (see `HubGuides`). It must therefore say what the row says: the
+   slug is the live one, so the fallback card links to the real profile, and
+   the facts are the ones the author published, not an older draft of them. */
 export type PlatformGuide = {
   slug: string;
   name: string;
@@ -318,15 +319,15 @@ export type PlatformGuide = {
 
 export const platformGuides = [
   {
-    slug: "evgeniy-koryakin",
+    slug: "koriakin",
     name: "Євгеній Корякін",
     role: "Дослідник і практик аюрведи · засновник CenterWay",
     note: "Веде програми, консультації і супровід практики — від першої діагностики стану до довгих циклів відновлення.",
     photo: { src: "/shared/img/author-evgeniy-2026-08.webp", alt: "Євгеній Корякін" },
-    href: "/consult",
+    href: "/expert/koriakin",
     linkLabel: "Більше про автора",
     facts: [
-      { label: "12 років практики", icon: "clock" },
+      { label: "20 років практики", icon: "clock" },
       { label: "Магістр комплементарної медицини та інтегративної психології", icon: "shield-check" },
       { label: "Інструктор з йоги та практикуючий йогін", icon: "body" },
     ],
