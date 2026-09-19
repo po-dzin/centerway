@@ -2300,9 +2300,12 @@
      paint pulls in from the edge and takes a shallower, fixed radius instead,
      the way the card's own corner is a small fraction of the card's size
      rather than a fraction of a control's. The hit area is untouched: it is
-     still the whole `.menuTrigger` box, unpainted margin included. */
+     still the whole `.menuTrigger` box, unpainted margin included.
+     The corner is the radius scale's `inset` step, a detail inside something
+     else — the nearest named step to the 8px literal it was first written
+     with, which the geometry law does not allow. */
   inset: 0.3rem;
-  border-radius: 8px;
+  border-radius: var(--cw-radius-inset);
   background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent);
   pointer-events: none;
   transition: background-color var(--builder-motion-ink) ease;

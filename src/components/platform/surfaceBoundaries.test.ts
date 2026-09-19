@@ -16,15 +16,20 @@ const block = (source: string, selector: string) => {
 };
 
 describe("shared surface boundaries", () => {
-  it("paints the media menu as a disc the size of its control, and the disc is the state", () => {
+  it("paints the media menu as a soft plate inside its control, and the plate is the state", () => {
     /* 2026-09-13: the scrim used to be cut to the ink ring's optical diameter
        (~29px in a 36–48px target) with the ring drawn around it on hover, which
        read as a glitch. On a photograph the scrim is the box, and a box marks
-       itself: full size, deeper on hover/focus/open, no ring. */
+       itself: deeper on hover/focus/open, no ring.
+       2026-09-16: the plate pulls in from the hit box and takes a shallow
+       corner — a full-box disc, then a full-box `--cw-radius-btn`, both read
+       round in a corner this small. The corner is a named step of the radius
+       scale, never a literal (geometry law). */
     const css = read("src/components/builder/Builder.module.css");
     const paint = block(css, ".courseCard > .menuRoot > .menuTrigger::before");
-    expect(paint).toContain("inset: 0;");
-    expect(paint).toContain("border-radius: 50%");
+    expect(paint).toContain("inset: 0.3rem;");
+    expect(paint).toContain("border-radius: var(--cw-radius-inset)");
+    expect(paint).not.toMatch(/border-radius:\s*\d/);
     expect(paint).not.toContain("--cw-ink-hover-paint-size");
     expect(block(css, ".courseCard > .menuRoot > .menuTrigger .inkRing")).toContain("display: none");
     expect(css).toMatch(

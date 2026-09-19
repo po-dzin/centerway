@@ -288,7 +288,11 @@ export function BuilderDashboard() {
                 <tbody>
                   {courses.map((course) => {
                     const entry = audience?.[course.slug];
-                    const offered = course.status === "published" || (entry?.learners ?? 0) > 0;
+                    /* A dash only for a draft NOBODY was given. A lapsed seat is
+                       proof the course was offered, so its current counts are
+                       real zeros, not missing facts. */
+                    const offered =
+                      course.status === "published" || (entry?.learners ?? 0) > 0 || (entry?.lapsed ?? 0) > 0;
                     return (
                       <tr key={course.slug}>
                         <td data-cell="course">

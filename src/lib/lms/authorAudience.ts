@@ -128,8 +128,9 @@ export function audienceDayKeys(now: Date, count: number = AUDIENCE_SERIES_DAYS)
  *
  * Progress is folded per enrollment with the player's own `foldProgress`, so
  * «завершено» here means exactly what it means to the learner, uncompletions
- * included. Only lessons the course has NOW count: a lesson the author deleted
- * is not a step anybody can still finish.
+ * included. Only the STEPS the course has NOW count: a lesson the author
+ * deleted is not a step anybody can still finish, and a reference page is not
+ * a step at all — the caller leaves both out of `lessonsByCourse`.
  */
 export function foldAuthorAudience(input: {
   courseIds: string[];
@@ -231,6 +232,24 @@ export function foldAuthorAudience(input: {
   };
 }
 
+/**
+ * The lessons that count towards progress, per course: every lesson except
+ * those in a reference module. Pure, so the rule is tested apart from the read.
+ */
+export function stepLessonsByCourse(
+  lessons: readonly { id: string; course_id: string; module_id: string }[],
+  referenceModules: ReadonlySet<string>,
+): Map<string, Set<string>> {
+  const byCourse = new Map<string, Set<string>>();
+  for (const lesson of lessons) {
+    if (referenceModules.has(lesson.module_id)) continue;
+    const set = byCourse.get(lesson.course_id) ?? new Set<string>();
+    set.add(lesson.id);
+    byCourse.set(lesson.course_id, set);
+  }
+  return byCourse;
+}
+
 /** PostgREST caps a response at 1000 rows; a count that silently stops there is wrong. */
 const PAGE_SIZE = 1000;
 /** Ids per `.in()` — keeps the request URL well inside proxy limits. */
@@ -268,17 +287,24 @@ export async function readAuthorAudience(courseIds: string[], now: Date = new Da
     blockedAt: row.blocked_at ?? null,
   }));
 
+  /* STEPS ONLY. A reference module is a handbook you consult, not a step you
+     complete (`countLessons` in lms-core), and its pages cannot be marked done
+     — counting them would put every learner of such a course below 100% for
+     ever and keep them out of «пройшли». */
+  const { data: referenceRows, error: referenceError } = await db
+    .from("lms_modules")
+    .select("id")
+    .in("course_id", courseIds)
+    .eq("reference", true);
+  if (referenceError) throw new Error(`lms_audience_modules_failed:${referenceError.message}`);
+  const referenceModules = new Set((referenceRows ?? []).map((row) => row.id));
+
   const { data: lessonRows, error: lessonError } = await db
     .from("lms_lessons")
-    .select("id, course_id")
+    .select("id, course_id, module_id")
     .in("course_id", courseIds);
   if (lessonError) throw new Error(`lms_audience_lessons_failed:${lessonError.message}`);
-  const lessonsByCourse = new Map<string, Set<string>>();
-  for (const row of lessonRows ?? []) {
-    const set = lessonsByCourse.get(row.course_id) ?? new Set<string>();
-    set.add(row.id);
-    lessonsByCourse.set(row.course_id, set);
-  }
+  const lessonsByCourse = stepLessonsByCourse(lessonRows ?? [], referenceModules);
 
   const events: AudienceEventRow[] = [];
   for (const ids of chunks(

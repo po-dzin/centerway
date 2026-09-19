@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   audienceDayKeys,
   foldAuthorAudience,
+  stepLessonsByCourse,
   type AudienceEnrollmentRow,
   type AudienceEventRow,
 } from "./authorAudience";
@@ -195,5 +196,39 @@ describe("foldAuthorAudience — daily series", () => {
       ],
     });
     expect(days.find((day) => day.date === "2026-09-05")?.learners).toBe(2);
+  });
+});
+
+describe("stepLessonsByCourse", () => {
+  /* A reference page cannot be marked done, so counting it would hold every
+     learner of the course below 100% and out of «пройшли» for ever. */
+  it("leaves reference-module lessons out of the steps that count", () => {
+    const steps = stepLessonsByCourse(
+      [
+        { id: "l1", course_id: "c1", module_id: "m1" },
+        { id: "l2", course_id: "c1", module_id: "m1" },
+        { id: "ref", course_id: "c1", module_id: "handbook" },
+        { id: "x1", course_id: "c2", module_id: "m2" },
+      ],
+      new Set(["handbook"]),
+    );
+    expect([...(steps.get("c1") ?? [])]).toEqual(["l1", "l2"]);
+    expect([...(steps.get("c2") ?? [])]).toEqual(["x1"]);
+  });
+
+  it("lets a learner who did every step finish a course that also has a handbook", () => {
+    const steps = stepLessonsByCourse(
+      [
+        { id: "l1", course_id: "c1", module_id: "m1" },
+        { id: "ref", course_id: "c1", module_id: "handbook" },
+      ],
+      new Set(["handbook"]),
+    );
+    const { courses } = fold({
+      enrollments: [row({ id: "e1" })],
+      events: [event("e1", "l1", "lesson.completed", "2026-09-01T10:00:00Z")],
+      lessonsByCourse: steps,
+    });
+    expect(courses.get("c1")).toMatchObject({ finished: 1, progressShare: 1 });
   });
 });
