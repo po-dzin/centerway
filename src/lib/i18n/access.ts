@@ -64,6 +64,8 @@ export const access = {
   access_grant_amount: { uk: "Сума", en: "Amount" },
   access_grant_currency: { uk: "Валюта", en: "Currency" },
   access_grant_note: { uk: "Коментар до оплати", en: "Payment note" },
+  access_col_cohort: { uk: "Потік", en: "Cohort" },
+  access_col_ref: { uk: "Привів", en: "Referred by" },
   access_grant_cohort: { uk: "Старт потоку", en: "Cohort starts" },
   access_grant_ref: { uk: "Хто привів", en: "Referred by" },
   access_granted: { uk: "Доступ видано", en: "Access granted" },

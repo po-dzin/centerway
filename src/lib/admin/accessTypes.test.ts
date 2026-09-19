@@ -71,6 +71,8 @@ describe("groupLearnersByAccount", () => {
     source: "manual",
     orderRef: null,
     startedAt: "2026-08-01T00:00:00.000Z",
+    cohortStartsOn: null,
+    ref: null,
     expiresAt: null,
     access: "active",
     daysLeft: null,

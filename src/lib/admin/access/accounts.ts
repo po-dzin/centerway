@@ -131,7 +131,7 @@ async function foldEnrollmentsByAccount(
   let query = db
     .from("lms_enrollments")
     .select(
-      "id, course_id, auth_user_id, source, order_ref, started_at, expires_at, status, revoked_at, blocked_at, blocked_reason",
+      "id, course_id, auth_user_id, source, order_ref, started_at, cohort_starts_on, ref, expires_at, status, revoked_at, blocked_at, blocked_reason",
     )
     .in("auth_user_id", authUserIds)
     .order("started_at", { ascending: false })
@@ -178,6 +178,8 @@ async function foldEnrollmentsByAccount(
       source: row.source as string,
       orderRef: (row.order_ref as string | null) ?? null,
       startedAt: row.started_at as string,
+      cohortStartsOn: (row.cohort_starts_on as string | null) ?? null,
+      ref: (row.ref as string | null) ?? null,
       expiresAt: (row.expires_at as string | null) ?? null,
       // The panel's own answer to "can they open it right now", folded
       // from the same rule the learner's door uses — a deadline that has

@@ -957,6 +957,26 @@ function PeopleTab({
                                     month: "short",
                                   })}
                                 </span>
+                                {/* The flow a seat belongs to and who brought the
+                                    person: with the course filter above, this is
+                                    the roster of a cohort. The date is a calendar
+                                    date, so it is read as UTC — a local parse would
+                                    print the 5th for anyone west of Greenwich. */}
+                                {row.cohortStartsOn ? (
+                                  <span>
+                                    {t("access_col_cohort")}:{" "}
+                                    {new Date(`${row.cohortStartsOn}T00:00:00Z`).toLocaleDateString(locale, {
+                                      day: "2-digit",
+                                      month: "short",
+                                      timeZone: "UTC",
+                                    })}
+                                  </span>
+                                ) : null}
+                                {row.ref ? (
+                                  <span>
+                                    {t("access_col_ref")}: <span className={lists.itemCode}>{row.ref}</span>
+                                  </span>
+                                ) : null}
                                 {/* A closed door is not a detail — it is why the
                                                                     learner wrote in, so it is said outright, and it
                                                                     says WHICH kind of closed. */}
