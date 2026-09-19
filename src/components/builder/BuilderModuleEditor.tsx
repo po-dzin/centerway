@@ -7,6 +7,7 @@
  */
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { HandGraphic, Icon } from "@/components/Icon";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { newLesson, nextDayIndex, uniqueSlug, type Course, type CourseModule, type Lesson } from "@/lms-core";
@@ -23,6 +24,7 @@ import { LAST_LESSON_REFUSAL, removeLesson, removeModule, stepLesson, stepModule
 import styles from "./Builder.module.css";
 import { ids, trailTitle } from "./BuilderCourseView";
 import { COURSE_STATE_LABELS } from "@/lib/lms/courseState";
+import { BUILDER_COURSES_PATH } from "@/lib/surfaces/catalog";
 
 export function BuilderCourseRail({
   published,
@@ -37,6 +39,24 @@ export function BuilderCourseRail({
 }) {
   return (
     <div className={styles.courseRail}>
+      {/* THE WAY OUT, IN WORDS, WHERE THE HAND IS (2026-09-19). The breadcrumb
+          in the bar was the only way from a course back to the shelf — a
+          small target at the far top of the screen, beside the thing it is
+          furthest from. The lesson's contents panel already opens with
+          «← Структура курсу»; the course rail now opens the same way, one
+          level up. A link, so the shell's unsaved-changes guard catches it
+          like any other anchor. In the compact rail only the arrow stays. */}
+      <Link
+        className={`cw-nav-link ${styles.courseRailBack}`}
+        data-cw-ink-control=""
+        href={BUILDER_COURSES_PATH}
+        aria-label="До всіх матеріалів"
+      >
+        <span className={styles.courseRailIcon}>
+          <Icon name="arrow-left" size={18} />
+        </span>
+        <BuilderInkLabel>Матеріали</BuilderInkLabel>
+      </Link>
       <nav className={styles.courseRailNav} aria-label="Розділи курсу">
         <a
           className={`cw-nav-link ${styles.courseRailLink}`}

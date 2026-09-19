@@ -112,6 +112,11 @@ export function BuilderShell({
       .slice(0, -1)
       .reverse()
       .find((step) => step.onNavigate || step.href) ?? null;
+  /* The word beside the phone's arrow names the LEVEL, never the title
+     (`PlatformBackOrgan`): the workshop root's own name, and «До курсу» from
+     anything deeper — the only level between the root and a lesson is a
+     course, and the reader's back control already says it that way. */
+  const parentText = parent ? (trail.indexOf(parent) === 0 ? parent.label : "До курсу") : undefined;
 
   /* Two ways to fold one panel, one thing the control has to say. `collapsed`
      empties the rail, `compact` narrows it to its icon column — but from the
@@ -171,9 +176,9 @@ export function BuilderShell({
         label="Майстерня"
         left={
           parent?.onNavigate ? (
-            <PlatformBackOrgan onNavigate={parent.onNavigate} label={`Назад: ${parent.label}`} />
+            <PlatformBackOrgan onNavigate={parent.onNavigate} label={`Назад: ${parent.label}`} text={parentText} />
           ) : parent?.href ? (
-            <PlatformBackOrgan href={parent.href} label={`Назад: ${parent.label}`} />
+            <PlatformBackOrgan href={parent.href} label={`Назад: ${parent.label}`} text={parentText} />
           ) : (
             <PlatformMarkOrgan />
           )

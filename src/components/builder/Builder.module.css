@@ -700,6 +700,13 @@
     gap: 0;
   }
 
+  .aside[data-compact] .courseRailBack {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 0;
+  }
+
+  .aside[data-compact] .courseRailBack > .inkLabel,
   .aside[data-compact] .courseRailLink > .inkLabel,
   .aside[data-compact] .courseRailStatusLine {
     display: none;
@@ -5950,10 +5957,40 @@
   flex-direction: column;
 }
 
+/* The rail's first row: back to the shelf. Same grid as a section row, so its
+   arrow stands in the icon column and its word on the labels' edge; the nav
+   below keeps a full step of air so «назад» does not read as a fifth section. */
+.courseRailBack {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--cw-space-sm);
+  min-height: var(--ds-button-min-height);
+  margin-block-start: var(--cw-space-md);
+  color: var(--cw-platform-muted);
+  text-decoration: none;
+}
+
+.courseRailBack:focus-visible {
+  color: var(--cw-platform-text);
+}
+
+@media (hover: hover) {
+  .courseRailBack:hover {
+    color: var(--cw-platform-text);
+  }
+}
+
 .courseRailNav {
   display: grid;
   gap: var(--cw-space-md);
   padding-block-start: var(--cw-space-2xl);
+}
+
+/* Under the back row the nav keeps one step of air, not the rail's full top
+   margin — the workshop rail, which has no back row, keeps that. */
+.courseRailBack + .courseRailNav {
+  padding-block-start: var(--cw-space-xl);
 }
 
 .courseRailLink {

@@ -195,6 +195,28 @@
   height: var(--ds-icon-in-control);
 }
 
+/* THE LABELLED WAY BACK (2026-09-19). The same island, widened to carry a
+   word: the arrow keeps its box and its size, the word sits after it at the
+   button contract's compact type, and the island never grows past a third of
+   the phone — the word is a level name by contract (see `PlatformBackOrgan`),
+   so the ellipsis is a guard, not a layout. */
+.organLabelled {
+  width: auto;
+  max-width: min(12rem, 45vw);
+  gap: var(--cw-space-2xs);
+  padding-inline: var(--cw-space-sm) var(--cw-space-md);
+}
+
+.organText {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* THE EMPTY ACCOUNT IS AN ISLAND TOO (2026-09-06).
 
    With a session the trailing control is a photograph filling its 48px box: it
