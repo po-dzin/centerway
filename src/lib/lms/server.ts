@@ -18,6 +18,7 @@ import {
   accessRuleOf,
   accessStateOf,
   acceptedPaidOrders,
+  courseOfferCode,
   daysRemaining,
   dripAnchor,
   foldProgress,
@@ -260,10 +261,14 @@ async function loadPurchases(identity: LearnerIdentity): Promise<{ orders: PaidO
  */
 async function readOfferAccess(course: Course): Promise<{ rule: AccessRule | null; free: boolean }> {
   const db = adminClient();
+  // The course's own offer, by its code, in the one table of prices. The same
+  // row the old table held — the mirror trigger writes it — so the answer is
+  // unchanged; which of SEVERAL offers' terms applies is a question for the
+  // entitlement, answered when access is keyed by the offer that was bought.
   const { data } = await db
-    .from("lms_course_offers")
+    .from("experience_offers")
     .select("access_days, access_lifetime, amount, active")
-    .eq("course_id", course.id)
+    .eq("code", courseOfferCode(course.slug))
     .maybeSingle();
 
   if (!data) return { rule: null, free: false };
@@ -639,11 +644,20 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
   // as time-boxed the moment the learner opened the course. One row per course
   // (`code` is unique), so there is nothing to choose between.
   const { data: offerRows } = await db
-    .from("lms_course_offers")
-    .select("course_id, access_days, access_lifetime, amount, active");
+    .from("experience_offers")
+    .select("code, access_days, access_lifetime, amount, active");
+  // Keyed by the course's own offer code, which is what `readOfferAccess` reads
+  // for one course — the shelf and the door must look at the same row.
+  const idByOfferCode = new Map(courses.map((course) => [courseOfferCode(course.slug), course.id]));
+  const courseRows = ((offerRows ?? []) as Array<Record<string, unknown>>).flatMap(
+    (row): Array<Record<string, unknown>> => {
+      const courseId = idByOfferCode.get(row.code as string);
+      return courseId ? [{ ...row, course_id: courseId }] : [];
+    },
+  );
 
   const ruleByCourse = new Map<string, AccessRule | null>(
-    ((offerRows ?? []) as Array<Record<string, unknown>>).map((row) => [
+    courseRows.map((row) => [
       row.course_id as string,
       accessRuleOf({
         accessDays: (row.access_days as number | null) ?? null,
@@ -652,10 +666,7 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
     ]),
   );
   const freeByCourse = new Map<string, boolean>(
-    ((offerRows ?? []) as Array<Record<string, unknown>>).map((row) => [
-      row.course_id as string,
-      Boolean(row.active) && Number(row.amount) === 0,
-    ]),
+    courseRows.map((row) => [row.course_id as string, Boolean(row.active) && Number(row.amount) === 0]),
   );
 
   const entries = await Promise.all(

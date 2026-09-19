@@ -102,13 +102,10 @@ export async function recordManualPayment(input: {
  * "unconfigured means perpetual" direction the door already takes.
  */
 async function offerExpiryFor(db: Db, courseSlug: string, paidAt: string): Promise<string | null> {
-  const { data: course } = await db.from("lms_courses").select("id").eq("slug", courseSlug).maybeSingle();
-  if (!course?.id) return null;
-
   const { data: offer } = await db
-    .from("lms_course_offers")
+    .from("experience_offers")
     .select("access_days, access_lifetime")
-    .eq("course_id", course.id)
+    .eq("code", courseOfferCode(courseSlug))
     .maybeSingle();
   if (!offer) return null;
 

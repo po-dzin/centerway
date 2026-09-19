@@ -57,10 +57,13 @@ function order(ref: string, createdAt: string, productCode = "reset-day"): Row {
 }
 
 /** A 30-day offer on Reset Day unless a test says otherwise. */
+const SLUG_BY_COURSE: Record<string, string> = { "course-reset": "reset-day", "course-way21": "way21" };
+
+/* An offer row in the one table of prices, where a course's term is found by
+   its own offer code (`course:<slug>`), not by `course_id`. */
 function offer(courseId: string, days: number | null, lifetime = false): Row {
   return {
-    course_id: courseId,
-    code: `course:${courseId}`,
+    code: `course:${SLUG_BY_COURSE[courseId] ?? courseId}`,
     access_days: days,
     access_lifetime: lifetime,
     active: true,
@@ -70,7 +73,7 @@ function offer(courseId: string, days: number | null, lifetime = false): Row {
 function seed(input: Seed = {}) {
   db.tables = {
     lms_enrollments: input.enrollments ?? [],
-    lms_course_offers: input.offers ?? [offer("course-reset", 30)],
+    experience_offers: input.offers ?? [offer("course-reset", 30)],
     platform_users: [{ auth_user_id: "auth-1", email: "learner@example.com", timezone: "Europe/Kyiv" }],
     user_roles: [],
     customers: [{ id: "cus-1", email: "learner@example.com", auth_user_id: "auth-1" }],

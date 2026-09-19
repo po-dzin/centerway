@@ -69,7 +69,8 @@ function seed(courses: Row[], offers: Row[] = []) {
     // must not break it for the next one.
     lms_modules: [{ ...moduleRow }],
     lms_lessons: [{ ...lessonRow }],
-    lms_course_offers: offers,
+    // The one table of prices, keyed by the course's own offer code.
+    experience_offers: offers,
   };
   db.failures = {};
 }
