@@ -353,6 +353,8 @@ export async function ensureEnrollment(
   identity: LearnerIdentity,
   course: Course,
   now = new Date(),
+  /** Where the person came from, for the row this call may create. Never rewrites an existing one. */
+  attribution?: { ref?: string | null; utm?: Record<string, string> | null },
 ): Promise<{ enrollment: EnrollmentRecord } | { enrollment: null; reason: AccessDenial }> {
   const db = adminClient();
 
@@ -477,6 +479,9 @@ export async function ensureEnrollment(
       // A course that runs as a cohort hands its date to everyone who joins it,
       // early or late; the operator can still set another date per person.
       cohort_starts_on: courseCohortDate(course),
+      // A free seat has no order, so who brought the person is recorded here.
+      ref: attribution?.ref ?? null,
+      utm: attribution?.utm ?? null,
       expires_at: expiresAt,
     })
     .select(ENROLLMENT_COLUMNS)
@@ -789,6 +794,7 @@ export async function loadLearnerCourse(
   identity: LearnerIdentity,
   courseSlug: string,
   now = new Date(),
+  attribution?: { ref?: string | null; utm?: Record<string, string> | null },
 ): Promise<
   | { ok: true; context: LearnerCourseContext }
   | { ok: false; reason: "course_not_found" | "not_published" | AccessDenial }
@@ -828,7 +834,7 @@ export async function loadLearnerCourse(
     });
   }
 
-  const result = await ensureEnrollment(identity, course, now);
+  const result = await ensureEnrollment(identity, course, now, attribution);
   if (!result.enrollment) return { ok: false, reason: result.reason };
 
   const [progress, settings] = await Promise.all([

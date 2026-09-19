@@ -8,6 +8,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import { makeOrderRef } from "@/lib/payments/paymentStart";
 import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
+import { readAttribution } from "@/lib/referral/attribution";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 
 export const runtime = "nodejs";
@@ -88,6 +89,7 @@ export const POST = withRoute("orders.create", async (req) => {
   const parsed = await parseBody(req, Body);
   if (!parsed.ok) return cors(parsed.response, origin);
   const body = parsed.data;
+  const attribution = readAttribution(req as NextRequest);
 
   {
     /* Same rule as /api/pay/start: no fallback product. This route only
@@ -115,7 +117,8 @@ export const POST = withRoute("orders.create", async (req) => {
       status: "created",
       fbp: asOptionalString(attrib?.fbp),
       fbclid: asOptionalString(attrib?.fbclid),
-      campaign: asOptionalString(attrib?.utm_campaign),
+      campaign: asOptionalString(attrib?.utm_campaign) ?? attribution.utm?.campaign ?? null,
+      ref: attribution.ref,
       client_ip: asOptionalString(attrib?.client_ip),
       client_ua: asOptionalString(attrib?.client_ua),
       page_url: asOptionalString(attrib?.page_url),

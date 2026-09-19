@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { loadLearnerCourse } from "@/lib/lms/server";
+import { readAttribution } from "@/lib/referral/attribution";
 import { isDenied, resolveCourseAccess } from "@/lib/lms/courseAccess";
 import { buildOutline, dripAnchor, foldProgress, resolveCurrentLesson, summarizeStanding } from "@/lms-core";
 
@@ -56,6 +57,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       { authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) },
       slug,
       now,
+      // The course page is where a seat is first opened, so it is the one call
+      // that says who brought the person (`lib/referral/attribution`).
+      readAttribution(req),
     );
     if (!result.ok) {
       return NextResponse.json({ error: result.reason }, { status: FAILURE_STATUS[result.reason] ?? 400 });
