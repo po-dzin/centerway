@@ -38,6 +38,7 @@ import {
   type ProgressEvent,
   type ProgressEventType,
 } from "@/lms-core";
+import { loadOpeningCodes, openingCodesFor } from "@/lib/experiences/openingCodes";
 import { linkPurchasesToAccount } from "@/lib/platform/linkPurchases";
 import { getLiveCourse, listLiveCourses } from "./liveCatalog";
 
@@ -183,11 +184,16 @@ export async function checkEntitlement(
     return { entitled: true, source: "manual", grantedAt: now.toISOString(), orderRef: null };
   }
 
-  const [purchases, offer] = await Promise.all([loadPurchases(identity), readOfferAccess(course)]);
+  const [purchases, offer, opening] = await Promise.all([
+    loadPurchases(identity),
+    readOfferAccess(course),
+    loadOpeningCodes(adminClient(), [course.id]),
+  ]);
+  const courseProductCodes = openingCodesFor(course, opening);
 
   if (offer.free) {
     return resolveEntitlement({
-      courseProductCodes: course.entitlementProductCodes,
+      courseProductCodes,
       courseSlug: course.slug,
       orders: purchases.orders,
       freeCourse: true,
@@ -197,7 +203,7 @@ export async function checkEntitlement(
   if (purchases.orders.length === 0) return { entitled: false, reason: "no_paid_order" };
 
   return resolveEntitlement({
-    courseProductCodes: course.entitlementProductCodes,
+    courseProductCodes,
     courseSlug: course.slug,
     orders: purchases.orders,
     now,
@@ -376,16 +382,17 @@ export async function ensureEnrollment(
   // staff role and no offer term lifts it.
   if (row?.blocked_at) return { enrollment: null, reason: "blocked" };
 
-  const [offerAccess, purchases, staff] = await Promise.all([
+  const [offerAccess, purchases, staff, opening] = await Promise.all([
     readOfferAccess(course),
     loadPurchases(identity),
     isStaff(identity.authUserId),
+    loadOpeningCodes(db, [course.id]),
   ]);
 
   const { rule, free } = offerAccess;
 
   const orders = acceptedPaidOrders({
-    courseProductCodes: course.entitlementProductCodes,
+    courseProductCodes: openingCodesFor(course, opening),
     courseSlug: course.slug,
     orders: purchases.orders,
     now,
@@ -643,9 +650,13 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
   // same enrollment — a withdrawn offer showed as perpetual on the shelf and
   // as time-boxed the moment the learner opened the course. One row per course
   // (`code` is unique), so there is nothing to choose between.
-  const { data: offerRows } = await db
-    .from("experience_offers")
-    .select("code, access_days, access_lifetime, amount, active");
+  const [{ data: offerRows }, openingByCourse] = await Promise.all([
+    db.from("experience_offers").select("code, access_days, access_lifetime, amount, active"),
+    loadOpeningCodes(
+      db,
+      courses.map((course) => course.id),
+    ),
+  ]);
   // Keyed by the course's own offer code, which is what `readOfferAccess` reads
   // for one course — the shelf and the door must look at the same row.
   const idByOfferCode = new Map(courses.map((course) => [courseOfferCode(course.slug), course.id]));
@@ -675,7 +686,7 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
       const free = freeByCourse.get(course.id) === true;
 
       const orders = acceptedPaidOrders({
-        courseProductCodes: course.entitlementProductCodes,
+        courseProductCodes: openingCodesFor(course, openingByCourse),
         courseSlug: course.slug,
         orders: purchases.orders,
         now,

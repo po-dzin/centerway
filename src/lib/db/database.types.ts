@@ -2322,6 +2322,13 @@ export type Database = {
       }
     }
     Views: {
+      course_opening_codes: {
+        Row: {
+          code: string | null
+          course_id: string | null
+        }
+        Relationships: []
+      }
       lms_media_usage: {
         Row: {
           assets: number | null
