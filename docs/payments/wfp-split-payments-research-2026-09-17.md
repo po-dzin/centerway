@@ -300,6 +300,82 @@ Partner API, §2.2), передаёт платформе `merchantAccount` и `s
 Plata by mono рекламирует 1,3 % ([shop-express](https://shop-express.ua/ukr/blog/acquiring-from-monobank/)).
 Точные ставки для сплита — только по запросу.
 
+## 5.1. Как это делают другие платформы
+
+Три модели, и почти любой известный маркетплейс или платформа для курсов
+сидит в одной из них.
+
+**Модель А. Платформа — продавец, автор получает выплату потом
+(агрегатор).** Udemy, Skillshare, Preply, Gumroad, Patreon, Coursera.
+Покупатель платит платформе, платформа — merchant of record: её чек, её
+возвраты, её налоговая отчётность по продаже. Автор — подрядчик, получает
+роялти пакетом раз в месяц через PayPal, Payoneer, Tipalti или Wise, после
+окончания окна возврата и при достижении порога выплаты. У Udemy это выплата
+на третий месяц за продажи первого, минимум 25 $
+([Udemy](https://support.udemy.com/hc/en-us/articles/229604008-Instructor-Payment-Overview)).
+У Preply: ученик платит Preply, Preply удерживает 18–33 % в зависимости от
+наработанных часов, остаток попадает на баланс репетитора, вывод через
+Wise/Payoneer/PayPal
+([Preply](https://help.preply.com/en/articles/4171348-when-and-how-you-get-paid-for-lessons)).
+В Украине так работают Prom.ua (Пром-оплата: деньги резервируются у
+покупателя, продавцу-ФОП зачисляются на расчётный счёт как эквайринг после
+подтверждения получения товара,
+[Prom](https://support.prom.ua/hc/uk/articles/360006721397)) и Rozetka через
+собственную платёжную структуру RozetkaPay, с которой продавец подписывает
+отдельный договор ([Rozetka](https://sellerhelp.rozetka.com.ua/p244-payment-metod.html)).
+Крупные украинские маркетплейсы для этой задачи завели собственное
+юрлицо-эквайер, а не встроенный сплит стороннего провайдера. Это ровно модель
+3.3 из §3 — деньги проходят через платформу.
+
+**Модель Б. Connected accounts: платформа инициирует, деньги на уровне
+транзакции уходят продавцу.** Реализуется провайдерами Stripe Connect, Adyen
+for Platforms, Mangopay; в Украине — «розщеплення» monobank и LiqPay из §5.
+Продавец проходит онбординг у провайдера как подключённый аккаунт, платформа
+при создании платежа указывает получателя и свою комиссию. У Stripe два
+режима, которые почти буквально соответствуют нашим моделям 3.3 и сплиту:
+*destination charges* — платформа остаётся merchant of record, чек и
+возвраты у неё, но доля продавца переводится ему автоматически при
+создании платежа; *separate charges and transfers* — для сценариев с
+несколькими получателями на один платёж, как у DoorDash
+([Stripe](https://docs.stripe.com/connect/charges)). На этой модели построен
+Teachable BackOffice: сплит между владельцем школы, соавторами и
+аффилиатами считается и выплачивается автоматически на каждую продажу,
+Teachable отдельно собирает налоговые формы авторов
+([Teachable](https://support.teachable.com/en/articles/11682555-teachable-pay)).
+Так же живут Airbnb, Uber, Etsy, Shopify. Это модель, которую хочет владелец,
+и именно её на украинском рынке даёт не WFP, а monobank/LiqPay.
+
+**Модель В. Bring your own gateway: платформа вообще не касается денег.**
+Thinkific, Kajabi, Teachable без BackOffice. Автор подключает свой
+собственный Stripe или PayPal, деньги идут ему напрямую, чек от его имени
+шлёт Stripe, а платформа берёт абонплату школы и иногда небольшой процент с
+транзакции сверху ([Thinkific](https://support.thinkific.com/hc/en-us/articles/360030357334)).
+Это модель 3.2 из §3. Работает она там потому, что это конструктор
+персональных школ (один автор = одна школа с одной ценовой политикой), а не
+общая витрина с единой ценой: комиссию платформы там берут подпиской, а не
+долей от каждого платежа.
+
+**Что из этого стоит взять, независимо от выбранного провайдера:**
+
+- выплата или сплит наступает только после окончания окна возврата
+  (у Udemy — 30 дней, у Prom — до подтверждения получения), а не в момент
+  оплаты;
+- есть порог минимальной суммы выплаты, ниже которого деньги копятся на
+  балансе автора;
+- налоговые данные и реквизиты автора собираются один раз при онбординге, а
+  не изобретаются при первой выплате;
+- в леджере хранится снимок доли на момент заказа (§8.1), а не текущая
+  настройка автора — иначе прошлые заказы задним числом меняют сумму
+  выплаты при правке доли.
+
+Для CenterWay: желаемый результат владельца — деньги напрямую автору,
+налоги сам — в мире достигается только моделью Б или В, но модель А (Udemy,
+Preply, Prom, Rozetka) — самая частая именно потому, что она проще
+юридически и не требует ни встроенного сплита, ни отдельного эквайера у
+каждого продавца. Модель В не подходит маркетплейсу с общей витриной.
+Значит для CenterWay реалистична модель Б — то, что уже рекомендовано в §6,
+только через monobank/LiqPay, а не WFP.
+
 ## 6. Рекомендация с условиями
 
 **Рекомендация: транзакционный сплит делать не на WFP, а у провайдера, у
@@ -518,6 +594,16 @@ WayForPay (по поисковым выдержкам, страницы недо
 - https://news.dtkt.ua/taxation/pdv/55215-nadajete-poslugi-z-navcannia-koli-dije-zvilnennia-z-pdv — льгота ПДВ на обучение
 - https://i.factor.ua/ukr/journals/nibu/2026/march/issue-25/article-136897.html , https://news.dtkt.ua/taxation/pdv/106276-oboviazkova-rejestraciia-fopiv-platnikami-pdv-koli-ziavitsia-tekst-zakonoprojektu — законопроект о ПДВ для ФОП
 - https://www.pwc.com/ua/uk/publications/tax-and-legal-alert/2026/zakon-DAC7-15111-d.html , https://forbes.ua/news/verkhovna-rada-ukhvalila-zakon-pro-opodatkuvannya-tsifrovikh-platform-09062026-39475 , https://horoshop.ua/ua/blog/digital-platforms-act/ — закон 15111-д о цифровых платформах
+
+Другие платформы (§5.1):
+
+- https://docs.stripe.com/connect/charges — Stripe Connect: destination charges vs separate charges and transfers
+- https://support.teachable.com/en/articles/11682555-teachable-pay — Teachable BackOffice: сплит с соавторами и аффилиатами
+- https://support.udemy.com/hc/en-us/articles/229604008-Instructor-Payment-Overview — Udemy: график и порог выплат инструктору
+- https://help.preply.com/en/articles/4171348-when-and-how-you-get-paid-for-lessons — Preply: комиссия и вывод средств репетитором
+- https://support.prom.ua/hc/uk/articles/360006721397 — Prom.ua: как работает Пром-оплата
+- https://sellerhelp.rozetka.com.ua/p244-payment-metod.html — Rozetka: подключение способов оплаты через RozetkaPay
+- https://support.thinkific.com/hc/en-us/articles/360030357334 — Thinkific: разница между встроенным процессингом и своим Stripe/PayPal
 
 Внутренние:
 
