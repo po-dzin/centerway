@@ -17,6 +17,7 @@ import { getAdminLocale } from "@/lib/admin/adminLocale";
 import { ORDER_STATUS_BADGE_CLASS } from "@/lib/admin/adminStatusStyles";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
+import { FULFILMENT_STATUSES, type FulfilmentStatus } from "@/lib/admin/fulfilmentStatus";
 import { Icon } from "@/components/Icon";
 import pageStyles from "@/components/admin/AdminPage.module.css";
 import controls from "@/components/admin/AdminControls.module.css";
@@ -29,6 +30,8 @@ interface Order {
   amount: number | null;
   currency: string | null;
   status: string;
+  /** Set only for orders a person carries out (consultation, package, parcel). */
+  fulfilment_status: FulfilmentStatus | null;
   customer_id: string | null;
   created_at: string;
   customers: {
@@ -734,6 +737,12 @@ export default function OrdersPage() {
     pending: t("orders_status_pending"),
     refunded: t("orders_status_refunded"),
   };
+  const fulfilmentLabel: Record<FulfilmentStatus, string> = {
+    pending: t("orders_fulfilment_pending"),
+    scheduled: t("orders_fulfilment_scheduled"),
+    done: t("orders_fulfilment_done"),
+    cancelled: t("orders_fulfilment_cancelled"),
+  };
   const STATUS_TABS = [
     { key: "", label: t("orders_tab_all") },
     { key: "paid", label: t("orders_tab_paid") },
@@ -893,6 +902,26 @@ export default function OrdersPage() {
     return () => abortRef.current?.abort();
   }, []);
 
+  /* Carrying out a consultation or sending a parcel is the operator's step, and
+     the list is where they see it. Optimistic: the select shows the new state
+     at once and returns to the old one if the server refuses. */
+  const setFulfilment = async (order: Order, next: FulfilmentStatus) => {
+    const previous = order.fulfilment_status;
+    setData((rows) =>
+      rows.map((row) => (row.order_ref === order.order_ref ? { ...row, fulfilment_status: next } : row)),
+    );
+    const res = await authorizedFetch("/api/admin/orders/fulfilment", {
+      method: "PATCH",
+      body: JSON.stringify({ order_ref: order.order_ref, status: next }),
+    }).catch(() => null);
+    if (!res?.ok) {
+      setData((rows) =>
+        rows.map((row) => (row.order_ref === order.order_ref ? { ...row, fulfilment_status: previous } : row)),
+      );
+      setError(t("orders_fulfilment_failed"));
+    }
+  };
+
   const handleStatusChange = (status: string) => {
     setStatus(status);
     setPage(0);
@@ -1031,6 +1060,20 @@ export default function OrdersPage() {
                         </div>
                         <div className={lists.orderSub}>
                           <span className={lists.orderSubMuted}>{order.product_code}</span>
+                          {order.fulfilment_status ? (
+                            <select
+                              value={order.fulfilment_status}
+                              onChange={(e) => void setFulfilment(order, e.target.value as FulfilmentStatus)}
+                              aria-label={t("orders_fulfilment_label")}
+                              className={`${controls.select} ${controls.selectNarrow}`}
+                            >
+                              {FULFILMENT_STATUSES.map((step) => (
+                                <option key={step} value={step}>
+                                  {fulfilmentLabel[step]}
+                                </option>
+                              ))}
+                            </select>
+                          ) : null}
                           {customerLabel && (
                             <>
                               <span className={lists.orderSubMuted}>·</span>

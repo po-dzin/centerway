@@ -208,5 +208,14 @@
     "body": {
       "order_ref": "smoke-order"
     }
+  },
+  {
+    "kind": "mutate",
+    "method": "PATCH",
+    "path": "/api/admin/orders/fulfilment",
+    "body": {
+      "order_ref": "smoke-order",
+      "status": "done"
+    }
   }
 ]

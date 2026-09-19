@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   let query = db
     .from("orders")
     .select(
-      `id, order_ref, product_code, amount, currency, status, customer_id, created_at,
+      `id, order_ref, product_code, amount, currency, status, fulfilment_status, customer_id, created_at,
        customers(id, email, phone, display_name)`,
       { count: "exact" },
     )
