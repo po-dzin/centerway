@@ -17,7 +17,11 @@ const routeContracts = readJson("data/generator/route_family_contracts.json");
 const screens = readJson("data/generator/screen_manifests.json");
 const blocks = readJson("data/generator/block_manifests.json");
 const semanticBlocks = readJson("data/generator/semantic_block_layer.json");
-const platformDetoxAliasPage = path.join(root, "src", "app", "(platform)", "programs", "detox", "page.tsx");
+/* /programs/detox stopped being a page on 2026-09-20: old program addresses are
+   rows in `experience_aliases`, resolved by the course route. The invariant now
+   reads the two halves of that — the row and the resolver. */
+const registryMigration = path.join(root, "supabase", "migrations", "20260919000000_experiences_registry.sql");
+const programRoutePage = path.join(root, "src", "app", "(platform)", "programs", "[slug]", "page.tsx");
 const publicDetoxAliasPage = path.join(root, "src", "app", "(platform)", "detox", "page.tsx");
 // /herbs stopped being a redirect alias on 2026-08-17 (docs/design-system.md,
 // "The imagery pipeline" section footnote) — it is a funnel entry now, served
@@ -143,9 +147,13 @@ for (const screen of detoxScreens) {
   }
 }
 
-const platformDetoxAliasSource = readInvariantSource(platformDetoxAliasPage, "/programs/detox");
-if (platformDetoxAliasSource !== null && !platformDetoxAliasSource.includes('permanentRedirect("/programs/way21")')) {
-  fail("/programs/detox invariant failed: alias route must permanently redirect to /programs/way21");
+const registrySource = readInvariantSource(registryMigration, "/programs/detox");
+if (registrySource !== null && !/\('detox',\s*'way21',\s*'slug'\)/.test(registrySource)) {
+  fail("/programs/detox invariant failed: experience_aliases must map detox to way21");
+}
+const programRouteSource = readInvariantSource(programRoutePage, "/programs/detox");
+if (programRouteSource !== null && !/permanentRedirect\(moved\)/.test(programRouteSource)) {
+  fail("/programs/detox invariant failed: the course route must permanently redirect an aliased address");
 }
 
 const publicDetoxAliasSource = readInvariantSource(publicDetoxAliasPage, "/detox");
