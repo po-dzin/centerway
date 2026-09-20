@@ -53,7 +53,7 @@ export default async function LearnCoursePage({
          back to the shelf rather than the mark — see `PlatformBackOrgan`. The
          wide screen keeps the full path in the workspace bar, where a
          breadcrumb has room to be a breadcrumb. */
-      back={{ href: LEARNING_SHELF_HREF, label: "До моїх матеріалів" }}
+      back={{ href: LEARNING_SHELF_HREF, label: "До моїх матеріалів", text: "Бібліотека" }}
       workspaceContent={<CourseTopbarTrail courseTitle={liveCourse.title} />}
     >
       {view}

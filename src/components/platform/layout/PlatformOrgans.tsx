@@ -145,10 +145,13 @@ export function PlatformMarkOrgan({ onNavigate }: { onNavigate?: () => void }) {
  * worked this way since 2026-08-29 (`ReaderChrome`); this is that arrow, in the
  * shared island, so the course map and the editor speak it too.
  *
- * NO TITLE ON IT, and the reader's note says why: any course name longer than
- * half a phone's width came back as a fragment with an ellipsis, and that
- * fragment was then the widest object on the screen. The destination is the
- * `aria-label`; the page it returns to writes its own name in full.
+ * A WORD, NEVER A TITLE (2026-09-19). A bare arrow was the only way back on a
+ * phone, and it did not say where to. `text` puts a short word beside it —
+ * the LEVEL it returns to («Матеріали», «До курсу», «Бібліотека»), never the
+ * parent's title: any course name longer than half a phone's width came back
+ * as a fragment with an ellipsis, and that fragment was then the widest object
+ * on the screen (the reader's note). The full destination stays the
+ * `aria-label`. Without `text` the island is the round arrow it always was.
  *
  * A CALLBACK OR AN HREF. The workshop must be able to ASK before it leaves — an
  * unsaved paragraph is not something a route change gets to discard quietly —
@@ -158,23 +161,34 @@ export function PlatformBackOrgan({
   href,
   onNavigate,
   label,
+  text,
 }: {
   href?: string;
   onNavigate?: () => void;
   label: string;
+  /** A short visible word for the level it returns to — never a title. */
+  text?: string;
 }) {
-  const glyph = <Icon name="arrow-left" size={18} />;
+  const glyph = text ? (
+    <>
+      <Icon name="arrow-left" size={18} />
+      <span className={styles.organText}>{text}</span>
+    </>
+  ) : (
+    <Icon name="arrow-left" size={18} />
+  );
+  const className = text ? `${styles.organ} ${styles.organLabelled}` : styles.organ;
 
   if (onNavigate) {
     return (
-      <button className={styles.organ} type="button" onClick={onNavigate} aria-label={label} title={label}>
+      <button className={className} type="button" onClick={onNavigate} aria-label={label} title={label}>
         {glyph}
       </button>
     );
   }
 
   return (
-    <Link className={styles.organ} href={href ?? "/"} aria-label={label} title={label}>
+    <Link className={className} href={href ?? "/"} aria-label={label} title={label}>
       {glyph}
     </Link>
   );

@@ -34,6 +34,49 @@ export type BuilderCourseSummary = {
       Empty on a draft that has not chosen yet: `categories` only becomes
       required on the way to publication (see readiness.ts). */
   categories: CourseCategory[];
+  /** Effective review state — the pending revision's, when one is waiting. */
+  reviewStatus: "draft" | "in_review" | "changes_requested" | "approved";
+  /** What the reviewer asked for, when they asked for changes. */
+  reviewNote: string | null;
+  /** Catalogue visibility. Read-only here: it is governed in admin. */
+  visibility: "hidden" | "unlisted" | "listed";
+  hasPendingRevision: boolean;
+  /** When the version currently under review was sent. */
+  submittedAt: string | null;
+  /** When the live release was approved. */
+  approvedAt: string | null;
+  /** Raw review columns, for `courseStateKeys`. */
+  liveReviewStatus: string | null;
+  pendingReviewStatus: string | null;
+};
+
+/** How many people are in one course. Counts only — never an identity. */
+export type BuilderCourseAudience = {
+  learners: number;
+  lapsed: number;
+  joinedRecently: number;
+  activeRecently: number;
+  notStarted: number;
+  finished: number;
+  completionsRecently: number;
+  /** 0..1, or null when there is nobody to average or nothing to complete. */
+  progressShare: number | null;
+};
+
+/** One Kyiv day and how many distinct people opened a lesson in it. */
+export type BuilderAudienceDay = { date: string; learners: number };
+
+/** One line of the append-only course journal, named by its course. */
+export type BuilderActivityEntry = {
+  id: string;
+  slug: string;
+  courseTitle: string;
+  revisionNumber: number;
+  kind: CourseRevisionSummary["kind"];
+  label: string | null;
+  /** The person behind the entry; null for a system actor or a vanished account. */
+  actor: string | null;
+  createdAt: string;
 };
 
 export type BuilderCourseDto = {
@@ -110,6 +153,18 @@ export function listCourses(): Promise<
   BuilderResult<{ courses: BuilderCourseSummary[]; isAdmin: boolean; canCreate: boolean }>
 > {
   return request("/api/lms/authoring/courses");
+}
+
+/** Audience size per course slug — counts only; this route returns no people. */
+export function listAuthoringAudience(): Promise<
+  BuilderResult<{ audience: Record<string, BuilderCourseAudience>; days: BuilderAudienceDay[] }>
+> {
+  return request("/api/lms/authoring/audience");
+}
+
+/** The author's own change journal, newest first, across all their courses. */
+export function listAuthoringActivity(): Promise<BuilderResult<{ activity: BuilderActivityEntry[] }>> {
+  return request("/api/lms/authoring/activity");
 }
 
 export function createCourse(): Promise<BuilderResult<{ slug: string }>> {

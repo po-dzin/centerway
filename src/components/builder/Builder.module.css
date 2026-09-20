@@ -714,6 +714,13 @@
     gap: 0;
   }
 
+  .aside[data-compact] .courseRailBack {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 0;
+  }
+
+  .aside[data-compact] .courseRailBack > .inkLabel,
   .aside[data-compact] .courseRailLink > .inkLabel,
   .aside[data-compact] .courseRailStatusLine {
     display: none;
@@ -2246,7 +2253,7 @@
   /* The card system's field (docs/card-system-2026-09-13.md): the cover lies
      `--ds-card-inset` from every edge, the body indents past it. */
   padding: var(--ds-card-inset);
-  border-radius: var(--cw-radius-lg);
+  border-radius: var(--cw-card-radius);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-soft);
 }
@@ -2322,12 +2329,11 @@
      paint pulls in from the edge and takes a shallower, fixed radius instead,
      the way the card's own corner is a small fraction of the card's size
      rather than a fraction of a control's. The hit area is untouched: it is
-     still the whole `.menuTrigger` box, unpainted margin included. */
+     still the whole `.menuTrigger` box, unpainted margin included.
+     The corner is the radius scale's `inset` step, a detail inside something
+     else — the nearest named step to the 8px literal it was first written
+     with, which the geometry law does not allow. */
   inset: 0.3rem;
-  /* `--cw-radius-inset` (6px) and not the 8px literal this shipped with: the
-     geometry law has one step for exactly this case — a paint set inside a
-     control — and an unnamed radius is how a scale becomes eleven numbers.
-     Two pixels shallower, same reading. */
   border-radius: var(--cw-radius-inset);
   background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent);
   pointer-events: none;
@@ -2704,6 +2710,28 @@
   margin: 0;
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-body-sm-size);
+}
+
+/* FIXED SLOTS ON THE SHELF CARD (2026-09-17), the admin row's rule: two title
+   lines held whether the name needs them or not, and each meta fact on one line
+   with an ellipsis, so every card in a row prints its counts and its readiness
+   at the same height. */
+.courseCardBody > .courseTitle {
+  display: -webkit-box;
+  overflow: hidden;
+  height: calc(2 * 1.3rem * 1.25);
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.courseCardBody > .courseMeta {
+  display: block;
+  overflow: hidden;
+  height: calc(var(--ds-type-body-sm-size) * 1.5);
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* One quiet summary replaces two full-width release panels. It answers the
@@ -5980,10 +6008,40 @@
   flex-direction: column;
 }
 
+/* The rail's first row: back to the shelf. Same grid as a section row, so its
+   arrow stands in the icon column and its word on the labels' edge; the nav
+   below keeps a full step of air so «назад» does not read as a fifth section. */
+.courseRailBack {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--cw-space-sm);
+  min-height: var(--ds-button-min-height);
+  margin-block-start: var(--cw-space-md);
+  color: var(--cw-platform-muted);
+  text-decoration: none;
+}
+
+.courseRailBack:focus-visible {
+  color: var(--cw-platform-text);
+}
+
+@media (hover: hover) {
+  .courseRailBack:hover {
+    color: var(--cw-platform-text);
+  }
+}
+
 .courseRailNav {
   display: grid;
   gap: var(--cw-space-md);
   padding-block-start: var(--cw-space-2xl);
+}
+
+/* Under the back row the nav keeps one step of air, not the rail's full top
+   margin — the workshop rail, which has no back row, keeps that. */
+.courseRailBack + .courseRailNav {
+  padding-block-start: var(--cw-space-xl);
 }
 
 .courseRailLink {
@@ -5999,6 +6057,21 @@
 
 .courseRailLink > .inkLabel {
   padding-block: var(--cw-space-2xs);
+}
+
+/* A LABELLED ROW TAKES THE STROKE ONLY. The ring is the mark of an icon-only
+   choice (`docs/design-system.md`, the ink table), so it shows only in the
+   compact desktop rail, where the label is hidden and the icon is the row. */
+@media (max-width: 900px) {
+  .courseRailIcon :global(.cw-ink-icon-mark) {
+    display: none;
+  }
+}
+
+@media (min-width: 901px) {
+  .aside:not([data-compact]) .courseRailIcon :global(.cw-ink-icon-mark) {
+    display: none;
+  }
 }
 
 .courseRailIcon {
@@ -6661,4 +6734,426 @@
   gap: var(--cw-space-md);
   padding-inline-start: var(--cw-space-md);
   min-width: 0;
+}
+
+/* ── The author's overview (/build) ───────────────────
+
+   A DASHBOARD, READ TOP TO BOTTOM (2026-09-17). The first version was five
+   panels of sentences, and on real data it read as a wall: every course name
+   underlined, every fact a clause. It is now four kinds of object, each the
+   right shape for its data:
+
+   - tiles for the four numbers an author checks first, each with the comparison
+     that makes the number mean something («із 12», «+3 за 30 днів»);
+   - one bar chart for the one thing that changes over time;
+   - a table for the per-course facts, because «which course» is a row and
+     «which fact» is a column;
+   - a short ruled list for what needs the author, and a table for the journal.
+
+   The panels stay `.panel`: level-0 objects on the page's ground. Tiles are
+   panels too, not a new material. Numbers use the platform's data face.
+
+   MOBILE-FIRST AND LAST IN THE FILE. Everything here is the phone layout; the
+   wider rules come after. A rule written above a media query loses to any later
+   top-level rule of the same specificity, which is how earlier builder
+   overrides came to be silently discarded. */
+
+.overviewSections {
+  display: grid;
+  gap: var(--cw-space-md);
+  margin-block-start: var(--cw-space-md);
+  min-width: 0;
+}
+
+.overviewSectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs) var(--cw-space-md);
+}
+
+.overviewSectionLead {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+}
+
+/* ── Tiles ── */
+
+.overviewTiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cw-space-sm);
+  margin: 0;
+}
+
+.overviewTile {
+  composes: panel;
+  align-content: start;
+  gap: var(--cw-space-2xs);
+  /* Label, value, note share rows across the strip, so a label that wraps to
+     two lines does not push its number below its neighbours'. */
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+}
+
+.overviewTileLabel {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.35;
+}
+
+.overviewTileValue {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-display-size);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.overviewTileNote {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: 1.4;
+}
+
+/* ── Activity chart ──
+
+   One series, so no legend: the heading names it. Bars grow from a shared
+   baseline with rounded data ends and a surface gap between them; the grid is
+   one recessive rule at the maximum. The readout above the plot is the
+   tooltip — it names the day under the pointer and otherwise the latest day,
+   so the value never depends on hovering, and a visually hidden table carries
+   every day for a screen reader. */
+
+.overviewChartReadout {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-variant-numeric: tabular-nums;
+  min-height: 1.5em;
+}
+
+.overviewChart {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--cw-space-xs);
+  align-items: stretch;
+}
+
+.overviewChartPlot {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: 9rem;
+  border-block-end: 1px solid var(--builder-rule);
+}
+
+.overviewChartColumn {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  cursor: default;
+}
+
+.overviewChartBar {
+  width: 100%;
+  min-height: 2px;
+  /* The surface gap between neighbours, drawn by the bar's own transparent
+     sides rather than a gap in the row — so the plot stays on the spacing
+     scale and every column keeps the same width. */
+  border-inline: 1px solid transparent;
+  background-clip: padding-box;
+  border-radius: var(--cw-radius-inset) var(--cw-radius-inset) 0 0;
+  background-color: var(--cw-platform-accent-pressed);
+  opacity: 0.85;
+  transition: opacity var(--cw-motion-state) var(--cw-ease-state);
+}
+
+.overviewChartBar[data-empty] {
+  background-color: var(--builder-rule);
+  opacity: 1;
+}
+
+.overviewChartColumn[data-current] .overviewChartBar:not([data-empty]) {
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .overviewChartPlot:hover .overviewChartColumn:not(:hover) .overviewChartBar:not([data-empty]) {
+    opacity: 0.45;
+  }
+}
+
+.overviewChartScale {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.overviewChartAxis {
+  grid-column: 1;
+  display: flex;
+  justify-content: space-between;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Tables ── */
+
+/* The one element allowed to be wider than a phone, in its own scroller. */
+.overviewTableScroll {
+  overflow-x: auto;
+  min-width: 0;
+  margin-inline: calc(-1 * var(--cw-space-xs));
+}
+
+.overviewTable {
+  width: 100%;
+  min-width: 36rem;
+  border-collapse: collapse;
+  /* Fixed: the name column takes what the numbers leave, and a long title
+     truncates inside it instead of widening the table under its neighbours. */
+  table-layout: fixed;
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.overviewTable[data-table="courses"] th[data-numeric] {
+  width: 4.75rem;
+}
+
+.overviewTable[data-table="journal"] th:first-child,
+.overviewTable[data-table="journal"] th:last-child {
+  width: 9rem;
+}
+
+.overviewTable th,
+.overviewTable td {
+  padding: var(--cw-space-xs);
+  text-align: start;
+  vertical-align: top;
+}
+
+.overviewTable th {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* THE RULE IS BETWEEN THE ROWS, fading at both ends — a separator, not the
+   edge of a cell. `border-image` does not paint on a collapsed table's rows,
+   and on each cell it would fade five times across one line, so the row's own
+   background carries the same gradient `--cw-rule-fade-x` draws. None above
+   the header, none under the last row. */
+.overviewTable tbody tr {
+  background: linear-gradient(90deg, transparent 0, var(--builder-rule) 8%, var(--builder-rule) 92%, transparent 100%)
+    top / 100% 1px no-repeat;
+}
+
+.overviewTable [data-numeric] {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.overviewTable td[data-numeric] {
+  font-family: var(--cw-font-data);
+  color: var(--cw-platform-text);
+}
+
+.overviewTable td[data-muted] {
+  color: var(--cw-platform-muted);
+}
+
+.overviewTableWhen {
+  white-space: nowrap;
+  color: var(--cw-platform-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.overviewCourseCell {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  justify-items: start;
+  min-width: 0;
+}
+
+/* ── Lines (what needs the author) ── */
+
+.overviewList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0;
+}
+
+.overviewItem {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  justify-items: start;
+  padding-block: var(--cw-space-xs);
+  min-height: var(--ds-touch-target-min);
+  align-content: center;
+  --cw-rule-ink: var(--builder-rule);
+  border-block-start: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
+}
+
+.overviewItem:first-child {
+  border-block-start: none;
+  border-image: none;
+}
+
+.overviewName {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  color: inherit;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.overviewName:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset-tight);
+  border-radius: var(--cw-radius-sm);
+}
+
+.overviewItemState {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--cw-space-2xs);
+}
+
+.overviewItemLine {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.overviewItemNote {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* `base` is named explicitly beside `text`: `composes` does not chain, and a
+   role that only names `text` ships without the geometry and the focus ring
+   `base` owns. See docs/design-system.md, "`composes` does not chain". */
+.overviewTextAction {
+  composes: base from "../platform/PlatformButtons.module.css";
+  composes: text from "../platform/PlatformButtons.module.css";
+  color: var(--cw-platform-text);
+}
+
+/* ── Phone: each row becomes a short block ──
+
+   Six columns do not fit 390px, and a sideways-scrolling table hides the one
+   number an author came for. In the phone band the header row is set aside
+   (kept for screen readers), the name takes the whole line, and each number
+   prints its column's name beside it. A dash has nothing to say there, so it
+   is dropped. */
+@media (max-width: 560px) {
+  .overviewTableScroll {
+    overflow: visible;
+    margin-inline: 0;
+  }
+
+  .overviewTable,
+  .overviewTable tbody {
+    display: block;
+    min-width: 0;
+  }
+
+  .overviewTable thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .overviewTable tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--cw-space-2xs) var(--cw-space-md);
+    padding-block: var(--cw-space-sm);
+  }
+
+  .overviewTable tbody tr:first-child {
+    background: none;
+  }
+
+  .overviewTable td {
+    display: block;
+    padding: 0;
+  }
+
+  .overviewTable td[data-cell="course"],
+  .overviewTable td[data-cell="event"] {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+
+  .overviewTable td[data-numeric] {
+    text-align: start;
+  }
+
+  .overviewTable td[data-numeric][data-muted] {
+    display: none;
+  }
+
+  .overviewTable td[data-label]::before {
+    content: attr(data-label) " ";
+    color: var(--cw-platform-muted);
+    font-family: var(--ds-font-family-base);
+    font-size: var(--ds-type-label-size);
+  }
+
+  .overviewTable td[data-cell="when"],
+  .overviewTable td[data-cell="who"] {
+    order: 1;
+    font-size: var(--ds-type-label-size);
+  }
+}
+
+@media (min-width: 901px) {
+  .overviewTiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .overviewTableScroll {
+    margin-inline: 0;
+  }
+}
+
+/* ── ONE COLUMN, NOTHING TO ALIGN WITH (2026-09-17) ──
+
+   Same rule as the shelf card's: the fixed slots line a ROW up, and below
+   761px the workshop grid is a single column, so a held second title line is
+   an empty gap rather than an alignment. */
+@media (max-width: 760px) {
+  .courseCardBody > .courseTitle,
+  .courseCardBody > .courseMeta {
+    height: auto;
+  }
 }

@@ -238,8 +238,12 @@
    translucent ink plate over a scrim. */
 .programTileCategories {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: var(--cw-space-2xs);
+  /* One chip row, whether or not there are chips — see the slot note on
+     `.programTileBody`. A third chip that does not fit is clipped, not wrapped. */
+  height: 1.75rem;
+  overflow: hidden;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -617,7 +621,17 @@
 
 /* The body starts under the frame and indents past its edge by
    `--ds-card-body-inline`, so the text sits a full 1rem inside the card. */
+/* FIXED SLOTS (2026-09-17). The same rule the admin row keeps: each field is a
+   slot whose height is set here from the type tokens, never from the copy, and
+   a missing field leaves its slot empty. Cards in a row therefore print their
+   eyebrow, name, chips, description, price and button on the same lines —
+   before this, one card's subtitle pushed its chips and description a line
+   below the neighbours'. */
 .programTileBody {
+  --program-slot-title: calc(var(--ds-offer-card-title-size) * var(--ds-offer-card-title-line-height));
+  --program-slot-sm: calc(var(--ds-type-body-sm-size) * var(--ds-type-body-sm-line-height));
+  --program-slot-label: calc(var(--ds-type-label-size) * var(--ds-type-label-line-height));
+  --program-slot-body: calc(1em * var(--ds-type-body-line-height));
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -641,6 +655,32 @@
   display: flex;
   flex-direction: column;
   gap: var(--cw-space-2xs);
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+
+/* One line: the kind/duration, and the author's pretitle after it when there
+   is one, cut with an ellipsis rather than given a second line of its own. */
+.programTileEyebrow {
+  flex-direction: row;
+  align-items: baseline;
+  gap: var(--cw-space-xs);
+  height: max(var(--program-slot-label), var(--program-slot-sm));
+  white-space: nowrap;
+}
+
+.programTileEyebrow > * {
+  min-width: 0;
+}
+
+.programTileEyebrow > .label,
+.programTileHeadline > * {
+  flex-shrink: 0;
+}
+
+/* Two name lines and one subtitle line, always. */
+.programTileHeadline {
+  height: calc(2 * var(--program-slot-title) + var(--cw-space-2xs) + var(--program-slot-sm));
 }
 
 /* TWO LINES FOR THE NAME. A course out of the builder carries whatever its
@@ -674,6 +714,19 @@
   line-height: var(--ds-type-body-line-height);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+/* One line each. Same specificity as the two-line clamp above, so it has to
+   come after it. */
+.programTileBody p.programTilePretitle,
+.programTileBody p.programTilePosttitle {
+  -webkit-line-clamp: 1;
+}
+
+/* Two description lines, held even when the copy is one line long. */
+.programTileBody p.programTileDescription {
+  flex: 0 0 auto;
+  height: calc(2 * var(--program-slot-body));
 }
 
 /* THE ONE BUTTON — «Деталі». The contract's `secondary` at full card width,
@@ -748,7 +801,9 @@
 .programTilePrice {
   display: flex;
   align-items: baseline;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex: 0 0 auto;
+  white-space: nowrap;
   gap: var(--cw-space-2xs) var(--cw-space-xs);
   color: var(--cw-platform-text);
   font-family: var(--cw-font-data);
@@ -908,6 +963,15 @@
 
   .programTileBody h3 {
     font-size: var(--ds-type-body-size);
+  }
+
+  /* The narrow card drops the subtitle, so its headline is two name lines. */
+  .programTileBody {
+    --program-slot-title: calc(var(--ds-type-body-size) * var(--ds-offer-card-title-line-height));
+  }
+
+  .programTileHeadline {
+    height: calc(2 * var(--program-slot-title));
   }
 
   .programTilePrice strong {
