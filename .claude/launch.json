@@ -1,6 +1,310 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "wt2", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev", "--", "--port", "8123"], "port": 8123 }
+    {
+      "name": "dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 8000,
+      "autoPort": false,
+      "url": "http://localhost:8000/"
+    },
+    {
+      "name": "dev-8030",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "8030"
+      ],
+      "port": 8030,
+      "autoPort": false,
+      "url": "http://localhost:8030/"
+    },
+    {
+      "name": "proto",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8932",
+        "--directory",
+        "docs/design-system/prototypes"
+      ],
+      "port": 8932,
+      "autoPort": false,
+      "url": "http://localhost:8932"
+    },
+    {
+      "name": "dev-hero-worktree",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd .claude/worktrees/centerway-ds-audit-hero-500fad && npx next dev -p 8041"
+      ],
+      "port": 8041,
+      "autoPort": false,
+      "url": "http://localhost:8041/"
+    },
+    {
+      "name": "dev-8041",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "8041"
+      ],
+      "port": 8041,
+      "autoPort": false,
+      "url": "http://localhost:8041/"
+    },
+    {
+      "name": "dev-8060",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "8060"
+      ],
+      "port": 8060,
+      "autoPort": false,
+      "url": "http://localhost:8060/"
+    },
+    {
+      "name": "prod-8061",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "start",
+        "-p",
+        "8061"
+      ],
+      "port": 8061,
+      "autoPort": false,
+      "url": "http://localhost:8061/"
+    },
+    {
+      "name": "hero-worktree",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd .claude/worktrees/dark-theme-cabinet-hero && npx next dev -p 8070"
+      ],
+      "port": 8070,
+      "autoPort": false,
+      "url": "http://localhost:8070/"
+    },
+    {
+      "name": "dev-dark-worktree-8070",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd .claude/worktrees/dark-theme-cabinet-hero && npx next dev -p 8070"
+      ],
+      "port": 8070,
+      "autoPort": false,
+      "url": "http://localhost:8070/"
+    },
+    {
+      "name": "room-view-8091",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "8091"
+      ],
+      "port": 8091,
+      "autoPort": false,
+      "url": "http://localhost:8091/"
+    },
+    {
+      "name": "dev-8110",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "8110"
+      ],
+      "port": 8110,
+      "autoPort": false,
+      "url": "http://localhost:8110/"
+    },
+    {
+      "name": "reader-8123",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd .claude/worktrees/reader-top && npx next dev -p 8123"
+      ],
+      "port": 8123,
+      "autoPort": false,
+      "url": "http://localhost:8123/"
+    },
+    {
+      "name": "hero-atmosphere-8140",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/G/Documents/Projects/cw-hero-atmosphere && npx next dev -p 8140"
+      ],
+      "port": 8140,
+      "autoPort": false,
+      "url": "http://localhost:8140/"
+    },
+    {
+      "name": "nav-8150",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/G/Documents/Projects/cw-nav && npx next dev -p 8150"
+      ],
+      "port": 8150,
+      "autoPort": false,
+      "url": "http://localhost:8150/"
+    },
+    {
+      "name": "auth-menu-8160",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/G/Documents/Projects/cw-auth-menu && npx next dev -p 8160"
+      ],
+      "port": 8160,
+      "autoPort": false,
+      "url": "http://localhost:8160/"
+    },
+    {
+      "name": "sweep-8170",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/G/Documents/Projects/cw-sweep && npx next dev -p 8170"
+      ],
+      "port": 8170,
+      "autoPort": false,
+      "url": "http://localhost:8170/"
+    },
+    {
+      "name": "menu-8180",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "/Users/G/Documents/Projects/cw-menu",
+        "-p",
+        "8180"
+      ],
+      "port": 8180,
+      "autoPort": false,
+      "url": "http://localhost:8180/"
+    },
+    {
+      "name": "focus-8190",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "/Users/G/Documents/Projects/cw-focus",
+        "-p",
+        "8190"
+      ],
+      "port": 8190,
+      "autoPort": false,
+      "url": "http://localhost:8190/"
+    },
+    {
+      "name": "ink-8210",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "/Users/G/Documents/Projects/cw-ink",
+        "-p",
+        "8210"
+      ],
+      "port": 8210,
+      "autoPort": false,
+      "url": "http://localhost:8210/"
+    },
+    {
+      "name": "mk-8220",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "/Users/G/Documents/Projects/cw-mark",
+        "-p",
+        "8220"
+      ],
+      "port": 8220,
+      "autoPort": false,
+      "url": "http://localhost:8220/"
+    },
+    {
+      "name": "adm-8230",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "/Users/G/Documents/Projects/cw-admin",
+        "-p",
+        "8230"
+      ],
+      "port": 8230,
+      "autoPort": false,
+      "url": "http://localhost:8230/"
+    },
+    {
+      "name": "mobile-sweep-8260",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/G/Documents/Projects/cw-mobile-sweep && npx next dev -p 8260"
+      ],
+      "port": 8260,
+      "autoPort": false,
+      "url": "http://localhost:8260/"
+    },
+    {
+      "name": "card-system-8250",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/G/Documents/Projects/cw-card-system && npx next dev -p 8250"
+      ],
+      "port": 8250,
+      "autoPort": false,
+      "url": "http://localhost:8250/"
+    },
+    {
+      "name": "broadcasts-8270",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/G/Documents/Projects/cw-broadcasts && npx next dev -p 8270"
+      ],
+      "port": 8270,
+      "autoPort": false,
+      "url": "http://localhost:8270/"
+    },
+    {
+      "name": "foundation-8280",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/G/Documents/Projects/cw-wave0 && SF_GATE_BYPASS=1 npx next dev -p 8280"
+      ],
+      "port": 8280,
+      "autoPort": false,
+      "url": "http://localhost:8280/"
+    }
   ]
 }

@@ -76,6 +76,16 @@ describe("shared surface boundaries", () => {
     for (const file of authorFoldFiles()) expect(read(file), file).not.toContain('data-cw-edge="none"');
   });
 
+  it("uses the DS rounded-button tile for offer-category icons", () => {
+    const offer = read("src/components/platform/PlatformBlocksOffer.module.css");
+    const categoryTile = block(offer, ".programTileCategoryDisc");
+
+    expect(categoryTile).toContain("width: var(--ds-card-category-disc);");
+    expect(categoryTile).toContain("height: var(--ds-card-category-disc);");
+    expect(categoryTile).toContain("border-radius: var(--cw-radius-btn);");
+    expect(categoryTile).not.toContain("border-radius: 50%");
+  });
+
   it("distinguishes quiet command boundaries from the strong checkbox state", () => {
     const buttons = read("src/components/platform/PlatformButtons.module.css");
     const filter = read("src/components/platform/cabinet/ShelfFilter.module.css");

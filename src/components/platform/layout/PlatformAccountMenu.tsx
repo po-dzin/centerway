@@ -282,14 +282,8 @@ export function PlatformAccountMenu({
     /* A hard navigation, not a router push. Sign-out invalidates data every
        shell already has in memory — the role cache, the shelf, an open course —
        and the root of the current origin is the one destination that exists on
-       all three.
-
-       NO `eslint-disable` HERE ANY MORE (2026-09-20). One sat on this line
-       naming `@next/next/no-location-assign-relative-destination`, a rule the
-       installed plugin (16.1.5) does not define — and ESLint treats a disable
-       for an unknown rule as an error, so `npm run lint` had been failing on
-       this one line since 2026-09-13. The line it silenced is deliberate and
-       is explained above; nothing warns about it today. */
+       all three. That is exactly what the lint rule steers away from, so it is
+       told so here rather than obeyed. */
     if (typeof window !== "undefined") window.location.assign("/");
   };
 

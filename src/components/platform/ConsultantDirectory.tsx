@@ -1,6 +1,6 @@
 import { AuthorCard } from "@/components/platform/AuthorCard";
 import { PlatformBlock } from "@/components/platform/PlatformBlock";
-import styles from "@/components/platform/PlatformTrustStyles";
+import { PlatformOfferCarousel } from "@/components/platform/PlatformOfferCarousel";
 import type { Author } from "@/lms-core";
 
 /**
@@ -22,14 +22,11 @@ export function ConsultantDirectory({ authors }: { authors: Author[] }) {
       title="З ким можна продовжити розмову"
       lead="Досвід, напрям і курси — у профілі кожного автора."
     >
-      <div
-        className={`${styles.guideRail} ${styles.consultantRail}`}
-        data-layout={authors.length === 1 ? "single" : undefined}
-      >
+      <PlatformOfferCarousel label="Автори для консультації">
         {authors.map((author) => (
           <AuthorCard key={author.slug} author={author} />
         ))}
-      </div>
+      </PlatformOfferCarousel>
     </PlatformBlock>
   );
 }

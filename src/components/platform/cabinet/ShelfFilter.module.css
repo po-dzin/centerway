@@ -93,6 +93,11 @@
      here split one button into two competing controls. */
   composes: secondary from "../PlatformButtons.module.css";
   composes: hug from "../PlatformButtons.module.css";
+  /* The search field beside this command owns `--ds-touch-target-min`; a
+     compact button otherwise paints at 40px on touch while the field paints at
+     48px. These two controls form one filter bar, so they share the same token
+     on every breakpoint rather than aligning by an accidental line-height. */
+  min-height: var(--ds-touch-target-min);
   color: var(--cw-platform-muted);
 }
 

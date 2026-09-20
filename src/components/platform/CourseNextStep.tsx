@@ -33,7 +33,6 @@ export function CourseNextStep({ currentSlug, courses }: { currentSlug: string; 
             categories={course.categoryLabels}
             categoryCodes={course.categories}
             pretitle={course.pretitle}
-            posttitle={course.posttitle}
             commercialMode={course.commercialMode}
             price={course.price}
             compareAtPrice={course.compareAtPrice}

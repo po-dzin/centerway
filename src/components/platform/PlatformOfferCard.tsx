@@ -34,7 +34,8 @@ import type { PlatformOfferArtwork } from "@/lib/platform/content";
  *
  * THE CARD'S WIDTH, NOT THE SCREEN'S, DECIDES ITS DENSITY. The same card is a
  * third of a desktop row, one card of a phone carousel and half of a 375px
- * catalogue; below 14rem it drops the description and prints the short label.
+ * catalogue; below 14rem it keeps one line of the description, drops
+ * secondary facts and stacks the price over the short action.
  */
 export type PlatformOfferCardProps = {
   /** The NAME, two lines. Not the name plus what it is — `offerName` cuts that. */
@@ -81,13 +82,6 @@ export type PlatformOfferCardProps = {
    * it. It answers "why me", the name answers "what is this".
    */
   pretitle?: string;
-  /**
-   * The line that used to sit below the name. Since 2026-09-20 it is the promo
-   * of a course whose author wrote no `pretitle`: the one field they had filled
-   * says the same kind of thing, and printing it where it was would leave the
-   * card with a name and nothing to sell.
-   */
-  posttitle?: string;
   commercialMode?: "fixed" | "free" | "inquiry";
   price?: string | null;
   compareAtPrice?: string | null;
@@ -126,7 +120,6 @@ export function PlatformOfferCard({
   status = "active",
   statusLabel = "Скоро",
   pretitle,
-  posttitle,
   commercialMode,
   price,
   compareAtPrice,
@@ -154,10 +147,9 @@ export function PlatformOfferCard({
      (most courses have none): then the NAME takes the promo's place and size,
      so the card still opens on its one loudest line rather than on a small
      caption over an empty slot. */
-  /* Capitalised here, not in CSS: the fallback is a `posttitle`, which authors
-     write as a continuation of the name («практикум з умовного голодування»),
-     and `::first-letter` does not reach a clamped `-webkit-box`. */
-  const rawPromo = pretitle || posttitle || undefined;
+  /* Capitalised here, not in CSS: `::first-letter` does not reach a clamped
+     `-webkit-box`. */
+  const rawPromo = pretitle;
   const promo = rawPromo ? rawPromo.charAt(0).toLocaleUpperCase("uk") + rawPromo.slice(1) : undefined;
   const badge = kindBadge && tag && !tag.startsWith(kindBadge) ? `${kindBadge} · ${tag}` : tag || kindBadge;
 
@@ -238,25 +230,27 @@ export function PlatformOfferCard({
             ))}
           </ul>
         ) : null}
-        {commercialMode ? (
-          <div className={styles.programTilePrice} data-mode={commercialMode}>
-            {compareAtPrice ? <s>{compareAtPrice}</s> : null}
-            <strong>
-              {commercialMode === "fixed" ? price : commercialMode === "free" ? "Безкоштовно" : "Ціна за запитом"}
-            </strong>
-          </div>
-        ) : null}
         {isPlanned ? (
           <span className={styles.programTileStatus}>{statusLabel}</span>
         ) : (
-          /* Not a link: the overlay above already is one, and it covers this.
-             Two labels, one shown: the card's width picks which. */
-          <span className={styles.programLink}>
-            <span className={styles.programLinkFull}>{ctaLabel}</span>
-            <span className={styles.programLinkShort} aria-hidden="true">
-              {shortCtaLabel(ctaLabel)}
+          <div className={styles.programTileFooter}>
+            {commercialMode ? (
+              <div className={styles.programTilePrice} data-mode={commercialMode}>
+                {compareAtPrice ? <s>{compareAtPrice}</s> : null}
+                <strong>
+                  {commercialMode === "fixed" ? price : commercialMode === "free" ? "Безкоштовно" : "Ціна за запитом"}
+                </strong>
+              </div>
+            ) : null}
+            {/* Not a link: the overlay above already is one, and it covers this.
+               Two labels, one shown: the card's width picks which. */}
+            <span className={styles.programLink}>
+              <span className={styles.programLinkFull}>{ctaLabel}</span>
+              <span className={styles.programLinkShort} aria-hidden="true">
+                {shortCtaLabel(ctaLabel)}
+              </span>
             </span>
-          </span>
+          </div>
         )}
       </div>
     </article>

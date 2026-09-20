@@ -210,8 +210,6 @@ export type StorefrontCard = {
    * card; this is the one line that is theirs.
    */
   pretitle?: string;
-  /** The line below the title — what kind of thing this is, in their words. */
-  posttitle?: string;
   /**
    * What the course is about, as codes from the closed list. Codes, not labels,
    * because the same card is the thing a category filter will read.
@@ -318,12 +316,8 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
         : {}),
       visual: VISUAL_BY_PALETTE[course.theme?.palette ?? ""] ?? "stone",
       lessons: course.modules.reduce((total, module) => total + module.lessons.length, 0),
-      // The cover's own three lines, carried to the card that shows them. The
-      // subtitle falls back to the dash-split for courses authored before
-      // `posttitle` existed — the same fallback `toOfferSurface` uses, read
-      // from it rather than repeated here.
+      // The author’s optional hook, carried to the card that shows it.
       ...(course.pretitle ? { pretitle: course.pretitle } : {}),
-      ...(surface.subtitle ? { posttitle: surface.subtitle } : {}),
       ...(course.categories
         ? {
             categories: course.categories,

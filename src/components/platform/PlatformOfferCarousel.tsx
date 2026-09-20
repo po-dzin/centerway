@@ -29,11 +29,13 @@ const INITIAL_EDGE_STATE: EdgeState = {
 const MAX_VISIBLE_OFFERS = 10;
 
 /**
- * One carrier for every embedded offer collection.
+ * One carrier for every embedded collection of comparable cards.
  *
  * Desktop exposes one page of three cards, tablet two and phone one readable
- * card plus the next edge. The cards stay ordinary server-rendered children;
- * this client boundary owns only viewport measurement and paging controls.
+ * card plus the next edge. Offers and author profiles deliberately share this
+ * carrier: the entity inside a card changes, the answer to "where am I in this
+ * sequence?" does not. The cards stay ordinary server-rendered children; this
+ * client boundary owns only viewport measurement and paging controls.
  */
 /*
  * THE CAROUSEL DOES NOT CARRY THE WAY OUT ANY MORE.

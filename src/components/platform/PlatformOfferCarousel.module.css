@@ -131,6 +131,16 @@
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
+  /* ROOM FOR THE CARD'S SHADOW (2026-09-20). A scroller that scrolls on X clips
+     on Y as well, so the soft shadow `--cw-mat-shadow-soft` (10px down, 28px of
+     blur — about 2.4rem below the card) was cut at the rail's edge and drew a
+     lighter rectangle behind the row. The fix is not to remove the shadow but to
+     put the room INSIDE the clip: pad by more than it reaches, pull the margin
+     back by the same amount, and the rail's box in the layout is unchanged. The
+     sides are left alone on purpose — the scroll maths reads `clientWidth`, and
+     a side gutter here would also bleed past the page gutter on a phone. */
+  padding-block: var(--cw-space-2xl);
+  margin-block: calc(var(--cw-space-2xl) * -1);
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
@@ -300,8 +310,12 @@
     display: none;
   }
 
+  /* Dots already report that more cards follow, so a cut neighbour is no
+     longer needed as an affordance. Let the current card take the whole content
+     measure and keep its title, proof and CTA as readable as a normal mobile
+     card. */
   .track {
-    grid-auto-columns: var(--ds-offer-card-rail-width);
+    grid-auto-columns: 100%;
     gap: var(--cw-space-sm);
   }
 }

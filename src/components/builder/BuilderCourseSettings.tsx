@@ -19,7 +19,6 @@ import {
   COURSE_HEADING_FONTS,
   COURSE_KINDS,
   COURSE_PALETTES,
-  COURSE_POSTTITLE_MAX,
   COURSE_PRETITLE_MAX,
   COURSE_TYPE_SCALES,
   DEFAULT_COURSE_THEME,
@@ -438,14 +437,11 @@ export function BuilderCourseSettings({
         summary={
           <>
             <strong>{course.tagline || "Рядок під назвою не додано"}</strong>
-            <span>
-              {[course.pretitle, course.posttitle].filter(Boolean).join(" · ") ||
-                "Гачок і підзаголовок не додані"}
-            </span>
+            <span>{course.pretitle || "Гачок над назвою не додано"}</span>
           </>
         }
       >
-        {/* THREE LINES AROUND ONE NAME, and the name itself is not among them:
+        {/* TWO LINES AROUND ONE NAME, and the name itself is not among them:
             it is edited at the top of this page, where it is displayed. Putting
             a second title field here would have given the course two names and
             no rule about which one wins. */}
@@ -458,17 +454,6 @@ export function BuilderCourseSettings({
             hint: `Головний рядок картки — крупно, НАД назвою: «Поверни тілу легкість». До ${COURSE_PRETITLE_MAX} символів. Рід і тривалість тут не потрібні — їх друкує бейдж.`,
           }}
           value={course.pretitle}
-          onChange={onChange}
-        />
-        <FieldInput
-          field={{
-            path: ["posttitle"],
-            label: "Підзаголовок",
-            kind: "text",
-            maxLength: COURSE_POSTTITLE_MAX,
-            hint: `Рядок ПІД назвою на сторінці курсу — що це за річ: «практикум з умовного голодування». До ${COURSE_POSTTITLE_MAX} символів. Якщо гачка над назвою немає, картка друкує його замість гачка.`,
-          }}
-          value={course.posttitle}
           onChange={onChange}
         />
         <FieldInput

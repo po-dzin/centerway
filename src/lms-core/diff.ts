@@ -37,7 +37,6 @@ const COURSE_FIELDS = [
   "summary",
   "tagline",
   "pretitle",
-  "posttitle",
   "kind",
   "categories",
   "results",

@@ -84,6 +84,8 @@
   --ds-offer-card-title-line-height: 1.2;
   --ds-offer-card-promo-size: clamp(1.3rem, 2.2vw, 1.8rem);
   --ds-offer-card-promo-line-height: 1.1;
+  --ds-offer-card-promo-weight: 500;
+  --ds-offer-card-title-weight: 400;
   --ds-focus-ring-width: 3px;
   --ds-focus-ring-offset: 3px;
   --ds-focus-ring-offset-tight: 1px;

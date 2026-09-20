@@ -68,18 +68,15 @@ export function toOfferSurface(course: Course): OfferSurface {
        a display rule, not an edit: `course.title` in the database is untouched
        and still what the page's metadata and its schema.org name print.
 
-       UNCONDITIONAL, even once `posttitle` exists — see the subtitle test
-       below ("the title is still cut for the name"). `posttitle` answers
-       WHERE THE SUBTITLE COMES FROM, not whether the h1 keeps a legacy tail:
-       a course written before the field existed still has one string with two
-       jobs in it, and an author who has since filled `posttitle` has not
-       necessarily rewritten `title` to drop what `posttitle` now says better.
+       UNCONDITIONAL: the spaced-dash tail remains a legacy subtitle, not part
+       of a compact card title. A course written before the split has one
+       string with two jobs, and the reader must still see both without the
+       card becoming a paragraph.
        A name whose dash is genuinely part of it (no course does this today —
        see courseOffer.test.ts) is a real gap in this rule, but fixing it needs
        a way to tell "trailing explanation" from "the name itself" that the
-       data does not carry yet; skipping the cut whenever `posttitle` is set
-       would silently restore the four-line hero for every course written
-       before the field did.
+       data does not carry yet; skipping the cut would silently restore the
+       four-line hero for every course written before the split.
 
        `fullTitle` NO LONGER IS the same string (2026-09-11). It was, on the
        argument that a builder course carries one name and inventing a longer
@@ -94,19 +91,15 @@ export function toOfferSurface(course: Course): OfferSurface {
        sentence the system silently removed from their page. */
     title: offerName(course.title),
     fullTitle: course.title,
-    /* Where the tail went, and the field that replaced the guess. The dash-split
-       of the title is what this had to infer before `posttitle` existed; the
-       author's own line wins, and the parse stays for courses written that way.
-       The hero drops this when its own title already ends in it — see
-       ProgramDetailPage — so nothing says the tail twice. */
+    /* The legacy title tail remains a subtitle on the page. The hero drops it
+       when its own title already ends in it — see ProgramDetailPage — so
+       nothing says the tail twice. */
     /* The author's line above the name, carried as written. No fallback and no
        parse: unlike `subtitle`, this was never inferred from anything — an
        author either wrote a надзаголовок or did not, and a page that has none
        prints none. */
     ...(course.pretitle ? { pretitle: course.pretitle } : {}),
-    ...(course.posttitle || offerSubtitle(course.title)
-      ? { subtitle: course.posttitle ?? offerSubtitle(course.title) }
-      : {}),
+    ...(offerSubtitle(course.title) ? { subtitle: offerSubtitle(course.title) } : {}),
     /* THE CATEGORY, never the tagline. This used to read `course.tagline ??
        category`, which conflated two fields with different jobs: `tag` answers
        "what kind of thing is this" and is set in a small uppercase pill beside

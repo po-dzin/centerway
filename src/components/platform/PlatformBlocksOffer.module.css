@@ -36,11 +36,10 @@
 }
 
 @media (max-width: 900px) {
-  /* THE CATALOGUE KEEPS TWO COLUMNS ON A PHONE (2026-09-13). It was one
-     vertical line of text-heavy tiles — six offers, six screens. With the
-     photograph inset and the card choosing its own density below 14rem
-     (`@container` at the end of this file), a 165px column holds the frame,
-     the name, the price and «Деталі», which is what a reader compares on. */
+  /* Catalogue comparisons stay two-up down to a phone. At that width the card
+     itself changes density through its container query below — one benefit line
+     and a vertical price/CTA footer — rather than changing the catalogue's
+     navigation shape. */
   .aggregateRail {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -80,6 +79,19 @@
 
   .programShowcase > * {
     scroll-snap-align: start;
+  }
+}
+
+/* A phone catalogue is one full-width reading object at a time. It keeps the
+   picture field, two-line description and category evidence legible without
+   pretending the next card is part of the current decision. The collection
+   gap is the named small step: shadows have air, while the cards still read
+   as one catalogue. At this full measure, price and CTA share the footer's
+   baseline again; the vertical footer is reserved for genuinely narrow cards. */
+@media (max-width: 560px) {
+  .aggregateRail {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--cw-space-sm);
   }
 }
 
@@ -150,6 +162,7 @@
    object, and a card on a phone stops carrying empty paper under short copy. */
 .programTile {
   composes: compact from "./PlatformButtons.module.css";
+  composes: cw-object from global;
   /* Queries below ask the CARD how wide it is, not the screen. */
   container-type: inline-size;
   position: relative;
@@ -162,16 +175,14 @@
   color: var(--cw-platform-text);
 }
 
-/* NO SHADOW ON THE OFFER CARD (2026-09-20). The rail clips its own overflow
-   (`overflow-y: hidden` is what makes a carousel scroll), so a soft shadow that
-   reaches past the card was cut to the rail's rectangle — and the rectangle
-   showed: a lighter box behind the row, visible between the cards and at the
-   corners. The card is told from the page by its own tone, not by lift. The
-   attribute is in the selector on purpose: the material's own `box-shadow` is
-   (0,1,0) and so is a bare class, and which wins would then be a question of
-   file order. */
+/* THE SHADOW IS BACK, AND THE RAIL GIVES IT ROOM (2026-09-20). It was removed
+   because the carousel clipped it into a rectangle, and without it the cards
+   melted into the page. The shadow was never the problem: the rail's scroller
+   cut it at its own edge. `PlatformOfferCarousel.module.css` now pads the
+   scroller vertically by more than the shadow reaches and pulls the margin back
+   by the same amount, so the shadow has space and the layout does not move. */
 .programTile[data-cw-material] {
-  box-shadow: none;
+  box-shadow: var(--cw-object-shadow);
 }
 
 /* THE FRAME IN THE FIELD. One horizontal cover on every surface (Course Cover
@@ -212,8 +223,8 @@
   letter-spacing: 0.02em;
 }
 
-/* The description is the `p` rule below; this name only marks it for the
-   narrow card, which hides it. */
+/* The description is the `p` rule below; this name marks its compact one-line
+   version on a narrow card. */
 .programTileDescription {
   margin: 0;
 }
@@ -258,16 +269,16 @@
   backdrop-filter: blur(6px);
 }
 
-/* WHAT THE OFFER IS ABOUT — a glyph in a disc with its word under it, three
-   equal cells (2026-09-20). No plate around the pair: the disc holds the sign,
-   the word stands beneath it, and a course with two subjects fills two thirds
-   of the row, so the slot keeps its height whatever the count. Three is the
-   ceiling (`COURSE_CATEGORIES_MAX`); a fourth is not drawn. */
+/* WHAT THE OFFER IS ABOUT — a glyph in the DS's small rounded rectangle with
+   its word under it, in cells a third of the row wide (2026-09-20). The tile
+   holds the sign, the word stands beneath it, and the slot keeps its height
+   whatever the count. Two is the floor for a listed course (a readiness
+   blocker), three is the ceiling (`COURSE_CATEGORIES_MAX`); a fourth is not drawn. */
 .programTileCategories {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  justify-content: center;
   gap: var(--cw-space-2xs);
-  /* One slot, whether or not there are subjects: the disc, the gap, one label. */
+  /* One slot, whether or not there are subjects: the icon tile, the gap, one label. */
   height: calc(var(--ds-card-category-disc) + var(--cw-space-2xs) + var(--program-slot-label));
   overflow: hidden;
   margin: 0;
@@ -275,8 +286,13 @@
   list-style: none;
 }
 
+/* A third of the row each, whatever the count, and the row is CENTRED: one
+   subject sat in the left cell with two empty thirds beside it and read as a
+   layout mistake; two hugged the left edge. Fixed thirds keep the cell width
+   the same on every card, centring keeps the group balanced. */
 .programTileCategory {
   display: flex;
+  flex: 0 0 calc((100% - 2 * var(--cw-space-2xs)) / 3);
   flex-direction: column;
   align-items: center;
   gap: var(--cw-space-2xs);
@@ -286,9 +302,11 @@
 .programTileCategoryDisc {
   display: grid;
   place-items: center;
+  /* A square on the card-icon scale: one quiet, rounded plate behind the
+     pictogram, not a second circular gesture or a stretched mini-button. */
   width: var(--ds-card-category-disc);
   height: var(--ds-card-category-disc);
-  border-radius: 50%;
+  border-radius: var(--cw-radius-btn);
   background: var(--cw-mat-surface-sunk);
   color: var(--cw-platform-text);
 }
@@ -727,7 +745,7 @@
      promo above it. */
   color: color-mix(in srgb, var(--cw-platform-text) 78%, transparent);
   font-size: var(--ds-offer-card-title-size);
-  font-weight: 500;
+  font-weight: var(--ds-offer-card-title-weight);
   line-height: var(--ds-offer-card-title-line-height);
   hyphens: auto;
   -webkit-box-orient: vertical;
@@ -738,8 +756,8 @@
 .programTileHeadline[data-has-promo="false"] h3 {
   color: var(--cw-platform-text);
   font-size: var(--ds-offer-card-promo-size);
-  font-weight: 700;
-  letter-spacing: -0.015em;
+  font-weight: var(--ds-offer-card-promo-weight);
+  letter-spacing: -0.01em;
   line-height: var(--ds-offer-card-promo-line-height);
   -webkit-line-clamp: 2;
 }
@@ -763,13 +781,19 @@
 /* AFTER the generic `p:not(.label)` rule above and at the same specificity, on
    purpose: that rule paints every card paragraph muted at body leading, and the
    promo is the one paragraph that is neither. */
+/* WEIGHT IS A TOKEN, AND IT IS THE PLATFORM'S OWN (2026-09-20). The promo was 700
+   and stood out of every page it sat on: the reset gives headings `inherit`
+   (regular), the block title above the row is 500, and the only bold in the
+   product is the button label. A hook set at the button's weight read as a
+   second button. It takes the block title's 500, the name under it the reset's
+   400 — the hierarchy is the size and the tone, not a heavier stroke. */
 .programTileBody p.programTilePromo {
   display: -webkit-box;
   overflow: hidden;
   color: var(--cw-platform-text);
   font-size: var(--ds-offer-card-promo-size);
-  font-weight: 700;
-  letter-spacing: -0.015em;
+  font-weight: var(--ds-offer-card-promo-weight);
+  letter-spacing: -0.01em;
   line-height: var(--ds-offer-card-promo-line-height);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -781,14 +805,24 @@
   height: calc(2 * var(--program-slot-body));
 }
 
-/* THE ONE BUTTON — «Деталі». The contract's `secondary` at full card width,
-   compact because it is nested in a card. `margin-top: auto` pins it to the
-   floor of the body, so cards of different copy length line their buttons up
-   along the bottom of a row. Not a link: `.programTileOverlay` is. */
+/* THE OFFER FOOTER — price and the one action share the card's baseline.
+   `margin-top: auto` pins this pair to the floor, so cards of different copy
+   length line up in a row. The visible action is not a link:
+   `.programTileOverlay` is the card's one real link. */
+.programTileFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+  margin-top: auto;
+  min-width: 0;
+}
+
 .programLink {
   composes: secondary from "./PlatformButtons.module.css";
-  composes: fill from "./PlatformButtons.module.css";
-  margin-top: auto;
+  flex: 0 0 auto;
+  margin-top: 0;
+  white-space: nowrap;
 }
 
 /* Whole-card route to the detail page.
@@ -824,30 +858,14 @@
    `:has()` rather than a sibling combinator: the card is what reacts. Focus
    answers at every pointer; hover only where a pointer can hover, the query
    the button contract's own hover rules take. */
+/* THE CARD ANSWERS, NOT ITS BUTTON (2026-09-20). Hover, press and the shadow are
+   `.cw-object` (globals.css), on the whole tile: the tile is the one target, so
+   the tile is what moves. The label inside no longer lifts on its own — it used
+   to, and the card stayed still under a pointer that was on the card. The
+   button still answers when the pointer is on the button itself (its own
+   `secondary` role); it just does not answer for the card. */
 .programTile:has(.programTileOverlay:focus-visible) .programLink {
-  transform: translateY(var(--ds-button-lift));
   background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
-  box-shadow: var(--cw-mat-shadow-soft);
-}
-
-@media (hover: hover) {
-  .programTile:hover .programLink {
-    transform: translateY(var(--ds-button-lift));
-    background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
-    box-shadow: var(--cw-mat-shadow-soft);
-  }
-}
-
-/* PRESS, ON THE CARD AND NOT ON THE BUTTON (2026-09-14), because the card is
-   what a finger lands on. `.programTileOverlay` is the click target and a child
-   of the tile, so `:active` reaches the tile the same way `:hover` does and the
-   tile's own CTA shows the answer: it settles by `--cw-press-settle` instead
-   of lifting. With hover gated to pointers, this is the only response the rail
-   gives on a phone. Outside the hover query on purpose. */
-.programTile:active .programLink {
-  transform: translateY(var(--cw-press-settle));
-  background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
-  box-shadow: none;
 }
 
 .programTilePrice {
@@ -961,31 +979,15 @@
 }
 
 /* Reduced motion: offer/test tiles keep the hover surface change, lose the lift. */
-@media (prefers-reduced-motion: reduce) {
-  .programLink {
-    transition: none;
-  }
-
-  @media (hover: hover) {
-    .programLink:hover {
-      transform: none;
-    }
-  }
-
-  .programTile:active .programLink {
-    transform: none;
-  }
-}
 
 /* ── The narrow card ─────────────────────────────────────────────────────────
-   Below 14rem — half of a 375px catalogue, ~165px — the description is a
-   fragment and «Деталі програми» breaks inside its button. The card keeps what
-   a reader compares on: the frame, the eyebrow, the name, the price, «Деталі». */
+   Below 14rem — an embedded two-column card, ~165px — the card keeps two lines
+   of its benefit, then stacks price and «Деталі». Category tiles and long
+   supporting facts stay on wider cards. */
 @container (max-width: 14rem) {
   /* Doubled and element-qualified on purpose: the rules that SHOW these —
      `.programTileBody p:not(.label)` (0,2,1) — outrank a single class, and every
      one of these lines is a `p` inside the body, and a query that loses the cascade hides nothing. */
-  .programTileBody p.programTileDescription,
   .programTileBody .programTileCategories,
   .programTileBody .programTilePoints,
   .programTileBody p.programTileMeta {
@@ -995,6 +997,14 @@
   .programTileBody {
     gap: var(--cw-space-2xs);
     padding-inline: var(--cw-space-2xs);
+  }
+
+  .programTileBody p.programTileDescription {
+    display: -webkit-box;
+    height: calc(2 * var(--program-slot-body));
+    font-size: var(--ds-type-body-sm-size);
+    line-height: var(--ds-type-body-sm-line-height);
+    -webkit-line-clamp: 2;
   }
 
   /* Narrow: the promo and the name step down to the body size and the name goes,
@@ -1025,8 +1035,14 @@
     font-size: var(--ds-type-body-size);
   }
 
-  .programLink {
-    margin-top: auto;
+  .programTileFooter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .programTileFooter .programLink {
+    width: 100%;
+    max-width: none;
   }
 
   .programLinkFull {
