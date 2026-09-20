@@ -730,7 +730,7 @@
      promo above it. */
   color: color-mix(in srgb, var(--cw-platform-text) 78%, transparent);
   font-size: var(--ds-offer-card-title-size);
-  font-weight: 500;
+  font-weight: var(--ds-offer-card-title-weight);
   line-height: var(--ds-offer-card-title-line-height);
   hyphens: auto;
   -webkit-box-orient: vertical;
@@ -741,8 +741,8 @@
 .programTileHeadline[data-has-promo="false"] h3 {
   color: var(--cw-platform-text);
   font-size: var(--ds-offer-card-promo-size);
-  font-weight: 700;
-  letter-spacing: -0.015em;
+  font-weight: var(--ds-offer-card-promo-weight);
+  letter-spacing: -0.01em;
   line-height: var(--ds-offer-card-promo-line-height);
   -webkit-line-clamp: 2;
 }
@@ -766,13 +766,19 @@
 /* AFTER the generic `p:not(.label)` rule above and at the same specificity, on
    purpose: that rule paints every card paragraph muted at body leading, and the
    promo is the one paragraph that is neither. */
+/* WEIGHT IS A TOKEN, AND IT IS THE PLATFORM'S OWN (2026-09-20). The promo was 700
+   and stood out of every page it sat on: the reset gives headings `inherit`
+   (regular), the block title above the row is 500, and the only bold in the
+   product is the button label. A hook set at the button's weight read as a
+   second button. It takes the block title's 500, the name under it the reset's
+   400 — the hierarchy is the size and the tone, not a heavier stroke. */
 .programTileBody p.programTilePromo {
   display: -webkit-box;
   overflow: hidden;
   color: var(--cw-platform-text);
   font-size: var(--ds-offer-card-promo-size);
-  font-weight: 700;
-  letter-spacing: -0.015em;
+  font-weight: var(--ds-offer-card-promo-weight);
+  letter-spacing: -0.01em;
   line-height: var(--ds-offer-card-promo-line-height);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
