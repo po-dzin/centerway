@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 
+import { BRAND } from "@/lib/brand/identity";
 import { PLATFORM_GROUND } from "@/lib/platform/chrome";
 
 /**
@@ -17,7 +18,14 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "CenterWay",
     short_name: "CenterWay",
-    description: "Курси, практики та супровід — тіло, ритм і опора у власному темпі.",
+    /**
+     * The same sentence as the meta description and /llms.txt, not a fourth
+     * wording of it. A manifest is read by the install prompt, by the browser's
+     * app profile and by anything cataloguing installable apps — it is a public
+     * answer to "what is this", so it comes from the brand identity like every
+     * other one (src/lib/brand/identity.ts).
+     */
+    description: BRAND.description,
     lang: "uk",
     /**
      * The installed app opens on the SHELF, and the shelf is now the ROOT of
