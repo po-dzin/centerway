@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/I18nProvider";
 import { useSession } from "@/components/auth/SessionProvider";
 import { SignInOptions } from "@/components/auth/SignInOptions";
+import { googleQueryParams, type GoogleSignInIntent } from "@/lib/auth/lastAccount";
 import controls from "@/components/admin/AdminControls.module.css";
 import gate from "@/components/admin/AdminGate.module.css";
 import { supabaseClient } from "@/lib/supabaseClient";
@@ -39,11 +40,16 @@ export function AdminGate({ signedInAs }: { signedInAs: string | null }) {
     if (status === "signed-in" && !signedInAs) router.refresh();
   }, [status, signedInAs, router]);
 
-  const handleSignIn = async () => {
+  /* The intent comes from the door: an account to open at, or the instruction
+     to ask Google again. See `lib/auth/lastAccount` — the panel is the surface
+     where «the browser signs me back in as whoever it already had» is worst,
+     because an operator's second address is usually the one with the role. */
+  const handleSignIn = async (intent?: GoogleSignInIntent) => {
     await supabaseClient.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/admin`,
+        queryParams: googleQueryParams(intent),
       },
     });
   };
@@ -80,7 +86,7 @@ export function AdminGate({ signedInAs }: { signedInAs: string | null }) {
           <p className={gate.cardNote}>{t("login_card_subtitle")}</p>
         </div>
 
-        <SignInOptions googleLabel={t("login_btn")} onGoogle={() => void handleSignIn()} />
+        <SignInOptions googleLabel={t("login_btn")} onGoogle={(intent) => void handleSignIn(intent)} />
       </div>
     </div>
   );

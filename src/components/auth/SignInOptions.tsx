@@ -16,19 +16,34 @@
  * owns the course — and it is a real address of its own, `/signin/email`, not
  * a panel that swaps its contents: a URL survives a reload, can be linked
  * straight from the receipt, and gives the code step a screen to live on.
+ *
+ * WHO WAS HERE LAST, ON TOP AND BY NAME (2026-09-20). Signing out and signing
+ * back in used to be one indistinguishable tap: «Увійти» handed the browser to
+ * whichever Google session was still open and that account came straight back,
+ * with no question asked. Two changes, and they are opposite sides of the same
+ * coin. The account that was here last is offered FIRST, named, so the common
+ * case is still one tap and the person can SEE which identity it is. And the
+ * plain Google row beneath it now asks Google for the chooser
+ * (`prompt=select_account`), because on a browser holding one session that is
+ * the only way a second account is reachable at all.
  */
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useSyncExternalStore } from "react";
 
 import { HandGraphic } from "@/components/Icon";
 import styles from "@/components/platform/PlatformSurfaceStyles";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { SIGNIN_PATH_PREFIX } from "@/lib/surfaces/catalog";
+import { returnQuery, returnTargetFromHere } from "@/lib/auth/signInReturn";
+import { forgetLastAccount, readLastAccount, type GoogleSignInIntent } from "@/lib/auth/lastAccount";
 
 const copy = {
   or: "АБО",
   email: "Увійти через пошту",
+  continueAs: (who: string) => `Продовжити як ${who}`,
+  otherAccount: "Інший акаунт Google",
+  forget: "Не мій акаунт",
 } as const;
 
 /* A DOOR THAT IS NOT THERE IS NOT OFFERED (2026-09-13). The local Supabase stack
@@ -65,14 +80,75 @@ function GoogleGlyph() {
   );
 }
 
-export function SignInOptions({ googleLabel, onGoogle }: { googleLabel: string; onGoogle: () => void }) {
+/* THE REMEMBERED ACCOUNT IS AN EXTERNAL STORE, because that is what
+   `localStorage` is: the server does not have it, and the value has to be the
+   same on the first client render as in the markup or the door renders one
+   shape and swaps to another a frame later.
+   `useSyncExternalStore` compares snapshots by identity and `readLastAccount`
+   parses a fresh object on every call, so the parsed value is held and only
+   dropped when «Не мій акаунт» clears it — returned straight it would re-render
+   for ever. */
+let lastAccountSnapshot: ReturnType<typeof readLastAccount> | undefined;
+const lastAccountListeners = new Set<() => void>();
+
+function subscribeLastAccount(listener: () => void) {
+  lastAccountListeners.add(listener);
+  return () => {
+    lastAccountListeners.delete(listener);
+  };
+}
+
+function readLastAccountSnapshot() {
+  if (lastAccountSnapshot === undefined) lastAccountSnapshot = readLastAccount();
+  return lastAccountSnapshot;
+}
+
+function dropLastAccount() {
+  forgetLastAccount();
+  lastAccountSnapshot = null;
+  lastAccountListeners.forEach((listener) => listener());
+}
+
+/* The address bar, by contrast, genuinely cannot change under this screen:
+   leaving it is a navigation, which unmounts it. */
+const subscribeToNothing = () => () => {};
+const noAccount = () => null;
+
+const OR_RULE = (
+  /* Two drawn strokes and a word, not a hairline: a border across the panel
+     would read as the edge of a cell, and this is a pause between two choices.
+     The mark is `ink-rule`, the system's own drawn rule — geometry in
+     icon-glyphs.mjs, weight in `.signInOr*`. */
+  <>
+    <HandGraphic className={styles.signInOrMark} name="ink-rule" size={36} />
+    <span>{copy.or}</span>
+    <HandGraphic className={styles.signInOrMark} name="ink-rule" size={36} />
+  </>
+);
+
+export function SignInOptions({
+  googleLabel,
+  onGoogle,
+}: {
+  googleLabel: string;
+  /** The intent is the account to open at, or the instruction to ask again. */
+  onGoogle: (intent?: GoogleSignInIntent) => void;
+}) {
   /* WHERE TO COME BACK TO. The wall renders in front of whichever page was
      asked for — the shelf, a lesson, the cabinet — and the door has to return
      the person there rather than to a default. The address is read here, on
-     the surface that still knows it, and carried as `next`. */
-  const pathname = usePathname();
+     the surface that still knows it, and carried as `next`. A `next` this
+     surface was ITSELF opened with wins, so a destination named at the header
+     survives the second hop into the email door. */
   const href = useSurfaceHref();
-  const emailHref = href(`${SIGNIN_PATH_PREFIX}/email${pathname ? `?next=${encodeURIComponent(pathname)}` : ""}`);
+  const returnTarget = useSyncExternalStore(
+    subscribeToNothing,
+    () => returnTargetFromHere() ?? "",
+    () => "",
+  );
+  const emailHref = href(`${SIGNIN_PATH_PREFIX}/email${returnQuery(returnTarget || null)}`);
+
+  const last = useSyncExternalStore(subscribeLastAccount, readLastAccountSnapshot, noAccount);
 
   if (!googleOffered) {
     return (
@@ -84,26 +160,70 @@ export function SignInOptions({ googleLabel, onGoogle }: { googleLabel: string; 
     );
   }
 
+  if (last) {
+    return (
+      <div className={styles.form}>
+        {/* ONE TAP, AND IT SAYS WHOSE. The avatar and the address are not
+            decoration: they are the whole difference between «sign in» and
+            «sign in as this person», which is the question a shared machine
+            asks and the old door answered silently. */}
+        <button
+          className={`${styles.primaryButton} ${styles.signInFaceButton}`}
+          type="button"
+          onClick={() => onGoogle({ loginHint: last.email })}
+        >
+          <span className={styles.signInFace} aria-hidden="true">
+            {last.avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={last.avatar} alt="" referrerPolicy="no-referrer" />
+            ) : (
+              last.email.charAt(0).toUpperCase()
+            )}
+          </span>
+          <span className={styles.signInFaceText}>
+            <span>{copy.continueAs(last.name ?? last.email)}</span>
+            {last.name ? <span className={styles.signInFaceMail}>{last.email}</span> : null}
+          </span>
+        </button>
+
+        <p className={`${styles.status} ${styles.signInOr}`}>{OR_RULE}</p>
+
+        <button
+          className={styles.secondaryButton}
+          type="button"
+          onClick={() => onGoogle({ selectAccount: true })}
+          style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "0.6rem" }}
+        >
+          <GoogleGlyph />
+          {copy.otherAccount}
+        </button>
+        <Link className={styles.secondaryButton} href={emailHref}>
+          {copy.email}
+        </Link>
+        <div className={styles.signInQuietRow}>
+          <button className={styles.signInQuietButton} type="button" onClick={dropLastAccount}>
+            {copy.forget}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.form}>
       <button
         className={styles.primaryButton}
         type="button"
-        onClick={onGoogle}
+        /* The chooser, on a door that remembers nobody: either this browser has
+           never signed in here or the reader asked to be forgotten, and in both
+           cases picking the account silently is the thing being fixed. */
+        onClick={() => onGoogle({ selectAccount: true })}
         style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "0.6rem" }}
       >
         <GoogleGlyph />
         {googleLabel}
       </button>
-      {/* Two drawn strokes and a word, not a hairline: a border across the
-          panel would read as the edge of a cell, and this is a pause between
-          two choices. The mark is `ink-rule`, the system's own drawn rule —
-          geometry in icon-glyphs.mjs, weight in `.signInOr*`. */}
-      <p className={`${styles.status} ${styles.signInOr}`}>
-        <HandGraphic className={styles.signInOrMark} name="ink-rule" size={36} />
-        <span>{copy.or}</span>
-        <HandGraphic className={styles.signInOrMark} name="ink-rule" size={36} />
-      </p>
+      <p className={`${styles.status} ${styles.signInOr}`}>{OR_RULE}</p>
       <Link className={styles.secondaryButton} href={emailHref}>
         {copy.email}
       </Link>
