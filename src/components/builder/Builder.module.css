@@ -20,6 +20,11 @@
 .shell {
   composes: compact from "../platform/PlatformButtons.module.css";
   --builder-topbar-height: calc(var(--ds-touch-target-min) + 0.25rem);
+  /* WHERE THE RIGHT DRAWER'S TOP EDGE GOES. Below 901px there is no bar to
+     clear — the chrome is two floating islands — so it is the bar's own height
+     and nothing else. The desktop block adds the one pixel that made this a
+     separate name; see it. */
+  --builder-drawer-top: var(--builder-topbar-height);
   --builder-side-panel-width: var(--cw-workspace-side-panel-width);
   /* Both mode rails, one value — they are the same object on opposite edges of
      the document. Narrowed from 4.75rem: the column carries a 3rem ink ring and
@@ -177,6 +182,15 @@
 @media (min-width: 901px) {
   .shell {
     --builder-topbar-height: 4rem;
+    /* THE BAR'S LINE IS NOT INSIDE THE BAR. The topbar's contour is the chrome
+       material's ring — `0 0 0 1px var(--cw-mat-stroke-chrome)` in
+       `--cw-mat-shadow-chrome`, see «ONE TOPBAR, WHOEVER RENDERS IT» in
+       globals.css — and a ring paints OUTSIDE the box it belongs to. So the
+       bar's own height stops one pixel above its visible edge, and a drawer
+       that started at exactly 4rem covered that pixel: the topbar's line
+       stopped dead where the panel began, which is the bar looking cut rather
+       than the panel looking placed. */
+    --builder-drawer-top: calc(var(--builder-topbar-height) + 1px);
     height: 100svh;
     height: 100dvh;
     min-height: 0;
@@ -1760,26 +1774,41 @@
   gap: var(--cw-space-sm);
 }
 
-/* ON THE CONTRACT, NOT BESIDE IT (2026-09-07). This is a link that opens the
-   release panel, standing in `.revisionNoticeActions` next to a real button —
-   a control in a row of controls, and it was declaring its own `font-weight:
-   600` against the contract's 700. `guard:buttons` had been calling it for a
-   while and it was the one thing keeping the design gates out of CI, which is
-   how a known violation becomes a permanent one.
+/* THE COUNT IS THE DOOR (2026-09-20). This used to be a second control in the
+   action row reading «Публікація» — the name of a tab standing where an act
+   belongs, beside the one button this row exists for. It is now the blocker
+   count itself, inside the sentence, with an arrow after it: a phrase that
+   leads somewhere, which is what `text` is the role for.
 
-   `text` is the role for an action that is a sentence rather than a plate; the
-   colour stays local, which the guard allows and the row needs — this link is
-   the notice's ink, not the muted grey a standalone text button takes. */
-.revisionNoticeLink {
+   IT SITS IN THE PARAGRAPH AND WRAPS WITH IT. `text` is a transparent role —
+   no plate, no fill — so what lands in the sentence is words and an arrow. It
+   keeps the role's own touch floor rather than shrinking to the line's
+   leading: the notice grows a few pixels and the phrase stays pressable by a
+   thumb, which is the trade the contract exists to make.
+
+   ON THE CONTRACT, NOT BESIDE IT (2026-09-07). It declared its own
+   `font-weight: 600` against the contract's 700 once, `guard:buttons` called
+   it, and that was the one thing keeping the design gates out of CI. The
+   weight comes from the contract; only the colour stays local, which the guard
+   allows and the sentence needs — this is the notice's ink, not the muted grey
+   a standalone text button takes. */
+.revisionNoticeBlockerLink {
   composes: base text hug from "../platform/PlatformButtons.module.css";
+  /* The notice's own ink, not the muted grey a standalone text button takes:
+     this phrase is part of the sentence it sits in. The weight comes from the
+     contract — writing 600 here was exactly the drift guard:buttons catches,
+     «almost a button» next to a real one. */
   color: var(--cw-platform-text);
-  /* Действие в одном ряду с `quietAction`, а не текстовая ссылка в абзаце, —
-     поэтому вес берётся из контракта кнопок, а не назначается здесь. Своё
-     значение (600) было ровно тем дрейфом, который guard:buttons и ловит:
-     «почти как кнопка» рядом с настоящей кнопкой. Ссылка остаётся чернильной
-     (InkLabel) — контракт даёт ей вес, а не всю роль. */
   font-weight: var(--ds-button-font-weight);
+  /* The mark is the ink stroke `InkLabel` draws, so the role's underline would
+     be the same statement made twice. */
   text-decoration: none;
+}
+
+/* The arrow is the second half of one phrase, not a glyph parked beside it. */
+.revisionNoticeBlockerLink svg {
+  flex: 0 0 auto;
+  color: var(--cw-platform-muted);
 }
 
 .importPreview {
@@ -5029,12 +5058,17 @@
      it is reading as a sheet of glass over the entire application, which is
      exactly the "separate layer" it was built to stop looking like.
 
-     The fix is not to abandon the native dialog — Escape, the focus trap and
-     the inertness of the page behind it are still earned honestly by
-     `showModal()`, and the checkpoint this panel shows is still about the whole
-     course. It is to stop the dialog's OWN box from claiming the topbar's row,
-     and to stop its backdrop from painting over a topbar that is still fully
-     on screen right beside it. */
+     The first fix was to stop the dialog's OWN box from claiming the topbar's
+     row, and to stop its backdrop from painting over a topbar that is still
+     fully on screen right beside it.
+
+     AND THEN THE LAST MODAL THING ABOUT IT WENT TOO (2026-09-20). It still
+     opened with `showModal()`, so the course beside it was inert: an author
+     who opened the history to check what a version said could not scroll,
+     click or select anything in the document it was about. A drawer whose
+     defining property is «beside the work» must leave the work usable.
+     `BuilderSheet` opens this placement non-modally above 561px; the phone's
+     full-screen bottom sheet, where there is no «beside», stays modal. */
   .sheetSide {
     /* THE SIDE PANEL'S WIDTH, NOT A WIDTH OF ITS OWN. This was 32rem, then
        26rem — each time a number picked to look right beside the outline, and
@@ -5049,11 +5083,25 @@
        it inherits. */
     width: min(var(--builder-side-panel-width), calc(100vw - var(--cw-space-2xl)));
     max-width: none;
-    /* Below the topbar, not behind it — the same vertical extent `.aside` and
+    /* PLACED, NOT MARGINED (2026-09-20). It used to be an `auto` margin inside
+       the box a MODAL dialog is given, which is a rule that only works while
+       the dialog is modal: a `show()`n drawer is an ordinary absolutely
+       positioned element in the page, and «push me to the right with a margin»
+       puts it wherever its containing block happens to be. Stated as insets it
+       means the same thing in both modes — flush with the right edge of the
+       viewport, from under the topbar's line to the floor.
+
+       Below the topbar, not behind it — the same vertical extent `.aside` and
        `.toolLayer` occupy as real grid columns in `.body`. */
-    height: calc(100svh - var(--builder-topbar-height));
-    max-height: calc(100svh - var(--builder-topbar-height));
-    margin: var(--builder-topbar-height) 0 0 auto;
+    position: fixed;
+    inset-block: var(--builder-drawer-top) 0;
+    inset-inline: auto 0;
+    /* Over the document and the tool layer, under nothing: the same rung
+       `.aside[data-open]` takes, one above the sticky chrome. */
+    z-index: calc(var(--ds-z-sticky) + 1);
+    height: auto;
+    max-height: none;
+    margin: 0;
   }
 
   .sheetSide .sheetBody {

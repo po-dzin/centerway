@@ -64,6 +64,25 @@ export type ChromeSheet = {
 
 export function useChromeSheet(): ChromeSheet {
   const [open, setOpen] = useState(false);
+  /* WHETHER THE SHEET SHOULD TAKE THE FOCUS WHEN IT OPENS (2026-09-20).
+     It used to, always — `focusStopsIn(menu)[0]?.focus()` on every open — and
+     on a phone that painted the browser's own focus ring around the first row
+     of the menu the instant it appeared. Every time. The reader had chosen
+     nothing, and the topmost destination sat there looking chosen: on the
+     cabinet, where the first row is ALSO the current app and carries the ink
+     mark, the two marks together read as a selection stuck to the menu.
+
+     A pointer does not need the focus moved. The finger is the cursor; the
+     rows are a tap away and the ring says nothing a tap has not already said.
+     A KEYBOARD does need it, and for exactly the reason the ring below it
+     exists: the panel is portalled to the end of `document.body`, so without
+     this the next Tab walks into the page behind the open sheet.
+
+     So the question is asked of the trigger at the moment it is activated —
+     `:focus-visible` is true when the browser itself believes a keyboard is
+     driving, which is the same verdict it uses to decide whether to paint a
+     ring at all. */
+  const [enterFocus, setEnterFocus] = useState(false);
   const [anchor, setAnchor] = useState<CSSProperties | null>(null);
   /* The sheet is portalled to `document.body`, so it does NOT inherit the bar's
      tone scope — and the bar has one: `headerTone` flips the topbar to the
@@ -145,6 +164,16 @@ export function useChromeSheet(): ChromeSheet {
 
   const toggle = useCallback(() => {
     measure();
+    /* Guarded: `:focus-visible` is unsupported on old Safari, where `matches`
+       throws rather than returning false. No verdict means no stolen focus,
+       which is the quieter of the two failures. */
+    let byKeyboard = false;
+    try {
+      byKeyboard = Boolean(trigger?.matches(":focus-visible"));
+    } catch {
+      byKeyboard = false;
+    }
+    setEnterFocus(!open && byKeyboard);
     /* OPENING HANDS OVER, IN THIS HANDLER (2026-09-13). Closing the sibling
        here rather than on its own outside-click puts both state changes in one
        event, which React commits as one render: the other sheet's panel, its
@@ -153,7 +182,7 @@ export function useChromeSheet(): ChromeSheet {
        See `chromeSheetStore`. */
     if (!open) closeOtherSheets(id);
     setOpen(!open);
-  }, [measure, open, id]);
+  }, [measure, open, id, trigger]);
 
   useEffect(() => {
     if (!open) return;
@@ -230,12 +259,17 @@ export function useChromeSheet(): ChromeSheet {
      enters when the sheet opens, Tab circles inside it while it is open, and
      focus returns to the trigger when it closes. */
   useEffect(() => {
-    if (!open || !menu) return;
+    if (!open || !menu || !enterFocus) return;
     /* The first stop, not the panel itself. A container with `tabindex="-1"`
        would announce the sheet and then require a second Tab to reach anything
-       in it, which is the same complaint one step smaller. */
+       in it, which is the same complaint one step smaller.
+
+       Only for a keyboard opening — see `enterFocus`. A pointer opening leaves
+       focus on the trigger, and the Tab ring below reads that as «outside the
+       ring» and enters at the first row, so the sheet stays fully reachable
+       without anything in it being marked before it is chosen. */
     focusStopsIn(menu)[0]?.focus();
-  }, [open, menu]);
+  }, [open, menu, enterFocus]);
 
   useEffect(() => {
     if (!open || !menu) return;

@@ -1284,6 +1284,17 @@
   transition: color 160ms ease;
 }
 
+/* THE SHEET SUPPLIES ITS OWN FOCUS RING, for the same reason it supplies its
+   own Tab order: it is portalled to `document.body`, so the platform's ring —
+   declared on `.shell :where(a, button, …):focus-visible` at the top of this
+   file — cannot reach it. What painted the ring instead was the BROWSER, in
+   the browser's own blue, on a menu whose whole palette is ink and cream. Ours
+   is the same ring every other control in the product wears. */
+.profileMenu :where(a, button, summary, input):focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
 /* THE MARK, NOT A FILL — the same rule the bar above draws and the same one the
    cabinet's tab strip draws, at the same three numbers. This menu used to be
    the odd one out twice over: it lit a whole row on hover where the other two

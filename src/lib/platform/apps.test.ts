@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { appHref, appIsOffOrigin, appsFor, currentAppKey, hostServesPersonalPath, isPersonalHost } from "./apps";
+import {
+  appHref,
+  appIsOffOrigin,
+  appsFor,
+  currentAppKey,
+  hostServesPersonalPath,
+  isPersonalHost,
+  leadsBackToPublicSite,
+} from "./apps";
 import { PERSONAL_HOST } from "@/lib/surfaces/catalog";
 
 const anon = { signedIn: false, role: null, authorsCourses: false };
@@ -142,5 +150,29 @@ describe("host predicates", () => {
   it("treats a missing host as neither", () => {
     expect(isPersonalHost(null)).toBe(false);
     expect(hostServesPersonalPath(undefined)).toBe(false);
+  });
+});
+
+describe("leadsBackToPublicSite", () => {
+  it("offers the way out from every application, the cabinet included", () => {
+    // The cabinet was the hole: on `my` since 2026-08-27, it is the surface the
+    // installed app opens at and the one a sign-in lands on, and until
+    // 2026-09-20 it carried no row back to the public site at all.
+    expect(leadsBackToPublicSite("cabinet")).toBe(true);
+    expect(leadsBackToPublicSite("learn")).toBe(true);
+    expect(leadsBackToPublicSite("builder")).toBe(true);
+    // The panel is on `www` and still needs it: no main navigation, no «Головна».
+    expect(leadsBackToPublicSite("admin")).toBe(true);
+  });
+
+  it("stays silent on the storefront, where the bar already says Головна", () => {
+    expect(leadsBackToPublicSite(null)).toBe(false);
+  });
+
+  it("agrees with currentAppKey about the cabinet's address", () => {
+    // The two are one rule in two halves: if `/profile` ever stopped resolving
+    // to `cabinet`, the row would vanish again and nothing else would notice.
+    expect(leadsBackToPublicSite(currentAppKey(PERSONAL_HOST, "/profile"))).toBe(true);
+    expect(leadsBackToPublicSite(currentAppKey("www.centerway.net.ua", "/programs"))).toBe(false);
   });
 });

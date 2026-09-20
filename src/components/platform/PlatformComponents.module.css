@@ -1084,8 +1084,93 @@
   transform: scaleX(-1) scaleY(var(--cw-ink-rule-weight));
 }
 
+/* THE DOOR IS A COLUMN, AT EVERY WIDTH (2026-09-20).
+   The other states drawn on this panel — loading, error, unavailable — are
+   pages: a heading and a paragraph, and 56rem is the right measure for prose.
+   A DOOR is not prose. It is a heading and a stack of controls, and at 56rem
+   the controls kept their own 22rem ceiling while the panel around them did
+   not, so the card stretched to nearly a metre of cream with a small button in
+   its top-left corner and the «АБО» rule running out past it on both sides.
+   The phone had it right all along, because there the panel simply could not
+   stretch. One column, the width of the widest control it holds plus the
+   panel's own padding, centred — the same card on a phone, a tablet and a
+   maximised window. */
 .profileDoorPanel {
   gap: var(--cw-space-sm);
+  /* THE COLUMN IS THE BUTTON'S OWN CEILING plus the panel's padding, so the
+     card is exactly as wide as the widest thing it can hold. Written from the
+     contract's token rather than as a round number, because a control that
+     stops at `--ds-button-max-width` inside a card wider than that leaves a
+     ragged right edge — the two measures have to be one measure. The padding
+     term restates `.panel`'s `clamp(1.15rem, 3vw, 2rem)`, doubled. */
+  width: min(100%, calc(var(--ds-button-max-width) + 2 * clamp(1.15rem, 3vw, 2rem)));
+}
+
+/* Inside the door, a control spans the column: at this width `wide`'s
+   `min-width` is the only thing that would leave gaps between the plates and
+   the card's edge. The contract's `max-width` is untouched — the column above
+   is built to it. */
+.profileDoorPanel :where(.primaryButton, .secondaryButton, .ghostButton) {
+  width: 100%;
+}
+
+/* ── «Продовжити як …» ────────────────────────────
+
+   The one control in the product that carries a FACE. It is what makes the row
+   an account and not a method: the same avatar the header shows, the name the
+   provider gave, and the address underneath in case two of them share a name.
+   Two lines, so the plate gives up the fixed control height and takes padding
+   instead — a 48px box would clip the address or push it out of the button. */
+.signInFaceButton {
+  height: auto;
+  min-height: var(--ds-touch-target-min);
+  padding-block: var(--cw-space-2xs);
+  gap: var(--cw-space-xs);
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.signInFace {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  font-size: var(--ds-type-label-size);
+  font-weight: 700;
+}
+
+.signInFace img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.signInFaceText {
+  display: grid;
+  /* The two lines are one label, so they sit at the scale's smallest step and
+     not at a hand-picked hairline gap. */
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+  text-align: left;
+}
+
+.signInFaceText > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Quieter, and at the label step: the address answers «which of me is this»
+   and is not what the button is for. */
+.signInFaceMail {
+  font-size: var(--ds-type-label-size);
+  line-height: 1.2;
+  font-weight: 600;
+  opacity: 0.78;
 }
 
 .profileDoorTitle {
