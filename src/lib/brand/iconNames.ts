@@ -2,7 +2,7 @@
 // Geometry source: scripts/lib/icon-glyphs.mjs
 
 // Cache key for the sprite URL — see spriteVersion() in scripts/icons-bake.mjs.
-export const CW_SPRITE_VERSION = "8f988756";
+export const CW_SPRITE_VERSION = "248c0e4d";
 
 export const CW_ICON_NAMES = [
   "arrow-right",
@@ -35,6 +35,12 @@ export const CW_ICON_NAMES = [
   "sleep",
   "food",
   "motion",
+  "wind",
+  "ripple",
+  "seated",
+  "sprout",
+  "incense",
+  "crosshair",
   "play",
   "guide",
   "plus",

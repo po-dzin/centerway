@@ -601,22 +601,14 @@
   font-weight: 560;
 }
 
-/* A rule, not a capsule: the platform draws progress as a line being filled,
-   and a second progress idiom in the hero would be one more than a reader
-   should have to learn. */
-.heroProgressTrack {
+/* THE SHARED RAIL, GIVEN ITS WIDTH (2026-09-20). The hero used to draw its own
+   filled capsule here; it now renders `ProgressRail` in its `media` tone, like
+   the shelf, the course view and the dosha test. All that is left for the hero
+   to say is how wide the rail may be and how much air sits above it — the
+   picture itself belongs to the component. */
+.heroProgressRail {
   width: min(100%, 19.5rem);
-  height: 0.28rem;
   margin-top: var(--cw-space-xs);
-  border-radius: var(--cw-radius-pill);
-  overflow: hidden;
-  background-color: color-mix(in srgb, var(--cw-platform-accent-contrast) 24%, transparent);
-}
-
-.heroProgressFill {
-  height: 100%;
-  border-radius: inherit;
-  background-color: var(--cw-platform-accent-contrast);
 }
 
 .heroFeatureActions {

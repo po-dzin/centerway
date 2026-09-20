@@ -26,7 +26,6 @@
 import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
-import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import type { CwIconName } from "@/components/iconNames";
 import { useOfferAccess } from "@/components/platform/OfferAccess";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
@@ -150,12 +149,20 @@ export function OfferCurriculum({
                           {state.kind === "locked" ? (
                             lesson.title
                           ) : (
+                            /* NO INK RULE IN THIS LIST (2026-09-20). The mark is
+                               built for a nav row — `.cw-ink-label-text` is
+                               `nowrap` with an ellipsis, which is right for a
+                               crumb and wrong for a lesson called «Харчування
+                               першого тижня: табу, продукти, ритм»: on a phone
+                               every second row ended in three dots. The outline
+                               is prose, so the title wraps like prose, and what
+                               says the row is open stays what it always was —
+                               its colour against a locked row's. */
                             <Link
                               className={styles.outlineLessonLink}
                               href={surfaceHref(`/learn/${course.slug}/${lesson.slug}`)}
-                              data-cw-ink-control
                             >
-                              <InteractionInkLabel variant="link">{lesson.title}</InteractionInkLabel>
+                              {lesson.title}
                             </Link>
                           )}
                           {state.note ? <span className={styles.outlineLessonNote}>{state.note}</span> : null}

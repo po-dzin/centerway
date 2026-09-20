@@ -75,12 +75,25 @@ type ProgressRailProps = {
   /** Accessible name — the rail carries no visible text of its own. */
   label: string;
   className?: string;
+  /**
+   * `media` is the rail over a photograph — the offer hero.
+   *
+   * ONE PROGRESS IDIOM ON THE PLATFORM (2026-09-20). The hero drew its own
+   * filled capsule while the shelf, the course view and the dosha test drew
+   * these dashes, so the same fact had two pictures depending on which page a
+   * reader happened to be standing on. A tone is the honest difference: over a
+   * photograph the track and the walker take the inverse ink, exactly as every
+   * other control there does. The done dashes stay gold in both — the accent
+   * is legible on paper and on a plate.
+   */
+  tone?: "page" | "media";
 };
 
-export function ProgressRail({ value, total, label, className }: ProgressRailProps) {
+export function ProgressRail({ value, total, label, className, tone = "page" }: ProgressRailProps) {
   if (total <= 0) return null;
 
   const done = Math.max(0, Math.min(value, total));
+  const wrap = [styles.wrap, tone === "media" ? styles.wrapMedia : "", className].filter(Boolean).join(" ");
   const a11y = {
     role: "progressbar" as const,
     "aria-valuemin": 0,
@@ -95,7 +108,7 @@ export function ProgressRail({ value, total, label, className }: ProgressRailPro
   if (total > MAX_DASHES) {
     const ratio = done / total;
     return (
-      <div className={className ? `${styles.wrap} ${className}` : styles.wrap} {...a11y}>
+      <div className={wrap} {...a11y}>
         <span className={styles.walker} style={{ "--cw-walk": ratio } as React.CSSProperties}>
           <Walker />
         </span>
@@ -107,7 +120,7 @@ export function ProgressRail({ value, total, label, className }: ProgressRailPro
   }
 
   return (
-    <div className={className ? `${styles.wrap} ${className}` : styles.wrap} {...a11y}>
+    <div className={wrap} {...a11y}>
       {/* The seam he stands on: `done / total` is the left edge before the
           first dash, the right edge after the last, and the gap between dash
           `done` and `done + 1` everywhere in between. */}
