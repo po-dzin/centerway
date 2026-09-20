@@ -1767,26 +1767,41 @@
   gap: var(--cw-space-sm);
 }
 
-/* ON THE CONTRACT, NOT BESIDE IT (2026-09-07). This is a link that opens the
-   release panel, standing in `.revisionNoticeActions` next to a real button —
-   a control in a row of controls, and it was declaring its own `font-weight:
-   600` against the contract's 700. `guard:buttons` had been calling it for a
-   while and it was the one thing keeping the design gates out of CI, which is
-   how a known violation becomes a permanent one.
+/* THE COUNT IS THE DOOR (2026-09-20). This used to be a second control in the
+   action row reading «Публікація» — the name of a tab standing where an act
+   belongs, beside the one button this row exists for. It is now the blocker
+   count itself, inside the sentence, with an arrow after it: a phrase that
+   leads somewhere, which is what `text` is the role for.
 
-   `text` is the role for an action that is a sentence rather than a plate; the
-   colour stays local, which the guard allows and the row needs — this link is
-   the notice's ink, not the muted grey a standalone text button takes. */
-.revisionNoticeLink {
+   IT SITS IN THE PARAGRAPH AND WRAPS WITH IT. `text` is a transparent role —
+   no plate, no fill — so what lands in the sentence is words and an arrow. It
+   keeps the role's own touch floor rather than shrinking to the line's
+   leading: the notice grows a few pixels and the phrase stays pressable by a
+   thumb, which is the trade the contract exists to make.
+
+   ON THE CONTRACT, NOT BESIDE IT (2026-09-07). It declared its own
+   `font-weight: 600` against the contract's 700 once, `guard:buttons` called
+   it, and that was the one thing keeping the design gates out of CI. The
+   weight comes from the contract; only the colour stays local, which the guard
+   allows and the sentence needs — this is the notice's ink, not the muted grey
+   a standalone text button takes. */
+.revisionNoticeBlockerLink {
   composes: base text hug from "../platform/PlatformButtons.module.css";
+  /* The notice's own ink, not the muted grey a standalone text button takes:
+     this phrase is part of the sentence it sits in. The weight comes from the
+     contract — writing 600 here was exactly the drift guard:buttons catches,
+     «almost a button» next to a real one. */
   color: var(--cw-platform-text);
-  /* Действие в одном ряду с `quietAction`, а не текстовая ссылка в абзаце, —
-     поэтому вес берётся из контракта кнопок, а не назначается здесь. Своё
-     значение (600) было ровно тем дрейфом, который guard:buttons и ловит:
-     «почти как кнопка» рядом с настоящей кнопкой. Ссылка остаётся чернильной
-     (InkLabel) — контракт даёт ей вес, а не всю роль. */
   font-weight: var(--ds-button-font-weight);
+  /* The mark is the ink stroke `InkLabel` draws, so the role's underline would
+     be the same statement made twice. */
   text-decoration: none;
+}
+
+/* The arrow is the second half of one phrase, not a glyph parked beside it. */
+.revisionNoticeBlockerLink svg {
+  flex: 0 0 auto;
+  color: var(--cw-platform-muted);
 }
 
 .importPreview {
@@ -2309,7 +2324,11 @@
      rather than a fraction of a control's. The hit area is untouched: it is
      still the whole `.menuTrigger` box, unpainted margin included. */
   inset: 0.3rem;
-  border-radius: 8px;
+  /* `--cw-radius-inset` (6px) and not the 8px literal this shipped with: the
+     geometry law has one step for exactly this case — a paint set inside a
+     control — and an unnamed radius is how a scale becomes eleven numbers.
+     Two pixels shallower, same reading. */
+  border-radius: var(--cw-radius-inset);
   background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent);
   pointer-events: none;
   transition: background-color var(--builder-motion-ink) ease;

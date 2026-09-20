@@ -16,15 +16,25 @@ const block = (source: string, selector: string) => {
 };
 
 describe("shared surface boundaries", () => {
-  it("paints the media menu as a disc the size of its control, and the disc is the state", () => {
+  it("paints the media menu as one plate that is itself the state", () => {
     /* 2026-09-13: the scrim used to be cut to the ink ring's optical diameter
        (~29px in a 36–48px target) with the ring drawn around it on hover, which
-       read as a glitch. On a photograph the scrim is the box, and a box marks
-       itself: full size, deeper on hover/focus/open, no ring. */
+       read as a glitch. On a photograph the scrim is the plate, and a plate
+       marks itself: one shape, deeper on hover/focus/open, no ring.
+
+       2026-09-16: that plate stopped being the whole touch target. The box is
+       what the FINGER needs; at 36–48px across, a disc of it read as an
+       oversized bubble floating off the photograph. The paint pulls in from the
+       edge and takes the soft rect the rest of the product uses, while the hit
+       area stays the untouched full box — which is why this now guards an inset
+       and the named inset radius rather than `inset: 0` and a circle. What it has
+       always guarded is unchanged: ONE shape carries the state, and the ink
+       ring does not come back beside it. */
     const css = read("src/components/builder/Builder.module.css");
     const paint = block(css, ".courseCard > .menuRoot > .menuTrigger::before");
-    expect(paint).toContain("inset: 0;");
-    expect(paint).toContain("border-radius: 50%");
+    expect(paint).toMatch(/inset: 0\.\d+rem;/);
+    expect(paint).not.toContain("border-radius: 50%");
+    expect(paint).toContain("border-radius: var(--cw-radius-inset)");
     expect(paint).not.toContain("--cw-ink-hover-paint-size");
     expect(block(css, ".courseCard > .menuRoot > .menuTrigger .inkRing")).toContain("display: none");
     expect(css).toMatch(

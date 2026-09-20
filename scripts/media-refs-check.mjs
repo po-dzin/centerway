@@ -153,7 +153,9 @@ async function main() {
     console.log(`  ? ${entry.src} — не вдалося перевірити (${entry.wheres[0]})`);
   }
   if (brokenHistory.length > 0) {
-    console.log(`  · ${brokenHistory.length} адрес(и) лише в історії версій більше не існує — відновлення буде без фото:`);
+    console.log(
+      `  · ${brokenHistory.length} адрес(и) лише в історії версій більше не існує — відновлення буде без фото:`,
+    );
     for (const entry of brokenHistory.slice(0, 8)) console.log(`      ${entry.src} — ${entry.wheres[0]}`);
   }
   if (broken.length === 0) {
