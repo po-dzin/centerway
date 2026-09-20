@@ -72,9 +72,15 @@ export const BRAND = {
    * The meta description of the platform itself — the default for any page
    * that has not written its own, and the sentence quoted when nothing more
    * specific matches. Kept inside ~160 characters on purpose.
+   *
+   * IT MUST NOT RESTATE THE CATEGORY. The title is "CenterWay — <category>", and
+   * a result page prints title and description one under the other: a
+   * description that opens with the same words spends its first line saying
+   * nothing new, and pushes the boundary past the cut. It starts where the
+   * title stops — with what is inside.
    */
   description:
-    "CenterWay — сучасна велнес платформа цілісного відновлення: тіло, харчування, ритм і практика зібрані в один шлях, із супроводом до стану уважної присутності. Без медичних обіцянок.",
+    "Тіло, харчування, ритм і практика — в один шлях із супроводом: уроки, консультація, трав'яна підтримка, тест доші. Без медичних обіцянок.",
 
   /**
    * The long form: what an answer engine is given when it asks the platform to
