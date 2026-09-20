@@ -237,21 +237,22 @@
   inset-block-start: var(--cw-space-xs);
   inset-inline-start: var(--cw-space-xs);
   margin: 0;
-  /* THIN, ROUND, LIGHT (2026-09-20). The canonical capsule is the scrim ink
-     with inverse text — a dark plate on the photograph. On a card the badge
-     reads better as a piece of paper laid on the frame: the inverse text as its
-     ground and the scrim ink as its type. Both tokens are the same in the light
-     and the dark theme, which is the point — the badge sits on a photograph,
-     and a photograph does not change with the theme. Pill radius, because the
-     frame's own corner is already rounded and a second square corner beside it
-     is the one thing on the card with an edge. One badge says the kind AND the
-     duration. */
+  /* THIN, ROUND, AND THE THEME'S OWN (2026-09-20). The canonical capsule is the
+     scrim ink with inverse text — dark in both themes. Here the badge is a piece
+     of the card's paper laid on the frame: the platform surface and the platform
+     ink, so it is LIGHT in the light theme and DARK in the dark one, like the
+     card it belongs to. (A first pass pinned it light in both, on the argument
+     that a photograph does not change with the theme; a pale pill on a dark card
+     read as a hole, and the argument was wrong about which object the badge
+     belongs to.) Pill radius: the frame's own corner is already rounded, and a
+     second square corner beside it is the one thing on the card with an edge.
+     One badge says the kind AND the duration. */
   min-height: 1.4rem;
   padding-block: 0;
   padding-inline: var(--cw-space-sm);
   border-radius: var(--cw-radius-pill);
-  background: color-mix(in srgb, var(--cw-mat-inverse-text) 92%, transparent);
-  color: var(--cw-mat-scrim-ink);
+  background: color-mix(in srgb, var(--cw-platform-surface) 92%, transparent);
+  color: var(--cw-platform-text);
   font-size: var(--ds-type-label-size);
   font-weight: 600;
   backdrop-filter: blur(6px);
