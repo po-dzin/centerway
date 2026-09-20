@@ -12,7 +12,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     slug,
     async (grant) => {
       try {
-        await submitBuilderCourseForReview(slug, grant.identity.authUserId);
+        /* The identity is known here for certain, so the service is told who
+           it is rather than guessing: an admin's own submission is not a
+           request the house has to answer (see `reviewAnnounce.ts`). */
+        await submitBuilderCourseForReview(slug, grant.identity.authUserId, {
+          isAdmin: grant.identity.isAdmin,
+          email: grant.identity.email,
+        });
         return NextResponse.json({ status: "in_review" });
       } catch (error) {
         const message = error instanceof Error ? error.message : "unknown_error";

@@ -9,7 +9,15 @@ import { HandGraphic } from "@/components/Icon";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { supabaseClient } from "@/lib/supabaseClient";
 import styles from "@/components/platform/PlatformShellStyles";
-import { appHref, appIsOffOrigin, appsFor, currentAppKey, type PlatformAppKey } from "@/lib/platform/apps";
+import {
+  appHref,
+  appIsOffOrigin,
+  appsFor,
+  currentAppKey,
+  leadsBackToPublicSite,
+  type PlatformAppKey,
+} from "@/lib/platform/apps";
+import { useSignInHref } from "@/components/auth/useSignInReturn";
 import { markInstallSurface } from "../pwa/installStore";
 import { usePwaInstall } from "../pwa/usePwaInstall";
 import { usePlatformIdentity } from "./usePlatformIdentity";
@@ -234,55 +242,35 @@ export function PlatformAccountMenu({
      other crossing. */
   const surfaceHref = useSurfaceHref();
   const cabinetHref = surfaceHref("/profile");
+  /* THE DOOR REMEMBERS THE PAGE IT WAS OPENED FROM (2026-09-20).
+     The signed-out row leads to the cabinet, and the cabinet is where the
+     sign-in ends — so pressing «Увійти» while reading a programme, the
+     diagnostic or the catalogue signed you in and put you on your dashboard,
+     with the page you were reading gone and the browser's back button the only
+     way to it. The wall in front of `/learn` and `/profile` never had this
+     problem: it renders IN PLACE of the page asked for. This is that same
+     promise for the one entry that is a link rather than a wall —
+     `lib/auth/signInReturn` says what may be carried, `useSignInReturn` spends
+     it on arrival. */
+  const signInHref = useSignInHref(cabinetHref);
   /* THE WAY BACK TO THE PUBLIC SITE.
-     `my` serves the shelf, the player and the builder, and nothing on it leads
+     `my` serves the cabinet, the shelf and the player, and nothing on it leads
      back to the public site: its own root IS the shelf, so a reader who wanted
      the catalogue, the programs or the offer they came from had the browser's
      back button and nothing else. The admin panel had the same hole and closed
-     it with a first row out; this is that row, on the other shell.
+     it with a first row out; this is that row, on the other shells.
 
-     NOT an entry in `apps.ts`. That list answers "which applications may this
-     account enter", and every row in it is marked when you are standing in it.
-     The public site is not an application of the account — it is where the
-     account is not needed — and a row labelled «На платформу» marked as the
-     current page on `www` would read as an instruction to go where you already
-     are. The label is Ukrainian here and translated in the panel because the
-     platform ships one language and the panel ships two; what the two shells
-     share is the destination, not the string. */
+     WHERE it is offered is `leadsBackToPublicSite` below. The label is
+     Ukrainian here and translated in the panel because the platform ships one
+     language and the panel ships two; what the two shells share is the
+     destination, not the string. */
   const platformHref = surfaceHref("/");
   const allApps = appsFor({ signedIn, role: identity.role, authorsCourses: identity.authorsCourses });
   const apps = exclude?.length ? allApps.filter((app) => !exclude.includes(app.key)) : allApps;
   const here = currentAppKey(host, pathname);
-  /* WHICH APPLICATION, not which host. Keying the exit off `isPersonalHost`
-     was the obvious version and hid the row exactly where it is most needed
-     while building: the subdomain only ever points at production, so on
-     localhost and on a preview `my` does not exist and the shelf and the
-     builder are reached by path. Asking where the reader IS answers for both —
-     the personal host, where everything is one of these two, and every other
-     environment, where they are paths on one origin.
-
-     `cabinet` is deliberately not in the list: /profile is on the public site,
-     so its reader is already on the platform. */
-  const inPersonalApp = here === "learn" || here === "builder";
-  /* THE ROW IS WRONG IN EXACTLY ONE PLACE — the public home page itself, where
-     it would offer the page being read. It used to be gated on `inPersonalApp`
-     instead, which is a much bigger claim than the one thing it was avoiding:
-     the CABINET is on `www` and is not a personal app, so /profile — the one
-     account surface most likely to be a dead end — was left with no way out to
-     the storefront but the browser's back button. Every other surface (the
-     cabinet, an offer page, the panel) is somewhere you can sensibly leave. */
-  /* NARROWED TO THE STOREFRONT AS A WHOLE (2026-09-10). Gating on the home
-     PAGE meant every other www page — diagnostics, a program, the cabinet —
-     carried a «На головну» row while the bar three centimetres above it
-     already had «Головна» in the main navigation. Two ways to the same page,
-     one of them hidden behind an avatar. The row answers «how do I get back to
-     the public site», which is a question only the personal apps and the panel
-     can ask. */
-  /* AND THE PANEL IS ONE OF THEM (2026-09-13). The paragraph above names it,
-     the condition did not: `/admin` is on `www` but it is not the storefront —
-     no main navigation, no «Головна» — so narrowing to `!inPersonalApp` took
-     the panel's only way back to the public site away with the duplicate. */
-  const onPublicSite = !(inPersonalApp || here === "admin");
+  /* The rule, with its history, is `leadsBackToPublicSite` in apps.ts — it sits
+     beside `currentAppKey`, whose answer it reads, and is tested there. */
+  const showHomeRow = leadsBackToPublicSite(here);
 
   /* No close-on-pathname effect. Every row in the menu closes it in its own
      handler, and anything outside the menu is an outside pointerdown, which the
@@ -294,9 +282,14 @@ export function PlatformAccountMenu({
     /* A hard navigation, not a router push. Sign-out invalidates data every
        shell already has in memory — the role cache, the shelf, an open course —
        and the root of the current origin is the one destination that exists on
-       all three. That is exactly what the lint rule steers away from, so it is
-       told so here rather than obeyed. */
-    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- sign-out must drop every in-memory cache
+       all three.
+
+       NO `eslint-disable` HERE ANY MORE (2026-09-20). One sat on this line
+       naming `@next/next/no-location-assign-relative-destination`, a rule the
+       installed plugin (16.1.5) does not define — and ESLint treats a disable
+       for an unknown rule as an error, so `npm run lint` had been failing on
+       this one line since 2026-09-13. The line it silenced is deliberate and
+       is explained above; nothing warns about it today. */
     if (typeof window !== "undefined") window.location.assign("/");
   };
 
@@ -330,7 +323,7 @@ export function PlatformAccountMenu({
           <PlatformThemeControl />
         </div>
         <Link
-          href={cabinetHref}
+          href={signInHref}
           {...INK_ROW}
           onClick={() => {
             close();
@@ -412,7 +405,7 @@ export function PlatformAccountMenu({
           A plain anchor, like every other crossing in this menu: `next/link`
           would prefetch a route this origin does not own and still full-load on
           click. */}
-      {onPublicSite ? null : (
+      {showHomeRow ? (
         <a
           href={platformHref}
           {...INK_ROW}
@@ -423,7 +416,7 @@ export function PlatformAccountMenu({
         >
           <InkMenuLabel>На головну</InkMenuLabel>
         </a>
-      )}
+      ) : null}
       {apps.map((app) => {
         const href = appHref(app, host);
         const offOrigin = appIsOffOrigin(app, host);

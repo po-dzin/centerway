@@ -335,17 +335,27 @@ describe("the footer's own addresses", () => {
 });
 
 describe("the account menu does not offer a door the bar already carries", () => {
-  it("hides the way back to the storefront while on the storefront", () => {
-    /* Gated on the home PAGE, every other www route carried «На головну» while
-       the navigation three centimetres above it already read «Головна». */
+  /* THE RULE MOVED (2026-09-20). It used to be an expression in the menu and
+     these two tests read it as text; it now lives beside the question it reads
+     — `leadsBackToPublicSite` in `lib/platform/apps.ts`, tested there against
+     every surface, including the cabinet that was silently missing from it.
+     What is left to check here is that the menu still ASKS rather than growing
+     a second copy of the rule: a component that re-derives «am I on the
+     storefront» from the pathname is how the two answers drift apart. */
+  it("asks apps.ts where the way back belongs instead of deciding for itself", () => {
     const menu = read("src/components/platform/layout/PlatformAccountMenu.tsx");
-    expect(menu).toContain('const onPublicSite = !(inPersonalApp || here === "admin");');
-    expect(menu).toContain("{onPublicSite ? null : (");
+    expect(menu).toContain("const showHomeRow = leadsBackToPublicSite(here);");
+    expect(menu).toContain("{showHomeRow ? (");
+    // No local re-derivation, under any of the names this rule has had.
+    expect(menu).not.toContain("onPublicSite");
     expect(menu).not.toContain("onPublicHome");
+    expect(menu).not.toContain("inPersonalApp");
   });
 
-  it("keeps the way back in the admin panel, which has no storefront navigation", () => {
+  it("keeps the row a plain anchor, because it leaves this origin", () => {
+    /* `next/link` would prefetch a route this origin does not own and still
+       full-load on click — the storefront is another app. */
     const menu = read("src/components/platform/layout/PlatformAccountMenu.tsx");
-    expect(menu).toMatch(/onPublicSite = !\(inPersonalApp \|\| here === "admin"\)/);
+    expect(menu).toMatch(/\{showHomeRow \? \(\s*\n\s*<a\s*\n\s*href=\{platformHref\}/);
   });
 });

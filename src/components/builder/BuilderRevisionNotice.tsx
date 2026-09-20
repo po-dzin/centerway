@@ -1,5 +1,7 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
+
 import { InkLabel } from "./BuilderInkLabel";
 import styles from "./Builder.module.css";
 import type { BuilderCourseDto } from "./builderClient";
@@ -23,6 +25,15 @@ import type { BuilderCourseDto } from "./builderClient";
  *
  * NOT ON «Публікація» ITSELF — that panel says all of this at length and owns
  * the same button. This is the reminder for the tabs where the writing happens.
+ *
+ * ONE BUTTON, AND THE WAY IN IS THE SENTENCE (2026-09-20). There used to be a
+ * second control beside it reading «Публікація», which named a TAB rather than
+ * an act — so a row whose one real action is «send this for review» offered two
+ * things to press and the bigger-looking one went somewhere. Where an author
+ * actually wants to go from here is the list of what is still missing, and the
+ * notice already says how many: so the count itself opens it, with an arrow
+ * after it saying that it leads somewhere. When nothing is blocking, there is
+ * nothing to go and look at, and the row is one button.
  */
 export function BuilderRevisionNotice({
   review,
@@ -43,10 +54,14 @@ export function BuilderRevisionNotice({
 }) {
   const submitted = review.status === "in_review";
   /* Why the button cannot be pressed, in the author's terms and in the order
-     they can act on: save first, then the blockers, both of which the release
-     panel lists by name. A disabled control with no reason beside it is the
-     thing this notice exists to stop being. */
-  const refusal = dirty ? "Спочатку збережіть зміни." : !ready ? `Лишилось блокерів: ${blockerCount}.` : null;
+     they can act on: save first, then the blockers. A disabled control with no
+     reason beside it is the thing this notice exists to stop being.
+
+     THE TWO REFUSALS ARE NOT THE SAME KIND. «Save first» is answered where the
+     author already is — one press of a button they can see. «Blockers remain»
+     is answered somewhere else, by a list of what they are, which is why only
+     that one becomes a way in. */
+  const blocked = !dirty && !ready;
 
   return (
     <aside className={styles.revisionNotice} aria-label="Стан цієї версії">
@@ -55,25 +70,29 @@ export function BuilderRevisionNotice({
           ? "Оновлення на перевірці. Учні поки бачать поточну версію."
           : "Учні бачать поточну версію. Ці зміни поїдуть до них після перевірки."}
         {review.status === "changes_requested" && review.note ? ` Коментар: ${review.note}` : ""}
-        {refusal ? ` ${refusal}` : ""}
+        {dirty ? " Спочатку збережіть зміни." : ""}{" "}
+        {blocked ? (
+          /* The count and the way to see what it counts are one control: an
+             author reading «лишилось блокерів: 1» is already asking «який»,
+             and the arrow is the answer to that and not a second subject. */
+          <button
+            className={styles.revisionNoticeBlockerLink}
+            type="button"
+            onClick={onOpenRelease}
+            aria-label={`Лишилось блокерів: ${blockerCount}. Показати, яких саме`}
+          >
+            <InkLabel>Лишилось блокерів: {blockerCount}</InkLabel>
+            <Icon name="arrow-right" size={16} aria-hidden="true" />
+          </button>
+        ) : null}
       </p>
-      <div className={styles.revisionNoticeActions}>
-        {submitted ? null : (
+      {submitted ? null : (
+        <div className={styles.revisionNoticeActions}>
           <button className={styles.quietAction} type="button" onClick={onSubmit} disabled={busy || dirty || !ready}>
             Надіслати на перевірку
           </button>
-        )}
-        <a
-          className={styles.revisionNoticeLink}
-          href="#course-release"
-          onClick={(event) => {
-            event.preventDefault();
-            onOpenRelease();
-          }}
-        >
-          <InkLabel>Публікація</InkLabel>
-        </a>
-      </div>
+        </div>
+      )}
     </aside>
   );
 }

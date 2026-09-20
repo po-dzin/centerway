@@ -74,3 +74,45 @@ describe("workshop chrome on a phone", () => {
     expect(rule(organs, ".cluster > :is(button, a)")).toContain("box-shadow: none");
   });
 });
+
+/**
+ * THE RIGHT DRAWER IS A DRAWER (2026-09-20).
+ *
+ * Twice now this panel has been written as a modal with a drawer's silhouette,
+ * and both faults were invisible in a screenshot of the panel itself — they
+ * were only visible in what the panel did to everything else on the screen.
+ */
+describe("the version-history drawer", () => {
+  const css = read("src/components/builder/Builder.module.css");
+  const sheet = read("src/components/builder/BuilderSheet.tsx");
+
+  it("leaves the course beside it usable", () => {
+    // Non-modal above the phone band: `show()`, not `showModal()`. An author
+    // opens the history to read it against the document it describes.
+    expect(sheet).toContain("dialog.show()");
+    expect(sheet).toContain('placement === "side" && window.matchMedia(DRAWER_FROM).matches');
+    // And the phone's full-screen bottom sheet, where there is no «beside»,
+    // keeps the focus trap it earns.
+    expect(sheet).toContain("dialog.showModal()");
+    // `cancel` never fires for a non-modal dialog, so Escape is listened for —
+    // once, and never for the modal half as well.
+    expect(sheet).toContain('ref.current.matches(":modal")');
+  });
+
+  it("starts below the topbar's line rather than on top of it", () => {
+    // The bar's contour is the chrome ring, which paints outside its box: the
+    // drawer has to clear the height AND that pixel.
+    expect(rule(css, ".shell")).toContain("--builder-drawer-top: var(--builder-topbar-height)");
+    expect(css).toContain("--builder-drawer-top: calc(var(--builder-topbar-height) + 1px)");
+    const side = rule(css, ".sheetSide");
+    expect(side).toContain("position: fixed");
+    expect(side).toContain("inset-block: var(--builder-drawer-top) 0");
+    // Placed by its insets, because an auto margin only reaches the right edge
+    // while the dialog is modal.
+    expect(side).toContain("margin: 0");
+  });
+
+  it("dims nothing", () => {
+    expect(rule(css, ".sheetSide::backdrop")).toContain("background: transparent");
+  });
+});

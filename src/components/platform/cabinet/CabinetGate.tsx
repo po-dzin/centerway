@@ -16,6 +16,7 @@ import type { Session } from "@supabase/supabase-js";
 
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { SignInOptions } from "@/components/auth/SignInOptions";
+import type { GoogleSignInIntent } from "@/lib/auth/lastAccount";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { StatePanel } from "./StatePanel";
 import { getProfileCopy } from "@/components/platform/profile/copy";
@@ -39,7 +40,7 @@ export function cabinetGate({
   loading: boolean;
   session: Session | null;
   error?: string | null;
-  onSignIn: () => void;
+  onSignIn: (intent?: GoogleSignInIntent) => void;
   loadingCopy?: { label?: string; title: string; lead?: string };
   /** Route-owned loading geometry. The gate resolves session state, but the
       route owns the space its final content will occupy. */
