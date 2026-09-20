@@ -233,10 +233,14 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
                 visual={course.visual}
                 slug={course.slug}
                 artwork={course.artwork}
+                kindBadge={course.kindBadge}
+                categories={course.categoryLabels}
+                categoryCodes={course.categories}
+                pretitle={course.pretitle}
+                posttitle={course.posttitle}
                 commercialMode={course.commercialMode}
                 price={course.price}
                 compareAtPrice={course.compareAtPrice}
-                ctaLabel="Деталі курсу"
               />
             ))}
           </PlatformOfferCarousel>

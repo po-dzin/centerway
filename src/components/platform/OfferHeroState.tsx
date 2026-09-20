@@ -25,6 +25,7 @@ import { Icon } from "@/components/Icon";
 import { useOfferAccess } from "@/components/platform/OfferAccess";
 import { CheckoutStartLink } from "@/components/platform/CheckoutStartLink";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
+import { ProgressRail } from "@/components/platform/ProgressRail";
 import styles from "@/components/platform/PlatformHeroStyles";
 
 export type OfferHeroCommerce = {
@@ -82,19 +83,22 @@ export function OfferHeroCommitment({ commerce }: { commerce: OfferHeroCommerce 
                 : "Курс відкрито у вашому кабінеті."}
         </p>
       </div>
-      {/* The bar is drawn only when there is a real fraction to draw. A rail at
-          zero on a course nobody has started yet reads as a stalled download. */}
+      {/* The rail is drawn only when there is a real fraction to draw. A rail at
+          zero on a course nobody has started yet reads as a stalled download.
+
+          THE SAME RAIL AS EVERYWHERE ELSE (2026-09-20). This used to be a
+          filled capsule written here — the one surface on the platform that
+          drew progress as a bar while the shelf, the course view and the dosha
+          test drew the dashed rail with the walker on it. Two pictures of one
+          fact is one more idiom than a reader should have to learn. */}
       {total > 0 && done > 0 && !finished ? (
-        <div
-          className={styles.heroProgressTrack}
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={total}
-          aria-valuenow={done}
-          aria-label={`Пройдено ${done} з ${total} уроків`}
-        >
-          <div className={styles.heroProgressFill} style={{ width: `${Math.round((done / total) * 100)}%` }} />
-        </div>
+        <ProgressRail
+          value={done}
+          total={total}
+          tone="media"
+          className={styles.heroProgressRail}
+          label={`Пройдено ${done} з ${total} уроків`}
+        />
       ) : null}
     </>
   );

@@ -15,6 +15,7 @@
  * nothing but the codes themselves.
  */
 
+import type { CwIconName } from "@/lib/brand/iconNames";
 import type { CourseCategory, CourseKind } from "@/lms-core";
 
 /**
@@ -32,4 +33,25 @@ export const COURSE_CATEGORY_LABELS: Record<CourseCategory, string> = {
   movement: "Рух",
   nutrition: "Харчування",
   cleansing: "Очищення",
+  breathing: "Дихання",
+  meditation: "Медитація",
+  focus: "Фокус",
+  energy: "Енергія",
+  relaxation: "Релаксація",
+};
+
+/**
+ * The glyph each subject is drawn with — one per subject, and none shared with
+ * anything else in the product (2026-09-20). `focus` is the sight, NOT `lens`:
+ * that is the search magnifier in the filters and the admin.
+ */
+export const COURSE_CATEGORY_ICONS: Record<CourseCategory, CwIconName> = {
+  movement: "motion",
+  nutrition: "food",
+  cleansing: "ripple",
+  breathing: "wind",
+  meditation: "seated",
+  focus: "crosshair",
+  energy: "sprout",
+  relaxation: "incense",
 };

@@ -20,7 +20,6 @@
  */
 
 import { useEffect, useState } from "react";
-import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 
 import { Icon } from "@/components/Icon";
 import { BUILDER_PATH_PREFIX } from "@/lib/surfaces/catalog";
@@ -113,8 +112,13 @@ export function CourseAuthorLink({
       href={builderHref(`/${courseSlug}`)}
       data-cw-ink-control
     >
+      {/* NO INK MARK HERE (2026-09-20). The stroke is how a bare text control
+          says "this is pressable", and this control is not bare: it has a glyph
+          in front of it. Two marked labels sat in the same utility line — the
+          way back and this — and the line read as two links to the same kind of
+          place. The mark belongs to the one that has nothing else. */}
       <Icon name="settings" size={20} />
-      <InteractionInkLabel variant="link">Редагувати</InteractionInkLabel>
+      <span>Редагувати</span>
     </a>
   );
 

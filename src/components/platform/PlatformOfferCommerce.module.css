@@ -205,6 +205,11 @@
 .outlineLessonLink {
   color: var(--cw-platform-text);
   text-decoration: none;
+  /* Prose wraps. A lesson title is a sentence fragment, not a label: it takes
+     as many lines as it needs and breaks inside a long word rather than
+     running out of the row. */
+  display: inline;
+  overflow-wrap: anywhere;
 }
 
 /* A finished lesson keeps its link — repeating a protocol is the normal way to

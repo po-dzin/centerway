@@ -98,11 +98,11 @@ export function PlatformTrail({
               onClick={back.onNavigate}
               title={back.label}
             >
-              <TrailInkLabel>{back.label}</TrailInkLabel>
+              <TrailInkLabel back>{back.label}</TrailInkLabel>
             </button>
           ) : (
             <Link className={styles.crumbLink} data-cw-ink-control href={back.href ?? "#"} title={back.label}>
-              <TrailInkLabel>{back.label}</TrailInkLabel>
+              <TrailInkLabel back>{back.label}</TrailInkLabel>
             </Link>
           )}
         </span>
@@ -138,13 +138,29 @@ export function PlatformTrail({
   );
 }
 
-function TrailInkLabel({ children, current = false }: { children: string; current?: boolean }) {
+function TrailInkLabel({
+  children,
+  current = false,
+  back = false,
+}: {
+  children: string;
+  current?: boolean;
+  /** The way out of this page, drawn left of the trail with an arrow. */
+  back?: boolean;
+}) {
   // The trail used to carry its own copy of the stroke recipe — box, offset,
   // dasharray, three state rules. It now asks for the shared rounded ink edge
   // instead, so the crumb you are on is marked the same way the bar and the
   // tabs mark the thing you are on.
+  //
+  // THE WAY BACK IS MARKED AT REST, THE CRUMBS ARE NOT (2026-09-20). A crumb
+  // takes `tab`, which draws the stroke only under the step you are ON — right
+  // for a row that says where you are. The back control answers a different
+  // question: it is the one thing on the page you can press to leave, it has
+  // no plate under it, and at rest it was an arrow beside plain text. `link` is
+  // the role for exactly that — an underlined text control — so it takes it.
   return (
-    <InteractionInkLabel variant="tab" active={current}>
+    <InteractionInkLabel variant={back ? "link" : "tab"} active={current}>
       {children}
     </InteractionInkLabel>
   );

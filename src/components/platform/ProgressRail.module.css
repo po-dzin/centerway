@@ -98,3 +98,23 @@
     transition: none;
   }
 }
+
+/* ── Over a photograph ───────────────────────────────────────────────────
+   The offer hero. Only the two marks that read the page's own ink change:
+   the track and the walker take the inverse ink the hero's copy already
+   takes. The done dashes keep the accent, which carries on any ground. */
+.wrapMedia .walker {
+  color: var(--cw-mat-inverse-text);
+}
+
+.wrapMedia .dash {
+  background: color-mix(in srgb, var(--cw-mat-inverse-text) 34%, transparent);
+}
+
+.wrapMedia .long {
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--cw-mat-inverse-text) 34%, transparent) 0 0.4rem,
+    transparent 0.4rem 0.64rem
+  );
+}

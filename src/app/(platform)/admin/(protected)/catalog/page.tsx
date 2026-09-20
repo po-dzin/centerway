@@ -80,6 +80,11 @@ const CATEGORY_KEY: Record<CourseCategory, string> = {
   movement: "catalog_category_movement",
   nutrition: "catalog_category_nutrition",
   cleansing: "catalog_category_cleansing",
+  breathing: "catalog_category_breathing",
+  meditation: "catalog_category_meditation",
+  focus: "catalog_category_focus",
+  energy: "catalog_category_energy",
+  relaxation: "catalog_category_relaxation",
 };
 
 const GROUPING_KEY: Record<CatalogGrouping, string> = {

@@ -84,6 +84,11 @@ const CATEGORY_LABELS: Record<CourseCategory, string> = {
   movement: "Рух",
   nutrition: "Харчування",
   cleansing: "Очищення",
+  breathing: "Дихання",
+  meditation: "Медитація",
+  focus: "Фокус",
+  energy: "Енергія",
+  relaxation: "Релаксація",
 };
 
 /**
@@ -435,7 +440,7 @@ export function BuilderCourseSettings({
             <strong>{course.tagline || "Рядок під назвою не додано"}</strong>
             <span>
               {[course.pretitle, course.posttitle].filter(Boolean).join(" · ") ||
-                "Надзаголовок і підзаголовок не додані"}
+                "Гачок і підзаголовок не додані"}
             </span>
           </>
         }
@@ -447,10 +452,10 @@ export function BuilderCourseSettings({
         <FieldInput
           field={{
             path: ["pretitle"],
-            label: "Надзаголовок",
+            label: "Гачок над назвою",
             kind: "text",
             maxLength: COURSE_PRETITLE_MAX,
-            hint: `Маленький рядок НАД назвою: «Авторський курс», «Спільно з IREM». До ${COURSE_PRETITLE_MAX} символів. Рід і тривалість тут не потрібні — їх друкує бейдж.`,
+            hint: `Головний рядок картки — крупно, НАД назвою: «Поверни тілу легкість». До ${COURSE_PRETITLE_MAX} символів. Рід і тривалість тут не потрібні — їх друкує бейдж.`,
           }}
           value={course.pretitle}
           onChange={onChange}
@@ -461,7 +466,7 @@ export function BuilderCourseSettings({
             label: "Підзаголовок",
             kind: "text",
             maxLength: COURSE_POSTTITLE_MAX,
-            hint: `Рядок ПІД назвою — що це за річ: «практикум з умовного голодування». До ${COURSE_POSTTITLE_MAX} символів.`,
+            hint: `Рядок ПІД назвою на сторінці курсу — що це за річ: «практикум з умовного голодування». До ${COURSE_POSTTITLE_MAX} символів. Якщо гачка над назвою немає, картка друкує його замість гачка.`,
           }}
           value={course.posttitle}
           onChange={onChange}

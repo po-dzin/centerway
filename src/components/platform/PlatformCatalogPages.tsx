@@ -68,12 +68,12 @@ export function storefrontEntry(course: StorefrontCard): CatalogEntry {
       artwork: course.artwork,
       kindBadge: course.kindBadge,
       categories: course.categoryLabels,
+      categoryCodes: course.categories,
       pretitle: course.pretitle,
       posttitle: course.posttitle,
       commercialMode: course.commercialMode,
       price: course.price,
       compareAtPrice: course.compareAtPrice,
-      ctaLabel: course.lessons <= 8 ? "Деталі курсу" : "Деталі програми",
     },
   };
 }
@@ -473,7 +473,12 @@ export async function PlatformProductsIndexPage() {
                 description={program.description}
                 href={program.href}
                 visual={program.visual}
-                ctaLabel="Деталі програми"
+                /* ONE LABEL FOR A RAIL THAT STANDS INSIDE A PAGE (2026-09-20).
+                   A carousel at the foot of an offer page is not a catalogue —
+                   it is the question "and after this?". Every such rail says
+                   «Наступний крок», the same words the recommendation rail on
+                   a course page says. Catalogue cards keep «Детальніше». */
+                ctaLabel="Наступний крок"
                 slug={program.slug}
                 artwork={program.artwork}
                 commercialMode={program.commercialMode}

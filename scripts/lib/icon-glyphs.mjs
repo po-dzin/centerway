@@ -233,10 +233,127 @@ export const ICONS = {
   // Движение: a dot travelling along a curved path. Reads as motion rather than
   // as text alignment (the earlier three-lines-plus-arc did), and it borrows the
   // dot/path primitives so it sits inside the graphics language.
+  /* «Рух» — THE PERSON MOVING, not the trace they leave (2026-09-20). This was
+     a swoosh with an arrowhead: a diagram of a trajectory, which is what a
+     chart says, not what a body does. A figure mid-stride says it at 20px and
+     stands apart from `seated` — the same body, the other state. Its second
+     consumer, the practice block in the lesson tools, gains by the change for
+     the same reason. */
   motion: {
     group: "Elements",
-    d: ["M3.4 18.6C7.4 8.6 12.6 5 19.4 6.2", "M15.6 4.2l3.8 2-1.6 3.8"],
-    dots: [{ cx: 3.4, cy: 18.6, r: 1.5, accent: true }],
+    /* CENTRED ON THE GRID, 2026-09-20 second pass. The first runner hung from
+       the top-left: head at y 3, back foot at x 5.2, so the figure's mass sat
+       above and left of centre and the glyph leaned out of its disc. The box is
+       now 5.0–18.6 across and 4.4–18.6 down — 11.8 and 11.5 against the grid's
+       12 — and each limb is two segments instead of three, so the joints read
+       at 20px instead of turning into a knot. */
+    d: [
+      "M14.2 4.4a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",
+      "M13.4 10.4 10.4 14",
+      "M13.8 11.4l3.6 1.6 1.2-2.4",
+      "M12.4 11.6 8.6 10.6",
+      "M10.4 14l2.6 3.4 3.4 1.2",
+      "M10.4 14 7.4 16.8 5 16",
+    ],
+  },
+
+  /* ── The course categories, drawn rather than borrowed (2026-09-20) ──────
+     The offer card prints a category as a glyph in a disc, and a category set
+     of eight had been assembled out of whatever the set already held: `breath`
+     was a circle with four axes, which is `center`, `sun` and `lens` wearing a
+     different name; «очищення» was the water DROP; «медитація» was a STONE;
+     «енергія» the sun and «релаксація» the moon. Five of eight categories were
+     therefore represented by a glyph that means something else somewhere else
+     in the product — and three of them by the same circle.
+
+     These five are authored for the job. Each is a different KIND of shape, so
+     they stay apart at 20px in a row: strokes travelling sideways, rings
+     spreading outward, a figure, a growing thing, a slack line between two
+     posts. `motion` (the category «Рух») and `food` («Харчування») keep their
+     existing glyphs — a moving line and a place setting were already the right
+     drawings — and `lens` keeps «Фокус», which stops colliding the moment the
+     breathing circle is gone. */
+
+  /** «Дихання» — moving air: strokes that travel sideways and curl at the end. */
+  wind: {
+    group: "Elements",
+    d: [
+      "M3.2 8.2h8.6a2.4 2.4 0 1 0-2.4-2.4",
+      "M3.2 12h11.6a2.6 2.6 0 1 1-2.6 2.6",
+      "M3.2 15.8h6.4",
+    ],
+  },
+
+  /** «Очищення» — a drop has fallen and the water is carrying it outward. */
+  ripple: {
+    group: "Elements",
+    d: [
+      "M12 9.6c-3.2 0-5.8 1.2-5.8 2.8s2.6 2.8 5.8 2.8 5.8-1.2 5.8-2.8-2.6-2.8-5.8-2.8z",
+      "M3.4 15.2c1.6 1.8 5 3 8.6 3s7-1.2 8.6-3",
+    ],
+    dots: [{ cx: 12, cy: 5.4, r: 1.3, accent: true }],
+  },
+
+  /** «Медитація» — the person, seated. The stone was the place, not the act.
+      The first draft hung the arms off a straight spine and sat the body on a
+      dome; the dome read as a hill with a head on it. Lotus now: the arms fall
+      from the shoulders to the knees and the crossed legs are the base, which
+      is the silhouette everyone already knows. */
+  seated: {
+    group: "Elements",
+    d: [
+      "M12 3.4a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2z",
+      "M12 8.4c-2.6 0-4.7 2.1-4.7 4.7 0 1.4.5 2.6 1.4 3.5",
+      "M12 8.4c2.6 0 4.7 2.1 4.7 4.7 0 1.4-.5 2.6-1.4 3.5",
+      "M4.6 19.4c1.5-1.8 4.3-2.8 7.4-2.8s5.9 1 7.4 2.8z",
+    ],
+  },
+
+  /** «Енергія» — what is growing, not what is burning. */
+  sprout: {
+    group: "Elements",
+    d: [
+      "M12 20.4v-7.2",
+      "M12 14c-3.4 0-5.6-2.1-5.6-5.5 3.4 0 5.6 2.1 5.6 5.5z",
+      "M12 12.4c0-3.4 2.2-5.5 5.6-5.5 0 3.4-2.2 5.5-5.6 5.5z",
+    ],
+  },
+
+  /** «Релаксація» — incense: a still stick and the smoke taking its time.
+      Two drafts died here. A hammock with posts read as a letter M at 20px; a
+      hammock without them read as a smile. Both were drawings of FURNITURE, and
+      the category is not a place to lie down — it is the state. A rising curl
+      is the only shape in this set that moves slowly, and nothing else in the
+      product uses one. */
+  incense: {
+    group: "Elements",
+    /* THE SMOKE HAS TO LEAVE THE STICK. First pass started the curl where the
+       stick ended and the two read as one bent line. The stick now stops at
+       13.8 and the curl starts at 11.4 — a clear 2.4 of nothing between them,
+       which is what says "this part is burning and this part is air". */
+    d: [
+      "M8.8 20.6h6.4",
+      "M12 20.6v-6.8",
+      "M12 11.4c-2.5-1.7 2.3-3 .2-4.9-1.1-1-1-2 .1-3",
+    ],
+  },
+
+  /** «Фокус» — a sight. NOT `lens`: that glyph is the SEARCH magnifier in the
+      catalogue filter, the shelf filter, the admin search, the cover editor and
+      the workshop rail, and a category that borrowed it would have put "search"
+      on a course card. The rings and the four marks crossing them are a sight,
+      which is the picture «фокус» actually asks for, and the centre dot is the
+      set's own node. */
+  crosshair: {
+    group: "Elements",
+    d: [
+      "M12 5.2a6.8 6.8 0 1 0 0 13.6 6.8 6.8 0 0 0 0-13.6z",
+      "M12 2.6v4.4",
+      "M12 17v4.4",
+      "M2.6 12h4.4",
+      "M17 12h4.4",
+    ],
+    dots: [{ cx: 12, cy: 12, r: 1.4, accent: true }],
   },
 
   // ── Content: what the programme hands you ──────────────────────────────
