@@ -46,13 +46,24 @@ export const BRAND = {
    * it is the METHOD the programmes lean on, stated in `summary`, not the
    * category the platform is.
    *
-   * "КУРОВАНА" IS NOT AN ORNAMENT. The semiotic passport puts it plainly:
-   * CenterWay does not sell content, it organises НАВІГАЦІЮ ДО СТАНУ — a
-   * curated path from scatteredness to support, clarity and attentive
-   * presence. A platform where anyone uploads anything is a library; this one
-   * is assembled, and the word says so before the visitor has to guess.
+   * "ВЕЛНЕС" IS THE WORD THE SEARCH IS TYPED IN. A category has to be the term
+   * a stranger already uses for this shelf of the market, and in Ukrainian
+   * search that term is "велнес". The previous word, "курована", described the
+   * platform correctly — it is assembled, not a library where anyone uploads
+   * anything — but that is a PROPERTY, and nobody searches for a property.
+   * What the word protected is not lost: the summary still opens with "не
+   * бібліотека відео і не набір порад, а зібраний шлях".
+   *
+   * "СУЧАСНА" SEPARATES IT FROM THE ESOTERIC SHELF. Ayurveda is the method
+   * here, and the neighbourhood that word puts the platform in is full of
+   * mysticism. "Сучасна" says, before the visitor decides, that what happens
+   * inside is lessons, an access window, a cabinet and live support.
+   *
+   * "ЦІЛІСНОГО ВІДНОВЛЕННЯ" is unchanged and carries the same weight it always
+   * did: body, food, rhythm and practice are one path here, not four separate
+   * pieces of advice, and the path is taken to a stated end.
    */
-  category: "Курована платформа цілісного відновлення",
+  category: "Сучасна велнес платформа цілісного відновлення",
 
   /** The line under the name. Human first, indexable second. */
   tagline: "Тіло · Ритм · Опора",
@@ -61,9 +72,15 @@ export const BRAND = {
    * The meta description of the platform itself — the default for any page
    * that has not written its own, and the sentence quoted when nothing more
    * specific matches. Kept inside ~160 characters on purpose.
+   *
+   * IT MUST NOT RESTATE THE CATEGORY. The title is "CenterWay — <category>", and
+   * a result page prints title and description one under the other: a
+   * description that opens with the same words spends its first line saying
+   * nothing new, and pushes the boundary past the cut. It starts where the
+   * title stops — with what is inside.
    */
   description:
-    "CenterWay — курована платформа цілісного відновлення: тіло, харчування, ритм і практика зібрані в один шлях, із супроводом до стану уважної присутності. Без медичних обіцянок.",
+    "Тіло, харчування, ритм і практика — в один шлях із супроводом: програми, тести, консультації, продукти. Без медичних обіцянок.",
 
   /**
    * The long form: what an answer engine is given when it asks the platform to
@@ -71,9 +88,9 @@ export const BRAND = {
    * part of the format.
    */
   summary: [
-    "CenterWay — курована платформа цілісного відновлення: не бібліотека відео і не набір порад, а зібраний шлях від розсіяності до опори, ясності та стану уважної присутності. Курс, тілесна практика, харчування, ритм дня і живий супровід зібрані в одну програму і в один кабінет.",
+    "CenterWay — сучасна велнес платформа цілісного відновлення: не бібліотека відео і не набір порад, а зібраний шлях від розсіяності до опори, ясності та стану уважної присутності. Курс, тілесна практика, харчування, ритм дня і живий супровід зібрані в одну програму і в один кабінет.",
     "Для дорослих у перевантаженому ритмі, які хочуть повернути травлення, сон і енергію послідовно, а не окремими порадами.",
-    "Усередині: безкоштовний тест доші; програми — детокс «Шлях 21», розвантажувальний день, відновлююча гімнастика IREM, харчування під конституцію; персональна консультація і трав'яна підтримка. Куплене відкривається в особистому кабінеті: уроки у своєму темпі, зрозумілий термін доступу і супровід.",
+    "Усередині: програми з супроводом, безкоштовні тести, персональні консультації та продукти для відновлення. Куплене відкривається в особистому кабінеті: матеріали у своєму темпі, зрозумілий термін доступу і живий супровід.",
     "Метод спирається на аюрведу, дієтологію і роботу з тілом. CenterWay не ставить діагнозів, не лікує захворювань і не замінює лікаря — робота йде з харчуванням, ритмом дня і практикою.",
   ],
 
