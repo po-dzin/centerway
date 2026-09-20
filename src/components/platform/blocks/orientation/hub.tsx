@@ -101,27 +101,22 @@ export function HubIntro() {
         </div>
         <aside className={styles.videoAside} id="diagnostics" data-cw-hub-intro="aside">
           <div className={styles.videoDecisionIntro}>
-            <p className={styles.label}>Тест доші · перший крок</p>
-            <h2 className={`${styles.title} ${styles.videoDecisionTitle}`}>Спочатку — зрозуміти свій стан</h2>
+            <p className={styles.label}>Діагностика стану · перший крок</p>
+            <h2 className={`${styles.title} ${styles.videoDecisionTitle}`}>Побачити свій стан і вибрати старт</h2>
             <p className={styles.videoDecisionText}>
-              Кілька хвилин, щоб уважніше подивитися на свій поточний стан і зрозуміти, з чого почати.
+              Тести допомагають помітити ритм, енергію, сон, травлення й напругу. Це не діагноз, а спокійний спосіб
+              зрозуміти, що варто дослідити далі.
             </p>
           </div>
           <div className={styles.videoDecisionRail}>
-            {/* ONE ACTION. This card used to offer the dosha test and a
-                consultation side by side, and the consultation is where the
-                last block of this very page ends — the same destination, twice
-                on one screen, with the second button making the first look like
-                one of two equal options. The card asks one thing: take the
-                test. */}
+            {/* The first available test is the route action. The full catalogue
+                stays secondary: it gives context without competing with the
+                next concrete step. */}
             <div className={styles.videoActionGrid} data-cw-hub-intro="actions">
               <Link className={styles.videoActionPrimary} href={DOSHA_TEST_ROUTE}>
-                Тест доші
+                Пройти перший тест
               </Link>
             </div>
-            {/* These two are entries in the diagnostics catalogue, not the
-                catalogue — the panel names the rest rather than leaving the
-                topbar as the only route to it. */}
             {/* `PlatformBlockLink`, not a fifth hand-assembled copy of it. This
                 one composed the right classes and still drifted, because the
                 SHAPE was rebuilt here: when the shared crossing moved to the

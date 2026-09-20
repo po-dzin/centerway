@@ -128,18 +128,13 @@ export async function PlatformProgramsIndexPage() {
 
         <section className={`${offerStyles.container} ${offerStyles.section} ${offerStyles.sectionFlow}`}>
           <article className={offerStyles.panel}>
-            <p className={offerStyles.label}>Як обирати</p>
-            {/* A heading, not just the eyebrow (2026-09-13): the panel was the
-                only section on this page that answered its question with a
-                label alone, so a reader scanning headings skipped it. Each
-                point is its own sentence — they are four separate answers, not
-                one list-sentence broken by semicolons. */}
-            <h2 className={offerStyles.sectionTitle}>Короткий вхід чи глибока програма</h2>
+            <p className={offerStyles.label}>Формати та категорії</p>
+            <h2 className={offerStyles.sectionTitle}>Оберіть формат під свій ритм</h2>
             <ul className={offerStyles.timeline}>
-              <li>Міні-курси — для короткого входу без довгого зобов&apos;язання.</li>
-              <li>Програми — для глибшої роботи з тілом, харчуванням, рухом і ритмом.</li>
-              <li>Продукти зібрані окремо: це інший формат і інше рішення.</li>
-              <li>Якщо стан неясний, почніть із тесту доші або консультації.</li>
+              <li>Міні-курси — короткий вхід у тему й практику без великого навантаження.</li>
+              <li>Курси — послідовна робота з уроками, щоб розгорнути тему глибше у власному темпі.</li>
+              <li>Чек-листи — точкові матеріали, коли потрібна проста опора для конкретного кроку.</li>
+              <li>Категорії охоплюють рух, харчування, очищення, дихання, медитацію, фокус, енергію та релаксацію.</li>
             </ul>
           </article>
         </section>

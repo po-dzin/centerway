@@ -114,6 +114,9 @@ describe("platform interaction layers", () => {
     const carousel = read("src/components/platform/PlatformOfferCarousel.tsx");
     expect(carousel).not.toMatch(/from "next\/link"/);
     expect(carousel).not.toMatch(/viewAllHref[?:]/);
+
+    const carouselCss = read("src/components/platform/PlatformOfferCarousel.module.css");
+    expect(carouselCss).toContain("grid-auto-columns: 100%;");
   });
 
   it("moves every shared admin navigation consumer onto the ink primitives", () => {
@@ -241,6 +244,7 @@ describe("platform interaction layers", () => {
     const filterToggle = /\.filterToggle\s*\{([\s\S]*?)\n\}/.exec(filterCss)?.[1] ?? "";
     expect(filterToggle).toContain('composes: secondary from "../PlatformButtons.module.css";');
     expect(filterToggle).toContain('composes: hug from "../PlatformButtons.module.css";');
+    expect(filterToggle).toContain("min-height: var(--ds-touch-target-min);");
     expect(filterToggle).not.toContain("cw-ink-icon");
     expect(filterCss).toContain("flex: 0 0 1.15rem;");
   });

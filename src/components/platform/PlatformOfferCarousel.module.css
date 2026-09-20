@@ -310,8 +310,12 @@
     display: none;
   }
 
+  /* Dots already report that more cards follow, so a cut neighbour is no
+     longer needed as an affordance. Let the current card take the whole content
+     measure and keep its title, proof and CTA as readable as a normal mobile
+     card. */
   .track {
-    grid-auto-columns: var(--ds-offer-card-rail-width);
+    grid-auto-columns: 100%;
     gap: var(--cw-space-sm);
   }
 }
