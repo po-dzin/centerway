@@ -196,7 +196,7 @@ describe("what a card owes a stranger", () => {
     cover: { src: "/cover.webp", alt: "Обкладинка" },
     tagline: "Навіщо це людині",
     durationDays: 3,
-    categories: ["nutrition"],
+    categories: ["nutrition", "cleansing"],
     audience: ["Кому це"],
     results: ["Що зміниться"],
     format: ["Що входить"],
@@ -215,6 +215,18 @@ describe("what a card owes a stranger", () => {
     expect(codes).toContain("lms_ready_missing_cover");
     expect(codes).toContain("lms_ready_missing_tagline");
     expect(codes).toContain("lms_ready_missing_category");
+  });
+
+  it("asks for two subjects, not one — and does not fail a one-subject draft at save", () => {
+    const listed = { visibility: "listed" as const, ...complete };
+    const one = courseReadiness(course({ ...listed, categories: ["nutrition"] })).blockers.map((b) => b.code);
+    expect(one).toContain("lms_ready_few_categories");
+    expect(one).not.toContain("lms_ready_missing_category");
+    const none = courseReadiness(course({ ...listed, categories: undefined })).blockers.map((b) => b.code);
+    expect(none).toContain("lms_ready_missing_category");
+    expect(none).not.toContain("lms_ready_few_categories");
+    // A hidden one-subject course is a perfectly good private draft.
+    expect(courseReadiness(course({ categories: ["nutrition"] })).ready).toBe(true);
   });
 
   it("lets a listed course through once the five are answered", () => {

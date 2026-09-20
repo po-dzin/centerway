@@ -134,6 +134,9 @@ export const COURSE_CATEGORIES = [
  */
 export const COURSE_CATEGORIES_MAX = 3;
 
+/** The floor a course needs to be listed — a readiness blocker, not a write rule. */
+export const COURSE_CATEGORIES_MIN = 2;
+
 export type CourseCategory = (typeof COURSE_CATEGORIES)[number];
 
 /**

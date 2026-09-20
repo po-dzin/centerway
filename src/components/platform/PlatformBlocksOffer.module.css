@@ -162,16 +162,14 @@
   color: var(--cw-platform-text);
 }
 
-/* NO SHADOW ON THE OFFER CARD (2026-09-20). The rail clips its own overflow
-   (`overflow-y: hidden` is what makes a carousel scroll), so a soft shadow that
-   reaches past the card was cut to the rail's rectangle — and the rectangle
-   showed: a lighter box behind the row, visible between the cards and at the
-   corners. The card is told from the page by its own tone, not by lift. The
-   attribute is in the selector on purpose: the material's own `box-shadow` is
-   (0,1,0) and so is a bare class, and which wins would then be a question of
-   file order. */
+/* THE SHADOW IS BACK, AND THE RAIL GIVES IT ROOM (2026-09-20). It was removed
+   because the carousel clipped it into a rectangle, and without it the cards
+   melted into the page. The shadow was never the problem: the rail's scroller
+   cut it at its own edge. `PlatformOfferCarousel.module.css` now pads the
+   scroller vertically by more than the shadow reaches and pulls the margin back
+   by the same amount, so the shadow has space and the layout does not move. */
 .programTile[data-cw-material] {
-  box-shadow: none;
+  box-shadow: var(--cw-mat-shadow-soft);
 }
 
 /* THE FRAME IN THE FIELD. One horizontal cover on every surface (Course Cover
@@ -258,14 +256,14 @@
   backdrop-filter: blur(6px);
 }
 
-/* WHAT THE OFFER IS ABOUT — a glyph in a disc with its word under it, three
-   equal cells (2026-09-20). No plate around the pair: the disc holds the sign,
-   the word stands beneath it, and a course with two subjects fills two thirds
-   of the row, so the slot keeps its height whatever the count. Three is the
-   ceiling (`COURSE_CATEGORIES_MAX`); a fourth is not drawn. */
+/* WHAT THE OFFER IS ABOUT — a glyph in a disc with its word under it, in
+   cells a third of the row wide (2026-09-20). No plate around the pair: the disc
+   holds the sign, the word stands beneath it, and the slot keeps its height
+   whatever the count. Two is the floor for a listed course (a readiness
+   blocker), three is the ceiling (`COURSE_CATEGORIES_MAX`); a fourth is not drawn. */
 .programTileCategories {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  justify-content: center;
   gap: var(--cw-space-2xs);
   /* One slot, whether or not there are subjects: the disc, the gap, one label. */
   height: calc(var(--ds-card-category-disc) + var(--cw-space-2xs) + var(--program-slot-label));
@@ -275,8 +273,13 @@
   list-style: none;
 }
 
+/* A third of the row each, whatever the count, and the row is CENTRED: one
+   subject sat in the left cell with two empty thirds beside it and read as a
+   layout mistake; two hugged the left edge. Fixed thirds keep the cell width
+   the same on every card, centring keeps the group balanced. */
 .programTileCategory {
   display: flex;
+  flex: 0 0 calc((100% - 2 * var(--cw-space-2xs)) / 3);
   flex-direction: column;
   align-items: center;
   gap: var(--cw-space-2xs);

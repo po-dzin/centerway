@@ -20,7 +20,7 @@
 
 import type { LessonBlock, RichTextNode } from "./blocks";
 import { addressedBlocks } from "./blocks";
-import { flattenLessons, type Course } from "./course";
+import { COURSE_CATEGORIES_MIN, flattenLessons, type Course } from "./course";
 import { isDefaultDraftSlug } from "./drafts";
 import { inlineToPlainText, type InlineText } from "./inline";
 import { buildInternalReferenceTargets, parseInternalReference } from "./references";
@@ -254,7 +254,14 @@ export function courseReadiness(course: Course): CourseReadiness {
        same reason: a blocker is for what nothing downstream can substitute for.
        A checklist that is a standing daily ritual has no honest number of days
        to give, and the gate was making its author invent one. */
+    /* TWO SUBJECTS AT LEAST (2026-09-20). One left the card's row of three cells
+       with a lone glyph and two empty thirds, and «what is this about» answered
+       with a single word is not much of an answer. The floor is a BLOCKER, not a
+       validation error: a draft with one subject must still save, and a live
+       course that has one keeps selling — it just cannot be re-approved until
+       its author adds the second. See `contract-ceiling-never-at-read`. */
     if (!course.categories?.length) add("lms_ready_missing_category", course.slug);
+    else if (course.categories.length < COURSE_CATEGORIES_MIN) add("lms_ready_few_categories", course.slug);
 
     /* THE STOREFRONT'S OWN FOUR (2026-09-08).
      *

@@ -29,6 +29,7 @@ const BLOCKER_LABELS: Record<string, string> = {
   lms_ready_missing_cover_alt: "Обкладинка без опису для читача з екранним диктором",
   lms_ready_missing_tagline: "Немає рядка під назвою — картці нічого сказати",
   lms_ready_missing_category: "Не вказано розділ — курс ніде буде знайти",
+  lms_ready_few_categories: "Вкажіть щонайменше дві теми — картка показує їх рядом, з однією рядок порожній",
   // And the four the storefront gate adds — the vocabulary is the tab's own, so
   // an author reads the name of the field they have to go and fill.
   lms_ready_missing_audience: "Не сказано, для кого це — на сторінці буде порожньо",
