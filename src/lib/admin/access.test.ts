@@ -25,6 +25,39 @@ vi.mock("@/lib/email/purchaseEmail", () => ({
   sendPurchaseEmail: (input: unknown) => sendPurchaseEmail(input as never),
 }));
 
+/* Approving a first publication reads the course back before it publishes it
+   (see `moderateCourse`). The rows in this file are the moderation aggregate's
+   own stubs — three columns and two lesson ids — not whole authored courses,
+   and rebuilding one from them is `courseFromRows`' contract, tested where it
+   lives. What belongs here is the DECISION: that approval publishes, and that
+   an unready course is refused. So the rebuild is mocked and the test says
+   which of the two answers it gives. */
+const loadBuilderCourse = vi.fn<(slug: string) => Promise<unknown>>();
+vi.mock("@/lib/lms/builder", () => ({
+  loadBuilderCourse: (slug: string) => loadBuilderCourse(slug),
+}));
+
+/** A course document complete enough for the readiness gate to pass it. */
+function readyCourse(slug: string) {
+  return {
+    liveCourse: {
+      id: "course-reset",
+      slug,
+      title: "Reset Day",
+      programSlug: slug,
+      brand: "centerway",
+      locale: "uk",
+      translationGroupId: "tg-1",
+      status: "draft",
+      version: 1,
+      schedule: { kind: "self_paced" },
+      entitlementProductCodes: [],
+      accessNote: "Доступ на рік",
+      modules: [],
+    },
+  };
+}
+
 const {
   AccessError,
   createAccount,
@@ -1106,14 +1139,42 @@ describe("course moderation and admin deletion", () => {
     expect(row.pending_review_status).toBe("draft");
   });
 
-  it("still approves a submitted-but-unpublished course, which has no revision at all", async () => {
+  /* NO PING-PONG (2026-09-20). Approving a submitted draft used to stamp it
+     approved and stop, leaving the author to come back and press «Опублікувати»
+     — a second act by the other party for a decision already made. The
+     approval carries the publication now. Visibility in the catalogue is still
+     a separate decision and is deliberately untouched. */
+  it("publishes a submitted draft on approval instead of handing it back to its author", async () => {
     const row = db.rows("lms_courses").find((item) => item.id === "course-reset")!;
     Object.assign(row, { status: "draft", review_status: "in_review", visibility: "hidden", pending_content: null });
+    loadBuilderCourse.mockResolvedValue(readyCourse("reset-day"));
 
     await moderateCourse({ courseId: "course-reset", actorId: ADMIN, action: "approve" });
 
     expect(row.review_status).toBe("approved");
+    expect(row.status).toBe("published");
+    expect(row.visibility).toBe("hidden");
+  });
+
+  /* Nothing freezes a draft the way `pending_content` freezes a revision: its
+     author can keep editing after submitting. So the gate they passed on the
+     way in is asked again on the way out, and approving is not a way around
+     it. */
+  it("refuses to publish a course that no longer passes its own readiness gate", async () => {
+    const row = db.rows("lms_courses").find((item) => item.id === "course-reset")!;
+    Object.assign(row, { status: "draft", review_status: "in_review", visibility: "hidden", pending_content: null });
+    const course = readyCourse("reset-day");
+    /* The builder's own placeholder marker, left in a title — the same hole
+       the submit gate would have refused. */
+    loadBuilderCourse.mockResolvedValue({
+      liveCourse: { ...course.liveCourse, title: "[ЗАПОВНИ назву]" },
+    });
+
+    await expect(moderateCourse({ courseId: "course-reset", actorId: ADMIN, action: "approve" })).rejects.toMatchObject(
+      { status: 422 },
+    );
     expect(row.status).toBe("draft");
+    expect(row.review_status).toBe("in_review");
   });
 
   it("refuses to approve a course that is neither published nor submitted", async () => {

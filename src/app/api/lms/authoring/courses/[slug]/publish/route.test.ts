@@ -24,12 +24,12 @@ vi.mock("@/lib/lms/courseAccess", () => ({
     _req: NextRequest,
     _slug: string,
     run: (grant: {
-      identity: { authUserId: string; isAdmin: boolean };
+      identity: { authUserId: string; isAdmin: boolean; email: string | null };
       load: () => Promise<{ reviewStatus: string; course: { id: string } }>;
     }) => Promise<NextResponse>,
   ) =>
     run({
-      identity: { authUserId: "staff-1", isAdmin: state.isAdmin },
+      identity: { authUserId: "staff-1", isAdmin: state.isAdmin, email: "staff@centerway.net.ua" },
       load: async () => ({ reviewStatus: state.reviewStatus, course: { id: "course-1" } }),
     }),
 }));
@@ -80,7 +80,13 @@ describe("direct publish route", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ status: "published" });
     expect(calls).toEqual(["submit", "approve"]);
-    expect(submitBuilderCourseForReview).toHaveBeenCalledWith("way21", "staff-1");
+    /* The identity travels with the submission: an admin publishing from the
+       builder must not announce a review to the house — the approve on the
+       next line is the answer to it. */
+    expect(submitBuilderCourseForReview).toHaveBeenCalledWith("way21", "staff-1", {
+      isAdmin: true,
+      email: "staff@centerway.net.ua",
+    });
     expect(moderateCourse).toHaveBeenCalledWith({ courseId: "course-1", actorId: "staff-1", action: "approve" });
     expect(revalidateTag).toHaveBeenCalledWith("lms-course:way21", { expire: 0 });
     expect(revalidateTag).toHaveBeenCalledWith("lms-courses", { expire: 0 });
