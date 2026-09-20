@@ -2,8 +2,8 @@
  * Tell the crawlers the pages changed, instead of waiting for them to notice.
  *
  * WHY THIS EXISTS. The brand signature was rewritten on 2026-08-27 — the
- * platform stopped calling itself "аюрведична платформа відновлення" and became
- * "курована платформа цілісного відновлення" (src/lib/brand/identity.ts). Every
+ * platform stopped calling itself "аюрведична платформа відновлення" — and has
+ * since been renamed again (src/lib/brand/identity.ts is the one place). Every
  * live surface served the new line the same day. Bing kept quoting the old one
  * in its results for weeks, which is what Edge's address bar, Copilot and every
  * answer engine reading Bing's index then repeat. Nothing was broken in the
