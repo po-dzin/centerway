@@ -68,12 +68,12 @@ export function storefrontEntry(course: StorefrontCard): CatalogEntry {
       artwork: course.artwork,
       kindBadge: course.kindBadge,
       categories: course.categoryLabels,
+      categoryCodes: course.categories,
       pretitle: course.pretitle,
       posttitle: course.posttitle,
       commercialMode: course.commercialMode,
       price: course.price,
       compareAtPrice: course.compareAtPrice,
-      ctaLabel: course.lessons <= 8 ? "Деталі курсу" : "Деталі програми",
     },
   };
 }

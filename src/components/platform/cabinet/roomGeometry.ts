@@ -16,8 +16,17 @@ import type { LearnerShelfCourseDto } from "@/components/lms/lmsClient";
 import type { CourseCategory } from "@/lms-core";
 import type { CabinetCopy } from "./copy";
 
-export const CATEGORY_ORDER: CourseCategory[] = ["movement", "nutrition", "cleansing"];
-export const ROMAN = ["I", "II", "III", "IV", "V", "VI"];
+export const CATEGORY_ORDER: CourseCategory[] = [
+  "movement",
+  "nutrition",
+  "cleansing",
+  "breathing",
+  "meditation",
+  "focus",
+  "energy",
+  "relaxation",
+];
+export const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
 
 export type RoomBook = {
   slug: string;

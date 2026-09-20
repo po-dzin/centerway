@@ -67,6 +67,7 @@
   --ds-rail-control-overhang: 1rem;
   --ds-author-banner-ratio: 5 / 1;
   --ds-card-inset: var(--cw-space-xs);
+  --ds-card-category-disc: 2.25rem;
   --ds-card-body-inline: var(--cw-space-xs);
   --ds-card-media-radius: calc(var(--cw-card-radius) - var(--ds-card-inset));
   --ds-card-media-ratio: 16 / 9;
@@ -81,6 +82,8 @@
   --ds-offer-card-rail-width: var(--ds-offer-card-width-mobile);
   --ds-offer-card-title-size: clamp(1.15rem, 1.9vw, 1.45rem);
   --ds-offer-card-title-line-height: 1.2;
+  --ds-offer-card-promo-size: clamp(1.3rem, 2.2vw, 1.8rem);
+  --ds-offer-card-promo-line-height: 1.1;
   --ds-focus-ring-width: 3px;
   --ds-focus-ring-offset: 3px;
   --ds-focus-ring-offset-tight: 1px;

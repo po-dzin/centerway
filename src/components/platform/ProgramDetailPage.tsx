@@ -182,7 +182,7 @@ export function ProgramDetailPage({
      which moved there with the count it protects. */
 
   const buyHref = isCheckout ? commerce.checkoutHref : isFree ? commerce.accessHref : "#program-enroll";
-  const buyLabel = isCheckout ? "Придбати доступ" : isFree ? "Почати безкоштовно" : "Записатися на програму";
+  const buyLabel = isCheckout ? "Купити" : isFree ? "Почати безкоштовно" : "Записатися на програму";
 
   return (
     /* EVERYTHING INSIDE ONE PROVIDER, and only two things read it. The hero and

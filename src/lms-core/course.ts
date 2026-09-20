@@ -114,7 +114,25 @@ export type CourseKind = (typeof COURSE_KINDS)[number];
  * Codes are English so they can be a database enum and a URL segment; the
  * words a person reads are the builder's and the catalogue's, per locale.
  */
-export const COURSE_CATEGORIES = ["movement", "nutrition", "cleansing"] as const;
+export const COURSE_CATEGORIES = [
+  "movement",
+  "nutrition",
+  "cleansing",
+  "breathing",
+  "meditation",
+  "focus",
+  "energy",
+  "relaxation",
+] as const;
+
+/**
+ * At most three subjects on one course (2026-09-20). The card prints them as
+ * three equal cells under the description, so a fourth has nowhere to stand —
+ * and a course that is about five things is about none. The ceiling is on the
+ * WRITE only: a stored course that somehow carries more is still read and shown
+ * (the first three), never dropped — see `contract-ceiling-never-at-read`.
+ */
+export const COURSE_CATEGORIES_MAX = 3;
 
 export type CourseCategory = (typeof COURSE_CATEGORIES)[number];
 
@@ -144,7 +162,10 @@ export type CourseCategory = (typeof COURSE_CATEGORIES)[number];
  */
 export const COURSE_TITLE_MAX = 48;
 export const COURSE_TITLE_RAW_MAX = 120;
-export const COURSE_PRETITLE_MAX = 24;
+/* The promo line — the card's loudest text (2026-09-20). It was a 24-character
+   caption over the name; it is now the author's hook in the card's display
+   step, two lines of ~22 characters at the tightest desktop card, so 44. */
+export const COURSE_PRETITLE_MAX = 44;
 export const COURSE_POSTTITLE_MAX = 64;
 
 /**
@@ -447,6 +468,7 @@ export function validateCourse(
       new Set(input.categories as string[]).size === input.categories.length,
       `lms_course_duplicate_categories:${path}`,
     );
+    assert(input.categories.length <= COURSE_CATEGORIES_MAX, `lms_course_too_many_categories:${path}`);
   }
 
   if (input.durationDays !== undefined) {

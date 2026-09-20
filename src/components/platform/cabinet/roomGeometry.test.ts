@@ -18,7 +18,16 @@ import type { LearnerShelfCourseDto } from "@/components/lms/lmsClient";
 import type { CabinetCopy } from "./copy";
 
 const copy = {
-  courseCategories: { movement: "Рух", nutrition: "Харчування", cleansing: "Очищення" },
+  courseCategories: {
+    movement: "Рух",
+    nutrition: "Харчування",
+    cleansing: "Очищення",
+    breathing: "Дихання",
+    meditation: "Медитація",
+    focus: "Фокус",
+    energy: "Енергія",
+    relaxation: "Релаксація",
+  },
 } as unknown as CabinetCopy;
 
 function course(slug: string, categories: string[], live = true): LearnerShelfCourseDto {
