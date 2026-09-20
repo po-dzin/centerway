@@ -28,7 +28,7 @@
  * its path is printed at the end of a run, so the step at least does not
  * require hunting for it.
  *
- * Texts live in src/lib/tgSupportBotCopy.ts alongside everything else the bot
+ * Texts live in src/lib/telegram/tgSupportBotCopy.ts alongside everything else the bot
  * says, so the description and the first reply cannot drift into two voices.
  */
 
@@ -37,7 +37,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 // TS is imported directly; the npm script supplies --import ./scripts/lib/register-ts.mjs.
-import { botProfile } from "../src/lib/tgSupportBotCopy.ts";
+import { botProfile } from "../src/lib/telegram/tgSupportBotCopy.ts";
 
 const dryRun = process.argv.includes("--dry") || process.argv.includes("--dry-run");
 const token = process.env.TELEGRAM_BOT_TOKEN;
