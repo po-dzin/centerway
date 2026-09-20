@@ -45,7 +45,7 @@ import {
   type LessonViewDto,
   type LmsFailure,
 } from "./lmsClient";
-import { lessonMemo, recall, remember, subscribeLibraryMemory, warm } from "./libraryMemory";
+import { lessonMemo, useRemembered, warm } from "./libraryMemory";
 import styles from "./Lms.module.css";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 
@@ -78,11 +78,7 @@ export function LessonView({
      the first frame and corrected by the re-read, instead of blanking to a
      loader every time the pager is pressed. */
   const memo = lessonMemo(courseSlug, lessonSlug, draftPreview);
-  const known = useSyncExternalStore(
-    subscribeLibraryMemory,
-    () => recall<LessonViewDto>(memo),
-    () => undefined,
-  );
+  const [known, setKnown] = useRemembered<LessonViewDto>(memo, `lesson:${courseSlug}/${lessonSlug}`);
   const [failure, setFailure] = useState<LmsFailure | null>(null);
   const state: State = useMemo(
     () =>
@@ -161,9 +157,9 @@ export function LessonView({
       setFailure(result.error);
       return;
     }
-    remember(memo, result.data);
+    setKnown(result.data);
     setFailure(null);
-  }, [courseSlug, lessonSlug, draftPreview, memo]);
+  }, [courseSlug, lessonSlug, draftPreview, setKnown]);
 
   useEffect(() => {
     // Guarded so a fast navigation between lessons cannot land stale content.
@@ -178,13 +174,13 @@ export function LessonView({
         setFailure(result.error);
         return;
       }
-      remember(memo, result.data);
+      setKnown(result.data);
       setFailure(null);
     })();
     return () => {
       cancelled = true;
     };
-  }, [courseSlug, lessonSlug, draftPreview, memo]);
+  }, [courseSlug, lessonSlug, draftPreview, setKnown]);
 
   /* THE NEXT STEP, FETCHED BEFORE IT IS ASKED FOR.
      The pager is the most predictable navigation in the product — a reader who

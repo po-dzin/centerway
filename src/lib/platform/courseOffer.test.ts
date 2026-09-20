@@ -97,16 +97,6 @@ describe("the pretitle", () => {
 });
 
 describe("the subtitle", () => {
-  it("prefers the field over the dash the parser used to look for", () => {
-    const surface = toOfferSurface(
-      course({ title: "Розвантажувальний день — практикум", posttitle: "три дні без їжі" }),
-    );
-    expect(surface.subtitle).toBe("три дні без їжі");
-    // The title is still cut for the name: that rule is about the h1, not about
-    // where the subtitle came from.
-    expect(surface.title).toBe("Розвантажувальний день");
-  });
-
   it("keeps parsing the dash for courses written before the field", () => {
     expect(toOfferSurface(course({ title: "Розвантажувальний день — практикум" })).subtitle).toBe("практикум");
   });

@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { validateLessonBlock, collectRequiredChecklistItemIds, youtubeIdFrom } from "./blocks";
 import {
   COURSE_DURATION_DAYS_MAX,
-  COURSE_POSTTITLE_MAX,
   COURSE_PRETITLE_MAX,
   COURSE_TITLE_MAX,
   COURSE_TITLE_RAW_MAX,
@@ -157,7 +156,6 @@ describe("course validation", () => {
   it("accepts the card fields a catalogue entry is made of", () => {
     const course = dailyCourse();
     course.pretitle = "Авторський курс";
-    course.posttitle = "практикум з умовного голодування";
     course.kind = "mini";
     course.categories = ["nutrition", "cleansing"];
     course.durationDays = 3;
@@ -188,14 +186,11 @@ describe("course validation", () => {
     expect(() => validateCourse(course)).toThrow(/lms_course_duplicate_categories/);
   });
 
-  it("holds the ceiling on the two lines around the title", () => {
+  it("holds the ceiling on the author line above the title", () => {
     const course = dailyCourse() as unknown as Record<string, unknown>;
     course.pretitle = "я".repeat(COURSE_PRETITLE_MAX + 1);
     expect(() => validateCourse(course)).toThrow(/lms_course_pretitle_too_long/);
 
-    course.pretitle = "я".repeat(COURSE_PRETITLE_MAX);
-    course.posttitle = "я".repeat(COURSE_POSTTITLE_MAX + 1);
-    expect(() => validateCourse(course)).toThrow(/lms_course_posttitle_too_long/);
   });
 
   it("holds the title to two mobile catalogue lines for every writer", () => {

@@ -48,7 +48,6 @@ export async function HubMini() {
             categories={course.categoryLabels}
             categoryCodes={course.categories}
             pretitle={course.pretitle}
-            posttitle={course.posttitle}
             commercialMode={course.commercialMode}
             price={course.price}
             compareAtPrice={course.compareAtPrice}
@@ -99,7 +98,6 @@ export async function HubFree() {
             categories={course.categoryLabels}
             categoryCodes={course.categories}
             pretitle={course.pretitle}
-            posttitle={course.posttitle}
             commercialMode={course.commercialMode}
             price={course.price}
             compareAtPrice={course.compareAtPrice}
@@ -136,7 +134,6 @@ export async function HubPrograms() {
             categories={course.categoryLabels}
             categoryCodes={course.categories}
             pretitle={course.pretitle}
-            posttitle={course.posttitle}
             commercialMode={course.commercialMode}
             price={course.price}
             compareAtPrice={course.compareAtPrice}

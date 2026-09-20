@@ -26,10 +26,45 @@ describe("platform interaction layers", () => {
     expect(css).toContain('[aria-current="page"]');
   });
 
-  it("keeps material hover only for physical rows and cards", () => {
-    expect(rule(".cw-list-item:hover")).toContain("--cw-mat-hover-bg");
+  it("keeps material hover only for physical rows, and none for a list item with controls in it", () => {
+    // A list item holds its own controls, so it is not one target and does not
+    // fill under the pointer (docs/card-interaction-2026-09-20.md).
+    expect(css).not.toContain(".cw-list-item:hover");
     expect(rule(".cw-row-hover:hover")).toContain("--cw-mat-hover-bg");
     expect(rule(".cw-page-btn:hover")).not.toContain("background");
+  });
+
+  it("limits the whole-object recipe to the cabinet course card", () => {
+    const cabinet = read("src/components/platform/cabinet/Cabinet.module.css").replace(/\/\*[\s\S]*?\*\//g, "");
+    const cabinetRule = (selector: string) => {
+      const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return new RegExp(`${escaped}\\s*\\{([\\s\\S]*?)\\}`, "m").exec(cabinet)?.[1] ?? "";
+    };
+
+    // Generic cabinet cards also hold static information and recovery actions.
+    // Only the course frame is one routed object.
+    expect(cabinetRule(".card")).not.toContain("cw-object");
+    expect(cabinetRule(".courseCardFrame")).toContain("cw-object");
+    expect(cabinetRule(".shelfCourseCard")).toContain("cw-object");
+  });
+
+  it("uses the same raised elevation for selected objects as for hover", () => {
+    expect(rule(".cw-object:hover")).toContain("--cw-mat-shadow-raised");
+    const selected = rule(".cw-object[data-selected]");
+    expect(selected).toContain("--cw-mat-shadow-raised");
+    expect(selected).toContain("--ds-button-lift");
+  });
+
+  it("puts every author surface on the shared paged carousel", () => {
+    for (const source of [
+      read("src/components/platform/blocks/trust/guides.tsx"),
+      read("src/components/platform/ConsultantDirectory.tsx"),
+      read("src/app/(platform)/experts/page.tsx"),
+    ]) {
+      expect(source).toContain("PlatformOfferCarousel");
+      expect(source).not.toContain("guideRail");
+      expect(source).not.toContain("consultantRail");
+    }
   });
 
   it("keeps native text selection out of controls without blocking reading or editing", () => {

@@ -401,6 +401,13 @@
   border-radius: var(--cw-radius-lg);
 }
 
+/* The compact course card has one overlay route. The empty/loading shelf uses
+   the same layout class but has independent actions, so it must not inherit
+   the whole-object response. */
+.shelfCourseCard {
+  composes: cw-object from global;
+}
+
 .shelfCardTitle {
   margin: 0;
   font-size: var(--ds-type-body-size);
@@ -889,6 +896,10 @@
    with text in them, not collection objects with a picture. Declared after
    both, so at equal specificity the field wins by source order. */
 .courseCardFrame {
+  /* The course is one routed object. Generic `.card` also serves static
+     account, installation and recovery panels, so the pointer recipe belongs
+     here rather than making every cabinet panel pretend it is clickable. */
+  composes: cw-object from global;
   padding: var(--ds-card-inset);
   /* The card system's one radius, so the inset frame's corners are concentric
      (`--ds-card-media-radius` is computed from this, not from `xl`). */

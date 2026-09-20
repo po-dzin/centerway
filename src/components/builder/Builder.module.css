@@ -2051,9 +2051,12 @@
   }
 }
 
+/* `backwards`, not `both` (2026-09-20). The keyframes only name a `from`, so the
+   end state is the element's own — there is nothing to hold — and a held
+   animation outranks the transition the card's hover lift rides on. */
 .courseCard,
 .courseRow {
-  animation: courseEntryIn var(--builder-motion-page) var(--builder-ease-page) both;
+  animation: courseEntryIn var(--builder-motion-page) var(--builder-ease-page) backwards;
 }
 
 .courseCard[data-removing],
@@ -2216,6 +2219,7 @@
    corner and out of flow, so the reservation is over: what is left is the face,
    and it takes the height a taller neighbour in the row forces. */
 .courseCard {
+  composes: cw-object from global;
   position: relative;
   display: grid;
   grid-template-rows: minmax(0, 1fr);
@@ -2226,7 +2230,7 @@
   padding: var(--ds-card-inset);
   border-radius: var(--cw-card-radius);
   background: var(--cw-mat-surface);
-  box-shadow: var(--cw-mat-shadow-soft);
+  box-shadow: var(--cw-object-shadow);
 }
 
 /* THE MENU IS A CORNER AFFORDANCE, so it sits in the corner. At the foot of the
@@ -2394,33 +2398,30 @@
    to one that was not. Same shape, same two strengths, the row's own corner
    radius instead of the card's: one recipe for "this is the entry under the
    pointer" in both views, not two. */
-.courseCard::after,
-.courseRow::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  border: 1px solid var(--cw-nav-marker);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--builder-motion-tool) ease;
+/* THE MARK IS THE CONTOUR, AND ONLY WHEN THE ENTRY IS THE CHOSEN ONE (2026-09-20).
+   This was a solid 1px frame in the marker ink that came up faintly under the
+   pointer and on focus-within, and fully while the menu was open — so "under the
+   cursor" and "selected" were the same line at two opacities, and on the dark
+   theme it was a gold box. Under the pointer the card now LIFTS (`.cw-object`,
+   globals.css); the row does not answer as a whole — it has a link and a menu,
+   and the link draws its own ink rule. What is left for this file to say is
+   which entry is the chosen one: the one whose menu is open. That is the canon's
+   `--cw-contour-selected`, dashed and outside the edge, in the marker ink — the
+   page's ink on light, brass on dark. Keyboard focus is the ring on the face,
+   below. `:has` rather than a state prop, as before: the trigger already reports
+   `aria-expanded`. */
+.courseCard:has(.menuTrigger[aria-expanded="true"]),
+.courseRow:has(.menuTrigger[aria-expanded="true"]) {
+  outline: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-selected);
+  outline-offset: var(--cw-contour-offset);
 }
 
-.courseCard:focus-within::after,
-.courseRow:focus-within::after {
-  opacity: var(--cw-ink-hover-opacity);
-}
-
-@media (hover: hover) {
-  .courseCard:hover::after,
-  .courseRow:hover::after {
-    opacity: var(--cw-ink-hover-opacity);
-  }
-}
-
-.courseCard:has(.menuTrigger[aria-expanded="true"])::after,
-.courseRow:has(.menuTrigger[aria-expanded="true"])::after {
-  opacity: 1;
+/* An open course-card menu chooses its card, so it keeps the same physical
+   elevation as hover. The compact row is an entry with two independent targets
+   and deliberately remains a contour-only selection. */
+.courseCard:has(.menuTrigger[aria-expanded="true"]) {
+  --cw-object-shadow: var(--cw-mat-shadow-raised);
+  transform: translateY(var(--ds-button-lift));
 }
 
 .courseCardFace {

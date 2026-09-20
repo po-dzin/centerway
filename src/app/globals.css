@@ -1677,17 +1677,15 @@
   /* A list row is a card by its box — 57–200px on the short side takes `lg`
      (geometry audit, 2026-09-07). It said `sm` 12 while the plates and dialogs
      beside it said 28, so one admin page showed three corners (2026-09-14). */
+  /* NO HOVER FILL (2026-09-20). A row with its own controls inside — a status
+     select, a trash can — is not one target, so it does not answer the pointer as
+     one: the fill said "click me" over a surface where the click lands on a
+     child. What answers is the thing that is pressable (its link draws the ink
+     rule). See docs/card-interaction-2026-09-20.md. */
   .cw-list-item {
     border: 1px solid var(--cw-border);
     border-radius: var(--cw-card-radius);
     background-color: var(--cw-surface);
-    transition: background-color 0.2s ease;
-  }
-
-  @media (hover: hover) {
-    .cw-list-item:hover {
-      background-color: var(--cw-mat-hover-bg);
-    }
   }
 
   .cw-row-hover {
@@ -2707,6 +2705,65 @@ body {
 
 [data-cw-material="matte"] {
   background-color: var(--cw-mat-surface);
+}
+
+/* ── THE OBJECT: one answer to "this is under the pointer" (2026-09-20) ──────
+   For anything that is ONE target — the offer card, the shelf card, the
+   workshop card. Five states, and each is a mark the canon already owns:
+
+     rest      the soft shadow;
+     hover     the whole object lifts `--ds-button-lift` and the shadow deepens to
+               `raised` — POINTER ONLY, behind the query, because a phone latches
+               hover instead of having it (docs → "Hover is a pointer state");
+     focus     the ring, drawn by the link inside (not here, and never behind the
+               query — a keyboard has no pointer);
+     press     it settles `--cw-press-settle` and the shadow goes out — the one
+               state a finger has, so it is NOT behind the query;
+     selected  `--cw-contour-selected`, the draughtsman's dashed line outside the
+               edge, in the theme's marker ink: the page's ink on light, brass on
+               dark. Set with `data-selected`.
+
+   The shadow rides a custom property so that a component which paints its own
+   `box-shadow` (the offer tile does, at higher specificity) reads it instead of
+   fixing one value and freezing the state. Reduced motion keeps the shadow and
+   withholds the movement. */
+.cw-object {
+  --cw-object-shadow: var(--cw-mat-shadow-soft);
+  box-shadow: var(--cw-object-shadow);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+@media (hover: hover) {
+  .cw-object:hover {
+    --cw-object-shadow: var(--cw-mat-shadow-raised);
+    transform: translateY(var(--ds-button-lift));
+  }
+}
+
+.cw-object[data-selected] {
+  --cw-object-shadow: var(--cw-mat-shadow-raised);
+  transform: translateY(var(--ds-button-lift));
+  outline: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-selected);
+  outline-offset: var(--cw-contour-offset);
+}
+
+.cw-object:active {
+  --cw-object-shadow: none;
+  transform: translateY(var(--cw-press-settle));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cw-object {
+    transition: box-shadow 160ms ease;
+  }
+
+  .cw-object:hover,
+  .cw-object[data-selected],
+  .cw-object:active {
+    transform: none;
+  }
 }
 
 [data-cw-material="glass"] {

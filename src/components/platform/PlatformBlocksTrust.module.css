@@ -129,46 +129,9 @@
 
 /* ── The guides ───────────────────────────────────────
 
-   Standard offer-card dimensions at every count. A lone author never grows
-   into a panorama; long portraits crop inside their horizontal media slot. */
-.guideRail {
-  display: grid;
-  grid-template-columns: repeat(
-    auto-fill,
-    minmax(min(100%, var(--ds-offer-card-width-desktop)), var(--ds-offer-card-width-desktop))
-  );
-  gap: var(--cw-space-md);
-}
-
-/* The consultation page introduces people, rather than indexing them: retain
-   one horizontal sequence at every viewport so adding an author extends the
-   rail instead of changing the block into a new grid. */
-.consultantRail,
-.consultantRail[data-layout="single"] {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: var(--cw-space-md);
-  overflow-x: auto;
-  overflow-y: visible;
-  padding: 0.1rem var(--cw-space-2xs) var(--cw-space-2xs) 0.05rem;
-  scroll-snap-type: x proximity;
-  overscroll-behavior-x: contain;
-}
-
-/* Its own rule because the one above is a group with an attribute selector, and
-   `composes` takes simple classes only. */
-.consultantRail {
-  /* No bar: the one recipe in globals.css — see «THE SCROLLBAR, IN ONE PLACE». */
-  composes: cw-scroll-none from global;
-}
-
-.consultantRail > .guideCard,
-.consultantRail[data-layout="single"] > .guideCard {
-  flex: 0 0 var(--ds-offer-card-rail-width);
-  width: var(--ds-offer-card-rail-width);
-  min-width: var(--ds-offer-card-rail-width);
-  scroll-snap-align: start;
-}
+   Author cards ride `PlatformOfferCarousel`: offers and authors have one
+   navigable collection contract (paging dots, no persistent scrollbar and
+   shadow room) even though their card content differs. */
 
 /* THE PORTRAIT LIES IN A FIELD — see `AuthorCard` and
    docs/card-system-2026-09-13.md. Paper, the photograph inset on every side in
@@ -177,6 +140,7 @@
    the button sits on the floor of each. */
 .guideCard {
   composes: compact from "./PlatformButtons.module.css";
+  composes: cw-object from global;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -185,7 +149,7 @@
   padding: var(--ds-card-inset);
   border-radius: var(--cw-card-radius);
   color: var(--cw-platform-text);
-  box-shadow: var(--cw-mat-shadow-soft);
+  box-shadow: var(--cw-object-shadow);
 }
 
 .guideMedia {
@@ -250,22 +214,10 @@
   outline-offset: var(--ds-focus-ring-offset-inset);
 }
 
-/* The overlay covers the button, so the card drives the answer
-   `.secondary:hover` would give. Focus answers at every pointer; hover only
-   where a pointer can hover (docs/design-system.md → "Hover is a pointer
-   state"). */
+/* The overlay covers the button. Keyboard focus still changes the visible
+   label, while hover/press are the whole-card `.cw-object` recipe. */
 .guideCard:has(.guideOverlay:focus-visible) .guideLink {
-  transform: translateY(var(--ds-button-lift));
   background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
-  box-shadow: var(--cw-mat-shadow-soft);
-}
-
-@media (hover: hover) {
-  .guideCard:hover .guideLink {
-    transform: translateY(var(--ds-button-lift));
-    background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
-    box-shadow: var(--cw-mat-shadow-soft);
-  }
 }
 
 .guideBody {
@@ -355,24 +307,6 @@
   margin-top: auto;
 }
 
-@media (max-width: 900px) {
-  /* Same rule as `.consultantRail` above and as the landings' proof rails: a
-     rail reports its position with its cut edge and its dots, never with the
-     browser's scrollbar. This one kept a persistent grey trench under the
-     author cards on every platform that draws one. */
-  .guideRail {
-    display: flex;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x proximity;
-    padding-bottom: var(--cw-space-2xs);
-  }
-
-  .guideCard {
-    flex: 0 0 var(--ds-offer-card-rail-width);
-    scroll-snap-align: start;
-  }
-}
 
 .copyStack {
   display: grid;

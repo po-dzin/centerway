@@ -259,8 +259,10 @@
 
 .dayBadgeDone {
   composes: dayBadge;
-  background: var(--cw-platform-accent);
-  color: var(--cw-platform-on-accent);
+  /* A completed lesson is history, not the next destination. The check carries
+     that fact without borrowing the accent reserved for the current step. */
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
 }
 
 .outlineTitle {

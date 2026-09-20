@@ -36,11 +36,9 @@
 }
 
 @media (max-width: 900px) {
-  /* THE CATALOGUE KEEPS TWO COLUMNS ON A PHONE (2026-09-13). It was one
-     vertical line of text-heavy tiles — six offers, six screens. With the
-     photograph inset and the card choosing its own density below 14rem
-     (`@container` at the end of this file), a 165px column holds the frame,
-     the name, the price and «Деталі», which is what a reader compares on. */
+  /* Tablet catalogue: two comparable offers per row. The phone rule below
+     intentionally becomes one column, so its card can keep its actual value
+     statement instead of collapsing to a title, price and tiny CTA. */
   .aggregateRail {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -80,6 +78,26 @@
 
   .programShowcase > * {
     scroll-snap-align: start;
+  }
+}
+
+/* A phone is a reading surface, not a smaller desktop grid. One catalogue card
+   per row keeps the inset cover, two-line benefit and category context readable;
+   the price then sits above its full-width action instead of competing with it
+   on a 165px baseline. Tablet starts at 561px and returns to the paired row. */
+@media (max-width: 560px) {
+  .aggregateRail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .programTileFooter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .programTileFooter .programLink {
+    width: 100%;
+    max-width: none;
   }
 }
 
@@ -150,6 +168,7 @@
    object, and a card on a phone stops carrying empty paper under short copy. */
 .programTile {
   composes: compact from "./PlatformButtons.module.css";
+  composes: cw-object from global;
   /* Queries below ask the CARD how wide it is, not the screen. */
   container-type: inline-size;
   position: relative;
@@ -169,7 +188,7 @@
    scroller vertically by more than the shadow reaches and pulls the margin back
    by the same amount, so the shadow has space and the layout does not move. */
 .programTile[data-cw-material] {
-  box-shadow: var(--cw-mat-shadow-soft);
+  box-shadow: var(--cw-object-shadow);
 }
 
 /* THE FRAME IN THE FIELD. One horizontal cover on every surface (Course Cover
@@ -210,8 +229,8 @@
   letter-spacing: 0.02em;
 }
 
-/* The description is the `p` rule below; this name only marks it for the
-   narrow card, which hides it. */
+/* The description is the `p` rule below; this name marks its compact one-line
+   version on a narrow card. */
 .programTileDescription {
   margin: 0;
 }
@@ -790,14 +809,24 @@
   height: calc(2 * var(--program-slot-body));
 }
 
-/* THE ONE BUTTON — «Деталі». The contract's `secondary` at full card width,
-   compact because it is nested in a card. `margin-top: auto` pins it to the
-   floor of the body, so cards of different copy length line their buttons up
-   along the bottom of a row. Not a link: `.programTileOverlay` is. */
+/* THE OFFER FOOTER — price and the one action share the card's baseline.
+   `margin-top: auto` pins this pair to the floor, so cards of different copy
+   length line up in a row. The visible action is not a link:
+   `.programTileOverlay` is the card's one real link. */
+.programTileFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+  margin-top: auto;
+  min-width: 0;
+}
+
 .programLink {
   composes: secondary from "./PlatformButtons.module.css";
-  composes: fill from "./PlatformButtons.module.css";
-  margin-top: auto;
+  flex: 0 0 auto;
+  margin-top: 0;
+  white-space: nowrap;
 }
 
 /* Whole-card route to the detail page.
@@ -833,30 +862,14 @@
    `:has()` rather than a sibling combinator: the card is what reacts. Focus
    answers at every pointer; hover only where a pointer can hover, the query
    the button contract's own hover rules take. */
+/* THE CARD ANSWERS, NOT ITS BUTTON (2026-09-20). Hover, press and the shadow are
+   `.cw-object` (globals.css), on the whole tile: the tile is the one target, so
+   the tile is what moves. The label inside no longer lifts on its own — it used
+   to, and the card stayed still under a pointer that was on the card. The
+   button still answers when the pointer is on the button itself (its own
+   `secondary` role); it just does not answer for the card. */
 .programTile:has(.programTileOverlay:focus-visible) .programLink {
-  transform: translateY(var(--ds-button-lift));
   background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
-  box-shadow: var(--cw-mat-shadow-soft);
-}
-
-@media (hover: hover) {
-  .programTile:hover .programLink {
-    transform: translateY(var(--ds-button-lift));
-    background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
-    box-shadow: var(--cw-mat-shadow-soft);
-  }
-}
-
-/* PRESS, ON THE CARD AND NOT ON THE BUTTON (2026-09-14), because the card is
-   what a finger lands on. `.programTileOverlay` is the click target and a child
-   of the tile, so `:active` reaches the tile the same way `:hover` does and the
-   tile's own CTA shows the answer: it settles by `--cw-press-settle` instead
-   of lifting. With hover gated to pointers, this is the only response the rail
-   gives on a phone. Outside the hover query on purpose. */
-.programTile:active .programLink {
-  transform: translateY(var(--cw-press-settle));
-  background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
-  box-shadow: none;
 }
 
 .programTilePrice {
@@ -970,31 +983,15 @@
 }
 
 /* Reduced motion: offer/test tiles keep the hover surface change, lose the lift. */
-@media (prefers-reduced-motion: reduce) {
-  .programLink {
-    transition: none;
-  }
-
-  @media (hover: hover) {
-    .programLink:hover {
-      transform: none;
-    }
-  }
-
-  .programTile:active .programLink {
-    transform: none;
-  }
-}
 
 /* ── The narrow card ─────────────────────────────────────────────────────────
-   Below 14rem — half of a 375px catalogue, ~165px — the description is a
-   fragment and «Деталі програми» breaks inside its button. The card keeps what
-   a reader compares on: the frame, the eyebrow, the name, the price, «Деталі». */
+   Below 14rem — an embedded two-column card, ~165px — the card keeps one line
+   of its benefit, then stacks price and «Деталі». Categories and long
+   supporting facts would crowd that comparison, so they stay on wider cards. */
 @container (max-width: 14rem) {
   /* Doubled and element-qualified on purpose: the rules that SHOW these —
      `.programTileBody p:not(.label)` (0,2,1) — outrank a single class, and every
      one of these lines is a `p` inside the body, and a query that loses the cascade hides nothing. */
-  .programTileBody p.programTileDescription,
   .programTileBody .programTileCategories,
   .programTileBody .programTilePoints,
   .programTileBody p.programTileMeta {
@@ -1004,6 +1001,14 @@
   .programTileBody {
     gap: var(--cw-space-2xs);
     padding-inline: var(--cw-space-2xs);
+  }
+
+  .programTileBody p.programTileDescription {
+    display: -webkit-box;
+    height: var(--program-slot-body);
+    font-size: var(--ds-type-body-sm-size);
+    line-height: var(--ds-type-body-sm-line-height);
+    -webkit-line-clamp: 1;
   }
 
   /* Narrow: the promo and the name step down to the body size and the name goes,
@@ -1034,8 +1039,14 @@
     font-size: var(--ds-type-body-size);
   }
 
-  .programLink {
-    margin-top: auto;
+  .programTileFooter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .programTileFooter .programLink {
+    width: 100%;
+    max-width: none;
   }
 
   .programLinkFull {

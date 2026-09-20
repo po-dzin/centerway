@@ -43,6 +43,7 @@
  * empty name».
  */
 
+import { useCallback, useState, useSyncExternalStore } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 
 /* A reading session is dozens of screens, not thousands, and every entry is a
@@ -125,6 +126,39 @@ export function remember<T>(key: string | null, value: T): void {
     store.delete(oldest.value);
   }
   announce();
+}
+
+/**
+ * An answer that is shared when it is safe to share, and local when it is not.
+ *
+ * Reader screens use the module memory for a learner's published material. A
+ * Builder draft deliberately has no memory key: re-opening it must ask the API
+ * for the version that exists now, rather than show a prior authoring state.
+ * That must not make the screen unable to hold the response it just received,
+ * though. `useRemembered` keeps such keyless answers in component state, keyed
+ * to the requested resource so a route change cannot briefly show another
+ * draft's content.
+ */
+export function useRemembered<T>(key: string | null, localKey: string): [T | undefined, (value: T) => void] {
+  const shared = useSyncExternalStore(
+    subscribeLibraryMemory,
+    () => recall<T>(key),
+    () => undefined,
+  );
+  const [local, setLocal] = useState<{ key: string; value: T } | null>(null);
+  const value = key ? shared : local?.key === localKey ? local.value : undefined;
+  const setValue = useCallback(
+    (next: T) => {
+      if (key) {
+        remember(key, next);
+      } else {
+        setLocal({ key: localKey, value: next });
+      }
+    },
+    [key, localKey],
+  );
+
+  return [value, setValue];
 }
 
 /** Forgets everything. Sign-out's own broom, and the tests'. */
