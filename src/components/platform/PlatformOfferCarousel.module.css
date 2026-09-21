@@ -131,16 +131,16 @@
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
-  /* ROOM FOR THE CARD'S SHADOW (2026-09-20). A scroller that scrolls on X clips
-     on Y as well, so the soft shadow `--cw-mat-shadow-soft` (10px down, 28px of
-     blur — about 2.4rem below the card) was cut at the rail's edge and drew a
-     lighter rectangle behind the row. The fix is not to remove the shadow but to
-     put the room INSIDE the clip: pad by more than it reaches, pull the margin
-     back by the same amount, and the rail's box in the layout is unchanged. The
-     sides are left alone on purpose — the scroll maths reads `clientWidth`, and
-     a side gutter here would also bleed past the page gutter on a phone. */
-  padding-block: var(--cw-space-2xl);
-  margin-block: calc(var(--cw-space-2xl) * -1);
+  /* ONE CARD SHADOW, ONE SAFE FIELD (2026-09-20). A horizontal scroller clips
+     both axes. Its previous 10/28 soft shadow (and 24/56 raised state) was long
+     enough to become a dark rectangle once clipped, particularly in night mode.
+     Material tokens now keep the card close to its floor; this rail gives that
+     short shadow `--cw-space-sm` of real air on every edge. Equal negative
+     margins preserve the track's measured width, so one-phone-width cards and
+     paging maths stay exactly where they were while the first and last shadows
+     no longer hit the clip wall. */
+  padding: var(--cw-space-sm);
+  margin: calc(var(--cw-space-sm) * -1);
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;

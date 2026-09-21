@@ -76,14 +76,29 @@ describe("shared surface boundaries", () => {
     for (const file of authorFoldFiles()) expect(read(file), file).not.toContain('data-cw-edge="none"');
   });
 
-  it("uses the DS rounded-button tile for offer-category icons", () => {
+  it("uses the proportional DS square-tile recipe for offer-category icons", () => {
     const offer = read("src/components/platform/PlatformBlocksOffer.module.css");
     const categoryTile = block(offer, ".programTileCategoryDisc");
+    const tokens = read("data/design-tokens/cw.tokens.json");
 
     expect(categoryTile).toContain("width: var(--ds-card-category-disc);");
     expect(categoryTile).toContain("height: var(--ds-card-category-disc);");
-    expect(categoryTile).toContain("border-radius: var(--cw-radius-btn);");
+    expect(categoryTile).toContain("border-radius: var(--ds-card-category-radius);");
     expect(categoryTile).not.toContain("border-radius: 50%");
+    expect(tokens).toContain('"--ds-card-category-disc": "2.25rem"');
+    expect(tokens).toContain('"--ds-card-category-radius": "var(--cw-radius-sm)"');
+  });
+
+  it("keeps square chrome corners proportional to their touch target", () => {
+    const tokens = read("data/design-tokens/cw.tokens.json");
+    const organs = read("src/components/platform/layout/ChromeOrgans.module.css");
+    const shell = read("src/components/platform/PlatformShell.module.css");
+
+    expect(tokens).toContain('"--ds-icon-control-radius": "var(--cw-radius-md)"');
+    expect(tokens).toContain('"--ds-touch-target-min": "2.25rem",\n      "--ds-icon-control-radius": "var(--cw-radius-sm)"');
+    expect(organs).toContain("--platform-island-radius: var(--ds-icon-control-radius);");
+    expect(shell).toContain("--platform-utility-control-size: var(--ds-touch-target-min);");
+    expect(shell).toContain("--platform-utility-control-radius: var(--ds-icon-control-radius);");
   });
 
   it("distinguishes quiet command boundaries from the strong checkbox state", () => {

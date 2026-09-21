@@ -281,8 +281,8 @@
         "--cw-mat-scroll-thumb-hover": "color-mix(in srgb, var(--cw-platform-text) 34%, transparent)",
         "--cw-mat-scroll-track": "transparent",
         "--cw-mat-meter-track": "color-mix(in srgb, var(--cw-platform-border) 72%, var(--cw-platform-surface) 28%)",
-        "--cw-mat-shadow-soft": "0 1px 2px rgba(35, 29, 20, 0.05), 0 10px 28px rgba(35, 29, 20, 0.07)",
-        "--cw-mat-shadow-raised": "0 2px 6px rgba(35, 29, 20, 0.07), 0 24px 56px rgba(35, 29, 20, 0.12)",
+        "--cw-mat-shadow-soft": "0 2px 4px rgba(35, 29, 20, 0.04), 0 6px 16px rgba(35, 29, 20, 0.08)",
+        "--cw-mat-shadow-raised": "0 3px 6px rgba(35, 29, 20, 0.05), 0 8px 18px rgba(35, 29, 20, 0.10)",
         "--cw-mat-stroke-chrome": "color-mix(in srgb, var(--cw-platform-text) 13%, transparent)",
         "--cw-mat-shadow-chrome": "0 0 0 1px var(--cw-mat-stroke-chrome), 0 18px 40px rgba(35, 29, 20, 0.10)",
         "--cw-mat-shadow-deep": "0 3px 8px rgba(24, 20, 14, 0.09), 0 32px 64px rgba(24, 20, 14, 0.16)",
@@ -332,8 +332,8 @@
         "--cw-mat-scroll-thumb-hover": "color-mix(in srgb, var(--cw-platform-text) 34%, transparent)",
         "--cw-mat-scroll-track": "transparent",
         "--cw-mat-meter-track": "color-mix(in srgb, var(--cw-platform-border) 72%, var(--cw-platform-surface) 28%)",
-        "--cw-mat-shadow-soft": "0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35)",
-        "--cw-mat-shadow-raised": "0 2px 6px rgba(0, 0, 0, 0.35), 0 28px 60px rgba(0, 0, 0, 0.5)",
+        "--cw-mat-shadow-soft": "0 2px 4px rgba(0, 0, 0, 0.22), 0 6px 16px rgba(0, 0, 0, 0.28)",
+        "--cw-mat-shadow-raised": "0 3px 6px rgba(0, 0, 0, 0.24), 0 8px 18px rgba(0, 0, 0, 0.30)",
         "--cw-mat-stroke-chrome": "color-mix(in srgb, var(--cw-platform-text) 16%, transparent)",
         "--cw-mat-shadow-chrome": "0 0 0 1px var(--cw-mat-stroke-chrome), 0 18px 40px rgba(0, 0, 0, 0.24)",
         "--cw-mat-shadow-deep": "0 3px 8px rgba(0, 0, 0, 0.4), 0 32px 68px rgba(0, 0, 0, 0.55)",
@@ -439,6 +439,7 @@
         "--ds-breakpoint-desktop-min": "56.3125rem",
         "--ds-container-max": "var(--cw-max-width)",
         "--ds-touch-target-min": "3rem",
+        "--ds-icon-control-radius": "var(--cw-radius-md)",
         "--ds-icon-control-ratio": "0.53",
         "--ds-icon-in-control": "calc(var(--ds-touch-target-min) * var(--ds-icon-control-ratio))",
         "--ds-button-min-height": "3rem",
@@ -465,6 +466,7 @@
         "--ds-author-banner-ratio": "5 / 1",
         "--ds-card-inset": "var(--cw-space-xs)",
         "--ds-card-category-disc": "2.25rem",
+        "--ds-card-category-radius": "var(--cw-radius-sm)",
         "--ds-card-body-inline": "var(--cw-space-xs)",
         "--ds-card-media-radius": "calc(var(--cw-card-radius) - var(--ds-card-inset))",
         "--ds-card-media-ratio": "16 / 9",
@@ -507,7 +509,8 @@
       }
     },
     "dsAliasPointerFine": {
-      "--ds-touch-target-min": "2.25rem"
+      "--ds-touch-target-min": "2.25rem",
+      "--ds-icon-control-radius": "var(--cw-radius-sm)"
     }
   }
 }

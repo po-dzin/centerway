@@ -92,16 +92,10 @@
   --platform-header-sheet-filter: var(--cw-mat-filter);
   --platform-header-wordmark-image: var(--cw-brand-asset-wordmark-dark);
   --platform-header-shell-radius: var(--cw-radius-lg);
-  --platform-utility-control-size: 3rem;
-  /* SOFT RECT, NEVER PILL (2026-09-06). One token, three controls — the
-     account entry, the bar's menu button and the panel close — and all three
-     were circles because a utility control is habitually a circle. On the one
-     radius scale `pill` is for things that are genuinely round; a 3rem square
-     control is not. `md` is the control step. */
-  /* `sm`, not `md`: this control is 36px on screen, where `md` 16 is 89% of a
-     circle. See the note on `--platform-island-radius` in
-     ChromeOrgans.module.css — same box, same reasoning, one pair of values. */
-  --platform-utility-control-radius: var(--cw-radius-sm);
+  /* Square utility controls share the icon-control proportion: 48px/16px for
+     touch, 36px/12px for a fine pointer. */
+  --platform-utility-control-size: var(--ds-touch-target-min);
+  --platform-utility-control-radius: var(--ds-icon-control-radius);
   --platform-utility-control-focus: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
   border: 0;
   border-radius: var(--platform-header-shell-radius);

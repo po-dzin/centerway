@@ -306,7 +306,7 @@
      pictogram, not a second circular gesture or a stretched mini-button. */
   width: var(--ds-card-category-disc);
   height: var(--ds-card-category-disc);
-  border-radius: var(--cw-radius-btn);
+  border-radius: var(--ds-card-category-radius);
   background: var(--cw-mat-surface-sunk);
   color: var(--cw-platform-text);
 }
@@ -705,7 +705,10 @@
   flex-direction: column;
   gap: var(--cw-space-xs);
   min-width: 0;
-  padding: 0 var(--ds-card-body-inline) var(--ds-card-body-inline);
+  /* The copy and footer share one inset on the side and the floor: the price
+     and CTA therefore sit on the same quiet inner edge as the text. */
+  padding: 0 var(--ds-card-body-inline);
+  padding-block-end: var(--ds-card-body-inline);
 }
 
 .programTileBody h3,
@@ -821,7 +824,11 @@
 .programLink {
   composes: secondary from "./PlatformButtons.module.css";
   flex: 0 0 auto;
+  /* The secondary recipe centres the box; this removes the font's extra
+     leading, which made this short label read optically low on mobile. */
+  line-height: 1;
   margin-top: 0;
+  text-align: center;
   white-space: nowrap;
 }
 
@@ -887,7 +894,9 @@
 }
 
 .programTilePrice strong {
-  font-size: var(--ds-type-lead-size);
+  /* Price is the offer's concrete proof, not supporting metadata. It takes
+     the card's existing promotional type step rather than a local number. */
+  font-size: var(--ds-offer-card-promo-size);
   font-weight: 750;
 }
 
