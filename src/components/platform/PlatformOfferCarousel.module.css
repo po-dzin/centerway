@@ -135,12 +135,12 @@
      both axes. Its previous 10/28 soft shadow (and 24/56 raised state) was long
      enough to become a dark rectangle once clipped, particularly in night mode.
      Material tokens now keep the card close to its floor; this rail gives that
-     short shadow `--cw-space-sm` of real air on every edge. Equal negative
+     short shadow `--ds-rail-shadow-field` of real air on every edge. Equal negative
      margins preserve the track's measured width, so one-phone-width cards and
      paging maths stay exactly where they were while the first and last shadows
      no longer hit the clip wall. */
-  padding: var(--cw-space-sm);
-  margin: calc(var(--cw-space-sm) * -1);
+  padding: var(--ds-rail-shadow-field);
+  margin: calc(var(--ds-rail-shadow-field) * -1);
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
