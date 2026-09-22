@@ -2258,7 +2258,6 @@
      `--ds-card-inset` from every edge, the body indents past it. */
   padding: var(--ds-card-inset);
   border-radius: var(--cw-card-radius);
-  background: var(--cw-mat-surface);
   box-shadow: var(--cw-object-shadow);
 }
 
@@ -2702,7 +2701,7 @@
 .courseTitle {
   position: relative;
   margin: 0;
-  font-family: var(--cw-font-editorial);
+  font-family: var(--ds-entity-title-font-family);
   font-size: 1.3rem;
   font-weight: 500;
 }
@@ -4358,7 +4357,10 @@
   }
 
   .courseGrid {
-    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    /* Preserve the shelf geometry when search leaves one or two courses.
+       `auto-fill` retains the empty tracks; `auto-fit` collapses them and
+       turns the remaining course into an accidental feature card. */
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--ds-course-card-grid-min)), 1fr));
   }
 
   .typeGrid {

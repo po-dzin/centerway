@@ -1568,6 +1568,11 @@ The contract layer (`route_family_contracts.json` → `screen_manifests.json` �
 
   This replaced **three** overlapping scales that shipped at once: `--cw-radius-*` (12/18/28), an unused `--ds-radius-*` delivery alias (12/16/20), and a standalone `--cw-card-radius` (20). `md` therefore meant 18 in one file and 16 in another, and a single mobile screen rendered six different corners (12, 14.4, 16, 16.8, 20, 21.6 px). Viewport-interpolated radii (`clamp(1rem, 4vw, …)`) are gone for the same reason: a corner that changes with the window cannot belong to a scale.
 - Touch target minimum `--ds-touch-target-min: 3rem` (canonical since e0c7dbc).
+- **Square icon plates keep a third-side corner ratio** (2026-09-21): 48px touch
+  controls take `--cw-radius-md` (16px), and their 36px fine-pointer alias
+  takes `--cw-radius-sm` (12px). `--ds-icon-control-radius` carries that pair;
+  `--ds-card-category-disc` / `--ds-card-category-radius` apply 36px / 12px to
+  category plates. Media/status chips remain pills.
 - Breakpoints: mobile ≤ 560px, tablet 561–900px, desktop ≥ 901px.
 - **One page gutter for the whole network, and the topbar's contents sit on it (2026-08-27).**
   `--cw-page-gutter: clamp(20px, 5vw, 40px)` is where a page's content column

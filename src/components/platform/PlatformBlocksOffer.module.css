@@ -88,7 +88,7 @@
    gap is the named small step: shadows have air, while the cards still read
    as one catalogue. At this full measure, price and CTA share the footer's
    baseline again; the vertical footer is reserved for genuinely narrow cards. */
-@media (max-width: 560px) {
+@media (max-width: 640px) {
   .aggregateRail {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--cw-space-sm);
@@ -98,7 +98,7 @@
 /* ── The tablet band ──────────────────────────────────
 
    A rail is a phone answer: it trades a control for a cut edge because there
-   is only room for one card. From 561px there is room for two, and the rail
+   is only room for one card. From 641px there is room for two, and the rail
    became the wrong shape — an 834px iPad showed a single 626px card with the
    next one clipped, where 905px showed the same offers two-up at 428px. The
    cliff was the layout, not the width.
@@ -111,7 +111,7 @@
    These rules used to live in PlatformResponsive.module.css, where the winner
    depended on the order a given route bundled the two files in — /programs and
    the home page resolved the same rail differently. */
-@media (min-width: 561px) and (max-width: 900px) {
+@media (min-width: 641px) and (max-width: 900px) {
   .programShowcase,
   .programShowcase[data-layout="mini"],
   .aggregateRail,
@@ -306,7 +306,7 @@
      pictogram, not a second circular gesture or a stretched mini-button. */
   width: var(--ds-card-category-disc);
   height: var(--ds-card-category-disc);
-  border-radius: var(--cw-radius-btn);
+  border-radius: var(--ds-card-category-radius);
   background: var(--cw-mat-surface-sunk);
   color: var(--cw-platform-text);
 }
@@ -408,7 +408,7 @@
   position: relative;
   z-index: 1;
   display: grid;
-  gap: var(--cw-space-xs);
+  gap: var(--ds-offer-card-content-gap);
   width: 100%;
   padding: 1.25rem;
 }
@@ -695,7 +695,7 @@
    before this, one card's subtitle pushed its chips and description a line
    below the neighbours'. */
 .programTileBody {
-  --program-slot-promo: calc(var(--ds-offer-card-promo-size) * var(--ds-offer-card-promo-line-height));
+  --program-slot-pretitle: calc(var(--ds-offer-card-pretitle-size) * var(--ds-offer-card-pretitle-line-height));
   --program-slot-title: calc(var(--ds-offer-card-title-size) * var(--ds-offer-card-title-line-height));
   --program-slot-sm: calc(var(--ds-type-body-sm-size) * var(--ds-type-body-sm-line-height));
   --program-slot-label: calc(var(--ds-type-label-size) * var(--ds-type-label-line-height));
@@ -703,9 +703,12 @@
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: var(--cw-space-xs);
+  gap: var(--ds-offer-card-content-gap);
   min-width: 0;
-  padding: 0 var(--ds-card-body-inline) var(--ds-card-body-inline);
+  /* The copy and footer share one inset on the side and the floor: the price
+     and CTA therefore sit on the same quiet inner edge as the text. */
+  padding: 0 var(--ds-card-body-inline);
+  padding-block-end: var(--ds-card-body-inline);
 }
 
 .programTileBody h3,
@@ -724,9 +727,9 @@
   display: flex;
   flex: 0 0 auto;
   flex-direction: column;
-  gap: var(--cw-space-2xs);
+  gap: var(--ds-offer-card-headline-gap);
   overflow: hidden;
-  height: calc(2 * var(--program-slot-promo) + var(--cw-space-2xs) + var(--program-slot-title));
+  height: calc(2 * var(--program-slot-pretitle) + var(--ds-offer-card-headline-gap) + var(--program-slot-title));
 }
 
 /* ONE LINE FOR THE NAME UNDER A PROMO. A course out of the builder carries
@@ -744,6 +747,7 @@
      and only the weight and the tone step back so it does not argue with the
      promo above it. */
   color: color-mix(in srgb, var(--cw-platform-text) 78%, transparent);
+  font-family: var(--ds-entity-title-font-family);
   font-size: var(--ds-offer-card-title-size);
   font-weight: var(--ds-offer-card-title-weight);
   line-height: var(--ds-offer-card-title-line-height);
@@ -755,10 +759,11 @@
 /* No promo: the name is the loudest line and stands where the promo would. */
 .programTileHeadline[data-has-promo="false"] h3 {
   color: var(--cw-platform-text);
-  font-size: var(--ds-offer-card-promo-size);
-  font-weight: var(--ds-offer-card-promo-weight);
+  font-family: var(--ds-entity-title-font-family);
+  font-size: var(--ds-offer-card-pretitle-size);
+  font-weight: var(--ds-offer-card-pretitle-weight);
   letter-spacing: -0.01em;
-  line-height: var(--ds-offer-card-promo-line-height);
+  line-height: var(--ds-offer-card-pretitle-line-height);
   -webkit-line-clamp: 2;
 }
 
@@ -791,18 +796,39 @@
   display: -webkit-box;
   overflow: hidden;
   color: var(--cw-platform-text);
-  font-size: var(--ds-offer-card-promo-size);
-  font-weight: var(--ds-offer-card-promo-weight);
+  font-family: var(--ds-offer-card-pretitle-font-family);
+  font-size: var(--ds-offer-card-pretitle-size);
+  font-weight: var(--ds-offer-card-pretitle-weight);
   letter-spacing: -0.01em;
-  line-height: var(--ds-offer-card-promo-line-height);
+  line-height: var(--ds-offer-card-pretitle-line-height);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+/* The editorial hook is deliberately the leading textual role: it stays above
+   the entity title at every width, with a larger desktop display step. */
+@media (min-width: 901px) {
+  .programTileBody {
+    --program-slot-pretitle: calc(
+      var(--ds-offer-card-pretitle-desktop-size) *
+        var(--ds-offer-card-pretitle-line-height)
+    );
+  }
+
+  .programTileBody p.programTilePromo {
+    font-size: var(--ds-offer-card-pretitle-desktop-size);
+  }
+
+  .programTileHeadline[data-has-promo="false"] h3 {
+    font-size: var(--ds-offer-card-pretitle-desktop-size);
+  }
 }
 
 /* Two description lines, held even when the copy is one line long. */
 .programTileBody p.programTileDescription {
   flex: 0 0 auto;
   height: calc(2 * var(--program-slot-body));
+  font-size: var(--ds-offer-card-description-size);
 }
 
 /* THE OFFER FOOTER — price and the one action share the card's baseline.
@@ -821,7 +847,11 @@
 .programLink {
   composes: secondary from "./PlatformButtons.module.css";
   flex: 0 0 auto;
+  /* The secondary recipe centres the box; this removes the font's extra
+     leading, which made this short label read optically low on mobile. */
+  line-height: 1;
   margin-top: 0;
+  text-align: center;
   white-space: nowrap;
 }
 
@@ -887,8 +917,10 @@
 }
 
 .programTilePrice strong {
-  font-size: var(--ds-type-lead-size);
-  font-weight: 750;
+  /* Price is factual metadata, not a second display headline. Its named
+     data role stays below the hook and entity title at every card measure. */
+  font-size: var(--ds-offer-card-price-size);
+  font-weight: var(--ds-offer-card-price-weight);
 }
 
 .programTilePrice[data-mode="inquiry"] strong {
@@ -1007,16 +1039,18 @@
     -webkit-line-clamp: 2;
   }
 
-  /* Narrow: the promo and the name step down to the body size and the name goes,
-     so the card keeps its loudest line, the price and «Деталі». The slot is two
-     promo lines at that size. */
+  /* Narrow two-column cards retain the editorial hierarchy, but clamp it to
+     the compact card step rather than reverting it to the body role. */
   .programTileBody {
-    --program-slot-promo: calc(var(--ds-type-body-size) * var(--ds-offer-card-promo-line-height));
+    --program-slot-pretitle: calc(
+      var(--ds-offer-card-pretitle-size) *
+        var(--ds-offer-card-pretitle-line-height)
+    );
   }
 
   .programTileBody p.programTilePromo,
   .programTileHeadline[data-has-promo="false"] h3 {
-    font-size: var(--ds-type-body-size);
+    font-size: var(--ds-offer-card-pretitle-size);
   }
 
   .programTileBody h3 {
@@ -1028,11 +1062,7 @@
   }
 
   .programTileHeadline {
-    height: calc(2 * var(--program-slot-promo));
-  }
-
-  .programTilePrice strong {
-    font-size: var(--ds-type-body-size);
+    height: calc(2 * var(--program-slot-pretitle));
   }
 
   .programTileFooter {

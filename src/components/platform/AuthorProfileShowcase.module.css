@@ -326,7 +326,7 @@
 .courseTitle {
   margin: var(--cw-space-2xs) 0 0;
   color: var(--cw-platform-ink-strong);
-  font-family: var(--cw-font-editorial);
+  font-family: var(--ds-entity-title-font-family);
   font-size: clamp(1.8rem, 5vw, 3rem);
   font-weight: 500;
   line-height: 1.1;

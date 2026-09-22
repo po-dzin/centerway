@@ -55,6 +55,29 @@ describe("platform interaction layers", () => {
     expect(selected).toContain("--ds-button-lift");
   });
 
+  it("keeps one short material shadow for cards and gives every rail edge room", () => {
+    const tokens = read("data/design-tokens/cw.tokens.json");
+    const carousel = read("src/components/platform/PlatformOfferCarousel.module.css");
+
+    expect(tokens).toContain('"--cw-mat-shadow-soft": "0 2px 4px');
+    expect(tokens).toContain('0 6px 16px');
+    expect(tokens).toContain('"--cw-mat-shadow-raised": "0 3px 6px');
+    expect(tokens).toContain('0 8px 18px');
+    expect(tokens).not.toContain('0 24px 56px');
+    expect(tokens).not.toContain('0 28px 60px');
+    expect(carousel).toContain("padding: var(--cw-space-sm);");
+    expect(carousel).toContain("margin: calc(var(--cw-space-sm) * -1);");
+  });
+
+  it("uses one dot per full card on a phone and one dot per page above it", () => {
+    const carousel = read("src/components/platform/PlatformOfferCarousel.tsx");
+
+    expect(carousel).toContain('window.matchMedia("(max-width: 560px)").matches');
+    expect(carousel).toContain("const pages = phone ? visibleCount");
+    expect(carousel).toContain("const targetOffset = cards[index]?.offsetLeft;");
+    expect(carousel).toContain("targetOffset - firstOffset");
+  });
+
   it("puts every author surface on the shared paged carousel", () => {
     for (const source of [
       read("src/components/platform/blocks/trust/guides.tsx"),

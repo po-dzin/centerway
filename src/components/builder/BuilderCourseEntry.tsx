@@ -116,6 +116,8 @@ export function CourseCard(props: EntryProps) {
   return (
     <article
       className={styles.courseCard}
+      data-cw-material="matte"
+      data-cw-edge="none"
       data-flip-key={course.slug}
       data-removing={props.removing || undefined}
       data-course-status={course.status}

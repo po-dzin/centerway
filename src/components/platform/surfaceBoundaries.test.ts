@@ -76,14 +76,102 @@ describe("shared surface boundaries", () => {
     for (const file of authorFoldFiles()) expect(read(file), file).not.toContain('data-cw-edge="none"');
   });
 
-  it("uses the DS rounded-button tile for offer-category icons", () => {
+  it("uses the proportional DS square-tile recipe for offer-category icons", () => {
     const offer = read("src/components/platform/PlatformBlocksOffer.module.css");
     const categoryTile = block(offer, ".programTileCategoryDisc");
+    const tokens = read("data/design-tokens/cw.tokens.json");
 
     expect(categoryTile).toContain("width: var(--ds-card-category-disc);");
     expect(categoryTile).toContain("height: var(--ds-card-category-disc);");
-    expect(categoryTile).toContain("border-radius: var(--cw-radius-btn);");
+    expect(categoryTile).toContain("border-radius: var(--ds-card-category-radius);");
     expect(categoryTile).not.toContain("border-radius: 50%");
+    expect(tokens).toContain('"--ds-card-category-disc": "2.25rem"');
+    expect(tokens).toContain('"--ds-card-category-radius": "var(--cw-radius-sm)"');
+  });
+
+  it("keeps square chrome corners proportional to their touch target", () => {
+    const tokens = read("data/design-tokens/cw.tokens.json");
+    const organs = read("src/components/platform/layout/ChromeOrgans.module.css");
+    const shell = read("src/components/platform/PlatformShell.module.css");
+
+    expect(tokens).toContain('"--ds-icon-control-radius": "var(--cw-radius-md)"');
+    expect(tokens).toContain('"--ds-touch-target-min": "2.25rem",\n      "--ds-icon-control-radius": "var(--cw-radius-sm)"');
+    expect(organs).toContain("--platform-island-radius: var(--ds-icon-control-radius);");
+    expect(shell).toContain("--platform-utility-control-size: var(--ds-touch-target-min);");
+    expect(shell).toContain("--platform-utility-control-radius: var(--ds-icon-control-radius);");
+  });
+
+  it("uses one entity-title role for the same course across storefront, shelf, and Builder", () => {
+    const tokens = read("data/design-tokens/cw.tokens.json");
+    const offer = read("src/components/platform/PlatformBlocksOffer.module.css");
+    const cabinet = read("src/components/platform/cabinet/Cabinet.module.css");
+    const builder = read("src/components/builder/Builder.module.css");
+    const authorProfile = read("src/components/platform/AuthorProfileShowcase.module.css");
+
+    expect(tokens).toContain('"--ds-entity-title-font-family": "var(--cw-font-editorial)"');
+    expect(tokens).toContain('"--ds-offer-card-pretitle-font-family": "var(--cw-font-editorial)"');
+    expect(tokens).toContain('"--ds-offer-card-title-size": "clamp(1.25rem, 1.9vw, 1.5rem)"');
+    expect(tokens).toContain('"--ds-offer-card-pretitle-size": "clamp(1.5rem, 2.4vw, 1.75rem)"');
+    expect(tokens).toContain('"--ds-offer-card-pretitle-desktop-size": "clamp(1.5rem, 2.4vw, 1.8rem)"');
+    expect(tokens).toContain(
+      '"--ds-offer-card-description-size": "clamp(0.9375rem, 1.4vw, var(--ds-type-body-size))"',
+    );
+    expect(tokens).toContain('"--ds-offer-card-content-gap": "var(--cw-space-xs)"');
+    expect(tokens).toContain('"--ds-offer-card-headline-gap": "var(--cw-space-2xs)"');
+    expect(tokens).toContain(
+      '"--ds-offer-card-price-size": "clamp(0.875rem, 1.12vw, var(--ds-type-body-size))"',
+    );
+    expect(tokens).toContain('"--ds-offer-card-price-weight": "500"');
+    expect(block(offer, ".programTileBody h3")).toContain("font-family: var(--ds-entity-title-font-family)");
+    expect(block(offer, ".programTileBody p.programTilePromo")).toContain(
+      "font-family: var(--ds-offer-card-pretitle-font-family)",
+    );
+    expect(offer).toContain("font-size: var(--ds-offer-card-pretitle-desktop-size)");
+    expect(offer).toContain(
+      "--program-slot-pretitle: calc(\n      var(--ds-offer-card-pretitle-desktop-size) *\n        var(--ds-offer-card-pretitle-line-height)\n    )",
+    );
+    expect(block(offer, ".programTilePrice strong")).toContain(
+      "font-size: var(--ds-offer-card-price-size)",
+    );
+    expect(block(offer, ".programTilePrice strong")).toContain(
+      "font-weight: var(--ds-offer-card-price-weight)",
+    );
+    expect(block(cabinet, ".courseCardTitle")).toContain("font-family: var(--ds-entity-title-font-family)");
+    expect(block(authorProfile, ".courseTitle")).toContain("font-family: var(--ds-entity-title-font-family)");
+    expect(builder).toMatch(
+      /\.courseTitle\s*\{[\s\S]*?font-family:\s*var\(--ds-entity-title-font-family\);/,
+    );
+  });
+
+  it("keeps Library and Builder course cards on stable matte grid tracks after filtering", () => {
+    const tokens = read("data/design-tokens/cw.tokens.json");
+    const cabinet = read("src/components/platform/cabinet/Cabinet.module.css");
+    const builder = read("src/components/builder/Builder.module.css");
+    const entry = read("src/components/builder/BuilderCourseEntry.tsx");
+
+    const grid = "repeat(auto-fill, minmax(min(100%, var(--ds-course-card-grid-min)), 1fr))";
+    expect(tokens).toContain('"--ds-course-card-grid-min": "22rem"');
+    expect(block(cabinet, '.cardGrid[data-view="grid"]')).toContain(grid);
+    expect(builder).toContain(grid);
+    expect(entry).toContain('data-cw-material="matte"');
+    expect(entry).toContain('data-cw-edge="none"');
+    expect(block(builder, ".courseCard")).not.toContain("background: var(--cw-mat-surface)");
+  });
+
+  it("keeps a phone catalogue in its full-card reading measure through 640px", () => {
+    const offer = read("src/components/platform/PlatformBlocksOffer.module.css");
+    expect(offer).toContain("@media (max-width: 640px)");
+    expect(offer).toContain("@media (min-width: 641px) and (max-width: 900px)");
+  });
+
+  it("gives carousel shadows a symmetric tokenised safe field", () => {
+    const tokens = read("data/design-tokens/cw.tokens.json");
+    const carousel = read("src/components/platform/PlatformOfferCarousel.module.css");
+    const viewport = block(carousel, ".viewport");
+
+    expect(tokens).toContain('"--ds-rail-shadow-field": "var(--cw-space-md)"');
+    expect(viewport).toContain("padding: var(--ds-rail-shadow-field)");
+    expect(viewport).toContain("margin: calc(var(--ds-rail-shadow-field) * -1)");
   });
 
   it("distinguishes quiet command boundaries from the strong checkbox state", () => {
