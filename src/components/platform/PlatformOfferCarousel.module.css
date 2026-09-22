@@ -141,6 +141,10 @@
      no longer hit the clip wall. */
   padding: var(--ds-rail-shadow-field);
   margin: calc(var(--ds-rail-shadow-field) * -1);
+  /* The shadow field is also the rail's visual start. Without matching scroll
+     padding, mandatory snap aligns a card to the negative-margin viewport
+     edge after a swipe, erasing the page gutter on a phone. */
+  scroll-padding-inline: var(--ds-rail-shadow-field);
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
@@ -310,12 +314,13 @@
     display: none;
   }
 
-  /* Dots already report that more cards follow, so a cut neighbour is no
-     longer needed as an affordance. Let the current card take the whole content
-     measure and keep its title, proof and CTA as readable as a normal mobile
-     card. */
+  /* A mobile offer rail is an uncontained carousel: the active card keeps the
+     platform's left reading edge while `--cw-space-xl` leaves a deliberate
+     32px glimpse of what follows. The dots name progress, but the visible
+     neighbour answers the immediate gesture question without relying on a
+     small control or a tutorial. */
   .track {
-    grid-auto-columns: 100%;
+    grid-auto-columns: calc(100% - var(--cw-space-xl));
     gap: var(--cw-space-sm);
   }
 }

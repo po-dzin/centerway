@@ -101,28 +101,27 @@ export function HubIntro() {
         </div>
         <aside className={styles.videoAside} id="diagnostics" data-cw-hub-intro="aside">
           <div className={styles.videoDecisionIntro}>
-            <p className={styles.label}>Діагностика стану · перший крок</p>
-            <h2 className={`${styles.title} ${styles.videoDecisionTitle}`}>Побачити свій стан і вибрати старт</h2>
+            <p className={styles.label}>Діагностика</p>
+            <h2 className={`${styles.title} ${styles.videoDecisionTitle}`}>Спочатку — зрозуміти свій стан</h2>
             <p className={styles.videoDecisionText}>
-              Тести допомагають помітити ритм, енергію, сон, травлення й напругу. Це не діагноз, а спокійний спосіб
-              зрозуміти, що варто дослідити далі.
+              Кілька хвилин, щоб уважніше подивитися на свій поточний стан і зрозуміти, з чого почати. Це не кінцевий
+              діагноз, а орієнтир для наступного кроку.
             </p>
           </div>
           <div className={styles.videoDecisionRail}>
-            {/* The first available test is the route action. The full catalogue
-                stays secondary: it gives context without competing with the
-                next concrete step. */}
+            {/* One primary route action and one visibly secondary way to browse
+                the diagnostic catalogue: distinct decisions, one action group. */}
             <div className={styles.videoActionGrid} data-cw-hub-intro="actions">
               <Link className={styles.videoActionPrimary} href={DOSHA_TEST_ROUTE}>
-                Пройти перший тест
+                Пройти тест доші
+              </Link>
+              <Link className={styles.videoActionSecondary} href="/tests">
+                Усі тести
               </Link>
             </div>
-            {/* `PlatformBlockLink`, not a fifth hand-assembled copy of it. This
-                one composed the right classes and still drifted, because the
-                SHAPE was rebuilt here: when the shared crossing moved to the
-                resting stroke this link kept the navigation strength and went
-                on being invisible until hovered. Composing the styles is not
-                the same as using the component. */}
+            {/* On compact screens the established link treatment keeps the
+                action stack light; the desktop-only secondary plate makes the
+                parallel choice legible in its wider action row. */}
             <span className={styles.videoDecisionMore}>
               <PlatformBlockLink href="/tests" label="Усі тести" />
             </span>

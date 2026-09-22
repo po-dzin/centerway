@@ -799,6 +799,7 @@
 
 .videoActionGrid {
   display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(9rem, 1fr);
   gap: var(--cw-space-sm);
   align-content: end;
   width: 100%;
@@ -808,6 +809,14 @@
    until the contract took it. */
 .videoActionPrimary {
   composes: primary from "./PlatformButtons.module.css";
+  composes: fill from "./PlatformButtons.module.css";
+}
+
+/* One action group, two weights: start the available assessment or open the
+   diagnostic catalogue. The primary keeps the larger share; equal gold actions
+   would make two different decisions look interchangeable. */
+.videoActionSecondary {
+  composes: secondary from "./PlatformButtons.module.css";
   composes: fill from "./PlatformButtons.module.css";
 }
 
@@ -848,7 +857,7 @@
    the colour, the stroke, the arrow and its nudge for every surface at once.
    `.videoDecisionMoreArrow` is gone with the hand-assembled markup. */
 .videoDecisionMore {
-  display: inline-flex;
+  display: none;
   justify-content: flex-start;
 }
 
@@ -895,8 +904,18 @@
   }
 
   .videoActionGrid {
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--cw-space-sm);
     height: auto;
+  }
+
+  .videoActionSecondary {
+    display: none;
+  }
+
+  .videoDecisionMore {
+    display: inline-flex;
+    justify-content: flex-start;
   }
 
   .videoDecisionText {
