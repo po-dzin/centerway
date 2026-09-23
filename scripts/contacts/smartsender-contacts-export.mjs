@@ -15,7 +15,7 @@
  * Needs `SMARTSENDER_API_TOKEN` in .env.local. It is a project API token
  * (Smart Sender → Settings → API), sent as a Bearer token.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 
 import { loadDotEnv } from "../lib/db-url.mjs";
 
@@ -70,8 +70,19 @@ const ID_LIKE = /(^|\.)(id|userid|user_id|tguserid|telegram_?id|chat_?id|externa
 const PAGE_SIZE = 20;
 const CANDIDATES = [(page) => `/contacts?page=${page}&limitation=${PAGE_SIZE}`];
 
-const file = `data/contacts-import/raw/smartsender-contacts-${new Date().toISOString().slice(0, 10)}.json`;
-const resume = process.argv.includes("--resume") && existsSync(file);
+const DIR = "data/contacts-import/raw";
+const today = `${DIR}/smartsender-contacts-${new Date().toISOString().slice(0, 10)}.json`;
+/* Resume the LATEST export, not today's. A sweep started yesterday and
+   continued today would otherwise silently re-list 1941 contacts and re-fetch
+   every gate — hours of rate-limited calls to rebuild what is already on disk. */
+const previous = existsSync(DIR)
+  ? readdirSync(DIR)
+      .filter((f) => /^smartsender-contacts-\d{4}-\d{2}-\d{2}\.json$/.test(f))
+      .sort()
+      .at(-1)
+  : undefined;
+const resume = process.argv.includes("--resume") && Boolean(previous);
+const file = resume ? `${DIR}/${previous}` : today;
 const result = resume
   ? JSON.parse(readFileSync(file, "utf8"))
   : { exported_at: new Date().toISOString(), source: "smartsender", endpoint: null, contacts: [] };
@@ -153,6 +164,50 @@ for (const contact of todo) {
     save();
   }
   await sleep(250);
+}
+
+/* WHO TOOK WHICH PROGRAM. Smart Sender has no "students of this training"
+   endpoint — `/trainings/{id}/contacts` is a 404 — so the only way to the roster
+   is to ask every contact what it is enrolled in. Same pacing as the gates pass,
+   and `--trainings` keeps it opt-in because it is another full sweep. */
+if (process.argv.includes("--trainings")) {
+  const catalogue = list((await get("/trainings?page=1&limitation=20")).body);
+  console.log("trainings:", catalogue.map((t) => `${t.id}:${t.name}`).join(" | "));
+
+  const pending = result.contacts.filter((c) => !Array.isArray(c.trainings));
+  console.log(`trainings to fetch: ${pending.length}`);
+  let n = 0;
+  for (const contact of pending) {
+    for (let attempt = 1; attempt <= 6; attempt++) {
+      const res = await get(`/contacts/${contact.id}/trainings?page=1&limitation=20`);
+      if (res.status === 200) {
+        contact.trainings = list(res.body).map((t) => ({ id: t.id, name: t.name }));
+        break;
+      }
+      if (res.status === 423 || res.status === 429 || res.status >= 500) {
+        console.log(`  ${res.status} after ${n} — waiting 125 s`);
+        save();
+        await sleep(125_000);
+        continue;
+      }
+      contact.trainings_error = res.status;
+      break;
+    }
+    n++;
+    if (n % 100 === 0) {
+      console.log(`  ${n}/${pending.length}`);
+      save();
+    }
+    await sleep(250);
+  }
+
+  const roster = {};
+  for (const contact of result.contacts) {
+    for (const training of contact.trainings ?? []) {
+      roster[`${training.id}:${training.name}`] = (roster[`${training.id}:${training.name}`] ?? 0) + 1;
+    }
+  }
+  console.log("by training:", roster);
 }
 
 const channels = {};
