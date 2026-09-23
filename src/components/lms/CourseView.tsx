@@ -56,7 +56,7 @@ function lockNote(availability: Availability): string {
       ? "відкриється завтра"
       : `відкриється через ${availability.daysRemaining} дн.`;
   }
-  return "спершу заверши попередній урок";
+  return "спершу завершіть попередній урок";
 }
 
 export function CourseView({
@@ -297,7 +297,7 @@ export function CourseView({
       {reference.length > 0 ? (
         <section className={styles.referenceSection}>
           <h2 className={styles.referenceHeading}>Довідкові матеріали</h2>
-          <p className={styles.referenceLead}>Не входять у проходження — відкривай, коли знадобиться.</p>
+          <p className={styles.referenceLead}>Не входять у проходження — відкривайте, коли знадобиться.</p>
           <ul className={styles.outline}>
             {reference.map((entry) => (
               <li key={entry.lessonId} className={styles.outlineItem}>

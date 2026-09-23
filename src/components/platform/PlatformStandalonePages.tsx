@@ -103,11 +103,11 @@ export function PlatformConsultPage({ authors = [] }: { authors?: Author[] }) {
   );
 }
 
-export function PlatformDoshaTestPage() {
+export function PlatformDoshaTestPage({ author }: { author?: Author | null }) {
   return (
     <PlatformShell headerMode="overlay">
       <main data-cw-platform-template="dosha" data-cw-detail-template="dosha">
-        <DoshaTestClient />
+        <DoshaTestClient author={author ?? null} />
       </main>
     </PlatformShell>
   );

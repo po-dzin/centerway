@@ -19,6 +19,9 @@ export type PlatformTestEntry = {
   status: PlatformTestStatus;
 };
 
+/** The dosha test's slug in `test_definitions` — the row that carries its author. */
+export const DOSHA_TEST_API_SLUG = "dosha-test";
+
 export const TESTS_HUB_ROUTE = "/tests";
 export const DOSHA_TEST_ROUTE = "/tests/dosha";
 export const LEGACY_DOSHA_TEST_ROUTE = "/dosha-test";
@@ -26,7 +29,7 @@ export const LEGACY_DOSHA_TEST_ROUTE = "/dosha-test";
 export const platformTests: PlatformTestEntry[] = [
   {
     slug: "dosha",
-    apiSlug: "dosha-test",
+    apiSlug: DOSHA_TEST_API_SLUG,
     href: DOSHA_TEST_ROUTE,
     title: "Тест доші",
     tag: "Конституція",

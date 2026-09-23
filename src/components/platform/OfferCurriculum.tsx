@@ -48,7 +48,7 @@ function scheduleNote(availability: LessonAvailability): string {
       ? "відкриється завтра"
       : `відкриється через ${availability.daysRemaining} дн.`;
   }
-  return "спершу заверши попередній урок";
+  return "спершу завершіть попередній урок";
 }
 
 export function OfferCurriculum({

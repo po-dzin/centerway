@@ -76,7 +76,7 @@ export async function ProductDetailPage({ product }: { product: Product }) {
       }}
       detailRight={{
         label: "Як входити",
-        title: "Три коректні сценарії входу",
+        title: "Три способи почати",
         body: (
           <PlatformOfferResultList
             items={[

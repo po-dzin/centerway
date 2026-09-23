@@ -114,6 +114,50 @@ export async function getCourseAuthor(courseSlug: string): Promise<Author | null
   })();
 }
 
+/**
+ * The author of one test, resolved exactly as a course's author is.
+ *
+ * A test is authored material — the same kind of thing as a programme or a
+ * product — so `test_definitions.author_id` holds an `auth.users.id` and the
+ * displayable profile comes from `lms_authors.auth_user_id`. One resolution
+ * path for both, rather than a second convention for tests.
+ *
+ * Null is the honest answer for a test nobody has claimed yet, and the surface
+ * simply prints no byline: a test without an owner must not borrow one.
+ */
+async function readTestAuthor(testSlug: string): Promise<Author | null> {
+  try {
+    const db = adminClient();
+    const { data, error } = await db
+      .from("test_definitions")
+      .select("author_id")
+      .eq("slug", testSlug)
+      .maybeSingle();
+    if (error || !data) return null;
+    /* Cast through `unknown`: the generated database types are regenerated from
+       a live database (`npm run db:types`), and until the migration adding
+       `test_definitions.author_id` is applied they still describe the table
+       without it. The column is declared in
+       supabase/migrations/20260923000000_test_definitions_author.sql. */
+    const authorId = (data as unknown as { author_id?: string | null }).author_id;
+    if (typeof authorId !== "string" || authorId.length === 0) return null;
+    const row = await findAuthorByUser(authorId);
+    return row ? authorFromRow(row) : null;
+  } catch (error) {
+    console.warn(
+      `platform_test_author_unavailable:${testSlug}:${error instanceof Error ? error.message : "unknown_error"}`,
+    );
+    return null;
+  }
+}
+
+export async function getTestAuthor(testSlug: string): Promise<Author | null> {
+  return unstable_cache(() => readTestAuthor(testSlug), ["platform-test-author", testSlug], {
+    tags: [AUTHOR_LIST_TAG, `platform-test:${testSlug}`],
+    revalidate: REVALIDATE_SECONDS,
+  })();
+}
+
 async function readAuthor(slug: string): Promise<Author | null> {
   try {
     const db = adminClient();
