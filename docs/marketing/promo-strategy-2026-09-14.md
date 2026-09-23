@@ -315,13 +315,13 @@ Resend используется только для чека — `docs/conversio
 | `video:upload --file\|--url`, `ad:create --adset --video --thumb --message --headline --link` | креатив от Page 109220005242649 / IG 17841403794945854, объявление PAUSED | с `--apply` |
 
 Без `--apply` — сухой прогон: печатает точный запрос и пишет строку в журнал. Удаления нет.
-Миграция `supabase/migrations/20260914000000_meta_actions.sql` (журнал, RLS, только service role).
+Миграция `supabase/migrations/20260923000000_meta_actions.sql` (журнал, RLS, только service role).
 
 **Состояние миграции ❓:** запись `20260914000000` в `schema_migrations` есть, таблицы нет — первый
 `db push` был прерван политикой разрешений после записи версии. Починить одной из двух команд:
 
 ```bash
-supabase db query --db-url "$SUPABASE_DB_URL" "$(grep -v '^--' supabase/migrations/20260914000000_meta_actions.sql)"
+supabase db query --db-url "$SUPABASE_DB_URL" "$(grep -v '^--' supabase/migrations/20260923000000_meta_actions.sql)"
 ```
 
 или удалить строку версии и повторить `npm run db:push`. До этого CLI работает, но журнал пишет предупреждение.
