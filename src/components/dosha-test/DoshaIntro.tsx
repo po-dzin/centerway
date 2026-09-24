@@ -76,7 +76,7 @@ export function DoshaIntro({ author, fontFamily, topbarBadge, error, isBusy, req
               </p>
               <h1 className={styles.title}>Тест доші</h1>
               <p className={styles.lead}>
-                Швидка самооцінка ритму, енергії, травлення і напруги — щоб побачити поточний стан і зрозуміти, з чого
+                Швидка самооцінка тіла, енергії, емоцій і мислення — щоб побачити поточний стан і зрозуміти, з чого
                 почати.
               </p>
             </div>

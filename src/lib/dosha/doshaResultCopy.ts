@@ -127,7 +127,7 @@ export const RESULT_COPY: Record<
    start button below the fold on a phone — the steps were reassurance, and
    reassurance that costs the CTA its place stops reassuring anyone. */
 export const HOW_IT_WORKS_STEPS = [
-  "12 коротких питань про ритм, енергію, травлення, сон і напругу.",
+  "12 коротких питань про тіло, сон, енергію, емоційні реакції і мислення.",
   "Профіль доші як робоча гіпотеза про ваш поточний стан.",
   "Наступний крок: консультація, програма або самостійний старт.",
 ];

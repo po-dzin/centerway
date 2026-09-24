@@ -8,7 +8,7 @@ import { DOSHA_TEST_API_SLUG } from "@/lib/platform/tests";
 export const metadata: Metadata = pageMetadata({
   title: "Тест доші: безкоштовно, 12 питань",
   description: describe(
-    "Безкоштовний тест доші CenterWay: 12 питань про сон, травлення, енергію і реакцію на стрес — і зрозумілий перший крок за результатом.",
+    "Безкоштовний тест доші CenterWay: 12 питань про тіло, сон, енергію, емоції і мислення — і зрозумілий перший крок за результатом.",
   ),
   path: "/tests/dosha",
 });
