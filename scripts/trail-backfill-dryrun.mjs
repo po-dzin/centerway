@@ -5,7 +5,8 @@
 import { db } from "./lib/lms-cli.mjs";
 const c = db();
 
-const { data: rows, error } = await c.from("lms_progress_events")
+const { data: rows, error } = await c
+  .from("lms_progress_events")
   .select("id,enrollment_id,lesson_id,type,client_id,occurred_at")
   .eq("type", "lesson.started");
 if (error) throw new Error(error.message);
@@ -13,10 +14,13 @@ if (error) throw new Error(error.message);
 const groups = {};
 for (const r of rows) (groups[`${r.enrollment_id}|${r.lesson_id}`] ||= []).push(r);
 
-let keep = 0, flip = 0, prefixWouldHaveBeenWrong = 0;
+let keep = 0,
+  flip = 0,
+  prefixWouldHaveBeenWrong = 0;
 for (const list of Object.values(groups)) {
-  list.sort((a,b) => a.occurred_at === b.occurred_at ? (a.id < b.id ? -1 : 1)
-                                                    : (a.occurred_at < b.occurred_at ? -1 : 1));
+  list.sort((a, b) =>
+    a.occurred_at === b.occurred_at ? (a.id < b.id ? -1 : 1) : a.occurred_at < b.occurred_at ? -1 : 1,
+  );
   list.forEach((r, i) => {
     if (i === 0) {
       keep++;
@@ -35,5 +39,5 @@ console.log(`\nlessons whose real start carries the srv:open: prefix: ${prefixWo
 console.log(`-> a prefix-keyed backfill would have destroyed ${prefixWouldHaveBeenWrong} genuine starts.`);
 
 // After the migration every group must still keep exactly one start.
-const bad = Object.entries(groups).filter(([,l]) => l.length === 0);
+const bad = Object.entries(groups).filter(([, l]) => l.length === 0);
 console.log(`\ngroups left with no lesson.started: ${bad.length} (must be 0)`);

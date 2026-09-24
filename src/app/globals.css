@@ -2772,9 +2772,14 @@ body {
     transition: box-shadow 160ms ease;
   }
 
-  .cw-object:hover,
   .cw-object[data-selected],
   .cw-object:active {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) and (hover: hover) {
+  .cw-object:hover {
     transform: none;
   }
 }

@@ -277,11 +277,7 @@ export const ICONS = {
   /** «Дихання» — moving air: strokes that travel sideways and curl at the end. */
   wind: {
     group: "Elements",
-    d: [
-      "M3.2 8.2h8.6a2.4 2.4 0 1 0-2.4-2.4",
-      "M3.2 12h11.6a2.6 2.6 0 1 1-2.6 2.6",
-      "M3.2 15.8h6.4",
-    ],
+    d: ["M3.2 8.2h8.6a2.4 2.4 0 1 0-2.4-2.4", "M3.2 12h11.6a2.6 2.6 0 1 1-2.6 2.6", "M3.2 15.8h6.4"],
   },
 
   /** «Очищення» — a drop has fallen and the water is carrying it outward. */
@@ -331,11 +327,7 @@ export const ICONS = {
        stick ended and the two read as one bent line. The stick now stops at
        13.8 and the curl starts at 11.4 — a clear 2.4 of nothing between them,
        which is what says "this part is burning and this part is air". */
-    d: [
-      "M8.8 20.6h6.4",
-      "M12 20.6v-6.8",
-      "M12 11.4c-2.5-1.7 2.3-3 .2-4.9-1.1-1-1-2 .1-3",
-    ],
+    d: ["M8.8 20.6h6.4", "M12 20.6v-6.8", "M12 11.4c-2.5-1.7 2.3-3 .2-4.9-1.1-1-1-2 .1-3"],
   },
 
   /** «Фокус» — a sight. NOT `lens`: that glyph is the SEARCH magnifier in the
@@ -346,13 +338,7 @@ export const ICONS = {
       set's own node. */
   crosshair: {
     group: "Elements",
-    d: [
-      "M12 5.2a6.8 6.8 0 1 0 0 13.6 6.8 6.8 0 0 0 0-13.6z",
-      "M12 2.6v4.4",
-      "M12 17v4.4",
-      "M2.6 12h4.4",
-      "M17 12h4.4",
-    ],
+    d: ["M12 5.2a6.8 6.8 0 1 0 0 13.6 6.8 6.8 0 0 0 0-13.6z", "M12 2.6v4.4", "M12 17v4.4", "M2.6 12h4.4", "M17 12h4.4"],
     dots: [{ cx: 12, cy: 12, r: 1.4, accent: true }],
   },
 
