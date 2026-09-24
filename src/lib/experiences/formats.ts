@@ -3,6 +3,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 
 import { COURSE_LIST_TAG, courseTag } from "@/lib/lms/liveCatalog";
+import { courseOfferCode } from "@/lms-core";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 import { normalizeOfferCode } from "./offers";
@@ -121,14 +122,17 @@ async function includedPrograms(db: Db, offerIds: string[]): Promise<Map<string,
   return byOffer;
 }
 
-function toFormat(row: OfferRow, includes: FormatIncludedProgram[]): ProgramFormat | null {
-  if (!isOfferFormat(row.format)) return null;
+function toFormat(row: OfferRow, includes: FormatIncludedProgram[], ownCode: string): ProgramFormat | null {
+  // The course's own offer is its self-paced format whether or not anyone
+  // marked it so — it is the thing that was on sale before formats existed.
+  const kind = isOfferFormat(row.format) ? row.format : row.code === ownCode ? "self" : null;
+  if (!kind) return null;
   const mode = row.mode === "lead" || row.mode === "free" ? row.mode : "checkout";
   if (mode === "checkout" && (row.amount === null || row.amount <= 0)) return null;
   return {
     code: row.code,
-    format: row.format,
-    label: ukLine(row.label) ?? FORMAT_DEFAULT_LABELS[row.format],
+    format: kind,
+    label: ukLine(row.label) ?? FORMAT_DEFAULT_LABELS[kind],
     summary: ukLine(row.summary),
     mode,
     amount: row.amount,
@@ -139,7 +143,7 @@ function toFormat(row: OfferRow, includes: FormatIncludedProgram[]): ProgramForm
   };
 }
 
-async function readProgramFormats(courseId: string): Promise<ProgramFormat[]> {
+async function readProgramFormats(courseId: string, courseSlug: string): Promise<ProgramFormat[]> {
   try {
     const db = supabaseAdmin();
     const course = await db.from("lms_courses").select("experience_id").eq("id", courseId).maybeSingle();
@@ -151,17 +155,19 @@ async function readProgramFormats(courseId: string): Promise<ProgramFormat[]> {
       .select(OFFER_COLUMNS)
       .eq("experience_id", experienceId)
       .eq("active", true)
-      .eq("review_status", "approved")
-      .not("format", "is", null);
+      .eq("review_status", "approved");
     if (offers.error || !offers.data) return [];
 
-    const rows = (offers.data as OfferRow[]).sort((a, b) => a.sort_order - b.sort_order || a.code.localeCompare(b.code));
+    const ownCode = courseOfferCode(courseSlug);
+    const rows = (offers.data as OfferRow[])
+      .filter((row) => row.format !== null || row.code === ownCode)
+      .sort((a, b) => a.sort_order - b.sort_order || a.code.localeCompare(b.code));
     const includes = await includedPrograms(
       db,
       rows.map((row) => row.id),
     );
     return rows
-      .map((row) => toFormat(row, includes.get(row.id) ?? []))
+      .map((row) => toFormat(row, includes.get(row.id) ?? [], ownCode))
       .filter((entry): entry is ProgramFormat => entry !== null);
   } catch {
     // Formats that cannot be read are not «no formats»: the page falls back to
@@ -176,7 +182,7 @@ async function readProgramFormats(courseId: string): Promise<ProgramFormat[]> {
  * before.
  */
 export async function loadProgramFormats(course: { id: string; slug: string }): Promise<ProgramFormat[]> {
-  return unstable_cache(() => readProgramFormats(course.id), ["program-formats", course.id], {
+  return unstable_cache(() => readProgramFormats(course.id, course.slug), ["program-formats", course.id], {
     tags: [courseTag(course.slug), COURSE_LIST_TAG],
     revalidate: 300,
   })();
