@@ -31,8 +31,8 @@ export function CourseNextStep({ currentSlug, courses }: { currentSlug: string; 
             artwork={course.artwork}
             kindBadge={course.kindBadge}
             categories={course.categoryLabels}
+            categoryCodes={course.categories}
             pretitle={course.pretitle}
-            posttitle={course.posttitle}
             commercialMode={course.commercialMode}
             price={course.price}
             compareAtPrice={course.compareAtPrice}

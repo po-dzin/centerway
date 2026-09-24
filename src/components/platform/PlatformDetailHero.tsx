@@ -26,9 +26,9 @@ type PlatformDetailHeroProps = {
    * The author's own line above the name — the mirror of `subtitle`.
    *
    * It sits between the badge and the h1, which is the same order the
-   * catalogue card puts them in (label, pretitle, name, posttitle): a reader
-   * arriving from a card meets the three lines in the order they already read
-   * them. NOT folded into `badge`, for the reason the badge's own comment
+   * catalogue card puts them in (label, pretitle, name): a reader
+   * arriving from a card meets the two authored lines in the order they already
+   * read them. NOT folded into `badge`, for the reason the badge's own comment
    * gives about taglines — that pill is uppercase and holds the system's word
    * for a kind of thing, and an author's sentence set in caps across the top of
    * a hero is the bug, not the feature.

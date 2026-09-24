@@ -20,7 +20,7 @@ const semanticBlocks = readJson("data/generator/semantic_block_layer.json");
 /* /programs/detox stopped being a page on 2026-09-20: old program addresses are
    rows in `experience_aliases`, resolved by the course route. The invariant now
    reads the two halves of that — the row and the resolver. */
-const registryMigration = path.join(root, "supabase", "migrations", "20260919000000_experiences_registry.sql");
+const registryMigration = path.join(root, "supabase", "migrations", "20260924000000_experiences_registry.sql");
 const programRoutePage = path.join(root, "src", "app", "(platform)", "programs", "[slug]", "page.tsx");
 const publicDetoxAliasPage = path.join(root, "src", "app", "(platform)", "detox", "page.tsx");
 // /herbs stopped being a redirect alias on 2026-08-17 (docs/design-system.md,

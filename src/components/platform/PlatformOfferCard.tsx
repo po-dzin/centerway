@@ -1,6 +1,9 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
 import styles from "@/components/platform/PlatformOfferStyles";
+import { COURSE_CATEGORIES_MAX, type CourseCategory } from "@/lms-core";
+import { COURSE_CATEGORY_ICONS } from "@/lib/platform/catalogVocabulary";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 
 /**
@@ -14,8 +17,10 @@ import type { PlatformOfferArtwork } from "@/lib/platform/content";
  * cover, which is most of them. Nothing on this card sits on the photograph
  * except the kind badge, and that badge brings its own ground.
  *
- * THE PREVIEW FORMAT, stated once here and enforced in CSS: an eyebrow of one
- * line, a name of two, two lines of description, the price, one button.
+ * THE PREVIEW FORMAT, stated once here and enforced in CSS (2026-09-20 order):
+ * the promo line, the name under it, two lines of description, the categories,
+ * the price, one button. The kind and the duration are ONE badge on the photo —
+ * they were an eyebrow above the name and the same fact twice.
  *
  * FIXED SLOTS, THE ADMIN ROW'S RULE (2026-09-17). Every field has a height of
  * its own that does not depend on the copy: the eyebrow one line (the author's
@@ -29,7 +34,8 @@ import type { PlatformOfferArtwork } from "@/lib/platform/content";
  *
  * THE CARD'S WIDTH, NOT THE SCREEN'S, DECIDES ITS DENSITY. The same card is a
  * third of a desktop row, one card of a phone carousel and half of a 375px
- * catalogue; below 14rem it drops the description and prints the short label.
+ * catalogue; below 14rem it keeps one line of the description, drops
+ * secondary facts and stacks the price over the short action.
  */
 export type PlatformOfferCardProps = {
   /** The NAME, two lines. Not the name plus what it is — `offerName` cuts that. */
@@ -62,13 +68,20 @@ export type PlatformOfferCardProps = {
   kindBadge?: string;
   /** What it is about — one to three words each, already translated. */
   categories?: readonly string[];
+  /**
+   * The same subjects as CODES, in the same order as `categories`. The words
+   * are the caller's (translated); the glyph is the card's, and it is chosen by
+   * the code — never by the word, which is a translation and can change.
+   */
+  categoryCodes?: readonly CourseCategory[];
   /** "planned" renders the card without a link, as a surface that does not exist yet. */
   status?: "active" | "planned";
   statusLabel?: string;
-  /** The author's own line above the title, when they wrote one. */
+  /**
+   * THE PROMO — the author's own hook, printed ABOVE the name and larger than
+   * it. It answers "why me", the name answers "what is this".
+   */
   pretitle?: string;
-  /** The line below the title, in the author's own words. */
-  posttitle?: string;
   commercialMode?: "fixed" | "free" | "inquiry";
   price?: string | null;
   compareAtPrice?: string | null;
@@ -83,11 +96,11 @@ function initialsOf(title: string): string {
     .join("");
 }
 
-/* «Деталі курсу» does not fit a 165px column on one line of a button; «Деталі»
+/* «Детальніше» does not fit a 165px column on one line of a button; «Деталі»
    does, and it says the same thing on a card whose picture and title already
-   named the course. A label that is not a «Деталі …» label keeps its words. */
+   named the course. A label that is not a «Детал…» label keeps its words. */
 function shortCtaLabel(label: string): string {
-  return label.startsWith("Деталі") ? "Деталі" : label;
+  return label.startsWith("Детал") ? "Деталі" : label;
 }
 
 export function PlatformOfferCard({
@@ -98,15 +111,15 @@ export function PlatformOfferCard({
   visual,
   slug,
   artwork,
-  ctaLabel = "Деталі продукту",
+  ctaLabel = "Детальніше",
   meta,
   points,
   kindBadge,
   categories,
+  categoryCodes,
   status = "active",
   statusLabel = "Скоро",
   pretitle,
-  posttitle,
   commercialMode,
   price,
   compareAtPrice,
@@ -129,6 +142,23 @@ export function PlatformOfferCard({
   };
 
   const isPlanned = status === "planned" || !href;
+
+  /* THE PROMO, and what stands in for it. No promo at all is a normal state
+     (most courses have none): then the NAME takes the promo's place and size,
+     so the card still opens on its one loudest line rather than on a small
+     caption over an empty slot. */
+  /* Capitalised here, not in CSS: `::first-letter` does not reach a clamped
+     `-webkit-box`. */
+  const rawPromo = pretitle;
+  const promo = rawPromo ? rawPromo.charAt(0).toLocaleUpperCase("uk") + rawPromo.slice(1) : undefined;
+  const badge = kindBadge && tag && !tag.startsWith(kindBadge) ? `${kindBadge} · ${tag}` : tag || kindBadge;
+
+  /* Three subjects at most — the contract's write ceiling. A stored course that
+     carries more still reads, it just shows the first three. */
+  const subjects = (categories ?? []).slice(0, COURSE_CATEGORIES_MAX).map((label, index) => ({
+    label,
+    code: categoryCodes?.[index],
+  }));
 
   return (
     <article
@@ -164,29 +194,35 @@ export function PlatformOfferCard({
             {initialsOf(title)}
           </span>
         )}
-        {kindBadge ? <p className={styles.programTileKind}>{kindBadge}</p> : null}
+        {badge ? <p className={styles.programTileBadge}>{badge}</p> : null}
       </div>
       <div className={styles.programTileBody}>
-        <div className={styles.programTileEyebrow}>
-          <p className={styles.label}>{tag}</p>
-          {pretitle ? <p className={styles.programTilePretitle}>{pretitle}</p> : null}
-        </div>
-        <div className={styles.programTileHeadline}>
+        {/* PROMO ABOVE, NAME BELOW — one headline slot, so the description under
+            it starts on the same line in every card of a row whether or not the
+            author wrote a promo. The `h3` is always the NAME: it is what the
+            page, the receipt and the breadcrumb call the offer. */}
+        <div className={styles.programTileHeadline} data-has-promo={promo ? "true" : "false"}>
+          {promo ? <p className={styles.programTilePromo}>{promo}</p> : null}
           <h3>{title}</h3>
-          {posttitle ? <p className={styles.programTilePosttitle}>{posttitle}</p> : null}
         </div>
+        <p className={styles.programTileDescription}>{description}</p>
         {/* ALWAYS RENDERED, empty or not: the categories are a slot, and a card
-            without them keeps the line so its description starts where its
-            neighbours' does (docs/card-system-2026-09-13.md, «Слоти»). */}
-        <ul className={styles.programTileCategories} aria-hidden={categories?.length ? undefined : true}>
-          {categories?.map((category) => (
-            <li className={styles.programTileCategory} key={category}>
-              {category}
+            without them keeps the line so its price starts where its
+            neighbours' does (docs/card-system-2026-09-13.md, «Слоти»). Under
+            the description now, not above it — they qualify what was just
+            said rather than introduce it. A glyph in a disc with the word under
+            it, three equal cells, no plate around the pair. */}
+        <ul className={styles.programTileCategories} aria-hidden={subjects.length ? undefined : true}>
+          {subjects.map(({ label, code }) => (
+            <li className={styles.programTileCategory} key={label}>
+              <span className={styles.programTileCategoryDisc} aria-hidden="true">
+                {code ? <Icon name={COURSE_CATEGORY_ICONS[code]} size={20} /> : null}
+              </span>
+              <span className={styles.programTileCategoryLabel}>{label}</span>
             </li>
           ))}
         </ul>
         {meta ? <p className={styles.programTileMeta}>{meta}</p> : null}
-        <p className={styles.programTileDescription}>{description}</p>
         {points && points.length > 0 ? (
           <ul className={styles.programTilePoints}>
             {points.map((point) => (
@@ -194,25 +230,27 @@ export function PlatformOfferCard({
             ))}
           </ul>
         ) : null}
-        {commercialMode ? (
-          <div className={styles.programTilePrice} data-mode={commercialMode}>
-            {compareAtPrice ? <s>{compareAtPrice}</s> : null}
-            <strong>
-              {commercialMode === "fixed" ? price : commercialMode === "free" ? "Безкоштовно" : "Ціна за запитом"}
-            </strong>
-          </div>
-        ) : null}
         {isPlanned ? (
           <span className={styles.programTileStatus}>{statusLabel}</span>
         ) : (
-          /* Not a link: the overlay above already is one, and it covers this.
-             Two labels, one shown: the card's width picks which. */
-          <span className={styles.programLink}>
-            <span className={styles.programLinkFull}>{ctaLabel}</span>
-            <span className={styles.programLinkShort} aria-hidden="true">
-              {shortCtaLabel(ctaLabel)}
+          <div className={styles.programTileFooter}>
+            {commercialMode ? (
+              <div className={styles.programTilePrice} data-mode={commercialMode}>
+                {compareAtPrice ? <s>{compareAtPrice}</s> : null}
+                <strong>
+                  {commercialMode === "fixed" ? price : commercialMode === "free" ? "Безкоштовно" : "Ціна за запитом"}
+                </strong>
+              </div>
+            ) : null}
+            {/* Not a link: the overlay above already is one, and it covers this.
+               Two labels, one shown: the card's width picks which. */}
+            <span className={styles.programLink}>
+              <span className={styles.programLinkFull}>{ctaLabel}</span>
+              <span className={styles.programLinkShort} aria-hidden="true">
+                {shortCtaLabel(ctaLabel)}
+              </span>
             </span>
-          </span>
+          </div>
         )}
       </div>
     </article>

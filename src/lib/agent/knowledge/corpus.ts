@@ -168,7 +168,7 @@ export function courseDocs(courses: Course[]): KnowledgeDoc[] {
       // assistant citing the row name would hand a person a 404.
       href: `/programs/${course.programSlug}`,
       text: paragraphs([
-        [course.pretitle, course.title, course.posttitle].filter(Boolean).join(" — "),
+        [course.pretitle, course.title].filter(Boolean).join(" — "),
         course.tagline,
         summary,
         list("Результати", course.results),

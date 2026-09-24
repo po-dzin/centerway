@@ -80,6 +80,11 @@ const CATEGORY_KEY: Record<CourseCategory, string> = {
   movement: "catalog_category_movement",
   nutrition: "catalog_category_nutrition",
   cleansing: "catalog_category_cleansing",
+  breathing: "catalog_category_breathing",
+  meditation: "catalog_category_meditation",
+  focus: "catalog_category_focus",
+  energy: "catalog_category_energy",
+  relaxation: "catalog_category_relaxation",
 };
 
 const GROUPING_KEY: Record<CatalogGrouping, string> = {
@@ -567,6 +572,10 @@ function PublicationRow({
     row.reviewStatus !== "approved" &&
     (row.reviewStatus === "in_review" || row.status === "published");
   const approvable = revisionInReview || approvesLive;
+  /* Mirrors `moderateCourse` again: approving a course that is still a draft
+     and is in the queue also publishes it, so the button must say so. The
+     author is no longer asked to come back and press a second one. */
+  const publishesOnApproval = row.status !== "published" && row.reviewStatus === "in_review";
   const rowNote = publicationNote(row, t);
 
   return (
@@ -645,7 +654,13 @@ function PublicationRow({
           title={t("catalog_review_title")}
           description={row.title}
           context={rowNote?.text}
-          approveLabel={approvesLive && row.hasPendingRevision ? t("catalog_approve_live") : t("catalog_approve")}
+          approveLabel={
+            approvesLive && row.hasPendingRevision
+              ? t("catalog_approve_live")
+              : publishesOnApproval
+                ? t("catalog_approve_publish")
+                : t("catalog_approve")
+          }
           returnLabel={inReview ? t("catalog_return") : undefined}
           notePlaceholder={t("catalog_note_placeholder")}
           cancelLabel={t("catalog_modal_cancel")}

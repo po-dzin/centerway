@@ -24,6 +24,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session } from "@supabase/supabase-js";
 
 import { supabaseClient } from "@/lib/supabaseClient";
+import { rememberAccount } from "@/lib/auth/lastAccount";
 
 export type SessionStatus = "loading" | "signed-out" | "signed-in";
 export type SessionState = { session: Session | null; status: SessionStatus };
@@ -54,12 +55,20 @@ function useSubscription(enabled: boolean): SessionState {
   useEffect(() => {
     if (!enabled || !isAuthConfigured()) return;
 
-    const publish = (next: Session | null) =>
+    const publish = (next: Session | null) => {
+      /* WHO WAS HERE, KEPT FOR THE NEXT VISIT. Not for this session — the
+         session is a cookie and needs no help — but for the DOOR, which after
+         a sign-out has to be able to offer this account by name instead of
+         silently handing the browser back to it. A name, an address and an
+         avatar URL; nothing that could act as the person. See
+         `lib/auth/lastAccount`. */
+      rememberAccount(next);
       setState((current) =>
         current.status !== "loading" && sameSession(current.session, next)
           ? current
           : { session: next, status: next ? "signed-in" : "signed-out" },
       );
+    };
 
     void supabaseClient.auth.getSession().then(({ data }) => publish(data.session));
     const {

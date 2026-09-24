@@ -114,7 +114,28 @@ export type CourseKind = (typeof COURSE_KINDS)[number];
  * Codes are English so they can be a database enum and a URL segment; the
  * words a person reads are the builder's and the catalogue's, per locale.
  */
-export const COURSE_CATEGORIES = ["movement", "nutrition", "cleansing"] as const;
+export const COURSE_CATEGORIES = [
+  "movement",
+  "nutrition",
+  "cleansing",
+  "breathing",
+  "meditation",
+  "focus",
+  "energy",
+  "relaxation",
+] as const;
+
+/**
+ * At most three subjects on one course (2026-09-20). The card prints them as
+ * three equal cells under the description, so a fourth has nowhere to stand —
+ * and a course that is about five things is about none. The ceiling is on the
+ * WRITE only: a stored course that somehow carries more is still read and shown
+ * (the first three), never dropped — see `contract-ceiling-never-at-read`.
+ */
+export const COURSE_CATEGORIES_MAX = 3;
+
+/** The floor a course needs to be listed — a readiness blocker, not a write rule. */
+export const COURSE_CATEGORIES_MIN = 2;
 
 export type CourseCategory = (typeof COURSE_CATEGORIES)[number];
 
@@ -144,8 +165,10 @@ export type CourseCategory = (typeof COURSE_CATEGORIES)[number];
  */
 export const COURSE_TITLE_MAX = 48;
 export const COURSE_TITLE_RAW_MAX = 120;
-export const COURSE_PRETITLE_MAX = 24;
-export const COURSE_POSTTITLE_MAX = 64;
+/* The promo line — the card's loudest text (2026-09-20). It was a 24-character
+   caption over the name; it is now the author's hook in the card's display
+   step, two lines of ~22 characters at the tightest desktop card, so 44. */
+export const COURSE_PRETITLE_MAX = 44;
 
 /**
  * The most days a course may claim, and the reason there is a ceiling at all:
@@ -235,17 +258,6 @@ export type Course = {
    * «Спільно з IREM».
    */
   pretitle?: string;
-  /**
-   * The line BELOW the title on the cover — what kind of thing this is, in a
-   * sentence fragment: «практикум з умовного голодування».
-   *
-   * WHY IT IS A FIELD NOW. Authors were already writing it — into the title,
-   * after a dash — and `offerSubtitle` cut it back out by pattern-matching the
-   * dash. That worked until a title legitimately contained one. A field says
-   * the thing the parser was guessing, and the guess stays only as the fallback
-   * for courses written before this existed.
-   */
-  posttitle?: string;
   /**
    * The line under the title on a card. NOT the summary: `summary` answers
    * "what is this", the tagline answers "why would I".
@@ -415,18 +427,9 @@ export function validateCourse(
     assert(isNonEmptyString(input.tagline), `lms_course_invalid_tagline:${path}`);
   }
 
-  // The two lines the cover hangs around the title. Bounded, because they sit in
-  // a frame the grid does not let grow — see the MAX constants above. The
-  // ceiling is checked here rather than only in the builder so that an import,
-  // a snapshot or the agent cannot write what the form refuses.
-  for (const [key, max] of [
-    ["pretitle", COURSE_PRETITLE_MAX],
-    ["posttitle", COURSE_POSTTITLE_MAX],
-  ] as const) {
-    const value = input[key];
-    if (value === undefined) continue;
-    assert(isNonEmptyString(value), `lms_course_invalid_${key}:${path}`);
-    assert(!bounded || value.trim().length <= max, `lms_course_${key}_too_long:${path}`);
+  if (input.pretitle !== undefined) {
+    assert(isNonEmptyString(input.pretitle), `lms_course_invalid_pretitle:${path}`);
+    assert(!bounded || input.pretitle.trim().length <= COURSE_PRETITLE_MAX, `lms_course_pretitle_too_long:${path}`);
   }
 
   if (input.kind !== undefined) {
@@ -447,6 +450,7 @@ export function validateCourse(
       new Set(input.categories as string[]).size === input.categories.length,
       `lms_course_duplicate_categories:${path}`,
     );
+    assert(input.categories.length <= COURSE_CATEGORIES_MAX, `lms_course_too_many_categories:${path}`);
   }
 
   if (input.durationDays !== undefined) {

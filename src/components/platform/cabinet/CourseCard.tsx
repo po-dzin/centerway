@@ -241,7 +241,7 @@ export function CompactCourseCard({
   const resumable = course.access === "enrolled" && total > 0 && !course.standing?.isFinished;
 
   return (
-    <article className={styles.shelfCard} {...glassMedia}>
+    <article className={`${styles.shelfCard} ${styles.shelfCourseCard}`} {...glassMedia}>
       <MotionLink className={styles.cardOverlay} href={href(action.href)} aria-hidden="true" tabIndex={-1} />
       <CourseCover course={course} />
       <h3 className={styles.shelfCardTitle}>{course.title}</h3>

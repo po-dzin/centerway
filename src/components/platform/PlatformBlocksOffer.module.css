@@ -36,11 +36,10 @@
 }
 
 @media (max-width: 900px) {
-  /* THE CATALOGUE KEEPS TWO COLUMNS ON A PHONE (2026-09-13). It was one
-     vertical line of text-heavy tiles — six offers, six screens. With the
-     photograph inset and the card choosing its own density below 14rem
-     (`@container` at the end of this file), a 165px column holds the frame,
-     the name, the price and «Деталі», which is what a reader compares on. */
+  /* Catalogue comparisons stay two-up down to a phone. At that width the card
+     itself changes density through its container query below — one benefit line
+     and a vertical price/CTA footer — rather than changing the catalogue's
+     navigation shape. */
   .aggregateRail {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -83,10 +82,23 @@
   }
 }
 
+/* A phone catalogue is one full-width reading object at a time. It keeps the
+   picture field, two-line description and category evidence legible without
+   pretending the next card is part of the current decision. The collection
+   gap is the named small step: shadows have air, while the cards still read
+   as one catalogue. At this full measure, price and CTA share the footer's
+   baseline again; the vertical footer is reserved for genuinely narrow cards. */
+@media (max-width: 640px) {
+  .aggregateRail {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--cw-space-sm);
+  }
+}
+
 /* ── The tablet band ──────────────────────────────────
 
    A rail is a phone answer: it trades a control for a cut edge because there
-   is only room for one card. From 561px there is room for two, and the rail
+   is only room for one card. From 641px there is room for two, and the rail
    became the wrong shape — an 834px iPad showed a single 626px card with the
    next one clipped, where 905px showed the same offers two-up at 428px. The
    cliff was the layout, not the width.
@@ -99,7 +111,7 @@
    These rules used to live in PlatformResponsive.module.css, where the winner
    depended on the order a given route bundled the two files in — /programs and
    the home page resolved the same rail differently. */
-@media (min-width: 561px) and (max-width: 900px) {
+@media (min-width: 641px) and (max-width: 900px) {
   .programShowcase,
   .programShowcase[data-layout="mini"],
   .aggregateRail,
@@ -150,6 +162,7 @@
    object, and a card on a phone stops carrying empty paper under short copy. */
 .programTile {
   composes: compact from "./PlatformButtons.module.css";
+  composes: cw-object from global;
   /* Queries below ask the CARD how wide it is, not the screen. */
   container-type: inline-size;
   position: relative;
@@ -160,7 +173,16 @@
   padding: var(--ds-card-inset);
   border-radius: var(--cw-card-radius);
   color: var(--cw-platform-text);
-  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+/* THE SHADOW IS BACK, AND THE RAIL GIVES IT ROOM (2026-09-20). It was removed
+   because the carousel clipped it into a rectangle, and without it the cards
+   melted into the page. The shadow was never the problem: the rail's scroller
+   cut it at its own edge. `PlatformOfferCarousel.module.css` now pads the
+   scroller vertically by more than the shadow reaches and pulls the margin back
+   by the same amount, so the shadow has space and the layout does not move. */
+.programTile[data-cw-material] {
+  box-shadow: var(--cw-object-shadow);
 }
 
 /* THE FRAME IN THE FIELD. One horizontal cover on every surface (Course Cover
@@ -201,12 +223,8 @@
   letter-spacing: 0.02em;
 }
 
-.programTileCategory {
-  composes: chip from "./Chip.module.css";
-}
-
-/* The description is the `p` rule below; this name only marks it for the
-   narrow card, which hides it. */
+/* The description is the `p` rule below; this name marks its compact one-line
+   version on a narrow card. */
 .programTileDescription {
   margin: 0;
 }
@@ -224,29 +242,84 @@
    hand-made glass chip with its own blur fallbacks while it sat on a scrimmed
    plate; on a bare cover the canonical capsule is already the answer the
    builder and the shelf give. */
-.programTileKind {
+.programTileBadge {
   composes: mediaBadge from "./PlatformSurfaces.module.css";
   position: absolute;
-  inset-block-start: var(--cw-space-2xs);
-  inset-inline-start: var(--cw-space-2xs);
+  inset-block-start: var(--cw-space-xs);
+  inset-inline-start: var(--cw-space-xs);
   margin: 0;
+  /* THIN, ROUND, AND THE THEME'S OWN (2026-09-20). The canonical capsule is the
+     scrim ink with inverse text — dark in both themes. Here the badge is a piece
+     of the card's paper laid on the frame: the platform surface and the platform
+     ink, so it is LIGHT in the light theme and DARK in the dark one, like the
+     card it belongs to. (A first pass pinned it light in both, on the argument
+     that a photograph does not change with the theme; a pale pill on a dark card
+     read as a hole, and the argument was wrong about which object the badge
+     belongs to.) Pill radius: the frame's own corner is already rounded, and a
+     second square corner beside it is the one thing on the card with an edge.
+     One badge says the kind AND the duration. */
+  min-height: 1.4rem;
+  padding-block: 0;
+  padding-inline: var(--cw-space-sm);
+  border-radius: var(--cw-radius-pill);
+  background: color-mix(in srgb, var(--cw-platform-surface) 92%, transparent);
+  color: var(--cw-platform-text);
   font-size: var(--ds-type-label-size);
+  font-weight: 600;
+  backdrop-filter: blur(6px);
 }
 
-/* What the offer is about, as paper chips — they sit in the body now, on the
-   card's own surface, so they take the chip's paper ground instead of a
-   translucent ink plate over a scrim. */
+/* WHAT THE OFFER IS ABOUT — a glyph in the DS's small rounded rectangle with
+   its word under it, in cells a third of the row wide (2026-09-20). The tile
+   holds the sign, the word stands beneath it, and the slot keeps its height
+   whatever the count. Two is the floor for a listed course (a readiness
+   blocker), three is the ceiling (`COURSE_CATEGORIES_MAX`); a fourth is not drawn. */
 .programTileCategories {
   display: flex;
-  flex-wrap: nowrap;
+  justify-content: center;
   gap: var(--cw-space-2xs);
-  /* One chip row, whether or not there are chips — see the slot note on
-     `.programTileBody`. A third chip that does not fit is clipped, not wrapped. */
-  height: 1.75rem;
+  /* One slot, whether or not there are subjects: the icon tile, the gap, one label. */
+  height: calc(var(--ds-card-category-disc) + var(--cw-space-2xs) + var(--program-slot-label));
   overflow: hidden;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* A third of the row each, whatever the count, and the row is CENTRED: one
+   subject sat in the left cell with two empty thirds beside it and read as a
+   layout mistake; two hugged the left edge. Fixed thirds keep the cell width
+   the same on every card, centring keeps the group balanced. */
+.programTileCategory {
+  display: flex;
+  flex: 0 0 calc((100% - 2 * var(--cw-space-2xs)) / 3);
+  flex-direction: column;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+.programTileCategoryDisc {
+  display: grid;
+  place-items: center;
+  /* A square on the card-icon scale: one quiet, rounded plate behind the
+     pictogram, not a second circular gesture or a stretched mini-button. */
+  width: var(--ds-card-category-disc);
+  height: var(--ds-card-category-disc);
+  border-radius: var(--ds-card-category-radius);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+}
+
+.programTileCategoryLabel {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+  line-height: var(--ds-type-label-line-height);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .offerHeroVisualCard {
@@ -335,7 +408,7 @@
   position: relative;
   z-index: 1;
   display: grid;
-  gap: var(--cw-space-xs);
+  gap: var(--ds-offer-card-content-gap);
   width: 100%;
   padding: 1.25rem;
 }
@@ -493,18 +566,12 @@
   transform-origin: var(--program-photo-position);
 }
 
-.programTile[data-visual="stone"] {
-  --program-tile-fg: var(--cw-sem-method-ink);
-  --program-tile-copy: color-mix(in srgb, var(--cw-sem-method-ink) 72%, transparent);
-  --program-tile-button-bg: color-mix(
-    in srgb,
-    var(--cw-sem-progress) 66%,
-    var(--cw-platform-visual-sand-button-base) 34%
-  );
-  --program-tile-button-border: color-mix(in srgb, var(--cw-sem-progress) 58%, transparent);
-}
-
-.programTile[data-visual="leaf"],
+/* ONE GROUND FOR EVERY CARD (2026-09-20). This block used to tint the card by
+   its `visual` — `stone` and `leaf` each painted their own paper (and their own
+   button, through `--program-tile-button-*`, which nothing read any more) — so
+   two cards of one rail were two different creams. The card is the matte
+   material and nothing else; only the hero, which is art-directed, keeps its
+   per-visual ground below. */
 .offerHeroVisualCard[data-visual="leaf"] {
   --program-tile-fg: var(--cw-sem-method-ink);
   --program-tile-copy: color-mix(in srgb, var(--cw-sem-method-ink) 72%, transparent);
@@ -628,6 +695,7 @@
    before this, one card's subtitle pushed its chips and description a line
    below the neighbours'. */
 .programTileBody {
+  --program-slot-pretitle: calc(var(--ds-offer-card-pretitle-size) * var(--ds-offer-card-pretitle-line-height));
   --program-slot-title: calc(var(--ds-offer-card-title-size) * var(--ds-offer-card-title-line-height));
   --program-slot-sm: calc(var(--ds-type-body-sm-size) * var(--ds-type-body-sm-line-height));
   --program-slot-label: calc(var(--ds-type-label-size) * var(--ds-type-label-line-height));
@@ -635,9 +703,12 @@
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: var(--cw-space-xs);
+  gap: var(--ds-offer-card-content-gap);
   min-width: 0;
-  padding: 0 var(--ds-card-body-inline) var(--ds-card-body-inline);
+  /* The copy and footer share one inset on the side and the floor: the price
+     and CTA therefore sit on the same quiet inner edge as the text. */
+  padding: 0 var(--ds-card-body-inline);
+  padding-block-end: var(--ds-card-body-inline);
 }
 
 .programTileBody h3,
@@ -645,58 +716,54 @@
   margin: 0;
 }
 
-/* One grid cell each, not one row each. `pretitle`/`posttitle` are the
-   author's own optional lines around the eyebrow and the name; wrapping them
-   with the badge/title they sit beside keeps the card's fixed row count
-   (`.label`, `h3`, description, footer) true whether or not an author wrote
-   them — see the preview-format note below. */
-.programTileEyebrow,
+/* THE HEADLINE — ONE SLOT, PROMO ABOVE THE NAME (2026-09-20). The promo is the
+   author's hook and the name is the product; the card leads with the hook and
+   says the name under it, smaller. The slot's height is the two promo lines plus
+   ONE name line, set here from the type tokens and never from the copy — two
+   name lines reserved as well left the card with more air than text — so
+   every card of a row starts its description on the same line. A card with no
+   promo lets the NAME take the promo's size and place (`data-has-promo`). */
 .programTileHeadline {
   display: flex;
-  flex-direction: column;
-  gap: var(--cw-space-2xs);
   flex: 0 0 auto;
+  flex-direction: column;
+  gap: var(--ds-offer-card-headline-gap);
   overflow: hidden;
+  height: calc(2 * var(--program-slot-pretitle) + var(--ds-offer-card-headline-gap) + var(--program-slot-title));
 }
 
-/* One line: the kind/duration, and the author's pretitle after it when there
-   is one, cut with an ellipsis rather than given a second line of its own. */
-.programTileEyebrow {
-  flex-direction: row;
-  align-items: baseline;
-  gap: var(--cw-space-xs);
-  height: max(var(--program-slot-label), var(--program-slot-sm));
-  white-space: nowrap;
-}
-
-.programTileEyebrow > * {
-  min-width: 0;
-}
-
-.programTileEyebrow > .label,
-.programTileHeadline > * {
-  flex-shrink: 0;
-}
-
-/* Two name lines and one subtitle line, always. */
-.programTileHeadline {
-  height: calc(2 * var(--program-slot-title) + var(--cw-space-2xs) + var(--program-slot-sm));
-}
-
-/* TWO LINES FOR THE NAME. A course out of the builder carries whatever its
-   author typed; the string rules live in src/lib/platform/offerPreview.ts and
-   this clamp is the ceiling that holds when an author writes past them. No
-   `overflow-wrap: anywhere` — a name never breaks inside a word (see «A display
-   title never breaks inside a word»); `hyphens` is the only permission a long
-   Ukrainian compound gets. */
+/* ONE LINE FOR THE NAME UNDER A PROMO. A course out of the builder carries
+   whatever its author typed; the string rules live in
+   src/lib/platform/offerPreview.ts and this clamp is the ceiling that holds when
+   an author writes past them. No `overflow-wrap: anywhere` — a name never breaks
+   inside a word (see «A display title never breaks inside a word»); `hyphens` is
+   the only permission a long Ukrainian compound gets. A card with NO promo gives
+   its name the two-line slot instead (below), so the whole name is always
+   readable somewhere on the card. */
 .programTileBody h3 {
   display: -webkit-box;
   overflow: hidden;
-  color: var(--cw-platform-text);
+  /* Second in the hierarchy, not last: the name keeps the card's own title step,
+     and only the weight and the tone step back so it does not argue with the
+     promo above it. */
+  color: color-mix(in srgb, var(--cw-platform-text) 78%, transparent);
+  font-family: var(--ds-entity-title-font-family);
   font-size: var(--ds-offer-card-title-size);
+  font-weight: var(--ds-offer-card-title-weight);
   line-height: var(--ds-offer-card-title-line-height);
   hyphens: auto;
   -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+/* No promo: the name is the loudest line and stands where the promo would. */
+.programTileHeadline[data-has-promo="false"] h3 {
+  color: var(--cw-platform-text);
+  font-family: var(--ds-entity-title-font-family);
+  font-size: var(--ds-offer-card-pretitle-size);
+  font-weight: var(--ds-offer-card-pretitle-weight);
+  letter-spacing: -0.01em;
+  line-height: var(--ds-offer-card-pretitle-line-height);
   -webkit-line-clamp: 2;
 }
 
@@ -716,27 +783,76 @@
   -webkit-line-clamp: 2;
 }
 
-/* One line each. Same specificity as the two-line clamp above, so it has to
-   come after it. */
-.programTileBody p.programTilePretitle,
-.programTileBody p.programTilePosttitle {
-  -webkit-line-clamp: 1;
+/* AFTER the generic `p:not(.label)` rule above and at the same specificity, on
+   purpose: that rule paints every card paragraph muted at body leading, and the
+   promo is the one paragraph that is neither. */
+/* WEIGHT IS A TOKEN, AND IT IS THE PLATFORM'S OWN (2026-09-20). The promo was 700
+   and stood out of every page it sat on: the reset gives headings `inherit`
+   (regular), the block title above the row is 500, and the only bold in the
+   product is the button label. A hook set at the button's weight read as a
+   second button. It takes the block title's 500, the name under it the reset's
+   400 — the hierarchy is the size and the tone, not a heavier stroke. */
+.programTileBody p.programTilePromo {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--cw-platform-text);
+  font-family: var(--ds-offer-card-pretitle-font-family);
+  font-size: var(--ds-offer-card-pretitle-size);
+  font-weight: var(--ds-offer-card-pretitle-weight);
+  letter-spacing: -0.01em;
+  line-height: var(--ds-offer-card-pretitle-line-height);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* The editorial hook is deliberately the leading textual role: it stays above
+   the entity title at every width, with a larger desktop display step. */
+@media (min-width: 901px) {
+  .programTileBody {
+    --program-slot-pretitle: calc(
+      var(--ds-offer-card-pretitle-desktop-size) *
+        var(--ds-offer-card-pretitle-line-height)
+    );
+  }
+
+  .programTileBody p.programTilePromo {
+    font-size: var(--ds-offer-card-pretitle-desktop-size);
+  }
+
+  .programTileHeadline[data-has-promo="false"] h3 {
+    font-size: var(--ds-offer-card-pretitle-desktop-size);
+  }
 }
 
 /* Two description lines, held even when the copy is one line long. */
 .programTileBody p.programTileDescription {
   flex: 0 0 auto;
   height: calc(2 * var(--program-slot-body));
+  font-size: var(--ds-offer-card-description-size);
 }
 
-/* THE ONE BUTTON — «Деталі». The contract's `secondary` at full card width,
-   compact because it is nested in a card. `margin-top: auto` pins it to the
-   floor of the body, so cards of different copy length line their buttons up
-   along the bottom of a row. Not a link: `.programTileOverlay` is. */
+/* THE OFFER FOOTER — price and the one action share the card's baseline.
+   `margin-top: auto` pins this pair to the floor, so cards of different copy
+   length line up in a row. The visible action is not a link:
+   `.programTileOverlay` is the card's one real link. */
+.programTileFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+  margin-top: auto;
+  min-width: 0;
+}
+
 .programLink {
   composes: secondary from "./PlatformButtons.module.css";
-  composes: fill from "./PlatformButtons.module.css";
-  margin-top: auto;
+  flex: 0 0 auto;
+  /* The secondary recipe centres the box; this removes the font's extra
+     leading, which made this short label read optically low on mobile. */
+  line-height: 1;
+  margin-top: 0;
+  text-align: center;
+  white-space: nowrap;
 }
 
 /* Whole-card route to the detail page.
@@ -772,30 +888,14 @@
    `:has()` rather than a sibling combinator: the card is what reacts. Focus
    answers at every pointer; hover only where a pointer can hover, the query
    the button contract's own hover rules take. */
+/* THE CARD ANSWERS, NOT ITS BUTTON (2026-09-20). Hover, press and the shadow are
+   `.cw-object` (globals.css), on the whole tile: the tile is the one target, so
+   the tile is what moves. The label inside no longer lifts on its own — it used
+   to, and the card stayed still under a pointer that was on the card. The
+   button still answers when the pointer is on the button itself (its own
+   `secondary` role); it just does not answer for the card. */
 .programTile:has(.programTileOverlay:focus-visible) .programLink {
-  transform: translateY(var(--ds-button-lift));
   background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
-  box-shadow: var(--cw-mat-shadow-soft);
-}
-
-@media (hover: hover) {
-  .programTile:hover .programLink {
-    transform: translateY(var(--ds-button-lift));
-    background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
-    box-shadow: var(--cw-mat-shadow-soft);
-  }
-}
-
-/* PRESS, ON THE CARD AND NOT ON THE BUTTON (2026-09-14), because the card is
-   what a finger lands on. `.programTileOverlay` is the click target and a child
-   of the tile, so `:active` reaches the tile the same way `:hover` does and the
-   tile's own CTA shows the answer: it settles by `--cw-press-settle` instead
-   of lifting. With hover gated to pointers, this is the only response the rail
-   gives on a phone. Outside the hover query on purpose. */
-.programTile:active .programLink {
-  transform: translateY(var(--cw-press-settle));
-  background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
-  box-shadow: none;
 }
 
 .programTilePrice {
@@ -817,8 +917,10 @@
 }
 
 .programTilePrice strong {
-  font-size: var(--ds-type-lead-size);
-  font-weight: 750;
+  /* Price is factual metadata, not a second display headline. Its named
+     data role stays below the hook and entity title at every card measure. */
+  font-size: var(--ds-offer-card-price-size);
+  font-weight: var(--ds-offer-card-price-weight);
 }
 
 .programTilePrice[data-mode="inquiry"] strong {
@@ -869,20 +971,6 @@
   color: var(--cw-platform-muted);
 }
 
-.programTilePretitle.programTilePretitle,
-.programTilePosttitle.programTilePosttitle {
-  display: -webkit-box;
-  overflow: hidden;
-  color: var(--cw-platform-muted);
-  font-family: var(--cw-font-data);
-  font-size: var(--ds-type-body-sm-size);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: var(--ds-type-body-sm-line-height);
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-}
-
 .programTileStatus {
   width: 100%;
   min-height: var(--ds-button-min-height);
@@ -923,35 +1011,17 @@
 }
 
 /* Reduced motion: offer/test tiles keep the hover surface change, lose the lift. */
-@media (prefers-reduced-motion: reduce) {
-  .programLink {
-    transition: none;
-  }
-
-  @media (hover: hover) {
-    .programLink:hover {
-      transform: none;
-    }
-  }
-
-  .programTile:active .programLink {
-    transform: none;
-  }
-}
 
 /* ── The narrow card ─────────────────────────────────────────────────────────
-   Below 14rem — half of a 375px catalogue, ~165px — the description is a
-   fragment and «Деталі програми» breaks inside its button. The card keeps what
-   a reader compares on: the frame, the eyebrow, the name, the price, «Деталі». */
+   Below 14rem — an embedded two-column card, ~165px — the card keeps two lines
+   of its benefit, then stacks price and «Деталі». Category tiles and long
+   supporting facts stay on wider cards. */
 @container (max-width: 14rem) {
   /* Doubled and element-qualified on purpose: the rules that SHOW these —
      `.programTileBody p:not(.label)` (0,2,1) — outrank a single class, and every
      one of these lines is a `p` inside the body, and a query that loses the cascade hides nothing. */
-  .programTileBody p.programTileDescription,
   .programTileBody .programTileCategories,
   .programTileBody .programTilePoints,
-  .programTileBody p.programTilePretitle,
-  .programTileBody p.programTilePosttitle,
   .programTileBody p.programTileMeta {
     display: none;
   }
@@ -961,25 +1031,48 @@
     padding-inline: var(--cw-space-2xs);
   }
 
-  .programTileBody h3 {
-    font-size: var(--ds-type-body-size);
+  .programTileBody p.programTileDescription {
+    display: -webkit-box;
+    height: calc(2 * var(--program-slot-body));
+    font-size: var(--ds-type-body-sm-size);
+    line-height: var(--ds-type-body-sm-line-height);
+    -webkit-line-clamp: 2;
   }
 
-  /* The narrow card drops the subtitle, so its headline is two name lines. */
+  /* Narrow two-column cards retain the editorial hierarchy, but clamp it to
+     the compact card step rather than reverting it to the body role. */
   .programTileBody {
-    --program-slot-title: calc(var(--ds-type-body-size) * var(--ds-offer-card-title-line-height));
+    --program-slot-pretitle: calc(
+      var(--ds-offer-card-pretitle-size) *
+        var(--ds-offer-card-pretitle-line-height)
+    );
+  }
+
+  .programTileBody p.programTilePromo,
+  .programTileHeadline[data-has-promo="false"] h3 {
+    font-size: var(--ds-offer-card-pretitle-size);
+  }
+
+  .programTileBody h3 {
+    display: none;
+  }
+
+  .programTileHeadline[data-has-promo="false"] h3 {
+    display: -webkit-box;
   }
 
   .programTileHeadline {
-    height: calc(2 * var(--program-slot-title));
+    height: calc(2 * var(--program-slot-pretitle));
   }
 
-  .programTilePrice strong {
-    font-size: var(--ds-type-body-size);
+  .programTileFooter {
+    align-items: stretch;
+    flex-direction: column;
   }
 
-  .programLink {
-    margin-top: auto;
+  .programTileFooter .programLink {
+    width: 100%;
+    max-width: none;
   }
 
   .programLinkFull {

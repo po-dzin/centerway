@@ -180,7 +180,7 @@ export function ProgramDetailPage({
      which moved there with the count it protects. */
 
   const buyHref = isCheckout ? commerce.checkoutHref : isFree ? commerce.accessHref : "#program-enroll";
-  const buyLabel = isCheckout ? "Придбати доступ" : isFree ? "Почати безкоштовно" : "Записатися на програму";
+  const buyLabel = isCheckout ? "Купити" : isFree ? "Почати безкоштовно" : "Записатися на програму";
 
   return (
     /* EVERYTHING INSIDE ONE PROVIDER, and only two things read it. The hero and
@@ -197,11 +197,9 @@ export function ProgramDetailPage({
           /* The author's line above the name, when they wrote one. It reaches
              the catalogue card already; this is the page that card previews. */
           ...(program.pretitle ? { pretitle: program.pretitle } : {}),
-          /* The hero prints the author's whole title, and for a course written
-             as «Ім'я — пояснення» the subtitle IS that explanation, parsed back
-             out of the same string. Printed under a title that already ends in
-             it, it reads as a stutter rather than as a second line. An explicit
-             `posttitle` that says something the title does not still shows. */
+          /* The hero prints the author's whole title. Its legacy subtitle is
+             parsed from the same string, so it is suppressed when that title
+             already ends in it rather than repeating the phrase. */
           ...(program.subtitle && !program.fullTitle.includes(program.subtitle) ? { subtitle: program.subtitle } : {}),
           description: program.description,
           badge: `${program.tag} · ${program.duration}`,

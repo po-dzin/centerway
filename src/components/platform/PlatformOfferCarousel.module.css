@@ -131,6 +131,16 @@
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
+  /* ONE CARD SHADOW, ONE SAFE FIELD (2026-09-20). A horizontal scroller clips
+     both axes. Its previous 10/28 soft shadow (and 24/56 raised state) was long
+     enough to become a dark rectangle once clipped, particularly in night mode.
+     Material tokens now keep the card close to its floor; this rail gives that
+     short shadow `--ds-rail-shadow-field` of real air on every edge. Equal negative
+     margins preserve the track's measured width, so one-phone-width cards and
+     paging maths stay exactly where they were while the first and last shadows
+     no longer hit the clip wall. */
+  padding: var(--ds-rail-shadow-field);
+  margin: calc(var(--ds-rail-shadow-field) * -1);
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
@@ -300,8 +310,12 @@
     display: none;
   }
 
+  /* Dots already report that more cards follow, so a cut neighbour is no
+     longer needed as an affordance. Let the current card take the whole content
+     measure and keep its title, proof and CTA as readable as a normal mobile
+     card. */
   .track {
-    grid-auto-columns: var(--ds-offer-card-rail-width);
+    grid-auto-columns: 100%;
     gap: var(--cw-space-sm);
   }
 }

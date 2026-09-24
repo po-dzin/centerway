@@ -44,7 +44,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
         /* Already in the queue — the submit step would refuse a second time,
            and there is nothing to submit. Approving is the whole request. */
         if (loaded.reviewStatus !== "in_review") {
-          await submitBuilderCourseForReview(slug, grant.identity.authUserId);
+          /* `isAdmin` is not a guess here either — this whole route is
+             refused above to anyone else — and it is what keeps publishing
+             from inside the builder from announcing a review that nobody is
+             waiting on: the next line approves it. */
+          await submitBuilderCourseForReview(slug, grant.identity.authUserId, {
+            isAdmin: true,
+            email: grant.identity.email,
+          });
         }
         await moderateCourse({
           courseId: loaded.course.id,

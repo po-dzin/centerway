@@ -29,11 +29,13 @@ const INITIAL_EDGE_STATE: EdgeState = {
 const MAX_VISIBLE_OFFERS = 10;
 
 /**
- * One carrier for every embedded offer collection.
+ * One carrier for every embedded collection of comparable cards.
  *
- * Desktop exposes one page of three cards, tablet two and phone one readable
- * card plus the next edge. The cards stay ordinary server-rendered children;
- * this client boundary owns only viewport measurement and paging controls.
+ * Desktop exposes one page of three cards, tablet two and phone one full card.
+ * Offers and author profiles deliberately share this
+ * carrier: the entity inside a card changes, the answer to "where am I in this
+ * sequence?" does not. The cards stay ordinary server-rendered children; this
+ * client boundary owns only viewport measurement and paging controls.
  */
 /*
  * THE CAROUSEL DOES NOT CARRY THE WAY OUT ANY MORE.
@@ -80,13 +82,16 @@ export function PlatformOfferCarousel({
     });
     const firstVisible = visible[0] ?? 0;
     const lastVisible = visible.at(-1) ?? firstVisible;
-    /* One dot per page of the rail. A dot per card lied on desktop, where a
-       page carries three of them: four cards drew four dots for two swipes.
-       The last page is usually a partial step, so the position is read off
-       how far along the scrollable distance we are, not off scrollLeft
-       divided by a page width. */
-    const pages = maxScroll > 2 ? Math.ceil(maxScroll / viewport.clientWidth) + 1 : 1;
-    const page = maxScroll > 2 ? Math.round((viewport.scrollLeft / maxScroll) * (pages - 1)) : 0;
+    /* A phone has one whole card per snap, so its dots name cards exactly.
+       Desktop/tablet instead name scroll pages: three cards may travel as one
+       page there, and a dot per card would overstate the number of steps. */
+    const phone = window.matchMedia("(max-width: 560px)").matches;
+    const pages = phone ? visibleCount : maxScroll > 2 ? Math.ceil(maxScroll / viewport.clientWidth) + 1 : 1;
+    const page = phone
+      ? Math.min(firstVisible, Math.max(0, pages - 1))
+      : maxScroll > 2
+        ? Math.round((viewport.scrollLeft / maxScroll) * (pages - 1))
+        : 0;
     const next = {
       overflow: maxScroll > 2,
       previous: viewport.scrollLeft > 2,
@@ -108,7 +113,7 @@ export function PlatformOfferCarousel({
         ? current
         : next,
     );
-  }, []);
+  }, [visibleCount]);
 
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -141,12 +146,27 @@ export function PlatformOfferCarousel({
 
   /* The dots are the same map read backwards: `measure` turns a scroll
      position into a page, this turns a page back into a scroll position, so a
-     tap always lands where its own dot lights up. */
+     tap always lands where its own dot lights up. On a phone the page is the
+     card itself, therefore the scroll target is that card's real snap offset
+     rather than a fractional share of the scroll range. */
   const goToPage = (index: number) => {
     const viewport = viewportRef.current;
     if (!viewport) return;
 
     const maxScroll = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+    if (window.matchMedia("(max-width: 560px)").matches) {
+      const cards = Array.from(viewport.firstElementChild?.children ?? []) as HTMLElement[];
+      const firstOffset = cards[0]?.offsetLeft ?? 0;
+      const targetOffset = cards[index]?.offsetLeft;
+      if (targetOffset !== undefined) {
+        viewport.scrollTo({
+          left: Math.min(maxScroll, Math.max(0, targetOffset - firstOffset)),
+          behavior: scrollBehavior(),
+        });
+        return;
+      }
+    }
+
     const steps = Math.max(1, edges.pages - 1);
     viewport.scrollTo({
       left: (maxScroll / steps) * index,

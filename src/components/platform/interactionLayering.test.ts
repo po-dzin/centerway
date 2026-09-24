@@ -26,10 +26,68 @@ describe("platform interaction layers", () => {
     expect(css).toContain('[aria-current="page"]');
   });
 
-  it("keeps material hover only for physical rows and cards", () => {
-    expect(rule(".cw-list-item:hover")).toContain("--cw-mat-hover-bg");
+  it("keeps material hover only for physical rows, and none for a list item with controls in it", () => {
+    // A list item holds its own controls, so it is not one target and does not
+    // fill under the pointer (docs/card-interaction-2026-09-20.md).
+    expect(css).not.toContain(".cw-list-item:hover");
     expect(rule(".cw-row-hover:hover")).toContain("--cw-mat-hover-bg");
     expect(rule(".cw-page-btn:hover")).not.toContain("background");
+  });
+
+  it("limits the whole-object recipe to the cabinet course card", () => {
+    const cabinet = read("src/components/platform/cabinet/Cabinet.module.css").replace(/\/\*[\s\S]*?\*\//g, "");
+    const cabinetRule = (selector: string) => {
+      const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return new RegExp(`${escaped}\\s*\\{([\\s\\S]*?)\\}`, "m").exec(cabinet)?.[1] ?? "";
+    };
+
+    // Generic cabinet cards also hold static information and recovery actions.
+    // Only the course frame is one routed object.
+    expect(cabinetRule(".card")).not.toContain("cw-object");
+    expect(cabinetRule(".courseCardFrame")).toContain("cw-object");
+    expect(cabinetRule(".shelfCourseCard")).toContain("cw-object");
+  });
+
+  it("uses the same raised elevation for selected objects as for hover", () => {
+    expect(rule(".cw-object:hover")).toContain("--cw-mat-shadow-raised");
+    const selected = rule(".cw-object[data-selected]");
+    expect(selected).toContain("--cw-mat-shadow-raised");
+    expect(selected).toContain("--ds-button-lift");
+  });
+
+  it("keeps one short material shadow for cards and gives every rail edge room", () => {
+    const tokens = read("data/design-tokens/cw.tokens.json");
+    const carousel = read("src/components/platform/PlatformOfferCarousel.module.css");
+
+    expect(tokens).toContain('"--cw-mat-shadow-soft": "0 2px 4px');
+    expect(tokens).toContain('0 6px 16px');
+    expect(tokens).toContain('"--cw-mat-shadow-raised": "0 3px 6px');
+    expect(tokens).toContain('0 8px 18px');
+    expect(tokens).not.toContain('0 24px 56px');
+    expect(tokens).not.toContain('0 28px 60px');
+    expect(carousel).toContain("padding: var(--cw-space-sm);");
+    expect(carousel).toContain("margin: calc(var(--cw-space-sm) * -1);");
+  });
+
+  it("uses one dot per full card on a phone and one dot per page above it", () => {
+    const carousel = read("src/components/platform/PlatformOfferCarousel.tsx");
+
+    expect(carousel).toContain('window.matchMedia("(max-width: 560px)").matches');
+    expect(carousel).toContain("const pages = phone ? visibleCount");
+    expect(carousel).toContain("const targetOffset = cards[index]?.offsetLeft;");
+    expect(carousel).toContain("targetOffset - firstOffset");
+  });
+
+  it("puts every author surface on the shared paged carousel", () => {
+    for (const source of [
+      read("src/components/platform/blocks/trust/guides.tsx"),
+      read("src/components/platform/ConsultantDirectory.tsx"),
+      read("src/app/(platform)/experts/page.tsx"),
+    ]) {
+      expect(source).toContain("PlatformOfferCarousel");
+      expect(source).not.toContain("guideRail");
+      expect(source).not.toContain("consultantRail");
+    }
   });
 
   it("keeps native text selection out of controls without blocking reading or editing", () => {
@@ -79,6 +137,9 @@ describe("platform interaction layers", () => {
     const carousel = read("src/components/platform/PlatformOfferCarousel.tsx");
     expect(carousel).not.toMatch(/from "next\/link"/);
     expect(carousel).not.toMatch(/viewAllHref[?:]/);
+
+    const carouselCss = read("src/components/platform/PlatformOfferCarousel.module.css");
+    expect(carouselCss).toContain("grid-auto-columns: 100%;");
   });
 
   it("moves every shared admin navigation consumer onto the ink primitives", () => {
@@ -206,6 +267,7 @@ describe("platform interaction layers", () => {
     const filterToggle = /\.filterToggle\s*\{([\s\S]*?)\n\}/.exec(filterCss)?.[1] ?? "";
     expect(filterToggle).toContain('composes: secondary from "../PlatformButtons.module.css";');
     expect(filterToggle).toContain('composes: hug from "../PlatformButtons.module.css";');
+    expect(filterToggle).toContain("min-height: var(--ds-touch-target-min);");
     expect(filterToggle).not.toContain("cw-ink-icon");
     expect(filterCss).toContain("flex: 0 0 1.15rem;");
   });
@@ -335,17 +397,27 @@ describe("the footer's own addresses", () => {
 });
 
 describe("the account menu does not offer a door the bar already carries", () => {
-  it("hides the way back to the storefront while on the storefront", () => {
-    /* Gated on the home PAGE, every other www route carried «На головну» while
-       the navigation three centimetres above it already read «Головна». */
+  /* THE RULE MOVED (2026-09-20). It used to be an expression in the menu and
+     these two tests read it as text; it now lives beside the question it reads
+     — `leadsBackToPublicSite` in `lib/platform/apps.ts`, tested there against
+     every surface, including the cabinet that was silently missing from it.
+     What is left to check here is that the menu still ASKS rather than growing
+     a second copy of the rule: a component that re-derives «am I on the
+     storefront» from the pathname is how the two answers drift apart. */
+  it("asks apps.ts where the way back belongs instead of deciding for itself", () => {
     const menu = read("src/components/platform/layout/PlatformAccountMenu.tsx");
-    expect(menu).toContain('const onPublicSite = !(inPersonalApp || here === "admin");');
-    expect(menu).toContain("{onPublicSite ? null : (");
+    expect(menu).toContain("const showHomeRow = leadsBackToPublicSite(here);");
+    expect(menu).toContain("{showHomeRow ? (");
+    // No local re-derivation, under any of the names this rule has had.
+    expect(menu).not.toContain("onPublicSite");
     expect(menu).not.toContain("onPublicHome");
+    expect(menu).not.toContain("inPersonalApp");
   });
 
-  it("keeps the way back in the admin panel, which has no storefront navigation", () => {
+  it("keeps the row a plain anchor, because it leaves this origin", () => {
+    /* `next/link` would prefetch a route this origin does not own and still
+       full-load on click — the storefront is another app. */
     const menu = read("src/components/platform/layout/PlatformAccountMenu.tsx");
-    expect(menu).toMatch(/onPublicSite = !\(inPersonalApp \|\| here === "admin"\)/);
+    expect(menu).toMatch(/\{showHomeRow \? \(\s*\n\s*<a\s*\n\s*href=\{platformHref\}/);
   });
 });

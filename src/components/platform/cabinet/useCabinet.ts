@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import type { Session } from "@supabase/supabase-js";
 
 import { supabaseClient } from "@/lib/supabaseClient";
+import { googleQueryParams, type GoogleSignInIntent } from "@/lib/auth/lastAccount";
 import { fetchMyCourses, type LearnerShelfCourseDto } from "@/components/lms/lmsClient";
 import { recall, remember, shelfMemo, subscribeLibraryMemory } from "@/components/lms/libraryMemory";
 import type { ProfileLang, ProfileResponse } from "@/components/platform/profile/types";
@@ -63,7 +64,7 @@ export function useProfileLang(): ProfileLang {
 export type CabinetSessionState = {
   session: Session | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (intent?: GoogleSignInIntent) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -77,9 +78,19 @@ export function useCabinetSession(): CabinetSessionState {
   const { session, status } = useSession();
   const loading = isAuthEnabled && status === "loading";
 
-  const signInWithGoogle = useCallback(async () => {
+  /* THE INTENT IS THE DOOR'S, NOT THIS HOOK'S (2026-09-20). «Продовжити як …»
+     names an account (`login_hint`), «Інший акаунт» insists on the chooser
+     (`prompt=select_account`), and without either Google silently reuses the
+     one session the browser has — which is how signing out and back in came to
+     be a single tap that asked nothing. `redirectTo` stays the current address,
+     `?next=` and all, so the round trip returns to the page that offered the
+     door rather than to a default. */
+  const signInWithGoogle = useCallback(async (intent?: GoogleSignInIntent) => {
     const redirectTo = typeof window !== "undefined" ? window.location.href : undefined;
-    await supabaseClient.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
+    await supabaseClient.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo, queryParams: googleQueryParams(intent) },
+    });
   }, []);
 
   const signOut = useCallback(async () => {

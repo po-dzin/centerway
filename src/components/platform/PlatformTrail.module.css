@@ -116,6 +116,25 @@
   }
 }
 
+/* THE BUDGET IS FOR A CROWDED ROW, AND ABOVE 901px THE ROW IS NOT CROWDED
+   (2026-09-20). 16ch cut «Short-Перезавантаження» to «Short-Перезавант» on a
+   1440px topbar with a third of it empty — an ellipsis that is not buying
+   anything from anybody, and a title clipped mid-word reads as a fault rather
+   than as a budget. The tight cap earns its keep where it was written: in the
+   builder's page body at 561–900px, where the trail shares a row with tools
+   that do not shrink.
+
+   A CAP, NOT A WIDTH, so this is not the flat 14rem the «ONE LINE, ALWAYS»
+   note above is about. The step still floors at `min-width: 0`, the flex row
+   still shrinks it when the row is short, and the ellipsis is still the last
+   word — it simply stops being the FIRST one. 28ch is a long course title set
+   whole; anything past that is a sentence and truncates as it always did. */
+@media (min-width: 901px) {
+  .trail {
+    --trail-here-max: 28ch;
+  }
+}
+
 .here {
   min-width: 0;
   padding-inline: var(--cw-space-2xs);

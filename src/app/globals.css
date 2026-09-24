@@ -256,8 +256,8 @@
     --cw-mat-scroll-thumb-hover: color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
     --cw-mat-scroll-track: transparent;
     --cw-mat-meter-track: color-mix(in srgb, var(--cw-platform-border) 72%, var(--cw-platform-surface) 28%);
-    --cw-mat-shadow-soft: 0 1px 2px rgba(35, 29, 20, 0.05), 0 10px 28px rgba(35, 29, 20, 0.07);
-    --cw-mat-shadow-raised: 0 2px 6px rgba(35, 29, 20, 0.07), 0 24px 56px rgba(35, 29, 20, 0.12);
+    --cw-mat-shadow-soft: 0 2px 4px rgba(35, 29, 20, 0.04), 0 6px 16px rgba(35, 29, 20, 0.08);
+    --cw-mat-shadow-raised: 0 3px 6px rgba(35, 29, 20, 0.05), 0 8px 18px rgba(35, 29, 20, 0.10);
     --cw-mat-stroke-chrome: color-mix(in srgb, var(--cw-platform-text) 13%, transparent);
     --cw-mat-shadow-chrome: 0 0 0 1px var(--cw-mat-stroke-chrome), 0 18px 40px rgba(35, 29, 20, 0.10);
     --cw-mat-shadow-deep: 0 3px 8px rgba(24, 20, 14, 0.09), 0 32px 64px rgba(24, 20, 14, 0.16);
@@ -313,6 +313,7 @@
     --ds-breakpoint-desktop-min: 56.3125rem;
     --ds-container-max: var(--cw-max-width);
     --ds-touch-target-min: 3rem;
+    --ds-icon-control-radius: var(--cw-radius-md);
     --ds-icon-control-ratio: 0.53;
     --ds-icon-in-control: calc(var(--ds-touch-target-min) * var(--ds-icon-control-ratio));
     --ds-button-min-height: 3rem;
@@ -336,22 +337,38 @@
     --ds-rail-control-size: var(--ds-touch-target-min);
     --ds-rail-control-icon: var(--ds-icon-in-control);
     --ds-rail-control-overhang: 1rem;
+    --ds-rail-shadow-field: var(--cw-space-md);
     --ds-author-banner-ratio: 5 / 1;
     --ds-card-inset: var(--cw-space-xs);
+    --ds-card-category-disc: 2.25rem;
+    --ds-card-category-radius: var(--cw-radius-sm);
     --ds-card-body-inline: var(--cw-space-xs);
     --ds-card-media-radius: calc(var(--cw-card-radius) - var(--ds-card-inset));
     --ds-card-media-ratio: 16 / 9;
     --ds-card-portrait-ratio: 4 / 5;
     --ds-card-thumb-width: 5rem;
     --ds-card-thumb-width-compact: 4rem;
+    --ds-course-card-grid-min: 22rem;
     --ds-offer-card-min-height-tablet: 26rem;
     --ds-offer-card-min-height-mobile: 22rem;
     --ds-offer-card-width-desktop: 24rem;
     --ds-offer-card-width-tablet: 21rem;
     --ds-offer-card-width-mobile: min(82vw, 19rem);
     --ds-offer-card-rail-width: var(--ds-offer-card-width-mobile);
-    --ds-offer-card-title-size: clamp(1.15rem, 1.9vw, 1.45rem);
-    --ds-offer-card-title-line-height: 1.2;
+    --ds-entity-title-font-family: var(--cw-font-editorial);
+    --ds-offer-card-pretitle-font-family: var(--cw-font-editorial);
+    --ds-offer-card-content-gap: var(--cw-space-xs);
+    --ds-offer-card-headline-gap: var(--cw-space-2xs);
+    --ds-offer-card-title-size: clamp(1.25rem, 1.9vw, 1.5rem);
+    --ds-offer-card-title-line-height: 1.12;
+    --ds-offer-card-pretitle-size: clamp(1.5rem, 2.4vw, 1.75rem);
+    --ds-offer-card-pretitle-desktop-size: clamp(1.5rem, 2.4vw, 1.8rem);
+    --ds-offer-card-pretitle-line-height: 1.1;
+    --ds-offer-card-pretitle-weight: 500;
+    --ds-offer-card-title-weight: 500;
+    --ds-offer-card-description-size: clamp(0.9375rem, 1.4vw, var(--ds-type-body-size));
+    --ds-offer-card-price-size: clamp(0.875rem, 1.12vw, var(--ds-type-body-size));
+    --ds-offer-card-price-weight: 500;
     --ds-focus-ring-width: 3px;
     --ds-focus-ring-offset: 3px;
     --ds-focus-ring-offset-tight: 1px;
@@ -415,6 +432,7 @@
     :root {
       /* DS_ALIAS_POINTER_FINE_START */
     --ds-touch-target-min: 2.25rem;
+    --ds-icon-control-radius: var(--cw-radius-sm);
     /* DS_ALIAS_POINTER_FINE_END */
     }
   }
@@ -505,8 +523,8 @@
     --cw-mat-scroll-thumb-hover: color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
     --cw-mat-scroll-track: transparent;
     --cw-mat-meter-track: color-mix(in srgb, var(--cw-platform-border) 72%, var(--cw-platform-surface) 28%);
-    --cw-mat-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
-    --cw-mat-shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.35), 0 28px 60px rgba(0, 0, 0, 0.5);
+    --cw-mat-shadow-soft: 0 2px 4px rgba(0, 0, 0, 0.22), 0 6px 16px rgba(0, 0, 0, 0.28);
+    --cw-mat-shadow-raised: 0 3px 6px rgba(0, 0, 0, 0.24), 0 8px 18px rgba(0, 0, 0, 0.30);
     --cw-mat-stroke-chrome: color-mix(in srgb, var(--cw-platform-text) 16%, transparent);
     --cw-mat-shadow-chrome: 0 0 0 1px var(--cw-mat-stroke-chrome), 0 18px 40px rgba(0, 0, 0, 0.24);
     --cw-mat-shadow-deep: 0 3px 8px rgba(0, 0, 0, 0.4), 0 32px 68px rgba(0, 0, 0, 0.55);
@@ -1672,17 +1690,15 @@
   /* A list row is a card by its box — 57–200px on the short side takes `lg`
      (geometry audit, 2026-09-07). It said `sm` 12 while the plates and dialogs
      beside it said 28, so one admin page showed three corners (2026-09-14). */
+  /* NO HOVER FILL (2026-09-20). A row with its own controls inside — a status
+     select, a trash can — is not one target, so it does not answer the pointer as
+     one: the fill said "click me" over a surface where the click lands on a
+     child. What answers is the thing that is pressable (its link draws the ink
+     rule). See docs/card-interaction-2026-09-20.md. */
   .cw-list-item {
     border: 1px solid var(--cw-border);
     border-radius: var(--cw-card-radius);
     background-color: var(--cw-surface);
-    transition: background-color 0.2s ease;
-  }
-
-  @media (hover: hover) {
-    .cw-list-item:hover {
-      background-color: var(--cw-mat-hover-bg);
-    }
   }
 
   .cw-row-hover {
@@ -2702,6 +2718,65 @@ body {
 
 [data-cw-material="matte"] {
   background-color: var(--cw-mat-surface);
+}
+
+/* ── THE OBJECT: one answer to "this is under the pointer" (2026-09-20) ──────
+   For anything that is ONE target — the offer card, the shelf card, the
+   workshop card. Five states, and each is a mark the canon already owns:
+
+     rest      the soft shadow;
+     hover     the whole object lifts `--ds-button-lift` and the shadow deepens to
+               `raised` — POINTER ONLY, behind the query, because a phone latches
+               hover instead of having it (docs → "Hover is a pointer state");
+     focus     the ring, drawn by the link inside (not here, and never behind the
+               query — a keyboard has no pointer);
+     press     it settles `--cw-press-settle` and the shadow goes out — the one
+               state a finger has, so it is NOT behind the query;
+     selected  `--cw-contour-selected`, the draughtsman's dashed line outside the
+               edge, in the theme's marker ink: the page's ink on light, brass on
+               dark. Set with `data-selected`.
+
+   The shadow rides a custom property so that a component which paints its own
+   `box-shadow` (the offer tile does, at higher specificity) reads it instead of
+   fixing one value and freezing the state. Reduced motion keeps the shadow and
+   withholds the movement. */
+.cw-object {
+  --cw-object-shadow: var(--cw-mat-shadow-soft);
+  box-shadow: var(--cw-object-shadow);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+@media (hover: hover) {
+  .cw-object:hover {
+    --cw-object-shadow: var(--cw-mat-shadow-raised);
+    transform: translateY(var(--ds-button-lift));
+  }
+}
+
+.cw-object[data-selected] {
+  --cw-object-shadow: var(--cw-mat-shadow-raised);
+  transform: translateY(var(--ds-button-lift));
+  outline: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-selected);
+  outline-offset: var(--cw-contour-offset);
+}
+
+.cw-object:active {
+  --cw-object-shadow: none;
+  transform: translateY(var(--cw-press-settle));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cw-object {
+    transition: box-shadow 160ms ease;
+  }
+
+  .cw-object:hover,
+  .cw-object[data-selected],
+  .cw-object:active {
+    transform: none;
+  }
 }
 
 [data-cw-material="glass"] {

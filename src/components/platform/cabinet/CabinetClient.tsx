@@ -30,6 +30,7 @@ import { getProfileCopy } from "@/components/platform/profile/copy";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 import { JOURNAL_HREF, LEARNING_SHELF_HREF } from "@/lib/platform/content";
 import { PwaInstallCard } from "./PwaInstallCard";
+import { useSignInReturn } from "@/components/auth/useSignInReturn";
 import { cabinetGate } from "./CabinetGate";
 import { CabinetFold } from "./CabinetFold";
 import { CabinetHero } from "./CabinetHero";
@@ -114,6 +115,10 @@ export function CabinetClient() {
 
   const lang = useProfileLang();
   const { session, loading: sessionLoading, signInWithGoogle, signOut } = useCabinetSession();
+  /* A SIGN-IN THAT BEGAN ELSEWHERE ENDS WHERE IT BEGAN. The header's door is a
+     link to the cabinet, so without this the round trip lands here and stops —
+     see `useSignInReturn`. */
+  useSignInReturn(session);
   const identity = usePlatformIdentity(session);
   const { profile, loading: profileLoading, error, clear: clearProfile } = useProfileData(session);
   const { shelf, failed: shelfFailed, reload: reloadShelf } = useLearnerShelf(session);
@@ -177,7 +182,7 @@ export function CabinetClient() {
     loading: sessionLoading || profileLoading,
     session,
     error,
-    onSignIn: () => void signInWithGoogle(),
+    onSignIn: (intent) => void signInWithGoogle(intent),
   });
   if (gate) return gate;
   if (!profile) return null;

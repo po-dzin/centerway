@@ -8,9 +8,10 @@
 import { adminClient } from "@/lib/auth/adminClient";
 import type { TablesUpdate } from "@/lib/db/database.types";
 import { writeCourseStructure } from "@/lib/lms/authoring";
+import { loadBuilderCourse } from "@/lib/lms/builder";
 import { applyAccessTermToOffer } from "@/lib/lms/offerTerm";
-import { JOURNAL_MIGRATION_REQUIRED, writeCourseRelease } from "@/lib/lms/release";
-import { validateCourse, type Course } from "@/lms-core";
+import { JOURNAL_MIGRATION_REQUIRED, journalCourseState, writeCourseRelease } from "@/lib/lms/release";
+import { courseReadiness, validateCourse, type Course } from "@/lms-core";
 import type { AuthorProfileRow, CourseRow } from "@/lib/admin/accessTypes";
 import { resolveAccountByEmail } from "./accounts";
 import { AccessError, accountsByIds, writeAudit } from "./shared";
@@ -247,12 +248,74 @@ export async function moderateCourse(input: {
       });
       values = approvalValues;
     } else {
+      /* APPROVING A FIRST PUBLICATION PUBLISHES IT (2026-09-20).
+         It used to only stamp `review_status = 'approved'` and stop there, so
+         a course that had passed review sat as a draft until its AUTHOR went
+         back to the builder and pressed «Опублікувати» — a second act, by the
+         other party, for a decision that had already been made. Two people
+         waiting on each other is not a gate; it is the reason three courses
+         sat approved and unpublished.
+
+         So the approval carries the release. What it does NOT do is widen what
+         approving means for the other case in this branch: a course that is
+         ALREADY published whose live release was never approved keeps its
+         status — there is nothing to publish, only an approval to record.
+
+         WHAT THE AUTHOR KEEPS. Taking a course back off the shelf is still
+         theirs («Зняти з публікації»), and so is everything before this point.
+         The one step that moves is the one they had no say in anyway: whether
+         the reviewer said yes. */
+      const publishesOnApproval = course.status !== "published" && course.review_status === "in_review";
       values = {
         review_status: "approved",
         review_note: null,
         approved_at: new Date().toISOString(),
         approved_by: input.actorId,
+        ...(publishesOnApproval ? { status: "published" } : {}),
       };
+
+      if (publishesOnApproval) {
+        /* READ BACK, NOT TRUSTED. A draft's material lives in the relational
+           rows and the author may have kept editing after submitting — nothing
+           freezes a draft the way `pending_content` freezes a revision. So the
+           document that is about to become public is rebuilt and held to the
+           readiness gate its author passed on the way in; approving is not a
+           way around it. */
+        const loaded = await loadBuilderCourse(course.slug as string);
+        if (!loaded) throw new AccessError("course_not_found", 404);
+        const readiness = courseReadiness(loaded.liveCourse);
+        if (!readiness.ready) {
+          throw new AccessError(`course_not_ready:${readiness.blockers[0]?.code ?? "unknown"}`, 422);
+        }
+
+        try {
+          /* One transaction for the status change and the `published` entry
+             that proves it — the same rule the revision path above follows.
+             No structure moves here: the lessons are already the ones this
+             document names. */
+          await journalCourseState({
+            courseId: course.id as string,
+            course: { ...loaded.liveCourse, status: "published" },
+            values,
+            journal: { kind: "published", actorId: input.actorId, label: "Затверджено рецензентом" },
+          });
+          releaseApplied = true;
+        } catch (error) {
+          // Same allowance as the revision path: an unmigrated database still
+          // approves, it simply approves without the artifact.
+          if (!(error instanceof Error) || error.message !== JOURNAL_MIGRATION_REQUIRED) throw error;
+          console.warn(`access: publication of ${course.slug} not journaled — ${JOURNAL_MIGRATION_REQUIRED}`);
+        }
+
+        /* The course is on the shelf now, so its offer grants what the words
+           promise — the same line the revision path runs for the same reason. */
+        await applyAccessTermToOffer(db, {
+          courseId: course.id as string,
+          note: loaded.liveCourse.accessNote,
+          actorId: input.actorId,
+          source: "approval",
+        });
+      }
     }
   } else if (input.action === "request_changes") {
     if (reviewStatus !== "in_review") throw new AccessError("course_not_in_review", 409);

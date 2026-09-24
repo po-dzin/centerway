@@ -9,7 +9,7 @@
  */
 
 import { plural } from "@/lib/plural";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MotionLink } from "@/components/platform/MotionLink";
 
 import { courseThemeAttributes, inlineToPlainText } from "@/lms-core";
@@ -24,7 +24,7 @@ import {
   type CourseViewDto,
   type LmsFailure,
 } from "./lmsClient";
-import { courseMemo, recall, remember, subscribeLibraryMemory } from "./libraryMemory";
+import { courseMemo, useRemembered } from "./libraryMemory";
 import { CourseNotes } from "./CourseNotes";
 import { useAnnotations } from "./useAnnotations";
 import { LmsNotice } from "./LmsNotice";
@@ -81,11 +81,7 @@ export function CourseView({
      re-read below correct it, instead of blanking to a loader first. See
      `libraryMemory.ts` for why stale-then-true beats blank-then-true here. */
   const memo = courseMemo(courseSlug, draftPreview);
-  const known = useSyncExternalStore(
-    subscribeLibraryMemory,
-    () => recall<CourseViewDto>(memo),
-    () => undefined,
-  );
+  const [known, setKnown] = useRemembered<CourseViewDto>(memo, `course:${courseSlug}`);
   const [failure, setFailure] = useState<LmsFailure | null>(null);
   const state:
     { status: "loading" } | { status: "ready"; data: CourseViewDto } | { status: "error"; error: LmsFailure } = known
@@ -103,12 +99,12 @@ export function CourseView({
   const load = useCallback(async () => {
     const result = await fetchCourse(courseSlug, draftPreview);
     if (result.ok) {
-      remember(memo, result.data);
+      setKnown(result.data);
       setFailure(null);
     } else {
       setFailure(result.error);
     }
-  }, [courseSlug, draftPreview, memo]);
+  }, [courseSlug, draftPreview, setKnown]);
 
   /**
    * Takes a finished course back to step one.
@@ -152,7 +148,7 @@ export function CourseView({
       const result = await fetchCourse(courseSlug, draftPreview);
       if (cancelled) return;
       if (result.ok) {
-        remember(memo, result.data);
+        setKnown(result.data);
         setFailure(null);
       } else {
         setFailure(result.error);
@@ -161,7 +157,7 @@ export function CourseView({
     return () => {
       cancelled = true;
     };
-  }, [courseSlug, draftPreview, memo]);
+  }, [courseSlug, draftPreview, setKnown]);
 
   if (state.status === "loading") {
     return (

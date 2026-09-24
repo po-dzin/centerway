@@ -23,7 +23,7 @@ import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { StatePanel } from "@/components/platform/cabinet/StatePanel";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import { isAuthEnabled, useCabinetSession, useProfileLang } from "@/components/platform/cabinet/useCabinet";
-import { PROFILE_PATH_PREFIX } from "@/lib/surfaces/catalog";
+import { goToReturnTarget, returnTargetOrCabinet } from "@/lib/auth/signInReturn";
 
 /**
  * Where this door opens onto.
@@ -35,32 +35,32 @@ import { PROFILE_PATH_PREFIX } from "@/lib/surfaces/catalog";
  * is only ever navigated TO, so it is read at the moment of leaving and never
  * enters the markup.
  *
- * A sign-in page that takes its destination from the query string is the exact
- * shape of an open redirect: `?next=https://evil.example` would hand a freshly
- * signed-in session to whoever sent the link. Only a plain path on this origin
- * is honoured — a leading slash, and not the protocol-relative `//host` form
- * that a browser reads as another origin.
+ * WHAT MAY BE FOLLOWED is `lib/auth/signInReturn`'s to decide, and it is the
+ * same answer here, at the wall in front of `/learn` and `/profile`, and at
+ * the header's own door. A sign-in page that takes its destination from the
+ * query string is the exact shape of an open redirect, so the rule lives in
+ * one place rather than being restated by each screen that carries a `next`.
+ * It became one place on 2026-09-20, when the cabinet's move to `my` made the
+ * common return a CROSSING — `www` to `my` and back — and this screen's own
+ * «a path on this origin» rule would have quietly dropped every one of them.
  */
-function nextDestination(): string {
-  if (typeof window === "undefined") return PROFILE_PATH_PREFIX;
-  const raw = new URLSearchParams(window.location.search).get("next");
-  if (!raw || !raw.startsWith("/")) return PROFILE_PATH_PREFIX;
-  /* THE STRING CHECK WAS NOT ENOUGH (2026-09-13). `/\evil.example` starts with
-     one slash and not two, and a URL parser reads the backslash as a slash —
-     so it passed and led off-origin. The candidate is resolved the way the
-     browser will resolve it and kept only if it lands on this origin. */
-  try {
-    const target = new URL(raw, window.location.origin);
-    if (target.origin !== window.location.origin) return PROFILE_PATH_PREFIX;
-    return `${target.pathname}${target.search}${target.hash}`;
-  } catch {
-    return PROFILE_PATH_PREFIX;
-  }
-}
 
 /* The destination does not change while this screen is mounted: leaving it is
    a navigation, which unmounts it. */
 const subscribeToNothing = () => () => {};
+
+/* Asked of the PATH, not of the string: a return address may now be absolute —
+   the panel is on `www` and this door is on `my` — and `startsWith("/admin")`
+   said no to every one of those, so staff arriving from the panel were handed
+   the buyer's «the address you paid with» hint. */
+function returnsToAdmin(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return new URL(returnTargetOrCabinet(), window.location.origin).pathname.startsWith("/admin");
+  } catch {
+    return false;
+  }
+}
 
 export function EmailSignInScreen() {
   const router = useRouter();
@@ -68,7 +68,7 @@ export function EmailSignInScreen() {
   const copy = useMemo(() => getProfileCopy(lang, { productPurchases: 0 }), [lang]);
   const { session, loading } = useCabinetSession();
 
-  const leave = useCallback(() => router.replace(nextDestination()), [router]);
+  const leave = useCallback(() => goToReturnTarget(returnTargetOrCabinet(), (path) => router.replace(path)), [router]);
 
   /* WHO IS AT THIS DOOR (2026-09-13). The hint under the field tells a buyer
      to use the address they paid with — true for the receipt, wrong for staff
@@ -76,18 +76,14 @@ export function EmailSignInScreen() {
      which one this is. Read as an external store — the address bar is one —
      so the server snapshot (false) and the client's first render agree and no
      effect has to set state after mount. */
-  const forStaff = useSyncExternalStore(
-    subscribeToNothing,
-    () => nextDestination().startsWith("/admin"),
-    () => false,
-  );
+  const forStaff = useSyncExternalStore(subscribeToNothing, returnsToAdmin, () => false);
 
   /* Already signed in — including the moment right after the code is
      accepted, which arrives here as an auth event rather than as a return
      value. One effect covers both, so there is a single way out of this
      screen and no chance of two navigations racing. */
   useEffect(() => {
-    if (session?.user) router.replace(nextDestination());
+    if (session?.user) goToReturnTarget(returnTargetOrCabinet(), (path) => router.replace(path));
   }, [router, session]);
 
   if (!isAuthEnabled) {

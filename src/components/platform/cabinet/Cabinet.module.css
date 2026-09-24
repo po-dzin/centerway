@@ -124,7 +124,7 @@
    disagreeing about what a course IS. */
 .courseCardTitle {
   composes: cardTitle;
-  font-family: var(--cw-font-editorial);
+  font-family: var(--ds-entity-title-font-family);
   font-size: 1.3rem;
   font-weight: 500;
   /* TWO LINES, NEVER MORE. A shelf is scanned, not read — a title running to
@@ -399,6 +399,13 @@
   gap: var(--cw-space-xs);
   padding: var(--ds-card-inset);
   border-radius: var(--cw-radius-lg);
+}
+
+/* The compact course card has one overlay route. The empty/loading shelf uses
+   the same layout class but has independent actions, so it must not inherit
+   the whole-object response. */
+.shelfCourseCard {
+  composes: cw-object from global;
 }
 
 .shelfCardTitle {
@@ -889,6 +896,10 @@
    with text in them, not collection objects with a picture. Declared after
    both, so at equal specificity the field wins by source order. */
 .courseCardFrame {
+  /* The course is one routed object. Generic `.card` also serves static
+     account, installation and recovery panels, so the pointer recipe belongs
+     here rather than making every cabinet panel pretend it is clickable. */
+  composes: cw-object from global;
   padding: var(--ds-card-inset);
   /* The card system's one radius, so the inset frame's corners are concentric
      (`--ds-card-media-radius` is computed from this, not from `xl`). */
@@ -2137,10 +2148,16 @@
     padding-block-start: var(--cw-space-xl);
   }
 
-  /* auto-fit, not a fixed pair: a lone course card reading as a half-width tile
-     with dead space beside it looks like a layout bug, not a shelf. */
+  /* Generic cards may fill their available collection space. */
   .cardGrid {
     grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  }
+
+  /* A filtered learning shelf keeps the same tracks as the complete shelf:
+     one remaining course is still a course card, not a full-width feature.
+     `auto-fill` deliberately preserves unoccupied tracks. */
+  .cardGrid[data-view="grid"] {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--ds-course-card-grid-min)), 1fr));
   }
 
   /* NO OVERRIDE HERE ANY MORE — the base rule already answers this band. This

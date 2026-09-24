@@ -1,6 +1,6 @@
 import { AuthorCard } from "@/components/platform/AuthorCard";
 import { PlatformBlock, PlatformBlockLink } from "@/components/platform/PlatformBlock";
-import styles from "@/components/platform/PlatformTrustStyles";
+import { PlatformOfferCarousel } from "@/components/platform/PlatformOfferCarousel";
 import { listListedAuthors } from "@/lib/lms/authors";
 import { platformGuides } from "@/lib/platform/content";
 import type { Author } from "@/lms-core";
@@ -49,8 +49,6 @@ export async function HubGuides() {
   const guides = listed.length > 0 ? listed : fallbackGuides();
   if (guides.length === 0) return null;
 
-  const single = guides.length === 1;
-
   return (
     <PlatformBlock
       id="author"
@@ -73,11 +71,11 @@ export async function HubGuides() {
          with that introduction, and until now the home page never said so. */
       headActions={<PlatformBlockLink href="/consult" label="Консультації" />}
     >
-      <div className={styles.guideRail} data-layout={single ? "single" : undefined}>
+      <PlatformOfferCarousel label="Автори CenterWay">
         {guides.map((guide) => (
           <AuthorCard key={guide.slug} author={guide} />
         ))}
-      </div>
+      </PlatformOfferCarousel>
     </PlatformBlock>
   );
 }

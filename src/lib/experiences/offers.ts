@@ -13,7 +13,7 @@ import type { adminClient } from "@/lib/auth/adminClient";
  * the two old tables, and database triggers mirror every such write here by
  * `code`. So this module is safe to READ today and must not be WRITTEN until the
  * catalogue moves — a write here would be overwritten by the next mirror.
- * See the migration `20260920000000_experience_offers.sql`.
+ * See the migration `20260924020000_experience_offers.sql`.
  */
 
 type Db = ReturnType<typeof adminClient>;

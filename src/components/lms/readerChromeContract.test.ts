@@ -70,6 +70,27 @@ describe("reader / author preview chrome contract", () => {
     expect(read("src/components/lms/ZenPreview.module.css")).not.toContain("zen-boundary-block");
   });
 
+  it("holds a draft response locally without putting it in the learner cache", () => {
+    const memory = read("src/components/lms/libraryMemory.ts");
+    const course = read("src/components/lms/CourseView.tsx");
+    const lesson = read("src/components/lms/LessonView.tsx");
+
+    expect(memory).toContain("export function useRemembered");
+    expect(memory).toContain("const value = key ? shared : local?.key === localKey ? local.value : undefined");
+    expect(memory).toContain("setLocal({ key: localKey, value: next })");
+    expect(memory).toContain("return draftPreview ? null");
+    expect(course).toContain("useRemembered<CourseViewDto>(memo, `course:${courseSlug}`)");
+    expect(lesson).toContain("useRemembered<LessonViewDto>(memo, `lesson:${courseSlug}/${lessonSlug}`)");
+  });
+
+  it("marks completed lessons with a check, not the current-step accent", () => {
+    const css = read("src/components/lms/Lms.module.css");
+    const done = rule(css, "dayBadgeDone");
+    expect(done).toContain("background: var(--cw-mat-surface-sunk)");
+    expect(done).toContain("color: var(--cw-platform-text)");
+    expect(done).not.toContain("--cw-platform-accent");
+  });
+
   it("uses DS elevation, never foreground-coloured glow, for reader overlays", () => {
     const css = read("src/components/lms/Lms.module.css");
     /* THE SHEET MOVED ONE HOP (2026-09-06), the same way the reader's chrome row

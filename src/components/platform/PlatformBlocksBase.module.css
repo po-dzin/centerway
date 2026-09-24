@@ -303,8 +303,13 @@
    ink, and the cabinet's rested with a permanently gold arrow — three answers
    to "how loud is a way out". The answer is one: the label and its arrow are
    the page's own ink, at full strength, because a crossing is not a footnote to
-   the block it belongs to; and both turn to warmth together under the pointer
-   or the focus ring, because the gold IS the hover in this system.
+   the block it belongs to; and both take the SELECTION MARK's colour together under
+   the pointer or the focus ring — `--cw-nav-marker`, which is the page's ink in
+   the light theme and the brass only in the dark one (2026-09-20). It used to be
+   `--cw-sem-warmth-strong` here, so a light page answered a hover with a gold
+   arrow beside a label whose own stroke had already gone to ink: two marks, two
+   colours, one gesture. The theme decides what the mark is; this control does
+   not pick a colour of its own.
    The arrow takes `currentColor`, so it is not coloured separately — a rule
    that sets the glyph on its own is the bug the cabinet had. */
 .blockAction {
@@ -314,12 +319,12 @@
 }
 
 .blockAction:focus-visible {
-  color: var(--cw-sem-warmth-strong);
+  color: var(--cw-nav-marker);
 }
 
 @media (hover: hover) {
   .blockAction:hover:not(:disabled) {
-    color: var(--cw-sem-warmth-strong);
+    color: var(--cw-nav-marker);
   }
 }
 

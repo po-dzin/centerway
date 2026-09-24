@@ -31,6 +31,7 @@ import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState
 import { PlatformPageHead } from "@/components/platform/PlatformPageHead";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
+import { useSignInReturn } from "@/components/auth/useSignInReturn";
 import { cabinetGate } from "./CabinetGate";
 import { getCabinetCopy } from "./copy";
 import { dateLocaleFor } from "./format";
@@ -76,6 +77,10 @@ export function JournalClient() {
   const locale = dateLocaleFor(lang);
   const href = useSurfaceHref();
   const { session, loading: sessionLoading, signInWithGoogle } = useCabinetSession();
+  /* A SIGN-IN THAT BEGAN ELSEWHERE ENDS WHERE IT BEGAN. The header's door is a
+     link to the cabinet, so without this the round trip lands here and stops —
+     see `useSignInReturn`. */
+  useSignInReturn(session);
 
   /**
    * The read is keyed to the ACCOUNT, not to the token.
@@ -137,7 +142,7 @@ export function JournalClient() {
     lang,
     loading: sessionLoading,
     session,
-    onSignIn: () => void signInWithGoogle(),
+    onSignIn: (intent) => void signInWithGoogle(intent),
     loadingFallback: loadingView,
   });
   if (gate) return gate;

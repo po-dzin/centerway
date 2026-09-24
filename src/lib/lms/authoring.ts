@@ -60,7 +60,6 @@ const OPTIONAL_COURSE_COLUMNS: ReadonlyArray<readonly [column: string, field: st
   ["cover", "cover"],
   ["sort_order", "sortOrder"],
   ["pretitle", "pretitle"],
-  ["posttitle", "posttitle"],
   ["tagline", "tagline"],
   ["kind", "kind"],
   ["categories", "categories"],
@@ -113,7 +112,6 @@ export function courseRows(course: Course): CourseRows {
       // which the authoring routes have no grant on. See the 2026-08-22
       // migration for why that is a different table rather than a policy.
       pretitle: course.pretitle ?? null,
-      posttitle: course.posttitle ?? null,
       tagline: course.tagline ?? null,
       // The card's badge, from closed lists. Both nullable: absent means the
       // catalogue falls back to counting lessons, which is what it did before
@@ -237,7 +235,6 @@ export function courseFromRows(
     // the migration itself writes. So an older database reads back as hidden
     // rather than refusing to open.
     ...(courseRow.pretitle ? { pretitle: courseRow.pretitle as string } : {}),
-    ...(courseRow.posttitle ? { posttitle: courseRow.posttitle as string } : {}),
     ...(courseRow.tagline ? { tagline: courseRow.tagline as string } : {}),
     ...(courseRow.kind ? { kind: courseRow.kind as never } : {}),
     ...(Array.isArray(courseRow.categories) && courseRow.categories.length > 0

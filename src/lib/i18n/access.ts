@@ -127,6 +127,11 @@ export const access = {
   catalog_category_movement: { uk: "Рух", en: "Movement" },
   catalog_category_nutrition: { uk: "Харчування", en: "Nutrition" },
   catalog_category_cleansing: { uk: "Очищення", en: "Cleansing" },
+  catalog_category_breathing: { uk: "Дихання", en: "Breathing" },
+  catalog_category_meditation: { uk: "Медитація", en: "Meditation" },
+  catalog_category_focus: { uk: "Фокус", en: "Focus" },
+  catalog_category_energy: { uk: "Енергія", en: "Energy" },
+  catalog_category_relaxation: { uk: "Релаксація", en: "Relaxation" },
   catalog_group_by: { uk: "Групувати", en: "Group" },
   catalog_group_submitted: { uk: "Спершу нові заявки", en: "Newest submissions first" },
   catalog_group_alphabet: { uk: "За алфавітом", en: "Alphabetically" },
@@ -171,6 +176,9 @@ export const access = {
   catalog_blocker_no_access_rule: { uk: "не задано строк доступу", en: "no access term" },
   catalog_approve: { uk: "Затвердити", en: "Approve" },
   catalog_approve_live: { uk: "Затвердити поточну версію", en: "Approve the live version" },
+  /* A first publication goes live on approval (see `moderateCourse`), so the
+     button says both halves of what pressing it does. */
+  catalog_approve_publish: { uk: "Затвердити і опублікувати", en: "Approve and publish" },
   catalog_not_moderated: {
     uk: "Не проходив модерацію — продається, але змінити видимість не вийде, доки не затвердите",
     en: "Never went through review — it still sells, but visibility cannot be changed until you approve it",

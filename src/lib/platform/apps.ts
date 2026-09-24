@@ -167,3 +167,36 @@ export function currentAppKey(
   if (inside("/profile")) return "cabinet";
   return null;
 }
+
+/**
+ * Whether the account menu should offer a way back to the PUBLIC site.
+ *
+ * The row is not an entry in `appsFor`: that list answers «which applications
+ * may this account enter», and every row in it is marked when you are standing
+ * in it. The public site is not an application of the account — it is where
+ * the account is not needed — and a row marked as the current page on `www`
+ * would read as an instruction to go where you already are.
+ *
+ * WHICH APPLICATION, NOT WHICH HOST. Keying this off `isPersonalHost` was the
+ * obvious version and hid the row exactly where it is most needed while
+ * building: the subdomain only ever points at production, so on localhost and
+ * on a preview `my` does not exist and the personal surfaces are reached by
+ * path. Asking where the reader IS answers for both.
+ *
+ * THE PANEL COUNTS (2026-09-13). `/admin` is on `www` but it is not the
+ * storefront — no main navigation, no «Головна» — so it asks this question
+ * like the personal apps do.
+ *
+ * AND SO DOES THE CABINET (2026-09-20). It used to be excluded on the grounds
+ * that «/profile is on the public site, so its reader is already on the
+ * platform» — false since the cabinet moved to `my` on 2026-08-27. What was on
+ * screen: the surface the installed app opens at, and the one a sign-in lands
+ * on, with no row leading back to the public site at all.
+ *
+ * Everywhere else — a programme page, the diagnostic, the catalogue — the bar
+ * three centimetres above already carries «Головна», and a second door to one
+ * room hidden behind an avatar is worse than none.
+ */
+export function leadsBackToPublicSite(here: PlatformAppKey | null): boolean {
+  return here !== null;
+}

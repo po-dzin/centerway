@@ -10,7 +10,7 @@ import type { Metadata } from "next";
 import { AuthorCard } from "@/components/platform/AuthorCard";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import { PlatformBlock } from "@/components/platform/PlatformBlock";
-import trustStyles from "@/components/platform/PlatformTrustStyles";
+import { PlatformOfferCarousel } from "@/components/platform/PlatformOfferCarousel";
 import { listListedAuthors } from "@/lib/lms/authors";
 import { describe } from "@/lib/brand/identity";
 import { pageMetadata } from "@/lib/seo/metadata";
@@ -37,14 +37,14 @@ export default async function ExpertsIndexPage() {
           title="Хто веде курси й програми"
           lead="У профілі — досвід, напрям і курси, які веде автор."
         >
-          <div className={trustStyles.guideRail} data-layout={authors.length === 1 ? "single" : undefined}>
+          <PlatformOfferCarousel label="Автори CenterWay">
             {/* One card everywhere an author is previewed — the home block,
                 /consult and this index render the same component, and the
                 destination comes from `authorHref` inside it. */}
             {authors.map((author) => (
               <AuthorCard key={author.slug} author={author} />
             ))}
-          </div>
+          </PlatformOfferCarousel>
         </PlatformBlock>
       </>
     </PlatformShell>

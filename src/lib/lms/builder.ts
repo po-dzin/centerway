@@ -35,6 +35,7 @@ import { courseFromRows, writeCourseStructure } from "./authoring";
 import { getSnapshotCourse } from "./catalog";
 import { applyAccessTermToOffer } from "./offerTerm";
 import { immediatePublishedPatch } from "./publishedEditPolicy";
+import { announceReviewSubmitted } from "./reviewAnnounce";
 import { JOURNAL_MIGRATION_REQUIRED, checkpointAutosave, journalCourseState, writeCourseRelease } from "./release";
 import { loadCourseRevision } from "./revisions";
 import {
@@ -761,7 +762,18 @@ export async function saveBuilderCourse(
  * (`journal_lms_course_state`), because a submission recorded as sent that was
  * not, or sent-but-not-recorded, is worse than either alone.
  */
-export async function submitBuilderCourseForReview(slug: string, actorId: string | null = null): Promise<void> {
+export async function submitBuilderCourseForReview(
+  slug: string,
+  actorId: string | null = null,
+  /**
+   * WHO IS SUBMITTING, for the one thing that depends on it: the house is told
+   * about a submission it has to answer, and not about one it is making itself
+   * (`reviewAnnounce.ts` holds the rule and the reason). The default is the
+   * safe half — an unknown caller is not an admin, so the notice is sent
+   * rather than silently dropped.
+   */
+  actor: { isAdmin?: boolean; email?: string | null } = {},
+): Promise<void> {
   const loaded = await loadBuilderCourse(slug);
   if (!loaded) throw new Error("lms_builder_course_not_found");
   if (!courseReadiness(loaded.course).ready) throw new Error("lms_builder_not_ready_for_review");
@@ -789,6 +801,10 @@ export async function submitBuilderCourseForReview(slug: string, actorId: string
     throw new Error("lms_builder_review_published");
   }
 
+  /* Written EITHER through the journal or plainly, never both — and the
+     announcement below needs to know that the write happened at all, which an
+     early `return` inside the try could not tell it. */
+  let written = false;
   if (courseId) {
     try {
       await journalCourseState({
@@ -797,7 +813,7 @@ export async function submitBuilderCourseForReview(slug: string, actorId: string
         values,
         journal: { kind: "review_submitted", actorId },
       });
-      return;
+      written = true;
     } catch (error) {
       // The journal migration is applied by hand, so "shipped but not yet
       // applied" is a real state. Refusing the submission would break a flow
@@ -808,8 +824,22 @@ export async function submitBuilderCourseForReview(slug: string, actorId: string
     }
   }
 
-  const { error } = await adminClient().from("lms_courses").update(values).eq("slug", slug);
-  if (error) throw new Error(`lms_builder_review_submit_failed:${error.message}`);
+  if (!written) {
+    const { error } = await adminClient().from("lms_courses").update(values).eq("slug", slug);
+    if (error) throw new Error(`lms_builder_review_submit_failed:${error.message}`);
+  }
+
+  /* AFTER THE WRITE, AND ONLY AFTER IT. A notice about a submission that then
+     failed to store is worse than no notice: somebody opens the queue and
+     finds nothing there. `announceReviewSubmitted` never throws, so the
+     submission's own outcome is already settled by this line. */
+  await announceReviewSubmitted({
+    slug,
+    title: loaded.course.title,
+    actorEmail: actor.email ?? null,
+    isRevision: loaded.hasPendingRevision,
+    actorIsAdmin: actor.isAdmin === true,
+  });
 }
 
 /**
