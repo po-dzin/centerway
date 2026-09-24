@@ -232,7 +232,7 @@ export function CourseView({
           offers the beginning of it rather than a dead end. */}
       {standing.isFinished && !draftPreview ? (
         <div className={styles.restartRow}>
-          <p className={styles.restartHint}>Протокол можна проходити повторно — коли відчуєте потребу.</p>
+          <p className={styles.restartHint}>Курс можна пройти ще раз — коли відчуєте потребу.</p>
           <button
             className={styles.restartButton}
             type="button"

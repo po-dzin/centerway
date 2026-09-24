@@ -25,8 +25,8 @@ const COPY: Record<LmsFailure, { title: string; text: string; href?: string; cta
     cta: "Перейти до кабінету",
   },
   unauthorized: {
-    title: "Сесія завершилась",
-    text: "Схоже, сесія застаріла. Оновіть сторінку або увійдіть ще раз.",
+    title: "Потрібно увійти ще раз",
+    text: "Час входу минув. Оновіть сторінку або увійдіть ще раз.",
     href: "/profile",
     cta: "Перейти до кабінету",
   },
@@ -65,7 +65,7 @@ const COPY: Record<LmsFailure, { title: string; text: string; href?: string; cta
   },
   blocked: {
     title: "Доступ до курсу закрито",
-    text: "Доступ до цього курсу заблоковано. Напишіть нам — це вирішується тільки вручну.",
+    text: "Доступ до цього курсу зупинено. Напишіть нам — розберемося особисто.",
     href: "/profile",
     cta: "Мій кабінет",
   },
