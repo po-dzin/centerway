@@ -742,7 +742,8 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
     set.add(code.toLowerCase());
     codesByExperience.set(experienceId, set);
   };
-  for (const row of (offerRows ?? []) as Array<{ experience_id: string; code: string }>) addCode(row.experience_id, row.code);
+  for (const row of (offerRows ?? []) as Array<{ experience_id: string; code: string }>)
+    addCode(row.experience_id, row.code);
   for (const row of (aliasRows ?? []) as Array<{ code: string; offer_id: string }>) {
     addCode(offerExperience.get(row.offer_id), row.code);
   }

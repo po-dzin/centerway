@@ -93,7 +93,9 @@ export function acceptedPaidOrders(input: {
   now: Date;
 }): PaidOrderRef[] {
   const accepted = new Set(
-    [...input.courseProductCodes, courseOfferCode(input.courseSlug), courseBonusCode(input.courseSlug)].map(normalizeCode),
+    [...input.courseProductCodes, courseOfferCode(input.courseSlug), courseBonusCode(input.courseSlug)].map(
+      normalizeCode,
+    ),
   );
 
   return input.orders
@@ -112,7 +114,9 @@ export function resolveEntitlement(input: EntitlementInput): Entitlement {
      declared codes stay: they are how the OLD funnel names ("mini-detox") keep
      working. */
   const accepted = new Set(
-    [...input.courseProductCodes, courseOfferCode(input.courseSlug), courseBonusCode(input.courseSlug)].map(normalizeCode),
+    [...input.courseProductCodes, courseOfferCode(input.courseSlug), courseBonusCode(input.courseSlug)].map(
+      normalizeCode,
+    ),
   );
 
   const manual = (input.manualGrants ?? []).find((grant) => grant.courseSlug === input.courseSlug);

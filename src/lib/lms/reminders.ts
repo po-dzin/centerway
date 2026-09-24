@@ -327,7 +327,9 @@ export async function runDailyReminders(
   const enrollments = await fetchAllRows<EnrollmentRow>(limit, (from, to) =>
     db
       .from("lms_enrollments")
-      .select("id, course_id, auth_user_id, started_at, cohort_starts_on, expires_at, status, blocked_at, source, order_ref")
+      .select(
+        "id, course_id, auth_user_id, started_at, cohort_starts_on, expires_at, status, blocked_at, source, order_ref",
+      )
       .in("course_id", [...courses.keys()])
       .order("id", { ascending: true })
       .range(from, to),
@@ -339,7 +341,9 @@ export async function runDailyReminders(
   // through a bundle = a bonus seat, or a seat whose order is not one of the
   // course's own codes.
   const ownByCourse = await loadOwnCodes(db, [...courses.values()]);
-  const seatOrderRefs = [...new Set(enrollments.map((row) => row.order_ref).filter((ref): ref is string => Boolean(ref)))];
+  const seatOrderRefs = [
+    ...new Set(enrollments.map((row) => row.order_ref).filter((ref): ref is string => Boolean(ref))),
+  ];
   const { data: seatOrders } = seatOrderRefs.length
     ? await db.from("orders").select("order_ref, product_code").in("order_ref", seatOrderRefs)
     : { data: [] as Array<{ order_ref: string; product_code: string | null }> };
