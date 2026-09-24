@@ -1,6 +1,7 @@
 import "server-only";
 
 import { adminClient } from "@/lib/auth/adminClient";
+import type { TablesUpdate } from "@/lib/db/database.types";
 import { courseOfferCode } from "@/lms-core";
 
 import { FORMAT_DEFAULT_LABELS, isOfferFormat, type OfferFormat } from "./formats";
@@ -382,7 +383,7 @@ export async function updateFormat(input: {
   }
 
   const now = new Date().toISOString();
-  const patch: Record<string, unknown> = {};
+  const patch: TablesUpdate<"experience_offers"> = {};
   if (parsed.format !== undefined) patch.format = parsed.format;
   if (parsed.mode !== undefined) patch.mode = parsed.mode;
   if (parsed.label !== undefined) patch.label = parsed.label ? { uk: parsed.label, en: parsed.label } : null;

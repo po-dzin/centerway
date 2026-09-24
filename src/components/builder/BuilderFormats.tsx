@@ -157,7 +157,7 @@ export function BuilderFormats({
     const program = published.find((entry) => entry.slug === slug);
     if (!program) return;
     const order = Math.max(0, ...course.modules.map((module) => module.order)) + 1;
-    const module: CourseModule = {
+    const linkedModule: CourseModule = {
       id: crypto.randomUUID(),
       slug: nextModuleSlug(course.modules, program.slug),
       title: program.title,
@@ -166,7 +166,7 @@ export function BuilderFormats({
       linkedCourseSlug: program.slug,
       lessons: [],
     };
-    onChange(["modules"], [...course.modules, module]);
+    onChange(["modules"], [...course.modules, linkedModule]);
     setAdding("");
   }
 

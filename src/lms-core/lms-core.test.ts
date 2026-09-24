@@ -794,6 +794,22 @@ describe("entitlement", () => {
     expect(result).toMatchObject({ entitled: true, source: "order", orderRef: "o1" });
   });
 
+  it("opens a course for a buyer's bonus, and only the bonus for THAT course", () => {
+    const own = resolveEntitlement({
+      ...base,
+      orders: [
+        { orderRef: "bonus-1", productCode: "bonus:reset-day", status: "paid", createdAt: "2026-09-25T10:00:00Z" },
+      ],
+    });
+    expect(own).toMatchObject({ entitled: true, orderRef: "bonus-1" });
+
+    const other = resolveEntitlement({
+      ...base,
+      orders: [{ orderRef: "bonus-2", productCode: "bonus:short", status: "paid", createdAt: "2026-09-25T10:00:00Z" }],
+    });
+    expect(other).toMatchObject({ entitled: false });
+  });
+
   it("refuses access without a paid order", () => {
     const result = resolveEntitlement({
       ...base,

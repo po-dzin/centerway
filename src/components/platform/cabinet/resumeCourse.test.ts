@@ -27,6 +27,8 @@ function course(
     currentLessonTitle: "Lesson 2",
     cover: null,
     categories: [],
+    includedIn: null,
+    carries: [],
     ...overrides,
   };
 }
