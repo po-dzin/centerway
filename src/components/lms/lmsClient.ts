@@ -117,6 +117,10 @@ export type LearnerShelfCourseDto = {
   cover: Course["cover"] | null;
   /** What the course is about — see `Course.categories` in lms-core. */
   categories: CourseCategory[];
+  /** The open program this one is held inside, when a bundle carried it in. */
+  includedIn: { slug: string; title: string } | null;
+  /** Programs held inside this one. */
+  carries: Array<{ slug: string; title: string }>;
 };
 
 export type LearnerShelfDto = { courses: LearnerShelfCourseDto[] };

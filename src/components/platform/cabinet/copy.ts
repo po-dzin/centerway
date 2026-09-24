@@ -122,6 +122,8 @@ export type CabinetCopy = {
   courseRevoked: string;
   courseBlocked: string;
   accessUntilLabel: string;
+  /** Programs a bundle carried in, named on the card of the one that holds them. */
+  carriesLabel: string;
   accessForeverLabel: string;
   daysLeft: (days: number) => string;
   buyAccess: string;
@@ -249,6 +251,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       courseRevoked: "Access withdrawn",
       courseBlocked: "Access closed",
       accessUntilLabel: "Access until",
+      carriesLabel: "Also inside",
       accessForeverLabel: "Access without an end date",
       daysLeft: (days) => (days === 1 ? "1 day left" : `${days} days left`),
       buyAccess: "Get access",
@@ -360,6 +363,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     courseRevoked: "Доступ відкликано",
     courseBlocked: "Доступ закрито",
     accessUntilLabel: "Доступ до",
+    carriesLabel: "Також усередині",
     accessForeverLabel: "Доступ без обмеження в часі",
     daysLeft: (days) => `лишил${days === 1 ? "ся" : "ось"} ${days} ${ukPlural(days, "день", "дні", "днів")}`,
     buyAccess: "Придбати доступ",

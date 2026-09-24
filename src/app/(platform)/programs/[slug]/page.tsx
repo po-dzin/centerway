@@ -31,6 +31,7 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 
 import { adminClient } from "@/lib/auth/adminClient";
+import { loadProgramFormats } from "@/lib/experiences/formats";
 import { isContentKind, resolveExperience } from "@/lib/experiences/registry";
 import { ProgramDetailPage } from "@/components/platform/ProgramDetailPage";
 import { CourseNextStep } from "@/components/platform/CourseNextStep";
@@ -137,11 +138,12 @@ export default async function CourseOfferPage({
   /* Both reads at once: they are independent, and a byline should not wait on a
      price. Neither can fail the page — `loadCourseOffer` falls back to the lead
      form and `getCourseAuthor` to no byline at all. */
-  const [offer, author, query, storefrontCourses] = await Promise.all([
+  const [offer, author, query, storefrontCourses, formats] = await Promise.all([
     loadCourseOffer(course.slug),
     getCourseAuthor(course.slug),
     searchParams,
     listStorefrontCourses(),
+    loadProgramFormats(course),
   ]);
 
   /* THE CODE COMES FROM THE RETURN, not from the course.
@@ -165,6 +167,7 @@ export default async function CourseOfferPage({
       course={course}
       commerce={courseOfferCommerce(course.programSlug, offer)}
       author={author}
+      formats={formats}
       purchase={returned ? <OfferPurchaseReturn purchase={{ ...returned, product: returnedCode }} /> : undefined}
       nextStep={<CourseNextStep currentSlug={course.slug} courses={storefrontCourses} />}
     />

@@ -12,7 +12,7 @@
  * blank the dashboard, so it surfaces as a card, not a page state.
  */
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { Session } from "@supabase/supabase-js";
 
 import { supabaseClient } from "@/lib/supabaseClient";
@@ -240,8 +240,12 @@ export function useLearnerShelf(session: Session | null) {
     };
   }, [userId, attempt, sessionRef]);
 
+  /* A PROGRAM A BUNDLE CARRIED IN is shown inside the one that carries it
+     (its card names it, its reader opens it), not as a second card beside it. */
+  const visible = useMemo(() => (shelf ? shelf.filter((course) => !course.includedIn) : null), [shelf]);
+
   return {
-    shelf,
+    shelf: visible,
     /* A FAILED RE-READ OF A SHELF WE HAVE IS NOT AN ERROR SCREEN. Replacing a
        working shelf with «could not load» because the refresh behind it lost
        the network is the blanking this whole layer exists to stop. The notice

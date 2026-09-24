@@ -176,6 +176,11 @@ export function CourseCard({
             {course.daysLeft !== null ? <> — {copy.daysLeft(course.daysLeft)}</> : null}
           </li>
         ) : null}
+        {course.carries.length > 0 ? (
+          <li>
+            {copy.carriesLabel}: <strong>{course.carries.map((program) => program.title).join(" · ")}</strong>
+          </li>
+        ) : null}
       </ul>
 
       <div className={styles.actions}>

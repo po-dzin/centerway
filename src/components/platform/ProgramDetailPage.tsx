@@ -5,6 +5,9 @@ import {
   PlatformOfferSurfaceTemplate,
 } from "@/components/platform/PlatformOfferSurfaceTemplate";
 import { OfferCheckoutPanel, OfferFreePanel, OfferSupportPanel } from "@/components/platform/OfferCommerce";
+import { OfferFormats } from "@/components/platform/OfferFormats";
+import type { ProgramFormat } from "@/lib/experiences/formats";
+import { formatPrice } from "@/lib/products";
 import { OfferCurriculum } from "@/components/platform/OfferCurriculum";
 import { OfferAccessProvider } from "@/components/platform/OfferAccess";
 import { OfferHeroActions, OfferHeroCommitment } from "@/components/platform/OfferHeroState";
@@ -51,8 +54,16 @@ export function ProgramDetailPage({
   author = null,
   purchase,
   nextStep,
+  formats = [],
 }: {
   program: OfferSurface;
+  /**
+   * The ways through this program (2026-09-25), when there is more than one.
+   * With two or more, the page sells the CHOICE: the hero leads to the formats
+   * and quotes the lowest price, and the enrol section is the formats side by
+   * side. With one or none, everything below is the single offer it always was.
+   */
+  formats?: ProgramFormat[];
   /**
    * The course this offer delivers, when the caller already has it.
    *
@@ -179,8 +190,30 @@ export function ProgramDetailPage({
      where each one now lives — including the guard this row was carrying,
      which moved there with the count it protects. */
 
-  const buyHref = isCheckout ? commerce.checkoutHref : isFree ? commerce.accessHref : "#program-enroll";
-  const buyLabel = isCheckout ? "Купити" : isFree ? "Почати безкоштовно" : "Записатися на програму";
+  const choosesFormat = formats.length >= 2;
+  const lowestFormat = formats
+    .filter((format) => format.mode === "checkout" && format.amount !== null)
+    .sort((a, b) => (a.amount ?? 0) - (b.amount ?? 0))[0];
+  const formatFromPrice =
+    choosesFormat && lowestFormat?.amount != null
+      ? `від ${formatPrice(lowestFormat.amount, lowestFormat.currency)}`
+      : null;
+
+  const buyHref = choosesFormat
+    ? "#formats"
+    : isCheckout
+      ? commerce.checkoutHref
+      : isFree
+        ? commerce.accessHref
+        : "#program-enroll";
+  const buyLabel = choosesFormat
+    ? "Обрати формат"
+    : isCheckout
+      ? "Купити"
+      : isFree
+        ? "Почати безкоштовно"
+        : "Записатися на програму";
+  const heroPrice = choosesFormat ? formatFromPrice : isCheckout || isFree ? commerce.price : null;
 
   return (
     /* EVERYTHING INSIDE ONE PROVIDER, and only two things read it. The hero and
@@ -212,11 +245,11 @@ export function ProgramDetailPage({
           commitment: (
             <OfferHeroCommitment
               commerce={{
-                price: isCheckout || isFree ? commerce.price : null,
+                price: heroPrice,
                 // The free branch quotes a former price too, when the owner has
                 // set one: «було 795 ₴ — зараз безкоштовно» is the whole
                 // sentence, and the hero is where it is read.
-                compareAtPrice: isCheckout || isFree ? commerce.compareAtPrice : null,
+                compareAtPrice: !choosesFormat && (isCheckout || isFree) ? commerce.compareAtPrice : null,
                 accessNote: program.accessNote ?? null,
               }}
             />
@@ -324,58 +357,60 @@ export function ProgramDetailPage({
           <OfferSupport
             title={program.title}
             sales={
-              <>
-                <article className={offerPanelStyles.panel}>
-                  <p className={offerPanelStyles.label}>{isCheckout ? "Участь" : isFree ? "Доступ" : "Запис"}</p>
-                  <h2 className={offerPanelStyles.title}>
-                    {isCheckout
-                      ? `Відкрити доступ до «${program.title}»`
-                      : isFree
-                        ? `Почати «${program.title}» без оплати`
-                        : `Записатися на «${program.title}»`}
-                  </h2>
-                  <p className={offerPanelStyles.lead}>
-                    {isCheckout
-                      ? `Оплата проходить тут, на платформі, без переходу на окремий лендинг: ${deliveryLine}.`
-                      : isFree
-                        ? `Це безкоштовний доступ до курсу: ${deliveryLine}. Увійдіть або створіть акаунт, щоб зберегти прогрес.`
-                        : "Цю програму ми узгоджуємо в розмові — щоб формат, темп і межі методу підходили саме вашому стану. Залиште контакт, і ми повернемося з деталями і способом оплати."}
-                  </p>
-                </article>
-                {isCheckout ? (
-                  <OfferCheckoutPanel
-                    commerce={commerce}
-                    label="Оплата"
-                    title={program.title}
-                    lead={program.description}
-                    includes={includes}
-                    ctaLabel={`Оплатити ${commerce.price}`}
-                  />
-                ) : isFree ? (
-                  <OfferFreePanel
-                    commerce={commerce}
-                    label="Безкоштовний доступ"
-                    title="Почати навчання"
-                    lead={program.description}
-                    includes={includes}
-                    ctaLabel="Відкрити курс"
-                  />
-                ) : (
-                  <OfferSupportPanel label="Форма" title="Залишити контакти">
-                    <LeadForm
-                      productCode={commerce.leadProductCode}
-                      source={`platform_${program.slug}_form`}
-                      ctaPlace={`${program.slug}_offer`}
+              choosesFormat ? (
+                <OfferFormats programSlug={program.slug} programTitle={program.title} formats={formats} />
+              ) : (
+                <>
+                  <article className={offerPanelStyles.panel}>
+                    <p className={offerPanelStyles.label}>{isCheckout ? "Участь" : isFree ? "Доступ" : "Запис"}</p>
+                    <h2 className={offerPanelStyles.title}>
+                      {isCheckout
+                        ? `Відкрити доступ до «${program.title}»`
+                        : isFree
+                          ? `Почати «${program.title}» без оплати`
+                          : `Записатися на «${program.title}»`}
+                    </h2>
+                    <p className={offerPanelStyles.lead}>
+                      {isCheckout
+                        ? `Оплата проходить тут, на платформі, без переходу на окремий лендинг: ${deliveryLine}.`
+                        : isFree
+                          ? `Це безкоштовний доступ до курсу: ${deliveryLine}. Увійдіть або створіть акаунт, щоб зберегти прогрес.`
+                          : "Цю програму ми узгоджуємо в розмові — щоб формат, темп і межі методу підходили саме вашому стану. Залиште контакт, і ми повернемося з деталями і способом оплати."}
+                    </p>
+                  </article>
+                  {isCheckout ? (
+                    <OfferCheckoutPanel
+                      commerce={commerce}
+                      label="Оплата"
+                      title={program.title}
+                      lead={program.description}
+                      includes={includes}
+                      ctaLabel={`Оплатити ${commerce.price}`}
                     />
-                  </OfferSupportPanel>
-                )}
-              </>
+                  ) : isFree ? (
+                    <OfferFreePanel
+                      commerce={commerce}
+                      label="Безкоштовний доступ"
+                      title="Почати навчання"
+                      lead={program.description}
+                      includes={includes}
+                      ctaLabel="Відкрити курс"
+                    />
+                  ) : (
+                    <OfferSupportPanel label="Форма" title="Залишити контакти">
+                      <LeadForm
+                        productCode={commerce.leadProductCode}
+                        source={`platform_${program.slug}_form`}
+                        ctaPlace={`${program.slug}_offer`}
+                      />
+                    </OfferSupportPanel>
+                  )}
+                </>
+              )
             }
           />
         }
-        trailing={
-          <OfferStickyBar price={isCheckout || isFree ? commerce.price : null} buyHref={buyHref} buyLabel={buyLabel} />
-        }
+        trailing={<OfferStickyBar price={heroPrice} buyHref={buyHref} buyLabel={buyLabel} />}
         boundary={{
           label: "Межі методу",
           title: "Чесний формат без медичних обіцянок",

@@ -2,7 +2,8 @@ import crypto from "crypto";
 import { asString } from "@/lib/strings";
 import { NextRequest, NextResponse } from "next/server";
 import { persistLeadBestEffort, type LeadRecord } from "@/lib/payments/checkoutFlow";
-import { normalizeProduct, type ProductCode } from "@/lib/products";
+import { normalizeProduct, type FormatProductCode, type ProductCode } from "@/lib/products";
+import { resolveFormatOffer } from "@/lib/experiences/formats";
 import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { upsertCustomerByContact } from "@/lib/platform/customerIdentity";
@@ -102,11 +103,14 @@ export async function POST(req: NextRequest) {
   const name = asString(body.name);
   const phone = asString(body.phone);
   const email = asString(body.email)?.toLowerCase() ?? null;
-  const product =
-    normalizeProduct({
-      product: asString(body.product) ?? undefined,
-      product_code: asString(body.product_code) ?? undefined,
-    }) ?? "consult";
+  const requested = asString(body.product) ?? asString(body.product_code) ?? undefined;
+  const known = normalizeProduct({ product: requested, product_code: asString(body.product_code) ?? undefined });
+  // A guided FORMAT of a program (`natural-body-support`) is priced in
+  // conversation, and its request must arrive under its own code — not be
+  // filed as a generic consultation, which is where unknown codes still go.
+  const format = known ? null : await resolveFormatOffer(requested);
+  const product: ProductCode =
+    known ?? (format && format.mode === "lead" ? (format.code as FormatProductCode) : "consult");
 
   if (!name || (!phone && !email)) {
     return cors(NextResponse.json({ ok: false, error: "contact_required" }, { status: 400 }));

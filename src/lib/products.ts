@@ -226,7 +226,15 @@ export type CourseProductCode = `course:${string}`;
  * buyer for Short Reboot. Prices for these codes live in the database, so the
  * commercial facts are now looked up (`loadPayableOffer`) rather than indexed.
  */
-export type PayableProductCode = CatalogProductCode | CourseProductCode;
+/**
+ * A FORMAT of a program, sold under the code its offer row carries
+ * (`way21-group`, 2026-09-25). Branded rather than plain `string` so nothing
+ * can index `PRODUCTS` with it by accident: it only ever comes out of
+ * `loadPayableOffer`, which resolved it against `experience_offers`.
+ */
+export type FormatProductCode = string & { readonly __formatOffer: true };
+
+export type PayableProductCode = CatalogProductCode | CourseProductCode | FormatProductCode;
 export type LeadProductCode = (typeof LEAD_PRODUCT_CODES)[number];
 export type ProductCode = PayableProductCode | LeadProductCode;
 export type Locale = "uk" | "en";

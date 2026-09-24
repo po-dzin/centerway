@@ -33,11 +33,13 @@ import {
   isCatalogProduct,
   normalizePayableProduct,
   type CatalogProductCode,
+  type FormatProductCode,
   type PayableOffer,
 } from "@/lib/products";
 import { mediaSources } from "@/lib/lms/media";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { loadProductOffer } from "@/lib/platform/productOffers";
+import { resolveFormatOffer } from "@/lib/experiences/formats";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 import { toOfferSurface } from "@/lib/platform/courseOffer";
 import { COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
@@ -430,7 +432,9 @@ async function productOffer(code: CatalogProductCode): Promise<PayableOffer | nu
 
 export async function loadPayableOffer(code: unknown): Promise<PayableOffer | null> {
   const normalized = normalizePayableProduct(code);
-  if (!normalized) return null;
+  // Neither one of the six nor `course:<slug>`: it may be a FORMAT of a
+  // program (`way21-group`), priced in `experience_offers` alone.
+  if (!normalized) return loadFormatPayable(code);
 
   if (isCatalogProduct(normalized)) {
     const aliasSlug = COURSE_CODE_ALIASES[normalized];
@@ -446,6 +450,37 @@ export async function loadPayableOffer(code: unknown): Promise<PayableOffer | nu
   const slug = parseCourseOfferCode(normalized);
   if (!slug) return null;
   return loadCourseOfferFor(slug);
+}
+
+/**
+ * A format of a program as something to charge for (2026-09-25).
+ *
+ * Only an approved, active, priced checkout format of a PUBLIC program: the
+ * same two halves `loadCourseOfferFor` insists on — the author finished the
+ * program, the owner agreed the figure. The invoice line is the one the owner
+ * wrote for the format; without one it is built from the program and the
+ * format's name, never borrowed from a neighbouring product.
+ */
+async function loadFormatPayable(code: unknown): Promise<PayableOffer | null> {
+  const format = await resolveFormatOffer(code);
+  if (!format || format.mode !== "checkout" || format.amount === null || format.amount <= 0) return null;
+  if (format.courseStatus !== "published" || !["listed", "unlisted"].includes(format.courseVisibility ?? "hidden")) {
+    return null;
+  }
+
+  const fallback = `${format.courseTitle} — ${format.label.toLowerCase()} — CenterWay`;
+  return {
+    code: format.code as FormatProductCode,
+    heading: format.invoiceHeading ?? { uk: fallback, en: fallback },
+    description: format.invoiceDescription ?? { uk: fallback, en: fallback },
+    amount: format.amount,
+    listAmount: format.listAmount ?? format.amount,
+    currency: format.currency,
+    pixelContentName: format.pixelContentName ?? format.courseTitle,
+    fulfilment: { kind: "course", courseSlug: format.courseSlug, programSlug: format.programSlug },
+    approvedUrl: PLATFORM_THANKS_URL,
+    declinedUrl: PLATFORM_FAILED_URL,
+  };
 }
 
 /** The commercial facts for one course, read from its own row. */

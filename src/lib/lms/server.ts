@@ -477,6 +477,8 @@ export async function ensureEnrollment(
     return { enrollment: null, reason: "expired" };
   }
 
+  const formatCohort = plan.grant ? await cohortOfOrderFormat(db, plan.orderRef, course.id) : null;
+
   const inserted = await db
     .from("lms_enrollments")
     .insert({
@@ -490,7 +492,9 @@ export async function ensureEnrollment(
       started_at: now.toISOString(),
       // A course that runs as a cohort hands its date to everyone who joins it,
       // early or late; the operator can still set another date per person.
-      cohort_starts_on: courseCohortDate(course),
+      // A group FORMAT names its own day 1 (2026-09-25): the Шлях 21 cohort
+      // starts on 1 October whoever bought it on 26 September.
+      cohort_starts_on: formatCohort ?? courseCohortDate(course),
       // A free seat has no order, so who brought the person is recorded here.
       ref: attribution?.ref ?? null,
       utm: attribution?.utm ?? null,
@@ -522,6 +526,40 @@ export async function ensureEnrollment(
   }
 
   return { enrollment: toEnrollmentRecord(inserted.data as EnrollmentRow) };
+}
+
+/**
+ * Day 1 of the cohort the granting order bought into, if it bought one.
+ *
+ * Only a format of THIS course's own program counts. The Шлях 21 cohort also
+ * opens Reset Day and Short, and those stay open from the day of purchase —
+ * a bundled program is not part of the cohort's calendar.
+ */
+async function cohortOfOrderFormat(
+  db: ReturnType<typeof adminClient>,
+  orderRef: string | null,
+  courseId: string,
+): Promise<string | null> {
+  if (!orderRef) return null;
+  try {
+    const [order, course] = await Promise.all([
+      db.from("orders").select("offer_id").eq("order_ref", orderRef).maybeSingle(),
+      db.from("lms_courses").select("experience_id").eq("id", courseId).maybeSingle(),
+    ]);
+    const offerId = order.data?.offer_id as string | null | undefined;
+    const experienceId = course.data?.experience_id as string | null | undefined;
+    if (!offerId || !experienceId) return null;
+    const offer = await db
+      .from("experience_offers")
+      .select("cohort_starts_on, experience_id")
+      .eq("id", offerId)
+      .maybeSingle();
+    if (!offer.data || offer.data.experience_id !== experienceId) return null;
+    return (offer.data.cohort_starts_on as string | null) ?? null;
+  } catch {
+    // No cohort is the old behaviour — day 1 is the day they open it.
+    return null;
+  }
 }
 
 /** Reads the raw event log and folds it into current progress. */
@@ -595,6 +633,14 @@ export type LearnerShelfEntry = {
   standing: CourseStandingSummary | null;
   currentLessonSlug: string | null;
   currentLessonTitle: string | null;
+  /**
+   * The program this one is held INSIDE (2026-09-25): Reset Day opened by the
+   * Шлях 21 cohort. Set only when the seat came through a bundle or a bonus and
+   * the parent is open too — a course bought on its own keeps its own card.
+   */
+  includedIn: { slug: string; title: string } | null;
+  /** The reverse: programs held inside this one, so its card can name them. */
+  carries: Array<{ slug: string; title: string }>;
 };
 
 /**
@@ -635,9 +681,15 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
   // narrower question than "may preview live content": a coach previewing an
   // unfinished course they did not write is reading someone else's unreviewed
   // draft, not testing their own material.
-  const { data: courseAuthorRows } = await db.from("lms_courses").select("id, author_id");
+  const { data: courseAuthorRows } = await db.from("lms_courses").select("id, author_id, experience_id");
   const authorByCourse = new Map(
     ((courseAuthorRows ?? []) as Array<{ id: string; author_id: string | null }>).map((row) => [row.id, row.author_id]),
+  );
+  const experienceByCourse = new Map(
+    ((courseAuthorRows ?? []) as Array<{ id: string; experience_id: string | null }>).map((row) => [
+      row.id,
+      row.experience_id,
+    ]),
   );
 
   // One read for every term rather than one per card: the shelf renders the
@@ -650,13 +702,40 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
   // same enrollment — a withdrawn offer showed as perpetual on the shelf and
   // as time-boxed the moment the learner opened the course. One row per course
   // (`code` is unique), so there is nothing to choose between.
-  const [{ data: offerRows }, openingByCourse] = await Promise.all([
-    db.from("experience_offers").select("code, access_days, access_lifetime, amount, active"),
+  const [{ data: offerRows }, openingByCourse, { data: aliasRows }] = await Promise.all([
+    db.from("experience_offers").select("id, experience_id, code, access_days, access_lifetime, amount, active"),
     loadOpeningCodes(
       db,
       courses.map((course) => course.id),
     ),
+    db.from("offer_aliases").select("code, offer_id"),
   ]);
+
+  // A course's OWN codes — the ones that say «bought this program», as against
+  // a bundle that carried it in. Its declared legacy codes, its `course:` code,
+  // and every code or old code of an offer that belongs to its own thing.
+  const offerExperience = new Map(
+    ((offerRows ?? []) as Array<{ id: string; experience_id: string }>).map((row) => [row.id, row.experience_id]),
+  );
+  const codesByExperience = new Map<string, Set<string>>();
+  const addCode = (experienceId: string | undefined, code: string) => {
+    if (!experienceId) return;
+    const set = codesByExperience.get(experienceId) ?? new Set<string>();
+    set.add(code.toLowerCase());
+    codesByExperience.set(experienceId, set);
+  };
+  for (const row of (offerRows ?? []) as Array<{ experience_id: string; code: string }>) addCode(row.experience_id, row.code);
+  for (const row of (aliasRows ?? []) as Array<{ code: string; offer_id: string }>) {
+    addCode(offerExperience.get(row.offer_id), row.code);
+  }
+  const ownCodesOf = (course: Course): Set<string> => {
+    const own = new Set(codesByExperience.get(experienceByCourse.get(course.id) ?? "") ?? []);
+    for (const code of course.entitlementProductCodes) own.add(code.toLowerCase());
+    own.add(courseOfferCode(course.slug));
+    return own;
+  };
+  const heldThroughBundle = new Set<string>();
+
   // Keyed by the course's own offer code, which is what `readOfferAccess` reads
   // for one course — the shelf and the door must look at the same row.
   const idByOfferCode = new Map(courses.map((course) => [courseOfferCode(course.slug), course.id]));
@@ -691,6 +770,12 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
         orders: purchases.orders,
         now,
       });
+
+      // Held only because a bundle carried it (or a bonus handed it): no order
+      // under the course's own codes. Such a course is shown inside its parent.
+      const ownCodes = ownCodesOf(course);
+      const boughtOnItsOwn = orders.some((order) => ownCodes.has(order.productCode.trim().toLowerCase()));
+      if (!boughtOnItsOwn && (orders.length > 0 || row?.source === "bonus")) heldThroughBundle.add(course.id);
 
       // What opening the course WOULD do, without doing it.
       const plan = planAccess({
@@ -734,6 +819,8 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
         expiresAt,
         daysLeft: daysRemaining(expiresAt, now),
         source: (row?.source ?? (plan.grant ? "order" : free ? "free" : null)) as EnrollmentRecord["source"] | null,
+        includedIn: null,
+        carries: [],
       };
 
       // Past its deadline the row still exists — the learner keeps their
@@ -798,7 +885,21 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
     }),
   );
 
-  return entries.filter((entry): entry is LearnerShelfEntry => entry !== null);
+  const shelf = entries.filter((entry): entry is LearnerShelfEntry => entry !== null);
+
+  // Nest what a bundle carried under the open program that carries it.
+  const openParents = shelf.filter((entry) => entry.access !== "locked");
+  for (const entry of shelf) {
+    if (entry.access === "locked" || !heldThroughBundle.has(entry.course.id)) continue;
+    const parent = openParents.find(
+      (candidate) =>
+        candidate !== entry && candidate.course.modules.some((module) => module.linkedCourseSlug === entry.course.slug),
+    );
+    if (!parent) continue;
+    entry.includedIn = { slug: parent.course.slug, title: parent.course.title };
+    parent.carries.push({ slug: entry.course.slug, title: entry.course.title });
+  }
+  return shelf;
 }
 
 export type LearnerCourseContext = {
