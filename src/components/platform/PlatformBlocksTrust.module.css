@@ -307,7 +307,6 @@
   margin-top: auto;
 }
 
-
 .copyStack {
   display: grid;
   gap: var(--cw-space-sm);

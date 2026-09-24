@@ -190,7 +190,6 @@ describe("course validation", () => {
     const course = dailyCourse() as unknown as Record<string, unknown>;
     course.pretitle = "я".repeat(COURSE_PRETITLE_MAX + 1);
     expect(() => validateCourse(course)).toThrow(/lms_course_pretitle_too_long/);
-
   });
 
   it("holds the title to two mobile catalogue lines for every writer", () => {
