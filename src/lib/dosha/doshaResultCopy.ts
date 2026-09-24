@@ -142,17 +142,25 @@ export const HOW_IT_WORKS_STEPS = [
    dosha dominates / two are close / all three are level» would describe `type`
    a second time — and would describe it wrongly for every confident dual. */
 export const CONFIDENCE_COPY: Record<DoshaConfidence, { label: string; note: string | null }> = {
+  /* THESE SPEAK ABOUT THE BOUNDARY, NEVER ABOUT THE SHAPE. The previous labels
+     described the answers — «дві доші поруч», «відповіді лягли майже порівну» —
+     and that was false as often as true: 8/4/0 is a clear vata that sits 1.7pp
+     from the dual line, and it was told its answers were nearly equal; 5/5/2 is
+     medium because the THIRD dosha is close, and it was told two were close,
+     under a title that already says «Вата-Пітта». What `marginPp` measures is
+     how far the answers sit from the line where the test would have named a
+     neighbouring type, so that is the only thing these may say. */
   high: {
-    label: "Профіль читається впевнено",
+    label: "Результат стійкий",
     note: null,
   },
   medium: {
-    label: "Профіль читається, дві доші поруч",
-    note: "Дві доші йдуть близько, тож за кілька тижнів іншого режиму результат може зміститися. Перечитайте його як напрямок, а не як мітку.",
+    label: "Результат близько до межі між типами",
+    note: "Якби кілька відповідей були іншими, тест міг би назвати сусідній тип. Сприймайте результат як напрямок; щоб перевірити його, пройдіть тест ще раз через 2–3 тижні.",
   },
   low: {
-    label: "Даних мало для впевненого профілю",
-    note: "Ваші відповіді лягли майже порівну, тому це радше гіпотеза, ніж висновок. Пройдіть тест ще раз через 2-3 тижні або звіртеся на консультації — там стан читають разом із контекстом.",
+    label: "Результат на самій межі між типами",
+    note: "Ваші відповіді лягли дуже близько до межі, тож назва типу тут найменш певна. Пройдіть тест ще раз через 2–3 тижні або обговоріть результат на консультації — там стан читають разом із вашою історією.",
   },
 };
 
