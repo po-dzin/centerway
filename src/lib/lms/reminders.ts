@@ -16,7 +16,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
-import { loadOpeningCodes, openingCodesFor } from "@/lib/experiences/openingCodes";
+import { loadOwnCodes } from "@/lib/experiences/openingCodes";
 import {
   accessStateOf,
   courseOfferCode,
@@ -46,6 +46,8 @@ type EnrollmentRow = {
   expires_at?: string | null;
   status?: string | null;
   blocked_at?: string | null;
+  source?: string | null;
+  order_ref?: string | null;
 };
 
 function bump(counter: Record<string, number>, key: string): void {
@@ -133,17 +135,17 @@ export async function runUnstartedReminders(
   // the next run, not on the next deploy.
   const published = (await listLiveCourses()).filter((entry) => entry.status === "published");
   // The same widened set the door uses (`lib/experiences/openingCodes`), read once.
-  const openingByCourse = await loadOpeningCodes(
-    db,
-    published.map((entry) => entry.id),
-  );
+  // A bundle opens a course, but its buyer did not buy THAT course: the nudge
+  // goes out under the course's own codes only, so a Шлях 21 cohort order is
+  // one reminder about Шлях 21, not three.
+  const ownByCourse = await loadOwnCodes(db, published);
   for (const course of published) {
     /* The same set `resolveEntitlement` accepts, built the same way: the codes
        the author declared PLUS the course's own `course:<slug>`. A course sold
        from the builder declares nothing, and reading only the declared list
        skipped exactly those buyers — the ones with no funnel and no bot to fall
        back on. */
-    const productCodes = [...openingCodesFor(course, openingByCourse), courseOfferCode(course.slug)];
+    const productCodes = [...(ownByCourse.get(course.id) ?? []), courseOfferCode(course.slug)];
 
     // Paged, ascending on a column pair that is stable under concurrent
     // inserts — not `.limit(limit)` on its own, which silently re-served the
@@ -325,12 +327,31 @@ export async function runDailyReminders(
   const enrollments = await fetchAllRows<EnrollmentRow>(limit, (from, to) =>
     db
       .from("lms_enrollments")
-      .select("id, course_id, auth_user_id, started_at, cohort_starts_on, expires_at, status, blocked_at")
+      .select("id, course_id, auth_user_id, started_at, cohort_starts_on, expires_at, status, blocked_at, source, order_ref")
       .in("course_id", [...courses.keys()])
       .order("id", { ascending: true })
       .range(from, to),
   );
   let sent = 0;
+
+  // A daily program a bundle carried in stays quiet: the learner chose the
+  // program that carries it, and that one already writes every morning. Held
+  // through a bundle = a bonus seat, or a seat whose order is not one of the
+  // course's own codes.
+  const ownByCourse = await loadOwnCodes(db, [...courses.values()]);
+  const seatOrderRefs = [...new Set(enrollments.map((row) => row.order_ref).filter((ref): ref is string => Boolean(ref)))];
+  const { data: seatOrders } = seatOrderRefs.length
+    ? await db.from("orders").select("order_ref, product_code").in("order_ref", seatOrderRefs)
+    : { data: [] as Array<{ order_ref: string; product_code: string | null }> };
+  const codeByOrder = new Map((seatOrders ?? []).map((row) => [row.order_ref as string, row.product_code ?? ""]));
+  const heldThroughBundle = (enrollment: EnrollmentRow): boolean => {
+    if (enrollment.source === "bonus") return true;
+    if (!enrollment.order_ref) return false;
+    const code = codeByOrder.get(enrollment.order_ref);
+    if (code === undefined) return false;
+    return !(ownByCourse.get(enrollment.course_id)?.has(code.trim().toLowerCase()) ?? true);
+  };
+
   const timeZoneByUser = await loadTimeZones(
     db,
     enrollments.map((enrollment) => enrollment.auth_user_id),
@@ -339,6 +360,11 @@ export async function runDailyReminders(
   for (const enrollment of enrollments) {
     const course = courses.get(enrollment.course_id);
     if (!course) continue;
+
+    if (heldThroughBundle(enrollment)) {
+      bump(skipped, "held_through_bundle");
+      continue;
+    }
 
     // «Сьогоднішній крок чекає» — to someone whose access closed yesterday is
     // the worst message this cron can send. The row survives a lapsed deadline

@@ -43,3 +43,68 @@ export function openingCodesFor(
 ): string[] {
   return [...new Set([...course.entitlementProductCodes, ...(fromTables.get(course.id) ?? [])])];
 }
+
+/**
+ * The codes that say a course was bought FOR ITSELF (2026-09-25).
+ *
+ * `course_opening_codes` also lists the codes of bundles that carry a course in
+ * — the Шлях 21 cohort opens Reset Day. That is right for the door and wrong
+ * for everything that talks to a buyer about the course as their purchase:
+ * a cohort buyer must not get a «you paid for Reset Day and never opened it»
+ * nudge, nor a second daily reminder from a program they did not choose.
+ *
+ * Own = the course's declared codes, its `course:<slug>`, and every code or old
+ * code of an offer belonging to the course's own thing. A failed read answers
+ * with the declared codes alone — which only ever narrows who is nudged.
+ */
+export async function loadOwnCodes(
+  db: Db,
+  courses: ReadonlyArray<{ id: string; slug: string; entitlementProductCodes: readonly string[] }>,
+): Promise<Map<string, Set<string>>> {
+  const own = new Map<string, Set<string>>(
+    courses.map((course) => [
+      course.id,
+      new Set([...course.entitlementProductCodes, `course:${course.slug}`].map((code) => code.toLowerCase())),
+    ]),
+  );
+  if (courses.length === 0) return own;
+  try {
+    const { data: courseRows } = await db
+      .from("lms_courses")
+      .select("id, experience_id")
+      .in(
+        "id",
+        courses.map((course) => course.id),
+      );
+    const experienceIds = [
+      ...new Set((courseRows ?? []).map((row) => row.experience_id as string | null).filter(Boolean)),
+    ] as string[];
+    if (experienceIds.length === 0) return own;
+
+    const { data: offers } = await db
+      .from("experience_offers")
+      .select("id, code, experience_id")
+      .in("experience_id", experienceIds);
+    const offerIds = (offers ?? []).map((row) => row.id as string);
+    const { data: aliases } = offerIds.length
+      ? await db.from("offer_aliases").select("code, offer_id").in("offer_id", offerIds)
+      : { data: [] as Array<{ code: string; offer_id: string }> };
+
+    const codesByExperience = new Map<string, string[]>();
+    const experienceByOffer = new Map((offers ?? []).map((row) => [row.id as string, row.experience_id as string]));
+    const push = (experienceId: string | undefined, code: string) => {
+      if (!experienceId) return;
+      codesByExperience.set(experienceId, [...(codesByExperience.get(experienceId) ?? []), code.toLowerCase()]);
+    };
+    for (const row of offers ?? []) push(row.experience_id as string, row.code as string);
+    for (const row of aliases ?? []) push(experienceByOffer.get(row.offer_id as string), row.code as string);
+
+    for (const row of courseRows ?? []) {
+      const set = own.get(row.id as string);
+      for (const code of codesByExperience.get(row.experience_id as string) ?? []) set?.add(code);
+    }
+  } catch {
+    // Declared codes only.
+  }
+  return own;
+}
