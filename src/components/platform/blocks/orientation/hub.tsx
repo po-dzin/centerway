@@ -70,8 +70,8 @@ export function HubHero() {
           CenterWay
         </h1>
         <p className={styles.heroFeatureLead}>
-          Шлях до себе — не пошук нової особистості, а повернення до своєї природи — у тілі, емоціях і думках —
-          через увагу, харчування, практику і ритм дня.
+          Шлях до себе — не пошук нової особистості, а повернення до своєї природи: через тіло, увагу,
+          харчування і ритм дня.
         </p>
         <div className={styles.heroFeatureActions}>
           <Link className={styles.heroPrimaryButton} href="#intro-video">
