@@ -72,6 +72,20 @@ export type CourseViewDto = {
   };
   currentLessonSlug: string | null;
   outline: CourseOutlineEntryDto[];
+  /** Other programs this one carries as modules; each opens by its own access. */
+  linkedPrograms: LinkedProgramDto[];
+};
+
+export type LinkedProgramDto = {
+  moduleId: string;
+  title: string;
+  courseSlug: string;
+  programSlug: string;
+  courseTitle: string;
+  kind: "course" | "mini" | "checklist" | null;
+  lessonCount: number;
+  cover: { src: string; alt: string } | null;
+  access: "open" | "locked";
 };
 
 /** One course on the cabinet shelf — outline-free, just enough to decide where to go next. */

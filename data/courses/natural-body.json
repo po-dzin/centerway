@@ -2666,6 +2666,24 @@
           ]
         }
       ]
+    },
+    {
+      "id": "4f2b8c1e-7a3d-5e90-b6c4-2d1e8f0a9b31",
+      "slug": "reset-day",
+      "title": "Розвантажувальний день",
+      "order": 6,
+      "reference": true,
+      "linkedCourseSlug": "reset-day",
+      "lessons": []
+    },
+    {
+      "id": "4f2b8c1e-7a3d-5e90-b6c4-2d1e8f0a9b32",
+      "slug": "short",
+      "title": "Short-Перезавантаження",
+      "order": 7,
+      "reference": true,
+      "linkedCourseSlug": "short",
+      "lessons": []
     }
   ]
 }

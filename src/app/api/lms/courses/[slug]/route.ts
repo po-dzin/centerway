@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
+import { loadLinkedPrograms } from "@/lib/lms/linkedPrograms";
 import { loadLearnerCourse } from "@/lib/lms/server";
 import { readAttribution } from "@/lib/referral/attribution";
 import { isDenied, resolveCourseAccess } from "@/lib/lms/courseAccess";
@@ -36,6 +37,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
   const { slug } = await params;
   const now = new Date();
+  const identity = { authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) };
   const draftPreview = req.nextUrl.searchParams.get("preview") === "draft";
 
   let context;
@@ -54,7 +56,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     };
   } else {
     const result = await loadLearnerCourse(
-      { authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) },
+      identity,
       slug,
       now,
       // The course page is where a seat is first opened, so it is the one call
@@ -88,6 +90,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     availability: entry.availability,
   }));
 
+  // Each linked program answers with ITS OWN access, so the self-paced buyer
+  // sees Reset Day closed inside Шлях 21 and the group buyer sees it open.
+  const linkedPrograms = await loadLinkedPrograms(identity, course, now);
+
   return NextResponse.json({
     course: {
       slug: course.slug,
@@ -110,5 +116,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     standing: summarizeStanding(navigableCourse, progress, learner),
     currentLessonSlug: resolveCurrentLesson(navigableCourse, progress, learner)?.slug ?? null,
     outline,
+    linkedPrograms,
   });
 }
