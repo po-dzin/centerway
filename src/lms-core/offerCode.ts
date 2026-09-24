@@ -37,3 +37,20 @@ export function parseCourseOfferCode(code: unknown): string | null {
 export function isCourseOfferCode(code: unknown): boolean {
   return parseCourseOfferCode(code) !== null;
 }
+
+/**
+ * A course handed to a BUYER rather than sold to them (2026-09-25): past buyers
+ * of Шлях 21 get Reset Day and Short. It rides the same order-shaped path as a
+ * purchase — the grant belongs to the customer, so it works for someone who has
+ * never signed in yet — under a code no checkout can produce: the colon keeps
+ * it out of the catalogue namespace, and the prefix out of `course:`.
+ *
+ * Being its own code is the point: it opens the course, but it is not one of
+ * the course's OWN codes, so the shelf nests the course under the program that
+ * earned it and its reminders stay quiet.
+ */
+export const COURSE_BONUS_PREFIX = "bonus:";
+
+export function courseBonusCode(slug: string): string {
+  return `${COURSE_BONUS_PREFIX}${slug}`;
+}

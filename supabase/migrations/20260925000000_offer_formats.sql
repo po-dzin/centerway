@@ -243,3 +243,62 @@ select v.id::uuid, c.id, v.slug, v.title, v.ord, true, v.linked
 on conflict (id) do nothing;
 
 commit;
+
+-- ─────────────────────────────────────────
+-- 7. Прошлым покупателям — Reset Day и Short в подарок
+-- ─────────────────────────────────────────
+-- Решение 23.09: кто купил Шлях 21 или «Природне тіло» до форматов, получает
+-- мини-курсы заднім числом. Правило на оффере для этого не годится: базовый
+-- формат их не включает. Ручная выдача (`lms_enrollments`) тоже: она требует
+-- аккаунта, а большинство прошлых покупателей пришли из бота и на платформу
+-- ещё не входили.
+--
+-- Поэтому бонус принадлежит ПОКУПАТЕЛЮ (`customers`), как и его заказы, и
+-- читается рядом с ними (`loadPurchases`) под кодом `bonus:<slug>` — дверь,
+-- полка и зачисление принимают его тем же путём, что покупку. Своим кодом
+-- курса он не является, поэтому курс вкладывается в программу на полке и не
+-- шлёт своих напоминаний.
+begin;
+
+create table if not exists public.lms_course_bonuses (
+  id           uuid primary key default gen_random_uuid(),
+  customer_id  uuid        not null references public.customers (id) on delete cascade,
+  course_id    uuid        not null references public.lms_courses (id) on delete cascade,
+  reason       text        not null,
+  granted_at   timestamptz not null default now(),
+  granted_by   uuid        null references auth.users (id) on delete set null,
+  unique (customer_id, course_id)
+);
+
+comment on table public.lms_course_bonuses is
+  'Курс, подаренный покупателю, а не проданный. Открывает курс как заказ с кодом bonus:<slug>; работает до первого входа на платформу.';
+
+alter table public.lms_course_bonuses enable row level security;
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename = 'lms_course_bonuses' and policyname = 'lms_course_bonuses_admin_all') then
+    create policy lms_course_bonuses_admin_all on public.lms_course_bonuses
+      for all using (public.get_my_role() = 'admin') with check (public.get_my_role() = 'admin');
+  end if;
+end $$;
+grant all on public.lms_course_bonuses to service_role;
+
+create index if not exists idx_lms_course_bonuses_customer on public.lms_course_bonuses (customer_id);
+
+-- Каждый, у кого есть оплаченный заказ, открывающий Шлях 21 или «Природне
+-- тіло», сделанный до этой миграции. `test` — не оплата (см. QA-куку).
+insert into public.lms_course_bonuses (customer_id, course_id, reason, granted_at)
+select distinct o.customer_id, bonus.id, 'formats-2026-09-25: ' || parent.slug, now()
+  from public.orders o
+  join public.course_opening_codes v on v.code = lower(o.product_code)
+  join public.lms_courses parent on parent.id = v.course_id and parent.slug in ('way21', 'natural-body')
+  cross join public.lms_courses bonus
+ where bonus.slug in ('reset-day', 'short')
+   and o.status = 'paid'
+   and o.customer_id is not null
+   and o.created_at < now()
+on conflict (customer_id, course_id) do nothing;
+
+commit;
+
+-- ПРОВЕРКА:
+-- select c.slug, count(*) from lms_course_bonuses b join lms_courses c on c.id = b.course_id group by 1;

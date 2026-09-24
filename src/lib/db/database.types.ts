@@ -1178,6 +1178,48 @@ export type Database = {
         }
         Relationships: []
       }
+      lms_course_bonuses: {
+        Row: {
+          course_id: string
+          customer_id: string
+          granted_at: string
+          granted_by: string | null
+          id: string
+          reason: string
+        }
+        Insert: {
+          course_id: string
+          customer_id: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          reason: string
+        }
+        Update: {
+          course_id?: string
+          customer_id?: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_course_bonuses_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "lms_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_course_bonuses_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lms_course_offers: {
         Row: {
           access_days: number | null

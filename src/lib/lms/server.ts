@@ -18,6 +18,7 @@ import {
   accessRuleOf,
   accessStateOf,
   acceptedPaidOrders,
+  courseBonusCode,
   courseOfferCode,
   daysRemaining,
   dripAnchor,
@@ -227,10 +228,12 @@ async function loadPurchases(identity: LearnerIdentity): Promise<{ orders: PaidO
   const customerIds = await findCustomerIds(identity);
   if (customerIds.length === 0) return { orders: [] };
 
-  const ordersResult = await db
-    .from("orders")
-    .select("order_ref, product_code, status, created_at")
-    .in("customer_id", customerIds);
+  const [ordersResult, bonusResult] = await Promise.all([
+    db.from("orders").select("order_ref, product_code, status, created_at").in("customer_id", customerIds),
+    // Courses handed to a buyer, not sold (`courseBonusCode`). Read beside the
+    // orders because they belong to the same customer and open the same way.
+    db.from("lms_course_bonuses").select("id, granted_at, lms_courses(slug)").in("customer_id", customerIds),
+  ]);
 
   const orders: PaidOrderRef[] = (ordersResult.data ?? []).map((order) => ({
     orderRef: order.order_ref,
@@ -238,6 +241,21 @@ async function loadPurchases(identity: LearnerIdentity): Promise<{ orders: PaidO
     status: order.status ?? "",
     createdAt: order.created_at ?? new Date(0).toISOString(),
   }));
+
+  for (const bonus of (bonusResult.data ?? []) as Array<{
+    id: string;
+    granted_at: string;
+    lms_courses: { slug: string } | { slug: string }[] | null;
+  }>) {
+    const course = Array.isArray(bonus.lms_courses) ? bonus.lms_courses[0] : bonus.lms_courses;
+    if (!course?.slug) continue;
+    orders.push({
+      orderRef: `bonus-${bonus.id}`,
+      productCode: courseBonusCode(course.slug),
+      status: "paid",
+      createdAt: bonus.granted_at,
+    });
+  }
 
   return { orders };
 }
