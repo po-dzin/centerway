@@ -109,7 +109,13 @@ async function courseRow(db: Db, courseId: string) {
     .maybeSingle();
   if (error) throw new FormatError(`format_course_read_failed:${error.message}`, 500);
   if (!data?.experience_id) throw new FormatError("format_course_not_registered", 409);
-  return data as { id: string; slug: string; program_slug: string | null; author_id: string | null; experience_id: string };
+  return data as {
+    id: string;
+    slug: string;
+    program_slug: string | null;
+    author_id: string | null;
+    experience_id: string;
+  };
 }
 
 /** Codes the old catalogue still writes; their price reaches `experience_offers` through the mirror. */
@@ -258,12 +264,7 @@ function parseInput(input: FormatInput): Parsed {
   return parsed;
 }
 
-async function writeIncludes(
-  db: Db,
-  offerId: string,
-  slugs: string[],
-  allowed: IncludableProgram[],
-): Promise<void> {
+async function writeIncludes(db: Db, offerId: string, slugs: string[], allowed: IncludableProgram[]): Promise<void> {
   const allowedSlugs = new Set(allowed.map((program) => program.slug));
   const refused = slugs.filter((slug) => !allowedSlugs.has(slug));
   if (refused.length > 0) throw new FormatError("format_include_not_yours", 403);
@@ -272,7 +273,9 @@ async function writeIncludes(
     ? await db.from("lms_courses").select("slug, experience_id").in("slug", slugs)
     : { data: [] as Array<{ slug: string; experience_id: string | null }>, error: null };
   if (error) throw new FormatError(`format_programs_read_failed:${error.message}`, 500);
-  const experienceBySlug = new Map((targets ?? []).map((row) => [row.slug as string, row.experience_id as string | null]));
+  const experienceBySlug = new Map(
+    (targets ?? []).map((row) => [row.slug as string, row.experience_id as string | null]),
+  );
 
   await db.from("experience_offer_items").delete().eq("offer_id", offerId);
   const rows = slugs.flatMap((slug, index) => {
@@ -432,10 +435,7 @@ export async function listFormatsForReview(): Promise<FormatForReview[]> {
     .not("experience_id", "is", null);
   if (error) throw new FormatError(`format_read_failed:${error.message}`, 500);
 
-  const { data: formatted } = await db
-    .from("experience_offers")
-    .select("experience_id")
-    .not("format", "is", null);
+  const { data: formatted } = await db.from("experience_offers").select("experience_id").not("format", "is", null);
   const withFormats = new Set((formatted ?? []).map((row) => row.experience_id as string));
 
   const lists = await Promise.all(

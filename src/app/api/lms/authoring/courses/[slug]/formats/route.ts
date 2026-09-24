@@ -96,7 +96,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
     async (grant) => {
       try {
         const body = ((await req.json().catch(() => null)) ?? {}) as FormatInput & { code?: unknown };
-        if (typeof body.code !== "string" || !body.code) return NextResponse.json({ error: "format_code_required" }, { status: 400 });
+        if (typeof body.code !== "string" || !body.code)
+          return NextResponse.json({ error: "format_code_required" }, { status: 400 });
         await updateFormat({
           courseId: grant.courseId,
           authUserId: grant.identity.authUserId,

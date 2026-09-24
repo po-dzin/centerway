@@ -422,3 +422,72 @@ export async function exportLessonFile(
   const filename = /filename="([^"]+)"/.exec(disposition)?.[1] ?? `${lesson.slug}.${format}`;
   return { ok: true, data: { filename, blob: await response.blob() } };
 }
+
+/* ─────────────────────────────────────────
+   Formats (2026-09-25) — see lib/experiences/formatAuthoring
+   ───────────────────────────────────────── */
+
+export type BuilderFormatKind = "self" | "group" | "individual";
+export type BuilderFormatReview = "draft" | "proposed" | "approved" | "declined";
+
+export type BuilderFormatDto = {
+  code: string;
+  format: BuilderFormatKind;
+  label: string;
+  labelIsDefault: boolean;
+  summary: string;
+  mode: "checkout" | "lead";
+  amount: number | null;
+  proposedAmount: number | null;
+  currency: string;
+  cohortStartsOn: string | null;
+  reviewStatus: BuilderFormatReview;
+  active: boolean;
+  includes: Array<{ slug: string; title: string }>;
+  legacy: boolean;
+};
+
+export type BuilderFormatsDto = {
+  formats: BuilderFormatDto[];
+  includable: Array<{ slug: string; title: string; status: string }>;
+  isOwner: boolean;
+};
+
+export type BuilderFormatInput = {
+  format?: BuilderFormatKind;
+  label?: string;
+  summary?: string;
+  mode?: "checkout" | "lead";
+  proposedAmount?: number | null;
+  cohortStartsOn?: string | null;
+  includes?: string[];
+  submit?: boolean;
+};
+
+export function loadCourseFormats(slug: string): Promise<BuilderResult<BuilderFormatsDto>> {
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/formats`);
+}
+
+export function createCourseFormat(slug: string, input: BuilderFormatInput): Promise<BuilderResult<{ code: string }>> {
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/formats`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateCourseFormat(
+  slug: string,
+  code: string,
+  input: BuilderFormatInput,
+): Promise<BuilderResult<{ ok: true }>> {
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/formats`, {
+    method: "PATCH",
+    body: JSON.stringify({ ...input, code }),
+  });
+}
+
+export function deleteCourseFormat(slug: string, code: string): Promise<BuilderResult<{ ok: true }>> {
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/formats?code=${encodeURIComponent(code)}`, {
+    method: "DELETE",
+  });
+}
