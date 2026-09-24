@@ -508,6 +508,140 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcast_recipients: {
+        Row: {
+          address: string
+          bounced_at: string | null
+          broadcast_id: string
+          claimed_at: string | null
+          clicked_at: string | null
+          complained_at: string | null
+          created_at: string
+          customer_id: string | null
+          delivered_at: string | null
+          error_text: string | null
+          id: string
+          name: string | null
+          opened_at: string | null
+          provider_id: string | null
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          address: string
+          bounced_at?: string | null
+          broadcast_id: string
+          claimed_at?: string | null
+          clicked_at?: string | null
+          complained_at?: string | null
+          created_at?: string
+          customer_id?: string | null
+          delivered_at?: string | null
+          error_text?: string | null
+          id?: string
+          name?: string | null
+          opened_at?: string | null
+          provider_id?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          address?: string
+          bounced_at?: string | null
+          broadcast_id?: string
+          claimed_at?: string | null
+          clicked_at?: string | null
+          complained_at?: string | null
+          created_at?: string
+          customer_id?: string | null
+          delivered_at?: string | null
+          error_text?: string | null
+          id?: string
+          name?: string | null
+          opened_at?: string | null
+          provider_id?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcast_recipients_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "broadcasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      broadcasts: {
+        Row: {
+          audience: Json
+          body: string
+          channel: string
+          created_at: string
+          created_by: string | null
+          cta_label: string | null
+          cta_url: string | null
+          error_text: string | null
+          failed_count: number
+          finished_at: string | null
+          id: string
+          preheader: string
+          recipients_total: number
+          scheduled_at: string | null
+          sent_count: number
+          started_at: string | null
+          status: string
+          subject: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          audience?: Json
+          body?: string
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          cta_label?: string | null
+          cta_url?: string | null
+          error_text?: string | null
+          failed_count?: number
+          finished_at?: string | null
+          id?: string
+          preheader?: string
+          recipients_total?: number
+          scheduled_at?: string | null
+          sent_count?: number
+          started_at?: string | null
+          status?: string
+          subject?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          audience?: Json
+          body?: string
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          cta_label?: string | null
+          cta_url?: string | null
+          error_text?: string | null
+          failed_count?: number
+          finished_at?: string | null
+          id?: string
+          preheader?: string
+          recipients_total?: number
+          scheduled_at?: string | null
+          sent_count?: number
+          started_at?: string | null
+          status?: string
+          subject?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           auth_user_id: string | null
@@ -625,16 +759,19 @@ export type Database = {
           created_at: string
           experience_id: string
           offer_id: string
+          sort_order: number
         }
         Insert: {
           created_at?: string
           experience_id: string
           offer_id: string
+          sort_order?: number
         }
         Update: {
           created_at?: string
           experience_id?: string
           offer_id?: string
+          sort_order?: number
         }
         Relationships: [
           {
@@ -660,16 +797,27 @@ export type Database = {
           active: boolean
           amount: number | null
           code: string
+          cohort_starts_on: string | null
           created_at: string
           currency: string
           experience_id: string
+          format: string | null
           id: string
           invoice_description: Json | null
           invoice_heading: Json | null
+          label: Json | null
           list_amount: number | null
           mode: string
           pixel_content_name: string | null
+          proposed_amount: number | null
+          proposed_at: string | null
+          proposed_by: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
           share_pct: number | null
+          sort_order: number
+          summary: Json | null
           updated_at: string
         }
         Insert: {
@@ -678,16 +826,27 @@ export type Database = {
           active?: boolean
           amount?: number | null
           code: string
+          cohort_starts_on?: string | null
           created_at?: string
           currency?: string
           experience_id: string
+          format?: string | null
           id?: string
           invoice_description?: Json | null
           invoice_heading?: Json | null
+          label?: Json | null
           list_amount?: number | null
           mode: string
           pixel_content_name?: string | null
+          proposed_amount?: number | null
+          proposed_at?: string | null
+          proposed_by?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           share_pct?: number | null
+          sort_order?: number
+          summary?: Json | null
           updated_at?: string
         }
         Update: {
@@ -696,16 +855,27 @@ export type Database = {
           active?: boolean
           amount?: number | null
           code?: string
+          cohort_starts_on?: string | null
           created_at?: string
           currency?: string
           experience_id?: string
+          format?: string | null
           id?: string
           invoice_description?: Json | null
           invoice_heading?: Json | null
+          label?: Json | null
           list_amount?: number | null
           mode?: string
           pixel_content_name?: string | null
+          proposed_amount?: number | null
+          proposed_at?: string | null
+          proposed_by?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           share_pct?: number | null
+          sort_order?: number
+          summary?: Json | null
           updated_at?: string
         }
         Relationships: [
@@ -1204,7 +1374,6 @@ export type Database = {
           pending_review_status: string | null
           pending_submitted_at: string | null
           pending_updated_at: string | null
-          posttitle: string | null
           pretitle: string | null
           program_slug: string
           published_revision_id: string | null
@@ -1251,7 +1420,6 @@ export type Database = {
           pending_review_status?: string | null
           pending_submitted_at?: string | null
           pending_updated_at?: string | null
-          posttitle?: string | null
           pretitle?: string | null
           program_slug: string
           published_revision_id?: string | null
@@ -1298,7 +1466,6 @@ export type Database = {
           pending_review_status?: string | null
           pending_submitted_at?: string | null
           pending_updated_at?: string | null
-          posttitle?: string | null
           pretitle?: string | null
           program_slug?: string
           published_revision_id?: string | null
@@ -1530,6 +1697,7 @@ export type Database = {
           course_id: string
           created_at: string
           id: string
+          linked_course_slug: string | null
           order: number
           reference: boolean
           slug: string
@@ -1541,6 +1709,7 @@ export type Database = {
           course_id: string
           created_at?: string
           id?: string
+          linked_course_slug?: string | null
           order: number
           reference?: boolean
           slug: string
@@ -1552,6 +1721,7 @@ export type Database = {
           course_id?: string
           created_at?: string
           id?: string
+          linked_course_slug?: string | null
           order?: number
           reference?: boolean
           slug?: string
@@ -1693,6 +1863,59 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "lms_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messaging_subscriptions: {
+        Row: {
+          address: string
+          channel: string
+          created_at: string
+          customer_id: string | null
+          id: string
+          name: string | null
+          source: string
+          status: string
+          status_broadcast_id: string | null
+          status_changed_at: string
+          status_reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          channel: string
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          name?: string | null
+          source?: string
+          status?: string
+          status_broadcast_id?: string | null
+          status_changed_at?: string
+          status_reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          channel?: string
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          name?: string | null
+          source?: string
+          status?: string
+          status_broadcast_id?: string | null
+          status_changed_at?: string
+          status_reason?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_subscriptions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
             referencedColumns: ["id"]
           },
         ]
@@ -2448,6 +2671,51 @@ export type Database = {
           revision_number: number
         }[]
       }
+      broadcast_audience: {
+        Args: { p_audience: Json }
+        Returns: {
+          address: string
+          customer_id: string
+          name: string
+        }[]
+      }
+      broadcast_audience_count: { Args: { p_audience: Json }; Returns: number }
+      broadcast_claim_recipients: {
+        Args: { p_broadcast_id: string; p_limit: number }
+        Returns: {
+          address: string
+          bounced_at: string | null
+          broadcast_id: string
+          claimed_at: string | null
+          clicked_at: string | null
+          complained_at: string | null
+          created_at: string
+          customer_id: string | null
+          delivered_at: string | null
+          error_text: string | null
+          id: string
+          name: string | null
+          opened_at: string | null
+          provider_id: string | null
+          sent_at: string | null
+          status: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "broadcast_recipients"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      broadcast_mark_results: {
+        Args: { p_broadcast_id: string; p_results: Json }
+        Returns: undefined
+      }
+      broadcast_materialize: {
+        Args: { p_broadcast_id: string }
+        Returns: number
+      }
+      broadcast_stats: { Args: { p_broadcast_id: string }; Returns: Json }
       check_rate_limit: {
         Args: { p_key: string; p_max: number; p_window_seconds: number }
         Returns: {
@@ -2547,6 +2815,7 @@ export type Database = {
           asset_key: string
         }[]
       }
+      messaging_subscription_counts: { Args: never; Returns: Json }
       refresh_analytics_views: { Args: never; Returns: undefined }
     }
     Enums: {
