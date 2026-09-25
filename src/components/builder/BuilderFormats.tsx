@@ -32,7 +32,9 @@ import {
   type BuilderFormatKind,
   type BuilderFormatsDto,
 } from "./builderClient";
+import { ChoiceRow, ChoiceSet } from "./BuilderFields";
 import styles from "./Builder.module.css";
+import css from "./BuilderFormats.module.css";
 
 const KIND_LABELS: Record<BuilderFormatKind, string> = {
   self: "Самостійно",
@@ -43,11 +45,17 @@ const KIND_LABELS: Record<BuilderFormatKind, string> = {
 const REVIEW_LABELS: Record<BuilderFormatDto["reviewStatus"], string> = {
   draft: "Чернетка",
   proposed: "На погодженні",
-  approved: "Погоджено",
+  approved: "У продажу",
   declined: "Відхилено",
 };
 
 const UAH = new Intl.NumberFormat("uk-UA");
+const DATE = new Intl.DateTimeFormat("uk-UA", { day: "numeric", month: "long", timeZone: "UTC" });
+
+function formatDate(iso: string): string {
+  const date = new Date(`${iso}T00:00:00Z`);
+  return Number.isNaN(date.getTime()) ? iso : DATE.format(date);
+}
 
 function price(amount: number | null): string {
   return amount === null ? "—" : `${UAH.format(amount)} ₴`;
@@ -227,26 +235,19 @@ export function BuilderFormats({
     const approved = format?.reviewStatus === "approved";
     const locked = approved && !data?.isOwner;
     return (
-      <div className={styles.settingsForm}>
+      <div className={css.editor}>
         {!locked ? (
-          <div className={styles.field}>
-            <span className={styles.fieldLabel}>Формат</span>
-            <div className={styles.choiceRow} role="group" aria-label="Формат">
-              {(Object.keys(KIND_LABELS) as BuilderFormatKind[]).map((kind) => (
-                <button
-                  key={kind}
-                  type="button"
-                  className={styles.choiceOption}
-                  aria-pressed={draft.format === kind}
-                  onClick={() =>
-                    setDraft((prev) => ({ ...prev, format: kind, mode: kind === "individual" ? "lead" : prev.mode }))
-                  }
-                >
-                  {KIND_LABELS[kind]}
-                </button>
-              ))}
-            </div>
-          </div>
+          <ChoiceRow<BuilderFormatKind>
+            label="Формат"
+            options={(Object.keys(KIND_LABELS) as BuilderFormatKind[]).map((kind) => ({
+              value: kind,
+              label: KIND_LABELS[kind],
+            }))}
+            value={draft.format}
+            onChange={(kind) =>
+              kind && setDraft((prev) => ({ ...prev, format: kind, mode: kind === "individual" ? "lead" : prev.mode }))
+            }
+          />
         ) : null}
 
         <label className={styles.field}>
@@ -266,33 +267,22 @@ export function BuilderFormats({
             className={styles.input}
             value={draft.summary}
             maxLength={240}
-            rows={2}
+            rows={3}
+            placeholder="Одне-два речення: хто поруч і що людина отримує понад програму"
             onChange={(event) => setDraft((prev) => ({ ...prev, summary: event.target.value }))}
           />
         </label>
 
         {!locked ? (
-          <div className={styles.field}>
-            <span className={styles.fieldLabel}>Як купують</span>
-            <div className={styles.choiceRow} role="group" aria-label="Як купують">
-              <button
-                type="button"
-                className={styles.choiceOption}
-                aria-pressed={draft.mode === "checkout"}
-                onClick={() => setDraft((prev) => ({ ...prev, mode: "checkout" }))}
-              >
-                Оплата на сторінці
-              </button>
-              <button
-                type="button"
-                className={styles.choiceOption}
-                aria-pressed={draft.mode === "lead"}
-                onClick={() => setDraft((prev) => ({ ...prev, mode: "lead" }))}
-              >
-                Заявка, ціну узгоджуємо
-              </button>
-            </div>
-          </div>
+          <ChoiceRow<"checkout" | "lead">
+            label="Як купують"
+            options={[
+              { value: "checkout", label: "Оплата на сторінці" },
+              { value: "lead", label: "Заявка, ціну узгоджуємо" },
+            ]}
+            value={draft.mode}
+            onChange={(mode) => mode && setDraft((prev) => ({ ...prev, mode }))}
+          />
         ) : null}
 
         <label className={styles.field}>
@@ -307,7 +297,7 @@ export function BuilderFormats({
             value={draft.proposedAmount}
             onChange={(event) => setDraft((prev) => ({ ...prev, proposedAmount: event.target.value }))}
           />
-          <span className={styles.readOnlyNote}>
+          <span className={styles.fieldHint}>
             Остаточну ціну затверджує власник платформи — вона може відрізнятися.
           </span>
         </label>
@@ -324,57 +314,37 @@ export function BuilderFormats({
           </label>
         ) : null}
 
-        {!locked ? (
-          <fieldset className={styles.field}>
-            <legend className={styles.fieldLabel}>Також відкриває</legend>
-            {published.length === 0 ? (
-              <p className={styles.readOnlyNote}>У вас немає інших опублікованих програм.</p>
-            ) : (
-              published.map((program) => (
-                <label key={program.slug} className={styles.fieldLabel}>
-                  <input
-                    type="checkbox"
-                    checked={draft.includes.includes(program.slug)}
-                    onChange={(event) =>
-                      setDraft((prev) => ({
-                        ...prev,
-                        includes: event.target.checked
-                          ? [...prev.includes, program.slug]
-                          : prev.includes.filter((slug) => slug !== program.slug),
-                      }))
-                    }
-                  />{" "}
-                  {program.title}
-                </label>
-              ))
-            )}
-          </fieldset>
-        ) : (
-          <p className={styles.readOnlyNote}>
+        {locked ? (
+          <p className={css.note}>
             Формат уже продається: склад і старт потоку змінює власник платформи — напишіть нам.
           </p>
+        ) : published.length === 0 ? (
+          <p className={css.note}>У вас немає інших опублікованих програм, які можна вкласти.</p>
+        ) : (
+          <ChoiceSet<string>
+            label="Також відкриває"
+            hint="Ці програми відкриються покупцю цього формату разом з основною."
+            options={published.map((program) => ({ value: program.slug, label: program.title }))}
+            values={draft.includes}
+            onChange={(next) => setDraft((prev) => ({ ...prev, includes: next ?? [] }))}
+          />
         )}
 
-        <div className={styles.authorLinkActions}>
+        <div className={css.actions}>
+          <button className={css.submitAction} type="button" disabled={busy} onClick={() => void save(format, true)}>
+            {approved ? "Зберегти й надіслати" : "Надіслати на погодження"}
+          </button>
           {!approved ? (
             <button
-              className={styles.quietAction}
+              className={css.secondaryAction}
               type="button"
               disabled={busy}
-              onClick={() => void save(format, true)}
+              onClick={() => void save(format, false)}
             >
-              Надіслати на погодження
+              Зберегти чернетку
             </button>
           ) : null}
-          <button
-            className={styles.quietAction}
-            type="button"
-            disabled={busy}
-            onClick={() => void save(format, approved)}
-          >
-            {approved ? "Зберегти й надіслати" : "Зберегти чернетку"}
-          </button>
-          <button className={styles.quietAction} type="button" disabled={busy} onClick={() => setEditing(null)}>
+          <button className={css.secondaryAction} type="button" disabled={busy} onClick={() => setEditing(null)}>
             Скасувати
           </button>
         </div>
@@ -383,113 +353,128 @@ export function BuilderFormats({
   }
 
   return (
-    <div className={styles.settingsForm}>
-      <section className={styles.courseSettingSection} aria-labelledby="linked-programs-title">
-        <div className={styles.courseSettingCopy}>
-          <h3 className={styles.courseSettingTitle} id="linked-programs-title">
+    <div className={css.root}>
+      <section className={css.block} aria-labelledby="linked-programs-title">
+        <header className={css.blockHead}>
+          <h3 className={css.blockTitle} id="linked-programs-title">
             Програми всередині
           </h3>
-          <p className={styles.readOnlyNote}>
-            Ваші окремі програми, які стоять у «Додаткових матеріалах» цієї. Контент не копіюється — у кожної свій
-            прогрес. Хто їх відкриває, вирішує формат нижче.
+          <p className={css.blockLead}>
+            Ваші окремі програми в «Додаткових матеріалах» цієї. Контент не копіюється — у кожної свій прогрес. Хто їх
+            відкриває, вирішує формат нижче.
           </p>
-        </div>
+        </header>
+
         {linked.length > 0 ? (
-          <ul className={styles.settingsForm}>
+          <ul className={css.list}>
             {linked.map((module) => (
-              <li key={module.id} className={styles.authorLinkActions}>
-                <span>{module.title}</span>
+              <li key={module.id} className={css.linkedRow}>
+                <span className={css.linkedTitle}>{module.title}</span>
                 <button className={styles.dangerAction} type="button" onClick={() => removeLinked(module.id)}>
                   Прибрати
                 </button>
               </li>
             ))}
           </ul>
-        ) : null}
+        ) : (
+          <p className={css.note}>Поки жодної — програма стоїть сама.</p>
+        )}
+
         {linkable.length > 0 ? (
-          <div className={styles.authorLinkActions}>
-            <label className={styles.readOnlyNote} htmlFor="linked-program-add">
-              Додати програму
+          <div className={css.addRow}>
+            <label className={styles.field}>
+              <span className={styles.fieldLabel}>Додати програму</span>
+              <select className={styles.input} value={adding} onChange={(event) => setAdding(event.target.value)}>
+                <option value="">Оберіть…</option>
+                {linkable.map((program) => (
+                  <option key={program.slug} value={program.slug}>
+                    {program.title}
+                  </option>
+                ))}
+              </select>
             </label>
-            <select
-              id="linked-program-add"
-              className={styles.input}
-              value={adding}
-              onChange={(event) => setAdding(event.target.value)}
-            >
-              <option value="">Оберіть…</option>
-              {linkable.map((program) => (
-                <option key={program.slug} value={program.slug}>
-                  {program.title}
-                </option>
-              ))}
-            </select>
-            <button className={styles.quietAction} type="button" disabled={!adding} onClick={() => addLinked(adding)}>
+            <button className={css.secondaryAction} type="button" disabled={!adding} onClick={() => addLinked(adding)}>
               Додати
             </button>
           </div>
         ) : null}
       </section>
 
-      <section className={styles.courseSettingSection} aria-labelledby="course-formats-title">
-        <div className={styles.courseSettingCopy}>
-          <h3 className={styles.courseSettingTitle} id="course-formats-title">
+      <section className={css.block} aria-labelledby="course-formats-title">
+        <header className={css.blockHead}>
+          <h3 className={css.blockTitle} id="course-formats-title">
             Формати
           </h3>
-          <p className={styles.readOnlyNote}>
-            Способи пройти програму: самостійно, у групі, із супроводом. Два й більше — сторінка показує їх поруч.
+          <p className={css.blockLead}>
+            Способи пройти програму: самостійно, у групі, із супроводом. Коли їх два й більше, сторінка показує їх
+            поруч.
           </p>
-        </div>
+        </header>
 
-        {failed ? <p className={styles.readOnlyNote}>Не вдалося прочитати формати. Оновіть сторінку.</p> : null}
-        {!data && !failed ? <p className={styles.readOnlyNote}>Завантаження…</p> : null}
+        {failed ? <p className={css.note}>Не вдалося прочитати формати. Оновіть сторінку.</p> : null}
+        {!data && !failed ? <p className={css.note}>Завантаження…</p> : null}
 
-        {data?.formats.map((format) => (
-          <article key={format.code} className={styles.courseSettingSection}>
-            <div className={styles.courseSettingCopy}>
-              <h4 className={styles.courseSettingTitle}>{format.label}</h4>
-              <p className={styles.readOnlyNote}>
-                {KIND_LABELS[format.format]} · {REVIEW_LABELS[format.reviewStatus]}
-                {format.reviewStatus === "approved" && !format.active ? " · знято з продажу" : ""}
-                {" · "}
-                {format.mode === "lead" && format.amount === null ? "ціна за запитом" : price(format.amount)}
-                {format.proposedAmount !== null ? ` · запропоновано ${price(format.proposedAmount)}` : ""}
-                {format.cohortStartsOn ? ` · старт ${format.cohortStartsOn}` : ""}
-              </p>
-              {format.includes.length > 0 ? (
-                <p className={styles.readOnlyNote}>
-                  Також відкриває: {format.includes.map((program) => program.title).join(" · ")}
+        {data && data.formats.length > 0 ? (
+          <ul className={css.list}>
+            {data.formats.map((format) => (
+              <li key={format.code} className={css.item}>
+                <div className={css.itemHead}>
+                  <h4 className={css.itemName}>{format.label}</h4>
+                  <p className={css.itemPrice}>
+                    {format.mode === "lead" && format.amount === null ? "за запитом" : price(format.amount)}
+                  </p>
+                </div>
+                <p className={css.itemMeta}>
+                  {[
+                    format.labelIsDefault ? null : KIND_LABELS[format.format],
+                    format.reviewStatus === "approved" && !format.active
+                      ? "Знято з продажу"
+                      : REVIEW_LABELS[format.reviewStatus],
+                    format.mode === "lead" ? "через заявку" : null,
+                    format.cohortStartsOn ? `старт ${formatDate(format.cohortStartsOn)}` : null,
+                    format.proposedAmount !== null ? `пропозиція ${price(format.proposedAmount)}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </p>
-              ) : null}
-            </div>
-            {editing === format.code ? (
-              editor(format)
-            ) : (
-              <div className={styles.authorLinkActions}>
-                <button className={styles.quietAction} type="button" onClick={() => startEdit(format)}>
-                  Змінити
-                </button>
-                {format.reviewStatus !== "approved" ? (
-                  <button
-                    className={styles.dangerAction}
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void remove(format)}
-                  >
-                    Прибрати
-                  </button>
+                {format.includes.length > 0 ? (
+                  <p className={css.itemIncludes}>
+                    Також відкриває: <strong>{format.includes.map((program) => program.title).join(" · ")}</strong>
+                  </p>
                 ) : null}
-              </div>
-            )}
-          </article>
-        ))}
+                {editing === format.code ? (
+                  editor(format)
+                ) : (
+                  <div className={css.actions}>
+                    <button className={css.secondaryAction} type="button" onClick={() => startEdit(format)}>
+                      Змінити
+                    </button>
+                    {format.reviewStatus !== "approved" ? (
+                      <button
+                        className={styles.dangerAction}
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void remove(format)}
+                      >
+                        Прибрати
+                      </button>
+                    ) : null}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
         {data ? (
           editing === "new" ? (
-            editor(null)
+            <div className={css.item}>
+              <h4 className={css.itemName}>Новий формат</h4>
+              {editor(null)}
+            </div>
           ) : (
-            <div className={styles.authorLinkActions}>
-              <button className={styles.quietAction} type="button" onClick={() => startEdit(null)}>
+            <div className={css.actions}>
+              <button className={css.secondaryAction} type="button" onClick={() => startEdit(null)}>
                 Додати формат
               </button>
             </div>

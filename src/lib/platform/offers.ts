@@ -39,7 +39,7 @@ import {
 import { mediaSources } from "@/lib/lms/media";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { loadProductOffer } from "@/lib/platform/productOffers";
-import { resolveFormatOffer } from "@/lib/experiences/formats";
+import { loadProgramFormats, resolveFormatOffer } from "@/lib/experiences/formats";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 import { toOfferSurface } from "@/lib/platform/courseOffer";
 import { COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
@@ -270,9 +270,35 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
   const listed = courses
     .filter((course) => isPublicCourse(course, ["listed"]))
     .sort((a, b) => (a.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.sortOrder ?? Number.MAX_SAFE_INTEGER));
-  const offers = await Promise.all(listed.map((course) => loadCourseOffer(course.slug)));
+  const [offers, formatSets] = await Promise.all([
+    Promise.all(listed.map((course) => loadCourseOffer(course.slug))),
+    Promise.all(listed.map((course) => loadProgramFormats(course))),
+  ]);
 
   return listed.map((course, index) => {
+    const offer = offers[index] ?? null;
+    /* SEVERAL WAYS THROUGH IT, SEVERAL PRICES (2026-09-25). A program sold in
+       formats quotes the lowest of them as «від …», the same figure its page's
+       hero prints — a card showing only the self-paced price would read as the
+       whole offer. `amount` stays the lowest figure, for the price filter. */
+    const priced = (formatSets[index] ?? []).filter(
+      (format) => format.mode === "checkout" && format.amount !== null && format.amount > 0,
+    );
+    const lowest = (formatSets[index] ?? []).length >= 2 ? priced.sort((a, b) => a.amount! - b.amount!)[0] : undefined;
+    if (lowest && lowest.amount !== null) {
+      return {
+        ...storefrontCard(course, index, offer),
+        commercialMode: "fixed" as const,
+        price: `від ${formatPrice(lowest.amount, lowest.currency)}`,
+        amount: lowest.amount,
+        currency: lowest.currency,
+        compareAtPrice: null,
+      };
+    }
+    return storefrontCard(course, index, offer);
+  });
+
+  function storefrontCard(course: Course, index: number, offer: CourseOffer | null): StorefrontCard {
     /* THE CARD SAYS WHAT THE PAGE SAYS. The eyebrow, the name and the
          duration are read off the same `toOfferSurface` the offer page is built
          from, so a reader who follows a card meets the two facts they were
@@ -281,7 +307,6 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
          a course was authored with a long title. */
     const surface = toOfferSurface(course);
     const card = course.cover ? coverCard(course.cover.src) : undefined;
-    const offer = offers[index];
     return {
       slug: course.slug,
       programSlug: course.programSlug,
@@ -330,7 +355,7 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
           }
         : {}),
     };
-  });
+  }
 }
 
 /**

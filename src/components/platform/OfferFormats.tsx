@@ -7,6 +7,7 @@ import { CheckoutStartLink } from "./CheckoutStartLink";
 import { LeadForm } from "./LeadForm";
 import styles from "./PlatformOfferCommerce.module.css";
 import offerStyles from "./PlatformOfferStyles";
+import css from "./OfferFormats.module.css";
 
 /**
  * THE FORMATS OF A PROGRAM, SIDE BY SIDE (2026-09-25).
@@ -50,7 +51,7 @@ export function OfferFormats({
   formats: ProgramFormat[];
 }) {
   return (
-    <section id="formats" aria-labelledby="formats-heading" className={offerStyles.panel}>
+    <section id="formats" aria-labelledby="formats-heading" className={`${offerStyles.panel} ${css.root}`}>
       <p className={offerStyles.label}>Формати</p>
       <h2 id="formats-heading" className={offerStyles.title}>
         Як пройти «{programTitle}»
@@ -66,7 +67,7 @@ export function OfferFormats({
               ? formatPrice(format.listAmount, format.currency)
               : null;
           return (
-            <li key={format.code} className={styles.bentoCard} data-format={format.format}>
+            <li key={format.code} className={`${styles.bentoCard} ${css.card}`} data-format={format.format}>
               <div className={styles.bentoCardHead}>
                 <h3 className={styles.bentoCardTitle}>{format.label}</h3>
               </div>
@@ -94,23 +95,42 @@ export function OfferFormats({
                 ))}
               </ul>
 
-              {format.mode === "checkout" && price ? (
-                <CheckoutStartLink
-                  className={styles.buyAction}
-                  href={formatCheckoutHref(format.code, programSlug)}
-                  label={`Оплатити ${price}`}
-                />
-              ) : format.mode === "lead" ? (
-                <LeadForm
-                  productCode={format.code}
-                  source={`platform_${programSlug}_format`}
-                  ctaPlace={`${programSlug}_format_${format.code}`}
-                />
-              ) : null}
+              <div className={css.action}>
+                {format.mode === "checkout" && price ? (
+                  <CheckoutStartLink
+                    className={styles.buyAction}
+                    href={formatCheckoutHref(format.code, programSlug)}
+                    label={`Оплатити ${price}`}
+                  />
+                ) : format.mode === "lead" ? (
+                  <a className={styles.buyAction} href={`#format-request-${format.code}`}>
+                    Залишити заявку
+                  </a>
+                ) : null}
+              </div>
             </li>
           );
         })}
       </ul>
+
+      {/* The enquiry lives under the row, not inside its card: a form in the
+          third card stretched the whole row to its height and left the two
+          priced cards standing over empty space. */}
+      {formats
+        .filter((format) => format.mode === "lead")
+        .map((format) => (
+          <div key={format.code} id={`format-request-${format.code}`} className={css.request}>
+            <h3 className={styles.bentoCardTitle}>Заявка: {format.label.toLowerCase()}</h3>
+            <p className={styles.fineprint}>
+              Цей формат узгоджуємо в розмові — залиште контакт, і ми повернемося з деталями та способом оплати.
+            </p>
+            <LeadForm
+              productCode={format.code}
+              source={`platform_${programSlug}_format`}
+              ctaPlace={`${programSlug}_format_${format.code}`}
+            />
+          </div>
+        ))}
 
       <p className={styles.fineprint}>
         Оплата карткою через WayForPay. Натискаючи кнопку, ви приймаєте{" "}

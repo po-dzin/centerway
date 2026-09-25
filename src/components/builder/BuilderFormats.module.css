@@ -1,0 +1,176 @@
+/* «Формати й набори» — its own rhythm (2026-09-25).
+
+   The first cut borrowed `.settingsForm`, a grid with no gap, as the container
+   for everything: label, input, the next label and the buttons all touched,
+   and a format's name, its status line and its price read as one paragraph.
+   The spacing here is a cadence of three steps, and only three:
+
+     2xs  inside one field      label ↔ its control, a title ↔ its meta line
+     md   between fields        one question ↔ the next
+     xl   between the two halves «Програми всередині» ↔ «Формати»
+
+   Rules, not boxes, separate the items of a list — the builder's lists are
+   drawn that way everywhere (`--builder-rule`, fading at the ends). */
+
+.root {
+  display: grid;
+  gap: var(--cw-space-xl);
+  padding-block: var(--cw-space-lg);
+}
+
+.block {
+  display: grid;
+  gap: var(--cw-space-md);
+}
+
+.blockHead {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  max-width: 38rem;
+}
+
+.blockTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-size);
+  font-weight: 600;
+}
+
+.blockLead {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+}
+
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  gap: var(--cw-space-sm);
+  padding-block: var(--cw-space-md);
+  border-block-start: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
+}
+
+.item:last-child {
+  border-block-end: 1px solid var(--builder-rule);
+}
+
+/* Name on the left, price on the right — the two facts a reader compares down
+   the list. The price is tabular so a column of them lines up. */
+.itemHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cw-space-2xs) var(--cw-space-md);
+}
+
+.itemName {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-size);
+  font-weight: 600;
+}
+
+.itemPrice {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-size);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.itemMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-2xs) var(--cw-space-sm);
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.45;
+}
+
+.itemIncludes {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.45;
+}
+
+.itemIncludes strong {
+  color: var(--cw-platform-text);
+  font-weight: 500;
+}
+
+/* The line a program sits on: its title, and the one control that removes it. */
+.linkedRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  padding-block: var(--cw-space-sm);
+  border-block-start: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
+}
+
+.linkedRow:last-child {
+  border-block-end: 1px solid var(--builder-rule);
+}
+
+.linkedTitle {
+  min-width: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-size);
+}
+
+.addRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--cw-space-sm);
+}
+
+.addRow > :first-child {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+/* The editor opens UNDER the item it edits, indented by nothing and set apart
+   by air, not by a card: it is the same item, being changed. */
+.editor {
+  display: grid;
+  gap: var(--cw-space-md);
+  padding-block-start: var(--cw-space-sm);
+  max-width: 38rem;
+}
+
+.note {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: 1.45;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  padding-block-start: var(--cw-space-2xs);
+}
+
+.submitAction {
+  composes: primary from "../platform/PlatformButtons.module.css";
+}
+
+.secondaryAction {
+  composes: secondary from "../platform/PlatformButtons.module.css";
+}

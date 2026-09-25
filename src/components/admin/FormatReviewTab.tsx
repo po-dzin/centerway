@@ -3,20 +3,21 @@
 /**
  * The owner's side of the format constructor (2026-09-25).
  *
- * An author composes a format in the builder and proposes a price; nothing is
- * on sale until it is approved here. Approving sets the LIVE price — the
- * author's figure is prefilled as a starting point, not a decision — and a
- * change of price on a format already on sale waits here beside the current
- * one until the owner takes it or keeps the old one.
+ * ONE CARD PER PROGRAM, its formats as rows inside it. A format is a way
+ * through one program — «Шлях 21» on your own, in a cohort, with a guide — so
+ * the three are read together, priced against each other, and listed under the
+ * program they belong to rather than as three unrelated products.
  *
- * Proposals come first, then what is on sale, then drafts the author has not
- * sent yet — which are shown so the owner can see what is coming, not acted on.
+ * Nothing is on sale until the owner approves it here. Approving sets the LIVE
+ * price; the author's proposal is prefilled as a starting point, not a
+ * decision. A draft the owner set up (Природне тіло's group and guided formats)
+ * is priced and approved the same way. A live format shows the decision form
+ * only while a new price waits beside the current one.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
-import { AdminRow } from "@/components/admin/AdminRow";
 import { useI18n } from "@/components/I18nProvider";
 import { useToast } from "@/components/ToastProvider";
 import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
@@ -25,12 +26,7 @@ import { getErrorMessage } from "@/lib/errors";
 import type { FormatReviewRow } from "@/lib/admin/formatReviewTypes";
 import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
-
-const KIND_KEY = {
-  self: "formats_kind_self",
-  group: "formats_kind_group",
-  individual: "formats_kind_individual",
-} as const;
+import css from "./FormatReviewTab.module.css";
 
 const REVIEW_KEY = {
   draft: "formats_review_draft",
@@ -39,8 +35,14 @@ const REVIEW_KEY = {
   declined: "formats_review_declined",
 } as const;
 
+const ORDER = { self: 0, group: 1, individual: 2 } as const;
+
 function EmptyIcon() {
   return <Icon className="cw-muted" name="price" size={20} />;
+}
+
+function waitsForDecision(row: FormatReviewRow): boolean {
+  return row.reviewStatus !== "approved" || row.proposedAmount !== null;
 }
 
 export function FormatReviewTab({
@@ -55,17 +57,63 @@ export function FormatReviewTab({
   onChanged: () => Promise<void>;
 }) {
   const { t } = useI18n();
+
+  /* Programs with something waiting come first; inside a program the formats
+     keep one order everywhere — self, group, guided — the order the page
+     shows them in. */
+  const programs = useMemo(() => {
+    const byCourse = new Map<string, { slug: string; title: string; formats: FormatReviewRow[] }>();
+    for (const row of formats) {
+      const entry = byCourse.get(row.courseSlug) ?? { slug: row.courseSlug, title: row.courseTitle, formats: [] };
+      entry.formats.push(row);
+      byCourse.set(row.courseSlug, entry);
+    }
+    return [...byCourse.values()]
+      .map((entry) => ({
+        ...entry,
+        formats: [...entry.formats].sort((a, b) => ORDER[a.format] - ORDER[b.format] || a.code.localeCompare(b.code)),
+        waiting: entry.formats.filter(waitsForDecision).length,
+      }))
+      .sort((a, b) => Number(b.waiting > 0) - Number(a.waiting > 0) || a.title.localeCompare(b.title, "uk"));
+  }, [formats]);
+
   if (formats.length === 0) return <AdminEmptyState icon={<EmptyIcon />} description={t("formats_empty")} />;
+
   return (
-    <div className={lists.list}>
-      {formats.map((row) => (
-        <FormatReviewItem key={row.code} row={row} canEdit={canEdit} errorText={errorText} onChanged={onChanged} />
-      ))}
+    <div>
+      <p className={css.intro}>{t("formats_intro")}</p>
+      <div className={css.programs}>
+        {programs.map((program) => (
+          <section key={program.slug} className={lists.item} aria-labelledby={`formats-${program.slug}`}>
+            <div className={css.programHead}>
+              <h3 className={css.programTitle} id={`formats-${program.slug}`}>
+                {program.title}
+              </h3>
+              <p className={css.programCount}>
+                {t("formats_count")}: {program.formats.length}
+                {program.waiting > 0 ? (
+                  <>
+                    {" · "}
+                    <strong>
+                      {t("formats_waiting")}: {program.waiting}
+                    </strong>
+                  </>
+                ) : null}
+              </p>
+            </div>
+            <ul className={css.formats}>
+              {program.formats.map((row) => (
+                <FormatRow key={row.code} row={row} canEdit={canEdit} errorText={errorText} onChanged={onChanged} />
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }
 
-function FormatReviewItem({
+function FormatRow({
   row,
   canEdit,
   errorText,
@@ -87,7 +135,7 @@ function FormatReviewItem({
 
   const approved = row.reviewStatus === "approved";
   const pendingPrice = approved && row.proposedAmount !== null;
-  const actionable = row.reviewStatus === "proposed" || pendingPrice;
+  const deciding = waitsForDecision(row);
 
   const act = async (action: "approve" | "decline" | "withdraw" | "resume") => {
     setBusy(true);
@@ -121,107 +169,102 @@ function FormatReviewItem({
     }
   };
 
+  const state = approved && !row.active ? t("formats_withdrawn") : t(REVIEW_KEY[row.reviewStatus]);
+  const meta = [
+    row.mode === "lead" ? t("formats_mode_lead") : null,
+    row.cohortStartsOn ? `${t("formats_cohort")}: ${row.cohortStartsOn}` : null,
+    row.includes.length > 0
+      ? `${t("formats_includes")}: ${row.includes.map((program) => program.title).join(" · ")}`
+      : null,
+  ].filter(Boolean);
+
   return (
-    <AdminRow
-      title={`${row.courseTitle} — ${row.label}`}
-      meta={
-        <>
-          <span className={lists.itemCode}>{row.code}</span>
-          <span>{t(KIND_KEY[row.format])}</span>
-          <span className={row.reviewStatus === "proposed" ? "cw-status-pending-text" : undefined}>
-            {t(REVIEW_KEY[row.reviewStatus])}
+    <li className={css.format}>
+      <div className={css.formatHead}>
+        <p className={css.formatName}>
+          {row.label}{" "}
+          <span
+            className={
+              deciding ? "cw-status-pending-text" : approved && !row.active ? "cw-status-failed-text" : "cw-muted"
+            }
+          >
+            · {state}
           </span>
-          {approved && !row.active ? <span className="cw-status-failed-text">{t("formats_withdrawn")}</span> : null}
-          <span>
-            {t("formats_live_price")}:{" "}
-            {row.amount != null ? `${row.amount} ${row.currency}` : t("products_price_on_request")}
-            {row.mode === "lead" ? ` · ${t("formats_mode_lead")}` : ""}
-          </span>
-          {row.proposedAmount != null ? (
-            <strong>
-              {t("formats_proposed_price")}: {row.proposedAmount} {row.currency}
-            </strong>
-          ) : null}
-          {row.cohortStartsOn ? (
-            <span>
-              {t("formats_cohort")}: {row.cohortStartsOn}
-            </span>
-          ) : null}
-          {row.includes.length > 0 ? (
-            <span>
-              {t("formats_includes")}: {row.includes.map((program) => program.title).join(" · ")}
-            </span>
-          ) : null}
-        </>
-      }
-      footer={
-        canEdit ? (
-          <>
-            {actionable ? (
-              <div className={controls.priceForm}>
-                <label className={controls.field}>
-                  <span className={controls.fieldCaption}>{t("formats_final_amount")}</span>
-                  <input
-                    type="number"
-                    min={1}
-                    step={1}
-                    inputMode="numeric"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className={controls.input}
-                  />
-                </label>
-                <label className={controls.field}>
-                  <span className={controls.fieldCaption}>{t("formats_list_amount")}</span>
-                  <input
-                    type="number"
-                    min={1}
-                    step={1}
-                    inputMode="numeric"
-                    value={listAmount}
-                    onChange={(e) => setListAmount(e.target.value)}
-                    className={controls.input}
-                  />
-                </label>
-                <div className={controls.priceActions}>
-                  <button
-                    type="button"
-                    onClick={() => void act("approve")}
-                    disabled={busy}
-                    className={`${controls.action} cw-surface-2`}
-                  >
-                    {t("formats_approve")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void act("decline")}
-                    disabled={busy}
-                    className={`${controls.action} cw-btn-muted`}
-                  >
-                    {t(pendingPrice ? "formats_decline_price" : "formats_decline")}
-                  </button>
-                </div>
-              </div>
-            ) : null}
-            {approved ? (
-              <div className={controls.priceActions}>
+        </p>
+        <p className={css.formatPrice}>
+          {row.amount != null ? `${row.amount} ${row.currency}` : t("products_price_on_request")}
+          {row.proposedAmount != null ? ` → ${row.proposedAmount} ${row.currency}` : ""}
+        </p>
+      </div>
+      <p className={css.formatMeta}>
+        <code>{row.code}</code> · {meta.join(" · ")}
+      </p>
+      {row.summary ? <p className={css.formatSummary}>{row.summary}</p> : null}
+
+      {canEdit ? (
+        deciding ? (
+          <div className={css.decision}>
+            <label className={controls.field}>
+              <span className={controls.fieldCaption}>
+                {row.proposedAmount != null ? t("formats_proposed_price") : t("formats_final_amount")}
+              </span>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                inputMode="numeric"
+                placeholder={row.mode === "lead" ? t("products_price_on_request") : undefined}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className={controls.input}
+              />
+            </label>
+            <label className={controls.field}>
+              <span className={controls.fieldCaption}>{t("formats_list_amount")}</span>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                inputMode="numeric"
+                value={listAmount}
+                onChange={(e) => setListAmount(e.target.value)}
+                className={controls.input}
+              />
+            </label>
+            <div className={css.actions}>
+              <button
+                type="button"
+                onClick={() => void act("approve")}
+                disabled={busy}
+                className={`${controls.action} cw-surface-2`}
+              >
+                {t("formats_approve")}
+              </button>
+              {row.reviewStatus !== "draft" ? (
                 <button
                   type="button"
-                  onClick={() => void act(row.active ? "withdraw" : "resume")}
+                  onClick={() => void act("decline")}
                   disabled={busy}
                   className={`${controls.action} cw-btn-muted`}
                 >
-                  {t(row.active ? "products_withdraw" : "products_resume")}
+                  {t(pendingPrice ? "formats_decline_price" : "formats_decline")}
                 </button>
-              </div>
-            ) : null}
-            <p className={controls.hint}>{t("formats_amount_hint")}</p>
-          </>
+              ) : null}
+            </div>
+          </div>
         ) : (
-          <p className={controls.hint}>{t("access_role_admin_only")}</p>
+          <div className={css.actions}>
+            <button
+              type="button"
+              onClick={() => void act(row.active ? "withdraw" : "resume")}
+              disabled={busy}
+              className={`${controls.action} cw-btn-muted`}
+            >
+              {t(row.active ? "products_withdraw" : "products_resume")}
+            </button>
+          </div>
         )
-      }
-      note={row.summary || undefined}
-    />
+      ) : null}
+    </li>
   );
 }

@@ -767,8 +767,12 @@
       <h2 class="sec-title">Оберіть свій формат</h2>
     </div>
     <div class="format-grid">
+      <!-- The set of cards follows the program's formats (lib/landing/formatSync):
+           a format on sale with no card here gets one, a card for a format no
+           longer on sale is removed. The copy in the cards below is kept. -->
+      <!-- cw:formats way21 -->
 
-      <!-- Self-guided -->
+      <!-- cw:format course:way21 -->
       <div class="format-card self reveal" data-cw-nav-dark>
         <span class="fc-badge">Програма</span>
         <div class="fc-title">Шлях 21 — самостійно</div>
@@ -785,8 +789,9 @@
         <a href="#offer" class="btn btn-primary fc-cta openModal" data-cta-final data-cw-product="way21" data-cw-offer-id="way21_self_4100" data-cw-price-value="4100">Почати Шлях 21 <span class="arr"><svg class="ico ico-arr" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-arrow-right"/></svg></span></a>
         <div class="fc-guarantee"><svg class="ico" width="13" height="13" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-shield-check"/></svg><a class="refund-policy-link" href="index2.html#refund-policy">Гарантія повернення коштів</a></div>
       </div>
+      <!-- /cw:format -->
 
-      <!-- Individual -->
+      <!-- cw:format way21-support -->
       <div class="format-card premium reveal">
         <span class="fc-badge">Повне занурення</span>
         <div class="fc-title">Шлях 21 — індивідуальний супровід</div>
@@ -807,7 +812,9 @@
         <button type="button" class="btn btn-primary fc-cta" data-lead-open="way21-support">Залишити заявку <span class="arr"><svg class="ico ico-arr" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-arrow-right"/></svg></span></button>
         <div class="fc-guarantee"><svg class="ico" width="13" height="13" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-shield-check"/></svg>Максимальний результат</div>
       </div>
+      <!-- /cw:format -->
 
+      <!-- /cw:formats -->
     </div>
   </div>
 </section>
