@@ -7,6 +7,7 @@
  * the learning shelf and its lesson links.
  */
 
+import { plural } from "@/lib/plural";
 import type { CourseCategory } from "@/lms-core";
 import type { ProfileLang } from "../profile/types";
 import { COURSE_STATE_LABELS } from "@/lib/lms/courseState";
@@ -103,6 +104,8 @@ export type CabinetCopy = {
   coursesCount: (count: number) => string;
   productsCount: (count: number) => string;
   dayNumber: (day: number) => string;
+  /** Before a cohort's day 1: the card says when it starts, not «День −3». */
+  startsIn: (days: number) => string;
   courseFinished: string;
   courseNotStarted: string;
   /** The draft badge on the cover corner — one word, the corner is small. */
@@ -119,6 +122,8 @@ export type CabinetCopy = {
   courseRevoked: string;
   courseBlocked: string;
   accessUntilLabel: string;
+  /** Programs a bundle carried in, named on the card of the one that holds them. */
+  carriesLabel: string;
   accessForeverLabel: string;
   daysLeft: (days: number) => string;
   buyAccess: string;
@@ -233,6 +238,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       coursesCount: (count) => (count === 1 ? "1 course" : `${count} courses`),
       productsCount: (count) => (count === 1 ? "1 product" : `${count} products`),
       dayNumber: (day) => `Day ${day}`,
+      startsIn: (days) => (days === 1 ? "Starts tomorrow" : `Starts in ${days} days`),
       courseFinished: "Completed",
       courseNotStarted: "Not started",
       courseDraft: COURSE_STATE_LABELS.draft.en,
@@ -245,6 +251,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       courseRevoked: "Access withdrawn",
       courseBlocked: "Access closed",
       accessUntilLabel: "Access until",
+      carriesLabel: "Also inside",
       accessForeverLabel: "Access without an end date",
       daysLeft: (days) => (days === 1 ? "1 day left" : `${days} days left`),
       buyAccess: "Get access",
@@ -343,6 +350,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     coursesCount: (count) => `${count} ${ukPlural(count, "курс", "курси", "курсів")}`,
     productsCount: (count) => `${count} ${ukPlural(count, "продукт", "продукти", "продуктів")}`,
     dayNumber: (day) => `День ${day}`,
+    startsIn: (days) => (days === 1 ? "Старт завтра" : `Старт через ${days} ${plural(days, "день", "дні", "днів")}`),
     courseFinished: "Пройдено",
     courseNotStarted: "Ще не розпочато",
     courseDraft: COURSE_STATE_LABELS.draft.uk,
@@ -355,6 +363,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     courseRevoked: "Доступ відкликано",
     courseBlocked: "Доступ закрито",
     accessUntilLabel: "Доступ до",
+    carriesLabel: "Також усередині",
     accessForeverLabel: "Доступ без обмеження в часі",
     daysLeft: (days) => `лишил${days === 1 ? "ся" : "ось"} ${days} ${ukPlural(days, "день", "дні", "днів")}`,
     buyAccess: "Придбати доступ",

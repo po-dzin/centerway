@@ -22,7 +22,7 @@ const ADMIN = "auth-admin";
 
 const offerOf = (overrides: Partial<Row> = {}): Row => ({
   id: "offer-1",
-  course_id: "course-reset",
+  experience_id: "exp-reset",
   code: "course:reset-day",
   amount: 795,
   list_amount: null,
@@ -37,7 +37,7 @@ const offerOf = (overrides: Partial<Row> = {}): Row => ({
 function seed(courses: Row[], offers: Row[] = []) {
   db.tables = {
     lms_courses: courses,
-    lms_course_offers: offers,
+    experience_offers: offers,
     lms_enrollments: [{ id: "enr-1", course_id: "course-reset" }],
     platform_users: [{ auth_user_id: "auth-author", email: "author@example.com" }],
     audit_log: [],
@@ -49,6 +49,7 @@ const course = (overrides: Partial<Row> = {}): Row => ({
   id: "course-reset",
   slug: "reset-day",
   title: "Reset Day",
+  experience_id: "exp-reset",
   status: "published",
   review_status: "approved",
   visibility: "listed",
@@ -187,7 +188,7 @@ describe("saveOffer", () => {
     const result = await saveOffer({ courseId: "course-reset", actorId: ADMIN, amount: 990, accessDays: 90 });
 
     expect(result).toMatchObject({ code: "course:reset-day", created: true });
-    const row = db.rows("lms_course_offers")[0];
+    const row = db.rows("experience_offers")[0];
     expect(row).toMatchObject({ amount: 990, access_days: 90, access_lifetime: false, active: true });
     // The Meta label defaults to the course title on creation.
     expect(row!.pixel_content_name).toBe("Reset Day");
@@ -198,7 +199,7 @@ describe("saveOffer", () => {
 
     await saveOffer({ courseId: "course-reset", actorId: ADMIN, amount: 0, accessDays: 30 });
 
-    expect(db.rows("lms_course_offers")[0]).toMatchObject({ amount: 0, access_days: 30, active: true });
+    expect(db.rows("experience_offers")[0]).toMatchObject({ amount: 0, access_days: 30, active: true });
   });
 
   /* «Було 795 ₴, зараз безкоштовно» is the most ordinary sentence a free
@@ -209,7 +210,7 @@ describe("saveOffer", () => {
 
     await saveOffer({ courseId: "course-reset", actorId: ADMIN, amount: 0, listAmount: 795, accessDays: 30 });
 
-    expect(db.rows("lms_course_offers")[0]).toMatchObject({ amount: 0, list_amount: 795, active: true });
+    expect(db.rows("experience_offers")[0]).toMatchObject({ amount: 0, list_amount: 795, active: true });
   });
 
   it("still refuses a quoted price that is not above the charged one", async () => {
@@ -231,7 +232,7 @@ describe("saveOffer", () => {
   it("accepts an explicit forever", async () => {
     await saveOffer({ courseId: "course-reset", actorId: ADMIN, amount: 990, accessLifetime: true });
 
-    expect(db.rows("lms_course_offers")[0]).toMatchObject({ access_days: null, access_lifetime: true });
+    expect(db.rows("experience_offers")[0]).toMatchObject({ access_days: null, access_lifetime: true });
   });
 
   it("refuses a struck-through figure below what is charged", async () => {
@@ -246,7 +247,7 @@ describe("saveOffer", () => {
 
     await saveOffer({ courseId: "course-reset", actorId: ADMIN, amount: 1200, accessDays: 30 });
 
-    expect(db.rows("lms_course_offers")[0]!.pixel_content_name).toBe("Reset Day");
+    expect(db.rows("experience_offers")[0]!.pixel_content_name).toBe("Reset Day");
   });
 });
 
@@ -254,8 +255,8 @@ describe("setOfferActive", () => {
   it("withdraws without deleting — the row is the record of what was sold", async () => {
     await setOfferActive({ courseId: "course-reset", active: false, actorId: ADMIN });
 
-    expect(db.rows("lms_course_offers")).toHaveLength(1);
-    expect(db.rows("lms_course_offers")[0]!.active).toBe(false);
+    expect(db.rows("experience_offers")).toHaveLength(1);
+    expect(db.rows("experience_offers")[0]!.active).toBe(false);
   });
 
   it("refuses a course that was never priced", async () => {

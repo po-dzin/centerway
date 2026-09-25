@@ -39,6 +39,10 @@ export type LearnerRow = {
   source: string;
   orderRef: string | null;
   startedAt: string;
+  /** The cohort's shared day 1 (`YYYY-MM-DD`); null for a self-paced seat. */
+  cohortStartsOn: string | null;
+  /** Who brought this person (`?ref`), when somebody did. */
+  ref: string | null;
   expiresAt: string | null;
   /** Whether the door is open right now, and if not, why. Derived, never stored. */
   access: AccessState;

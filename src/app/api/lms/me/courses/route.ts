@@ -43,6 +43,8 @@ export async function GET(req: NextRequest) {
       standing: entry.standing,
       currentLessonSlug: entry.currentLessonSlug,
       currentLessonTitle: entry.currentLessonTitle,
+      includedIn: entry.includedIn,
+      carries: entry.carries,
       cover: entry.course.cover ?? null,
       /* What the course is about — see `Course.categories` in lms-core. Zero
          or more from a closed list; required before a course can go public,

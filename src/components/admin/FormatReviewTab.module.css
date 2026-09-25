@@ -1,0 +1,127 @@
+/* The Formats tab: one card per program, its formats as ruled rows inside
+   (2026-09-25). A format is a way through ONE program, so it is listed under
+   that program — the first cut printed every format as a card of its own, and
+   Шлях 21 read as three unrelated products.
+
+   Cadence: 2xs inside a row's text, sm between a row's lines, md between rows
+   and around the card's head, lg between programs. */
+
+.intro {
+  margin: 0 0 var(--cw-space-sm);
+  max-width: 44rem;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+}
+
+.programs {
+  display: grid;
+  gap: var(--cw-space-lg);
+}
+
+.programHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cw-space-2xs) var(--cw-space-md);
+}
+
+.programTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-size);
+  font-weight: 600;
+}
+
+.programCount {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+}
+
+.programCount strong {
+  color: var(--cw-status-pending, var(--cw-platform-text));
+  font-weight: 600;
+}
+
+.formats {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.format {
+  display: grid;
+  gap: var(--cw-space-sm);
+  padding-block: var(--cw-space-md);
+  border-block-start: 1px solid var(--cw-mat-stroke-chrome);
+  border-image: var(--cw-rule-fade-x);
+}
+
+.format:last-child {
+  padding-block-end: 0;
+}
+
+/* Name and state on the left, the live price on the right: the column the
+   owner reads down when comparing formats of one program. */
+.formatHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cw-space-2xs) var(--cw-space-md);
+}
+
+.formatName {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+}
+
+.formatPrice {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.formatMeta {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: 1.5;
+}
+
+.formatMeta code {
+  font-family: var(--cw-font-data);
+}
+
+.formatSummary {
+  margin: 0;
+  max-width: 44rem;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: 1.5;
+}
+
+.decision {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--cw-space-sm);
+}
+
+.decision > label {
+  flex: 0 1 12rem;
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-sm);
+}

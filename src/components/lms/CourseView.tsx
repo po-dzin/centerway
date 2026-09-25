@@ -8,6 +8,7 @@
  * планом: день 8" — because a learner has to see week three to prepare for it.
  */
 
+import { plural } from "@/lib/plural";
 import { useCallback, useEffect, useState } from "react";
 import { MotionLink } from "@/components/platform/MotionLink";
 
@@ -179,6 +180,7 @@ export function CourseView({
   }
 
   const { course, standing, outline, currentLessonSlug } = state.data;
+  const linkedPrograms = state.data.linkedPrograms ?? [];
 
   // Reference material is listed apart from the protocol: it is a handbook you
   // consult, not a step you complete.
@@ -209,6 +211,13 @@ export function CourseView({
           {standing.completedLessons} з {standing.totalLessons} пройдено
         </span>
         {standing.currentDay !== null ? <span className={styles.chip}>День {standing.currentDay}</span> : null}
+        {standing.startsInDays ? (
+          <span className={styles.chip}>
+            {standing.startsInDays === 1
+              ? "Старт завтра"
+              : `Старт через ${standing.startsInDays} ${plural(standing.startsInDays, "день", "дні", "днів")}`}
+          </span>
+        ) : null}
         {standing.isFinished ? <span className={styles.chip}>Курс завершено</span> : null}
       </div>
 
@@ -307,6 +316,48 @@ export function CourseView({
                 </MotionLink>
               </li>
             ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {/* PROGRAMS INSIDE THIS ONE (2026-09-25). A linked module is another
+          program — its own lessons, progress and address — so it opens there
+          rather than here. Each card answers with the program's OWN access:
+          closed for a format that does not include it, with the way to one
+          that does, never hidden. */}
+      {linkedPrograms.length > 0 ? (
+        <section className={styles.referenceSection} aria-labelledby="linked-programs-heading">
+          <h2 id="linked-programs-heading" className={styles.referenceHeading}>
+            Додаткові програми
+          </h2>
+          <p className={styles.referenceLead}>Окремі програми всередині цієї — зі своїм прогресом.</p>
+          <ul className={styles.outline}>
+            {linkedPrograms.map((program) => {
+              const kindLabel =
+                program.kind === "mini" ? "Міні-курс" : program.kind === "checklist" ? "Чек-лист" : "Програма";
+              const size = `${program.lessonCount} ${plural(program.lessonCount, "урок", "уроки", "уроків")}`;
+              const locked = program.access === "locked";
+              return (
+                <li key={program.moduleId} className={styles.outlineItem}>
+                  <MotionLink
+                    className={styles.outlineLink}
+                    href={href(locked ? `/programs/${program.programSlug}#formats` : `/learn/${program.courseSlug}`)}
+                  >
+                    <span className={styles.dayBadge} aria-hidden="true">
+                      <Icon name={locked ? "lock" : "star"} size={18} />
+                    </span>
+                    <div className={styles.outlineBody}>
+                      <h3 className={styles.outlineTitle}>{program.title}</h3>
+                      <p className={styles.outlineMeta}>
+                        {kindLabel} · {size}
+                        {locked ? " · входить у формати з супроводом" : ""}
+                      </p>
+                    </div>
+                    <Icon name="chevron-right" size={20} className={styles.outlineGlyph} />
+                  </MotionLink>
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}

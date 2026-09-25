@@ -101,6 +101,14 @@ class FakeQuery implements PromiseLike<{
     return this;
   }
 
+  /** Case-sensitive, as Postgres LIKE is. */
+  like(column: string, pattern: string) {
+    const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*");
+    const re = new RegExp(`^${escaped}$`);
+    this.filters.push((row) => typeof row[column] === "string" && re.test(row[column] as string));
+    return this;
+  }
+
   ilike(column: string, pattern: string) {
     const re = ilikeToRegExp(pattern);
     this.filters.push((row) => typeof row[column] === "string" && re.test(row[column] as string));

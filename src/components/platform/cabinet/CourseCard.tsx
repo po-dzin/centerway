@@ -142,6 +142,8 @@ export function CourseCard({
         ) : null}
         {course.standing?.currentDay ? (
           <span className={styles.chip}>{copy.dayNumber(course.standing.currentDay)}</span>
+        ) : course.standing?.startsInDays ? (
+          <span className={styles.chip}>{copy.startsIn(course.standing.startsInDays)}</span>
         ) : null}
       </div>
 
@@ -172,6 +174,11 @@ export function CourseCard({
           <li>
             {copy.accessUntilLabel}: <strong>{fmtShortDate(course.expiresAt, dateLocale)}</strong>
             {course.daysLeft !== null ? <> — {copy.daysLeft(course.daysLeft)}</> : null}
+          </li>
+        ) : null}
+        {course.carries.length > 0 ? (
+          <li>
+            {copy.carriesLabel}: <strong>{course.carries.map((program) => program.title).join(" · ")}</strong>
           </li>
         ) : null}
       </ul>

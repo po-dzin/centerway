@@ -95,7 +95,9 @@ describe("shared surface boundaries", () => {
     const shell = read("src/components/platform/PlatformShell.module.css");
 
     expect(tokens).toContain('"--ds-icon-control-radius": "var(--cw-radius-md)"');
-    expect(tokens).toContain('"--ds-touch-target-min": "2.25rem",\n      "--ds-icon-control-radius": "var(--cw-radius-sm)"');
+    expect(tokens).toContain(
+      '"--ds-touch-target-min": "2.25rem",\n      "--ds-icon-control-radius": "var(--cw-radius-sm)"',
+    );
     expect(organs).toContain("--platform-island-radius: var(--ds-icon-control-radius);");
     expect(shell).toContain("--platform-utility-control-size: var(--ds-touch-target-min);");
     expect(shell).toContain("--platform-utility-control-radius: var(--ds-icon-control-radius);");
@@ -113,34 +115,24 @@ describe("shared surface boundaries", () => {
     expect(tokens).toContain('"--ds-offer-card-title-size": "clamp(1.25rem, 1.9vw, 1.5rem)"');
     expect(tokens).toContain('"--ds-offer-card-pretitle-size": "clamp(1.5rem, 2.4vw, 1.75rem)"');
     expect(tokens).toContain('"--ds-offer-card-pretitle-desktop-size": "clamp(1.5rem, 2.4vw, 1.8rem)"');
-    expect(tokens).toContain(
-      '"--ds-offer-card-description-size": "clamp(0.9375rem, 1.4vw, var(--ds-type-body-size))"',
-    );
+    expect(tokens).toContain('"--ds-offer-card-description-size": "clamp(0.9375rem, 1.4vw, var(--ds-type-body-size))"');
     expect(tokens).toContain('"--ds-offer-card-content-gap": "var(--cw-space-xs)"');
     expect(tokens).toContain('"--ds-offer-card-headline-gap": "var(--cw-space-2xs)"');
-    expect(tokens).toContain(
-      '"--ds-offer-card-price-size": "clamp(0.875rem, 1.12vw, var(--ds-type-body-size))"',
-    );
+    expect(tokens).toContain('"--ds-offer-card-price-size": "clamp(0.875rem, 1.12vw, var(--ds-type-body-size))"');
     expect(tokens).toContain('"--ds-offer-card-price-weight": "500"');
     expect(block(offer, ".programTileBody h3")).toContain("font-family: var(--ds-entity-title-font-family)");
     expect(block(offer, ".programTileBody p.programTilePromo")).toContain(
       "font-family: var(--ds-offer-card-pretitle-font-family)",
     );
     expect(offer).toContain("font-size: var(--ds-offer-card-pretitle-desktop-size)");
-    expect(offer).toContain(
-      "--program-slot-pretitle: calc(\n      var(--ds-offer-card-pretitle-desktop-size) *\n        var(--ds-offer-card-pretitle-line-height)\n    )",
+    expect(offer).toMatch(
+      /--program-slot-pretitle:\s*calc\(\s*var\(--ds-offer-card-pretitle-desktop-size\)\s*\*\s*var\(--ds-offer-card-pretitle-line-height\)\s*\)/,
     );
-    expect(block(offer, ".programTilePrice strong")).toContain(
-      "font-size: var(--ds-offer-card-price-size)",
-    );
-    expect(block(offer, ".programTilePrice strong")).toContain(
-      "font-weight: var(--ds-offer-card-price-weight)",
-    );
+    expect(block(offer, ".programTilePrice strong")).toContain("font-size: var(--ds-offer-card-price-size)");
+    expect(block(offer, ".programTilePrice strong")).toContain("font-weight: var(--ds-offer-card-price-weight)");
     expect(block(cabinet, ".courseCardTitle")).toContain("font-family: var(--ds-entity-title-font-family)");
     expect(block(authorProfile, ".courseTitle")).toContain("font-family: var(--ds-entity-title-font-family)");
-    expect(builder).toMatch(
-      /\.courseTitle\s*\{[\s\S]*?font-family:\s*var\(--ds-entity-title-font-family\);/,
-    );
+    expect(builder).toMatch(/\.courseTitle\s*\{[\s\S]*?font-family:\s*var\(--ds-entity-title-font-family\);/);
   });
 
   it("keeps Library and Builder course cards on stable matte grid tracks after filtering", () => {

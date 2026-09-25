@@ -120,8 +120,8 @@ export const PRODUCTS = {
       en: "Way 21 — integrative detox program",
     },
     description: {
-      uk: 'Оплата детокс-програми "Шлях 21" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
-      en: "Detox program payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
+      uk: 'Оплата детокс-програми "Шлях 21" від Centerway. Після успішної оплати програма відкриється у вашому кабінеті на платформі - там уроки, матеріали і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
+      en: "Detox program payment by Centerway. After successful payment the program opens in your account on the platform, with its lessons, materials and next steps. Support: if you have questions, message us and we will help quickly.",
     },
     amount: 4100,
     listAmount: 4100,
@@ -137,8 +137,8 @@ export const PRODUCTS = {
       en: "Way 21 — guided package",
     },
     description: {
-      uk: 'Оплата пакета "Шлях 21 — індивідуальний супровід" від Centerway: програма детоксу з 2 особистими консультаціями та персональним веденням. Після оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
-      en: "Guided package payment by Centerway: the detox program with 2 personal consultations and individual guidance. After payment, a confirmation page opens with a Telegram bot entry button. Support: if you have questions, message us and we will help quickly.",
+      uk: 'Оплата пакета "Шлях 21 — індивідуальний супровід" від Centerway: програма детоксу з 2 особистими консультаціями та персональним веденням. Після оплати програма відкриється у вашому кабінеті на платформі, а час консультацій узгодимо з вами особисто. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
+      en: "Guided package payment by Centerway: the detox program with 2 personal consultations and individual guidance. After payment the program opens in your account on the platform, and we arrange the consultation times with you personally. Support: if you have questions, message us and we will help quickly.",
     },
     // No test price: the guided package sells through the landing's lead form,
     // so nothing charges this amount in the QA flow. It stands as the quote used
@@ -157,8 +157,8 @@ export const PRODUCTS = {
       en: "Reset Day — mini course",
     },
     description: {
-      uk: 'Оплата міні-курсу "Розвантажувальний день" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
-      en: "Mini course payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
+      uk: 'Оплата міні-курсу "Розвантажувальний день" від Centerway. Після успішної оплати міні-курс відкриється у вашому кабінеті на платформі - там уроки, матеріали і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
+      en: "Mini course payment by Centerway. After successful payment the mini course opens in your account on the platform, with its lessons, materials and next steps. Support: if you have questions, message us and we will help quickly.",
     },
     amount: 795,
     listAmount: 795,
@@ -226,7 +226,15 @@ export type CourseProductCode = `course:${string}`;
  * buyer for Short Reboot. Prices for these codes live in the database, so the
  * commercial facts are now looked up (`loadPayableOffer`) rather than indexed.
  */
-export type PayableProductCode = CatalogProductCode | CourseProductCode;
+/**
+ * A FORMAT of a program, sold under the code its offer row carries
+ * (`way21-group`, 2026-09-25). Branded rather than plain `string` so nothing
+ * can index `PRODUCTS` with it by accident: it only ever comes out of
+ * `loadPayableOffer`, which resolved it against `experience_offers`.
+ */
+export type FormatProductCode = string & { readonly __formatOffer: true };
+
+export type PayableProductCode = CatalogProductCode | CourseProductCode | FormatProductCode;
 export type LeadProductCode = (typeof LEAD_PRODUCT_CODES)[number];
 export type ProductCode = PayableProductCode | LeadProductCode;
 export type Locale = "uk" | "en";

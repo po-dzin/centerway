@@ -25,7 +25,10 @@
  * codebase as `amount` versus `listAmount`; this is the same split one level up.
  */
 
+import { loadProgramFormats, type ProgramFormat } from "@/lib/experiences/formats";
+import { listLiveCourses } from "@/lib/lms/liveCatalog";
 import { loadPayableOffer } from "@/lib/platform/offers";
+import { applyFormatSync, collectFormatPrograms } from "./formatSync";
 import { loadProductOffer } from "@/lib/platform/productOffers";
 import {
   applyCheckoutGate,
@@ -103,7 +106,11 @@ export async function resolveClosedCheckouts(codes: string[]): Promise<Set<strin
 
 /** True when the page quotes money or offers to take it — the cheap test callers gate on. */
 export function hasLandingCommerce(html: string): boolean {
-  return collectPriceCodes(html).length > 0 || collectCheckoutCodes(html).length > 0;
+  return (
+    collectPriceCodes(html).length > 0 ||
+    collectCheckoutCodes(html).length > 0 ||
+    collectFormatPrograms(html).length > 0
+  );
 }
 
 /**
@@ -114,7 +121,40 @@ export function hasLandingCommerce(html: string): boolean {
  * does not print, is the exact failure `priceSync` was written for, and two
  * call sites each wiring their own half is how that comes back.
  */
-export async function syncLandingCommerce(html: string): Promise<string> {
+/**
+ * The formats each marked block asks for, by the program's public address.
+ * A read that fails answers `null` for that program, and its typed cards stand.
+ */
+async function resolveLandingFormats(
+  html: string,
+): Promise<Map<string, { title: string; formats: ProgramFormat[] } | null>> {
+  const programs = collectFormatPrograms(html);
+  const found = new Map<string, { title: string; formats: ProgramFormat[] } | null>();
+  if (programs.length === 0) return found;
+  try {
+    const courses = await listLiveCourses();
+    await Promise.all(
+      programs.map(async (programSlug) => {
+        const course = courses.find((entry) => entry.programSlug === programSlug && entry.status === "published");
+        if (!course) return found.set(programSlug, null);
+        // The landing names the program the short way its cards always have:
+        // «Шлях 21 — самостійно», not the full catalogue title twice over.
+        const title = course.title.split(" — ")[0]!.trim();
+        found.set(programSlug, { title, formats: await loadProgramFormats(course) });
+      }),
+    );
+  } catch (error) {
+    console.warn("landing_formats_read_failed", { error: error instanceof Error ? error.message : String(error) });
+  }
+  return found;
+}
+
+export async function syncLandingCommerce(input: string): Promise<string> {
+  // Formats first: a card they add carries its own `data-cw-price` and CTA,
+  // which the price and checkout passes below then treat like any other.
+  const formats = await resolveLandingFormats(input);
+  const html = formats.size > 0 ? applyFormatSync(input, (slug) => formats.get(slug) ?? null) : input;
+
   const [prices, closed] = await Promise.all([
     resolveLandingPrices(html),
     resolveClosedCheckouts(collectCheckoutCodes(html)),

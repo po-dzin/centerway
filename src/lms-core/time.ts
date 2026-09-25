@@ -88,22 +88,35 @@ export function enrollmentDayNumber(startedAt: Date, now: Date, timeZone: string
   return calendarDaysBetween(startedAt, now, timeZone) + 1;
 }
 
+/** Parses `YYYY-MM-DD`; anything else (including an impossible date) is null. */
+export function parseCalendarDate(value: string | null | undefined): CalendarDate | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec((value ?? "").trim());
+  if (!match) return null;
+  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const probe = new Date(Date.UTC(year, month - 1, day));
+  if (probe.getUTCFullYear() !== year || probe.getUTCMonth() !== month - 1 || probe.getUTCDate() !== day) return null;
+  return { year, month, day };
+}
+
+/**
+ * An instant that falls ON the given calendar date in the given timezone.
+ *
+ * A cohort starts on a DATE — «6 жовтня» — and that date arrives at a different
+ * moment for each learner. Everything downstream counts days from an instant,
+ * so the date is turned into one that lands on the right local day: noon UTC,
+ * nudged by twelve hours for the few zones (UTC+13, UTC-12) where noon UTC is
+ * already tomorrow or still yesterday.
+ */
+export function instantOnCalendarDate(date: CalendarDate, timeZone: string): Date {
+  const zone = resolveTimeZone(timeZone);
+  const target = toDayNumber(date);
+  const noon = new Date(Date.UTC(date.year, date.month - 1, date.day, 12));
+  const drift = toDayNumber(localCalendarDate(noon, zone)) - target;
+  return drift === 0 ? noon : new Date(noon.getTime() - drift * 12 * 3_600_000);
+}
+
 export function formatCalendarDate(date: CalendarDate): string {
   const month = String(date.month).padStart(2, "0");
   const day = String(date.day).padStart(2, "0");
   return `${date.year}-${month}-${day}`;
-}
-
-export function parseCalendarDate(value: string): CalendarDate | null {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
-  if (!match) return null;
-
-  const [, year, month, day] = match;
-  if (!year || !month || !day) return null;
-
-  return {
-    year: Number.parseInt(year, 10),
-    month: Number.parseInt(month, 10),
-    day: Number.parseInt(day, 10),
-  };
 }

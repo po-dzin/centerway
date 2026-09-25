@@ -12,9 +12,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
+import { loadLinkedPrograms } from "@/lib/lms/linkedPrograms";
 import { loadLearnerCourse } from "@/lib/lms/server";
+import { readAttribution } from "@/lib/referral/attribution";
 import { isDenied, resolveCourseAccess } from "@/lib/lms/courseAccess";
-import { buildOutline, foldProgress, resolveCurrentLesson, summarizeStanding } from "@/lms-core";
+import { buildOutline, dripAnchor, foldProgress, resolveCurrentLesson, summarizeStanding } from "@/lms-core";
 
 export const runtime = "nodejs";
 
@@ -35,6 +37,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
   const { slug } = await params;
   const now = new Date();
+  const identity = { authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) };
   const draftPreview = req.nextUrl.searchParams.get("preview") === "draft";
 
   let context;
@@ -53,9 +56,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     };
   } else {
     const result = await loadLearnerCourse(
-      { authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) },
+      identity,
       slug,
       now,
+      // The course page is where a seat is first opened, so it is the one call
+      // that says who brought the person (`lib/referral/attribution`).
+      readAttribution(req),
     );
     if (!result.ok) {
       return NextResponse.json({ error: result.reason }, { status: FAILURE_STATUS[result.reason] ?? 400 });
@@ -64,7 +70,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   }
 
   const { course, enrollment, progress, timeZone } = context;
-  const learner = { startedAt: enrollment.startedAt, timeZone, now };
+  const learner = { startedAt: dripAnchor(enrollment, timeZone), timeZone, now };
   // Preview must let the author inspect every lesson regardless of drip or
   // sequence, while keeping the authored schedule mode visible in the DTO.
   const navigableCourse = draftPreview
@@ -83,6 +89,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     completed: entry.completed,
     availability: entry.availability,
   }));
+
+  // Each linked program answers with ITS OWN access, so the self-paced buyer
+  // sees Reset Day closed inside Шлях 21 and the group buyer sees it open.
+  const linkedPrograms = await loadLinkedPrograms(identity, course, now);
 
   return NextResponse.json({
     course: {
@@ -106,5 +116,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     standing: summarizeStanding(navigableCourse, progress, learner),
     currentLessonSlug: resolveCurrentLesson(navigableCourse, progress, learner)?.slug ?? null,
     outline,
+    linkedPrograms,
   });
 }

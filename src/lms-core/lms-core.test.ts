@@ -129,6 +129,60 @@ describe("block validation", () => {
 });
 
 describe("course validation", () => {
+  it("accepts a module that links another program, empty and in the materials", () => {
+    const course = dailyCourse();
+    course.modules.push({
+      id: "m-linked",
+      slug: "reset-day",
+      title: "Розвантажувальний день",
+      order: 9,
+      reference: true,
+      linkedCourseSlug: "reset-day",
+      lessons: [],
+    });
+    expect(() => validateCourse(course)).not.toThrow();
+  });
+
+  it("refuses a linked module that has lessons, sits in the day sequence, or links itself", () => {
+    const withLessons = dailyCourse();
+    withLessons.modules.push({
+      ...withLessons.modules[0]!,
+      id: "m-linked",
+      slug: "linked",
+      order: 9,
+      reference: true,
+      linkedCourseSlug: "reset-day",
+    });
+    expect(() => validateCourse(withLessons)).toThrow(/lms_module_linked_has_lessons/);
+
+    const inSequence = dailyCourse();
+    inSequence.modules.push({
+      id: "m-linked",
+      slug: "linked",
+      title: "Linked",
+      order: 9,
+      linkedCourseSlug: "reset-day",
+      lessons: [],
+    });
+    expect(() => validateCourse(inSequence)).toThrow(/lms_module_linked_not_reference/);
+
+    const itself = dailyCourse();
+    itself.modules.push({
+      id: "m-linked",
+      slug: "linked",
+      title: "Linked",
+      order: 9,
+      reference: true,
+      linkedCourseSlug: itself.slug,
+      lessons: [],
+    });
+    expect(() => validateCourse(itself)).toThrow(/lms_module_links_itself/);
+
+    const empty = dailyCourse();
+    empty.modules.push({ id: "m-empty", slug: "empty", title: "Empty", order: 9, reference: true, lessons: [] });
+    expect(() => validateCourse(empty)).toThrow(/lms_module_empty_lessons/);
+  });
+
   it("accepts separate landscape and mobile hero focal points", () => {
     const course = dailyCourse();
     course.cover = {
@@ -190,7 +244,6 @@ describe("course validation", () => {
     const course = dailyCourse() as unknown as Record<string, unknown>;
     course.pretitle = "я".repeat(COURSE_PRETITLE_MAX + 1);
     expect(() => validateCourse(course)).toThrow(/lms_course_pretitle_too_long/);
-
   });
 
   it("holds the title to two mobile catalogue lines for every writer", () => {

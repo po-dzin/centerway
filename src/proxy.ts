@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isInfraBypassPath, shouldBypassProxy } from "@/lib/proxy/bypass";
 import { rewritePersonalHostRequest } from "@/lib/proxy/personal";
 import { rewriteFunnelHostRequest, rewriteLegacyLandingEntryRequest } from "@/lib/proxy/landing";
+import { rememberAttribution } from "@/lib/referral/attribution";
 import { PERSONAL_HOST } from "@/lib/surfaces/catalog";
 
 const RETIRED_FUNNEL_HOST_REDIRECTS: Record<string, string> = {
@@ -64,7 +65,18 @@ function retiredHostRedirect(req: NextRequest): NextResponse | null {
   return target ? NextResponse.redirect(new URL(target), 308) : null;
 }
 
+/**
+ * Routing decides the response; attribution rides on whatever it decided.
+ * `?ref=` and `utm_*` are remembered on every outcome — a rewrite to a landing
+ * bundle and a plain pass-through alike — except a host redirect, whose target
+ * still carries the query and will be seen again on the canonical host.
+ */
 export function proxy(req: NextRequest) {
+  const response = route(req);
+  return response.status >= 300 && response.status < 400 ? response : rememberAttribution(req, response);
+}
+
+function route(req: NextRequest): NextResponse {
   const retired = retiredHostRedirect(req);
   if (retired) {
     return retired;

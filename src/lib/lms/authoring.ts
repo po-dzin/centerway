@@ -135,6 +135,7 @@ export function courseRows(course: Course): CourseRows {
       title: module.title,
       order: module.order,
       reference: module.reference === true,
+      linked_course_slug: module.linkedCourseSlug ?? null,
       summary: module.summary ?? null,
     })),
     lessons: course.modules.flatMap((module) =>
@@ -205,6 +206,9 @@ export function courseFromRows(
         title: moduleRow.title as string,
         order: Number(moduleRow.order),
         ...(moduleRow.reference === true ? { reference: true } : {}),
+        ...(typeof moduleRow.linked_course_slug === "string" && moduleRow.linked_course_slug
+          ? { linkedCourseSlug: moduleRow.linked_course_slug }
+          : {}),
         ...(moduleRow.summary === null ? {} : { summary: moduleRow.summary as never }),
         lessons,
       };

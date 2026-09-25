@@ -111,7 +111,7 @@ export async function listCatalog(): Promise<CatalogRow[]> {
   const { data: courseRows, error } = await db
     .from("lms_courses")
     .select(
-      "id, slug, program_slug, title, status, review_status, pending_content, pending_review_status, visibility, author_id, updated_at, cover, categories, submitted_at, pending_submitted_at",
+      "id, slug, program_slug, title, status, review_status, pending_content, pending_review_status, visibility, author_id, updated_at, cover, categories, submitted_at, pending_submitted_at, experience_id",
     )
     .order("updated_at", { ascending: false });
   if (error) throw new AccessError(error.message, 500);
@@ -130,14 +130,25 @@ export async function listCatalog(): Promise<CatalogRow[]> {
     // leave the check unasked rather than accusing every row at once.
     shelfSlugs = null;
   }
+  /* THE ONE TABLE OF PRICES (2026-09-25): a course's own offer is the
+     `course:<slug>` row of its thing in `experience_offers`. The catalogue wrote
+     `lms_course_offers` until today and a trigger copied it across; now it
+     writes here and nothing is copied. */
   const { data: offerRows } = await db
-    .from("lms_course_offers")
+    .from("experience_offers")
     .select(
-      "course_id, code, amount, list_amount, currency, pixel_content_name, access_days, access_lifetime, active, updated_at",
-    );
+      "experience_id, code, amount, list_amount, currency, pixel_content_name, access_days, access_lifetime, active, updated_at",
+    )
+    .like("code", "course:%");
 
+  const offerByCode = new Map(
+    (offerRows ?? []).map((row) => [row.code as string, toOffer(row as Record<string, unknown>)]),
+  );
   const offerByCourse = new Map(
-    (offerRows ?? []).map((row) => [row.course_id as string, toOffer(row as Record<string, unknown>)]),
+    courses.flatMap((row) => {
+      const offer = offerByCode.get(courseOfferCode(row.slug as string));
+      return offer ? [[row.id as string, offer] as const] : [];
+    }),
   );
 
   const authorIds = [...new Set(courses.map((row) => row.author_id as string | null).filter(Boolean))] as string[];
@@ -267,6 +278,34 @@ export async function listCatalog(): Promise<CatalogRow[]> {
   });
 }
 
+/**
+ * A course's own offer: the `course:` row of its thing. Preferring today's code
+ * when there is one, and otherwise the `course:` row that thing already has —
+ * which is what a draft whose slug was renamed looks like.
+ */
+async function ownCourseOffer(
+  db: ReturnType<typeof adminClient>,
+  courseId: string,
+): Promise<{ id: string; code: string; pixel_content_name: string | null; format: string | null } | null> {
+  const { data: course } = await db.from("lms_courses").select("slug, experience_id").eq("id", courseId).maybeSingle();
+  if (!course?.experience_id) return null;
+  const { data, error } = await db
+    .from("experience_offers")
+    .select("id, code, pixel_content_name, format")
+    .eq("experience_id", course.experience_id as string)
+    .like("code", "course:%");
+  if (error) throw new AccessError(error.message, 500);
+  const rows = (data ?? []) as Array<{
+    id: string;
+    code: string;
+    pixel_content_name: string | null;
+    format: string | null;
+  }>;
+  return (
+    rows.find((row) => row.code === courseOfferCode(course.slug as string)) ?? (rows.length === 1 ? rows[0]! : null)
+  );
+}
+
 export type SaveOfferInput = {
   courseId: string;
   actorId: string;
@@ -295,11 +334,12 @@ export async function saveOffer(input: SaveOfferInput) {
 
   const { data: course, error: courseError } = await db
     .from("lms_courses")
-    .select("id, slug, title")
+    .select("id, slug, title, experience_id")
     .eq("id", input.courseId)
     .maybeSingle();
   if (courseError) throw new AccessError(courseError.message, 500);
   if (!course) throw new AccessError("course_not_found", 404);
+  if (!course.experience_id) throw new AccessError("course_not_registered", 409);
 
   if (!Number.isInteger(input.amount) || input.amount < 0) throw new AccessError("amount_invalid", 400);
 
@@ -324,33 +364,34 @@ export async function saveOffer(input: SaveOfferInput) {
   }
 
   const code = courseOfferCode(course.slug as string);
-  // Keyed on the COURSE, not on the code. `code` is derived from the slug, so
-  // a renamed draft course produces a new code — looking up by it would miss
-  // the row that already exists and try to insert a second one for the same
-  // course, which `lms_course_offers_one_per_course` (2026-08-28) now refuses.
-  // Finding it by course_id updates the code in place instead, and carries
-  // `pixel_content_name` across the rename, which is the one field that must
-  // never change once set.
-  const { data: existing } = await db
-    .from("lms_course_offers")
-    .select("id, pixel_content_name")
-    .eq("course_id", course.id)
-    .maybeSingle();
+  // Found by the COURSE, not only by today's code. `code` is derived from the
+  // slug, so a renamed draft course produces a new one — looking up by it would
+  // miss the row that already exists and write a second offer for the same
+  // course. `ownCourseOffer` finds it by the course's thing and updates the code
+  // in place, carrying `pixel_content_name` across the rename: the one field
+  // that must never change once set.
+  const existing = await ownCourseOffer(db, course.id as string);
 
   const payload = {
-    course_id: course.id,
+    experience_id: course.experience_id as string,
     code,
+    // Zero is a free course, and the table says so in `mode`: its CHECK keeps
+    // the two states apart so a free row can never open a checkout.
+    mode: input.amount === 0 ? "free" : "checkout",
     amount: input.amount,
     list_amount: listAmount,
     currency: input.currency?.trim() || "UAH",
-    pixel_content_name: (existing?.pixel_content_name as string | undefined) ?? (course.title as string),
+    pixel_content_name: existing?.pixel_content_name ?? (course.title as string),
     access_days: accessDays,
     access_lifetime: lifetime,
     active: true,
-    updated_at: new Date().toISOString(),
+    review_status: "approved",
+    format: existing?.format ?? "self",
   };
 
-  const { error } = await db.from("lms_course_offers").upsert(payload, { onConflict: "course_id" });
+  const { error } = existing
+    ? await db.from("experience_offers").update(payload).eq("id", existing.id)
+    : await db.from("experience_offers").insert({ ...payload, sort_order: 1 });
   if (error) throw new AccessError(error.message, 500);
 
   /* THE WORDS FOLLOW THE TERM (2026-09-14). The storefront prints
@@ -395,18 +436,11 @@ export async function setOfferActive(input: { courseId: string; active: boolean;
 
   // By course, for the same reason as saveOffer: after a draft rename the
   // stored code no longer matches the one the slug would produce.
-  const { data: existing } = await db
-    .from("lms_course_offers")
-    .select("id, code")
-    .eq("course_id", course.id)
-    .maybeSingle();
+  const existing = await ownCourseOffer(db, course.id as string);
   if (!existing) throw new AccessError("offer_not_found", 404);
-  const code = (existing.code as string | null) ?? courseOfferCode(course.slug as string);
+  const code = existing.code;
 
-  const { error } = await db
-    .from("lms_course_offers")
-    .update({ active: input.active, updated_at: new Date().toISOString() })
-    .eq("id", existing.id);
+  const { error } = await db.from("experience_offers").update({ active: input.active }).eq("id", existing.id);
   if (error) throw new AccessError(error.message, 500);
 
   await writeAudit(db, {

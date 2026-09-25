@@ -19,7 +19,15 @@ import { adminClient } from "@/lib/auth/adminClient";
 import { toProductOffer } from "@/lib/platform/productOffers";
 import type { ProductOffer, ProductOfferKind, ProductOfferRow } from "@/lib/admin/productOfferTypes";
 
-const COLUMNS = "code, amount, list_amount, currency, kind, pixel_content_name, active, updated_at";
+// From the one table of prices (2026-09-25); `mode` there is `kind` here,
+// translated in `fromRow` rather than by a column alias.
+const COLUMNS = "code, amount, list_amount, currency, mode, pixel_content_name, active, updated_at";
+
+function fromRow(row: Record<string, unknown>): ProductOffer {
+  return toProductOffer({ ...row, kind: row.mode === "lead" ? "lead" : "checkout" } as Parameters<
+    typeof toProductOffer
+  >[0]);
+}
 
 /**
  * The codes this screen may price, and what each one is.
@@ -31,19 +39,24 @@ const COLUMNS = "code, amount, list_amount, currency, kind, pixel_content_name, 
  * restore the two-sources-for-one-price bug that 2026-09-02 removed.
  */
 export const PRICEABLE_PRODUCTS: Array<{ code: string; title: string; kind: ProductOfferKind }> = [
-  { code: "way21-support", title: "Шлях 21 — індивідуальний супровід", kind: "lead" },
   { code: "herbs", title: "Фітозбір — індивідуальний підбір", kind: "checkout" },
   { code: "consult", title: "Консультація", kind: "lead" },
   { code: "irem-individual", title: "IREM — індивідуально", kind: "lead" },
 ];
 
 export async function listProductOffers(): Promise<ProductOfferRow[]> {
-  const { data, error } = await adminClient().from("product_offers").select(COLUMNS);
+  const { data, error } = await adminClient()
+    .from("experience_offers")
+    .select(COLUMNS)
+    .in(
+      "code",
+      PRICEABLE_PRODUCTS.map((product) => product.code),
+    );
   if (error) throw new AccessError(error.message, 500);
 
   const byCode = new Map(
     (data ?? []).map((row) => {
-      const offer = toProductOffer(row as Parameters<typeof toProductOffer>[0]);
+      const offer = fromRow(row as Record<string, unknown>);
       return [offer.code, offer];
     }),
   );
@@ -90,16 +103,25 @@ export async function saveProductOffer(input: SaveProductOfferInput): Promise<Pr
     }
   }
 
-  const { data, error } = await adminClient()
-    .from("product_offers")
+  /* Written to the one table of prices (2026-09-25). A product's price belongs
+     to its thing in the registry, found by the same slug as the code; a
+     product with no thing has nowhere to put a price, and says so. A missing
+     figure is stored as a lead: a checkout without an amount has never opened. */
+  const db = adminClient();
+  const { data: thing } = await db.from("experiences").select("id").eq("slug", input.code).maybeSingle();
+  if (!thing) throw new AccessError("product_not_registered", 409);
+  const { data, error } = await db
+    .from("experience_offers")
     .upsert(
       {
+        experience_id: thing.id as string,
         code: input.code,
         amount: input.amount,
         list_amount: input.listAmount,
         currency: (input.currency ?? "UAH").toUpperCase(),
-        kind: input.kind,
+        mode: input.kind === "lead" || input.amount === null ? "lead" : "checkout",
         active: true,
+        review_status: "approved",
       },
       { onConflict: "code" },
     )
@@ -112,7 +134,7 @@ export async function saveProductOffer(input: SaveProductOfferInput): Promise<Pr
   /* `pixel_content_name` is never written here. Meta's reporting history is
        joined on it, so it is set once at seed time and left alone — the same
        rule the course offer follows across a slug rename. */
-  return toProductOffer(data as Parameters<typeof toProductOffer>[0]);
+  return fromRow(data as Record<string, unknown>);
 }
 
 export async function setProductOfferActive(code: string, active: boolean): Promise<ProductOffer> {
@@ -121,7 +143,7 @@ export async function setProductOfferActive(code: string, active: boolean): Prom
   }
 
   const { data, error } = await adminClient()
-    .from("product_offers")
+    .from("experience_offers")
     .update({ active })
     .eq("code", code)
     .select(COLUMNS)
@@ -129,5 +151,5 @@ export async function setProductOfferActive(code: string, active: boolean): Prom
 
   if (error) throw new AccessError(error.message, 500);
   if (!data) throw new AccessError("product_offer_not_found", 404);
-  return toProductOffer(data as Parameters<typeof toProductOffer>[0]);
+  return fromRow(data as Record<string, unknown>);
 }

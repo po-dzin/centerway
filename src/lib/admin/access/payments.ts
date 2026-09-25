@@ -102,13 +102,10 @@ export async function recordManualPayment(input: {
  * "unconfigured means perpetual" direction the door already takes.
  */
 async function offerExpiryFor(db: Db, courseSlug: string, paidAt: string): Promise<string | null> {
-  const { data: course } = await db.from("lms_courses").select("id").eq("slug", courseSlug).maybeSingle();
-  if (!course?.id) return null;
-
   const { data: offer } = await db
-    .from("lms_course_offers")
+    .from("experience_offers")
     .select("access_days, access_lifetime")
-    .eq("course_id", course.id)
+    .eq("code", courseOfferCode(courseSlug))
     .maybeSingle();
   if (!offer) return null;
 
@@ -183,6 +180,10 @@ export type ProvisionAccessInput = {
   payment?: { amount: number; currency: PaymentCurrency; note?: string | null } | null;
   /** Why this seat exists — `manual` unless the operator says bonus or promo. */
   source?: GrantSource;
+  /** `YYYY-MM-DD`: the cohort this seat joins. Absent leaves the rhythm alone. */
+  cohortStartsOn?: string | null;
+  /** Who brought this person (`?ref`). */
+  ref?: string | null;
   actorId: string;
 };
 
@@ -248,6 +249,8 @@ export async function provisionAccess(input: ProvisionAccessInput) {
     source: input.source ?? (payment ? "manual" : undefined),
     actorId: input.actorId,
     orderRef: payment?.orderRef ?? null,
+    cohortStartsOn: input.cohortStartsOn,
+    ref: input.ref,
   });
 
   /* ONLY FOR A SALE. A grant with no payment is a gift or a promo seat, and

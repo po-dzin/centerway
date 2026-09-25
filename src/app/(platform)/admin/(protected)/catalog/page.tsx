@@ -42,6 +42,8 @@ import type { CatalogRow, SaleBlocker } from "@/lib/admin/catalogTypes";
 import type { AuthorProfileRow, CourseRow } from "@/lib/admin/accessTypes";
 import { CourseAuthorshipTab } from "@/components/admin/CourseAuthorshipTab";
 import { ProductPricingTab } from "@/components/admin/ProductPricingTab";
+import { FormatReviewTab } from "@/components/admin/FormatReviewTab";
+import type { FormatReviewRow } from "@/lib/admin/formatReviewTypes";
 import type { ProductOfferRow } from "@/lib/admin/productOfferTypes";
 import { ACCESS_TERM_PRESETS } from "@/lib/admin/catalogTypes";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
@@ -128,7 +130,7 @@ export default function CatalogPage() {
   const { lang, t } = useI18n();
   const locale = getAdminLocale(lang);
 
-  const [tab, setTab] = useState<"publication" | "pricing" | "products" | "authorship">("publication");
+  const [tab, setTab] = useState<"publication" | "pricing" | "formats" | "products" | "authorship">("publication");
   /* Authorship needs the ACCESS shape of a course — `author_id` resolved to an
        email, plus whether this operator may write it — which `/admin/catalog`
        does not carry. It is fetched only when that tab is first opened: two
@@ -141,6 +143,8 @@ export default function CatalogPage() {
        the tab is first opened. */
   const [productOffers, setProductOffers] = useState<ProductOfferRow[]>([]);
   const [canEditProducts, setCanEditProducts] = useState(false);
+  const [formats, setFormats] = useState<FormatReviewRow[]>([]);
+  const [canEditFormats, setCanEditFormats] = useState(false);
   const [rows, setRows] = useState<CatalogRow[] | null>(null);
   const [canEdit, setCanEdit] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -211,6 +215,19 @@ export default function CatalogPage() {
     }
   }, [errorText]);
 
+  const loadFormats = useCallback(async () => {
+    try {
+      const payload = (await authFetch("/api/admin/offer-formats")) as {
+        formats?: FormatReviewRow[];
+        canEdit?: boolean;
+      };
+      setFormats(payload.formats ?? []);
+      setCanEditFormats(Boolean(payload.canEdit));
+    } catch (e) {
+      setError(errorText(getErrorMessage(e)));
+    }
+  }, [errorText]);
+
   /* The read is started from inside the effect's async body rather than
        called from it directly: a synchronous `load()` sets state during the
        effect and cascades a render, which is what react-hooks flags. Reloads
@@ -259,6 +276,7 @@ export default function CatalogPage() {
         items={[
           { key: "publication", label: t("catalog_tab_publication") },
           { key: "pricing", label: t("catalog_tab_pricing") },
+          { key: "formats", label: t("catalog_tab_formats") },
           { key: "products", label: t("catalog_tab_products") },
           { key: "authorship", label: t("access_tab_builder") },
         ]}
@@ -268,6 +286,7 @@ export default function CatalogPage() {
           setTab(next);
           if (next === "authorship") void loadAuthorship();
           if (next === "products") void loadProductOffers();
+          if (next === "formats") void loadFormats();
         }}
       />
 
@@ -283,6 +302,8 @@ export default function CatalogPage() {
           errorText={errorText}
           onChanged={loadAuthorship}
         />
+      ) : tab === "formats" ? (
+        <FormatReviewTab formats={formats} canEdit={canEditFormats} errorText={errorText} onChanged={loadFormats} />
       ) : tab === "products" ? (
         <ProductPricingTab
           products={productOffers}

@@ -105,6 +105,8 @@ export default function AccessPage() {
         course_not_published: t("access_error_course_not_published"),
         enrollment_not_found: t("access_error_enrollment_not_found"),
         expires_at_invalid: t("access_error_expires_at_invalid"),
+        cohort_date_invalid: t("access_error_cohort_date_invalid"),
+        ref_invalid: t("access_error_ref_invalid"),
         amount_invalid: t("access_error_amount_invalid"),
         currency_invalid: t("access_error_currency_invalid"),
         cannot_change_own_role: t("access_error_cannot_change_own_role"),
@@ -289,6 +291,11 @@ function PeopleTab({
   const [grantAmount, setGrantAmount] = useState("");
   const [grantCurrency, setGrantCurrency] = useState<string>(PAYMENT_CURRENCIES[0]);
   const [grantNote, setGrantNote] = useState("");
+  /* A cohort's shared day 1 and who brought the person. Both optional: most
+     seats are self-paced and came on their own. The cohort date is KEPT between
+     grants — enrolling a flow is the same date typed twenty times otherwise. */
+  const [grantCohort, setGrantCohort] = useState("");
+  const [grantRef, setGrantRef] = useState("");
   /* The role, set on the same form that can create the account.
        `user` is "no elevation" and is what an account gets anyway, so the field
        is only sent when it is something else — see `grant`. Assigning a role
@@ -383,6 +390,9 @@ function PeopleTab({
           fullName: grantName.trim() || null,
           createAccount: grantCreateAccount,
           expiresAt: grantDeadlineValue(grantForever, grantExpiresAt),
+          // Absent, not blank: a blank cohort would pull an existing seat out of its flow.
+          cohortStartsOn: grantCohort || undefined,
+          ref: grantRef.trim() || undefined,
           // Omitted rather than sent as "user": the API treats absence
           // as "leave the role alone", which is what an operator who
           // never touched the field meant.
@@ -410,6 +420,7 @@ function PeopleTab({
       setGrantName("");
       setGrantAmount("");
       setGrantNote("");
+      setGrantRef("");
       setGrantCreateAccount(false);
       setGrantRole("user");
       // Only on success: a failed grant keeps the dialog and everything
@@ -689,6 +700,22 @@ function PeopleTab({
                 className={controls.input}
               />
             </label>
+            <div className={`${controls.field} ${access.spanFull} ${access.spanDeadline}`}>
+              <span className={controls.fieldCaption}>{t("access_grant_cohort")}</span>
+              <AdminDateField value={grantCohort} onChange={setGrantCohort} locale={locale} labels={dateLabels} />
+            </div>
+            <label className={`${controls.field} ${access.spanFull} ${access.spanCourse}`}>
+              <span className={controls.fieldCaption}>{t("access_grant_ref")}</span>
+              <input
+                type="text"
+                value={grantRef}
+                onChange={(e) => setGrantRef(e.target.value)}
+                placeholder="olena"
+                autoCapitalize="none"
+                spellCheck={false}
+                className={controls.input}
+              />
+            </label>
           </div>
 
           <div className={access.grantFoot}>
@@ -930,6 +957,26 @@ function PeopleTab({
                                     month: "short",
                                   })}
                                 </span>
+                                {/* The flow a seat belongs to and who brought the
+                                    person: with the course filter above, this is
+                                    the roster of a cohort. The date is a calendar
+                                    date, so it is read as UTC — a local parse would
+                                    print the 5th for anyone west of Greenwich. */}
+                                {row.cohortStartsOn ? (
+                                  <span>
+                                    {t("access_col_cohort")}:{" "}
+                                    {new Date(`${row.cohortStartsOn}T00:00:00Z`).toLocaleDateString(locale, {
+                                      day: "2-digit",
+                                      month: "short",
+                                      timeZone: "UTC",
+                                    })}
+                                  </span>
+                                ) : null}
+                                {row.ref ? (
+                                  <span>
+                                    {t("access_col_ref")}: <span className={lists.itemCode}>{row.ref}</span>
+                                  </span>
+                                ) : null}
                                 {/* A closed door is not a detail — it is why the
                                                                     learner wrote in, so it is said outright, and it
                                                                     says WHICH kind of closed. */}

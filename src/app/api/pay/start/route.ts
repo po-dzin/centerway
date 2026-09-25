@@ -5,6 +5,7 @@ import { resolveIremLandingOffer } from "@/lib/landing/offers";
 import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import { createPaymentInvoice, resolveLocaleFromRequest } from "@/lib/payments/paymentStart";
+import { readAttribution } from "@/lib/referral/attribution";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,7 @@ export async function GET(req: NextRequest) {
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
   const url = new URL(req.url);
+  const attribution = readAttribution(req);
   /* NO FALLBACK. This used to be `resolvePayableProduct`, which answered an
      unrecognised code with "short" — so a typo, a stale link or a course code
      this route did not yet understand opened a checkout for Short Reboot and
@@ -59,7 +61,10 @@ export async function GET(req: NextRequest) {
     fbp: req.cookies.get("_fbp")?.value ?? url.searchParams.get("fbp") ?? undefined,
     fbc: req.cookies.get("_fbc")?.value ?? url.searchParams.get("fbc") ?? undefined,
     fbclid: url.searchParams.get("fbclid") ?? undefined,
-    campaign: url.searchParams.get("utm_campaign") ?? undefined,
+    // The pay link on a platform page carries no UTM of its own; the landing
+    // that did is remembered by the proxy (`lib/referral/attribution`).
+    campaign: url.searchParams.get("utm_campaign") ?? attribution.utm?.campaign ?? undefined,
+    ref: attribution.ref,
     event_id: url.searchParams.get("event_id") ?? undefined,
     client_ip:
       (forwardedIp || null) ?? req.headers.get("cf-connecting-ip") ?? req.headers.get("x-real-ip") ?? undefined,

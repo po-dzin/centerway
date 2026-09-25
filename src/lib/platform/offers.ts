@@ -33,11 +33,13 @@ import {
   isCatalogProduct,
   normalizePayableProduct,
   type CatalogProductCode,
+  type FormatProductCode,
   type PayableOffer,
 } from "@/lib/products";
 import { mediaSources } from "@/lib/lms/media";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { loadProductOffer } from "@/lib/platform/productOffers";
+import { loadProgramFormats, resolveFormatOffer } from "@/lib/experiences/formats";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 import { toOfferSurface } from "@/lib/platform/courseOffer";
 import { COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
@@ -81,7 +83,6 @@ const REVALIDATE_SECONDS = 300;
 export type CourseOffer = {
   /** The payable product code. Always `course:<slug>`. */
   code: string;
-  courseId: string;
   courseSlug: string;
   amount: number;
   /** What a page may QUOTE. Null means there is no agreed figure to print. */
@@ -102,7 +103,6 @@ type Row = Record<string, unknown>;
 function toOffer(row: Row, courseSlug: string): CourseOffer {
   return {
     code: row.code as string,
-    courseId: row.course_id as string,
     courseSlug,
     amount: Number(row.amount),
     listAmount: row.list_amount === null || row.list_amount === undefined ? null : Number(row.list_amount),
@@ -115,8 +115,10 @@ async function readOffer(slug: string): Promise<CourseOffer | null> {
   try {
     const db = supabaseAdmin();
     const { data, error } = await db
-      .from("lms_course_offers")
-      .select("code, course_id, amount, list_amount, currency, pixel_content_name, active, lms_courses!inner(slug)")
+      /* THE ONE TABLE OF PRICES (2026-09-20). Since 2026-09-25 the owner's
+         catalogue writes here directly — see `lib/experiences/offers.ts`. */
+      .from("experience_offers")
+      .select("code, amount, list_amount, currency, pixel_content_name, active")
       .eq("code", courseOfferCode(slug))
       .eq("active", true)
       .limit(1);
@@ -265,9 +267,35 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
   const listed = courses
     .filter((course) => isPublicCourse(course, ["listed"]))
     .sort((a, b) => (a.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.sortOrder ?? Number.MAX_SAFE_INTEGER));
-  const offers = await Promise.all(listed.map((course) => loadCourseOffer(course.slug)));
+  const [offers, formatSets] = await Promise.all([
+    Promise.all(listed.map((course) => loadCourseOffer(course.slug))),
+    Promise.all(listed.map((course) => loadProgramFormats(course))),
+  ]);
 
   return listed.map((course, index) => {
+    const offer = offers[index] ?? null;
+    /* SEVERAL WAYS THROUGH IT, SEVERAL PRICES (2026-09-25). A program sold in
+       formats quotes the lowest of them as «від …», the same figure its page's
+       hero prints — a card showing only the self-paced price would read as the
+       whole offer. `amount` stays the lowest figure, for the price filter. */
+    const priced = (formatSets[index] ?? []).filter(
+      (format) => format.mode === "checkout" && format.amount !== null && format.amount > 0,
+    );
+    const lowest = (formatSets[index] ?? []).length >= 2 ? priced.sort((a, b) => a.amount! - b.amount!)[0] : undefined;
+    if (lowest && lowest.amount !== null) {
+      return {
+        ...storefrontCard(course, index, offer),
+        commercialMode: "fixed" as const,
+        price: `від ${formatPrice(lowest.amount, lowest.currency)}`,
+        amount: lowest.amount,
+        currency: lowest.currency,
+        compareAtPrice: null,
+      };
+    }
+    return storefrontCard(course, index, offer);
+  });
+
+  function storefrontCard(course: Course, index: number, offer: CourseOffer | null): StorefrontCard {
     /* THE CARD SAYS WHAT THE PAGE SAYS. The eyebrow, the name and the
          duration are read off the same `toOfferSurface` the offer page is built
          from, so a reader who follows a card meets the two facts they were
@@ -276,7 +304,6 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
          a course was authored with a long title. */
     const surface = toOfferSurface(course);
     const card = course.cover ? coverCard(course.cover.src) : undefined;
-    const offer = offers[index];
     return {
       slug: course.slug,
       programSlug: course.programSlug,
@@ -325,7 +352,7 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
           }
         : {}),
     };
-  });
+  }
 }
 
 /**
@@ -427,7 +454,9 @@ async function productOffer(code: CatalogProductCode): Promise<PayableOffer | nu
 
 export async function loadPayableOffer(code: unknown): Promise<PayableOffer | null> {
   const normalized = normalizePayableProduct(code);
-  if (!normalized) return null;
+  // Neither one of the six nor `course:<slug>`: it may be a FORMAT of a
+  // program (`way21-group`), priced in `experience_offers` alone.
+  if (!normalized) return loadFormatPayable(code);
 
   if (isCatalogProduct(normalized)) {
     const aliasSlug = COURSE_CODE_ALIASES[normalized];
@@ -443,6 +472,37 @@ export async function loadPayableOffer(code: unknown): Promise<PayableOffer | nu
   const slug = parseCourseOfferCode(normalized);
   if (!slug) return null;
   return loadCourseOfferFor(slug);
+}
+
+/**
+ * A format of a program as something to charge for (2026-09-25).
+ *
+ * Only an approved, active, priced checkout format of a PUBLIC program: the
+ * same two halves `loadCourseOfferFor` insists on — the author finished the
+ * program, the owner agreed the figure. The invoice line is the one the owner
+ * wrote for the format; without one it is built from the program and the
+ * format's name, never borrowed from a neighbouring product.
+ */
+async function loadFormatPayable(code: unknown): Promise<PayableOffer | null> {
+  const format = await resolveFormatOffer(code);
+  if (!format || format.mode !== "checkout" || format.amount === null || format.amount <= 0) return null;
+  if (format.courseStatus !== "published" || !["listed", "unlisted"].includes(format.courseVisibility ?? "hidden")) {
+    return null;
+  }
+
+  const fallback = `${format.courseTitle} — ${format.label.toLowerCase()} — CenterWay`;
+  return {
+    code: format.code as FormatProductCode,
+    heading: format.invoiceHeading ?? { uk: fallback, en: fallback },
+    description: format.invoiceDescription ?? { uk: fallback, en: fallback },
+    amount: format.amount,
+    listAmount: format.listAmount ?? format.amount,
+    currency: format.currency,
+    pixelContentName: format.pixelContentName ?? format.courseTitle,
+    fulfilment: { kind: "course", courseSlug: format.courseSlug, programSlug: format.programSlug },
+    approvedUrl: PLATFORM_THANKS_URL,
+    declinedUrl: PLATFORM_FAILED_URL,
+  };
 }
 
 /** The commercial facts for one course, read from its own row. */

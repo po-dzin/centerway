@@ -42,7 +42,7 @@ const connectionString = `postgresql://postgres.${ref}:${password}@${host}:5432/
 const client = new pg.Client({ connectionString, ssl: { rejectUnauthorized: false } });
 const counts = async () => {
   const { rows } = await client.query(
-    "select type, count(*)::int as n from public.lms_progress_events group by type order by type"
+    "select type, count(*)::int as n from public.lms_progress_events group by type order by type",
   );
   return rows.map((r) => `${r.type}=${r.n}`).join("  ");
 };
@@ -58,7 +58,7 @@ try {
     `insert into supabase_migrations.schema_migrations (version, name, statements)
      values ($1, $2, $3)
      on conflict (version) do nothing`,
-    [version, name, [sql]]
+    [version, name, [sql]],
   );
 
   console.log("after: ", await counts());
@@ -69,7 +69,7 @@ try {
         where type in ('lesson.started', 'lesson.opened')
         group by enrollment_id, lesson_id
        having count(*) filter (where type = 'lesson.started') <> 1
-     ) q`
+     ) q`,
   );
   console.log("groups without exactly one start:", rows[0].bad);
   if (rows[0].bad !== 0) throw new Error("invariant broken — refusing to commit");

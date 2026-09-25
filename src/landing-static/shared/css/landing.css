@@ -1121,6 +1121,10 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 /* ============ FORMAT GRID ============ */
 .format-grid{display:grid;grid-template-columns:1fr 1fr;gap: var(--cw-space-md);align-items:start}
 @media(max-width:700px){.format-grid{grid-template-columns:1fr}}
+/* Three formats (self · cohort · guided) sit in three columns while each still
+   has room for its price and list; below that they stack, never two-and-one. */
+@media(min-width:1000px){.format-grid:has(>.format-card:nth-of-type(3)){grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:701px) and (max-width:999px){.format-grid:has(>.format-card:nth-of-type(3)){grid-template-columns:1fr}}
 .format-card{border-radius:var(--r-lg);padding: var(--cw-space-xl) 1.8rem;position:relative;overflow:hidden;display:flex;flex-direction:column}
 .format-card>*{position:relative;z-index:1}
 .format-card.self{background:var(--irem-grad-dark);color:#fff}

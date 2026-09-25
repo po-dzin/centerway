@@ -72,12 +72,16 @@ export function toProductOffer(row: Row): ProductOffer {
   };
 }
 
-const COLUMNS = "code, amount, list_amount, currency, kind, pixel_content_name, active, updated_at";
+/* Read from the one table of prices (2026-09-20), which the admin writes
+   directly since 2026-09-25; `mode` there is `kind` here, with
+   one deliberate fold — a checkout with no figure is stored as a lead, because
+   that is what it has always behaved as (`productOffer` refuses both). */
+const COLUMNS = "code, amount, list_amount, currency, kind:mode, pixel_content_name, active, updated_at";
 
 async function readProductOffer(code: string): Promise<ProductOffer | null> {
   try {
     const { data, error } = await supabaseAdmin()
-      .from("product_offers")
+      .from("experience_offers")
       .select(COLUMNS)
       .eq("code", code)
       .eq("active", true)

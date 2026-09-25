@@ -60,13 +60,14 @@ describe("platform interaction layers", () => {
     const carousel = read("src/components/platform/PlatformOfferCarousel.module.css");
 
     expect(tokens).toContain('"--cw-mat-shadow-soft": "0 2px 4px');
-    expect(tokens).toContain('0 6px 16px');
+    expect(tokens).toContain("0 6px 16px");
     expect(tokens).toContain('"--cw-mat-shadow-raised": "0 3px 6px');
-    expect(tokens).toContain('0 8px 18px');
-    expect(tokens).not.toContain('0 24px 56px');
-    expect(tokens).not.toContain('0 28px 60px');
-    expect(carousel).toContain("padding: var(--cw-space-sm);");
-    expect(carousel).toContain("margin: calc(var(--cw-space-sm) * -1);");
+    expect(tokens).toContain("0 8px 18px");
+    expect(tokens).not.toContain("0 24px 56px");
+    expect(tokens).not.toContain("0 28px 60px");
+    expect(tokens).toContain('"--ds-rail-shadow-field": "var(--cw-space-md)"');
+    expect(carousel).toContain("padding: var(--ds-rail-shadow-field);");
+    expect(carousel).toContain("margin: calc(var(--ds-rail-shadow-field) * -1);");
   });
 
   it("uses one dot per full card on a phone and one dot per page above it", () => {

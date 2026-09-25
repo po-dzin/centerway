@@ -28,8 +28,11 @@
  */
 
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 
+import { adminClient } from "@/lib/auth/adminClient";
+import { loadProgramFormats } from "@/lib/experiences/formats";
+import { isContentKind, resolveExperience } from "@/lib/experiences/registry";
 import { ProgramDetailPage } from "@/components/platform/ProgramDetailPage";
 import { CourseNextStep } from "@/components/platform/CourseNextStep";
 import { OfferPurchaseReturn, readPurchaseReturn } from "@/components/platform/OfferPurchaseReturn";
@@ -65,13 +68,28 @@ async function publicCourse(address: string): Promise<Course | null> {
  */
 function unavailableProgramFallback(address: string): string | null {
   if (address === "reset-day") return "/reset-day";
-  /* Renamed 2026-09-02. «Soul Daily Ritual» was published at the address the
-     builder generated from its default title, and that address had already
-     reached `sitemap.xml` on a route tree that carries no `noindex`. The row
-     moved; whoever holds the old link — a crawler, a saved tab — is sent on
-     rather than shown a 404. Kept until the old URL stops being requested. */
-  if (address === "novyi-kurs-5") return "/programs/soul-daily-ritual";
   return null;
+}
+
+/**
+ * AN OLD ADDRESS IS A ROW, NOT A PAGE (2026-09-20).
+ *
+ * `/programs/detox`, `/programs/mini-detox`, `/programs/ideal-body`,
+ * `/programs/short` and `/programs/novyi-kurs-5` were each a hand-written
+ * redirect — four page files and one special case here, and every future
+ * rename would have been another. They are `experience_aliases` now, and a
+ * course whose `program_slug` changes in the builder leaves its old address
+ * behind by itself (the registry trigger). Permanent, because the move is.
+ */
+async function aliasedProgramAddress(address: string): Promise<string | null> {
+  try {
+    const found = await resolveExperience(adminClient(), address);
+    if (!found || found.via !== "alias" || !isContentKind(found.experience.kind)) return null;
+    return `/programs/${found.experience.slug}`;
+  } catch {
+    // A registry that cannot be read is a 404 for an old address, not a 500.
+    return null;
+  }
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -106,6 +124,8 @@ export default async function CourseOfferPage({
   const { slug } = await params;
   const course = await publicCourse(slug);
   if (!course) {
+    const moved = await aliasedProgramAddress(slug);
+    if (moved) permanentRedirect(moved);
     const fallback = unavailableProgramFallback(slug);
     if (fallback) redirect(fallback);
     notFound();
@@ -118,11 +138,12 @@ export default async function CourseOfferPage({
   /* Both reads at once: they are independent, and a byline should not wait on a
      price. Neither can fail the page — `loadCourseOffer` falls back to the lead
      form and `getCourseAuthor` to no byline at all. */
-  const [offer, author, query, storefrontCourses] = await Promise.all([
+  const [offer, author, query, storefrontCourses, formats] = await Promise.all([
     loadCourseOffer(course.slug),
     getCourseAuthor(course.slug),
     searchParams,
     listStorefrontCourses(),
+    loadProgramFormats(course),
   ]);
 
   /* THE CODE COMES FROM THE RETURN, not from the course.
@@ -146,6 +167,7 @@ export default async function CourseOfferPage({
       course={course}
       commerce={courseOfferCommerce(course.programSlug, offer)}
       author={author}
+      formats={formats}
       purchase={returned ? <OfferPurchaseReturn purchase={{ ...returned, product: returnedCode }} /> : undefined}
       nextStep={<CourseNextStep currentSlug={course.slug} courses={storefrontCourses} />}
     />

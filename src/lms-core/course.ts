@@ -85,9 +85,23 @@ export type CourseModule = {
    * drawer, whenever the learner needs them.
    */
   reference?: boolean;
+  /**
+   * The module IS another program (2026-09-25): «Розвантажувальний день»
+   * inside the materials of Шлях 21. It carries no lessons of its own — the
+   * content, progress, reader and address stay with the linked course, so an
+   * author's edit there reaches every program that links it. Always a
+   * reference module: a linked program is not a day of this one. Whether the
+   * learner may open it is decided by the linked course's own access.
+   */
+  linkedCourseSlug?: string;
   summary?: InlineText;
   lessons: Lesson[];
 };
+
+/** A module that points at another program instead of holding lessons. */
+export function isLinkedModule(module: Pick<CourseModule, "linkedCourseSlug">): boolean {
+  return typeof module.linkedCourseSlug === "string" && module.linkedCourseSlug.length > 0;
+}
 
 /**
  * WHAT KIND OF THING THIS IS — the badge in the corner of a catalogue card.
@@ -543,7 +557,20 @@ export function validateCourse(
       assert(typeof module.reference === "boolean", `lms_module_invalid_reference:${modulePath}`);
     }
     if (module.summary !== undefined) validateInlineText(module.summary, `${modulePath}.summary`);
-    assert(Array.isArray(module.lessons) && module.lessons.length > 0, `lms_module_empty_lessons:${modulePath}`);
+    if (module.linkedCourseSlug !== undefined) {
+      assert(
+        typeof module.linkedCourseSlug === "string" && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(module.linkedCourseSlug),
+        `lms_module_invalid_linked_course:${modulePath}`,
+      );
+      assert(module.linkedCourseSlug !== input.slug, `lms_module_links_itself:${modulePath}`);
+      assert(module.reference === true, `lms_module_linked_not_reference:${modulePath}`);
+      assert(
+        Array.isArray(module.lessons) && module.lessons.length === 0,
+        `lms_module_linked_has_lessons:${modulePath}`,
+      );
+    } else {
+      assert(Array.isArray(module.lessons) && module.lessons.length > 0, `lms_module_empty_lessons:${modulePath}`);
+    }
 
     module.lessons.forEach((lesson, lessonIndex) => {
       const lessonPath = `${modulePath}.lessons[${lessonIndex}]`;

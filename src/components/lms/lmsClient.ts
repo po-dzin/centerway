@@ -63,9 +63,29 @@ export type CourseViewDto = {
     theme: CourseTheme | null;
   };
   enrollment: { startedAt: string; source: string; timeZone: string };
-  standing: { totalLessons: number; completedLessons: number; currentDay: number | null; isFinished: boolean };
+  standing: {
+    totalLessons: number;
+    completedLessons: number;
+    currentDay: number | null;
+    startsInDays: number | null;
+    isFinished: boolean;
+  };
   currentLessonSlug: string | null;
   outline: CourseOutlineEntryDto[];
+  /** Other programs this one carries as modules; each opens by its own access. */
+  linkedPrograms: LinkedProgramDto[];
+};
+
+export type LinkedProgramDto = {
+  moduleId: string;
+  title: string;
+  courseSlug: string;
+  programSlug: string;
+  courseTitle: string;
+  kind: "course" | "mini" | "checklist" | null;
+  lessonCount: number;
+  cover: { src: string; alt: string } | null;
+  access: "open" | "locked";
 };
 
 /** One course on the cabinet shelf — outline-free, just enough to decide where to go next. */
@@ -97,6 +117,10 @@ export type LearnerShelfCourseDto = {
   cover: Course["cover"] | null;
   /** What the course is about — see `Course.categories` in lms-core. */
   categories: CourseCategory[];
+  /** The open program this one is held inside, when a bundle carried it in. */
+  includedIn: { slug: string; title: string } | null;
+  /** Programs held inside this one. */
+  carries: Array<{ slug: string; title: string }>;
 };
 
 export type LearnerShelfDto = { courses: LearnerShelfCourseDto[] };

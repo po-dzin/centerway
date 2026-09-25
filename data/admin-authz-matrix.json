@@ -202,11 +202,34 @@
     }
   },
   {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/offer-formats"
+  },
+  {
+    "kind": "mutate",
+    "method": "PATCH",
+    "path": "/api/admin/offer-formats",
+    "body": {
+      "code": "smoke-format",
+      "action": "withdraw"
+    }
+  },
+  {
     "kind": "mutate",
     "method": "POST",
     "path": "/api/admin/orders/access-link",
     "body": {
       "order_ref": "smoke-order"
+    }
+  },
+  {
+    "kind": "mutate",
+    "method": "PATCH",
+    "path": "/api/admin/orders/fulfilment",
+    "body": {
+      "order_ref": "smoke-order",
+      "status": "done"
     }
   }
 ]

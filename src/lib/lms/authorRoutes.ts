@@ -11,37 +11,13 @@
 
 import type { Author } from "@/lms-core";
 
-/**
- * The founder's public address is `/consult`, not `/expert/<slug>` — see the
- * `/expert` merge (2026-08-23): the consultation is what someone arrives
- * wanting, and the founder's credentials are evidence on that page rather than
- * a page of their own. Every other author gets the address their profile has.
- *
- * BOTH TRANSLITERATIONS, because the product persists both and the link must be
- * right whichever row is live: the static showcase card in
- * `src/lib/platform/content.ts` is `evgeniy-koryakin`, while the seeding
- * migrations under `docs/migration/sql` write `yevhenii-koriakin`. Matching one
- * of them is how this exception silently stopped firing — the card linked to a
- * profile page instead of the consultation.
- *
- * It lives HERE, beside the data, rather than in a block: `/experts` derived
- * the same destination independently and got it wrong in its own way, which is
- * what a rule copied into two call sites does.
+/*
+ * No author is an exception any more. Until 2026-09 the founder's card pointed
+ * at `/consult` and `/expert/<his slug>` redirected there (the `/expert` merge
+ * of 2026-08-23); both branches were retired when his profile became a full
+ * page, and the predicate that kept them was left behind with no caller. It is
+ * gone now, with the two transliterations it had to match.
  */
-const FOUNDER_SLUGS: readonly string[] = ["evgeniy-koryakin", "yevhenii-koriakin"];
-
-/**
- * Whether this slug is the founder's, under either transliteration.
- *
- * The PAGE needs this as well as the link: publishing his profile so the home
- * page can print it would otherwise also mint `/expert/<slug>`, which is the
- * second page about him that the 2026-08-23 merge existed to remove. The route
- * redirects on this predicate, so the link and the page cannot disagree about
- * who the exception is.
- */
-export function isFounderAuthorSlug(slug: string): boolean {
-  return FOUNDER_SLUGS.includes(slug);
-}
 
 /** Where an author's card should point. */
 export function authorHref(author: Pick<Author, "slug">): string {

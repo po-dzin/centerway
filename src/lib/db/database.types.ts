@@ -83,6 +83,36 @@ export type Database = {
           },
         ]
       }
+      agent_questions: {
+        Row: {
+          created_at: string
+          expected_doc_id: string | null
+          id: string
+          redacted: string[]
+          source: string
+          text: string
+          topic: string | null
+        }
+        Insert: {
+          created_at?: string
+          expected_doc_id?: string | null
+          id?: string
+          redacted?: string[]
+          source: string
+          text: string
+          topic?: string | null
+        }
+        Update: {
+          created_at?: string
+          expected_doc_id?: string | null
+          id?: string
+          redacted?: string[]
+          source?: string
+          text?: string
+          topic?: string | null
+        }
+        Relationships: []
+      }
       agent_runs: {
         Row: {
           contour: string
@@ -478,6 +508,140 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcast_recipients: {
+        Row: {
+          address: string
+          bounced_at: string | null
+          broadcast_id: string
+          claimed_at: string | null
+          clicked_at: string | null
+          complained_at: string | null
+          created_at: string
+          customer_id: string | null
+          delivered_at: string | null
+          error_text: string | null
+          id: string
+          name: string | null
+          opened_at: string | null
+          provider_id: string | null
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          address: string
+          bounced_at?: string | null
+          broadcast_id: string
+          claimed_at?: string | null
+          clicked_at?: string | null
+          complained_at?: string | null
+          created_at?: string
+          customer_id?: string | null
+          delivered_at?: string | null
+          error_text?: string | null
+          id?: string
+          name?: string | null
+          opened_at?: string | null
+          provider_id?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          address?: string
+          bounced_at?: string | null
+          broadcast_id?: string
+          claimed_at?: string | null
+          clicked_at?: string | null
+          complained_at?: string | null
+          created_at?: string
+          customer_id?: string | null
+          delivered_at?: string | null
+          error_text?: string | null
+          id?: string
+          name?: string | null
+          opened_at?: string | null
+          provider_id?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcast_recipients_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "broadcasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      broadcasts: {
+        Row: {
+          audience: Json
+          body: string
+          channel: string
+          created_at: string
+          created_by: string | null
+          cta_label: string | null
+          cta_url: string | null
+          error_text: string | null
+          failed_count: number
+          finished_at: string | null
+          id: string
+          preheader: string
+          recipients_total: number
+          scheduled_at: string | null
+          sent_count: number
+          started_at: string | null
+          status: string
+          subject: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          audience?: Json
+          body?: string
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          cta_label?: string | null
+          cta_url?: string | null
+          error_text?: string | null
+          failed_count?: number
+          finished_at?: string | null
+          id?: string
+          preheader?: string
+          recipients_total?: number
+          scheduled_at?: string | null
+          sent_count?: number
+          started_at?: string | null
+          status?: string
+          subject?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          audience?: Json
+          body?: string
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          cta_label?: string | null
+          cta_url?: string | null
+          error_text?: string | null
+          failed_count?: number
+          finished_at?: string | null
+          id?: string
+          preheader?: string
+          recipients_total?: number
+          scheduled_at?: string | null
+          sent_count?: number
+          started_at?: string | null
+          status?: string
+          subject?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           auth_user_id: string | null
@@ -557,6 +721,219 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      experience_aliases: {
+        Row: {
+          alias: string
+          created_at: string
+          experience_id: string
+          kind: string
+        }
+        Insert: {
+          alias: string
+          created_at?: string
+          experience_id: string
+          kind?: string
+        }
+        Update: {
+          alias?: string
+          created_at?: string
+          experience_id?: string
+          kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experience_aliases_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      experience_offer_items: {
+        Row: {
+          created_at: string
+          experience_id: string
+          offer_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          experience_id: string
+          offer_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          experience_id?: string
+          offer_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experience_offer_items_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "experience_offer_items_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "experience_offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      experience_offers: {
+        Row: {
+          access_days: number | null
+          access_lifetime: boolean
+          active: boolean
+          amount: number | null
+          code: string
+          cohort_starts_on: string | null
+          created_at: string
+          currency: string
+          experience_id: string
+          format: string | null
+          id: string
+          invoice_description: Json | null
+          invoice_heading: Json | null
+          label: Json | null
+          list_amount: number | null
+          mode: string
+          pixel_content_name: string | null
+          proposed_amount: number | null
+          proposed_at: string | null
+          proposed_by: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          share_pct: number | null
+          sort_order: number
+          summary: Json | null
+          updated_at: string
+        }
+        Insert: {
+          access_days?: number | null
+          access_lifetime?: boolean
+          active?: boolean
+          amount?: number | null
+          code: string
+          cohort_starts_on?: string | null
+          created_at?: string
+          currency?: string
+          experience_id: string
+          format?: string | null
+          id?: string
+          invoice_description?: Json | null
+          invoice_heading?: Json | null
+          label?: Json | null
+          list_amount?: number | null
+          mode: string
+          pixel_content_name?: string | null
+          proposed_amount?: number | null
+          proposed_at?: string | null
+          proposed_by?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          share_pct?: number | null
+          sort_order?: number
+          summary?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          access_days?: number | null
+          access_lifetime?: boolean
+          active?: boolean
+          amount?: number | null
+          code?: string
+          cohort_starts_on?: string | null
+          created_at?: string
+          currency?: string
+          experience_id?: string
+          format?: string | null
+          id?: string
+          invoice_description?: Json | null
+          invoice_heading?: Json | null
+          label?: Json | null
+          list_amount?: number | null
+          mode?: string
+          pixel_content_name?: string | null
+          proposed_amount?: number | null
+          proposed_at?: string | null
+          proposed_by?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          share_pct?: number | null
+          sort_order?: number
+          summary?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experience_offers_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      experiences: {
+        Row: {
+          author_profile_id: string | null
+          cover: Json | null
+          created_at: string
+          id: string
+          kind: string
+          listed: boolean
+          slug: string
+          sort_order: number | null
+          summary: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_profile_id?: string | null
+          cover?: Json | null
+          created_at?: string
+          id?: string
+          kind: string
+          listed?: boolean
+          slug: string
+          sort_order?: number | null
+          summary?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_profile_id?: string | null
+          cover?: Json | null
+          created_at?: string
+          id?: string
+          kind?: string
+          listed?: boolean
+          slug?: string
+          sort_order?: number | null
+          summary?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experiences_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "lms_authors"
             referencedColumns: ["id"]
           },
         ]
@@ -987,6 +1364,7 @@ export type Database = {
           draft_generation: number
           duration_days: number | null
           entitlement_product_codes: string[]
+          experience_id: string
           format: Json | null
           id: string
           kind: string | null
@@ -996,7 +1374,6 @@ export type Database = {
           pending_review_status: string | null
           pending_submitted_at: string | null
           pending_updated_at: string | null
-          posttitle: string | null
           pretitle: string | null
           program_slug: string
           published_revision_id: string | null
@@ -1033,6 +1410,7 @@ export type Database = {
           draft_generation?: number
           duration_days?: number | null
           entitlement_product_codes?: string[]
+          experience_id: string
           format?: Json | null
           id?: string
           kind?: string | null
@@ -1042,7 +1420,6 @@ export type Database = {
           pending_review_status?: string | null
           pending_submitted_at?: string | null
           pending_updated_at?: string | null
-          posttitle?: string | null
           pretitle?: string | null
           program_slug: string
           published_revision_id?: string | null
@@ -1079,6 +1456,7 @@ export type Database = {
           draft_generation?: number
           duration_days?: number | null
           entitlement_product_codes?: string[]
+          experience_id?: string
           format?: Json | null
           id?: string
           kind?: string | null
@@ -1088,7 +1466,6 @@ export type Database = {
           pending_review_status?: string | null
           pending_submitted_at?: string | null
           pending_updated_at?: string | null
-          posttitle?: string | null
           pretitle?: string | null
           program_slug?: string
           published_revision_id?: string | null
@@ -1119,6 +1496,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lms_courses_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "lms_courses_published_revision_fk"
             columns: ["id", "published_revision_id"]
             isOneToOne: false
@@ -1132,49 +1516,58 @@ export type Database = {
           auth_user_id: string
           blocked_at: string | null
           blocked_reason: string | null
+          cohort_starts_on: string | null
           course_id: string
           created_at: string
           expires_at: string | null
           granted_by: string | null
           id: string
           order_ref: string | null
+          ref: string | null
           revoked_at: string | null
           source: string
           started_at: string
           status: string
           updated_at: string
+          utm: Json | null
         }
         Insert: {
           auth_user_id: string
           blocked_at?: string | null
           blocked_reason?: string | null
+          cohort_starts_on?: string | null
           course_id: string
           created_at?: string
           expires_at?: string | null
           granted_by?: string | null
           id?: string
           order_ref?: string | null
+          ref?: string | null
           revoked_at?: string | null
           source?: string
           started_at?: string
           status?: string
           updated_at?: string
+          utm?: Json | null
         }
         Update: {
           auth_user_id?: string
           blocked_at?: string | null
           blocked_reason?: string | null
+          cohort_starts_on?: string | null
           course_id?: string
           created_at?: string
           expires_at?: string | null
           granted_by?: string | null
           id?: string
           order_ref?: string | null
+          ref?: string | null
           revoked_at?: string | null
           source?: string
           started_at?: string
           status?: string
           updated_at?: string
+          utm?: Json | null
         }
         Relationships: [
           {
@@ -1304,6 +1697,7 @@ export type Database = {
           course_id: string
           created_at: string
           id: string
+          linked_course_slug: string | null
           order: number
           reference: boolean
           slug: string
@@ -1315,6 +1709,7 @@ export type Database = {
           course_id: string
           created_at?: string
           id?: string
+          linked_course_slug?: string | null
           order: number
           reference?: boolean
           slug: string
@@ -1326,6 +1721,7 @@ export type Database = {
           course_id?: string
           created_at?: string
           id?: string
+          linked_course_slug?: string | null
           order?: number
           reference?: boolean
           slug?: string
@@ -1471,6 +1867,85 @@ export type Database = {
           },
         ]
       }
+      messaging_subscriptions: {
+        Row: {
+          address: string
+          channel: string
+          created_at: string
+          customer_id: string | null
+          id: string
+          name: string | null
+          source: string
+          status: string
+          status_broadcast_id: string | null
+          status_changed_at: string
+          status_reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          channel: string
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          name?: string | null
+          source?: string
+          status?: string
+          status_broadcast_id?: string | null
+          status_changed_at?: string
+          status_reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          channel?: string
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          name?: string | null
+          source?: string
+          status?: string
+          status_broadcast_id?: string | null
+          status_changed_at?: string
+          status_reason?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_subscriptions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offer_aliases: {
+        Row: {
+          code: string
+          created_at: string
+          offer_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          offer_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          offer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_aliases_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "experience_offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           amount: number | null
@@ -1480,15 +1955,19 @@ export type Database = {
           created_at: string
           currency: string | null
           customer_id: string | null
+          experience_id: string | null
           fbc: string | null
           fbclid: string | null
           fbp: string | null
+          fulfilment_status: string | null
           id: string
           meta: Json | null
+          offer_id: string | null
           order_ref: string
           page_url: string | null
           payload: Json | null
           product_code: string
+          ref: string | null
           status: string
           updated_at: string
         }
@@ -1500,15 +1979,19 @@ export type Database = {
           created_at?: string
           currency?: string | null
           customer_id?: string | null
+          experience_id?: string | null
           fbc?: string | null
           fbclid?: string | null
           fbp?: string | null
+          fulfilment_status?: string | null
           id?: string
           meta?: Json | null
+          offer_id?: string | null
           order_ref: string
           page_url?: string | null
           payload?: Json | null
           product_code: string
+          ref?: string | null
           status?: string
           updated_at?: string
         }
@@ -1520,15 +2003,19 @@ export type Database = {
           created_at?: string
           currency?: string | null
           customer_id?: string | null
+          experience_id?: string | null
           fbc?: string | null
           fbclid?: string | null
           fbp?: string | null
+          fulfilment_status?: string | null
           id?: string
           meta?: Json | null
+          offer_id?: string | null
           order_ref?: string
           page_url?: string | null
           payload?: Json | null
           product_code?: string
+          ref?: string | null
           status?: string
           updated_at?: string
         }
@@ -1538,6 +2025,20 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "experience_offers"
             referencedColumns: ["id"]
           },
         ]
@@ -1901,6 +2402,7 @@ export type Database = {
       test_definitions: {
         Row: {
           created_at: string
+          experience_id: string | null
           id: string
           slug: string
           status: string
@@ -1910,6 +2412,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          experience_id?: string | null
           id?: string
           slug: string
           status?: string
@@ -1919,6 +2422,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          experience_id?: string | null
           id?: string
           slug?: string
           status?: string
@@ -1926,7 +2430,15 @@ export type Database = {
           updated_at?: string
           version?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "test_definitions_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       test_options: {
         Row: {
@@ -2033,6 +2545,13 @@ export type Database = {
       }
     }
     Views: {
+      course_opening_codes: {
+        Row: {
+          code: string | null
+          course_id: string | null
+        }
+        Relationships: []
+      }
       lms_media_usage: {
         Row: {
           assets: number | null
@@ -2152,6 +2671,51 @@ export type Database = {
           revision_number: number
         }[]
       }
+      broadcast_audience: {
+        Args: { p_audience: Json }
+        Returns: {
+          address: string
+          customer_id: string
+          name: string
+        }[]
+      }
+      broadcast_audience_count: { Args: { p_audience: Json }; Returns: number }
+      broadcast_claim_recipients: {
+        Args: { p_broadcast_id: string; p_limit: number }
+        Returns: {
+          address: string
+          bounced_at: string | null
+          broadcast_id: string
+          claimed_at: string | null
+          clicked_at: string | null
+          complained_at: string | null
+          created_at: string
+          customer_id: string | null
+          delivered_at: string | null
+          error_text: string | null
+          id: string
+          name: string | null
+          opened_at: string | null
+          provider_id: string | null
+          sent_at: string | null
+          status: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "broadcast_recipients"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      broadcast_mark_results: {
+        Args: { p_broadcast_id: string; p_results: Json }
+        Returns: undefined
+      }
+      broadcast_materialize: {
+        Args: { p_broadcast_id: string }
+        Returns: number
+      }
+      broadcast_stats: { Args: { p_broadcast_id: string }; Returns: Json }
       check_rate_limit: {
         Args: { p_key: string; p_max: number; p_window_seconds: number }
         Returns: {
@@ -2216,6 +2780,7 @@ export type Database = {
         Args: { p_course_id: string; p_values: Json }
         Returns: undefined
       }
+      experience_refresh: { Args: { target: string }; Returns: undefined }
       get_my_role: { Args: never; Returns: string }
       journal_lms_course_state: {
         Args: {
@@ -2250,6 +2815,7 @@ export type Database = {
           asset_key: string
         }[]
       }
+      messaging_subscription_counts: { Args: never; Returns: Json }
       refresh_analytics_views: { Args: never; Returns: undefined }
     }
     Enums: {

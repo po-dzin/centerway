@@ -810,8 +810,7 @@
 @media (min-width: 901px) {
   .programTileBody {
     --program-slot-pretitle: calc(
-      var(--ds-offer-card-pretitle-desktop-size) *
-        var(--ds-offer-card-pretitle-line-height)
+      var(--ds-offer-card-pretitle-desktop-size) * var(--ds-offer-card-pretitle-line-height)
     );
   }
 
@@ -1042,10 +1041,7 @@
   /* Narrow two-column cards retain the editorial hierarchy, but clamp it to
      the compact card step rather than reverting it to the body role. */
   .programTileBody {
-    --program-slot-pretitle: calc(
-      var(--ds-offer-card-pretitle-size) *
-        var(--ds-offer-card-pretitle-line-height)
-    );
+    --program-slot-pretitle: calc(var(--ds-offer-card-pretitle-size) * var(--ds-offer-card-pretitle-line-height));
   }
 
   .programTileBody p.programTilePromo,

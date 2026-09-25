@@ -1002,10 +1002,10 @@ describe("course moderation and admin deletion", () => {
   it("carries the approved access-term preset onto the offer's real term", async () => {
     db.tables.lms_lessons = [];
     db.tables.lms_progress_events = [];
-    db.tables.lms_course_offers = [
+    db.tables.experience_offers = [
       {
         id: "offer-reset",
-        course_id: "course-reset",
+        experience_id: "exp-reset",
         code: "course:reset-day",
         access_days: 30,
         access_lifetime: false,
@@ -1024,7 +1024,7 @@ describe("course moderation and admin deletion", () => {
 
     await moderateCourse({ courseId: "course-reset", actorId: ADMIN, action: "approve" });
 
-    expect(db.rows("lms_course_offers")[0]).toMatchObject({ access_days: 365, access_lifetime: false });
+    expect(db.rows("experience_offers")[0]).toMatchObject({ access_days: 365, access_lifetime: false });
     expect(db.rows("audit_log").some((entry) => entry.action === "catalog.offer.term_from_course")).toBe(true);
   });
 

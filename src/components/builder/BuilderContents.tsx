@@ -20,7 +20,7 @@
 import { useState } from "react";
 
 import { Icon } from "@/components/Icon";
-import type { Course, CourseModule } from "@/lms-core";
+import { isLinkedModule, type Course, type CourseModule } from "@/lms-core";
 import { BuilderGrip } from "./BuilderGrip";
 import { BuilderMenu } from "./BuilderMenu";
 import { InkLabel } from "./BuilderInkLabel";
@@ -299,7 +299,7 @@ export function BuilderContents({
                       </div>
                     );
                   })}
-                  {onAddLesson ? (
+                  {onAddLesson && !isLinkedModule(entry) ? (
                     <button className={styles.contentsAdd} type="button" onClick={() => onAddLesson(entry.id)}>
                       <Icon name="plus" size={18} /> Додати урок
                     </button>

@@ -55,6 +55,8 @@ export type PaymentStartInput = {
   fbc?: string | null;
   fbclid?: string | null;
   campaign?: string | null;
+  /** Who brought the buyer (`?ref`), already normalized. A person, not a campaign. */
+  ref?: string | null;
   client_ip?: string | null; // IP пользователя в момент клика на оплату
   client_ua?: string | null; // User-Agent браузера
   page_url?: string | null; // URL лендинга (event_source_url для CAPI)
@@ -261,6 +263,7 @@ export async function createPaymentInvoiceWithDeps(
     fbp: input.fbp,
     fbclid: input.fbclid,
     campaign: input.campaign,
+    ref: input.ref ?? null,
     client_ip: input.client_ip,
     client_ua: input.client_ua,
     page_url: input.page_url,

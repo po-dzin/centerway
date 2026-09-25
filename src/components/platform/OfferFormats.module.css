@@ -1,0 +1,28 @@
+/* The formats span the enrol section (2026-09-25). The section is a two-column
+   split built for «text beside a checkout»; three formats squeezed into its
+   left half stacked into one long column on a desktop. They take the whole
+   row instead, and the cards lay out three across where there is room. */
+.root {
+  grid-column: 1 / -1;
+}
+
+/* Every card ends in its action, at the same height across the row: a reader
+   compares formats left to right, and buttons at three different heights read
+   as three different kinds of thing. */
+.root .card {
+  display: flex;
+  flex-direction: column;
+}
+
+.root .action {
+  margin-block-start: auto;
+}
+
+/* The enquiry for a format agreed in conversation, under the row of cards. */
+.request {
+  display: grid;
+  gap: var(--cw-space-sm);
+  max-width: 36rem;
+  padding-block-start: var(--cw-space-md);
+  scroll-margin-block-start: var(--cw-space-3xl);
+}

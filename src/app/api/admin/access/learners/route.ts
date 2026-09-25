@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { normalizeRef } from "@/lib/referral/ref";
+import { parseCalendarDate } from "@/lms-core";
 import {
   AccessError,
   blockCourse,
@@ -99,6 +101,10 @@ type ProvisionBody = {
   payment?: { amount?: unknown; currency?: unknown; note?: string } | null;
   /** `manual` (default), `bonus` or `promotion` — why this seat exists. */
   source?: string;
+  /** `YYYY-MM-DD`: the cohort's shared day 1. Empty returns the seat to self-paced. */
+  cohortStartsOn?: string | null;
+  /** Who brought this person: the ambassador's tag, as in `?ref=`. */
+  ref?: string | null;
   /**
    * An elevated role to give the account, admin-only and optional.
    *
@@ -122,6 +128,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const deadline = normalizeDeadline(body.expiresAt);
   if (!deadline.ok) return badRequestResponse("expires_at_invalid");
+
+  let cohortStartsOn: string | null | undefined;
+  if (body.cohortStartsOn !== undefined) {
+    const typed = (body.cohortStartsOn ?? "").trim();
+    if (typed && !parseCalendarDate(typed)) return badRequestResponse("cohort_date_invalid");
+    cohortStartsOn = typed || null;
+  }
+  const ref = normalizeRef(body.ref);
+  if (body.ref && !ref) return badRequestResponse("ref_invalid");
 
   // Payment is optional — a review grant or a gift carries no money — but a
   // half-typed one is rejected rather than silently dropped: an operator who
@@ -160,6 +175,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       source: isGrantSource(body.source) ? body.source : undefined,
       createAccount: Boolean(body.createAccount),
       payment,
+      cohortStartsOn,
+      ref: ref ?? undefined,
       actorId: session.user.id,
     });
     // AFTER provisioning, never before: the account may not have existed

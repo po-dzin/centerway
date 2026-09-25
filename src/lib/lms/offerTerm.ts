@@ -31,10 +31,18 @@ export async function applyAccessTermToOffer(
   const rule = accessRuleForNote(input.note);
   if (!rule) return "not_a_preset";
   try {
+    // The course's own `course:<slug>` offer in the one table of prices.
+    const { data: course, error: courseError } = await db
+      .from("lms_courses")
+      .select("slug")
+      .eq("id", input.courseId)
+      .maybeSingle();
+    if (courseError) throw new Error(courseError.message);
+    if (!course) return "no_offer";
     const { data: offer, error } = await db
-      .from("lms_course_offers")
+      .from("experience_offers")
       .select("id, code, access_days, access_lifetime")
-      .eq("course_id", input.courseId)
+      .eq("code", `course:${course.slug as string}`)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!offer) return "no_offer";
@@ -46,11 +54,10 @@ export async function applyAccessTermToOffer(
     if (sameAccessRule(current, rule)) return "unchanged";
 
     const { error: updateError } = await db
-      .from("lms_course_offers")
+      .from("experience_offers")
       .update({
         access_days: rule.accessLifetime ? null : rule.accessDays,
         access_lifetime: rule.accessLifetime,
-        updated_at: new Date().toISOString(),
       })
       .eq("id", offer.id as string);
     if (updateError) throw new Error(updateError.message);

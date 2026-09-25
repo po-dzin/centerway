@@ -29,6 +29,7 @@
 
 import { adminClient } from "@/lib/auth/adminClient";
 import { courseFromRows } from "@/lib/lms/authoring";
+import { courseOfferCode } from "@/lms-core";
 
 type Row = Record<string, unknown>;
 
@@ -63,7 +64,7 @@ export async function auditShelf(): Promise<ShelfAudit> {
     db.from("lms_courses").select("*"),
     db.from("lms_modules").select("*"),
     db.from("lms_lessons").select("*"),
-    db.from("lms_course_offers").select("course_id, code, amount, active"),
+    db.from("experience_offers").select("code, amount, active"),
   ]);
 
   const firstError = courseRows.error ?? moduleRows.error ?? lessonRows.error;
@@ -72,8 +73,12 @@ export async function auditShelf(): Promise<ShelfAudit> {
   const courses = (courseRows.data ?? []) as Row[];
   const modules = (moduleRows.data ?? []) as Row[];
   const lessons = (lessonRows.data ?? []) as Row[];
+  // By the course's own offer code — the same row the storefront prices from.
+  const activeOfferCodes = new Set(
+    ((offerRows.data ?? []) as Row[]).filter((row) => row.active).map((row) => row.code as string),
+  );
   const activeOffers = new Set(
-    ((offerRows.data ?? []) as Row[]).filter((row) => row.active).map((row) => row.course_id as string),
+    courses.filter((row) => activeOfferCodes.has(courseOfferCode(row.slug as string))).map((row) => row.id as string),
   );
 
   const faults: ShelfFault[] = [];

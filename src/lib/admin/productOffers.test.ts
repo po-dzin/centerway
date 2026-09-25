@@ -21,7 +21,12 @@ const { listProductOffers, saveProductOffer, setProductOfferActive, PRICEABLE_PR
   await import("./productOffers");
 
 function seed(offers: Row[] = []) {
-  db.tables = { product_offers: offers };
+  // Prices live in the one table since 2026-09-25; a product's row hangs off
+  // its thing in the registry, found by the same slug as the code.
+  db.tables = {
+    experience_offers: offers,
+    experiences: ["herbs", "consult", "irem-individual"].map((slug) => ({ id: `exp-${slug}`, slug })),
+  };
   db.failures = {};
 }
 
@@ -30,7 +35,7 @@ const offerOf = (overrides: Partial<Row> = {}): Row => ({
   amount: 1,
   list_amount: null,
   currency: "UAH",
-  kind: "checkout",
+  mode: "checkout",
   pixel_content_name: "Herbal Blend",
   active: true,
   updated_at: "2026-09-02T00:00:00.000Z",

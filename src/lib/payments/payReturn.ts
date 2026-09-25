@@ -80,6 +80,13 @@ export function buildReturnDestination(
   orderRef: string,
   meta: ReturnMeta,
   nowMs: number,
+  /**
+   * The program page, when the caller had to look it up. A FORMAT code
+   * (`way21-group`) cannot name its program by itself the way `course:<slug>`
+   * does, so the route resolves it and hands the answer in — this function
+   * stays synchronous, which is the point of `productProgramPath`.
+   */
+  programPathOverride?: string | null,
 ): string {
   const urls = productReturnUrls(product);
 
@@ -100,7 +107,7 @@ export function buildReturnDestination(
      webhook sends server-side. Losing that pairing would have Meta counting
      one payment twice, which is the reason this is a redirect target and not a
      deletion of /pay/thanks. */
-  const programPath = status === "paid" ? productProgramPath(product) : null;
+  const programPath = status === "paid" ? (programPathOverride ?? productProgramPath(product)) : null;
   /* Pending has its own page rather than borrowing the declined one. The two
      say opposite things about the buyer's money, and a shared page with a
      conditional sentence is how they would drift back together. */

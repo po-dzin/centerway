@@ -76,7 +76,7 @@ describe("writeCourseStructure", () => {
     return expect(writeCourseStructure(fakeWriter(), course)).resolves.toMatchObject({
       slug: "way21",
       status: "published",
-      moduleCount: 5,
+      moduleCount: 7,
       lessonCount: 16,
     });
   });

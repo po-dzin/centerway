@@ -9,6 +9,7 @@ import {
   newCourseFromTemplate,
   courseForSave,
   newModule,
+  isLinkedModule,
   nextDayIndex,
   PLACEHOLDER_MARKER,
   renumber,
@@ -31,6 +32,7 @@ import {
   type WorkspaceMode,
 } from "./courseWorkspace";
 import { BuilderCourseAuthor } from "./BuilderCourseAuthor";
+import { BuilderFormats } from "./BuilderFormats";
 import { BuilderStructureStart, isPristineStructure } from "./BuilderStructureStart";
 import { BuilderBlockers } from "./BuilderBlockers";
 import {
@@ -971,6 +973,9 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             Сторінка програми
           </h2>
           <BuilderCourseSettings course={course} scope="page" onChange={editCourse} />
+          {/* The ways through the program and what each opens — the part of the
+              page the author composes and the owner prices. */}
+          <BuilderFormats course={course} onChange={editCourse} />
         </div>
       </section>
 
@@ -1041,23 +1046,32 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         {isPristineStructure(course) ? <BuilderStructureStart format="start" onApply={applyTemplate} /> : null}
 
         <div className={styles.structureModules}>
-          {course.modules.map((module, moduleIndex) => (
-            <ModuleEditor
-              key={module.id}
-              course={course}
-              module={module}
-              moduleIndex={moduleIndex}
-              moduleDrag={moduleDrag}
-              lessonDrag={lessonDrag}
-              onChange={editCourse}
-              onModules={editModules}
-              onNote={toast.warning}
-              onOpenLesson={openLesson}
-              busy={working}
-              onImportLessons={(files) => importLessons(moduleIndex, files)}
-              onExportLesson={exportLesson}
-            />
-          ))}
+          {course.modules.map((module, moduleIndex) =>
+            isLinkedModule(module) ? (
+              /* A linked module is another program: it has no lessons to edit
+                 here. It is added and removed under «Сторінка програми». */
+              <p key={module.id} className={styles.readOnlyNote}>
+                Програма всередині: <strong>{module.title}</strong> — додається й прибирається у вкладці «Сторінка
+                програми».
+              </p>
+            ) : (
+              <ModuleEditor
+                key={module.id}
+                course={course}
+                module={module}
+                moduleIndex={moduleIndex}
+                moduleDrag={moduleDrag}
+                lessonDrag={lessonDrag}
+                onChange={editCourse}
+                onModules={editModules}
+                onNote={toast.warning}
+                onOpenLesson={openLesson}
+                busy={working}
+                onImportLessons={(files) => importLessons(moduleIndex, files)}
+                onExportLesson={exportLesson}
+              />
+            ),
+          )}
         </div>
 
         <button
