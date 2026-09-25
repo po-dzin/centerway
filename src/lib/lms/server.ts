@@ -267,9 +267,8 @@ async function loadPurchases(identity: LearnerIdentity): Promise<{ orders: PaidO
  */
 async function readOfferAccess(course: Course): Promise<{ rule: AccessRule | null; free: boolean }> {
   const db = adminClient();
-  // The course's own offer, by its code, in the one table of prices. The same
-  // row the old table held — the mirror trigger writes it — so the answer is
-  // unchanged; which of SEVERAL offers' terms applies is a question for the
+  // The course's own offer, by its code, in the one table of prices. Which of
+  // SEVERAL offers' terms applies is a question for the
   // entitlement, answered when access is keyed by the offer that was bought.
   const { data } = await db
     .from("experience_offers")

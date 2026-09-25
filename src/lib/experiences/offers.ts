@@ -9,11 +9,10 @@ import type { adminClient } from "@/lib/auth/adminClient";
  * regular), and an offer may open more than its own thing
  * (`experience_offer_items`: the guided package opens the way21 course).
  *
- * TRANSITIONAL: the owner's catalogue and the builder's access term still write
- * the two old tables, and database triggers mirror every such write here by
- * `code`. So this module is safe to READ today and must not be WRITTEN until the
- * catalogue moves — a write here would be overwritten by the next mirror.
- * See the migration `20260924020000_experience_offers.sql`.
+ * THE ONLY PLACE A PRICE IS WRITTEN (2026-09-25). The owner's catalogue, the
+ * product prices, the builder's access term and the format review all write
+ * here; the copies from the two older tables are gone
+ * (`20260925010000_offer_writers_move.sql`), and those tables are an archive.
  */
 
 type Db = ReturnType<typeof adminClient>;

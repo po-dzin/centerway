@@ -444,7 +444,6 @@ export type BuilderFormatDto = {
   reviewStatus: BuilderFormatReview;
   active: boolean;
   includes: Array<{ slug: string; title: string }>;
-  legacy: boolean;
 };
 
 export type BuilderFormatsDto = {

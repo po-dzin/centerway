@@ -1,6 +1,6 @@
 /**
- * Reads and writes `public.lms_course_offers` — the price of a course built in
- * the builder.
+ * Reads and writes a course's own offer in `public.experience_offers` — the one
+ * table of prices since 2026-09-25 (`lms_course_offers` is an archive now).
  *
  * WHY A SCRIPT AND NOT A SCREEN IN THE BUILDER. The price is the OWNER's, not
  * the author's (docs/migration/sql/2026-08-22_lms_course_storefront.sql): an
@@ -91,7 +91,7 @@ const offerCode = (slug) => `course:${slug}`;
 async function courseFor(slug) {
   const { data, error } = await db
     .from("lms_courses")
-    .select("id, slug, title, status, visibility")
+    .select("id, slug, title, status, visibility, experience_id")
     .eq("slug", slug)
     .maybeSingle();
   if (error) fail(error.message);
@@ -118,8 +118,8 @@ function report(course, offer) {
 
 async function offerFor(slug) {
   const { data, error } = await db
-    .from("lms_course_offers")
-    .select("id, code, amount, list_amount, currency, pixel_content_name, active, access_days, access_lifetime")
+    .from("experience_offers")
+    .select("id, code, amount, list_amount, currency, pixel_content_name, active, access_days, access_lifetime, format")
     .eq("code", offerCode(slug))
     .maybeSingle();
   if (error) fail(error.message);
@@ -133,7 +133,7 @@ async function list() {
     .order("sort_order", { ascending: true });
   if (error) fail(error.message);
   const { data: offers } = await db
-    .from("lms_course_offers")
+    .from("experience_offers")
     .select("id, code, amount, list_amount, currency, active, access_days, access_lifetime");
   const byCode = new Map((offers ?? []).map((row) => [row.code, row]));
 
@@ -170,10 +170,7 @@ async function main() {
     if (!existing) fail(`"${slug}" has no offer to withdraw`);
     // Deactivated, never deleted: the row is the record of what was sold, and
     // orders already filed under this code have to keep resolving.
-    const { error } = await db
-      .from("lms_course_offers")
-      .update({ active: false, updated_at: new Date().toISOString() })
-      .eq("id", existing.id);
+    const { error } = await db.from("experience_offers").update({ active: false }).eq("id", existing.id);
     if (error) fail(error.message);
     console.log(`admin:offer — withdrew ${offerCode(slug)}`);
     report(course, await offerFor(slug));
@@ -207,8 +204,8 @@ async function main() {
     // Term-only edit: the price stays exactly as it is.
     if (!existingForTerm) fail(`"${slug}" has no offer yet — set a price with --amount in the same call`);
     const { error } = await db
-      .from("lms_course_offers")
-      .update({ access_days: accessDays, access_lifetime: accessLifetime, updated_at: new Date().toISOString() })
+      .from("experience_offers")
+      .update({ access_days: accessDays, access_lifetime: accessLifetime })
       .eq("id", existingForTerm.id);
     if (error) fail(error.message);
     console.log(`admin:offer — access term updated for ${offerCode(slug)}`);
@@ -224,9 +221,13 @@ async function main() {
   }
 
   const existing = existingForTerm;
+  if (!course.experience_id) fail(`"${slug}" is not in the experiences registry yet — run the migrations first`);
   const payload = {
-    course_id: course.id,
+    experience_id: course.experience_id,
     code: offerCode(slug),
+    mode: amount === 0 ? "free" : "checkout",
+    review_status: "approved",
+    format: existing?.format ?? "self",
     amount,
     list_amount: listAmount,
     currency: "UAH",
@@ -239,10 +240,9 @@ async function main() {
     // splits one product's history into two lines.
     pixel_content_name: existing?.pixel_content_name ?? course.title,
     active: true,
-    updated_at: new Date().toISOString(),
   };
 
-  const { error } = await db.from("lms_course_offers").upsert(payload, { onConflict: "code" });
+  const { error } = await db.from("experience_offers").upsert(payload, { onConflict: "code" });
   if (error) fail(error.message);
 
   console.log(`admin:offer — ${existing ? "updated" : "created"} ${offerCode(slug)}`);

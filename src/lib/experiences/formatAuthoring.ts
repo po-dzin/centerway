@@ -50,8 +50,6 @@ export type AuthoredFormat = {
   reviewStatus: FormatReviewStatus;
   active: boolean;
   includes: Array<{ slug: string; title: string }>;
-  /** Sold under a row the old catalogue still owns: its price moves through that catalogue. */
-  legacy: boolean;
 };
 
 export type IncludableProgram = { slug: string; title: string; status: string };
@@ -119,16 +117,6 @@ async function courseRow(db: Db, courseId: string) {
   };
 }
 
-/** Codes the old catalogue still writes; their price reaches `experience_offers` through the mirror. */
-async function legacyCodes(db: Db, codes: string[]): Promise<Set<string>> {
-  if (codes.length === 0) return new Set();
-  const [course, product] = await Promise.all([
-    db.from("lms_course_offers").select("code").in("code", codes),
-    db.from("product_offers").select("code").in("code", codes),
-  ]);
-  return new Set([...(course.data ?? []), ...(product.data ?? [])].map((row) => row.code as string));
-}
-
 export async function listCourseFormats(courseId: string): Promise<AuthoredFormat[]> {
   const db = adminClient();
   const course = await courseRow(db, courseId);
@@ -150,10 +138,6 @@ export async function listCourseFormats(courseId: string): Promise<AuthoredForma
     ? await db.from("lms_courses").select("slug, title, experience_id").in("experience_id", itemExperienceIds)
     : { data: [] as Array<{ slug: string; title: string; experience_id: string }> };
   const courseByExperience = new Map((itemCourses ?? []).map((row) => [row.experience_id as string, row]));
-  const legacy = await legacyCodes(
-    db,
-    rows.map((row) => row.code),
-  );
 
   return rows
     .sort((a, b) => a.sort_order - b.sort_order || a.code.localeCompare(b.code))
@@ -180,7 +164,6 @@ export async function listCourseFormats(courseId: string): Promise<AuthoredForma
             const target = courseByExperience.get(item.experience_id as string);
             return target ? [{ slug: target.slug as string, title: target.title as string }] : [];
           }),
-        legacy: legacy.has(row.code),
       };
     });
 }
@@ -465,10 +448,8 @@ export type ReviewAction =
  * The owner's decision. Approving sets the LIVE price — the author's proposal
  * is a starting point the owner may change — and puts the format on sale.
  *
- * A legacy row (the course's own offer, the Шлях 21 guided package) still
- * belongs to the old catalogue: its price is written there and reaches
- * `experience_offers` through the mirror, or the next catalogue save would
- * silently put the old figure back.
+ * Every price lives in `experience_offers` alone since 2026-09-25 — the
+ * copies from the two older tables are gone — so this writes it there.
  */
 export async function reviewFormat(input: { code: string; actorId: string; decision: ReviewAction }): Promise<void> {
   const db = adminClient();
@@ -477,7 +458,6 @@ export async function reviewFormat(input: { code: string; actorId: string; decis
   if (!data) throw new FormatError("format_not_found", 404);
   const row = data as Row;
   const now = new Date().toISOString();
-  const legacy = (await legacyCodes(db, [row.code])).has(row.code);
 
   if (input.decision.action === "approve") {
     const amount = input.decision.amount;
@@ -492,14 +472,6 @@ export async function reviewFormat(input: { code: string; actorId: string; decis
       throw new FormatError("format_invalid_list_amount");
     }
 
-    if (legacy) {
-      const table = row.code.startsWith("course:") ? "lms_course_offers" : "product_offers";
-      const mirrored = await db
-        .from(table)
-        .update({ amount, list_amount: listAmount, active: true })
-        .eq("code", row.code);
-      if (mirrored.error) throw new FormatError(`format_write_failed:${mirrored.error.message}`, 500);
-    }
     const { error: writeError } = await db
       .from("experience_offers")
       .update({
@@ -536,11 +508,6 @@ export async function reviewFormat(input: { code: string; actorId: string; decis
 
   if (row.review_status !== "approved") throw new FormatError("format_not_approved", 409);
   const active = input.decision.action === "resume";
-  if (legacy) {
-    const table = row.code.startsWith("course:") ? "lms_course_offers" : "product_offers";
-    const mirrored = await db.from(table).update({ active }).eq("code", row.code);
-    if (mirrored.error) throw new FormatError(`format_write_failed:${mirrored.error.message}`, 500);
-  }
   const { error: writeError } = await db.from("experience_offers").update({ active }).eq("id", row.id);
   if (writeError) throw new FormatError(`format_write_failed:${writeError.message}`, 500);
 }

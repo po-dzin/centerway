@@ -115,11 +115,8 @@ async function readOffer(slug: string): Promise<CourseOffer | null> {
   try {
     const db = supabaseAdmin();
     const { data, error } = await db
-      /* THE ONE TABLE OF PRICES (2026-09-20). The owner's catalogue still writes
-         `lms_course_offers`; a database trigger mirrors every such write here in
-         the same transaction, so this read is never behind it. Reading here
-         first is what lets the catalogue move later without this path noticing.
-         See `lib/experiences/offers.ts`. */
+      /* THE ONE TABLE OF PRICES (2026-09-20). Since 2026-09-25 the owner's
+         catalogue writes here directly — see `lib/experiences/offers.ts`. */
       .from("experience_offers")
       .select("code, amount, list_amount, currency, pixel_content_name, active")
       .eq("code", courseOfferCode(slug))

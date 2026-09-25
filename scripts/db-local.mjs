@@ -72,10 +72,18 @@ const LOCAL_SUPERUSER_URL = "postgresql://supabase_admin:postgres@127.0.0.1:5432
  */
 const CONTENT_TABLES = [
   "lms_authors",
+  // The registry before the courses that point at it (`lms_courses.experience_id`),
+  // and the one table of prices after both (2026-09-25).
+  "experiences",
+  "experience_aliases",
   "lms_courses",
   "lms_modules",
   "lms_lessons",
   "lms_media_assets",
+  "experience_offers",
+  "experience_offer_items",
+  "offer_aliases",
+  // Archive since 2026-09-25 — kept so an old snapshot still restores.
   "lms_course_offers",
   "product_offers",
   "test_definitions",

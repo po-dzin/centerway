@@ -18,7 +18,6 @@ export type FormatReviewRow = {
   reviewStatus: "draft" | "proposed" | "approved" | "declined";
   active: boolean;
   includes: Array<{ slug: string; title: string }>;
-  legacy: boolean;
   courseSlug: string;
   courseTitle: string;
 };

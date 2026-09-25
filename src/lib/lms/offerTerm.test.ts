@@ -8,7 +8,7 @@ const db = new FakeSupabase();
 
 const offer = (overrides: Partial<Row> = {}): Row => ({
   id: "offer-1",
-  course_id: "course-1",
+  experience_id: "exp-1",
   code: "course:reset-day",
   access_days: 30,
   access_lifetime: false,
@@ -16,7 +16,11 @@ const offer = (overrides: Partial<Row> = {}): Row => ({
 });
 
 beforeEach(() => {
-  db.tables = { lms_course_offers: [offer()], audit_log: [] };
+  db.tables = {
+    lms_courses: [{ id: "course-1", slug: "reset-day" }],
+    experience_offers: [offer()],
+    audit_log: [],
+  };
   db.failures = {};
 });
 
@@ -26,7 +30,7 @@ const apply = (note: string | null, actorId: string | null = "author-1") =>
 describe("applyAccessTermToOffer", () => {
   it("moves the offer's real term to the preset the author chose, and says so in the audit", async () => {
     expect(await apply("Пів року")).toBe("updated");
-    expect(db.rows("lms_course_offers")[0]).toMatchObject({ access_days: 180, access_lifetime: false });
+    expect(db.rows("experience_offers")[0]).toMatchObject({ access_days: 180, access_lifetime: false });
     expect(db.rows("audit_log")[0]).toMatchObject({
       action: "catalog.offer.term_from_course",
       entity_id: "course:reset-day",
@@ -35,7 +39,7 @@ describe("applyAccessTermToOffer", () => {
 
   it("grants lifetime access for «Назавжди» and clears the day count", async () => {
     expect(await apply("Назавжди")).toBe("updated");
-    expect(db.rows("lms_course_offers")[0]).toMatchObject({ access_days: null, access_lifetime: true });
+    expect(db.rows("experience_offers")[0]).toMatchObject({ access_days: null, access_lifetime: true });
   });
 
   it("writes nothing when the offer already grants what the words say", async () => {
@@ -44,14 +48,14 @@ describe("applyAccessTermToOffer", () => {
   });
 
   it("does not create an offer — that is the owner's act in the catalogue", async () => {
-    db.tables.lms_course_offers = [];
+    db.tables.experience_offers = [];
     expect(await apply("Рік")).toBe("no_offer");
-    expect(db.rows("lms_course_offers")).toHaveLength(0);
+    expect(db.rows("experience_offers")).toHaveLength(0);
   });
 
   it("leaves the term alone for words that are not a preset", async () => {
     expect(await apply("доступ назавжди")).toBe("not_a_preset");
     expect(await apply(null)).toBe("not_a_preset");
-    expect(db.rows("lms_course_offers")[0]).toMatchObject({ access_days: 30 });
+    expect(db.rows("experience_offers")[0]).toMatchObject({ access_days: 30 });
   });
 });

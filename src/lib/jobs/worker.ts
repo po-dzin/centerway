@@ -6,7 +6,6 @@ import { normalizeTrackingString } from "@/lib/tracking/metaClickIds";
 import { getErrorMessage } from "@/lib/errors";
 import { processDoshaReminderJob } from "@/lib/dosha/doshaReminder";
 import { PRODUCTS, isCatalogProduct } from "@/lib/products";
-import { parseCourseOfferCode } from "@/lms-core";
 
 // Simple job registry
 type JobHandler = (payload: unknown) => Promise<void>;
@@ -45,12 +44,12 @@ async function pixelContentNameFor(
 ): Promise<string | null> {
   if (!productCode) return null;
   if (isCatalogProduct(productCode)) return PRODUCTS[productCode].pixelContentName;
-  if (!parseCourseOfferCode(productCode)) return null;
-
+  // Any other code is an offer in the one table of prices — a course, or a
+  // format of one (`way21-group`) — and carries its own reporting label.
   const { data } = await db
-    .from("lms_course_offers")
+    .from("experience_offers")
     .select("pixel_content_name")
-    .eq("code", productCode)
+    .eq("code", productCode.trim().toLowerCase())
     .maybeSingle();
 
   return normalizeTrackingString(data?.pixel_content_name) ?? null;
