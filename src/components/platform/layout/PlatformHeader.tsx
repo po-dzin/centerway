@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { personalNav, platformHomeHref, platformNav } from "@/lib/platform/content";
 import { canonicalPersonalPath } from "@/lib/surfaces/catalog";
 import { isPersonalHost } from "@/lib/platform/surfaceHref";
@@ -57,6 +57,19 @@ export function PlatformHeader({
   const navLayerRef = useRef<HTMLDivElement | null>(null);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
   const pathname = usePathname();
+  /* WHICH ITEM IS CURRENT IS ASKED OF THE ADDRESS BAR ONCE WE ARE IN ONE
+     (2026-09-25). On production «Головна» was never marked on the home page:
+     the build's prerender marks it, but the copy Vercel regenerates in the
+     background (ISR) came out without `aria-current`, and hydration does not
+     patch an attribute the server got wrong — so it stayed unmarked until the
+     first client navigation. The server snapshot is still `usePathname()`;
+     in the browser the location itself decides, and the change is an ordinary
+     re-render that React applies. */
+  const activePath = useSyncExternalStore(
+    subscribeNever,
+    () => window.location.pathname,
+    () => pathname,
+  );
   const href = useSurfaceHref();
   const host = useSurfaceHost();
   const onPersonalSurface = surface === "personal" || isPersonalHost(host);
@@ -214,6 +227,7 @@ export function PlatformHeader({
   }
 
   function isActive(href: string, match: "exact" | "prefix") {
+    const pathname = activePath;
     if (!pathname) return false;
     // Hashes are stripped before comparing: `pathname` never carries one, so a
     // raw href with a fragment could never read as current. Nothing in the nav
@@ -337,4 +351,10 @@ export function PlatformHeader({
       </div>
     </header>
   );
+}
+
+/* The location is re-read on every render; the header re-renders on every
+   route change through `usePathname`, so there is nothing to subscribe to. */
+function subscribeNever(): () => void {
+  return () => {};
 }
