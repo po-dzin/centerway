@@ -1,3 +1,5 @@
+import { parseCourseOfferCode } from "@/lms-core/offerCode";
+
 export type PlatformProfileOfferKind = "program" | "mini-course" | "product" | "lead" | "unknown";
 
 export function getOfferMeta(productCode: string | null | undefined): {
@@ -7,11 +9,14 @@ export function getOfferMeta(productCode: string | null | undefined): {
 } {
   const code = (productCode ?? "").trim().toLowerCase();
 
-  switch (code) {
+  /* `course:<slug>` is the code every offer is filed under since the offer
+     codes became one channel; the cases below are keyed by the older names. */
+  switch (parseCourseOfferCode(code) ?? code) {
     case "short":
     case "reboot":
       return { code: "short", title: "Short-Перезавантаження", kind: "mini-course" };
     case "irem":
+    case "irem-gymnastics":
       return { code: "irem", title: "IREM Гімнастика", kind: "program" };
     case "natural-body":
     case "ideal-body":

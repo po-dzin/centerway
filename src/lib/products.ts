@@ -1,5 +1,3 @@
-import { courseOfferCode, parseCourseOfferCode } from "@/lms-core/offerCode";
-
 export type SearchParams = Record<string, string | string[] | undefined>;
 
 /**
@@ -193,50 +191,26 @@ export const PRODUCTS = {
   },
 } as const;
 
-// Codes that only ever produce a lead, never an order. "herbs" left this list
-// when it got its own checkout; consult stayed, because the consultation is
-// agreed in conversation and its landing posts to /api/leads.
-export const LEAD_PRODUCT_CODES = ["consult", "natural-body", "platform", "irem-individual"] as const;
-
 /**
  * The six products written in this file, and only those.
  *
- * `PRODUCTS[code]` is safe for exactly this union and nothing wider — which is
- * the whole reason it has its own name now.
+ * WHAT IS LEFT OF THEM (2026-09-25). Prices, invoice prose, reporting labels
+ * and every spelling a code was ever sold under live in `experience_offers` and
+ * `offer_aliases`, and a code reaches its offer only through `describeOffer`.
+ * The entries below are read by the surfaces that have not moved yet — the
+ * support bot's course map, the agent corpus, the report key and the IREM
+ * landing — and go when the last of them does.
  */
 export type CatalogProductCode = keyof typeof PRODUCTS;
 
 /**
- * A course out of the builder, sold under its own code.
- *
- * Built by `courseOfferCode` and parsed by `parseCourseOfferCode`, both in
- * lms-core so the checkout and the entitlement cannot build it differently.
- * The two namespaces cannot collide: a `PRODUCTS` key can never contain a
- * colon.
+ * Anything that can be charged for: an offer's own code, as `experience_offers`
+ * carries it — `course:<slug>`, `way21-group`, `way21-support`. A plain string
+ * since the codes became one channel: the only way to get a payable code is
+ * `loadPayableOffer`, which resolved it against the table.
  */
-export type CourseProductCode = `course:${string}`;
-
-/**
- * Anything that can be charged for.
- *
- * WIDENED 2026-08-22, and the widening is the point. While this was
- * `keyof typeof PRODUCTS`, every payment surface could write `PRODUCTS[code]`
- * and be right; a `course:<slug>` code reaching that indexing would have read
- * `undefined` — or, through `resolvePayableProduct`'s old fallback, charged the
- * buyer for Short Reboot. Prices for these codes live in the database, so the
- * commercial facts are now looked up (`loadPayableOffer`) rather than indexed.
- */
-/**
- * A FORMAT of a program, sold under the code its offer row carries
- * (`way21-group`, 2026-09-25). Branded rather than plain `string` so nothing
- * can index `PRODUCTS` with it by accident: it only ever comes out of
- * `loadPayableOffer`, which resolved it against `experience_offers`.
- */
-export type FormatProductCode = string & { readonly __formatOffer: true };
-
-export type PayableProductCode = CatalogProductCode | CourseProductCode | FormatProductCode;
-export type LeadProductCode = (typeof LEAD_PRODUCT_CODES)[number];
-export type ProductCode = PayableProductCode | LeadProductCode;
+export type PayableProductCode = string;
+export type ProductCode = string;
 export type Locale = "uk" | "en";
 
 const DEFAULT_LOCALE: Locale = "en";
@@ -245,61 +219,9 @@ function first(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;
 }
 
-/**
- * Нормализуем продукт из любого входа:
- * - "short" / "irem"
- * - { product: "irem" } / { product_code: "short" }
- * - Promise<searchParams>
- */
-export function normalizeProduct(input: unknown): ProductCode | null {
-  if (!input) return null;
-
-  // строка
-  if (typeof input === "string") {
-    const s = input.trim().toLowerCase();
-    // A course out of the builder. Checked FIRST and rebuilt from the parsed
-    // slug rather than passed through, so nothing but the exact shape survives.
-    const courseSlug = parseCourseOfferCode(s);
-    if (courseSlug) return courseOfferCode(courseSlug) as CourseProductCode;
-    if (s === "short" || s === "reboot") return "short";
-    if (s === "irem-individual" || s === "irem_individual" || s === "irem-support") return "irem-individual";
-    if (s === "irem") return "irem";
-    if (s === "way21-support" || s === "way21_support") return "way21-support";
-    if (s === "way21" || s === "shlyah21" || s === "detox21") return "way21";
-    if (s === "reset-day" || s === "reset_day" || s === "reset" || s === "rozvantazhennya") return "reset-day";
-    if (s === "consult" || s === "consultation") return "consult";
-    // `ideal-body` is the name this product was sold under until 2026-08-29;
-    // it stays on the left of the arrow for exactly the reason the others do.
-    if (s === "natural-body" || s === "ideal-body" || s === "ideal_body" || s === "idealne-tilo") return "natural-body";
-    if (s === "herbs") return "herbs";
-    if (s === "platform" || s === "centerway") return "platform";
-    return null;
-  }
-
-  // объект searchParams
-  if (typeof input === "object") {
-    const sp = input as SearchParams;
-    const raw = first(sp.product) ?? first(sp.product_code) ?? first(sp.p);
-
-    if (typeof raw === "string") return normalizeProduct(raw);
-    return null;
-  }
-
-  return null;
-}
-
 /** One of the six written in this file — the only codes `PRODUCTS` may be indexed by. */
-export function isCatalogProduct(product: ProductCode | string | null | undefined): product is CatalogProductCode {
+export function isCatalogProduct(product: string | null | undefined): product is CatalogProductCode {
   return typeof product === "string" && Object.prototype.hasOwnProperty.call(PRODUCTS, product);
-}
-
-export function isPayableProduct(product: ProductCode | string | null | undefined): product is PayableProductCode {
-  return isCatalogProduct(product) || parseCourseOfferCode(product) !== null;
-}
-
-export function normalizePayableProduct(input: unknown): PayableProductCode | null {
-  const product = normalizeProduct(input);
-  return isPayableProduct(product) ? product : null;
 }
 
 export type ProductFulfilment =
@@ -330,10 +252,6 @@ export type ProductFulfilment =
   | { kind: "bot"; url: string }
   | { kind: "cabinet" };
 
-export function productFulfilment(product: CatalogProductCode): ProductFulfilment {
-  return PRODUCTS[product].fulfilment;
-}
-
 /**
  * Everything a payment needs to know about the thing being sold.
  *
@@ -362,82 +280,12 @@ export type PayableOffer = {
   declinedUrl: string;
 };
 
-/** One of the six, as an offer. Pure — no database, no await. */
-export function catalogOffer(code: CatalogProductCode): PayableOffer {
-  const entry = PRODUCTS[code];
-  return {
-    code,
-    heading: { uk: entry.heading.uk, en: entry.heading.en },
-    description: { uk: entry.description.uk, en: entry.description.en },
-    amount: entry.amount,
-    listAmount: entry.listAmount,
-    currency: entry.currency,
-    pixelContentName: entry.pixelContentName,
-    fulfilment: entry.fulfilment,
-    approvedUrl: entry.approvedUrl,
-    declinedUrl: entry.declinedUrl,
-  };
-}
-
 export function offerHeading(offer: PayableOffer, locale: Locale): string {
   return offer.heading[locale] ?? offer.heading[DEFAULT_LOCALE];
 }
 
 export function offerDescription(offer: PayableOffer, locale: Locale): string {
   return offer.description[locale] ?? offer.description[DEFAULT_LOCALE];
-}
-
-/**
- * Where a buyer is sent back to after paying for `code`.
- *
- * The six answer from their own entry; anything else answers with the platform
- * pair, which is what all six point at anyway. A code with no entry must still
- * return somewhere real — a return URL is decided before the payment, and a
- * missing one strands the buyer on WayForPay.
- */
-export function productReturnUrls(code: string): { approvedUrl: string; declinedUrl: string } {
-  if (isCatalogProduct(code)) {
-    return { approvedUrl: PRODUCTS[code].approvedUrl, declinedUrl: PRODUCTS[code].declinedUrl };
-  }
-  return { approvedUrl: PLATFORM_THANKS_URL, declinedUrl: PLATFORM_FAILED_URL };
-}
-
-/**
- * The offer page for what `code` sells, when there is one.
- *
- * WHAT IT IS FOR. A buyer who pays for a course used to land on a confirmation
- * page and then press a second button to reach the thing they bought. That page
- * exists for a real reason — a bot purchase has nowhere else to go, and a
- * physical order has only the cabinet — but for a course it is a step between
- * the payment and the course whose entire content is "you paid". The offer page
- * they came from already knows how to show a course as owned: unlocked lessons,
- * their standing, a button into the last one. Sending them back to it is the
- * confirmation.
- *
- * `null` for anything without an offer page — bot deliveries and the herb
- * order, which keep `/pay/thanks`.
- *
- * NOT ASYNC, and it must not become so: it is called while deciding the return
- * URL, and a database read there is a way for a payment to end nowhere. A
- * builder course answers from its code alone (`course:<slug>` → `/programs/
- * <slug>`), and it cannot be sold at all unless that page is already public —
- * `loadPayableOffer` refuses a course that is not.
- */
-export function productProgramPath(code: string): string | null {
-  const courseCode = parseCourseOfferCode(code);
-  if (courseCode) return `/programs/${courseCode}`;
-
-  if (isCatalogProduct(code)) {
-    const fulfilment = PRODUCTS[code].fulfilment;
-    /* THE PROGRAM SLUG, falling back to the course slug where the two agree.
-       They stopped agreeing on 2026-08-29, when Short Reboot and IREM moved off
-       Telegram delivery: `short` is sold at /programs/reboot and
-       `irem-gymnastics` at /programs/irem, and returning a buyer to the row
-       name would have ended a paid checkout on a 404. */
-    if (fulfilment.kind === "course") return `/programs/${fulfilment.programSlug}`;
-  }
-
-  return null;
 }
 
 /**

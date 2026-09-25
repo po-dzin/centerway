@@ -17,7 +17,9 @@
  */
 
 import { PROFILE_PATH_PREFIX, surfaceUrl } from "@/lib/surfaces/catalog";
-import { isCatalogProduct, normalizeProduct, productFulfilment, type ProductFulfilment } from "@/lib/products";
+import type { adminClient } from "@/lib/auth/adminClient";
+import { describeOffer, offerFulfilment } from "@/lib/experiences/offers";
+import type { ProductFulfilment } from "@/lib/products";
 import { parseCourseOfferCode } from "@/lms-core/offerCode";
 
 /**
@@ -35,27 +37,30 @@ export function fulfilmentDestination(fulfilment: ProductFulfilment): { href: st
 /**
  * What an ORDER delivers, from the code stored on the row.
  *
- * Two shapes reach `orders.product_code` and only one of them is in
- * `PRODUCTS`: a course built in the builder is filed as `course:<slug>` and is
- * knowable without any lookup, because the slug IS the address.
+ * Through `describeOffer`, the one channel from a code to an offer, because the
+ * codes on old rows are not the codes offers carry now — `reboot`, `irem`,
+ * `ideal_body` and the rest were live long enough to be stored, and an operator
+ * opening a 2026-03 order is exactly the person who must not be handed the
+ * cabinet by default. Those spellings are rows of `offer_aliases`; a second
+ * table of them here would drift the moment either changed.
  *
- * `normalizeProduct` rather than a fresh switch, because the codes on old rows
- * are not the codes in the file — `reboot`, `detox`, `ideal_body` and the rest
- * were live long enough to be stored, and an operator opening a 2026-03 order
- * is exactly the person who must not be handed the cabinet by default. That
- * table of aliases already exists and is already tested; a second one here
- * would drift the moment either changed.
- *
- * Anything still unrecognised falls to the cabinet rather than to null: a
- * buyer helped by an operator is better served by the page that lists
+ * A `course:<slug>` code still answers when the database does not — the slug
+ * is the address. Anything unrecognised falls to the cabinet rather than to an
+ * error: a buyer helped by an operator is better served by the page that lists
  * everything they own than by an error message.
  */
-export function orderFulfilment(productCode: string | null | undefined): ProductFulfilment {
+export async function orderFulfilment(
+  db: ReturnType<typeof adminClient>,
+  productCode: string | null | undefined,
+): Promise<ProductFulfilment> {
+  try {
+    const target = await describeOffer(db, productCode);
+    if (target) return offerFulfilment(target);
+  } catch (error) {
+    console.warn("order_fulfilment_read_failed", { error: error instanceof Error ? error.message : String(error) });
+  }
+
   const courseSlug = parseCourseOfferCode(productCode);
   if (courseSlug) return { kind: "course", courseSlug };
-
-  const normalized = normalizeProduct(productCode);
-  if (isCatalogProduct(normalized)) return productFulfilment(normalized);
-
   return { kind: "cabinet" };
 }

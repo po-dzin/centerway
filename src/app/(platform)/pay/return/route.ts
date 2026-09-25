@@ -1,53 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildReturnDestination, resolveReturnStatus } from "@/lib/payments/payReturn";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { describeFormatCode } from "@/lib/experiences/formats";
-import {
-  normalizePayableProduct,
-  productReturnUrls,
-  type FormatProductCode,
-  type PayableProductCode,
-} from "@/lib/products";
+import { describeOffer, type OfferTarget } from "@/lib/experiences/offers";
+import { PLATFORM_FAILED_URL } from "@/lib/products";
 
 export const runtime = "nodejs";
-
-type ProductCode = PayableProductCode;
 
 function norm(v: unknown): string | null {
   return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
 /**
- * Which product this return belongs to, from the parameters alone.
+ * What was bought, through the one channel from a code to an offer.
  *
- * `null` when nothing recognisable came back — the caller then asks the order
- * row, which is the only other place that knows. A course out of the builder
- * cannot be recovered from the order reference: `course:my-course` is written
- * into it as `course-my-course` (a colon has no business travelling through a
- * payment provider's URLs) and a slug may contain dashes of its own, so the
- * split is ambiguous by construction. The order row is not.
+ * The code on the return is tried first, then the code the order was FILED
+ * under, which is the last word. Either may be any spelling the offer ever had
+ * (`reboot`, `way21`, `way21-group`, `course:way21`): `describeOffer` answers
+ * through `offer_aliases`, so this route keeps no table of its own. The old
+ * `irem_` / `short_` order-reference prefixes are not read any more — the order
+ * row says the same thing without guessing.
+ *
+ * `null` when neither resolves; the buyer then returns to the generic pages,
+ * which are where every product returns on failure anyway.
  */
-function productFrom(orderRef: string | null, productRaw: string | null): ProductCode | null {
-  if (productRaw === "short" || productRaw === "reboot") return "short";
-  const normalized = normalizePayableProduct(productRaw);
-  if (normalized) return normalized;
-  if (orderRef?.startsWith("irem_")) return "irem";
-  if (orderRef?.startsWith("short_") || orderRef?.startsWith("reboot_")) return "short";
-  return null;
-}
-
-/** The product code the order was FILED under. The last word, and the true one. */
-async function productFromOrder(orderRef: string): Promise<ProductCode | null> {
+async function offerFor(codeFromParams: string | null, orderRef: string): Promise<OfferTarget | null> {
   try {
     const sb = supabaseAdmin();
+    if (codeFromParams) {
+      const fromParams = await describeOffer(sb, codeFromParams);
+      if (fromParams) return fromParams;
+    }
     const { data } = await sb.from("orders").select("product_code").eq("order_ref", orderRef).maybeSingle();
-    const code = data?.product_code ?? null;
-    // A FORMAT of a program (`way21-group`) is none of the six and not
-    // `course:<slug>`; without this it fell through to "short" and a cohort
-    // buyer was returned to Short Reboot.
-    return (
-      normalizePayableProduct(code) ?? ((await describeFormatCode(code))?.code as FormatProductCode | undefined) ?? null
-    );
+    return data?.product_code ? await describeOffer(sb, data.product_code) : null;
   } catch (err) {
     console.warn("pay_return_product_read_failed", {
       orderRef,
@@ -219,12 +203,6 @@ function pickMeta(body: Record<string, string>, sp: URLSearchParams) {
 
 async function handler(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
-  // Resolve product up front (no DB) so the backstop can always route to a real page.
-  // "short" only as the last resort of the last resort: the catch-all below has
-  // to redirect somewhere real even when the request carried nothing at all,
-  // and every product's failure page is the same platform page anyway.
-  let product: ProductCode =
-    productFrom(norm(sp.get("order_ref")) || norm(sp.get("orderReference")), norm(sp.get("product"))) ?? "short";
 
   try {
     const body = await readBody(req);
@@ -235,21 +213,16 @@ async function handler(req: NextRequest) {
       norm(body["order_ref"]) ||
       norm(body["orderReference"]);
 
-    const productRaw = norm(sp.get("product")) || norm(body["product"]);
-    const fromParams = productFrom(orderRef, productRaw);
-    if (fromParams) product = fromParams;
-
     // Если order_ref не пришел — не можем понять что делать
     if (!orderRef) {
-      return NextResponse.redirect(productReturnUrls(product).declinedUrl, { status: 302 });
+      return NextResponse.redirect(PLATFORM_FAILED_URL, { status: 302 });
     }
 
-    // The parameters said nothing usable — ask the order itself before deciding
-    // where to send the buyer. A wrong product here shows the wrong "open your
-    // course" button to someone who has just paid.
-    if (!fromParams) {
-      product = (await productFromOrder(orderRef)) ?? product;
-    }
+    // A wrong product here shows the wrong "open your course" button to
+    // someone who has just paid, so it is resolved before anything else.
+    const productRaw = norm(sp.get("product")) || norm(body["product"]);
+    const target = await offerFor(productRaw, orderRef);
+    const product = target?.offer.code ?? productRaw ?? "";
 
     // 1) what the gateway told the browser, 2) otherwise what the database can
     // prove. Never a timeout: see `resolveReturnStatus`.
@@ -262,9 +235,6 @@ async function handler(req: NextRequest) {
     });
 
     // мета платежа (rrn/amount/currency) — берём из payments.raw_payload если есть
-    // A format's program page is not written in its code; look it up once.
-    const format = normalizePayableProduct(product) ? null : await describeFormatCode(product);
-
     const metaFromParams = pickMeta(body, sp);
     const metaFromDb = await latestPaymentMeta(orderRef);
 
@@ -276,7 +246,7 @@ async function handler(req: NextRequest) {
       orderRef,
       { rrn: meta.rrn ?? null, amount: meta.amount ?? null, currency: meta.currency ?? null },
       Date.now(),
-      format ? `/programs/${format.programSlug}` : null,
+      target?.course ? `/programs/${target.course.programSlug}` : null,
     );
 
     return NextResponse.redirect(destination, { status: 302 });
@@ -286,7 +256,7 @@ async function handler(req: NextRequest) {
     console.error("pay_return_failed", {
       error: err instanceof Error ? err.message : String(err),
     });
-    return NextResponse.redirect(productReturnUrls(product).declinedUrl, { status: 302 });
+    return NextResponse.redirect(PLATFORM_FAILED_URL, { status: 302 });
   }
 }
 

@@ -7,8 +7,6 @@ import {
   PLATFORM_FAILED_URL,
   PLATFORM_THANKS_URL,
   PRODUCTS,
-  isPayableProduct,
-  normalizeProduct,
   type CatalogProductCode,
 } from "@/lib/products";
 import { getSnapshotCourse, getSnapshotCourseByProgram } from "@/lib/lms/catalog";
@@ -28,13 +26,6 @@ const payableCodes = Object.keys(PRODUCTS) as CatalogProductCode[];
  * knows where the thing it sold is delivered".
  */
 describe("payable product chain", () => {
-  it("routes every payable code through isPayableProduct", () => {
-    for (const code of payableCodes) {
-      expect(isPayableProduct(code), `${code} must be payable`).toBe(true);
-      expect(normalizeProduct(code), `${code} must survive normalization`).toBe(code);
-    }
-  });
-
   it("charges a positive amount in a known currency, or none where no price was agreed", () => {
     for (const code of payableCodes) {
       const product = PRODUCTS[code];
@@ -137,14 +128,24 @@ describe("payable product chain", () => {
    */
   it("returns a paid course to its offer page and everything else to the confirmation", () => {
     for (const code of payableCodes) {
+      const fulfilment = PRODUCTS[code].fulfilment;
+      // The route resolves the program page through `describeOffer` and hands
+      // it in; this asserts what the destination does with that answer.
+      const programPath = fulfilment.kind === "course" ? `/programs/${fulfilment.programSlug}` : null;
       const paid = new URL(
-        buildReturnDestination("paid", code, `qa_${code}`, { rrn: "QA1", amount: "1", currency: "UAH" }, 0),
+        buildReturnDestination(
+          "paid",
+          code,
+          `qa_${code}`,
+          { rrn: "QA1", amount: "1", currency: "UAH" },
+          0,
+          programPath,
+        ),
       );
       expect(paid.origin).toBe(new URL(PLATFORM_THANKS_URL).origin);
       expect(paid.searchParams.get("order_ref")).toBe(`qa_${code}`);
       expect(paid.searchParams.get("product")).toBe(code);
 
-      const fulfilment = PRODUCTS[code].fulfilment;
       if (fulfilment.kind === "course") {
         expect(paid.pathname, `${code} is a course and must land on its offer page`).toBe(
           `/programs/${fulfilment.programSlug}`,

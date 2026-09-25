@@ -1,30 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Course } from "@/lms-core";
 
+import { FakeSupabase, type Row } from "@/lib/admin/fakeSupabase";
+
 /**
- * Every course product is sold under two codes: the platform charges
- * `course:<slug>` from the offer row, and the funnel landing links
- * `?product=<legacy>`, which used to be charged from the constant in
- * `PRODUCTS`. Two numbers for one course.
+ * ONE CHANNEL FROM A CODE TO A PRICE (2026-09-25).
  *
- * These tests hold the two doors to one price. They were written for
- * `reset-day`, the first product aliased, and the gap they did not cover cost
- * exactly what the file predicted: way21's landing quoted 4100 ₴ in its own CTA
- * and charged 1 ₴, because a QA price had been opened in the constant that the
- * row knew nothing about. So the alias list is now walked whole.
+ * Every course product used to be sold under two codes that read two numbers:
+ * the storefront charged `course:<slug>` from the offer row, the landing linked
+ * `?product=<legacy>` and was charged from the constant in `PRODUCTS`. The bill
+ * arrived on 2026-09-02 — way21's landing quoted 4100 ₴ and charged 1 ₴.
+ *
+ * Now there is one table of prices and one table of old spellings, and
+ * `loadPayableOffer` reads nothing else. These tests walk the spellings
+ * production has actually filed orders under and hold them to the row.
  */
 
 const getLiveCourse = vi.fn();
-const readOfferRow = vi.fn();
-const readProductOffer = vi.fn();
+const db = new FakeSupabase();
 
 vi.mock("next/cache", () => ({
   unstable_cache: (fn: () => unknown) => fn,
-}));
-
-vi.mock("@/lib/platform/productOffers", () => ({
-  loadProductOffer: (code: string) => readProductOffer(code),
-  PRODUCT_OFFERS_TAG: "product-offers",
 }));
 
 vi.mock("@/lib/lms/liveCatalog", () => ({
@@ -35,278 +31,172 @@ vi.mock("@/lib/lms/liveCatalog", () => ({
 }));
 
 vi.mock("@/lib/supabaseAdmin", () => ({
-  supabaseAdmin: () => {
-    const chain: Record<string, unknown> = {};
-    chain.select = () => chain;
-    chain.eq = () => chain;
-    chain.limit = async () => readOfferRow();
-    return { from: () => chain };
-  },
+  supabaseAdmin: () => db,
 }));
 
-const publishedCourse = {
-  id: "c-1",
-  slug: "reset-day",
-  title: "Розвантажувальний день",
-  status: "published",
-  visibility: "listed",
-  modules: [],
-} as unknown as Course;
+const { loadPayableOffer } = await import("./offers");
 
-const offerRow = {
-  data: [
-    {
-      code: "course:reset-day",
-      course_id: "c-1",
-      amount: 795,
-      list_amount: 1200,
-      currency: "UAH",
-      pixel_content_name: "Reset Day",
-      active: true,
-    },
-  ],
-  error: null,
-};
+const course = (slug: string, overrides: Partial<Course> = {}): Course =>
+  ({
+    id: `c-${slug}`,
+    slug,
+    title: `Title of ${slug}`,
+    summary: null,
+    status: "published",
+    visibility: "listed",
+    modules: [],
+    ...overrides,
+  }) as unknown as Course;
 
-/* Warm the transform once, outside any test's clock; `vi.resetModules()`
-   below clears the registry, not the transform cache, so each test still gets
-   a fresh module without paying the cold import that timed out under load. */
-await import("./offers");
-await import("@/lib/products");
+const offer = (code: string, experienceId: string, overrides: Partial<Row> = {}): Row => ({
+  id: `offer-${code}`,
+  experience_id: experienceId,
+  code,
+  mode: "checkout",
+  amount: 4100,
+  list_amount: null,
+  currency: "UAH",
+  access_days: null,
+  access_lifetime: true,
+  invoice_heading: null,
+  invoice_description: null,
+  share_pct: null,
+  pixel_content_name: null,
+  active: true,
+  format: null,
+  label: null,
+  ...overrides,
+});
 
 beforeEach(() => {
-  vi.resetModules();
   getLiveCourse.mockReset();
-  readOfferRow.mockReset();
-  readProductOffer.mockReset();
-  // No row unless a test says otherwise, which is the state of every course
-  // product: they are priced in `lms_course_offers`, not here.
-  readProductOffer.mockResolvedValue(null);
+  getLiveCourse.mockImplementation(async (slug: string) => course(slug));
+  db.failures = {};
+  db.tables = {
+    experiences: [
+      { id: "exp-way21", kind: "course", slug: "way21", title: null },
+      { id: "exp-reboot", kind: "mini", slug: "reboot", title: null },
+      { id: "exp-irem", kind: "course", slug: "irem", title: null },
+      { id: "exp-herbs", kind: "physical", slug: "herbs", title: "Фітозбір" },
+      { id: "exp-consult", kind: "consultation", slug: "consult", title: "Консультація" },
+    ],
+    lms_courses: [
+      { slug: "way21", program_slug: "way21", experience_id: "exp-way21", created_at: "2026-01-01" },
+      { slug: "way21-en", program_slug: "way21", experience_id: "exp-way21", created_at: "2026-05-01" },
+      { slug: "short", program_slug: "reboot", experience_id: "exp-reboot", created_at: "2026-01-01" },
+      { slug: "irem-gymnastics", program_slug: "irem", experience_id: "exp-irem", created_at: "2026-01-01" },
+    ],
+    experience_offers: [
+      offer("course:way21", "exp-way21", {
+        pixel_content_name: "Way21 Detox",
+        invoice_heading: { uk: "Шлях 21 — інтегративна детокс-програма", en: "Way 21 — integrative detox program" },
+        invoice_description: { uk: "Оплата детокс-програми.", en: "Detox program payment." },
+      }),
+      offer("way21-group", "exp-way21", { format: "group", label: null }),
+      offer("way21-support", "exp-way21", { mode: "lead", amount: 9000, format: "individual" }),
+      offer("course:short", "exp-reboot", { amount: 795, pixel_content_name: "Short Reboot" }),
+      offer("course:irem-gymnastics", "exp-irem", { amount: 3950, pixel_content_name: "IREM" }),
+      offer("herbs", "exp-herbs", {
+        amount: 1200,
+        invoice_heading: { uk: "Фітозбір — індивідуальний підбір", en: "Herbal blend" },
+      }),
+      offer("consult", "exp-consult", { mode: "lead", amount: null }),
+    ],
+    offer_aliases: [
+      { code: "way21", offer_id: "offer-course:way21" },
+      { code: "detox21", offer_id: "offer-course:way21" },
+      { code: "shlyah21", offer_id: "offer-course:way21" },
+      { code: "short", offer_id: "offer-course:short" },
+      { code: "reboot", offer_id: "offer-course:short" },
+      { code: "irem", offer_id: "offer-course:irem-gymnastics" },
+      { code: "way21_support", offer_id: "offer-way21-support" },
+    ],
+  };
 });
 
-describe("the legacy reset-day code", () => {
-  it("is charged the offer row's price, not the constant's", async () => {
-    getLiveCourse.mockResolvedValue(publishedCourse);
-    readOfferRow.mockReturnValue(offerRow);
-    const { loadPayableOffer } = await import("./offers");
-
-    const offer = await loadPayableOffer("reset-day");
-
-    // The figure comes from the row. If this ever reads the constant again, the
-    // landing quotes one number and charges another the day they diverge.
-    expect(offer?.amount).toBe(795);
-    expect(offer?.listAmount).toBe(1200);
-    // And the order is filed under the canonical code, so one course is one
-    // product in orders, in Meta and in the entitlement.
-    expect(offer?.code).toBe("course:reset-day");
-  });
-
-  it("keeps the hand-written invoice prose, which the row cannot express", async () => {
-    getLiveCourse.mockResolvedValue(publishedCourse);
-    readOfferRow.mockReturnValue(offerRow);
-    const { loadPayableOffer } = await import("./offers");
-    const { PRODUCTS } = await import("@/lib/products");
-
-    const offer = await loadPayableOffer("reset-day");
-
-    // A course row yields one title in one language; the constant has a real
-    // sentence in both, and a WayForPay invoice line is read by a person.
-    expect(offer?.heading).toEqual(PRODUCTS["reset-day"].heading);
-    expect(offer?.description.en).not.toBe(offer?.description.uk);
-  });
-
-  it("stops selling when the offer is withdrawn, instead of falling back to the constant", async () => {
-    getLiveCourse.mockResolvedValue(publishedCourse);
-    readOfferRow.mockReturnValue({ data: [], error: null });
-    const { loadPayableOffer } = await import("./offers");
-
-    // Deliberate: one door must not keep selling a course the storefront calls
-    // closed.
-    expect(await loadPayableOffer("reset-day")).toBeNull();
-  });
-});
-
-describe("every legacy code that names a course", () => {
-  /* The four that resolve to a row, with the slug each one points at. Written
-     out rather than imported so that adding a product to COURSE_CODE_ALIASES
-     without deciding what it charges fails here. */
-  const ALIASED: Array<{ code: string; slug: string; pixel: string }> = [
-    { code: "short", slug: "short", pixel: "Short Reboot" },
-    { code: "irem", slug: "irem-gymnastics", pixel: "IREM" },
-    { code: "way21", slug: "way21", pixel: "Way21 Detox" },
-    { code: "reset-day", slug: "reset-day", pixel: "Reset Day" },
-  ];
-
-  it.each(ALIASED)("charges $code from the row, never from the constant", async ({ code, slug }) => {
-    getLiveCourse.mockResolvedValue({ ...publishedCourse, slug } as unknown as Course);
-    readOfferRow.mockReturnValue({
-      data: [
-        {
-          code: `course:${slug}`,
-          course_id: "c-1",
-          // A figure that appears in no constant, so a pass cannot come from
-          // the file this is meant to stop reading.
-          amount: 1234,
-          list_amount: 5678,
-          currency: "UAH",
-          pixel_content_name: "row",
-          active: true,
-        },
-      ],
-      error: null,
+describe("a legacy code", () => {
+  it("is charged the row's price and filed under the offer's own code", async () => {
+    const payable = await loadPayableOffer("way21");
+    expect(payable).toMatchObject({
+      code: "course:way21",
+      amount: 4100,
+      pixelContentName: "Way21 Detox",
+      heading: { uk: "Шлях 21 — інтегративна детокс-програма" },
+      fulfilment: { kind: "course", courseSlug: "way21", programSlug: "way21" },
     });
-    const { loadPayableOffer } = await import("./offers");
-
-    const offer = await loadPayableOffer(code);
-
-    expect(offer?.amount).toBe(1234);
-    expect(offer?.listAmount).toBe(5678);
-    // Filed under the canonical code, so one course is one product in orders,
-    // in Meta and in the entitlement.
-    expect(offer?.code).toBe(`course:${slug}`);
   });
 
-  it.each(ALIASED)("keeps $code's hand-written invoice prose", async ({ code, slug }) => {
-    getLiveCourse.mockResolvedValue({ ...publishedCourse, slug } as unknown as Course);
-    readOfferRow.mockReturnValue({
-      data: [
-        {
-          code: `course:${slug}`,
-          course_id: "c-1",
-          amount: 100,
-          list_amount: null,
-          currency: "UAH",
-          pixel_content_name: "row",
-          active: true,
-        },
-      ],
-      error: null,
+  it("reaches the same offer as every other spelling of it", async () => {
+    const canonical = await loadPayableOffer("course:way21");
+    for (const spelling of ["way21", "WAY21", " detox21 ", "shlyah21"]) {
+      expect(await loadPayableOffer(spelling), spelling).toEqual(canonical);
+    }
+  });
+
+  it("delivers the row a program's name differs from", async () => {
+    // Sold at /programs/reboot and /programs/irem, read at /learn/short and
+    // /learn/irem-gymnastics — the reason fulfilment is a lookup, not the code.
+    expect((await loadPayableOffer("reboot"))?.fulfilment).toEqual({
+      kind: "course",
+      courseSlug: "short",
+      programSlug: "reboot",
     });
-    const { loadPayableOffer } = await import("./offers");
-    const { PRODUCTS } = await import("@/lib/products");
-
-    const offer = await loadPayableOffer(code);
-
-    // A WayForPay invoice line is read by a person, and the row yields one
-    // title in one language where the constant has a sentence in two.
-    expect(offer?.heading).toEqual(PRODUCTS[code as keyof typeof PRODUCTS].heading);
-    expect(offer?.description.en).not.toBe(offer?.description.uk);
-  });
-
-  it.each(ALIASED)("stops selling $code when its offer is withdrawn", async ({ code, slug }) => {
-    getLiveCourse.mockResolvedValue({ ...publishedCourse, slug } as unknown as Course);
-    readOfferRow.mockReturnValue({ data: [], error: null });
-    const { loadPayableOffer } = await import("./offers");
-
-    expect(await loadPayableOffer(code)).toBeNull();
+    expect((await loadPayableOffer("irem"))?.fulfilment).toMatchObject({ courseSlug: "irem-gymnastics" });
   });
 });
 
-describe("the products that are not a course of their own", () => {
-  /* `lms_course_offers` is unique on course_id, so neither of these can have a
-     row there: way21-support is a second offer against the way21 course, and
-     herbs is not a course at all. Since 2026-09-03 they are priced in
-     `product_offers` instead, and none of it goes near the course tables. */
-
-  it("charges herbs from its product_offers row", async () => {
-    readProductOffer.mockResolvedValue({
-      code: "herbs",
-      amount: 640,
-      listAmount: null,
-      currency: "UAH",
-      kind: "checkout",
-      pixelContentName: null,
-      active: true,
-      updatedAt: null,
-    });
-    const { loadPayableOffer } = await import("./offers");
-
-    const offer = await loadPayableOffer("herbs");
-
-    expect(offer?.amount).toBe(640);
-    // Prose stays hand-written: a row has no sentence in two languages, and a
-    // WayForPay invoice line is read by a person.
-    const { PRODUCTS } = await import("@/lib/products");
-    expect(offer?.heading).toEqual(PRODUCTS.herbs.heading);
-    expect(getLiveCourse).not.toHaveBeenCalled();
+describe("what refuses a checkout", () => {
+  it("an unknown code — never someone else's product", async () => {
+    for (const junk of ["nonsense", "", null, undefined, "course:", "course:../secret"]) {
+      expect(await loadPayableOffer(junk), String(junk)).toBeNull();
+    }
   });
 
-  it("refuses a checkout for a package sold as an enquiry", async () => {
-    readProductOffer.mockResolvedValue({
-      code: "way21-support",
-      amount: 9000,
-      listAmount: null,
-      currency: "UAH",
-      kind: "lead",
-      pixelContentName: null,
-      active: true,
-      updatedAt: null,
-    });
-    const { loadPayableOffer } = await import("./offers");
+  it("a withdrawn offer, through every door at once", async () => {
+    db.tables.experience_offers!.find((row) => row.code === "course:way21")!.active = false;
+    expect(await loadPayableOffer("way21")).toBeNull();
+    expect(await loadPayableOffer("course:way21")).toBeNull();
+  });
 
-    // The way21 landing quotes this figure beside a lead form and has no buy
-    // button for it. A price typed into the admin must not become one.
+  it("a package sold as an enquiry, and a price «за запитом»", async () => {
     expect(await loadPayableOffer("way21-support")).toBeNull();
+    expect(await loadPayableOffer("way21_support")).toBeNull();
+    expect(await loadPayableOffer("consult")).toBeNull();
   });
 
-  it("refuses a checkout when the price is «за запитом»", async () => {
-    readProductOffer.mockResolvedValue({
-      code: "herbs",
-      amount: null,
-      listAmount: null,
-      currency: "UAH",
-      kind: "checkout",
-      pixelContentName: null,
-      active: true,
-      updatedAt: null,
+  it("a course that is a draft or hidden", async () => {
+    getLiveCourse.mockImplementation(async (slug: string) => course(slug, { status: "draft" } as Partial<Course>));
+    expect(await loadPayableOffer("way21")).toBeNull();
+    getLiveCourse.mockImplementation(async (slug: string) =>
+      course(slug, { visibility: "hidden" } as Partial<Course>),
+    );
+    expect(await loadPayableOffer("way21")).toBeNull();
+  });
+
+  it("a price that cannot be read", async () => {
+    db.failures = { "experience_offers:select": "boom" };
+    expect(await loadPayableOffer("way21")).toBeNull();
+  });
+});
+
+describe("offers that are not a course's own", () => {
+  it("names a format in the invoice line when the owner wrote none", async () => {
+    const payable = await loadPayableOffer("way21-group");
+    expect(payable).toMatchObject({
+      code: "way21-group",
+      heading: { uk: "Title of way21 — у групі потоку — CenterWay" },
+      fulfilment: { kind: "course", courseSlug: "way21", programSlug: "way21" },
     });
-    const { loadPayableOffer } = await import("./offers");
-
-    // Null is not zero and not a free sale: it means nobody has agreed a figure.
-    expect(await loadPayableOffer("herbs")).toBeNull();
   });
 
-  it("falls back to the constant when no row exists and the constant quotes a price", async () => {
-    readProductOffer.mockResolvedValue(null);
-    const { loadPayableOffer } = await import("./offers");
-    const { PRODUCTS } = await import("@/lib/products");
-
-    /* Unlike a course, where an absent offer is the owner declining to sell.
-       way21-support was sold from a hand-written constant for as long as it has
-       existed, so an absent row is an absence — and closing a live checkout
-       over it would be a decision nobody made. Safe here because both doors
-       read this one function, which is what the way21 bug was actually about. */
-    const offer = await loadPayableOffer("way21-support");
-    expect(offer?.amount).toBe(PRODUCTS["way21-support"].amount);
-  });
-
-  it("refuses when no row exists and the constant has no price to fall back to", async () => {
-    readProductOffer.mockResolvedValue(null);
-    const { loadPayableOffer } = await import("./offers");
-    const { PRODUCTS } = await import("@/lib/products");
-
-    /* herbs was never sold self-serve: its `amount` is the 1 ₴ QA placeholder
-       and its `listAmount` is null to say no figure was agreed. Falling back to
-       the placeholder charged a hryvnia for an individual blend on every
-       request the row did not answer — while it was absent, after an admin
-       deactivated it, and after any read failure. No price means the form. */
-    expect(PRODUCTS.herbs.listAmount).toBeNull();
-    expect(await loadPayableOffer("herbs")).toBeNull();
-  });
-
-  it("sells herbs the moment the owner sets its price, with no deployment", async () => {
-    readProductOffer.mockResolvedValue({
+  it("sells a thing with no course and delivers it to the cabinet", async () => {
+    expect(await loadPayableOffer("herbs")).toMatchObject({
       code: "herbs",
-      amount: 640,
-      listAmount: null,
-      currency: "UAH",
-      kind: "checkout",
-      pixelContentName: null,
-      active: true,
-      updatedAt: null,
+      amount: 1200,
+      heading: { uk: "Фітозбір — індивідуальний підбір" },
+      pixelContentName: "Фітозбір",
+      fulfilment: { kind: "cabinet" },
     });
-    const { loadPayableOffer } = await import("./offers");
-
-    expect((await loadPayableOffer("herbs"))?.amount).toBe(640);
+    expect(getLiveCourse).not.toHaveBeenCalled();
   });
 });

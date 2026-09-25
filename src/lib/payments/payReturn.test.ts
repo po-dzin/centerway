@@ -89,8 +89,9 @@ describe("buildReturnDestination", () => {
   it("still routes the two settled states where they always went", () => {
     /* A paid course goes to its own page rather than to a confirmation screen,
        and for `short` that page is /programs/REBOOT — the product row name and
-       the program slug stopped agreeing on 2026-08-29. */
-    const paid = new URL(buildReturnDestination("paid", "short", "short_20260902_ab12", {}, 0));
+       the program slug stopped agreeing on 2026-08-29. The route looks that up
+       (`describeOffer`) and hands it in. */
+    const paid = new URL(buildReturnDestination("paid", "short", "short_20260902_ab12", {}, 0, "/programs/reboot"));
     expect(paid.origin).toBe(new URL(PLATFORM_THANKS_URL).origin);
     expect(paid.pathname).toBe("/programs/reboot");
 

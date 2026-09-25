@@ -90,7 +90,7 @@ const PAYABLE_BY_SLUG: Partial<Record<string, CatalogProductCode>> = {
  * The lead code for an offer that is not self-serve.
  *
  * `natural-body` has no price and no funnel of its own; the consultation is
- * agreed in conversation on purpose. Both are in LEAD_PRODUCT_CODES.
+ * agreed in conversation on purpose. Both are lead offers in `experience_offers`.
  */
 const LEAD_BY_SLUG: Partial<Record<string, string>> = {
   "natural-body": "natural-body",

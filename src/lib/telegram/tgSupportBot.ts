@@ -20,7 +20,6 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { PRODUCTS } from "@/lib/products";
 import { normalizeEmail } from "@/lib/strings";
 import { asJson } from "@/lib/db/types";
-import type { ProductCode } from "@/lib/products";
 import { callTelegramBotApi, sendTelegramMessage } from "@/lib/telegram/tg";
 import { verifyTelegramLinkToken } from "@/lib/platform/telegramLink";
 import { verifyDoshaResultToken } from "@/lib/platform/doshaTelegramLink";
@@ -39,7 +38,7 @@ import {
 } from "@/lib/telegram/tgSupportBotCopy";
 
 type Supabase = ReturnType<typeof supabaseAdmin>;
-type BotProductCode = Extract<ProductCode, "short" | "irem" | "way21" | "reset-day">;
+type BotProductCode = "short" | "irem" | "way21" | "reset-day";
 
 type BotState =
   | "idle"

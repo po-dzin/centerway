@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { FakeSupabase } from "@/lib/admin/fakeSupabase";
 import { fulfilmentDestination, orderFulfilment } from "./fulfilmentDestination";
 
 /**
@@ -8,67 +10,79 @@ import { fulfilmentDestination, orderFulfilment } from "./fulfilmentDestination"
  * token=…`) was a route that reads no token. Every one of these is a claim
  * about an address a real person is asked to open.
  */
+const db = new FakeSupabase();
+
+beforeEach(() => {
+  db.failures = {};
+  db.tables = {
+    experiences: [
+      { id: "exp-reboot", kind: "mini", slug: "reboot", title: null },
+      { id: "exp-irem", kind: "course", slug: "irem", title: null },
+      { id: "exp-way21", kind: "course", slug: "way21", title: null },
+      { id: "exp-herbs", kind: "physical", slug: "herbs", title: "Фітозбір" },
+    ],
+    lms_courses: [
+      { slug: "short", program_slug: "reboot", experience_id: "exp-reboot", created_at: "2026-01-01" },
+      { slug: "irem-gymnastics", program_slug: "irem", experience_id: "exp-irem", created_at: "2026-01-01" },
+      { slug: "way21", program_slug: "way21", experience_id: "exp-way21", created_at: "2026-01-01" },
+    ],
+    experience_offers: [
+      { id: "o-short", experience_id: "exp-reboot", code: "course:short", active: true },
+      { id: "o-irem", experience_id: "exp-irem", code: "course:irem-gymnastics", active: true },
+      { id: "o-way21", experience_id: "exp-way21", code: "course:way21", active: true },
+      { id: "o-support", experience_id: "exp-way21", code: "way21-support", active: true, format: "individual" },
+      { id: "o-herbs", experience_id: "exp-herbs", code: "herbs", active: true },
+    ],
+    offer_aliases: [
+      { code: "short", offer_id: "o-short" },
+      { code: "reboot", offer_id: "o-short" },
+      { code: "irem", offer_id: "o-irem" },
+      { code: "way21", offer_id: "o-way21" },
+    ],
+  };
+});
+
 describe("orderFulfilment", () => {
-  it("addresses a builder course by the slug inside its offer code", () => {
-    expect(orderFulfilment("course:soul-daily-ritual")).toEqual({
+  it("addresses a builder course by the slug inside its offer code, even with no row", async () => {
+    expect(await orderFulfilment(db as never, "course:soul-daily-ritual")).toEqual({
       kind: "course",
       courseSlug: "soul-daily-ritual",
     });
   });
 
-  it("reads a catalogue product's fulfilment rather than assuming the code is the slug", () => {
-    // `short` is sold as /programs/reboot and read at /learn/short — the two
-    // slugs differ, which is the whole reason fulfilment is a lookup.
-    expect(orderFulfilment("short")).toMatchObject({ kind: "course", courseSlug: "short" });
+  it("reads an old spelling through offer_aliases rather than assuming the code is the slug", async () => {
+    // `short` is sold as /programs/reboot and read at /learn/short, `irem` is
+    // read at /learn/irem-gymnastics — treating the order's code as the slug,
+    // the shortcut the old button took, sends the buyer nowhere.
+    expect(await orderFulfilment(db as never, "reboot")).toEqual({
+      kind: "course",
+      courseSlug: "short",
+      programSlug: "reboot",
+    });
+    expect(await orderFulfilment(db as never, "irem")).toMatchObject({ courseSlug: "irem-gymnastics" });
   });
 
-  it("resolves every product code production has actually filed an order under", () => {
-    /* Read off `select distinct product_code from orders` on 2026-09-02. The
-       operator's button is pressed against rows that exist, so this list — not
-       an invented one — is what it has to answer for. `reboot` rides along as
-       the alias `short` was sold under before 2026-08-29. */
-    const live: Record<string, ReturnType<typeof orderFulfilment>["kind"]> = {
-      "course:natural-body": "course",
-      "course:novyi-kurs-5": "course",
-      "course:reset-day": "course",
-      "course:way21": "course",
-      irem: "course",
-      "reset-day": "course",
-      short: "course",
-      way21: "course",
-      "way21-support": "course",
-      reboot: "course",
-      // A consultation and a herbal blend are not read on the platform; the
-      // cabinet, which lists everything the person owns, is the honest answer.
-      consult: "cabinet",
-      herbs: "cabinet",
-    };
-
-    for (const [code, kind] of Object.entries(live)) {
-      expect(orderFulfilment(code).kind, code).toBe(kind);
-    }
+  it("delivers a guided package through the course it opens", async () => {
+    expect(await orderFulfilment(db as never, "way21-support")).toMatchObject({ kind: "course", courseSlug: "way21" });
   });
 
-  it("keeps the course slug distinct from the code it is sold under", () => {
-    // `irem` is read at /learn/irem-gymnastics, and `short` at /learn/short
-    // while being sold as /programs/reboot. Treating the order's code as the
-    // slug — the shortcut the old button effectively took — sends the buyer to
-    // a course that does not exist.
-    expect(orderFulfilment("irem")).toMatchObject({ courseSlug: "irem-gymnastics" });
-    expect(orderFulfilment("reboot")).toMatchObject({ courseSlug: "short" });
+  it("sends a thing with no course to the cabinet", async () => {
+    expect(await orderFulfilment(db as never, "herbs")).toEqual({ kind: "cabinet" });
   });
 
-  it("falls back to the cabinet, never to nothing", () => {
+  it("falls back to the cabinet, never to nothing", async () => {
     for (const code of [null, undefined, "", "   ", "no-such-product"]) {
-      expect(orderFulfilment(code)).toEqual({ kind: "cabinet" });
+      expect(await orderFulfilment(db as never, code)).toEqual({ kind: "cabinet" });
     }
+    db.failures = { "experience_offers:select": "boom" };
+    expect(await orderFulfilment(db as never, "reboot")).toEqual({ kind: "cabinet" });
   });
 
-  it("refuses a malformed course code instead of building an address from it", () => {
+  it("refuses a malformed course code instead of building an address from it", async () => {
     // The slug becomes a URL path segment, so anything outside the shape
     // `slugify` produces must not survive as one.
-    expect(orderFulfilment("course:../../etc/passwd")).toEqual({ kind: "cabinet" });
-    expect(orderFulfilment("course:")).toEqual({ kind: "cabinet" });
+    expect(await orderFulfilment(db as never, "course:../../etc/passwd")).toEqual({ kind: "cabinet" });
+    expect(await orderFulfilment(db as never, "course:")).toEqual({ kind: "cabinet" });
   });
 });
 
