@@ -436,6 +436,7 @@ export type BuilderFormatDto = {
   label: string;
   labelIsDefault: boolean;
   summary: string;
+  features: string[];
   mode: "checkout" | "lead";
   amount: number | null;
   proposedAmount: number | null;
@@ -456,6 +457,7 @@ export type BuilderFormatInput = {
   format?: BuilderFormatKind;
   label?: string;
   summary?: string;
+  features?: string[];
   mode?: "checkout" | "lead";
   proposedAmount?: number | null;
   cohortStartsOn?: string | null;

@@ -344,7 +344,9 @@ export function ProgramDetailPage({
                 means the commitment (see `OfferBento`'s own note on the
                 rename). */}
             <OfferBento audience={program.audience} results={program.results} format={program.format} />
-            {course ? <OfferCurriculum course={course} landingHref={offerLandingUrl(program.slug)} /> : null}
+            {course ? (
+              <OfferCurriculum course={course} landingHref={offerLandingUrl(program.slug)} formats={formats} />
+            ) : null}
             <OfferAuthor author={author} note={program.authorNote} />
           </>
         }

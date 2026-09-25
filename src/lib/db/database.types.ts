@@ -801,6 +801,7 @@ export type Database = {
           created_at: string
           currency: string
           experience_id: string
+          features: Json | null
           format: string | null
           id: string
           invoice_description: Json | null
@@ -830,6 +831,7 @@ export type Database = {
           created_at?: string
           currency?: string
           experience_id: string
+          features?: Json | null
           format?: string | null
           id?: string
           invoice_description?: Json | null
@@ -859,6 +861,7 @@ export type Database = {
           created_at?: string
           currency?: string
           experience_id?: string
+          features?: Json | null
           format?: string | null
           id?: string
           invoice_description?: Json | null

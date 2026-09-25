@@ -65,6 +65,8 @@ type Draft = {
   format: BuilderFormatKind;
   label: string;
   summary: string;
+  /** One point per line, as the author types it. */
+  features: string;
   mode: "checkout" | "lead";
   proposedAmount: string;
   cohortStartsOn: string;
@@ -76,6 +78,7 @@ function draftOf(format: BuilderFormatDto | null): Draft {
     format: format?.format ?? "group",
     label: format && !format.labelIsDefault ? format.label : "",
     summary: format?.summary ?? "",
+    features: format?.features.join("\n") ?? "",
     mode: format?.mode ?? "checkout",
     proposedAmount: format?.proposedAmount ? String(format.proposedAmount) : "",
     cohortStartsOn: format?.cohortStartsOn ?? "",
@@ -89,7 +92,13 @@ function inputOf(draft: Draft, locked: boolean): BuilderFormatInput | { error: s
   if (proposedAmount !== null && (!Number.isInteger(proposedAmount) || proposedAmount <= 0)) {
     return { error: "Ціна — ціле число гривень, більше нуля" };
   }
-  const shared: BuilderFormatInput = { label: draft.label, summary: draft.summary, proposedAmount };
+  const features = draft.features
+    .split("\n")
+    .map((line) => line.replace(/^\s*[-•·*]\s*/, "").trim())
+    .filter(Boolean);
+  if (features.length > 12) return { error: "Не більше 12 пунктів у списку" };
+  if (features.some((line) => line.length > 160)) return { error: "Пункт списку — до 160 символів" };
+  const shared: BuilderFormatInput = { label: draft.label, summary: draft.summary, features, proposedAmount };
   if (locked) return shared;
   return {
     ...shared,
@@ -262,13 +271,29 @@ export function BuilderFormats({
         </label>
 
         <label className={styles.field}>
-          <span className={styles.fieldLabel}>Що дає цей формат</span>
+          <span className={styles.fieldLabel}>Що входить</span>
+          <textarea
+            className={styles.input}
+            value={draft.features}
+            rows={6}
+            placeholder={
+              "Кожен пункт з нового рядка, наприклад:\nУсе з формату «Самостійно»\nЗакрита Telegram-група потоку"
+            }
+            onChange={(event) => setDraft((prev) => ({ ...prev, features: event.target.value }))}
+          />
+          <span className={styles.fieldHint}>
+            Кожен рядок — окремий пункт на картці формату. Програми з набору додаються окремо, як бонус.
+          </span>
+        </label>
+
+        <label className={styles.field}>
+          <span className={styles.fieldLabel}>Коротко про формат</span>
           <textarea
             className={styles.input}
             value={draft.summary}
             maxLength={240}
-            rows={3}
-            placeholder="Одне-два речення: хто поруч і що людина отримує понад програму"
+            rows={2}
+            placeholder="Необов'язково: одне речення під ціною"
             onChange={(event) => setDraft((prev) => ({ ...prev, summary: event.target.value }))}
           />
         </label>
@@ -437,6 +462,17 @@ export function BuilderFormats({
                     .filter(Boolean)
                     .join(" · ")}
                 </p>
+                {format.features.length > 0 ? (
+                  <ul className={css.itemFeatures}>
+                    {format.features.map((feature) => (
+                      <li key={feature}>{feature}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className={css.itemIncludes}>
+                    Список «що входить» ще не заповнено — на сторінці буде лише назва програми.
+                  </p>
+                )}
                 {format.includes.length > 0 ? (
                   <p className={css.itemIncludes}>
                     Також відкриває: <strong>{format.includes.map((program) => program.title).join(" · ")}</strong>

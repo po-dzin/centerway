@@ -67,11 +67,13 @@ export function renderFormatCard(format: ProgramFormat, programTitle: string): s
   const dark = format.mode === "checkout";
   const price = format.amount !== null ? `${format.amount} грн` : "за запитом";
   const note = cohortLine(format) ?? (format.mode === "lead" ? "ціну узгоджуємо в розмові" : "повний доступ");
-  const features = [
-    `<li>Уся програма «${escape(programTitle)}»</li>`,
-    format.summary ? `<li>${escape(format.summary)}</li>` : "",
-    includedItems(format),
-  ].join("");
+  // The author's list when there is one — the same lines the program page
+  // shows; otherwise the one thing certainly true, and the summary.
+  const own =
+    format.features.length > 0
+      ? format.features.map((feature) => `<li>${escape(feature)}</li>`)
+      : [`<li>Уся програма «${escape(programTitle)}»</li>`, format.summary ? `<li>${escape(format.summary)}</li>` : ""];
+  const features = [...own, includedItems(format)].join("");
   const action =
     format.mode === "lead"
       ? `<button type="button" class="btn btn-primary fc-cta" data-lead-open="${escape(format.code)}">Залишити заявку ${ARROW}</button>`
