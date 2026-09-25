@@ -116,8 +116,12 @@ async function graphPost(pathname, body) {
   const url = `https://graph.facebook.com/${API_VERSION}/${pathname}`;
   let res;
   if (body instanceof FormData) {
-    body.set("access_token", TOKEN);
-    res = await fetch(url, { method: "POST", body });
+    // A copy, never the caller's form: that same object is what the journal
+    // records, and the token must not travel into `meta_actions.params`.
+    const form = new FormData();
+    for (const [k, v] of body.entries()) form.append(k, v);
+    form.set("access_token", TOKEN);
+    res = await fetch(url, { method: "POST", body: form });
   } else {
     const params = new URLSearchParams();
     for (const [k, v] of Object.entries(body)) {
@@ -145,6 +149,7 @@ function db() {
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
+/** A dry run is only a record of intent, so a journal that is down merely warns. */
 async function journal(row) {
   const client = db();
   if (!client) {
@@ -153,6 +158,35 @@ async function journal(row) {
   }
   const { error } = await client.from("meta_actions").insert({ actor: ACTOR, ...row });
   if (error) console.warn(`(journal write failed: ${error.message})`);
+}
+
+/**
+ * A real write is journaled BEFORE it is sent, and refused if that fails.
+ *
+ * The journal is the safety contract of this tool: every change to live ads
+ * has a row saying who, what and when. Writing it after the call meant a
+ * budget change could land with no row at all whenever the database was
+ * unreachable. So the intent is persisted first (`dry_run: false`, no response
+ * yet), and the row is completed with the outcome afterwards. No row, no call.
+ */
+async function journalIntent(row) {
+  const client = db();
+  if (!client)
+    die("refusing to --apply: the journal is unavailable (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY missing)");
+  const { data, error } = await client
+    .from("meta_actions")
+    .insert({ actor: ACTOR, ...row, error: "pending: sent to Meta, outcome not recorded yet" })
+    .select("id")
+    .single();
+  if (error || !data) die(`refusing to --apply: could not write the journal row (${error?.message ?? "no row"})`);
+  return { client, id: data.id };
+}
+
+async function journalOutcome(entry, patch) {
+  const { error } = await entry.client.from("meta_actions").update(patch).eq("id", entry.id);
+  // The change already happened; a failed update leaves the «pending» row, which
+  // still says it was attempted. Loud, but not fatal.
+  if (error) console.error(`   ! journal row ${entry.id} not completed: ${error.message}`);
 }
 
 /**
@@ -179,31 +213,23 @@ async function applyWrite({ flags, action, objectType, objectId, describe, reque
     });
     return null;
   }
+  const entry = await journalIntent({
+    action,
+    object_type: objectType,
+    object_id: objectId ?? null,
+    params: serializable(request.body),
+    dry_run: false,
+    response: null,
+  });
   try {
     const response = await run();
     console.log(`   ✔ ${JSON.stringify(response)}`);
-    await journal({
-      action,
-      object_type: objectType,
-      object_id: objectId ?? response?.id ?? null,
-      params: serializable(request.body),
-      dry_run: false,
-      response,
-      error: null,
-    });
+    await journalOutcome(entry, { object_id: objectId ?? response?.id ?? null, response, error: null });
     return response;
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     console.error(`   ✖ ${message}`);
-    await journal({
-      action,
-      object_type: objectType,
-      object_id: objectId ?? null,
-      params: serializable(request.body),
-      dry_run: false,
-      response: e?.response ?? null,
-      error: message,
-    });
+    await journalOutcome(entry, { response: e?.response ?? null, error: message });
     process.exitCode = 1;
     return null;
   }
@@ -214,7 +240,13 @@ function serializable(body) {
   if (body instanceof FormData) {
     const out = {};
     for (const [k, v] of body.entries()) out[k] = typeof v === "string" ? v : `<file ${v.name ?? ""}>`;
+    delete out.access_token;
     return out;
+  }
+  if (typeof body === "object" && "access_token" in body) {
+    const rest = { ...body };
+    delete rest.access_token;
+    return rest;
   }
   return body;
 }
