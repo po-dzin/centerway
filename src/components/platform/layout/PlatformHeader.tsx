@@ -57,18 +57,24 @@ export function PlatformHeader({
   const navLayerRef = useRef<HTMLDivElement | null>(null);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
   const pathname = usePathname();
-  /* WHICH ITEM IS CURRENT IS ASKED OF THE ADDRESS BAR ONCE WE ARE IN ONE
-     (2026-09-25). On production «Головна» was never marked on the home page:
-     the build's prerender marks it, but the copy Vercel regenerates in the
-     background (ISR) came out without `aria-current`, and hydration does not
-     patch an attribute the server got wrong — so it stayed unmarked until the
-     first client navigation. The server snapshot is still `usePathname()`;
-     in the browser the location itself decides, and the change is an ordinary
-     re-render that React applies. */
+  /* WHICH ITEM IS CURRENT IS DECIDED IN THE BROWSER (2026-09-25).
+     On production «Головна» was never marked on the home page: the build's own
+     prerender marks it (checked locally, including a local ISR regeneration),
+     but the copy Vercel regenerates came out without `aria-current`, and
+     hydration never patches an attribute the server got wrong. A first attempt
+     read the location with the SAME value as the server snapshot, so React saw
+     nothing to change and the stale attribute stayed.
+
+     So the server and the hydration pass mark nothing, and the router's path
+     marks the current item on the render right after — a real change React writes to
+     the DOM. The stroke then draws in under the current item as the page
+     settles, which is the arrival the ink motion is for. */
   const activePath = useSyncExternalStore(
     subscribeNever,
-    () => window.location.pathname,
+    // The router's own path, not `window.location`: on a client navigation the
+    // header renders before the address bar is updated.
     () => pathname,
+    () => null,
   );
   const href = useSurfaceHref();
   const host = useSurfaceHost();
@@ -353,8 +359,8 @@ export function PlatformHeader({
   );
 }
 
-/* The location is re-read on every render; the header re-renders on every
-   route change through `usePathname`, so there is nothing to subscribe to. */
+/* The snapshot is re-read on every render, and the header re-renders on every
+   route change through `usePathname` — there is nothing to subscribe to. */
 function subscribeNever(): () => void {
   return () => {};
 }
