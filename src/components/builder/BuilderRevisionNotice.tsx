@@ -34,6 +34,13 @@ import type { BuilderCourseDto } from "./builderClient";
  * notice already says how many: so the count itself opens it, with an arrow
  * after it saying that it leads somewhere. When nothing is blocking, there is
  * nothing to go and look at, and the row is one button.
+ *
+ * AN ADMIN PUBLISHES, NOT SUBMITS (2026-09-25). The one button used to be
+ * «Надіслати на перевірку» for everybody — so an admin's own edit went into a
+ * queue only they could clear, and sat «на перевірці» until they found the
+ * approve button in the admin panel. Whoever `canPublishDirectly` gets the
+ * publish call instead (`/publish`: submit and approve in one step), including
+ * for a revision already sitting in the queue.
  */
 export function BuilderRevisionNotice({
   review,
@@ -43,6 +50,8 @@ export function BuilderRevisionNotice({
   blockerCount,
   onSubmit,
   onOpenRelease,
+  canPublishDirectly = false,
+  onPublish,
 }: {
   review: BuilderCourseDto["review"];
   ready: boolean;
@@ -51,8 +60,12 @@ export function BuilderRevisionNotice({
   blockerCount: number;
   onSubmit: () => void;
   onOpenRelease: () => void;
+  /** An admin: the button publishes the update instead of queueing it. */
+  canPublishDirectly?: boolean;
+  onPublish?: () => void;
 }) {
-  const submitted = review.status === "in_review";
+  const publishes = canPublishDirectly && Boolean(onPublish);
+  const submitted = review.status === "in_review" && !publishes;
   /* Why the button cannot be pressed, in the author's terms and in the order
      they can act on: save first, then the blockers. A disabled control with no
      reason beside it is the thing this notice exists to stop being.
@@ -68,7 +81,9 @@ export function BuilderRevisionNotice({
       <p className={styles.revisionNoticeText}>
         {submitted
           ? "Оновлення на перевірці. Учні поки бачать поточну версію."
-          : "Учні бачать поточну версію. Ці зміни поїдуть до них після перевірки."}
+          : publishes
+            ? "Учні бачать поточну версію. Ці зміни поїдуть до них, щойно ви опублікуєте оновлення."
+            : "Учні бачать поточну версію. Ці зміни поїдуть до них після перевірки."}
         {review.status === "changes_requested" && review.note ? ` Коментар: ${review.note}` : ""}
         {dirty ? " Спочатку збережіть зміни." : ""}{" "}
         {blocked ? (
@@ -88,8 +103,13 @@ export function BuilderRevisionNotice({
       </p>
       {submitted ? null : (
         <div className={styles.revisionNoticeActions}>
-          <button className={styles.quietAction} type="button" onClick={onSubmit} disabled={busy || dirty || !ready}>
-            Надіслати на перевірку
+          <button
+            className={styles.quietAction}
+            type="button"
+            onClick={publishes ? onPublish : onSubmit}
+            disabled={busy || dirty || !ready}
+          >
+            {publishes ? "Опублікувати оновлення" : "Надіслати на перевірку"}
           </button>
         </div>
       )}

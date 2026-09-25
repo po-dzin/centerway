@@ -143,6 +143,12 @@
   margin: calc(var(--ds-rail-shadow-field) * -1);
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
+  /* THE SNAPPORT STARTS WHERE THE CARDS DO (2026-09-25). Without this the snap
+     edge is the padding box's, so `mandatory` pulled the first card onto the
+     shadow field's outer edge: the rail loaded 16px scrolled, the back arrow
+     lit on a rail nobody had touched, and the last card ran past the content
+     column. */
+  scroll-padding-inline: var(--ds-rail-shadow-field);
   scroll-behavior: smooth;
   isolation: isolate;
 }
