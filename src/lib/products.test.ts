@@ -3,12 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { LANDING_STATIC_BRANDS, UTILITY_FILE_BY_PAGE } from "@/lib/landing/contracts";
-import {
-  PLATFORM_FAILED_URL,
-  PLATFORM_THANKS_URL,
-  PRODUCTS,
-  type CatalogProductCode,
-} from "@/lib/products";
+import { PLATFORM_FAILED_URL, PLATFORM_THANKS_URL, PRODUCTS, type CatalogProductCode } from "@/lib/products";
 import { getSnapshotCourse, getSnapshotCourseByProgram } from "@/lib/lms/catalog";
 import { buildReturnDestination } from "@/lib/payments/payReturn";
 

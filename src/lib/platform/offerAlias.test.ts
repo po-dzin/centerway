@@ -167,9 +167,7 @@ describe("what refuses a checkout", () => {
   it("a course that is a draft or hidden", async () => {
     getLiveCourse.mockImplementation(async (slug: string) => course(slug, { status: "draft" } as Partial<Course>));
     expect(await loadPayableOffer("way21")).toBeNull();
-    getLiveCourse.mockImplementation(async (slug: string) =>
-      course(slug, { visibility: "hidden" } as Partial<Course>),
-    );
+    getLiveCourse.mockImplementation(async (slug: string) => course(slug, { visibility: "hidden" } as Partial<Course>));
     expect(await loadPayableOffer("way21")).toBeNull();
   });
 
