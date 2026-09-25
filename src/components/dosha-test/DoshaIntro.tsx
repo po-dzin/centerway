@@ -12,8 +12,15 @@ import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { heroFraming } from "@/components/platform/heroFraming";
 import { platformPageArtwork } from "@/lib/platform/content";
 import { TESTS_HUB_ROUTE } from "@/lib/platform/tests";
+import { AuthorCard } from "@/components/platform/AuthorCard";
+import type { Author } from "@/lms-core";
 
 type DoshaIntroProps = {
+  /* WHOSE TEST THIS IS. A test carries a byline for the same reason a
+     programme does: its vocabulary — doshas, elements, constitution — is one
+     practitioner's language, and it is answerable when a person stands behind
+     it. Null prints nothing: an unclaimed test must not borrow a face. */
+  author: Author | null;
   fontFamily: string;
   topbarBadge: string;
   error: string | null;
@@ -21,7 +28,7 @@ type DoshaIntroProps = {
   requestStartTest: () => Promise<void>;
 };
 
-export function DoshaIntro({ fontFamily, topbarBadge, error, isBusy, requestStartTest }: DoshaIntroProps) {
+export function DoshaIntro({ author, fontFamily, topbarBadge, error, isBusy, requestStartTest }: DoshaIntroProps) {
   const doshaHeroArtwork = platformPageArtwork.dosha;
   const heroStyle = heroFraming(doshaHeroArtwork);
 
@@ -69,7 +76,7 @@ export function DoshaIntro({ fontFamily, topbarBadge, error, isBusy, requestStar
               </p>
               <h1 className={styles.title}>Тест доші</h1>
               <p className={styles.lead}>
-                Швидка самооцінка ритму, енергії, травлення і напруги — щоб побачити поточний стан і зрозуміти, з чого
+                Швидка самооцінка тіла, енергії, емоцій і мислення — щоб побачити поточний стан і зрозуміти, з чого
                 почати.
               </p>
             </div>
@@ -112,6 +119,13 @@ export function DoshaIntro({ fontFamily, topbarBadge, error, isBusy, requestStar
                 <p>{BOUNDARY_NOTE}</p>
               </div>
             </details>
+
+            {author ? (
+              <div className={styles.card} data-tone="support">
+                <p className={styles.label}>Автор тесту</p>
+                <AuthorCard author={author} />
+              </div>
+            ) : null}
 
             <Link className={styles.diagnosticBackLink} href={TESTS_HUB_ROUTE} data-cw-ink-control>
               <Icon name="arrow-left" size={16} className={styles.diagnosticBackIcon} />

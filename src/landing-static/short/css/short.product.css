@@ -1279,6 +1279,9 @@ img {
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   padding: 0 var(--landing-space-proof-reviews-edge-padding, 24px);
+  /* The snap edge is the padding's, not the scroller's — else the first review
+     loads pulled flush to the edge. */
+  scroll-padding-inline: var(--landing-space-proof-reviews-edge-padding, 24px);
   scrollbar-width: none;
 }
 

@@ -64,7 +64,7 @@ export function buildPurchaseEmail(input: PurchaseEmailInput): PurchaseEmailCont
   const signInNote =
     input.fulfilment.kind === "bot"
       ? null
-      : `Заходьте на платформу через цю саму адресу — ${input.email}. Доступ прив'язаний до неї, і якщо увійти через інший акаунт, купленого курсу там не буде.`;
+      : `Входьте на платформу з цією ж адресою — ${input.email}. Доступ відкривається саме за нею: під іншим акаунтом куплений курс не зʼявиться.`;
 
   const lines = [
     `Дякуємо! Оплату прийнято.`,

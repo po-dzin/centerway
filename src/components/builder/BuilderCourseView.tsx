@@ -823,6 +823,8 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           blockerCount={readiness.blockers.length}
           onSubmit={() => void submitReview()}
           onOpenRelease={() => selectWorkspaceMode("release")}
+          canPublishDirectly={state.data.canPublishDirectly}
+          onPublish={() => void publishNow()}
         />
       ) : null}
 

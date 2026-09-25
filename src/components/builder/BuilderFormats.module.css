@@ -109,6 +109,22 @@
   font-weight: 500;
 }
 
+/* What the format gives, as the page will list it. */
+.itemFeatures {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  margin: 0;
+  padding-inline-start: 1.1em;
+  list-style: disc;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.45;
+}
+
+.itemFeatures li::marker {
+  color: var(--cw-platform-muted);
+}
+
 /* The line a program sits on: its title, and the one control that removes it. */
 .linkedRow {
   display: flex;

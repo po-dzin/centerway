@@ -801,6 +801,7 @@ export type Database = {
           created_at: string
           currency: string
           experience_id: string
+          features: Json | null
           format: string | null
           id: string
           invoice_description: Json | null
@@ -830,6 +831,7 @@ export type Database = {
           created_at?: string
           currency?: string
           experience_id: string
+          features?: Json | null
           format?: string | null
           id?: string
           invoice_description?: Json | null
@@ -859,6 +861,7 @@ export type Database = {
           created_at?: string
           currency?: string
           experience_id?: string
+          features?: Json | null
           format?: string | null
           id?: string
           invoice_description?: Json | null
@@ -1920,6 +1923,45 @@ export type Database = {
           },
         ]
       }
+      meta_actions: {
+        Row: {
+          action: string
+          actor: string
+          created_at: string
+          dry_run: boolean
+          error: string | null
+          id: number
+          object_id: string | null
+          object_type: string | null
+          params: Json | null
+          response: Json | null
+        }
+        Insert: {
+          action: string
+          actor: string
+          created_at?: string
+          dry_run?: boolean
+          error?: string | null
+          id?: never
+          object_id?: string | null
+          object_type?: string | null
+          params?: Json | null
+          response?: Json | null
+        }
+        Update: {
+          action?: string
+          actor?: string
+          created_at?: string
+          dry_run?: boolean
+          error?: string | null
+          id?: never
+          object_id?: string | null
+          object_type?: string | null
+          params?: Json | null
+          response?: Json | null
+        }
+        Relationships: []
+      }
       offer_aliases: {
         Row: {
           code: string
@@ -2401,6 +2443,7 @@ export type Database = {
       }
       test_definitions: {
         Row: {
+          author_id: string | null
           created_at: string
           experience_id: string | null
           id: string
@@ -2411,6 +2454,7 @@ export type Database = {
           version: string
         }
         Insert: {
+          author_id?: string | null
           created_at?: string
           experience_id?: string | null
           id?: string
@@ -2421,6 +2465,7 @@ export type Database = {
           version?: string
         }
         Update: {
+          author_id?: string | null
           created_at?: string
           experience_id?: string | null
           id?: string

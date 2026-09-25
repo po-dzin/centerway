@@ -18,8 +18,31 @@
   margin-block-start: auto;
 }
 
-/* The enquiry for a format agreed in conversation, under the row of cards. */
+/* The bonus programs, under a rule: what this format adds over the others. */
+.bonus {
+  display: grid;
+  gap: var(--cw-space-xs);
+  padding-block-start: var(--cw-space-sm);
+  border-block-start: 1px solid var(--cw-platform-border);
+  border-image: var(--cw-rule-fade-x);
+}
+
+.bonusLabel {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-weight: 560;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* The enquiry for a format agreed in conversation, under the row of cards.
+   Folded until its card's button points at it. */
 .request {
+  display: none;
+}
+
+.request:target {
   display: grid;
   gap: var(--cw-space-sm);
   max-width: 36rem;

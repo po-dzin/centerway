@@ -71,7 +71,7 @@ export async function PayStatusPage({ status, searchParams }: { status: ReturnSt
 
   const destination = paid
     ? fulfilment.kind === "bot"
-      ? { href: fulfilment.url, label: "Відкрити бот", external: true }
+      ? { href: fulfilment.url, label: "Відкрити бот у Telegram", external: true }
       : fulfilment.kind === "course"
         ? // ABSOLUTE, because this page cannot move. `PLATFORM_THANKS_URL` is
           // baked into invoices WayForPay has already issued, so the return
@@ -91,10 +91,10 @@ export async function PayStatusPage({ status, searchParams }: { status: ReturnSt
 
   const lead = paid
     ? fulfilment.kind === "bot"
-      ? "Доступ уже готується. Відкрийте бот — саме там уроки і подальші інструкції."
+      ? "Доступ уже готується. Відкрийте бот у Telegram — там уроки і подальші інструкції."
       : fulfilment.kind === "course"
         ? "Курс уже ваш. Він відкритий у кабінеті — там усі матеріали і прогрес."
-        : "Замовлення прийнято, і воно вже видно у вашому кабінеті. Деталі складу і доставки уточнимо в Telegram."
+        : "Замовлення прийнято, і воно вже видно у вашому кабінеті. Склад і доставку ми уточнимо з вами в Telegram."
     : pending
       ? /* NOT "гроші не списані". We do not know that yet, and this is the
            sentence the old page said to people whose card HAD been charged —

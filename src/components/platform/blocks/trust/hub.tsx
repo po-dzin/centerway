@@ -28,8 +28,8 @@ export function HubSupport() {
     <PlatformBlock
       id="support-nature"
       label="Продукти"
-      title="Природна підтримка процесу"
-      lead="Що з продуктів доречно поруч із програмою і режимом?"
+      title="Продукти, що продовжують курс"
+      lead="Трави, олії та інше, що автори використовують у своїх програмах. Беріть поруч із курсом або окремо, коли вже знаєте, що вам підходить."
       graphic="center"
       headActions={<PlatformBlockLink href="/products" label="Усі продукти" />}
     >
@@ -59,8 +59,8 @@ export function HubProof() {
     <PlatformBlock
       id="stories"
       label="Історії"
-      title="Реальні зміни проходять як процес"
-      lead="Які зміни проходять інші люди в реальних умовах?"
+      title="Своїми словами"
+      lead="Люди, які пройшли програми, про те, що змінилося — у тілі, настрої і щоденному житті."
     >
       {/* The group shot used to be the home hero. The hero is now the
           threshold plate, which carries atmosphere but no evidence — this

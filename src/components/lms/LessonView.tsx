@@ -633,7 +633,7 @@ export function LessonView({
           // A lookup page is never "completed", so it has nothing to stick to the
           // bottom of the screen. Contents stays in the stable top position; the
           // hint remains in flow at its real weight, without a fake sequence.
-          <p className={styles.completeHint}>Довідкова сторінка — повертайся сюди будь-коли.</p>
+          <p className={styles.completeHint}>Довідкова сторінка — повертайтеся сюди будь-коли.</p>
         ) : (
           <>
             <label
