@@ -70,8 +70,8 @@ export function HubHero() {
           CenterWay
         </h1>
         <p className={styles.heroFeatureLead}>
-          Шлях до себе — не пошук нової особистості, а повернення до своєї природи: через тіло, увагу,
-          харчування і ритм дня.
+          Шлях до себе — не пошук нової особистості, а повернення до своєї природи: через тіло, увагу, харчування і ритм
+          дня.
         </p>
         <div className={styles.heroFeatureActions}>
           <Link className={styles.heroPrimaryButton} href="#intro-video">
@@ -104,8 +104,8 @@ export function HubIntro() {
             <p className={styles.label}>Діагностика стану · перший крок</p>
             <h2 className={`${styles.title} ${styles.videoDecisionTitle}`}>Почніть із себе, а не з програми</h2>
             <p className={styles.videoDecisionText}>
-              Короткі тести про вашу природу, травлення, втому і ритм дня. Кожен займає кілька хвилин і показує, з
-              чого почати саме вам.
+              Короткі тести про вашу природу, травлення, втому і ритм дня. Кожен займає кілька хвилин і показує, з чого
+              почати саме вам.
             </p>
           </div>
           <div className={styles.videoDecisionRail}>

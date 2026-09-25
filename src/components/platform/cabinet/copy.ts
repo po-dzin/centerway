@@ -383,7 +383,8 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     installCardTitle: "Застосунок на екрані",
     installTitle: "Додати CenterWay на екран телефона",
     installLead: "Відкриватиметься як застосунок: на весь екран, з власною іконкою, і ваші курси завжди за один дотик.",
-    installElsewhereLead: "Застосунок додається з вашої бібліотеки — тоді іконка відкриває ваші курси, а не головну сторінку сайту.",
+    installElsewhereLead:
+      "Застосунок додається з вашої бібліотеки — тоді іконка відкриває ваші курси, а не головну сторінку сайту.",
     installElsewhereAction: "Відкрити бібліотеку, щоб додати",
     installBrowserLead: "Відкрийте меню браузера та оберіть «Встановити застосунок» або «На початковий екран».",
     installInstalledTitle: "CenterWay уже додано на ваш екран.",

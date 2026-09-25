@@ -116,7 +116,8 @@ export function getProfileCopy(lang: ProfileLang, counts: ProfileCopyCounts): Pr
     doshaCompletedPrefix: "Завершено",
     completedShort: "Пройдено",
     retakeTest: "Перепройти тест",
-    doshaEmptyLead: "Ви ще не проходили тест доші. Він займає кілька хвилин і допомагає побачити ваш поточний стан і перший крок.",
+    doshaEmptyLead:
+      "Ви ще не проходили тест доші. Він займає кілька хвилин і допомагає побачити ваш поточний стан і перший крок.",
     startTest: "Почати доша-тест",
     routeSummaryLabel: "Коротко",
     routeSummaryTitle: "Коротко про ваш кабінет",
@@ -142,8 +143,7 @@ export function getProfileCopy(lang: ProfileLang, counts: ProfileCopyCounts): Pr
     noProductsLead: "У кабінеті поки немає придбаних продуктів.",
     progressLabel: "Поступ",
     progressTitle: "Проходження програм",
-    progressLead:
-      "Тут видно, де ви зараз: активні програми, пройдені етапи і наступний крок.",
+    progressLead: "Тут видно, де ви зараз: активні програми, пройдені етапи і наступний крок.",
     contactsTitle: "Ваші контакти",
     name: "Ім’я",
     email: "Email",

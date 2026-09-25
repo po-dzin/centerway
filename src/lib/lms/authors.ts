@@ -128,11 +128,7 @@ export async function getCourseAuthor(courseSlug: string): Promise<Author | null
 async function readTestAuthor(testSlug: string): Promise<Author | null> {
   try {
     const db = adminClient();
-    const { data, error } = await db
-      .from("test_definitions")
-      .select("author_id")
-      .eq("slug", testSlug)
-      .maybeSingle();
+    const { data, error } = await db.from("test_definitions").select("author_id").eq("slug", testSlug).maybeSingle();
     if (error || !data) return null;
     /* Cast through `unknown`: the generated database types are regenerated from
        a live database (`npm run db:types`), and until the migration adding
