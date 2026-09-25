@@ -169,8 +169,13 @@ async function applyWrite({ flags, action, objectType, objectId, describe, reque
   if (!apply) {
     console.log("   dry run — add --apply to send");
     await journal({
-      action, object_type: objectType, object_id: objectId ?? null,
-      params: serializable(request.body), dry_run: true, response: null, error: null,
+      action,
+      object_type: objectType,
+      object_id: objectId ?? null,
+      params: serializable(request.body),
+      dry_run: true,
+      response: null,
+      error: null,
     });
     return null;
   }
@@ -178,16 +183,26 @@ async function applyWrite({ flags, action, objectType, objectId, describe, reque
     const response = await run();
     console.log(`   ✔ ${JSON.stringify(response)}`);
     await journal({
-      action, object_type: objectType, object_id: objectId ?? response?.id ?? null,
-      params: serializable(request.body), dry_run: false, response, error: null,
+      action,
+      object_type: objectType,
+      object_id: objectId ?? response?.id ?? null,
+      params: serializable(request.body),
+      dry_run: false,
+      response,
+      error: null,
     });
     return response;
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     console.error(`   ✖ ${message}`);
     await journal({
-      action, object_type: objectType, object_id: objectId ?? null,
-      params: serializable(request.body), dry_run: false, response: e?.response ?? null, error: message,
+      action,
+      object_type: objectType,
+      object_id: objectId ?? null,
+      params: serializable(request.body),
+      dry_run: false,
+      response: e?.response ?? null,
+      error: message,
     });
     process.exitCode = 1;
     return null;
@@ -217,12 +232,34 @@ function actionMoney(row, types) {
 
 async function insights(level, since, until, extra = {}) {
   const fields = [
-    "campaign_id", "campaign_name", "adset_id", "adset_name", "ad_id", "ad_name",
-    "spend", "impressions", "reach", "clicks", "ctr", "cpc", "cpm", "frequency", "actions", "action_values",
+    "campaign_id",
+    "campaign_name",
+    "adset_id",
+    "adset_name",
+    "ad_id",
+    "ad_name",
+    "spend",
+    "impressions",
+    "reach",
+    "clicks",
+    "ctr",
+    "cpc",
+    "cpm",
+    "frequency",
+    "actions",
+    "action_values",
   ].join(",");
-  const res = await graphGet(`${ACCOUNT}/insights`, {
-    level, fields, time_range: { since, until }, limit: "500", ...extra,
-  }, { all: true });
+  const res = await graphGet(
+    `${ACCOUNT}/insights`,
+    {
+      level,
+      fields,
+      time_range: { since, until },
+      limit: "500",
+      ...extra,
+    },
+    { all: true },
+  );
   return res.data;
 }
 
@@ -264,7 +301,8 @@ async function paidOrders(since, until) {
     byCampaign: rows.reduce((m, r) => {
       const k = r.campaign || "(none)";
       m[k] = m[k] || { n: 0, sum: 0 };
-      m[k].n += 1; m[k].sum += Number(r.amount) || 0;
+      m[k].n += 1;
+      m[k].sum += Number(r.amount) || 0;
       return m;
     }, {}),
   };
@@ -274,45 +312,89 @@ async function paidOrders(since, until) {
 
 const commands = {
   async help() {
-    console.log(fs.readFileSync(new URL(import.meta.url)).toString().split("*/")[0].replace(/^\/\*\*\n/, "").replace(/^ \* ?/gm, ""));
+    console.log(
+      fs
+        .readFileSync(new URL(import.meta.url))
+        .toString()
+        .split("*/")[0]
+        .replace(/^\/\*\*\n/, "")
+        .replace(/^ \* ?/gm, ""),
+    );
   },
 
   async whoami() {
     const me = await graphGet("me", { fields: "id,name" });
     const dbg = await graphGet("debug_token", { input_token: TOKEN });
     const d = dbg.data || {};
-    console.log(`token: ${me.name} (${me.id}) · type ${d.type} · valid ${d.is_valid} · expires ${d.expires_at === 0 ? "never" : d.expires_at}`);
+    console.log(
+      `token: ${me.name} (${me.id}) · type ${d.type} · valid ${d.is_valid} · expires ${d.expires_at === 0 ? "never" : d.expires_at}`,
+    );
     console.log(`scopes: ${(d.scopes || []).join(", ")}`);
-    console.log(`account: ${ACCOUNT} · api ${API_VERSION} · pixel ${PIXEL_ID || "(unset)"} · page ${PAGE_ID} · ig actor ${IG_ACTOR_ID}`);
-    const pages = await graphGet("me/accounts", { fields: "id,name,instagram_business_account{username}" }).catch(() => ({ data: [] }));
-    console.log(`page assets on this token: ${pages.data?.length ? pages.data.map((p) => `${p.name} (${p.id}) ig=${p.instagram_business_account?.username ?? "-"}`).join("; ") : "none — organic/publishing needs a Page token (see docs/marketing/meta-ads-audit-and-integration-2026-09-09.md §4)"}`);
+    console.log(
+      `account: ${ACCOUNT} · api ${API_VERSION} · pixel ${PIXEL_ID || "(unset)"} · page ${PAGE_ID} · ig actor ${IG_ACTOR_ID}`,
+    );
+    const pages = await graphGet("me/accounts", { fields: "id,name,instagram_business_account{username}" }).catch(
+      () => ({ data: [] }),
+    );
+    console.log(
+      `page assets on this token: ${pages.data?.length ? pages.data.map((p) => `${p.name} (${p.id}) ig=${p.instagram_business_account?.username ?? "-"}`).join("; ") : "none — organic/publishing needs a Page token (see docs/marketing/meta-ads-audit-and-integration-2026-09-09.md §4)"}`,
+    );
   },
 
   async status({ flags }) {
     const acct = await graphGet(ACCOUNT, { fields: "name,account_status,currency,amount_spent,timezone_name" });
-    console.log(`${acct.name} · status ${acct.account_status} · ${acct.currency} · lifetime spend ${fmt(uah(acct.amount_spent))} · tz ${acct.timezone_name}`);
-    const active = await graphGet(`${ACCOUNT}/campaigns`, { fields: "id,name,effective_status,daily_budget,objective", effective_status: ["ACTIVE"], limit: 100 }, { all: true });
+    console.log(
+      `${acct.name} · status ${acct.account_status} · ${acct.currency} · lifetime spend ${fmt(uah(acct.amount_spent))} · tz ${acct.timezone_name}`,
+    );
+    const active = await graphGet(
+      `${ACCOUNT}/campaigns`,
+      { fields: "id,name,effective_status,daily_budget,objective", effective_status: ["ACTIVE"], limit: 100 },
+      { all: true },
+    );
     console.log(`\nactive campaigns: ${active.data.length}`);
-    for (const c of active.data) console.log(`  ${c.id} ${c.name} · ${c.objective} · daily ${c.daily_budget ? fmt(uah(c.daily_budget)) : "adset-level"}`);
-    const activeAdsets = await graphGet(`${ACCOUNT}/adsets`, { fields: "id,name,campaign_id,daily_budget,effective_status", effective_status: ["ACTIVE"], limit: 100 }, { all: true });
-    const dailyTotal = activeAdsets.data.reduce((m, a) => m + uah(a.daily_budget), 0) + active.data.reduce((m, c) => m + uah(c.daily_budget), 0);
+    for (const c of active.data)
+      console.log(
+        `  ${c.id} ${c.name} · ${c.objective} · daily ${c.daily_budget ? fmt(uah(c.daily_budget)) : "adset-level"}`,
+      );
+    const activeAdsets = await graphGet(
+      `${ACCOUNT}/adsets`,
+      { fields: "id,name,campaign_id,daily_budget,effective_status", effective_status: ["ACTIVE"], limit: 100 },
+      { all: true },
+    );
+    const dailyTotal =
+      activeAdsets.data.reduce((m, a) => m + uah(a.daily_budget), 0) +
+      active.data.reduce((m, c) => m + uah(c.daily_budget), 0);
     console.log(`active adsets: ${activeAdsets.data.length} · committed daily budget ≈ ${fmt(dailyTotal)} UAH`);
 
     const today = isoDate(new Date());
-    for (const [label, since] of [["today", today], ["yesterday", daysAgo(1)], ["7d", daysAgo(6)], ["30d", daysAgo(29)]]) {
+    for (const [label, since] of [
+      ["today", today],
+      ["yesterday", daysAgo(1)],
+      ["7d", daysAgo(6)],
+      ["30d", daysAgo(29)],
+    ]) {
       const until = label === "yesterday" ? since : today;
       const rows = await insights("account", since, until);
       const s = summarize(rows);
       const orders = await paidOrders(since, until);
       const trueRoas = orders && s.spend ? orders.revenue / s.spend : 0;
       console.log(`\n${label.padEnd(9)} ${line(s)}`);
-      if (orders) console.log(`          orders(db) ${orders.count} paid · revenue ${fmt(orders.revenue)} · attributed ${orders.attributed} · ROAS(true) ${fmt(trueRoas, 2)}`);
+      if (orders)
+        console.log(
+          `          orders(db) ${orders.count} paid · revenue ${fmt(orders.revenue)} · attributed ${orders.attributed} · ROAS(true) ${fmt(trueRoas, 2)}`,
+        );
     }
 
     const client = db();
     if (client) {
-      const { data } = await client.from("analytics_meta_daily").select("day,synced_at").order("day", { ascending: false }).limit(1);
-      console.log(`\nsync: analytics_meta_daily last day ${data?.[0]?.day ?? "-"} (synced ${data?.[0]?.synced_at ?? "-"})`);
+      const { data } = await client
+        .from("analytics_meta_daily")
+        .select("day,synced_at")
+        .order("day", { ascending: false })
+        .limit(1);
+      console.log(
+        `\nsync: analytics_meta_daily last day ${data?.[0]?.day ?? "-"} (synced ${data?.[0]?.synced_at ?? "-"})`,
+      );
     }
     if (flags.verbose) console.log(JSON.stringify(acct, null, 2));
   },
@@ -323,31 +405,57 @@ const commands = {
     const until = flags.until || isoDate(new Date());
     const onlyActive = flags.all !== true;
     const [campaigns, adsets, ads] = await Promise.all([
-      graphGet(`${ACCOUNT}/campaigns`, { fields: "id,name,effective_status,objective,daily_budget,bid_strategy", limit: 200 }, { all: true }),
-      graphGet(`${ACCOUNT}/adsets`, { fields: "id,name,campaign_id,effective_status,daily_budget,optimization_goal,targeting{age_min,age_max,genders,geo_locations,custom_audiences,excluded_custom_audiences,publisher_platforms,targeting_automation}", limit: 500 }, { all: true }),
-      graphGet(`${ACCOUNT}/ads`, { fields: "id,name,adset_id,effective_status,creative{id}", limit: 500 }, { all: true }),
+      graphGet(
+        `${ACCOUNT}/campaigns`,
+        { fields: "id,name,effective_status,objective,daily_budget,bid_strategy", limit: 200 },
+        { all: true },
+      ),
+      graphGet(
+        `${ACCOUNT}/adsets`,
+        {
+          fields:
+            "id,name,campaign_id,effective_status,daily_budget,optimization_goal,targeting{age_min,age_max,genders,geo_locations,custom_audiences,excluded_custom_audiences,publisher_platforms,targeting_automation}",
+          limit: 500,
+        },
+        { all: true },
+      ),
+      graphGet(
+        `${ACCOUNT}/ads`,
+        { fields: "id,name,adset_id,effective_status,creative{id}", limit: 500 },
+        { all: true },
+      ),
     ]);
     const [ci, si, ai] = await Promise.all([
-      insights("campaign", since, until), insights("adset", since, until), insights("ad", since, until),
+      insights("campaign", since, until),
+      insights("adset", since, until),
+      insights("ad", since, until),
     ]);
-    const byC = groupBy(ci, "campaign_id"), byS = groupBy(si, "adset_id"), byA = groupBy(ai, "ad_id");
+    const byC = groupBy(ci, "campaign_id"),
+      byS = groupBy(si, "adset_id"),
+      byA = groupBy(ai, "ad_id");
     console.log(`window ${since}..${until}${onlyActive ? " · active or spending only (add --all)" : ""}\n`);
     for (const c of campaigns.data) {
       const cs = summarize(byC[c.id] || []);
       if (onlyActive && c.effective_status !== "ACTIVE" && cs.spend === 0) continue;
-      console.log(`■ ${c.id} [${c.effective_status}] ${c.name} · ${c.objective}${c.daily_budget ? ` · CBO ${fmt(uah(c.daily_budget))}/d` : ""}`);
+      console.log(
+        `■ ${c.id} [${c.effective_status}] ${c.name} · ${c.objective}${c.daily_budget ? ` · CBO ${fmt(uah(c.daily_budget))}/d` : ""}`,
+      );
       console.log(`    ${line(cs)}`);
       for (const a of adsets.data.filter((x) => x.campaign_id === c.id)) {
         const ss = summarize(byS[a.id] || []);
         if (onlyActive && a.effective_status !== "ACTIVE" && ss.spend === 0) continue;
         const t = a.targeting || {};
         const tg = `${(t.geo_locations?.countries || []).join("/")} ${t.age_min ?? "?"}-${t.age_max ?? "?"} ${t.genders?.[0] === 2 ? "F" : t.genders?.[0] === 1 ? "M" : "all"}${t.targeting_automation?.advantage_audience ? " adv+" : ""}${t.custom_audiences?.length ? ` +${t.custom_audiences.map((x) => x.name).join(",")}` : ""}${t.excluded_custom_audiences?.length ? ` −${t.excluded_custom_audiences.length}excl` : ""}`;
-        console.log(`  ├ ${a.id} [${a.effective_status}] ${a.name} · ${a.optimization_goal}${a.daily_budget ? ` · ${fmt(uah(a.daily_budget))}/d` : ""} · ${tg}`);
+        console.log(
+          `  ├ ${a.id} [${a.effective_status}] ${a.name} · ${a.optimization_goal}${a.daily_budget ? ` · ${fmt(uah(a.daily_budget))}/d` : ""} · ${tg}`,
+        );
         console.log(`  │   ${line(ss)}`);
         for (const ad of ads.data.filter((x) => x.adset_id === a.id)) {
           const as = summarize(byA[ad.id] || []);
           if (onlyActive && ad.effective_status !== "ACTIVE" && as.spend === 0) continue;
-          console.log(`  │   · ${ad.id} [${ad.effective_status}] ${ad.name} (creative ${ad.creative?.id ?? "-"}) · ${line(as)}`);
+          console.log(
+            `  │   · ${ad.id} [${ad.effective_status}] ${ad.name} (creative ${ad.creative?.id ?? "-"}) · ${line(as)}`,
+          );
         }
       }
     }
@@ -361,41 +469,76 @@ const commands = {
     if (flags.breakdown) extra.breakdowns = flags.breakdown;
     if (flags.daily) extra.time_increment = "1";
     const rows = await insights(level, since, until, extra);
-    if (flags.json) { console.log(JSON.stringify(rows, null, 2)); return; }
+    if (flags.json) {
+      console.log(JSON.stringify(rows, null, 2));
+      return;
+    }
     rows.sort((a, b) => Number(b.spend) - Number(a.spend));
     for (const r of rows) {
       const name = r.ad_name || r.adset_name || r.campaign_name || level;
-      const bd = flags.breakdown ? ` [${flags.breakdown.split(",").map((k) => r[k]).join("/")}]` : "";
-      console.log(`${(r.date_start && flags.daily) ? r.date_start + " " : ""}${name.slice(0, 60)}${bd}\n    ${line(summarize([r]))}`);
+      const bd = flags.breakdown
+        ? ` [${flags.breakdown
+            .split(",")
+            .map((k) => r[k])
+            .join("/")}]`
+        : "";
+      console.log(
+        `${r.date_start && flags.daily ? r.date_start + " " : ""}${name.slice(0, 60)}${bd}\n    ${line(summarize([r]))}`,
+      );
     }
     console.log(`\nTOTAL ${line(summarize(rows))}`);
   },
 
   async audiences() {
-    const res = await graphGet(`${ACCOUNT}/customaudiences`, { fields: "id,name,subtype,approximate_count_lower_bound,delivery_status,time_updated", limit: 50 }, { all: true });
-    for (const a of res.data) console.log(`${a.id} ${a.subtype.padEnd(12)} ~${a.approximate_count_lower_bound ?? "?"}  ${a.name}  (${a.delivery_status?.code === 200 ? "ready" : a.delivery_status?.description})`);
+    const res = await graphGet(
+      `${ACCOUNT}/customaudiences`,
+      { fields: "id,name,subtype,approximate_count_lower_bound,delivery_status,time_updated", limit: 50 },
+      { all: true },
+    );
+    for (const a of res.data)
+      console.log(
+        `${a.id} ${a.subtype.padEnd(12)} ~${a.approximate_count_lower_bound ?? "?"}  ${a.name}  (${a.delivery_status?.code === 200 ? "ready" : a.delivery_status?.description})`,
+      );
   },
 
   async journal({ flags }) {
     const client = db();
     if (!client) die("journal needs SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY");
-    const { data, error } = await client.from("meta_actions").select("*").order("created_at", { ascending: false }).limit(Number(flags.limit || 20));
+    const { data, error } = await client
+      .from("meta_actions")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(Number(flags.limit || 20));
     if (error) die(error.message);
-    for (const r of data) console.log(`${r.created_at.slice(0, 16)} ${r.dry_run ? "○" : r.error ? "✖" : "✔"} ${r.actor} ${r.action} ${r.object_type ?? ""} ${r.object_id ?? ""} ${r.error ? "— " + r.error : ""}`);
+    for (const r of data)
+      console.log(
+        `${r.created_at.slice(0, 16)} ${r.dry_run ? "○" : r.error ? "✖" : "✔"} ${r.actor} ${r.action} ${r.object_type ?? ""} ${r.object_id ?? ""} ${r.error ? "— " + r.error : ""}`,
+      );
   },
 
-  async pause({ positional, flags }) { return setStatus(positional[0], "PAUSED", flags); },
-  async resume({ positional, flags }) { return setStatus(positional[0], "ACTIVE", flags); },
+  async pause({ positional, flags }) {
+    return setStatus(positional[0], "PAUSED", flags);
+  },
+  async resume({ positional, flags }) {
+    return setStatus(positional[0], "ACTIVE", flags);
+  },
 
   async budget({ positional, flags }) {
     const [id, amountRaw] = positional;
     const amount = Number(amountRaw);
-    if (!id || !Number.isFinite(amount) || amount <= 0) die("usage: budget <adset_or_campaign_id> <uah_per_day> --apply");
-    if (amount > BUDGET_CAP_UAH && flags.force !== true) die(`refused: ${amount} UAH/day is above META_DAILY_BUDGET_CAP_UAH=${BUDGET_CAP_UAH}; add --force if this is deliberate`);
+    if (!id || !Number.isFinite(amount) || amount <= 0)
+      die("usage: budget <adset_or_campaign_id> <uah_per_day> --apply");
+    if (amount > BUDGET_CAP_UAH && flags.force !== true)
+      die(
+        `refused: ${amount} UAH/day is above META_DAILY_BUDGET_CAP_UAH=${BUDGET_CAP_UAH}; add --force if this is deliberate`,
+      );
     const obj = await graphGet(id, { fields: "name,daily_budget" });
     const body = { daily_budget: Math.round(amount * 100) };
     return applyWrite({
-      flags, action: "budget", objectType: "adset_or_campaign", objectId: id,
+      flags,
+      action: "budget",
+      objectType: "adset_or_campaign",
+      objectId: id,
       describe: `budget «${obj.name}»: ${fmt(uah(obj.daily_budget))} → ${fmt(amount)} UAH/day`,
       request: { method: "POST", path: id, body },
       run: () => graphPost(id, body),
@@ -408,18 +551,30 @@ const commands = {
     if (!PIXEL_ID) die("META_PIXEL_ID is not set");
     const name = flags.name || defaultAudienceName(kind, days);
     let filter;
-    if (kind === "purchasers") filter = { operator: "and", filters: [{ field: "event", operator: "eq", value: "Purchase" }] };
-    else if (kind === "checkout") filter = { operator: "and", filters: [{ field: "event", operator: "eq", value: "InitiateCheckout" }] };
-    else if (kind === "visitors") filter = flags.url
-      ? { operator: "and", filters: [{ field: "url", operator: "i_contains", value: flags.url }] }
-      : { operator: "and", filters: [{ field: "url", operator: "i_contains", value: "" }] };
+    if (kind === "purchasers")
+      filter = { operator: "and", filters: [{ field: "event", operator: "eq", value: "Purchase" }] };
+    else if (kind === "checkout")
+      filter = { operator: "and", filters: [{ field: "event", operator: "eq", value: "InitiateCheckout" }] };
+    else if (kind === "visitors")
+      filter = flags.url
+        ? { operator: "and", filters: [{ field: "url", operator: "i_contains", value: flags.url }] }
+        : { operator: "and", filters: [{ field: "url", operator: "i_contains", value: "" }] };
     else die("kind must be purchasers | checkout | visitors");
     const body = {
-      name, subtype: "WEBSITE", prefill: true,
-      rule: { inclusions: { operator: "or", rules: [{ event_sources: [{ id: PIXEL_ID, type: "pixel" }], retention_seconds: days * 86400, filter }] } },
+      name,
+      subtype: "WEBSITE",
+      prefill: true,
+      rule: {
+        inclusions: {
+          operator: "or",
+          rules: [{ event_sources: [{ id: PIXEL_ID, type: "pixel" }], retention_seconds: days * 86400, filter }],
+        },
+      },
     };
     return applyWrite({
-      flags, action: "audience:create", objectType: "custom_audience",
+      flags,
+      action: "audience:create",
+      objectType: "custom_audience",
       describe: `create website audience «${name}» (${kind}, ${days}d)`,
       request: { method: "POST", path: `${ACCOUNT}/customaudiences`, body },
       run: () => graphPost(`${ACCOUNT}/customaudiences`, body),
@@ -431,9 +586,16 @@ const commands = {
     const ratio = Number(flags.ratio || 0.03);
     const src = await graphGet(String(flags.source), { fields: "name" });
     const name = flags.name || `LAL ${Math.round(ratio * 100)}% — ${src.name}`;
-    const body = { name, subtype: "LOOKALIKE", origin_audience_id: String(flags.source), lookalike_spec: { type: "custom_ratio", ratio, country: flags.country || "UA" } };
+    const body = {
+      name,
+      subtype: "LOOKALIKE",
+      origin_audience_id: String(flags.source),
+      lookalike_spec: { type: "custom_ratio", ratio, country: flags.country || "UA" },
+    };
     return applyWrite({
-      flags, action: "lookalike", objectType: "custom_audience",
+      flags,
+      action: "lookalike",
+      objectType: "custom_audience",
       describe: `create lookalike «${name}»`,
       request: { method: "POST", path: `${ACCOUNT}/customaudiences`, body },
       run: () => graphPost(`${ACCOUNT}/customaudiences`, body),
@@ -442,17 +604,26 @@ const commands = {
 
   async "campaign:create"({ flags }) {
     if (!flags.name) die("usage: campaign:create --name=… [--daily=600] [--objective=sales|leads|traffic] --apply");
-    const objective = { sales: "OUTCOME_SALES", leads: "OUTCOME_LEADS", traffic: "OUTCOME_TRAFFIC" }[flags.objective || "sales"];
+    const objective = { sales: "OUTCOME_SALES", leads: "OUTCOME_LEADS", traffic: "OUTCOME_TRAFFIC" }[
+      flags.objective || "sales"
+    ];
     if (!objective) die("objective must be sales | leads | traffic");
     const daily = flags.daily ? Number(flags.daily) : null;
-    if (daily && daily > BUDGET_CAP_UAH && flags.force !== true) die(`refused: ${daily} UAH/day above cap ${BUDGET_CAP_UAH}`);
+    if (daily && daily > BUDGET_CAP_UAH && flags.force !== true)
+      die(`refused: ${daily} UAH/day above cap ${BUDGET_CAP_UAH}`);
     const body = {
-      name: flags.name, objective, status: "PAUSED", special_ad_categories: [],
-      buying_type: "AUCTION", bid_strategy: "LOWEST_COST_WITHOUT_CAP",
+      name: flags.name,
+      objective,
+      status: "PAUSED",
+      special_ad_categories: [],
+      buying_type: "AUCTION",
+      bid_strategy: "LOWEST_COST_WITHOUT_CAP",
       ...(daily ? { daily_budget: Math.round(daily * 100) } : {}),
     };
     return applyWrite({
-      flags, action: "campaign:create", objectType: "campaign",
+      flags,
+      action: "campaign:create",
+      objectType: "campaign",
       describe: `create campaign «${flags.name}» (${objective}${daily ? `, CBO ${daily} UAH/day` : ", ABO"}) — PAUSED`,
       request: { method: "POST", path: `${ACCOUNT}/campaigns`, body },
       run: () => graphPost(`${ACCOUNT}/campaigns`, body),
@@ -460,30 +631,54 @@ const commands = {
   },
 
   async "adset:create"({ flags }) {
-    if (!flags.campaign || !flags.name) die("usage: adset:create --campaign=<id> --name=… [--daily=300] [--ages=35-64] [--gender=female|male|all] [--exclude=id,id] [--include=id,id] [--platforms=instagram,facebook] [--no-advantage] [--event=PURCHASE] --apply");
+    if (!flags.campaign || !flags.name)
+      die(
+        "usage: adset:create --campaign=<id> --name=… [--daily=300] [--ages=35-64] [--gender=female|male|all] [--exclude=id,id] [--include=id,id] [--platforms=instagram,facebook] [--no-advantage] [--event=PURCHASE] --apply",
+      );
     if (!PIXEL_ID) die("META_PIXEL_ID is not set");
-    const [ageMin, ageMax] = String(flags.ages || "35-64").split("-").map(Number);
+    const [ageMin, ageMax] = String(flags.ages || "35-64")
+      .split("-")
+      .map(Number);
     const genders = flags.gender === "male" ? [1] : flags.gender === "all" ? undefined : [2];
     const daily = flags.daily ? Number(flags.daily) : null;
-    if (daily && daily > BUDGET_CAP_UAH && flags.force !== true) die(`refused: ${daily} UAH/day above cap ${BUDGET_CAP_UAH}`);
+    if (daily && daily > BUDGET_CAP_UAH && flags.force !== true)
+      die(`refused: ${daily} UAH/day above cap ${BUDGET_CAP_UAH}`);
     const targeting = {
       geo_locations: { countries: (flags.countries || "UA").split(",") },
-      age_min: ageMin, age_max: ageMax,
+      age_min: ageMin,
+      age_max: ageMax,
       ...(genders ? { genders } : {}),
       ...(flags.platforms ? { publisher_platforms: flags.platforms.split(",") } : {}),
-      ...(flags.include ? { custom_audiences: String(flags.include).split(",").map((id) => ({ id })) } : {}),
-      ...(flags.exclude ? { excluded_custom_audiences: String(flags.exclude).split(",").map((id) => ({ id })) } : {}),
+      ...(flags.include
+        ? {
+            custom_audiences: String(flags.include)
+              .split(",")
+              .map((id) => ({ id })),
+          }
+        : {}),
+      ...(flags.exclude
+        ? {
+            excluded_custom_audiences: String(flags.exclude)
+              .split(",")
+              .map((id) => ({ id })),
+          }
+        : {}),
       targeting_automation: { advantage_audience: flags["no-advantage"] ? 0 : 1 },
     };
     const body = {
-      name: flags.name, campaign_id: String(flags.campaign), status: "PAUSED",
-      billing_event: "IMPRESSIONS", optimization_goal: "OFFSITE_CONVERSIONS",
+      name: flags.name,
+      campaign_id: String(flags.campaign),
+      status: "PAUSED",
+      billing_event: "IMPRESSIONS",
+      optimization_goal: "OFFSITE_CONVERSIONS",
       promoted_object: { pixel_id: PIXEL_ID, custom_event_type: flags.event || "PURCHASE" },
       targeting,
       ...(daily ? { daily_budget: Math.round(daily * 100), bid_strategy: "LOWEST_COST_WITHOUT_CAP" } : {}),
     };
     return applyWrite({
-      flags, action: "adset:create", objectType: "adset",
+      flags,
+      action: "adset:create",
+      objectType: "adset",
       describe: `create adset «${flags.name}» in ${flags.campaign} — PAUSED`,
       request: { method: "POST", path: `${ACCOUNT}/adsets`, body },
       run: () => graphPost(`${ACCOUNT}/adsets`, body),
@@ -503,7 +698,9 @@ const commands = {
       body.set("source", new Blob([fs.readFileSync(file)]), path.basename(file));
     }
     return applyWrite({
-      flags, action: "video:upload", objectType: "video",
+      flags,
+      action: "video:upload",
+      objectType: "video",
       describe: `upload video «${name}»`,
       request: { method: "POST", path: `${ACCOUNT}/advideos`, body },
       run: () => graphPost(`${ACCOUNT}/advideos`, body),
@@ -511,10 +708,14 @@ const commands = {
   },
 
   async "ad:create"({ flags }) {
-    if (!flags.adset || !flags.name) die("usage: ad:create --adset=<id> --name=… (--creative=<id> | --video=<video_id> --thumb=<image_url> --message=… --headline=… --link=https://…) [--cta=LEARN_MORE] --apply");
+    if (!flags.adset || !flags.name)
+      die(
+        "usage: ad:create --adset=<id> --name=… (--creative=<id> | --video=<video_id> --thumb=<image_url> --message=… --headline=… --link=https://…) [--cta=LEARN_MORE] --apply",
+      );
     let creativeId = flags.creative ? String(flags.creative) : null;
     if (!creativeId) {
-      if (!flags.video || !flags.link || !flags.message) die("a new creative needs --video, --thumb, --message, --headline, --link");
+      if (!flags.video || !flags.link || !flags.message)
+        die("a new creative needs --video, --thumb, --message, --headline, --link");
       const creativeBody = {
         name: `${flags.name} — creative`,
         object_story_spec: {
@@ -530,17 +731,28 @@ const commands = {
         },
       };
       const created = await applyWrite({
-        flags, action: "creative:create", objectType: "creative",
+        flags,
+        action: "creative:create",
+        objectType: "creative",
         describe: `create video creative for «${flags.name}»`,
         request: { method: "POST", path: `${ACCOUNT}/adcreatives`, body: creativeBody },
         run: () => graphPost(`${ACCOUNT}/adcreatives`, creativeBody),
       });
-      if (!created?.id) { if (flags.apply) return null; creativeId = "<creative_id from the step above>"; }
-      else creativeId = created.id;
+      if (!created?.id) {
+        if (flags.apply) return null;
+        creativeId = "<creative_id from the step above>";
+      } else creativeId = created.id;
     }
-    const body = { name: flags.name, adset_id: String(flags.adset), status: "PAUSED", creative: { creative_id: creativeId } };
+    const body = {
+      name: flags.name,
+      adset_id: String(flags.adset),
+      status: "PAUSED",
+      creative: { creative_id: creativeId },
+    };
     return applyWrite({
-      flags, action: "ad:create", objectType: "ad",
+      flags,
+      action: "ad:create",
+      objectType: "ad",
       describe: `create ad «${flags.name}» in adset ${flags.adset} — PAUSED`,
       request: { method: "POST", path: `${ACCOUNT}/ads`, body },
       run: () => graphPost(`${ACCOUNT}/ads`, body),
@@ -553,7 +765,10 @@ async function setStatus(id, status, flags) {
   const obj = await graphGet(id, { fields: "name,effective_status" });
   const body = { status };
   return applyWrite({
-    flags, action: status === "PAUSED" ? "pause" : "resume", objectType: "object", objectId: id,
+    flags,
+    action: status === "PAUSED" ? "pause" : "resume",
+    objectType: "object",
+    objectId: id,
     describe: `${status === "PAUSED" ? "pause" : "activate"} «${obj.name}» (now ${obj.effective_status})`,
     request: { method: "POST", path: id, body },
     run: () => graphPost(id, body),
@@ -567,7 +782,13 @@ function groupBy(rows, key) {
 }
 
 function defaultAudienceName(kind, days) {
-  return { purchasers: `Покупці ${days}д (платформа)`, checkout: `Почали оплату ${days}д (платформа)`, visitors: `Відвідувачі ${days}д (платформа)` }[kind] || `${kind} ${days}d`;
+  return (
+    {
+      purchasers: `Покупці ${days}д (платформа)`,
+      checkout: `Почали оплату ${days}д (платформа)`,
+      visitors: `Відвідувачі ${days}д (платформа)`,
+    }[kind] || `${kind} ${days}d`
+  );
 }
 
 // ─── Main ────────────────────────────────────────────────────────────────────
