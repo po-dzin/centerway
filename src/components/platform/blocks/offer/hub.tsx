@@ -2,6 +2,7 @@ import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
 import { PlatformOfferCarousel } from "@/components/platform/PlatformOfferCarousel";
 import { PlatformBlock, PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import { listStorefrontCourses } from "@/lib/platform/offers";
+import { withAuthorNames } from "@/lib/lms/authors";
 
 /**
  * The home page's two shelves.
@@ -23,7 +24,9 @@ import { listStorefrontCourses } from "@/lib/platform/offers";
 const MINI_LESSON_CEILING = 8;
 
 export async function HubMini() {
-  const authored = (await listStorefrontCourses()).filter((course) => course.lessons <= MINI_LESSON_CEILING);
+  const authored = (await withAuthorNames(await listStorefrontCourses())).filter(
+    (course) => course.lessons <= MINI_LESSON_CEILING,
+  );
 
   return (
     <PlatformBlock
@@ -48,6 +51,7 @@ export async function HubMini() {
             categories={course.categoryLabels}
             categoryCodes={course.categories}
             pretitle={course.pretitle}
+            author={course.authorName}
             commercialMode={course.commercialMode}
             price={course.price}
             compareAtPrice={course.compareAtPrice}
@@ -72,7 +76,9 @@ export async function HubMini() {
  * priced, the section should disappear rather than announce an absence.
  */
 export async function HubFree() {
-  const free = (await listStorefrontCourses()).filter((course) => course.commercialMode === "free");
+  const free = (await withAuthorNames(await listStorefrontCourses())).filter(
+    (course) => course.commercialMode === "free",
+  );
   if (free.length === 0) return null;
 
   return (
@@ -98,6 +104,7 @@ export async function HubFree() {
             categories={course.categoryLabels}
             categoryCodes={course.categories}
             pretitle={course.pretitle}
+            author={course.authorName}
             commercialMode={course.commercialMode}
             price={course.price}
             compareAtPrice={course.compareAtPrice}
@@ -109,7 +116,9 @@ export async function HubFree() {
 }
 
 export async function HubPrograms() {
-  const authored = (await listStorefrontCourses()).filter((course) => course.lessons > MINI_LESSON_CEILING);
+  const authored = (await withAuthorNames(await listStorefrontCourses())).filter(
+    (course) => course.lessons > MINI_LESSON_CEILING,
+  );
 
   return (
     <PlatformBlock
@@ -134,6 +143,7 @@ export async function HubPrograms() {
             categories={course.categoryLabels}
             categoryCodes={course.categories}
             pretitle={course.pretitle}
+            author={course.authorName}
             commercialMode={course.commercialMode}
             price={course.price}
             compareAtPrice={course.compareAtPrice}

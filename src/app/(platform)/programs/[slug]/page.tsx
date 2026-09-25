@@ -36,7 +36,7 @@ import { isContentKind, resolveExperience } from "@/lib/experiences/registry";
 import { ProgramDetailPage } from "@/components/platform/ProgramDetailPage";
 import { CourseNextStep } from "@/components/platform/CourseNextStep";
 import { OfferPurchaseReturn, readPurchaseReturn } from "@/components/platform/OfferPurchaseReturn";
-import { getCourseAuthor } from "@/lib/lms/authors";
+import { getCourseAuthor, withAuthorNames } from "@/lib/lms/authors";
 import { toOfferSurface } from "@/lib/platform/courseOffer";
 import { listLiveCourses } from "@/lib/lms/liveCatalog";
 import { courseOfferCommerce } from "@/lib/platform/offerCommerce";
@@ -142,7 +142,7 @@ export default async function CourseOfferPage({
     loadCourseOffer(course.slug),
     getCourseAuthor(course.slug),
     searchParams,
-    listStorefrontCourses(),
+    listStorefrontCourses().then(withAuthorNames),
     loadProgramFormats(course),
   ]);
 

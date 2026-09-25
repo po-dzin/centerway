@@ -130,12 +130,7 @@ async function readTestAuthor(testSlug: string): Promise<Author | null> {
     const db = adminClient();
     const { data, error } = await db.from("test_definitions").select("author_id").eq("slug", testSlug).maybeSingle();
     if (error || !data) return null;
-    /* Cast through `unknown`: the generated database types are regenerated from
-       a live database (`npm run db:types`), and until the migration adding
-       `test_definitions.author_id` is applied they still describe the table
-       without it. The column is declared in
-       supabase/migrations/20260923000000_test_definitions_author.sql. */
-    const authorId = (data as unknown as { author_id?: string | null }).author_id;
+    const authorId = data.author_id;
     if (typeof authorId !== "string" || authorId.length === 0) return null;
     const row = await findAuthorByUser(authorId);
     return row ? authorFromRow(row) : null;
@@ -145,6 +140,36 @@ async function readTestAuthor(testSlug: string): Promise<Author | null> {
     );
     return null;
   }
+}
+
+/**
+ * Storefront cards with their author's name filled in.
+ *
+ * A card is authored material, so it prints a byline — the home page now says
+ * «За кожною програмою — автор», and a rail that says so above cards with no
+ * names on them would contradict itself. Each read is `getCourseAuthor`'s own
+ * cached one, so a rail costs no more than the programme pages already do. A
+ * course with no author row simply keeps no name.
+ */
+export async function withAuthorNames<T extends { slug: string }>(
+  courses: readonly T[],
+): Promise<(T & { authorName?: string })[]> {
+  const authors = await Promise.all(courses.map((course) => getCourseAuthor(course.slug)));
+  return courses.map((course, index) => {
+    const name = authors[index]?.name;
+    return name ? { ...course, authorName: name } : { ...course };
+  });
+}
+
+/** The same byline for tests, keyed by their `test_definitions` slug. */
+export async function testAuthorNames(testSlugs: readonly string[]): Promise<Map<string, string>> {
+  const authors = await Promise.all(testSlugs.map((slug) => getTestAuthor(slug)));
+  return new Map(
+    testSlugs.flatMap((slug, index) => {
+      const name = authors[index]?.name;
+      return name ? [[slug, name] as const] : [];
+    }),
+  );
 }
 
 export async function getTestAuthor(testSlug: string): Promise<Author | null> {
