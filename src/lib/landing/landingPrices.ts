@@ -25,10 +25,10 @@
  * codebase as `amount` versus `listAmount`; this is the same split one level up.
  */
 
-import { loadProgramFormats, type ProgramFormat } from "@/lib/experiences/formats";
+import { loadBundleHosts, loadProgramFormats, type BundleHost, type ProgramFormat } from "@/lib/experiences/formats";
 import { listLiveCourses } from "@/lib/lms/liveCatalog";
 import { loadPayableOffer } from "@/lib/platform/offers";
-import { applyFormatSync, collectFormatPrograms } from "./formatSync";
+import { applyBundleSync, applyFormatSync, collectBundledPrograms, collectFormatPrograms } from "./formatSync";
 import { loadProductOffer } from "@/lib/platform/productOffers";
 import {
   applyCheckoutGate,
@@ -109,7 +109,8 @@ export function hasLandingCommerce(html: string): boolean {
   return (
     collectPriceCodes(html).length > 0 ||
     collectCheckoutCodes(html).length > 0 ||
-    collectFormatPrograms(html).length > 0
+    collectFormatPrograms(html).length > 0 ||
+    collectBundledPrograms(html).length > 0
   );
 }
 
@@ -149,11 +150,39 @@ async function resolveLandingFormats(
   return found;
 }
 
+/**
+ * For every `cw:bundled-in` marker: the included program's short title and the
+ * formats of other programs that open it. `null` for a program that cannot be
+ * read or is not published — its marker keeps what the page typed.
+ */
+async function resolveLandingBundles(
+  html: string,
+): Promise<Map<string, { title: string; hosts: BundleHost[] } | null>> {
+  const programs = collectBundledPrograms(html);
+  const found = new Map<string, { title: string; hosts: BundleHost[] } | null>();
+  if (programs.length === 0) return found;
+  try {
+    const courses = await listLiveCourses();
+    await Promise.all(
+      programs.map(async (programSlug) => {
+        const course = courses.find((entry) => entry.programSlug === programSlug && entry.status === "published");
+        if (!course) return found.set(programSlug, null);
+        const hosts = await loadBundleHosts(course.slug);
+        found.set(programSlug, hosts === null ? null : { title: course.title.split(" — ")[0]!.trim(), hosts });
+      }),
+    );
+  } catch (error) {
+    console.warn("landing_bundles_read_failed", { error: error instanceof Error ? error.message : String(error) });
+  }
+  return found;
+}
+
 export async function syncLandingCommerce(input: string): Promise<string> {
   // Formats first: a card they add carries its own `data-cw-price` and CTA,
   // which the price and checkout passes below then treat like any other.
-  const formats = await resolveLandingFormats(input);
-  const html = formats.size > 0 ? applyFormatSync(input, (slug) => formats.get(slug) ?? null) : input;
+  const [formats, bundles] = await Promise.all([resolveLandingFormats(input), resolveLandingBundles(input)]);
+  const withFormats = formats.size > 0 ? applyFormatSync(input, (slug) => formats.get(slug) ?? null) : input;
+  const html = bundles.size > 0 ? applyBundleSync(withFormats, (slug) => bundles.get(slug) ?? null) : withFormats;
 
   const [prices, closed] = await Promise.all([
     resolveLandingPrices(html),
