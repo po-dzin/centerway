@@ -2193,6 +2193,51 @@
     }
   }
 
+  /* THE STROKE IS DRAWN, NOT SWITCHED ON (2026-09-25).
+     The ladder above says HOW STRONG a mark is in each state; this says how it
+     ARRIVES. Until now it faded in whole — a stamp. The prototype of 09-10
+     (docs/design-system/prototypes/ink-draw-2026-09-10.html) drew it along its
+     own length, left to right, the way a pen crosses a word; that pass was
+     deferred as «motion on top of a mark that is already whole», and this is
+     it. The mark is still whole in every state it is shown in: only the
+     travel into that state is drawn.
+
+     Revealed with `clip-path`, not `stroke-dashoffset`: the mark is a sprite
+     `<use>`, whose path length the page cannot know, and a clip in the
+     element's own box travels left to right before the tilt is applied. The
+     inset is generous vertically so the scaled stroke is never shaved.
+
+     Shown = every state that already sets a visible strength: the link's
+     rest, focus, hover, press, current. Everything else starts undrawn. */
+  .cw-ink-label-mark {
+    clip-path: inset(-200% 100% -200% 0);
+    transition:
+      opacity 0.16s ease,
+      transform 0.18s ease,
+      color 0.16s ease,
+      clip-path 0.36s cubic-bezier(0.3, 0.7, 0.2, 1);
+  }
+
+  .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark,
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible .cw-ink-label-mark,
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):active .cw-ink-label-mark,
+  :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]) .cw-ink-label-mark,
+  .cw-ink-label[data-cw-ink-active="true"] .cw-ink-label-mark {
+    clip-path: inset(-200% 0 -200% 0);
+  }
+
+  @media (hover: hover) {
+    :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover .cw-ink-label-mark {
+      clip-path: inset(-200% 0 -200% 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cw-ink-label-mark {
+      transition: opacity 0.16s ease, color 0.16s ease;
+    }
+  }
+
   .cw-nav-link:focus-visible,
   .cw-tab:focus-visible {
     outline: none;

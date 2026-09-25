@@ -20,7 +20,7 @@ import { CourseAuthorLink } from "@/components/platform/AuthorEntry";
 import { getSnapshotCourseByProgram } from "@/lib/lms/catalog";
 import { offerLandingUrl } from "@/lib/platform/offerLanding";
 import { resolveOfferCommerce, type OfferCommerce } from "@/lib/platform/offerCommerce";
-import type { Author, Course } from "@/lms-core";
+import { isLinkedModule, type Author, type Course } from "@/lms-core";
 import type { ReactNode } from "react";
 
 import { JsonLd } from "@/components/seo/StructuredData";
@@ -147,7 +147,10 @@ export function ProgramDetailPage({
      the panel below it, so «7 днів» appeared in the badge and again as a pill,
      and «доступ назавжди» sat twice within one screen — once as a pill and
      once under the price. */
-  const lessonLabel = `${lessonCount} ${plural(lessonCount, "урок", "уроки", "уроків")}`;
+  /* The protocol's own lessons: the reference entries are named separately in
+     the same list, and the hero's progress already counts only these. */
+  const stepCount = course ? lessonCount - referenceLessons(course) : lessonCount;
+  const lessonLabel = `${stepCount} ${plural(stepCount, "урок", "уроки", "уроків")}`;
   const formatMeta = [
     /* AND THE COUNT IS SKIPPED WHEN THE BADGE IS ALREADY PRINTING IT. With no
        `durationDays` set, `program.duration` IS the lesson count — see
@@ -156,15 +159,18 @@ export function ProgramDetailPage({
        re-deriving the condition keeps this true even if that fallback changes. */
     ...(course && lessonLabel !== program.duration ? [lessonLabel] : []),
     ...(course ? [] : [program.tag]),
-    /* Sentence case, like every other line in this list. These three were
-       written lowercase back when they were pills inside a row; as items of a
-       list they sat beside «6 уроків» and «Чек-лист» and read as a different
-       voice on the same card. */
-    isCheckout
-      ? "Оплата просто тут, без переходу на лендинг"
-      : isFree
-        ? "Доступ без оплати"
-        : "Участь узгоджуємо в розмові",
+    /* HOW IT IS WALKED, NOT HOW IT IS PAID FOR (2026-09-25). This line used
+       to be «Оплата просто тут, без переходу на лендинг» — a remark about the
+       checkout, printed in the panel about the course's shape, a screen above
+       the checkout that says it again. The panel now answers its own question:
+       how the lessons arrive, what else sits beside them, where it is read. */
+    ...(course ? [rhythmLine(course)] : []),
+    ...(course && referenceLessons(course) > 0
+      ? [
+          `Окремо від уроків — ${referenceLessons(course)} ${plural(referenceLessons(course), "довідковий матеріал", "довідкові матеріали", "довідкових матеріалів")}`,
+        ]
+      : []),
+    "Проходити можна з телефона і з компʼютера",
   ];
 
   /* WHAT THE PANEL IS TITLED, now that the duration is the badge's.
@@ -178,6 +184,9 @@ export function ProgramDetailPage({
       ? "День за днем"
       : "У своєму темпі"
     : program.duration;
+  /* «Формат» was also the name of the formats block further down — two panels
+     a screen apart under one word, one about the course's shape and one about
+     ways to buy it. This one is the shape. */
 
   /* THE PILL ROW IS GONE (2026-09-08), and the note it replaces is worth
      keeping as the reason it existed: the three facts used to be reachable only
@@ -322,7 +331,7 @@ export function ProgramDetailPage({
           lead: program.longDescription,
         }}
         detailRight={{
-          label: "Формат",
+          label: "Як побудовано",
           title: rhythmTitle,
           body: <PlatformOfferMetaList items={formatMeta} />,
         }}
@@ -374,7 +383,7 @@ export function ProgramDetailPage({
                     </h2>
                     <p className={offerPanelStyles.lead}>
                       {isCheckout
-                        ? `Оплата проходить тут, на платформі, без переходу на окремий лендинг: ${deliveryLine}.`
+                        ? `Разова оплата, без підписки. ${deliveryLine}.`
                         : isFree
                           ? `Це безкоштовний доступ до курсу: ${deliveryLine}. Увійдіть або створіть акаунт, щоб зберегти прогрес.`
                           : "Цю програму ми узгоджуємо в розмові — щоб формат, темп і межі методу підходили саме вашому стану. Залиште контакт, і ми повернемося з деталями і способом оплати."}
@@ -422,4 +431,24 @@ export function ProgramDetailPage({
       />
     </OfferAccessProvider>
   );
+}
+
+/* How the lessons arrive, in the terms of the course's own schedule. */
+function rhythmLine(course: Course): string {
+  if (course.schedule.mode === "daily") {
+    return course.schedule.gate === "hard"
+      ? "Щодня відкривається урок свого дня — від дати старту"
+      : "Кожен урок має свій день; наперед можна зазирнути будь-коли";
+  }
+  if (course.schedule.mode === "sequential") return "Уроки відкриваються по черзі, у вашому темпі";
+  return "Усі уроки відкриті одразу — у вашому темпі";
+}
+
+/* Entries in reference modules (recipes, blends, recordings) — the material
+   beside the protocol, not a step of it. Linked programs hold no lessons here
+   and are bonuses of particular formats, said by the formats block. */
+function referenceLessons(course: Course): number {
+  return course.modules
+    .filter((module) => module.reference && !isLinkedModule(module))
+    .reduce((total, module) => total + module.lessons.length, 0);
 }

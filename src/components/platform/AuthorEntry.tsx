@@ -22,6 +22,7 @@
 import { useEffect, useState } from "react";
 
 import { Icon } from "@/components/Icon";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { BUILDER_PATH_PREFIX } from "@/lib/surfaces/catalog";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import heroStyles from "./PlatformHeroStyles";
@@ -112,13 +113,14 @@ export function CourseAuthorLink({
       href={builderHref(`/${courseSlug}`)}
       data-cw-ink-control
     >
-      {/* NO INK MARK HERE (2026-09-20). The stroke is how a bare text control
-          says "this is pressable", and this control is not bare: it has a glyph
-          in front of it. Two marked labels sat in the same utility line — the
-          way back and this — and the line read as two links to the same kind of
-          place. The mark belongs to the one that has nothing else. */}
+      {/* THE SELECTION STROKE, NOT THE LINK RULE (2026-09-25). This control
+          once had no mark at all, so that it would not read as a second link
+          beside the way back — and it ended up the one control in the hero
+          that answered neither hover nor press. `navigation` is absent at rest
+          (so the utility line still has one marked label) and arrives under
+          the pointer, like the crumbs beside it. */}
       <Icon name="settings" size={20} />
-      <span>Редагувати</span>
+      <InteractionInkLabel variant="navigation">Редагувати</InteractionInkLabel>
     </a>
   );
 
