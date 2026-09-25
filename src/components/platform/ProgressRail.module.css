@@ -111,6 +111,15 @@
   background: color-mix(in srgb, var(--cw-mat-inverse-text) 34%, transparent);
 }
 
+/* THE DONE DASH HAS TO WIN HERE TOO (2026-09-25). `.dashDone` composes `.dash`,
+   so a done dash carries BOTH classes — and `.wrapMedia .dash` (two classes)
+   out-ranked `.dashDone` (one) and painted every finished lesson in the track's
+   colour. On the offer hero the walker stood at «2 з 11» over eleven grey
+   dashes. Stated at the same specificity, after the track. */
+.wrapMedia .dashDone {
+  background: var(--cw-platform-accent);
+}
+
 .wrapMedia .long {
   background: repeating-linear-gradient(
     90deg,

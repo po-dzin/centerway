@@ -26,6 +26,7 @@
 import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import type { CwIconName } from "@/components/iconNames";
 import { useOfferAccess } from "@/components/platform/OfferAccess";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
@@ -142,15 +143,25 @@ export function OfferCurriculum({
               const inFormats = slug ? bonusFormats(slug) : [];
               /* A LINKED PROGRAM IS NOT AN EMPTY MODULE (2026-09-25). It has no
                  lessons here — they live in its own course — so the card says
-                 what it is and who gets it, centred, instead of a title over
-                 nothing. */
+                 what it is and who gets it instead of a title over nothing.
+                 Left-aligned like every other module: centring set two cards
+                 apart from the column they belong to. The tag takes the
+                 padlock's place at the end of the head. */
               return (
                 <li key={module.id ?? module.title}>
                   <div className={`${styles.outlineModule} ${styles.outlineLinked}`}>
-                    <p className={styles.outlineLinkedTag}>Бонус</p>
-                    <h3 className={styles.outlineModuleTitle}>
-                      {program ? <Link href={`/programs/${program.programSlug}`}>{module.title}</Link> : module.title}
-                    </h3>
+                    <div className={styles.outlineModuleHead}>
+                      <h3 className={styles.outlineModuleTitle}>
+                        {program ? (
+                          <Link href={`/programs/${program.programSlug}`} data-cw-ink-control>
+                            <InteractionInkLabel variant="navigation">{module.title}</InteractionInkLabel>
+                          </Link>
+                        ) : (
+                          module.title
+                        )}
+                      </h3>
+                      <p className={styles.outlineLinkedTag}>Бонус</p>
+                    </div>
                     <p className={styles.outlineLinkedNote}>
                       {inFormats.length > 0
                         ? `Окремий міні-курс у форматах ${inFormats.join(" і ")}`

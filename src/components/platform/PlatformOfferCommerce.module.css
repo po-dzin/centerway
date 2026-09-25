@@ -155,12 +155,10 @@
 }
 
 /* A linked program (Reset Day, Short inside Шлях 21): no lessons of its own
-   here, so the card is centred and says what it is and who gets it. */
+   here, so under its title the card says what it is and who gets it. Same
+   column and padding as every other module. */
 .outlineLinked {
-  justify-items: center;
   gap: var(--cw-space-2xs);
-  text-align: center;
-  padding-block: var(--cw-space-lg);
 }
 
 .outlineLinked .outlineModuleTitle a {
@@ -169,7 +167,8 @@
 }
 
 .outlineLinkedTag {
-  margin: 0;
+  flex: none;
+  margin: 0 0 0 auto;
   color: var(--cw-sem-warmth);
   font-size: var(--ds-type-label-size);
   font-weight: 560;
@@ -179,7 +178,6 @@
 
 .outlineLinkedNote {
   margin: 0;
-  max-width: 34rem;
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-body-sm-size);
   line-height: 1.45;
