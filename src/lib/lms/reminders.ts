@@ -351,8 +351,6 @@ export async function runDailyReminders(
   const heldThroughBundle = (enrollment: EnrollmentRow): boolean => {
     if (enrollment.source === "bonus") return true;
     if (!enrollment.order_ref) return false;
-    // A seat anchored on a buyer's bonus (`lms_course_bonuses`), not an order.
-    if (enrollment.order_ref.startsWith("bonus-")) return true;
     const code = codeByOrder.get(enrollment.order_ref);
     if (code === undefined) return false;
     return !(ownByCourse.get(enrollment.course_id)?.has(code.trim().toLowerCase()) ?? true);

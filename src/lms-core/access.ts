@@ -8,7 +8,7 @@
  * merchant-of-record later is a new source value, not a rewrite (§3A.1).
  */
 
-import { courseBonusCode, courseOfferCode } from "./offerCode";
+import { courseOfferCode } from "./offerCode";
 
 /**
  * "token" is retained for callers that still name it and for stored history; it
@@ -92,11 +92,7 @@ export function acceptedPaidOrders(input: {
   orders: PaidOrderRef[];
   now: Date;
 }): PaidOrderRef[] {
-  const accepted = new Set(
-    [...input.courseProductCodes, courseOfferCode(input.courseSlug), courseBonusCode(input.courseSlug)].map(
-      normalizeCode,
-    ),
-  );
+  const accepted = new Set([...input.courseProductCodes, courseOfferCode(input.courseSlug)].map(normalizeCode));
 
   return input.orders
     .filter((order) => order.status.trim().toLowerCase() === "paid")
@@ -113,11 +109,7 @@ export function resolveEntitlement(input: EntitlementInput): Entitlement {
      — and the omission would be invisible until a buyer complained. The
      declared codes stay: they are how the OLD funnel names ("mini-detox") keep
      working. */
-  const accepted = new Set(
-    [...input.courseProductCodes, courseOfferCode(input.courseSlug), courseBonusCode(input.courseSlug)].map(
-      normalizeCode,
-    ),
-  );
+  const accepted = new Set([...input.courseProductCodes, courseOfferCode(input.courseSlug)].map(normalizeCode));
 
   const manual = (input.manualGrants ?? []).find((grant) => grant.courseSlug === input.courseSlug);
   if (manual) {
