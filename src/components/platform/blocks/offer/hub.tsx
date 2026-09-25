@@ -29,8 +29,8 @@ export async function HubMini() {
     <PlatformBlock
       id="mini-courses"
       label="Міні-курси"
-      title="М'який вхід без довгого зобов'язання"
-      lead="Кілька днів практики, щоб спробувати підхід без довгого зобов'язання."
+      title="Маленький крок, який можна зробити сьогодні"
+      lead="Кілька днів простої практики — щоб відчути підхід на собі."
       headActions={<PlatformBlockLink href="/programs" label="Усі матеріали" />}
     >
       <PlatformOfferCarousel label="Міні-курси CenterWay">
@@ -115,8 +115,8 @@ export async function HubPrograms() {
     <PlatformBlock
       id="programs"
       label="Програми"
-      title="Глибші формати для тіла, харчування і ритму"
-      lead="Що обрати для свого поточного стану?"
+      title="Глибше — коли готові"
+      lead="Довші програми для тіла, харчування і ритму дня. Оберіть ту, що відповідає вашому стану зараз."
       headActions={<PlatformBlockLink href="/programs" label="Усі матеріали" />}
     >
       <PlatformOfferCarousel label="Програми CenterWay">
