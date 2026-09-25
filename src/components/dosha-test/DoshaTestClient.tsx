@@ -12,6 +12,7 @@
 
 import styles from "@/components/platform/PlatformDiagnosticStyles";
 import { DoshaIntro } from "./DoshaIntro";
+import type { Author } from "@/lms-core";
 import { DoshaLoadingStep } from "./DoshaLoadingStep";
 import { DoshaQuestionStep } from "./DoshaQuestionStep";
 import { DoshaResult } from "./DoshaResult";
@@ -20,10 +21,12 @@ import { useDoshaAttempt } from "./useDoshaAttempt";
 const DEFAULT_UI_VARIANT = "dosha_test_calm_route_v1";
 
 type DoshaTestClientProps = {
+  /** Whose test this is. Null while no author has claimed the row. */
+  author?: Author | null;
   uiVariant?: string;
 };
 
-export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT }: DoshaTestClientProps) {
+export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, author = null }: DoshaTestClientProps) {
   const attempt = useDoshaAttempt(uiVariant);
   const { phase, currentQuestion, resultType, resultCopy, topbarBadge } = attempt;
   const testFontFamily = "var(--cw-font-ui), 'Manrope', 'Segoe UI', sans-serif";
@@ -32,6 +35,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT }: Dosh
     <>
       {phase === "intro" ? (
         <DoshaIntro
+          author={author}
           fontFamily={testFontFamily}
           topbarBadge={topbarBadge}
           error={attempt.error}

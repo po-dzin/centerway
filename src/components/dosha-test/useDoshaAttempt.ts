@@ -150,7 +150,7 @@ export function useDoshaAttempt(uiVariant: string) {
       if (questions.length === 0) return;
 
       if (questions.some((question) => !finalAnswers[question.id]?.length)) {
-        setError("Не всі відповіді заповнені. Перевірте питання і завершить тест.");
+        setError("Не всі відповіді заповнені. Перевірте питання і завершіть тест.");
         return;
       }
 

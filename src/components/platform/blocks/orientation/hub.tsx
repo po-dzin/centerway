@@ -70,8 +70,8 @@ export function HubHero() {
           CenterWay
         </h1>
         <p className={styles.heroFeatureLead}>
-          Шлях до себе - не пошук нової особистості, а повернення до своєї істинної природи через тіло, увагу і
-          практику.
+          Шлях до себе — не пошук нової особистості, а повернення до своєї природи: через тіло, увагу, харчування і ритм
+          дня.
         </p>
         <div className={styles.heroFeatureActions}>
           <Link className={styles.heroPrimaryButton} href="#intro-video">
@@ -102,10 +102,10 @@ export function HubIntro() {
         <aside className={styles.videoAside} id="diagnostics" data-cw-hub-intro="aside">
           <div className={styles.videoDecisionIntro}>
             <p className={styles.label}>Діагностика стану · перший крок</p>
-            <h2 className={`${styles.title} ${styles.videoDecisionTitle}`}>Побачити свій стан і вибрати старт</h2>
+            <h2 className={`${styles.title} ${styles.videoDecisionTitle}`}>Почніть із себе, а не з програми</h2>
             <p className={styles.videoDecisionText}>
-              Тести допомагають помітити ритм, енергію, сон, травлення й напругу. Це не діагноз, а спокійний спосіб
-              зрозуміти, що варто дослідити далі.
+              Короткі тести про вашу природу, травлення, втому і ритм дня. Кожен займає кілька хвилин і показує, з чого
+              почати саме вам.
             </p>
           </div>
           <div className={styles.videoDecisionRail}>

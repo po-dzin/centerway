@@ -161,6 +161,12 @@ export function isPublicCourse(course: Course, at: CourseVisibility[] = ["listed
 
 /** A listed course, reduced to what a catalogue card needs. */
 export type StorefrontCard = {
+  /**
+   * The author's display name, for the byline under the categories. Not set
+   * here: `offers.ts` sits below `lib/lms/authors.ts` in the import graph, so
+   * the rails that print cards fill it through `withAuthorNames()`.
+   */
+  authorName?: string;
   /** The course's identity — its row, its lessons, its cache tag. */
   slug: string;
   /**

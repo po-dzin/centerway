@@ -114,6 +114,71 @@ export async function getCourseAuthor(courseSlug: string): Promise<Author | null
   })();
 }
 
+/**
+ * The author of one test, resolved exactly as a course's author is.
+ *
+ * A test is authored material — the same kind of thing as a programme or a
+ * product — so `test_definitions.author_id` holds an `auth.users.id` and the
+ * displayable profile comes from `lms_authors.auth_user_id`. One resolution
+ * path for both, rather than a second convention for tests.
+ *
+ * Null is the honest answer for a test nobody has claimed yet, and the surface
+ * simply prints no byline: a test without an owner must not borrow one.
+ */
+async function readTestAuthor(testSlug: string): Promise<Author | null> {
+  try {
+    const db = adminClient();
+    const { data, error } = await db.from("test_definitions").select("author_id").eq("slug", testSlug).maybeSingle();
+    if (error || !data) return null;
+    const authorId = data.author_id;
+    if (typeof authorId !== "string" || authorId.length === 0) return null;
+    const row = await findAuthorByUser(authorId);
+    return row ? authorFromRow(row) : null;
+  } catch (error) {
+    console.warn(
+      `platform_test_author_unavailable:${testSlug}:${error instanceof Error ? error.message : "unknown_error"}`,
+    );
+    return null;
+  }
+}
+
+/**
+ * Storefront cards with their author's name filled in.
+ *
+ * A card is authored material, so it prints a byline — the home page now says
+ * «За кожною програмою — автор», and a rail that says so above cards with no
+ * names on them would contradict itself. Each read is `getCourseAuthor`'s own
+ * cached one, so a rail costs no more than the programme pages already do. A
+ * course with no author row simply keeps no name.
+ */
+export async function withAuthorNames<T extends { slug: string }>(
+  courses: readonly T[],
+): Promise<(T & { authorName?: string })[]> {
+  const authors = await Promise.all(courses.map((course) => getCourseAuthor(course.slug)));
+  return courses.map((course, index) => {
+    const name = authors[index]?.name;
+    return name ? { ...course, authorName: name } : { ...course };
+  });
+}
+
+/** The same byline for tests, keyed by their `test_definitions` slug. */
+export async function testAuthorNames(testSlugs: readonly string[]): Promise<Map<string, string>> {
+  const authors = await Promise.all(testSlugs.map((slug) => getTestAuthor(slug)));
+  return new Map(
+    testSlugs.flatMap((slug, index) => {
+      const name = authors[index]?.name;
+      return name ? [[slug, name] as const] : [];
+    }),
+  );
+}
+
+export async function getTestAuthor(testSlug: string): Promise<Author | null> {
+  return unstable_cache(() => readTestAuthor(testSlug), ["platform-test-author", testSlug], {
+    tags: [AUTHOR_LIST_TAG, `platform-test:${testSlug}`],
+    revalidate: REVALIDATE_SECONDS,
+  })();
+}
+
 async function readAuthor(slug: string): Promise<Author | null> {
   try {
     const db = adminClient();

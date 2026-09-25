@@ -76,8 +76,8 @@ export const PRODUCTS = {
       en: "Short Reboot — online course",
     },
     description: {
-      uk: 'Оплата онлайн-курсу "Short Reboot" від Centerway. Після успішної оплати курс відкриється у вашому кабінеті на платформі - там уроки, матеріали і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
-      en: "Online course payment by Centerway. After successful payment the course opens in your account on the platform, with its lessons, materials and next steps. Support: if you have questions, message us and we will help quickly.",
+      uk: 'Оплата онлайн-курсу "Short Reboot" від CenterWay. Після успішної оплати курс відкриється у вашому кабінеті на платформі - там уроки, матеріали і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо.',
+      en: "Online course payment by CenterWay. After successful payment the course opens in your account on the platform, with its lessons, materials and next steps. Support: if you have questions, message us and we will help.",
     },
     amount: 795,
     listAmount: 795,
@@ -97,8 +97,8 @@ export const PRODUCTS = {
       en: "IREM gymnastics — online system",
     },
     description: {
-      uk: 'Оплата онлайн-системи "ІВЕМ-гімнастика" від Centerway. Після успішної оплати система відкриється у вашому кабінеті на платформі - там уроки, розбори вправ і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
-      en: "Online system payment by Centerway. After successful payment the system opens in your account on the platform, with its lessons, exercise breakdowns and next steps. Support: if you have questions, message us and we will help quickly.",
+      uk: 'Оплата онлайн-системи "ІВЕМ-гімнастика" від CenterWay. Після успішної оплати система відкриється у вашому кабінеті на платформі - там уроки, розбори вправ і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо.',
+      en: "Online system payment by CenterWay. After successful payment the system opens in your account on the platform, with its lessons, exercise breakdowns and next steps. Support: if you have questions, message us and we will help.",
     },
     amount: 3950,
     listAmount: 3950,
@@ -120,8 +120,8 @@ export const PRODUCTS = {
       en: "Way 21 — integrative detox program",
     },
     description: {
-      uk: 'Оплата детокс-програми "Шлях 21" від Centerway. Після успішної оплати програма відкриється у вашому кабінеті на платформі - там уроки, матеріали і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
-      en: "Detox program payment by Centerway. After successful payment the program opens in your account on the platform, with its lessons, materials and next steps. Support: if you have questions, message us and we will help quickly.",
+      uk: 'Оплата детокс-програми "Шлях 21" від CenterWay. Після успішної оплати програма відкриється у вашому кабінеті на платформі - там уроки, матеріали і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо.',
+      en: "Detox program payment by CenterWay. After successful payment the program opens in your account on the platform, with its lessons, materials and next steps. Support: if you have questions, message us and we will help.",
     },
     amount: 4100,
     listAmount: 4100,
@@ -137,8 +137,8 @@ export const PRODUCTS = {
       en: "Way 21 — guided package",
     },
     description: {
-      uk: 'Оплата пакета "Шлях 21 — індивідуальний супровід" від Centerway: програма детоксу з 2 особистими консультаціями та персональним веденням. Після оплати програма відкриється у вашому кабінеті на платформі, а час консультацій узгодимо з вами особисто. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
-      en: "Guided package payment by Centerway: the detox program with 2 personal consultations and individual guidance. After payment the program opens in your account on the platform, and we arrange the consultation times with you personally. Support: if you have questions, message us and we will help quickly.",
+      uk: 'Оплата пакета "Шлях 21 — індивідуальний супровід" від CenterWay: програма детоксу з 2 особистими консультаціями та персональним веденням. Після оплати програма відкриється у вашому кабінеті на платформі, а час консультацій узгодимо з вами особисто. Підтримка: якщо виникли питання - напишіть нам, допоможемо.',
+      en: "Guided package payment by CenterWay: the detox program with 2 personal consultations and individual guidance. After payment the program opens in your account on the platform, and we arrange the consultation times with you personally. Support: if you have questions, message us and we will help.",
     },
     // No test price: the guided package sells through the landing's lead form,
     // so nothing charges this amount in the QA flow. It stands as the quote used
@@ -157,8 +157,8 @@ export const PRODUCTS = {
       en: "Reset Day — mini course",
     },
     description: {
-      uk: 'Оплата міні-курсу "Розвантажувальний день" від Centerway. Після успішної оплати міні-курс відкриється у вашому кабінеті на платформі - там уроки, матеріали і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.',
-      en: "Mini course payment by Centerway. After successful payment the mini course opens in your account on the platform, with its lessons, materials and next steps. Support: if you have questions, message us and we will help quickly.",
+      uk: 'Оплата міні-курсу "Розвантажувальний день" від CenterWay. Після успішної оплати міні-курс відкриється у вашому кабінеті на платформі - там уроки, матеріали і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо.',
+      en: "Mini course payment by CenterWay. After successful payment the mini course opens in your account on the platform, with its lessons, materials and next steps. Support: if you have questions, message us and we will help.",
     },
     amount: 795,
     listAmount: 795,
@@ -174,8 +174,8 @@ export const PRODUCTS = {
       en: "Herbal blend — individual selection",
     },
     description: {
-      uk: "Оплата індивідуального підбору фітозбору від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка переходу до продукту в кабінеті — там же будуть подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
-      en: "Individual herbal blend payment by Centerway. After successful payment, a confirmation page opens with a button to the product in the cabinet and next steps. Support: if you have questions, message us and we will help quickly.",
+      uk: "Оплата індивідуального підбору фітозбору від CenterWay. Після успішної оплати відкриється сторінка підтвердження та кнопка переходу до продукту в кабінеті — там же будуть подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо.",
+      en: "Individual herbal blend payment by CenterWay. After successful payment, a confirmation page opens with a button to the product in the cabinet and next steps. Support: if you have questions, message us and we will help.",
     },
     // Unreachable: `productOffer` refuses the fallback when `listAmount` is
     // null, so nothing charges this. Zero rather than a placeholder figure, so

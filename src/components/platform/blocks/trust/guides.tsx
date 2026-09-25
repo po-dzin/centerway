@@ -65,8 +65,8 @@ export async function HubGuides() {
          sentence, the count no longer changes the heading either: one author
          or four, the question the block answers is the same. */
       label="Автори"
-      title="Хто веде цей процес"
-      lead="Досвід, підхід і курси — у профілі кожного автора."
+      title="За кожною програмою — автор"
+      lead="Кожен курс і тест має людину, яка за нього відповідає. Дізнайтеся, чий підхід вам ближче."
       /* The block introduces people; the consultation is what a reader does
          with that introduction, and until now the home page never said so. */
       headActions={<PlatformBlockLink href="/consult" label="Консультації" />}

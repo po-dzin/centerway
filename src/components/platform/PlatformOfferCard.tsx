@@ -56,6 +56,13 @@ export type PlatformOfferCardProps = {
   /** Short format line (duration, question count) under the title. */
   meta?: string;
   /**
+   * WHOSE WORK THIS IS — the author's name, printed in the card's conditional
+   * line after the categories, the same place and style as `meta`. It is not a
+   * new slot: the slot table (docs/card-system-2026-09-13.md) stays as it is,
+   * and a card without an author simply has no line there.
+   */
+  author?: string;
+  /**
    * The card's own context lines — when this offer is appropriate, what it does
    * not replace. Three at most; hidden in a narrow card, where they would be
    * the only thing a reader saw.
@@ -113,6 +120,7 @@ export function PlatformOfferCard({
   artwork,
   ctaLabel = "Детальніше",
   meta,
+  author,
   points,
   kindBadge,
   categories,
@@ -222,6 +230,11 @@ export function PlatformOfferCard({
             </li>
           ))}
         </ul>
+        {author ? (
+          <p className={styles.programTileMeta} data-cw-card-author="">
+            Автор: {author}
+          </p>
+        ) : null}
         {meta ? <p className={styles.programTileMeta}>{meta}</p> : null}
         {points && points.length > 0 ? (
           <ul className={styles.programTilePoints}>

@@ -78,7 +78,7 @@ export const STRINGS = {
     photoAlt: "Опис фото (для читачів екрана)",
     mediaDrop: "Відпустіть, щоб завантажити",
     photoCropCardTitle: "Картка",
-    photoCropCardNote: "Головна · консультації · директорія авторів",
+    photoCropCardNote: "Головна · консультації · сторінка авторів",
     /* Named by its job, not by its shape (2026-09-06): portraits left the
        circle, and a caption that says «кругла» over a soft-rect preview teaches
        the author a shape the product no longer draws. */
@@ -92,7 +92,7 @@ export const STRINGS = {
     backgroundReplace: "Замінити фон",
     backgroundRemove: "Прибрати фон",
     listed: "Публічна сторінка",
-    listedOn: "Сторінку /expert видно всім",
+    listedOn: "Вашу сторінку автора видно всім",
     listedOff: "Сторінка прихована — видно лише в описі курсу",
     slug: "Адреса сторінки",
     save: "Зберегти",

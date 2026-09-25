@@ -103,7 +103,7 @@ export function OfferFreePanel({
       <Link className={styles.buyAction} href={commerce.accessHref} data-cw-offer-cta>
         {ctaLabel}
       </Link>
-      <p className={styles.fineprint}>Якщо ви ще не увійшли, платформа попросить авторизуватися перед стартом.</p>
+      <p className={styles.fineprint}>Якщо ви ще не увійшли, перед стартом ми попросимо вас увійти.</p>
     </article>
   );
 }

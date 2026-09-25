@@ -11,6 +11,7 @@ import { platformAggregateArtwork, platformPageArtwork, platformProductOffers } 
 import { activePlatformTests, plannedPlatformTests, testsHubCopy } from "@/lib/platform/tests";
 import { heroTitleFit } from "@/components/platform/heroTitleFit";
 import { listStorefrontCourses, type StorefrontCard } from "@/lib/platform/offers";
+import { testAuthorNames, withAuthorNames } from "@/lib/lms/authors";
 import { PlatformCatalogBrowser, type CatalogEntry } from "@/components/platform/PlatformCatalogBrowser";
 import { offerEyebrow } from "@/lib/platform/offerPreview";
 import { getPlatformRoute } from "@/lib/surfaces/catalog";
@@ -69,6 +70,7 @@ export function storefrontEntry(course: StorefrontCard): CatalogEntry {
       categories: course.categoryLabels,
       categoryCodes: course.categories,
       pretitle: course.pretitle,
+      author: course.authorName,
       commercialMode: course.commercialMode,
       price: course.price,
       compareAtPrice: course.compareAtPrice,
@@ -85,7 +87,7 @@ export function catalogCurrency(courses: readonly StorefrontCard[]): string | nu
 }
 
 export async function PlatformProgramsIndexPage() {
-  const authored = await listStorefrontCourses();
+  const authored = await withAuthorNames(await listStorefrontCourses());
 
   const heroStyle = heroFraming(platformAggregateArtwork.programs);
 
@@ -163,7 +165,12 @@ export async function PlatformProgramsIndexPage() {
   );
 }
 
-export function PlatformTestsHubPage() {
+export async function PlatformTestsHubPage() {
+  /* Tests are authored like courses, so their cards carry the same byline.
+     Planned tests have no database row yet and simply print none. */
+  const testAuthors = await testAuthorNames(
+    activePlatformTests.flatMap((test) => (test.apiSlug ? [test.apiSlug] : [])),
+  );
   const heroArtwork = platformPageArtwork.dosha;
   const heroStyle = heroFraming(heroArtwork);
   const consultHref = getPlatformRoute("consult") ?? "/consult";
@@ -243,6 +250,7 @@ export function PlatformTestsHubPage() {
                 title={test.title}
                 tag={test.tag}
                 meta={test.format}
+                author={test.apiSlug ? testAuthors.get(test.apiSlug) : undefined}
                 description={test.description}
                 href={test.href}
                 visual={test.visual}
@@ -327,7 +335,9 @@ const PRODUCT_RELATED_SLUGS = ["reset-day", "way21", "natural-body"];
 
 export async function PlatformProductsIndexPage() {
   const featuredProduct = platformProductOffers[0];
-  const authoredBySlug = new Map((await listStorefrontCourses()).map((course) => [course.slug, course]));
+  const authoredBySlug = new Map(
+    (await withAuthorNames(await listStorefrontCourses())).map((course) => [course.slug, course]),
+  );
   const relatedPrograms = PRODUCT_RELATED_SLUGS.map((slug) => authoredBySlug.get(slug)).filter(
     (program) => program !== undefined,
   );
@@ -462,6 +472,7 @@ export async function PlatformProductsIndexPage() {
               <PlatformOfferCard
                 key={program.slug}
                 title={program.title}
+                author={program.authorName}
                 tag={program.tag}
                 description={program.description}
                 href={program.href}

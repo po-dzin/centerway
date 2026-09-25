@@ -271,7 +271,7 @@ export function CourseContentsDrawer({
                       <span className={styles.drawerMeta}>
                         {entry.availability.reason === "locked_by_day"
                           ? `відкриється через ${entry.availability.daysRemaining} дн.`
-                          : "спершу заверши попередній урок"}
+                          : "спершу завершіть попередній урок"}
                       </span>
                     </span>
                   </div>
