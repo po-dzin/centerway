@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildReturnDestination, resolveReturnStatus } from "@/lib/payments/payReturn";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { normalizePayableProduct, productReturnUrls, type PayableProductCode } from "@/lib/products";
+import { describeFormatCode } from "@/lib/experiences/formats";
+import {
+  normalizePayableProduct,
+  productReturnUrls,
+  type FormatProductCode,
+  type PayableProductCode,
+} from "@/lib/products";
 
 export const runtime = "nodejs";
 
@@ -35,7 +41,13 @@ async function productFromOrder(orderRef: string): Promise<ProductCode | null> {
   try {
     const sb = supabaseAdmin();
     const { data } = await sb.from("orders").select("product_code").eq("order_ref", orderRef).maybeSingle();
-    return normalizePayableProduct(data?.product_code ?? null);
+    const code = data?.product_code ?? null;
+    // A FORMAT of a program (`way21-group`) is none of the six and not
+    // `course:<slug>`; without this it fell through to "short" and a cohort
+    // buyer was returned to Short Reboot.
+    return (
+      normalizePayableProduct(code) ?? ((await describeFormatCode(code))?.code as FormatProductCode | undefined) ?? null
+    );
   } catch (err) {
     console.warn("pay_return_product_read_failed", {
       orderRef,
@@ -250,6 +262,9 @@ async function handler(req: NextRequest) {
     });
 
     // мета платежа (rrn/amount/currency) — берём из payments.raw_payload если есть
+    // A format's program page is not written in its code; look it up once.
+    const format = normalizePayableProduct(product) ? null : await describeFormatCode(product);
+
     const metaFromParams = pickMeta(body, sp);
     const metaFromDb = await latestPaymentMeta(orderRef);
 
@@ -261,6 +276,7 @@ async function handler(req: NextRequest) {
       orderRef,
       { rrn: meta.rrn ?? null, amount: meta.amount ?? null, currency: meta.currency ?? null },
       Date.now(),
+      format ? `/programs/${format.programSlug}` : null,
     );
 
     return NextResponse.redirect(destination, { status: 302 });

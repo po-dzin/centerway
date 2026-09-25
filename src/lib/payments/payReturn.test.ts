@@ -105,3 +105,34 @@ describe("buildReturnDestination", () => {
     expect(dest.pathname).toBe("/pay/pending");
   });
 });
+
+describe("buildReturnDestination for a format", () => {
+  it("lands a paid format on the program page the route looked up", () => {
+    const url = new URL(
+      buildReturnDestination(
+        "paid",
+        "way21-group" as never,
+        "way21-group_1",
+        { rrn: null, amount: null, currency: null },
+        0,
+        "/programs/way21",
+      ),
+    );
+    expect(url.pathname).toBe("/programs/way21");
+    expect(url.searchParams.get("product")).toBe("way21-group");
+  });
+
+  it("ignores the program page when the payment did not go through", () => {
+    const url = new URL(
+      buildReturnDestination(
+        "failed",
+        "way21-group" as never,
+        "way21-group_1",
+        { rrn: null, amount: null, currency: null },
+        0,
+        "/programs/way21",
+      ),
+    );
+    expect(url.toString().startsWith(PLATFORM_FAILED_URL)).toBe(true);
+  });
+});

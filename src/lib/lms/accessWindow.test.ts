@@ -291,3 +291,57 @@ describe("several programs on one account", () => {
     expect(way21.enrollment).toMatchObject({ expiresAt: "2026-11-18T09:00:00.000Z" });
   });
 });
+
+/* THE COHORT ON A RENEWAL (2026-09-25). Someone who opened Шлях 21 on their
+   own and then bought the group format joins that cohort's calendar; before
+   this, the renewal kept their old anchor and they counted days apart from the
+   group they had paid to be in. */
+describe("buying a cohort format on top of an existing seat", () => {
+  it("re-anchors the seat to the cohort's day 1", async () => {
+    seed({
+      enrollments: [
+        enrollment({ course_id: "course-way21", order_ref: "ord-self", started_at: "2026-08-20T00:00:00.000Z" }),
+      ],
+      orders: [
+        order("ord-self", "2026-08-19T09:00:00.000Z", "course:way21"),
+        { ...order("ord-group", "2026-08-25T09:00:00.000Z", "way21-group"), offer_id: "offer-group" },
+      ],
+      offers: [
+        { ...offer("course-way21", null, true), id: "offer-self", experience_id: "exp-way21" },
+        {
+          id: "offer-group",
+          code: "way21-group",
+          experience_id: "exp-way21",
+          cohort_starts_on: "2026-10-01",
+          access_days: null,
+          access_lifetime: true,
+          active: true,
+        },
+      ],
+    });
+    db.tables.lms_courses = [{ id: "course-way21", slug: "way21", experience_id: "exp-way21" }];
+    db.tables.course_opening_codes = [
+      { course_id: "course-way21", code: "course:way21" },
+      { course_id: "course-way21", code: "way21-group" },
+    ];
+
+    const result = await ensureEnrollment(IDENTITY, WAY21, NOW);
+    expect(result.enrollment).toMatchObject({ orderRef: "ord-group" });
+    expect(row()).toMatchObject({ order_ref: "ord-group", cohort_starts_on: "2026-10-01" });
+  });
+
+  it("leaves the anchor alone when the new purchase names no cohort", async () => {
+    seed({
+      enrollments: [enrollment({ course_id: "course-way21", order_ref: "ord-1", cohort_starts_on: null })],
+      orders: [
+        order("ord-1", "2026-08-19T09:00:00.000Z", "way21"),
+        order("ord-2", "2026-08-25T09:00:00.000Z", "way21"),
+      ],
+      offers: [{ ...offer("course-way21", 30), id: "offer-self", experience_id: "exp-way21" }],
+    });
+    db.tables.lms_courses = [{ id: "course-way21", slug: "way21", experience_id: "exp-way21" }];
+
+    await ensureEnrollment(IDENTITY, WAY21, NOW);
+    expect(row().cohort_starts_on ?? null).toBeNull();
+  });
+});

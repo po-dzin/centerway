@@ -418,11 +418,18 @@ export async function ensureEnrollment(
     // the OLD payment. A ban is the state that survives a new payment, and it
     // was already answered above.
     if (plan.grant) {
+      /* A NEW PURCHASE CAN BE A COHORT (2026-09-25). Someone who opened Шлях 21
+         self-paced, or took the free course, and then buys the group format is
+         re-anchored to that cohort's day 1 — otherwise they would keep counting
+         days from their old start while the group moves on without them. A
+         purchase that names no cohort leaves the anchor as it is. */
+      const renewedCohort = await cohortOfOrderFormat(db, plan.orderRef, course.id);
       const renewed = await db
         .from("lms_enrollments")
         .update({
           expires_at: plan.expiresAt,
           order_ref: plan.orderRef,
+          ...(renewedCohort ? { cohort_starts_on: renewedCohort } : {}),
           status: "active",
           revoked_at: null,
           // A hand-made grant that the learner has now paid for becomes an
@@ -436,6 +443,7 @@ export async function ensureEnrollment(
 
       const updated = (renewed.data as EnrollmentRow | null) ?? {
         ...row,
+        ...(renewedCohort ? { cohort_starts_on: renewedCohort } : {}),
         expires_at: plan.expiresAt,
         order_ref: plan.orderRef,
         status: "active",

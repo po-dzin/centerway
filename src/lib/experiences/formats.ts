@@ -269,3 +269,39 @@ export async function resolveFormatOffer(code: unknown): Promise<PayableFormat |
     return null;
   }
 }
+
+/**
+ * What a format code belongs to, for a buyer coming BACK from paying for it.
+ *
+ * Unlike `resolveFormatOffer` this does not ask whether the format is still on
+ * sale: the purchase was real when it was made, and a group withdrawn an hour
+ * after someone paid for it must still return that person to its program — not
+ * to whatever the return route falls back to.
+ */
+export async function describeFormatCode(code: unknown): Promise<{ code: string; programSlug: string } | null> {
+  const key = normalizeOfferCode(code);
+  if (!key) return null;
+  try {
+    const db = supabaseAdmin();
+    const offer = await db
+      .from("experience_offers")
+      .select("code, format, experience_id")
+      .eq("code", key)
+      .maybeSingle();
+    if (offer.error || !offer.data || !isOfferFormat(offer.data.format)) return null;
+    const course = await db
+      .from("lms_courses")
+      .select("slug, program_slug")
+      .eq("experience_id", offer.data.experience_id as string)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (course.error || !course.data) return null;
+    return {
+      code: offer.data.code as string,
+      programSlug: (course.data.program_slug as string | null) ?? (course.data.slug as string),
+    };
+  } catch {
+    return null;
+  }
+}
