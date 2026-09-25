@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ProgramFormat } from "@/lib/experiences/formats";
-import { applyFormatSync, collectFormatPrograms } from "./formatSync";
+import { applyFormatSync, collectFormatPrograms, renderFormatCard } from "./formatSync";
 
 const page = `<div class="format-grid">
 <!-- cw:formats way21 -->
@@ -16,6 +16,7 @@ function format(code: string, kind: ProgramFormat["format"], extra: Partial<Prog
     format: kind,
     label: kind,
     summary: null,
+    features: [],
     mode: kind === "individual" ? "lead" : "checkout",
     amount: 4100,
     listAmount: null,
@@ -68,5 +69,15 @@ describe("landing format sync", () => {
     const once = applyFormatSync(page, () => ({ title: "Шлях 21", formats }));
     const twice = applyFormatSync(once, () => ({ title: "Шлях 21", formats }));
     expect(twice.match(/data-cw-included/g)?.length).toBe(2);
+  });
+
+  it("lists a new card's features from the format itself, then its bonus programs", () => {
+    const card = renderFormatCard(
+      format("way21-group", "group", { features: ["Закрита Telegram-група потоку"], includes: minis }),
+      "Шлях 21",
+    );
+    expect(card).toContain("<li>Закрита Telegram-група потоку</li>");
+    expect(card).not.toContain("Уся програма");
+    expect(card.match(/data-cw-included/g)?.length).toBe(2);
   });
 });

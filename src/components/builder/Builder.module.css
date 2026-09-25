@@ -5941,6 +5941,7 @@
   background: var(--cw-platform-bg);
   white-space: nowrap;
   scroll-snap-type: x proximity;
+  scroll-padding-inline: var(--cw-space-xs);
   overflow-x: auto;
   overscroll-behavior-x: contain;
   /* The track is chrome inside chrome on a 48px strip — see the same

@@ -4,7 +4,7 @@ import { adminClient } from "@/lib/auth/adminClient";
 import type { TablesUpdate } from "@/lib/db/database.types";
 import { courseOfferCode } from "@/lms-core";
 
-import { FORMAT_DEFAULT_LABELS, isOfferFormat, type OfferFormat } from "./formats";
+import { FORMAT_DEFAULT_LABELS, isOfferFormat, ukList, type OfferFormat } from "./formats";
 
 /**
  * THE FORMAT CONSTRUCTOR, AUTHOR SIDE AND OWNER SIDE (2026-09-25).
@@ -31,6 +31,8 @@ type Db = ReturnType<typeof adminClient>;
 
 export const FORMAT_LABEL_MAX = 60;
 export const FORMAT_SUMMARY_MAX = 240;
+export const FORMAT_FEATURES_MAX = 12;
+export const FORMAT_FEATURE_MAX = 160;
 export const FORMAT_AMOUNT_MAX = 1_000_000;
 
 export type FormatReviewStatus = "draft" | "proposed" | "approved" | "declined";
@@ -42,6 +44,8 @@ export type AuthoredFormat = {
   /** Whether `label` is the author's own words or the default for the kind. */
   labelIsDefault: boolean;
   summary: string;
+  /** What the buyer gets, point by point. */
+  features: string[];
   mode: "checkout" | "lead";
   amount: number | null;
   proposedAmount: number | null;
@@ -58,6 +62,7 @@ export type FormatInput = {
   format?: unknown;
   label?: unknown;
   summary?: unknown;
+  features?: unknown;
   mode?: unknown;
   proposedAmount?: unknown;
   cohortStartsOn?: unknown;
@@ -75,7 +80,7 @@ export class FormatError extends Error {
 }
 
 const COLUMNS =
-  "id, code, format, label, summary, mode, amount, proposed_amount, currency, cohort_starts_on, review_status, active, sort_order, experience_id";
+  "id, code, format, label, summary, features, mode, amount, proposed_amount, currency, cohort_starts_on, review_status, active, sort_order, experience_id";
 
 type Row = {
   id: string;
@@ -83,6 +88,7 @@ type Row = {
   format: string | null;
   label: unknown;
   summary: unknown;
+  features: unknown;
   mode: string;
   amount: number | null;
   proposed_amount: number | null;
@@ -150,6 +156,7 @@ export async function listCourseFormats(courseId: string): Promise<AuthoredForma
         label: label || FORMAT_DEFAULT_LABELS[format],
         labelIsDefault: !label,
         summary: uk(row.summary),
+        features: ukList(row.features),
         mode: row.mode === "lead" ? "lead" : "checkout",
         amount: row.amount,
         proposedAmount: row.proposed_amount,
@@ -193,6 +200,7 @@ type Parsed = {
   format?: OfferFormat;
   label?: string;
   summary?: string;
+  features?: string[];
   mode?: "checkout" | "lead";
   proposedAmount?: number | null;
   cohortStartsOn?: string | null;
@@ -217,6 +225,15 @@ function parseInput(input: FormatInput): Parsed {
     const summary = input.summary.trim();
     if (summary.length > FORMAT_SUMMARY_MAX) throw new FormatError("format_summary_too_long");
     parsed.summary = summary;
+  }
+  if (input.features !== undefined) {
+    if (!Array.isArray(input.features) || input.features.some((item) => typeof item !== "string")) {
+      throw new FormatError("format_invalid_features");
+    }
+    const features = (input.features as string[]).map((item) => item.trim()).filter(Boolean);
+    if (features.length > FORMAT_FEATURES_MAX) throw new FormatError("format_features_too_many");
+    if (features.some((item) => item.length > FORMAT_FEATURE_MAX)) throw new FormatError("format_feature_too_long");
+    parsed.features = features;
   }
   if (input.mode !== undefined) {
     if (input.mode !== "checkout" && input.mode !== "lead") throw new FormatError("format_invalid_mode");
@@ -317,6 +334,7 @@ export async function createFormat(input: {
       format: parsed.format,
       label: parsed.label ? { uk: parsed.label, en: parsed.label } : null,
       summary: parsed.summary ? { uk: parsed.summary, en: parsed.summary } : null,
+      features: parsed.features?.length ? { uk: parsed.features, en: parsed.features } : null,
       sort_order: sortOrder,
       cohort_starts_on: parsed.format === "group" ? (parsed.cohortStartsOn ?? null) : null,
       review_status: parsed.submit ? "proposed" : "draft",
@@ -371,6 +389,13 @@ export async function updateFormat(input: {
   if (parsed.mode !== undefined) patch.mode = parsed.mode;
   if (parsed.label !== undefined) patch.label = parsed.label ? { uk: parsed.label, en: parsed.label } : null;
   if (parsed.summary !== undefined) patch.summary = parsed.summary ? { uk: parsed.summary, en: parsed.summary } : null;
+  if (parsed.features !== undefined) {
+    // Only the Ukrainian list is authored; an English one written elsewhere stays.
+    const en = row.features && typeof row.features === "object" ? (row.features as { en?: unknown }).en : undefined;
+    patch.features = parsed.features.length
+      ? { uk: parsed.features, en: Array.isArray(en) ? (en as string[]) : parsed.features }
+      : null;
+  }
   if (parsed.cohortStartsOn !== undefined) patch.cohort_starts_on = parsed.cohortStartsOn;
   if (parsed.proposedAmount !== undefined) {
     patch.proposed_amount = parsed.proposedAmount;

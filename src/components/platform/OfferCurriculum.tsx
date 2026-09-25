@@ -29,7 +29,8 @@ import { Icon } from "@/components/Icon";
 import type { CwIconName } from "@/components/iconNames";
 import { useOfferAccess } from "@/components/platform/OfferAccess";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
-import type { Course, LessonAvailability } from "@/lms-core";
+import type { ProgramFormat } from "@/lib/experiences/formats";
+import { isLinkedModule, type Course, type LessonAvailability } from "@/lms-core";
 import styles from "./PlatformOfferCommerce.module.css";
 import offerStyles from "./PlatformOfferStyles";
 
@@ -54,8 +55,11 @@ function scheduleNote(availability: LessonAvailability): string {
 export function OfferCurriculum({
   course,
   landingHref = null,
+  formats = [],
 }: {
   course: Course;
+  /** The program's formats, to say which of them open a linked program. */
+  formats?: ProgramFormat[];
   /**
    * The product's own funnel landing, when it still has one.
    *
@@ -90,7 +94,11 @@ export function OfferCurriculum({
     // deliberately: it is what an anonymous reader sees, and briefly showing a
     // buyer a padlock is recoverable in a way that briefly showing a stranger an
     // open course is not.
-    if (!owned) return { kind: "locked", glyph: "lock", note: null };
+    //
+    // A DOT, NOT A PADLOCK PER ROW (2026-09-25). A column of padlocks said
+    // «closed» fourteen times and hid that this is a list of lessons at all.
+    // The padlock sits once, on the module; each row keeps a list mark.
+    if (!owned) return { kind: "locked", glyph: null, note: null };
 
     const entry = bySlug.get(lessonSlug);
     // Owned, but the second read has not landed. Open, with no decoration —
@@ -106,6 +114,14 @@ export function OfferCurriculum({
     return { kind: "open", glyph: null, note: null };
   }
 
+  /* Which formats open a linked program — said on its card, so a reader of the
+     outline knows the extra module is not part of every purchase. */
+  function bonusFormats(courseSlug: string): string[] {
+    return formats
+      .filter((format) => format.includes.some((program) => program.courseSlug === courseSlug))
+      .map((format) => `«${format.label}»`);
+  }
+
   return (
     <section
       className={`${offerStyles.container} ${offerStyles.section}`}
@@ -119,9 +135,34 @@ export function OfferCurriculum({
         <h2 className={offerStyles.title}>Програма курсу</h2>
         <p className={offerStyles.lead}>{course.summary ? inlineToText(course.summary) : null}</p>
         <ul className={styles.outline}>
-          {course.modules.map((module) => (
-            <li key={module.id ?? module.title}>
-              {/* NOT AN ACCORDION ANY MORE (2026-09-05). It was a `<details>`
+          {course.modules.map((module) => {
+            if (isLinkedModule(module)) {
+              const slug = module.linkedCourseSlug;
+              const program = formats.flatMap((format) => format.includes).find((entry) => entry.courseSlug === slug);
+              const inFormats = slug ? bonusFormats(slug) : [];
+              /* A LINKED PROGRAM IS NOT AN EMPTY MODULE (2026-09-25). It has no
+                 lessons here — they live in its own course — so the card says
+                 what it is and who gets it, centred, instead of a title over
+                 nothing. */
+              return (
+                <li key={module.id ?? module.title}>
+                  <div className={`${styles.outlineModule} ${styles.outlineLinked}`}>
+                    <p className={styles.outlineLinkedTag}>Бонус</p>
+                    <h3 className={styles.outlineModuleTitle}>
+                      {program ? <Link href={`/programs/${program.programSlug}`}>{module.title}</Link> : module.title}
+                    </h3>
+                    <p className={styles.outlineLinkedNote}>
+                      {inFormats.length > 0
+                        ? `Окремий міні-курс у форматах ${inFormats.join(" і ")}`
+                        : "Окремий міні-курс, відкривається разом з особливими форматами програми"}
+                    </p>
+                  </div>
+                </li>
+              );
+            }
+            return (
+              <li key={module.id ?? module.title}>
+                {/* NOT AN ACCORDION ANY MORE (2026-09-05). It was a `<details>`
                   per module, and the collapsing was answering a question
                   nobody asks: this outline is three cards and a dozen rows on
                   the longest course in the product, so there was never enough
@@ -133,23 +174,35 @@ export function OfferCurriculum({
                   The whole `openModules` machine went with them: the state,
                   the first-module default, and the effect that had to reopen
                   the current lesson's module because the default had shut it. */}
-              <div className={styles.outlineModule}>
-                <div className={styles.outlineModuleHead}>
-                  <h3 className={styles.outlineModuleTitle}>{module.title}</h3>
-                </div>
-                <ul className={styles.outlineLessons}>
-                  {module.lessons.map((lesson) => {
-                    const state = stateFor(lesson.slug);
-                    return (
-                      <li className={styles.outlineLesson} data-state={state.kind} key={lesson.slug}>
-                        <span className={styles.outlineLessonGlyph}>
-                          {state.glyph ? <Icon name={state.glyph} size={20} /> : null}
-                        </span>
-                        <span>
-                          {state.kind === "locked" ? (
-                            lesson.title
-                          ) : (
-                            /* NO INK RULE IN THIS LIST (2026-09-20). The mark is
+                <div className={styles.outlineModule}>
+                  <div className={styles.outlineModuleHead}>
+                    <h3 className={styles.outlineModuleTitle}>{module.title}</h3>
+                    {!owned ? (
+                      <Icon
+                        className={styles.outlineModuleLock}
+                        name="lock"
+                        size={18}
+                        label="Відкривається після оплати"
+                      />
+                    ) : null}
+                  </div>
+                  <ul className={styles.outlineLessons}>
+                    {module.lessons.map((lesson) => {
+                      const state = stateFor(lesson.slug);
+                      return (
+                        <li className={styles.outlineLesson} data-state={state.kind} key={lesson.slug}>
+                          <span className={styles.outlineLessonGlyph}>
+                            {state.glyph ? (
+                              <Icon name={state.glyph} size={20} />
+                            ) : (
+                              <span className={styles.outlineLessonDot} aria-hidden="true" />
+                            )}
+                          </span>
+                          <span>
+                            {state.kind === "locked" ? (
+                              lesson.title
+                            ) : (
+                              /* NO INK RULE IN THIS LIST (2026-09-20). The mark is
                                built for a nav row — `.cw-ink-label-text` is
                                `nowrap` with an ellipsis, which is right for a
                                crumb and wrong for a lesson called «Харчування
@@ -158,22 +211,23 @@ export function OfferCurriculum({
                                is prose, so the title wraps like prose, and what
                                says the row is open stays what it always was —
                                its colour against a locked row's. */
-                            <Link
-                              className={styles.outlineLessonLink}
-                              href={surfaceHref(`/learn/${course.slug}/${lesson.slug}`)}
-                            >
-                              {lesson.title}
-                            </Link>
-                          )}
-                          {state.note ? <span className={styles.outlineLessonNote}>{state.note}</span> : null}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            </li>
-          ))}
+                              <Link
+                                className={styles.outlineLessonLink}
+                                href={surfaceHref(`/learn/${course.slug}/${lesson.slug}`)}
+                              >
+                                {lesson.title}
+                              </Link>
+                            )}
+                            {state.note ? <span className={styles.outlineLessonNote}>{state.note}</span> : null}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </li>
+            );
+          })}
         </ul>
         {/* FOR AN OWNER TOO, since 2026-09-05. It used to be hidden from them,
             reasoning that somebody who has bought this has no use for the page

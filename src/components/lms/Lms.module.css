@@ -1513,6 +1513,14 @@
     );
   }
 
+  /* The course map keeps its own air here too (2026-09-25). This `.wrap` rule
+     comes later than `.courseWrap` and out-ranked it from 561px up, so the map
+     paid the lesson's floating-chrome clearance under a real topbar: ~124px of
+     nothing above «Мій курс». */
+  .courseWrap {
+    margin-block-start: var(--cw-space-xl);
+  }
+
   /* The drawer becomes a centred dialog once there is room for one. */
   .drawerBackdrop {
     align-items: center;

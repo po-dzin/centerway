@@ -93,6 +93,30 @@
   color: var(--cw-platform-muted);
 }
 
+/* ONE LINE MEANS ONE BASELINE (2026-09-25). A pressable crumb is a 48px
+   `chrome` box and the page you are on is bare text; centred against each
+   other by `.step`, their text only lines up when both boxes are the same
+   height — and the chrome role's own `min-height`/`display` (which do not
+   always survive the composition chain, see `.chromeBare`) left the library's
+   «Мої матеріали» 6px above the title beside it. Every step now carries the
+   same box and the same line box, stated here rather than inherited. */
+.crumbLink,
+.here {
+  box-sizing: border-box;
+  height: var(--ds-touch-target-min);
+  min-height: var(--ds-touch-target-min);
+  line-height: var(--ds-touch-target-min);
+  padding-block: 0;
+}
+
+/* THE TRAIL STARTS AT ITS OWN EDGE. The first crumb's inline padding is hit
+   area, not layout: it pushed «Матеріали» a padding's width in from the column
+   everything else starts on. The press target stays whole — it overhangs into
+   the gap before the trail instead. */
+.step:not(.step ~ .step) .crumbLink {
+  margin-inline-start: calc(-1 * var(--ds-button-padding-inline));
+}
+
 @media (hover: hover) {
   .crumbLink:hover:not(:disabled) {
     color: var(--cw-platform-text);

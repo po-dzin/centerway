@@ -48,6 +48,8 @@ export type ProgramFormat = {
   format: OfferFormat;
   label: string;
   summary: string | null;
+  /** What the buyer gets in this format, point by point, in the author's words. Empty when not written yet. */
+  features: string[];
   mode: "checkout" | "lead" | "free";
   /** Whole currency units. `null` only on a lead: «ціна за запитом». */
   amount: number | null;
@@ -70,17 +72,29 @@ type OfferRow = {
   format: string | null;
   label: unknown;
   summary: unknown;
+  features: unknown;
   sort_order: number;
   cohort_starts_on: string | null;
 };
 
 const OFFER_COLUMNS =
-  "id, experience_id, code, mode, amount, list_amount, currency, format, label, summary, sort_order, cohort_starts_on";
+  "id, experience_id, code, mode, amount, list_amount, currency, format, label, summary, features, sort_order, cohort_starts_on";
 
 function ukLine(value: unknown): string | null {
   if (!value || typeof value !== "object") return null;
   const uk = (value as { uk?: unknown }).uk;
   return typeof uk === "string" && uk.trim() ? uk.trim() : null;
+}
+
+/** The `uk` list of a `{uk: [..], en: [..]}` column, blanks dropped. */
+export function ukList(value: unknown): string[] {
+  if (!value || typeof value !== "object") return [];
+  const uk = (value as { uk?: unknown }).uk;
+  if (!Array.isArray(uk)) return [];
+  return uk
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 type Db = ReturnType<typeof supabaseAdmin>;
@@ -134,6 +148,7 @@ function toFormat(row: OfferRow, includes: FormatIncludedProgram[], ownCode: str
     format: kind,
     label: ukLine(row.label) ?? FORMAT_DEFAULT_LABELS[kind],
     summary: ukLine(row.summary),
+    features: ukList(row.features),
     mode,
     amount: row.amount,
     listAmount: row.list_amount,

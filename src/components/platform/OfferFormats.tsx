@@ -80,20 +80,38 @@ export function OfferFormats({
 
               {format.summary ? <p className={styles.fineprint}>{format.summary}</p> : null}
 
+              {/* What the buyer gets, in the author's words (`features`). A
+                  format nobody has described yet still says the one thing that
+                  is certainly true — the program is theirs. */}
               <ul className={styles.includes}>
-                <li>
-                  <Icon className={styles.includeMark} name="check" size={20} />
-                  <span>«{programTitle}» повністю</span>
-                </li>
-                {format.includes.map((program) => (
-                  <li key={program.courseSlug}>
+                {(format.features.length > 0 ? format.features : [`«${programTitle}» повністю`]).map((feature) => (
+                  <li key={feature}>
                     <Icon className={styles.includeMark} name="check" size={20} />
-                    <span>
-                      <Link href={`/programs/${program.programSlug}`}>{program.title}</Link> — {kindLabel(program.kind)}
-                    </span>
+                    <span>{feature}</span>
                   </li>
                 ))}
               </ul>
+
+              {/* The programs a format opens besides its own, set apart: they are
+                  the reason to pick this format over the one beside it, and they
+                  come from the bundle, not from the copy above — so they cannot
+                  promise something the purchase does not open. */}
+              {format.includes.length > 0 ? (
+                <div className={css.bonus}>
+                  <p className={css.bonusLabel}>Бонусом</p>
+                  <ul className={styles.includes}>
+                    {format.includes.map((program) => (
+                      <li key={program.courseSlug}>
+                        <Icon className={styles.includeMark} name="plus" size={20} />
+                        <span>
+                          <Link href={`/programs/${program.programSlug}`}>{program.title}</Link> —{" "}
+                          {kindLabel(program.kind)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
 
               <div className={css.action}>
                 {format.mode === "checkout" && price ? (
@@ -115,7 +133,9 @@ export function OfferFormats({
 
       {/* The enquiry lives under the row, not inside its card: a form in the
           third card stretched the whole row to its height and left the two
-          priced cards standing over empty space. */}
+          priced cards standing over empty space. It stays folded until its
+          card's button is pressed (`:target`) — an open form under three prices
+          read as a fourth thing to fill in rather than the answer to one. */}
       {formats
         .filter((format) => format.mode === "lead")
         .map((format) => (
