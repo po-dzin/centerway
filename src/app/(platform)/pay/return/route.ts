@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { buildReturnDestination, resolveReturnStatus } from "@/lib/payments/payReturn";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { describeOffer, type OfferTarget } from "@/lib/experiences/offers";
+import { storedCallbackOutcome } from "@/lib/payments/gateway";
+import type { PaymentOutcome } from "@/lib/payments/orderStatus";
 import { PLATFORM_FAILED_URL } from "@/lib/products";
 
 export const runtime = "nodejs";
@@ -121,7 +123,7 @@ function sleep(ms: number): Promise<void> {
  */
 async function paymentEvidence(
   orderRef: string,
-): Promise<{ orderStatus: string | null; lastCallbackStatus: string | null }> {
+): Promise<{ orderStatus: string | null; lastCallbackOutcome: PaymentOutcome | null }> {
   const attempts = 4;
   const delayMs = 350;
   let orderStatus: string | null = null;
@@ -132,7 +134,7 @@ async function paymentEvidence(
       const { data: order } = await sb.from("orders").select("status").eq("order_ref", orderRef).maybeSingle();
       orderStatus = (order?.status as string | null) ?? orderStatus;
       if (orderStatus === "paid" || orderStatus === "refunded") {
-        return { orderStatus, lastCallbackStatus: null };
+        return { orderStatus, lastCallbackOutcome: null };
       }
     } catch (err) {
       console.warn("pay_return_status_read_failed", {
@@ -146,24 +148,21 @@ async function paymentEvidence(
     }
   }
 
-  return { orderStatus, lastCallbackStatus: await lastCallbackStatus(orderRef) };
+  return { orderStatus, lastCallbackOutcome: await lastCallbackOutcome(orderRef) };
 }
 
-/** `transactionStatus` from the most recent stored callback for this order. */
-async function lastCallbackStatus(orderRef: string): Promise<string | null> {
+/** What the most recent stored callback for this order said, in its gateway's words. */
+async function lastCallbackOutcome(orderRef: string): Promise<PaymentOutcome | null> {
   try {
     const sb = supabaseAdmin();
     const { data } = await sb
       .from("payments")
-      .select("raw_payload")
+      .select("provider, raw_payload")
       .eq("order_ref", orderRef)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-
-    const raw = data?.raw_payload as Record<string, unknown> | null | undefined;
-    const status = raw?.transactionStatus ?? raw?.status;
-    return typeof status === "string" && status.trim() ? status.trim() : null;
+    return storedCallbackOutcome(data);
   } catch (err) {
     console.warn("pay_return_callback_read_failed", {
       orderRef,
@@ -231,7 +230,7 @@ async function handler(req: NextRequest) {
     const finalStatus = resolveReturnStatus({
       fromParams: byParams,
       orderStatus: evidence?.orderStatus ?? null,
-      lastCallbackStatus: evidence?.lastCallbackStatus ?? null,
+      lastCallbackOutcome: evidence?.lastCallbackOutcome ?? null,
     });
 
     // мета платежа (rrn/amount/currency) — берём из payments.raw_payload если есть

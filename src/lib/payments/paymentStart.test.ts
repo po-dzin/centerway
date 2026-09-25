@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { wayforpay } from "@/lib/payments/gateway/wayforpay";
 import { createPaymentInvoiceWithDeps } from "@/lib/payments/paymentStart";
 import { PLATFORM_FAILED_URL, PLATFORM_THANKS_URL, type PayableOffer } from "@/lib/products";
 
@@ -86,6 +87,7 @@ function stubDeps() {
     fetchFn,
     deps: {
       db,
+      gateway: wayforpay,
       fetchFn: fetchFn as unknown as typeof fetch,
       nowMs: () => Date.parse("2026-08-22T10:00:00Z"),
       randomHex: () => "ab12cd34",
@@ -184,10 +186,7 @@ describe("createPaymentInvoice", () => {
   it("files a plain offer code under itself", async () => {
     const { deps, fetchFn, inserted } = stubDeps();
 
-    await createPaymentInvoiceWithDeps(
-      { offer: legacyOffer, locale: "uk", source: "pay_start", staff: true },
-      deps,
-    );
+    await createPaymentInvoiceWithDeps({ offer: legacyOffer, locale: "uk", source: "pay_start", staff: true }, deps);
 
     expect(inserted[0]!.product_code).toBe("way21-group");
     expect(wfpBody(fetchFn).orderReference).toBe("way21-group_20260822_ab12cd34");

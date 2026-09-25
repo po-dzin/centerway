@@ -14,7 +14,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-import { computeWfpCallbackSignature } from "@/lib/payments/wfp";
+import { computeWfpCallbackSignature } from "@/lib/payments/gateway/wayforpay";
 import { FakeSupabase } from "@/lib/admin/fakeSupabase";
 
 // ---- collaborators ---------------------------------------------------------------

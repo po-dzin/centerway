@@ -8,7 +8,8 @@ import {
   offerDescription,
   offerHeading,
 } from "@/lib/products";
-import { buildReturnUrl, buildWfpProductName } from "@/lib/payments/pay";
+import { activeGateway, type PaymentGateway } from "@/lib/payments/gateway";
+import { buildReturnUrl, invoiceLine } from "@/lib/payments/pay";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
@@ -68,14 +69,11 @@ type PaymentDb = ReturnType<typeof supabaseAdmin>;
 
 type PaymentDeps = {
   db: PaymentDb;
+  gateway: PaymentGateway;
   fetchFn: typeof fetch;
   nowMs: () => number;
   randomHex: (bytes: number) => string;
 };
-
-function hmacMd5Hex(secret: string, data: string) {
-  return crypto.createHmac("md5", secret).update(data, "utf8").digest("hex");
-}
 
 /**
  * `APP_BASE_URL` IS DELIBERATELY NOT HERE ANY MORE.
@@ -94,10 +92,8 @@ function hmacMd5Hex(secret: string, data: string) {
  * are for secrets and for what genuinely differs per environment; where we live
  * is neither.
  */
-export function requiredPaymentEnv() {
-  const need = ["WFP_MERCHANT_ACCOUNT", "WFP_SECRET_KEY", "WFP_MERCHANT_DOMAIN"] as const;
-  const missing = need.filter((k) => !process.env[k]);
-  return { need, missing };
+export function requiredPaymentEnv(gateway: PaymentGateway = activeGateway()) {
+  return { gateway: gateway.id, missing: gateway.missingEnv() };
 }
 
 /**
@@ -170,13 +166,14 @@ export async function createPaymentInvoiceWithDeps(
   input: PaymentStartInput,
   deps: PaymentDeps,
 ): Promise<PaymentStartResult> {
-  const { missing, need } = requiredPaymentEnv();
+  const gateway = deps.gateway;
+  const missing = gateway.missingEnv();
   if (missing.length) {
     return {
       ok: false,
       status: 500,
       error: "missing_env",
-      need,
+      need: missing,
       details: missing.join(","),
     };
   }
@@ -187,72 +184,35 @@ export async function createPaymentInvoiceWithDeps(
     typeof input.amountOverride === "number" && Number.isFinite(input.amountOverride) && input.amountOverride > 0
       ? input.amountOverride
       : cfg.amount;
-  const title = buildWfpProductName(offerHeading(cfg, input.locale), offerDescription(cfg, input.locale));
-
-  const merchantAccount = process.env.WFP_MERCHANT_ACCOUNT!;
-  const secretKey = process.env.WFP_SECRET_KEY!;
+  const title = invoiceLine(offerHeading(cfg, input.locale), offerDescription(cfg, input.locale));
   const appBaseUrl = PLATFORM_ORIGIN;
-  const merchantDomainName = process.env.WFP_MERCHANT_DOMAIN!;
 
   const order_ref = makeOrderRef(product, deps.nowMs, deps.randomHex);
   const sb = deps.db;
 
-  // The WayForPay CREATE_INVOICE round-trip is the slowest leg of this request and
-  // depends only on locally-computed values (order_ref, amount, signature). Kick it
-  // off first and let the order/analytics writes run concurrently underneath it
-  // instead of stacking them sequentially ahead of the external call.
+  // The gateway round-trip is the slowest leg of this request and depends only
+  // on locally-computed values (order_ref, amount). Kick it off first and let
+  // the order/analytics writes run concurrently underneath it instead of
+  // stacking them sequentially ahead of the external call.
   const returnUrl = buildReturnUrl(appBaseUrl, product, order_ref);
 
-  const wfpPayload: {
-    apiVersion: number;
-    transactionType: string;
-    merchantAccount: string;
-    merchantDomainName: string;
-    orderReference: string;
-    orderDate: number;
-    amount: number;
-    currency: string;
-    productName: string[];
-    productPrice: number[];
-    productCount: number[];
-    serviceUrl: string;
-    returnUrl: string;
-    merchantSignature?: string;
-  } = {
-    apiVersion: 1,
-    transactionType: "CREATE_INVOICE",
-    merchantAccount,
-    merchantDomainName,
-    orderReference: order_ref,
-    orderDate: Math.floor(deps.nowMs() / 1000),
-    amount,
-    currency: cfg.currency,
-    productName: [title],
-    productPrice: [amount],
-    productCount: [1],
-    serviceUrl: `${appBaseUrl}/api/wfp/webhook`,
-    returnUrl,
-  };
-
-  const signStr = [
-    merchantAccount,
-    merchantDomainName,
-    wfpPayload.orderReference,
-    wfpPayload.orderDate,
-    wfpPayload.amount,
-    wfpPayload.currency,
-    ...wfpPayload.productName,
-    ...wfpPayload.productCount.map(String),
-    ...wfpPayload.productPrice.map(String),
-  ].join(";");
-
-  wfpPayload.merchantSignature = hmacMd5Hex(secretKey, signStr);
-
-  const wfpResponsePromise = deps.fetchFn("https://api.wayforpay.com/api", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(wfpPayload),
-  });
+  /* No `splits` yet: the active gateway cannot route an author's part at
+     source, so the whole payment lands on the platform and the author's share
+     is accrued by the database when the order becomes paid (`order_shares`).
+     A gateway with `supportsSplit` gets them here, and the order is marked
+     `split_at_source` so the share is not paid out a second time. */
+  const invoicePromise = gateway.createInvoice(
+    {
+      orderRef: order_ref,
+      orderDate: Math.floor(deps.nowMs() / 1000),
+      amount,
+      currency: cfg.currency,
+      lineTitle: title,
+      returnUrl,
+      callbackUrl: `${appBaseUrl}${gateway.callbackPath}`,
+    },
+    deps.fetchFn,
+  );
 
   const orderInsertPromise = sb.from("orders").insert({
     order_ref,
@@ -396,8 +356,8 @@ export async function createPaymentInvoiceWithDeps(
       }
     })();
 
-  const [{ error: orderErr }, resp] = await Promise.all([orderInsertPromise, wfpResponsePromise]);
-  // Keep the CAPI job overlapped with the WFP call without dropping it on the floor.
+  const [{ error: orderErr }, invoice] = await Promise.all([orderInsertPromise, invoicePromise]);
+  // Keep the CAPI job overlapped with the gateway call without dropping it on the floor.
   await capiJobPromise;
   await staffMarkerPromise;
 
@@ -410,24 +370,16 @@ export async function createPaymentInvoiceWithDeps(
     };
   }
 
-  const text = await resp.text();
-  let payUrl: string | null = null;
-  try {
-    const j = JSON.parse(text);
-    payUrl = j.invoiceUrl ?? j.url ?? null;
-  } catch {
-    // non-json response
-  }
-
-  if (!payUrl) {
+  if (!invoice.ok) {
     return {
       ok: false,
       status: 502,
-      error: "wfp_no_url",
-      raw: text,
+      error: invoice.error,
+      raw: invoice.raw,
       order_ref,
     };
   }
+  const payUrl = invoice.payUrl;
 
   return {
     ok: true,
@@ -440,6 +392,7 @@ export async function createPaymentInvoiceWithDeps(
 export async function createPaymentInvoice(input: PaymentStartInput): Promise<PaymentStartResult> {
   return createPaymentInvoiceWithDeps(input, {
     db: supabaseAdmin(),
+    gateway: activeGateway(),
     fetchFn: fetch,
     nowMs: () => Date.now(),
     randomHex: (bytes: number) => crypto.randomBytes(bytes).toString("hex"),

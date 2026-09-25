@@ -1,6 +1,6 @@
 import { PLATFORM_FAILED_URL, PLATFORM_PENDING_URL, PLATFORM_THANKS_URL } from "@/lib/products";
 import { parseCourseOfferCode } from "@/lms-core/offerCode";
-import { wfpCallbackOutcome } from "@/lib/payments/wfp";
+import type { PaymentOutcome } from "@/lib/payments/orderStatus";
 
 /**
  * `pending` is the state this flow was missing, and its absence was a lie told
@@ -43,8 +43,8 @@ export type ReturnMeta = {
  *    callback, so it is proof. `refunded` is proof of the opposite.
  * 3. What the last stored callback said. This is the one that separates the two
  *    states the old code collapsed: if a callback has ARRIVED and it declined
- *    the payment, that is a real failure. Read through `wfpCallbackOutcome` so
- *    the gateway's vocabulary is interpreted in exactly one place.
+ *    the payment, that is a real failure. Classified by the gateway that stored
+ *    it (`storedCallbackOutcome`), so its vocabulary is read in one place.
  * 4. Otherwise nothing has come back yet, and the honest answer is `pending`.
  *
  * Note what is deliberately NOT here: elapsed time. How long we have waited is
@@ -57,7 +57,8 @@ export function resolveReturnStatus(input: {
   /** `orders.status`, or null when the row could not be read. */
   orderStatus: string | null;
   /** `transactionStatus` from the most recent stored callback, if any. */
-  lastCallbackStatus: string | null;
+  /** What the latest stored callback said, already classified by its gateway. */
+  lastCallbackOutcome: PaymentOutcome | null;
 }): ReturnStatus {
   if (input.fromParams) return input.fromParams;
 
@@ -65,11 +66,9 @@ export function resolveReturnStatus(input: {
   if (orderStatus === "paid") return "paid";
   if (orderStatus === "refunded") return "failed";
 
-  if (input.lastCallbackStatus) {
-    const outcome = wfpCallbackOutcome({ transactionStatus: input.lastCallbackStatus });
-    if (outcome === "approved") return "paid";
-    if (outcome === "rejected" || outcome === "refunded") return "failed";
-  }
+  const outcome = input.lastCallbackOutcome;
+  if (outcome === "approved") return "paid";
+  if (outcome === "rejected" || outcome === "refunded") return "failed";
 
   return "pending";
 }
