@@ -1,12 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const sent: Array<{ chatId: number | string; text: string }> = [];
+type Card = {
+  html: string;
+  photo?: string | null;
+  replyMarkup?: { inline_keyboard: Array<Array<{ text: string; url?: string }>> };
+};
+const sent: Array<{ chatId: number | string; text: string; card: Card }> = [];
 
-vi.mock("@/lib/telegram/tg", () => ({
-  sendTelegramMessage: async (chatId: number | string, text: string) => {
-    sent.push({ chatId, text });
-  },
-}));
+vi.mock("@/lib/telegram/tg", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/telegram/tg")>();
+  return {
+    escapeTelegramHtml: actual.escapeTelegramHtml,
+    sendTelegramCard: async (chatId: number | string, card: Card) => {
+      sent.push({ chatId, text: card.html, card });
+    },
+  };
+});
+
+const buttonUrl = (index = 0) => sent[index]!.card.replyMarkup?.inline_keyboard[0]?.[0]?.url;
 
 /**
  * Minimal stand-in for the two profile reads `resolveChannels` makes.
@@ -48,19 +59,30 @@ describe("learner notifications", () => {
     expect(sent).toHaveLength(1);
     // The PERSONAL origin: lessons live on `my`, and a reminder that named
     // `www` would spend a 308 on the way to the lesson it points at.
-    expect(sent[0]!.text).toContain("https://my.centerway.net.ua/way21/day-3");
-    expect(sent[0]!.text).not.toMatch(/\n\/learn/);
+    expect(buttonUrl()).toBe("https://my.centerway.net.ua/way21/day-3");
+    // The link rides on the button, not as a bare URL at the foot of the body.
+    expect(sent[0]!.text).not.toContain("http");
   });
 
   it("leaves an already-absolute link alone", async () => {
     await notifyLearner({ authUserId: "user-1", text: "Тест", href: "https://example.com/x" });
-    expect(sent[0]!.text).toContain("https://example.com/x");
-    expect(sent[0]!.text).not.toContain("centerway.net.ua/https");
+    expect(buttonUrl()).toBe("https://example.com/x");
   });
 
   it("sends the body unchanged when there is no link", async () => {
     await notifyLearner({ authUserId: "user-1", text: "Без посилання" });
     expect(sent[0]!.text).toBe("Без посилання");
+    expect(sent[0]!.card.replyMarkup).toBeUndefined();
+  });
+
+  it("escapes what it did not write, and bolds the title", async () => {
+    await notifyLearner({ authUserId: "user-1", title: "Курс <A&B>", text: "1 < 2", href: "/learn/x" });
+    expect(sent[0]!.text).toBe("<b>Курс &lt;A&amp;B&gt;</b>\n\n1 &lt; 2");
+  });
+
+  it("absolutises a site-relative cover for Telegram to fetch", async () => {
+    await notifyLearner({ authUserId: "user-1", text: "Тест", imageSrc: "/cw/cover.png" });
+    expect(sent[0]!.card.photo).toBe("https://www.centerway.net.ua/cw/cover.png");
   });
 
   it("addresses the chat id resolved from the profile", async () => {

@@ -258,11 +258,16 @@ export async function runUnstartedReminders(
 
       const result = await notifyLearner({
         authUserId,
+        title: course.title,
         text:
           decision.nudgeNumber === 1
             ? `«${course.title}» вже відкритий у вашому кабінеті. Перший урок можна пройти тоді, коли буде зручно.`
             : `Нагадуємо: «${course.title}» чекає в кабінеті. Відлік днів починається з першого відкриття, тож ви нічого не пропустили.`,
         href: `/learn/${course.slug}`,
+        actionLabel: "Почати курс",
+        // The cover only on the first nudge: it is the "here is what you
+        // bought" moment. The second is a quiet reminder and stays text.
+        imageSrc: decision.nudgeNumber === 1 ? (course.cover?.src ?? null) : null,
       });
 
       if (result.delivered) {
@@ -418,8 +423,10 @@ export async function runDailyReminders(
 
     const result = await notifyLearner({
       authUserId: enrollment.auth_user_id,
-      text: `День ${decision.dayNumber}: ${decision.lesson.title}. Урок готовий — заходьте, коли буде зручно.`,
+      title: `День ${decision.dayNumber} · ${course.title}`,
+      text: `«${decision.lesson.title}» — урок готовий. Заходьте, коли буде зручно.`,
       href: `/learn/${course.slug}/${decision.lesson.slug}`,
+      actionLabel: "Відкрити урок",
     });
 
     if (result.delivered) {

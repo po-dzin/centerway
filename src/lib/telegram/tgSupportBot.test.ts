@@ -67,11 +67,27 @@ describe("support bot — copy", () => {
     expect(Object.keys(botCopy.faqLabels).sort()).toEqual(Object.keys(botCopy.faq).sort());
   });
 
-  it("sends people to the cabinet with an absolute URL", () => {
+  it("sends people to the cabinet with an absolute URL, as a word and not a bare link", () => {
     // A relative path is printed, not linkified, by Telegram.
     expect(CABINET_URL).toMatch(/^https:\/\//);
-    expect(botCopy.cabinet).toContain(CABINET_URL);
-    expect(botCopy.faq.where_course).toContain(CABINET_URL);
+    // The link lives in an anchor inside the sentence (and on a button); a
+    // bare URL on its own line is what made the answers read as a list of links.
+    for (const text of [botCopy.cabinet, botCopy.faq.where_course]) {
+      expect(text).toContain(`<a href="${CABINET_URL}">`);
+      expect(text.split("\n")).not.toContain(CABINET_URL);
+    }
+  });
+
+  it("writes only the HTML Telegram accepts", () => {
+    // parse_mode HTML rejects the WHOLE message on an unknown tag or a stray
+    // "<" — the send fails, it does not degrade. So every tag must be one of
+    // Telegram's, and every "&" an entity.
+    const allowed = /^<\/?(b|i|u|s|code|pre|a)( href="[^"]+")?>$/;
+    for (const line of collectStrings(botCopy)) {
+      for (const tag of line.match(/<[^>]*>/g) ?? []) expect(tag, line).toMatch(allowed);
+      expect(line.replace(/<[^>]*>/g, ""), line).not.toMatch(/[<>]|&(?!amp;|lt;|gt;|quot;)/);
+    }
+    expect(botCopy.accessFoundPlatform("A <b> & C")).toContain("A &lt;b&gt; &amp; C");
   });
 
   it("addresses the reader as «ви» throughout", () => {

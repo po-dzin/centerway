@@ -234,4 +234,18 @@ describe("buildDoshaResultMessage", () => {
     expect(shaky).toContain(RESULT_COPY.vata.softTitle);
     expect(shaky).not.toContain(RESULT_COPY.vata.title);
   });
+  it("dresses the chat form without changing what it says", async () => {
+    const { buildDoshaResultHtml, shareBar, RESULT_COPY } = await import("@/lib/dosha/doshaResultCopy");
+    const html = buildDoshaResultHtml({
+      resultType: "vata",
+      scores: { vata: 9, pitta: 2, kapha: 1 },
+      intro: "Ваш результат",
+      outro: "Кінець.",
+    });
+    expect(html).toContain(`<b>${RESULT_COPY.vata.title}</b>`);
+    expect(html).toContain(`Вата  ${shareBar(75)} 75%`);
+    expect(html).not.toContain("http");
+    expect(shareBar(75)).toBe("▰▰▰▰▰▰▰▰▱▱");
+    expect(shareBar(0)).toBe("▱▱▱▱▱▱▱▱▱▱");
+  });
 });

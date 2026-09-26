@@ -14,10 +14,16 @@
  *      в кабінеті" and then the link — not a bare button.
  *   2. Never promise a human timeframe the bot cannot keep. "Передали в
  *      підтримку" is true; "відповімо протягом години" is not ours to say.
- *   3. One idea per message. Telegram has no visual hierarchy to lean on.
+ *   3. One idea per message. Telegram has no visual hierarchy to lean on —
+ *      except the one we give it: every string here is sent with
+ *      `parse_mode: "HTML"`, so the lead line is bold and a link is a word in
+ *      the sentence (plus a button under it), never a bare URL. Anything
+ *      interpolated from outside — a course title — goes through
+ *      `escapeTelegramHtml`.
  */
 
 import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
+import { escapeTelegramHtml } from "@/lib/telegram/tg";
 import { SUPPORT_BOT_URL } from "@/lib/supportBotUrl";
 import { PLATFORM_ORIGIN, platformUrl, surfaceUrl } from "@/lib/surfaces/catalog";
 
@@ -57,10 +63,10 @@ export { PLATFORM_ORIGIN };
 
 export const botCopy = {
   greeting: [
-    "Вітаємо в CenterWay.",
+    "<b>Вітаємо в CenterWay.</b>",
     "",
     "Тут можна знайти свій доступ, поставити питання і написати підтримці.",
-    "Курси відкриваються в кабінеті на сайті — бот допомагає до нього дійти.",
+    `Курси відкриваються в <a href="${CABINET_URL}">кабінеті на сайті</a> — бот допомагає до нього дійти.`,
   ].join("\n"),
 
   menuPrompt: "З чим допомогти?",
@@ -69,10 +75,11 @@ export const botCopy = {
      one message: where the courses are, and the one condition that actually
      trips people up — signing in with the address the purchase was made on. */
   cabinet: [
-    "Усі придбані курси лежать у кабінеті, у розділі «Бібліотека»:",
-    CABINET_URL,
+    "<b>Ваші курси — у кабінеті</b>",
     "",
-    "Важливо увійти тією поштою, на яку оформлювали замовлення — за нею кабінет знаходить покупку.",
+    `Усі придбані курси лежать у розділі <a href="${CABINET_URL}">«Бібліотека»</a>.`,
+    "",
+    "Важливо увійти <b>тією поштою, на яку оформлювали замовлення</b> — за нею кабінет знаходить покупку.",
     "Якщо курс там не з'явився, натисніть «Не бачу доступ».",
   ].join("\n"),
 
@@ -81,7 +88,9 @@ export const botCopy = {
 
   accessFoundPlatform: (title: string) =>
     [
-      `Оплату за «${title}» знайдено — курс уже відкритий у кабінеті.`,
+      "<b>Оплату знайдено ✓</b>",
+      "",
+      `Курс «${escapeTelegramHtml(title)}» уже відкритий у кабінеті.`,
       "",
       "Увійдіть тією ж поштою, що й під час оплати, і курс буде в розділі «Бібліотека».",
     ].join("\n"),
@@ -92,7 +101,7 @@ export const botCopy = {
      "where is my access" and it does not depend on which product was bought. */
 
   accessNotFound: [
-    "За цими даними оплату не знайшли.",
+    "<b>За цими даними оплату не знайшли</b>",
     "",
     "Буває, що оплата оформлена на іншу пошту або телефон — спробуйте другий контакт.",
     "Якщо контакт правильний, напишіть підтримці: розберемося вручну.",
@@ -106,8 +115,7 @@ export const botCopy = {
      alive, and the kind of mismatch a hand-kept second list produces eventually. */
   faq: {
     where_course: [
-      "Курс відкривається в кабінеті на сайті, у розділі «Бібліотека»:",
-      CABINET_URL,
+      `Курс відкривається в кабінеті на сайті, у розділі <a href="${CABINET_URL}">«Бібліотека»</a>.`,
       "",
       "Уроки, прогрес і наступний крок — усе там. Окремий застосунок не потрібен, але кабінет можна додати на екран телефона.",
     ].join("\n"),
@@ -117,7 +125,7 @@ export const botCopy = {
       "Перевірте адресу, якою входите в кабінет. Якщо вона правильна — натисніть «Не бачу доступ», перевіримо оплату.",
     ].join("\n"),
     login: [
-      "Вхід у кабінет — без пароля: введіть пошту, і на неї прийде код із цифр. Або увійдіть через Google.",
+      "Вхід у кабінет — <b>без пароля</b>: введіть пошту, і на неї прийде код із цифр. Або увійдіть через Google.",
       "",
       "Якщо лист не дійшов, подивіться в «Промоакції» та «Спам». Якщо його немає й там — напишіть підтримці.",
     ].join("\n"),
@@ -150,22 +158,25 @@ export const botCopy = {
 
   supportAskContact: "Надішліть email або телефон, за яким підтримка знайде ваше замовлення.",
   supportAskMessage: "Тепер опишіть ситуацію одним повідомленням.",
-  supportSent: "Передали звернення підтримці. Відповідь прийде сюди, в цей чат.",
+  supportSent: "<b>Звернення передано ✓</b>\n\nВідповідь підтримки прийде сюди, в цей чат.",
   supportUnavailable: "Підтримка тимчасово недоступна. Спробуйте, будь ласка, пізніше.",
   bugAskMessage:
     "Опишіть помилку одним повідомленням. Додайте сторінку, що робили перед помилкою і, якщо можете, скриншот окремим повідомленням.",
-  bugSent: "Дякуємо. Помилку передано технічній команді.",
+  bugSent: "<b>Дякуємо!</b> Помилку передано технічній команді.",
 
-  linkedOk: "Готово — акаунт CenterWay підключено. Нагадування про уроки приходитимуть сюди.",
+  linkedOk: "<b>Готово — акаунт CenterWay підключено ✓</b>\n\nНагадування про уроки приходитимуть сюди.",
   linkExpired: "Посилання застаріло. Відкрийте кабінет і натисніть «Підключити Telegram» ще раз.",
   linkBroken: "Не вдалося перевірити посилання. Спробуйте ще раз із кабінету.",
 
   /* The dosha result arrives here from the test, for a reader who may have no
      account at all — so the copy explains what this chat now is, rather than
      assuming they know they linked something. */
-  doshaResultIntro: "Ваш результат тесту доші:",
+  doshaResultIntro: "Ваш результат тесту доші",
   doshaResultOutro:
     "Зберегли — результат залишиться у цьому чаті. Якщо стан зміниться, пройдіть тест ще раз: він читає поточний ритм, а не мітку назавжди.",
+  /* The one next step, on a button under the result — the result is long, and
+     a link at its very end was the last thing anyone scrolled to. */
+  doshaResultNext: "Обговорити на консультації",
   doshaResultExpired: "Посилання на результат застаріло. Відкрийте тест і натисніть «Надіслати в Telegram» ще раз.",
   doshaResultBroken: "Не вдалося прочитати посилання на результат. Спробуйте ще раз зі сторінки тесту.",
   doshaResultMissing: "Не знайшли цей результат. Можливо, тест не був завершений — пройдіть його ще раз.",
