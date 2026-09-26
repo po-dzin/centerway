@@ -1,3 +1,4 @@
+import BalanceTestClient from "@/components/balance-test/BalanceTestClient";
 import DoshaTestClient from "@/components/dosha-test/DoshaTestClient";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import {
@@ -108,6 +109,16 @@ export function PlatformDoshaTestPage({ author }: { author?: Author | null }) {
     <PlatformShell headerMode="overlay">
       <main data-cw-platform-template="dosha" data-cw-detail-template="dosha">
         <DoshaTestClient author={author ?? null} />
+      </main>
+    </PlatformShell>
+  );
+}
+
+export function PlatformBalanceTestPage({ author }: { author?: Author | null }) {
+  return (
+    <PlatformShell headerMode="overlay">
+      <main data-cw-platform-template="dosha" data-cw-detail-template="dosha">
+        <BalanceTestClient author={author ?? null} />
       </main>
     </PlatformShell>
   );

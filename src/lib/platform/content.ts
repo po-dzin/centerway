@@ -231,6 +231,14 @@ export const platformPageArtwork = {
     desktopPosition: "center 42%",
     mobilePosition: "center 34%",
   },
+  /* The balance test: water, charcoal and dry flowers on one table under one
+     light — three states held level, with the charcoal standing for ama. */
+  balance: {
+    desktop: "/cw/platform/pages/dosha-hero-variant-charcoal-v2.webp",
+    card: "/cw/platform/pages/dosha-hero-variant-charcoal-v2-960.webp",
+    desktopPosition: "center 50%",
+    mobilePosition: "center 50%",
+  },
   consult: {
     desktop: "/cw/platform/pages/consult-hero-v1.webp",
     card: "/cw/platform/pages/consult-hero-v1-960.webp",

@@ -35,6 +35,10 @@
   min-width: 0;
 }
 
+.aggregateRail[data-layout="pair"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 @media (max-width: 900px) {
   /* Catalogue comparisons stay two-up down to a phone. At that width the card
      itself changes density through its container query below — one benefit line
@@ -89,7 +93,8 @@
    as one catalogue. At this full measure, price and CTA share the footer's
    baseline again; the vertical footer is reserved for genuinely narrow cards. */
 @media (max-width: 640px) {
-  .aggregateRail {
+  .aggregateRail,
+  .aggregateRail[data-layout="pair"] {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--cw-space-sm);
   }

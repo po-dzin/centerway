@@ -22,9 +22,13 @@ export type PlatformTestEntry = {
 /** The dosha test's slug in `test_definitions` — the row that carries its author. */
 export const DOSHA_TEST_API_SLUG = "dosha-test";
 
+/** The balance test's slug in `test_definitions` — see `src/lib/balance/balanceTest.ts`. */
+export const BALANCE_TEST_API_SLUG = "balance-test";
+
 export const TESTS_HUB_ROUTE = "/tests";
 export const DOSHA_TEST_ROUTE = "/tests/dosha";
 export const LEGACY_DOSHA_TEST_ROUTE = "/dosha-test";
+export const BALANCE_TEST_ROUTE = "/tests/balance";
 
 export const platformTests: PlatformTestEntry[] = [
   {
@@ -42,6 +46,25 @@ export const platformTests: PlatformTestEntry[] = [
       desktop: "/cw/platform/pages/dosha-hero-variant-ceramic-v1.webp",
       desktopPosition: "center 32%",
       mobilePosition: "center 34%",
+    },
+    status: "active",
+  },
+  {
+    slug: "balance",
+    apiSlug: BALANCE_TEST_API_SLUG,
+    href: BALANCE_TEST_ROUTE,
+    title: "Баланс дош",
+    tag: "Поточний стан",
+    format: "9 питань • 2-3 хв",
+    description:
+      "Не конституція, а те, що відбувається зараз: яка з трьох сил вийшла з рівноваги — вата, пітта чи капха з амою — і що з цим робити в режимі, їжі та диханні.",
+    reads: "ранок, травлення, розум, тіло, сон, емоційний осад",
+    visual: "water",
+    artwork: {
+      desktop: "/cw/platform/pages/dosha-hero-variant-charcoal-v2.webp",
+      card: "/cw/platform/pages/dosha-hero-variant-charcoal-v2-960.webp",
+      desktopPosition: "center 50%",
+      mobilePosition: "center 50%",
     },
     status: "active",
   },
