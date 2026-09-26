@@ -59,6 +59,14 @@ export const SUPPORT_PHOTO_URL = platformUrl("/cw/bot/final/menu-support-printed
 export const FAQ_PHOTO_URL = platformUrl("/cw/bot/final/menu-faq-printed-stamp-v1.png");
 export const ACCESS_PHOTO_URL = platformUrl("/cw/bot/final/menu-access-printed-stamp-v1.png");
 
+/**
+ * The card above a dosha result — one print per result type, baked by
+ * scripts/bot-dosha-cards.mjs from the dosha token colours. Sent as its own
+ * photo, captioned with the verdict only: the full result is ~1.8k characters
+ * and a caption stops at 1024.
+ */
+export const doshaCardUrl = (resultType: string) => platformUrl(`/cw/bot/dosha/${resultType}.png`);
+
 export { PLATFORM_ORIGIN };
 
 export const botCopy = {

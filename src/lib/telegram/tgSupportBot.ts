@@ -23,6 +23,7 @@ import { asJson } from "@/lib/db/types";
 import type { ProductCode } from "@/lib/products";
 import {
   callTelegramBotApi,
+  escapeTelegramHtml,
   reactToTelegramMessage,
   sendTelegramCard,
   sendTelegramChatAction,
@@ -33,7 +34,7 @@ import {
 import { verifyTelegramLinkToken } from "@/lib/platform/telegramLink";
 import { verifyDoshaResultToken } from "@/lib/platform/doshaTelegramLink";
 import { classifyDosha, type DoshaResultType } from "@/lib/dosha/doshaTest";
-import { buildDoshaResultHtml } from "@/lib/dosha/doshaResultCopy";
+import { buildDoshaResultHtml, RESULT_COPY } from "@/lib/dosha/doshaResultCopy";
 import { DOSHA_PRIMARY_EXIT, doshaExitHref } from "@/lib/dosha/doshaRouting";
 import { captureQuestion } from "@/lib/agent/questions/store";
 import { platformUrl } from "@/lib/surfaces/catalog";
@@ -42,6 +43,7 @@ import {
   ACCESS_PHOTO_URL,
   CABINET_PHOTO_URL,
   CABINET_URL,
+  doshaCardUrl,
   FAQ_PHOTO_URL,
   GREETING_PHOTO_URL,
   SUPPORT_PHOTO_URL,
@@ -616,6 +618,14 @@ async function tryDeliverDoshaResult(
   };
   const profile = classifyDosha(scores.vata, scores.pitta, scores.kapha);
 
+  // The print first, captioned with the verdict alone; the reading follows as
+  // text. If the photo is refused, sendTelegramCard sends the caption as text
+  // and the result still arrives in full below it.
+  await sendCaptionedPhoto(
+    chatId,
+    doshaCardUrl(resultType),
+    `<b>${escapeTelegramHtml(profile.confidence === "low" ? RESULT_COPY[resultType].softTitle : RESULT_COPY[resultType].title)}</b>`,
+  );
   await sendMessage(
     chatId,
     buildDoshaResultHtml({

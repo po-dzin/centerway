@@ -16,6 +16,7 @@ import {
   botProfile,
   CABINET_PHOTO_URL,
   CABINET_URL,
+  doshaCardUrl,
   FAQ_PHOTO_URL,
   GREETING_PHOTO_URL,
   SUPPORT_PHOTO_URL,
@@ -146,6 +147,15 @@ describe("support bot — copy", () => {
     expect(SUPPORT_PHOTO_URL).toMatch(/^https:\/\/.+\.png$/);
     expect(FAQ_PHOTO_URL).toMatch(/^https:\/\/.+\.png$/);
     expect(ACCESS_PHOTO_URL).toMatch(/^https:\/\/.+\.png$/);
+  });
+
+  it("ships a dosha card for every result type", async () => {
+    const { RESULT_COPY } = await import("@/lib/dosha/doshaResultCopy");
+    for (const type of Object.keys(RESULT_COPY)) {
+      const asset = `public/cw/bot/dosha/${type}.png`;
+      expect(existsSync(path.join(process.cwd(), asset)), asset).toBe(true);
+      expect(doshaCardUrl(type)).toMatch(new RegExp(`^https://.+/cw/bot/dosha/${type}\\.png$`));
+    }
   });
 
   it("registers a command for every menu branch a command claims to open", () => {
