@@ -138,6 +138,8 @@ describe("support bot — copy", () => {
       "public/cw/bot/final/menu-support-printed-stamp-v4.png",
       "public/cw/bot/final/menu-faq-printed-stamp-v1.png",
       "public/cw/bot/final/menu-access-printed-stamp-v1.png",
+      "public/cw/bot/final/reminder-course-waiting-v1.png",
+      "public/cw/bot/final/reminder-lesson-ready-v1.png",
     ];
 
     for (const asset of assets) {

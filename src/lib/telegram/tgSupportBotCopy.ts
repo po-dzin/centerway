@@ -59,6 +59,12 @@ export const SUPPORT_PHOTO_URL = platformUrl("/cw/bot/final/menu-support-printed
 export const FAQ_PHOTO_URL = platformUrl("/cw/bot/final/menu-faq-printed-stamp-v1.png");
 export const ACCESS_PHOTO_URL = platformUrl("/cw/bot/final/menu-access-printed-stamp-v1.png");
 
+/* The two reminder cards, from the same series (scripts/bot-card-gen.mjs):
+   a closed notebook waiting, for a course bought and not yet opened; an open
+   one with today's page marked, for the day-N lesson. */
+export const REMINDER_WAITING_PHOTO_URL = platformUrl("/cw/bot/final/reminder-course-waiting-v1.png");
+export const REMINDER_LESSON_PHOTO_URL = platformUrl("/cw/bot/final/reminder-lesson-ready-v1.png");
+
 /**
  * The card above a dosha result — one print per result type, baked by
  * scripts/bot-dosha-cards.mjs from the dosha token colours. Sent as its own

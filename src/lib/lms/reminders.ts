@@ -30,6 +30,7 @@ import {
 import { listLiveCourses } from "./liveCatalog";
 import { loadProgress } from "./server";
 import { notifyLearner } from "./notify";
+import { REMINDER_LESSON_PHOTO_URL, REMINDER_WAITING_PHOTO_URL } from "@/lib/telegram/tgSupportBotCopy";
 
 export type ReminderRunResult = {
   scanned: number;
@@ -265,9 +266,9 @@ export async function runUnstartedReminders(
             : `Нагадуємо: «${course.title}» чекає в кабінеті. Відлік днів починається з першого відкриття, тож ви нічого не пропустили.`,
         href: `/learn/${course.slug}`,
         actionLabel: "Почати курс",
-        // The cover only on the first nudge: it is the "here is what you
-        // bought" moment. The second is a quiet reminder and stays text.
-        imageSrc: decision.nudgeNumber === 1 ? (course.cover?.src ?? null) : null,
+        // The course's own cover when it has one — "here is what you bought";
+        // the series card of a notebook waiting when it does not.
+        imageSrc: course.cover?.src ?? REMINDER_WAITING_PHOTO_URL,
       });
 
       if (result.delivered) {
@@ -427,6 +428,9 @@ export async function runDailyReminders(
       text: `«${decision.lesson.title}» — урок готовий. Заходьте, коли буде зручно.`,
       href: `/learn/${course.slug}/${decision.lesson.slug}`,
       actionLabel: "Відкрити урок",
+      // One card for every day, on purpose: the same picture each morning is
+      // how the reader learns what this message is before reading it.
+      imageSrc: REMINDER_LESSON_PHOTO_URL,
     });
 
     if (result.delivered) {
