@@ -26,7 +26,8 @@
  * looks like too, so the typed cards stand untouched.
  */
 
-import type { ProgramFormat } from "@/lib/experiences/formats";
+import type { BundleHost, ProgramFormat } from "@/lib/experiences/formats";
+import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 
 const BLOCK = /<!--\s*cw:formats\s+([a-z0-9-]+)\s*-->([\s\S]*?)<!--\s*\/cw:formats\s*-->/g;
 const CARD = /<!--\s*cw:format\s+([a-z0-9:_-]+)\s*-->([\s\S]*?)<!--\s*\/cw:format\s*-->/g;
@@ -92,11 +93,29 @@ export function renderFormatCard(format: ProgramFormat, programTitle: string): s
   ].join("\n");
 }
 
-/** An existing card, told what else its format opens — once, however often it is served. */
-function withIncludes(card: string, format: ProgramFormat): string {
-  const cleaned = card.replace(/<li data-cw-included>[\s\S]*?<\/li>/g, "");
-  if (format.includes.length === 0) return cleaned;
-  return cleaned.replace(/(<ul class="fc-features">[\s\S]*?)(<\/ul>)/, `$1${includedItems(format)}$2`);
+/**
+ * An existing card, brought in line with its format — once, however often it
+ * is served.
+ *
+ * THE LIST FOLLOWS THE DATA WHEN THE DATA HAS ONE (2026-09-25). The card's
+ * badge, title, CTA and guarantee line stay as typed: they are the landing's
+ * voice. What the buyer GETS is the format's `features` — the list the author
+ * edits in the builder and the program page prints — so the landing cannot
+ * promise «Усі інструкції трьох тижнів» while the platform promises something
+ * else. A format nobody has described keeps the typed list.
+ *
+ * Either way the bundle's programs close the list, from `includes`.
+ */
+function syncCard(card: string, format: ProgramFormat): string {
+  const own =
+    format.features.length > 0 ? format.features.map((feature) => `<li>${escape(feature)}</li>`).join("") : null;
+  return card.replace(
+    /(<ul class="fc-features">)([\s\S]*?)(<\/ul>)/,
+    (_whole, open: string, inner: string, close: string) => {
+      const typed = inner.replace(/<li data-cw-included>[\s\S]*?<\/li>/g, "");
+      return `${open}${own ?? typed}${includedItems(format)}${close}`;
+    },
+  );
 }
 
 /**
@@ -119,7 +138,7 @@ export function applyFormatSync(
       .map((format) => {
         const existing = cards.get(format.code);
         return existing !== undefined
-          ? `<!-- cw:format ${format.code} -->${withIncludes(existing, format)}<!-- /cw:format -->`
+          ? `<!-- cw:format ${format.code} -->${syncCard(existing, format)}<!-- /cw:format -->`
           : renderFormatCard(format, program.title);
       })
       .join("\n");
@@ -130,4 +149,59 @@ export function applyFormatSync(
 /** The program addresses a page asks formats for. */
 export function collectFormatPrograms(html: string): string[] {
   return [...new Set([...html.matchAll(BLOCK)].map((match) => match[1]!))];
+}
+
+/* ── Bundles, from the included program's side ─────────────────────────────
+
+   A program that other formats open as a bonus says so on its own landing:
+   «Розвантажувальний день також входить бонусом у «Шлях 21» — у форматах …».
+   The page opts in with a marker where the sentence belongs; what fills it is
+   the data, so the day a format stops including the program the sentence goes.
+
+     <!-- cw:bundled-in reset-day --><!-- /cw:bundled-in -->
+
+   The slug is the included program's public address. `null` from the lookup
+   (a failed read) leaves whatever is between the markers; `[]` (in no bundle)
+   empties it. */
+
+const BUNDLED = /<!--\s*cw:bundled-in\s+([a-z0-9-]+)\s*-->([\s\S]*?)<!--\s*\/cw:bundled-in\s*-->/g;
+
+function joinLabels(labels: string[]): string {
+  const quoted = labels.map((label) => `«${escape(label)}»`);
+  return quoted.length <= 1 ? (quoted[0] ?? "") : `${quoted.slice(0, -1).join(", ")} і ${quoted.at(-1)}`;
+}
+
+/** The sentence for one included program, grouped by the program that hosts it. */
+export function renderBundleNote(programTitle: string, hosts: BundleHost[]): string {
+  if (hosts.length === 0) return "";
+  const byProgram = new Map<string, { title: string; labels: string[] }>();
+  for (const host of hosts) {
+    const entry = byProgram.get(host.programSlug) ?? { title: host.programTitle, labels: [] };
+    entry.labels.push(host.label);
+    byProgram.set(host.programSlug, entry);
+  }
+  const parts = [...byProgram].map(
+    ([slug, entry]) =>
+      `у <a href="${PLATFORM_ORIGIN}/programs/${escape(slug)}#formats">«${escape(entry.title)}»</a> — ${
+        entry.labels.length === 1 ? "у форматі" : "у форматах"
+      } ${joinLabels(entry.labels)}`,
+  );
+  return `<p class="bundle-note" data-cw-bundled-in>${escape(programTitle)} також входить бонусом ${parts.join("; ")}.</p>`;
+}
+
+/** Pure: every bundled-in marker filled from `hostsOf(programSlug)`. */
+export function applyBundleSync(
+  html: string,
+  hostsOf: (programSlug: string) => { title: string; hosts: BundleHost[] } | null,
+): string {
+  return html.replace(BUNDLED, (whole, programSlug: string) => {
+    const program = hostsOf(programSlug);
+    if (!program) return whole;
+    return `<!-- cw:bundled-in ${programSlug} -->${renderBundleNote(program.title, program.hosts)}<!-- /cw:bundled-in -->`;
+  });
+}
+
+/** The included programs a page asks about. */
+export function collectBundledPrograms(html: string): string[] {
+  return [...new Set([...html.matchAll(BUNDLED)].map((match) => match[1]!))];
 }
