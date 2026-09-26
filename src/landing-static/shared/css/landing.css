@@ -1173,6 +1173,12 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .short-text h3{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:clamp(1.5rem,3vw,2rem);color:var(--ink);margin: var(--cw-space-xs) 0 var(--cw-space-sm);line-height:1.2}
 .short-text p{font-size:.95rem;color:var(--text-muted);line-height:1.6;max-width:48ch}
 .short-text .notice{margin-top: var(--cw-space-sm);font-size:.86rem;color:var(--text-muted);opacity:.75;line-height:1.55;border-left:3px solid var(--line-strong);padding-left: var(--cw-space-md)}
+/* A program other formats open as a bonus says so here — filled from the data
+   (`cw:bundled-in`, lib/landing/formatSync). Quiet, beside the pitch it
+   qualifies; the link is the one way to the formats that include it. */
+.short-text .bundle-note{margin-top: var(--cw-space-sm);font-size:.9rem;color:var(--text-muted);line-height:1.55;max-width:52ch}
+.short-text .bundle-note a{color:var(--text);text-decoration:underline;text-decoration-color:var(--cta);text-underline-offset:.2em}
+@media (hover: hover){.short-text .bundle-note a:hover{text-decoration-thickness:2px}}
 .short-cta{flex:0 0 auto;width:100%;display:flex;flex-direction:column;gap: var(--cw-space-md);align-items:flex-start}
 .short-cta .btn{width:100%;justify-content:center}
 .short-price-row{display:flex;align-items:baseline;gap:.45em}

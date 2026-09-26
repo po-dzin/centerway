@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import type { ProgramFormat } from "@/lib/experiences/formats";
-import { applyFormatSync, collectFormatPrograms, renderFormatCard } from "./formatSync";
+import {
+  applyBundleSync,
+  applyFormatSync,
+  collectBundledPrograms,
+  collectFormatPrograms,
+  renderBundleNote,
+  renderFormatCard,
+} from "./formatSync";
+import type { BundleHost } from "@/lib/experiences/formats";
 
 const page = `<div class="format-grid">
 <!-- cw:formats way21 -->
@@ -79,5 +87,87 @@ describe("landing format sync", () => {
     expect(card).toContain("<li>Закрита Telegram-група потоку</li>");
     expect(card).not.toContain("Уся програма");
     expect(card.match(/data-cw-included/g)?.length).toBe(2);
+  });
+
+  it("replaces a typed card's list with the format's own features, then its bonus programs", () => {
+    const out = applyFormatSync(page, () => ({
+      title: "Шлях 21",
+      formats: [
+        format("course:way21", "self", { features: ["Покрокові інструкції", "Текстова підтримка протягом курсу"] }),
+        format("way21-support", "individual", { features: [], includes: minis }),
+      ],
+    }));
+    const self = out.slice(out.indexOf("cw:format course:way21"), out.indexOf("cw:format way21-support"));
+    expect(self).toContain("<li>Покрокові інструкції</li><li>Текстова підтримка протягом курсу</li>");
+    expect(self).not.toContain("Усі інструкції");
+    // No features written for the guided format: its typed list stands, the bonuses close it.
+    const support = out.slice(out.indexOf("cw:format way21-support"));
+    expect(support).toContain("<li>2 консультації</li>");
+    expect(support.match(/data-cw-included/g)?.length).toBe(2);
+  });
+
+  it("is stable when the synced page is synced again", () => {
+    const formats = [format("course:way21", "self", { features: ["A", "B"], includes: minis })];
+    const once = applyFormatSync(page, () => ({ title: "Шлях 21", formats }));
+    expect(applyFormatSync(once, () => ({ title: "Шлях 21", formats }))).toBe(once);
+  });
+
+  it("escapes what an author typed into a feature", () => {
+    const out = applyFormatSync(page, () => ({
+      title: "Шлях 21",
+      formats: [format("course:way21", "self", { features: ['<script>alert(1)</script> & "лапки"'] })],
+    }));
+    expect(out).not.toContain("<script>");
+    expect(out).toContain("&lt;script&gt;alert(1)&lt;/script&gt; &amp; &quot;лапки&quot;");
+  });
+});
+
+const hosts: BundleHost[] = [
+  { code: "way21-group", label: "У групі потоку", programSlug: "way21", programTitle: "Шлях 21" },
+  { code: "way21-support", label: "Індивідуальний супровід", programSlug: "way21", programTitle: "Шлях 21" },
+];
+
+const bundled = `<div class="short-text"><p>Pitch</p>
+<!-- cw:bundled-in reset-day --><!-- /cw:bundled-in -->
+</div>`;
+
+describe("landing bundle sync", () => {
+  it("finds the included programs a page asks about", () => {
+    expect(collectBundledPrograms(bundled)).toEqual(["reset-day"]);
+    expect(collectBundledPrograms("<p>none</p>")).toEqual([]);
+  });
+
+  it("names the host program and every format that opens this one, linking to its formats", () => {
+    const note = renderBundleNote("Розвантажувальний день", hosts);
+    expect(note).toContain("Розвантажувальний день також входить бонусом");
+    expect(note).toContain('href="https://www.centerway.net.ua/programs/way21#formats"');
+    expect(note).toContain("у форматах «У групі потоку» і «Індивідуальний супровід»");
+  });
+
+  it("says «у форматі» for one format and separates host programs", () => {
+    const note = renderBundleNote("Short", [
+      hosts[0]!,
+      { code: "natural-body-group", label: "У групі", programSlug: "natural-body", programTitle: "Природне тіло" },
+    ]);
+    expect(note).toContain("«Шлях 21»</a> — у форматі «У групі потоку»; у ");
+    expect(note).toContain("«Природне тіло»</a> — у форматі «У групі»");
+  });
+
+  it("fills the marker, and filling it twice changes nothing", () => {
+    const once = applyBundleSync(bundled, () => ({ title: "Розвантажувальний день", hosts }));
+    expect(once).toContain("data-cw-bundled-in");
+    expect(applyBundleSync(once, () => ({ title: "Розвантажувальний день", hosts }))).toBe(once);
+  });
+
+  it("empties the marker when the program is in no bundle any more", () => {
+    const filled = applyBundleSync(bundled, () => ({ title: "Розвантажувальний день", hosts }));
+    const emptied = applyBundleSync(filled, () => ({ title: "Розвантажувальний день", hosts: [] }));
+    expect(emptied).not.toContain("data-cw-bundled-in");
+    expect(emptied).toContain("<!-- cw:bundled-in reset-day --><!-- /cw:bundled-in -->");
+  });
+
+  it("leaves the marker exactly as it is when the read failed", () => {
+    const filled = applyBundleSync(bundled, () => ({ title: "Розвантажувальний день", hosts }));
+    expect(applyBundleSync(filled, () => null)).toBe(filled);
   });
 });

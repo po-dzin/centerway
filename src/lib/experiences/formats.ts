@@ -201,3 +201,86 @@ export async function loadProgramFormats(course: { id: string; slug: string }): 
     revalidate: 300,
   })();
 }
+
+/** A format of ANOTHER program that opens this one as a bonus. */
+export type BundleHost = {
+  code: string;
+  label: string;
+  /** The program whose format it is — Шлях 21 for Reset Day. */
+  programSlug: string;
+  programTitle: string;
+};
+
+/* Throws on a failed read, so the cache below never keeps a failure. */
+async function readBundleHosts(courseSlug: string): Promise<BundleHost[]> {
+  {
+    const db = supabaseAdmin();
+    const course = await db.from("lms_courses").select("experience_id").eq("slug", courseSlug).maybeSingle();
+    const experienceId = course.data?.experience_id as string | null | undefined;
+    if (course.error) throw new Error(`bundle_hosts_read_failed:${course.error.message}`);
+    if (!experienceId) return [];
+
+    const items = await db.from("experience_offer_items").select("offer_id").eq("experience_id", experienceId);
+    if (items.error) throw new Error(`bundle_hosts_read_failed:${items.error.message}`);
+    const offerIds = [...new Set((items.data ?? []).map((row) => row.offer_id as string))];
+    if (offerIds.length === 0) return [];
+
+    const offers = await db
+      .from("experience_offers")
+      .select(OFFER_COLUMNS)
+      .in("id", offerIds)
+      .eq("active", true)
+      .eq("review_status", "approved");
+    if (offers.error) throw new Error(`bundle_hosts_read_failed:${offers.error.message}`);
+    const rows = ((offers.data ?? []) as OfferRow[]).filter((row) => isOfferFormat(row.format));
+    if (rows.length === 0) return [];
+
+    const hosts = await db
+      .from("lms_courses")
+      .select("slug, program_slug, title, experience_id, status")
+      .in("experience_id", [...new Set(rows.map((row) => row.experience_id))])
+      .eq("status", "published");
+    if (hosts.error) throw new Error(`bundle_hosts_read_failed:${hosts.error.message}`);
+    const hostByExperience = new Map((hosts.data ?? []).map((row) => [row.experience_id as string, row]));
+
+    return rows
+      .sort((a, b) => a.sort_order - b.sort_order || a.code.localeCompare(b.code))
+      .flatMap((row): BundleHost[] => {
+        const host = hostByExperience.get(row.experience_id);
+        // A bonus of a program that is not published is not advertised.
+        if (!host || !isOfferFormat(row.format)) return [];
+        return [
+          {
+            code: row.code,
+            label: ukLine(row.label) ?? FORMAT_DEFAULT_LABELS[row.format],
+            programSlug: (host.program_slug as string | null) ?? (host.slug as string),
+            // The short name the landings use: «Шлях 21», not the catalogue subtitle.
+            programTitle: (host.title as string).split(" — ")[0]!.trim(),
+          },
+        ];
+      });
+  }
+}
+
+/**
+ * The formats of other programs that open this course as a bonus — «Reset Day
+ * comes with Шлях 21 in the group and the guided format». For the included
+ * program's own landing, so it says where else it can be had.
+ *
+ * `null` means the read failed: the caller leaves whatever the page typed.
+ * `[]` means it is in no bundle today.
+ */
+export async function loadBundleHosts(courseSlug: string): Promise<BundleHost[] | null> {
+  try {
+    return await unstable_cache(() => readBundleHosts(courseSlug), ["bundle-hosts", courseSlug], {
+      tags: [courseTag(courseSlug), COURSE_LIST_TAG],
+      revalidate: 300,
+    })();
+  } catch (error) {
+    console.warn("bundle_hosts_read_failed", {
+      courseSlug,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+}
