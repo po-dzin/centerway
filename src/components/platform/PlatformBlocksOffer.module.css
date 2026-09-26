@@ -851,6 +851,12 @@
 .programLink {
   composes: secondary from "./PlatformButtons.module.css";
   flex: 0 0 auto;
+  /* The CTA keeps the right-hand end of the footer whether or not a price
+     stands before it. `space-between` put it there only while it had a
+     neighbour: on a card with no price — every test, any unpriced offer — it
+     was the footer's only child and fell to the start, so one catalogue row
+     showed its buttons on two different sides. */
+  margin-inline-start: auto;
   /* The secondary recipe centres the box; this removes the font's extra
      leading, which made this short label read optically low on mobile. */
   line-height: 1;
