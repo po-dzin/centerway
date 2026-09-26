@@ -1,42 +1,22 @@
 import { describe, expect, it } from "vitest";
 
 import { programs } from "./content";
-import { courseOfferCommerce, productOfferCommerce, resolveOfferCommerce } from "./offerCommerce";
+import { courseOfferCommerce, productOfferCommerce } from "./offerCommerce";
 import type { PayableOffer } from "@/lib/products";
 import type { CourseOffer } from "./offers";
 
-describe("resolveOfferCommerce", () => {
-  it("sells the four offers that have both a checkout and an agreed price", () => {
-    for (const slug of ["reboot", "reset-day", "way21", "irem"]) {
-      const commerce = resolveOfferCommerce(slug);
-      expect(commerce.mode, slug).toBe("checkout");
-      if (commerce.mode !== "checkout") return;
-      expect(commerce.checkoutHref).toContain("/api/pay/start?product=");
-      expect(commerce.price).toMatch(/\d/);
-    }
+describe("an offer with no price row", () => {
+  it("asks, and files the question under the page's own slug", () => {
+    // The lead route resolves the slug through `offer_aliases`, so the page
+    // keeps no table of its own: `natural-body` reaches its course's offer.
+    expect(courseOfferCommerce("natural-body", null)).toEqual({ mode: "lead", leadProductCode: "natural-body" });
+    expect(productOfferCommerce("herbs", null)).toEqual({ mode: "lead", leadProductCode: "herbs" });
   });
 
-  it("quotes the LIST price, never the charged one", () => {
-    // A page must read listAmount, never amount: the two are separate fields so
-    // a QA price can sit in amount without any page advertising it. This is
-    // the test that fails if anyone reconnects them.
-    const way21 = resolveOfferCommerce("way21");
-    expect(way21.mode === "checkout" && way21.price).toContain("4");
-    expect(way21.mode === "checkout" && way21.price).not.toBe("1 ₴");
-  });
-
-  it("falls back to a form when no price has been agreed", () => {
-    // herbs has a WayForPay route but no figure anyone decided to charge.
-    expect(resolveOfferCommerce("herbs")).toEqual({ mode: "lead", leadProductCode: "herbs" });
-    expect(resolveOfferCommerce("natural-body")).toEqual({ mode: "lead", leadProductCode: "natural-body" });
-  });
-
-  it("never leaves a catalogue offer without a way to convert", () => {
+  it("never leaves a catalogue page without a way to convert", () => {
     for (const program of programs) {
-      const commerce = resolveOfferCommerce(program.slug);
-      if (commerce.mode === "lead") expect(commerce.leadProductCode.length).toBeGreaterThan(0);
-      else if (commerce.mode === "free") expect(commerce.accessHref.length).toBeGreaterThan(0);
-      else expect(commerce.checkoutHref.length).toBeGreaterThan(0);
+      const commerce = productOfferCommerce(program.slug, null);
+      expect(commerce.mode === "lead" && commerce.leadProductCode.length).toBeGreaterThan(0);
     }
   });
 });

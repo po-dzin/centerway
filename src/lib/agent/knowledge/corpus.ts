@@ -13,12 +13,10 @@
  * platform — landings, `docs/legacy/**`, retired offers — is deliberately out
  * (docs/agent-contour-2026-08-21.md §4).
  *
- * THE PRICE TRAP, since this is the module most likely to get it wrong: a
- * product carries TWO figures. `amount` is what the payment provider is asked
- * to take and diverges from the real price while the 1 ₴ QA window is open;
- * `listAmount` is what a surface may print. The corpus reads `productListPrice`
- * for the same reason a page does — an assistant quoting `amount` during that
- * window would tell a buyer a course costs one hryvnia.
+ * PRICES COME FROM THE ONE TABLE OF PRICES (2026-09-26): the offers are read
+ * from `experience_offers` by the server loader and passed in, the same rows
+ * the checkout charges. A lead offer is described without a figure — its price
+ * is agreed in conversation, and an assistant must not invent one.
  *
  * COURSES CONTRIBUTE THEIR OFFER, NOT THEIR LESSONS. See `types.ts`.
  */
@@ -26,14 +24,7 @@
 import { inlineToPlainText, type Course } from "@/lms-core";
 import { contact, legal, programs } from "@/lib/platform/content";
 import { plural } from "@/lib/plural";
-import {
-  PRODUCTS,
-  formatPrice,
-  productDescription,
-  productHeading,
-  productListPrice,
-  type CatalogProductCode,
-} from "@/lib/products";
+import { formatPrice } from "@/lib/products";
 import { platformTests } from "@/lib/platform/tests";
 import { botCopy, SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
 import type { KnowledgeDoc } from "./types";
@@ -98,32 +89,43 @@ export function supportDocs(): KnowledgeDoc[] {
     });
 }
 
-/** The payable catalogue: what a thing is called, what it costs, how it is delivered. */
-export function productDocs(): KnowledgeDoc[] {
-  return (Object.keys(PRODUCTS) as CatalogProductCode[]).map((code) => {
-    const price = productListPrice(code);
-    const fulfilment = PRODUCTS[code].fulfilment;
-    const programme = programs.find((entry) => entry.slug === code);
+/** One offer as the corpus describes it — read by the server from `experience_offers`. */
+export type CorpusOffer = {
+  code: string;
+  heading: string;
+  description: string | null;
+  mode: "checkout" | "lead" | "free";
+  /** The current price, whole units; null for «ціна за запитом». */
+  amount: number | null;
+  currency: string;
+  delivery: "course" | "cabinet";
+  href: string | null;
+};
 
-    return {
-      id: `product:${code}`,
-      kind: "product" as const,
-      title: productHeading(code, "uk"),
-      href: programme?.href ?? null,
-      text: paragraphs([
-        productHeading(code, "uk"),
-        productDescription(code, "uk"),
-        price === null ? "Ціна узгоджується окремо." : `Ціна: ${formatPrice(price, PRODUCTS[code].currency)}.`,
-        fulfilment.kind === "course"
-          ? "Доступ відкривається в кабінеті, у розділі «Бібліотека»."
-          : "Після оплати замовлення зʼявляється у вашому кабінеті на платформі.",
-      ]),
-      locale: "uk" as const,
-      audience: "public" as const,
-      source: "src/lib/products.ts",
-      updatedAt: null,
-    };
-  });
+/** The offers on sale: what a thing is called, what it costs, how it is delivered. */
+export function productDocs(offers: CorpusOffer[]): KnowledgeDoc[] {
+  return offers.map((offer) => ({
+    id: `product:${offer.code}`,
+    kind: "product" as const,
+    title: offer.heading,
+    href: offer.href,
+    text: paragraphs([
+      offer.heading,
+      offer.description,
+      offer.mode === "free"
+        ? "Безкоштовно."
+        : offer.mode === "lead" || offer.amount === null
+          ? "Ціна узгоджується окремо."
+          : `Ціна: ${formatPrice(offer.amount, offer.currency)}.`,
+      offer.delivery === "course"
+        ? "Доступ відкривається в кабінеті, у розділі «Бібліотека»."
+        : "Після оплати замовлення зʼявляється у вашому кабінеті на платформі.",
+    ]),
+    locale: "uk" as const,
+    audience: "public" as const,
+    source: "experience_offers",
+    updatedAt: null,
+  }));
 }
 
 /** The catalogue's own description of a programme — what the offer page says. */
@@ -286,14 +288,14 @@ export function policyDocs(): KnowledgeDoc[] {
 /**
  * The whole corpus.
  *
- * Courses are passed in rather than read here so the assembly stays pure: the
+ * Courses and offers are passed in rather than read here so the assembly stays pure: the
  * same function serves the live catalogue on a server and a fixture in a test,
  * and the test is what proves a course's lesson text never enters the index.
  */
-export function buildCorpus(input: { courses: Course[] }): KnowledgeDoc[] {
+export function buildCorpus(input: { courses: Course[]; offers?: CorpusOffer[] }): KnowledgeDoc[] {
   return [
     ...supportDocs(),
-    ...productDocs(),
+    ...productDocs(input.offers ?? []),
     ...programmeDocs(),
     ...courseDocs(input.courses),
     ...testDocs(),

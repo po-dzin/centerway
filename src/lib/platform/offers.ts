@@ -10,14 +10,14 @@
  *
  * TWO OWNERS, TWO TABLES, AND THAT IS THE POINT. What the course claims about
  * itself is the author's and lives on `lms_courses`. What it costs is the
- * owner's and lives on `lms_course_offers`, which the authoring API holds no
+ * owner's and lives on `experience_offers`, which the authoring API holds no
  * grant on. Reading them together here does not merge them: this module only
  * reads, and the only writer of a price is the admin surface.
  *
- * THE HAND-WRITTEN SIX ARE NOT TOUCHED. `PRODUCTS` stays authoritative for
- * every code it defines. A database offer can only ever answer to a
- * `course:<slug>` code, which `PRODUCTS` cannot contain, so the two namespaces
- * cannot collide and no existing purchase changes shape.
+ * ONE TABLE OF PRICES SINCE 2026-09-26. The hand-written six that used to sit
+ * beside it in `products.ts` are gone; every price, invoice line and old code
+ * spelling is a row of `experience_offers` or `offer_aliases`, and every door
+ * reaches it through `loadPayableOffer` below.
  */
 
 import { coverArtworkFraming } from "@/lib/lms/courseCover";

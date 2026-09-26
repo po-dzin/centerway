@@ -14,9 +14,8 @@ import offerStyles from "./PlatformOfferStyles";
  * handler that CREATES AN ORDER and redirects, and a prefetched Link would
  * open an invoice for every reader who scrolled past the button.
  *
- * The figure is the quoted price (`productListPrice`), never the charged one —
- * they diverge while the 1 ₴ QA window is open, and a page reading the charged
- * amount would advertise a hryvnia.
+ * The figure is the offer row's current price, the one the checkout charges;
+ * a former price is shown struck through only when it is higher.
  */
 export function OfferCheckoutPanel({
   commerce,

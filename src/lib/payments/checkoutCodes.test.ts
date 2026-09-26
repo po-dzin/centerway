@@ -77,6 +77,6 @@ describe("courseOfferCommerce", () => {
   });
 
   it("falls back to the form when nobody has priced it", () => {
-    expect(courseOfferCommerce("my-course", null)).toEqual({ mode: "lead", leadProductCode: "platform" });
+    expect(courseOfferCommerce("my-course", null)).toEqual({ mode: "lead", leadProductCode: "my-course" });
   });
 });

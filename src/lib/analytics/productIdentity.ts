@@ -19,71 +19,108 @@
  * folds them: both resolve through their course slug, because that is what the
  * buyer actually bought.
  *
- * The legacy half of that mapping is not invented here either — it is read off
- * `PRODUCTS[code].fulfilment.courseSlug`, the same field the checkout uses to
- * decide which course to open after payment. If those two ever disagreed, the
- * report would be the least of it.
+ * WHERE THE MAPPING COMES FROM (2026-09-26). The same tables the checkout
+ * reads: `offer_aliases` knows every spelling a code was sold under,
+ * `experience_offers` which thing each offer sells, and `lms_courses` which
+ * course delivers it. The hand-written `PRODUCTS` entries it used to read are
+ * gone. If the report and the checkout ever disagreed about what a code is,
+ * the report would be the least of it — so they read the same rows.
  */
 
 import type { Db } from "@/lib/db/server";
 import { parseCourseOfferCode } from "@/lms-core/offerCode";
-import { PRODUCTS } from "@/lib/products";
 
-/** The course a product code delivers, whichever vocabulary the code is in. */
-export function productCourseSlug(code: string | null | undefined): string | null {
-  const trimmed = (code ?? "").trim();
-  if (!trimmed) return null;
+const CONTENT_KINDS = new Set(["course", "mini", "checklist"]);
 
-  const fromOfferCode = parseCourseOfferCode(trimmed);
-  if (fromOfferCode) return fromOfferCode;
+export type ProductIdentity = {
+  /**
+   * The key a report groups on: one row per course, not per historical
+   * spelling of it. `course:<slug>` for anything a course delivers — its own
+   * offer, a format, a package, a legacy landing code; the offer's own code
+   * for a thing with no course (`consult`, `herbs`); the code itself when
+   * nothing knows it, so an unknown code stays visibly itself.
+   */
+  key(code: string | null | undefined, fallback?: string): string;
+  /** The title a person recognises, for a code or a key; null when there is none to show. */
+  title(code: string | null | undefined): string | null;
+};
 
-  const legacy = (PRODUCTS as Record<string, { fulfilment?: { kind: string; courseSlug?: string } }>)[trimmed];
-  const fulfilment = legacy?.fulfilment;
-  if (fulfilment?.kind === "course" && typeof fulfilment.courseSlug === "string") {
-    return fulfilment.courseSlug;
+type OfferRow = { id: string; code: string; experience_id: string };
+type ThingRow = { id: string; kind: string; title: string | null };
+type CourseRow = { slug: string; title: string | null; experience_id: string | null; created_at: string | null };
+
+async function rows<T>(db: Pick<Db, "from">, table: string, columns: string): Promise<T[]> {
+  try {
+    const { data, error } = await db.from(table as never).select(columns);
+    return error || !data ? [] : (data as unknown as T[]);
+  } catch {
+    return [];
   }
-  return null;
 }
 
 /**
- * The key a report should group on: one row per course, not per historical
- * spelling of the same course. Codes that deliver no course (a consultation,
- * a cabinet product, a code we no longer recognise) keep themselves.
+ * The vocabulary for one report, read once. Four small tables; a failed read
+ * degrades to "codes as themselves" rather than to a failed report.
  */
-export function canonicalProductKey(code: string | null | undefined, fallback = "unknown"): string {
-  const slug = productCourseSlug(code);
-  if (slug) return `course:${slug}`;
-  const trimmed = (code ?? "").trim();
-  return trimmed.length > 0 ? trimmed : fallback;
+export async function loadProductIdentity(db: Pick<Db, "from">): Promise<ProductIdentity> {
+  const [offers, aliases, things, courses] = await Promise.all([
+    rows<OfferRow>(db, "experience_offers", "id, code, experience_id"),
+    rows<{ code: string; offer_id: string }>(db, "offer_aliases", "code, offer_id"),
+    rows<ThingRow>(db, "experiences", "id, kind, title"),
+    rows<CourseRow>(db, "lms_courses", "slug, title, experience_id, created_at"),
+  ]);
+  return buildProductIdentity({ offers, aliases, things, courses });
 }
 
-/**
- * Titles for a batch of product codes, one query for the whole report.
- *
- * Keyed by canonical key, so a caller that grouped with `canonicalProductKey`
- * can look a row up directly. Courses are titled from `lms_courses` — the row
- * the author edits — so renaming a course in the builder renames it in every
- * report without a deploy.
- */
-export async function resolveProductTitles(
-  db: Pick<Db, "from">,
-  codes: Iterable<string | null | undefined>,
-): Promise<Map<string, string>> {
-  const slugs = new Set<string>();
-  for (const code of codes) {
-    const slug = productCourseSlug(code);
-    if (slug) slugs.add(slug);
+/** The pure half, for tests and for a caller that already holds the rows. */
+export function buildProductIdentity(input: {
+  offers: OfferRow[];
+  aliases: { code: string; offer_id: string }[];
+  things: ThingRow[];
+  courses: CourseRow[];
+}): ProductIdentity {
+  const offerById = new Map(input.offers.map((offer) => [offer.id, offer]));
+  const offerByCode = new Map<string, OfferRow>();
+  for (const alias of input.aliases) {
+    const offer = offerById.get(alias.offer_id);
+    if (offer) offerByCode.set(alias.code.toLowerCase(), offer);
+  }
+  // A live code wins over an alias, as it does at the checkout.
+  for (const offer of input.offers) offerByCode.set(offer.code.toLowerCase(), offer);
+
+  const thingById = new Map(input.things.map((thing) => [thing.id, thing]));
+  const courseTitle = new Map(input.courses.map((course) => [course.slug, course.title?.trim() || course.slug]));
+  const firstCourseOf = new Map<string, string>();
+  for (const course of [...input.courses].sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? ""))) {
+    if (course.experience_id && !firstCourseOf.has(course.experience_id)) {
+      firstCourseOf.set(course.experience_id, course.slug);
+    }
   }
 
-  const titles = new Map<string, string>();
-  if (slugs.size === 0) return titles;
-
-  const { data } = await db
-    .from("lms_courses")
-    .select("slug, title")
-    .in("slug", [...slugs]);
-  for (const row of data ?? []) {
-    titles.set(`course:${row.slug}`, row.title?.trim() || row.slug);
+  function key(code: string | null | undefined, fallback = "unknown"): string {
+    const trimmed = (code ?? "").trim();
+    if (!trimmed) return fallback;
+    const offer = offerByCode.get(trimmed.toLowerCase());
+    if (!offer) {
+      const slug = parseCourseOfferCode(trimmed);
+      return slug ? `course:${slug}` : trimmed;
+    }
+    const thing = thingById.get(offer.experience_id);
+    if (thing && CONTENT_KINDS.has(thing.kind)) {
+      const slug = parseCourseOfferCode(offer.code) ?? firstCourseOf.get(offer.experience_id);
+      if (slug) return `course:${slug}`;
+    }
+    return offer.code;
   }
-  return titles;
+
+  function title(code: string | null | undefined): string | null {
+    const canonical = key(code, "");
+    if (!canonical) return null;
+    const slug = parseCourseOfferCode(canonical);
+    if (slug) return courseTitle.get(slug) ?? null;
+    const offer = offerByCode.get(canonical.toLowerCase());
+    return (offer && thingById.get(offer.experience_id)?.title?.trim()) || null;
+  }
+
+  return { key, title };
 }

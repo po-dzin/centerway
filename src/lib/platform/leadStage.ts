@@ -24,7 +24,7 @@
  * finds nothing open the second time.
  */
 
-import { canonicalProductKey } from "@/lib/analytics/productIdentity";
+import { loadProductIdentity } from "@/lib/analytics/productIdentity";
 import type { Db } from "@/lib/db/server";
 
 /**
@@ -119,11 +119,12 @@ export async function closeWonLeadsForPurchase(
     const data = [...found.values()];
     if (data.length === 0) return { closed: 0, reason: "nothing_open" };
 
-    const paidKey = canonicalProductKey(params.productCode, "");
+    const identity = params.scope === "all_open" ? null : await loadProductIdentity(db);
+    const paidKey = identity?.key(params.productCode, "") ?? "";
     const matching =
       params.scope === "all_open"
         ? data
-        : data.filter((row) => paidKey !== "" && canonicalProductKey(row.product_code, "") === paidKey);
+        : data.filter((row) => paidKey !== "" && identity?.key(row.product_code, "") === paidKey);
 
     const ids = matching.map((row) => row.id).filter(Boolean);
     if (ids.length === 0) return { closed: 0, reason: "nothing_open" };

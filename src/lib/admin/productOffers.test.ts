@@ -17,15 +17,20 @@ vi.mock("@/lib/auth/adminClient", () => ({
   adminClient: () => db,
 }));
 
-const { listProductOffers, saveProductOffer, setProductOfferActive, PRICEABLE_PRODUCTS } =
-  await import("./productOffers");
+const { listProductOffers, saveProductOffer, setProductOfferActive } = await import("./productOffers");
 
 function seed(offers: Row[] = []) {
   // Prices live in the one table since 2026-09-25; a product's row hangs off
   // its thing in the registry, found by the same slug as the code.
   db.tables = {
     experience_offers: offers,
-    experiences: ["herbs", "consult", "irem-individual"].map((slug) => ({ id: `exp-${slug}`, slug })),
+    experiences: [
+      { id: "exp-herbs", slug: "herbs", kind: "physical", title: "Фітозбір" },
+      { id: "exp-consult", slug: "consult", kind: "consultation", title: "Консультація" },
+      { id: "exp-irem-individual", slug: "irem-individual", kind: "package", title: "IREM — індивідуально" },
+      // A course is priced on the catalogue screen, never here.
+      { id: "exp-way21", slug: "way21", kind: "course", title: null },
+    ],
   };
   db.failures = {};
 }
@@ -51,7 +56,7 @@ describe("listProductOffers", () => {
     // The point of the screen: a product with nothing in the table must
     // still appear, or the owner cannot give it its first price.
     const rows = await listProductOffers();
-    expect(rows.map((r) => r.code).sort()).toEqual(PRICEABLE_PRODUCTS.map((p) => p.code).sort());
+    expect(rows.map((r) => r.code).sort()).toEqual(["consult", "herbs", "irem-individual"]);
     expect(rows.every((r) => r.offer === null)).toBe(true);
   });
 

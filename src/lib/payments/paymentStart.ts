@@ -38,10 +38,9 @@ export type PaymentStartInput = {
   /**
    * WHAT IS BEING SOLD, ALREADY RESOLVED.
    *
-   * It used to be a product CODE, and this function looked the price up in
-   * `PRODUCTS`. That worked only while every sellable thing was written in that
-   * file. A course out of the builder is priced in `lms_course_offers`, so the
-   * caller resolves the offer (`loadPayableOffer`) and refuses the payment when
+   * It used to be a product CODE, and this function looked the price up in a
+   * constant table. Prices live in `experience_offers` now, so the caller
+   * resolves the offer (`loadPayableOffer`) and refuses the payment when
    * there is none — which is a decision a route can make and this function
    * cannot.
    */

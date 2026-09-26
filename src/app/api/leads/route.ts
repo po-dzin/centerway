@@ -107,11 +107,11 @@ export async function POST(req: NextRequest) {
      found through `offer_aliases` like every other door — so `ideal-body`,
      `natural-body` and `course:natural-body` are one program's requests, and a
      guided FORMAT (`way21-support`) arrives under its own code rather than as a
-     generic consultation. `platform` is the one code that names no offer: the
-     platform's own «ask us» form. Anything else unknown is a consultation. */
+     generic consultation. A code no offer answers to — a page with no price
+     yet, the platform's own «ask us» form — is a request to the platform, not
+     a consultation nobody asked for. */
   const offer = await describeOffer(supabaseAdmin(), requested).catch(() => null);
-  const product: string =
-    offer?.offer.code ?? (requested?.trim().toLowerCase() === "platform" ? "platform" : "consult");
+  const product: string = offer?.offer.code ?? "platform";
 
   if (!name || (!phone && !email)) {
     return cors(NextResponse.json({ ok: false, error: "contact_required" }, { status: 400 }));
