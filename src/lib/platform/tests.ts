@@ -1,4 +1,4 @@
-import type { PlatformOfferArtwork } from "@/lib/platform/content";
+import { platformPageArtwork, type PlatformOfferArtwork } from "@/lib/platform/content";
 
 export type PlatformTestStatus = "active" | "planned";
 
@@ -42,11 +42,7 @@ export const platformTests: PlatformTestEntry[] = [
       "Самооцінка тіла, енергії, емоційних реакцій, мислення і темпу життя: короткий профіль доші як робоча гіпотеза і перший доречний крок.",
     reads: "тіло, сон, енергія, емоції, мислення",
     visual: "stone",
-    artwork: {
-      desktop: "/cw/platform/pages/dosha-hero-variant-ceramic-v1.webp",
-      desktopPosition: "center 32%",
-      mobilePosition: "center 34%",
-    },
+    artwork: platformPageArtwork.doshaTest,
     status: "active",
   },
   {
@@ -60,12 +56,7 @@ export const platformTests: PlatformTestEntry[] = [
       "Не конституція, а те, що відбувається зараз: яка з трьох сил вийшла з рівноваги — вата, пітта чи капха з амою — і що з цим робити в режимі, їжі та диханні.",
     reads: "ранок, травлення, розум, тіло, сон, емоційний осад",
     visual: "water",
-    artwork: {
-      desktop: "/cw/platform/pages/dosha-hero-variant-charcoal-v2.webp",
-      card: "/cw/platform/pages/dosha-hero-variant-charcoal-v2-960.webp",
-      desktopPosition: "center 50%",
-      mobilePosition: "center 50%",
-    },
+    artwork: platformPageArtwork.balance,
     status: "active",
   },
   {
