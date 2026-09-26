@@ -13,18 +13,12 @@
  * `docs/checkout-test-flow-2026-08-21.md` settled for the landings, so the two
  * surfaces cannot drift into disagreeing about what is buyable.
  *
- * The quoted figure comes from `productListPrice`, never from the charged
- * amount — see the note above `PRODUCTS` in src/lib/products.ts.
+ * Every figure comes from `experience_offers`, the table the checkout charges
+ * from — through `loadCourseOffer` for a course and `loadPayableOffer` for
+ * anything else. There is no hand-written price to fall back to any more.
  */
 
-import {
-  formatPrice,
-  productListPrice,
-  PRODUCTS,
-  type CatalogProductCode,
-  type PayableOffer,
-  type PayableProductCode,
-} from "@/lib/products";
+import { formatPrice, type PayableOffer, type PayableProductCode } from "@/lib/products";
 import type { CourseOffer } from "@/lib/platform/offers";
 
 export type OfferCommerce =
@@ -72,31 +66,14 @@ export type OfferCommerce =
     };
 
 /**
- * Catalogue slug → payable product.
- *
- * Explicit, not derived: the two vocabularies genuinely differ ("reboot" is
- * sold as "short"), and a clever mapping would silently make a new catalogue
- * entry buyable the moment someone happened to name it after a product.
+ * The code a lead from this page is filed under: the page's own slug. The lead
+ * route resolves it through `offer_aliases` like every other door —
+ * `natural-body` reaches its course's offer, `herbs` and `consult` their own —
+ * so no table of slugs is kept here.
  */
-const PAYABLE_BY_SLUG: Partial<Record<string, CatalogProductCode>> = {
-  reboot: "short",
-  "reset-day": "reset-day",
-  way21: "way21",
-  irem: "irem",
-  herbs: "herbs",
-};
-
-/**
- * The lead code for an offer that is not self-serve.
- *
- * `natural-body` has no price and no funnel of its own; the consultation is
- * agreed in conversation on purpose. Both are in LEAD_PRODUCT_CODES.
- */
-const LEAD_BY_SLUG: Partial<Record<string, string>> = {
-  "natural-body": "natural-body",
-  consult: "consult",
-  herbs: "herbs",
-};
+function leadCode(slug: string): string {
+  return slug;
+}
 
 /** The site-relative link that starts a checkout for one payable code. */
 function checkoutHref(productCode: PayableProductCode, slug: string): string {
@@ -119,20 +96,8 @@ function checkoutHref(productCode: PayableProductCode, slug: string): string {
  * the former: it is rendered only when it is strictly greater.
  */
 export function courseOfferCommerce(slug: string, offer: CourseOffer | null): OfferCommerce {
-  /* NO ROW IS NOT THE SAME AS NOT FOR SALE — it means nobody has written the
-     course's price into `lms_course_offers` YET, and two of them are already
-     sold under a hand-written code: `/programs/reboot` charges `short` and
-     `/programs/irem` charges `irem`, both live, both through a Telegram bot
-     that the course-entitlement path does not deliver. When those two pages
-     stopped being hand-written this branch was the whole difference between
-     keeping a working checkout and quietly replacing it with a lead form.
-
-     So the hand-written answer is the fallback rather than a lead code guessed
-     from nothing: the database offer wins where there is one, and where there
-     is not, the offer converts exactly the way it did the day before it moved.
-     `slug` is the PROGRAM slug for that reason — it is the vocabulary both
-     tables below are keyed in. */
-  if (!offer) return resolveOfferCommerce(slug);
+  /* No active offer row: nobody has agreed a price, so the page asks. */
+  if (!offer) return { mode: "lead", leadProductCode: leadCode(slug) };
 
   if (offer.amount === 0) {
     return {
@@ -160,47 +125,16 @@ export function courseOfferCommerce(slug: string, offer: CourseOffer | null): Of
   };
 }
 
-export function resolveOfferCommerce(slug: string): OfferCommerce {
-  const productCode = PAYABLE_BY_SLUG[slug];
-
-  /* No agreed price means no self-serve checkout — the offer falls back to the
-     form. `herbs` is the live case: it has a WayForPay route and a 1 ₴ QA
-     amount, but no price anyone has decided to charge. A buy button over a
-     figure nobody agreed is worse than asking. */
-  const listed = productCode ? productListPrice(productCode) : null;
-
-  if (productCode && listed !== null) {
-    return {
-      mode: "checkout",
-      productCode,
-      checkoutHref: checkoutHref(productCode, slug),
-      price: formatPrice(listed, PRODUCTS[productCode].currency),
-      compareAtPrice: null,
-      amount: listed,
-      currency: PRODUCTS[productCode].currency,
-    };
-  }
-
-  return { mode: "lead", leadProductCode: LEAD_BY_SLUG[slug] ?? "platform" };
-}
-
 /**
  * How a PRODUCT that is not a course of its own converts.
  *
- * `resolveOfferCommerce` reads `products.ts`, where these prices no longer
- * live: since 2026-09-03 the owner sets them in `product_offers` from the admin
- * catalogue. Left on the constant, the platform page would keep showing an
- * enquiry form for a product the owner had just priced — the landing would sell
- * it and /products/<slug> would still be asking, which is the two-doors-
- * disagree bug one table over.
- *
- * So it asks the payable offer, exactly as the landing's CTA gate does. `null`
+ * It asks the payable offer, exactly as the landing's CTA gate does. `null`
  * covers every way there is no price to charge — none agreed, a figure quoted
  * beside a lead form, an offer withdrawn — and all of them mean the form.
  */
 export function productOfferCommerce(slug: string, offer: PayableOffer | null): OfferCommerce {
   if (!offer || offer.amount <= 0) {
-    return { mode: "lead", leadProductCode: LEAD_BY_SLUG[slug] ?? "platform" };
+    return { mode: "lead", leadProductCode: leadCode(slug) };
   }
 
   return {

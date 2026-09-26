@@ -6,18 +6,14 @@ import { loadPayableOffer } from "@/lib/platform/offers";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { normalizeCustomerEmail, upsertCustomerByContact } from "@/lib/platform/customerIdentity";
 import { closeWonLeadsForPurchase } from "@/lib/platform/leadStage";
-import { extractPaymentMeta } from "@/lib/payments/paymentMeta";
+import { gatewayFor, type SignatureCheck } from "@/lib/payments/gateway";
 import {
-  buildWfpAcceptResponse,
+  eventTypeForOutcome,
   nextOrderStatus,
   orderStatusForOutcome,
   statusesProtectedFrom,
-  verifyWfpCallbackSignature,
-  wfpCallbackOutcome,
-  wfpEventTypeFromStatus,
-  type WfpCallbackOutcome,
-  type WfpSignatureCheck,
-} from "@/lib/payments/wfp";
+  type PaymentOutcome,
+} from "@/lib/payments/orderStatus";
 import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
 import { isStaffOrder } from "@/lib/tracking/staffOrders";
 import { buildPurchaseCapiEventPayload, type PendingPurchaseCapiJobPayload } from "@/lib/jobs/worker";
@@ -52,10 +48,6 @@ async function readBodyParams(req: NextRequest): Promise<Payload> {
   return {};
 }
 
-function norm(v: unknown): string | null {
-  return typeof v === "string" && v.trim() ? v.trim() : null;
-}
-
 /**
  * Attach the no-downgrade rule to a status write as a WHERE clause, so the row
  * itself refuses the transition instead of relying on a value we read earlier.
@@ -66,7 +58,7 @@ function norm(v: unknown): string | null {
  */
 function guardStatus<T extends { not(column: string, operator: string, value: string): T }>(
   query: T,
-  outcome: WfpCallbackOutcome,
+  outcome: PaymentOutcome,
 ): T {
   const protectedStatuses = statusesProtectedFrom(outcome);
   if (protectedStatuses.length === 0) return query;
@@ -77,50 +69,6 @@ function guardStatus<T extends { not(column: string, operator: string, value: st
    a webhook that lower-cased differently from the lookup would create a second
    customer for the same person. */
 const normEmail = normalizeCustomerEmail;
-
-function parseUnixSeconds(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    if (value > 1_000_000_000_000) return Math.floor(value / 1000);
-    if (value > 1_000_000_000) return Math.floor(value);
-    return null;
-  }
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-
-  if (/^\d+$/.test(trimmed)) {
-    const numeric = Number(trimmed);
-    if (!Number.isFinite(numeric)) return null;
-    if (numeric > 1_000_000_000_000) return Math.floor(numeric / 1000);
-    if (numeric > 1_000_000_000) return Math.floor(numeric);
-  }
-
-  const parsedMs = Date.parse(trimmed);
-  if (!Number.isFinite(parsedMs)) return null;
-  return Math.floor(parsedMs / 1000);
-}
-
-function resolvePaymentEventTime(payload: Payload): number {
-  const candidates = [
-    payload["transactionDate"],
-    payload["transaction_date"],
-    payload["paymentDate"],
-    payload["payment_date"],
-    payload["processingDate"],
-    payload["processing_date"],
-    payload["updatedDate"],
-    payload["updated_at"],
-    payload["createdDate"],
-    payload["created_at"],
-  ];
-
-  for (const candidate of candidates) {
-    const parsed = parseUnixSeconds(candidate);
-    if (parsed !== null) return parsed;
-  }
-
-  return Math.floor(Date.now() / 1000);
-}
 
 async function enqueueTelegramSaleReport(sb: ReturnType<typeof supabaseAdmin>, orderRef: string): Promise<void> {
   const { data: existingTelegramJob } = await sb
@@ -144,32 +92,40 @@ async function enqueueTelegramSaleReport(sb: ReturnType<typeof supabaseAdmin>, o
   }
 }
 
+/**
+ * WayForPay's address. Baked into every invoice it has issued, so it stays
+ * while any of them can still call back; a second gateway gets its own route
+ * and reuses everything below through `PaymentGateway`.
+ */
+const gateway = gatewayFor("wfp");
+
 export async function POST(req: NextRequest) {
   const payload = await readBodyParams(req);
 
-  const orderRef = norm(payload["orderReference"] ?? payload["order_ref"]);
-  if (!orderRef) {
+  const callback = gateway.readCallback(payload);
+  if (!callback) {
     return NextResponse.json({ ok: false, error: "missing_order_ref" }, { status: 400 });
   }
+  const { orderRef } = callback;
 
   /* What this callback means, kept as its own value rather than a boolean. The
      status each table ends up holding is decided per row, against what that row
      already holds — see `nextOrderStatus`. */
-  const outcome = wfpCallbackOutcome(payload);
+  const outcome = callback.outcome;
   const paid = outcome === "approved";
   /* What this callback asserts about the payment, before any row's own history
      is taken into account. It is what the `events` row records — an event is a
      report of what arrived, not of what we decided to do about it. */
   const callbackStatus = orderStatusForOutcome(outcome) ?? "created";
-  const eventType = wfpEventTypeFromStatus(payload);
+  const eventType = eventTypeForOutcome(outcome);
 
   // The signature is the gate, and it stands before every write below: an unsigned or
   // wrongly-signed callback must not reach `payments`, must not flip `orders.status`,
   // and must not enqueue a Purchase. Anyone can POST here, so without this check a
   // forged `orderReference` bought free access and sent Meta a sale that never happened.
-  let sig: WfpSignatureCheck;
+  let sig: SignatureCheck;
   try {
-    sig = verifyWfpCallbackSignature(payload);
+    sig = gateway.verifyCallback(payload);
   } catch (sigErr) {
     console.error("[wfp-sig] verification errored", {
       orderRef,
@@ -188,14 +144,13 @@ export async function POST(req: NextRequest) {
 
   const sb = supabaseAdmin();
 
-  // мета из payload: rrn/email/phone/amount/currency и т.д.
-  const meta = extractPaymentMeta(payload);
-  const providerTxId =
-    norm(meta.rrn) ??
-    norm(payload["rrn"]) ??
-    norm(payload["transactionId"]) ??
-    norm(payload["payment_id"]) ??
-    norm(payload["id"]);
+  const meta = {
+    email: callback.payer.email,
+    phone: callback.payer.phone,
+    amount: callback.amount,
+    currency: callback.currency,
+  };
+  const providerTxId = callback.providerTxId;
   const safeProviderTxId = providerTxId ?? `order:${orderRef}`;
 
   try {
@@ -224,7 +179,7 @@ export async function POST(req: NextRequest) {
     // ⚠️ provider обязателен (у тебя NOT NULL) — ставим явно
     // ⚠️ raw_payload NOT NULL — кладём payload
     const { error: pErr } = await sb.from("payments").insert({
-      provider: "wfp",
+      provider: gateway.id,
       order_ref: orderRef,
       provider_tx_id: safeProviderTxId,
       status: callbackStatus,
@@ -256,7 +211,7 @@ export async function POST(req: NextRequest) {
             sb.from("payments").update({ status: nextStatus, raw_payload: payload }),
             outcome,
           )
-            .eq("provider", "wfp")
+            .eq("provider", gateway.id)
             .eq("order_ref", orderRef);
           if (pFixErr) errors.push(`payments_reconcile: ${pFixErr.message ?? "unknown"}`);
         }
@@ -324,12 +279,12 @@ export async function POST(req: NextRequest) {
             customer_id: order?.customer_id ?? customerId ?? null,
             payload: {
               status: callbackStatus,
-              provider: "wfp",
+              provider: gateway.id,
               provider_tx_id: safeProviderTxId,
               amount: meta.amount ?? null,
               currency: meta.currency ?? null,
               product_code: order?.product_code ?? null,
-              raw_status: norm(payload["transactionStatus"] ?? payload["status"]) ?? null,
+              raw_status: callback.rawStatus,
             },
           });
           if (eErr) errors.push(`events: ${eErr.message ?? "unknown"}`);
@@ -395,12 +350,11 @@ export async function POST(req: NextRequest) {
           .limit(1)
           .maybeSingle();
         if (!existingPurchaseJob?.id) {
-          const amountNumber =
-            meta.amount != null && Number.isFinite(Number(meta.amount)) ? Number(meta.amount) : undefined;
+          const amountNumber = meta.amount ?? undefined;
           const capiPayload: PendingPurchaseCapiJobPayload = {
             event_name: "Purchase",
             order_ref: orderRef,
-            payment_event_time: resolvePaymentEventTime(payload),
+            payment_event_time: callback.occurredAt ?? Math.floor(Date.now() / 1000),
             value: amountNumber,
             currency: meta.currency ?? "UAH",
             email: meta.email ?? null,
@@ -461,7 +415,7 @@ export async function POST(req: NextRequest) {
              Purchase already carry — so one product reads as one name in the
              receipt, in Meta and in the operator's report. */
           productTitle: offer?.pixelContentName ?? "Ваше замовлення",
-          amount: meta.amount != null && Number.isFinite(Number(meta.amount)) ? Number(meta.amount) : null,
+          amount: meta.amount,
           currency: meta.currency ?? "UAH",
           fulfilment: offer?.fulfilment ?? { kind: "cabinet" },
           orderRef,
@@ -494,15 +448,15 @@ export async function POST(req: NextRequest) {
 
     // The gateway's stop signal. Without this exact signed body it keeps
     // redelivering for four days — which is what it has been doing all along.
-    const accept = buildWfpAcceptResponse(orderRef);
-    if (!accept) {
+    const ack = gateway.acknowledge(orderRef);
+    if (!ack) {
       // Unreachable in practice: the signature gate above already refused the
       // request when the secret is missing. Kept because "cannot sign" must
       // never silently become "accepted".
       console.error("[wfp webhook] cannot sign acceptance, secret missing", { orderRef });
       return NextResponse.json({ ok: false, error: "missing_secret" }, { status: 500 });
     }
-    return NextResponse.json(accept);
+    return NextResponse.json(ack.body, { status: ack.status });
   } catch (e) {
     return NextResponse.json({ ok: false, error: "webhook_failed", details: errorMessage(e) }, { status: 500 });
   }

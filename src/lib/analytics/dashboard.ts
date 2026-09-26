@@ -14,7 +14,7 @@ import { normalizePixelEventNameStrict } from "@/lib/analytics/pixelEvents";
 import { unstable_cache } from "next/cache";
 import { adminClient } from "@/lib/auth/adminClient";
 import { normalizeTrackingString, resolveFbc } from "@/lib/tracking/metaClickIds";
-import { canonicalProductKey, resolveProductTitles } from "@/lib/analytics/productIdentity";
+import { loadProductIdentity } from "@/lib/analytics/productIdentity";
 
 type CapiEventName = "ViewContent" | "InitiateCheckout" | "Purchase";
 
@@ -142,7 +142,7 @@ type CampaignBreakdownRow = {
   currency: string;
 };
 
-/* `product_code` is the CANONICAL key (see `canonicalProductKey`), not the
+/* `product_code` is the CANONICAL key (see `ProductIdentity.key`), not the
    raw `orders.product_code` — one row per course rather than one per
    historical spelling of it. `product_title` is the course's own title out
    of `lms_courses`, null for a code that delivers no course. */
@@ -1016,6 +1016,7 @@ export async function computeAnalyticsPayload(range: DateRange, campaignLevel: C
     return metaAliasToName.get(`loose:${loose}`) ?? null;
   };
 
+  const identity = await loadProductIdentity(db);
   let paidRevenueFact = 0;
   for (const row of revenueOrderRows) {
     const createdAt = typeof row.created_at === "string" ? row.created_at : null;
@@ -1031,7 +1032,7 @@ export async function computeAnalyticsPayload(range: DateRange, campaignLevel: C
       knownMetaIds,
     });
     const source = resolveMetaCanonicalName(rawSource) ?? rawSource;
-    const productCode = canonicalProductKey(row.product_code);
+    const productCode = identity.key(row.product_code);
     const existing = resolveRowByAliases([source]) ?? {
       source_campaign: source,
       total_orders: 0,
@@ -1125,11 +1126,10 @@ export async function computeAnalyticsPayload(range: DateRange, campaignLevel: C
   /* Titles last, in one query for the whole breakdown: the rows are already
      folded onto canonical keys by now, so this asks `lms_courses` for each
      course once rather than once per order. */
-  const productTitles = await resolveProductTitles(db, productMap.keys());
   const productData = Array.from(productMap.values())
     .map((row) => ({
       ...row,
-      product_title: productTitles.get(row.product_code) ?? null,
+      product_title: identity.title(row.product_code),
       share_revenue_percent: Number(safeDivide(row.total_revenue * 100, paidRevenueFact).toFixed(2)),
     }))
     .sort((a, b) => {

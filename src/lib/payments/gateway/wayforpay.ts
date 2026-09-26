@@ -1,6 +1,8 @@
 import crypto from "crypto";
 
-export type WfpEventType = "payment_paid" | "payment_failed" | "payment_pending";
+import type { PaymentOutcome } from "@/lib/payments/orderStatus";
+
+import type { PaymentGateway, SignatureCheck } from "./types";
 
 function norm(v: unknown): string | null {
   return typeof v === "string" && v.trim() ? v.trim() : null;
@@ -24,11 +26,7 @@ export function computeWfpCallbackSignature(payload: Record<string, string>, sec
   return crypto.createHmac("md5", secret).update(signString, "utf8").digest("hex");
 }
 
-export type WfpSignatureCheck = {
-  ok: boolean; // signature present AND matches
-  present: boolean; // merchantSignature was included in the payload
-  reason: "match" | "mismatch" | "missing_signature" | "missing_secret";
-};
+export type WfpSignatureCheck = SignatureCheck;
 
 /**
  * Verify the inbound WayForPay callback signature. This is the gate: a callback
@@ -55,38 +53,6 @@ export function verifyWfpCallbackSignature(payload: Record<string, string>): Wfp
   return { ok, present: true, reason: ok ? "match" : "mismatch" };
 }
 
-// ─── WHAT A CALLBACK MEANS, AND WHAT IT IS ALLOWED TO DO ───────────────────
-
-/**
- * A callback's meaning, in the only four flavours an order can act on.
- *
- * The webhook used to collapse this to a boolean — approved, or not approved —
- * and everything wrong below flowed from that one simplification. "Not
- * approved" was written to the order as `created`, which made a refund
- * indistinguishable from an abandoned cart, and, far worse, made a *late
- * declined callback* indistinguishable from an instruction to un-sell a course
- * somebody had already paid for.
- */
-export type WfpCallbackOutcome = "approved" | "refunded" | "rejected" | "pending";
-
-/**
- * The statuses `orders.status` and `payments.status` are allowed to hold.
- *
- * `ORDER_STATUSES` is the same set at runtime, because the column is free text
- * in Postgres — there is no CHECK constraint standing behind this type. Anything
- * that writes the column from outside the callback (the admin reconcile, for
- * one) has to validate against something, and it must be THIS something: a
- * second hand-written list would eventually disagree with the transition rules
- * below, and the disagreement would show up as a customer losing a course.
- */
-export const ORDER_STATUSES = ["created", "paid", "refunded"] as const;
-
-export type OrderStatus = (typeof ORDER_STATUSES)[number];
-
-export function isOrderStatus(value: unknown): value is OrderStatus {
-  return typeof value === "string" && (ORDER_STATUSES as readonly string[]).includes(value);
-}
-
 /* WayForPay's own vocabulary. `Voided` sits with the refunds because the money
    goes back to the buyer either way — the difference is whether the payment had
    settled, which matters to accounting and not to entitlement. Anything not
@@ -97,7 +63,7 @@ const WFP_APPROVED = new Set(["approved", "success", "paid"]);
 const WFP_REFUNDED = new Set(["refunded", "voided", "void"]);
 const WFP_REJECTED = new Set(["declined", "expired", "failed"]);
 
-export function wfpCallbackOutcome(payload: Record<string, string>): WfpCallbackOutcome {
+export function wfpCallbackOutcome(payload: Record<string, string>): PaymentOutcome {
   const raw = norm(payload["transactionStatus"] ?? payload["status"])?.toLowerCase() ?? "";
   if (WFP_APPROVED.has(raw)) return "approved";
   if (WFP_REFUNDED.has(raw)) return "refunded";
@@ -111,79 +77,6 @@ export function wfpCallbackOutcome(payload: Record<string, string>): WfpCallback
    module now guards against: everything that was not an approval became one
    undifferentiated "not paid", which the webhook then wrote over a paid order.
    Call `wfpCallbackOutcome` and handle what it actually says. */
-
-export function wfpEventTypeFromStatus(payload: Record<string, string>): "payment_paid" | "payment_failed" | null {
-  const outcome = wfpCallbackOutcome(payload);
-  if (outcome === "approved") return "payment_paid";
-  if (outcome === "pending") return null;
-  return "payment_failed";
-}
-
-/** The status this outcome writes when nothing stands in its way. */
-export function orderStatusForOutcome(outcome: WfpCallbackOutcome): OrderStatus | null {
-  switch (outcome) {
-    case "approved":
-      return "paid";
-    case "refunded":
-      return "refunded";
-    case "rejected":
-      return "created";
-    case "pending":
-      return null;
-  }
-}
-
-/**
- * The statuses this outcome must never overwrite — the guard, stated once so
- * that the in-memory decision and the SQL predicate cannot drift apart.
- *
- * WHY THERE HAS TO BE A GUARD AT ALL. WayForPay redelivers a service callback
- * for up to four days and promises nothing about the order they arrive in. A
- * buyer whose card is declined and who immediately retries on the same invoice
- * therefore produces two callbacks, Declined and Approved, that can land in
- * either sequence — and until 2026-08-29 we never returned the signed
- * acceptance that stops redelivery, so every one of those callbacks was
- * arriving again and again for days.
- *
- * This is not hypothetical. Four production orders (2026-04-12, 04-25, 04-27,
- * 06-12) carry exactly that pair on one order reference. They are `paid` today
- * because the approval happened to be written last. Had a redelivered Declined
- * landed after it, the old code would have written `created` over `paid`, and
- * `acceptedPaidOrders` — which asks only whether the status reads "paid" —
- * would have closed the course on a paying customer, with no event, no alert
- * and no trace of why.
- *
- * A refund is the one thing that may take access away, and once taken it is
- * final for that reference: a repeat purchase gets a new one.
- */
-export function statusesProtectedFrom(outcome: WfpCallbackOutcome): OrderStatus[] {
-  switch (outcome) {
-    case "approved":
-      return ["refunded"];
-    case "rejected":
-      return ["paid", "refunded"];
-    case "refunded":
-    case "pending":
-      return [];
-  }
-}
-
-/**
- * The status to write for this callback, or `null` to leave the row untouched.
- *
- * `current` is deliberately `string | null` rather than `OrderStatus`: it comes
- * out of the database, where the column is free text, and a value this function
- * does not recognise must not be treated as an empty one.
- */
-export function nextOrderStatus(current: string | null | undefined, outcome: WfpCallbackOutcome): OrderStatus | null {
-  const target = orderStatusForOutcome(outcome);
-  if (!target) return null;
-
-  const held = norm(current ?? null)?.toLowerCase() ?? null;
-  if (held && statusesProtectedFrom(outcome).includes(held as OrderStatus)) return null;
-
-  return target;
-}
 
 // ─── The ANSWER WayForPay requires, which is not an HTTP status ─────────────
 
@@ -252,3 +145,161 @@ export function buildWfpAcceptResponse(
 
   return { orderReference, status: WFP_ACCEPT_STATUS, time: nowSeconds, signature };
 }
+
+// ─── The gateway, as the rest of the payment path sees it ──────────────────
+
+const WFP_API_URL = "https://api.wayforpay.com/api";
+const WFP_ENV = ["WFP_MERCHANT_ACCOUNT", "WFP_SECRET_KEY", "WFP_MERCHANT_DOMAIN"] as const;
+
+/** The invoice line: WayForPay refuses a product name over 255 characters. */
+export function wfpLineTitle(input: string): string {
+  const flat = input
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return flat.length <= 255 ? flat : `${flat.slice(0, 252)}...`;
+}
+
+/** Seconds from whichever date field this callback carries, or null. */
+function callbackTime(payload: Record<string, string>): number | null {
+  const candidates = [
+    payload["transactionDate"],
+    payload["transaction_date"],
+    payload["paymentDate"],
+    payload["payment_date"],
+    payload["processingDate"],
+    payload["processing_date"],
+    payload["updatedDate"],
+    payload["updated_at"],
+    payload["createdDate"],
+    payload["created_at"],
+  ];
+  for (const candidate of candidates) {
+    const trimmed = norm(candidate);
+    if (!trimmed) continue;
+    const numeric = Number(trimmed);
+    if (Number.isFinite(numeric)) {
+      if (numeric > 1_000_000_000_000) return Math.floor(numeric / 1000);
+      if (numeric > 1_000_000_000) return Math.floor(numeric);
+    }
+    const parsedMs = Date.parse(trimmed);
+    if (Number.isFinite(parsedMs)) return Math.floor(parsedMs / 1000);
+  }
+  return null;
+}
+
+function wfpAmount(payload: Record<string, string>): number | null {
+  for (const key of ["amount", "paymentAmount", "orderAmount"]) {
+    const value = norm(payload[key]);
+    if (value !== null && Number.isFinite(Number(value))) return Number(value);
+  }
+  return null;
+}
+
+export const wayforpay: PaymentGateway = {
+  id: "wfp",
+  /* No transaction split: WayForPay can hold several payout accounts for ONE
+     merchant, not route a payment to another merchant. Authors' parts are
+     accrued in `order_shares` and paid out by hand. */
+  supportsSplit: false,
+  callbackPath: "/api/wfp/webhook",
+
+  missingEnv() {
+    return WFP_ENV.filter((name) => !process.env[name]);
+  },
+
+  async createInvoice(request, fetchFn) {
+    if (request.splits?.length) return { ok: false, error: "gateway_split_unsupported" };
+
+    const merchantAccount = process.env.WFP_MERCHANT_ACCOUNT!;
+    const merchantDomainName = process.env.WFP_MERCHANT_DOMAIN!;
+    const lineTitle = wfpLineTitle(request.lineTitle);
+    const body: Record<string, unknown> = {
+      apiVersion: 1,
+      transactionType: "CREATE_INVOICE",
+      merchantAccount,
+      merchantDomainName,
+      orderReference: request.orderRef,
+      orderDate: request.orderDate,
+      amount: request.amount,
+      currency: request.currency,
+      productName: [lineTitle],
+      productPrice: [request.amount],
+      productCount: [1],
+      serviceUrl: request.callbackUrl,
+      returnUrl: request.returnUrl,
+    };
+    const signString = [
+      merchantAccount,
+      merchantDomainName,
+      request.orderRef,
+      request.orderDate,
+      request.amount,
+      request.currency,
+      lineTitle,
+      "1",
+      String(request.amount),
+    ].join(";");
+    body.merchantSignature = crypto
+      .createHmac("md5", process.env.WFP_SECRET_KEY!)
+      .update(signString, "utf8")
+      .digest("hex");
+
+    const response = await fetchFn(WFP_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const text = await response.text();
+    try {
+      const parsed = JSON.parse(text) as { invoiceUrl?: unknown; url?: unknown };
+      const payUrl = norm(parsed.invoiceUrl) ?? norm(parsed.url);
+      if (payUrl) return { ok: true, payUrl };
+    } catch {
+      // not JSON — reported below with the raw text
+    }
+    return { ok: false, error: "gateway_no_url", raw: text };
+  },
+
+  verifyCallback: verifyWfpCallbackSignature,
+
+  readCallback(payload) {
+    const orderRef = norm(payload["orderReference"] ?? payload["order_ref"]);
+    if (!orderRef) return null;
+    return {
+      orderRef,
+      outcome: wfpCallbackOutcome(payload),
+      rawStatus: norm(payload["transactionStatus"] ?? payload["status"]),
+      providerTxId:
+        norm(payload["rrn"]) ??
+        norm(payload["RRN"]) ??
+        norm(payload["transactionId"]) ??
+        norm(payload["payment_id"]) ??
+        norm(payload["id"]),
+      occurredAt: callbackTime(payload),
+      amount: wfpAmount(payload),
+      currency: norm(payload["currency"]) ?? norm(payload["orderCurrency"]) ?? norm(payload["paymentCurrency"]),
+      payer: {
+        email: norm(payload["email"]) ?? norm(payload["payerEmail"]),
+        phone: norm(payload["phone"]) ?? norm(payload["payerPhone"]),
+      },
+      raw: payload,
+    };
+  },
+
+  outcomeOf(rawStatus) {
+    return wfpCallbackOutcome({ transactionStatus: rawStatus ?? "" });
+  },
+
+  storedOutcome(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const record = raw as Record<string, unknown>;
+    const status = norm(record.transactionStatus) ?? norm(record.status);
+    return status ? wfpCallbackOutcome({ transactionStatus: status }) : null;
+  },
+
+  acknowledge(orderRef, nowSeconds) {
+    const accept = buildWfpAcceptResponse(orderRef, nowSeconds);
+    return accept ? { status: 200, body: accept } : null;
+  },
+};

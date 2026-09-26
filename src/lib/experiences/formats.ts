@@ -6,8 +6,6 @@ import { COURSE_LIST_TAG, courseTag } from "@/lib/lms/liveCatalog";
 import { courseOfferCode } from "@/lms-core";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-import { normalizeOfferCode } from "./offers";
-
 /**
  * FORMATS: ONE PROGRAM, SEVERAL WAYS THROUGH IT (2026-09-25).
  *
@@ -15,7 +13,8 @@ import { normalizeOfferCode } from "./offers";
  * cohort, with a guide. A format may open more than its program
  * (`experience_offer_items`): the Шлях 21 cohort also opens Reset Day and
  * Short. This module is the one reader of that shape for the storefront and
- * for the checkout, so the page cannot advertise a format the checkout refuses.
+ * for the storefront; the checkout reads the same rows through `describeOffer`,
+ * so the page cannot advertise a format the checkout refuses.
  *
  * ONLY APPROVED AND ACTIVE. An author's proposal (`review_status` draft /
  * proposed / declined) never reaches a buyer: the database refuses `active` on
@@ -282,124 +281,6 @@ export async function loadBundleHosts(courseSlug: string): Promise<BundleHost[] 
       courseSlug,
       error: error instanceof Error ? error.message : String(error),
     });
-    return null;
-  }
-}
-
-export type PayableFormat = {
-  code: string;
-  mode: "checkout" | "lead";
-  amount: number | null;
-  listAmount: number | null;
-  currency: string;
-  pixelContentName: string | null;
-  invoiceHeading: { uk: string; en: string } | null;
-  invoiceDescription: { uk: string; en: string } | null;
-  format: OfferFormat;
-  label: string;
-  courseSlug: string;
-  programSlug: string;
-  courseTitle: string;
-  courseStatus: string;
-  courseVisibility: string | null;
-};
-
-function localizedPair(value: unknown): { uk: string; en: string } | null {
-  const uk = ukLine(value);
-  if (!uk) return null;
-  const en = (value as { en?: unknown }).en;
-  return { uk, en: typeof en === "string" && en.trim() ? en : uk };
-}
-
-/**
- * A format by its checkout code, for the two doors that take money or a lead
- * (`/api/pay/start`, `/api/orders/create`, `/api/leads`). Uncached: price is
- * read at the moment it is charged.
- *
- * `null` for anything that is not an approved, active format of a program —
- * an unknown code is a 404 at the door, never someone else's product.
- */
-export async function resolveFormatOffer(code: unknown): Promise<PayableFormat | null> {
-  const key = normalizeOfferCode(code);
-  if (!key) return null;
-  try {
-    const db = supabaseAdmin();
-    const offer = await db
-      .from("experience_offers")
-      .select(
-        "code, mode, amount, list_amount, currency, pixel_content_name, invoice_heading, invoice_description, format, label, experience_id, active, review_status",
-      )
-      .eq("code", key)
-      .maybeSingle();
-    const row = offer.data;
-    if (offer.error || !row || !row.active || row.review_status !== "approved" || !isOfferFormat(row.format)) {
-      return null;
-    }
-    if (row.mode !== "checkout" && row.mode !== "lead") return null;
-
-    const course = await db
-      .from("lms_courses")
-      .select("slug, program_slug, title, status, visibility")
-      .eq("experience_id", row.experience_id as string)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    if (course.error || !course.data) return null;
-
-    return {
-      code: row.code as string,
-      mode: row.mode,
-      amount: row.amount as number | null,
-      listAmount: row.list_amount as number | null,
-      currency: row.currency as string,
-      pixelContentName: row.pixel_content_name as string | null,
-      invoiceHeading: localizedPair(row.invoice_heading),
-      invoiceDescription: localizedPair(row.invoice_description),
-      format: row.format,
-      label: ukLine(row.label) ?? FORMAT_DEFAULT_LABELS[row.format],
-      courseSlug: course.data.slug as string,
-      programSlug: (course.data.program_slug as string | null) ?? (course.data.slug as string),
-      courseTitle: course.data.title as string,
-      courseStatus: course.data.status as string,
-      courseVisibility: course.data.visibility as string | null,
-    };
-  } catch {
-    return null;
-  }
-}
-
-/**
- * What a format code belongs to, for a buyer coming BACK from paying for it.
- *
- * Unlike `resolveFormatOffer` this does not ask whether the format is still on
- * sale: the purchase was real when it was made, and a group withdrawn an hour
- * after someone paid for it must still return that person to its program — not
- * to whatever the return route falls back to.
- */
-export async function describeFormatCode(code: unknown): Promise<{ code: string; programSlug: string } | null> {
-  const key = normalizeOfferCode(code);
-  if (!key) return null;
-  try {
-    const db = supabaseAdmin();
-    const offer = await db
-      .from("experience_offers")
-      .select("code, format, experience_id")
-      .eq("code", key)
-      .maybeSingle();
-    if (offer.error || !offer.data || !isOfferFormat(offer.data.format)) return null;
-    const course = await db
-      .from("lms_courses")
-      .select("slug, program_slug")
-      .eq("experience_id", offer.data.experience_id as string)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    if (course.error || !course.data) return null;
-    return {
-      code: offer.data.code as string,
-      programSlug: (course.data.program_slug as string | null) ?? (course.data.slug as string),
-    };
-  } catch {
     return null;
   }
 }

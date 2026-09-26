@@ -1,5 +1,6 @@
-import { PLATFORM_PENDING_URL, productProgramPath, productReturnUrls, type PayableProductCode } from "@/lib/products";
-import { wfpCallbackOutcome } from "@/lib/payments/wfp";
+import { PLATFORM_FAILED_URL, PLATFORM_PENDING_URL, PLATFORM_THANKS_URL } from "@/lib/products";
+import { parseCourseOfferCode } from "@/lms-core/offerCode";
+import type { PaymentOutcome } from "@/lib/payments/orderStatus";
 
 /**
  * `pending` is the state this flow was missing, and its absence was a lie told
@@ -18,12 +19,11 @@ import { wfpCallbackOutcome } from "@/lib/payments/wfp";
 export type ReturnStatus = "paid" | "failed" | "pending";
 
 /**
- * WIDER THAN `PRODUCTS` SINCE 2026-08-22. A course out of the builder returns
- * through here too, and it has no entry in that constant. `productReturnUrls`
- * answers for both namespaces — and gives the same platform pair either way,
- * because that is where every product's confirmation lives now.
+ * The offer's code as the order carries it. Any code: every product returns to
+ * the same platform pair, and where a PAID one goes instead is decided by the
+ * caller, which has resolved the code (`describeOffer`) — see `programPath`.
  */
-export type ReturnProduct = PayableProductCode;
+export type ReturnProduct = string;
 
 export type ReturnMeta = {
   rrn?: string | null;
@@ -43,8 +43,8 @@ export type ReturnMeta = {
  *    callback, so it is proof. `refunded` is proof of the opposite.
  * 3. What the last stored callback said. This is the one that separates the two
  *    states the old code collapsed: if a callback has ARRIVED and it declined
- *    the payment, that is a real failure. Read through `wfpCallbackOutcome` so
- *    the gateway's vocabulary is interpreted in exactly one place.
+ *    the payment, that is a real failure. Classified by the gateway that stored
+ *    it (`storedCallbackOutcome`), so its vocabulary is read in one place.
  * 4. Otherwise nothing has come back yet, and the honest answer is `pending`.
  *
  * Note what is deliberately NOT here: elapsed time. How long we have waited is
@@ -57,7 +57,8 @@ export function resolveReturnStatus(input: {
   /** `orders.status`, or null when the row could not be read. */
   orderStatus: string | null;
   /** `transactionStatus` from the most recent stored callback, if any. */
-  lastCallbackStatus: string | null;
+  /** What the latest stored callback said, already classified by its gateway. */
+  lastCallbackOutcome: PaymentOutcome | null;
 }): ReturnStatus {
   if (input.fromParams) return input.fromParams;
 
@@ -65,11 +66,9 @@ export function resolveReturnStatus(input: {
   if (orderStatus === "paid") return "paid";
   if (orderStatus === "refunded") return "failed";
 
-  if (input.lastCallbackStatus) {
-    const outcome = wfpCallbackOutcome({ transactionStatus: input.lastCallbackStatus });
-    if (outcome === "approved") return "paid";
-    if (outcome === "rejected" || outcome === "refunded") return "failed";
-  }
+  const outcome = input.lastCallbackOutcome;
+  if (outcome === "approved") return "paid";
+  if (outcome === "rejected" || outcome === "refunded") return "failed";
 
   return "pending";
 }
@@ -81,14 +80,15 @@ export function buildReturnDestination(
   meta: ReturnMeta,
   nowMs: number,
   /**
-   * The program page, when the caller had to look it up. A FORMAT code
-   * (`way21-group`) cannot name its program by itself the way `course:<slug>`
-   * does, so the route resolves it and hands the answer in — this function
-   * stays synchronous, which is the point of `productProgramPath`.
+   * The program page of what was bought, resolved by the caller through
+   * `describeOffer`. Only a `course:<slug>` code names its page by itself;
+   * every other spelling (`way21`, `way21-group`, an alias) has to be looked up,
+   * and this function stays synchronous — a database read while deciding where
+   * a payment returns is a way for it to end nowhere.
    */
-  programPathOverride?: string | null,
+  programPath?: string | null,
 ): string {
-  const urls = productReturnUrls(product);
+  const urls = { approvedUrl: PLATFORM_THANKS_URL, declinedUrl: PLATFORM_FAILED_URL };
 
   /* A PAID COURSE GOES BACK TO ITS OWN PAGE, not to a confirmation screen.
      The offer page already knows how to show a course as owned — status,
@@ -107,16 +107,17 @@ export function buildReturnDestination(
      webhook sends server-side. Losing that pairing would have Meta counting
      one payment twice, which is the reason this is a redirect target and not a
      deletion of /pay/thanks. */
-  const programPath = status === "paid" ? (programPathOverride ?? productProgramPath(product)) : null;
+  const ownSlug = parseCourseOfferCode(product);
+  const paidPath = status === "paid" ? (programPath ?? (ownSlug ? `/programs/${ownSlug}` : null)) : null;
   /* Pending has its own page rather than borrowing the declined one. The two
      say opposite things about the buyer's money, and a shared page with a
      conditional sentence is how they would drift back together. */
   const destBase =
     status === "paid" ? urls.approvedUrl : status === "pending" ? PLATFORM_PENDING_URL : urls.declinedUrl;
-  const dest = programPath ? new URL(programPath, urls.approvedUrl) : new URL(destBase);
+  const dest = paidPath ? new URL(paidPath, urls.approvedUrl) : new URL(destBase);
 
   dest.searchParams.set("order_ref", orderRef);
-  dest.searchParams.set("product", String(product));
+  if (product) dest.searchParams.set("product", product);
   if (meta.rrn) {
     dest.searchParams.set("rrn", meta.rrn);
     dest.searchParams.set("payment_id", meta.rrn);

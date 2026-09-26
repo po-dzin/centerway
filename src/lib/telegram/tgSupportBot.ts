@@ -17,10 +17,8 @@
  */
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { PRODUCTS } from "@/lib/products";
 import { normalizeEmail } from "@/lib/strings";
 import { asJson } from "@/lib/db/types";
-import type { ProductCode } from "@/lib/products";
 import { callTelegramBotApi, sendTelegramMessage } from "@/lib/telegram/tg";
 import { verifyTelegramLinkToken } from "@/lib/platform/telegramLink";
 import { verifyDoshaResultToken } from "@/lib/platform/doshaTelegramLink";
@@ -39,7 +37,7 @@ import {
 } from "@/lib/telegram/tgSupportBotCopy";
 
 type Supabase = ReturnType<typeof supabaseAdmin>;
-type BotProductCode = Extract<ProductCode, "short" | "irem" | "way21" | "reset-day">;
+type BotProductCode = "short" | "irem" | "way21" | "reset-day";
 
 type BotState =
   | "idle"
@@ -107,32 +105,7 @@ export const PRODUCT_LABELS: Record<BotProductCode, string> = {
   "reset-day": "Легкий день",
 };
 
-/**
- * Where a paid learner is actually sent — and since 2026-08-29 there is one
- * answer for all four.
- *
- * The course runs in the LMS; access is the cabinet, and there is nothing to
- * hand over but a link and the reason it might look empty (signing in with a
- * different address than the order was placed on). Short and IREM were the two
- * legacy programs that lived in their own Telegram bots; they moved onto the
- * platform with everything else, and the `bot` variant of this type went with
- * them. What the bot still does is support: answering, not delivering.
- */
-type Delivery = { kind: "platform"; courseSlug: string };
-
 export type FaqKey = keyof typeof botCopy.faq;
-
-/* DERIVED, NOT KEPT. This was a second hand-written map of where each
-   course lives, beside `PRODUCTS[code].fulfilment`, and a test held the two
-   in step. The catalogue's fulfilment IS the answer — the row slug it names
-   is the row the cabinet opens — so the bot reads it and cannot drift. */
-export const PRODUCT_DELIVERY: Record<BotProductCode, Delivery> = Object.fromEntries(
-  (Object.keys(PRODUCT_LABELS) as BotProductCode[]).map((code) => {
-    const fulfilment = PRODUCTS[code].fulfilment;
-    if (fulfilment.kind !== "course") throw new Error(`support bot: ${code} is not delivered as a course`);
-    return [code, { kind: "platform", courseSlug: fulfilment.courseSlug }];
-  }),
-) as Record<BotProductCode, Delivery>;
 
 export function assertProduct(value: string | null | undefined): BotProductCode | null {
   if (value === "short" || value === "reboot") return "short";

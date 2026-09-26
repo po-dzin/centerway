@@ -19,7 +19,7 @@ import { LeadForm } from "@/components/platform/LeadForm";
 import { CourseAuthorLink } from "@/components/platform/AuthorEntry";
 import { getSnapshotCourseByProgram } from "@/lib/lms/catalog";
 import { offerLandingUrl } from "@/lib/platform/offerLanding";
-import { resolveOfferCommerce, type OfferCommerce } from "@/lib/platform/offerCommerce";
+import type { OfferCommerce } from "@/lib/platform/offerCommerce";
 import { isLinkedModule, type Author, type Course } from "@/lms-core";
 import type { ReactNode } from "react";
 
@@ -73,14 +73,11 @@ export function ProgramDetailPage({
    */
   course?: Course | null;
   /**
-   * How this offer converts, when the caller already knows.
-   *
-   * The six hand-written pages do not pass one: their commerce is decided by
-   * slug in `resolveOfferCommerce`, from constants, with no read. A course out
-   * of the builder is priced in the database, and only the caller can await
-   * that — so it hands the answer in rather than making this component async.
+   * How this offer converts. Priced in the database, and only the caller can
+   * await that — so it hands the answer in rather than making this component
+   * async.
    */
-  commerce?: OfferCommerce;
+  commerce: OfferCommerce;
   /**
    * The byline, when the caller has read it.
    *
@@ -98,7 +95,7 @@ export function ProgramDetailPage({
   purchase?: ReactNode;
   nextStep?: ReactNode;
 }) {
-  const commerce = givenCommerce ?? resolveOfferCommerce(program.slug);
+  const commerce = givenCommerce;
   const isCheckout = commerce.mode === "checkout";
   const isFree = commerce.mode === "free";
   // The SNAPSHOT on purpose: this page is statically prerendered and needs a

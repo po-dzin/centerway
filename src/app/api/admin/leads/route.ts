@@ -7,7 +7,7 @@ import {
   serverErrorResponse,
   unauthorizedResponse,
 } from "@/lib/api/adminRoute";
-import { canonicalProductKey, resolveProductTitles } from "@/lib/analytics/productIdentity";
+import { loadProductIdentity } from "@/lib/analytics/productIdentity";
 import { LEAD_STAGES, isLeadStage } from "@/lib/platform/leadStage";
 import { orIlikeFilter } from "@/lib/api/searchFilter";
 
@@ -64,10 +64,7 @@ export async function GET(req: NextRequest) {
        dashboard breakdown and on the customer card — one vocabulary, so nobody
        has to learn that `course:natural-body` and «Природнє тіло з Аюрведою»
        are the same thing. */
-  const titles = await resolveProductTitles(
-    db,
-    rows.map((row) => row.product_code),
-  );
+  const identity = await loadProductIdentity(db);
 
   /* Counts per stage for the tab strip. Cheap head-only queries: the operator
        needs to see that four leads are waiting without opening the tab, and a
@@ -92,7 +89,7 @@ export async function GET(req: NextRequest) {
       const payload = row.payload && typeof row.payload === "object" && !Array.isArray(row.payload) ? row.payload : {};
       return {
         ...row,
-        product_title: titles.get(canonicalProductKey(row.product_code)) ?? row.product_code ?? null,
+        product_title: identity.title(row.product_code) ?? row.product_code ?? null,
         /* Surfaced rather than left buried in the payload: an operator
                    calling this person wants to know which dosha they got before
                    they pick up the phone. `dosha_result_type` is verified against a

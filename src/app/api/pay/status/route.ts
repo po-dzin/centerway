@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { storedCallbackOutcome } from "@/lib/payments/gateway";
+
 import { resolveReturnStatus } from "@/lib/payments/payReturn";
 import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
@@ -44,20 +46,17 @@ export async function GET(req: NextRequest) {
       sb.from("orders").select("status").eq("order_ref", orderRef).maybeSingle(),
       sb
         .from("payments")
-        .select("raw_payload")
+        .select("provider, raw_payload")
         .eq("order_ref", orderRef)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
     ]);
 
-    const raw = payment?.raw_payload as Record<string, unknown> | null | undefined;
-    const callbackStatus = raw?.transactionStatus ?? raw?.status;
-
     const status = resolveReturnStatus({
       fromParams: null,
       orderStatus: (order?.status as string | null) ?? null,
-      lastCallbackStatus: typeof callbackStatus === "string" && callbackStatus.trim() ? callbackStatus.trim() : null,
+      lastCallbackOutcome: storedCallbackOutcome(payment),
     });
 
     /* Never cached. The whole value of this answer is that it is the current

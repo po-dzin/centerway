@@ -3,18 +3,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { LANDING_STATIC_BRANDS, UTILITY_FILE_BY_PAGE } from "@/lib/landing/contracts";
-import {
-  PLATFORM_FAILED_URL,
-  PLATFORM_THANKS_URL,
-  PRODUCTS,
-  isPayableProduct,
-  normalizeProduct,
-  type CatalogProductCode,
-} from "@/lib/products";
-import { getSnapshotCourse, getSnapshotCourseByProgram } from "@/lib/lms/catalog";
+import { PLATFORM_FAILED_URL, PLATFORM_THANKS_URL } from "@/lib/products";
 import { buildReturnDestination } from "@/lib/payments/payReturn";
-
-const payableCodes = Object.keys(PRODUCTS) as CatalogProductCode[];
 
 /**
  * The gap this covers: way21-support, consult and herbs each sat in a state
@@ -28,39 +18,7 @@ const payableCodes = Object.keys(PRODUCTS) as CatalogProductCode[];
  * knows where the thing it sold is delivered".
  */
 describe("payable product chain", () => {
-  it("routes every payable code through isPayableProduct", () => {
-    for (const code of payableCodes) {
-      expect(isPayableProduct(code), `${code} must be payable`).toBe(true);
-      expect(normalizeProduct(code), `${code} must survive normalization`).toBe(code);
-    }
-  });
-
-  it("charges a positive amount in a known currency, or none where no price was agreed", () => {
-    for (const code of payableCodes) {
-      const product = PRODUCTS[code];
-      if (product.listAmount === null) {
-        // No agreed price: the fallback refuses the sale (offerAlias.test.ts),
-        // so the constant must not carry a figure anyone could be charged.
-        expect(product.amount, `${code} amount`).toBe(0);
-      } else {
-        expect(product.amount, `${code} amount`).toBeGreaterThan(0);
-        // The charged figure and the quoted one are the same number. A 1 ₴ QA
-        // placeholder sat in `amount` under a 4100 `listAmount` for three
-        // weeks; this is the line that would have caught it.
-        expect(product.amount, `${code} amount must equal its list price`).toBe(product.listAmount);
-      }
-      expect(Number.isInteger(product.amount), `${code} amount must be whole`).toBe(true);
-      expect(product.currency, `${code} currency`).toBe("UAH");
-    }
-  });
-
   it("returns every product to the one platform confirmation", () => {
-    for (const code of payableCodes) {
-      const product = PRODUCTS[code];
-      expect(product.approvedUrl, `${code} approvedUrl`).toBe(PLATFORM_THANKS_URL);
-      expect(product.declinedUrl, `${code} declinedUrl`).toBe(PLATFORM_FAILED_URL);
-    }
-
     // The canonical platform origin, not the apex: the proxy 308s the bare host
     // onto www, and a redirect inside a payment return only loses people.
     for (const raw of [PLATFORM_THANKS_URL, PLATFORM_FAILED_URL]) {
@@ -95,34 +53,6 @@ describe("payable product chain", () => {
   });
 
   /**
-   * Every payable product has to say where the thing it sold is delivered.
-   * Before this existed the answer was a hard-coded href inside whichever
-   * thanks page the funnel happened to own, and the two bot products had a
-   * `?start=` token that lived nowhere else.
-   */
-  it("declares a fulfilment for every payable product", () => {
-    for (const code of payableCodes) {
-      const fulfilment = PRODUCTS[code].fulfilment;
-      expect(PRODUCTS[code].pixelContentName.length, `${code} pixelContentName`).toBeGreaterThan(0);
-
-      // The bot branch this loop used to have is gone with the deliveries it
-      // checked: nothing is handed over in Telegram any more (2026-08-29).
-      if (fulfilment.kind === "course") {
-        // TWO LOOKUPS, because the entry names two things. `courseSlug` is the
-        // row a learner reads at /learn/<slug>; `programSlug` is the public
-        // address the buyer is returned to. They are the same string for three
-        // of the four course products and deliberately different for `short`
-        // (row `short`, sold at /programs/reboot) and `irem`.
-        expect(getSnapshotCourse(fulfilment.courseSlug), `${code} names a course nothing serves`).not.toBeNull();
-        expect(
-          getSnapshotCourseByProgram(fulfilment.programSlug),
-          `${code} returns a buyer to a program page nothing serves`,
-        ).not.toBeNull();
-      }
-    }
-  });
-
-  /**
    * The paid destination SPLIT on 2026-08-26, and the split is the point.
    *
    * A course goes back to its own offer page, which shows it as owned — status,
@@ -136,27 +66,31 @@ describe("payable product chain", () => {
    * webhook pairs against, wherever the buyer lands.
    */
   it("returns a paid course to its offer page and everything else to the confirmation", () => {
-    for (const code of payableCodes) {
+    const cases: Array<[code: string, programPath: string | null, expected: string]> = [
+      ["course:short", "/programs/reboot", "/programs/reboot"],
+      ["way21-group", "/programs/way21", "/programs/way21"],
+      ["herbs", null, "/pay/thanks"],
+    ];
+    for (const [code, programPath, expected] of cases) {
       const paid = new URL(
-        buildReturnDestination("paid", code, `qa_${code}`, { rrn: "QA1", amount: "1", currency: "UAH" }, 0),
+        buildReturnDestination(
+          "paid",
+          code,
+          `qa_${code}`,
+          { rrn: "QA1", amount: "1", currency: "UAH" },
+          0,
+          programPath,
+        ),
       );
       expect(paid.origin).toBe(new URL(PLATFORM_THANKS_URL).origin);
       expect(paid.searchParams.get("order_ref")).toBe(`qa_${code}`);
       expect(paid.searchParams.get("product")).toBe(code);
-
-      const fulfilment = PRODUCTS[code].fulfilment;
-      if (fulfilment.kind === "course") {
-        expect(paid.pathname, `${code} is a course and must land on its offer page`).toBe(
-          `/programs/${fulfilment.programSlug}`,
-        );
-      } else {
-        expect(paid.pathname, `${code} has no offer page and keeps the confirmation`).toBe("/pay/thanks");
-      }
+      expect(paid.pathname, code).toBe(expected);
 
       // A FAILURE NEVER MOVES. The offer page shows a course as owned, and
       // showing it to someone whose card was declined would be the platform
       // handing over the goods on a payment that did not happen.
-      const failed = new URL(buildReturnDestination("failed", code, `qa_${code}`, {}, 0));
+      const failed = new URL(buildReturnDestination("failed", code, `qa_${code}`, {}, 0, programPath));
       expect(failed.pathname).toBe("/pay/failed");
     }
   });

@@ -1,4 +1,8 @@
 import type { adminClient } from "@/lib/auth/adminClient";
+import type { ProductFulfilment } from "@/lib/products";
+import { parseCourseOfferCode } from "@/lms-core/offerCode";
+
+import { isContentKind, type ExperienceKind } from "./registry";
 
 /**
  * WHAT A THING COSTS, FROM ONE TABLE (2026-09-20).
@@ -40,10 +44,14 @@ export type ExperienceOffer = {
   sharePct: number | null;
   pixelContentName: string | null;
   active: boolean;
+  /** `self` | `group` | `individual` for a format of a program; `null` for a thing sold one way. */
+  format: string | null;
+  /** The name the author gave the format, Ukrainian line only. */
+  label: string | null;
 };
 
 const COLUMNS =
-  "id, experience_id, code, mode, amount, list_amount, currency, access_days, access_lifetime, invoice_heading, invoice_description, share_pct, pixel_content_name, active";
+  "id, experience_id, code, mode, amount, list_amount, currency, access_days, access_lifetime, invoice_heading, invoice_description, share_pct, pixel_content_name, active, format, label";
 
 type OfferRow = {
   id: string;
@@ -60,6 +68,8 @@ type OfferRow = {
   share_pct: number | string | null;
   pixel_content_name: string | null;
   active: boolean;
+  format: string | null;
+  label: unknown;
 };
 
 function localized(value: unknown): LocalizedLine | null {
@@ -87,6 +97,8 @@ function fromRow(row: OfferRow): ExperienceOffer {
     sharePct: row.share_pct === null ? null : Number(row.share_pct),
     pixelContentName: row.pixel_content_name,
     active: row.active,
+    format: row.format,
+    label: localized(row.label)?.uk ?? null,
   };
 }
 
@@ -158,4 +170,66 @@ export async function experiencesOpenedBy(
 /** Whether a checkout may be opened for this offer right now. */
 export function isPayable(offer: ExperienceOffer): offer is ExperienceOffer & { amount: number } {
   return offer.active && offer.mode === "checkout" && offer.amount !== null && offer.amount > 0;
+}
+
+/**
+ * An offer together with what it sells and who delivers it.
+ *
+ * THE ONE CHANNEL FROM A CODE TO A THING (2026-09-25). Every door that is
+ * handed a product code — the checkout, the lead form, the return from the
+ * gateway, the operator's access link, the Meta job — asks this, and this asks
+ * `resolveOffer`, which asks `offer_aliases`. Before it, each door kept its own
+ * table of old spellings (`normalizeProduct`, `COURSE_CODE_ALIASES`, the
+ * `irem_` prefix check), and they disagreed at the edges: `mini-detox` was an
+ * alias in the database and unknown to the checkout.
+ *
+ * `course` is the row that delivers a content kind. Its slug is read from the
+ * offer's own code when the code is `course:<slug>` — a program has one row
+ * per language under one thing, and the code names the one that was sold —
+ * otherwise the thing's first course.
+ */
+export type OfferTarget = {
+  offer: ExperienceOffer;
+  via: ResolvedOffer["via"];
+  experience: { id: string; kind: ExperienceKind; slug: string; title: string | null };
+  course: { slug: string; programSlug: string } | null;
+};
+
+export async function describeOffer(db: Db, code: unknown): Promise<OfferTarget | null> {
+  const resolved = await resolveOffer(db, code);
+  if (!resolved) return null;
+  const { offer, via } = resolved;
+
+  const thing = await db.from("experiences").select("id, kind, slug, title").eq("id", offer.experienceId).maybeSingle();
+  if (thing.error) throw new Error(`experience_read_failed:${thing.error.message}`);
+  if (!thing.data) return null;
+  const experience = {
+    id: thing.data.id as string,
+    kind: thing.data.kind as ExperienceKind,
+    slug: thing.data.slug as string,
+    title: (thing.data.title as string | null) ?? null,
+  };
+
+  if (!isContentKind(experience.kind)) return { offer, via, experience, course: null };
+
+  const ownSlug = parseCourseOfferCode(offer.code);
+  const courses = ownSlug
+    ? await db.from("lms_courses").select("slug, program_slug").eq("slug", ownSlug).limit(1)
+    : await db
+        .from("lms_courses")
+        .select("slug, program_slug")
+        .eq("experience_id", experience.id)
+        .order("created_at", { ascending: true })
+        .limit(1);
+  if (courses.error) throw new Error(`offer_course_read_failed:${courses.error.message}`);
+  const row = (courses.data ?? [])[0] as { slug: string; program_slug: string | null } | undefined;
+  const course = row ? { slug: row.slug, programSlug: row.program_slug ?? row.slug } : null;
+  return { offer, via, experience, course };
+}
+
+/** Where a purchase of this offer is delivered: its course, or the cabinet that lists everything else. */
+export function offerFulfilment(target: Pick<OfferTarget, "course">): ProductFulfilment {
+  return target.course
+    ? { kind: "course", courseSlug: target.course.slug, programSlug: target.course.programSlug }
+    : { kind: "cabinet" };
 }

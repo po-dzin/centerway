@@ -3,13 +3,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import {
-  PRODUCT_DELIVERY,
-  PRODUCT_LABELS,
-  assertProduct,
-  normalizeEmail,
-  normalizePhoneDigits,
-} from "@/lib/telegram/tgSupportBot";
+import { PRODUCT_LABELS, assertProduct, normalizeEmail, normalizePhoneDigits } from "@/lib/telegram/tgSupportBot";
 import {
   botCopy,
   ACCESS_PHOTO_URL,
@@ -22,24 +16,6 @@ import {
 } from "@/lib/telegram/tgSupportBotCopy";
 
 describe("support bot — product routing", () => {
-  it("has a delivery target and a label for every product it offers", () => {
-    // The picker is generated from PRODUCT_LABELS and the answer is looked up in
-    // PRODUCT_DELIVERY. A product present in one and missing from the other is a
-    // button that leads nowhere.
-    expect(Object.keys(PRODUCT_DELIVERY).sort()).toEqual(Object.keys(PRODUCT_LABELS).sort());
-  });
-
-  it("routes every course to the cabinet", () => {
-    // The correction this rewrite exists for: way21 and reset-day run on the
-    // platform, and the old copy told their buyers to look inside a product bot.
-    expect(PRODUCT_DELIVERY.way21).toEqual({ kind: "platform", courseSlug: "way21" });
-    expect(PRODUCT_DELIVERY["reset-day"]).toEqual({ kind: "platform", courseSlug: "reset-day" });
-    // Short and IREM left their own bots on 2026-08-29 — the courseSlug is the
-    // ROW, and IREM's row is not the name it is sold under.
-    expect(PRODUCT_DELIVERY.short).toEqual({ kind: "platform", courseSlug: "short" });
-    expect(PRODUCT_DELIVERY.irem).toEqual({ kind: "platform", courseSlug: "irem-gymnastics" });
-  });
-
   it("accepts every alias the funnels and thanks pages actually send", () => {
     expect(assertProduct("reboot")).toBe("short");
     expect(assertProduct("shlyah21")).toBe("way21");

@@ -30,27 +30,51 @@ function fromRow(row: Record<string, unknown>): ProductOffer {
 }
 
 /**
- * The codes this screen may price, and what each one is.
+ * What this screen may price: every thing in the registry with no course
+ * behind it — a consultation, a package, a physical product. Read from
+ * `experiences` (2026-09-26) rather than kept as a list here: a new
+ * consultation registered by the owner appears on the screen without a deploy.
  *
- * A fixed list rather than "whatever is in the table", because a price row for
- * an unknown code is not a product — nothing would read it, and it would sit
- * in the admin looking like a live offer. `natural-body` is deliberately absent:
- * it already has a row in `lms_course_offers`, and a second figure here would
- * restore the two-sources-for-one-price bug that 2026-09-02 removed.
+ * A course is priced on its own screen (the catalogue) and never here; a
+ * second figure for it would restore the two-sources-for-one-price bug that
+ * 2026-09-02 removed. The code of a thing's offer is its slug.
  */
-export const PRICEABLE_PRODUCTS: Array<{ code: string; title: string; kind: ProductOfferKind }> = [
-  { code: "herbs", title: "Фітозбір — індивідуальний підбір", kind: "checkout" },
-  { code: "consult", title: "Консультація", kind: "lead" },
-  { code: "irem-individual", title: "IREM — індивідуально", kind: "lead" },
-];
+const PRICEABLE_KINDS = ["consultation", "package", "physical"] as const;
+
+type PriceableThing = { id: string; code: string; title: string; kind: ProductOfferKind };
+
+async function priceableThings(): Promise<PriceableThing[]> {
+  const { data, error } = await adminClient()
+    .from("experiences")
+    .select("id, slug, title, kind")
+    .in("kind", [...PRICEABLE_KINDS]);
+  if (error) throw new AccessError(error.message, 500);
+  return ((data ?? []) as { id: string; slug: string; title: string | null; kind: string }[])
+    .map((row) => ({
+      id: row.id,
+      code: row.slug,
+      title: row.title ?? row.slug,
+      // A physical product is bought; a consultation or package is agreed in
+      // conversation first. The owner can still price either way.
+      kind: (row.kind === "physical" ? "checkout" : "lead") as ProductOfferKind,
+    }))
+    .sort((a, b) => a.code.localeCompare(b.code));
+}
+
+async function priceableThing(code: string): Promise<PriceableThing> {
+  const known = (await priceableThings()).find((thing) => thing.code === code);
+  if (!known) throw new AccessError("product_unknown", 404);
+  return known;
+}
 
 export async function listProductOffers(): Promise<ProductOfferRow[]> {
+  const things = await priceableThings();
   const { data, error } = await adminClient()
     .from("experience_offers")
     .select(COLUMNS)
     .in(
       "code",
-      PRICEABLE_PRODUCTS.map((product) => product.code),
+      things.map((thing) => thing.code),
     );
   if (error) throw new AccessError(error.message, 500);
 
@@ -61,13 +85,13 @@ export async function listProductOffers(): Promise<ProductOfferRow[]> {
     }),
   );
 
-  /* Driven by the list, not by the table: a product with no row yet has to
-       appear on the screen, or the owner cannot give it its first price. */
-  return PRICEABLE_PRODUCTS.map((product) => ({
-    code: product.code,
-    title: product.title,
-    expectedKind: product.kind,
-    offer: byCode.get(product.code) ?? null,
+  /* Driven by the registry, not by the table of prices: a thing with no price
+       yet has to appear on the screen, or the owner cannot give it its first. */
+  return things.map((thing) => ({
+    code: thing.code,
+    title: thing.title,
+    expectedKind: thing.kind,
+    offer: byCode.get(thing.code) ?? null,
   }));
 }
 
@@ -81,8 +105,7 @@ export type SaveProductOfferInput = {
 };
 
 export async function saveProductOffer(input: SaveProductOfferInput): Promise<ProductOffer> {
-  const known = PRICEABLE_PRODUCTS.find((product) => product.code === input.code);
-  if (!known) throw new AccessError("product_unknown", 404);
+  const thing = await priceableThing(input.code);
 
   if (input.kind !== "checkout" && input.kind !== "lead") throw new AccessError("product_kind_invalid", 400);
 
@@ -103,18 +126,14 @@ export async function saveProductOffer(input: SaveProductOfferInput): Promise<Pr
     }
   }
 
-  /* Written to the one table of prices (2026-09-25). A product's price belongs
-     to its thing in the registry, found by the same slug as the code; a
-     product with no thing has nowhere to put a price, and says so. A missing
-     figure is stored as a lead: a checkout without an amount has never opened. */
-  const db = adminClient();
-  const { data: thing } = await db.from("experiences").select("id").eq("slug", input.code).maybeSingle();
-  if (!thing) throw new AccessError("product_not_registered", 409);
-  const { data, error } = await db
+  /* Written to the one table of prices (2026-09-25), against the thing it
+     prices. A missing figure is stored as a lead: a checkout without an amount
+     has never opened. */
+  const { data, error } = await adminClient()
     .from("experience_offers")
     .upsert(
       {
-        experience_id: thing.id as string,
+        experience_id: thing.id,
         code: input.code,
         amount: input.amount,
         list_amount: input.listAmount,
@@ -138,9 +157,7 @@ export async function saveProductOffer(input: SaveProductOfferInput): Promise<Pr
 }
 
 export async function setProductOfferActive(code: string, active: boolean): Promise<ProductOffer> {
-  if (!PRICEABLE_PRODUCTS.some((product) => product.code === code)) {
-    throw new AccessError("product_unknown", 404);
-  }
+  await priceableThing(code);
 
   const { data, error } = await adminClient()
     .from("experience_offers")
