@@ -3,7 +3,9 @@ import { PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import Link from "next/link";
 import styles from "@/components/platform/PlatformHeroStyles";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
-import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
+import { Icon } from "@/components/Icon";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
+import { activePlatformTests } from "@/lib/platform/tests";
 import { HubIntroVideo } from "./IntroVideo";
 import { heroTitleFit } from "@/components/platform/heroTitleFit";
 
@@ -109,14 +111,47 @@ export function HubIntro() {
             </p>
           </div>
           <div className={styles.videoDecisionRail}>
-            {/* The first available test is the route action. The full catalogue
-                stays secondary: it gives context without competing with the
-                next concrete step. */}
-            <div className={styles.videoActionGrid} data-cw-hub-intro="actions">
-              <Link className={styles.videoActionPrimary} href={DOSHA_TEST_ROUTE}>
-                Пройти перший тест
-              </Link>
-            </div>
+            {/* THE TESTS, NOT «THE FIRST TEST» (2026-09-27). This rail was one
+                gold button to the dosha test, which was right while there was
+                one test and silently hid the second the day it shipped. It is
+                now the list of what can be taken today, read from the same
+                registry as the /tests hub, so the next test appears here by
+                being marked active. A list and not a carousel: two or three
+                rows fit the panel beside the video without growing the row,
+                and a carousel of two is mostly its own controls. The row is
+                the choice, so there is no gold button competing with it — the
+                hand-off from the hero lands on the list itself. */}
+            <ul className={styles.videoTestList} data-cw-hub-intro="actions">
+              {activePlatformTests.map((test) =>
+                test.href ? (
+                  <li key={test.slug}>
+                    <Link className={styles.videoTestRow} href={test.href} data-cw-ink-control>
+                      {test.artwork ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          className={styles.videoTestThumb}
+                          src={test.artwork.card ?? test.artwork.desktop}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <span className={styles.videoTestThumb} aria-hidden="true" />
+                      )}
+                      <span className={styles.videoTestText}>
+                        <span className={styles.videoTestTitle}>
+                          <InteractionInkLabel variant="link">{test.title}</InteractionInkLabel>
+                        </span>
+                        <span className={styles.videoTestMeta}>
+                          {test.tag} · {test.format}
+                        </span>
+                      </span>
+                      <Icon name="arrow-right" size={18} className={styles.videoTestArrow} />
+                    </Link>
+                  </li>
+                ) : null,
+              )}
+            </ul>
             {/* `PlatformBlockLink`, not a fifth hand-assembled copy of it. This
                 one composed the right classes and still drifted, because the
                 SHAPE was rebuilt here: when the shared crossing moved to the
