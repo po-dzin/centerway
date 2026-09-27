@@ -8,7 +8,7 @@ import {
   getIsoDateInTimeZone,
   localMidnightUtcIso,
 } from "@/lib/analytics/helpers";
-import { canonicalProductKey, resolveProductTitles } from "@/lib/analytics/productIdentity";
+import { loadProductIdentity, type ProductIdentity } from "@/lib/analytics/productIdentity";
 import { sendTelegramMessageWithToken } from "@/lib/telegram/tg";
 
 const REPORTS_TIME_ZONE = process.env.ANALYTICS_REPORTS_TIMEZONE || "Europe/Kyiv";
@@ -118,10 +118,8 @@ function toPercent(numerator: number, denominator: number): string {
  * live, in the operator's own Telegram group, on the very order this session
  * was already reconciling.
  *
- * `courseTitles` is the batch lookup from `resolveProductTitles`, the shared
- * vocabulary in `productIdentity.ts`; a caller with one order (the sale
- * notification) passes a one-entry map rather than threading a whole batch
- * through for a single row. Lookups go through `canonicalProductKey`, so the
+ * `identity` is the shared vocabulary in `productIdentity.ts`, read once per
+ * report from the offer tables. Lookups fold through its `key`, so the
  * two spellings of one course — the landing's `short` and the platform's
  * `course:short` — both land on that course's title instead of on two
  * different labels, which is what split the digest's product totals.
@@ -130,12 +128,12 @@ function toPercent(numerator: number, denominator: number): string {
  * code is now visibly itself instead of indistinguishable from a real course
  * whose title just didn't load. Worse copy, never a false "nothing to see".
  */
-function productLabel(productCode: string | null | undefined, courseTitles: Map<string, string>): string {
+function productLabel(productCode: string | null | undefined, identity: ProductIdentity): string {
   const code = (productCode ?? "").trim();
   /* Canonical first: `short` and `course:short` are one course, so the legacy
      landing code finds the title the platform code stored. */
-  const courseTitle = courseTitles.get(canonicalProductKey(code));
-  if (courseTitle) return courseTitle;
+  const known = identity.title(code);
+  if (known) return known;
 
   switch (code) {
     case "consult":
@@ -611,11 +609,11 @@ export async function sendConfirmedSaleTelegramReport(orderRef: string): Promise
       }).format(new Date(order.created_at))
     : "невідомо";
 
-  const courseTitles = await resolveProductTitles(db, [order.product_code]);
+  const identity = await loadProductIdentity(db);
 
   const text = [
     "Підтверджено продаж",
-    `Продукт: ${productLabel(order.product_code, courseTitles)}`,
+    `Продукт: ${productLabel(order.product_code, identity)}`,
     `Сума: ${formatCurrency(asFiniteNumber(order.amount), typeof order.currency === "string" && order.currency ? order.currency : "UAH")}`,
     `Замовлення: ${order.order_ref}`,
     `Кампанія: ${escapeTelegramText(campaign)}`,
@@ -706,14 +704,11 @@ async function buildPeriodicReport(window: ReportWindow): Promise<PeriodicReport
   let totalRevenue = 0;
   let currency = "UAH";
 
-  const courseTitles = await resolveProductTitles(
-    db,
-    (ordersResult.data ?? []).map((row) => (typeof row.product_code === "string" ? row.product_code : null)),
-  );
+  const identity = await loadProductIdentity(db);
 
   for (const row of ordersResult.data ?? []) {
     totalOrders += 1;
-    const productCode = productLabel(typeof row.product_code === "string" ? row.product_code : null, courseTitles);
+    const productCode = productLabel(typeof row.product_code === "string" ? row.product_code : null, identity);
     const totals = productTotals.get(productCode) ?? { totalOrders: 0, paidOrders: 0, revenue: 0 };
     totals.totalOrders += 1;
 

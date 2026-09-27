@@ -63,7 +63,7 @@
     },
     {
       "question": "скільки коштує Шлях 21",
-      "expectedDocId": "product:way21",
+      "expectedDocId": "product:course:way21",
       "origin": "seed"
     },
     {

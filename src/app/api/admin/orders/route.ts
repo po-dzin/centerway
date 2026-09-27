@@ -10,7 +10,7 @@ import {
 } from "@/lib/api/adminRoute";
 import { sendPurchaseEmail } from "@/lib/email/purchaseEmail";
 import { loadPayableOffer } from "@/lib/platform/offers";
-import { ORDER_STATUSES, isOrderStatus } from "@/lib/payments/wfp";
+import { ORDER_STATUSES, isOrderStatus } from "@/lib/payments/orderStatus";
 
 // GET /api/admin/orders?status=...&q=...&limit=...&offset=...
 export async function GET(req: NextRequest) {

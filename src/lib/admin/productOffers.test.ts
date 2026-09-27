@@ -17,15 +17,20 @@ vi.mock("@/lib/auth/adminClient", () => ({
   adminClient: () => db,
 }));
 
-const { listProductOffers, saveProductOffer, setProductOfferActive, PRICEABLE_PRODUCTS } =
-  await import("./productOffers");
+const { listProductOffers, saveProductOffer, setProductOfferActive } = await import("./productOffers");
 
 function seed(offers: Row[] = []) {
   // Prices live in the one table since 2026-09-25; a product's row hangs off
   // its thing in the registry, found by the same slug as the code.
   db.tables = {
     experience_offers: offers,
-    experiences: ["herbs", "consult", "irem-individual"].map((slug) => ({ id: `exp-${slug}`, slug })),
+    experiences: [
+      { id: "exp-herbs", slug: "herbs", kind: "physical", title: "Фітозбір" },
+      { id: "exp-consult", slug: "consult", kind: "consultation", title: "Консультація" },
+      { id: "exp-irem-individual", slug: "irem-individual", kind: "package", title: "IREM — індивідуально" },
+      // A course is priced on the catalogue screen, never here.
+      { id: "exp-way21", slug: "way21", kind: "course", title: null },
+    ],
   };
   db.failures = {};
 }
@@ -51,7 +56,7 @@ describe("listProductOffers", () => {
     // The point of the screen: a product with nothing in the table must
     // still appear, or the owner cannot give it its first price.
     const rows = await listProductOffers();
-    expect(rows.map((r) => r.code).sort()).toEqual(PRICEABLE_PRODUCTS.map((p) => p.code).sort());
+    expect(rows.map((r) => r.code).sort()).toEqual(["consult", "herbs", "irem-individual"]);
     expect(rows.every((r) => r.offer === null)).toBe(true);
   });
 
@@ -109,6 +114,26 @@ describe("saveProductOffer", () => {
     await expect(
       saveProductOffer({ code: "herbs", amount: 100, listAmount: null, kind: "bogus" as never }),
     ).rejects.toThrow("product_kind_invalid");
+  });
+
+  it("never rebinds an offer whose experience_id was deliberately moved elsewhere", async () => {
+    // `way21-support`'s registry row is the retired package; the migration
+    // that turned it into a way21 format moved its OFFER onto the way21
+    // experience while leaving the package row in place (past orders point at
+    // it). This screen still finds the code by the package's slug, but saving
+    // a price through it must not write the package's id back as
+    // `experience_id` — that would silently undo the move.
+    db.tables = {
+      experiences: [
+        ...db.tables.experiences!,
+        { id: "exp-way21-support", slug: "way21-support", kind: "package", title: "Шлях 21 — супровід" },
+      ],
+      experience_offers: [offerOf({ code: "way21-support", experience_id: "exp-way21", amount: 9000, mode: "lead" })],
+    };
+    const offer = await saveProductOffer({ code: "way21-support", amount: 9500, listAmount: null, kind: "lead" });
+    expect(offer.amount).toBe(9500);
+    const row = db.tables.experience_offers!.find((r) => r.code === "way21-support");
+    expect(row?.experience_id).toBe("exp-way21");
   });
 });
 

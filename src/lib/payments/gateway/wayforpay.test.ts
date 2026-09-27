@@ -1,15 +1,17 @@
 import { afterEach, describe, expect, it } from "vitest";
 import crypto from "crypto";
 import {
-  buildWfpAcceptResponse,
-  computeWfpCallbackSignature,
+  eventTypeForOutcome,
   nextOrderStatus,
   orderStatusForOutcome,
   statusesProtectedFrom,
+} from "@/lib/payments/orderStatus";
+import {
+  buildWfpAcceptResponse,
+  computeWfpCallbackSignature,
   verifyWfpCallbackSignature,
   wfpCallbackOutcome,
-  wfpEventTypeFromStatus,
-} from "./wfp";
+} from "./wayforpay";
 
 const SECRET = "test-merchant-secret";
 
@@ -187,10 +189,10 @@ describe("wfpCallbackOutcome", () => {
   });
 
   it("keeps `payment_paid` / `payment_failed` meaning what they meant before", () => {
-    expect(wfpEventTypeFromStatus(callback({ transactionStatus: "Approved" }))).toBe("payment_paid");
-    expect(wfpEventTypeFromStatus(callback({ transactionStatus: "Declined" }))).toBe("payment_failed");
-    expect(wfpEventTypeFromStatus(callback({ transactionStatus: "Refunded" }))).toBe("payment_failed");
-    expect(wfpEventTypeFromStatus(callback({ transactionStatus: "InProcessing" }))).toBeNull();
+    expect(eventTypeForOutcome(wfpCallbackOutcome(callback({ transactionStatus: "Approved" })))).toBe("payment_paid");
+    expect(eventTypeForOutcome(wfpCallbackOutcome(callback({ transactionStatus: "Declined" })))).toBe("payment_failed");
+    expect(eventTypeForOutcome(wfpCallbackOutcome(callback({ transactionStatus: "Refunded" })))).toBe("payment_failed");
+    expect(eventTypeForOutcome(wfpCallbackOutcome(callback({ transactionStatus: "InProcessing" })))).toBeNull();
   });
 });
 

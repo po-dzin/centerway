@@ -15,7 +15,7 @@ vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ unstable_cache: (fn: () => unknown) => fn }));
 vi.mock("@/lib/supabaseAdmin", () => ({ supabaseAdmin: () => db }));
 
-const { describeFormatCode, loadBundleHosts, loadProgramFormats, resolveFormatOffer } = await import("./formats");
+const { loadBundleHosts, loadProgramFormats } = await import("./formats");
 
 const WAY21 = "exp-way21";
 const RESET = "exp-reset";
@@ -191,24 +191,5 @@ describe("loadBundleHosts", () => {
   it("answers null — not «no bundles» — when the read fails, so the landing keeps its text", async () => {
     db.failures = { "experience_offer_items:select": "boom" };
     await expect(loadBundleHosts("reset-day")).resolves.toBeNull();
-  });
-});
-
-describe("resolveFormatOffer / describeFormatCode", () => {
-  it("resolves an approved, active format to its program", async () => {
-    const payable = await resolveFormatOffer("WAY21-GROUP");
-    expect(payable).toMatchObject({ code: "way21-group", format: "group", amount: 4100, programSlug: "way21" });
-  });
-
-  it("refuses a proposal, an offer without a format, and an unknown code", async () => {
-    await expect(resolveFormatOffer("way21-vip")).resolves.toBeNull();
-    await expect(resolveFormatOffer("herbs")).resolves.toBeNull();
-    await expect(resolveFormatOffer("nope")).resolves.toBeNull();
-  });
-
-  it("still describes a format withdrawn after it was bought", async () => {
-    db.tables.experience_offers!.find((row) => row.code === "way21-group")!.active = false;
-    await expect(resolveFormatOffer("way21-group")).resolves.toBeNull();
-    await expect(describeFormatCode("way21-group")).resolves.toEqual({ code: "way21-group", programSlug: "way21" });
   });
 });

@@ -2,8 +2,7 @@ import crypto from "crypto";
 import { asString } from "@/lib/strings";
 import { NextRequest, NextResponse } from "next/server";
 import { persistLeadBestEffort, type LeadRecord } from "@/lib/payments/checkoutFlow";
-import { normalizeProduct, type FormatProductCode, type ProductCode } from "@/lib/products";
-import { resolveFormatOffer } from "@/lib/experiences/formats";
+import { describeOffer } from "@/lib/experiences/offers";
 import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { upsertCustomerByContact } from "@/lib/platform/customerIdentity";
@@ -83,7 +82,7 @@ function cors(res: NextResponse) {
   return res;
 }
 
-function makeLeadRef(product: ProductCode): string {
+function makeLeadRef(product: string): string {
   const d = new Date();
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -104,13 +103,15 @@ export async function POST(req: NextRequest) {
   const phone = asString(body.phone);
   const email = asString(body.email)?.toLowerCase() ?? null;
   const requested = asString(body.product) ?? asString(body.product_code) ?? undefined;
-  const known = normalizeProduct({ product: requested, product_code: asString(body.product_code) ?? undefined });
-  // A guided FORMAT of a program (`natural-body-support`) is priced in
-  // conversation, and its request must arrive under its own code — not be
-  // filed as a generic consultation, which is where unknown codes still go.
-  const format = known ? null : await resolveFormatOffer(requested);
-  const product: ProductCode =
-    known ?? (format && format.mode === "lead" ? (format.code as FormatProductCode) : "consult");
+  /* ONE CHANNEL. The request is filed under the code of the offer it is about,
+     found through `offer_aliases` like every other door — so `ideal-body`,
+     `natural-body` and `course:natural-body` are one program's requests, and a
+     guided FORMAT (`way21-support`) arrives under its own code rather than as a
+     generic consultation. A code no offer answers to — a page with no price
+     yet, the platform's own «ask us» form — is a request to the platform, not
+     a consultation nobody asked for. */
+  const offer = await describeOffer(supabaseAdmin(), requested).catch(() => null);
+  const product: string = offer?.offer.code ?? "platform";
 
   if (!name || (!phone && !email)) {
     return cors(NextResponse.json({ ok: false, error: "contact_required" }, { status: 400 }));

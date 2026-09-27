@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import { wayforpay } from "@/lib/payments/gateway/wayforpay";
 import { buildReturnDestination, resolveReturnStatus } from "@/lib/payments/payReturn";
+
+/** A stored WayForPay callback's status, classified the way the routes do. */
+const stored = (status: string) => wayforpay.outcomeOf(status);
 import { PLATFORM_FAILED_URL, PLATFORM_PENDING_URL, PLATFORM_THANKS_URL } from "@/lib/products";
 
 /**
@@ -16,7 +20,7 @@ import { PLATFORM_FAILED_URL, PLATFORM_PENDING_URL, PLATFORM_THANKS_URL } from "
  * tell them apart, and until it does, the answer is `pending`.
  */
 describe("resolveReturnStatus", () => {
-  const nothingKnown = { fromParams: null, orderStatus: null, lastCallbackStatus: null } as const;
+  const nothingKnown = { fromParams: null, orderStatus: null, lastCallbackOutcome: null } as const;
 
   it("says pending when nothing has come back yet, instead of calling it a failure", () => {
     expect(resolveReturnStatus(nothingKnown)).toBe("pending");
@@ -31,9 +35,9 @@ describe("resolveReturnStatus", () => {
   it("prefers the gateway's own word over a stale row", () => {
     // The callback may not have been written yet; the return parameter is
     // first-hand and current, and the row will catch up.
-    expect(resolveReturnStatus({ fromParams: "paid", orderStatus: "created", lastCallbackStatus: "Declined" })).toBe(
-      "paid",
-    );
+    expect(
+      resolveReturnStatus({ fromParams: "paid", orderStatus: "created", lastCallbackOutcome: stored("Declined") }),
+    ).toBe("paid");
   });
 
   it("treats a paid order as proof, since only a signed callback writes it", () => {
@@ -41,35 +45,35 @@ describe("resolveReturnStatus", () => {
   });
 
   it("treats a refunded order as failed, whatever the last callback said", () => {
-    expect(resolveReturnStatus({ ...nothingKnown, orderStatus: "refunded", lastCallbackStatus: "Approved" })).toBe(
-      "failed",
-    );
+    expect(
+      resolveReturnStatus({ ...nothingKnown, orderStatus: "refunded", lastCallbackOutcome: stored("Approved") }),
+    ).toBe("failed");
   });
 
   /* The distinction the old code could not make: a callback that ARRIVED and
      declined the payment is a real failure; silence is not. */
   it("calls it failed only once a rejecting callback has actually arrived", () => {
-    expect(resolveReturnStatus({ ...nothingKnown, orderStatus: "created", lastCallbackStatus: "Declined" })).toBe(
-      "failed",
-    );
-    expect(resolveReturnStatus({ ...nothingKnown, orderStatus: "created", lastCallbackStatus: "Expired" })).toBe(
-      "failed",
-    );
-    expect(resolveReturnStatus({ ...nothingKnown, orderStatus: "created", lastCallbackStatus: "Refunded" })).toBe(
-      "failed",
-    );
+    expect(
+      resolveReturnStatus({ ...nothingKnown, orderStatus: "created", lastCallbackOutcome: stored("Declined") }),
+    ).toBe("failed");
+    expect(
+      resolveReturnStatus({ ...nothingKnown, orderStatus: "created", lastCallbackOutcome: stored("Expired") }),
+    ).toBe("failed");
+    expect(
+      resolveReturnStatus({ ...nothingKnown, orderStatus: "created", lastCallbackOutcome: stored("Refunded") }),
+    ).toBe("failed");
   });
 
   it("keeps waiting while the gateway says the payment is still moving", () => {
     for (const inFlight of ["InProcessing", "WaitingAuthComplete", "Pending", "RefundInProcessing"]) {
-      expect(resolveReturnStatus({ ...nothingKnown, lastCallbackStatus: inFlight })).toBe("pending");
+      expect(resolveReturnStatus({ ...nothingKnown, lastCallbackOutcome: stored(inFlight) })).toBe("pending");
     }
   });
 
   it("recovers a payment whose callback landed but whose order write did not", () => {
-    expect(resolveReturnStatus({ ...nothingKnown, orderStatus: "created", lastCallbackStatus: "Approved" })).toBe(
-      "paid",
-    );
+    expect(
+      resolveReturnStatus({ ...nothingKnown, orderStatus: "created", lastCallbackOutcome: stored("Approved") }),
+    ).toBe("paid");
   });
 
   it("stays pending when the order row could not be read at all", () => {
@@ -89,8 +93,9 @@ describe("buildReturnDestination", () => {
   it("still routes the two settled states where they always went", () => {
     /* A paid course goes to its own page rather than to a confirmation screen,
        and for `short` that page is /programs/REBOOT — the product row name and
-       the program slug stopped agreeing on 2026-08-29. */
-    const paid = new URL(buildReturnDestination("paid", "short", "short_20260902_ab12", {}, 0));
+       the program slug stopped agreeing on 2026-08-29. The route looks that up
+       (`describeOffer`) and hands it in. */
+    const paid = new URL(buildReturnDestination("paid", "short", "short_20260902_ab12", {}, 0, "/programs/reboot"));
     expect(paid.origin).toBe(new URL(PLATFORM_THANKS_URL).origin);
     expect(paid.pathname).toBe("/programs/reboot");
 

@@ -9,9 +9,11 @@
  *
  * Contract, read off the clicked element:
  *   data-cw-checkout      — presence marks the trigger (value unused)
- *   data-cw-product       — payable product code, must exist in PRODUCTS
+ *   data-cw-product       — any code of an active offer (`experience_offers`
+ *                           or `offer_aliases`); the order is filed under the
+ *                           offer's own code
  *   data-cw-price-value   — analytics value only; the CHARGED amount always
- *                           comes from the server (PRODUCTS[...].amount), so a
+ *                           comes from the server (`experience_offers`), so a
  *                           stale number here can never mischarge anyone
  *   data-cw-offer-id      — optional offer label carried into the order payload
  *
