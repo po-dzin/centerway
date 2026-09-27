@@ -428,9 +428,10 @@ export async function runDailyReminders(
       text: `«${decision.lesson.title}» — урок готовий. Заходьте, коли буде зручно.`,
       href: `/learn/${course.slug}/${decision.lesson.slug}`,
       actionLabel: "Відкрити урок",
-      // One card for every day, on purpose: the same picture each morning is
-      // how the reader learns what this message is before reading it.
-      imageSrc: REMINDER_LESSON_PHOTO_URL,
+      // Day 1 only: the picture says "your daily practice starts", which is
+      // true once. Repeating it every morning would just be the same photo
+      // arriving on a schedule — noise dressed as recognition, not orientation.
+      imageSrc: decision.dayNumber === 1 ? REMINDER_LESSON_PHOTO_URL : null,
     });
 
     if (result.delivered) {
