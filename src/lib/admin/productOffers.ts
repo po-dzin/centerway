@@ -128,12 +128,25 @@ export async function saveProductOffer(input: SaveProductOfferInput): Promise<Pr
 
   /* Written to the one table of prices (2026-09-25), against the thing it
      prices. A missing figure is stored as a lead: a checkout without an amount
-     has never opened. */
-  const { data, error } = await adminClient()
+     has never opened.
+
+     `experience_id` is set from `thing.id` only for a FIRST price — an offer
+     that already has a row keeps whatever `experience_id` it holds. This
+     screen prices `way21-support` by its old package slug, but that offer was
+     deliberately rebound to the way21 experience (`20260925000000_offer_formats`:
+     the guided package became a format of the course it guides). Writing
+     `thing.id` here on every save would silently undo that move and drop the
+     format out of way21's page. */
+  const db = adminClient();
+  const existing = await db.from("experience_offers").select("experience_id").eq("code", input.code).maybeSingle();
+  if (existing.error) throw new AccessError(existing.error.message, 500);
+  const experienceId = (existing.data?.experience_id as string | undefined) ?? thing.id;
+
+  const { data, error } = await db
     .from("experience_offers")
     .upsert(
       {
-        experience_id: thing.id,
+        experience_id: experienceId,
         code: input.code,
         amount: input.amount,
         list_amount: input.listAmount,

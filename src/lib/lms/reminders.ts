@@ -30,6 +30,7 @@ import {
 import { listLiveCourses } from "./liveCatalog";
 import { loadProgress } from "./server";
 import { notifyLearner } from "./notify";
+import { REMINDER_LESSON_PHOTO_URL, REMINDER_WAITING_PHOTO_URL } from "@/lib/telegram/tgSupportBotCopy";
 
 export type ReminderRunResult = {
   scanned: number;
@@ -258,11 +259,16 @@ export async function runUnstartedReminders(
 
       const result = await notifyLearner({
         authUserId,
+        title: course.title,
         text:
           decision.nudgeNumber === 1
             ? `«${course.title}» вже відкритий у вашому кабінеті. Перший урок можна пройти тоді, коли буде зручно.`
             : `Нагадуємо: «${course.title}» чекає в кабінеті. Відлік днів починається з першого відкриття, тож ви нічого не пропустили.`,
         href: `/learn/${course.slug}`,
+        actionLabel: "Почати курс",
+        // The course's own cover when it has one — "here is what you bought";
+        // the series card of a notebook waiting when it does not.
+        imageSrc: course.cover?.src ?? REMINDER_WAITING_PHOTO_URL,
       });
 
       if (result.delivered) {
@@ -418,8 +424,14 @@ export async function runDailyReminders(
 
     const result = await notifyLearner({
       authUserId: enrollment.auth_user_id,
-      text: `День ${decision.dayNumber}: ${decision.lesson.title}. Урок готовий — заходьте, коли буде зручно.`,
+      title: `День ${decision.dayNumber} · ${course.title}`,
+      text: `«${decision.lesson.title}» — урок готовий. Заходьте, коли буде зручно.`,
       href: `/learn/${course.slug}/${decision.lesson.slug}`,
+      actionLabel: "Відкрити урок",
+      // Day 1 only: the picture says "your daily practice starts", which is
+      // true once. Repeating it every morning would just be the same photo
+      // arriving on a schedule — noise dressed as recognition, not orientation.
+      imageSrc: decision.dayNumber === 1 ? REMINDER_LESSON_PHOTO_URL : null,
     });
 
     if (result.delivered) {

@@ -50,6 +50,26 @@ function paragraphs(lines: (string | null | undefined | false)[]): string {
   return lines.filter((line): line is string => typeof line === "string" && line.trim() !== "").join("\n\n");
 }
 
+/**
+ * The bot's answer, as plain text.
+ *
+ * `botCopy.faq` is Telegram HTML — `<b>`, `<a href>` — meant for a chat
+ * bubble, not for this corpus (`validateCorpus` refuses markup in a
+ * document's text: an assistant answer rendered outside Telegram must not
+ * carry tags it cannot show). A link's own href is dropped rather than kept
+ * inline; the document already carries its own citation `href`.
+ */
+function plainFromTelegramHtml(html: string): string {
+  return html
+    .replace(/<a\s+[^>]*>(.*?)<\/a>/gi, "$1")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
 function list(label: string, items: readonly string[] | undefined): string | null {
   if (!items?.length) return null;
   return `${label}: ${items.join("; ")}.`;
@@ -78,7 +98,7 @@ export function supportDocs(): KnowledgeDoc[] {
         kind: "support" as const,
         title: label,
         href: SUPPORT_BOT_URL,
-        text: paragraphs([label, answer]),
+        text: paragraphs([label, plainFromTelegramHtml(answer)]),
         locale: "uk" as const,
         // Signed-out visitors ask "where is my course" too — often before they
         // realise they are signed out, which is the answer itself.

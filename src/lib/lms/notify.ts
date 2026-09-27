@@ -10,8 +10,8 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
-import { surfaceUrl } from "@/lib/surfaces/catalog";
-import { sendTelegramMessage } from "@/lib/telegram/tg";
+import { platformUrl, surfaceUrl } from "@/lib/surfaces/catalog";
+import { escapeTelegramHtml, sendTelegramCard } from "@/lib/telegram/tg";
 
 export type NotificationChannel = "telegram" | "email" | "webpush";
 
@@ -19,8 +19,14 @@ export type LearnerNotification = {
   authUserId: string;
   /** Short plain-text body. Channel senders may decorate it. */
   text: string;
+  /** Optional bold lead line — the course, the day. Plain text; senders escape it. */
+  title?: string;
   /** Site-relative path to the thing being nudged; senders absolutise it. */
   href?: string;
+  /** What the button on `href` says. Defaults to «Відкрити». */
+  actionLabel?: string;
+  /** A picture for the nudge — the course cover. Site-relative or absolute. */
+  imageSrc?: string | null;
 };
 
 export type DeliveryResult =
@@ -32,12 +38,31 @@ type ChannelSender = (notification: LearnerNotification, address: string) => Pro
 const senders: Partial<Record<NotificationChannel, ChannelSender>> = {
   telegram: async (notification, chatId) => {
     // Absolute, always. `href` is written site-relative by the callers (that is
-    // the right shape for a link the web app also renders), and Telegram does
-    // not linkify "/learn/way21" — it prints it as text. Every reminder we have
-    // ever queued points at a lesson, so this is the difference between a nudge
-    // that is one tap away and one that is a path the reader has to retype.
-    const body = notification.href ? `${notification.text}\n\n${surfaceUrl(notification.href)}` : notification.text;
-    await sendTelegramMessage(chatId, body);
+    // the right shape for a link the web app also renders), and Telegram
+    // refuses a relative url on a button outright. Every reminder we have ever
+    // queued points at a lesson, so this is the difference between a nudge
+    // that is one tap away and one that does not arrive at all.
+    //
+    // The link rides on a button, not in the body: a reminder that ended in a
+    // long URL read as a system notice, and the button is the same one tap.
+    const html = [
+      ...(notification.title ? [`<b>${escapeTelegramHtml(notification.title)}</b>`, ""] : []),
+      escapeTelegramHtml(notification.text),
+    ].join("\n");
+    const photo = notification.imageSrc
+      ? notification.imageSrc.startsWith("/")
+        ? platformUrl(notification.imageSrc)
+        : notification.imageSrc
+      : null;
+    await sendTelegramCard(chatId, {
+      html,
+      photo,
+      replyMarkup: notification.href
+        ? {
+            inline_keyboard: [[{ text: notification.actionLabel ?? "Відкрити", url: surfaceUrl(notification.href) }]],
+          }
+        : undefined,
+    });
   },
   // email / webpush intentionally unimplemented on H1 — see file header.
 };

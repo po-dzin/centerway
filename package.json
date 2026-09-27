@@ -31,6 +31,7 @@
     "tokens:build": "node scripts/generate-design-tokens.mjs",
     "tokens:check": "node scripts/generate-design-tokens.mjs && git diff --exit-code -- src/app/globals.css src/landing-static/shared/css/cw-tokens.generated.css",
     "brand:build": "node scripts/brand-mark-bake.mjs",
+    "bot:dosha-cards": "node scripts/bot-dosha-cards.mjs",
     "brand:check": "node scripts/brand-mark-bake.mjs --check",
     "icons:build": "node scripts/icons-bake.mjs",
     "icons:check": "node scripts/icons-bake.mjs --check",

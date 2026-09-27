@@ -19,18 +19,29 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { normalizeEmail } from "@/lib/strings";
 import { asJson } from "@/lib/db/types";
-import { callTelegramBotApi, sendTelegramMessage } from "@/lib/telegram/tg";
+import {
+  callTelegramBotApi,
+  escapeTelegramHtml,
+  reactToTelegramMessage,
+  sendTelegramCard,
+  sendTelegramChatAction,
+  sendTelegramMessage,
+  type InlineKeyboardButton,
+  type InlineKeyboardMarkup,
+} from "@/lib/telegram/tg";
 import { verifyTelegramLinkToken } from "@/lib/platform/telegramLink";
 import { verifyDoshaResultToken } from "@/lib/platform/doshaTelegramLink";
 import { classifyDosha, type DoshaResultType } from "@/lib/dosha/doshaTest";
-import { buildDoshaResultMessage } from "@/lib/dosha/doshaResultCopy";
+import { buildDoshaResultHtml, RESULT_COPY } from "@/lib/dosha/doshaResultCopy";
 import { DOSHA_PRIMARY_EXIT, doshaExitHref } from "@/lib/dosha/doshaRouting";
 import { captureQuestion } from "@/lib/agent/questions/store";
+import { platformUrl } from "@/lib/surfaces/catalog";
 import {
   botCopy,
   ACCESS_PHOTO_URL,
   CABINET_PHOTO_URL,
   CABINET_URL,
+  doshaCardUrl,
   FAQ_PHOTO_URL,
   GREETING_PHOTO_URL,
   SUPPORT_PHOTO_URL,
@@ -86,16 +97,6 @@ export type TelegramUpdate = {
   update_id: number;
   message?: TelegramMessage;
   callback_query?: TelegramCallbackQuery;
-};
-
-/* Telegram requires exactly one of these per button. `url` buttons matter here:
-   the cabinet is a web page, and a url button opens it directly instead of
-   making the reader long-press a link in the message body. */
-type InlineKeyboardButton =
-  { text: string; callback_data: string; url?: never } | { text: string; url: string; callback_data?: never };
-
-type InlineKeyboardMarkup = {
-  inline_keyboard: InlineKeyboardButton[][];
 };
 
 export const PRODUCT_LABELS: Record<BotProductCode, string> = {
@@ -163,17 +164,36 @@ function productKeyboard(): InlineKeyboardMarkup {
 
 /* Ordered by how often it is the reason someone opened the bot. The two short
    orientation branches share a row, keeping the first screen compact on a
-   phone; the longer problem/support actions retain their full readable width. */
+   phone; the longer problem/support actions retain their full readable width.
+
+   One sign per button, and only here: five text rows read as a form, and the
+   glyph is what lets a returning reader find their row without reading. Answers
+   and follow-up buttons stay plain, so the menu is the one place that has them. */
 function mainMenuKeyboard(): InlineKeyboardMarkup {
   return {
     inline_keyboard: [
       [
-        { text: "Мої курси", callback_data: "menu:cabinet" },
-        { text: "Часті питання", callback_data: "menu:faq" },
+        { text: "📚 Мої курси", callback_data: "menu:cabinet" },
+        { text: "💬 Часті питання", callback_data: "menu:faq" },
       ],
-      [{ text: "Не бачу доступ", callback_data: "menu:access" }],
-      [{ text: "Написати підтримці", callback_data: "menu:support" }],
-      [{ text: "Повідомити про помилку", callback_data: "menu:bug" }],
+      [{ text: "🔑 Не бачу доступ", callback_data: "menu:access" }],
+      [{ text: "✉️ Написати підтримці", callback_data: "menu:support" }],
+      [{ text: "🐞 Повідомити про помилку", callback_data: "menu:bug" }],
+    ],
+  };
+}
+
+/* The cabinet answer's own buttons: the place, then the one thing to do if the
+   place looks empty. The link is also a word in the text; the button is the
+   one-tap form of it. */
+function cabinetKeyboard(): InlineKeyboardMarkup {
+  return {
+    inline_keyboard: [
+      [{ text: "Відкрити бібліотеку", url: CABINET_URL }],
+      [
+        { text: "Не бачу доступ", callback_data: "menu:access" },
+        { text: "У меню", callback_data: "menu:back" },
+      ],
     ],
   };
 }
@@ -203,18 +223,13 @@ function backKeyboard(): InlineKeyboardMarkup {
   return { inline_keyboard: [[{ text: "У меню", callback_data: "menu:back" }]] };
 }
 
-async function sendMessage(chatId: number | string, text: string, replyMarkup?: InlineKeyboardMarkup): Promise<void> {
-  if (!replyMarkup) {
-    await sendTelegramMessage(chatId, text);
-    return;
-  }
+function absoluteUrl(href: string): string {
+  return href.startsWith("/") ? platformUrl(href) : href;
+}
 
-  await callTelegramBotApi("sendMessage", {
-    chat_id: chatId,
-    text,
-    disable_web_page_preview: true,
-    reply_markup: replyMarkup,
-  });
+/* Every bot message is HTML — see the copy file's header for why. */
+async function sendMessage(chatId: number | string, html: string, replyMarkup?: InlineKeyboardMarkup): Promise<void> {
+  await sendTelegramCard(chatId, { html, replyMarkup });
 }
 
 /**
@@ -234,16 +249,8 @@ async function sendCaptionedPhoto(
   caption: string,
   replyMarkup?: InlineKeyboardMarkup,
 ): Promise<void> {
-  try {
-    await callTelegramBotApi("sendPhoto", {
-      chat_id: chatId,
-      photo,
-      caption,
-      ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
-    });
-  } catch {
-    await sendMessage(chatId, caption, replyMarkup);
-  }
+  await sendTelegramChatAction(chatId, "upload_photo");
+  await sendTelegramCard(chatId, { html: caption, photo, replyMarkup });
 }
 
 async function sendGreeting(chatId: number): Promise<void> {
@@ -358,7 +365,7 @@ async function handleMenuAction(db: Supabase, chatId: number, user: TelegramUser
 
   if (action === "cabinet") {
     await saveSession(db, user, { state: "idle", contact: null });
-    await sendCaptionedPhoto(chatId, CABINET_PHOTO_URL, botCopy.cabinet, backKeyboard());
+    await sendCaptionedPhoto(chatId, CABINET_PHOTO_URL, botCopy.cabinet, cabinetKeyboard());
     return;
   }
 
@@ -411,6 +418,10 @@ async function handleAccessLookup(
     return;
   }
 
+  // The lookup is two or three reads; «друкує…» says the contact was taken
+  // and something is happening, instead of a pause that reads as nothing.
+  await sendTelegramChatAction(chatId);
+
   const found = await findPaidOrder(db, session.selected_product, contact);
 
   await logEventBestEffort(db, found ? "tg_bot_access_granted" : "tg_bot_access_denied", {
@@ -442,7 +453,7 @@ async function handleAccessLookup(
 async function sendAccessAnswer(chatId: number, product: BotProductCode): Promise<void> {
   await sendMessage(chatId, botCopy.accessFoundPlatform(PRODUCT_LABELS[product]), {
     inline_keyboard: [
-      [{ text: "Відкрити кабінет", url: CABINET_URL }],
+      [{ text: "Відкрити бібліотеку", url: CABINET_URL }],
       [{ text: "У меню", callback_data: "menu:back" }],
     ],
   });
@@ -580,16 +591,35 @@ async function tryDeliverDoshaResult(
   };
   const profile = classifyDosha(scores.vata, scores.pitta, scores.kapha);
 
+  // The print first, captioned with the verdict alone; the reading follows as
+  // text. If the photo is refused, sendTelegramCard sends the caption as text
+  // and the result still arrives in full below it.
+  await sendCaptionedPhoto(
+    chatId,
+    doshaCardUrl(resultType),
+    `<b>${escapeTelegramHtml(profile.confidence === "low" ? RESULT_COPY[resultType].softTitle : RESULT_COPY[resultType].title)}</b>`,
+  );
   await sendMessage(
     chatId,
-    buildDoshaResultMessage({
+    buildDoshaResultHtml({
       resultType,
       scores,
       intro: botCopy.doshaResultIntro,
       outro: botCopy.doshaResultOutro,
-      nextHref: doshaExitHref(DOSHA_PRIMARY_EXIT, { resultType, confidence: profile.confidence }),
     }),
-    backKeyboard(),
+    {
+      inline_keyboard: [
+        [
+          {
+            text: botCopy.doshaResultNext,
+            // A url button refuses a relative path outright, where the old
+            // body link merely printed it — so absolutise, whatever the exit is.
+            url: absoluteUrl(doshaExitHref(DOSHA_PRIMARY_EXIT, { resultType, confidence: profile.confidence })),
+          },
+        ],
+        [{ text: "У меню", callback_data: "menu:back" }],
+      ],
+    },
   );
 
   await saveDoshaContact(db, user, { attemptUserId: attempt.user_id, resultType });
@@ -735,7 +765,12 @@ async function handleTextMessage(db: Supabase, message: TelegramMessage): Promis
 
   const session = await getSession(db, user);
 
+  // A reaction on the reader's own message is the acknowledgement Telegram
+  // people already read: seen (👀) while a contact is checked, written down (✍)
+  // when a request goes to support, thanked (🙏) for a bug. Only on messages
+  // that START something — reacting to every line would be noise.
   if (session.state === "awaiting_access_lookup") {
+    await reactToTelegramMessage(chatId, message.message_id, "👀");
     await handleAccessLookup(db, chatId, user, session, text);
     return;
   }
@@ -746,10 +781,12 @@ async function handleTextMessage(db: Supabase, message: TelegramMessage): Promis
   }
 
   if (session.state === "awaiting_support_message") {
+    await reactToTelegramMessage(chatId, message.message_id, "✍");
     await handleSupportMessage(db, chatId, user, session, text);
     return;
   }
   if (session.state === "awaiting_bug_message") {
+    await reactToTelegramMessage(chatId, message.message_id, "🙏");
     await handleBugMessage(db, chatId, user, text);
     return;
   }
@@ -797,7 +834,10 @@ async function handleCallbackQuery(db: Supabase, callbackQuery: TelegramCallback
 
   if (data.startsWith("faq:")) {
     const key = data.slice("faq:".length) as FaqKey;
-    await sendMessage(chatId, botCopy.faq[key] ?? botCopy.faq.other, backKeyboard());
+    // The question the reader pressed, repeated as the answer's bold lead: in a
+    // scrolled chat the answer otherwise arrives without saying what it answers.
+    const answered = key in botCopy.faq ? key : "other";
+    await sendMessage(chatId, `<b>${botCopy.faqLabels[answered]}</b>\n\n${botCopy.faq[answered]}`, backKeyboard());
     return;
   }
 
