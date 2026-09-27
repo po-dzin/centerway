@@ -211,3 +211,60 @@ export function buildDoshaResultMessage(params: {
     ...(params.nextHref ? [params.nextHref] : []),
   ].join("\n");
 }
+
+/**
+ * The same result, for a chat that renders HTML.
+ *
+ * Same strings, same order, same hedging as `buildDoshaResultMessage` — only
+ * the dressing differs: the verdict is bold, the three shares are drawn as
+ * bars in a monospace block so they line up, and there is no trailing link,
+ * because the caller puts the next step on a button under the message.
+ * Everything is escaped here: this module owns the words, so it owns making
+ * them safe to mark up.
+ */
+export function buildDoshaResultHtml(params: {
+  resultType: DoshaResultType;
+  scores: { vata: number; pitta: number; kapha: number };
+  intro: string;
+  outro: string;
+}): string {
+  const profile = classifyDosha(params.scores.vata, params.scores.pitta, params.scores.kapha);
+  const copy = RESULT_COPY[params.resultType];
+  const confidence = CONFIDENCE_COPY[profile.confidence];
+  const esc = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  const bars = (
+    [
+      ["Вата ", profile.shares.vata],
+      ["Пітта", profile.shares.pitta],
+      ["Капха", profile.shares.kapha],
+    ] as const
+  )
+    .map(([label, share]) => `${label} ${shareBar(share)} ${Math.round(share)}%`)
+    .join("\n");
+
+  return [
+    esc(params.intro),
+    `<b>${esc(profile.confidence === "low" ? copy.softTitle : copy.title)}</b>`,
+    "",
+    `<code>${bars}</code>`,
+    `<i>${esc(confidence.label)}.</i>`,
+    ...(confidence.note ? [esc(confidence.note)] : []),
+    "",
+    esc(copy.summary.join("\n\n")),
+    "",
+    `<b>${esc(copy.weekVector.split(":")[0] ?? "")}:</b>${esc(copy.weekVector.slice(copy.weekVector.indexOf(":") + 1))}`,
+    "",
+    esc(copy.recommendation),
+    "",
+    `<i>${esc(BOUNDARY_NOTE)}</i>`,
+    "",
+    esc(params.outro),
+  ].join("\n");
+}
+
+/** Ten cells, rounded to the nearest: 75% → ▰▰▰▰▰▰▰▰▱▱. */
+export function shareBar(sharePercent: number): string {
+  const filled = Math.max(0, Math.min(10, Math.round(sharePercent / 10)));
+  return "▰".repeat(filled) + "▱".repeat(10 - filled);
+}

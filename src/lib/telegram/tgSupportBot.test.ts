@@ -16,6 +16,7 @@ import {
   botProfile,
   CABINET_PHOTO_URL,
   CABINET_URL,
+  doshaCardUrl,
   FAQ_PHOTO_URL,
   GREETING_PHOTO_URL,
   SUPPORT_PHOTO_URL,
@@ -67,11 +68,27 @@ describe("support bot — copy", () => {
     expect(Object.keys(botCopy.faqLabels).sort()).toEqual(Object.keys(botCopy.faq).sort());
   });
 
-  it("sends people to the cabinet with an absolute URL", () => {
+  it("sends people to the cabinet with an absolute URL, as a word and not a bare link", () => {
     // A relative path is printed, not linkified, by Telegram.
     expect(CABINET_URL).toMatch(/^https:\/\//);
-    expect(botCopy.cabinet).toContain(CABINET_URL);
-    expect(botCopy.faq.where_course).toContain(CABINET_URL);
+    // The link lives in an anchor inside the sentence (and on a button); a
+    // bare URL on its own line is what made the answers read as a list of links.
+    for (const text of [botCopy.cabinet, botCopy.faq.where_course]) {
+      expect(text).toContain(`<a href="${CABINET_URL}">`);
+      expect(text.split("\n")).not.toContain(CABINET_URL);
+    }
+  });
+
+  it("writes only the HTML Telegram accepts", () => {
+    // parse_mode HTML rejects the WHOLE message on an unknown tag or a stray
+    // "<" — the send fails, it does not degrade. So every tag must be one of
+    // Telegram's, and every "&" an entity.
+    const allowed = /^<\/?(b|i|u|s|code|pre|a)( href="[^"]+")?>$/;
+    for (const line of collectStrings(botCopy)) {
+      for (const tag of line.match(/<[^>]*>/g) ?? []) expect(tag, line).toMatch(allowed);
+      expect(line.replace(/<[^>]*>/g, ""), line).not.toMatch(/[<>]|&(?!amp;|lt;|gt;|quot;)/);
+    }
+    expect(botCopy.accessFoundPlatform("A <b> & C")).toContain("A &lt;b&gt; &amp; C");
   });
 
   it("addresses the reader as «ви» throughout", () => {
@@ -121,6 +138,8 @@ describe("support bot — copy", () => {
       "public/cw/bot/final/menu-support-printed-stamp-v4.png",
       "public/cw/bot/final/menu-faq-printed-stamp-v1.png",
       "public/cw/bot/final/menu-access-printed-stamp-v1.png",
+      "public/cw/bot/final/reminder-course-waiting-v1.png",
+      "public/cw/bot/final/reminder-lesson-ready-v1.png",
     ];
 
     for (const asset of assets) {
@@ -130,6 +149,15 @@ describe("support bot — copy", () => {
     expect(SUPPORT_PHOTO_URL).toMatch(/^https:\/\/.+\.png$/);
     expect(FAQ_PHOTO_URL).toMatch(/^https:\/\/.+\.png$/);
     expect(ACCESS_PHOTO_URL).toMatch(/^https:\/\/.+\.png$/);
+  });
+
+  it("ships a dosha card for every result type", async () => {
+    const { RESULT_COPY } = await import("@/lib/dosha/doshaResultCopy");
+    for (const type of Object.keys(RESULT_COPY)) {
+      const asset = `public/cw/bot/dosha/${type}.png`;
+      expect(existsSync(path.join(process.cwd(), asset)), asset).toBe(true);
+      expect(doshaCardUrl(type)).toMatch(new RegExp(`^https://.+/cw/bot/dosha/${type}\\.png$`));
+    }
   });
 
   it("registers a command for every menu branch a command claims to open", () => {
