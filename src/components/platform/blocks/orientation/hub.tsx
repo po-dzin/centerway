@@ -151,7 +151,11 @@ export function HubIntro() {
                       )}
                       <span className={styles.videoTestText}>
                         <span className={styles.videoTestTitle}>
-                          <InteractionInkLabel variant="link">{test.title}</InteractionInkLabel>
+                          {/* The selection stroke, not the link rule: a row of names is a
+                              list of ways in, like the nav, and resting
+                              underlines turned it into a column of links. The
+                              mark appears under the pointer only. */}
+                          <InteractionInkLabel variant="navigation">{test.title}</InteractionInkLabel>
                         </span>
                         <span className={styles.videoTestMeta}>
                           {test.tag} · {test.format}
