@@ -933,6 +933,69 @@
   justify-content: flex-start;
 }
 
+/* ── The video and its panel stay one height (2026-09-28) ──────────────────
+
+   The panel stretches to the row and the 16:9 player centres inside it, so
+   whenever the card beside it is taller than the player the difference shows
+   as dark bands above and below the video — and the list of tests made the
+   card taller. Two answers, by width:
+
+   ≥1200px — the card is made to fit under the player's height. The one
+   element that did not have to be a line of its own was «Усі тести» under the
+   list (a 48px row); it moves onto the label's line, and the card measures
+   311px against a 321px player at 1440 and 311 against 310 at 1200.
+
+   901–1199px — it cannot fit: at 1024 a half-width player is 260px and the
+   card 378px. So the player takes the full width and the card goes under it,
+   copy on the left and the list on the right: two panels of one width, no
+   letterbox. Below 900 the single-card phone layout takes over unchanged. */
+.videoDecisionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
+.videoDecisionHead > p {
+  margin: 0;
+}
+
+.videoDecisionMoreHead {
+  display: none;
+}
+
+@media (min-width: 1200px) {
+  .videoDecisionMoreHead {
+    display: inline-flex;
+  }
+
+  /* The crossing keeps its full hit area on a touch screen; with a mouse it
+     sits on the label's line at the label's height. */
+  @media (pointer: fine) {
+    .videoDecisionMoreHead > a {
+      min-height: 0;
+    }
+  }
+
+  .videoDecisionMoreFoot {
+    display: none;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1199px) {
+  .videoSection {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .videoAside {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--cw-space-lg);
+    padding: clamp(1rem, 2.4vw, 1.5rem);
+  }
+}
+
 @media (max-width: 900px) {
   /* ONE INSET FOR THE WHOLE CARD (2026-08-29). The two columns become one card
      here, and the card's padding used to be half a rem — barely a hairline of

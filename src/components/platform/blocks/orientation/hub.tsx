@@ -103,7 +103,15 @@ export function HubIntro() {
         </div>
         <aside className={styles.videoAside} id="diagnostics" data-cw-hub-intro="aside">
           <div className={styles.videoDecisionIntro}>
-            <p className={styles.label}>Діагностика стану · перший крок</p>
+            {/* The way to the catalogue stands on the label's line on a wide
+                screen — see `.videoDecisionHead` — and at the foot of the list
+                everywhere else. Two copies, one displayed at a time. */}
+            <div className={styles.videoDecisionHead}>
+              <p className={styles.label}>Діагностика стану · перший крок</p>
+              <span className={`${styles.videoDecisionMore} ${styles.videoDecisionMoreHead}`}>
+                <PlatformBlockLink href="/tests" label="Усі тести" />
+              </span>
+            </div>
             <h2 className={`${styles.title} ${styles.videoDecisionTitle}`}>Почніть із себе, а не з програми</h2>
             <p className={styles.videoDecisionText}>
               Короткі тести про вашу природу, травлення, втому і ритм дня. Кожен займає кілька хвилин і показує, з чого
@@ -158,7 +166,7 @@ export function HubIntro() {
                 resting stroke this link kept the navigation strength and went
                 on being invisible until hovered. Composing the styles is not
                 the same as using the component. */}
-            <span className={styles.videoDecisionMore}>
+            <span className={`${styles.videoDecisionMore} ${styles.videoDecisionMoreFoot}`}>
               <PlatformBlockLink href="/tests" label="Усі тести" />
             </span>
           </div>
