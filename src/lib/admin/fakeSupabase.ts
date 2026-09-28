@@ -95,6 +95,12 @@ class FakeQuery implements PromiseLike<{
     return this;
   }
 
+  /** PostgREST `neq`: rows whose value differs (NULL is not «not equal» there, but no caller relies on it). */
+  neq(column: string, value: unknown) {
+    this.filters.push((row) => row[column] !== value);
+    return this;
+  }
+
   in(column: string, values: unknown[]) {
     const set = new Set(values);
     this.filters.push((row) => set.has(row[column]));
