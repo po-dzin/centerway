@@ -11,8 +11,8 @@
  * WHAT CARRIES THE BRAND. The paper ground, one warm surface on it with a
  * hairline, the editorial serif for the one headline, Manrope for the words,
  * the warmth-coloured primary button with the ink label (the site's primary
- * button, 48 px), the spiral and the wordmark on top at the site header's
- * sizes (2rem mark, 8.1rem wordmark), the thin ink link rule. Web fonts
+ * button, 48 px), the spiral and the wordmark inside the card on top at the
+ * site header's sizes (2rem mark, 8.1rem wordmark), the thin ink link rule. Web fonts
  * load where the client allows (Apple Mail, iOS); elsewhere the fallback stack
  * keeps the same shape.
  *
@@ -136,6 +136,12 @@ export function renderEmailLayout(input: EmailLayoutInput): string {
   const preheader = input.preheader?.trim()
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all">${escapeHtml(input.preheader.trim())}${"&#8203;&nbsp;".repeat(40)}</div>`
     : "";
+  /* The brand sits INSIDE the card, on its own row with a hairline under it:
+     the letter is one object, the way a page of the platform is one object
+     under its bar — not a logo floating above a box. Mark and wordmark at the
+     site header's sizes (2rem, 8.1rem), baked at 3x so they stay sharp on a
+     phone's display. */
+  const brand = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 30px"><tr><td style="padding:0 0 22px;border-bottom:1px solid ${T.border}"><a href="${PLATFORM_ORIGIN}" style="text-decoration:none"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td valign="middle" style="padding-right:10px"><img src="${PLATFORM_ORIGIN}/cw/brand/email/cw-mark-ink@3x.png" width="32" height="32" alt="" style="display:block;border:0"></td><td valign="middle"><img src="${PLATFORM_ORIGIN}/cw/brand/email/cw-wordmark-ink@3x.png" width="130" height="31" alt="CenterWay" style="display:block;border:0;font-family:${FONT_UI};font-size:20px;font-weight:700;color:${T.ink}"></td></tr></table></a></td></tr></table>`;
   const eyebrow = input.eyebrow?.trim()
     ? `<p style="margin:0 0 10px;font-family:${FONT_UI};font-size:12px;line-height:1.4;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:${T.guide}">${escapeHtml(input.eyebrow.trim())}</p>`
     : "";
@@ -167,16 +173,16 @@ export function renderEmailLayout(input: EmailLayoutInput): string {
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
 <link href="${FONTS_HREF}" rel="stylesheet">
-<style>@media (max-width:480px){.cw-card{padding:28px 22px 22px !important}.cw-title{font-size:28px !important}}</style>
+<style>@media (max-width:480px){.cw-card{padding:22px 20px 22px !important}.cw-title{font-size:28px !important}}</style>
 </head>
-<body style="margin:0;padding:0;background:${T.paper};-webkit-text-size-adjust:100%">
+<body style="margin:0;padding:0;background:${T.paper};-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased">
 ${preheader}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${T.paper}" style="background:${T.paper}">
-<tr><td align="center" style="padding:32px 12px 40px">
+<tr><td align="center" style="padding:28px 16px 40px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px">
-<tr><td align="center" style="padding:0 0 24px"><a href="${PLATFORM_ORIGIN}" style="text-decoration:none"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td valign="middle" style="padding-right:10px"><img src="${PLATFORM_ORIGIN}/cw/brand/email/cw-mark-ink@2x.png" width="32" height="32" alt="" style="display:block;border:0"></td><td valign="middle"><img src="${PLATFORM_ORIGIN}/cw/brand/email/cw-wordmark-ink@2x.png" width="130" height="31" alt="CenterWay" style="display:block;border:0;font-family:${FONT_UI};font-size:20px;font-weight:700;color:${T.ink}"></td></tr></table></a></td></tr>
-<tr><td class="cw-card" style="background:${T.surface};border:1px solid ${T.border};border-radius:20px;padding:40px 36px 30px">
-${eyebrow}${title}${input.blocks.map(blockHtml).join("\n")}
+</table></a></td></tr>
+<tr><td class="cw-card" style="background:${T.surface};border:1px solid ${T.border};border-radius:20px;padding:28px 36px 30px">
+${brand}${eyebrow}${title}${input.blocks.map(blockHtml).join("\n")}
 ${input.cta ? button(input.cta) : ""}
 ${after}
 </td></tr>
