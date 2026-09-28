@@ -105,6 +105,34 @@ export const platformTestBySlug = Object.fromEntries(platformTests.map((test) =>
 export const activePlatformTests = platformTests.filter((test) => test.status === "active");
 export const plannedPlatformTests = platformTests.filter((test) => test.status === "planned");
 
+/* HOW MANY TESTS THE HOME PANEL CAN HOLD (2026-09-28). The panel beside the
+   intro video has to fit under the 16:9 player's height — 321px at the widest
+   content column — or the player letterboxes. Measured on the page:
+     two rows with thumbnails ... 311px   fits
+     three rows with thumbnails  383px   does not
+     three compact rows ........ 291px   fits (48px rows on touch still fit)
+   So: up to two, the picture rows; exactly three, the same rows without the
+   picture; four and more, the first two as picture rows and the rest behind
+   «Усі тести (N)». «First» is the order of `platformTests` — the order the
+   founder wants people to start in. */
+export const HOME_TEST_RAIL_PICTURE_MAX = 2;
+export const HOME_TEST_RAIL_COMPACT_MAX = 3;
+
+export type HomeTestRail = {
+  rows: PlatformTestEntry[];
+  density: "picture" | "compact";
+  /** Every active test — what «Усі тести» counts when rows hide some. */
+  total: number;
+};
+
+export function homeTestRail(tests: readonly PlatformTestEntry[] = activePlatformTests): HomeTestRail {
+  const takeable = tests.filter((test) => test.status === "active" && test.href);
+  const total = takeable.length;
+  if (total <= HOME_TEST_RAIL_PICTURE_MAX) return { rows: takeable, density: "picture", total };
+  if (total <= HOME_TEST_RAIL_COMPACT_MAX) return { rows: takeable, density: "compact", total };
+  return { rows: takeable.slice(0, HOME_TEST_RAIL_PICTURE_MAX), density: "picture", total };
+}
+
 export const testsHubCopy = {
   badge: "Стан · Гіпотеза · Маршрут",
   title: "Діагностика",

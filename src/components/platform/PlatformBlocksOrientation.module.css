@@ -865,6 +865,27 @@
   line-height: 1.35;
 }
 
+/* Three tests: the same row without its picture, name and «tag · format» on
+   one line. 41px with a mouse; a touch screen keeps the 48px target, and three
+   of those still fit under the player — see `homeTestRail`. */
+.videoTestList[data-density="compact"] .videoTestRow {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-block: var(--cw-space-xs);
+}
+
+.videoTestList[data-density="compact"] .videoTestText {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--cw-space-sm);
+}
+
+@media (pointer: coarse) {
+  .videoTestList[data-density="compact"] .videoTestRow {
+    min-height: var(--ds-button-hit-min);
+  }
+}
+
 /* The arrow nudges the way `.blockAction`'s does — same step, same tick,
    same brass — so the two crossings in this panel move alike. */
 .videoTestArrow {

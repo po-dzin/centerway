@@ -5,7 +5,7 @@ import styles from "@/components/platform/PlatformHeroStyles";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { Icon } from "@/components/Icon";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
-import { activePlatformTests } from "@/lib/platform/tests";
+import { homeTestRail } from "@/lib/platform/tests";
 import { HubIntroVideo } from "./IntroVideo";
 import { heroTitleFit } from "@/components/platform/heroTitleFit";
 
@@ -86,6 +86,9 @@ export function HubHero() {
 }
 
 export function HubIntro() {
+  const rail = homeTestRail();
+  /* «Усі тести» says how many there are once the panel stops showing all. */
+  const allTestsLabel = rail.rows.length < rail.total ? `Усі тести (${rail.total})` : "Усі тести";
   return (
     <section className={`${styles.container} ${styles.section}`} id="signals">
       <div className={styles.videoSection} data-cw-hub-intro="layout">
@@ -109,7 +112,7 @@ export function HubIntro() {
             <div className={styles.videoDecisionHead}>
               <p className={styles.label}>Діагностика стану · перший крок</p>
               <span className={`${styles.videoDecisionMore} ${styles.videoDecisionMoreHead}`}>
-                <PlatformBlockLink href="/tests" label="Усі тести" />
+                <PlatformBlockLink href="/tests" label={allTestsLabel} />
               </span>
             </div>
             <h2 className={`${styles.title} ${styles.videoDecisionTitle}`}>Почніть із себе, а не з програми</h2>
@@ -129,12 +132,12 @@ export function HubIntro() {
                 and a carousel of two is mostly its own controls. The row is
                 the choice, so there is no gold button competing with it — the
                 hand-off from the hero lands on the list itself. */}
-            <ul className={styles.videoTestList} data-cw-hub-intro="actions">
-              {activePlatformTests.map((test) =>
+            <ul className={styles.videoTestList} data-cw-hub-intro="actions" data-density={rail.density}>
+              {rail.rows.map((test) =>
                 test.href ? (
                   <li key={test.slug}>
                     <Link className={styles.videoTestRow} href={test.href} data-cw-ink-control>
-                      {test.artwork ? (
+                      {rail.density === "compact" ? null : test.artwork ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           className={styles.videoTestThumb}
@@ -167,7 +170,7 @@ export function HubIntro() {
                 on being invisible until hovered. Composing the styles is not
                 the same as using the component. */}
             <span className={`${styles.videoDecisionMore} ${styles.videoDecisionMoreFoot}`}>
-              <PlatformBlockLink href="/tests" label="Усі тести" />
+              <PlatformBlockLink href="/tests" label={allTestsLabel} />
             </span>
           </div>
         </aside>
