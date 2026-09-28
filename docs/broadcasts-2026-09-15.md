@@ -86,7 +86,7 @@ string is the Resend Idempotency-Key.
 
 Every letter — receipt, lifecycle, broadcast — is poured into one frame,
 `src/lib/email/layout.ts`: paper ground, one warm card, serif headline,
-warmth primary button, wordmark and spiral as PNGs under
+warmth primary button, spiral + wordmark on top as PNGs under
 `public/cw/brand/email/` (Gmail shows no SVG). Colours are the light-side
 platform tokens resolved to hex; change them there, not per letter.
 

@@ -11,7 +11,8 @@
  * WHAT CARRIES THE BRAND. The paper ground, one warm surface on it with a
  * hairline, the editorial serif for the one headline, Manrope for the words,
  * the warmth-coloured primary button with the ink label (the site's primary
- * button, 48 px), the wordmark on top and the spiral at the signature. Web fonts
+ * button, 48 px), the spiral and the wordmark on top at the site header's
+ * sizes (2rem mark, 8.1rem wordmark), the thin ink link rule. Web fonts
  * load where the client allows (Apple Mail, iOS); elsewhere the fallback stack
  * keeps the same shape.
  *
@@ -41,6 +42,8 @@ export const EMAIL_TOKENS = {
   accent: "#e5ae65",
   /** --cw-btn-primary-text / --cw-platform-on-accent */
   onAccent: "#203126",
+  /** --cw-link-rule on the light side: the text ink at the link's rest strength (0.62) */
+  linkRule: "#70766d",
   /** --cw-sem-guide-primary: the text-grade accent for the eyebrow and step numbers */
   guide: "#456b58",
 } as const;
@@ -85,7 +88,7 @@ export type EmailLayoutInput = {
 
 export function emailLink(href: string, label: string, tone: "ink" | "muted" = "ink"): string {
   const color = tone === "ink" ? T.ink : T.muted;
-  return `<a href="${escapeHtml(href)}" style="color:${color};text-decoration:underline;text-decoration-color:${T.accent};text-underline-offset:3px">${label}</a>`;
+  return `<a href="${escapeHtml(href)}" style="color:${color};text-decoration:underline;text-decoration-color:${T.linkRule};text-decoration-thickness:1px;text-underline-offset:3px">${label}</a>`;
 }
 
 function blockHtml(block: EmailBlock): string {
@@ -148,7 +151,7 @@ export function renderEmailLayout(input: EmailLayoutInput): string {
   const signature =
     input.signature === null
       ? ""
-      : `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto"><tr><td valign="middle" style="padding-right:10px"><img src="${PLATFORM_ORIGIN}/cw/brand/email/cw-mark-ink@2x.png" width="28" height="28" alt="" style="display:block;border:0"></td><td valign="middle" style="font-family:${FONT_EDITORIAL};font-size:18px;line-height:1.2;font-style:italic;color:${T.ink}">${escapeHtml(input.signature ?? "Команда CenterWay")}</td></tr></table>`;
+      : `<p style="margin:0;font-family:${FONT_EDITORIAL};font-size:18px;line-height:1.2;font-style:italic;color:${T.ink}">${escapeHtml(input.signature ?? "Команда CenterWay")}</p>`;
   const footer = (input.footer ?? [])
     .map(
       (line) =>
@@ -171,7 +174,7 @@ ${preheader}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${T.paper}" style="background:${T.paper}">
 <tr><td align="center" style="padding:32px 12px 40px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px">
-<tr><td align="center" style="padding:0 0 24px"><a href="${PLATFORM_ORIGIN}" style="text-decoration:none"><img src="${PLATFORM_ORIGIN}/cw/brand/email/cw-wordmark-ink@2x.png" width="150" height="36" alt="CenterWay" style="display:block;border:0;font-family:${FONT_UI};font-size:20px;font-weight:700;color:${T.ink}"></a></td></tr>
+<tr><td align="center" style="padding:0 0 24px"><a href="${PLATFORM_ORIGIN}" style="text-decoration:none"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td valign="middle" style="padding-right:10px"><img src="${PLATFORM_ORIGIN}/cw/brand/email/cw-mark-ink@2x.png" width="32" height="32" alt="" style="display:block;border:0"></td><td valign="middle"><img src="${PLATFORM_ORIGIN}/cw/brand/email/cw-wordmark-ink@2x.png" width="130" height="31" alt="CenterWay" style="display:block;border:0;font-family:${FONT_UI};font-size:20px;font-weight:700;color:${T.ink}"></td></tr></table></a></td></tr>
 <tr><td class="cw-card" style="background:${T.surface};border:1px solid ${T.border};border-radius:20px;padding:40px 36px 30px">
 ${eyebrow}${title}${input.blocks.map(blockHtml).join("\n")}
 ${input.cta ? button(input.cta) : ""}
