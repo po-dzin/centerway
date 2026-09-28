@@ -849,7 +849,7 @@
 
 .videoTestText {
   display: grid;
-  gap: 0.15rem;
+  gap: var(--cw-space-2xs);
   min-width: 0;
 }
 
@@ -992,7 +992,7 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
     gap: var(--cw-space-lg);
-    padding: clamp(1rem, 2.4vw, 1.5rem);
+    padding: var(--cw-space-lg);
   }
 }
 
