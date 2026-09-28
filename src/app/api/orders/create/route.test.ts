@@ -176,3 +176,52 @@ describe("POST /api/orders/create", () => {
     expect(db.tables.orders).toHaveLength(0);
   });
 });
+
+/* FORMATS (2026-09-25). A cohort or guided format is its own offer with its
+   own code and price. The order it writes must carry THAT code and THAT
+   amount — the entitlement and the webhook read the row — and a lead format
+   or an unknown format code must write nothing at all. */
+describe("POST /api/orders/create — formats of a program", () => {
+  const group = {
+    code: "way21-group",
+    amount: 4100,
+    currency: "UAH",
+    pixelContentName: "Шлях 21",
+  };
+
+  beforeEach(() => {
+    loadPayableOffer.mockImplementation(async (code: string) =>
+      code === "way21-group" || code === "Way21-Group" ? group : null,
+    );
+  });
+
+  it("files a group format under its own code at the format's amount", async () => {
+    const res = await post({ product_code: "way21-group" });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(body).toMatchObject({ ok: true, product: "way21-group", amount: 4100 });
+    expect(String(body.order_ref)).toMatch(/^way21-group_\d{8}_[0-9a-f]{8}$/);
+    expect(db.tables.orders![0]).toMatchObject({ product_code: "way21-group", amount: 4100, currency: "UAH" });
+    expect(db.tables.jobs![0]!.payload).toMatchObject({ value: 4100, content_ids: ["way21-group"] });
+  });
+
+  it("files the order under the offer's own code, not the spelling that came in", async () => {
+    await post({ product_code: "Way21-Group" });
+    expect(db.tables.orders![0]).toMatchObject({ product_code: "way21-group" });
+  });
+
+  it("refuses a lead format — the catalogue says it is not payable — and writes nothing", async () => {
+    const res = await post({ product_code: "way21-support" });
+    expect(res.status).toBe(404);
+    expect(loadPayableOffer).toHaveBeenCalledWith("way21-support");
+    expect(db.tables.orders).toHaveLength(0);
+    expect(db.tables.jobs).toHaveLength(0);
+  });
+
+  it("refuses an unknown format code with 404 instead of any fallback product", async () => {
+    const res = await post({ product_code: "way21-vip" });
+    expect(res.status).toBe(404);
+    await expect(res.json()).resolves.toMatchObject({ error: "unknown_product" });
+    expect(db.tables.orders).toHaveLength(0);
+  });
+});

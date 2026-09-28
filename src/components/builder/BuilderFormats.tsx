@@ -73,7 +73,8 @@ type Draft = {
   includes: string[];
 };
 
-function draftOf(format: BuilderFormatDto | null): Draft {
+/* `draftOf` / `inputOf` are exported for BuilderFormats.test.ts only. */
+export function draftOf(format: BuilderFormatDto | null): Draft {
   return {
     format: format?.format ?? "group",
     label: format && !format.labelIsDefault ? format.label : "",
@@ -86,7 +87,7 @@ function draftOf(format: BuilderFormatDto | null): Draft {
   };
 }
 
-function inputOf(draft: Draft, locked: boolean): BuilderFormatInput | { error: string } {
+export function inputOf(draft: Draft, locked: boolean): BuilderFormatInput | { error: string } {
   const amount = draft.proposedAmount.trim();
   const proposedAmount = amount ? Number(amount) : null;
   if (proposedAmount !== null && (!Number.isInteger(proposedAmount) || proposedAmount <= 0)) {

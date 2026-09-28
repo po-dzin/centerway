@@ -265,10 +265,14 @@ function parseInput(input: FormatInput): Parsed {
   return parsed;
 }
 
-async function writeIncludes(db: Db, offerId: string, slugs: string[], allowed: IncludableProgram[]): Promise<void> {
+/** Checked BEFORE the offer row is written: a refused include must not leave a half-saved format behind. */
+function refuseForeignIncludes(slugs: string[], allowed: IncludableProgram[]): void {
   const allowedSlugs = new Set(allowed.map((program) => program.slug));
-  const refused = slugs.filter((slug) => !allowedSlugs.has(slug));
-  if (refused.length > 0) throw new FormatError("format_include_not_yours", 403);
+  if (slugs.some((slug) => !allowedSlugs.has(slug))) throw new FormatError("format_include_not_yours", 403);
+}
+
+async function writeIncludes(db: Db, offerId: string, slugs: string[], allowed: IncludableProgram[]): Promise<void> {
+  refuseForeignIncludes(slugs, allowed);
 
   const { data: targets, error } = slugs.length
     ? await db.from("lms_courses").select("slug, experience_id").in("slug", slugs)
@@ -278,7 +282,10 @@ async function writeIncludes(db: Db, offerId: string, slugs: string[], allowed: 
     (targets ?? []).map((row) => [row.slug as string, row.experience_id as string | null]),
   );
 
-  await db.from("experience_offer_items").delete().eq("offer_id", offerId);
+  // A failed clear must stop here: inserting over the old rows would either hit
+  // the (offer_id, experience_id) key or leave a bundle of old and new mixed.
+  const cleared = await db.from("experience_offer_items").delete().eq("offer_id", offerId);
+  if (cleared.error) throw new FormatError(`format_includes_write_failed:${cleared.error.message}`, 500);
   const rows = slugs.flatMap((slug, index) => {
     const experienceId = experienceBySlug.get(slug);
     return experienceId ? [{ offer_id: offerId, experience_id: experienceId, sort_order: index + 1 }] : [];
@@ -313,6 +320,8 @@ export async function createFormat(input: {
   if (!parsed.format) throw new FormatError("format_invalid_kind");
   const mode = parsed.mode ?? (parsed.format === "individual" ? "lead" : "checkout");
   const programSlug = course.program_slug ?? course.slug;
+  const allowed = parsed.includes?.length ? await listIncludablePrograms(input) : [];
+  if (parsed.includes?.length) refuseForeignIncludes(parsed.includes, allowed);
   const code = await freeCode(db, `${programSlug}-${parsed.format}`.toLowerCase());
 
   const { data: siblings } = await db
@@ -346,10 +355,7 @@ export async function createFormat(input: {
     .single();
   if (error || !data) throw new FormatError(`format_write_failed:${error?.message ?? "unknown"}`, 500);
 
-  if (parsed.includes?.length) {
-    const allowed = await listIncludablePrograms(input);
-    await writeIncludes(db, data.id as string, parsed.includes, allowed);
-  }
+  if (parsed.includes?.length) await writeIncludes(db, data.id as string, parsed.includes, allowed);
   return code;
 }
 
@@ -383,6 +389,9 @@ export async function updateFormat(input: {
     if (touchesLocked) throw new FormatError("format_approved_locked", 409);
   }
 
+  const allowed = parsed.includes !== undefined ? await listIncludablePrograms(input) : [];
+  if (parsed.includes !== undefined) refuseForeignIncludes(parsed.includes, allowed);
+
   const now = new Date().toISOString();
   const patch: TablesUpdate<"experience_offers"> = {};
   if (parsed.format !== undefined) patch.format = parsed.format;
@@ -414,10 +423,7 @@ export async function updateFormat(input: {
     const { error } = await db.from("experience_offers").update(patch).eq("id", row.id);
     if (error) throw new FormatError(`format_write_failed:${error.message}`, 500);
   }
-  if (parsed.includes !== undefined) {
-    const allowed = await listIncludablePrograms(input);
-    await writeIncludes(db, row.id, parsed.includes, allowed);
-  }
+  if (parsed.includes !== undefined) await writeIncludes(db, row.id, parsed.includes, allowed);
 }
 
 /** An author may withdraw what never went on sale; anything sold is the owner's to retire. */
