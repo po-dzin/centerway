@@ -436,6 +436,7 @@ export function getMainDomainSitemapRoutes(): string[] {
     "/consult",
     "/tests",
     "/tests/dosha",
+    "/tests/balance",
     "/legal/public-offer",
     "/legal/privacy",
   ];

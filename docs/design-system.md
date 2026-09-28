@@ -284,6 +284,24 @@ Three separate symptoms, one habit: a block laid out for the copy it had, with t
 
 `SupportForm` — the block these replaced — had no other caller left and was deleted rather than kept as a second, unreachable answer to "who runs this".
 
+### The tests beside the video, and the second test (2026-09-28)
+
+**The card lists the tests; it no longer asks one thing.** «Пройти перший тест» was one gold button to the dosha test — right while there was one test, and it hid the second the day it shipped. The card's rail is now a list read from `homeTestRail()` in `src/lib/platform/tests.ts` (the same registry as `/tests`): a thumbnail, the name, «tag · format», an arrow. A row is a link, not a card and not a button — no plate, no border, no tint. The name carries the **selection stroke** (`InteractionInkLabel variant="navigation"`), absent at rest and drawn under the pointer, because resting link rules turned the list into a column of links; the arrow nudges on the `.blockAction` step. Rows are divided by `--cw-rule-fade-x`, between rows only.
+
+**The card is held to the player's height, not the other way round.** The panel/frame split above letterboxes the video whenever the card is taller than the 16:9 player, and the list made it taller. Measured at the widest content column (player 321px):
+
+| active tests | rail | card |
+| --- | --- | --- |
+| 1–2 | picture rows | 311px — fits |
+| 3 | compact rows (no picture, name and «tag · format» on one line; 48px on touch) | 291px — fits |
+| 4+ | the first two in registry order, picture rows, and «Усі тести (N)» | 311px — fits |
+
+From 1200px «Усі тести» stands on the label's line (`.videoDecisionHead`) rather than as a 48px row of its own — that row was the difference. Between 901 and 1199px the two cannot share a row at all (a half-width player is 260px at 1024, the card 378px), so the player takes the full width and the card goes under it in two columns. The phone layout is unchanged. The `/tests` hub keeps three to a row: four tests are 3 + 1 (decided 2026-09-28 over 2 × 2); two are a pair (`data-layout="pair"`).
+
+**A card's CTA keeps the right end of its footer with or without a price.** The footer spaced price and CTA with `space-between`, which only works with two children; a test card has no price, so the CTA was the only child and fell to the left, and one catalogue row showed its buttons on two sides. `.programLink` takes `margin-inline-start: auto`.
+
+**A diagnostic hero's photograph is the screen's, not the section's.** Opening the intro card's disclosure made the section taller, the `cover` crop re-solved and the centred card moved under the pointer. At every width the image is now one screen tall and `position: sticky` under an `overflow: clip` (not `hidden`, which would make the section a scrollport and pin the image to nothing), and on desktop the card is anchored from the top at the offset centring gave it closed. Both tests share the recipe through `main[data-cw-detail-template="dosha"]`, and both intros carry `data-dosha-test` because the test surfaces' token scope keys on it.
+
 ### One offer card, one size (2026-08-27)
 
 The catalogue drew two cards: `compact` (24rem) for mini-courses, the default (29rem) for programmes, from a `size` prop on `PlatformOfferCard`. So /programs read as two catalogues stacked, and a reader weighing a mini-course against a programme was comparing two different objects — the smaller one looked like a smaller claim, which is not what "shorter" means.

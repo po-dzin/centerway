@@ -891,8 +891,8 @@
 .videoTestArrow {
   color: var(--cw-platform-muted);
   transition:
-    transform var(--cw-motion-state) ease,
-    color var(--cw-motion-state) ease;
+    transform var(--cw-motion-state) var(--cw-ease-state),
+    color var(--cw-motion-state) var(--cw-ease-state);
 }
 
 .videoTestRow:focus-visible .videoTestArrow {
