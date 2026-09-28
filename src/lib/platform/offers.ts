@@ -10,14 +10,14 @@
  *
  * TWO OWNERS, TWO TABLES, AND THAT IS THE POINT. What the course claims about
  * itself is the author's and lives on `lms_courses`. What it costs is the
- * owner's and lives on `lms_course_offers`, which the authoring API holds no
+ * owner's and lives on `experience_offers`, which the authoring API holds no
  * grant on. Reading them together here does not merge them: this module only
  * reads, and the only writer of a price is the admin surface.
  *
- * THE HAND-WRITTEN SIX ARE NOT TOUCHED. `PRODUCTS` stays authoritative for
- * every code it defines. A database offer can only ever answer to a
- * `course:<slug>` code, which `PRODUCTS` cannot contain, so the two namespaces
- * cannot collide and no existing purchase changes shape.
+ * ONE TABLE OF PRICES SINCE 2026-09-26. The hand-written six that used to sit
+ * beside it in `products.ts` are gone; every price, invoice line and old code
+ * spelling is a row of `experience_offers` or `offer_aliases`, and every door
+ * reaches it through `loadPayableOffer` below.
  */
 
 import { coverArtworkFraming } from "@/lib/lms/courseCover";
@@ -27,19 +27,21 @@ import { COURSE_LIST_TAG, courseTag, getLiveCourse, listLiveCourses } from "@/li
 import {
   PLATFORM_FAILED_URL,
   PLATFORM_THANKS_URL,
-  PRODUCTS,
-  catalogOffer,
   formatPrice,
-  isCatalogProduct,
-  normalizePayableProduct,
-  type CatalogProductCode,
-  type FormatProductCode,
   type PayableOffer,
+  type PayableProductCode,
 } from "@/lib/products";
 import { mediaSources } from "@/lib/lms/media";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { loadProductOffer } from "@/lib/platform/productOffers";
-import { loadProgramFormats, resolveFormatOffer } from "@/lib/experiences/formats";
+import { FORMAT_DEFAULT_LABELS, isOfferFormat, loadProgramFormats } from "@/lib/experiences/formats";
+import {
+  describeOffer,
+  isPayable,
+  offerFulfilment,
+  type ExperienceOffer,
+  type OfferTarget,
+} from "@/lib/experiences/offers";
+import { isContentKind } from "@/lib/experiences/registry";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 import { toOfferSurface } from "@/lib/platform/courseOffer";
 import { COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
@@ -362,189 +364,70 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
 }
 
 /**
- * The commercial facts for ANY payable code, whichever namespace it is in.
+ * The commercial facts for ANY payable code, whichever spelling it arrives in.
  *
- * This is the function that defuses the first of the two mines the storefront
- * pass left behind. `resolvePayableProduct` used to answer an unknown code with
- * `"short"`, so a `course:<slug>` button reaching the payment route before this
- * existed would have charged the buyer for Short Reboot. There is no fallback
- * here: an unknown, unpublished or unpriced code answers `null`, and the routes
- * refuse to open a checkout for it.
+ * ONE CHANNEL (2026-09-25). The code goes to `describeOffer`, which answers
+ * from `experience_offers` and `offer_aliases` and nothing else — the landing's
+ * `?product=way21`, the storefront's `course:way21` and a cohort's
+ * `way21-group` are rows or aliases of one table, not three code paths.
+ * `normalizeProduct`, the hand-written `COURSE_CODE_ALIASES` and the fallback to
+ * the constants in `PRODUCTS` are gone, and with them the case where one door
+ * read a price the other did not.
  *
- * NULL IS THE NORMAL "NOT FOR SALE" ANSWER — a draft, a hidden course, or a
- * course nobody has priced. Only the owner writes `lms_course_offers`, so a
- * missing row is a decision, not an outage.
+ * The code on the answer is the offer's OWN code, not the spelling that came
+ * in, so every order a door writes is filed under the name the offer carries.
+ *
+ * NULL IS THE NORMAL "NOT FOR SALE" ANSWER, and there is no fallback: an
+ * unknown code, an inactive or unpriced offer, a lead or free offer, a draft or
+ * hidden course all refuse the checkout. A read that fails refuses it too — a
+ * price that cannot be read is not a price.
  */
-/**
- * Hand-written codes that name a course sold from the offer table.
- *
- * THE PRICE HAS ONE SOURCE, AND IT IS THE ROW. Every product here is sold
- * through two doors — the funnel landing links `?product=way21`, the storefront
- * charges `course:way21` — and each door used to read a different number: the
- * landing from the constant in `PRODUCTS`, the storefront from
- * `lms_course_offers`. The prose above this list used to warn what that costs,
- * and then covered only `reset-day`. The bill arrived on 2026-09-02: the way21
- * landing was quoting 4100 ₴ in its own CTA and charging 1 ₴, because the QA
- * window had been opened in the constant and the row knew nothing about it.
- *
- * So the legacy code resolves to the same row for every product that IS a
- * course. Money, code and access term come from the row; what stays in the
- * constant is the invoice PROSE, which the database path cannot express — a
- * course row yields one title in one language, and the hand-written entry has a
- * real sentence in both, read by a person on a WayForPay invoice.
- *
- * WHAT IS DELIBERATELY ABSENT. `lms_course_offers` is unique on `course_id` —
- * one course, one offer — so two products structurally cannot be here:
- * `way21-support` is a second offer against the same way21 course, and `herbs`
- * is not a course at all (`fulfilment: cabinet`). They keep their constants,
- * and that is the shape of the table rather than an omission. A price that must
- * live in the database for them needs a table that can hold it.
- *
- * Two consequences, both intended. Withdrawing the offer stops the funnel too,
- * instead of leaving one door selling a course the storefront calls closed. And
- * a QA price is now set where the price is — one UPDATE on the row — rather
- * than in a constant that only half the doors read.
- */
-const COURSE_CODE_ALIASES: Partial<Record<CatalogProductCode, string>> = {
-  short: "short",
-  irem: "irem-gymnastics",
-  way21: "way21",
-  "reset-day": "reset-day",
-};
-
-/**
- * A catalogue product with no course of its own: the price comes from
- * `product_offers`, and from the constant only when there is no row.
- *
- * Two products cannot be in `lms_course_offers` — `way21-support` is a second
- * offer against the way21 course and `herbs` is not a course at all — so before
- * this they were priced in `products.ts`, where only a deployment could change
- * them. See `platform/productOffers.ts` for why an absent row falls back here
- * while an absent COURSE offer refuses the sale instead.
- *
- * The prose stays hand-written for the same reason it does on the aliased path:
- * a WayForPay invoice line is read by a person, and a table row has no sentence
- * in two languages to give them.
- *
- * `amount: null` in the row means «ціна за запитом» and is NOT a price of zero,
- * so it withdraws the checkout rather than opening a free one. `kind: "lead"`
- * does the same: a package agreed in conversation and invoiced afterwards must
- * not become a buy button because somebody typed a figure next to it.
- *
- * THE FALLBACK NEEDS A PRICE TO FALL BACK TO, and one product has none.
- * `listAmount` is already this file's marker for «nobody agreed a figure» —
- * `herbs` carries `null` there with the comment saying so, because it was never
- * sold self-serve and its `amount` is the 1 ₴ QA placeholder. Returning that
- * constant charged a hryvnia for an individual blend on any request the row did
- * not answer: while the row was absent, after an admin deactivated it, and
- * after any read failure, since `loadProductOffer` reports all three the same
- * way. So the fallback applies to a constant that quotes a price and refuses
- * for one that does not — no price means the enquiry form, which is the state
- * this product was always in.
- */
-async function productOffer(code: CatalogProductCode): Promise<PayableOffer | null> {
-  const base = catalogOffer(code);
-  const row = await loadProductOffer(code);
-  if (!row) return base.listAmount === null ? null : base;
-
-  if (row.kind === "lead" || row.amount === null || row.amount <= 0) return null;
-
-  return {
-    ...base,
-    amount: row.amount,
-    listAmount: row.listAmount ?? base.listAmount,
-    currency: row.currency,
-    pixelContentName: row.pixelContentName ?? base.pixelContentName,
-  };
-}
-
 export async function loadPayableOffer(code: unknown): Promise<PayableOffer | null> {
-  const normalized = normalizePayableProduct(code);
-  // Neither one of the six nor `course:<slug>`: it may be a FORMAT of a
-  // program (`way21-group`), priced in `experience_offers` alone.
-  if (!normalized) return loadFormatPayable(code);
-
-  if (isCatalogProduct(normalized)) {
-    const aliasSlug = COURSE_CODE_ALIASES[normalized];
-    if (!aliasSlug) return productOffer(normalized);
-
-    const aliased = await loadCourseOfferFor(aliasSlug);
-    if (!aliased) return null;
-
-    const { heading, description } = PRODUCTS[normalized];
-    return { ...aliased, heading, description };
-  }
-
-  const slug = parseCourseOfferCode(normalized);
-  if (!slug) return null;
-  return loadCourseOfferFor(slug);
-}
-
-/**
- * A format of a program as something to charge for (2026-09-25).
- *
- * Only an approved, active, priced checkout format of a PUBLIC program: the
- * same two halves `loadCourseOfferFor` insists on — the author finished the
- * program, the owner agreed the figure. The invoice line is the one the owner
- * wrote for the format; without one it is built from the program and the
- * format's name, never borrowed from a neighbouring product.
- */
-async function loadFormatPayable(code: unknown): Promise<PayableOffer | null> {
-  const format = await resolveFormatOffer(code);
-  if (!format || format.mode !== "checkout" || format.amount === null || format.amount <= 0) return null;
-  if (format.courseStatus !== "published" || !["listed", "unlisted"].includes(format.courseVisibility ?? "hidden")) {
+  let target: OfferTarget | null;
+  try {
+    target = await describeOffer(supabaseAdmin(), code);
+  } catch (error) {
+    console.warn("payable_offer_read_failed", { error: error instanceof Error ? error.message : String(error) });
     return null;
   }
+  if (!target || !isPayable(target.offer)) return null;
+  const { offer } = target;
 
-  const fallback = `${format.courseTitle} — ${format.label.toLowerCase()} — CenterWay`;
-  return {
-    code: format.code as FormatProductCode,
-    heading: format.invoiceHeading ?? { uk: fallback, en: fallback },
-    description: format.invoiceDescription ?? { uk: fallback, en: fallback },
-    amount: format.amount,
-    listAmount: format.listAmount ?? format.amount,
-    currency: format.currency,
-    pixelContentName: format.pixelContentName ?? format.courseTitle,
-    fulfilment: { kind: "course", courseSlug: format.courseSlug, programSlug: format.programSlug },
-    approvedUrl: PLATFORM_THANKS_URL,
-    declinedUrl: PLATFORM_FAILED_URL,
-  };
-}
+  let title = target.experience.title ?? offer.code;
+  let summary = "";
+  if (isContentKind(target.experience.kind)) {
+    // Both halves have to agree: the course says the author finished it and
+    // let strangers see it, the offer says the owner set a price. Selling a
+    // draft would deliver a half-written course, and a thing whose course row
+    // is gone has nothing to deliver at all.
+    const course = target.course ? await getLiveCourse(target.course.slug) : null;
+    if (!course || !isPublicCourse(course)) return null;
+    title = course.title;
+    summary = course.summary ? inlineToPlainText(course.summary) : "";
+  }
 
-/** The commercial facts for one course, read from its own row. */
-async function loadCourseOfferFor(slug: string): Promise<PayableOffer | null> {
-  const [course, offer] = await Promise.all([getLiveCourse(slug), loadCourseOffer(slug)]);
-
-  // Both halves have to agree, and each says something different: the course
-  // says the author finished it and let strangers see it, the offer row says
-  // the owner set a price. Selling a draft would deliver a half-written course;
-  // selling without a row would charge a figure nobody agreed.
-  if (!course || !isPublicCourse(course) || !offer || offer.amount <= 0) return null;
-
-  const summary = course.summary ? inlineToPlainText(course.summary) : "";
-  const heading = `${course.title} — CenterWay`;
-  const description = summary || heading;
+  /* The invoice line the owner wrote, when there is one. Otherwise it is built
+     from the course's own title in its one language — inventing a translation
+     for a gateway invoice would put words in the author's mouth — and a format
+     of a program says which format was bought. */
+  const named = offer.format && offer.format !== "self" ? `${title} — ${formatLabel(offer).toLowerCase()}` : title;
+  const fallbackHeading = `${named} — CenterWay`;
+  const fallbackDescription = summary || fallbackHeading;
 
   return {
-    code: offer.code as `course:${string}`,
-    // One language, twice, on purpose: a course written by its author is
-    // written in one language, and inventing a translation for a WayForPay
-    // invoice line would put words in their mouth.
-    heading: { uk: heading, en: heading },
-    description: { uk: description, en: description },
+    code: offer.code as PayableProductCode,
+    heading: offer.invoiceHeading ?? { uk: fallbackHeading, en: fallbackHeading },
+    description: offer.invoiceDescription ?? { uk: fallbackDescription, en: fallbackDescription },
     amount: offer.amount,
     listAmount: offer.listAmount ?? offer.amount,
     currency: offer.currency,
-    pixelContentName: offer.pixelContentName,
-    // Always the platform: a course built here is delivered here. The cabinet
-    // shape belongs to a product that predates the LMS, and nothing is
-    // delivered by a bot any more.
-    //
-    // Both slugs named rather than one: the buyer reads at /learn/<slug> and is
-    // returned to /programs/<programSlug>, which are different strings for any
-    // course sold under a name older than its row.
-    fulfilment: { kind: "course", courseSlug: slug, programSlug: course.programSlug },
+    pixelContentName: offer.pixelContentName ?? title,
+    fulfilment: offerFulfilment(target),
     approvedUrl: PLATFORM_THANKS_URL,
     declinedUrl: PLATFORM_FAILED_URL,
   };
+}
+
+function formatLabel(offer: ExperienceOffer): string {
+  return offer.label ?? (isOfferFormat(offer.format) ? FORMAT_DEFAULT_LABELS[offer.format] : offer.code);
 }

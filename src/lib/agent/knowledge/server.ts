@@ -18,7 +18,9 @@
 import { unstable_cache } from "next/cache";
 
 import { COURSE_LIST_TAG, listLiveCourses } from "@/lib/lms/liveCatalog";
-import { buildCorpus } from "./corpus";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { parseCourseOfferCode } from "@/lms-core/offerCode";
+import { buildCorpus, type CorpusOffer } from "./corpus";
 import { buildIndex, type KnowledgeIndex } from "./search";
 import { validateCorpus, type KnowledgeDoc } from "./types";
 
@@ -30,7 +32,7 @@ async function collect(): Promise<KnowledgeDoc[]> {
     (course) => course.status === "published" && course.visibility !== "hidden",
   );
 
-  const docs = buildCorpus({ courses });
+  const docs = buildCorpus({ courses, offers: await loadCorpusOffers(courses) });
 
   // Reported, never thrown. A malformed document is a content problem, and
   // taking the assistant down over one is worse than answering from the rest of
@@ -42,6 +44,71 @@ async function collect(): Promise<KnowledgeDoc[]> {
   }
 
   return docs;
+}
+
+type OfferRow = {
+  code: string;
+  mode: string;
+  amount: number | null;
+  currency: string;
+  experience_id: string;
+  invoice_heading: { uk?: string } | null;
+  invoice_description: { uk?: string } | null;
+};
+
+/**
+ * The offers on sale, from the same table the checkout charges. Only things on
+ * the shelf, and only through a course the assistant may describe — a price
+ * for a hidden course would publish it.
+ */
+async function loadCorpusOffers(courses: Awaited<ReturnType<typeof listLiveCourses>>): Promise<CorpusOffer[]> {
+  try {
+    const db = supabaseAdmin();
+    const [offers, things, links] = await Promise.all([
+      db
+        .from("experience_offers")
+        .select("code, mode, amount, currency, experience_id, invoice_heading, invoice_description")
+        .eq("active", true),
+      db.from("experiences").select("id, kind, title, listed"),
+      db.from("lms_courses").select("slug, experience_id"),
+    ]);
+    if (offers.error || things.error || links.error) return [];
+    const thingById = new Map((things.data ?? []).map((thing) => [thing.id as string, thing]));
+    const courseBySlug = new Map(courses.map((course) => [course.slug, course]));
+    // First visible course of each thing, for offers not named after one (`way21-group`).
+    const courseByThing = new Map<string, (typeof courses)[number]>();
+    for (const link of links.data ?? []) {
+      const course = courseBySlug.get(link.slug as string);
+      const thingId = link.experience_id as string | null;
+      if (course && thingId && !courseByThing.has(thingId)) courseByThing.set(thingId, course);
+    }
+
+    const out: CorpusOffer[] = [];
+    for (const row of (offers.data ?? []) as OfferRow[]) {
+      const thing = thingById.get(row.experience_id);
+      if (!thing?.listed) continue;
+      const isContent = ["course", "mini", "checklist"].includes(thing.kind as string);
+      const ownSlug = parseCourseOfferCode(row.code);
+      const course = isContent ? (ownSlug && courseBySlug.get(ownSlug)) || courseByThing.get(row.experience_id) : null;
+      if (isContent && !course) continue;
+      const heading = row.invoice_heading?.uk?.trim() || course?.title || (thing.title as string | null) || row.code;
+      out.push({
+        code: row.code,
+        heading,
+        description: row.invoice_description?.uk?.trim() || null,
+        mode: row.mode === "lead" || row.mode === "free" ? row.mode : "checkout",
+        amount: row.amount,
+        currency: row.currency,
+        delivery: course ? "course" : "cabinet",
+        href: course ? `/programs/${course.programSlug}` : null,
+      });
+    }
+    return out;
+  } catch {
+    // The rest of the corpus stands without prices; an assistant that says
+    // «уточніть ціну» is better than one that is down.
+    return [];
+  }
 }
 
 const cachedCorpus = unstable_cache(collect, ["agent-knowledge-corpus"], {

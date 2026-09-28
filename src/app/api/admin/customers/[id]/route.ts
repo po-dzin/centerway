@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
 import type { TablesUpdate } from "@/lib/db/database.types";
 import { requireAdminSession, serverErrorResponse, unauthorizedResponse } from "@/lib/api/adminRoute";
-import { canonicalProductKey, resolveProductTitles } from "@/lib/analytics/productIdentity";
+import { loadProductIdentity } from "@/lib/analytics/productIdentity";
 
 type OrderRow = {
   id: string;
@@ -153,12 +153,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
      its own title here exactly as it does in the dashboard breakdown. */
   const orderRows = (orders ?? []) as OrderRow[];
   const eventRows = (events ?? []) as EventRow[];
-  const orderTitles = await resolveProductTitles(
-    db,
-    orderRows.map((o) => o.product_code),
-  );
-  const orderProductLabel = (code: string | null): string | null =>
-    orderTitles.get(canonicalProductKey(code)) ?? code ?? null;
+  const identity = await loadProductIdentity(db);
+  const orderProductLabel = (code: string | null): string | null => identity.title(code) ?? code ?? null;
 
   // Build unified timeline
   const timeline = [

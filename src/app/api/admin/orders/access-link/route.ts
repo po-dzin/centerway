@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
      operator copying a link for an order that never completed is either about
      to hand out a course for free or looking at the wrong row, and both are
      better interrupted here than discovered later. */
-  const { href, label } = fulfilmentDestination(orderFulfilment(order.product_code));
+  const { href, label } = fulfilmentDestination(await orderFulfilment(supabase, order.product_code));
 
   await supabase.from("events").insert({
     type: "access_link_issued",

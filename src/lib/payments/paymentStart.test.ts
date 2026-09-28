@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { wayforpay } from "@/lib/payments/gateway/wayforpay";
 import { createPaymentInvoiceWithDeps } from "@/lib/payments/paymentStart";
-import { catalogOffer, type PayableOffer } from "@/lib/products";
+import { PLATFORM_FAILED_URL, PLATFORM_THANKS_URL, type PayableOffer } from "@/lib/products";
 
 /**
  * What the invoice is built FROM.
@@ -23,6 +24,15 @@ const courseOffer: PayableOffer = {
   fulfilment: { kind: "course", courseSlug: "my-course" },
   approvedUrl: "https://www.centerway.net.ua/pay/thanks",
   declinedUrl: "https://www.centerway.net.ua/pay/failed",
+};
+
+/** An offer whose code is not `course:<slug>` — a format of a program. */
+const legacyOffer: PayableOffer = {
+  ...courseOffer,
+  code: "way21-group",
+  fulfilment: { kind: "course", courseSlug: "way21", programSlug: "way21" },
+  approvedUrl: PLATFORM_THANKS_URL,
+  declinedUrl: PLATFORM_FAILED_URL,
 };
 
 function stubDeps() {
@@ -77,6 +87,7 @@ function stubDeps() {
     fetchFn,
     deps: {
       db,
+      gateway: wayforpay,
       fetchFn: fetchFn as unknown as typeof fetch,
       nowMs: () => Date.parse("2026-08-22T10:00:00Z"),
       randomHex: () => "ab12cd34",
@@ -172,15 +183,12 @@ describe("createPaymentInvoice", () => {
     expect(returnUrl.searchParams.get("product")).toBe("course:my-course");
   });
 
-  it("still builds the six the way it always did", async () => {
+  it("files a plain offer code under itself", async () => {
     const { deps, fetchFn, inserted } = stubDeps();
 
-    await createPaymentInvoiceWithDeps(
-      { offer: catalogOffer("reset-day"), locale: "uk", source: "pay_start", staff: true },
-      deps,
-    );
+    await createPaymentInvoiceWithDeps({ offer: legacyOffer, locale: "uk", source: "pay_start", staff: true }, deps);
 
-    expect(inserted[0]!.product_code).toBe("reset-day");
-    expect(wfpBody(fetchFn).orderReference).toBe("reset-day_20260822_ab12cd34");
+    expect(inserted[0]!.product_code).toBe("way21-group");
+    expect(wfpBody(fetchFn).orderReference).toBe("way21-group_20260822_ab12cd34");
   });
 });

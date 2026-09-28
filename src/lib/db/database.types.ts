@@ -508,6 +508,53 @@ export type Database = {
         }
         Relationships: []
       }
+      author_payout_accounts: {
+        Row: {
+          active: boolean
+          author_id: string
+          created_at: string
+          default_share_pct: number | null
+          gateway: string | null
+          iban: string | null
+          legal_name: string | null
+          receiver_ref: string | null
+          tax_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          author_id: string
+          created_at?: string
+          default_share_pct?: number | null
+          gateway?: string | null
+          iban?: string | null
+          legal_name?: string | null
+          receiver_ref?: string | null
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          author_id?: string
+          created_at?: string
+          default_share_pct?: number | null
+          gateway?: string | null
+          iban?: string | null
+          legal_name?: string | null
+          receiver_ref?: string | null
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "author_payout_accounts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: true
+            referencedRelation: "lms_authors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       broadcast_recipients: {
         Row: {
           address: string
@@ -1988,6 +2035,69 @@ export type Database = {
           },
         ]
       }
+      order_shares: {
+        Row: {
+          amount: number
+          author_id: string
+          base_amount: number
+          created_at: string
+          currency: string
+          id: string
+          offer_id: string | null
+          order_ref: string
+          paid_out_at: string | null
+          payout_note: string | null
+          share_pct: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          author_id: string
+          base_amount: number
+          created_at?: string
+          currency: string
+          id?: string
+          offer_id?: string | null
+          order_ref: string
+          paid_out_at?: string | null
+          payout_note?: string | null
+          share_pct: number
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          author_id?: string
+          base_amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          offer_id?: string | null
+          order_ref?: string
+          paid_out_at?: string | null
+          payout_note?: string | null
+          share_pct?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_shares_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "lms_authors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_shares_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "experience_offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           amount: number | null
@@ -2010,6 +2120,7 @@ export type Database = {
           payload: Json | null
           product_code: string
           ref: string | null
+          split_at_source: boolean
           status: string
           updated_at: string
         }
@@ -2034,6 +2145,7 @@ export type Database = {
           payload?: Json | null
           product_code: string
           ref?: string | null
+          split_at_source?: boolean
           status?: string
           updated_at?: string
         }
@@ -2058,6 +2170,7 @@ export type Database = {
           payload?: Json | null
           product_code?: string
           ref?: string | null
+          split_at_source?: boolean
           status?: string
           updated_at?: string
         }

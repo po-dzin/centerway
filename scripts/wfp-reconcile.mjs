@@ -45,7 +45,7 @@ import { readFileSync } from "node:fs";
    (see the npm script), so it reads the same source the webhook verifies with.
    The copy that lived here said a smoke test kept the two in step; no such test
    existed. */
-import { WFP_CALLBACK_SIGNATURE_FIELDS as CALLBACK_SIGNATURE_FIELDS } from "@/lib/payments/wfp";
+import { WFP_CALLBACK_SIGNATURE_FIELDS as CALLBACK_SIGNATURE_FIELDS } from "@/lib/payments/gateway/wayforpay";
 
 const WFP_API = "https://api.wayforpay.com/api";
 

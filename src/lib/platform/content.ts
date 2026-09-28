@@ -187,10 +187,9 @@ export const programs = [
      the dynamic route had a price to read. reboot and irem came last, and they
      are the two that prove why the ADDRESS is not the course slug: they are
      sold at /programs/reboot and /programs/irem while their rows are named
-     `short` and `irem-gymnastics`. Neither has an offer row, because neither is
-     delivered by the platform — both still fulfil through a Telegram bot, and
-     both keep charging the hand-written `PRODUCTS` code through
-     `resolveOfferCommerce`. Moving the page did not move the delivery.
+     `short` and `irem-gymnastics`. Both moved onto the platform on 2026-08-29,
+     and since 2026-09-26 both are priced like every other course: an offer row
+     in `experience_offers`, with their old codes as aliases.
 
      What is left in this file is layout, navigation, artwork and copy that
      belongs to no course. A new offer does not come here; it comes out of the

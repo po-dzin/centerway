@@ -3,43 +3,20 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import {
-  PRODUCT_DELIVERY,
-  PRODUCT_LABELS,
-  assertProduct,
-  normalizeEmail,
-  normalizePhoneDigits,
-} from "@/lib/telegram/tgSupportBot";
+import { PRODUCT_LABELS, assertProduct, normalizeEmail, normalizePhoneDigits } from "@/lib/telegram/tgSupportBot";
 import {
   botCopy,
   ACCESS_PHOTO_URL,
   botProfile,
   CABINET_PHOTO_URL,
   CABINET_URL,
+  doshaCardUrl,
   FAQ_PHOTO_URL,
   GREETING_PHOTO_URL,
   SUPPORT_PHOTO_URL,
 } from "@/lib/telegram/tgSupportBotCopy";
 
 describe("support bot — product routing", () => {
-  it("has a delivery target and a label for every product it offers", () => {
-    // The picker is generated from PRODUCT_LABELS and the answer is looked up in
-    // PRODUCT_DELIVERY. A product present in one and missing from the other is a
-    // button that leads nowhere.
-    expect(Object.keys(PRODUCT_DELIVERY).sort()).toEqual(Object.keys(PRODUCT_LABELS).sort());
-  });
-
-  it("routes every course to the cabinet", () => {
-    // The correction this rewrite exists for: way21 and reset-day run on the
-    // platform, and the old copy told their buyers to look inside a product bot.
-    expect(PRODUCT_DELIVERY.way21).toEqual({ kind: "platform", courseSlug: "way21" });
-    expect(PRODUCT_DELIVERY["reset-day"]).toEqual({ kind: "platform", courseSlug: "reset-day" });
-    // Short and IREM left their own bots on 2026-08-29 — the courseSlug is the
-    // ROW, and IREM's row is not the name it is sold under.
-    expect(PRODUCT_DELIVERY.short).toEqual({ kind: "platform", courseSlug: "short" });
-    expect(PRODUCT_DELIVERY.irem).toEqual({ kind: "platform", courseSlug: "irem-gymnastics" });
-  });
-
   it("accepts every alias the funnels and thanks pages actually send", () => {
     expect(assertProduct("reboot")).toBe("short");
     expect(assertProduct("shlyah21")).toBe("way21");
@@ -67,11 +44,27 @@ describe("support bot — copy", () => {
     expect(Object.keys(botCopy.faqLabels).sort()).toEqual(Object.keys(botCopy.faq).sort());
   });
 
-  it("sends people to the cabinet with an absolute URL", () => {
+  it("sends people to the cabinet with an absolute URL, as a word and not a bare link", () => {
     // A relative path is printed, not linkified, by Telegram.
     expect(CABINET_URL).toMatch(/^https:\/\//);
-    expect(botCopy.cabinet).toContain(CABINET_URL);
-    expect(botCopy.faq.where_course).toContain(CABINET_URL);
+    // The link lives in an anchor inside the sentence (and on a button); a
+    // bare URL on its own line is what made the answers read as a list of links.
+    for (const text of [botCopy.cabinet, botCopy.faq.where_course]) {
+      expect(text).toContain(`<a href="${CABINET_URL}">`);
+      expect(text.split("\n")).not.toContain(CABINET_URL);
+    }
+  });
+
+  it("writes only the HTML Telegram accepts", () => {
+    // parse_mode HTML rejects the WHOLE message on an unknown tag or a stray
+    // "<" — the send fails, it does not degrade. So every tag must be one of
+    // Telegram's, and every "&" an entity.
+    const allowed = /^<\/?(b|i|u|s|code|pre|a)( href="[^"]+")?>$/;
+    for (const line of collectStrings(botCopy)) {
+      for (const tag of line.match(/<[^>]*>/g) ?? []) expect(tag, line).toMatch(allowed);
+      expect(line.replace(/<[^>]*>/g, ""), line).not.toMatch(/[<>]|&(?!amp;|lt;|gt;|quot;)/);
+    }
+    expect(botCopy.accessFoundPlatform("A <b> & C")).toContain("A &lt;b&gt; &amp; C");
   });
 
   it("addresses the reader as «ви» throughout", () => {
@@ -121,6 +114,8 @@ describe("support bot — copy", () => {
       "public/cw/bot/final/menu-support-printed-stamp-v4.png",
       "public/cw/bot/final/menu-faq-printed-stamp-v1.png",
       "public/cw/bot/final/menu-access-printed-stamp-v1.png",
+      "public/cw/bot/final/reminder-course-waiting-v1.png",
+      "public/cw/bot/final/reminder-lesson-ready-v1.png",
     ];
 
     for (const asset of assets) {
@@ -130,6 +125,15 @@ describe("support bot — copy", () => {
     expect(SUPPORT_PHOTO_URL).toMatch(/^https:\/\/.+\.png$/);
     expect(FAQ_PHOTO_URL).toMatch(/^https:\/\/.+\.png$/);
     expect(ACCESS_PHOTO_URL).toMatch(/^https:\/\/.+\.png$/);
+  });
+
+  it("ships a dosha card for every result type", async () => {
+    const { RESULT_COPY } = await import("@/lib/dosha/doshaResultCopy");
+    for (const type of Object.keys(RESULT_COPY)) {
+      const asset = `public/cw/bot/dosha/${type}.png`;
+      expect(existsSync(path.join(process.cwd(), asset)), asset).toBe(true);
+      expect(doshaCardUrl(type)).toMatch(new RegExp(`^https://.+/cw/bot/dosha/${type}\\.png$`));
+    }
   });
 
   it("registers a command for every menu branch a command claims to open", () => {

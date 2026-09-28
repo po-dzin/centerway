@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { adminClient } from "@/lib/auth/adminClient";
-import { PRODUCTS, type SearchParams } from "@/lib/products";
+import { PLATFORM_THANKS_URL, type SearchParams } from "@/lib/products";
 import { loadPayableOffer } from "@/lib/platform/offers";
 
 type QueryLike = URLSearchParams | SearchParams | Record<string, string | string[] | undefined> | null | undefined;
@@ -115,6 +115,8 @@ function asPositiveInteger(value: number | string | null | undefined): number | 
 }
 
 function formatPriceLabel(amount: number, currency: string): string {
+  // No figure to print (the offer could not be read): an empty label, never «0 грн».
+  if (!(amount > 0)) return "";
   // No thousands separator: toLocaleString("uk-UA") inserts a non-breaking
   // space (4100 -> "4 100"), breaking every other landing's plain "4100 грн"
   // convention (way21, reset-day) and this exact string match in typed hero.
@@ -156,7 +158,7 @@ function buildDraftNote(): string {
 }
 
 function getIremLandingBaseUrl(): string {
-  return new URL("/", PRODUCTS.irem.approvedUrl).toString();
+  return new URL("/", PLATFORM_THANKS_URL).toString();
 }
 
 function buildIremLandingUrl(offerToken: string): string {
@@ -166,20 +168,24 @@ function buildIremLandingUrl(offerToken: string): string {
 }
 
 /**
- * `amount` is passed in rather than read from `PRODUCTS` here (2026-09-02).
- *
- * The constant used to be both the printed price and, before the alias, the
- * charged one — so they could not disagree. Now the charge comes from
- * `lms_course_offers` through `loadPayableOffer`, and a base offer that kept
- * reading the file would print one figure while WayForPay took another the
- * moment somebody edited the row. That is the exact drift that put «4100 грн»
- * on the way21 landing over a 1 ₴ checkout.
- *
- * The constant remains the FALLBACK at the call site: a landing must render a
- * stale price rather than no price.
+ * The offer the IREM landing and its personal prices are built around, by its
+ * own code. The checkout files an IREM sale under this code whichever spelling
+ * the landing linked (`?product=irem`), so this is what `/api/pay/start`
+ * compares against before applying a personal price.
  */
-function buildBaseIremOffer(offerRequested: boolean, amount: number): LandingResolvedOffer {
-  const base = PRODUCTS.irem;
+export const IREM_OFFER_CODE = "course:irem-gymnastics";
+
+/**
+ * `amount` and `currency` are passed in — read from `experience_offers`
+ * through `loadPayableOffer`, the row the checkout charges — so the landing
+ * cannot print one figure while the gateway takes another. That is the exact
+ * drift that put «4100 грн» on the way21 landing over a 1 ₴ checkout.
+ */
+function buildBaseIremOffer(
+  offerRequested: boolean,
+  { amount, currency }: { amount: number; currency: string },
+): LandingResolvedOffer {
+  const base = { currency };
   return {
     product: "irem",
     offerId: "irem_main_4100",
@@ -298,19 +304,24 @@ async function activateDraftIremOffer(offerToken: string): Promise<PersonalOffer
   return (data as PersonalOfferTokenRow | null) ?? null;
 }
 
-/** The live price of irem, falling back to the constant if it cannot be read. */
-async function iremBaseAmount(): Promise<number> {
+/**
+ * The live price of IREM. When it cannot be read — no row, a withdrawn offer, a
+ * failed read — the landing prints no figure (`amount: 0` renders as an empty
+ * label) rather than a remembered one, and the checkout refuses on its own.
+ */
+async function iremBasePrice(): Promise<{ amount: number; currency: string }> {
   try {
-    const offer = await loadPayableOffer("irem");
-    return offer?.amount ?? PRODUCTS.irem.amount;
+    const offer = await loadPayableOffer(IREM_OFFER_CODE);
+    if (offer) return { amount: offer.amount, currency: offer.currency };
   } catch {
-    return PRODUCTS.irem.amount;
+    // below
   }
+  return { amount: 0, currency: "UAH" };
 }
 
 export async function resolveIremLandingOffer(input: QueryLike): Promise<LandingResolvedOffer> {
   const offerToken = first(readQueryValue(input, "offer_token"));
-  const base = buildBaseIremOffer(Boolean(offerToken), await iremBaseAmount());
+  const base = buildBaseIremOffer(Boolean(offerToken), await iremBasePrice());
 
   if (!offerToken) {
     return base;

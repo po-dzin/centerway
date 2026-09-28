@@ -1,7 +1,7 @@
 // src/app/api/pay/start/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { resolveIremLandingOffer } from "@/lib/landing/offers";
+import { IREM_OFFER_CODE, resolveIremLandingOffer } from "@/lib/landing/offers";
 import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import { createPaymentInvoice, resolveLocaleFromRequest } from "@/lib/payments/paymentStart";
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "unknown_product" }, { status: 404 });
   }
   const product = offer.code;
-  const resolvedOffer = product === "irem" ? await resolveIremLandingOffer(url.searchParams) : null;
+  const resolvedOffer = product === IREM_OFFER_CODE ? await resolveIremLandingOffer(url.searchParams) : null;
   const format = url.searchParams.get("format"); // json | null
   const locale = resolveLocaleFromRequest(req.headers, url.searchParams);
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");

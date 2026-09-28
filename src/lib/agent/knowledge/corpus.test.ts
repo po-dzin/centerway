@@ -57,15 +57,32 @@ describe("knowledge corpus", () => {
     for (const title of titles) expect(way21!.text).toContain(title);
   });
 
-  /**
-   * The 1 ₴ QA window is open in `products.ts` right now: `amount` is 1 while
-   * `listAmount` is the real figure. A corpus reading the wrong field would
-   * tell a buyer a course costs one hryvnia — with the tone of a fact.
-   */
-  it("quotes the list price, never the charged amount", () => {
-    const short = productDocs().find((doc) => doc.id === "product:short");
-    expect(short?.text).not.toMatch(/Ціна: 1\s*₴/);
-    expect(short?.text).toMatch(/Ціна: /);
+  it("quotes an offer's price, and never invents one for a lead", () => {
+    const [sold, asked] = productDocs([
+      {
+        code: "course:short",
+        heading: "Short Reboot — онлайн-курс",
+        description: null,
+        mode: "checkout",
+        amount: 795,
+        currency: "UAH",
+        delivery: "course",
+        href: "/programs/reboot",
+      },
+      {
+        code: "consult",
+        heading: "Консультація",
+        description: null,
+        mode: "lead",
+        amount: 1500,
+        currency: "UAH",
+        delivery: "cabinet",
+        href: null,
+      },
+    ]);
+    expect(sold?.text).toMatch(/Ціна: 795/);
+    expect(asked?.text).toContain("Ціна узгоджується окремо.");
+    expect(asked?.text).not.toMatch(/1\s?500/);
   });
 
   it("carries the house's own support answers verbatim", () => {

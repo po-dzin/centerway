@@ -28,6 +28,17 @@ function fakeDb(rows: Row[]) {
     rows,
     updates,
     from(table: string) {
+      /* The vocabulary tables the key is read from: one alias is enough to
+         prove a legacy spelling folds onto its course. */
+      const vocabulary: Record<string, Row[]> = {
+        experience_offers: [{ id: "o-irem", code: "course:irem-gymnastics", experience_id: "exp-irem" }],
+        offer_aliases: [{ code: "irem", offer_id: "o-irem" }],
+        experiences: [{ id: "exp-irem", kind: "course", title: null }],
+        lms_courses: [],
+      } as unknown as Record<string, Row[]>;
+      if (table in vocabulary) {
+        return { select: async () => ({ data: vocabulary[table], error: null }) };
+      }
       if (table !== "leads") throw new Error(`unexpected table ${table}`);
       let selected = rows;
       const builder: LeadsBuilder = {

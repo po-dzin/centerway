@@ -20,8 +20,8 @@
 import { BRAND, brandSummary } from "@/lib/brand/identity";
 import { authorHref, listListedAuthors } from "@/lib/lms/authors";
 import { programs } from "@/lib/platform/content";
-import { loadCourseOffer, listStorefrontCourses } from "@/lib/platform/offers";
-import { courseOfferCommerce, resolveOfferCommerce } from "@/lib/platform/offerCommerce";
+import { loadCourseOffer, loadPayableOffer, listStorefrontCourses } from "@/lib/platform/offers";
+import { courseOfferCommerce, productOfferCommerce } from "@/lib/platform/offerCommerce";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 
 /** Rebuilt at most once an hour: the live half is a database read. */
@@ -37,21 +37,23 @@ function line(path: string, name: string, note: string): string {
  * before routing gets here. Nothing to guard on this side.
  */
 export async function GET(): Promise<Response> {
-  const offers = programs.map((program) => {
-    const commerce = resolveOfferCommerce(program.slug);
-    const price =
-      commerce.mode === "checkout"
-        ? `Ціна: ${commerce.price}.`
-        : commerce.mode === "free"
-          ? "Доступ безкоштовний."
-          : "Ціна узгоджується в розмові.";
-    const base = program.surfaceType === "product" ? "/products" : "/programs";
-    return line(
-      `${base}/${program.slug}`,
-      program.fullTitle,
-      `${program.description} Формат: ${program.duration}. ${price}`,
-    );
-  });
+  const offers = await Promise.all(
+    programs.map(async (program) => {
+      const commerce = productOfferCommerce(program.slug, await loadPayableOffer(program.slug));
+      const price =
+        commerce.mode === "checkout"
+          ? `Ціна: ${commerce.price}.`
+          : commerce.mode === "free"
+            ? "Доступ безкоштовний."
+            : "Ціна узгоджується в розмові.";
+      const base = program.surfaceType === "product" ? "/products" : "/programs";
+      return line(
+        `${base}/${program.slug}`,
+        program.fullTitle,
+        `${program.description} Формат: ${program.duration}. ${price}`,
+      );
+    }),
+  );
 
   /*
    * A course DEDUPED BY PATH, not by matching its slug against `programs`.

@@ -5,7 +5,7 @@ import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { normalizeTrackingString } from "@/lib/tracking/metaClickIds";
 import { getErrorMessage } from "@/lib/errors";
 import { processDoshaReminderJob } from "@/lib/dosha/doshaReminder";
-import { PRODUCTS, isCatalogProduct } from "@/lib/products";
+import { describeOffer } from "@/lib/experiences/offers";
 
 // Simple job registry
 type JobHandler = (payload: unknown) => Promise<void>;
@@ -43,16 +43,10 @@ async function pixelContentNameFor(
   productCode: string | null,
 ): Promise<string | null> {
   if (!productCode) return null;
-  if (isCatalogProduct(productCode)) return PRODUCTS[productCode].pixelContentName;
-  // Any other code is an offer in the one table of prices — a course, or a
-  // format of one (`way21-group`) — and carries its own reporting label.
-  const { data } = await db
-    .from("experience_offers")
-    .select("pixel_content_name")
-    .eq("code", productCode.trim().toLowerCase())
-    .maybeSingle();
-
-  return normalizeTrackingString(data?.pixel_content_name) ?? null;
+  // Any spelling the order was filed under — `short`, `course:short`, a format
+  // — reaches its offer through `offer_aliases`, and the offer carries the label.
+  const target = await describeOffer(db, productCode).catch(() => null);
+  return normalizeTrackingString(target?.offer.pixelContentName) ?? null;
 }
 
 function isCapiEventPayload(payload: unknown): payload is CapiEventPayload {
