@@ -1,4 +1,4 @@
--- 2026-09-26 · the balance test gets its row, and its author
+-- 2026-09-28 · the balance test gets its row, and its author
 --
 -- «Внутрішній простір і баланс дош» — the second test on the platform. Its
 -- questions, scoring and result copy live in code (src/lib/balance/balanceTest.ts):
