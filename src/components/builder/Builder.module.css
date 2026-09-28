@@ -4452,10 +4452,14 @@
   color: var(--cw-platform-muted);
 }
 
+/* The same link rule the reader draws (globals.css → the link rule), so the
+   author sees in the editor what the learner will see in the lesson. */
 .inlineSurface a {
-  color: var(--cw-sem-guide-primary);
-  text-decoration: underline;
-  text-underline-offset: 0.18em;
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-thickness: var(--cw-link-rule-width);
+  text-underline-offset: var(--cw-link-rule-offset);
+  text-decoration-color: var(--cw-link-rule-color);
 }
 
 /* ── Overflow menu ────────────────────────────────── */

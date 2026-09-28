@@ -523,8 +523,20 @@
   line-height: 1.45;
 }
 
+/* The DS link rule, spelled out: `composes` cannot reach a descendant. */
 .fineprint a {
   color: inherit;
+  text-decoration-line: underline;
+  text-decoration-thickness: var(--cw-link-rule-width);
+  text-underline-offset: var(--cw-link-rule-offset);
+  text-decoration-color: var(--cw-link-rule-color);
+}
+
+@media (hover: hover) {
+  .fineprint a:hover {
+    color: var(--cw-platform-text);
+    text-decoration-color: var(--cw-link-rule-color-strong);
+  }
 }
 
 /* ── Payment status ───────────────────────────────── */

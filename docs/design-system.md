@@ -2038,6 +2038,41 @@ have is a change to this canon, not a local recipe.
 | **ink ring** | a baked open loop around a glyph (`ink-ring`) | an icon-only choice: a mode, a toggle, a pressed utility | `InteractionInkIcon` |
 | **contour** | a dashed line on the object's own edge | a chosen or empty *object*: a selected block, a library cell, a slot with nothing in it | `--cw-contour-*` tokens |
 
+### The link rule is a hairline (2026-09-28)
+
+**This supersedes the link row of the table below.** A link in running copy no
+longer carries a drawn mark. It carries the line the letters themselves carry:
+one hairline under the words.
+
+| token | value | what it sets |
+| --- | --- | --- |
+| `--cw-link-rule-width` | `1px` | the line's thickness, in every state |
+| `--cw-link-rule-offset` | `0.22em` | the gap under the baseline |
+| `--cw-link-rule-color` | ink at 62% (light) · gold at 72% (night) | the line at rest |
+| `--cw-link-rule-color-strong` | ink (light) · gold (night) | the line on hover, focus, press, current |
+
+The colours follow `--cw-nav-marker` — ink on the light side, gold on the night
+one — and are declared in the marker's own scopes, because a custom property
+that reads another resolves where it is declared: written once on `:root`, the
+night side would inherit the light ink.
+
+**Why.** Beside the thin line the letters draw in a letter from the platform, the
+half-weight `ink-rule` read as a second, heavier mark — the hand that says «you
+are here» in a menu, pressed into a sentence. The heavy drawn stroke now means one
+thing only: navigation, menus and tabs (`navigation` / `menu` / `tab`), with its
+hover and current states unchanged.
+
+**Where it is drawn.** `InteractionInkLabel variant="link"` renders no sprite and
+underlines its text; `.cw-link-rule` is the same line for a bare anchor (lesson
+prose, the journal crossing); the `text` button role and the builder's editor
+spell the same tokens where a global class cannot reach. States: the word takes
+`--cw-nav-marker` and the line goes whole — never thicker, so a link never turns
+into a selection stroke. Headings and buttons do not carry it.
+
+Not reached by this rule, on purpose: the static landings (`src/landing-static`)
+and the mail frame, which resolves the light value to hex
+(`src/lib/email/layout.ts`, `linkRule`).
+
 ### Two marks, one shape (2026-09-09)
 
 **This supersedes the three strengths below.** One drawing at three strengths was

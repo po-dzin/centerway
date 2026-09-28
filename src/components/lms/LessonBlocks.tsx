@@ -122,13 +122,17 @@ function Inline({ value, path }: { value: InlineText | undefined; path?: (string
           const path = `/${references.route}/${references.courseSlug}/${target.slug}${fragment}`;
           node =
             references.route === "learn" ? (
-              <Link href={surfaceHref(path)}>{node}</Link>
+              <Link className="cw-link-rule" href={surfaceHref(path)}>
+                {node}
+              </Link>
             ) : (
-              <Link href={path}>{node}</Link>
+              <Link className="cw-link-rule" href={path}>
+                {node}
+              </Link>
             );
         } else if (span.href && !internalReference) {
           node = (
-            <a href={span.href} rel="noopener noreferrer">
+            <a className="cw-link-rule" href={span.href} rel="noopener noreferrer">
               {node}
             </a>
           );

@@ -174,7 +174,8 @@
     --cw-brand-size-wordmark-header-height: 1.93rem;
     --cw-ink-stroke-height: 0.85rem;
     --cw-ink-stroke-weight: 3.4;
-    --cw-ink-link-weight: 1.7;
+    --cw-link-rule-width: 1px;
+    --cw-link-rule-offset: 0.22em;
     --cw-ink-stroke-tilt: 0deg;
     --cw-ink-stroke-offset: -0.7rem;
     --cw-ink-ring-size: 3rem;
@@ -184,7 +185,6 @@
     --cw-contour-selected: color-mix(in srgb, var(--cw-nav-marker) 62%, transparent);
     --cw-contour-empty: color-mix(in srgb, var(--cw-platform-text) 22%, transparent);
     --cw-ink-rest-opacity: 0.34;
-    --cw-ink-link-rest-opacity: 0.62;
     --cw-ink-hover-opacity: 0.68;
     --cw-ink-hover-scale: 0.74;
     --cw-ink-ring-optical-ratio: 0.82;
@@ -656,8 +656,15 @@
      under it marked everything in gold — a light-tone stamp says «the thing
      behind me is pale», which on the night gamma is not a reason to change the
      mark. */
+  /* THE LINK RULE'S COLOUR FOLLOWS THE MARKER (2026-09-28): ink on the light
+     side, gold on the night one — the same pair the selection stroke and the
+     brand mark already follow. Declared in the marker's own scopes, not once
+     on :root, because a custom property that reads another is resolved where
+     it is declared: written once, the night side would inherit the light ink. */
   :root {
     --cw-nav-marker: var(--cw-platform-text);
+    --cw-link-rule-color: color-mix(in srgb, var(--cw-platform-text) 62%, transparent);
+    --cw-link-rule-color-strong: var(--cw-platform-text);
     --cw-nav-marker-size: 2px;
     --cw-nav-marker-hover-opacity: var(--cw-ink-hover-opacity);
     --cw-nav-marker-hover-scale: var(--cw-ink-hover-scale);
@@ -667,6 +674,8 @@
   [data-cw-theme="dark"],
   [data-cw-header-tone="dark"] {
     --cw-nav-marker: var(--cw-platform-accent);
+    --cw-link-rule-color: color-mix(in srgb, var(--cw-platform-accent) 72%, transparent);
+    --cw-link-rule-color-strong: var(--cw-platform-accent);
   }
 
   [data-cw-theme="dark"] {
@@ -2008,60 +2017,78 @@
      the browser's own `text-decoration` underneath it and nothing else, which
      is exactly the "I still don't see the ink underline" report. */
   /* ── the link rule ──────────────────────────────────
-     THIN, AND THE TEXT'S OWN COLOUR. A gold line under ink-coloured words was
-     the loudest thing in a paragraph and read as a highlight someone had left
-     on; worse, on the cabinet's own row the word went brass on hover while the
-     line stayed ink, so the two halves of one control changed state
-     separately. The rule is `currentColor` at rest — it belongs to the
-     sentence — and the label as a whole goes brass when pointed at, which
-     carries the word and the rule together because the mark reads the same
-     colour the text does. */
-  .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark {
-    color: currentColor;
-    opacity: var(--cw-ink-link-rest-opacity);
-    transform:
-      scaleY(var(--cw-ink-link-weight))
-      rotate(var(--cw-ink-stroke-tilt));
+     A THIN STRAIGHT LINE, NOT A DRAWN STROKE (2026-09-28). The link used to
+     carry the baked `ink-rule` at half the selection weight; beside the
+     letters' own thin line it read as a second, heavier mark — the same hand
+     that marks «you are here» in a menu, pressed into a sentence. The rule is
+     now the line the letters carry: one hairline (`--cw-link-rule-width`) at
+     `--cw-link-rule-offset` under the baseline, ink on the light side and gold
+     on the night one (`--cw-link-rule-color`), running under every word of a
+     link that wraps. The drawn, heavy stroke stays where it means something:
+     navigation, menus and tabs.
+
+     Rest: the line at 62%. Hover, focus, press, current: the word takes the
+     marker colour and the line goes whole (`--cw-link-rule-color-strong`) —
+     the same hairline, never thicker, so a link never turns into a selection
+     stroke under the cursor. `.cw-link-rule` is the same line for an anchor
+     that is not wrapped in InteractionInkLabel: lesson prose, a link inside a
+     paragraph, fine print. */
+  .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-text,
+  .cw-link-rule {
+    text-decoration-line: underline;
+    text-decoration-thickness: var(--cw-link-rule-width);
+    text-underline-offset: var(--cw-link-rule-offset);
+    text-decoration-color: var(--cw-link-rule-color);
+    text-decoration-skip-ink: auto;
+    transition:
+      color var(--cw-motion-state) var(--cw-ease-state),
+      text-decoration-color var(--cw-motion-state) var(--cw-ease-state);
+  }
+
+  /* The label clips its text for the ellipsis, and a clip in the em box would
+     cut a line drawn under the baseline. The padding lets the line in; the
+     negative margin gives the height back so the row does not grow. */
+  .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-text {
+    padding-bottom: 0.35em;
+    margin-bottom: -0.35em;
   }
 
   :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible
     .cw-ink-label[data-cw-ink-variant="link"],
-  .cw-ink-label[data-cw-ink-variant="link"][data-cw-ink-active="true"] {
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):active .cw-ink-label[data-cw-ink-variant="link"],
+  :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"])
+    .cw-ink-label[data-cw-ink-variant="link"],
+  .cw-ink-label[data-cw-ink-variant="link"][data-cw-ink-active="true"],
+  .cw-link-rule:focus-visible,
+  .cw-link-rule:active,
+  .cw-link-rule[aria-current="page"] {
     color: var(--cw-nav-marker);
   }
 
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible
+    .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-text,
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):active
+    .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-text,
+  :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"])
+    .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-text,
+  .cw-ink-label[data-cw-ink-variant="link"][data-cw-ink-active="true"] .cw-ink-label-text,
+  .cw-link-rule:focus-visible,
+  .cw-link-rule:active,
+  .cw-link-rule[aria-current="page"] {
+    text-decoration-color: var(--cw-link-rule-color-strong);
+  }
+
   @media (hover: hover) {
     :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover
-      .cw-ink-label[data-cw-ink-variant="link"] {
+      .cw-ink-label[data-cw-ink-variant="link"],
+    .cw-link-rule:hover {
       color: var(--cw-nav-marker);
     }
-  }
 
-  /* The weight is restated, not inherited. The selection stroke's hover rule
-     below also matches this mark and carries `scaleY(3.4)`; without the thin
-     weight here a link would thicken into a selection stroke under the
-     cursor, which is the one thing these two marks must never do to each
-     other. This selector is the more specific of the two, so it holds. */
-  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible
-    .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark,
-  .cw-ink-label[data-cw-ink-variant="link"][data-cw-ink-active="true"] .cw-ink-label-mark {
-    opacity: 1;
-    transform:
-      scaleY(var(--cw-ink-link-weight))
-      rotate(var(--cw-ink-stroke-tilt));
-  }
-
-  /* The hover half of the rule above, behind the pointer query like every
-     other hover (docs → "Hover is a pointer state"). It still outranks the
-     selection stroke's hover copy below on specificity, so a pointed-at link
-     keeps its thin weight. */
-  @media (hover: hover) {
     :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover
-      .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark {
-      opacity: 1;
-      transform:
-        scaleY(var(--cw-ink-link-weight))
-        rotate(var(--cw-ink-stroke-tilt));
+      .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-text,
+    .cw-link-rule:hover {
+      text-decoration-color: var(--cw-link-rule-color-strong);
     }
   }
 
@@ -2151,14 +2178,6 @@
       rotate(var(--cw-ink-stroke-tilt));
   }
 
-  /* Pinned last on purpose. Every state rule above carries the same (0,3,0)
-     specificity as the link variant's selector, so a tie is broken by order —
-     and without this the hover rule would SHORTEN a link's stroke to 80% at the
-     moment it is pointed at, which is the ladder running backwards. Length is
-     not a variable for this variant; only opacity is. */
-  .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark {
-  }
-
   :is(.cw-icon-btn, .cw-page-btn, .cw-nav-link, [data-cw-ink-control]):focus-visible .cw-ink-icon-mark {
     opacity: var(--cw-ink-hover-opacity);
     transform: scale(0.94) rotate(-7deg);
@@ -2207,8 +2226,8 @@
      element's own box travels left to right before the tilt is applied. The
      inset is generous vertically so the scaled stroke is never shaved.
 
-     Shown = every state that already sets a visible strength: the link's
-     rest, focus, hover, press, current. Everything else starts undrawn. */
+     Shown = every state that already sets a visible strength: focus, hover,
+     press, current. (A link carries no drawn mark since 2026-09-28.) Everything else starts undrawn. */
   .cw-ink-label-mark {
     clip-path: inset(-200% 100% -200% 0);
     transition:
@@ -2218,7 +2237,6 @@
       clip-path 0.36s cubic-bezier(0.3, 0.7, 0.2, 1);
   }
 
-  .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark,
   :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible .cw-ink-label-mark,
   :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):active .cw-ink-label-mark,
   :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]) .cw-ink-label-mark,
