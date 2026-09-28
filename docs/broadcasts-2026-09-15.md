@@ -63,6 +63,30 @@ roughly 5–8 thousand letters a minute, far above the base. «Надіслат�
 starts immediately via `after()`; the queued job (5-minute cron or the admin
 pulse) is the guarantee.
 
+## Lifecycle letters (2026-09-28)
+
+Sent by the platform itself, from the receipts domain (`send.centerway.net.ua`),
+not from the broadcast tool. Voice: the platform, signed «Команда CenterWay».
+Code: `src/lib/email/lifecycleEmails.ts` (words), `lifecycleRuns.ts` (who, when).
+
+| Letter | Trigger | Where it runs |
+|---|---|---|
+| «Вітаємо в CenterWay» | a new `platform_users` row since `WELCOME_EMAILS_SINCE` | `/api/cron/process-jobs`, every 5 min |
+| Receipt + stream line | paid order of a `format='group'` offer | the existing receipt, date read from the order's offer |
+| «Завтра стартує …» | `cohort_starts_on` = tomorrow in Kyiv | `/api/cron/lms-reminders`, 09:00 Kyiv |
+| «День 1 · …» | `cohort_starts_on` = today in Kyiv | same run |
+
+Stream recipients come from two roads and are merged by address: paid orders of
+a group offer (scanned by order, because an enrollment appears only when the
+course is first opened) and enrollments carrying the start date (manual grants —
+the friends of a stream — and buyers who already opened it). Self-paced learners
+get no stream letters. Each letter leaves an `events` row
+`type='lifecycle_email_sent'` with `order_ref` naming letter and person; the same
+string is the Resend Idempotency-Key.
+
+`TELEGRAM_CHANNEL_URL` and `TELEGRAM_STREAM_CHAT_URL` are optional: until set,
+the letters say the chat link will follow separately and omit the channel.
+
 ## Next
 
 - **Telegram broadcasts**: `channel = 'telegram'`, address = chat id from

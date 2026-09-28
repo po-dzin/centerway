@@ -101,6 +101,21 @@ class FakeQuery implements PromiseLike<{
     return this;
   }
 
+  /** Range comparisons as PostgREST does them on ISO strings and numbers. */
+  gte(column: string, value: string | number) {
+    this.filters.push(
+      (row) => row[column] !== null && row[column] !== undefined && (row[column] as string | number) >= value,
+    );
+    return this;
+  }
+
+  lte(column: string, value: string | number) {
+    this.filters.push(
+      (row) => row[column] !== null && row[column] !== undefined && (row[column] as string | number) <= value,
+    );
+    return this;
+  }
+
   in(column: string, values: unknown[]) {
     const set = new Set(values);
     this.filters.push((row) => set.has(row[column]));

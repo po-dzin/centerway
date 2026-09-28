@@ -22,6 +22,7 @@ import { escapeHtml } from "@/lib/strings";
 import { fulfilmentDestination } from "@/lib/payments/fulfilmentDestination";
 import { SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
 import type { ProductFulfilment } from "@/lib/products";
+import { ukDate } from "./lifecycleEmails";
 import { sendEmail } from "./resend";
 
 export type PurchaseEmailContent = {
@@ -37,6 +38,8 @@ export type PurchaseEmailInput = {
   currency: string;
   fulfilment: ProductFulfilment;
   orderRef: string;
+  /** A group-format offer's shared start date (YYYY-MM-DD); null for self-paced. */
+  cohortStartsOn?: string | null;
 };
 
 function formatAmount(amount: number | null, currency: string): string | null {
@@ -66,6 +69,10 @@ export function buildPurchaseEmail(input: PurchaseEmailInput): PurchaseEmailCont
       ? null
       : `Входьте на платформу з цією ж адресою — ${input.email}. Доступ відкривається саме за нею: під іншим акаунтом куплений курс не зʼявиться.`;
 
+  const streamNote = input.cohortStartsOn
+    ? `Потік стартує ${ukDate(input.cohortStartsOn)}. Напередодні надішлемо лист, а в день старту — перший урок.`
+    : null;
+
   const lines = [
     `Дякуємо! Оплату прийнято.`,
     ``,
@@ -73,6 +80,8 @@ export function buildPurchaseEmail(input: PurchaseEmailInput): PurchaseEmailCont
     price ? `Сума: ${price}` : null,
     `Номер замовлення: ${input.orderRef}`,
     ``,
+    streamNote,
+    streamNote ? `` : null,
     `${label}: ${href}`,
     ``,
     signInNote,
@@ -91,6 +100,7 @@ export function buildPurchaseEmail(input: PurchaseEmailInput): PurchaseEmailCont
   <p style="margin:0 0 4px"><strong>${escapeHtml(title)}</strong></p>
   ${price ? `<p style="margin:0 0 4px;color:#6b625a">Сума: ${escapeHtml(price)}</p>` : ""}
   <p style="margin:0 0 24px;color:#6b625a">Замовлення: ${escapeHtml(input.orderRef)}</p>
+  ${streamNote ? `<p style="margin:0 0 24px">${escapeHtml(streamNote)}</p>` : ""}
   <p style="margin:0 0 24px">
     <a href="${escapeHtml(href)}" style="display:inline-block;background:#2b2723;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:700">${escapeHtml(label)}</a>
   </p>
@@ -136,6 +146,28 @@ async function purchaseEmailSent(orderRef: string): Promise<boolean> {
   return Boolean(data?.id);
 }
 
+/**
+ * The shared start date of the offer this order bought, when it is a group
+ * stream. Read here rather than passed in so the three callers (payment
+ * webhook, reconcile, manual sale) stay as they were. A failed read is not a
+ * reason to hold the receipt: it goes out without the line.
+ */
+async function cohortOfOrder(orderRef: string): Promise<string | null> {
+  try {
+    const db = adminClient();
+    const { data: order } = await db.from("orders").select("offer_id").eq("order_ref", orderRef).maybeSingle();
+    if (!order?.offer_id) return null;
+    const { data: offer } = await db
+      .from("experience_offers")
+      .select("format, cohort_starts_on")
+      .eq("id", order.offer_id)
+      .maybeSingle();
+    return offer?.format === "group" && offer.cohort_starts_on ? offer.cohort_starts_on : null;
+  } catch {
+    return null;
+  }
+}
+
 export type SendPurchaseEmailResult = {
   sent: boolean;
   reason?: string;
@@ -153,7 +185,10 @@ export async function sendPurchaseEmail(input: PurchaseEmailInput): Promise<Send
     if (!input.email) return { sent: false, reason: "no_email" };
     if (await purchaseEmailSent(input.orderRef)) return { sent: false, reason: "already_sent" };
 
-    const content = buildPurchaseEmail(input);
+    const content = buildPurchaseEmail({
+      ...input,
+      cohortStartsOn: input.cohortStartsOn === undefined ? await cohortOfOrder(input.orderRef) : input.cohortStartsOn,
+    });
     const result = await sendEmail({
       to: input.email,
       subject: content.subject,
