@@ -16,9 +16,12 @@
  *   [текст](https://…)  link (http, https, mailto only)
  *   {{name}}            recipient's name; {{name|друзі}} with a fallback
  *
- * Inline styles and no tables for the same reason as the purchase receipt: mail
- * clients strip <style>, and nothing here needs a grid.
+ * The letter is poured into the shared frame (`@/lib/email/layout`), the same
+ * one the receipt and the lifecycle letters use, so a campaign looks like the
+ * platform and not like a newsletter tool.
  */
+
+import { emailLink, renderEmailLayout, type EmailBlock } from "@/lib/email/layout";
 
 export type BroadcastContent = {
   subject: string;
@@ -34,10 +37,6 @@ export type RenderRecipient = {
 };
 
 export type RenderedEmail = { subject: string; html: string; text: string };
-
-const INK = "#2b2723";
-const MUTED = "#6b625a";
-const FAINT = "#9a9089";
 
 function escapeHtml(value: string): string {
   return value
@@ -116,9 +115,7 @@ function inlineHtml(text: string): string {
   for (const match of text.matchAll(LINK_RE)) {
     out += boldHtml(text.slice(last, match.index));
     const [, label = "", url = ""] = match;
-    out += isSafeUrl(url)
-      ? `<a href="${escapeHtml(url)}" style="color:${INK};text-decoration:underline">${boldHtml(label)}</a>`
-      : boldHtml(match[0]);
+    out += isSafeUrl(url) ? emailLink(url, boldHtml(label)) : boldHtml(match[0]);
     last = (match.index ?? 0) + match[0].length;
   }
   return out + boldHtml(text.slice(last));
@@ -146,37 +143,19 @@ export function renderBroadcastEmail(content: BroadcastContent, recipient: Rende
   const footerNote = "Ви отримали цей лист, бо залишали свою адресу на CenterWay.";
   const unsubscribeLabel = "Відписатися від розсилки";
 
-  const htmlBlocks = blocks
-    .map((block) => {
-      if (block.kind === "heading") {
-        return `<h2 style="margin:28px 0 12px;font-size:20px;line-height:1.35;font-weight:700;color:${INK}">${inlineHtml(block.text)}</h2>`;
-      }
-      if (block.kind === "list") {
-        return `<ul style="margin:0 0 20px;padding-left:22px">${block.items
-          .map((item) => `<li style="margin:0 0 6px">${inlineHtml(item)}</li>`)
-          .join("")}</ul>`;
-      }
-      return `<p style="margin:0 0 20px">${block.lines.map(inlineHtml).join("<br>")}</p>`;
-    })
-    .join("\n  ");
+  const htmlBlocks = blocks.map((block): EmailBlock => {
+    if (block.kind === "heading") return { kind: "heading", html: inlineHtml(block.text) };
+    if (block.kind === "list") return { kind: "list", items: block.items.map(inlineHtml) };
+    return { kind: "paragraph", html: block.lines.map(inlineHtml).join("<br>") };
+  });
 
-  /* The preheader is the grey line an inbox shows after the subject. Hidden in
-     the body, padded with zero-width spaces so the client does not pull the
-     first paragraph in after it. */
-  const preheaderHtml = preheader
-    ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(preheader)}${"&#8203;&nbsp;".repeat(40)}</div>`
-    : "";
-
-  const html = `${preheaderHtml}<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:${INK};max-width:560px;margin:0 auto;padding:24px">
-  ${htmlBlocks}
-  ${
-    cta
-      ? `<p style="margin:8px 0 28px"><a href="${escapeHtml(cta.url)}" style="display:inline-block;background:${INK};color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:700">${escapeHtml(cta.label)}</a></p>`
-      : ""
-  }
-  <p style="margin:32px 0 0;color:${MUTED}">CenterWay</p>
-  <p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:${FAINT}">${escapeHtml(footerNote)} <a href="${escapeHtml(recipient.unsubscribeUrl)}" style="color:${FAINT}">${unsubscribeLabel}</a>.</p>
-</div>`;
+  const html = renderEmailLayout({
+    preheader,
+    blocks: htmlBlocks,
+    cta: cta ? { label: cta.label, href: cta.url } : null,
+    signature: "CenterWay",
+    footer: [`${escapeHtml(footerNote)} ${emailLink(recipient.unsubscribeUrl, unsubscribeLabel, "muted")}.`],
+  });
 
   const textParts = blocks.map((block) => {
     if (block.kind === "heading") return inlineText(block.text).toUpperCase();

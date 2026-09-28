@@ -12,18 +12,15 @@
  */
 
 import { escapeHtml } from "@/lib/strings";
+import { emailLink, renderEmailLayout, type EmailBlock } from "./layout";
 
 export type LifecycleEmail = { subject: string; html: string; text: string };
 
 type Line = { text: string } | { link: string; before: string; label: string; after?: string };
 
-const INK = "#2b2723";
-const MUTED = "#6b625a";
-const FAINT = "#9a9089";
-
-function lineHtml(line: Line): string {
+function lineHtml(line: Line, tone: "ink" | "muted" = "ink"): string {
   if ("text" in line) return escapeHtml(line.text);
-  return `${escapeHtml(line.before)}<a href="${escapeHtml(line.link)}" style="color:${INK}">${escapeHtml(line.label)}</a>${escapeHtml(line.after ?? "")}`;
+  return `${escapeHtml(line.before)}${emailLink(line.link, escapeHtml(line.label), tone)}${escapeHtml(line.after ?? "")}`;
 }
 
 function lineText(line: Line): string {
@@ -31,25 +28,63 @@ function lineText(line: Line): string {
   return `${line.before}${line.label}${line.after ?? ""}: ${line.link}`;
 }
 
-/** One letter shape for every lifecycle message: paragraphs, one button, a quiet foot. */
+type Step = { title: string; line: Line };
+
+/**
+ * One letter shape for every lifecycle message, poured into the shared frame:
+ * an eyebrow, a serif headline, paragraphs, optional steps or facts, one button,
+ * a quiet foot. The plain-text twin is written from the same parts.
+ */
 function compose(input: {
   subject: string;
+  preheader: string;
+  eyebrow: string;
+  title: string;
   greeting: string;
   paragraphs: Line[];
+  steps?: Step[];
+  facts?: { label: string; value: Line }[];
+  note?: Line;
+  closing?: Line[];
   cta: { label: string; href: string };
   foot?: Line[];
 }): LifecycleEmail {
   const foot = input.foot ?? [];
-  const html = `<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:${INK};max-width:520px;margin:0 auto;padding:24px">
-  <p style="margin:0 0 20px">${escapeHtml(input.greeting)}</p>
-  ${input.paragraphs.map((p) => `<p style="margin:0 0 20px">${lineHtml(p)}</p>`).join("\n  ")}
-  <p style="margin:8px 0 28px"><a href="${escapeHtml(input.cta.href)}" style="display:inline-block;background:${INK};color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:700">${escapeHtml(input.cta.label)}</a></p>
-  ${foot.map((p) => `<p style="margin:0 0 16px;color:${MUTED}">${lineHtml(p)}</p>`).join("\n  ")}
-  <p style="margin:24px 0 0;color:${FAINT}">Команда CenterWay</p>
-</div>`;
+  const blocks: EmailBlock[] = [
+    { kind: "paragraph", html: escapeHtml(input.greeting) },
+    ...input.paragraphs.map((p): EmailBlock => ({ kind: "paragraph", html: lineHtml(p) })),
+  ];
+  if (input.facts?.length) {
+    blocks.push({
+      kind: "facts",
+      rows: input.facts.map((f) => ({ label: escapeHtml(f.label), value: lineHtml(f.value) })),
+    });
+  }
+  if (input.steps?.length) {
+    blocks.push({
+      kind: "steps",
+      items: input.steps.map((step) => ({ title: escapeHtml(step.title), html: lineHtml(step.line, "muted") })),
+    });
+  }
+  for (const line of input.closing ?? []) blocks.push({ kind: "paragraph", html: lineHtml(line) });
+  if (input.note) blocks.push({ kind: "note", html: lineHtml(input.note) });
+
+  const html = renderEmailLayout({
+    preheader: input.preheader,
+    eyebrow: input.eyebrow,
+    title: input.title,
+    blocks,
+    cta: input.cta,
+    after: foot.map((line) => lineHtml(line, "muted")),
+    signature: "Команда CenterWay",
+  });
   const text = [
     input.greeting,
     ...input.paragraphs.map(lineText),
+    ...(input.facts ?? []).map((f) => `${f.label}: ${lineText(f.value)}`),
+    ...(input.steps ?? []).map((step, i) => `${i + 1}. ${step.title} — ${lineText(step.line)}`),
+    ...(input.closing ?? []).map(lineText),
+    ...(input.note ? [lineText(input.note)] : []),
     `${input.cta.label}: ${input.cta.href}`,
     ...foot.map(lineText),
     "Команда CenterWay",
@@ -82,37 +117,54 @@ export type Links = {
 
 export function buildWelcomeEmail(input: { name?: string | null; links: Links }): LifecycleEmail {
   const { links } = input;
-  const paragraphs: Line[] = [
+  const steps: Step[] = [
     {
-      text: "Ви створили акаунт на CenterWay — платформі цілісного відновлення. Тут живуть програми наших авторів: харчування, режим, тіло, практики.",
+      title: "Тест доші",
+      line: {
+        link: links.doshaTestUrl,
+        before: "",
+        label: "Пройдіть тест",
+        after: " — він підкаже, яка конституція у вас переважає і з чого краще починати.",
+      },
     },
-    { text: "З чого почати:" },
     {
-      link: links.doshaTestUrl,
-      before: "— пройдіть ",
-      label: "тест доші",
-      after: " — він підкаже, яка конституція у вас переважає і з чого краще починати;",
+      title: "Програми",
+      line: {
+        link: links.programsUrl,
+        before: "",
+        label: "Подивіться програми",
+        after: " — у кожної є самостійний формат, а в деяких і груповий потік.",
+      },
     },
     {
-      link: links.programsUrl,
-      before: "— подивіться ",
-      label: "програми",
-      after: " — у кожної є самостійний формат, а в деяких і груповий потік;",
+      title: "Кабінет",
+      line: { text: "Зберігає уроки й прогрес: повертайтеся, коли зручно." },
     },
-    { text: "— ваш кабінет зберігає уроки й прогрес: повертайтеся, коли зручно." },
   ];
   if (links.channelUrl) {
-    paragraphs.push({
-      link: links.channelUrl,
-      before: "Практики, розбори й анонси ми публікуємо в ",
-      label: "Telegram-каналі CenterWay",
-      after: ".",
+    steps.push({
+      title: "Канал",
+      line: {
+        link: links.channelUrl,
+        before: "Практики, розбори й анонси — у ",
+        label: "Telegram-каналі CenterWay",
+        after: ".",
+      },
     });
   }
   return compose({
     subject: "Вітаємо в CenterWay",
+    preheader: "З чого почати: тест доші, програми і ваш кабінет.",
+    eyebrow: "Ласкаво просимо",
+    title: "Ваш простір відновлення готовий",
     greeting: greet(input.name),
-    paragraphs,
+    paragraphs: [
+      {
+        text: "Ви створили акаунт на CenterWay — платформі цілісного відновлення. Тут живуть програми наших авторів: харчування, режим, тіло, практики.",
+      },
+      { text: "З чого почати:" },
+    ],
+    steps,
     cta: { label: "Відкрити кабінет", href: links.cabinetUrl },
     foot: [{ link: links.supportUrl, before: "Якщо щось не відкривається — ", label: "напишіть нам", after: "." }],
   });
@@ -141,29 +193,48 @@ export function buildStreamEmail(input: {
     text: "Заходьте до кабінету тим самим email, на який прийшов цей лист, — за ним відкривається доступ.",
   };
 
+  const facts = (lessons: string): { label: string; value: Line }[] => [
+    { label: "Старт", value: { text: when } },
+    { label: "Формат", value: { text: "Груповий потік" } },
+    { label: "Уроки", value: { text: lessons } },
+  ];
+  const help: Line = {
+    link: links.supportUrl,
+    before: "Якщо щось не відкривається — ",
+    label: "напишіть нам",
+    after: ".",
+  };
+
   if (input.stage === "tomorrow") {
     return compose({
       subject: `Завтра стартує ${programTitle}`,
+      preheader: `${when} починаємо разом. Перший урок — зранку в кабінеті.`,
+      eyebrow: `Потік · ${programTitle}`,
+      title: "Завтра починаємо",
       greeting: greet(input.name),
       paragraphs: [
         {
           text: `Завтра, ${when}, стартує потік програми «${programTitle}». Усі учасники починають з першого дня разом.`,
         },
+      ],
+      facts: facts("Щодня в кабінеті, перший — зранку"),
+      closing: [
         {
-          text: "Уроки відкриваються в кабінеті щодня — перший буде готовий зранку. Якщо є можливість, підготуйтеся сьогодні: перегляньте вступ і спокійно сплануйте завтрашній день.",
+          text: "Якщо є можливість, підготуйтеся сьогодні: перегляньте вступ і спокійно сплануйте завтрашній день.",
         },
         chat,
       ],
+      note: signIn,
       cta: { label: "Відкрити кабінет", href: links.cabinetUrl },
-      foot: [
-        signIn,
-        { link: links.supportUrl, before: "Якщо щось не відкривається — ", label: "напишіть нам", after: "." },
-      ],
+      foot: [help],
     });
   }
 
   return compose({
     subject: `День 1 · ${programTitle}`,
+    preheader: "Перший урок уже в кабінеті.",
+    eyebrow: `День 1 · ${programTitle}`,
+    title: "Перший урок уже чекає",
     greeting: greet(input.name),
     paragraphs: [
       { text: `Сьогодні перший день потоку «${programTitle}». Перший урок уже чекає в кабінеті.` },
@@ -172,10 +243,8 @@ export function buildStreamEmail(input: {
       },
       chat,
     ],
+    note: signIn,
     cta: { label: "Відкрити перший урок", href: links.cabinetUrl },
-    foot: [
-      signIn,
-      { link: links.supportUrl, before: "Якщо щось не відкривається — ", label: "напишіть нам", after: "." },
-    ],
+    foot: [help],
   });
 }

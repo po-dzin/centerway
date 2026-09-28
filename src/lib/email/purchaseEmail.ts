@@ -22,6 +22,7 @@ import { escapeHtml } from "@/lib/strings";
 import { fulfilmentDestination } from "@/lib/payments/fulfilmentDestination";
 import { SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
 import type { ProductFulfilment } from "@/lib/products";
+import { emailLink, renderEmailLayout, type EmailBlock } from "./layout";
 import { ukDate } from "./lifecycleEmails";
 import { sendEmail } from "./resend";
 
@@ -93,21 +94,33 @@ export function buildPurchaseEmail(input: PurchaseEmailInput): PurchaseEmailCont
 
   const text = lines.join("\n");
 
-  /* Inline styles and a table-free layout on purpose: mail clients strip
-     <style> blocks, and this message has one job — carry a link that works. */
-  const html = `<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#2b2723;max-width:520px;margin:0 auto;padding:24px">
-  <p style="margin:0 0 20px">Дякуємо! Оплату прийнято.</p>
-  <p style="margin:0 0 4px"><strong>${escapeHtml(title)}</strong></p>
-  ${price ? `<p style="margin:0 0 4px;color:#6b625a">Сума: ${escapeHtml(price)}</p>` : ""}
-  <p style="margin:0 0 24px;color:#6b625a">Замовлення: ${escapeHtml(input.orderRef)}</p>
-  ${streamNote ? `<p style="margin:0 0 24px">${escapeHtml(streamNote)}</p>` : ""}
-  <p style="margin:0 0 24px">
-    <a href="${escapeHtml(href)}" style="display:inline-block;background:#2b2723;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:700">${escapeHtml(label)}</a>
-  </p>
-  ${signInNote ? `<p style="margin:0 0 20px;color:#6b625a">${escapeHtml(signInNote)}</p>` : ""}
-  <p style="margin:0 0 20px;color:#6b625a">Якщо щось не відкривається — <a href="${escapeHtml(SUPPORT_BOT_URL)}" style="color:#2b2723">напишіть нам</a>.</p>
-  <p style="margin:0;color:#9a9089">CenterWay</p>
-</div>`;
+  /* The shared frame (layout.ts): tables and inline styles, because mail
+     clients strip <style>. The job is still one — carry a link that works. */
+  const blocks: EmailBlock[] = [
+    { kind: "paragraph", html: "Дякуємо! Оплату прийнято." },
+    {
+      kind: "facts",
+      rows: [
+        ...(price ? [{ label: "Сума", value: escapeHtml(price) }] : []),
+        { label: "Замовлення", value: escapeHtml(input.orderRef) },
+        ...(input.cohortStartsOn ? [{ label: "Старт потоку", value: escapeHtml(ukDate(input.cohortStartsOn)) }] : []),
+      ],
+    },
+  ];
+  /* The date already stands in the facts panel; the paragraph keeps only what happens next. */
+  if (streamNote)
+    blocks.push({ kind: "paragraph", html: "Напередодні надішлемо лист, а в день старту — перший урок." });
+  if (signInNote) blocks.push({ kind: "note", html: escapeHtml(signInNote) });
+
+  const html = renderEmailLayout({
+    preheader: `${title} — доступ і деталі замовлення.`,
+    eyebrow: "Оплату отримано",
+    title,
+    blocks,
+    cta: { label, href },
+    after: [`Якщо щось не відкривається — ${emailLink(SUPPORT_BOT_URL, "напишіть нам", "muted")}.`],
+    signature: "Команда CenterWay",
+  });
 
   return { subject, html, text };
 }
