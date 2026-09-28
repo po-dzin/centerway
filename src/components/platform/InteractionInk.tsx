@@ -29,11 +29,11 @@ export function InteractionInkLabel({
    *   appears on hover and stays for the row you are on. (`menu` is kept as a
    *   name because call sites and a contract test read it; it is the same
    *   mark as `navigation` and no longer a third geometry.)
-   * `link` — the LINK RULE: thin, and the TEXT'S OWN COLOUR at rest, so a link
-   *   in running copy carries an underline that belongs to the sentence rather
-   *   than a gold line hanging under it. Pointing at it turns the rule AND the
-   *   word brass together. This is what makes an ink link safe to use wherever
-   *   `text-decoration` used to be.
+   * `link` — the LINK RULE: a hairline under the words, not a drawn stroke
+   *   (2026-09-28). Ink on the light side, gold on the night one, visible at
+   *   rest; pointing at it turns the word to the marker colour and the line
+   *   whole. No sprite is rendered for it — the line is the text's own
+   *   underline, drawn from the `--cw-link-rule-*` tokens in globals.css.
    * `tab` — KEPT AS A NAME, not as a shape. It briefly drew a rounded-rect
    *   edge around the label, on the reasoning that a segmented control chooses
    *   one of several rather than pointing at a way out. On screen that read as
@@ -53,7 +53,7 @@ export function InteractionInkLabel({
   return (
     <span className="cw-ink-label" data-cw-ink-variant={variant} data-cw-ink-active={active || undefined}>
       <span className="cw-ink-label-text">{children}</span>
-      <HandGraphic className="cw-ink-label-mark" name="ink-rule" size={36} />
+      {variant === "link" ? null : <HandGraphic className="cw-ink-label-mark" name="ink-rule" size={36} />}
     </span>
   );
 }
