@@ -34,7 +34,10 @@ export async function POST(req: NextRequest, { params }: Params) {
         try {
           await runBroadcastJob({ broadcast_id: id });
         } catch (error) {
-          log.error("broadcasts.kickoff_failed", { id, message: error instanceof Error ? error.message : String(error) });
+          log.error("broadcasts.kickoff_failed", {
+            id,
+            message: error instanceof Error ? error.message : String(error),
+          });
         }
       });
     }

@@ -30,6 +30,10 @@ src/lib/db/database.types.ts
 # several guards read them by line (carriers, rhythm, the DS contract).
 src/landing-static
 
+# Contact exports (personal data, gitignored in their own folder) — never
+# committed, so never formatted; Prettier does not read nested .gitignore files.
+data/contacts-import/raw
+
 # Prose is written, not formatted; docs/README.md is generated besides.
 *.md
 docs/**/*.html

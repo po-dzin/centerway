@@ -8,7 +8,6 @@
 
 import { serviceClient } from "@/lib/db/server";
 import { sendEmail } from "@/lib/email/resend";
-import { PRODUCTS } from "@/lib/products";
 
 import { audienceIsEmpty, normalizeAudience, type Audience } from "./audience";
 import { isSafeUrl } from "./render";
@@ -185,7 +184,12 @@ export async function scheduleBroadcast(id: string, at: Date | null) {
 
   const { data, error } = await serviceClient()
     .from("broadcasts")
-    .update({ status: "scheduled", scheduled_at: when.toISOString(), error_text: null, updated_at: new Date().toISOString() })
+    .update({
+      status: "scheduled",
+      scheduled_at: when.toISOString(),
+      error_text: null,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", id)
     .in("status", SCHEDULABLE_FROM)
     .select("*")
@@ -251,15 +255,27 @@ export type AudienceOptions = {
 /** What the audience picker can offer, read from the data rather than hard-coded. */
 export async function audienceOptions(): Promise<AudienceOptions> {
   const db = serviceClient();
-  const [orders, leads, courses, customers, subs] = await Promise.all([
+  const [orders, leads, courses, customers, subs, offers] = await Promise.all([
     db.from("orders").select("product_code").eq("status", "paid").limit(20000),
     db.from("leads").select("product_code").not("email", "is", null).limit(20000),
     db.from("lms_courses").select("id, title, status").order("title"),
     db.from("customers").select("tags").limit(20000),
     db.from("messaging_subscriptions").select("source").eq("channel", "email").limit(50000),
+    // Offers live in the database since the experiences migration; a code that
+    // is not an offer (a lead form, a retired product) keeps its raw name.
+    db.from("experience_offers").select("code, label, invoice_heading, pixel_content_name"),
   ]);
-  for (const res of [orders, leads, courses, customers, subs]) {
+  for (const res of [orders, leads, courses, customers, subs, offers]) {
     if (res.error) throw new Error(res.error.message);
+  }
+  const ukText = (value: unknown): string | null => {
+    const uk = value && typeof value === "object" ? (value as { uk?: unknown }).uk : null;
+    return typeof uk === "string" && uk.trim() ? uk.trim() : null;
+  };
+  const offerLabel = new Map<string, string>();
+  for (const offer of offers.data ?? []) {
+    const label = ukText(offer.label) ?? ukText(offer.invoice_heading) ?? offer.pixel_content_name;
+    if (label) offerLabel.set(offer.code, label);
   }
 
   const products = new Map<string, { paid: number; leads: number }>();
@@ -279,10 +295,9 @@ export async function audienceOptions(): Promise<AudienceOptions> {
   const sourceCounts = new Map<string, number>();
   for (const row of subs.data ?? []) sourceCounts.set(row.source, (sourceCounts.get(row.source) ?? 0) + 1);
 
-  const catalog = PRODUCTS as Record<string, { heading?: { uk?: string } }>;
   return {
     products: [...products.entries()]
-      .map(([code, counts]) => ({ code, label: catalog[code]?.heading?.uk ?? code, ...counts }))
+      .map(([code, counts]) => ({ code, label: offerLabel.get(code) ?? code, ...counts }))
       .sort((a, b) => b.paid + b.leads - (a.paid + a.leads)),
     courses: (courses.data ?? []).map((c) => ({ id: c.id, title: c.title, status: c.status })),
     tags: [...tagCounts.entries()].map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count),

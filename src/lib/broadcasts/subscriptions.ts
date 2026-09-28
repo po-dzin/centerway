@@ -213,8 +213,7 @@ export async function applyResendEvent(event: {
     "email.clicked": "clicked_at",
     "email.bounced": "bounced_at",
     "email.complained": "complained_at",
-  }[event.type] as
-    "delivered_at" | "opened_at" | "clicked_at" | "bounced_at" | "complained_at" | undefined;
+  }[event.type] as "delivered_at" | "opened_at" | "clicked_at" | "bounced_at" | "complained_at" | undefined;
   if (!column) return "ignored";
 
   const db = serviceClient();

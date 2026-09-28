@@ -74,11 +74,21 @@ export function UnsubscribeActions({ token, maskedAddress }: { token: string | n
       </p>
       <div className={styles.statusActions}>
         {state === "ask" || state === "error" ? (
-          <button type="button" className={styles.statusPrimaryAction} disabled={busy} onClick={() => act("unsubscribe")}>
+          <button
+            type="button"
+            className={styles.statusPrimaryAction}
+            disabled={busy}
+            onClick={() => act("unsubscribe")}
+          >
             Відписатися
           </button>
         ) : state === "unsubscribed" ? (
-          <button type="button" className={styles.statusSecondaryAction} disabled={busy} onClick={() => act("resubscribe")}>
+          <button
+            type="button"
+            className={styles.statusSecondaryAction}
+            disabled={busy}
+            onClick={() => act("resubscribe")}
+          >
             Повернути підписку
           </button>
         ) : null}

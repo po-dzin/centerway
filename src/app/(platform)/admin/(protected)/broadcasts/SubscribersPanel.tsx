@@ -181,7 +181,7 @@ export function SubscribersPanel({ canWrite }: { canWrite: boolean }) {
                 setCsv(e.target.value);
                 setPreview(null);
               }}
-              placeholder={"email;name;status\nanna@example.com;Анна;active"}
+              placeholder={t("broadcasts_import_placeholder")}
             />
           </label>
           {preview ? (
@@ -266,7 +266,9 @@ export function SubscribersPanel({ canWrite }: { canWrite: boolean }) {
                 <div className={lists.itemIdentity}>
                   <p className={lists.itemTitle}>{item.address}</p>
                   <p className={lists.itemSub}>
-                    {[item.name, fill(t("broadcasts_base_source"), { source: item.source })].filter(Boolean).join(" · ")}
+                    {[item.name, fill(t("broadcasts_base_source"), { source: item.source })]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
                 </div>
                 {canWrite ? (
@@ -284,7 +286,9 @@ export function SubscribersPanel({ canWrite }: { canWrite: boolean }) {
                     ))}
                   </select>
                 ) : (
-                  <span className={`${STATUS_BADGE[item.status]} ${styles.rowStatus}`}>{t(STATUS_LABEL[item.status])}</span>
+                  <span className={`${STATUS_BADGE[item.status]} ${styles.rowStatus}`}>
+                    {t(STATUS_LABEL[item.status])}
+                  </span>
                 )}
               </div>
             </div>

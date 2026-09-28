@@ -61,13 +61,17 @@ export function personalize(template: string, name: string | null | undefined): 
   });
 }
 
-type Block = { kind: "heading"; text: string } | { kind: "list"; items: string[] } | { kind: "paragraph"; lines: string[] };
+type Block =
+  { kind: "heading"; text: string } | { kind: "list"; items: string[] } | { kind: "paragraph"; lines: string[] };
 
 export function parseBlocks(body: string): Block[] {
   const blocks: Block[] = [];
   const chunks = body.replace(/\r\n?/g, "\n").split(/\n\s*\n/);
   for (const chunk of chunks) {
-    const lines = chunk.split("\n").map((line) => line.trimEnd()).filter((line) => line.trim() !== "");
+    const lines = chunk
+      .split("\n")
+      .map((line) => line.trimEnd())
+      .filter((line) => line.trim() !== "");
     if (lines.length === 0) continue;
 
     let paragraph: string[] = [];

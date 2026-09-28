@@ -231,5 +231,98 @@
       "order_ref": "smoke-order",
       "status": "done"
     }
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/broadcasts"
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/broadcasts",
+    "body": {
+      "title": "Smoke"
+    }
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/broadcasts/00000000-0000-4000-8000-000000000000",
+    "routePath": "/api/admin/broadcasts/:id"
+  },
+  {
+    "kind": "mutate",
+    "method": "PATCH",
+    "path": "/api/admin/broadcasts/00000000-0000-4000-8000-000000000000",
+    "routePath": "/api/admin/broadcasts/:id",
+    "body": {
+      "title": "Smoke"
+    }
+  },
+  {
+    "kind": "mutate",
+    "method": "DELETE",
+    "path": "/api/admin/broadcasts/00000000-0000-4000-8000-000000000000",
+    "routePath": "/api/admin/broadcasts/:id"
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/broadcasts/00000000-0000-4000-8000-000000000000/send",
+    "routePath": "/api/admin/broadcasts/:id/send",
+    "body": {}
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/broadcasts/00000000-0000-4000-8000-000000000000/cancel",
+    "routePath": "/api/admin/broadcasts/:id/cancel",
+    "body": {}
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/broadcasts/00000000-0000-4000-8000-000000000000/test",
+    "routePath": "/api/admin/broadcasts/:id/test",
+    "body": {}
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/broadcasts/audience"
+  },
+  {
+    "kind": "read",
+    "method": "POST",
+    "path": "/api/admin/broadcasts/audience",
+    "body": {
+      "audience": {
+        "include": []
+      }
+    }
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/subscriptions"
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/subscriptions",
+    "body": {
+      "csv": "email\nsmoke@example.com",
+      "dryRun": true
+    }
+  },
+  {
+    "kind": "mutate",
+    "method": "PATCH",
+    "path": "/api/admin/subscriptions",
+    "body": {
+      "address": "smoke@example.com",
+      "status": "unsubscribed"
+    }
   }
 ]

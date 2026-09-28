@@ -77,7 +77,7 @@ export function BroadcastEditor({
   const [options, setOptions] = useState<AudienceOptions | null>(null);
   const [count, setCount] = useState<number | null>(null);
   const [counting, setCounting] = useState(false);
-  const [previewName, setPreviewName] = useState("Анна");
+  const [previewName, setPreviewName] = useState(() => t("broadcasts_preview_name_default"));
   const [scheduleAt, setScheduleAt] = useState(() => localInputValue(new Date(Date.now() + 60 * 60 * 1000)));
   const [confirm, setConfirm] = useState<null | "now" | "schedule">(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -252,11 +252,7 @@ export function BroadcastEditor({
   const valuesOf = (kind: AudienceKind, field: string): string[] =>
     ((rule(kind) as Record<string, unknown> | undefined)?.[field] as string[] | undefined) ?? [];
 
-  const optionList = (
-    kind: AudienceKind,
-    field: string,
-    items: { value: string; label: string; count?: number }[],
-  ) =>
+  const optionList = (kind: AudienceKind, field: string, items: { value: string; label: string; count?: number }[]) =>
     rule(kind) ? (
       <div className={styles.options}>
         {items.length === 0 ? <span className={styles.checkHint}>{t("broadcasts_no_options")}</span> : null}
@@ -312,7 +308,7 @@ export function BroadcastEditor({
       ),
     [draft.subject, draft.preheader, draft.body, draft.cta_label, draft.cta_url, previewName],
   );
-  const srcDoc = `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"></head><body style="margin:0;background:#fff">${preview.html}</body></html>`;
+  const srcDoc = `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"></head><body style="margin:0;background:white">${preview.html}</body></html>`;
 
   const products = (options?.products ?? []).map((p) => ({ value: p.code, label: p.label }));
   const statTiles: [TranslationKey, number][] = [
@@ -339,7 +335,9 @@ export function BroadcastEditor({
         <div className={pageStyles.heading}>
           <h2 className={pageStyles.title}>{saved.title || saved.subject || t("broadcasts_untitled")}</h2>
           <p className={pageStyles.subtitle}>
-            <span className={BROADCAST_STATUS_BADGE_CLASS[saved.status]}>{t(BROADCAST_STATUS_LABEL[saved.status])}</span>
+            <span className={BROADCAST_STATUS_BADGE_CLASS[saved.status]}>
+              {t(BROADCAST_STATUS_LABEL[saved.status])}
+            </span>
             {saved.status === "scheduled" && saved.scheduled_at
               ? ` ${new Date(saved.scheduled_at).toLocaleString(locale, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`
               : null}
@@ -349,11 +347,21 @@ export function BroadcastEditor({
         {editable ? (
           <div className={controls.actions}>
             {saved.status === "draft" ? (
-              <button type="button" className={`${controls.action} cw-btn-muted`} disabled={busy} onClick={() => setConfirmDelete(true)}>
+              <button
+                type="button"
+                className={`${controls.action} cw-btn-muted`}
+                disabled={busy}
+                onClick={() => setConfirmDelete(true)}
+              >
                 {t("broadcasts_delete")}
               </button>
             ) : null}
-            <button type="button" className={`${controls.action} cw-surface-2`} disabled={busy || !dirty} onClick={save}>
+            <button
+              type="button"
+              className={`${controls.action} cw-surface-2`}
+              disabled={busy || !dirty}
+              onClick={save}
+            >
               {t("broadcasts_save")}
             </button>
           </div>
@@ -395,19 +403,39 @@ export function BroadcastEditor({
             <h3 className={styles.sectionTitle}>{t("broadcasts_section_content")}</h3>
             <label className={controls.field}>
               <span className={controls.fieldCaption}>{t("broadcasts_field_title")}</span>
-              <input className={controls.input} disabled={!editable} value={draft.title} onChange={(e) => set("title", e.target.value)} />
+              <input
+                className={controls.input}
+                disabled={!editable}
+                value={draft.title}
+                onChange={(e) => set("title", e.target.value)}
+              />
             </label>
             <label className={controls.field}>
               <span className={controls.fieldCaption}>{t("broadcasts_field_subject")}</span>
-              <input className={controls.input} disabled={!editable} value={draft.subject} onChange={(e) => set("subject", e.target.value)} />
+              <input
+                className={controls.input}
+                disabled={!editable}
+                value={draft.subject}
+                onChange={(e) => set("subject", e.target.value)}
+              />
             </label>
             <label className={controls.field}>
               <span className={controls.fieldCaption}>{t("broadcasts_field_preheader")}</span>
-              <input className={controls.input} disabled={!editable} value={draft.preheader} onChange={(e) => set("preheader", e.target.value)} />
+              <input
+                className={controls.input}
+                disabled={!editable}
+                value={draft.preheader}
+                onChange={(e) => set("preheader", e.target.value)}
+              />
             </label>
             <label className={controls.field}>
               <span className={controls.fieldCaption}>{t("broadcasts_field_body")}</span>
-              <textarea className={styles.body} disabled={!editable} value={draft.body} onChange={(e) => set("body", e.target.value)} />
+              <textarea
+                className={styles.body}
+                disabled={!editable}
+                value={draft.body}
+                onChange={(e) => set("body", e.target.value)}
+              />
             </label>
             <p className={controls.hint}>{t("broadcasts_body_hint")}</p>
             <div className={styles.twoFields}>
@@ -438,7 +466,9 @@ export function BroadcastEditor({
             <div className={styles.toolbar}>
               <h3 className={styles.sectionTitle}>{t("broadcasts_section_audience")}</h3>
               <span className={styles.count}>
-                {counting ? t("broadcasts_audience_counting") : fill(t("broadcasts_audience_count"), { count: count ?? "—" })}
+                {counting
+                  ? t("broadcasts_audience_counting")
+                  : fill(t("broadcasts_audience_count"), { count: count ?? "—" })}
               </span>
             </div>
             <p className={controls.hint}>{t("broadcasts_audience_hint")}</p>
@@ -460,7 +490,9 @@ export function BroadcastEditor({
                 optionList(
                   "buyers",
                   "product_codes",
-                  (options?.products ?? []).filter((p) => p.paid > 0).map((p) => ({ value: p.code, label: p.label, count: p.paid })),
+                  (options?.products ?? [])
+                    .filter((p) => p.paid > 0)
+                    .map((p) => ({ value: p.code, label: p.label, count: p.paid })),
                 ),
               )}
               {group(
@@ -508,7 +540,9 @@ export function BroadcastEditor({
                 optionList(
                   "leads",
                   "product_codes",
-                  (options?.products ?? []).filter((p) => p.leads > 0).map((p) => ({ value: p.code, label: p.label, count: p.leads })),
+                  (options?.products ?? [])
+                    .filter((p) => p.leads > 0)
+                    .map((p) => ({ value: p.code, label: p.label, count: p.leads })),
                 ),
               )}
               {group(
@@ -540,14 +574,20 @@ export function BroadcastEditor({
                 </div>
               ) : null}
             </div>
-            {products.length === 0 && !options ? <p className={controls.hint}>{t("broadcasts_audience_counting")}</p> : null}
+            {products.length === 0 && !options ? (
+              <p className={controls.hint}>{t("broadcasts_audience_counting")}</p>
+            ) : null}
           </section>
 
           {editable ? (
             <section className={`${surfaces.plate} ${surfaces.plateCard} ${styles.section}`}>
               <h3 className={styles.sectionTitle}>{t("broadcasts_section_send")}</h3>
-              {options ? <p className={controls.hint}>{fill(t("broadcasts_sender"), { from: options.sender.from })}</p> : null}
-              {options && !options.sender.dedicated ? <p className={controls.hint}>{t("broadcasts_sender_shared")}</p> : null}
+              {options ? (
+                <p className={controls.hint}>{fill(t("broadcasts_sender"), { from: options.sender.from })}</p>
+              ) : null}
+              {options && !options.sender.dedicated ? (
+                <p className={controls.hint}>{t("broadcasts_sender_shared")}</p>
+              ) : null}
               <div className={controls.actions}>
                 <button type="button" className={`${controls.action} cw-surface-2`} disabled={busy} onClick={sendTest}>
                   {t("broadcasts_test")}
@@ -592,12 +632,21 @@ export function BroadcastEditor({
               <h3 className={styles.sectionTitle}>{t("broadcasts_section_preview")}</h3>
               <label className={controls.field} style={{ flex: "0 1 12rem" }}>
                 <span className={controls.fieldCaption}>{t("broadcasts_preview_name")}</span>
-                <input className={controls.input} value={previewName} onChange={(e) => setPreviewName(e.target.value)} />
+                <input
+                  className={controls.input}
+                  value={previewName}
+                  onChange={(e) => setPreviewName(e.target.value)}
+                />
               </label>
             </div>
             <p className={styles.previewSubject}>{preview.subject || "—"}</p>
             {draft.preheader ? <p className={controls.hint}>{preview.text ? draft.preheader : null}</p> : null}
-            <iframe title={t("broadcasts_section_preview")} className={styles.previewFrame} sandbox="" srcDoc={srcDoc} />
+            <iframe
+              title={t("broadcasts_section_preview")}
+              className={styles.previewFrame}
+              sandbox=""
+              srcDoc={srcDoc}
+            />
           </section>
         </div>
       </div>
@@ -611,7 +660,12 @@ export function BroadcastEditor({
               <button type="button" className={controls.action} onClick={() => setConfirm(null)}>
                 {t("common_close")}
               </button>
-              <button type="button" className={`${controls.actionPrimary} cw-btn-primary`} disabled={busy} onClick={() => send(confirm)}>
+              <button
+                type="button"
+                className={`${controls.actionPrimary} cw-btn-primary`}
+                disabled={busy}
+                onClick={() => send(confirm)}
+              >
                 {t(confirm === "now" ? "broadcasts_confirm_go" : "broadcasts_confirm_schedule_go")}
               </button>
             </>
@@ -631,7 +685,12 @@ export function BroadcastEditor({
               <span className={controls.factValue}>
                 {confirm === "now"
                   ? t("broadcasts_confirm_now")
-                  : new Date(scheduleAt).toLocaleString(locale, { day: "2-digit", month: "long", hour: "2-digit", minute: "2-digit" })}
+                  : new Date(scheduleAt).toLocaleString(locale, {
+                      day: "2-digit",
+                      month: "long",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
               </span>
             </div>
           </div>
@@ -648,7 +707,12 @@ export function BroadcastEditor({
               <button type="button" className={controls.action} onClick={() => setConfirmDelete(false)}>
                 {t("common_close")}
               </button>
-              <button type="button" className={`${controls.actionPrimary} cw-btn-muted`} disabled={busy} onClick={remove}>
+              <button
+                type="button"
+                className={`${controls.actionPrimary} cw-btn-muted`}
+                disabled={busy}
+                onClick={remove}
+              >
                 {t("broadcasts_delete")}
               </button>
             </>

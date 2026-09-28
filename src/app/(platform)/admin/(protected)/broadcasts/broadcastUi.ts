@@ -36,10 +36,7 @@ const ERROR_KEYS: Record<string, TranslationKey> = {
   not_editable: "broadcasts_error_not_editable",
 };
 
-export async function errorFromResponse(
-  res: Response,
-  t: (key: TranslationKey) => string,
-): Promise<string> {
+export async function errorFromResponse(res: Response, t: (key: TranslationKey) => string): Promise<string> {
   const body = (await res.json().catch(() => null)) as { error?: string } | null;
   const code = body?.error ?? String(res.status);
   const key = ERROR_KEYS[code];

@@ -17,7 +17,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!isUuid(id)) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   const body = await readJson(req);
-  const to = (typeof body.email === "string" && body.email.trim() ? body.email : session.user.email ?? "")
+  const to = (typeof body.email === "string" && body.email.trim() ? body.email : (session.user.email ?? ""))
     .trim()
     .toLowerCase();
   if (!EMAIL_RE.test(to)) return NextResponse.json({ error: "email_invalid" }, { status: 400 });

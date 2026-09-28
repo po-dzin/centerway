@@ -37,7 +37,10 @@ export const broadcasts = {
   broadcasts_section_content: { uk: "Лист", en: "Letter" },
   broadcasts_field_title: { uk: "Назва (бачите лише ви)", en: "Name (only you see it)" },
   broadcasts_field_subject: { uk: "Тема листа", en: "Subject" },
-  broadcasts_field_preheader: { uk: "Прехедер — сірий рядок після теми", en: "Preheader — the grey line after the subject" },
+  broadcasts_field_preheader: {
+    uk: "Прехедер — сірий рядок після теми",
+    en: "Preheader — the grey line after the subject",
+  },
   broadcasts_field_body: { uk: "Текст", en: "Body" },
   broadcasts_body_hint: {
     uk: "Порожній рядок — новий абзац. # заголовок · - пункт списку · **жирний** · [текст](https://…) · {{name}} або {{name|друзі}} — ім'я отримувача.",
@@ -67,7 +70,10 @@ export const broadcasts = {
   broadcasts_audience_counting: { uk: "Рахуємо…", en: "Counting…" },
   broadcasts_audience_any: { uk: "Без обмежень — усі в цій групі", en: "No filter — everyone in this group" },
   broadcasts_kind_subscribers: { uk: "Імпортована база", en: "Imported base" },
-  broadcasts_kind_subscribers_hint: { uk: "Підписники з імпорту (SendPulse, CSV)", en: "Subscribers from imports (SendPulse, CSV)" },
+  broadcasts_kind_subscribers_hint: {
+    uk: "Підписники з імпорту (SendPulse, CSV)",
+    en: "Subscribers from imports (SendPulse, CSV)",
+  },
   broadcasts_kind_buyers: { uk: "Покупці", en: "Buyers" },
   broadcasts_kind_buyers_hint: { uk: "Є оплачене замовлення", en: "Have a paid order" },
   broadcasts_kind_enrolled: { uk: "Учні курсів", en: "Course learners" },
@@ -81,6 +87,7 @@ export const broadcasts = {
   broadcasts_no_options: { uk: "Поки немає даних", en: "No data yet" },
 
   broadcasts_section_preview: { uk: "Як виглядатиме", en: "Preview" },
+  broadcasts_preview_name_default: { uk: "Анна", en: "Anna" },
   broadcasts_preview_name: { uk: "Ім'я для прев'ю", en: "Name for preview" },
 
   broadcasts_section_send: { uk: "Відправка", en: "Sending" },
@@ -141,8 +148,14 @@ export const broadcasts = {
     uk: "Resend не налаштовано: немає RESEND_API_KEY",
     en: "Resend is not configured: RESEND_API_KEY is missing",
   },
-  broadcasts_error_cta_url_invalid: { uk: "Посилання кнопки має починатися з https://", en: "The button link must start with https://" },
-  broadcasts_error_not_editable: { uk: "Цю розсилку вже не можна змінити", en: "This broadcast can no longer be edited" },
+  broadcasts_error_cta_url_invalid: {
+    uk: "Посилання кнопки має починатися з https://",
+    en: "The button link must start with https://",
+  },
+  broadcasts_error_not_editable: {
+    uk: "Цю розсилку вже не можна змінити",
+    en: "This broadcast can no longer be edited",
+  },
   broadcasts_error_generic: { uk: "Не вийшло: {code}", en: "Failed: {code}" },
 
   broadcasts_base_subscribed: { uk: "Підписані", en: "Subscribed" },
@@ -172,6 +185,10 @@ export const broadcasts = {
   broadcasts_import_file: { uk: "Файл CSV", en: "CSV file" },
   broadcasts_import_paste: { uk: "…або вставте вміст", en: "…or paste the contents" },
   broadcasts_import_source: { uk: "Мітка джерела", en: "Source label" },
+  broadcasts_import_placeholder: {
+    uk: "email;name;status\nanna@example.com;Анна;active",
+    en: "email;name;status\nanna@example.com;Anna;active",
+  },
   broadcasts_import_check: { uk: "Перевірити", en: "Check" },
   broadcasts_import_run: { uk: "Імпортувати", en: "Import" },
   broadcasts_import_valid: { uk: "Адрес", en: "Addresses" },

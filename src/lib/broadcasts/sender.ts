@@ -113,7 +113,12 @@ export async function enqueueBroadcastJob(broadcastId: string, runAt: Date): Pro
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-type Outcome = { id: string; status: "sent" | "failed" | "pending"; provider_id?: string | null; error_text?: string | null };
+type Outcome = {
+  id: string;
+  status: "sent" | "failed" | "pending";
+  provider_id?: string | null;
+  error_text?: string | null;
+};
 
 async function markResults(broadcastId: string, results: Outcome[]) {
   if (results.length === 0) return;
@@ -146,7 +151,12 @@ export async function runBroadcastJob(payload: unknown, options: { budgetMs?: nu
     if (broadcast.scheduled_at && Date.parse(broadcast.scheduled_at) > Date.now() + 30_000) return "not_due";
     const { data: moved, error: moveError } = await db
       .from("broadcasts")
-      .update({ status: "sending", started_at: new Date().toISOString(), error_text: null, updated_at: new Date().toISOString() })
+      .update({
+        status: "sending",
+        started_at: new Date().toISOString(),
+        error_text: null,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", broadcastId)
       .eq("status", "scheduled")
       .select("id")
@@ -188,12 +198,20 @@ export async function runBroadcastJob(payload: unknown, options: { budgetMs?: nu
     try {
       emails = rows.map((row) => buildRecipientEmail(content, { address: row.address, name: row.name }, broadcastId));
     } catch (renderError) {
-      await markResults(broadcastId, rows.map((row) => ({ id: row.id, status: "pending" })));
+      await markResults(
+        broadcastId,
+        rows.map((row) => ({ id: row.id, status: "pending" })),
+      );
       throw renderError;
     }
 
     const key = `broadcast-${broadcastId}-${createHash("sha256")
-      .update(rows.map((row) => row.id).sort().join(","))
+      .update(
+        rows
+          .map((row) => row.id)
+          .sort()
+          .join(","),
+      )
       .digest("hex")
       .slice(0, 32)}`;
     const result = await sendEmailBatch(emails, key);
@@ -204,15 +222,25 @@ export async function runBroadcastJob(payload: unknown, options: { budgetMs?: nu
         rows.map((row, index) => ({ id: row.id, status: "sent", provider_id: result.ids[index] })),
       );
     } else if (result.reason === "missing_api_key") {
-      await markResults(broadcastId, rows.map((row) => ({ id: row.id, status: "pending" })));
+      await markResults(
+        broadcastId,
+        rows.map((row) => ({ id: row.id, status: "pending" })),
+      );
       await db
         .from("broadcasts")
-        .update({ status: "failed", error_text: "RESEND_API_KEY is not configured", updated_at: new Date().toISOString() })
+        .update({
+          status: "failed",
+          error_text: "RESEND_API_KEY is not configured",
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", broadcastId);
       return "failed";
     } else if (result.reason === "rate_limited" || result.reason === "network_error") {
       // Nobody's fault on the recipient's side: put the rows back and come back.
-      await markResults(broadcastId, rows.map((row) => ({ id: row.id, status: "pending" })));
+      await markResults(
+        broadcastId,
+        rows.map((row) => ({ id: row.id, status: "pending" })),
+      );
       await enqueueBroadcastJob(broadcastId, new Date(Date.now() + RETRY_LATER_MS));
       return "retry_later";
     } else {

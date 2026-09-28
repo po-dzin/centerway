@@ -73,7 +73,7 @@ describe("render", () => {
 
   it("escapes HTML and refuses javascript links", () => {
     const { html, text } = renderBroadcastEmail(
-      { subject: "S", body: '<script>x</script> [клік](javascript:alert(1)) [сайт](https://cw.ua/a?b=1&c=2) **ж**' },
+      { subject: "S", body: "<script>x</script> [клік](javascript:alert(1)) [сайт](https://cw.ua/a?b=1&c=2) **ж**" },
       { unsubscribeUrl: "https://cw.ua/unsubscribe?t=1" },
     );
     expect(html).not.toContain("<script>");
@@ -101,7 +101,8 @@ describe("render", () => {
 
 describe("csv import", () => {
   it("reads a semicolon export with quotes, BOM and a status column", () => {
-    const csv = '﻿Email;Ім\'я;Статус\n"anna@x.com";"Анна; ""А""";active\nBAD;x;active\nbob@x.com;;Відписаний\nANNA@x.com;;unsubscribed\n';
+    const csv =
+      '﻿Email;Ім\'я;Статус\n"anna@x.com";"Анна; ""А""";active\nBAD;x;active\nbob@x.com;;Відписаний\nANNA@x.com;;unsubscribed\n';
     const parsed = parseContacts(csv);
     expect(parsed.invalid).toBe(1);
     expect(parsed.duplicates).toBe(1);
@@ -191,7 +192,10 @@ describe("resend webhook signature", () => {
 
   it("parses the fields it acts on", () => {
     expect(
-      parseResendEvent({ type: "email.bounced", data: { email_id: "e1", to: ["a@b.co"], bounce: { type: "Permanent" } } }),
+      parseResendEvent({
+        type: "email.bounced",
+        data: { email_id: "e1", to: ["a@b.co"], bounce: { type: "Permanent" } },
+      }),
     ).toEqual({ type: "email.bounced", emailId: "e1", to: ["a@b.co"], bounceType: "Permanent" });
     expect(parseResendEvent(null)).toBeNull();
   });

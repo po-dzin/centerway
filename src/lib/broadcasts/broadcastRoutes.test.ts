@@ -59,7 +59,9 @@ beforeEach(() => {
 describe("/api/unsubscribe", () => {
   it("never unsubscribes on GET — a link scanner must not empty the list", async () => {
     const token = createUnsubscribeToken("a@b.co", ID);
-    const res = await unsubscribe.GET(new NextRequest(`http://localhost/api/unsubscribe?t=${encodeURIComponent(token)}`));
+    const res = await unsubscribe.GET(
+      new NextRequest(`http://localhost/api/unsubscribe?t=${encodeURIComponent(token)}`),
+    );
     expect(res.status).toBe(303);
     expect(res.headers.get("location")).toContain("/unsubscribe?t=");
     expect(calls.setStatus).toHaveLength(0);
@@ -83,11 +85,15 @@ describe("/api/unsubscribe", () => {
   it("resubscribes only an address that unsubscribed itself", async () => {
     const token = createUnsubscribeToken("a@b.co");
     await unsubscribe.POST(json("http://localhost/api/unsubscribe", { t: token, action: "resubscribe" }));
-    expect(calls.setStatus).toEqual([["a@b.co", "subscribed", expect.objectContaining({ onlyFrom: ["unsubscribed"] })]]);
+    expect(calls.setStatus).toEqual([
+      ["a@b.co", "subscribed", expect.objectContaining({ onlyFrom: ["unsubscribed"] })],
+    ]);
   });
 
   it("refuses a forged token", async () => {
-    const res = await unsubscribe.POST(json("http://localhost/api/unsubscribe", { t: "u1.aaa.bbb.cccccccccccccccccccccccc" }));
+    const res = await unsubscribe.POST(
+      json("http://localhost/api/unsubscribe", { t: "u1.aaa.bbb.cccccccccccccccccccccccc" }),
+    );
     expect(res.status).toBe(400);
     expect(calls.setStatus).toHaveLength(0);
   });
@@ -120,7 +126,10 @@ describe("/api/admin/subscriptions", () => {
     session.value = { user: { id: "s" }, role: "support" };
     expect((await subscriptions.GET(new NextRequest("http://localhost/api/admin/subscriptions"))).status).toBe(200);
     expect((await subscriptions.POST(json("http://localhost/x", { csv: "a@b.co" }))).status).toBe(403);
-    expect((await subscriptions.PATCH(json("http://localhost/x", { address: "a@b.co", status: "unsubscribed" }, "PATCH"))).status).toBe(403);
+    expect(
+      (await subscriptions.PATCH(json("http://localhost/x", { address: "a@b.co", status: "unsubscribed" }, "PATCH")))
+        .status,
+    ).toBe(403);
   });
 
   it("previews an import without writing", async () => {
@@ -131,7 +140,9 @@ describe("/api/admin/subscriptions", () => {
 
   it("refuses a status outside the vocabulary", async () => {
     session.value = { user: { id: "a" }, role: "admin" };
-    const res = await subscriptions.PATCH(json("http://localhost/x", { address: "a@b.co", status: "deleted" }, "PATCH"));
+    const res = await subscriptions.PATCH(
+      json("http://localhost/x", { address: "a@b.co", status: "deleted" }, "PATCH"),
+    );
     expect(res.status).toBe(400);
   });
 });
