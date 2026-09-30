@@ -12,7 +12,7 @@ import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { heroFraming } from "@/components/platform/heroFraming";
 import { platformPageArtwork } from "@/lib/platform/content";
 import { TESTS_HUB_ROUTE } from "@/lib/platform/tests";
-import { AuthorCard } from "@/components/platform/AuthorCard";
+import { AuthorByline } from "@/components/platform/AuthorByline";
 import type { Author } from "@/lms-core";
 
 type DoshaIntroProps = {
@@ -75,6 +75,7 @@ export function DoshaIntro({ author, fontFamily, topbarBadge, error, isBusy, req
                 <span>{topbarBadge}</span>
               </p>
               <h1 className={styles.title}>Тест доші</h1>
+              {author ? <AuthorByline author={author} /> : null}
               <p className={styles.lead}>
                 Швидка самооцінка тіла, енергії, емоцій і мислення — щоб побачити поточний стан і зрозуміти, з чого
                 почати.
@@ -119,13 +120,6 @@ export function DoshaIntro({ author, fontFamily, topbarBadge, error, isBusy, req
                 <p>{BOUNDARY_NOTE}</p>
               </div>
             </details>
-
-            {author ? (
-              <div className={styles.card} data-tone="support">
-                <p className={styles.label}>Автор тесту</p>
-                <AuthorCard author={author} />
-              </div>
-            ) : null}
 
             <Link className={styles.diagnosticBackLink} href={TESTS_HUB_ROUTE} data-cw-ink-control>
               <Icon name="arrow-left" size={16} className={styles.diagnosticBackIcon} />
