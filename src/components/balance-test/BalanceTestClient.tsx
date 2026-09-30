@@ -17,13 +17,11 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
-import { AuthorByline } from "@/components/platform/AuthorByline";
+import { DiagnosticIntro } from "@/components/platform/DiagnosticIntro";
 import { DoshaMark } from "@/components/platform/DoshaMark";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "@/components/platform/PlatformDiagnosticStyles";
-import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { ProgressRail } from "@/components/platform/ProgressRail";
-import { heroFraming } from "@/components/platform/heroFraming";
 import {
   BALANCE_BOUNDARY_NOTE,
   BALANCE_HOW_IT_WORKS,
@@ -199,75 +197,21 @@ function BackToTests() {
 }
 
 function BalanceIntro({ author, onStart }: { author: Author | null; onStart: () => void }) {
-  const artwork = platformPageArtwork.balance;
-
   return (
-    <section
-      className={styles.heroFeature}
-      data-cw-topbar-tone="dark"
-      data-cw-semantic-role="diagnostic-entry"
-      data-cw-semantic-family="guide-progress"
-      data-cw-token-source="global-app-ds"
-      data-dosha-test="true"
-      data-balance-phase="intro"
-      style={heroFraming(artwork)}
-    >
-      <div className={styles.heroPhotoLayer}>
-        <PlatformHeroPhoto
-          artwork={artwork}
-          alt="Тест балансу дош CenterWay: вода, вугілля і квіти в рівновазі"
-          className={styles.expertImage}
-          eager
-        />
-      </div>
-      <div
-        className={`${styles.heroFeatureContent} ${styles.diagnosticHeroContent}`}
-        style={{ fontFamily: FONT_FAMILY }}
-      >
-        <article className={`${styles.panel} ${styles.diagnosticHeroCard}`}>
-          <div className={styles.panelStack}>
-            <div className={styles.panelIntro}>
-              <p className={styles.heroBadge} data-cw-header-tone="dark">
-                <span>{TOTAL} питань • 2-3 хв</span>
-              </p>
-              <h1 className={styles.title}>{TEST_TITLE}</h1>
-              {author ? <AuthorByline author={author} /> : null}
-              <p className={styles.lead}>
-                Яка стихія зараз вийшла з рівноваги, а яка тримає баланс — і що з цим робити в режимі, їжі та диханні.
-              </p>
-            </div>
-
-            <div className={styles.card} data-tone="proof">
-              <p className={styles.label}>Як це працює</p>
-              <ol className={styles.diagnosticNumberList}>
-                {BALANCE_HOW_IT_WORKS.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ol>
-            </div>
-
-            <div className={styles.diagnosticActions}>
-              <button type="button" onClick={onStart} className={styles.primaryButton}>
-                Почати тест
-              </button>
-            </div>
-
-            <details className={styles.collapsibleBlock}>
-              <summary className={styles.collapsibleSummary}>
-                <span>Чим він відрізняється від тесту доші</span>
-                <Icon name="chevron-down" size={18} className={styles.collapsibleMarker} />
-              </summary>
-              <div className={styles.card} data-tone="support">
-                <p>{BALANCE_VS_DOSHA}</p>
-                <p>{BALANCE_BOUNDARY_NOTE}</p>
-              </div>
-            </details>
-
-            <BackToTests />
-          </div>
-        </article>
-      </div>
-    </section>
+    <DiagnosticIntro
+      artwork={platformPageArtwork.balance}
+      imageAlt="Тест балансу дош CenterWay: вода, вугілля і квіти в рівновазі"
+      phaseAttribute="data-balance-phase"
+      fontFamily={FONT_FAMILY}
+      badge={`${TOTAL} питань • 2-3 хв`}
+      title={TEST_TITLE}
+      lead="Яка стихія зараз вийшла з рівноваги, а яка тримає баланс — і що з цим робити в режимі, їжі та диханні."
+      author={author}
+      steps={BALANCE_HOW_IT_WORKS}
+      notes={[BALANCE_VS_DOSHA]}
+      boundary={BALANCE_BOUNDARY_NOTE}
+      onStart={onStart}
+    />
   );
 }
 
