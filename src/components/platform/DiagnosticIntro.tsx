@@ -100,7 +100,7 @@ export function DiagnosticIntro({
               <button type="button" onClick={onStart} disabled={isBusy} className={styles.primaryButton}>
                 {isBusy ? "Запускаємо..." : "Почати тест"}
               </button>
-              <p className={styles.diagnosticActionNote}>{FREE_NOTE}</p>
+              <p className={styles.diagnosticCostNote}>{FREE_NOTE}</p>
             </div>
 
             <details className={styles.collapsibleBlock}>
