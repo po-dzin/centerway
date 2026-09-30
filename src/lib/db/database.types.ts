@@ -940,6 +940,8 @@ export type Database = {
       }
       experiences: {
         Row: {
+          first_listed_at: string | null
+          highlight: string | null
           author_profile_id: string | null
           cover: Json | null
           created_at: string
@@ -953,6 +955,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          first_listed_at?: string | null
+          highlight?: string | null
           author_profile_id?: string | null
           cover?: Json | null
           created_at?: string
@@ -966,6 +970,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          first_listed_at?: string | null
+          highlight?: string | null
           author_profile_id?: string | null
           cover?: Json | null
           created_at?: string

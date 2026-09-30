@@ -240,6 +240,7 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
                 commercialMode={course.commercialMode}
                 price={course.price}
                 compareAtPrice={course.compareAtPrice}
+                highlight={course.highlight}
               />
             ))}
           </PlatformOfferCarousel>

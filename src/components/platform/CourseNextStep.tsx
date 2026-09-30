@@ -37,6 +37,7 @@ export function CourseNextStep({ currentSlug, courses }: { currentSlug: string; 
             commercialMode={course.commercialMode}
             price={course.price}
             compareAtPrice={course.compareAtPrice}
+            highlight={course.highlight}
             ctaLabel="Наступний крок"
           />
         ))}

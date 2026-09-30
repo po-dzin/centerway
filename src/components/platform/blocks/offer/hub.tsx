@@ -55,6 +55,7 @@ export async function HubMini() {
             commercialMode={course.commercialMode}
             price={course.price}
             compareAtPrice={course.compareAtPrice}
+            highlight={course.highlight}
           />
         ))}
       </PlatformOfferCarousel>
@@ -108,6 +109,7 @@ export async function HubFree() {
             commercialMode={course.commercialMode}
             price={course.price}
             compareAtPrice={course.compareAtPrice}
+            highlight={course.highlight}
           />
         ))}
       </PlatformOfferCarousel>
@@ -147,6 +149,7 @@ export async function HubPrograms() {
             commercialMode={course.commercialMode}
             price={course.price}
             compareAtPrice={course.compareAtPrice}
+            highlight={course.highlight}
           />
         ))}
       </PlatformOfferCarousel>

@@ -274,6 +274,28 @@
   backdrop-filter: blur(6px);
 }
 
+/* THE FLAG, OPPOSITE THE KIND (2026-09-30). One more thing is allowed on the
+   photograph: «Бестселер» or «Новинка», top right, the same thin pill as the
+   kind so the two read as a pair of labels rather than a label and a sticker.
+   They are told apart by weight, not by hue: the owner's «Бестселер» is the
+   brand's gold filled — the one filled object on the card besides the button,
+   and deliberately so — and «Новинка» is the paper pill with a gold edge, a
+   fact about time rather than a recommendation. At most one per card. */
+.programTileFlag {
+  inset-inline-start: auto;
+  inset-inline-end: var(--cw-space-xs);
+}
+
+.programTileFlag[data-flag="bestseller"] {
+  background: var(--cw-platform-accent);
+  color: var(--cw-platform-on-accent);
+  backdrop-filter: none;
+}
+
+.programTileFlag[data-flag="new"] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-platform-accent) 70%, transparent);
+}
+
 /* WHAT THE OFFER IS ABOUT — a glyph in the DS's small rounded rectangle with
    its word under it, in cells a third of the row wide (2026-09-20). The tile
    holds the sign, the word stands beneath it, and the slot keeps its height
@@ -1027,6 +1049,14 @@
    of its benefit, then stacks price and «Деталі». Category tiles and long
    supporting facts stay on wider cards. */
 @container (max-width: 14rem) {
+  /* Two pills do not fit side by side across a narrow frame: the flag steps
+     under the kind, on the same left edge. */
+  .programTileFlag {
+    inset-inline-start: var(--cw-space-xs);
+    inset-inline-end: auto;
+    inset-block-start: calc(var(--cw-space-xs) + 1.4rem + var(--cw-space-2xs));
+  }
+
   /* Doubled and element-qualified on purpose: the rules that SHOW these —
      `.programTileBody p:not(.label)` (0,2,1) — outrank a single class, and every
      one of these lines is a `p` inside the body, and a query that loses the cascade hides nothing. */
