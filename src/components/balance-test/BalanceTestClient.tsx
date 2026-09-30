@@ -17,7 +17,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
-import { AuthorCard } from "@/components/platform/AuthorCard";
+import { AuthorByline } from "@/components/platform/AuthorByline";
 import { DoshaMark } from "@/components/platform/DoshaMark";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "@/components/platform/PlatformDiagnosticStyles";
@@ -231,6 +231,7 @@ function BalanceIntro({ author, onStart }: { author: Author | null; onStart: () 
                 <span>{TOTAL} питань • 2-3 хв</span>
               </p>
               <h1 className={styles.title}>{TEST_TITLE}</h1>
+              {author ? <AuthorByline author={author} /> : null}
               <p className={styles.lead}>
                 Яка стихія зараз вийшла з рівноваги, а яка тримає баланс — і що з цим робити в режимі, їжі та диханні.
               </p>
@@ -261,13 +262,6 @@ function BalanceIntro({ author, onStart }: { author: Author | null; onStart: () 
                 <p>{BALANCE_BOUNDARY_NOTE}</p>
               </div>
             </details>
-
-            {author ? (
-              <div className={styles.card} data-tone="support">
-                <p className={styles.label}>Автор тесту</p>
-                <AuthorCard author={author} />
-              </div>
-            ) : null}
 
             <BackToTests />
           </div>
