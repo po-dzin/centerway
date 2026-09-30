@@ -43,7 +43,7 @@
    pressing it are «is it free» and «do I have to sign in», and both answers
    used to be a sentence inside a card of steps. Muted, one line, and it sits
    under the button on a phone where the actions stack. */
-.diagnosticActionNote {
+.diagnosticCostNote {
   margin: 0;
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-body-sm-size);
