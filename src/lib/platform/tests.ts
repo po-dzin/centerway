@@ -1,4 +1,4 @@
-import type { PlatformOfferArtwork } from "@/lib/platform/content";
+import { platformPageArtwork, type PlatformOfferArtwork } from "@/lib/platform/content";
 
 export type PlatformTestStatus = "active" | "planned";
 
@@ -22,9 +22,13 @@ export type PlatformTestEntry = {
 /** The dosha test's slug in `test_definitions` — the row that carries its author. */
 export const DOSHA_TEST_API_SLUG = "dosha-test";
 
+/** The balance test's slug in `test_definitions` — see `src/lib/balance/balanceTest.ts`. */
+export const BALANCE_TEST_API_SLUG = "balance-test";
+
 export const TESTS_HUB_ROUTE = "/tests";
 export const DOSHA_TEST_ROUTE = "/tests/dosha";
 export const LEGACY_DOSHA_TEST_ROUTE = "/dosha-test";
+export const BALANCE_TEST_ROUTE = "/tests/balance";
 
 export const platformTests: PlatformTestEntry[] = [
   {
@@ -38,11 +42,21 @@ export const platformTests: PlatformTestEntry[] = [
       "Самооцінка тіла, енергії, емоційних реакцій, мислення і темпу життя: короткий профіль доші як робоча гіпотеза і перший доречний крок.",
     reads: "тіло, сон, енергія, емоції, мислення",
     visual: "stone",
-    artwork: {
-      desktop: "/cw/platform/pages/dosha-hero-variant-ceramic-v1.webp",
-      desktopPosition: "center 32%",
-      mobilePosition: "center 34%",
-    },
+    artwork: platformPageArtwork.doshaTest,
+    status: "active",
+  },
+  {
+    slug: "balance",
+    apiSlug: BALANCE_TEST_API_SLUG,
+    href: BALANCE_TEST_ROUTE,
+    title: "Баланс дош",
+    tag: "Поточний стан",
+    format: "9 питань • 2-3 хв",
+    description:
+      "Не конституція, а те, що відбувається зараз: яка з трьох сил вийшла з рівноваги — вата, пітта чи капха з амою — і що з цим робити в режимі, їжі та диханні.",
+    reads: "ранок, травлення, розум, тіло, сон, емоційний осад",
+    visual: "water",
+    artwork: platformPageArtwork.balance,
     status: "active",
   },
   {
@@ -90,6 +104,34 @@ export const platformTestBySlug = Object.fromEntries(platformTests.map((test) =>
 
 export const activePlatformTests = platformTests.filter((test) => test.status === "active");
 export const plannedPlatformTests = platformTests.filter((test) => test.status === "planned");
+
+/* HOW MANY TESTS THE HOME PANEL CAN HOLD (2026-09-28). The panel beside the
+   intro video has to fit under the 16:9 player's height — 321px at the widest
+   content column — or the player letterboxes. Measured on the page:
+     two rows with thumbnails ... 311px   fits
+     three rows with thumbnails  383px   does not
+     three compact rows ........ 291px   fits (48px rows on touch still fit)
+   So: up to two, the picture rows; exactly three, the same rows without the
+   picture; four and more, the first two as picture rows and the rest behind
+   «Усі тести (N)». «First» is the order of `platformTests` — the order the
+   founder wants people to start in. */
+export const HOME_TEST_RAIL_PICTURE_MAX = 2;
+export const HOME_TEST_RAIL_COMPACT_MAX = 3;
+
+export type HomeTestRail = {
+  rows: PlatformTestEntry[];
+  density: "picture" | "compact";
+  /** Every active test — what «Усі тести» counts when rows hide some. */
+  total: number;
+};
+
+export function homeTestRail(tests: readonly PlatformTestEntry[] = activePlatformTests): HomeTestRail {
+  const takeable = tests.filter((test) => test.status === "active" && test.href);
+  const total = takeable.length;
+  if (total <= HOME_TEST_RAIL_PICTURE_MAX) return { rows: takeable, density: "picture", total };
+  if (total <= HOME_TEST_RAIL_COMPACT_MAX) return { rows: takeable, density: "compact", total };
+  return { rows: takeable.slice(0, HOME_TEST_RAIL_PICTURE_MAX), density: "picture", total };
+}
 
 export const testsHubCopy = {
   badge: "Стан · Гіпотеза · Маршрут",

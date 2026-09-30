@@ -811,6 +811,108 @@
   composes: fill from "./PlatformButtons.module.css";
 }
 
+/* The tests beside the intro video — one row per active test. A row is a
+   link: thumbnail, name over «tag · format», and an arrow. It is not a card and
+   not a button: no plate, no border, no hover tint. Hover and focus speak
+   through the ink rule under the name (`InteractionInkLabel`), and the rows
+   are divided by the system's fading rule, drawn only BETWEEN rows. */
+.videoTestList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.videoTestList > li + li {
+  border-top: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
+}
+
+.videoTestRow {
+  display: grid;
+  grid-template-columns: 4.75rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  padding-block: var(--cw-space-sm);
+  color: var(--cw-platform-text);
+  text-decoration: none;
+}
+
+.videoTestThumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-platform-surface-muted);
+}
+
+.videoTestText {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+.videoTestTitle {
+  font-size: var(--ds-type-body-size);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.videoTestMeta {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.35;
+}
+
+/* Three tests: the same row without its picture, name and «tag · format» on
+   one line. 41px with a mouse; a touch screen keeps the 48px target, and three
+   of those still fit under the player — see `homeTestRail`. */
+.videoTestList[data-density="compact"] .videoTestRow {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-block: var(--cw-space-xs);
+}
+
+.videoTestList[data-density="compact"] .videoTestText {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--cw-space-sm);
+}
+
+@media (pointer: coarse) {
+  .videoTestList[data-density="compact"] .videoTestRow {
+    min-height: var(--ds-button-hit-min);
+  }
+}
+
+/* The arrow nudges the way `.blockAction`'s does — same step, same tick,
+   same brass — so the two crossings in this panel move alike. */
+.videoTestArrow {
+  color: var(--cw-platform-muted);
+  transition:
+    transform var(--cw-motion-state) var(--cw-ease-state),
+    color var(--cw-motion-state) var(--cw-ease-state);
+}
+
+.videoTestRow:focus-visible .videoTestArrow {
+  color: var(--cw-nav-marker);
+  transform: translateX(0.18rem);
+}
+
+@media (hover: hover) {
+  .videoTestRow:hover .videoTestArrow {
+    color: var(--cw-nav-marker);
+    transform: translateX(0.18rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .videoTestArrow {
+    transition: none;
+  }
+}
+
 .videoDecisionRail {
   display: grid;
   gap: var(--cw-space-sm);
@@ -850,6 +952,69 @@
 .videoDecisionMore {
   display: inline-flex;
   justify-content: flex-start;
+}
+
+/* ── The video and its panel stay one height (2026-09-28) ──────────────────
+
+   The panel stretches to the row and the 16:9 player centres inside it, so
+   whenever the card beside it is taller than the player the difference shows
+   as dark bands above and below the video — and the list of tests made the
+   card taller. Two answers, by width:
+
+   ≥1200px — the card is made to fit under the player's height. The one
+   element that did not have to be a line of its own was «Усі тести» under the
+   list (a 48px row); it moves onto the label's line, and the card measures
+   311px against a 321px player at 1440 and 311 against 310 at 1200.
+
+   901–1199px — it cannot fit: at 1024 a half-width player is 260px and the
+   card 378px. So the player takes the full width and the card goes under it,
+   copy on the left and the list on the right: two panels of one width, no
+   letterbox. Below 900 the single-card phone layout takes over unchanged. */
+.videoDecisionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
+.videoDecisionHead > p {
+  margin: 0;
+}
+
+.videoDecisionMoreHead {
+  display: none;
+}
+
+@media (min-width: 1200px) {
+  .videoDecisionMoreHead {
+    display: inline-flex;
+  }
+
+  /* The crossing keeps its full hit area on a touch screen; with a mouse it
+     sits on the label's line at the label's height. */
+  @media (pointer: fine) {
+    .videoDecisionMoreHead > a {
+      min-height: 0;
+    }
+  }
+
+  .videoDecisionMoreFoot {
+    display: none;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1199px) {
+  .videoSection {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .videoAside {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--cw-space-lg);
+    padding: var(--cw-space-lg);
+  }
 }
 
 @media (max-width: 900px) {

@@ -243,7 +243,14 @@ export async function PlatformTestsHubPage() {
               <h2 className={offerStyles.sectionTitle}>{testsHubCopy.activeTitle}</h2>
             </div>
           </div>
-          <div className={offerStyles.aggregateRail} data-layout="single">
+          {/* One test is one full-width card; two are a pair, not two cards and
+              an empty third column. */}
+          <div
+            className={offerStyles.aggregateRail}
+            data-layout={
+              activePlatformTests.length === 1 ? "single" : activePlatformTests.length === 2 ? "pair" : undefined
+            }
+          >
             {activePlatformTests.map((test) => (
               <PlatformOfferCard
                 key={test.slug}

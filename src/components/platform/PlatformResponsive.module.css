@@ -1784,12 +1784,17 @@
     gap: var(--cw-space-sm);
   }
 
+  /* Anchored from the top, not centred. Centred, the card grew in both
+     directions when its disclosure opened — up by half of what it gained — and
+     once it outgrew the screen the whole centre moved, so the card jumped under
+     the reader's pointer. The top padding is what centring gave a closed card
+     (~46rem tall) and stays put when it opens; below it is the bar's floor. */
   main[data-cw-detail-template="dosha"] .diagnosticHeroContent,
   .heroFeature[data-cw-detail-template="dosha"] .diagnosticHeroContent {
     min-height: 100svh;
-    align-content: center;
+    align-content: start;
     justify-items: center;
-    padding-top: clamp(6.2rem, 9vw, 8rem);
+    padding-top: max(clamp(6.2rem, 9vw, 8rem), calc((100svh - 46rem) / 2));
     padding-bottom: clamp(6.2rem, 9vw, 8rem);
   }
 }
@@ -1863,11 +1868,31 @@
   main[data-cw-detail-template="dosha"] .diagnosticHeroContent,
   .heroFeature[data-cw-detail-template="dosha"] .diagnosticHeroContent {
     min-height: 100svh;
-    align-content: center;
+    align-content: start;
     justify-items: center;
-    padding-top: clamp(5.6rem, 11vw, 7rem);
+    padding-top: max(clamp(5.6rem, 11vw, 7rem), calc((100svh - 46rem) / 2));
     padding-bottom: clamp(5.6rem, 11vw, 7rem);
   }
+}
+
+/* THE DIAGNOSTIC HERO'S PHOTOGRAPH IS THE SCREEN'S, NOT THE SECTION'S — at
+   every width. The phone got this first (below): the image stretched with the
+   section, so opening the disclosure made the section taller and the `cover`
+   crop re-solved against the new height — the photo zoomed under the card.
+   Here the image is one screen tall and sticky, so it holds its crop AND stays
+   behind the card while a tall card scrolls past it, instead of ending in a
+   hard edge. Sticky needs a clip that is not a scroll container: `hidden` on
+   the section and the layer would make each of them the scrollport and pin
+   the image to nothing, `clip` crops the same pixels without that. */
+main[data-cw-detail-template="dosha"] > .heroFeature,
+main[data-cw-detail-template="dosha"] .heroPhotoLayer {
+  overflow: clip;
+}
+
+main[data-cw-detail-template="dosha"] .heroPhotoLayer .expertImage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
 }
 
 @media (max-width: 560px) {

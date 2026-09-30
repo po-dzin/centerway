@@ -29,7 +29,7 @@ type DoshaIntroProps = {
 };
 
 export function DoshaIntro({ author, fontFamily, topbarBadge, error, isBusy, requestStartTest }: DoshaIntroProps) {
-  const doshaHeroArtwork = platformPageArtwork.dosha;
+  const doshaHeroArtwork = platformPageArtwork.doshaTest;
   const heroStyle = heroFraming(doshaHeroArtwork);
 
   return (

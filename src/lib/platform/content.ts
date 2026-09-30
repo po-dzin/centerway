@@ -230,6 +230,33 @@ export const platformPageArtwork = {
     desktopPosition: "center 42%",
     mobilePosition: "center 34%",
   },
+  /* THE TWO TESTS, ONE ROOM (2026-09-26). Both plates are the sage-plaster
+     room the September heroes live in — the threshold, the apothecary — so the
+     diagnostic pair reads as part of that series rather than as the August
+     still-life set. They are told apart by the hour and by what is on the
+     table, because they answer different questions:
+       doshaTest — evening, low warm window light; the three doshas as three
+         materials (dry grass in pale ceramic, a flame in copper, water and a
+         stone in dark stoneware). What you are made of.
+       balance   — morning, cool light through bamboo; a cairn of three stones
+         and the morning glass of water with ginger, turmeric beside it. How
+         you are today.
+     Objects sit at the two edges and the middle third is bare wall: the intro
+     card stands there. The portrait masters restage the same table tall. */
+  doshaTest: {
+    desktop: "/cw/platform/pages/test-dosha-hero-2026-09.webp",
+    mobile: "/cw/platform/pages/test-dosha-hero-2026-09-portrait.webp",
+    card: "/cw/platform/pages/test-dosha-hero-2026-09-960.webp",
+    desktopPosition: "center 50%",
+    mobilePosition: "center 60%",
+  },
+  balance: {
+    desktop: "/cw/platform/pages/test-balance-hero-2026-09.webp",
+    mobile: "/cw/platform/pages/test-balance-hero-2026-09-portrait.webp",
+    card: "/cw/platform/pages/test-balance-hero-2026-09-960.webp",
+    desktopPosition: "center 50%",
+    mobilePosition: "center 60%",
+  },
   consult: {
     desktop: "/cw/platform/pages/consult-hero-v1.webp",
     card: "/cw/platform/pages/consult-hero-v1-960.webp",
