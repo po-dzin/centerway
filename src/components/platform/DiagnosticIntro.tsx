@@ -4,8 +4,11 @@
    format badge and the lead, a disclosure, a second card for the author. A
    person deciding whether to spend three minutes needs five things, and this
    screen shows exactly those — what it is (title, lead), how long (badge),
-   whose it is (byline), what it costs (the line beside the button), and the
-   button. Everything else — how it works, what it is not, the limits of the
+   whose it is (byline), and the button. (A «Безкоштовно · без реєстрації» line
+   stood beside the button for a day and was taken out on 2026-09-30: a free
+   test says so by having no price, and the end of the flow does offer an
+   account — to keep the result — so «no registration» promised more than it
+   meant.) Everything else — how it works, what it is not, the limits of the
    method — sits in ONE disclosure, closed, for the person who wants it. */
 
 import Link from "next/link";
@@ -18,9 +21,6 @@ import { heroFraming } from "@/components/platform/heroFraming";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 import { TESTS_HUB_ROUTE } from "@/lib/platform/tests";
 import type { Author } from "@/lms-core";
-
-/** What the button's neighbour says. Both tests are free and open without an account. */
-const FREE_NOTE = "Безкоштовно · без реєстрації";
 
 type DiagnosticIntroProps = {
   artwork: PlatformOfferArtwork;
@@ -100,7 +100,6 @@ export function DiagnosticIntro({
               <button type="button" onClick={onStart} disabled={isBusy} className={styles.primaryButton}>
                 {isBusy ? "Запускаємо..." : "Почати тест"}
               </button>
-              <p className={styles.diagnosticCostNote}>{FREE_NOTE}</p>
             </div>
 
             <details className={styles.collapsibleBlock}>
