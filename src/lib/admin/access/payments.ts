@@ -6,6 +6,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import { emailIlike } from "@/lib/strings";
 import { sendPurchaseEmail } from "@/lib/email/purchaseEmail";
 import { closeWonLeadsForPurchase } from "@/lib/platform/leadStage";
 import { accessRuleOf, accessWindowEnd, courseOfferCode } from "@/lms-core";
@@ -131,7 +132,7 @@ async function resolveCustomerId(db: Db, email: string, authUserId: string | nul
   const { data: existing, error: readError } = await db
     .from("customers")
     .select("id, auth_user_id")
-    .ilike("email", email)
+    .ilike("email", emailIlike(email))
     .order("created_at", { ascending: true })
     .limit(1);
   if (readError) throw new AccessError(readError.message, 500);

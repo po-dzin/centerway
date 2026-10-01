@@ -28,6 +28,7 @@ const sendConfirmedSaleTelegramReport = vi.fn<(orderRef: string) => Promise<{ se
   sent: true,
 }));
 const dispatchCapiEventInline = vi.fn();
+const notifyHouseThread = vi.fn(async () => "sent");
 const isStaffOrder = vi.fn(async () => false);
 const loadPayableOffer = vi.fn(async () => ({
   pixelContentName: "Way21 Detox",
@@ -40,6 +41,7 @@ vi.mock("@/lib/analytics/telegramReports", () => ({ sendConfirmedSaleTelegramRep
 vi.mock("@/lib/tracking/capiDispatch", () => ({ dispatchCapiEventInline }));
 vi.mock("@/lib/tracking/staffOrders", () => ({ isStaffOrder }));
 vi.mock("@/lib/platform/offers", () => ({ loadPayableOffer }));
+vi.mock("@/lib/telegram/houseThread", () => ({ notifyHouseThread }));
 vi.mock("@/lib/jobs/worker", () => ({ buildPurchaseCapiEventPayload: vi.fn(async () => ({})) }));
 
 const { POST } = await import("./route");
@@ -95,6 +97,7 @@ beforeEach(() => {
     dispatchCapiEventInline,
     isStaffOrder,
     loadPayableOffer,
+    notifyHouseThread,
   ])
     m.mockClear();
   isStaffOrder.mockResolvedValue(false);
@@ -226,5 +229,55 @@ describe("POST /api/wfp/webhook", () => {
   it("answers 400 to a body with no order reference", async () => {
     const res = await post({ transactionStatus: "Approved" });
     expect(res.status).toBe(400);
+  });
+
+  /* A callback the order cannot account for (meta-audit 2026-09-30, N2/N3).
+     Until 2026-10-01 both of these went through in full: a payments row, a
+     Meta Purchase, a receipt and a sale report. */
+  it("opens nothing for an order it never created, tells the house, and still accepts", async () => {
+    db.tables.orders = [];
+    const res = await post(callback());
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({ status: "accept" });
+    expect(db.tables.payments).toHaveLength(0);
+    expect(db.tables.events).toHaveLength(0);
+    expect(dispatchCapiEventInline).not.toHaveBeenCalled();
+    expect(sendPurchaseEmail).not.toHaveBeenCalled();
+    expect(sendConfirmedSaleTelegramReport).not.toHaveBeenCalled();
+    expect(notifyHouseThread).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not mark paid an approval for a different sum than the order", async () => {
+    db.tables.orders![0]!.amount = 4100;
+    db.tables.orders![0]!.currency = "UAH";
+    const res = await post(callback({ amount: "1" }));
+    expect(res.status).toBe(200);
+    expect(db.tables.orders![0]!.status).toBe("created");
+    expect(db.tables.payments).toHaveLength(0);
+    expect(dispatchCapiEventInline).not.toHaveBeenCalled();
+    expect(sendPurchaseEmail).not.toHaveBeenCalled();
+    expect(notifyHouseThread).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not mark paid an approval in another currency", async () => {
+    db.tables.orders![0]!.amount = 4100;
+    db.tables.orders![0]!.currency = "UAH";
+    await post(callback({ currency: "USD" }));
+    expect(db.tables.orders![0]!.status).toBe("created");
+  });
+
+  it("settles an approval for exactly the order's sum", async () => {
+    db.tables.orders![0]!.amount = 4100;
+    db.tables.orders![0]!.currency = "UAH";
+    await post(callback({ amount: "4100.00" }));
+    expect(db.tables.orders![0]!.status).toBe("paid");
+    expect(notifyHouseThread).not.toHaveBeenCalled();
+  });
+
+  it("lets a refund through whatever its amount — a partial refund is still a refund", async () => {
+    db.tables.orders![0]!.status = "paid";
+    db.tables.orders![0]!.amount = 4100;
+    await post(callback({ amount: "2000", transactionStatus: "Refunded" }));
+    expect(db.tables.orders![0]!.status).toBe("refunded");
   });
 });

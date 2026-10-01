@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { secretsEqual } from "@/lib/auth/secretsEqual";
 
 import type { PaymentOutcome } from "@/lib/payments/orderStatus";
 
@@ -49,7 +50,7 @@ export function verifyWfpCallbackSignature(payload: Record<string, string>): Wfp
   if (!provided) return { ok: false, present: false, reason: "missing_signature" };
 
   const expected = computeWfpCallbackSignature(payload, secret);
-  const ok = provided.toLowerCase() === expected.toLowerCase();
+  const ok = secretsEqual(provided.toLowerCase(), expected.toLowerCase());
   return { ok, present: true, reason: ok ? "match" : "mismatch" };
 }
 

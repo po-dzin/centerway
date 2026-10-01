@@ -10,6 +10,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import { emailIlike, sameEmail } from "@/lib/strings";
 import type { GrantSource } from "@/lib/admin/accessTypes";
 import { isAdminRole, isStaffRole } from "@/lib/platform/adminRole";
 import {
@@ -28,6 +29,7 @@ import {
   resolveCurrentLesson,
   resolveEntitlement,
   resolveTimeZone,
+  refundedSeat,
   summarizeStanding,
   type AccessRule,
   type AccessState,
@@ -150,8 +152,8 @@ async function findCustomerIds(identity: LearnerIdentity): Promise<string[]> {
   // first for no reason — neither filter depends on the other's result.
   const byEmail =
     identity.email && identity.emailVerified
-      ? db.from("customers").select("id").ilike("email", identity.email.trim().toLowerCase())
-      : Promise.resolve({ data: [] as { id: string }[] });
+      ? db.from("customers").select("id, email").ilike("email", emailIlike(identity.email))
+      : Promise.resolve({ data: [] as { id: string; email: string | null }[] });
   const [byAuth, byEmailResult] = await Promise.all([
     db.from("customers").select("id").eq("auth_user_id", identity.authUserId),
     byEmail,
@@ -159,7 +161,7 @@ async function findCustomerIds(identity: LearnerIdentity): Promise<string[]> {
 
   const ids = new Set<string>();
   for (const row of byAuth.data ?? []) ids.add(row.id);
-  for (const row of byEmailResult.data ?? []) ids.add(row.id);
+  for (const row of byEmailResult.data ?? []) if (sameEmail(row.email, identity.email)) ids.add(row.id);
   return [...ids];
 }
 
@@ -397,7 +399,7 @@ export async function ensureEnrollment(
     now,
   });
 
-  const plan = planAccess({
+  const ordinaryPlan = planAccess({
     orders,
     rule,
     now,
@@ -411,6 +413,26 @@ export async function ensureEnrollment(
         }
       : null,
   });
+
+  // A seat bought with a payment that has since been refunded closes, or is
+  // planned again from the payments that remain (see `refundedSeat`). Not for
+  // staff, and not on a course that is free now: nobody needs a payment to
+  // hold it.
+  const refund =
+    row && !staff && !free
+      ? refundedSeat({
+          source: row.source,
+          orderRef: row.order_ref,
+          status: row.status,
+          revokedAt: row.revoked_at,
+          orders: purchases.orders,
+          accepted: orders,
+          rule,
+          now,
+        })
+      : null;
+  if (refund?.kind === "close") return { enrollment: null, reason: "revoked" };
+  const plan = refund?.kind === "rewind" ? refund.plan : ordinaryPlan;
 
   if (row) {
     // A purchase made since the current window was anchored renews the seat —
@@ -786,7 +808,7 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
       if (!boughtOnItsOwn && (orders.length > 0 || row?.source === "bonus")) heldThroughBundle.add(course.id);
 
       // What opening the course WOULD do, without doing it.
-      const plan = planAccess({
+      const ordinaryPlan = planAccess({
         orders,
         rule: ruleByCourse.get(course.id) ?? null,
         now,
@@ -801,10 +823,32 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
           : null,
       });
 
+      // The same refund rule the door applies, so the shelf does not show open
+      // a course the door will refuse.
+      const refund =
+        row && !staff && !free
+          ? refundedSeat({
+              source: row.source,
+              orderRef: row.order_ref,
+              status: row.status,
+              revokedAt: row.revoked_at,
+              orders: purchases.orders,
+              accepted: orders,
+              rule: ruleByCourse.get(course.id) ?? null,
+              now,
+            })
+          : null;
+      const refunded = refund?.kind === "close";
+      const plan = refund?.kind === "rewind" ? refund.plan : ordinaryPlan;
+
       const projected = plan.grant
         ? { status: "active", blockedAt: row?.blocked_at ?? null, expiresAt: plan.expiresAt }
         : row
-          ? { status: row.status ?? "active", blockedAt: row.blocked_at ?? null, expiresAt: row.expires_at ?? null }
+          ? {
+              status: refunded ? "revoked" : (row.status ?? "active"),
+              blockedAt: row.blocked_at ?? null,
+              expiresAt: row.expires_at ?? null,
+            }
           : free
             ? { status: "active", blockedAt: null, expiresAt: null }
             : { status: "active", blockedAt: null, expiresAt: null };

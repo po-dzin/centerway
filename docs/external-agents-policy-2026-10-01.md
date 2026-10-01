@@ -37,7 +37,7 @@
 
 Браузерные агенты умеют пройти тест, оставить заявку, дойти до оплаты за человека. Ничего из этого не запрещается. Запрещается одно: выглядеть для Meta как человек, пришедший с рекламы. До этой правки агент на чекауте отправлял `InitiateCheckout` так же, как покупатель, и кампании учились на этом сигнале.
 
-Состояние входов: rate limit уже стоял на всех трёх — `/api/pay/start` (30/мин), `/api/events` (120/мин), `/api/leads`, `/api/orders/create` (30/мин). Записка от 25.09 утверждала обратное — это была ошибка поиска, лимиты не трогались.
+Состояние входов: rate limit уже стоял на всех трёх — `/api/pay/start` (30/мин), `/api/events` (120/мин), `/api/leads`, `/api/orders/create` (30/мин). Записка от 25.09 утверждала обратное — это была ошибка поиска, лимиты не трогались. `/api/orders/create` удалён 01.10 (PR #305): вызовов у него не было, а заказы он писал.
 
 ### Как распознаётся агент
 
@@ -57,7 +57,7 @@
 |---|---|---|
 | Pixel (платформа и лендинги) | грузится | не грузится, `fbq` — заглушка, как у `cw_staff` |
 | `/api/events` | пишет, шлёт CAPI | отбрасывается целиком (`{ ok, agent: true }`) |
-| `/api/pay/start`, `/api/orders/create` | заказ + `InitiateCheckout` в CAPI | заказ создаётся, `InitiateCheckout` не шлётся, строка `agent_checkout` в `events`, `via_agent: true` в `checkout_started` |
+| `/api/pay/start` | заказ + `InitiateCheckout` в CAPI | заказ создаётся, `InitiateCheckout` не шлётся, строка `agent_checkout` в `events`, `via_agent: true` в `checkout_started` |
 | Оплата (вебхук WFP) | `paid`, `Purchase` в Meta | **так же** — платит человек, деньги настоящие |
 | `/api/leads` | заявка, Telegram, `Lead` в CAPI | заявка и Telegram так же, `payload.via_agent = true`, `Lead` в CAPI не шлётся |
 

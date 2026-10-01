@@ -6,6 +6,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import { emailIlike } from "@/lib/strings";
 import { accessStateOf, daysRemaining } from "@/lms-core";
 import { foldProgress, type ProgressEvent, type ProgressEventType } from "@/lms-core/progress";
 import {
@@ -26,7 +27,7 @@ export async function resolveAccountByEmail(db: Db, email: string): Promise<Acce
   const { data, error } = await db
     .from("platform_users")
     .select("auth_user_id, email, full_name, avatar_url")
-    .ilike("email", trimmed)
+    .ilike("email", emailIlike(trimmed))
     .maybeSingle();
 
   if (error) throw new AccessError(error.message, 500);
@@ -435,7 +436,7 @@ export async function createAccount(input: { email: string; fullName?: string | 
   const { data: existing } = await db
     .from("platform_users")
     .select("auth_user_id, email, full_name, avatar_url")
-    .ilike("email", email)
+    .ilike("email", emailIlike(email))
     .maybeSingle();
 
   if (existing) {

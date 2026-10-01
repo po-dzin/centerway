@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { secretsEqual } from "@/lib/auth/secretsEqual";
 
 export function requireCronAuth(req: Request): NextResponse | null {
   const cronSecret = process.env.CRON_SECRET;
@@ -10,7 +11,7 @@ export function requireCronAuth(req: Request): NextResponse | null {
   const authHeader = req.headers.get("authorization");
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : null;
 
-  if (token !== cronSecret) {
+  if (!secretsEqual(token, cronSecret)) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 

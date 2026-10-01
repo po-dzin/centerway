@@ -4,6 +4,7 @@ import { adminClient } from "@/lib/auth/adminClient";
 import type { TablesUpdate } from "@/lib/db/database.types";
 import { courseOfferCode } from "@/lms-core";
 
+import { announceFormatProposed } from "./formatAnnounce";
 import { FORMAT_DEFAULT_LABELS, isOfferFormat, ukList, type OfferFormat } from "./formats";
 
 /**
@@ -109,7 +110,7 @@ function uk(value: unknown): string {
 async function courseRow(db: Db, courseId: string) {
   const { data, error } = await db
     .from("lms_courses")
-    .select("id, slug, program_slug, author_id, experience_id")
+    .select("id, slug, title, program_slug, author_id, experience_id")
     .eq("id", courseId)
     .maybeSingle();
   if (error) throw new FormatError(`format_course_read_failed:${error.message}`, 500);
@@ -117,6 +118,7 @@ async function courseRow(db: Db, courseId: string) {
   return data as {
     id: string;
     slug: string;
+    title: string;
     program_slug: string | null;
     author_id: string | null;
     experience_id: string;
@@ -356,6 +358,18 @@ export async function createFormat(input: {
   if (error || !data) throw new FormatError(`format_write_failed:${error?.message ?? "unknown"}`, 500);
 
   if (parsed.includes?.length) await writeIncludes(db, data.id as string, parsed.includes, allowed);
+
+  if (parsed.submit) {
+    await announceFormatProposed({
+      courseSlug: course.slug,
+      courseTitle: course.title,
+      formatLabel: parsed.label || FORMAT_DEFAULT_LABELS[parsed.format],
+      proposedAmount: parsed.proposedAmount ?? null,
+      currency: "UAH",
+      isPriceChange: false,
+      actorIsAdmin: input.isAdmin,
+    });
+  }
   return code;
 }
 
@@ -424,6 +438,30 @@ export async function updateFormat(input: {
     if (error) throw new FormatError(`format_write_failed:${error.message}`, 500);
   }
   if (parsed.includes !== undefined) await writeIncludes(db, row.id, parsed.includes, allowed);
+
+  // The owner hears about it when something now waits on them: a format sent
+  // for review, or a new price proposed beside one already on sale.
+  const submitted = parsed.submit && !approved;
+  const newPrice =
+    approved &&
+    typeof parsed.proposedAmount === "number" &&
+    parsed.proposedAmount !== row.proposed_amount &&
+    parsed.proposedAmount !== row.amount;
+  if (submitted || newPrice) {
+    const course = await courseRow(db, input.courseId);
+    const format = parsed.format ?? (isOfferFormat(row.format) ? row.format : null);
+    await announceFormatProposed({
+      courseSlug: course.slug,
+      courseTitle: course.title,
+      formatLabel:
+        (parsed.label !== undefined ? parsed.label : uk(row.label)) ||
+        (format ? FORMAT_DEFAULT_LABELS[format] : row.code),
+      proposedAmount: parsed.proposedAmount !== undefined ? parsed.proposedAmount : row.proposed_amount,
+      currency: row.currency,
+      isPriceChange: Boolean(newPrice),
+      actorIsAdmin: input.isAdmin,
+    });
+  }
 }
 
 /** An author may withdraw what never went on sale; anything sold is the owner's to retire. */

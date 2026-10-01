@@ -28,6 +28,34 @@ export function normalizeEmail(input: string): string | null {
   return value;
 }
 
+/**
+ * An address as an `ilike` pattern that matches that address, in any case, and
+ * nothing else.
+ *
+ * Customers are looked up by email with `ilike` because the stored column is
+ * not reliably lower-cased. Passed raw, the address was a LIKE pattern: `_` is
+ * "any one character", so the verified owner of `ivan_petrov@x` matched the
+ * customer row of `ivan.petrov@x` and opened that person's courses
+ * (meta-audit 2026-09-30). `\`, `%` and `_` are escaped here.
+ *
+ * PostgREST also reads `*` as `%` and offers no escape for it, so this alone is
+ * not exact for an address containing `*`. Where the match decides whose
+ * purchases these are, filter the rows again with `sameEmail`.
+ */
+export function emailIlike(email: string): string {
+  return email
+    .trim()
+    .toLowerCase()
+    .replace(/[\\%_]/g, "\\$&");
+}
+
+/** The same mailbox as far as the platform is concerned: case and surrounding space ignored. */
+export function sameEmail(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (typeof a !== "string" || typeof b !== "string") return false;
+  const left = a.trim().toLowerCase();
+  return left !== "" && left === b.trim().toLowerCase();
+}
+
 /** The four characters that make text markup, escaped. `&` first, always. */
 export function escapeHtml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
