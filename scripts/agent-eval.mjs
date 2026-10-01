@@ -47,7 +47,10 @@ if (useDatabase) {
   console.log(`Зібрано ${stored.length} розмічених питань із бази.`);
 }
 
-const index = buildIndex(buildCorpus({ courses: snapshotCourses() }));
+// Prices live in `experience_offers`, which a checkout without a database
+// cannot read; the fixture is the same one `eval.test.ts` scores against.
+const { offers } = JSON.parse(fs.readFileSync(path.join(process.cwd(), "data/agent/offers-fixture.json"), "utf8"));
+const index = buildIndex(buildCorpus({ courses: snapshotCourses(), offers }));
 const report = evaluateRetrieval(index, cases, { k });
 
 console.log(`\nКорпус: ${index.docs.length} документів. Кейсів: ${report.total}.`);

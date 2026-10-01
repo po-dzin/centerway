@@ -20,6 +20,7 @@ import { unstable_cache } from "next/cache";
 import { COURSE_LIST_TAG, listLiveCourses } from "@/lib/lms/liveCatalog";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { parseCourseOfferCode } from "@/lms-core/offerCode";
+import { isFindable } from "@/lib/agent/assistant/tools";
 import { buildCorpus, type CorpusOffer } from "./corpus";
 import { buildIndex, type KnowledgeIndex } from "./search";
 import { validateCorpus, type KnowledgeDoc } from "./types";
@@ -28,9 +29,9 @@ import { validateCorpus, type KnowledgeDoc } from "./types";
 const REVALIDATE_SECONDS = 300;
 
 async function collect(): Promise<KnowledgeDoc[]> {
-  const courses = (await listLiveCourses()).filter(
-    (course) => course.status === "published" && course.visibility !== "hidden",
-  );
+  // `isFindable`, not `visibility !== "hidden"`: a hidden course reads back
+  // from the database with visibility ABSENT, so that test let every one in.
+  const courses = (await listLiveCourses()).filter(isFindable);
 
   const docs = buildCorpus({ courses, offers: await loadCorpusOffers(courses) });
 

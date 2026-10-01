@@ -37,7 +37,7 @@ import type { KnowledgeDoc } from "./types";
  * to them as a lock on material they already paid for. That distinction is
  * exactly what the support bot's `schedule` answer spends its four lines on.
  */
-function scheduleSentence(schedule: Course["schedule"]): string {
+export function scheduleSentence(schedule: Course["schedule"]): string {
   if (schedule.mode === "open") return "Усі уроки доступні одразу.";
   if (schedule.mode === "sequential") return "Уроки відкриваються послідовно, один за одним.";
   return schedule.gate === "hard"
