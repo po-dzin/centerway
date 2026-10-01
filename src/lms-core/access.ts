@@ -134,6 +134,47 @@ export function resolveEntitlement(input: EntitlementInput): Entitlement {
 }
 
 /**
+ * IS THIS SEAT STANDING ON A REFUNDED PAYMENT, with nothing else paid under it?
+ *
+ * An enrollment row, once written, answers the door by itself: its own status
+ * and deadline. Entitlement is re-read only when there is no row. So until
+ * 2026-10-01 a refund closed nothing for anyone who had already opened the
+ * course — pay, open, refund, and the seat stayed, for ever on a lifetime
+ * offer (meta-audit 2026-09-30, N1).
+ *
+ * A refund is the one thing allowed to take access away (see
+ * `statusesProtectedFrom` in lib/payments/orderStatus.ts), so a seat whose
+ * anchoring order now reads `refunded` is closed — unless another accepted paid
+ * order for this course still stands, in which case the learner has paid and
+ * keeps the course.
+ *
+ * Only seats a purchase opened. A manual grant, a bonus and a free seat are not
+ * bought, so no refund can be what holds them. An anchor this learner's orders
+ * do not include is left alone: closing a seat on a guess is the wrong
+ * direction to fail in.
+ */
+export function seatRefunded(input: {
+  /** `lms_enrollments.source`; a row from before the column was set reads as a purchase. */
+  source: string | null | undefined;
+  /** `lms_enrollments.order_ref` — the payment the current window was anchored to. */
+  orderRef: string | null | undefined;
+  /** Every order this learner holds, of any status. */
+  orders: PaidOrderRef[];
+  /** `acceptedPaidOrders` for this course: the paid orders that grant it. */
+  accepted: PaidOrderRef[];
+}): boolean {
+  const source = input.source?.trim().toLowerCase() || "order";
+  if (source !== "order") return false;
+  if (input.accepted.length > 0) return false;
+
+  const ref = input.orderRef?.trim();
+  if (!ref) return false;
+
+  const anchor = input.orders.find((order) => order.orderRef === ref);
+  return anchor?.status.trim().toLowerCase() === "refunded";
+}
+
+/**
  * Has this enrollment's deadline passed?
  *
  * A deadline is per enrollment, not per product: the same course can be sold

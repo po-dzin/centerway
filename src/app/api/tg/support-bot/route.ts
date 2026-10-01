@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { secretsEqual } from "@/lib/auth/secretsEqual";
 import { handleTgSupportBotUpdate, type TelegramUpdate } from "@/lib/telegram/tgSupportBot";
 
 export const runtime = "nodejs";
@@ -9,7 +10,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "missing_webhook_secret" }, { status: 500 });
   }
 
-  if (req.headers.get("x-telegram-bot-api-secret-token") !== secret) {
+  if (!secretsEqual(req.headers.get("x-telegram-bot-api-secret-token"), secret)) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 

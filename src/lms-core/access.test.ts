@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { planAccess, type AccessPlanInput } from "./access";
+import { planAccess, seatRefunded, type AccessPlanInput } from "./access";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -62,5 +62,47 @@ describe("planAccess — stacking purchases separated by more than one term", ()
     expect(plan.grant).toBe(true);
     if (!plan.grant) return;
     expect(plan.expiresAt).toBe(new Date(Date.parse("2026-08-01T00:00:00.000Z") + 30 * DAY_MS).toISOString());
+  });
+});
+
+describe("seatRefunded — a refund closes the seat it paid for (meta-audit 2026-09-30, N1)", () => {
+  const order = (orderRef: string, status: string, createdAt = "2026-09-01T10:00:00Z") => ({
+    orderRef,
+    productCode: "course:way21",
+    status,
+    createdAt,
+  });
+
+  it("closes a seat whose anchoring order now reads refunded", () => {
+    expect(seatRefunded({ source: "order", orderRef: "a", orders: [order("a", "refunded")], accepted: [] })).toBe(true);
+  });
+
+  it("keeps the seat while another paid order for the course still stands", () => {
+    const paid = order("b", "paid", "2026-09-10T10:00:00Z");
+    expect(
+      seatRefunded({ source: "order", orderRef: "a", orders: [order("a", "refunded"), paid], accepted: [paid] }),
+    ).toBe(false);
+  });
+
+  it("keeps the seat while its order is still paid", () => {
+    const paid = order("a", "paid");
+    expect(seatRefunded({ source: "order", orderRef: "a", orders: [paid], accepted: [paid] })).toBe(false);
+  });
+
+  it("reads a row with no source as a purchase", () => {
+    expect(seatRefunded({ source: null, orderRef: "a", orders: [order("a", "refunded")], accepted: [] })).toBe(true);
+  });
+
+  it("never closes a seat no payment opened", () => {
+    for (const source of ["manual", "bonus", "free", "promotion"]) {
+      expect(seatRefunded({ source, orderRef: "a", orders: [order("a", "refunded")], accepted: [] })).toBe(false);
+    }
+  });
+
+  it("leaves alone a seat whose anchor it cannot see", () => {
+    expect(seatRefunded({ source: "order", orderRef: "elsewhere", orders: [], accepted: [] })).toBe(false);
+    expect(seatRefunded({ source: "order", orderRef: null, orders: [order("a", "refunded")], accepted: [] })).toBe(
+      false,
+    );
   });
 });

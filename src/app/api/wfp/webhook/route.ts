@@ -11,9 +11,11 @@ import {
   eventTypeForOutcome,
   nextOrderStatus,
   orderStatusForOutcome,
+  settlementMismatch,
   statusesProtectedFrom,
   type PaymentOutcome,
 } from "@/lib/payments/orderStatus";
+import { notifyHouseThread } from "@/lib/telegram/houseThread";
 import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
 import { isStaffOrder } from "@/lib/tracking/staffOrders";
 import { buildPurchaseCapiEventPayload, type PendingPurchaseCapiJobPayload } from "@/lib/jobs/worker";
@@ -99,6 +101,22 @@ async function enqueueTelegramSaleReport(sb: ReturnType<typeof supabaseAdmin>, o
  */
 const gateway = gatewayFor("wfp");
 
+/**
+ * The gateway's stop signal. Without this exact signed body it keeps
+ * redelivering for four days — which is what it has been doing all along.
+ */
+function acknowledged(orderRef: string): NextResponse {
+  const ack = gateway.acknowledge(orderRef);
+  if (!ack) {
+    // Unreachable in practice: the signature gate already refused the request
+    // when the secret is missing. Kept because "cannot sign" must never
+    // silently become "accepted".
+    console.error("[wfp webhook] cannot sign acceptance, secret missing", { orderRef });
+    return NextResponse.json({ ok: false, error: "missing_secret" }, { status: 500 });
+  }
+  return NextResponse.json(ack.body, { status: ack.status });
+}
+
 export async function POST(req: NextRequest) {
   const payload = await readBodyParams(req);
 
@@ -161,7 +179,7 @@ export async function POST(req: NextRequest) {
        callback may write at all. */
     const { data: order, error: oGetErr } = await sb
       .from("orders")
-      .select("customer_id, product_code, status")
+      .select("customer_id, product_code, status, amount, currency")
       .eq("order_ref", orderRef)
       .maybeSingle();
 
@@ -174,6 +192,42 @@ export async function POST(req: NextRequest) {
        how a rejected callback would write `created` over `paid`. The collected
        error withholds the acceptance further down, and WayForPay redelivers. */
     const nextStatus = oGetErr ? null : nextOrderStatus(order?.status ?? null, outcome);
+
+    /* A SIGNED CALLBACK THAT THIS ORDER CANNOT ACCOUNT FOR — one naming an order
+       we never opened, or one approving a different sum than the order was
+       opened for. Every order is written by `/api/pay/start` before its invoice
+       exists, so neither should happen; until 2026-10-01 both went through in
+       full anyway: a `payments` row, a Meta Purchase, a receipt and a sale
+       report (meta-audit 2026-09-30, N2/N3).
+
+       Nothing is written and nothing is opened. The house is told, because money
+       may have moved and only a person can decide what it was for, and the
+       callback is accepted, because redelivering it for four days would decide
+       nothing either. */
+    const unknownOrder = !oGetErr && !order;
+    const mismatch =
+      paid && order ? settlementMismatch(order, { amount: callback.amount, currency: callback.currency }) : null;
+    if (unknownOrder || mismatch) {
+      const problem = unknownOrder ? "unknown_order" : `${mismatch}_mismatch`;
+      console.error("[wfp webhook] callback refused, it does not match an order", {
+        orderRef,
+        outcome,
+        problem,
+        charged: { amount: callback.amount, currency: callback.currency },
+        expected: order ? { amount: order.amount, currency: order.currency } : null,
+      });
+      await notifyHouseThread(
+        [
+          "⚠️ Оплата не збігається із замовленням",
+          `${orderRef} · ${outcome}`,
+          unknownOrder
+            ? "Такого замовлення в нас немає."
+            : `Очікували ${order?.amount ?? "?"} ${order?.currency ?? ""}, прийшло ${callback.amount ?? "?"} ${callback.currency ?? ""}.`,
+          "Доступ не відкрито, нічого не записано. Перевірте платіж у кабінеті WayForPay.",
+        ].join("\n"),
+      );
+      return acknowledged(orderRef);
+    }
 
     // 1) payments: сохраняем как источник правды
     // ⚠️ provider обязателен (у тебя NOT NULL) — ставим явно
@@ -446,17 +500,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // The gateway's stop signal. Without this exact signed body it keeps
-    // redelivering for four days — which is what it has been doing all along.
-    const ack = gateway.acknowledge(orderRef);
-    if (!ack) {
-      // Unreachable in practice: the signature gate above already refused the
-      // request when the secret is missing. Kept because "cannot sign" must
-      // never silently become "accepted".
-      console.error("[wfp webhook] cannot sign acceptance, secret missing", { orderRef });
-      return NextResponse.json({ ok: false, error: "missing_secret" }, { status: 500 });
-    }
-    return NextResponse.json(ack.body, { status: ack.status });
+    return acknowledged(orderRef);
   } catch (e) {
     return NextResponse.json({ ok: false, error: "webhook_failed", details: errorMessage(e) }, { status: 500 });
   }
