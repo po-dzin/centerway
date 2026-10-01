@@ -108,7 +108,7 @@ export type SendEmailBatchResult =
   | { sent: true; ids: string[] }
   | {
       sent: false;
-      reason: "missing_api_key" | "provider_error" | "rate_limited" | "network_error";
+      reason: "missing_api_key" | "provider_error" | "rate_limited" | "provider_unavailable" | "network_error";
       detail?: string;
     };
 
@@ -162,7 +162,10 @@ export async function sendEmailBatch(
       const detail = await response.text().catch(() => "");
       return {
         sent: false,
-        reason: response.status === 429 ? "rate_limited" : "provider_error",
+        /* 429 and 5xx say "not now", not "not these addresses": the caller
+           puts the batch back. Only a 4xx is a verdict on the request. */
+        reason:
+          response.status === 429 ? "rate_limited" : response.status >= 500 ? "provider_unavailable" : "provider_error",
         detail: `${response.status} ${detail.slice(0, 300)}`,
       };
     }

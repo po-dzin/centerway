@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
   const { limit, offset } = parseLimitOffset(searchParams, { defaultLimit: 50, maxLimit: 200 });
   try {
     const [page, counts] = await Promise.all([listSubscriptions({ status, q, limit, offset }), subscriptionCounts()]);
-    return NextResponse.json({ ...page, counts });
+    return NextResponse.json({ ...page, counts, canEdit: session.role === "admin" });
   } catch (error) {
     return broadcastErrorResponse(error, "subscriptions_list");
   }

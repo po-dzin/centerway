@@ -104,6 +104,31 @@ describe("POST /api/admin/broadcasts/:id", () => {
   });
 });
 
+describe("PATCH /api/admin/broadcasts/:id", () => {
+  it("audits a successful edit, naming the fields that changed", async () => {
+    lib.updateDraft.mockResolvedValue({ id: ID });
+    const { PATCH } = await import("./route");
+    const { writeAudit } = await import("@/lib/admin/access/shared");
+    const res = await PATCH(
+      new NextRequest(`https://x/api/admin/broadcasts/${ID}`, {
+        method: "PATCH",
+        headers: { authorization: "Bearer t", "content-type": "application/json" },
+        body: JSON.stringify({ subject: "s", audience: { include: [] } }),
+      }),
+      ctx(),
+    );
+    expect(res.status).toBe(200);
+    expect(writeAudit).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({
+        action: "broadcast.update",
+        entityId: ID,
+        metadata: { fields: ["subject", "audience"] },
+      }),
+    );
+  });
+});
+
 describe("GET /api/admin/broadcasts/:id", () => {
   it("lets support read, and says it cannot edit", async () => {
     requireAdminSession.mockResolvedValue(support);

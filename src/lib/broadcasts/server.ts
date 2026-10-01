@@ -474,13 +474,29 @@ export async function startBroadcast(
   if (claimError) throw new BroadcastError(claimError.message, 500);
   if (!claimed?.length) throw new BroadcastError("broadcast_not_draft", 409);
 
-  const { error } = await db.rpc("broadcast_materialize", { p_broadcast_id: id });
+  const { data: frozen, error } = await db.rpc("broadcast_materialize", { p_broadcast_id: id });
   if (error) {
     await db
       .from("broadcasts")
       .update({ status: "failed", error_text: `materialize: ${error.message}`, updated_at: new Date().toISOString() })
       .eq("id", id);
     throw new BroadcastError(error.message, 500);
+  }
+
+  /* The count above and the snapshot are two statements: a sale or an
+     unsubscribe can land between them. The snapshot is what would be sent, so
+     it is the number checked — and if it is not the confirmed one, the frozen
+     rows are dropped and the campaign goes back to being a draft, before a
+     single message leaves. */
+  const frozenCount = Number(frozen ?? 0);
+  if (frozenCount !== confirmCount) {
+    await db.from("broadcast_recipients").delete().eq("broadcast_id", id);
+    await db
+      .from("broadcasts")
+      .update({ status: "draft", started_at: null, recipients_total: 0, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .eq("status", "sending");
+    throw new BroadcastError("audience_changed", 409, { count: frozenCount });
   }
 
   return sendNextBatch(id, db);
@@ -553,6 +569,7 @@ export async function sendNextBatch(id: string, db: Db = serviceClient()): Promi
     results = rows.map((r, i) => ({ id: r.id, status: "sent", provider_id: result.ids[i] ?? null, error_text: null }));
   } else if (
     result.reason === "rate_limited" ||
+    result.reason === "provider_unavailable" ||
     result.reason === "missing_api_key" ||
     result.reason === "network_error"
   ) {

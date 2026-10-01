@@ -60,7 +60,15 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   const body = await readJson(req);
   if (!body) return badRequestResponse("body_invalid");
   try {
-    return NextResponse.json({ broadcast: await updateDraft(id, body) });
+    const broadcast = await updateDraft(id, body);
+    await writeAudit(serviceClient(), {
+      actorId: session.user.id,
+      action: "broadcast.update",
+      entityType: "broadcast",
+      entityId: id,
+      metadata: { fields: Object.keys(body).filter((key) => key !== "id") },
+    });
+    return NextResponse.json({ broadcast });
   } catch (error) {
     return broadcastErrorResponse(error, "update");
   }

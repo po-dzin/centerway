@@ -28,6 +28,7 @@ function stub(state: {
   claimed: { id: string; address: string; name: string | null }[];
   remaining: number;
   audienceCount?: number;
+  frozen?: number;
 }) {
   const calls: Call[] = [];
   const rpc: { name: string; args: Record<string, unknown> }[] = [];
@@ -86,6 +87,7 @@ function stub(state: {
       rpc.push({ name, args });
       if (name === "broadcast_claim_recipients") return { data: state.claimed, error: null };
       if (name === "broadcast_audience_count") return { data: state.audienceCount ?? 0, error: null };
+      if (name === "broadcast_materialize") return { data: state.frozen ?? state.audienceCount ?? 0, error: null };
       if (name === "broadcast_stats") return { data: { total: 2 }, error: null };
       return { data: null, error: null };
     },
@@ -129,6 +131,15 @@ describe("sendNextBatch", () => {
     ).toBe(true);
   });
 
+  it("puts the batch back on a provider outage (5xx) too", async () => {
+    sendEmailBatch.mockResolvedValue({ sent: false, reason: "provider_unavailable", detail: "503" });
+    const { db, rpc } = stub({ status: "sending", claimed: two, remaining: 2 });
+    const out = await sendNextBatch("b-1", db);
+    const mark = rpc.find((r) => r.name === "broadcast_mark_results")!;
+    expect((mark.args.p_results as { status: string }[]).every((r) => r.status === "pending")).toBe(true);
+    expect(out.paused).toBe("rate_limited");
+  });
+
   it("puts the batch back on a quota and pauses, instead of failing three hundred people", async () => {
     sendEmailBatch.mockResolvedValue({ sent: false, reason: "rate_limited", detail: "429 daily_quota_exceeded" });
     const { db, rpc } = stub({ status: "sending", claimed: two, remaining: 2 });
@@ -166,6 +177,19 @@ describe("startBroadcast", () => {
       extra: { count: 272 },
     });
     expect(rpc.some((r) => r.name === "broadcast_materialize")).toBe(false);
+  });
+
+  it("drops the snapshot and reverts to draft when it differs from the confirmed number", async () => {
+    const { db, calls } = stub({ status: "draft", claimed: [], remaining: 0, audienceCount: 271, frozen: 272 });
+    await expect(startBroadcast("b-1", 271, db)).rejects.toMatchObject({
+      code: "audience_changed",
+      extra: { count: 272 },
+    });
+    expect(calls.some((c) => c.table === "broadcast_recipients" && c.op === "delete")).toBe(true);
+    expect(
+      calls.some((c) => c.table === "broadcasts" && (c.values as { status?: string } | undefined)?.status === "draft"),
+    ).toBe(true);
+    expect(sendEmailBatch).not.toHaveBeenCalled();
   });
 
   it("keeps the draft a draft when the mail provider is not configured", async () => {

@@ -52,6 +52,8 @@ export function SubscriptionsPanel() {
   const [importText, setImportText] = useState("");
   const [importSendpulse, setImportSendpulse] = useState(true);
   const [busy, setBusy] = useState(false);
+  // Import and resubscribe are the owner's; support sees the list and may unsubscribe.
+  const [canEdit, setCanEdit] = useState(false);
   const seq = useRef(0);
 
   useEffect(() => {
@@ -69,13 +71,17 @@ export function SubscriptionsPanel() {
       const params = new URLSearchParams({ limit: String(LIMIT), offset: String(page * LIMIT) });
       if (status) params.set("status", status);
       if (debouncedQ) params.set("q", debouncedQ);
-      const data = await authorizedJson<{ data: SubscriptionRow[]; count: number; counts: SubscriptionCounts }>(
-        `/api/admin/broadcasts/subscriptions?${params}`,
-      );
+      const data = await authorizedJson<{
+        data: SubscriptionRow[];
+        count: number;
+        counts: SubscriptionCounts;
+        canEdit?: boolean;
+      }>(`/api/admin/broadcasts/subscriptions?${params}`);
       if (id !== seq.current) return;
       setRows(data.data);
       setCount(data.count);
       setCounts(data.counts);
+      setCanEdit(Boolean(data.canEdit));
     } catch (e) {
       if (id !== seq.current) return;
       setRows([]);
@@ -149,12 +155,14 @@ export function SubscriptionsPanel() {
           setPage(0);
         }}
       />
-      <div className={controls.actions}>
-        <button type="button" onClick={() => setImportOpen(true)} className={`${controls.action} cw-surface-2`}>
-          <Icon name="import" size={16} />
-          {t("bc_import")}
-        </button>
-      </div>
+      {canEdit ? (
+        <div className={controls.actions}>
+          <button type="button" onClick={() => setImportOpen(true)} className={`${controls.action} cw-surface-2`}>
+            <Icon name="import" size={16} />
+            {t("bc_import")}
+          </button>
+        </div>
+      ) : null}
       <AdminSearchInput
         value={q}
         onChange={setQ}
@@ -202,7 +210,7 @@ export function SubscriptionsPanel() {
                   >
                     {t("bc_list_unsubscribe")}
                   </button>
-                ) : row.status === "unsubscribed" && row.statusReason === "manual" ? (
+                ) : canEdit && row.status === "unsubscribed" && row.statusReason === "manual" ? (
                   <button
                     type="button"
                     disabled={busy}
