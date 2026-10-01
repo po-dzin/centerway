@@ -67,7 +67,9 @@ export type EmailBlock =
   /** A quiet panel of label → value rows: date, order, sum. */
   | { kind: "facts"; rows: { label: string; value: string }[] }
   /** A muted panel for the one thing not to miss (which email to sign in with). */
-  | { kind: "note"; html: string };
+  | { kind: "note"; html: string }
+  /** A one-time code, set large in the data face so it can be read across a room and typed back. */
+  | { kind: "code"; code: string };
 
 export type EmailLayoutInput = {
   /** The grey line an inbox shows after the subject. */
@@ -119,6 +121,8 @@ function blockHtml(block: EmailBlock): string {
           return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="${rule}padding:12px 0;font-family:${FONT_UI};font-size:14px;line-height:1.5;color:${T.muted}">${row.label}</td><td align="right" style="${rule}padding:12px 0 12px 16px;font-family:${FONT_UI};font-size:15px;line-height:1.5;font-weight:700;color:${T.ink}">${row.value}</td></tr></table>`;
         })
         .join("")}</td></tr></table>`;
+    case "code":
+      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 24px"><tr><td align="center" style="padding:22px 16px;background:${T.surfaceMuted};border-radius:16px;font-family:${FONT_DATA};font-size:34px;line-height:1.1;font-weight:600;letter-spacing:0.28em;text-indent:0.28em;color:${T.ink}">${escapeHtml(block.code)}</td></tr></table>`;
     case "note":
       return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 22px"><tr><td style="padding:14px 18px;background:${T.surfaceMuted};border-left:3px solid ${T.accent};border-radius:4px 12px 12px 4px;font-family:${FONT_UI};font-size:15px;line-height:1.6;color:${T.ink}">${block.html}</td></tr></table>`;
   }
