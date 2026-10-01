@@ -57,6 +57,21 @@ describe("resolveSurfaceHref", () => {
   it("carries the query and hash across the crossing", () => {
     expect(resolveSurfaceHref("/learn/way21?day=3#top", WWW)).toBe("https://my.centerway.net.ua/way21?day=3#top");
   });
+
+  it("sends the free-course button on a www offer page to the course on `my`", () => {
+    // 2026-10-01: `/programs/soul-daily-ritual` handed the raw route to the
+    // browser and «Почати безкоштовно» opened a 404 on www.
+    expect(resolveSurfaceHref("/learn/soul-daily-ritual", WWW)).toBe("https://my.centerway.net.ua/soul-daily-ritual");
+  });
+
+  it("leaves a same-page reference alone on every host", () => {
+    // The offer page's buy href is `#formats` as often as it is a route, and
+    // on a funnel host an absolutised anchor would leave the page.
+    for (const host of [WWW, MY, "dosha.centerway.net.ua"]) {
+      expect(resolveSurfaceHref("#formats", host)).toBe("#formats");
+      expect(resolveSurfaceHref("?tab=done", host)).toBe("?tab=done");
+    }
+  });
 });
 
 describe("host predicates", () => {

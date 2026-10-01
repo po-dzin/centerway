@@ -14,20 +14,26 @@
  *   my.centerway.net.ua/profile     → /profile               the cabinet
  *   my.centerway.net.ua/build/…     → /build/…               the builder
  *   my.centerway.net.ua/learn…      → 308 to the short form  it is not an address
- *   www.centerway.net.ua/learn…     → 404                    personal, only here
- *   www.centerway.net.ua/build/…    → 404                    same rule, same reason
- *   www.centerway.net.ua/profile    → 308 to `my`            it had a public address
+ *   www.centerway.net.ua/learn/x    → 308 to `my/x`          the owner, short form
+ *   www.centerway.net.ua/build/…    → 308 to `my/build/…`    same rule
+ *   www.centerway.net.ua/profile    → 308 to `my/profile`    same rule
  *
  * The tree is the point. A dashboard at the root with lessons under `/learn/…`
  * meant children whose parent redirected away — so the prefix stopped being an
  * address and went back to being what it is: the route the pages live at.
  *
- * Both prefixes 404 on every public host, with no forward for either. A
- * redirect would keep a second, older address alive and discoverable, which is
- * what "one canonical origin" exists to prevent. The cost is stated where it
- * lands: links printed before the move — messages the support bot has already
- * sent, reminders already queued, an app installed off the old `start_url` —
- * arrive at a 404 rather than at the dashboard.
+ * EVERY PERSONAL PATH ON A PUBLIC HOST FORWARDS TO ITS OWNER (2026-10-01).
+ * Until then `/learn` and `/build` answered a bare 404 there, on the theory
+ * that they "never had a public address" and a redirect would keep a second
+ * one alive. Both halves were wrong. App code writes `/learn/…` as a relative
+ * route everywhere, so any link that skips `surfaceHref` on a `www` page IS a
+ * public address — the free-course button on `/programs/soul-daily-ritual`
+ * was one, and it sent every reader who pressed it to Chrome's own «сторінку
+ * не знайдено». And a 308 to the canonical origin does not keep a second
+ * address alive; it is how one origin stays canonical, exactly as `www.my`
+ * and the apex already are. So a stale link — a shared lesson, a queued
+ * reminder, an app installed off an old `start_url`, a button that forgot to
+ * resolve its href — now lands where it was aimed instead of on an empty 404.
  *
  * On the personal host an unclaimed path is a COURSE, so the public top-level
  * segments (`/legal/…`, `/programs`, `/products`) forward to `www` instead of
@@ -44,7 +50,6 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   LEARNING_PATH_PREFIX,
   PLATFORM_ORIGIN,
-  PROFILE_PATH_PREFIX,
   canonicalPersonalPath,
   isPersonalPath,
   isPublicRootPath,
@@ -83,21 +88,12 @@ export function rewritePersonalHostRequest(req: NextRequest): NextResponse | nul
     if (!isPersonalPath(pathname)) return null;
     if (allowsPersonalPath(req)) return NextResponse.next();
 
-    /* THE CABINET IS THE ONE PERSONAL PATH THAT FORWARDS (2026-08-27).
-       `/learn` and `/build` never had a public address, so 404 there closes an
-       address that was never given out. `/profile` DID: it was a public path
-       for months, it is in the account menu of every page already served, and
-       it is what an installed app was launched from. A 404 for it would break
-       links people are holding, so it forwards — once, permanently — to the
-       origin that owns it now. */
-    if (pathname === PROFILE_PATH_PREFIX || pathname.startsWith(`${PROFILE_PATH_PREFIX}/`)) {
-      const target = new URL(personalUrl(pathname));
-      target.search = req.nextUrl.search;
-      return NextResponse.redirect(target, 308);
-    }
-
-    // Personal, and only here. No forward for either prefix.
-    return new NextResponse(null, { status: 404 });
+    // Forwarded, never 404'd: see "EVERY PERSONAL PATH" above. Folded to the
+    // short form in the same hop, so a lesson is one redirect from its page
+    // and not two.
+    const target = new URL(personalUrl(canonicalPersonalPath(pathname)));
+    target.search = req.nextUrl.search;
+    return NextResponse.redirect(target, 308);
   }
 
   // The route prefix is not an address on this host. It forwards rather than

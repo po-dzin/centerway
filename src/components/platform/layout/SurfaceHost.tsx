@@ -28,7 +28,8 @@
  * test, a component mounted on its own — and is the browser's own host.
  */
 
-import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNode } from "react";
+import Link from "next/link";
+import { createContext, useContext, useMemo, useSyncExternalStore, type ComponentProps, type ReactNode } from "react";
 
 import { hostBrandFromHost } from "@/lib/surfaces/hostBrand";
 import { isPersonalHost, resolveSurfaceHref, servesEveryPath } from "@/lib/platform/surfaceHref";
@@ -91,6 +92,18 @@ export function useSurfaceHost(): string | null {
 export function useSurfaceHref(): (path: string) => string {
   const host = useSurfaceHost();
   return useMemo(() => (path: string) => resolveSurfaceHref(path, host), [host]);
+}
+
+/**
+ * A `next/link` whose string href is resolved against this page's origin.
+ *
+ * For SERVER components, which cannot call `useSurfaceHref` and would
+ * otherwise hand a raw `/learn/…` route to the browser — on `www` that is an
+ * address on the wrong origin. The free-course button was exactly that.
+ */
+export function SurfaceLink({ href, ...props }: Omit<ComponentProps<typeof Link>, "href"> & { href: string }) {
+  const surfaceHref = useSurfaceHref();
+  return <Link href={surfaceHref(href)} {...props} />;
 }
 
 /**
