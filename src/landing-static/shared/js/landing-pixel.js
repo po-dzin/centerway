@@ -20,6 +20,20 @@
   var isStaff = false;
   try { isStaff = localStorage.getItem("cw_staff") === "1"; } catch (_) {}
   if (!isStaff) isStaff = /(?:^|;\s*)cw_staff=1(?:;|$)/.test(document.cookie || "");
+  // Automated visitors are silenced the same way: an agent on checkout is not an
+  // ad-driven person. `cw_agent=1` is set by the proxy (it alone sees the
+  // Signature-Agent header); the pattern is a copy of AGENT_USER_AGENT in
+  // src/lib/tracking/agentTraffic.ts — this bundle never loads the app's.
+  if (!isStaff) {
+    try {
+      isStaff =
+        navigator.webdriver === true ||
+        /(?:^|;\s*)cw_agent=1(?:;|$)/.test(document.cookie || "") ||
+        /ChatGPT-User|OAI-SearchBot|GPTBot|Claude-User|Claude-SearchBot|ClaudeBot|Perplexity-User|PerplexityBot|Google-Extended|Googlebot|GoogleOther|bingbot|Applebot|meta-externalagent|meta-externalfetcher|Bytespider|CCBot|Amazonbot|DuckAssistBot|MistralAI-User|HeadlessChrome/i.test(
+          navigator.userAgent || ""
+        );
+    } catch (_) {}
+  }
   if (isStaff) {
     window.CW_STAFF = true;
     // No-op fbq so every downstream fbq(...) call (PageView here, ViewContent /

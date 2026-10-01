@@ -3,6 +3,7 @@ import { asString, asStringArray } from "@/lib/strings";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
+import { AGENT_COOKIE, isAgentRequest } from "@/lib/tracking/agentTraffic";
 import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
 
 export const runtime = "nodejs";
@@ -97,6 +98,13 @@ export async function POST(req: NextRequest) {
   // Drop their events entirely so nothing reaches Meta (CAPI) or our funnel analytics.
   if (req.cookies.get("cw_staff")?.value === "1") {
     return cors(NextResponse.json({ ok: true, staff: true }));
+  }
+  // An agent's page views, scrolls and clicks are dropped the same way: they
+  // would reach Meta as a person's, and they are not a funnel anybody walked.
+  // Its checkout and its lead are kept — /api/pay/start and /api/leads mark
+  // them `via_agent` instead (lib/tracking/agentTraffic).
+  if (isAgentRequest(req.headers, req.cookies.get(AGENT_COOKIE)?.value)) {
+    return cors(NextResponse.json({ ok: true, agent: true }));
   }
 
   const rl = await enforceRateLimit(req, { name: "events", limit: 120, windowSeconds: 60 });

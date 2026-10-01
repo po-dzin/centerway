@@ -6,6 +6,7 @@ import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import { createPaymentInvoice, resolveLocaleFromRequest } from "@/lib/payments/paymentStart";
 import { readAttribution } from "@/lib/referral/attribution";
+import { AGENT_COOKIE, isAgentRequest } from "@/lib/tracking/agentTraffic";
 
 export const runtime = "nodejs";
 
@@ -71,6 +72,7 @@ export async function GET(req: NextRequest) {
     client_ua: req.headers.get("user-agent") ?? undefined,
     page_url: req.headers.get("referer") ?? undefined,
     staff: req.cookies.get("cw_staff")?.value === "1",
+    agent: isAgentRequest(req.headers, req.cookies.get(AGENT_COOKIE)?.value),
   });
 
   if (!started.ok) {
