@@ -22,6 +22,7 @@ import { access } from "./i18n/access";
 import { analytics } from "./i18n/analytics";
 import { audit } from "./i18n/audit";
 import { auth } from "./i18n/auth";
+import { broadcasts } from "./i18n/broadcasts";
 import { customers } from "./i18n/customers";
 import { jobs } from "./i18n/jobs";
 import { layout } from "./i18n/layout";
@@ -40,6 +41,7 @@ const entries = {
   ...jobs,
   ...customers,
   ...access,
+  ...broadcasts,
 };
 
 export type TranslationKey = keyof typeof entries;

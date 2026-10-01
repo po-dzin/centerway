@@ -23,6 +23,7 @@ const ADMIN_KEY_PREFIXES = [
   "leads_",
   "catalog_",
   "access_",
+  "bc_",
 ];
 
 /* WHERE ADMIN STRINGS ARE WRITTEN. The parity check above reads the dictionary,

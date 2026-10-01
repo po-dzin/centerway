@@ -1,0 +1,175 @@
+/*
+ * BROADCASTS (2026-10-01): the editor, the audience, the progress.
+ *
+ * Material composes from the global layer, measures come from the tokens; the
+ * only things declared here are the arrangements this screen alone has — a
+ * two-column editor beside its preview, a grid of checkbox groups, a row of
+ * figures.
+ */
+
+.editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-lg);
+  align-items: start;
+}
+
+@media (min-width: 1100px) {
+  .editor {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-md);
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
+.bodyField {
+  composes: cw-input from global;
+  width: 100%;
+  min-height: 18rem;
+  padding-block: var(--cw-space-xs);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.55;
+  resize: vertical;
+}
+
+/* ── The audience ─────────────────────────────────────────────────────── */
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+}
+
+.groupHead {
+  composes: cw-text from global;
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-2xs) var(--cw-space-md);
+  padding-left: calc(1rem + var(--cw-space-xs));
+}
+
+.option {
+  composes: cw-muted from global;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  font-size: var(--ds-type-label-size);
+}
+
+.checkBox {
+  flex: 0 0 auto;
+}
+
+.count {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--cw-space-xs);
+}
+
+.countValue {
+  composes: cw-text from global;
+  font-size: var(--ds-type-title-size);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.sample {
+  composes: cw-muted from global;
+  margin: 0;
+  font-size: var(--ds-type-label-size);
+  overflow-wrap: anywhere;
+}
+
+/* ── The preview ───────────────────────────────────────────────────────── */
+
+.previewSubject {
+  composes: cw-text from global;
+  margin: 0;
+  font-weight: 600;
+}
+
+.previewFrame {
+  composes: cw-border from global;
+  display: block;
+  width: 100%;
+  min-height: 32rem;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-xl);
+}
+
+/* ── Progress ──────────────────────────────────────────────────────────── */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cw-space-xs);
+}
+
+@media (min-width: 640px) {
+  .stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.stat {
+  composes: cw-surface-2 from global;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+}
+
+.statValue {
+  composes: cw-text from global;
+  font-size: var(--ds-type-body-size);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+}
+
+.meter {
+  composes: cw-surface-2 from global;
+  height: var(--cw-space-2xs);
+  overflow: hidden;
+  border-radius: var(--cw-radius-pill);
+}
+
+.meterFill {
+  composes: cw-status-success-dot from global;
+  height: 100%;
+  transition: width var(--cw-motion-state) var(--cw-ease-state);
+}
