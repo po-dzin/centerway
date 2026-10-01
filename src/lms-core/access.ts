@@ -134,7 +134,7 @@ export function resolveEntitlement(input: EntitlementInput): Entitlement {
 }
 
 /**
- * IS THIS SEAT STANDING ON A REFUNDED PAYMENT, with nothing else paid under it?
+ * WHAT A REFUND DOES TO A SEAT THAT ALREADY EXISTS.
  *
  * An enrollment row, once written, answers the door by itself: its own status
  * and deadline. Entitlement is re-read only when there is no row. So until
@@ -143,35 +143,61 @@ export function resolveEntitlement(input: EntitlementInput): Entitlement {
  * offer (meta-audit 2026-09-30, N1).
  *
  * A refund is the one thing allowed to take access away (see
- * `statusesProtectedFrom` in lib/payments/orderStatus.ts), so a seat whose
- * anchoring order now reads `refunded` is closed — unless another accepted paid
- * order for this course still stands, in which case the learner has paid and
- * keeps the course.
+ * `statusesProtectedFrom` in lib/payments/orderStatus.ts). When the order the
+ * seat is anchored to now reads `refunded`:
  *
- * Only seats a purchase opened. A manual grant, a bonus and a free seat are not
- * bought, so no refund can be what holds them. An anchor this learner's orders
- * do not include is left alone: closing a seat on a guess is the wrong
- * direction to fail in.
+ *   · nothing else paid for this course → `close`;
+ *   · other paid orders remain → `rewind`: the window is planned again from
+ *     those orders alone, as if the refunded one had never happened. Not left
+ *     as it stands, because a renewal's term was stacked onto the window, and
+ *     not handed to the ordinary planner, which cannot see the refunded anchor
+ *     and would read an OLDER payment as a new one and stack its term a second
+ *     time (PR #305 review).
+ *
+ * Only purchase-backed seats: `order`, and `token` — a paid order handed over
+ * by an access link (20260826030000_program_access_windows.sql). A manual
+ * grant, a bonus or a promotion is not bought, so no refund can be what holds
+ * it. An anchor this learner's orders do not include is left alone: closing a
+ * seat on a guess is the wrong direction to fail in.
+ *
+ * An operator's revoke still stands: the rewound plan only counts payments
+ * made after it, exactly as a renewal would.
  */
-export function seatRefunded(input: {
+export type RefundedSeat = { kind: "close" } | { kind: "rewind"; plan: Extract<AccessPlan, { grant: true }> } | null;
+
+const PURCHASE_SOURCES = new Set(["order", "token"]);
+
+export function refundedSeat(input: {
   /** `lms_enrollments.source`; a row from before the column was set reads as a purchase. */
   source: string | null | undefined;
   /** `lms_enrollments.order_ref` — the payment the current window was anchored to. */
   orderRef: string | null | undefined;
+  status?: string | null;
+  revokedAt?: string | null;
   /** Every order this learner holds, of any status. */
   orders: PaidOrderRef[];
   /** `acceptedPaidOrders` for this course: the paid orders that grant it. */
   accepted: PaidOrderRef[];
-}): boolean {
+  rule: AccessRule | null;
+  now: Date;
+}): RefundedSeat {
   const source = input.source?.trim().toLowerCase() || "order";
-  if (source !== "order") return false;
-  if (input.accepted.length > 0) return false;
+  if (!PURCHASE_SOURCES.has(source)) return null;
 
   const ref = input.orderRef?.trim();
-  if (!ref) return false;
-
+  if (!ref) return null;
   const anchor = input.orders.find((order) => order.orderRef === ref);
-  return anchor?.status.trim().toLowerCase() === "refunded";
+  if (anchor?.status.trim().toLowerCase() !== "refunded") return null;
+
+  if (input.accepted.length === 0) return { kind: "close" };
+
+  const plan = planAccess({
+    orders: input.accepted,
+    rule: input.rule,
+    now: input.now,
+    existing: { orderRef: null, expiresAt: null, status: input.status ?? "active", revokedAt: input.revokedAt ?? null },
+  });
+  return plan.grant ? { kind: "rewind", plan } : { kind: "close" };
 }
 
 /**

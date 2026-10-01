@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { planAccess, seatRefunded, type AccessPlanInput } from "./access";
+import { planAccess, refundedSeat, type AccessPlanInput } from "./access";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -65,44 +65,76 @@ describe("planAccess — stacking purchases separated by more than one term", ()
   });
 });
 
-describe("seatRefunded — a refund closes the seat it paid for (meta-audit 2026-09-30, N1)", () => {
-  const order = (orderRef: string, status: string, createdAt = "2026-09-01T10:00:00Z") => ({
+describe("refundedSeat — a refund closes the seat it paid for (meta-audit 2026-09-30, N1)", () => {
+  const order = (orderRef: string, status: string, createdAt = "2026-08-20T10:00:00Z") => ({
     orderRef,
     productCode: "course:way21",
     status,
     createdAt,
   });
+  const MONTH = { lifetime: false as const, days: 30 };
+  const seat = (input: Partial<Parameters<typeof refundedSeat>[0]>) =>
+    refundedSeat({ source: "order", orderRef: "a", orders: [], accepted: [], rule: MONTH, now: NOW, ...input });
 
   it("closes a seat whose anchoring order now reads refunded", () => {
-    expect(seatRefunded({ source: "order", orderRef: "a", orders: [order("a", "refunded")], accepted: [] })).toBe(true);
+    expect(seat({ orders: [order("a", "refunded")] })).toEqual({ kind: "close" });
   });
 
-  it("keeps the seat while another paid order for the course still stands", () => {
-    const paid = order("b", "paid", "2026-09-10T10:00:00Z");
+  it("rewinds a refunded renewal to the payment that remains, without stacking it twice", () => {
+    const first = order("first", "paid", "2026-08-20T10:00:00Z");
+    const renewal = order("a", "refunded", "2026-08-25T10:00:00Z");
+    const result = seat({ orders: [first, renewal], accepted: [first] });
+    expect(result?.kind).toBe("rewind");
+    if (result?.kind !== "rewind") return;
+    expect(result.plan.orderRef).toBe("first");
+    expect(result.plan.expiresAt).toBe(new Date(Date.parse(first.createdAt) + 30 * DAY_MS).toISOString());
+  });
+
+  it("does not let the plain planner read the older payment as new", () => {
+    // The bug the rewind exists for: with the refunded anchor out of sight, the
+    // older payment is "fresh" and its term lands on the window a second time.
+    const first = order("first", "paid", "2026-08-20T10:00:00Z");
+    const stacked = new Date(Date.parse(first.createdAt) + 60 * DAY_MS).toISOString();
+    const plain = planAccess({
+      ...BASE,
+      orders: [first],
+      existing: { orderRef: "a", expiresAt: stacked, status: "active", revokedAt: null },
+    });
+    expect(plain.grant).toBe(true);
+    if (plain.grant)
+      expect(plain.expiresAt).not.toBe(new Date(Date.parse(first.createdAt) + 30 * DAY_MS).toISOString());
+  });
+
+  it("closes when the payments that remain predate an operator's revoke", () => {
+    const first = order("first", "paid", "2026-08-20T10:00:00Z");
     expect(
-      seatRefunded({ source: "order", orderRef: "a", orders: [order("a", "refunded"), paid], accepted: [paid] }),
-    ).toBe(false);
+      seat({
+        orders: [first, order("a", "refunded", "2026-08-25T10:00:00Z")],
+        accepted: [first],
+        status: "revoked",
+        revokedAt: "2026-08-22T00:00:00Z",
+      }),
+    ).toEqual({ kind: "close" });
   });
 
-  it("keeps the seat while its order is still paid", () => {
+  it("leaves alone a seat whose order is still paid", () => {
     const paid = order("a", "paid");
-    expect(seatRefunded({ source: "order", orderRef: "a", orders: [paid], accepted: [paid] })).toBe(false);
+    expect(seat({ orders: [paid], accepted: [paid] })).toBeNull();
   });
 
-  it("reads a row with no source as a purchase", () => {
-    expect(seatRefunded({ source: null, orderRef: "a", orders: [order("a", "refunded")], accepted: [] })).toBe(true);
+  it("treats an access-link seat and a row with no source as purchases", () => {
+    expect(seat({ source: "token", orders: [order("a", "refunded")] })).toEqual({ kind: "close" });
+    expect(seat({ source: null, orders: [order("a", "refunded")] })).toEqual({ kind: "close" });
   });
 
   it("never closes a seat no payment opened", () => {
     for (const source of ["manual", "bonus", "free", "promotion"]) {
-      expect(seatRefunded({ source, orderRef: "a", orders: [order("a", "refunded")], accepted: [] })).toBe(false);
+      expect(seat({ source, orders: [order("a", "refunded")] })).toBeNull();
     }
   });
 
   it("leaves alone a seat whose anchor it cannot see", () => {
-    expect(seatRefunded({ source: "order", orderRef: "elsewhere", orders: [], accepted: [] })).toBe(false);
-    expect(seatRefunded({ source: "order", orderRef: null, orders: [order("a", "refunded")], accepted: [] })).toBe(
-      false,
-    );
+    expect(seat({ orderRef: "elsewhere" })).toBeNull();
+    expect(seat({ orderRef: null, orders: [order("a", "refunded")] })).toBeNull();
   });
 });

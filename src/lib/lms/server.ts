@@ -29,7 +29,7 @@ import {
   resolveCurrentLesson,
   resolveEntitlement,
   resolveTimeZone,
-  seatRefunded,
+  refundedSeat,
   summarizeStanding,
   type AccessRule,
   type AccessState,
@@ -399,7 +399,7 @@ export async function ensureEnrollment(
     now,
   });
 
-  const plan = planAccess({
+  const ordinaryPlan = planAccess({
     orders,
     rule,
     now,
@@ -414,17 +414,25 @@ export async function ensureEnrollment(
       : null,
   });
 
-  // A seat bought with a payment that has since been refunded closes, unless
-  // another paid order for this course still holds it. Answered after the plan
-  // because a NEW purchase (`plan.grant`) re-opens the seat below.
-  if (
-    row &&
-    !plan.grant &&
-    !staff &&
-    seatRefunded({ source: row.source, orderRef: row.order_ref, orders: purchases.orders, accepted: orders })
-  ) {
-    return { enrollment: null, reason: "revoked" };
-  }
+  // A seat bought with a payment that has since been refunded closes, or is
+  // planned again from the payments that remain (see `refundedSeat`). Not for
+  // staff, and not on a course that is free now: nobody needs a payment to
+  // hold it.
+  const refund =
+    row && !staff && !free
+      ? refundedSeat({
+          source: row.source,
+          orderRef: row.order_ref,
+          status: row.status,
+          revokedAt: row.revoked_at,
+          orders: purchases.orders,
+          accepted: orders,
+          rule,
+          now,
+        })
+      : null;
+  if (refund?.kind === "close") return { enrollment: null, reason: "revoked" };
+  const plan = refund?.kind === "rewind" ? refund.plan : ordinaryPlan;
 
   if (row) {
     // A purchase made since the current window was anchored renews the seat —
@@ -800,7 +808,7 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
       if (!boughtOnItsOwn && (orders.length > 0 || row?.source === "bonus")) heldThroughBundle.add(course.id);
 
       // What opening the course WOULD do, without doing it.
-      const plan = planAccess({
+      const ordinaryPlan = planAccess({
         orders,
         rule: ruleByCourse.get(course.id) ?? null,
         now,
@@ -817,11 +825,21 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
 
       // The same refund rule the door applies, so the shelf does not show open
       // a course the door will refuse.
-      const refunded =
-        !!row &&
-        !plan.grant &&
-        !staff &&
-        seatRefunded({ source: row.source, orderRef: row.order_ref, orders: purchases.orders, accepted: orders });
+      const refund =
+        row && !staff && !free
+          ? refundedSeat({
+              source: row.source,
+              orderRef: row.order_ref,
+              status: row.status,
+              revokedAt: row.revoked_at,
+              orders: purchases.orders,
+              accepted: orders,
+              rule: ruleByCourse.get(course.id) ?? null,
+              now,
+            })
+          : null;
+      const refunded = refund?.kind === "close";
+      const plan = refund?.kind === "rewind" ? refund.plan : ordinaryPlan;
 
       const projected = plan.grant
         ? { status: "active", blockedAt: row?.blocked_at ?? null, expiresAt: plan.expiresAt }
