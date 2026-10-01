@@ -9,6 +9,8 @@ import { loadPayableOffer } from "@/lib/platform/offers";
 import { makeOrderRef } from "@/lib/payments/paymentStart";
 import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { readAttribution } from "@/lib/referral/attribution";
+import { markAgentOrder } from "@/lib/tracking/agentOrders";
+import { AGENT_COOKIE, isAgentRequest } from "@/lib/tracking/agentTraffic";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 
 export const runtime = "nodejs";
@@ -131,6 +133,13 @@ export const POST = withRoute("orders.create", async (req) => {
       );
     }
 
+    /* An agent's order is real — a person pays for it — but the step is the
+       agent's: no InitiateCheckout to Meta, and the order is marked instead. */
+    const agent = isAgentRequest(req.headers, (req as NextRequest).cookies.get(AGENT_COOKIE)?.value);
+    if (agent) {
+      await markAgentOrder(sb, order_ref, { product, source: "orders_create" });
+    }
+
     const clientEventId = asOptionalString(attrib?.event_id);
     const capiEventId = clientEventId ?? `checkout_${order_ref}`;
     const [existingByEventIdRes, existingByOrderRefRes] = await Promise.all([
@@ -155,7 +164,7 @@ export const POST = withRoute("orders.create", async (req) => {
 
     // Always ensure a server-side InitiateCheckout CAPI job exists for each created order.
     // Use event_id dedupe key to stay compatible with client-side Pixel/CAPI deduplication.
-    if (!hasExistingInitiateCheckoutJob) {
+    if (!agent && !hasExistingInitiateCheckoutJob) {
       const capiPayload: CapiEventPayload = {
         event_name: "InitiateCheckout",
         event_id: capiEventId,

@@ -22,6 +22,7 @@ import { authorHref, listListedAuthors } from "@/lib/lms/authors";
 import { programs } from "@/lib/platform/content";
 import { loadCourseOffer, loadPayableOffer, listStorefrontCourses } from "@/lib/platform/offers";
 import { courseOfferCommerce, productOfferCommerce } from "@/lib/platform/offerCommerce";
+import { AGENT_RULES_UA } from "@/lib/seo/agentPolicy";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 
 /** Rebuilt at most once an hour: the live half is a database read. */
@@ -141,6 +142,10 @@ export async function GET(): Promise<Response> {
     "",
     "Публічні сторінки українською. Підтримка і супровід — українською та російською.",
     "Продукти цифрові та доступні з будь-якої країни; трав'яна підтримка — за домовленістю.",
+    "",
+    "## Для агентів",
+    "",
+    ...AGENT_RULES_UA.map((rule) => `- ${rule}`),
     "",
     "## Контакти",
     "",

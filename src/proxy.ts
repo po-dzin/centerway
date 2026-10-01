@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isInfraBypassPath, shouldBypassProxy } from "@/lib/proxy/bypass";
+import { rememberAgent } from "@/lib/proxy/agent";
 import { rewritePersonalHostRequest } from "@/lib/proxy/personal";
 import { rewriteFunnelHostRequest, rewriteLegacyLandingEntryRequest } from "@/lib/proxy/landing";
 import { rememberAttribution } from "@/lib/referral/attribution";
@@ -69,11 +70,14 @@ function retiredHostRedirect(req: NextRequest): NextResponse | null {
  * Routing decides the response; attribution rides on whatever it decided.
  * `?ref=` and `utm_*` are remembered on every outcome — a rewrite to a landing
  * bundle and a plain pass-through alike — except a host redirect, whose target
- * still carries the query and will be seen again on the canonical host.
+ * still carries the query and will be seen again on the canonical host. An
+ * automated visitor is remembered the same way (`lib/proxy/agent`).
  */
 export function proxy(req: NextRequest) {
   const response = route(req);
-  return response.status >= 300 && response.status < 400 ? response : rememberAttribution(req, response);
+  return response.status >= 300 && response.status < 400
+    ? response
+    : rememberAgent(req, rememberAttribution(req, response));
 }
 
 function route(req: NextRequest): NextResponse {
