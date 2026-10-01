@@ -33,16 +33,28 @@ describe("personal host routing", () => {
   });
 
   /**
-   * The rule that gives each surface ONE canonical origin, applied to both
-   * prefixes without exception. A forward for `/learn` would keep an older
-   * address alive and discoverable, which is the thing the rule exists to
-   * prevent — at the price, stated where it lands, that links printed before
-   * the move arrive at a 404.
+   * The rule that gives each surface ONE canonical origin, enforced by a
+   * forward rather than a 404. App code writes `/learn/…` as a relative route,
+   * so a link that skips `surfaceHref` on a `www` page is a public address
+   * whether anyone meant it to be or not — the free-course button on
+   * `/programs/soul-daily-ritual` was one, and it 404'd (2026-10-01).
    */
-  it("404s BOTH personal prefixes on the public host and on a funnel host", () => {
-    for (const path of ["/learn", "/learn/way21", "/build", "/build/way21"]) {
-      expect(rewritePersonalHostRequest(request("www.centerway.net.ua", path))?.status, path).toBe(404);
-      expect(rewritePersonalHostRequest(request("way21.centerway.net.ua", path))?.status, path).toBe(404);
+  it("forwards EVERY personal prefix from a public or funnel host to its owner, short form", () => {
+    for (const [from, to] of [
+      ["/learn", "https://my.centerway.net.ua/"],
+      ["/learn/soul-daily-ritual", "https://my.centerway.net.ua/soul-daily-ritual"],
+      ["/learn/way21/day-1?from=tg", "https://my.centerway.net.ua/way21/day-1?from=tg"],
+      ["/build", "https://my.centerway.net.ua/build"],
+      ["/build/way21", "https://my.centerway.net.ua/build/way21"],
+      ["/profile", "https://my.centerway.net.ua/profile"],
+      ["/journal", "https://my.centerway.net.ua/journal"],
+      ["/signin/email", "https://my.centerway.net.ua/signin/email"],
+    ] as const) {
+      for (const host of ["www.centerway.net.ua", "way21.centerway.net.ua"]) {
+        const res = rewritePersonalHostRequest(request(host, from));
+        expect(res?.status, `${host}${from}`).toBe(308);
+        expect(res?.headers.get("location"), `${host}${from}`).toBe(to);
+      }
     }
   });
 
@@ -95,7 +107,10 @@ describe("personal host routing", () => {
 
   it("does not mistake a lookalike host for the personal one", () => {
     expect(isPersonalHost(request("my.centerway.net.ua.evil.com", "/"))).toBe(false);
-    expect(rewritePersonalHostRequest(request("my.centerway.net.ua.evil.com", "/build"))?.status).toBe(404);
+    // Treated as any other foreign host: forwarded to the GENUINE origin.
+    expect(rewritePersonalHostRequest(request("my.centerway.net.ua.evil.com", "/build"))?.headers.get("location")).toBe(
+      "https://my.centerway.net.ua/build",
+    );
   });
 });
 
@@ -141,8 +156,10 @@ describe("personal host, through the full proxy", () => {
     }
   });
 
-  it("keeps /build 404ing on a funnel host", () => {
-    expect(proxy(request("way21.centerway.net.ua", "/build"))?.status).toBe(404);
+  it("forwards /build off a funnel host instead of 404ing", () => {
+    expect(proxy(request("way21.centerway.net.ua", "/build"))?.headers.get("location")).toBe(
+      "https://my.centerway.net.ua/build",
+    );
   });
 
   it("308s www.my to the bare host instead of serving a second copy", () => {

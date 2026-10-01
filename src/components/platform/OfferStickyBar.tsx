@@ -114,7 +114,7 @@ export function OfferStickyBar({
           isPageCta={false}
         />
       ) : (
-        <Link className={styles.stickyAction} href={buyHref}>
+        <Link className={styles.stickyAction} href={surfaceHref(buyHref)}>
           {buyLabel}
         </Link>
       )}
