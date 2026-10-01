@@ -455,6 +455,9 @@ export async function startBroadcast(
   const audience = audienceFromRow(row.audience);
   assertSendable(row, audience);
 
+  // Before anything is frozen: a campaign that cannot send should stay a draft.
+  if (!process.env.RESEND_API_KEY) throw new BroadcastError("resend_not_configured", 503);
+
   const count = await countAudience(audience, db);
   if (count === 0) throw new BroadcastError("audience_empty");
   if (count !== confirmCount) throw new BroadcastError("audience_changed", 409, { count });

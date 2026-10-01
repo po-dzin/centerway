@@ -479,7 +479,7 @@ export function BroadcastEditor({
             )}
           </div>
 
-          <div className={bc.column}>
+          <div className={bc.previewColumn}>
             <span className={controls.fieldLabel}>{t("bc_preview")}</span>
             <p className={bc.previewSubject}>{preview.subject || "—"}</p>
             <iframe title={t("bc_preview")} className={bc.previewFrame} sandbox="" srcDoc={preview.html} />
@@ -585,7 +585,7 @@ export function BroadcastEditor({
               </div>
             ) : null}
           </div>
-          <div className={bc.column}>
+          <div className={bc.previewColumn}>
             <span className={controls.fieldLabel}>{t("bc_preview")}</span>
             <p className={bc.previewSubject}>{preview.subject || "—"}</p>
             <iframe title={t("bc_preview")} className={bc.previewFrame} sandbox="" srcDoc={preview.html} />
@@ -778,26 +778,6 @@ function AudienceBuilder({
         ) : null}
       </div>
 
-      {options && options.products.length > 0 ? (
-        <div className={bc.group}>
-          <span className={bc.groupHead}>{t("bc_aud_exclude_buyers")}</span>
-          <div className={bc.options}>
-            {options.products.map((p) => (
-              <label key={p.code} className={bc.option}>
-                <input
-                  type="checkbox"
-                  className={bc.checkBox}
-                  disabled={disabled}
-                  checked={(audience.exclude_buyers ?? []).includes(p.code)}
-                  onChange={() => onChange((a) => ({ ...a, exclude_buyers: toggled(a.exclude_buyers ?? [], p.code) }))}
-                />
-                {p.code}
-              </label>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
       {options && options.tags.length > 0 ? (
         <>
           <div className={bc.group}>
@@ -840,6 +820,25 @@ function AudienceBuilder({
             </div>
           </div>
         </>
+      ) : null}
+      {options && options.products.length > 0 ? (
+        <div className={bc.group}>
+          <span className={bc.groupHead}>{t("bc_aud_exclude_buyers")}</span>
+          <div className={bc.options}>
+            {options.products.map((p) => (
+              <label key={p.code} className={bc.option}>
+                <input
+                  type="checkbox"
+                  className={bc.checkBox}
+                  disabled={disabled}
+                  checked={(audience.exclude_buyers ?? []).includes(p.code)}
+                  onChange={() => onChange((a) => ({ ...a, exclude_buyers: toggled(a.exclude_buyers ?? [], p.code) }))}
+                />
+                {p.code}
+              </label>
+            ))}
+          </div>
+        </div>
       ) : null}
     </div>
   );

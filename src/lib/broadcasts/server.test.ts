@@ -101,6 +101,7 @@ const two = [
 beforeEach(() => {
   sendEmailBatch.mockReset();
   process.env.UNSUBSCRIBE_SECRET = "s";
+  process.env.RESEND_API_KEY = "re_test";
 });
 
 describe("sendNextBatch", () => {
@@ -165,6 +166,13 @@ describe("startBroadcast", () => {
       extra: { count: 272 },
     });
     expect(rpc.some((r) => r.name === "broadcast_materialize")).toBe(false);
+  });
+
+  it("keeps the draft a draft when the mail provider is not configured", async () => {
+    delete process.env.RESEND_API_KEY;
+    const { db, calls } = stub({ status: "draft", claimed: [], remaining: 0, audienceCount: 2 });
+    await expect(startBroadcast("b-1", 2, db)).rejects.toMatchObject({ code: "resend_not_configured" });
+    expect(calls.some((c) => c.op === "update")).toBe(false);
   });
 
   it("refuses a campaign that is no longer a draft", async () => {

@@ -185,7 +185,7 @@ function Campaigns() {
             >
               <div className={lists.itemBody}>
                 <div className={lists.itemTitleRow}>
-                  <p className={lists.itemTypeCode}>{b.title || b.subject || t("bc_untitled")}</p>
+                  <p className={lists.itemTitle}>{b.title || b.subject || t("bc_untitled")}</p>
                   <span className={STATUS_BADGE[b.status] ?? STATUS_BADGE.draft}>
                     {t(`bc_status_${b.status}` as TranslationKey)}
                   </span>

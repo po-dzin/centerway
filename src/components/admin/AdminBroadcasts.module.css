@@ -18,6 +18,12 @@
   .editor {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
+
+  /* The letter stays in view while the form beside it scrolls. */
+  .previewColumn {
+    position: sticky;
+    top: var(--cw-space-md);
+  }
 }
 
 .column {
@@ -25,6 +31,10 @@
   flex-direction: column;
   gap: var(--cw-space-md);
   min-width: 0;
+}
+
+.previewColumn {
+  composes: column;
 }
 
 .toolbar {
@@ -96,7 +106,7 @@
 
 .countValue {
   composes: cw-text from global;
-  font-size: var(--ds-type-title-size);
+  font-size: var(--ds-type-lead-size);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
