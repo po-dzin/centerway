@@ -231,5 +231,85 @@
       "order_ref": "smoke-order",
       "status": "done"
     }
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/broadcasts"
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/broadcasts",
+    "body": {
+      "title": "smoke"
+    }
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/broadcasts/00000000-0000-4000-8000-000000000000",
+    "routePath": "/api/admin/broadcasts/:id"
+  },
+  {
+    "kind": "mutate",
+    "method": "PATCH",
+    "path": "/api/admin/broadcasts/00000000-0000-4000-8000-000000000000",
+    "routePath": "/api/admin/broadcasts/:id",
+    "body": {
+      "title": "smoke"
+    }
+  },
+  {
+    "kind": "mutate",
+    "method": "DELETE",
+    "path": "/api/admin/broadcasts/00000000-0000-4000-8000-000000000000",
+    "routePath": "/api/admin/broadcasts/:id"
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/broadcasts/00000000-0000-4000-8000-000000000000",
+    "routePath": "/api/admin/broadcasts/:id",
+    "body": {
+      "action": "test"
+    }
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/broadcasts/audience"
+  },
+  {
+    "kind": "read",
+    "method": "POST",
+    "path": "/api/admin/broadcasts/audience",
+    "body": {
+      "audience": {
+        "include": []
+      }
+    }
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/broadcasts/subscriptions"
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/broadcasts/subscriptions",
+    "body": {
+      "text": "smoke@example.com"
+    }
+  },
+  {
+    "kind": "mutate",
+    "method": "PATCH",
+    "path": "/api/admin/broadcasts/subscriptions",
+    "body": {
+      "address": "smoke@example.com",
+      "action": "unsubscribe"
+    }
   }
 ]
