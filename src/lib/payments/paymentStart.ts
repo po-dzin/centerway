@@ -13,6 +13,7 @@ import { buildReturnUrl, invoiceLine } from "@/lib/payments/pay";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
+import { markAgentOrder } from "@/lib/tracking/agentOrders";
 import { STAFF_CHECKOUT_EVENT } from "@/lib/tracking/staffOrders";
 
 export type PaymentStartSuccess = {
@@ -62,6 +63,7 @@ export type PaymentStartInput = {
   page_url?: string | null; // URL лендинга (event_source_url для CAPI)
   event_id?: string | null; // event_id для dedupe Pixel + CAPI (InitiateCheckout)
   staff?: boolean; // internal/QA traffic — skip Meta CAPI (InitiateCheckout)
+  agent?: boolean; // automated visitor — skip InitiateCheckout, mark the order via_agent (lib/tracking/agentTraffic)
 };
 
 type PaymentDb = ReturnType<typeof supabaseAdmin>;
@@ -233,8 +235,10 @@ export async function createPaymentInvoiceWithDeps(
 
   // Ensure exactly one server-side InitiateCheckout CAPI job per order. This is pure
   // analytics, so it runs alongside the WFP call and never blocks the redirect.
-  // Staff / QA traffic is excluded so it never reaches Meta.
-  const capiJobPromise = input.staff
+  // Staff / QA traffic is excluded so it never reaches Meta, and so is an
+  // agent's: the step is the agent's, not an ad-driven person's.
+  const capiJobPromise =
+    input.staff || input.agent
     ? Promise.resolve()
     : (async () => {
         try {
@@ -325,6 +329,11 @@ export async function createPaymentInvoiceWithDeps(
       })()
     : Promise.resolve();
 
+  const agentMarkerPromise =
+    input.agent && !input.staff
+      ? markAgentOrder(sb, order_ref, { product, source: input.source, host: input.host ?? null })
+      : Promise.resolve();
+
   if (!input.staff)
     void (async () => {
       try {
@@ -344,6 +353,7 @@ export async function createPaymentInvoiceWithDeps(
             client_ip: input.client_ip ?? null,
             client_ua: input.client_ua ?? null,
             page_url: input.page_url ?? null,
+            ...(input.agent ? { via_agent: true } : {}),
             ...(input.payload ?? {}),
           },
         });
@@ -359,6 +369,7 @@ export async function createPaymentInvoiceWithDeps(
   // Keep the CAPI job overlapped with the gateway call without dropping it on the floor.
   await capiJobPromise;
   await staffMarkerPromise;
+  await agentMarkerPromise;
 
   if (orderErr) {
     return {

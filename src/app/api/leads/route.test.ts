@@ -38,11 +38,11 @@ vi.mock("@/lib/api/rateLimit", async (importOriginal) => ({
 
 const { POST } = await import("./route");
 
-function post(body: unknown) {
+function post(body: unknown, extraHeaders: Record<string, string> = {}) {
   return POST(
     new NextRequest("https://www.centerway.net.ua/api/leads", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...extraHeaders },
       body: JSON.stringify(body),
     }),
   );
@@ -160,5 +160,20 @@ describe("POST /api/leads — formats of a program", () => {
     const res = await post({ name: "Олена", phone: "+380501112233", product: "way21-support" });
     expect(res.status).toBe(429);
     expect(db.tables.leads).toHaveLength(0);
+  });
+});
+
+describe("POST /api/leads — a request left by an agent", () => {
+  it("is filed and announced like any other, marked via_agent, and kept out of Meta", async () => {
+    const res = await post(
+      { name: "Олена", phone: "+380501112233", product: "way21-support", event_id: "evt-agent" },
+      { "signature-agent": '"https://chatgpt.com"' },
+    );
+    expect(res.status).toBe(200);
+
+    expect(db.tables.leads).toHaveLength(1);
+    expect((db.tables.leads![0]!.payload as Record<string, unknown>).via_agent).toBe(true);
+    expect(sendTelegramMessage).toHaveBeenCalledTimes(1);
+    expect(db.tables.jobs).toHaveLength(0);
   });
 });

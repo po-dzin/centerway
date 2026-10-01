@@ -5,6 +5,7 @@ import { persistLeadBestEffort, type LeadRecord } from "@/lib/payments/checkoutF
 import { describeOffer } from "@/lib/experiences/offers";
 import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { AGENT_COOKIE, isAgentRequest } from "@/lib/tracking/agentTraffic";
 import { upsertCustomerByContact } from "@/lib/platform/customerIdentity";
 import { applyDoshaTagsToCustomer, loadTestAttempt } from "@/lib/dosha/doshaTestRepo";
 import { isDoshaResultType, type DoshaResultType } from "@/lib/dosha/doshaTest";
@@ -152,6 +153,11 @@ export async function POST(req: NextRequest) {
       user_agent: req.headers.get("user-agent"),
     },
   };
+  /* A request left by an agent is a real request — someone asked it to — and
+     gets the same personal answer. It is marked, and its Lead stays out of
+     Meta (lib/tracking/agentTraffic). */
+  const viaAgent = isAgentRequest(req.headers, req.cookies.get(AGENT_COOKIE)?.value);
+  if (viaAgent) lead.payload.via_agent = true;
 
   const db = supabaseAdmin();
 
@@ -193,7 +199,7 @@ export async function POST(req: NextRequest) {
     return cors(NextResponse.json({ ok: false, error: "lead_persist_failed" }, { status: 500 }));
   }
 
-  if (asString(body.event_id)) {
+  if (asString(body.event_id) && !viaAgent) {
     await db.from("jobs").insert({
       type: "meta:capi",
       status: "pending",
