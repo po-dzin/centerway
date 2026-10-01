@@ -57,7 +57,7 @@ export function readAttribution(req: NextRequest): Attribution {
   };
 }
 
-function cookieDomain(req: NextRequest): string | undefined {
+export function cookieDomain(req: NextRequest): string | undefined {
   const host =
     (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "").split(":")[0]?.toLowerCase() ?? "";
   // The parent domain in production so `www.`, `my.` and the funnel hosts share

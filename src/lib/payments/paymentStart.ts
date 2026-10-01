@@ -13,6 +13,7 @@ import { buildReturnUrl, invoiceLine } from "@/lib/payments/pay";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
+import { markAgentOrder } from "@/lib/tracking/agentOrders";
 import { STAFF_CHECKOUT_EVENT } from "@/lib/tracking/staffOrders";
 
 export type PaymentStartSuccess = {
@@ -62,6 +63,7 @@ export type PaymentStartInput = {
   page_url?: string | null; // URL лендинга (event_source_url для CAPI)
   event_id?: string | null; // event_id для dedupe Pixel + CAPI (InitiateCheckout)
   staff?: boolean; // internal/QA traffic — skip Meta CAPI (InitiateCheckout)
+  agent?: boolean; // automated visitor — skip InitiateCheckout, mark the order via_agent (lib/tracking/agentTraffic)
 };
 
 type PaymentDb = ReturnType<typeof supabaseAdmin>;
@@ -233,75 +235,77 @@ export async function createPaymentInvoiceWithDeps(
 
   // Ensure exactly one server-side InitiateCheckout CAPI job per order. This is pure
   // analytics, so it runs alongside the WFP call and never blocks the redirect.
-  // Staff / QA traffic is excluded so it never reaches Meta.
-  const capiJobPromise = input.staff
-    ? Promise.resolve()
-    : (async () => {
-        try {
-          const [existingByEventIdRes, existingByOrderRefRes] = await Promise.all([
-            sb
+  // Staff / QA traffic is excluded so it never reaches Meta, and so is an
+  // agent's: the step is the agent's, not an ad-driven person's.
+  const capiJobPromise =
+    input.staff || input.agent
+      ? Promise.resolve()
+      : (async () => {
+          try {
+            const [existingByEventIdRes, existingByOrderRefRes] = await Promise.all([
+              sb
+                .from("jobs")
+                .select("id")
+                .eq("type", "meta:capi")
+                .contains("payload", { event_name: "InitiateCheckout", event_id: capiEventId })
+                .limit(1)
+                .maybeSingle(),
+              sb
+                .from("jobs")
+                .select("id")
+                .eq("type", "meta:capi")
+                .contains("payload", { event_name: "InitiateCheckout", order_ref: order_ref })
+                .limit(1)
+                .maybeSingle(),
+            ]);
+
+            const hasExistingInitiateCheckoutJob =
+              Boolean(existingByEventIdRes.data?.id) || Boolean(existingByOrderRefRes.data?.id);
+
+            if (hasExistingInitiateCheckoutJob) {
+              return;
+            }
+
+            const capiPayload: CapiEventPayload = {
+              event_name: "InitiateCheckout",
+              event_id: capiEventId,
+              event_time: Math.floor(deps.nowMs() / 1000),
+              value: amount,
+              currency: cfg.currency,
+              order_ref,
+              fbp: input.fbp ?? null,
+              fbc: input.fbc ?? null,
+              fbclid: input.fbclid ?? null,
+              ip_address: input.client_ip ?? null,
+              user_agent: input.client_ua ?? null,
+              event_source_url: input.page_url ?? null,
+              action_source: "website",
+              // The agreed reporting label, not the invoice line. This used to send
+              // the localized heading, which made the same product arrive in Meta
+              // under a different name per language and per surface.
+              content_name: cfg.pixelContentName,
+              content_type: "product",
+              content_ids: [product],
+            };
+            const { data: job } = await sb
               .from("jobs")
+              .insert({
+                type: "meta:capi",
+                payload: capiPayload,
+                status: "pending",
+              })
               .select("id")
-              .eq("type", "meta:capi")
-              .contains("payload", { event_name: "InitiateCheckout", event_id: capiEventId })
-              .limit(1)
-              .maybeSingle(),
-            sb
-              .from("jobs")
-              .select("id")
-              .eq("type", "meta:capi")
-              .contains("payload", { event_name: "InitiateCheckout", order_ref: order_ref })
-              .limit(1)
-              .maybeSingle(),
-          ]);
+              .maybeSingle();
 
-          const hasExistingInitiateCheckoutJob =
-            Boolean(existingByEventIdRes.data?.id) || Boolean(existingByOrderRefRes.data?.id);
-
-          if (hasExistingInitiateCheckoutJob) {
-            return;
+            // Fire InitiateCheckout to Meta immediately (alongside the browser Pixel event);
+            // the job row stays the durable fallback for the daily cron.
+            if (job?.id) {
+              dispatchCapiEventInline(sb, job.id, capiPayload);
+            }
+          } catch (capiErr) {
+            console.warn("capi_initiate_checkout_failed", capiErr, { order_ref });
           }
-
-          const capiPayload: CapiEventPayload = {
-            event_name: "InitiateCheckout",
-            event_id: capiEventId,
-            event_time: Math.floor(deps.nowMs() / 1000),
-            value: amount,
-            currency: cfg.currency,
-            order_ref,
-            fbp: input.fbp ?? null,
-            fbc: input.fbc ?? null,
-            fbclid: input.fbclid ?? null,
-            ip_address: input.client_ip ?? null,
-            user_agent: input.client_ua ?? null,
-            event_source_url: input.page_url ?? null,
-            action_source: "website",
-            // The agreed reporting label, not the invoice line. This used to send
-            // the localized heading, which made the same product arrive in Meta
-            // under a different name per language and per surface.
-            content_name: cfg.pixelContentName,
-            content_type: "product",
-            content_ids: [product],
-          };
-          const { data: job } = await sb
-            .from("jobs")
-            .insert({
-              type: "meta:capi",
-              payload: capiPayload,
-              status: "pending",
-            })
-            .select("id")
-            .maybeSingle();
-
-          // Fire InitiateCheckout to Meta immediately (alongside the browser Pixel event);
-          // the job row stays the durable fallback for the daily cron.
-          if (job?.id) {
-            dispatchCapiEventInline(sb, job.id, capiPayload);
-          }
-        } catch (capiErr) {
-          console.warn("capi_initiate_checkout_failed", capiErr, { order_ref });
-        }
-      })();
+        })();
 
   /* The staff flag lives in the browser, and the WayForPay webhook has no browser.
      Without a mark on the order itself, a 1 ₴ QA payment came back as a real
@@ -325,6 +329,11 @@ export async function createPaymentInvoiceWithDeps(
       })()
     : Promise.resolve();
 
+  const agentMarkerPromise =
+    input.agent && !input.staff
+      ? markAgentOrder(sb, order_ref, { product, source: input.source, host: input.host ?? null })
+      : Promise.resolve();
+
   if (!input.staff)
     void (async () => {
       try {
@@ -344,6 +353,7 @@ export async function createPaymentInvoiceWithDeps(
             client_ip: input.client_ip ?? null,
             client_ua: input.client_ua ?? null,
             page_url: input.page_url ?? null,
+            ...(input.agent ? { via_agent: true } : {}),
             ...(input.payload ?? {}),
           },
         });
@@ -359,6 +369,7 @@ export async function createPaymentInvoiceWithDeps(
   // Keep the CAPI job overlapped with the gateway call without dropping it on the floor.
   await capiJobPromise;
   await staffMarkerPromise;
+  await agentMarkerPromise;
 
   if (orderErr) {
     return {

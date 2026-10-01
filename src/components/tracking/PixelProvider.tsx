@@ -4,6 +4,7 @@ import Script from "next/script";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 
+import { isAgentBrowser } from "@/lib/tracking/agentTraffic";
 import { META_PIXEL_ID } from "@/lib/tracking/pixelId";
 
 /**
@@ -65,6 +66,15 @@ function readStaffFlag(): boolean {
   return /(?:^|;\s*)cw_staff=1(?:;|$)/.test(document.cookie || "");
 }
 
+/**
+ * Whether the Pixel stays silent: staff, or an automated visitor. An agent on
+ * checkout is not an ad-driven person and must not teach the campaigns that it
+ * is (lib/tracking/agentTraffic). Same no-op path as staff, nothing new.
+ */
+function readSilenced(): boolean {
+  return readStaffFlag() || isAgentBrowser();
+}
+
 /** Applies `?cw_staff=1|0`. The write half, kept out of render. */
 function persistStaffFlagFromUrl(search: string): void {
   let param: string | null = null;
@@ -105,7 +115,7 @@ export function PixelProvider({ pixelId = META_PIXEL_ID }: { pixelId?: string })
   /* The server snapshot is `true` — treat an unknown reader as staff. That way
      the SDK is never in the HTML, and the one frame before hydration cannot
      load a pixel for someone who opted out. */
-  const staff = useSyncExternalStore(subscribeToStaffFlag, readStaffFlag, () => true);
+  const staff = useSyncExternalStore(subscribeToStaffFlag, readSilenced, () => true);
   const initialised = useRef(false);
 
   useEffect(() => {
@@ -125,7 +135,7 @@ export function PixelProvider({ pixelId = META_PIXEL_ID }: { pixelId?: string })
      * never initialised. Purchase then "fired" into a function that does
      * nothing — the single event this whole page exists for.
      */
-    if (!readStaffFlag()) return;
+    if (!readSilenced()) return;
     /* A no-op, so every downstream fbq(...) — Purchase on the thanks page
        included — does nothing instead of throwing. */
     if (!window.fbq) window.fbq = () => {};
