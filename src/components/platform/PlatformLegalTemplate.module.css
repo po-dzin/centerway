@@ -21,3 +21,54 @@
   flex-wrap: wrap;
   gap: var(--cw-space-sm);
 }
+
+/* The full text of a legal document, set as reading text on one plate.
+   Clauses are numbered in the text itself (the numbers are part of the
+   document and are cited by number), so the lists carry no markers of
+   their own. */
+.document {
+  display: grid;
+  gap: var(--cw-space-lg);
+  max-width: 52rem;
+  padding: clamp(1.15rem, 3vw, 2rem);
+  border-radius: var(--cw-card-radius);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+  color: color-mix(in srgb, var(--cw-platform-text) 82%, var(--cw-platform-muted) 18%);
+  line-height: var(--ds-type-body-line-height);
+  overflow-wrap: anywhere;
+}
+
+.document section {
+  display: grid;
+  gap: var(--cw-space-sm);
+}
+
+.document h2 {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-lead-size);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.document p,
+.document ul {
+  margin: 0;
+}
+
+.document ul {
+  display: grid;
+  gap: var(--cw-space-xs);
+  padding: 0;
+  list-style: none;
+}
+
+.document ul li::before {
+  content: "— ";
+}
+
+.document strong {
+  color: var(--cw-platform-text);
+  font-weight: 600;
+}

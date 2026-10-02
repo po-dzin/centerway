@@ -45,7 +45,12 @@ export function organizationLd(): JsonLdNode {
     "@type": ["Organization", "EducationalOrganization"],
     "@id": ORG_ID,
     name: BRAND.name,
-    alternateName: BRAND.category,
+    // The spellings, not the category: `alternateName` is "another name for
+    // this thing", and an engine matching «центрвей» reads it as exactly that.
+    // The category moved to `disambiguatingDescription`, the field schema.org
+    // has for "which CenterWay is meant".
+    alternateName: [...BRAND.alternateNames],
+    disambiguatingDescription: BRAND.category,
     url: `${PLATFORM_ORIGIN}/`,
     logo: abs("/cw/brand/cw-icon-512.png"),
     image: abs(BRAND_COVER),
@@ -54,6 +59,7 @@ export function organizationLd(): JsonLdNode {
     knowsAbout: [...BRAND.entities],
     sameAs: [...BRAND.sameAs],
     founder: { "@id": PERSON_ID },
+    address: { "@type": "PostalAddress", addressCountry: BRAND.country },
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer support",
@@ -71,6 +77,7 @@ export function websiteLd(): JsonLdNode {
     "@id": SITE_ID,
     url: `${PLATFORM_ORIGIN}/`,
     name: BRAND.name,
+    alternateName: [...BRAND.alternateNames],
     description: BRAND.description,
     inLanguage: "uk-UA",
     publisher: { "@id": ORG_ID },

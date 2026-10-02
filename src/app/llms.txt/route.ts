@@ -106,6 +106,8 @@ export async function GET(): Promise<Response> {
     "",
     `> ${BRAND.description}`,
     "",
+    `Інші написання назви: ${BRAND.alternateNames.join(", ")}.`,
+    "",
     brandSummary(),
     "",
     "## Межі методу",
