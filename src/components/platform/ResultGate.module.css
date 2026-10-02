@@ -1,0 +1,29 @@
+/* The door between a test's verdict and its full reading — see ResultGate.tsx. */
+
+.includes {
+  display: grid;
+  gap: var(--cw-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.includes li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--cw-space-xs);
+  align-items: start;
+}
+
+.mark {
+  /* The bento's tick: ink at half strength. Gold on the paper card is under
+     3:1, and the list is a promise, not a call to act. */
+  color: color-mix(in srgb, var(--cw-platform-text) 46%, transparent);
+}
+
+.how {
+  margin: 0;
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+  color: var(--cw-platform-muted);
+}

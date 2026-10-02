@@ -94,6 +94,10 @@ export async function requestTelegramLink(attemptId: string): Promise<string | n
 export async function postAttemptEvent(attemptId: string, body: Record<string, unknown>): Promise<void> {
   await fetch(`/api/test-attempts/${attemptId}/events`, {
     method: "POST",
+    /* keepalive: the click that leads to the sign-in door navigates away in
+       the same tick, and an ordinary request dies with the page — which is why
+       the journal held not one «save» click after 2026-09-07. */
+    keepalive: true,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   }).catch(() => undefined);

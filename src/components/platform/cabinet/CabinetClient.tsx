@@ -187,7 +187,7 @@ export function CabinetClient() {
   if (gate) return gate;
   if (!profile) return null;
 
-  const { account, contacts, dosha } = profile.profile;
+  const { account, contacts, dosha, balance } = profile.profile;
 
   return (
     <main className={surfaceStyles.profileMain} data-cw-platform-template="cabinet" data-cw-hero="bleed">
@@ -320,6 +320,14 @@ export function CabinetClient() {
             ) : (
               <p className={styles.shelfCardNote}>{copy.doshaEmptyLead}</p>
             )}
+            {/* The balance test's reading rides under the constitution as one
+                line: the dosha is who you are, this is how you are now — a
+                second wheel would make the tile two results of equal weight. */}
+            {balance ? (
+              <p className={styles.shelfCardMeta}>
+                {copy.balanceNow}: {copy.balanceLabels[balance.primary]} · {fmtDate(balance.completedAt, dateLocale)}
+              </p>
+            ) : null}
             <div className={styles.shelfCardAction}>
               <Link className={dosha ? styles.actionGhost : styles.actionPrimary} href={doshaTestHref}>
                 {dosha ? copy.retakeTest : copy.startTest}

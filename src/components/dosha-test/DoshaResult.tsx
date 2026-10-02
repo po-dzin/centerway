@@ -1,7 +1,7 @@
 /* Split out of DoshaTestClient on 2026-09-13. Owns the result phase inside
    the flow panel: the profile, what it means in practice, the method's
-   boundaries, the ways to keep the result (Telegram, the cabinet), the two
-   exits and the retake. Stateless — it renders what useDoshaAttempt derived
+   boundaries, the door to the full reading (or, past it, where the result is
+   kept), the two exits and the retake. Stateless — it renders what useDoshaAttempt derived
    and fires the follow-up events through the callbacks it is handed. */
 
 import Link from "next/link";
@@ -20,8 +20,8 @@ import type {
   DoshaResultCopy,
   DoshaScores,
   EmitAttemptEvent,
-  PendingSave,
 } from "./doshaTestTypes";
+import { ResultGate } from "@/components/platform/ResultGate";
 
 /** The share row's fixed order — the order the doshas are always named in. */
 const DOSHA_SHARE_ORDER: { dosha: BaseDosha; label: string }[] = [
@@ -46,7 +46,6 @@ function doshasOfType(type: DoshaResultType): BaseDosha[] {
 type DoshaResultProps = {
   topbarBadge: string;
   uiVariant: string;
-  attemptId: string | null;
   resultType: DoshaResultType;
   resultCopy: DoshaResultCopy;
   resultHeading: string | null;
@@ -56,21 +55,21 @@ type DoshaResultProps = {
   completedAt: string | null;
   nextStep: string | null;
   totalQuestions: number;
-  isBusy: boolean;
   telegramLink: string | null;
-  isAuthEnabled: boolean;
+  /** The full reading is shown: the reader is signed in, or auth is not configured here. */
+  unlocked: boolean;
   savedToCabinet: boolean;
   hasSessionUser: boolean;
   surfaceHref: ReturnType<typeof useSurfaceHref>;
   emitAttemptEvent: EmitAttemptEvent;
-  signInWithGoogle: (pendingSave?: PendingSave) => Promise<void>;
+  /** Puts the result on the shelf the page reads back after the sign-in round trip. */
+  shelveForSignIn: () => void;
   restartTest: () => void;
 };
 
 export function DoshaResult({
   topbarBadge,
   uiVariant,
-  attemptId,
   resultType,
   resultCopy,
   resultHeading,
@@ -80,14 +79,13 @@ export function DoshaResult({
   completedAt,
   nextStep,
   totalQuestions,
-  isBusy,
   telegramLink,
-  isAuthEnabled,
+  unlocked,
   savedToCabinet,
   hasSessionUser,
   surfaceHref,
   emitAttemptEvent,
-  signInWithGoogle,
+  shelveForSignIn,
   restartTest,
 }: DoshaResultProps) {
   return (
@@ -112,94 +110,59 @@ export function DoshaResult({
         {/* The summary is paragraphs, not one string: what the type
             IS, then what it looks like out of balance. Rendered as
             one <p> the break between them collapsed into a space
-            and the two halves read as one run-on claim. */}
-        {resultCopy.summary.map((paragraph) => (
+            and the two halves read as one run-on claim.
+            Before sign-in only the first is shown: what the type is
+            is the verdict, and the verdict is free. */}
+        {(unlocked ? resultCopy.summary : resultCopy.summary.slice(0, 1)).map((paragraph) => (
           <p key={paragraph.slice(0, 32)}>{paragraph}</p>
         ))}
-        <p>{resultCopy.recommendation}</p>
+        {unlocked ? <p>{resultCopy.recommendation}</p> : null}
       </div>
 
-      <div className={styles.card} data-tone="proof">
-        <h2>Що це означає у практиці</h2>
-        <p>{resultCopy.weekVector}</p>
-        {/* Percentages, because the verdict is drawn on percentages:
-            the row used to show three near-equal counts under a
-            headline that claimed one of them dominated. */}
-        <p className={styles.doshaShareRow}>
-          {DOSHA_SHARE_ORDER.map(({ dosha, label }) => (
-            <span key={dosha} className={styles.doshaShare}>
-              <DoshaMark dosha={dosha} size={32} />
-              {label} <b>{profile.shares[dosha]}%</b>
-            </span>
-          ))}
-        </p>
-        <p className={styles.diagnosticScoreRow}>{confidenceCopy.label}</p>
-        {confidenceCopy.note ? <p>{confidenceCopy.note}</p> : null}
-      </div>
+      {unlocked ? (
+        <>
+          <div className={styles.card} data-tone="proof">
+            <h2>Що це означає у практиці</h2>
+            <p>{resultCopy.weekVector}</p>
+            {/* Percentages, because the verdict is drawn on percentages:
+                the row used to show three near-equal counts under a
+                headline that claimed one of them dominated. */}
+            <p className={styles.doshaShareRow}>
+              {DOSHA_SHARE_ORDER.map(({ dosha, label }) => (
+                <span key={dosha} className={styles.doshaShare}>
+                  <DoshaMark dosha={dosha} size={32} />
+                  {label} <b>{profile.shares[dosha]}%</b>
+                </span>
+              ))}
+            </p>
+            <p className={styles.diagnosticScoreRow}>{confidenceCopy.label}</p>
+            {confidenceCopy.note ? <p>{confidenceCopy.note}</p> : null}
+          </div>
 
-      <div className={styles.card} data-tone="policy">
-        <p className={styles.label}>Межі методу</p>
-        <p>{BOUNDARY_NOTE}</p>
-      </div>
-
-      {/* THE STEP THAT WAS MISSING. Between «I know my type» and
-          «I pay» there was nothing at all: two heavy exits and no
-          way to keep what you had just been given. Signing in here
-          is the cheap step — it saves the result, and it is the
-          first point in the journey where an account buys the
-          reader something rather than costing them the test. */}
-      <div className={styles.card} data-tone="support">
-        <p className={styles.label}>Зберегти результат</p>
-        {/* TELEGRAM FIRST, ACCOUNT SECOND. Both are the cheap step,
-            but one of them costs a tap and the other costs a
-            sign-in — and the chat works for a reader who has no
-            account and does not want one yet. */}
-        {telegramLink ? (
-          <>
-            <p>Надішлемо профіль у Telegram — щоб він залишився під рукою разом із коротким вектором на тиждень.</p>
-            <a
-              className={styles.secondaryButton}
-              href={telegramLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => {
-                void emitAttemptEvent("dosha_followup_clicked", {
-                  target: "save_result_telegram",
-                  ctaTarget: "save_result_telegram",
-                  screen: "result",
-                  step: totalQuestions,
-                  uiVariant,
-                  resultType,
-                  scores,
-                  completedAt,
-                  nextStep,
-                });
-              }}
-            >
-              Надіслати в Telegram
-            </a>
-          </>
-        ) : null}
-
-        {isAuthEnabled ? (
-          savedToCabinet || hasSessionUser ? (
-            <>
-              <p>Результат збережено у вашому кабінеті — його видно поруч із програмами і прогресом.</p>
-              <Link className={styles.diagnosticTextButton} href={surfaceHref("/profile")} data-cw-ink-control>
-                <InteractionInkLabel variant="link">Відкрити кабінет</InteractionInkLabel>
-              </Link>
-            </>
-          ) : (
-            <>
-              <p>Результат зберігається у кабінеті: до нього можна повернутись і порівняти з наступним проходженням.</p>
-              <button
-                type="button"
-                className={styles.diagnosticTextButton}
-                disabled={isBusy}
+          {/* KEPT, AND SAID SO. The result has an owner by the time
+              this renders, so there is nothing left to offer here but
+              the way to it — and Telegram, for a reader who wants the
+              profile in the chat they already use. */}
+          <div className={styles.card} data-tone="support">
+            <p className={styles.label}>Результат збережено</p>
+            <p>
+              {savedToCabinet || hasSessionUser
+                ? "Профіль у вашому кабінеті — поруч із програмами і прогресом. Наступне проходження покаже, як він змінюється."
+                : "Профіль відкрито."}
+            </p>
+            <Link className={styles.diagnosticTextButton} href={surfaceHref("/profile")} data-cw-ink-control>
+              <InteractionInkLabel variant="link">Відкрити кабінет</InteractionInkLabel>
+            </Link>
+            {telegramLink ? (
+              <a
+                className={styles.secondaryButton}
+                href={telegramLink}
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => {
                   void emitAttemptEvent("dosha_followup_clicked", {
-                    target: "save_result",
-                    ctaTarget: "save_result",
+                    target: "save_result_telegram",
+                    ctaTarget: "save_result_telegram",
                     screen: "result",
                     step: totalQuestions,
                     uiVariant,
@@ -208,16 +171,42 @@ export function DoshaResult({
                     completedAt,
                     nextStep,
                   });
-                  void signInWithGoogle(
-                    attemptId ? { attemptId, resultType, scores, completedAt, nextStep } : undefined,
-                  );
                 }}
               >
-                Зберегти у кабінеті
-              </button>
-            </>
-          )
-        ) : null}
+                Надіслати в Telegram
+              </a>
+            ) : null}
+          </div>
+        </>
+      ) : (
+        <ResultGate
+          title="Увійдіть, щоб відкрити повний профіль"
+          includes={[
+            "Частки вати, пітти й капхи — і наскільки чітко проявився ваш тип",
+            "Як тип виглядає поза рівновагою і з чого почати",
+            "Вектор на тиждень: що змінити в режимі, їжі й русі",
+            "Профіль у кабінеті — щоб порівняти з наступним проходженням",
+          ]}
+          onBeforeLeave={() => {
+            void emitAttemptEvent("dosha_followup_clicked", {
+              target: "save_result",
+              ctaTarget: "save_result",
+              screen: "result",
+              step: totalQuestions,
+              uiVariant,
+              resultType,
+              scores,
+              completedAt,
+              nextStep,
+            });
+            shelveForSignIn();
+          }}
+        />
+      )}
+
+      <div className={styles.card} data-tone="policy">
+        <p className={styles.label}>Межі методу</p>
+        <p>{BOUNDARY_NOTE}</p>
       </div>
 
       <div className={styles.panelIntro}>

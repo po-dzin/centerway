@@ -9,7 +9,6 @@ import { classifyDosha, DOSHA_MAX_CHOICES_PER_QUESTION, type DoshaResultType } f
 import { CONFIDENCE_COPY, RESULT_COPY } from "@/lib/dosha/doshaResultCopy";
 import { DOSHA_PRIMARY_EXIT } from "@/lib/dosha/doshaRouting";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
-import { supabaseClient } from "@/lib/supabaseClient";
 import { useSession } from "@/components/auth/SessionProvider";
 import {
   attachAttempt,
@@ -122,23 +121,15 @@ export function useDoshaAttempt(uiVariant: string) {
     [attemptId, phase, uiVariant],
   );
 
-  const signInWithGoogle = useCallback(async (pendingSave?: PendingSave) => {
-    if (typeof window !== "undefined" && pendingSave) {
-      window.sessionStorage.setItem(PENDING_SAVE_KEY, JSON.stringify(pendingSave));
-    }
-
-    const redirectTo =
-      typeof window !== "undefined"
-        ? `${window.location.origin}${window.location.pathname}${window.location.search}`
-        : undefined;
-
-    await supabaseClient.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo,
-      },
-    });
-  }, []);
+  /* The sign-in itself happens at the platform's door (ResultGate links to it
+     with `?next=` back here). All this page owes the round trip is the result
+     on a shelf it can read back: sessionStorage, this tab, this origin — which
+     the crossing to `my` and back leaves intact. */
+  const shelveForSignIn = useCallback(() => {
+    if (typeof window === "undefined" || !attemptId || !resultType) return;
+    const pending: PendingSave = { attemptId, resultType, scores, completedAt, nextStep };
+    window.sessionStorage.setItem(PENDING_SAVE_KEY, JSON.stringify(pending));
+  }, [attemptId, completedAt, nextStep, resultType, scores]);
 
   const loadDefinition = useCallback(
     (): Promise<TestDefinitionResponse | null> => fetchDefinition(getOrCreateSessionId()),
@@ -381,8 +372,12 @@ export function useDoshaAttempt(uiVariant: string) {
      by the server, and a `window.open` after an awaited fetch is what popup
      blockers exist to stop. By the time the reader reaches for it, it is a
      plain link. */
+  const unlocked = !isAuthEnabled || Boolean(session?.user);
+
   useEffect(() => {
-    if (phase !== "result" || !attemptId) return;
+    /* Only past the door: the Telegram button lives in the full reading, and
+       issuing a link for a locked screen would mint one nobody can press. */
+    if (phase !== "result" || !attemptId || !unlocked) return;
     let cancelled = false;
 
     void requestTelegramLink(attemptId).then((link) => {
@@ -392,7 +387,7 @@ export function useDoshaAttempt(uiVariant: string) {
     return () => {
       cancelled = true;
     };
-  }, [attemptId, phase]);
+  }, [attemptId, phase, unlocked]);
 
   useEffect(() => {
     if (phase === "result" && resultType && resultViewedSent === false) {
@@ -533,6 +528,9 @@ export function useDoshaAttempt(uiVariant: string) {
     isBusy,
     error,
     hasSessionUser: Boolean(session?.user),
+    /* Without auth configured (a bare local checkout) there is no door to
+       go through, so the reading is shown whole rather than locked forever. */
+    unlocked,
     savedToCabinet,
     telegramLink,
     surfaceHref,
@@ -549,7 +547,7 @@ export function useDoshaAttempt(uiVariant: string) {
     resultHeading,
     topbarBadge,
     emitAttemptEvent,
-    signInWithGoogle,
+    shelveForSignIn,
     requestStartTest,
     selectAnswer,
     goToStep,
