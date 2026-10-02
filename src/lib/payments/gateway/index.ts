@@ -14,7 +14,7 @@ const GATEWAYS: Record<GatewayId, PaymentGateway> = { wfp: wayforpay };
  */
 export function activeGateway(): PaymentGateway {
   const wanted = process.env.PAYMENT_GATEWAY?.trim().toLowerCase();
-  return (wanted && wanted in GATEWAYS ? GATEWAYS[wanted as GatewayId] : null) ?? wayforpay;
+  return (wanted && Object.hasOwn(GATEWAYS, wanted) ? GATEWAYS[wanted as GatewayId] : null) ?? wayforpay;
 }
 
 /**
@@ -31,5 +31,5 @@ export function storedCallbackOutcome(row: { provider?: unknown; raw_payload?: u
 
 export function gatewayFor(provider: string | null | undefined): PaymentGateway {
   const key = provider?.trim().toLowerCase();
-  return (key && key in GATEWAYS ? GATEWAYS[key as GatewayId] : null) ?? wayforpay;
+  return (key && Object.hasOwn(GATEWAYS, key) ? GATEWAYS[key as GatewayId] : null) ?? wayforpay;
 }

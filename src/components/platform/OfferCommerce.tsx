@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
 import { CheckoutStartLink } from "./CheckoutStartLink";
+import { SurfaceLink } from "./layout/SurfaceHost";
 import type { OfferCommerce } from "@/lib/platform/offerCommerce";
 import styles from "./PlatformOfferCommerce.module.css";
 import offerStyles from "./PlatformOfferStyles";
@@ -99,9 +100,11 @@ export function OfferFreePanel({
           </li>
         ))}
       </ul>
-      <Link className={styles.buyAction} href={commerce.accessHref} data-cw-offer-cta>
+      {/* Resolved against the page's origin: `accessHref` is the ROUTE
+          `/learn/<course>`, which on `www` is not where the course lives. */}
+      <SurfaceLink className={styles.buyAction} href={commerce.accessHref} data-cw-offer-cta>
         {ctaLabel}
-      </Link>
+      </SurfaceLink>
       <p className={styles.fineprint}>Якщо ви ще не увійшли, перед стартом ми попросимо вас увійти.</p>
     </article>
   );

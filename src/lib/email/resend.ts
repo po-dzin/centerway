@@ -49,6 +49,8 @@ export type SendEmailInput = {
    * days later. The caller still needs its own record for that.
    */
   idempotencyKey?: string;
+  /** Extra message headers — `List-Unsubscribe` for a broadcast, nothing for a receipt. */
+  headers?: Record<string, string>;
 };
 
 export type SendEmailResult =
@@ -77,6 +79,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
         // access link has to survive a client that refuses to render HTML.
         text: input.text,
         ...(input.replyTo ? { reply_to: input.replyTo } : {}),
+        ...(input.headers ? { headers: input.headers } : {}),
       }),
     });
 
@@ -87,6 +90,89 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
 
     const body = (await response.json().catch(() => null)) as { id?: string } | null;
     return { sent: true, id: body?.id ?? "unknown" };
+  } catch (error) {
+    return {
+      sent: false,
+      reason: "network_error",
+      detail: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+const RESEND_BATCH_ENDPOINT = "https://api.resend.com/emails/batch";
+
+/** The provider's ceiling on one batch call. */
+export const RESEND_BATCH_MAX = 100;
+
+export type SendEmailBatchResult =
+  | { sent: true; ids: string[] }
+  | {
+      sent: false;
+      reason: "missing_api_key" | "provider_error" | "rate_limited" | "provider_unavailable" | "network_error";
+      detail?: string;
+    };
+
+/**
+ * Up to a hundred messages in one request — the broadcast's sender.
+ *
+ * One call per batch instead of one per address is not only fewer round trips:
+ * the provider's rate limit counts REQUESTS, so a campaign of three hundred is
+ * three requests, not three hundred against a two-per-second ceiling.
+ *
+ * All or nothing, as the provider defines it: one invalid message fails the
+ * whole call, and the caller marks the whole batch. A 429 is its own reason so
+ * the caller can put the rows back instead of calling them failed — a daily
+ * quota is a pause, not a verdict on the addresses.
+ *
+ * Never throws, for the same reason `sendEmail` does not.
+ */
+export async function sendEmailBatch(
+  messages: Omit<SendEmailInput, "idempotencyKey">[],
+  options: { idempotencyKey?: string } = {},
+): Promise<SendEmailBatchResult> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return { sent: false, reason: "missing_api_key" };
+  if (messages.length === 0) return { sent: true, ids: [] };
+  if (messages.length > RESEND_BATCH_MAX) {
+    return { sent: false, reason: "provider_error", detail: `batch_too_large:${messages.length}` };
+  }
+
+  try {
+    const response = await fetch(RESEND_BATCH_ENDPOINT, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        ...(options.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey.slice(0, 256) } : {}),
+      },
+      body: JSON.stringify(
+        messages.map((input) => ({
+          from: input.from ?? PURCHASE_FROM,
+          to: [input.to],
+          subject: input.subject,
+          html: input.html,
+          text: input.text,
+          ...(input.replyTo ? { reply_to: input.replyTo } : {}),
+          ...(input.headers ? { headers: input.headers } : {}),
+        })),
+      ),
+    });
+
+    if (!response.ok) {
+      const detail = await response.text().catch(() => "");
+      return {
+        sent: false,
+        /* 429 and 5xx say "not now", not "not these addresses": the caller
+           puts the batch back. Only a 4xx is a verdict on the request. */
+        reason:
+          response.status === 429 ? "rate_limited" : response.status >= 500 ? "provider_unavailable" : "provider_error",
+        detail: `${response.status} ${detail.slice(0, 300)}`,
+      };
+    }
+
+    const body = (await response.json().catch(() => null)) as { data?: { id?: string }[] } | null;
+    const ids = (body?.data ?? []).map((row) => row?.id ?? "unknown");
+    return { sent: true, ids };
   } catch (error) {
     return {
       sent: false,

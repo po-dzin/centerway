@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { secretsEqual } from "@/lib/auth/secretsEqual";
 import { adminClient } from "@/lib/auth/adminClient";
 import { sendTelegramMessage } from "@/lib/telegram/tg";
 
@@ -170,7 +171,7 @@ export async function POST(req: NextRequest) {
   // Accept secret via header or query param
   const headerSecret = req.headers.get("x-sp-secret");
   const querySecret = req.nextUrl.searchParams.get("secret");
-  if (headerSecret !== secret && querySecret !== secret) {
+  if (!secretsEqual(headerSecret, secret) && !secretsEqual(querySecret, secret)) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 

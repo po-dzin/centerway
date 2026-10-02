@@ -114,3 +114,32 @@ export function eventTypeForOutcome(outcome: PaymentOutcome): "payment_paid" | "
   if (outcome === "pending") return null;
   return "payment_failed";
 }
+
+/**
+ * Does an approved callback pay for THIS order, or for some other sum?
+ *
+ * The invoice amount is signed by us when the payment starts, so a mismatch
+ * should not happen — which is exactly why it is checked. Until 2026-10-01 the
+ * webhook never compared them: `callback.amount` went to Meta and to the
+ * receipt, and the order was marked paid whatever was charged
+ * (meta-audit 2026-09-30, N2). A callback that disagrees with the order it
+ * names is not allowed to open a course; it is reported to the house instead.
+ *
+ * A side the order does not record (an old row with no amount or currency) is
+ * not a disagreement: there is nothing to compare, and refusing would lock out
+ * a buyer over our own missing column.
+ */
+export function settlementMismatch(
+  order: { amount: number | null | undefined; currency: string | null | undefined },
+  callback: { amount: number | null | undefined; currency: string | null | undefined },
+): "amount" | "currency" | null {
+  const orderCurrency = norm(order.currency ?? null)?.toUpperCase() ?? null;
+  const paidCurrency = norm(callback.currency ?? null)?.toUpperCase() ?? null;
+  if (orderCurrency && paidCurrency && orderCurrency !== paidCurrency) return "currency";
+
+  const expected = typeof order.amount === "number" && Number.isFinite(order.amount) ? order.amount : null;
+  const charged = typeof callback.amount === "number" && Number.isFinite(callback.amount) ? callback.amount : null;
+  if (expected !== null && charged !== null && Math.abs(expected - charged) >= 0.005) return "amount";
+
+  return null;
+}

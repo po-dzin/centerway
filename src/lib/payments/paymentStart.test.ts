@@ -167,6 +167,16 @@ describe("createPaymentInvoice", () => {
     expect(inserted.some((row) => row.__table === "jobs")).toBe(false);
   });
 
+  it("marks an agent's checkout via_agent and sends no InitiateCheckout, but keeps it a real order", async () => {
+    const { deps, inserted } = stubDeps();
+
+    await createPaymentInvoiceWithDeps({ offer: courseOffer, locale: "uk", source: "pay_start", agent: true }, deps);
+
+    expect(inserted.some((row) => row.type === "agent_checkout")).toBe(true);
+    expect(inserted.some((row) => row.type === "staff_checkout")).toBe(false);
+    expect(inserted.some((row) => row.__table === "jobs")).toBe(false);
+  });
+
   it("keeps the colon out of the order reference, and the product out of the guesswork", async () => {
     const { deps, fetchFn } = stubDeps();
 

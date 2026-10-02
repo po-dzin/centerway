@@ -28,9 +28,20 @@ function jsonContains(haystack: unknown, needle: unknown): boolean {
   return Object.entries(needle as Row).every(([key, value]) => jsonContains((haystack as Row)[key], value));
 }
 
+/** LIKE semantics as Postgres has them: `%` any run, `_` any one character, a backslash escapes the next. */
 function ilikeToRegExp(pattern: string): RegExp {
-  const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*");
-  return new RegExp(`^${escaped}$`, "i");
+  const literal = (char: string) => char.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  let source = "";
+  for (let i = 0; i < pattern.length; i += 1) {
+    const char = pattern.charAt(i);
+    if (char === "\\" && i + 1 < pattern.length) {
+      i += 1;
+      source += literal(pattern.charAt(i));
+    } else if (char === "%") source += ".*";
+    else if (char === "_") source += ".";
+    else source += literal(char);
+  }
+  return new RegExp(`^${source}$`, "is");
 }
 
 class FakeQuery implements PromiseLike<{

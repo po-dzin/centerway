@@ -136,7 +136,7 @@ export function OfferHeroActions({
         {buyHref.startsWith("/api/") ? (
           <CheckoutStartLink className={styles.heroPrimaryButton} href={buyHref} label={buyLabel} isPageCta={false} />
         ) : (
-          <Link className={styles.heroPrimaryButton} href={buyHref}>
+          <Link className={styles.heroPrimaryButton} href={surfaceHref(buyHref)}>
             {buyLabel}
           </Link>
         )}

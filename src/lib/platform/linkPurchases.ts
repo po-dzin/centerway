@@ -16,6 +16,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import { emailIlike, sameEmail } from "@/lib/strings";
 
 export type LinkPurchasesResult = {
   linked: number;
@@ -37,13 +38,13 @@ export async function linkPurchasesToAccount(params: {
   // account is left alone — that is a support case, not an automatic merge.
   const { data: claimable, error: readError } = await db
     .from("customers")
-    .select("id")
-    .ilike("email", email)
+    .select("id, email")
+    .ilike("email", emailIlike(email))
     .is("auth_user_id", null);
 
   if (readError) throw new Error(`link_purchases_read_failed:${readError.message}`);
 
-  const ids = (claimable ?? []).map((row) => row.id);
+  const ids = (claimable ?? []).filter((row) => sameEmail(row.email, email)).map((row) => row.id);
   if (ids.length === 0) return { linked: 0, reason: "nothing_to_link" };
 
   const { error: writeError } = await db

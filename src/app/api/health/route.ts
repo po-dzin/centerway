@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { secretsEqual } from "@/lib/auth/secretsEqual";
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -60,7 +61,7 @@ export async function GET(req: Request) {
   }
 
   const secret = process.env.CRON_SECRET;
-  const authorized = Boolean(secret) && req.headers.get("authorization") === `Bearer ${secret}`;
+  const authorized = Boolean(secret) && secretsEqual(req.headers.get("authorization"), `Bearer ${secret}`);
 
   const body: Record<string, unknown> = { ok: dbUp, db: dbUp ? "up" : "down", ts };
 

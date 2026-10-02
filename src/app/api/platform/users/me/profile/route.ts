@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
+import { emailIlike, sameEmail } from "@/lib/strings";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { getOfferMeta } from "@/lib/platform/profile";
 
@@ -35,17 +36,21 @@ export async function GET(req: NextRequest) {
     .eq("auth_user_id", user.id)
     .limit(1)
     .maybeSingle();
-  const customerFallbackQuery = normalizedEmail
-    ? db
-        .from("customers")
-        .select("id, auth_user_id, email, phone, tg_id, display_name")
-        .ilike("email", normalizedEmail)
-        .limit(1)
-        .maybeSingle()
-    : Promise.resolve({ data: null, error: null });
+  // The email fallback hands over a customer's phone and Telegram, so it runs
+  // only on an address the identity provider verified — the same rule
+  // entitlement and purchase linking follow.
+  const customerFallbackQuery =
+    normalizedEmail && user.email_confirmed_at
+      ? db
+          .from("customers")
+          .select("id, auth_user_id, email, phone, tg_id, display_name")
+          .ilike("email", emailIlike(normalizedEmail))
+          .limit(5)
+      : Promise.resolve({ data: [], error: null });
 
   const [customerByAuth, customerByEmail] = await Promise.all([customerQuery, customerFallbackQuery]);
-  const customer = customerByAuth.data ?? customerByEmail.data ?? null;
+  const customer =
+    customerByAuth.data ?? (customerByEmail.data ?? []).find((row) => sameEmail(row.email, normalizedEmail)) ?? null;
 
   /* The @handle, read through the bot's own record of the chat rather than
      copied onto the customer.

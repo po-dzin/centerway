@@ -47,6 +47,10 @@ export function servesEveryPath(rawHost: string | null | undefined): boolean {
  */
 export function resolveSurfaceHref(path: string, rawHost: string | null | undefined): string {
   if (/^https?:\/\//i.test(path)) return path;
+  // A same-page reference — `#formats`, `?tab=done` — names no origin, and
+  // absolutising it on a funnel host would navigate away from the page it
+  // points into. Callers that take an href of either kind pass both through.
+  if (path.startsWith("#") || path.startsWith("?")) return path;
   if (servesEveryPath(rawHost)) return path;
 
   const host = normalizeHost(rawHost);
