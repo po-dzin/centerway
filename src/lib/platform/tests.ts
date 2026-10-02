@@ -151,10 +151,10 @@ export const testsHubCopy = {
   activeLabel: "Доступні тести",
   activeTitle: "З чого можна почати вже зараз",
   /* The note that used to stand under the cards («Ці тести ще збираються…»)
-     said again what the label and the «Скоро» buttons already say; the one
-     thing it added — what covers these questions meanwhile — rides on the
-     label now. */
-  plannedLabel: "Готуються · частину вже закриває тест доші",
+     said again what the label and the «Скоро» buttons already say, and its
+     «meanwhile the dosha test covers part of this» set one test up as a
+     stand-in for another. Each test answers its own question. */
+  plannedLabel: "Готуються",
   plannedTitle: "Наступні зрізи стану",
   bridgeLabel: "Жива діагностика",
   bridgeTitle: "Коли тесту недостатньо",
