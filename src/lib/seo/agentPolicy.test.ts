@@ -62,3 +62,10 @@ describe("renderRobots", () => {
     expect(CONTENT_SIGNAL).toContain("ai-input=yes");
   });
 });
+
+describe("Gemini", () => {
+  it("is not refused: Google-Extended also gates Gemini reading a page for a person", () => {
+    expect(TRAINING_CRAWLERS as readonly string[]).not.toContain("Google-Extended");
+    expect(renderRobots({ personal: false })).not.toContain("Google-Extended");
+  });
+});
