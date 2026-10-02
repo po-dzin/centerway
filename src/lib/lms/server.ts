@@ -707,7 +707,7 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
   const courses = await listLiveCourses();
 
   // Who authored each course, for the DRAFT-visibility question below. A
-  // narrower question than "may preview live content": a coach previewing an
+  // narrower question than "may preview live content": an author previewing an
   // unfinished course they did not write is reading someone else's unreviewed
   // draft, not testing their own material.
   const { data: courseAuthorRows } = await db.from("lms_courses").select("id, author_id, experience_id");
@@ -856,13 +856,13 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
       const state = row || plan.grant || free ? accessStateOf(projected, now) : null;
       const open = state === "active";
 
-      // A draft is visible to an admin (house-wide oversight), to a coach who
-      // authored it (previewing their own unfinished work), and to anyone
+      // A draft is visible to an admin (house-wide oversight), to its author
+      // (previewing their own unfinished work, whatever their role), and to anyone
       // holding a manual grant — the grant IS the enrollment row, so its
       // presence is the check. `support` is NOT included: seeing every draft
       // in the platform is an oversight power, not a support one, and support
       // already has the admin catalogue for that (2026-08-29).
-      const ownDraft = role === "coach" && authorByCourse.get(course.id) === identity.authUserId;
+      const ownDraft = authorByCourse.get(course.id) === identity.authUserId;
       if (course.status !== "published" && !(row && open) && !admin && !ownDraft) return null;
 
       const expiresAt = projected.expiresAt ?? null;

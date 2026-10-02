@@ -215,7 +215,7 @@ function seed() {
     ],
     user_roles: [
       { user_id: ADMIN, role: "admin", updated_at: daysAgo(30) },
-      { user_id: "auth-coach", role: "coach", updated_at: daysAgo(10) },
+      { user_id: "auth-coach", role: "support", updated_at: daysAgo(10) },
       { user_id: "auth-1", role: "user", updated_at: daysAgo(5) },
     ],
     customers: [{ id: "cus-1", email: "learner@example.com", auth_user_id: null, created_at: daysAgo(70) }],
@@ -470,13 +470,13 @@ describe("listPeople — the account side", () => {
   });
 
   it("narrows to one named role", async () => {
-    const { items } = await listPeople({ limit: 50, offset: 0, role: "coach" });
+    const { items } = await listPeople({ limit: 50, offset: 0, role: "support" });
     expect(items.map((row) => row.email)).toEqual(["coach@example.com"]);
   });
 
   it("carries what a person authors, which used to live only in the Roles table", async () => {
-    const { items } = await listPeople({ limit: 50, offset: 0, role: "coach" });
-    expect(items[0]).toMatchObject({ role: "coach", ownedCourses: 1 });
+    const { items } = await listPeople({ limit: 50, offset: 0, role: "support" });
+    expect(items[0]).toMatchObject({ role: "support", ownedCourses: 1 });
     expect(items[0]!.courses).toEqual([]);
   });
 
@@ -509,7 +509,7 @@ describe("listPeople — the account side", () => {
 
     expect(byEmail.get("learner@example.com")).toMatchObject({ role: "user", purchases: 1 });
     expect(byEmail.get("learner@example.com")!.courses).toHaveLength(1);
-    expect(byEmail.get("coach@example.com")).toMatchObject({ role: "coach", purchases: 0 });
+    expect(byEmail.get("coach@example.com")).toMatchObject({ role: "support", purchases: 0 });
     expect(byEmail.get("coach@example.com")!.courses).toEqual([]);
     // No `user_roles` row at all — most people — reads as null, not as a
     // missing account.
@@ -918,8 +918,8 @@ describe("setRole", () => {
   });
 
   it("creates the row for an account that has no role yet", async () => {
-    await setRole({ email: "fresh@example.com", role: "coach", actorId: ADMIN });
-    expect(db.rows("user_roles").find((row) => row.user_id === "auth-3")).toMatchObject({ role: "coach" });
+    await setRole({ email: "fresh@example.com", role: "support", actorId: ADMIN });
+    expect(db.rows("user_roles").find((row) => row.user_id === "auth-3")).toMatchObject({ role: "support" });
     expect((auditRows()[0] as { metadata: Row }).metadata).toMatchObject({ role_before: null });
   });
 

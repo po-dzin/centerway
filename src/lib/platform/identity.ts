@@ -2,7 +2,6 @@
 const ROLE_LABELS: Record<string, string> = {
   admin: "Адміністратор",
   support: "Підтримка",
-  coach: "Куратор",
 };
 
 /** A plain learner needs no redundant "Користувач" tag. */

@@ -730,7 +730,7 @@ function PeopleTab({
             </label>
 
             {/* Beside "create the account", because that is when it
-                        matters: a brand-new coach or author had to be made here,
+                        matters: a brand-new support or admin account had to be made here,
                         then found again on another tab to be given their role.
                         Admin-only — the roles API refuses `support`, and a
                         control that 403s is worse than no control. */}
@@ -776,7 +776,7 @@ function PeopleTab({
 
       {/* THE FACETS, in the order a question is usually asked: who, then
                 what they hold, then which course. Each resets the page — page 3
-                of "everybody" is not page 3 of "coaches". */}
+                of "everybody" is not page 3 of "admins". */}
       <div className={controls.fields}>
         <AdminSearchInput
           value={q}
