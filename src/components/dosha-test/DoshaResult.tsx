@@ -21,7 +21,8 @@ import type {
   DoshaScores,
   EmitAttemptEvent,
 } from "./doshaTestTypes";
-import { ResultGate, resultTeaserClassName } from "@/components/platform/ResultGate";
+import { ResultGate } from "@/components/platform/ResultGate";
+import { leadSentences } from "@/lib/tests/keptResult";
 
 /** The share row's fixed order — the order the doshas are always named in. */
 const DOSHA_SHARE_ORDER: { dosha: BaseDosha; label: string }[] = [
@@ -62,8 +63,8 @@ type DoshaResultProps = {
   hasSessionUser: boolean;
   surfaceHref: ReturnType<typeof useSurfaceHref>;
   emitAttemptEvent: EmitAttemptEvent;
-  /** Puts the result on the shelf the page reads back after the sign-in round trip. */
-  shelveForSignIn: () => void;
+  /** Claims the attempt again after a failed save. */
+  retrySave: () => Promise<void>;
   restartTest: () => void;
 };
 
@@ -85,7 +86,7 @@ export function DoshaResult({
   hasSessionUser,
   surfaceHref,
   emitAttemptEvent,
-  shelveForSignIn,
+  retrySave,
   restartTest,
 }: DoshaResultProps) {
   return (
@@ -121,7 +122,7 @@ export function DoshaResult({
         {unlocked ? (
           resultCopy.summary.map((paragraph) => <p key={paragraph.slice(0, 32)}>{paragraph}</p>)
         ) : (
-          <p className={resultTeaserClassName}>{resultCopy.summary[0]}</p>
+          <p>{leadSentences(resultCopy.summary[0] ?? "")}</p>
         )}
         {unlocked ? <p>{resultCopy.recommendation}</p> : null}
       </div>
@@ -146,53 +147,62 @@ export function DoshaResult({
             {confidenceCopy.note ? <p>{confidenceCopy.note}</p> : null}
           </div>
 
-          {/* KEPT, AND SAID SO. The result has an owner by the time
-              this renders, so there is nothing left to offer here but
-              the way to it — and Telegram, for a reader who wants the
-              profile in the chat they already use. */}
-          <div className={styles.card} data-tone="support">
-            <p className={styles.label}>Результат збережено</p>
-            <p>
-              {savedToCabinet || hasSessionUser
-                ? "Профіль у вашому кабінеті — поруч із програмами і прогресом. Наступне проходження покаже, як він змінюється."
-                : "Профіль відкрито."}
-            </p>
-            <Link className={styles.diagnosticTextButton} href={surfaceHref("/profile")} data-cw-ink-control>
-              <InteractionInkLabel variant="link">Відкрити кабінет</InteractionInkLabel>
-            </Link>
-            {telegramLink ? (
-              <a
-                className={styles.secondaryButton}
-                href={telegramLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => {
-                  void emitAttemptEvent("dosha_followup_clicked", {
-                    target: "save_result_telegram",
-                    ctaTarget: "save_result_telegram",
-                    screen: "result",
-                    step: totalQuestions,
-                    uiVariant,
-                    resultType,
-                    scores,
-                    completedAt,
-                    nextStep,
-                  });
-                }}
-              >
-                Надіслати в Telegram
-              </a>
-            ) : null}
-          </div>
+          {/* SAVED ONLY WHEN THE SERVER SAID SO. «Результат збережено»
+              is printed from the claim's answer, not from the presence
+              of a session; a failed claim says so and offers the retry.
+              Without a session (auth not configured here) there is
+              nothing to say about keeping, so the card is absent. */}
+          {hasSessionUser ? (
+            <div className={styles.card} data-tone="support">
+              <p className={styles.label}>{savedToCabinet ? "Результат збережено" : "Не вдалося зберегти"}</p>
+              <p>
+                {savedToCabinet
+                  ? "Профіль у вашому кабінеті — поруч із програмами і прогресом. Наступне проходження покаже, як він змінюється."
+                  : "Профіль відкрито, але в кабінет він ще не потрапив."}
+              </p>
+              {savedToCabinet ? (
+                <Link className={styles.diagnosticTextButton} href={surfaceHref("/profile")} data-cw-ink-control>
+                  <InteractionInkLabel variant="link">Відкрити кабінет</InteractionInkLabel>
+                </Link>
+              ) : (
+                <button type="button" className={styles.diagnosticTextButton} onClick={() => void retrySave()}>
+                  Спробувати ще раз
+                </button>
+              )}
+              {telegramLink ? (
+                <a
+                  className={styles.secondaryButton}
+                  href={telegramLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => {
+                    void emitAttemptEvent("dosha_followup_clicked", {
+                      target: "save_result_telegram",
+                      ctaTarget: "save_result_telegram",
+                      screen: "result",
+                      step: totalQuestions,
+                      uiVariant,
+                      resultType,
+                      scores,
+                      completedAt,
+                      nextStep,
+                    });
+                  }}
+                >
+                  Надіслати в Telegram
+                </a>
+              ) : null}
+            </div>
+          ) : null}
         </>
       ) : (
         <ResultGate
-          title="Увійдіть, щоб відкрити повний профіль"
+          title="Увійдіть — і повний профіль відкриється тут"
           includes={["Співвідношення дош", "Ваш тип поза рівновагою", "Вектор на тиждень", "Профіль у кабінеті"]}
-          onBeforeLeave={() => {
+          onSignInStart={(method) => {
             void emitAttemptEvent("dosha_followup_clicked", {
-              target: "save_result",
-              ctaTarget: "save_result",
+              target: `save_result_${method}`,
+              ctaTarget: `save_result_${method}`,
               screen: "result",
               step: totalQuestions,
               uiVariant,
@@ -201,7 +211,6 @@ export function DoshaResult({
               completedAt,
               nextStep,
             });
-            shelveForSignIn();
           }}
         />
       )}

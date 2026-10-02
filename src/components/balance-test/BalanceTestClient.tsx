@@ -25,7 +25,8 @@ import { DoshaMark } from "@/components/platform/DoshaMark";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "@/components/platform/PlatformDiagnosticStyles";
 import { ProgressRail } from "@/components/platform/ProgressRail";
-import { ResultGate, resultTeaserClassName } from "@/components/platform/ResultGate";
+import { ResultGate } from "@/components/platform/ResultGate";
+import { keepResult, leadSentences, readKeptResult } from "@/lib/tests/keptResult";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import {
   BALANCE_BOUNDARY_NOTE,
@@ -59,11 +60,13 @@ function marksOf(type: BalanceType): BaseDosha[] {
   return type === "balance" ? ["vata", "pitta", "kapha"] : [type];
 }
 
-/** The result shelved across the sign-in round trip — this tab, this origin. */
-const PENDING_KEY = "cw_balance_pending_v1";
+/* The finished result, kept for a day (lib/tests/keptResult): a reload, a Back
+   from a sign-in, or a visit later brings it back. Replaced only when the next
+   run finishes, so a retake never costs the result it started from. */
+const KEPT_KEY = "cw_balance_result_v1";
 const SESSION_KEY = "cw_balance_session_v1";
 
-type PendingBalance = { attemptId: string | null; answers: Record<string, BalanceType>; seed: string };
+type KeptBalance = { attemptId: string | null; answers: Record<string, BalanceType>; seed: string };
 
 const isAuthEnabled = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
@@ -99,7 +102,9 @@ export default function BalanceTestClient({ author = null }: { author?: Author |
      they left it, and changing it replaces the old one. */
   const [answers, setAnswers] = useState<Record<string, BalanceType>>({});
   const [seed, setSeed] = useState<string>("");
-  const [attemptId, setAttemptId] = useState<string | null>(null);
+  /* The attempt belongs to an account — from the server's answer, never from
+     the mere presence of a session. */
+  const [saved, setSaved] = useState(false);
   const flowRef = useRef<HTMLElement>(null);
   const { session, status } = useSession();
   const signedIn = Boolean(session?.user);
@@ -117,89 +122,107 @@ export default function BalanceTestClient({ author = null }: { author?: Author |
     flowRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
   }, [phase, step]);
 
-  /* BACK FROM THE DOOR. The reader left from the gate with the result on the
-     shelf; once the session exists, put the result back on screen and hand the
-     attempt to the account. A claim that fails leaves the result open anyway —
-     the reader did sign in — and the row stays anonymous. */
-  const restorePending = useCallback(async () => {
-    if (typeof window === "undefined") return;
-    const raw = window.sessionStorage.getItem(PENDING_KEY);
-    if (!raw) return;
-    window.sessionStorage.removeItem(PENDING_KEY);
-    let pending: PendingBalance | null = null;
-    try {
-      pending = JSON.parse(raw) as PendingBalance;
-    } catch {
-      return;
-    }
-    if (!pending?.answers || Object.keys(pending.answers).length !== TOTAL) return;
+  const phaseRef = useRef<Phase>("intro");
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
-    /* The claim first, then the screen — the order the dosha test keeps too:
-       the result appears already owned, a beat after the page settles. */
-    let ownedId = pending.attemptId;
-    if (pending.attemptId) {
-      await authorizedFetch(`/api/test-attempts/${pending.attemptId}/attach`, { method: "POST" }).catch(() => null);
-    } else {
-      /* The door was pressed before the anonymous save came back (or it
-         failed): store it now, signed in, so it is owned from the start. */
-      const res = await authorizedFetch(`/api/tests/${BALANCE_TEST_SLUG}/complete`, {
-        method: "POST",
-        body: JSON.stringify({ sessionId: sessionIdForAttempts(), answers: answerCodes(pending.answers) }),
-      }).catch(() => null);
-      const data = res?.ok ? ((await res.json()) as { attemptId?: string }) : null;
-      ownedId = data?.attemptId ?? null;
+  /* Hands the kept attempt to the signed-in account: the anonymous row is
+     attached, or — when the anonymous save never came back — the answers are
+     stored now, owned from the start. True when the server agreed. */
+  const claimKept = useCallback(async (kept: KeptBalance): Promise<string | null> => {
+    if (kept.attemptId) {
+      const res = await authorizedFetch(`/api/test-attempts/${kept.attemptId}/attach`, { method: "POST" }).catch(
+        () => null,
+      );
+      return res?.ok ? kept.attemptId : null;
     }
-
-    setSeed(pending.seed);
-    setAnswers(pending.answers);
-    setAttemptId(ownedId);
-    setStep(TOTAL - 1);
-    setPhase("result");
+    const res = await authorizedFetch(`/api/tests/${BALANCE_TEST_SLUG}/complete`, {
+      method: "POST",
+      body: JSON.stringify({ sessionId: sessionIdForAttempts(), answers: answerCodes(kept.answers) }),
+    }).catch(() => null);
+    const data = res?.ok ? ((await res.json()) as { attemptId?: string }) : null;
+    return data?.attemptId ?? null;
   }, []);
 
-  useEffect(() => {
-    if (status !== "signed-in") return;
-    void (async () => {
-      await restorePending();
-    })();
-  }, [status, restorePending]);
+  /* THE RESULT COMES BACK, WHATEVER HAPPENED IN BETWEEN — see the dosha
+     test's restore, which this mirrors. A retake in progress is left alone. */
+  const restoreKept = useCallback(
+    async (isSignedIn: boolean) => {
+      if (phaseRef.current === "question") return;
+      const kept = readKeptResult<KeptBalance>(KEPT_KEY);
+      if (!kept || Object.keys(kept.result.answers ?? {}).length !== TOTAL) return;
 
+      let claimed = kept.claimed;
+      if (isSignedIn && !claimed) {
+        const owned = await claimKept(kept.result);
+        if (owned) {
+          claimed = true;
+          keepResult<KeptBalance>(KEPT_KEY, { ...kept.result, attemptId: owned }, true, kept.savedAt);
+        }
+      } else {
+        await Promise.resolve();
+      }
+
+      setSeed(kept.result.seed);
+      setAnswers(kept.result.answers);
+      setSaved(claimed);
+      setStep(TOTAL - 1);
+      setPhase("result");
+    },
+    [claimKept],
+  );
+
+  useEffect(() => {
+    if (status === "loading") return;
+    void (async () => {
+      await restoreKept(status === "signed-in");
+    })();
+  }, [status, restoreKept]);
+
+  const retrySave = useCallback(async () => {
+    const kept = readKeptResult<KeptBalance>(KEPT_KEY);
+    if (!kept) return;
+    const owned = await claimKept(kept.result);
+    if (owned) {
+      keepResult<KeptBalance>(KEPT_KEY, { ...kept.result, attemptId: owned }, true, kept.savedAt);
+      setSaved(true);
+    }
+  }, [claimKept]);
+
+  /* A retake starts clean on screen but leaves the kept result in place: it
+     is replaced only when this run finishes. */
   const start = useCallback(() => {
     setSeed(newSeed());
     setAnswers({});
-    setAttemptId(null);
+    setSaved(false);
     setStep(0);
     setPhase("question");
   }, []);
 
   /* The last answer shows the verdict at once, from the local reading, and
-     sends the attempt in the background: the free part of the screen does not
-     wait on the network, and a failed save costs the reader nothing they can
-     see before the door. */
+     keeps it before anything else; the attempt goes to the server in the
+     background — completed while signed in, it is owned from the start. */
   const finish = useCallback(() => {
     setPhase("result");
+    keepResult<KeptBalance>(KEPT_KEY, { attemptId: null, answers, seed }, false);
     void authorizedFetch(`/api/tests/${BALANCE_TEST_SLUG}/complete`, {
       method: "POST",
       body: JSON.stringify({ sessionId: sessionIdForAttempts(), answers: answerCodes(answers) }),
     })
       .then(async (res) => (res.ok ? ((await res.json()) as { attemptId?: string }) : null))
-      .then((data) => setAttemptId(data?.attemptId ?? null))
-      .catch(() => setAttemptId(null));
-  }, [answers]);
+      .then((data) => {
+        const id = data?.attemptId ?? null;
+        setSaved(Boolean(id) && signedIn);
+        if (id) keepResult<KeptBalance>(KEPT_KEY, { attemptId: id, answers, seed }, signedIn);
+      })
+      .catch(() => undefined);
+  }, [answers, seed, signedIn]);
 
   const goForward = useCallback(() => {
     if (step + 1 < TOTAL) setStep(step + 1);
     else finish();
   }, [finish, step]);
-
-  const shelveForSignIn = useCallback(() => {
-    try {
-      const pending: PendingBalance = { attemptId, answers, seed };
-      window.sessionStorage.setItem(PENDING_KEY, JSON.stringify(pending));
-    } catch {
-      // Storage refused: the reader signs in and comes back to the intro.
-    }
-  }, [answers, attemptId, seed]);
 
   const goBack = useCallback(() => {
     if (step > 0) setStep(step - 1);
@@ -290,8 +313,9 @@ export default function BalanceTestClient({ author = null }: { author?: Author |
               secondary={reading.secondary}
               scores={reading.scores}
               unlocked={unlocked}
-              saved={signedIn}
-              onBeforeSignIn={shelveForSignIn}
+              signedIn={signedIn}
+              saved={saved}
+              onRetrySave={() => void retrySave()}
               onRestart={start}
             />
           ) : null}
@@ -334,8 +358,9 @@ function BalanceResult({
   secondary,
   scores,
   unlocked,
+  signedIn,
   saved,
-  onBeforeSignIn,
+  onRetrySave,
   onRestart,
 }: {
   primary: BalanceType;
@@ -343,9 +368,10 @@ function BalanceResult({
   scores: Record<BalanceType, number>;
   /** The full reading is shown: signed in, or no auth configured here. */
   unlocked: boolean;
-  /** Signed in, so the attempt has an owner and lives in the cabinet. */
+  signedIn: boolean;
+  /** The server confirmed the attempt belongs to the account. */
   saved: boolean;
-  onBeforeSignIn: () => void;
+  onRetrySave: () => void;
   onRestart: () => void;
 }) {
   const surfaceHref = useSurfaceHref();
@@ -371,12 +397,18 @@ function BalanceResult({
           </span>
           <h2>{copy.title}</h2>
         </div>
-        <p className={styles.label}>{copy.image}</p>
+        {/* The image line waits for the full reading: before sign-in the
+            quote carries the image, and the screen has to fit one phone. */}
+        {unlocked ? <p className={styles.label}>{copy.image}</p> : null}
         <blockquote>
           <p>
-            <i className={unlocked ? undefined : resultTeaserClassName}>«{copy.quote}»</i>
+            <i>«{copy.quote}»</i>
           </p>
         </blockquote>
+        {/* THE MEANING IS PART OF THE VERDICT. Before sign-in the reader gets
+            the quote whole and the first sentence of what the state is — a
+            name without its meaning is a label, not a result. */}
+        {unlocked ? null : <p>{leadSentences(copy.summary, 60)}</p>}
         {unlocked ? (
           <>
             <p>{copy.summary}</p>
@@ -425,21 +457,33 @@ function BalanceResult({
             </details>
           ) : null}
 
-          {saved ? (
+          {/* Printed from the server's answer (see `saved`); a failed claim
+              says so and offers the retry. No session, nothing to say. */}
+          {signedIn ? (
             <div className={styles.card} data-tone="support">
-              <p className={styles.label}>Результат збережено</p>
-              <p>Стан у вашому кабінеті. Пройдіть тест знову за кілька тижнів — і побачите, що змінилося.</p>
-              <Link className={styles.diagnosticTextButton} href={surfaceHref("/profile")} data-cw-ink-control>
-                <InteractionInkLabel variant="link">Відкрити кабінет</InteractionInkLabel>
-              </Link>
+              <p className={styles.label}>{saved ? "Результат збережено" : "Не вдалося зберегти"}</p>
+              <p>
+                {saved
+                  ? "Стан у вашому кабінеті. Пройдіть тест знову за кілька тижнів — і побачите, що змінилося."
+                  : "Результат відкрито, але в кабінет він ще не потрапив."}
+              </p>
+              {saved ? (
+                <Link className={styles.diagnosticTextButton} href={surfaceHref("/profile")} data-cw-ink-control>
+                  <InteractionInkLabel variant="link">Відкрити кабінет</InteractionInkLabel>
+                </Link>
+              ) : (
+                <button type="button" className={styles.diagnosticTextButton} onClick={onRetrySave}>
+                  Спробувати ще раз
+                </button>
+              )}
             </div>
           ) : null}
         </>
       ) : (
         <ResultGate
-          title="Увійдіть, щоб відкрити повний результат"
-          includes={["Що означає ваш стан", "Що допоможе зараз", "Друга доша, якщо помітна", "Результат у кабінеті"]}
-          onBeforeLeave={onBeforeSignIn}
+          title="Увійдіть — і повний результат відкриється тут"
+          includes={["Повний опис стану", "Що допоможе зараз", "Друга доша, якщо помітна", "Результат у кабінеті"]}
+          onSignInStart={() => undefined}
         />
       )}
 

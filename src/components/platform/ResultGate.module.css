@@ -2,7 +2,7 @@
 
 .includes {
   display: grid;
-  gap: var(--cw-space-xs);
+  gap: var(--cw-space-2xs);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -16,9 +16,9 @@
 }
 
 .mark {
-  /* The bento's tick: ink at half strength. Gold on the paper card is under
-     3:1, and the list is a promise, not a call to act. */
-  color: color-mix(in srgb, var(--cw-platform-text) 46%, transparent);
+  /* A lock, not a tick: these are what the reader does NOT have yet, and a
+     tick reads as done. Ink at 62% keeps the glyph above 3:1 on the card. */
+  color: color-mix(in srgb, var(--cw-platform-text) 62%, transparent);
 }
 
 .how {
@@ -28,10 +28,23 @@
   color: var(--cw-platform-muted);
 }
 
-.teaser {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  overflow: hidden;
+/* Google as the one button, the emailed code as a quiet line under it. */
+.ways {
+  display: grid;
+  justify-items: start;
+  gap: var(--cw-space-xs);
+}
+
+/* A word in the sentence that acts: the platform's link rule (ink underline
+   at rest), not a button shape. Padded so the target is taller than the line. */
+.inlineWay {
+  padding: var(--cw-space-2xs) 0;
+  border: 0;
+  background: none;
+  color: var(--cw-platform-text);
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--cw-nav-marker);
+  text-underline-offset: 0.2em;
+  cursor: pointer;
 }

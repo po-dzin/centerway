@@ -11,59 +11,91 @@
  * with the next run. The optional «save» that stood here instead was pressed
  * by nobody for three weeks, and no anonymous result reached an account.
  *
- * THE PLATFORM'S DOOR, NOT A GOOGLE BUTTON. The link goes to the cabinet's
- * sign-in wall with `?next=` set to this page (`useSignInHref`), so the reader
- * can use Google or an emailed code, and comes back here when the session
- * exists. The caller's `onBeforeLeave` runs on the click, before the page
- * goes: it shelves the result in sessionStorage so the page can put it back
- * and hand the attempt to the account on return.
+ * SIGN-IN HAPPENS HERE, NOT IN THE CABINET (second pass, same day). The first
+ * version linked to the cabinet's wall on `my` — another host, a heading about
+ * purchases, an email hint about payment, and no way back to the result. Now
+ * the card itself is the door: Google returns to this very address, and the
+ * emailed code is typed into this card, so the reader never leaves the page
+ * their result lives on. Either way the session appears, the page sees it,
+ * claims the attempt and opens the reading in place.
+ *
+ * The result does not depend on this click: the page keeps it for a day from
+ * the moment the test finished (lib/tests/keptResult), so a reader who
+ * hesitates, goes back or closes the tab loses nothing.
  */
 
+import { useState } from "react";
+
+import { EmailSignIn } from "@/components/auth/EmailSignIn";
 import { Icon } from "@/components/Icon";
-import { useSignInHref } from "@/components/auth/useSignInReturn";
-import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import styles from "@/components/platform/PlatformDiagnosticStyles";
+import { googleQueryParams, readLastAccount } from "@/lib/auth/lastAccount";
+import { supabaseClient } from "@/lib/supabaseClient";
 import gate from "./ResultGate.module.css";
-
-/**
- * The verdict's text before sign-in, held to three lines. The locked screen —
- * verdict and door — has to fit one phone screen; the full text is what the
- * door opens.
- */
-export const resultTeaserClassName = gate.teaser;
 
 export function ResultGate({
   title,
   includes,
-  onBeforeLeave,
+  onSignInStart,
 }: {
   title: string;
   /** What opens after sign-in: four short lines, one row each on a phone, so
       the verdict and the door fit one screen. */
   includes: readonly string[];
-  onBeforeLeave: () => void;
+  /** Fired as the reader chooses a way in — for the attempt's event log. */
+  onSignInStart: (method: "google" | "email") => void;
 }) {
-  const surfaceHref = useSurfaceHref();
-  const href = useSignInHref(surfaceHref("/profile"));
+  const [withEmail, setWithEmail] = useState(false);
+
+  const signInWithGoogle = async () => {
+    onSignInStart("google");
+    const last = readLastAccount();
+    await supabaseClient.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.href,
+        queryParams: googleQueryParams(last?.email ? { loginHint: last.email } : undefined),
+      },
+    });
+  };
 
   return (
-    <div className={styles.card} data-tone="support" data-cw-result-gate="">
-      <p className={styles.label}>Повний результат</p>
+    <div className={styles.card} data-tone="proof" data-cw-result-gate="">
       <h2>{title}</h2>
       <ul className={gate.includes}>
         {includes.map((line) => (
           <li key={line}>
-            <Icon name="check" size={20} className={gate.mark} />
+            <Icon name="lock" size={18} className={gate.mark} />
             <span>{line}</span>
           </li>
         ))}
       </ul>
-      <div className={styles.diagnosticActions}>
-        <a className={styles.primaryButton} href={href} onClick={onBeforeLeave}>
-          Увійти і відкрити
-        </a>
-      </div>
-      <p className={gate.how}>Google або код на пошту — і ви повернетеся сюди.</p>
+      {withEmail ? (
+        <EmailSignIn hint="Надішлемо код із шести цифр — пароль не потрібен." onBack={() => setWithEmail(false)} />
+      ) : (
+        <div className={gate.ways}>
+          <button type="button" className={styles.primaryButton} onClick={() => void signInWithGoogle()}>
+            Продовжити з Google
+          </button>
+          {/* The second way in is a line, not a second button: one tap is the
+              common path, and a full-height button under it pushed the door
+              past a phone's first screen. */}
+          <p className={gate.how}>
+            Або{" "}
+            <button
+              type="button"
+              className={gate.inlineWay}
+              onClick={() => {
+                onSignInStart("email");
+                setWithEmail(true);
+              }}
+            >
+              кодом на пошту
+            </button>
+            , без пароля.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

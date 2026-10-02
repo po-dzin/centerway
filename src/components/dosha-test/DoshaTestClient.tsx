@@ -97,7 +97,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, author
                   hasSessionUser={attempt.hasSessionUser}
                   surfaceHref={attempt.surfaceHref}
                   emitAttemptEvent={attempt.emitAttemptEvent}
-                  shelveForSignIn={attempt.shelveForSignIn}
+                  retrySave={attempt.retrySave}
                   restartTest={attempt.restartTest}
                 />
               ) : null}
