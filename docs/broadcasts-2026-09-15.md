@@ -70,6 +70,9 @@ Link scanners fetch every URL in a message, so GET must not act.
 | `RESEND_WEBHOOK_SECRET` | delivery stats, bounce/complaint suppression | the webhook answers 503; sending still works, stats stay at «надіслано» |
 | `UNSUBSCRIBE_SECRET` | signing unsubscribe links | derived from the service-role key; set it once so a key rotation does not break links already in inboxes |
 | `BROADCAST_FROM` | sender address | `CenterWay <info@send.centerway.net.ua>`, the receipts' sender |
+| `LIFECYCLE_EMAILS` | lifecycle letters (below) | not `on` → no lifecycle letter goes out; a deploy alone sends nothing |
+| `WELCOME_EMAILS_SINCE` | the welcome letter's start line | 2026-09-29 Kyiv; older accounts are never welcomed |
+| `TELEGRAM_CHANNEL_URL`, `TELEGRAM_STREAM_CHAT_URL` | links in the lifecycle letters | the letters leave the line out |
 
 Resend dashboard: add a webhook to `https://www.centerway.net.ua/api/resend/webhook`
 for `email.delivered`, `email.opened`, `email.clicked`, `email.bounced`,
@@ -95,13 +98,56 @@ Proposed sequence — the words are the owner's; nothing is sent without them:
 1. **Announcement** — mid-October. Buyers (all products) + registered + leads,
    excluding `way21-group` buyers.
 2. **Reminder** — about a week before. Same audience, same exclusion.
-3. **The day before** — 2026-10-31. Same.
-4. **Welcome** — 2026-11-01, to buyers of `way21-group` only: where the group
-   lives, what to do on day one.
+3. **Last call** — 2026-10-31. Same.
+
+The group's own buyers need no campaign: the lifecycle letters «Завтра стартує»
+(31.10) and «День 1» (1.11) go to them by themselves, read from the offer's
+`cohort_starts_on`, once `LIFECYCLE_EMAILS=on` and the cron routes are called.
 
 The exclusion needs `20261001000000_broadcast_exclude_buyers.sql` applied
 (`npm run db:push`). Until then the key is stored and ignored, and the count on
 screen includes those buyers.
+
+## Lifecycle letters
+
+Sent by the platform itself, from the receipts sender, not from the campaign
+tool. Voice: the platform, «ми» to «ви», signed «Команда CenterWay». Code:
+`src/lib/email/lifecycleEmails.ts` (words, pure) and `lifecycleRuns.ts` (who,
+when). Nothing goes out until `LIFECYCLE_EMAILS=on`.
+
+| Letter | Trigger | Where it runs |
+| --- | --- | --- |
+| «Вітаємо в CenterWay» | a new `platform_users` row since `WELCOME_EMAILS_SINCE` (looks back 3 days) | `/api/cron/process-jobs` |
+| Receipt + stream line | paid order of a `format='group'` offer | the existing receipt |
+| «Завтра стартує …» | `cohort_starts_on` = tomorrow in Kyiv | `/api/cron/lms-reminders` |
+| «День 1 · …» | `cohort_starts_on` = today in Kyiv | same run |
+
+Moving a stream's date is a data change only: the letters follow the offer's
+`cohort_starts_on` (and the enrollment's, for manual grants).
+
+**Who calls the cron routes.** `vercel.json` has no crons (emptied 2026-09-07),
+so these routes run only when something outside calls them with `CRON_SECRET`.
+Confirm a caller exists before relying on the stream letters.
+
+Stream recipients come from two roads merged by address: paid orders of a group
+offer (an enrollment appears only when the course is first opened) and
+enrollments carrying the start date (manual grants, buyers who already opened
+it). Each letter leaves an `events` row `type='lifecycle_email_sent'` whose
+`order_ref` names letter and person; the same string is the Resend
+Idempotency-Key, so a letter goes out at most once.
+
+## One mail frame
+
+Every letter (receipt, lifecycle, sign-in code, campaign) is poured into
+`src/lib/email/layout.ts`: paper ground, one warm card with the spiral and
+wordmark on top (PNGs under `public/cw/brand/email/`, since Gmail shows no SVG),
+serif headline, warmth primary button, thin ink link rule. Colours are the
+light-side platform tokens resolved to hex; change them there, not per letter.
+
+The sign-in code letter is generated into `supabase/templates/*.html` by
+`npm run email:auth-templates` and drift-checked by `authEmails.test.ts`. The
+hosted Supabase project keeps its own copy: paste the generated HTML into
+Auth → Email Templates (Magic link and Confirm signup) after a change.
 
 ## Not built (on purpose, for now)
 
