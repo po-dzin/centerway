@@ -12,6 +12,7 @@ import { OfferCurriculum } from "@/components/platform/OfferCurriculum";
 import { OfferAccessProvider } from "@/components/platform/OfferAccess";
 import { OfferHeroActions, OfferHeroCommitment } from "@/components/platform/OfferHeroState";
 import { OfferAuthor, OfferBento } from "@/components/platform/OfferFacets";
+import { OfferSeam } from "@/components/platform/OfferSeam";
 import { OfferStickyBar } from "@/components/platform/OfferStickyBar";
 import { OfferSupport } from "@/components/platform/OfferSupportState";
 import offerPanelStyles from "@/components/platform/PlatformOfferStyles";
@@ -349,9 +350,19 @@ export function ProgramDetailPage({
                 repeating it — and «Формат» is said once, by the panel that
                 means the commitment (see `OfferBento`'s own note on the
                 rename). */}
-            <OfferBento audience={program.audience} results={program.results} format={program.format} />
+            <OfferBento
+              audience={program.audience}
+              results={program.results}
+              format={program.format}
+              seam={<OfferSeam icon="sprout" caption="Чи це про вас" />}
+            />
             {course ? (
-              <OfferCurriculum course={course} landingHref={offerLandingUrl(program.slug)} formats={formats} />
+              <OfferCurriculum
+                course={course}
+                landingHref={offerLandingUrl(program.slug)}
+                formats={formats}
+                seam={<OfferSeam icon="calendar" caption={program.duration} />}
+              />
             ) : null}
             <OfferAuthor author={author} note={program.authorNote} />
           </>
