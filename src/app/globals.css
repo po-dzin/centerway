@@ -664,8 +664,15 @@
     --cw-brand-mark-color: var(--cw-platform-text);
   }
 
+  /* `data-cw-ink-ground="dark"` (2026-09-30): the same rule for an element
+     whose marks lie straight on a dark scrimmed photograph on the day gamma —
+     the hero's utility row (crumb, way back, the author's edit link) and a
+     media-tone trail. Near-black ink there was not a quieter mark but an
+     invisible one. Stamped on the element, not the hero: a paper card standing
+     in a hero (a test's intro) is a pale ground again. */
   [data-cw-theme="dark"],
-  [data-cw-header-tone="dark"] {
+  [data-cw-header-tone="dark"],
+  [data-cw-ink-ground="dark"] {
     --cw-nav-marker: var(--cw-platform-accent);
   }
 

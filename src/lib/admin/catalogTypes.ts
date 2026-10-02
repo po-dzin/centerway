@@ -95,6 +95,13 @@ export type CatalogRow = {
   /** Category codes; empty for a course nobody categorised. Words live in i18n. */
   categories: CourseCategory[];
   /**
+   * The owner's storefront flag on the course's registry row: «Бестселер» or
+   * nothing. «Новинка» is not here — it is derived from the date the course
+   * first went on the shelf, and nobody sets it. Null for a course with no
+   * registry row yet.
+   */
+  highlight?: "bestseller" | null;
+  /**
    * When the review that is waiting was submitted: the pending revision's date
    * when there is one, otherwise the course's own. Null when nothing was ever
    * submitted — the «newest submissions» grouping sorts on this.

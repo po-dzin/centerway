@@ -1,0 +1,56 @@
+/* The seam between two program-page blocks — see OfferSeam.tsx.
+   It sits at the top of the section it opens and climbs into the gap the
+   previous section left, so the space between panels does not grow. */
+
+.seam {
+  display: grid;
+  justify-items: center;
+  /* It climbs back through the previous section's bottom padding — the same
+     fluid value `.section` sets (PlatformBlocksBase.module.css) — so at every
+     width the seam takes the gap rather than adding its own height to it. */
+  margin-block: calc(-1 * clamp(2.3rem, 6.2vw, 4.8rem) - var(--cw-space-md)) var(--cw-space-lg);
+  color: var(--cw-platform-accent);
+  pointer-events: none;
+}
+
+.thread {
+  display: block;
+  inline-size: 1px;
+  block-size: var(--cw-space-xl);
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in srgb, var(--cw-platform-accent) 60%, transparent),
+    transparent
+  );
+}
+
+.ring {
+  display: grid;
+  place-items: center;
+  inline-size: 2.625rem;
+  block-size: 2.625rem;
+  border: 1px solid color-mix(in srgb, var(--cw-platform-accent) 70%, transparent);
+  border-radius: 50%;
+  background: var(--cw-platform-bg);
+}
+
+.caption {
+  margin-block-start: var(--cw-space-xs);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  line-height: var(--ds-type-label-line-height);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cw-platform-muted);
+}
+
+@media (max-width: 560px) {
+  .seam {
+    margin-block: calc(-1 * var(--cw-space-xl)) var(--cw-space-md);
+  }
+
+  .thread {
+    block-size: var(--cw-space-lg);
+  }
+}

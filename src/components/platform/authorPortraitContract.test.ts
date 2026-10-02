@@ -53,7 +53,7 @@ describe("author portrait", () => {
      object with a different rule. */
   it("draws a face round, at every size, without the caller saying so", () => {
     const css = read("src/components/platform/AuthorPortrait.module.css");
-    for (const step of [".sm {", ".md {", ".lg {"]) {
+    for (const step of [".xs {", ".sm {", ".md {", ".lg {"]) {
       const rule = css.slice(css.indexOf(step), css.indexOf("}", css.indexOf(step)));
       expect(rule).toContain("--portrait-size");
       expect(rule).toContain("--portrait-radius: var(--cw-radius-pill)");

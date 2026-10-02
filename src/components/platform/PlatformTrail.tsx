@@ -86,7 +86,12 @@ export function PlatformTrail({
   const back = [...steps].reverse().find((step) => step.href || step.onNavigate);
 
   return (
-    <nav className={styles.trail} data-tone={tone} aria-label={label}>
+    <nav
+      className={styles.trail}
+      data-tone={tone}
+      data-cw-ink-ground={tone === "media" ? "dark" : undefined}
+      aria-label={label}
+    >
       {back ? (
         <span className={styles.back}>
           <Icon className={styles.backIcon} name="arrow-left" size={16} />

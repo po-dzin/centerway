@@ -28,6 +28,7 @@ const FILES = [
   "src/components/dosha-test/DoshaTestClient.tsx",
   "src/components/dosha-test/useDoshaAttempt.ts",
   "src/components/dosha-test/DoshaIntro.tsx",
+  "src/components/platform/DiagnosticIntro.tsx",
   "src/components/dosha-test/DoshaQuestionStep.tsx",
   "src/components/dosha-test/DoshaLoadingStep.tsx",
   "src/components/dosha-test/DoshaResult.tsx",

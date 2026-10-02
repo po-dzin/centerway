@@ -943,6 +943,8 @@ export type Database = {
           author_profile_id: string | null
           cover: Json | null
           created_at: string
+          first_listed_at: string | null
+          highlight: string | null
           id: string
           kind: string
           listed: boolean
@@ -956,6 +958,8 @@ export type Database = {
           author_profile_id?: string | null
           cover?: Json | null
           created_at?: string
+          first_listed_at?: string | null
+          highlight?: string | null
           id?: string
           kind: string
           listed?: boolean
@@ -969,6 +973,8 @@ export type Database = {
           author_profile_id?: string | null
           cover?: Json | null
           created_at?: string
+          first_listed_at?: string | null
+          highlight?: string | null
           id?: string
           kind?: string
           listed?: boolean

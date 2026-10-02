@@ -86,7 +86,7 @@ export function OfferFormats({
               <ul className={styles.includes}>
                 {(format.features.length > 0 ? format.features : [`«${programTitle}» повністю`]).map((feature) => (
                   <li key={feature}>
-                    <Icon className={styles.includeMark} name="check" size={20} />
+                    <Icon className={`${styles.includeMark} ${css.tick}`} name="check" size={20} />
                     <span>{feature}</span>
                   </li>
                 ))}

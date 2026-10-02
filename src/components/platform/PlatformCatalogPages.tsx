@@ -74,6 +74,7 @@ export function storefrontEntry(course: StorefrontCard): CatalogEntry {
       commercialMode: course.commercialMode,
       price: course.price,
       compareAtPrice: course.compareAtPrice,
+      highlight: course.highlight,
     },
   };
 }
@@ -298,7 +299,6 @@ export async function PlatformTestsHubPage() {
               />
             ))}
           </div>
-          <p className={offerStyles.proofNote}>{testsHubCopy.plannedNote}</p>
         </section>
 
         <section
@@ -495,6 +495,7 @@ export async function PlatformProductsIndexPage() {
                 commercialMode={program.commercialMode}
                 price={program.price}
                 compareAtPrice={program.compareAtPrice}
+                highlight={program.highlight}
               />
             ))}
           </PlatformOfferCarousel>

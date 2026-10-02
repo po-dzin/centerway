@@ -15,7 +15,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 
 import { AccessError } from "@/lib/admin/access";
-import { listCatalog, saveOffer, setOfferActive } from "@/lib/admin/catalog";
+import { listCatalog, saveOffer, setCourseHighlight, setOfferActive } from "@/lib/admin/catalog";
 import { COURSE_LIST_TAG, PURGE, courseTag } from "@/lib/lms/liveCatalog";
 import {
   badRequestResponse,
@@ -46,7 +46,8 @@ export async function GET(req: NextRequest) {
 
 type Body = {
   courseId?: string;
-  action?: "save_offer" | "withdraw_offer" | "resume_offer";
+  action?: "save_offer" | "withdraw_offer" | "resume_offer" | "set_highlight";
+  highlight?: unknown;
   amount?: unknown;
   listAmount?: unknown;
   currency?: string;
@@ -72,6 +73,14 @@ export async function PATCH(req: NextRequest) {
   const actorId = session.user.id;
 
   try {
+    if (body.action === "set_highlight") {
+      if (body.highlight !== null && body.highlight !== "bestseller") return badRequestResponse("highlight_invalid");
+      const result = await setCourseHighlight({ courseId: body.courseId, highlight: body.highlight, actorId });
+      revalidateTag(courseTag(result.courseSlug), PURGE);
+      revalidateTag(COURSE_LIST_TAG, PURGE);
+      return NextResponse.json(result);
+    }
+
     if (body.action === "withdraw_offer" || body.action === "resume_offer") {
       const result = await setOfferActive({
         courseId: body.courseId,

@@ -1,0 +1,50 @@
+/* The door between a test's verdict and its full reading — see ResultGate.tsx. */
+
+.includes {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.includes li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--cw-space-xs);
+  align-items: start;
+}
+
+.mark {
+  /* A lock, not a tick: these are what the reader does NOT have yet, and a
+     tick reads as done. Ink at 62% keeps the glyph above 3:1 on the card. */
+  color: color-mix(in srgb, var(--cw-platform-text) 62%, transparent);
+}
+
+.how {
+  margin: 0;
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+  color: var(--cw-platform-muted);
+}
+
+/* Google as the one button, the emailed code as a quiet line under it. */
+.ways {
+  display: grid;
+  justify-items: start;
+  gap: var(--cw-space-xs);
+}
+
+/* A word in the sentence that acts: the platform's link rule (ink underline
+   at rest), not a button shape. Padded so the target is taller than the line. */
+.inlineWay {
+  padding: var(--cw-space-2xs) 0;
+  border: 0;
+  background: none;
+  color: var(--cw-platform-text);
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--cw-nav-marker);
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}

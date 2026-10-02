@@ -41,6 +41,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, author
           error={attempt.error}
           isBusy={attempt.isBusy}
           requestStartTest={attempt.requestStartTest}
+          resume={attempt.resumeOffer}
         />
       ) : (
         <section
@@ -82,7 +83,6 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, author
                 <DoshaResult
                   topbarBadge={topbarBadge}
                   uiVariant={uiVariant}
-                  attemptId={attempt.attemptId}
                   resultType={resultType}
                   resultCopy={resultCopy}
                   resultHeading={attempt.resultHeading}
@@ -92,14 +92,14 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, author
                   completedAt={attempt.completedAt}
                   nextStep={attempt.nextStep}
                   totalQuestions={attempt.totalQuestions}
-                  isBusy={attempt.isBusy}
                   telegramLink={attempt.telegramLink}
-                  isAuthEnabled={attempt.isAuthEnabled}
+                  unlocked={attempt.unlocked}
                   savedToCabinet={attempt.savedToCabinet}
+                  previousRun={attempt.previousRun}
                   hasSessionUser={attempt.hasSessionUser}
                   surfaceHref={attempt.surfaceHref}
                   emitAttemptEvent={attempt.emitAttemptEvent}
-                  signInWithGoogle={attempt.signInWithGoogle}
+                  retrySave={attempt.retrySave}
                   restartTest={attempt.restartTest}
                 />
               ) : null}

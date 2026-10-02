@@ -368,7 +368,7 @@ describe("the footer's interactive ink follows the gamma, not a fixed brass", ()
     const globalsCss = read("src/app/globals.css").replace(/\/\*[\s\S]*?\*\//g, "");
     expect(globalsCss).toMatch(/:root\s*\{[\s\S]*?--cw-nav-marker: var\(--cw-platform-text\);/);
     expect(globalsCss).toMatch(
-      /\[data-cw-theme="dark"\],\s*\n\s*\[data-cw-header-tone="dark"\]\s*\{\s*\n\s*--cw-nav-marker: var\(--cw-platform-accent\);/,
+      /\[data-cw-theme="dark"\],\s*\n\s*\[data-cw-header-tone="dark"\],\s*\n\s*\[data-cw-ink-ground="dark"\]\s*\{\s*\n\s*--cw-nav-marker: var\(--cw-platform-accent\);/,
     );
   });
 });
