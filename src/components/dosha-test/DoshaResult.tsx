@@ -278,14 +278,16 @@ export function DoshaResult({
         </>
       ) : null}
 
+      {/* The way back on the left, where its arrow points; the act on the
+          right, where actions sit on this platform. */}
       <div className={styles.diagnosticFlowFoot}>
-        <button type="button" onClick={restartTest} className={styles.diagnosticTextButton}>
-          Пройти тест ще раз
-        </button>
         <Link className={styles.diagnosticBackLink} href={TESTS_HUB_ROUTE} data-cw-ink-control>
           <Icon name="arrow-left" size={16} className={styles.diagnosticBackIcon} />
           <InteractionInkLabel variant="link">Усі тести</InteractionInkLabel>
         </Link>
+        <button type="button" onClick={restartTest} className={styles.diagnosticTextButton}>
+          Пройти тест ще раз
+        </button>
       </div>
     </div>
   );

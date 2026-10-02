@@ -480,10 +480,10 @@ function BalanceResult({
       ) : null}
 
       <div className={styles.diagnosticFlowFoot}>
+        <BackToTests />
         <button type="button" onClick={onRestart} className={styles.diagnosticTextButton}>
           Пройти тест ще раз
         </button>
-        <BackToTests />
       </div>
     </div>
   );
