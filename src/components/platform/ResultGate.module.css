@@ -27,3 +27,11 @@
   line-height: var(--ds-type-body-sm-line-height);
   color: var(--cw-platform-muted);
 }
+
+.teaser {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}

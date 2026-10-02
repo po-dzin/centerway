@@ -25,7 +25,7 @@ import { DoshaMark } from "@/components/platform/DoshaMark";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "@/components/platform/PlatformDiagnosticStyles";
 import { ProgressRail } from "@/components/platform/ProgressRail";
-import { ResultGate } from "@/components/platform/ResultGate";
+import { ResultGate, resultTeaserClassName } from "@/components/platform/ResultGate";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import {
   BALANCE_BOUNDARY_NOTE,
@@ -355,9 +355,11 @@ function BalanceResult({
 
   return (
     <div className={styles.diagnosticFlowStack}>
-      <div className={styles.diagnosticFlowHead}>
-        <span className={styles.diagnosticStepChip}>Результат готовий</span>
-      </div>
+      {unlocked ? (
+        <div className={styles.diagnosticFlowHead}>
+          <span className={styles.diagnosticStepChip}>Результат готовий</span>
+        </div>
+      ) : null}
 
       <div className={styles.card} data-tone="support">
         <p className={styles.label}>Ваш стан зараз</p>
@@ -372,7 +374,7 @@ function BalanceResult({
         <p className={styles.label}>{copy.image}</p>
         <blockquote>
           <p>
-            <i>«{copy.quote}»</i>
+            <i className={unlocked ? undefined : resultTeaserClassName}>«{copy.quote}»</i>
           </p>
         </blockquote>
         {unlocked ? (
@@ -436,37 +438,46 @@ function BalanceResult({
       ) : (
         <ResultGate
           title="Увійдіть, щоб відкрити повний результат"
-          includes={[
-            "Що означає ваш стан і як він складається з дев'яти відповідей",
-            "Що допоможе зараз: режим, харчування, дихання",
-            "Друга доша, якщо вона теж помітна, — і що робити з нею",
-            "Результат у кабінеті — щоб порівняти з наступним проходженням",
-          ]}
+          includes={["Що означає ваш стан", "Що допоможе зараз", "Друга доша, якщо помітна", "Результат у кабінеті"]}
           onBeforeLeave={onBeforeSignIn}
         />
       )}
 
-      <div className={styles.card} data-tone="policy">
-        <p className={styles.label}>Межі методу</p>
-        <p>{BALANCE_BOUNDARY_NOTE}</p>
-      </div>
+      {/* Past the door only: before sign-in the screen is the verdict and
+          the gate, on one phone screen. The method's limits are already in
+          the intro's «Як це працює і межі методу», and come back here with
+          the full reading they qualify. */}
+      {unlocked ? (
+        <div className={styles.card} data-tone="policy">
+          <p className={styles.label}>Межі методу</p>
+          <p>{BALANCE_BOUNDARY_NOTE}</p>
+        </div>
+      ) : null}
 
-      <div className={styles.panelIntro}>
-        <p className={styles.label}>Наступний крок</p>
-      </div>
+      {/* THE NEXT STEP IS PAST THE DOOR (2026-10-02). Before sign-in the
+          screen has one step to offer, and it is the gate above: a
+          consultation or a programme beside it splits a reader who has not
+          yet seen their own reading between three exits. */}
+      {unlocked ? (
+        <>
+          <div className={styles.panelIntro}>
+            <p className={styles.label}>Наступний крок</p>
+          </div>
 
-      <div className={styles.diagnosticResultActions}>
-        <Link href={balanceConsultHref(primary)} className={styles.primaryButton}>
-          Отримати персональні рекомендації
-        </Link>
-        <Link href={DOSHA_TEST_ROUTE} className={styles.secondaryButton}>
-          Дізнатися свою конституцію
-        </Link>
-      </div>
+          <div className={styles.diagnosticResultActions}>
+            <Link href={balanceConsultHref(primary)} className={styles.primaryButton}>
+              Отримати персональні рекомендації
+            </Link>
+            <Link href={DOSHA_TEST_ROUTE} className={styles.secondaryButton}>
+              Дізнатися свою конституцію
+            </Link>
+          </div>
 
-      <p className={styles.diagnosticScoreRow}>
-        Тест доші покаже природу, на якій тримається ваш стан, — разом ці два результати дають повнішу картину.
-      </p>
+          <p className={styles.diagnosticScoreRow}>
+            Тест доші покаже природу, на якій тримається ваш стан, — разом ці два результати дають повнішу картину.
+          </p>
+        </>
+      ) : null}
 
       <div className={styles.diagnosticFlowFoot}>
         <button type="button" onClick={onRestart} className={styles.diagnosticTextButton}>

@@ -21,7 +21,7 @@ import type {
   DoshaScores,
   EmitAttemptEvent,
 } from "./doshaTestTypes";
-import { ResultGate } from "@/components/platform/ResultGate";
+import { ResultGate, resultTeaserClassName } from "@/components/platform/ResultGate";
 
 /** The share row's fixed order — the order the doshas are always named in. */
 const DOSHA_SHARE_ORDER: { dosha: BaseDosha; label: string }[] = [
@@ -90,9 +90,14 @@ export function DoshaResult({
 }: DoshaResultProps) {
   return (
     <div className={styles.diagnosticFlowStack}>
-      <div className={styles.diagnosticFlowHead}>
-        <span className={styles.diagnosticStepChip}>{topbarBadge}</span>
-      </div>
+      {/* The chip goes before sign-in: the locked screen is the verdict and
+          the door on one phone screen, and «Результат готовий» above a
+          result already on screen is the one line it can spare. */}
+      {unlocked ? (
+        <div className={styles.diagnosticFlowHead}>
+          <span className={styles.diagnosticStepChip}>{topbarBadge}</span>
+        </div>
+      ) : null}
 
       <div className={styles.card} data-tone="support">
         <p className={styles.label}>Ваш профіль</p>
@@ -113,9 +118,11 @@ export function DoshaResult({
             and the two halves read as one run-on claim.
             Before sign-in only the first is shown: what the type is
             is the verdict, and the verdict is free. */}
-        {(unlocked ? resultCopy.summary : resultCopy.summary.slice(0, 1)).map((paragraph) => (
-          <p key={paragraph.slice(0, 32)}>{paragraph}</p>
-        ))}
+        {unlocked ? (
+          resultCopy.summary.map((paragraph) => <p key={paragraph.slice(0, 32)}>{paragraph}</p>)
+        ) : (
+          <p className={resultTeaserClassName}>{resultCopy.summary[0]}</p>
+        )}
         {unlocked ? <p>{resultCopy.recommendation}</p> : null}
       </div>
 
@@ -181,12 +188,7 @@ export function DoshaResult({
       ) : (
         <ResultGate
           title="Увійдіть, щоб відкрити повний профіль"
-          includes={[
-            "Частки вати, пітти й капхи — і наскільки чітко проявився ваш тип",
-            "Як тип виглядає поза рівновагою і з чого почати",
-            "Вектор на тиждень: що змінити в режимі, їжі й русі",
-            "Профіль у кабінеті — щоб порівняти з наступним проходженням",
-          ]}
+          includes={["Співвідношення дош", "Ваш тип поза рівновагою", "Вектор на тиждень", "Профіль у кабінеті"]}
           onBeforeLeave={() => {
             void emitAttemptEvent("dosha_followup_clicked", {
               target: "save_result",
@@ -204,63 +206,77 @@ export function DoshaResult({
         />
       )}
 
-      <div className={styles.card} data-tone="policy">
-        <p className={styles.label}>Межі методу</p>
-        <p>{BOUNDARY_NOTE}</p>
-      </div>
+      {/* Past the door only: before sign-in the screen is the verdict and
+          the gate, on one phone screen. The method's limits are already in
+          the intro's «Як це працює і межі методу», and come back here with
+          the full reading they qualify. */}
+      {unlocked ? (
+        <div className={styles.card} data-tone="policy">
+          <p className={styles.label}>Межі методу</p>
+          <p>{BOUNDARY_NOTE}</p>
+        </div>
+      ) : null}
 
-      <div className={styles.panelIntro}>
-        <p className={styles.label}>Наступний крок</p>
-      </div>
+      {/* THE NEXT STEP IS PAST THE DOOR (2026-10-02). Before sign-in the
+          screen has one step to offer, and it is the gate above: a
+          consultation or a programme beside it splits a reader who has not
+          yet seen their own reading between three exits. */}
+      {unlocked ? (
+        <>
+          <div className={styles.panelIntro}>
+            <p className={styles.label}>Наступний крок</p>
+          </div>
 
-      <div className={styles.diagnosticResultActions}>
-        <Link
-          href={doshaExitHref(DOSHA_PRIMARY_EXIT, { resultType, confidence: profile.confidence })}
-          onClick={() => {
-            void emitAttemptEvent("dosha_followup_clicked", {
-              target: DOSHA_PRIMARY_EXIT.target,
-              ctaTarget: DOSHA_PRIMARY_EXIT.ctaTarget,
-              screen: "result",
-              step: totalQuestions,
-              uiVariant,
-              resultType,
-              scores,
-              completedAt,
-              nextStep: DOSHA_PRIMARY_EXIT.nextStep,
-            });
-          }}
-          className={styles.primaryButton}
-        >
-          Отримати персональні рекомендації
-        </Link>
-        <Link
-          href={doshaExitHref(DOSHA_SECONDARY_EXIT, { resultType, confidence: profile.confidence })}
-          onClick={() => {
-            void emitAttemptEvent("dosha_followup_clicked", {
-              target: DOSHA_SECONDARY_EXIT.target,
-              ctaTarget: DOSHA_SECONDARY_EXIT.ctaTarget,
-              screen: "result",
-              step: totalQuestions,
-              uiVariant,
-              resultType,
-              scores,
-              completedAt,
-              nextStep: DOSHA_SECONDARY_EXIT.nextStep,
-            });
-          }}
-          className={styles.secondaryButton}
-        >
-          Переглянути програму
-        </Link>
-      </div>
+          <div className={styles.diagnosticResultActions}>
+            <Link
+              href={doshaExitHref(DOSHA_PRIMARY_EXIT, { resultType, confidence: profile.confidence })}
+              onClick={() => {
+                void emitAttemptEvent("dosha_followup_clicked", {
+                  target: DOSHA_PRIMARY_EXIT.target,
+                  ctaTarget: DOSHA_PRIMARY_EXIT.ctaTarget,
+                  screen: "result",
+                  step: totalQuestions,
+                  uiVariant,
+                  resultType,
+                  scores,
+                  completedAt,
+                  nextStep: DOSHA_PRIMARY_EXIT.nextStep,
+                });
+              }}
+              className={styles.primaryButton}
+            >
+              Отримати персональні рекомендації
+            </Link>
+            <Link
+              href={doshaExitHref(DOSHA_SECONDARY_EXIT, { resultType, confidence: profile.confidence })}
+              onClick={() => {
+                void emitAttemptEvent("dosha_followup_clicked", {
+                  target: DOSHA_SECONDARY_EXIT.target,
+                  ctaTarget: DOSHA_SECONDARY_EXIT.ctaTarget,
+                  screen: "result",
+                  step: totalQuestions,
+                  uiVariant,
+                  resultType,
+                  scores,
+                  completedAt,
+                  nextStep: DOSHA_SECONDARY_EXIT.nextStep,
+                });
+              }}
+              className={styles.secondaryButton}
+            >
+              Переглянути програму
+            </Link>
+          </div>
 
-      {/* ONE PROGRAM, NOT SEVEN. The type does not pick a different
-          product — it is read inside the one program — so the screen
-          says that plainly instead of implying a personalised
-          catalogue it does not have. */}
-      <p className={styles.diagnosticScoreRow}>
-        Програма одна для всіх типів: доші враховані всередині неї, тож ваш профіль стане в пригоді з першого дня.
-      </p>
+          {/* ONE PROGRAM, NOT SEVEN. The type does not pick a different
+            product — it is read inside the one program — so the screen
+            says that plainly instead of implying a personalised
+            catalogue it does not have. */}
+          <p className={styles.diagnosticScoreRow}>
+            Програма одна для всіх типів: доші враховані всередині неї, тож ваш профіль стане в пригоді з першого дня.
+          </p>
+        </>
+      ) : null}
 
       <div className={styles.diagnosticFlowFoot}>
         <button type="button" onClick={restartTest} className={styles.diagnosticTextButton}>

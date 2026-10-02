@@ -25,13 +25,21 @@ import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import styles from "@/components/platform/PlatformDiagnosticStyles";
 import gate from "./ResultGate.module.css";
 
+/**
+ * The verdict's text before sign-in, held to three lines. The locked screen —
+ * verdict and door — has to fit one phone screen; the full text is what the
+ * door opens.
+ */
+export const resultTeaserClassName = gate.teaser;
+
 export function ResultGate({
   title,
   includes,
   onBeforeLeave,
 }: {
   title: string;
-  /** What opens after sign-in, in the reader's words, three or four lines. */
+  /** What opens after sign-in: four short lines, one row each on a phone, so
+      the verdict and the door fit one screen. */
   includes: readonly string[];
   onBeforeLeave: () => void;
 }) {
@@ -55,7 +63,7 @@ export function ResultGate({
           Увійти і відкрити
         </a>
       </div>
-      <p className={gate.how}>Через Google або кодом на пошту. Після входу ви повернетеся сюди.</p>
+      <p className={gate.how}>Google або код на пошту — і ви повернетеся сюди.</p>
     </div>
   );
 }
