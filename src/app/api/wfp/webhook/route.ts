@@ -464,11 +464,11 @@ export async function POST(req: NextRequest) {
         const offer = order?.product_code ? await loadPayableOffer(order.product_code) : null;
         await sendPurchaseEmail({
           email: buyerEmail,
-          /* `pixelContentName` and not `heading`: the heading is a localized
-             record, and this is the same agreed label the Pixel and the CAPI
-             Purchase already carry — so one product reads as one name in the
-             receipt, in Meta and in the operator's report. */
-          productTitle: offer?.pixelContentName ?? "Ваше замовлення",
+          /* The invoice heading the buyer just paid against, in Ukrainian. Not
+             `pixelContentName`: that is Meta's label («Way21 Group»), which
+             reads as a tracking tag at the top of a receipt (meta-audit
+             2026-09-30). Meta and the operator's report keep the label. */
+          productTitle: offer?.heading.uk || offer?.pixelContentName || "Ваше замовлення",
           amount: meta.amount,
           currency: meta.currency ?? "UAH",
           fulfilment: offer?.fulfilment ?? { kind: "cabinet" },
