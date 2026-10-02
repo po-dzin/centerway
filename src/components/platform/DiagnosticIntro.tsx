@@ -104,22 +104,28 @@ export function DiagnosticIntro({
 
             {error ? <p className={styles.diagnosticErrorNote}>{error}</p> : null}
 
-            <div className={styles.diagnosticActions}>
-              {resume ? (
-                <>
-                  <button type="button" onClick={resume.onResume} disabled={isBusy} className={styles.primaryButton}>
-                    {isBusy ? "Відкриваємо..." : `Продовжити з питання ${resume.question}`}
-                  </button>
-                  <button type="button" onClick={onStart} disabled={isBusy} className={styles.diagnosticTextButton}>
-                    Почати заново
-                  </button>
-                </>
-              ) : (
+            {/* THE TWO CHOICES ARE ONE PAIR (2026-10-02). «Почати заново» was a
+                text link standing alone between the button and the disclosure,
+                reading as a stray third thing rather than the other half of the
+                question «continue or start over?». It is the secondary of a
+                pair now — the same pair the result's next step uses: side by
+                side where they fit, stacked full width on a phone. */}
+            {resume ? (
+              <div className={styles.diagnosticResultActions}>
+                <button type="button" onClick={resume.onResume} disabled={isBusy} className={styles.primaryButton}>
+                  {isBusy ? "Відкриваємо..." : `Продовжити з питання ${resume.question}`}
+                </button>
+                <button type="button" onClick={onStart} disabled={isBusy} className={styles.secondaryButton}>
+                  Почати заново
+                </button>
+              </div>
+            ) : (
+              <div className={styles.diagnosticActions}>
                 <button type="button" onClick={onStart} disabled={isBusy} className={styles.primaryButton}>
                   {isBusy ? "Запускаємо..." : "Почати тест"}
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             <details className={styles.collapsibleBlock}>
               <summary className={styles.collapsibleSummary}>
