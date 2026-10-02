@@ -102,7 +102,7 @@ Proposed sequence — the words are the owner's; nothing is sent without them:
 
 The group's own buyers need no campaign: the lifecycle letters «Завтра стартує»
 (31.10) and «День 1» (1.11) go to them by themselves, read from the offer's
-`cohort_starts_on`, once `LIFECYCLE_EMAILS=on` and the cron routes are called.
+`cohort_starts_on`, once `LIFECYCLE_EMAILS=on`.
 
 The exclusion needs `20261001000000_broadcast_exclude_buyers.sql` applied
 (`npm run db:push`). Until then the key is stored and ignored, and the count on
@@ -125,9 +125,10 @@ when). Nothing goes out until `LIFECYCLE_EMAILS=on`.
 Moving a stream's date is a data change only: the letters follow the offer's
 `cohort_starts_on` (and the enrollment's, for manual grants).
 
-**Who calls the cron routes.** `vercel.json` has no crons (emptied 2026-09-07),
-so these routes run only when something outside calls them with `CRON_SECRET`.
-Confirm a caller exists before relying on the stream letters.
+**Who calls the cron routes.** Supabase `pg_cron` (migration
+`20260829050000_pg_cron_scheduler.sql`), not Vercel: `cw-process-jobs` every
+5 minutes and `cw-lms-reminders` daily at 06:00 UTC (09:00 Kyiv in summer
+time, 08:00 after 25.10). `vercel.json` has no crons on purpose.
 
 Stream recipients come from two roads merged by address: paid orders of a group
 offer (an enrollment appears only when the course is first opened) and
