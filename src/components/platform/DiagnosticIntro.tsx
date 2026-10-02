@@ -127,23 +127,28 @@ export function DiagnosticIntro({
               </div>
             )}
 
-            <details className={styles.collapsibleBlock}>
-              <summary className={styles.collapsibleSummary}>
-                <span>Як це працює і межі методу</span>
-                <Icon name="chevron-down" size={18} className={styles.collapsibleMarker} />
-              </summary>
-              <div className={styles.card} data-tone="support">
-                <ol className={styles.diagnosticNumberList}>
-                  {steps.map((step) => (
-                    <li key={step}>{step}</li>
+            {/* Not for a reader coming back mid-test: they have read how it
+                works once already, and the screen's only question now is
+                «continue or start over?». */}
+            {resume ? null : (
+              <details className={styles.collapsibleBlock}>
+                <summary className={styles.collapsibleSummary}>
+                  <span>Як це працює і межі методу</span>
+                  <Icon name="chevron-down" size={18} className={styles.collapsibleMarker} />
+                </summary>
+                <div className={styles.card} data-tone="support">
+                  <ol className={styles.diagnosticNumberList}>
+                    {steps.map((step) => (
+                      <li key={step}>{step}</li>
+                    ))}
+                  </ol>
+                  {notes.map((note) => (
+                    <p key={note}>{note}</p>
                   ))}
-                </ol>
-                {notes.map((note) => (
-                  <p key={note}>{note}</p>
-                ))}
-                <p className={styles.diagnosticScoreRow}>{boundary}</p>
-              </div>
-            </details>
+                  <p className={styles.diagnosticScoreRow}>{boundary}</p>
+                </div>
+              </details>
+            )}
 
             <Link className={styles.diagnosticBackLink} href={TESTS_HUB_ROUTE} data-cw-ink-control>
               <Icon name="arrow-left" size={16} className={styles.diagnosticBackIcon} />
