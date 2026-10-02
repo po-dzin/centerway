@@ -299,7 +299,6 @@ export async function PlatformTestsHubPage() {
               />
             ))}
           </div>
-          <p className={offerStyles.proofNote}>{testsHubCopy.plannedNote}</p>
         </section>
 
         <section

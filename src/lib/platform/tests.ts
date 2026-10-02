@@ -150,9 +150,12 @@ export const testsHubCopy = {
   ],
   activeLabel: "Доступні тести",
   activeTitle: "З чого можна почати вже зараз",
-  plannedLabel: "Готуються",
+  /* The note that used to stand under the cards («Ці тести ще збираються…»)
+     said again what the label and the «Скоро» buttons already say; the one
+     thing it added — what covers these questions meanwhile — rides on the
+     label now. */
+  plannedLabel: "Готуються · частину вже закриває тест доші",
   plannedTitle: "Наступні зрізи стану",
-  plannedNote: "Ці тести ще збираються. Поки що їхні питання частково закриває тест доші і консультація.",
   bridgeLabel: "Жива діагностика",
   bridgeTitle: "Коли тесту недостатньо",
   bridgeLead:
