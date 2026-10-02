@@ -270,15 +270,8 @@
   flex-wrap: wrap;
   gap: var(--cw-space-xs);
   margin-bottom: var(--cw-space-2xs);
-  /* GOLD ON THE PHOTOGRAPH (2026-09-30). The marker follows the theme — ink by
-     day, gold by night — and this row is the one place on the day gamma where
-     marks lie straight on a dark scrimmed photo: the crumb you are on, the way
-     back, the author's edit link. Near-black ink there was not a quieter mark
-     but an invisible one. It is the exception already written for the bar that
-     wears the night material, restated for the ground under it: ink on a pale
-     ground, gold on a dark one. Scoped to the row, not the hero, because a
-     paper card standing in a hero (a test's intro) is a pale ground again. */
-  --cw-nav-marker: var(--cw-platform-accent);
+  /* Its marks go gold on the photograph: `data-cw-ink-ground="dark"` in
+     PlatformDetailHero, rule in globals.css. */
 }
 
 .heroUtilityLink {

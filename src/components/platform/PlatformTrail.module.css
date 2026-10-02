@@ -188,10 +188,8 @@
    dimmer, exactly as on paper. */
 .trail[data-tone="media"] {
   margin-block-end: 0;
-  /* The marks go gold with the crumbs: ink under a cream crumb on a photo is
-     the invisible mark `.heroUtilityRow` explains. Declared here too, because
-     a media trail also stands outside that row (the offer hero). */
-  --cw-nav-marker: var(--cw-platform-accent);
+  /* The marks go gold with the crumbs: PlatformTrail stamps
+     `data-cw-ink-ground="dark"` on a media trail (rule in globals.css). */
 }
 
 .trail[data-tone="media"] .backIcon,
