@@ -33,6 +33,19 @@ export const BRAND = {
   origin: PLATFORM_ORIGIN,
 
   /**
+   * THE NAME AS PEOPLE TYPE IT. A Ukrainian searcher types the brand in
+   * Cyrillic as often as in Latin — «центрвей» — and nothing the platform
+   * published contained that spelling, so the engine had to guess what the
+   * word meant and answered with a hotel, Amway and a qigong centre. Stated
+   * here, these become `alternateName` on the Organization and the WebSite
+   * (the WebSite one is what Google reads for the site name in a result).
+   */
+  alternateNames: ["Center Way", "ЦентрВей", "Центрвей"],
+
+  /** Where the business is. For the structured data, and for telling it apart from same-name businesses abroad. */
+  country: "UA",
+
+  /**
    * The category, in the words someone would use to search for it. Not a
    * slogan: a slogan answers "why", and every engine here is asking "what".
    *
