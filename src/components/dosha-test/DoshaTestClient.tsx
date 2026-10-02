@@ -41,6 +41,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, author
           error={attempt.error}
           isBusy={attempt.isBusy}
           requestStartTest={attempt.requestStartTest}
+          resume={attempt.resumeOffer}
         />
       ) : (
         <section
@@ -94,6 +95,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, author
                   telegramLink={attempt.telegramLink}
                   unlocked={attempt.unlocked}
                   savedToCabinet={attempt.savedToCabinet}
+                  previousRun={attempt.previousRun}
                   hasSessionUser={attempt.hasSessionUser}
                   surfaceHref={attempt.surfaceHref}
                   emitAttemptEvent={attempt.emitAttemptEvent}

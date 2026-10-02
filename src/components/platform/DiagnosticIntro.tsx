@@ -44,6 +44,13 @@ type DiagnosticIntroProps = {
   error?: string | null;
   isBusy?: boolean;
   onStart: () => void;
+  /**
+   * An unfinished run in this browser. The intro then offers the way back in
+   * first — «Продовжити з питання N» — and starting over as the quiet second
+   * choice, instead of dropping the reader mid-test without asking (the dosha
+   * test used to) or forgetting the answers on a reload (the balance test did).
+   */
+  resume?: { question: number; total: number; onResume: () => void } | null;
 };
 
 export function DiagnosticIntro({
@@ -61,6 +68,7 @@ export function DiagnosticIntro({
   error = null,
   isBusy = false,
   onStart,
+  resume = null,
 }: DiagnosticIntroProps) {
   const phase = { [phaseAttribute]: "intro" };
 
@@ -97,9 +105,20 @@ export function DiagnosticIntro({
             {error ? <p className={styles.diagnosticErrorNote}>{error}</p> : null}
 
             <div className={styles.diagnosticActions}>
-              <button type="button" onClick={onStart} disabled={isBusy} className={styles.primaryButton}>
-                {isBusy ? "Запускаємо..." : "Почати тест"}
-              </button>
+              {resume ? (
+                <>
+                  <button type="button" onClick={resume.onResume} disabled={isBusy} className={styles.primaryButton}>
+                    {isBusy ? "Відкриваємо..." : `Продовжити з питання ${resume.question}`}
+                  </button>
+                  <button type="button" onClick={onStart} disabled={isBusy} className={styles.diagnosticTextButton}>
+                    Почати заново
+                  </button>
+                </>
+              ) : (
+                <button type="button" onClick={onStart} disabled={isBusy} className={styles.primaryButton}>
+                  {isBusy ? "Запускаємо..." : "Почати тест"}
+                </button>
+              )}
             </div>
 
             <details className={styles.collapsibleBlock}>

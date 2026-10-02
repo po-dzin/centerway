@@ -22,6 +22,8 @@ import type {
   EmitAttemptEvent,
 } from "./doshaTestTypes";
 import { ResultGate } from "@/components/platform/ResultGate";
+import { formatDoshaResult } from "@/components/platform/cabinet/format";
+import { runDay, type PreviousRun } from "@/components/platform/usePreviousRun";
 import { leadSentences } from "@/lib/tests/keptResult";
 
 /** The share row's fixed order — the order the doshas are always named in. */
@@ -60,6 +62,8 @@ type DoshaResultProps = {
   /** The full reading is shown: the reader is signed in, or auth is not configured here. */
   unlocked: boolean;
   savedToCabinet: boolean;
+  /** The reader's run before this one, for the comparison line. */
+  previousRun: PreviousRun | null;
   hasSessionUser: boolean;
   surfaceHref: ReturnType<typeof useSurfaceHref>;
   emitAttemptEvent: EmitAttemptEvent;
@@ -83,6 +87,7 @@ export function DoshaResult({
   telegramLink,
   unlocked,
   savedToCabinet,
+  previousRun,
   hasSessionUser,
   surfaceHref,
   emitAttemptEvent,
@@ -160,6 +165,14 @@ export function DoshaResult({
                   ? "Профіль у вашому кабінеті — поруч із програмами і прогресом. Наступне проходження покаже, як він змінюється."
                   : "Профіль відкрито, але в кабінет він ще не потрапив."}
               </p>
+              {/* WHAT CHANGED. Retaking is sold by the hub and the cabinet as
+                  the way to see a change; this is the line that shows it. */}
+              {savedToCabinet && previousRun ? (
+                <p className={styles.diagnosticScoreRow}>
+                  Минулого разу, {runDay(previousRun.completedAt)}: {formatDoshaResult(previousRun.reading, "uk")}
+                  {previousRun.reading === resultType ? " — так само, як зараз." : "."}
+                </p>
+              ) : null}
               {savedToCabinet ? (
                 <Link className={styles.diagnosticTextButton} href={surfaceHref("/profile")} data-cw-ink-control>
                   <InteractionInkLabel variant="link">Відкрити кабінет</InteractionInkLabel>

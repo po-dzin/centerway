@@ -21,6 +21,8 @@ import {
   type TestQuestion,
 } from "./doshaTestApi";
 import { keepResult, markResultClaimed, readKeptResult } from "@/lib/tests/keptResult";
+import { usePreviousRun } from "@/components/platform/usePreviousRun";
+import { DOSHA_TEST_SLUG } from "@/lib/dosha/doshaTest";
 import {
   ATTEMPT_STORAGE_KEY,
   DRAFT_STORAGE_KEY,
@@ -69,6 +71,10 @@ export function useDoshaAttempt(uiVariant: string) {
   const [savedToCabinet, setSavedToCabinet] = useState(false);
   const [telegramLink, setTelegramLink] = useState<string | null>(null);
   const [resumeDraft, setResumeDraft] = useState<DraftState | null>(null);
+  /* An unfinished run found on mount, OFFERED on the intro rather than resumed
+     on its own: dropping a reader into question 7 of a test they opened to
+     look at was the old behaviour. Choosing it moves it to `resumeDraft`. */
+  const [resumableDraft, setResumableDraft] = useState<DraftState | null>(null);
   /* The cabinet lives on the personal host; only this resolver knows whether
      that is a path or a full origin from where the reader currently stands. */
   const surfaceHref = useSurfaceHref();
@@ -204,6 +210,7 @@ export function useDoshaAttempt(uiVariant: string) {
       }
 
       const sessionId = getOrCreateSessionId();
+      setResumableDraft(null);
       saveAttemptId(null);
       setAttemptId(null);
       setQuestions(data.questions ?? []);
@@ -331,7 +338,7 @@ export function useDoshaAttempt(uiVariant: string) {
     }
 
     window.localStorage.setItem(SESSION_STORAGE_KEY, draft.sessionId);
-    setResumeDraft(draft);
+    setResumableDraft(draft);
   }, []);
 
   /* The questions come from the server, so the resume is two steps: the effect
@@ -409,6 +416,7 @@ export function useDoshaAttempt(uiVariant: string) {
      blockers exist to stop. By the time the reader reaches for it, it is a
      plain link. */
   const unlocked = !isAuthEnabled || Boolean(session?.user);
+  const previousRun = usePreviousRun(DOSHA_TEST_SLUG, attemptId, phase === "result" && savedToCabinet);
 
   useEffect(() => {
     /* Only past the door: the Telegram button lives in the full reading, and
@@ -568,6 +576,7 @@ export function useDoshaAttempt(uiVariant: string) {
        go through, so the reading is shown whole rather than locked forever. */
     unlocked,
     savedToCabinet,
+    previousRun,
     telegramLink,
     surfaceHref,
     isAuthEnabled,
@@ -585,6 +594,19 @@ export function useDoshaAttempt(uiVariant: string) {
     emitAttemptEvent,
     retrySave,
     requestStartTest,
+    resumeOffer: resumableDraft
+      ? {
+          question: Math.min(
+            Math.max(resumableDraft.currentQuestionIndex, Object.keys(resumableDraft.answers).length + 1, 1),
+            totalQuestions,
+          ),
+          total: totalQuestions,
+          onResume: () => {
+            setResumeDraft(resumableDraft);
+            setResumableDraft(null);
+          },
+        }
+      : null,
     selectAnswer,
     goToStep,
     goForward,

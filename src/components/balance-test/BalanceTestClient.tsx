@@ -26,6 +26,7 @@ import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "@/components/platform/PlatformDiagnosticStyles";
 import { ProgressRail } from "@/components/platform/ProgressRail";
 import { ResultGate } from "@/components/platform/ResultGate";
+import { runDay, usePreviousRun, type PreviousRun } from "@/components/platform/usePreviousRun";
 import { keepResult, leadSentences, readKeptResult } from "@/lib/tests/keptResult";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import {
@@ -65,6 +66,31 @@ function marksOf(type: BalanceType): BaseDosha[] {
    run finishes, so a retake never costs the result it started from. */
 const KEPT_KEY = "cw_balance_result_v1";
 const SESSION_KEY = "cw_balance_session_v1";
+/* An unfinished run: the answers, where the reader stood, and the seed that
+   orders the options — restoring answers under a reshuffled question would
+   hand the reader someone else's choices. Offered on the intro, not forced. */
+const DRAFT_KEY = "cw_balance_draft_v1";
+
+type BalanceDraft = { answers: Record<string, BalanceType>; step: number; seed: string };
+
+function readDraft(): BalanceDraft | null {
+  try {
+    const draft = JSON.parse(window.localStorage.getItem(DRAFT_KEY) ?? "null") as BalanceDraft | null;
+    const answered = draft?.answers ? Object.keys(draft.answers).length : 0;
+    return draft?.seed && answered > 0 && answered < TOTAL ? draft : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(draft: BalanceDraft | null): void {
+  try {
+    if (draft) window.localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    else window.localStorage.removeItem(DRAFT_KEY);
+  } catch {
+    // Storage refused: the run lives as long as the page.
+  }
+}
 
 type KeptBalance = { attemptId: string | null; answers: Record<string, BalanceType>; seed: string };
 
@@ -105,6 +131,9 @@ export default function BalanceTestClient({ author = null }: { author?: Author |
   /* The attempt belongs to an account — from the server's answer, never from
      the mere presence of a session. */
   const [saved, setSaved] = useState(false);
+  /* Saved means the run on screen is the newest row; the one before it is
+     what the comparison line reads. */
+  const previousRun = usePreviousRun(BALANCE_TEST_SLUG, null, phase === "result" && saved);
   const flowRef = useRef<HTMLElement>(null);
   const { session, status } = useSession();
   const signedIn = Boolean(session?.user);
@@ -150,6 +179,8 @@ export default function BalanceTestClient({ author = null }: { author?: Author |
   const restoreKept = useCallback(
     async (isSignedIn: boolean) => {
       if (phaseRef.current === "question") return;
+      // An unfinished retake is newer than the kept result: the intro offers it.
+      if (readDraft()) return;
       const kept = readKeptResult<KeptBalance>(KEPT_KEY);
       if (!kept || Object.keys(kept.result.answers ?? {}).length !== TOTAL) return;
 
@@ -192,7 +223,35 @@ export default function BalanceTestClient({ author = null }: { author?: Author |
 
   /* A retake starts clean on screen but leaves the kept result in place: it
      is replaced only when this run finishes. */
+  /* An unfinished run found on mount, offered on the intro. */
+  const [resumable, setResumable] = useState<BalanceDraft | null>(null);
+  useEffect(() => {
+    void (async () => {
+      await Promise.resolve();
+      setResumable(readDraft());
+    })();
+  }, []);
+
+  /* Every answer and every step is written down, so a reload or a locked
+     phone costs nothing — the dosha test has always done this. */
+  useEffect(() => {
+    if (phase !== "question" || !seed) return;
+    writeDraft(Object.keys(answers).length > 0 ? { answers, step, seed } : null);
+  }, [answers, phase, seed, step]);
+
+  const resume = useCallback(() => {
+    if (!resumable) return;
+    setSeed(resumable.seed);
+    setAnswers(resumable.answers);
+    setStep(Math.min(Math.max(resumable.step, 0), TOTAL - 1));
+    setSaved(false);
+    setResumable(null);
+    setPhase("question");
+  }, [resumable]);
+
   const start = useCallback(() => {
+    writeDraft(null);
+    setResumable(null);
     setSeed(newSeed());
     setAnswers({});
     setSaved(false);
@@ -206,6 +265,7 @@ export default function BalanceTestClient({ author = null }: { author?: Author |
   const finish = useCallback(() => {
     setPhase("result");
     keepResult<KeptBalance>(KEPT_KEY, { attemptId: null, answers, seed }, false);
+    writeDraft(null);
     void authorizedFetch(`/api/tests/${BALANCE_TEST_SLUG}/complete`, {
       method: "POST",
       body: JSON.stringify({ sessionId: sessionIdForAttempts(), answers: answerCodes(answers) }),
@@ -230,7 +290,21 @@ export default function BalanceTestClient({ author = null }: { author?: Author |
   }, [step]);
 
   if (phase === "intro") {
-    return <BalanceIntro author={author} onStart={start} />;
+    return (
+      <BalanceIntro
+        author={author}
+        onStart={start}
+        resume={
+          resumable
+            ? {
+                question: Math.min(Math.max(resumable.step + 1, Object.keys(resumable.answers).length + 1), TOTAL),
+                total: TOTAL,
+                onResume: resume,
+              }
+            : null
+        }
+      />
+    );
   }
 
   return (
@@ -315,6 +389,7 @@ export default function BalanceTestClient({ author = null }: { author?: Author |
               unlocked={unlocked}
               signedIn={signedIn}
               saved={saved}
+              previousRun={previousRun}
               onRetrySave={() => void retrySave()}
               onRestart={start}
             />
@@ -334,7 +409,15 @@ function BackToTests() {
   );
 }
 
-function BalanceIntro({ author, onStart }: { author: Author | null; onStart: () => void }) {
+function BalanceIntro({
+  author,
+  onStart,
+  resume,
+}: {
+  author: Author | null;
+  onStart: () => void;
+  resume: { question: number; total: number; onResume: () => void } | null;
+}) {
   return (
     <DiagnosticIntro
       artwork={platformPageArtwork.balance}
@@ -349,6 +432,7 @@ function BalanceIntro({ author, onStart }: { author: Author | null; onStart: () 
       notes={[BALANCE_VS_DOSHA]}
       boundary={BALANCE_BOUNDARY_NOTE}
       onStart={onStart}
+      resume={resume}
     />
   );
 }
@@ -360,6 +444,7 @@ function BalanceResult({
   unlocked,
   signedIn,
   saved,
+  previousRun,
   onRetrySave,
   onRestart,
 }: {
@@ -371,6 +456,7 @@ function BalanceResult({
   signedIn: boolean;
   /** The server confirmed the attempt belongs to the account. */
   saved: boolean;
+  previousRun: PreviousRun | null;
   onRetrySave: () => void;
   onRestart: () => void;
 }) {
@@ -467,6 +553,13 @@ function BalanceResult({
                   ? "Стан у вашому кабінеті. Пройдіть тест знову за кілька тижнів — і побачите, що змінилося."
                   : "Результат відкрито, але в кабінет він ще не потрапив."}
               </p>
+              {saved && previousRun && previousRun.reading in BALANCE_TYPE_LABEL ? (
+                <p className={styles.diagnosticScoreRow}>
+                  Минулого разу, {runDay(previousRun.completedAt)}:{" "}
+                  {BALANCE_RESULT_COPY[previousRun.reading as BalanceType].title.toLowerCase()}
+                  {previousRun.reading === primary ? " — так само, як зараз." : "."}
+                </p>
+              ) : null}
               {saved ? (
                 <Link className={styles.diagnosticTextButton} href={surfaceHref("/profile")} data-cw-ink-control>
                   <InteractionInkLabel variant="link">Відкрити кабінет</InteractionInkLabel>

@@ -19,9 +19,18 @@ type DoshaIntroProps = {
   error: string | null;
   isBusy: boolean;
   requestStartTest: () => Promise<void>;
+  resume?: { question: number; total: number; onResume: () => void } | null;
 };
 
-export function DoshaIntro({ author, fontFamily, topbarBadge, error, isBusy, requestStartTest }: DoshaIntroProps) {
+export function DoshaIntro({
+  author,
+  fontFamily,
+  topbarBadge,
+  error,
+  isBusy,
+  requestStartTest,
+  resume = null,
+}: DoshaIntroProps) {
   return (
     <DiagnosticIntro
       artwork={platformPageArtwork.doshaTest}
@@ -30,7 +39,7 @@ export function DoshaIntro({ author, fontFamily, topbarBadge, error, isBusy, req
       fontFamily={fontFamily}
       badge={topbarBadge}
       title="Тест доші"
-      lead="Швидка самооцінка тіла, енергії, емоцій і мислення — щоб побачити поточний стан і зрозуміти, з чого почати."
+      lead="Швидка самооцінка тіла, енергії, емоцій і мислення — щоб побачити свою природу і зрозуміти, з чого почати."
       author={author}
       steps={HOW_IT_WORKS_STEPS}
       notes={[DOSHA_DISCLOSURE]}
@@ -40,6 +49,7 @@ export function DoshaIntro({ author, fontFamily, topbarBadge, error, isBusy, req
       onStart={() => {
         void requestStartTest();
       }}
+      resume={resume}
     />
   );
 }
