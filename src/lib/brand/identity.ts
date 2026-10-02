@@ -40,7 +40,7 @@ export const BRAND = {
    * here, these become `alternateName` on the Organization and the WebSite
    * (the WebSite one is what Google reads for the site name in a result).
    */
-  alternateNames: ["Center Way", "ЦентрВей", "Центрвей"],
+  alternateNames: ["Center Way", "Центрвей", "Центрпуть"],
 
   /** Where the business is. For the structured data, and for telling it apart from same-name businesses abroad. */
   country: "UA",

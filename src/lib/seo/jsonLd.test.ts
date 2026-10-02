@@ -8,7 +8,7 @@ describe("brand structured data", () => {
   it("names the brand in the spellings people search for", () => {
     for (const node of [organizationLd(), websiteLd()]) {
       expect(node.name).toBe(BRAND.name);
-      expect(node.alternateName).toEqual(expect.arrayContaining(["Центрвей", "Center Way"]));
+      expect(node.alternateName).toEqual(expect.arrayContaining(["Центрвей", "Центрпуть", "Center Way"]));
     }
   });
 

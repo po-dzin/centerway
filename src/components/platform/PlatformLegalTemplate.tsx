@@ -28,6 +28,8 @@ type PlatformLegalTemplateProps = {
   title: string;
   lead: string;
   panels?: LegalPanel[];
+  /** The document's full text, set as reading text on its own plate under the header. */
+  document?: ReactNode;
   actions?: LegalAction[];
   children?: ReactNode;
   shellMode?: "platform" | "plain";
@@ -38,6 +40,7 @@ function LegalContent({
   title,
   lead,
   panels = [],
+  document,
   actions = [],
   children,
 }: Omit<PlatformLegalTemplateProps, "shellMode">) {
@@ -60,6 +63,8 @@ function LegalContent({
             ))}
           </div>
         ) : null}
+
+        {document ? <article className={templateStyles.document}>{document}</article> : null}
 
         {children}
 
