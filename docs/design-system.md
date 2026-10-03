@@ -821,6 +821,114 @@ builder, the admin and the catalogue filters still carry their own numbers; the
 job is finished by a `guard:fields` in the shape of `guard:buttons` — a rule
 that a component stylesheet may not mint a field width, only take a step.
 
+## Email — one frame, every letter (2026-10-03)
+
+Every letter the platform sends is poured into one frame,
+`renderEmailLayout` in `src/lib/email/layout.ts`. No letter writes its own
+skeleton. The gallery `docs/design-system/email-gallery.html` shows each one,
+rendered with sample data by the same builder the sender calls. Regenerate it
+with `npm run email:gallery`. `src/lib/email/catalog.test.ts` fails when the
+gallery drifts from the code, and when a `build…Email` / `build…Template` in
+`src/lib/email/` is missing from `catalog.ts`.
+
+### Why a frame and not a stylesheet
+
+Mail clients strip `<style>` (Gmail keeps a little, Outlook renders with Word),
+and none of them know custom properties or `color-mix()`. So the skeleton is
+tables, every rule is inline, and the DS travels as **values**: the light-side
+platform tokens resolved to hex in `EMAIL_TOKENS`. There is no dark letter.
+`color-scheme: light` is declared so that clients which invert colours leave
+the paper alone.
+
+| Mail token | Platform token | Hex | Used for |
+|---|---|---|---|
+| `paper` | `--cw-platform-bg` | `#faefe0` | body ground |
+| `surface` | `--cw-platform-surface` | `#fff8ef` | the one card |
+| `surfaceMuted` | `--cw-platform-surface-muted` | `#f3e4d0` | facts, note, code panels |
+| `border` | `--cw-platform-border` | `#dcd4c6` | card hairline, rules between rows |
+| `ink` | `--cw-platform-text` | `#18261d` | text, title, links |
+| `muted` | `--cw-platform-muted` | `#48544c` | secondary lines, labels |
+| `faint` | `--cw-text-tertiary` | `#747b73` | footer small print |
+| `accent` | `--cw-btn-primary-bg` | `#e5ae65` | button fill, list bullets, note edge |
+| `onAccent` | `--cw-btn-primary-text` | `#203126` | button label |
+| `linkRule` | `--cw-link-rule` (light) | `#70766d` | the thin underline of a link |
+| `guide` | `--cw-sem-guide-primary` | `#456b58` | eyebrow, step numbers |
+
+When a platform token changes, change the hex here in the same commit. Then
+run `npm run email:auth-templates` and `npm run email:gallery`, because the
+sign-in letter in Supabase is a copy.
+
+### Anatomy, top to bottom
+
+1. **Preheader.** A hidden line: what an inbox shows after the subject. Every
+   letter has one.
+2. **Card** (`surface`, 1 px `border`, radius 20, max 560 px, padding 28/36,
+   and 22/20 under 480 px). The letter is one object, like a page of the
+   platform.
+3. **Brand row inside the card.** The mark (32 px) and the wordmark
+   (130×31) as PNG at 3×, because Gmail does not show SVG. A hairline sits
+   under them, and the row links to the site. It is the site header at its own
+   sizes. There is no logo floating above the card.
+4. **Eyebrow.** 12 px Manrope, 0.14em tracking, uppercase, `guide`. It names
+   the kind of letter: «Вхід», «Оплату отримано», «Потік · Шлях 21».
+5. **Title.** The one serif line: Cormorant 34 px, and 28 px on a phone.
+6. **Blocks.** These kinds and no others:
+   - `paragraph`: 16/1.65 Manrope.
+   - `heading`: serif 24.
+   - `list`: warm bullets.
+   - `steps`: numbered rows in the data face, with a hairline between rows.
+   - `facts`: a muted panel of label → value rows (date, order, sum).
+   - `note`: a muted panel with a warm left edge. Use it for the one thing not
+     to miss.
+   - `code`: a one-time code, IBM Plex Mono 34 px, tracked out so it can be
+     typed back.
+7. **Button.** At most one. It is the site's primary button: warm fill, ink
+   label, 48 px tall, radius 16. It is built bulletproof (the padded `<a>` is
+   the hit area, and the cell carries the fill).
+8. **After-lines.** 14 px `muted`: support, how to sign in.
+9. **Signature** under the card: serif italic «Команда CenterWay».
+10. **Footer.** 12 px `faint`: why you got this letter, and the unsubscribe
+    link.
+
+Links inside text use `emailLink()`: ink, with a 1 px `linkRule` underline
+offset 3 px. This is the site's thin link rule. Never a blue default.
+
+### Rules every letter keeps
+
+- **One voice.** Ukrainian, «ви», calm. No promise of a result and no
+  pressure. Wellness education and practice, not treatment
+  (`docs/platform-copy-voice-2026-09-23.md`). Copy changes need the owner's
+  yes before they ship.
+- **Plain-text twin.** Letters sent through Resend carry `text` built from
+  the same parts as the HTML. The sign-in letter is the exception, because
+  Supabase sends only HTML.
+- **The sign-in letter carries a code, never a link.** A link would sign in a
+  different browser than the tab that is waiting (`EmailSignIn.tsx`).
+- **Unsubscribe.** Broadcasts carry the footer link plus `List-Unsubscribe` and
+  `List-Unsubscribe-Post` (one-click). Suppressed addresses (unsubscribed,
+  bounced, complained) are never sent to.
+- **Gates.** Transactional letters (sign-in code, receipt) always go out.
+  Lifecycle letters go out only with `LIFECYCLE_EMAILS=on`. Broadcasts go out
+  only when the operator sends them.
+
+### The letters
+
+| Letter | Goes out when | Sent by | Builder |
+|---|---|---|---|
+| Код для входу | email typed on the sign-in page (new or existing account) | Supabase Auth, templates «Magic Link» + «Confirm signup» | `authEmails.ts` → `supabase/templates/*.html` |
+| Оплату отримано | gateway confirms a payment, or the operator records a sale | Resend | `purchaseEmail.ts` |
+| Оплату отримано · груповий потік | the same, for a group offer with a start date | Resend | `purchaseEmail.ts` |
+| Вітаємо в CenterWay | new account, morning cron | Resend, `LIFECYCLE_EMAILS` | `lifecycleEmails.ts` |
+| Завтра стартує потік | the day before `cohort_starts_on` | Resend, `LIFECYCLE_EMAILS` | `lifecycleEmails.ts` |
+| День 1 потоку | on `cohort_starts_on` | Resend, `LIFECYCLE_EMAILS` | `lifecycleEmails.ts` |
+| Розсилка | the operator sends from the admin | Resend | `broadcasts/render.ts` |
+
+The Supabase templates the platform never triggers are «Invite», «Reset
+password», «Change email» and «Reauthentication». Sign-in is a code, there
+are no passwords, and accounts made by a gift are created confirmed without a
+letter. They stay at Supabase's default. A flow that starts using one of them
+builds its template from this frame first.
+
 ## Vocabulary — the one table
 
 The word "semantic" covers **three different axes** in this codebase. They are consistent with each other (verified per-block 2026-07-03), but they answer different questions. Never use one axis's values in another's field.
