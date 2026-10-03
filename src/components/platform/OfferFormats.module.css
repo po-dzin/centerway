@@ -117,6 +117,16 @@
   text-transform: uppercase;
 }
 
+/* A bonus program's kind, before its name: «МІНІ-КУРС Розвантажувальний день». */
+.bonusKind {
+  margin-inline-end: var(--cw-space-2xs);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-weight: 560;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 /* The enquiry for a format agreed in conversation, under the row of cards.
    Folded until its card's button points at it. */
 .request {

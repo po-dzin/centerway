@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
 import { formatPrice } from "@/lib/products";
+import { bonusKindLabel } from "@/lib/platform/catalogVocabulary";
 import type { ProgramFormat } from "@/lib/experiences/formats";
 import { countdownText, daysUntil, featuredFormat } from "@/lib/experiences/formatFeatured";
 import { CheckoutStartLink } from "./CheckoutStartLink";
@@ -37,10 +38,6 @@ function cohortLine(isoDate: string | null, now: Date): string | null {
   if (Number.isNaN(date.getTime())) return null;
   const days = daysUntil(isoDate, now);
   return `Старт потоку — ${COHORT_DATE.format(date)}${days !== null ? `, ${countdownText(days)}` : ""}`;
-}
-
-function kindLabel(kind: ProgramFormat["includes"][number]["kind"]): string {
-  return kind === "mini" ? "міні-курс" : kind === "checklist" ? "чек-лист" : "програма";
 }
 
 function formatCheckoutHref(code: string, programSlug: string): string {
@@ -124,8 +121,8 @@ export function OfferFormats({
                       <li key={program.courseSlug}>
                         <Icon className={styles.includeMark} name="plus" size={20} />
                         <span>
-                          <Link href={`/programs/${program.programSlug}`}>{program.title}</Link> —{" "}
-                          {kindLabel(program.kind)}
+                          <span className={css.bonusKind}>{bonusKindLabel(program.kind)}</span>{" "}
+                          <Link href={`/programs/${program.programSlug}`}>{program.title}</Link>
                         </span>
                       </li>
                     ))}

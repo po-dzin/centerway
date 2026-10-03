@@ -1182,6 +1182,9 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .fc-features li::before{content:"✓";color:var(--fc-ink);font-weight:700;flex:0 0 auto;font-size:.85rem;margin-top:.12em}
 /* What else the format opens closes the list with a «+», not a tick. */
 .fc-features li[data-cw-included]::before{content:"+"}
+/* A bonus program's kind, before its name (lib/platform/catalogVocabulary
+   bonusKindLabel — the platform's word too). */
+.fc-kind{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--fc-ink);margin-right:.35em}
 .fc-cta{display:flex;width:100%;justify-content:center;align-self:end}
 .fc-guarantee{display:flex;align-items:center;justify-content:center;gap:.4em;margin-top: var(--cw-space-md);font-family:var(--f-mono);font-size:.72rem;letter-spacing:.1em;color:var(--text-muted)}
 /* The Telegram action keeps its own fill — it names a destination, not a role —

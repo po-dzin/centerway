@@ -43,6 +43,7 @@
 
 import { countdownText, daysUntil, featuredFormat } from "@/lib/experiences/formatFeatured";
 import { formatFloor } from "@/lib/experiences/formatFloor";
+import { bonusKindLabel } from "@/lib/platform/catalogVocabulary";
 import type { BundleHost, ProgramFormat } from "@/lib/experiences/formats";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 
@@ -65,13 +66,12 @@ function escape(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-function kindWord(kind: ProgramFormat["includes"][number]["kind"]): string {
-  return kind === "mini" ? "міні-курс" : kind === "checklist" ? "чек-лист" : "програма";
-}
-
 function includedItems(format: ProgramFormat): string {
   return format.includes
-    .map((program) => `<li data-cw-included>${escape(program.title)} — ${kindWord(program.kind)}</li>`)
+    .map(
+      (program) =>
+        `<li data-cw-included><span><span class="fc-kind">${bonusKindLabel(program.kind)}</span> ${escape(program.title)}</span></li>`,
+    )
     .join("");
 }
 

@@ -126,9 +126,10 @@ describe("OfferFormats", () => {
     expect(html).toContain("Бонусом");
     expect(html).toContain('href="/programs/reset-day-program"');
     expect(html).toContain("Reset Day");
-    expect(html).toContain("міні-курс");
+    // The kind comes before the name (G, 2026-10-03).
+    expect(html).toMatch(/>Міні-курс<\/span> <a href="\/programs\/reset-day-program">/);
     expect(html).toContain('href="/programs/short"');
-    expect(html).toContain("чек-лист");
+    expect(html).toContain('>Чек-лист</span> <a href="/programs/short">');
 
     expect(render([SELF])).not.toContain("Бонусом");
   });
