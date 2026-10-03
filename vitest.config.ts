@@ -44,7 +44,10 @@ export default defineConfig({
       ],
       reporter: ["text-summary"],
       reportsDirectory: "coverage",
-      thresholds: { statements: 23, branches: 21, functions: 21, lines: 23 },
+      // Raised 2026-10-02 from 23/21/21/23, which had fallen seven points
+      // behind (meta-audit 2026-09-30). Actual that day: 31.5/28.8/29.3/32.1,
+      // set one point under so a branch that adds a file is not failed for it.
+      thresholds: { statements: 30, branches: 27, functions: 28, lines: 31 },
     },
   },
 });

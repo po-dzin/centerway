@@ -405,7 +405,7 @@ describe("granting a role on the same form that creates the account", () => {
         course: { slug: "reset-day", title: "Reset Day", status: "published" },
       },
     });
-    access.setRole.mockResolvedValue({ account: { email: "new@b.c" }, previous: null, role: "coach" });
+    access.setRole.mockResolvedValue({ account: { email: "new@b.c" }, previous: null, role: "support" });
   });
 
   it("assigns the role AFTER provisioning, so a just-created account can be found", async () => {
@@ -426,7 +426,7 @@ describe("granting a role on the same form that creates the account", () => {
     });
     access.setRole.mockImplementation(async () => {
       order.push("role");
-      return { account: { email: "new@b.c" }, previous: null, role: "coach" };
+      return { account: { email: "new@b.c" }, previous: null, role: "support" };
     });
 
     const res = await learners.POST(
@@ -434,13 +434,13 @@ describe("granting a role on the same form that creates the account", () => {
         email: "new@b.c",
         course: "reset-day",
         createAccount: true,
-        role: "coach",
+        role: "support",
       }),
     );
 
     expect(res.status).toBe(200);
     expect(order).toEqual(["provision", "role"]);
-    expect(await res.json()).toMatchObject({ accountCreated: true, role: "coach" });
+    expect(await res.json()).toMatchObject({ accountCreated: true, role: "support" });
   });
 
   it("leaves the role alone when the field is absent, rather than writing `user`", async () => {
@@ -501,8 +501,8 @@ describe("accounts", () => {
   });
 
   it("passes a role facet through, including the `staff` shorthand", async () => {
-    await learners.GET(get("http://x/api/admin/access/learners?role=coach"));
-    expect(access.listPeople).toHaveBeenCalledWith(expect.objectContaining({ role: "coach" }));
+    await learners.GET(get("http://x/api/admin/access/learners?role=support"));
+    expect(access.listPeople).toHaveBeenCalledWith(expect.objectContaining({ role: "support" }));
 
     await learners.GET(get("http://x/api/admin/access/learners?role=staff"));
     expect(access.listPeople).toHaveBeenCalledWith(expect.objectContaining({ role: "staff" }));
@@ -536,10 +536,10 @@ describe("roles", () => {
   });
 
   it("assigns a valid role as the acting admin", async () => {
-    access.setRole.mockResolvedValue({ account: { email: "a@b.c" }, previous: "user", role: "coach" });
-    const res = await rolesPost(send("http://x/api/admin/access/roles", "POST", { email: "a@b.c", role: "coach" }));
+    access.setRole.mockResolvedValue({ account: { email: "a@b.c" }, previous: "user", role: "support" });
+    const res = await rolesPost(send("http://x/api/admin/access/roles", "POST", { email: "a@b.c", role: "support" }));
     expect(res.status).toBe(200);
-    expect(access.setRole).toHaveBeenCalledWith({ email: "a@b.c", role: "coach", actorId: "auth-admin" });
+    expect(access.setRole).toHaveBeenCalledWith({ email: "a@b.c", role: "support", actorId: "auth-admin" });
   });
 
   it("passes the self-demotion refusal through as a 409", async () => {

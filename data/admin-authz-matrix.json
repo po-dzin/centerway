@@ -94,7 +94,8 @@
   {
     "kind": "mutate",
     "method": "POST",
-    "path": "/api/admin/bootstrap-role"
+    "path": "/api/admin/bootstrap-role",
+    "auth": "signed-in"
   },
   {
     "kind": "mutate",

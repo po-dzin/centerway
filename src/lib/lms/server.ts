@@ -182,7 +182,12 @@ export async function checkEntitlement(
   course: Course,
   now = new Date(),
 ): Promise<ReturnType<typeof resolveEntitlement>> {
-  if (await isStaff(identity.authUserId)) {
+  // The course's own author counts as staff for it (PR #310 review).
+  const [staff, author] = await Promise.all([
+    isStaff(identity.authUserId),
+    isCourseAuthor(identity.authUserId, course.id),
+  ]);
+  if (staff || author) {
     return { entitled: true, source: "manual", grantedAt: now.toISOString(), orderRef: null };
   }
 
@@ -383,12 +388,17 @@ export async function ensureEnrollment(
   // staff role and no offer term lifts it.
   if (row?.blocked_at) return { enrollment: null, reason: "blocked" };
 
-  const [offerAccess, purchases, staff, opening] = await Promise.all([
+  const [offerAccess, purchases, staffRole, author, opening] = await Promise.all([
     readOfferAccess(course),
     loadPurchases(identity),
     isStaff(identity.authUserId),
+    isCourseAuthor(identity.authUserId, course.id),
     loadOpeningCodes(db, [course.id]),
   ]);
+  // The course's author opens it the way staff do: no purchase for their own
+  // work. Until 2026-10-02 that came from the `coach` role being staff; the
+  // role is retired and ownership is now the whole of it (PR #310 review).
+  const staff = staffRole || author;
 
   const { rule, free } = offerAccess;
 
@@ -707,7 +717,7 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
   const courses = await listLiveCourses();
 
   // Who authored each course, for the DRAFT-visibility question below. A
-  // narrower question than "may preview live content": a coach previewing an
+  // narrower question than "may preview live content": an author previewing an
   // unfinished course they did not write is reading someone else's unreviewed
   // draft, not testing their own material.
   const { data: courseAuthorRows } = await db.from("lms_courses").select("id, author_id, experience_id");
@@ -793,6 +803,10 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
     courses.map(async (course): Promise<LearnerShelfEntry | null> => {
       const row = enrollmentByCourse.get(course.id);
       const free = freeByCourse.get(course.id) === true;
+      // Their own course opens for its author as it does for staff (see
+      // `ensureEnrollment`), so the shelf shows it open rather than for sale.
+      const ownCourse = authorByCourse.get(course.id) === identity.authUserId;
+      const unpaid = staff || ownCourse;
 
       const orders = acceptedPaidOrders({
         courseProductCodes: openingCodesFor(course, openingByCourse),
@@ -826,7 +840,7 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
       // The same refund rule the door applies, so the shelf does not show open
       // a course the door will refuse.
       const refund =
-        row && !staff && !free
+        row && !unpaid && !free
           ? refundedSeat({
               source: row.source,
               orderRef: row.order_ref,
@@ -856,14 +870,13 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
       const state = row || plan.grant || free ? accessStateOf(projected, now) : null;
       const open = state === "active";
 
-      // A draft is visible to an admin (house-wide oversight), to a coach who
-      // authored it (previewing their own unfinished work), and to anyone
+      // A draft is visible to an admin (house-wide oversight), to its author
+      // (previewing their own unfinished work, whatever their role), and to anyone
       // holding a manual grant — the grant IS the enrollment row, so its
       // presence is the check. `support` is NOT included: seeing every draft
       // in the platform is an oversight power, not a support one, and support
       // already has the admin catalogue for that (2026-08-29).
-      const ownDraft = role === "coach" && authorByCourse.get(course.id) === identity.authUserId;
-      if (course.status !== "published" && !(row && open) && !admin && !ownDraft) return null;
+      if (course.status !== "published" && !(row && open) && !admin && !ownCourse) return null;
 
       const expiresAt = projected.expiresAt ?? null;
       const shared = {
@@ -917,7 +930,7 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
 
       // No row. Staff still open a published course, and a fresh purchase shows
       // as available before its first visit writes anything.
-      const available = open || staff;
+      const available = open || unpaid;
       const entitlement = available ? null : await checkEntitlement(identity, course, now);
 
       return {

@@ -7,6 +7,17 @@ on:
       - main
       - "codex/**"
 
+# Read-only token: nothing in this job writes to the repository or the PR.
+permissions:
+  contents: read
+
+# A newer push to the same branch makes the older run moot. Cancelled only on
+# pull requests: every push to main still finishes, so main keeps a result for
+# each commit.
+concurrency:
+  group: admin-smoke-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   smoke:
     runs-on: ubuntu-latest

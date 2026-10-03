@@ -25,7 +25,7 @@
  * form the CLI and the author's agent use.
  */
 
-import type { InlineSpan, InlineText } from "@/lms-core";
+import { isSafeHref, type InlineSpan, type InlineText } from "@/lms-core";
 import { escapeHtml } from "@/lib/strings";
 
 /** A structural stand-in for a DOM node — the subset this conversion needs. */
@@ -124,7 +124,10 @@ export function inlineToHtml(value: InlineText): string {
   const render = (node: MarkupNode): string => {
     if (node.kind === "text") return escapeHtml(node.text);
     const inner = node.children.map(render).join("");
-    if (node.tag === "a") return `<a href="${escapeHtml(node.href ?? "")}">${inner}</a>`;
+    // An unsafe target is written as plain text: this string goes into the
+    // editor through innerHTML, where React's own guard does not run.
+    if (node.tag === "a")
+      return isSafeHref(node.href ?? "") ? `<a href="${escapeHtml(node.href ?? "")}">${inner}</a>` : inner;
     return `<${node.tag}>${inner}</${node.tag}>`;
   };
 

@@ -38,15 +38,19 @@ export const ADMIN_ROLE_CACHE_KEY = "cw_admin_role_cache_v2";
 export const ADMIN_ROLE_CACHE_TTL_MS = 5 * 60_000;
 
 /**
- * Staff — who may open a draft course. A wider set than admin: `coach` belongs
- * here and nowhere near the admin surface.
+ * Staff — who may open any course without paying for it.
+ *
+ * It was wider than admin while `coach` existed. The role is retired
+ * (2026-10-02): an author is the owner of a course, not a role, and sees their
+ * own drafts through `author_id`. The two sets now hold the same roles; the
+ * predicates stay apart because they answer different questions.
  *
  * Separate predicate, same table. The distinction being kept is "which
  * question", not "which store": `isStaff` answers "may see unpublished work",
  * `isAdminRole` answers "may open the panel". What is NOT kept is the old split
  * where those two questions were also answered by two different tables.
  */
-export const STAFF_ROLES = new Set(["admin", "support", "coach"]);
+export const STAFF_ROLES = new Set(["admin", "support"]);
 
 export function isStaffRole(role: string | null | undefined): boolean {
   if (typeof role !== "string") return false;

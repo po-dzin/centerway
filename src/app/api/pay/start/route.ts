@@ -76,6 +76,9 @@ export async function GET(req: NextRequest) {
   });
 
   if (!started.ok) {
+    // The gateway's own answer stays in the log. It used to be sent to the
+    // buyer's browser as `raw`, on a page the buyer opens by clicking "pay".
+    if (started.raw) console.error("[pay/start] invoice failed", { order_ref: started.order_ref, raw: started.raw });
     return NextResponse.json(
       {
         ok: false,
@@ -83,7 +86,6 @@ export async function GET(req: NextRequest) {
         details: started.details,
         need: started.need,
         order_ref: started.order_ref,
-        raw: started.raw,
       },
       { status: started.status },
     );

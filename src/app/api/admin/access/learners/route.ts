@@ -109,7 +109,7 @@ type ProvisionBody = {
    * An elevated role to give the account, admin-only and optional.
    *
    * Absent means "leave the role alone", which is not the same as `user`:
-   * sending `user` to an existing coach would quietly demote them, and the
+   * sending `user` to an existing support account would quietly demote it, and the
    * panel omits the field rather than defaulting it for exactly that reason.
    */
   role?: string;

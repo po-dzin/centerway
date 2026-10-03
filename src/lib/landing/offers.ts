@@ -362,8 +362,15 @@ export async function resolveIremLandingOffer(input: QueryLike): Promise<Landing
     return mapPersonalOfferRow(refetched as PersonalOfferTokenRow, offerToken);
   }
 
+  // Only an active token carries the price. `consumed`, `cancelled` and
+  // `expired` are terminal: a cancelled offer or a spent one used to keep its
+  // discount until the deadline, because nothing past this line read the status
+  // (meta-audit 2026-09-30). A cancelled one is simply not offered; the other
+  // two read as over.
+  if (row.status === "cancelled") return base;
+
   const expiresAtMs = Date.parse(row.expires_at ?? "");
-  if (!Number.isFinite(expiresAtMs) || Date.now() > expiresAtMs) {
+  if (row.status !== "active" || !Number.isFinite(expiresAtMs) || Date.now() > expiresAtMs) {
     return {
       ...base,
       offerExpired: true,
