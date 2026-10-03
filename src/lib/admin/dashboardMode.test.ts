@@ -42,6 +42,11 @@ describe("the two modes between them", () => {
     }
   });
 
+  it("put who-brought-whom with the other where-from answers, on the traffic side", () => {
+    expect(MODE_SECTIONS.traffic).toContain("referrals");
+    expect(MODE_SECTIONS.courses).not.toContain("referrals");
+  });
+
   it("default to the question asked daily", () => {
     expect(DEFAULT_DASHBOARD_MODE).toBe("courses");
   });
@@ -62,6 +67,7 @@ describe("sectionForMode", () => {
     expect(sectionForMode("courses", "inputs_quality")).toBe("overview");
     expect(sectionForMode("traffic", "products")).toBe("overview");
     expect(sectionForMode("traffic", "dosha")).toBe("overview");
+    expect(sectionForMode("courses", "referrals")).toBe("overview");
   });
 
   it("never returns a section the chosen mode does not offer", () => {

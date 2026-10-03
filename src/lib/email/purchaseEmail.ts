@@ -22,6 +22,8 @@ import { escapeHtml } from "@/lib/strings";
 import { fulfilmentDestination } from "@/lib/payments/fulfilmentDestination";
 import { SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
 import type { ProductFulfilment } from "@/lib/products";
+import { emailLink, renderEmailLayout, type EmailBlock } from "./layout";
+import { ukDate } from "./lifecycleEmails";
 import { sendEmail } from "./resend";
 
 export type PurchaseEmailContent = {
@@ -37,6 +39,8 @@ export type PurchaseEmailInput = {
   currency: string;
   fulfilment: ProductFulfilment;
   orderRef: string;
+  /** A group-format offer's shared start date (YYYY-MM-DD); null for self-paced. */
+  cohortStartsOn?: string | null;
 };
 
 function formatAmount(amount: number | null, currency: string): string | null {
@@ -66,6 +70,10 @@ export function buildPurchaseEmail(input: PurchaseEmailInput): PurchaseEmailCont
       ? null
       : `Входьте на платформу з цією ж адресою — ${input.email}. Доступ відкривається саме за нею: під іншим акаунтом куплений курс не зʼявиться.`;
 
+  const streamNote = input.cohortStartsOn
+    ? `Потік стартує ${ukDate(input.cohortStartsOn)}. Напередодні надішлемо лист, а в день старту — перший урок.`
+    : null;
+
   const lines = [
     `Дякуємо! Оплату прийнято.`,
     ``,
@@ -73,6 +81,8 @@ export function buildPurchaseEmail(input: PurchaseEmailInput): PurchaseEmailCont
     price ? `Сума: ${price}` : null,
     `Номер замовлення: ${input.orderRef}`,
     ``,
+    streamNote,
+    streamNote ? `` : null,
     `${label}: ${href}`,
     ``,
     signInNote,
@@ -84,20 +94,33 @@ export function buildPurchaseEmail(input: PurchaseEmailInput): PurchaseEmailCont
 
   const text = lines.join("\n");
 
-  /* Inline styles and a table-free layout on purpose: mail clients strip
-     <style> blocks, and this message has one job — carry a link that works. */
-  const html = `<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#2b2723;max-width:520px;margin:0 auto;padding:24px">
-  <p style="margin:0 0 20px">Дякуємо! Оплату прийнято.</p>
-  <p style="margin:0 0 4px"><strong>${escapeHtml(title)}</strong></p>
-  ${price ? `<p style="margin:0 0 4px;color:#6b625a">Сума: ${escapeHtml(price)}</p>` : ""}
-  <p style="margin:0 0 24px;color:#6b625a">Замовлення: ${escapeHtml(input.orderRef)}</p>
-  <p style="margin:0 0 24px">
-    <a href="${escapeHtml(href)}" style="display:inline-block;background:#2b2723;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:700">${escapeHtml(label)}</a>
-  </p>
-  ${signInNote ? `<p style="margin:0 0 20px;color:#6b625a">${escapeHtml(signInNote)}</p>` : ""}
-  <p style="margin:0 0 20px;color:#6b625a">Якщо щось не відкривається — <a href="${escapeHtml(SUPPORT_BOT_URL)}" style="color:#2b2723">напишіть нам</a>.</p>
-  <p style="margin:0;color:#9a9089">CenterWay</p>
-</div>`;
+  /* The shared frame (layout.ts): tables and inline styles, because mail
+     clients strip <style>. The job is still one — carry a link that works. */
+  const blocks: EmailBlock[] = [
+    { kind: "paragraph", html: "Дякуємо! Оплату прийнято." },
+    {
+      kind: "facts",
+      rows: [
+        ...(price ? [{ label: "Сума", value: escapeHtml(price) }] : []),
+        { label: "Замовлення", value: escapeHtml(input.orderRef) },
+        ...(input.cohortStartsOn ? [{ label: "Старт потоку", value: escapeHtml(ukDate(input.cohortStartsOn)) }] : []),
+      ],
+    },
+  ];
+  /* The date already stands in the facts panel; the paragraph keeps only what happens next. */
+  if (streamNote)
+    blocks.push({ kind: "paragraph", html: "Напередодні надішлемо лист, а в день старту — перший урок." });
+  if (signInNote) blocks.push({ kind: "note", html: escapeHtml(signInNote) });
+
+  const html = renderEmailLayout({
+    preheader: `${title} — доступ і деталі замовлення.`,
+    eyebrow: "Оплату отримано",
+    title,
+    blocks,
+    cta: { label, href },
+    after: [`Якщо щось не відкривається — ${emailLink(SUPPORT_BOT_URL, "напишіть нам", "muted")}.`],
+    signature: "Команда CenterWay",
+  });
 
   return { subject, html, text };
 }
@@ -136,6 +159,28 @@ async function purchaseEmailSent(orderRef: string): Promise<boolean> {
   return Boolean(data?.id);
 }
 
+/**
+ * The shared start date of the offer this order bought, when it is a group
+ * stream. Read here rather than passed in so the three callers (payment
+ * webhook, reconcile, manual sale) stay as they were. A failed read is not a
+ * reason to hold the receipt: it goes out without the line.
+ */
+async function cohortOfOrder(orderRef: string): Promise<string | null> {
+  try {
+    const db = adminClient();
+    const { data: order } = await db.from("orders").select("offer_id").eq("order_ref", orderRef).maybeSingle();
+    if (!order?.offer_id) return null;
+    const { data: offer } = await db
+      .from("experience_offers")
+      .select("format, cohort_starts_on")
+      .eq("id", order.offer_id)
+      .maybeSingle();
+    return offer?.format === "group" && offer.cohort_starts_on ? offer.cohort_starts_on : null;
+  } catch {
+    return null;
+  }
+}
+
 export type SendPurchaseEmailResult = {
   sent: boolean;
   reason?: string;
@@ -153,7 +198,10 @@ export async function sendPurchaseEmail(input: PurchaseEmailInput): Promise<Send
     if (!input.email) return { sent: false, reason: "no_email" };
     if (await purchaseEmailSent(input.orderRef)) return { sent: false, reason: "already_sent" };
 
-    const content = buildPurchaseEmail(input);
+    const content = buildPurchaseEmail({
+      ...input,
+      cohortStartsOn: input.cohortStartsOn === undefined ? await cohortOfOrder(input.orderRef) : input.cohortStartsOn,
+    });
     const result = await sendEmail({
       to: input.email,
       subject: content.subject,

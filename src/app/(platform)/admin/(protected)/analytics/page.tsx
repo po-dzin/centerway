@@ -80,6 +80,7 @@ import type {
   PurchaseTransport,
   QualityGaps,
   QualitySeriesRow,
+  ReferralAnalytics,
   UnifiedKpis,
 } from "@/lib/admin/analytics/types";
 
@@ -127,6 +128,9 @@ export default function AnalyticsPage() {
 
   const [doshaData, setDoshaData] = useState<DoshaAnalytics | null>(null);
   const [doshaLoading, setDoshaLoading] = useState(false);
+  const [referralsData, setReferralsData] = useState<ReferralAnalytics | null>(null);
+  const [referralsLoading, setReferralsLoading] = useState(false);
+  const [openReferralTags, setOpenReferralTags] = useState<Set<string>>(new Set());
   const [diagnosticsPanels, setDiagnosticsPanels] = useState<Record<DiagnosticsPanelKey, boolean>>({
     freshness: false,
     quality: false,
@@ -551,6 +555,7 @@ export default function AnalyticsPage() {
     capi: t("analytics_subtab_capi"),
     dosha: t("analytics_dosha_tab"),
     inputs_quality: t("analytics_subtab_inputs_quality"),
+    referrals: t("analytics_subtab_referrals"),
   };
   const analyticsTabs = MODE_SECTIONS[dashboardMode].map((key) => ({
     key,
@@ -574,6 +579,42 @@ export default function AnalyticsPage() {
     }
   };
 
+  /* Loaded on first open, like the dosha tab: a tab nobody opens should not
+     cost every dashboard load the ten reads it takes to name the people. */
+  const fetchReferralAnalytics = async (period?: { from: string; to: string }) => {
+    setReferralsLoading(true);
+    try {
+      const query = new URLSearchParams();
+      if (period?.from) query.set("from", period.from);
+      if (period?.to) query.set("to", period.to);
+      const res = await authorizedFetch(`/api/admin/analytics/referrals?${query.toString()}`);
+      if (res.ok) {
+        setReferralsData((await res.json()) as ReferralAnalytics);
+      }
+    } catch {
+      // best-effort
+    } finally {
+      setReferralsLoading(false);
+    }
+  };
+
+  const toggleReferralTag = (ref: string) => {
+    setOpenReferralTags((prev) => {
+      const next = new Set(prev);
+      if (next.has(ref)) next.delete(ref);
+      else next.add(ref);
+      return next;
+    });
+  };
+
+  /* Kyiv, not the browser's zone: the server cut the period on Kyiv midnights
+     (ANALYTICS_TZ), and a row dated in another zone could print outside it. */
+  const formatReferralDate = (iso: string): string =>
+    new Date(iso).toLocaleDateString(dateLocale, { timeZone: "Europe/Kyiv" });
+
+  const formatReferralRevenue = (revenue: Array<{ currency: string; amount: number }>): string =>
+    revenue.length > 0 ? revenue.map((row) => formatCampaignSpend(row.amount, row.currency)).join(" · ") : "—";
+
   const handleDashboardModeChange = (mode: DashboardMode) => {
     setDashboardMode(mode);
     try {
@@ -594,6 +635,9 @@ export default function AnalyticsPage() {
     });
     if (key === "dosha" && !doshaData) {
       void fetchDoshaAnalytics({ from: fromDate, to: toDate });
+    }
+    if (key === "referrals" && !referralsData) {
+      void fetchReferralAnalytics({ from: fromDate, to: toDate });
     }
   };
   const toggleDiagnosticsPanel = (key: DiagnosticsPanelKey) => {
@@ -1850,6 +1894,153 @@ export default function AnalyticsPage() {
                   <p className={dash.figureLabel}>{t("analytics_dosha_cac_note")}</p>
                 </div>
               )}
+            </>
+          ) : (
+            <div className={`${surfaces.plate} ${dash.plateNote}`}>{t("analytics_dosha_press_refresh")}</div>
+          )}
+        </div>
+      )}
+
+      {analyticsSection === "referrals" && (
+        <div className={pageStyles.section}>
+          <div className={dash.rowBetween}>
+            <h2 className={dash.sectionTitle}>{t("analytics_referrals_title")}</h2>
+            <button
+              type="button"
+              onClick={() => {
+                void fetchReferralAnalytics({ from: fromDate, to: toDate });
+              }}
+              disabled={referralsLoading}
+              className={controls.action}
+            >
+              {referralsLoading ? t("common_loading_short") : t("analytics_refresh")}
+            </button>
+          </div>
+
+          {referralsLoading && !referralsData ? (
+            <AdminLoadingState variant="spinner" text={t("common_loading_short")} className={surfaces.plate} />
+          ) : referralsData ? (
+            <>
+              <div className={dash.kpis3}>
+                <div className={surfaces.plate}>
+                  <div className={dash.figureHeadlineLabel}>{t("analytics_referrals_people")}</div>
+                  <div className={dash.figureHeadline}>{referralsData.totals.people}</div>
+                  <div className={dash.figureAside}>
+                    {t("analytics_referrals_paid_people")}: {referralsData.totals.paid_people} ·{" "}
+                    {t("analytics_referrals_free_people")}: {referralsData.totals.free_people}
+                  </div>
+                </div>
+                <div className={surfaces.plate}>
+                  <div className={dash.figureHeadlineLabel}>{t("analytics_referrals_paid_orders")}</div>
+                  <div className={dash.figureHeadline}>{referralsData.totals.paid_orders}</div>
+                  <div className={dash.figureAside}>
+                    {t("analytics_referrals_tags")}: {referralsData.totals.tags}
+                  </div>
+                </div>
+                <div className={surfaces.plate}>
+                  <div className={dash.figureHeadlineLabel}>{t("analytics_col_revenue")}</div>
+                  <div className={dash.figureHeadline}>{formatReferralRevenue(referralsData.totals.revenue)}</div>
+                </div>
+              </div>
+
+              <div className={surfaces.plateFlush}>
+                <div className={`${dash.flushHead} ${dash.sectionHead}`}>
+                  <h3 className={dash.subTitle}>{t("analytics_subtab_referrals")}</h3>
+                  <p className={dash.figureLabel}>{t("analytics_referrals_note")}</p>
+                </div>
+                {referralsData.tags.length === 0 ? (
+                  <div className={dash.plateNote}>{t("analytics_referrals_empty")}</div>
+                ) : (
+                  <div className={surfaces.scrollX}>
+                    <table className={surfaces.tableDense}>
+                      <thead className={surfaces.tableHead}>
+                        <tr>
+                          <th className={surfaces.thDense}>{t("analytics_referrals_col_tag")}</th>
+                          <th className={surfaces.thDense}>{t("analytics_referrals_people")}</th>
+                          <th className={surfaces.thDense}>{t("analytics_referrals_paid_people")}</th>
+                          <th className={surfaces.thDense}>{t("analytics_referrals_free_people")}</th>
+                          <th className={surfaces.thDense}>{t("analytics_referrals_paid_orders")}</th>
+                          <th className={surfaces.thDense}>{t("analytics_col_revenue")}</th>
+                          <th className={surfaces.thDense}>{t("analytics_referrals_col_first")}</th>
+                          <th className={surfaces.thDense}>{t("analytics_referrals_col_last")}</th>
+                          <th className={surfaces.thDense} />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {referralsData.tags.map((tag) => {
+                          const open = openReferralTags.has(tag.ref);
+                          return [
+                            <tr key={tag.ref} className={surfaces.row}>
+                              <td className={`${surfaces.tdDense} ${surfaces.nowrap} cw-text`}>{tag.ref}</td>
+                              <td className={`${surfaces.tdDense} cw-text`}>{tag.people}</td>
+                              <td className={`${surfaces.tdDense} cw-text`}>{tag.paid_people}</td>
+                              <td className={`${surfaces.tdDense} cw-muted`}>{tag.free_people}</td>
+                              <td className={`${surfaces.tdDense} cw-muted`}>{tag.paid_orders}</td>
+                              <td className={`${surfaces.tdDense} ${surfaces.nowrap} cw-text`}>
+                                {formatReferralRevenue(tag.revenue)}
+                              </td>
+                              <td className={`${surfaces.tdDense} ${surfaces.nowrap} cw-muted`}>
+                                {formatReferralDate(tag.first_at)}
+                              </td>
+                              <td className={`${surfaces.tdDense} ${surfaces.nowrap} cw-muted`}>
+                                {formatReferralDate(tag.last_at)}
+                              </td>
+                              <td className={surfaces.tdDense}>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleReferralTag(tag.ref)}
+                                  aria-expanded={open}
+                                  className={`${controls.actionCompact} cw-btn-muted`}
+                                >
+                                  {open ? t("analytics_referrals_hide_people") : t("analytics_referrals_show_people")}
+                                </button>
+                              </td>
+                            </tr>,
+                            open ? (
+                              <tr key={`${tag.ref}:people`}>
+                                <td colSpan={9} className={surfaces.tdDense}>
+                                  <table className={surfaces.tableDense}>
+                                    <thead className={surfaces.tableHead}>
+                                      <tr>
+                                        <th className={surfaces.thDense}>{t("analytics_referrals_col_email")}</th>
+                                        <th className={surfaces.thDense}>{t("analytics_referrals_col_course")}</th>
+                                        <th className={surfaces.thDense}>{t("analytics_col_date")}</th>
+                                        <th className={surfaces.thDense}>{t("analytics_referrals_col_access")}</th>
+                                        <th className={surfaces.thDense}>{t("analytics_referrals_col_order")}</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {tag.people_list.map((person, index) => (
+                                        <tr key={`${person.course_key}:${index}`} className={surfaces.row}>
+                                          <td className={`${surfaces.tdDense} cw-text`}>{person.email ?? "—"}</td>
+                                          <td className={`${surfaces.tdDense} cw-text`}>
+                                            {person.course_title ?? person.course_key}
+                                          </td>
+                                          <td className={`${surfaces.tdDense} ${surfaces.nowrap} cw-muted`}>
+                                            {formatReferralDate(person.at)}
+                                          </td>
+                                          <td className={`${surfaces.tdDense} cw-muted`}>
+                                            {person.paid
+                                              ? t("analytics_referrals_paid")
+                                              : t("analytics_referrals_free")}
+                                          </td>
+                                          <td className={`${surfaces.tdDense} ${surfaces.nowrap} cw-muted`}>
+                                            {person.order_ref ?? "—"}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </td>
+                              </tr>
+                            ) : null,
+                          ];
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <div className={`${surfaces.plate} ${dash.plateNote}`}>{t("analytics_dosha_press_refresh")}</div>

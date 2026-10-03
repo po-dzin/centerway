@@ -12,6 +12,11 @@
   {
     "kind": "read",
     "method": "GET",
+    "path": "/api/admin/analytics/referrals"
+  },
+  {
+    "kind": "read",
+    "method": "GET",
     "path": "/api/admin/audit"
   },
   {
@@ -147,6 +152,15 @@
     "path": "/api/admin/access/learners",
     "body": {
       "email": "smoke@example.com",
+      "course": "smoke-course"
+    }
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/access/learners/bulk",
+    "body": {
+      "emails": "smoke@example.com",
       "course": "smoke-course"
     }
   },
