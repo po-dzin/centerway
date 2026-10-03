@@ -16,6 +16,12 @@ import styles from "./PlatformShellStyles";
  * the same sentence. G: «текст можно в одну линию с лого загрузки… ЕДИНУЮ
  * карточку загрузки ДЛЯ ВСЕХ вариантов». Both now render this node: the mark
  * and the words on one row, the card as tall as they are.
+ *
+ * NO FOOTER WHILE IT WAITS (same day). The header stays: it is the frame and
+ * the way out, and it does not move when the content lands. The footer is the
+ * END of a page, and under a short card it rose to mid-screen, then fell away
+ * when the content arrived. `data-cw-wait` is what the shell reads to hold it
+ * back (PlatformShell.module.css).
  */
 export function PlatformLoadingState({
   label,
@@ -32,6 +38,7 @@ export function PlatformLoadingState({
   return (
     <section
       className={className ? `${styles.platformLoadingState} ${className}` : styles.platformLoadingState}
+      data-cw-wait=""
       data-cw-material="matte"
       data-cw-edge="none"
       role="status"
