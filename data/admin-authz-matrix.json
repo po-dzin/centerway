@@ -152,6 +152,15 @@
   },
   {
     "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/access/learners/bulk",
+    "body": {
+      "emails": "smoke@example.com",
+      "course": "smoke-course"
+    }
+  },
+  {
+    "kind": "mutate",
     "method": "DELETE",
     "path": "/api/admin/access/learners?enrollmentId=smoke-enrollment",
     "routePath": "/api/admin/access/learners"

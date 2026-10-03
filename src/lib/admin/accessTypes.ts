@@ -203,6 +203,78 @@ export function grantDeadlineValue(forever: boolean, dateInput: string): string 
   return dateInput || undefined;
 }
 
+/**
+ * How many addresses one bulk grant may carry.
+ *
+ * A bound on the request, not on the cohort: a flow larger than this is two
+ * pastes. Each address costs an auth lookup, perhaps an account, and a grant
+ * with its audit row, and the whole list runs inside one request — a cap is
+ * what keeps a paste of the wrong spreadsheet column from becoming a request
+ * that times out halfway through with no answer for the half it reached.
+ */
+export const BULK_GRANT_LIMIT = 200;
+
+/* Deliberately loose — the same test the lifecycle letters apply. It is here
+   to catch a pasted name, a stray "@" or a cut-off line, not to rule on RFC
+   5322; an address that passes and does not exist simply never signs in. */
+const BULK_EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+/**
+ * A pasted list of addresses, as the bulk grant reads it.
+ *
+ * Accepts the textarea as typed (one per line, or separated by commas,
+ * semicolons or spaces — what a spreadsheet column or a chat message gives
+ * you) or an array. Addresses are trimmed and lower-cased, the case-blind
+ * match `resolveAccountByEmail` and `createAccount` already make, so `Anna@x`
+ * and `anna@x` are one person and one grant. The first spelling wins its place
+ * in the order, which keeps the result table in the order it was pasted.
+ *
+ * Shared by the route and the panel, so the count the operator sees before
+ * pressing the button is the count the server will act on.
+ */
+export function parseEmailList(input: unknown): { emails: string[]; invalid: string[]; duplicates: number } {
+  const pieces: string[] = [];
+  const split = (value: string) => pieces.push(...value.split(/[\s,;]+/));
+  if (typeof input === "string") split(input);
+  else if (Array.isArray(input)) for (const item of input) if (typeof item === "string") split(item);
+
+  const emails: string[] = [];
+  const invalid: string[] = [];
+  const seen = new Set<string>();
+  let duplicates = 0;
+
+  for (const piece of pieces) {
+    // `<anna@x.com>` and `mailto:` are what a copy out of a mail client gives.
+    const value = piece
+      .trim()
+      .replace(/^mailto:/i, "")
+      .replace(/^<|>$/g, "")
+      .toLowerCase();
+    if (!value) continue;
+    if (!BULK_EMAIL_RE.test(value)) {
+      if (!invalid.includes(piece.trim())) invalid.push(piece.trim());
+      continue;
+    }
+    if (seen.has(value)) {
+      duplicates += 1;
+      continue;
+    }
+    seen.add(value);
+    emails.push(value);
+  }
+
+  return { emails, invalid, duplicates };
+}
+
+/** One address's answer in a bulk grant. `error` is a code the panel translates. */
+export type BulkGrantResult = {
+  email: string;
+  outcome: "created" | "already" | "error";
+  accountCreated: boolean;
+  enrollmentId: string | null;
+  error: string | null;
+};
+
 /** The `<input type="date">` value for a stored deadline, in UTC to match how it was written. */
 export function deadlineInputValue(expiresAt: string | null): string {
   if (!expiresAt) return "";
