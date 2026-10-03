@@ -12,6 +12,7 @@ import {
   nearestCohort,
 } from "@/lib/experiences/formatFeatured";
 import { CheckoutStartLink } from "./CheckoutStartLink";
+import { EarlyPriceTimer } from "./EarlyPriceTimer";
 import { LeadForm } from "./LeadForm";
 import styles from "./PlatformOfferCommerce.module.css";
 import offerStyles from "./PlatformOfferStyles";
@@ -39,12 +40,24 @@ import css from "./OfferFormats.module.css";
 
 const COHORT_DATE = new Intl.DateTimeFormat("uk-UA", { day: "numeric", month: "long", timeZone: "UTC" });
 
-function cohortLine(isoDate: string | null, now: Date): string | null {
+/** «Найближчий потік · 1 листопада», with the days to it unless the early-price timer already counts. */
+function cohortLine(isoDate: string | null, now: Date, nearest: boolean, counted: boolean): string | null {
   if (!isoDate) return null;
   const date = new Date(`${isoDate}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return null;
   const days = daysUntil(isoDate, now);
-  return `Старт потоку — ${COHORT_DATE.format(date)}${days !== null ? `, ${countdownText(days)}` : ""}`;
+  const head = `${nearest ? "Найближчий потік" : "Старт потоку"} · ${COHORT_DATE.format(date)}`;
+  return days !== null && !counted ? `${head}, ${countdownText(days)}` : head;
+}
+
+/** «До 15 жовтня 3 400 ₴, далі 4 100 ₴». */
+function earlyLine(format: ProgramFormat): string | null {
+  if (!format.early || format.amount === null) return null;
+  const until = COHORT_DATE.format(new Date(`${format.early.until}T00:00:00Z`));
+  return `До ${until} ${formatPrice(format.amount, format.currency)}, далі ${formatPrice(
+    format.early.laterAmount,
+    format.currency,
+  )}`;
 }
 
 function formatCheckoutHref(code: string, programSlug: string): string {
@@ -75,7 +88,8 @@ export function OfferFormats({
 
       <ul className={styles.bento}>
         {formats.map((format) => {
-          const start = cohortLine(format.cohortStartsOn, now);
+          const early = earlyLine(format);
+          const start = cohortLine(format.cohortStartsOn, now, cohort === format.code, early !== null);
           const primary = isPrimaryFormat(formats, format.code);
           const action = primary ? styles.buyAction : css.secondaryAction;
           const price = format.amount !== null ? formatPrice(format.amount, format.currency) : null;
@@ -92,7 +106,6 @@ export function OfferFormats({
             >
               {featured === format.code ? <p className={css.bestseller}>Бестселер</p> : null}
               <div className={styles.bentoCardHead}>
-                {cohort === format.code ? <p className={css.flag}>Найближчий потік</p> : null}
                 <h3 className={styles.bentoCardTitle}>{format.label}</h3>
               </div>
 
@@ -101,6 +114,10 @@ export function OfferFormats({
                 <p className={styles.priceValue}>{price ?? "Ціна за запитом"}</p>
                 {start ? <p className={styles.priceNote}>{start}</p> : null}
               </div>
+
+              {early && format.early ? (
+                <EarlyPriceTimer endsAt={format.early.endsAt} renderedAt={now.getTime()} line={early} />
+              ) : null}
 
               {format.summary ? <p className={styles.fineprint}>{format.summary}</p> : null}
 
@@ -123,13 +140,27 @@ export function OfferFormats({
               {format.includes.length > 0 ? (
                 <div className={css.bonus}>
                   <p className={css.bonusLabel}>Бонусом</p>
-                  <ul className={styles.includes}>
+                  <ul className={css.bonusList}>
                     {format.includes.map((program) => (
-                      <li key={program.courseSlug}>
-                        <Icon className={styles.includeMark} name="plus" size={20} />
-                        <span>
-                          <span className={css.bonusKind}>{bonusKindLabel(program.kind)}</span>{" "}
-                          <Link href={`/programs/${program.programSlug}`}>{program.title}</Link>
+                      <li key={program.courseSlug} className={css.bonusRow}>
+                        {program.cover ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- a 72px thumb of the program's own cover
+                          <img className={css.bonusThumb} src={program.cover} alt="" loading="lazy" />
+                        ) : null}
+                        <span className={css.bonusText}>
+                          <span className={css.bonusKind}>
+                            {[program.tag ?? bonusKindLabel(program.kind), program.duration]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </span>
+                          <Link className={css.bonusTitle} href={`/programs/${program.programSlug}`}>
+                            {program.title}
+                          </Link>
+                          {program.separateAmount ? (
+                            <span className={css.bonusPrice}>
+                              окремо {formatPrice(program.separateAmount, program.currency ?? format.currency)}
+                            </span>
+                          ) : null}
                         </span>
                       </li>
                     ))}
@@ -142,7 +173,7 @@ export function OfferFormats({
                   <CheckoutStartLink
                     className={action}
                     href={formatCheckoutHref(format.code, programSlug)}
-                    label={`Оплатити ${price}`}
+                    label={primary ? `Оплатити ${price}` : "Обрати"}
                   />
                 ) : format.mode === "lead" ? (
                   <a className={action} href={`#format-request-${format.code}`}>

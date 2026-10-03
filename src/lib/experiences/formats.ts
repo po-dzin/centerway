@@ -2,7 +2,10 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 
-import { COURSE_LIST_TAG, courseTag } from "@/lib/lms/liveCatalog";
+import { currentPrice, type CurrentPrice } from "@/lib/experiences/earlyPrice";
+import { COURSE_LIST_TAG, courseTag, getLiveCourse } from "@/lib/lms/liveCatalog";
+import { toOfferSurface } from "@/lib/platform/courseOffer";
+import type { OfferSurface } from "@/lib/platform/offerSurface";
 import { courseOfferCode } from "@/lms-core";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -40,6 +43,14 @@ export type FormatIncludedProgram = {
   programSlug: string;
   title: string;
   kind: "course" | "mini" | "checklist" | null;
+  /** The card's badge and length, «Міні-курс» and «7 днів» — the same words its own card prints. */
+  tag?: string | null;
+  duration?: string | null;
+  /** The program's cover, for the row's thumbnail. */
+  cover?: string | null;
+  /** What the program costs on its own, now; null when it is not sold separately. */
+  separateAmount?: number | null;
+  currency?: string;
 };
 
 export type ProgramFormat = {
@@ -50,9 +61,17 @@ export type ProgramFormat = {
   /** What the buyer gets in this format, point by point, in the author's words. Empty when not written yet. */
   features: string[];
   mode: "checkout" | "lead" | "free";
-  /** Whole currency units. `null` only on a lead: «ціна за запитом». */
+  /** Whole currency units, the price NOW (the early one while it holds). `null` only on a lead: «ціна за запитом». */
   amount: number | null;
   listAmount: number | null;
+  /** The early price window while it holds: «До 15 жовтня 3 400 ₴, далі 4 100 ₴» and the timer. */
+  early: CurrentPrice["early"];
+  /** The stored early price, read raw so the cached rows can be priced at the moment of the request. */
+  earlyAmount: number | null;
+  earlyUntil: string | null;
+  /** The stored price after the early window; what `amount` falls back to. */
+  regularAmount: number | null;
+  regularListAmount: number | null;
   currency: string;
   /** `YYYY-MM-DD`, day 1 of the cohort. Group formats only. */
   cohortStartsOn: string | null;
@@ -69,6 +88,8 @@ type OfferRow = {
   mode: string;
   amount: number | null;
   list_amount: number | null;
+  early_amount: number | null;
+  early_until: string | null;
   currency: string;
   format: string | null;
   label: unknown;
@@ -80,7 +101,7 @@ type OfferRow = {
 };
 
 const OFFER_COLUMNS =
-  "id, experience_id, code, mode, amount, list_amount, currency, format, label, summary, features, sort_order, cohort_starts_on, featured";
+  "id, experience_id, code, mode, amount, list_amount, early_amount, early_until, currency, format, label, summary, features, sort_order, cohort_starts_on, featured";
 
 function ukLine(value: unknown): string | null {
   if (!value || typeof value !== "object") return null;
@@ -120,6 +141,26 @@ async function includedPrograms(db: Db, offerIds: string[]): Promise<Map<string,
   if (courses.error || !courses.data) return byOffer;
   const courseByExperience = new Map(courses.data.map((row) => [row.experience_id as string, row]));
 
+  // What each bonus is and costs on its own, in the words its own card uses.
+  const surfaces = new Map(
+    await Promise.all(
+      courses.data.map(async (row) => {
+        const live = await getLiveCourse(row.slug as string).catch(() => null);
+        return [row.slug as string, live ? toOfferSurface(live) : null] as const;
+      }),
+    ),
+  );
+  const ownOffers = await db
+    .from("experience_offers")
+    .select("code, amount, list_amount, early_amount, early_until, currency, mode")
+    .in(
+      "code",
+      courses.data.map((row) => courseOfferCode(row.slug as string)),
+    )
+    .eq("active", true)
+    .eq("review_status", "approved");
+  const offerByCode = new Map((ownOffers.data ?? []).map((row) => [row.code as string, row]));
+
   const sorted = [...items.data].sort((a, b) => Number(a.sort_order) - Number(b.sort_order));
   for (const item of sorted) {
     const course = courseByExperience.get(item.experience_id as string);
@@ -132,10 +173,45 @@ async function includedPrograms(db: Db, offerIds: string[]): Promise<Map<string,
       programSlug: (course.program_slug as string | null) ?? (course.slug as string),
       title: course.title as string,
       kind: (course.kind as FormatIncludedProgram["kind"]) ?? null,
+      ...separately(
+        surfaces.get(course.slug as string) ?? null,
+        offerByCode.get(courseOfferCode(course.slug as string)),
+      ),
     });
     byOffer.set(item.offer_id as string, list);
   }
   return byOffer;
+}
+
+type OwnOffer = {
+  amount: number | null;
+  list_amount: number | null;
+  early_amount: number | null;
+  early_until: string | null;
+  currency: string;
+  mode: string;
+};
+
+function separately(
+  surface: OfferSurface | null,
+  offer: OwnOffer | undefined,
+): Pick<FormatIncludedProgram, "tag" | "duration" | "cover" | "separateAmount" | "currency"> {
+  const price =
+    offer && offer.mode === "checkout"
+      ? currentPrice({
+          amount: offer.amount,
+          listAmount: offer.list_amount,
+          earlyAmount: offer.early_amount,
+          earlyUntil: offer.early_until,
+        }).amount
+      : null;
+  return {
+    tag: surface?.tag ?? null,
+    duration: surface?.duration ?? null,
+    cover: surface?.artwork?.desktop ?? null,
+    separateAmount: price !== null && price > 0 ? price : null,
+    currency: offer?.currency ?? "UAH",
+  };
 }
 
 function toFormat(row: OfferRow, includes: FormatIncludedProgram[], ownCode: string): ProgramFormat | null {
@@ -154,6 +230,11 @@ function toFormat(row: OfferRow, includes: FormatIncludedProgram[], ownCode: str
     mode,
     amount: row.amount,
     listAmount: row.list_amount,
+    early: null,
+    earlyAmount: row.early_amount ?? null,
+    earlyUntil: row.early_until ?? null,
+    regularAmount: row.amount,
+    regularListAmount: row.list_amount,
     currency: row.currency,
     cohortStartsOn: row.cohort_starts_on,
     featured: row.featured === true,
@@ -199,11 +280,35 @@ async function readProgramFormats(courseId: string, courseSlug: string): Promise
  * Empty for a program that has none — the page then shows its one offer as
  * before.
  */
-export async function loadProgramFormats(course: { id: string; slug: string }): Promise<ProgramFormat[]> {
-  return unstable_cache(() => readProgramFormats(course.id, course.slug), ["program-formats", course.id], {
-    tags: [courseTag(course.slug), COURSE_LIST_TAG],
-    revalidate: 300,
-  })();
+export async function loadProgramFormats(
+  course: { id: string; slug: string },
+  now: Date = new Date(),
+): Promise<ProgramFormat[]> {
+  const formats = await unstable_cache(
+    () => readProgramFormats(course.id, course.slug),
+    ["program-formats", course.id],
+    {
+      tags: [courseTag(course.slug), COURSE_LIST_TAG],
+      revalidate: 300,
+    },
+  )();
+  // Priced here, outside the cache: the early price ends at a moment, and a
+  // cached row must not keep quoting it for five more minutes.
+  return formats.map((format) => priceFormat(format, now));
+}
+
+/** A format priced at `now`: the early price while it holds, the regular one after. */
+export function priceFormat(format: ProgramFormat, now: Date = new Date()): ProgramFormat {
+  const price = currentPrice(
+    {
+      amount: format.regularAmount,
+      listAmount: format.regularListAmount,
+      earlyAmount: format.earlyAmount,
+      earlyUntil: format.earlyUntil,
+    },
+    now,
+  );
+  return { ...format, amount: price.amount, listAmount: price.listAmount, early: price.early };
 }
 
 /** A format of ANOTHER program that opens this one as a bonus. */

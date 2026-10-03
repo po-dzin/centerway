@@ -428,6 +428,31 @@ describe("updateFormat", () => {
     expect(offerRow("course:way21").featured).toBe(false);
   });
 
+  it("lets only the owner set an early price, lower than the regular one, and remove it", async () => {
+    await expectFormatError(
+      updateFormat({ ...admin, code: "way21-group", body: { early: { amount: 3400, until: "2026-10-15" } } }),
+      "format_early_owner_only",
+      403,
+    );
+    await expectFormatError(
+      updateFormat({ ...owner, code: "way21-group", body: { early: { amount: 4800, until: "2026-10-15" } } }),
+      "format_early_not_lower",
+    );
+    await expectFormatError(
+      updateFormat({ ...owner, code: "way21-group", body: { early: { amount: 3400, until: "15.10" } } }),
+      "format_invalid_early_date",
+    );
+    await updateFormat({ ...owner, code: "way21-group", body: { early: { amount: 3400, until: "2026-10-15" } } });
+    expect(offerRow("way21-group")).toMatchObject({ amount: 4800, early_amount: 3400, early_until: "2026-10-15" });
+    // The regular price cannot drop under the early one while it is stored.
+    await expectFormatError(
+      updateFormat({ ...owner, code: "way21-group", body: { proposedAmount: 3000 } }),
+      "format_early_not_lower",
+    );
+    await updateFormat({ ...owner, code: "way21-group", body: { early: null } });
+    expect(offerRow("way21-group")).toMatchObject({ early_amount: null, early_until: null });
+  });
+
   it("submitting sends a draft and a reworked decline to the owner", async () => {
     await updateFormat({ ...author, code: "way21-individual", body: { submit: true } });
     await updateFormat({ ...author, code: "way21-self", body: { submit: true } });

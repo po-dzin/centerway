@@ -62,6 +62,9 @@ export type AuthoredFormat = {
   active: boolean;
   /** The owner's «Бестселер» mark: the gold pill and the row's only primary button. */
   featured: boolean;
+  /** The owner's early price and the date it ends (00:00 Kyiv); both null when there is none. */
+  earlyAmount: number | null;
+  earlyUntil: string | null;
   includes: Array<{ slug: string; title: string }>;
 };
 
@@ -77,6 +80,8 @@ export type FormatInput = {
   cohortStartsOn?: unknown;
   includes?: unknown;
   featured?: unknown;
+  /** `{amount, until}` sets the early price, `null` removes it. Owner only. */
+  early?: unknown;
   submit?: unknown;
 };
 
@@ -90,7 +95,7 @@ export class FormatError extends Error {
 }
 
 const COLUMNS =
-  "id, code, format, label, summary, features, mode, amount, proposed_amount, currency, cohort_starts_on, review_status, active, featured, sort_order, experience_id";
+  "id, code, format, label, summary, features, mode, amount, proposed_amount, currency, cohort_starts_on, review_status, active, featured, early_amount, early_until, sort_order, experience_id";
 
 type Row = {
   id: string;
@@ -107,6 +112,8 @@ type Row = {
   review_status: string;
   active: boolean;
   featured: boolean;
+  early_amount: number | null;
+  early_until: string | null;
   sort_order: number;
   experience_id: string;
 };
@@ -177,6 +184,8 @@ export async function listCourseFormats(courseId: string): Promise<AuthoredForma
         reviewStatus: row.review_status as FormatReviewStatus,
         active: row.active,
         featured: row.featured === true,
+        earlyAmount: row.early_amount ?? null,
+        earlyUntil: row.early_until ?? null,
         includes: [...(items ?? [])]
           .filter((item) => item.offer_id === row.id)
           .sort((a, b) => Number(a.sort_order) - Number(b.sort_order))
@@ -219,6 +228,7 @@ type Parsed = {
   cohortStartsOn?: string | null;
   includes?: string[];
   featured?: boolean;
+  early?: { amount: number; until: string } | null;
   submit: boolean;
 };
 
@@ -273,6 +283,22 @@ function parseInput(input: FormatInput): Parsed {
   if (input.featured !== undefined) {
     if (typeof input.featured !== "boolean") throw new FormatError("format_invalid_featured");
     parsed.featured = input.featured;
+  }
+  if (input.early !== undefined) {
+    if (input.early === null) parsed.early = null;
+    else {
+      const { amount, until } = (typeof input.early === "object" ? input.early : {}) as {
+        amount?: unknown;
+        until?: unknown;
+      };
+      if (typeof amount !== "number" || !Number.isInteger(amount) || amount <= 0) {
+        throw new FormatError("format_invalid_early_price");
+      }
+      if (typeof until !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(until) || Number.isNaN(Date.parse(until))) {
+        throw new FormatError("format_invalid_early_date");
+      }
+      parsed.early = { amount, until };
+    }
   }
   if (input.includes !== undefined) {
     if (!Array.isArray(input.includes) || !input.includes.every((slug) => typeof slug === "string")) {
@@ -367,6 +393,16 @@ export async function createFormat(input: {
     input.canSetPrice && parsed.submit
       ? ownerPricing(mode, parsed.proposedAmount ?? null, input.authUserId, now)
       : null;
+  // An early price goes on only with the owner's live price, and under it.
+  let early: TablesUpdate<"experience_offers"> = {};
+  if (parsed.early) {
+    if (input.canSetPrice !== true) throw new FormatError("format_early_owner_only", 403);
+    const regular = pricing?.amount ?? null;
+    if (regular === null || regular === undefined || parsed.early.amount >= regular) {
+      throw new FormatError("format_early_not_lower");
+    }
+    early = { early_amount: parsed.early.amount, early_until: parsed.early.until };
+  }
   const allowed = parsed.includes?.length ? await listIncludablePrograms(input) : [];
   if (parsed.includes?.length) refuseForeignIncludes(parsed.includes, allowed);
   const code = await freeCode(db, `${programSlug}-${parsed.format}`.toLowerCase());
@@ -397,6 +433,7 @@ export async function createFormat(input: {
       proposed_by: input.authUserId,
       proposed_at: parsed.submit ? now : null,
       ...pricing,
+      ...early,
     })
     .select("id")
     .single();
@@ -453,6 +490,25 @@ export async function updateFormat(input: {
   if (parsed.featured !== undefined && input.canSetPrice !== true) {
     throw new FormatError("format_featured_owner_only", 403);
   }
+  // So is the early price: it is a price. Lower than the regular one, or it is
+  // not early, and only on a priced format.
+  if (parsed.early !== undefined) {
+    if (input.canSetPrice !== true) throw new FormatError("format_early_owner_only", 403);
+    const regular = parsed.proposedAmount !== undefined ? parsed.proposedAmount : row.amount;
+    if (parsed.early && (regular === null || parsed.early.amount >= regular)) {
+      throw new FormatError("format_early_not_lower");
+    }
+  }
+  // A new regular price may not fall to or below an early price still stored.
+  if (
+    parsed.early === undefined &&
+    parsed.proposedAmount !== undefined &&
+    input.canSetPrice === true &&
+    row.early_amount !== null &&
+    (parsed.proposedAmount === null || row.early_amount >= parsed.proposedAmount)
+  ) {
+    throw new FormatError("format_early_not_lower");
+  }
 
   const allowed = parsed.includes !== undefined ? await listIncludablePrograms(input) : [];
   if (parsed.includes !== undefined) refuseForeignIncludes(parsed.includes, allowed);
@@ -484,6 +540,10 @@ export async function updateFormat(input: {
   }
   if (parsed.cohortStartsOn !== undefined) patch.cohort_starts_on = parsed.cohortStartsOn;
   if (parsed.featured !== undefined) patch.featured = parsed.featured;
+  if (parsed.early !== undefined) {
+    patch.early_amount = parsed.early?.amount ?? null;
+    patch.early_until = parsed.early?.until ?? null;
+  }
   if (parsed.proposedAmount !== undefined) {
     patch.proposed_amount = parsed.proposedAmount;
     patch.proposed_by = input.authUserId;

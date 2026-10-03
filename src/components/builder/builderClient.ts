@@ -446,6 +446,9 @@ export type BuilderFormatDto = {
   active: boolean;
   /** The owner's «Бестселер» mark: the gold pill and the row's only primary button. */
   featured?: boolean;
+  /** The owner's early price and the date it ends (00:00 Kyiv). */
+  earlyAmount?: number | null;
+  earlyUntil?: string | null;
   includes: Array<{ slug: string; title: string }>;
 };
 
@@ -468,6 +471,8 @@ export type BuilderFormatInput = {
   includes?: string[];
   /** Owner only (`canSetPrice`). Marking one format clears the mark on the others. */
   featured?: boolean;
+  /** Owner only: the early price until a date; `null` removes it. */
+  early?: { amount: number; until: string } | null;
   submit?: boolean;
 };
 

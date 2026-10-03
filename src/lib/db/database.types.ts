@@ -847,6 +847,8 @@ export type Database = {
           cohort_starts_on: string | null
           created_at: string
           currency: string
+          early_amount: number | null
+          early_until: string | null
           experience_id: string
           featured: boolean
           features: Json | null
@@ -878,6 +880,8 @@ export type Database = {
           cohort_starts_on?: string | null
           created_at?: string
           currency?: string
+          early_amount?: number | null
+          early_until?: string | null
           experience_id: string
           featured?: boolean
           features?: Json | null
@@ -909,6 +913,8 @@ export type Database = {
           cohort_starts_on?: string | null
           created_at?: string
           currency?: string
+          early_amount?: number | null
+          early_until?: string | null
           experience_id?: string
           featured?: boolean
           features?: Json | null
