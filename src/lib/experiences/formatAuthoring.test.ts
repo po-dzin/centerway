@@ -52,6 +52,7 @@ function offer(row: Row): Row {
     cohort_starts_on: null,
     review_status: "draft",
     active: false,
+    featured: false,
     sort_order: 1,
     experience_id: "exp-way21",
     ...row,
@@ -403,6 +404,28 @@ describe("updateFormat", () => {
   it("an empty cohort date clears it", async () => {
     await updateFormat({ ...admin, code: "way21-group", body: { cohortStartsOn: "" } });
     expect(offerRow("way21-group").cohort_starts_on).toBeNull();
+  });
+
+  it("lets only the owner mark a «Бестселер», one per program", async () => {
+    await expectFormatError(
+      updateFormat({ ...admin, code: "way21-group", body: { featured: true } }),
+      "format_featured_owner_only",
+      403,
+    );
+    await expectFormatError(
+      updateFormat({ ...owner, code: "way21-group", body: { featured: "yes" } }),
+      "format_invalid_featured",
+    );
+    offerRow("course:other").featured = true;
+    await updateFormat({ ...owner, code: "way21-group", body: { featured: true } });
+    expect(offerRow("way21-group").featured).toBe(true);
+    await updateFormat({ ...owner, code: "course:way21", body: { featured: true } });
+    expect(offerRow("course:way21").featured).toBe(true);
+    expect(offerRow("way21-group").featured).toBe(false);
+    // Another program's mark is its own.
+    expect(offerRow("course:other").featured).toBe(true);
+    await updateFormat({ ...owner, code: "course:way21", body: { featured: false } });
+    expect(offerRow("course:way21").featured).toBe(false);
   });
 
   it("submitting sends a draft and a reworked decline to the owner", async () => {

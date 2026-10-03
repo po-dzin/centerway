@@ -26,6 +26,7 @@ function format(overrides: Partial<ProgramFormat> & Pick<ProgramFormat, "code" |
     listAmount: null,
     currency: "UAH",
     cohortStartsOn: null,
+    featured: false,
     includes: [],
     ...overrides,
   };

@@ -60,6 +60,8 @@ export type AuthoredFormat = {
   cohortStartsOn: string | null;
   reviewStatus: FormatReviewStatus;
   active: boolean;
+  /** The owner's «Бестселер» mark: the gold pill and the row's only primary button. */
+  featured: boolean;
   includes: Array<{ slug: string; title: string }>;
 };
 
@@ -74,6 +76,7 @@ export type FormatInput = {
   proposedAmount?: unknown;
   cohortStartsOn?: unknown;
   includes?: unknown;
+  featured?: unknown;
   submit?: unknown;
 };
 
@@ -87,7 +90,7 @@ export class FormatError extends Error {
 }
 
 const COLUMNS =
-  "id, code, format, label, summary, features, mode, amount, proposed_amount, currency, cohort_starts_on, review_status, active, sort_order, experience_id";
+  "id, code, format, label, summary, features, mode, amount, proposed_amount, currency, cohort_starts_on, review_status, active, featured, sort_order, experience_id";
 
 type Row = {
   id: string;
@@ -103,6 +106,7 @@ type Row = {
   cohort_starts_on: string | null;
   review_status: string;
   active: boolean;
+  featured: boolean;
   sort_order: number;
   experience_id: string;
 };
@@ -172,6 +176,7 @@ export async function listCourseFormats(courseId: string): Promise<AuthoredForma
         cohortStartsOn: row.cohort_starts_on,
         reviewStatus: row.review_status as FormatReviewStatus,
         active: row.active,
+        featured: row.featured === true,
         includes: [...(items ?? [])]
           .filter((item) => item.offer_id === row.id)
           .sort((a, b) => Number(a.sort_order) - Number(b.sort_order))
@@ -213,6 +218,7 @@ type Parsed = {
   proposedAmount?: number | null;
   cohortStartsOn?: string | null;
   includes?: string[];
+  featured?: boolean;
   submit: boolean;
 };
 
@@ -263,6 +269,10 @@ function parseInput(input: FormatInput): Parsed {
     else if (typeof input.cohortStartsOn === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input.cohortStartsOn)) {
       parsed.cohortStartsOn = input.cohortStartsOn;
     } else throw new FormatError("format_invalid_cohort_date");
+  }
+  if (input.featured !== undefined) {
+    if (typeof input.featured !== "boolean") throw new FormatError("format_invalid_featured");
+    parsed.featured = input.featured;
   }
   if (input.includes !== undefined) {
     if (!Array.isArray(input.includes) || !input.includes.every((slug) => typeof slug === "string")) {
@@ -439,8 +449,25 @@ export async function updateFormat(input: {
     if (touchesLocked) throw new FormatError("format_approved_locked", 409);
   }
 
+  // The «Бестселер» mark is the owner's, like the price.
+  if (parsed.featured !== undefined && input.canSetPrice !== true) {
+    throw new FormatError("format_featured_owner_only", 403);
+  }
+
   const allowed = parsed.includes !== undefined ? await listIncludablePrograms(input) : [];
   if (parsed.includes !== undefined) refuseForeignIncludes(parsed.includes, allowed);
+
+  // One marked format per program (a unique index holds it too): marking this
+  // one first clears whichever carried the mark before.
+  if (parsed.featured === true && !row.featured) {
+    const cleared = await db
+      .from("experience_offers")
+      .update({ featured: false })
+      .eq("experience_id", row.experience_id)
+      .neq("id", row.id)
+      .eq("featured", true);
+    if (cleared.error) throw new FormatError(`format_write_failed:${cleared.error.message}`, 500);
+  }
 
   const now = new Date().toISOString();
   const patch: TablesUpdate<"experience_offers"> = {};
@@ -456,6 +483,7 @@ export async function updateFormat(input: {
       : null;
   }
   if (parsed.cohortStartsOn !== undefined) patch.cohort_starts_on = parsed.cohortStartsOn;
+  if (parsed.featured !== undefined) patch.featured = parsed.featured;
   if (parsed.proposedAmount !== undefined) {
     patch.proposed_amount = parsed.proposedAmount;
     patch.proposed_by = input.authUserId;

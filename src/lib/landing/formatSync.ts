@@ -32,16 +32,24 @@
  * («від 3900 грн», `formatFloor` — the catalogue card's and the program page's
  * figure), or the one price when there is only one format.
  *
- * ONE GOLD BUTTON (G, 2026-10-03). The nearest cohort ahead — else the
- * self-paced format — keeps `btn-primary` and is marked `data-featured`; every
- * other card's button goes `btn-ghost` (`featuredFormat`, the program page's
- * rule too). A cohort's note says how many days are left to its start.
+ * ONE GOLD BUTTON (G, 2026-10-03). The format the owner marked «Бестселер» in
+ * the builder wears the gold pill, is marked `data-featured` and keeps
+ * `btn-primary`; every other card's button goes `btn-ghost` — all of them when
+ * nothing is marked (`featuredFormat`, the program page's rule too). The
+ * nearest cohort ahead is named «Найближчий потік» and its note counts the days
+ * to its start: information, not the gold.
  *
  * NO FORMATS IS NOT «REMOVE EVERYTHING». An empty list is what a failed read
  * looks like too, so the typed cards stand untouched.
  */
 
-import { countdownText, daysUntil, featuredFormat } from "@/lib/experiences/formatFeatured";
+import {
+  countdownText,
+  daysUntil,
+  featuredFormat,
+  isPrimaryFormat,
+  nearestCohort,
+} from "@/lib/experiences/formatFeatured";
 import { formatFloor } from "@/lib/experiences/formatFloor";
 import { bonusKindLabel } from "@/lib/platform/catalogVocabulary";
 import type { BundleHost, ProgramFormat } from "@/lib/experiences/formats";
@@ -76,7 +84,9 @@ function includedItems(format: ProgramFormat): string {
 }
 
 /** How a card stands in its row: whether it keeps the gold, and today. */
-type Standing = { featured: boolean; primary: boolean; now: Date };
+type Standing = { featured: boolean; primary: boolean; nearest: boolean; now: Date };
+
+const BESTSELLER = '<span class="fc-bestseller">Бестселер</span>';
 
 function cohortLine(format: ProgramFormat, now: Date): string | null {
   if (!format.cohortStartsOn) return null;
@@ -87,7 +97,7 @@ function cohortLine(format: ProgramFormat, now: Date): string | null {
 }
 
 function badgeFor(format: ProgramFormat, standing: Standing): string {
-  return standing.featured && format.format === "group" ? "Найближчий потік" : BADGE[format.format];
+  return standing.nearest ? "Найближчий потік" : BADGE[format.format];
 }
 
 function priceText(format: ProgramFormat): string {
@@ -106,7 +116,7 @@ function actionFor(format: ProgramFormat, primary: boolean): string {
 export function renderFormatCard(
   format: ProgramFormat,
   programTitle: string,
-  standing: Standing = { featured: false, primary: true, now: new Date() },
+  standing: Standing = { featured: false, primary: true, nearest: false, now: new Date() },
 ): string {
   const price = priceText(format);
   const note =
@@ -123,6 +133,7 @@ export function renderFormatCard(
   return [
     `<!-- cw:format ${format.code} -->`,
     `<div class="format-card reveal" data-format="${format.format}"${standing.featured ? " data-featured" : ""}>`,
+    standing.featured ? BESTSELLER : "",
     `<span class="fc-badge">${badgeFor(format, standing)}</span>`,
     `<div class="fc-title">${escape(programTitle)} — ${escape(format.label.toLowerCase())}</div>`,
     `<div class="fc-price"><b data-cw-price="${escape(format.code)}">${price}</b><small>${escape(note)}</small></div>`,
@@ -172,7 +183,10 @@ function syncCard(card: string, format: ProgramFormat, standing: Standing): stri
   const own =
     format.features.length > 0 ? format.features.map((feature) => `<li>${escape(feature)}</li>`).join("") : null;
   let next = card.replace(/<div class="format-card\b[^"]*"[^>]*>/, (open) => toneCard(open, format, standing.featured));
-  if (standing.featured && format.format === "group") {
+  // The pill is the mark's: dropped, then put back only on the marked card.
+  next = next.replace(/\s*<span class="fc-bestseller">[\s\S]*?<\/span>/, "");
+  if (standing.featured) next = next.replace(/(<div class="format-card\b[^>]*>)/, `$1${BESTSELLER}`);
+  if (standing.nearest) {
     next = next.replace(/(<span class="fc-badge">)[\s\S]*?(<\/span>)/, `$1${badgeFor(format, standing)}$2`);
   }
   next = next.replace(
@@ -235,12 +249,14 @@ export function applyFormatSync(
     const cards = new Map<string, string>();
     for (const match of inner.matchAll(CARD)) cards.set(match[1]!, match[2]!);
 
-    const featured = featuredFormat(program.formats, now);
+    const featured = featuredFormat(program.formats);
+    const cohort = nearestCohort(program.formats, now);
     const body = program.formats
       .map((format) => {
         const standing = {
           featured: featured === format.code,
-          primary: featured === null || featured === format.code,
+          primary: isPrimaryFormat(program.formats, format.code),
+          nearest: cohort === format.code,
           now,
         };
         const existing = cards.get(format.code);

@@ -4,7 +4,13 @@ import { Icon } from "@/components/Icon";
 import { formatPrice } from "@/lib/products";
 import { bonusKindLabel } from "@/lib/platform/catalogVocabulary";
 import type { ProgramFormat } from "@/lib/experiences/formats";
-import { countdownText, daysUntil, featuredFormat } from "@/lib/experiences/formatFeatured";
+import {
+  countdownText,
+  daysUntil,
+  featuredFormat,
+  isPrimaryFormat,
+  nearestCohort,
+} from "@/lib/experiences/formatFeatured";
 import { CheckoutStartLink } from "./CheckoutStartLink";
 import { LeadForm } from "./LeadForm";
 import styles from "./PlatformOfferCommerce.module.css";
@@ -21,10 +27,11 @@ import css from "./OfferFormats.module.css";
  * link to their own pages: they are sold on their own too, and a reader deciding
  * between formats is entitled to see what the extra is.
  *
- * ONE GOLD BUTTON IN THE ROW (G, 2026-10-03). The nearest cohort ahead — or,
- * without one, the self-paced format — keeps the primary action and is marked;
- * the others go secondary (`featuredFormat`). A cohort says how many days are
- * left to its start.
+ * ONE GOLD BUTTON IN THE ROW (G, 2026-10-03). The format the owner marked
+ * «Бестселер» in the builder wears a gold pill, sits slightly raised, and keeps
+ * the row's only primary button; the others go secondary (`featuredFormat`).
+ * The nearest cohort ahead says so and counts the days to its start — as
+ * information, without the gold.
  *
  * The anchor is `#formats`: the hero's button and a closed module inside a
  * course both lead here.
@@ -56,7 +63,8 @@ export function OfferFormats({
   formats: ProgramFormat[];
 }) {
   const now = new Date();
-  const featured = featuredFormat(formats, now);
+  const featured = featuredFormat(formats);
+  const cohort = nearestCohort(formats, now);
   return (
     <section id="formats" aria-labelledby="formats-heading" className={`${offerStyles.panel} ${css.root}`}>
       <p className={offerStyles.label}>Формати</p>
@@ -68,7 +76,7 @@ export function OfferFormats({
       <ul className={styles.bento}>
         {formats.map((format) => {
           const start = cohortLine(format.cohortStartsOn, now);
-          const primary = featured === null || featured === format.code;
+          const primary = isPrimaryFormat(formats, format.code);
           const action = primary ? styles.buyAction : css.secondaryAction;
           const price = format.amount !== null ? formatPrice(format.amount, format.currency) : null;
           const compareAt =
@@ -82,10 +90,9 @@ export function OfferFormats({
               data-format={format.format}
               data-featured={featured === format.code ? "" : undefined}
             >
+              {featured === format.code ? <p className={css.bestseller}>Бестселер</p> : null}
               <div className={styles.bentoCardHead}>
-                {featured === format.code && format.format === "group" ? (
-                  <p className={css.flag}>Найближчий потік</p>
-                ) : null}
+                {cohort === format.code ? <p className={css.flag}>Найближчий потік</p> : null}
                 <h3 className={styles.bentoCardTitle}>{format.label}</h3>
               </div>
 

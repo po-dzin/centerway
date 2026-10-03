@@ -1151,12 +1151,17 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .format-card[data-format="group"]{--fc-tone:var(--cw-sem-trust)}
 .format-card[data-format="individual"]{--fc-tone:var(--cw-sem-warmth)}
 .format-card>*{position:relative;z-index:1}
-/* The featured card — the one that keeps the gold button: the nearest cohort,
-   else the self-paced format (lib/experiences/formatFeatured). Its edge takes
-   the tone and its hairline thickens; the wash stays, so the row is one family.
-   The other cards' buttons are .btn-ghost: one primary per row. */
-.format-card[data-featured]{box-shadow:0 0 0 1px color-mix(in srgb, var(--fc-tone) 64%, transparent),var(--shadow-soft)}
-.format-card[data-featured]::before{block-size:3px;opacity:1}
+/* The featured card — the format the owner marked «Бестселер» in the builder
+   (lib/experiences/formatFeatured). It sits slightly raised, its edge takes the
+   gold, a gold pill names it in the top-right corner, and it keeps the row's
+   only .btn-primary; the other buttons are .btn-ghost. The wash stays the
+   format's own tone, so the row is one family. */
+.format-card[data-featured]{box-shadow:0 0 0 1px color-mix(in srgb, var(--cta) 70%, transparent),var(--shadow-med);transform:translateY(calc(-1 * var(--cw-space-2xs)))}
+.format-card[data-featured] .fc-badge{padding-right:calc(var(--cw-space-3xl) + var(--cw-space-lg))}
+.fc-bestseller{position:absolute;top:var(--cw-space-md);right:var(--cw-space-md);z-index:2;
+  padding:.35em .8em;border-radius:var(--r-pill);background:var(--cta);color:var(--ink);
+  font-family:var(--f-mono);font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;line-height:1.2}
+@media (prefers-reduced-motion: reduce){.format-card[data-featured]{transform:none}}
 /* Side by side, the cards share their rows: eyebrow, title, price, list,
    button and guarantee line up across the row however long each title or
    list runs, so the eye compares price with price and button with button. */

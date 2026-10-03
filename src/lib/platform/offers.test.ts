@@ -139,6 +139,7 @@ const format = (over: Partial<ProgramFormat>): ProgramFormat => ({
   listAmount: null,
   currency: "UAH",
   cohortStartsOn: null,
+  featured: false,
   includes: [],
   ...over,
 });

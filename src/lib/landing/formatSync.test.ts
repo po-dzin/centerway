@@ -30,6 +30,7 @@ function format(code: string, kind: ProgramFormat["format"], extra: Partial<Prog
     listAmount: null,
     currency: "UAH",
     cohortStartsOn: null,
+    featured: false,
     includes: [],
     ...extra,
   };
@@ -55,8 +56,7 @@ describe("landing format sync", () => {
       ],
     }));
     expect(out).toContain('<div class="format-card reveal" data-format="group">');
-    // No cohort ahead here: the self-paced card keeps the gold and is marked.
-    expect(out).toContain('<div class="format-card reveal" data-format="self" data-featured>');
+    expect(out).toContain('<div class="format-card reveal" data-format="self">');
     expect(out).toContain('<div class="format-card" data-format="individual">');
     expect(out).not.toMatch(/format-card[^"]*\b(self|premium)\b/);
     expect(out).not.toContain("data-cw-nav-dark");
@@ -161,26 +161,40 @@ describe("landing format sync — one gold button (2026-10-03)", () => {
   const formats = [
     format("course:way21", "self", { amount: 3900 }),
     format("way21-group", "group", { amount: 4100, cohortStartsOn: "2026-11-01" }),
-    format("way21-support", "individual", { amount: 9500, mode: "lead" }),
+    format("way21-support", "individual", { amount: 9500, mode: "lead", featured: true }),
   ];
-  const out = applyFormatSync(priced, () => ({ title: "Шлях 21", formats }), now);
-  const card = (code: string) => {
-    const at = out.indexOf(`cw:format ${code} `);
-    return out.slice(at, out.indexOf("/cw:format", at));
+  const sync = (list: ProgramFormat[], html = priced) =>
+    applyFormatSync(html, () => ({ title: "Шлях 21", formats: list }), now);
+  const cardOf = (html: string, code: string) => {
+    const at = html.indexOf(`cw:format ${code} `);
+    return html.slice(at, html.indexOf("/cw:format", at));
   };
 
-  it("gives the gold to the nearest cohort, flags it, and turns the other buttons secondary", () => {
-    expect(card("way21-group")).toContain('data-format="group" data-featured>');
-    expect(card("way21-group")).toContain('class="btn btn-primary fc-cta');
-    expect(card("course:way21")).not.toContain("data-featured");
-    expect(card("course:way21")).toContain('class="btn btn-ghost fc-cta openModal"');
-    expect(card("way21-support")).toContain('class="btn btn-ghost fc-cta" data-lead-open="way21-support"');
+  it("gives the pill and the only gold button to the format the owner marked", () => {
+    const out = sync(formats);
+    const marked = cardOf(out, "way21-support");
+    expect(marked).toContain('data-format="individual" data-featured>');
+    expect(marked).toContain('<span class="fc-bestseller">Бестселер</span>');
+    expect(marked).toContain('class="btn btn-primary fc-cta" data-lead-open="way21-support"');
+    expect(cardOf(out, "course:way21")).toContain('class="btn btn-ghost fc-cta openModal"');
+    expect(cardOf(out, "way21-group")).toContain('class="btn btn-ghost fc-cta');
     expect(out.match(/btn-primary fc-cta/g)).toHaveLength(1);
+    expect(out.match(/fc-bestseller/g)).toHaveLength(1);
+    // Synced twice, still one pill.
+    expect(sync(formats, out).match(/fc-bestseller/g)).toHaveLength(1);
   });
 
-  it("names a generated featured cohort «Найближчий потік»", () => {
-    const html = applyFormatSync(page, () => ({ title: "Шлях 21", formats }), now);
+  it("leaves every button secondary when nothing is marked", () => {
+    const out = sync(formats.map((entry) => ({ ...entry, featured: false })));
+    expect(out).not.toContain("btn-primary fc-cta");
+    expect(out).not.toContain("fc-bestseller");
+    expect(out).not.toContain("data-featured");
+  });
+
+  it("names the nearest cohort «Найближчий потік» as information, without the gold", () => {
+    const html = sync(formats, page);
     expect(html).toContain('<span class="fc-badge">Найближчий потік</span>');
+    expect(cardOf(html, "way21-group")).not.toContain("data-featured");
   });
 });
 

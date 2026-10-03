@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import type { ProgramFormat } from "./formats";
-import { countdownText, daysUntil, featuredFormat } from "./formatFeatured";
+import { countdownText, daysUntil, featuredFormat, isPrimaryFormat, nearestCohort } from "./formatFeatured";
 
-function format(code: string, kind: ProgramFormat["format"], cohortStartsOn: string | null = null): ProgramFormat {
+function format(
+  code: string,
+  kind: ProgramFormat["format"],
+  cohortStartsOn: string | null = null,
+  featured = false,
+): ProgramFormat {
   return {
     code,
     format: kind,
@@ -15,6 +20,7 @@ function format(code: string, kind: ProgramFormat["format"], cohortStartsOn: str
     listAmount: null,
     currency: "UAH",
     cohortStartsOn,
+    featured,
     includes: [],
   };
 }
@@ -29,15 +35,27 @@ describe("featured format", () => {
     expect(daysUntil(null, now)).toBeNull();
   });
 
-  it("gives the gold to the nearest cohort ahead, else to the self-paced format", () => {
+  it("gives the gold only to the format the owner marked", () => {
     const self = format("course:way21", "self");
-    const ind = format("way21-support", "individual");
-    expect(featuredFormat([self], now)).toBeNull();
-    expect(featuredFormat([ind, self], now)).toBe("course:way21");
+    const group = format("g", "group", "2026-11-01");
+    const ind = format("way21-support", "individual", null, true);
+    expect(featuredFormat([self, group])).toBeNull();
+    expect(featuredFormat([self, group, ind])).toBe("way21-support");
+    // Unmarked: every button in the row is secondary…
+    expect(isPrimaryFormat([self, group], "g")).toBe(false);
+    expect(isPrimaryFormat([self, group], "course:way21")).toBe(false);
+    // …except a program's only format, which has nothing to be compared with.
+    expect(isPrimaryFormat([self], "course:way21")).toBe(true);
+    expect(isPrimaryFormat([self, group, ind], "way21-support")).toBe(true);
+    expect(isPrimaryFormat([self, group, ind], "g")).toBe(false);
+  });
+
+  it("finds the nearest cohort ahead, as information", () => {
+    const self = format("course:way21", "self");
     expect(
-      featuredFormat([self, format("g-feb", "group", "2027-02-01"), format("g-nov", "group", "2026-11-01"), ind], now),
+      nearestCohort([self, format("g-feb", "group", "2027-02-01"), format("g-nov", "group", "2026-11-01")], now),
     ).toBe("g-nov");
-    expect(featuredFormat([self, format("g-old", "group", "2026-10-01")], now)).toBe("course:way21");
+    expect(nearestCohort([self, format("g-old", "group", "2026-10-01")], now)).toBeNull();
   });
 
   it("says the days in Ukrainian", () => {

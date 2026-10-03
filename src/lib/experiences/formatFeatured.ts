@@ -6,13 +6,17 @@ import type { ProgramFormat } from "./formats";
  *
  * A row of formats is one view, and the button contract allows one primary per
  * view (docs/design-system.md, «Five roles»). Three gold buttons side by side
- * asked three questions at once. The one that keeps the gold is the nearest
- * cohort still ahead: a group stage is the moment the program is built around,
- * and the date is the reason to decide now. Without one, the self-paced format
- * — the program itself — takes it. The others go secondary.
+ * asked three questions at once. The one that keeps the gold is the format the
+ * owner marked «Бестселер» in the builder (`experience_offers.featured`) — a
+ * claim about what sells is the owner's, like the price. Without a mark every
+ * button in the row is secondary; a program with one format has nothing to
+ * compare, and its one button stays primary.
+ *
+ * The nearest cohort ahead is information, not the gold: it says «Найближчий
+ * потік» and counts the days to its start (`nearestCohort`).
  *
  * Shared by the program page (OfferFormats) and the landings (formatSync), so
- * both highlight the same card.
+ * both mark the same card.
  */
 
 const DAY_MS = 86_400_000;
@@ -30,16 +34,24 @@ export function daysUntil(isoDate: string | null, now: Date = new Date()): numbe
   return days >= 0 ? days : null;
 }
 
-/** The code of the format that keeps the primary action; null for a single format. */
-export function featuredFormat(formats: ProgramFormat[], now: Date = new Date()): string | null {
-  if (formats.length < 2) return null;
-  const cohort = formats
+/** The code of the owner's «Бестселер» format; null when none is marked. */
+export function featuredFormat(formats: ProgramFormat[]): string | null {
+  return formats.find((format) => format.featured)?.code ?? null;
+}
+
+/** Whether this format's button is the row's primary: the marked one, or the only one. */
+export function isPrimaryFormat(formats: ProgramFormat[], code: string): boolean {
+  return formats.length < 2 || featuredFormat(formats) === code;
+}
+
+/** The group format whose cohort starts soonest, still ahead; null when none is. */
+export function nearestCohort(formats: ProgramFormat[], now: Date = new Date()): string | null {
+  const next = formats
     .filter((format) => format.format === "group")
-    .map((format) => ({ format, days: daysUntil(format.cohortStartsOn, now) }))
-    .filter((entry): entry is { format: ProgramFormat; days: number } => entry.days !== null)
+    .map((format) => ({ code: format.code, days: daysUntil(format.cohortStartsOn, now) }))
+    .filter((entry): entry is { code: string; days: number } => entry.days !== null)
     .sort((a, b) => a.days - b.days)[0];
-  if (cohort) return cohort.format.code;
-  return (formats.find((format) => format.format === "self") ?? formats[0]!).code;
+  return next?.code ?? null;
 }
 
 /** «через 29 днів», «через 2 дні», «через 1 день», «сьогодні». */

@@ -122,6 +122,26 @@
   border-color: color-mix(in srgb, var(--format-tone) 70%, var(--cw-mat-stroke-inner));
 }
 
+/* The owner's «Бестселер» mark — the same gold pill the program page shows on
+   this format. In the flow here, above the head: the status holds the corner. */
+.card[data-featured] {
+  border-color: color-mix(in srgb, var(--cw-platform-accent) 55%, var(--cw-mat-stroke-inner));
+}
+
+.cardBestseller {
+  align-self: flex-start;
+  margin: 0;
+  padding: var(--cw-space-2xs) var(--cw-space-sm);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-platform-accent);
+  color: var(--cw-platform-accent-contrast);
+  font-size: var(--ds-type-label-size);
+  font-weight: 640;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
 /* Kind on the left, where the eye starts; the status on the right, with a dot
    in the state's colour — the one fact an author scans the row for. */
 .cardHead {

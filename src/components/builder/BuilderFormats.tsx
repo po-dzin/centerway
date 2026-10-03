@@ -232,6 +232,18 @@ export function BuilderFormats({
     return result.ok;
   }
 
+  /** The owner's «Бестселер» mark — one per program; marking one clears the rest. */
+  async function setFeatured(format: BuilderFormatDto, featured: boolean) {
+    setBusy(true);
+    const result = await updateCourseFormat(course.slug, format.code, { featured, submit: false });
+    setBusy(false);
+    if (!result.ok) {
+      toast.error("Не вдалося змінити позначку «Бестселер»");
+      return;
+    }
+    await refresh();
+  }
+
   async function setOpeners(programSlug: string, codes: string[]) {
     if (!data) return;
     const changed = data.formats.filter(
@@ -476,7 +488,14 @@ export function BuilderFormats({
     const status = statusOf(format);
     const pendingPrice = format.proposedAmount !== null && format.proposedAmount !== format.amount;
     return (
-      <li key={format.code} className={css.card} data-format={format.format} data-editing={editing === format.code}>
+      <li
+        key={format.code}
+        className={css.card}
+        data-format={format.format}
+        data-editing={editing === format.code}
+        data-featured={format.featured ? "" : undefined}
+      >
+        {format.featured ? <p className={css.cardBestseller}>Бестселер</p> : null}
         <div className={css.cardHead}>
           {/* The kind, unless the name already is the kind's own word. */}
           <span className={css.cardKind}>{format.labelIsDefault ? null : KIND_LABELS[format.format]}</span>
@@ -541,6 +560,17 @@ export function BuilderFormats({
           >
             Змінити
           </button>
+          {canSetPrice && (data?.formats.length ?? 0) > 1 ? (
+            <button
+              className={css.secondaryAction}
+              type="button"
+              disabled={busy}
+              aria-pressed={format.featured === true}
+              onClick={() => void setFeatured(format, !format.featured)}
+            >
+              {format.featured ? "Зняти «Бестселер»" : "Зробити бестселером"}
+            </button>
+          ) : null}
           {format.reviewStatus !== "approved" ? (
             <button className={styles.dangerAction} type="button" disabled={busy} onClick={() => void remove(format)}>
               Прибрати
