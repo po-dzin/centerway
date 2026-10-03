@@ -264,7 +264,7 @@
 
 .bonusText {
   display: grid;
-  gap: 2px;
+  gap: var(--cw-space-2xs);
   min-inline-size: 0;
 }
 

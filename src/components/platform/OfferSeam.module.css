@@ -1,56 +1,126 @@
-/* The seam between two program-page blocks — see OfferSeam.tsx.
-   It sits at the top of the section it opens and climbs into the gap the
-   previous section left, so the space between panels does not grow. */
+/* The seam between two program-page blocks, drawn as the page's route — see
+   OfferSeam.tsx. It sits at the top of the section it opens and climbs into
+   the gap the previous section left, so the space between panels does not
+   grow. */
 
 .seam {
   display: grid;
   justify-items: center;
+  gap: var(--cw-space-sm);
+  /* Across the whole row when the block it opens sits in the two-column
+     support split (the formats do). */
+  grid-column: 1 / -1;
   /* It climbs back through the previous section's bottom padding — the same
      fluid value `.section` sets (PlatformBlocksBase.module.css) — so at every
      width the seam takes the gap rather than adding its own height to it. */
-  margin-block: calc(-1 * clamp(2.3rem, 6.2vw, 4.8rem) - var(--cw-space-md)) var(--cw-space-lg);
-  color: var(--cw-platform-accent);
+  margin-block: calc(-1 * clamp(2.3rem, 6.2vw, 4.8rem) + var(--cw-space-md)) var(--cw-space-lg);
   pointer-events: none;
 }
 
-.thread {
-  display: block;
-  inline-size: 1px;
-  block-size: var(--cw-space-xl);
-  background: linear-gradient(
-    180deg,
-    transparent,
-    color-mix(in srgb, var(--cw-platform-accent) 60%, transparent),
-    transparent
-  );
+.route {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  inline-size: min(100%, 34rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: var(--cw-space-xs);
+  min-inline-size: 0;
+}
+
+/* The thread from the previous ring to this one, behind both; gold up to the
+   step this block opens, quiet after it. */
+.step + .step::before {
+  position: absolute;
+  inset-block-start: calc(var(--seam-ring) / 2);
+  inset-inline: -50% 50%;
+  block-size: 1px;
+  content: "";
+  background: var(--cw-mat-stroke-inner);
+}
+
+.step[data-state="done"] + .step::before,
+.step[data-state="done"] + .step[data-state="current"]::before {
+  background: color-mix(in srgb, var(--cw-platform-accent) 75%, transparent);
+}
+
+.seam {
+  --seam-ring: 2.625rem;
 }
 
 .ring {
+  position: relative;
+  z-index: 1;
   display: grid;
   place-items: center;
-  inline-size: 2.625rem;
-  block-size: 2.625rem;
-  border: 1px solid color-mix(in srgb, var(--cw-platform-accent) 70%, transparent);
+  inline-size: var(--seam-ring);
+  block-size: var(--seam-ring);
+  border: 1px solid var(--cw-mat-stroke-inner);
   border-radius: 50%;
   background: var(--cw-platform-bg);
+  color: var(--cw-platform-muted);
 }
 
-.caption {
-  margin-block-start: var(--cw-space-xs);
-  font-family: var(--cw-font-data);
+.step[data-state="done"] .ring {
+  border-color: color-mix(in srgb, var(--cw-platform-accent) 75%, transparent);
+  color: var(--cw-platform-accent);
+}
+
+.step[data-state="current"] .ring {
+  border-color: var(--cw-platform-accent);
+  background: var(--cw-platform-accent);
+  color: var(--cw-platform-accent-contrast);
+}
+
+.label {
+  max-inline-size: 100%;
+  overflow: hidden;
+  color: var(--cw-platform-muted);
   font-size: var(--ds-type-label-size);
   line-height: var(--ds-type-label-line-height);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.step[data-state="current"] .label {
+  color: var(--cw-platform-text);
+  font-weight: 600;
+}
+
+.line {
+  max-inline-size: 34rem;
+  margin: 0;
   color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.45;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.line b {
+  color: var(--cw-platform-text);
+  font-weight: 600;
 }
 
 @media (max-width: 560px) {
   .seam {
-    margin-block: calc(-1 * var(--cw-space-xl)) var(--cw-space-md);
+    --seam-ring: 2.375rem;
+    margin-block: 0 var(--cw-space-md);
   }
 
-  .thread {
-    block-size: var(--cw-space-lg);
+  /* Four steps across a phone: a label that does not fit takes a second line
+     rather than an ellipsis. */
+  .label {
+    overflow: visible;
+    white-space: normal;
+    text-wrap: balance;
   }
 }

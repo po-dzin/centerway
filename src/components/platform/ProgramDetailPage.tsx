@@ -13,7 +13,8 @@ import { OfferCurriculum } from "@/components/platform/OfferCurriculum";
 import { OfferAccessProvider } from "@/components/platform/OfferAccess";
 import { OfferHeroActions, OfferHeroCommitment } from "@/components/platform/OfferHeroState";
 import { OfferAuthor, OfferBento } from "@/components/platform/OfferFacets";
-import { OfferSeam } from "@/components/platform/OfferSeam";
+import { OfferSeam, type RouteStep } from "@/components/platform/OfferSeam";
+import { nearestCohort } from "@/lib/experiences/formatFeatured";
 import { OfferStickyBar } from "@/components/platform/OfferStickyBar";
 import { OfferSupport } from "@/components/platform/OfferSupportState";
 import offerPanelStyles from "@/components/platform/PlatformOfferStyles";
@@ -219,6 +220,35 @@ export function ProgramDetailPage({
         : "Записатися на програму";
   const heroPrice = choosesFormat ? formatFromPrice : isCheckout || isFree ? commerce.price : null;
 
+  /* THE ROUTE THE SEAMS DRAW (G, 2026-10-03): the page's steps, and under each
+     seam one line of facts about the block it opens — see OfferSeam. */
+  const route: RouteStep[] = [
+    { icon: "leaf", label: "Метод" },
+    { icon: "sprout", label: "Чи це про вас" },
+    ...(course ? [{ icon: "calendar" as const, label: "Програма" }] : []),
+    { icon: "price", label: choosesFormat ? "Формати" : "Участь" },
+  ];
+  const references = course ? referenceLessons(course) : 0;
+  const programLine = [
+    program.duration,
+    lessonLabel !== program.duration ? lessonLabel : null,
+    references > 0
+      ? `${references} ${plural(references, "довідковий матеріал", "довідкові матеріали", "довідкових матеріалів")}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const nearest = formats.find((format) => format.code === nearestCohort(formats));
+  const formatsLine = [
+    `${waysToTake(formats.length)} пройти`,
+    formatFromPrice,
+    nearest?.cohortStartsOn
+      ? `потік стартує ${COHORT_DAY.format(new Date(`${nearest.cohortStartsOn}T00:00:00Z`))}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
   return (
     /* EVERYTHING INSIDE ONE PROVIDER, and only two things read it. The hero and
        the outline are the parts of an offer page that stop being an offer once
@@ -351,14 +381,21 @@ export function ProgramDetailPage({
               audience={program.audience}
               results={program.results}
               format={program.format}
-              seam={<OfferSeam icon="sprout" caption="Чи це про вас" />}
+              seam={
+                <OfferSeam
+                  steps={route}
+                  current={1}
+                  lead="Чи це про вас"
+                  text="для кого програма, що зміниться і що входить"
+                />
+              }
             />
             {course ? (
               <OfferCurriculum
                 course={course}
                 landingHref={offerLandingUrl(program.slug)}
                 formats={formats}
-                seam={<OfferSeam icon="calendar" caption={program.duration} />}
+                seam={<OfferSeam steps={route} current={2} lead="Програма курсу" text={programLine} />}
               />
             ) : null}
             <OfferAuthor author={author} note={program.authorNote} />
@@ -374,7 +411,12 @@ export function ProgramDetailPage({
             title={program.title}
             sales={
               choosesFormat ? (
-                <OfferFormats programSlug={program.slug} programTitle={program.title} formats={formats} />
+                <OfferFormats
+                  programSlug={program.slug}
+                  programTitle={program.title}
+                  formats={formats}
+                  seam={<OfferSeam steps={route} current={route.length - 1} lead="Формати" text={formatsLine} />}
+                />
               ) : (
                 <>
                   <article className={offerPanelStyles.panel}>
@@ -456,4 +498,12 @@ function referenceLessons(course: Course): number {
   return course.modules
     .filter((module) => module.reference && !isLinkedModule(module))
     .reduce((total, module) => total + module.lessons.length, 0);
+}
+
+const COHORT_DAY = new Intl.DateTimeFormat("uk-UA", { day: "numeric", month: "long", timeZone: "UTC" });
+
+/* «три способи», said as a word while it is a small number. */
+function waysToTake(count: number): string {
+  const words: Record<number, string> = { 2: "два способи", 3: "три способи", 4: "чотири способи" };
+  return words[count] ?? `${count} ${plural(count, "спосіб", "способи", "способів")}`;
 }
