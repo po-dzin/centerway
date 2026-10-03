@@ -3787,11 +3787,27 @@
   padding: var(--cw-space-sm);
   border: 1px solid var(--builder-rule);
   border-radius: var(--cw-radius-sm);
-  background: var(--cw-mat-surface);
+  /* The colour only, not the `background` shorthand: the shorthand reset
+     `background-image` too, which is where a select's chevron lives — so the
+     builder's selects fell back to the browser's own arrow, pinned to the
+     border and riding high of the value («кривий шеврон», 2026-10-03). */
+  background-color: var(--cw-mat-surface);
   color: var(--cw-platform-text);
   font: inherit;
   font-size: var(--ds-type-body-size);
   line-height: 1.5;
+}
+
+/* A select is a field with the system's ink chevron (`.cw-select`: two
+   stripes in `--cw-muted`, and a list that opens under the field where the
+   engine allows). The right padding is the chevron's room; two classes so it
+   holds over `.input`'s padding whichever stylesheet loads last. */
+.select {
+  composes: cw-select from global;
+}
+
+.input.select {
+  padding-inline-end: var(--cw-space-xl);
 }
 
 /* 16px minimum, always: anything smaller makes iOS Safari zoom the page on

@@ -41,6 +41,28 @@ export function accessRuleForNote(note: string | null | undefined): AccessRule |
 }
 
 /**
+ * The preset an older, hand-written note stands for, for SHOWING it.
+ *
+ * Courses written before the closed list (2026-09-13) still carry prose —
+ * «доступ назавжди», «Доступ назавжди » — and the builder showed none of the
+ * presets as chosen for them, so «Назавжди» looked unset on exactly the courses
+ * that are lifetime (G, 2026-10-03). This reads such a note the way a person
+ * would: case, spaces and a leading «доступ» do not change the term.
+ *
+ * Display only. `accessRuleForNote` stays exact on purpose — what changes the
+ * term an offer grants must be a value the author picked from the list.
+ */
+export function presetNoteFor(note: string | null | undefined): AccessTermNote | null {
+  const key = note
+    ?.trim()
+    .toLowerCase()
+    .replace(/^доступ\s+/, "")
+    .replace(/\s+/g, " ");
+  if (!key) return null;
+  return ACCESS_TERM_NOTES.find((candidate) => candidate.toLowerCase() === key) ?? null;
+}
+
+/**
  * The words for a rule the admin set in the catalogue.
  *
  * A preset's own label where one matches. The catalogue also offers terms the

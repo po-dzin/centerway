@@ -300,12 +300,20 @@ function YoutubeField({
 }
 
 /**
- * A closed list of choices, drawn as one row of pressable options.
+ * A closed list of choices where exactly one answer is true.
  *
- * Used everywhere the model already restricts the answer — a palette, a
- * schedule mode, a heading font. A `<select>` would work and would be wrong:
- * these are three-to-seven options the author is choosing BETWEEN, and a
- * dropdown hides every alternative behind a press.
+ * DRAWN AS A DROPDOWN (G, 2026-10-03). It was a row of pressable options, on
+ * the argument that a dropdown hides the alternatives behind a press. In use the
+ * row read as «колбаса з опцій»: six terms of access, three kinds of format and
+ * two ways to buy laid out as a strip of words, every one of them as loud as the
+ * chosen one, and the form became a wall of chips. Either/or is a select now —
+ * the answer reads as one value, the alternatives are one press away.
+ *
+ * ONE EXCEPTION: options that carry a swatch. A palette is chosen by looking at
+ * it, and a native list cannot draw a colour, so the gamma keeps its open row.
+ *
+ * `selection_family`: contour — the field's own edge and focus ring; nothing
+ * inside it is inked. The chevron is the shared `.cw-select` mark.
  */
 export function ChoiceRow<T extends string>({
   label,
@@ -322,45 +330,77 @@ export function ChoiceRow<T extends string>({
   value: T | undefined;
   required?: true;
   /**
-   * Whether pressing the chosen option again unsets the field.
+   * Whether the field may be set back to «not said».
    *
    * Off by default, because most closed lists in this builder answer a question
    * that always has an answer — a course HAS a palette, a schedule HAS a mode,
    * and there is no such thing as unsetting them. A field that is genuinely
    * optional is the other case, and it needs a way back to "not said" that is
-   * not "pick something wrong".
+   * not "pick something wrong": the list's first entry, «Не вказано».
    */
   clearable?: true;
   onChange: (next: T | undefined) => void;
 }) {
+  if (options.some((option) => option.swatch)) {
+    return (
+      <div className={styles.field}>
+        <span className={styles.fieldLabel}>
+          {label}
+          {required ? <RequiredMark /> : null}
+        </span>
+        <div className={styles.choiceRow} role="group" aria-label={label}>
+          {options.map((option) => {
+            const on = option.value === value;
+            return (
+              <button
+                key={option.value}
+                className={styles.choiceOption}
+                type="button"
+                aria-pressed={on}
+                data-cw-ink-control=""
+                onClick={() => onChange(on && clearable ? undefined : option.value)}
+              >
+                {option.swatch ? (
+                  <span className={styles.choiceSwatch} data-cw-pack={option.swatch} aria-hidden="true" />
+                ) : null}
+                <InkLabel>{option.label}</InkLabel>
+              </button>
+            );
+          })}
+        </div>
+        {hint ? <span className={styles.fieldHint}>{hint}</span> : null}
+      </div>
+    );
+  }
+
+  const chosen = options.some((option) => option.value === value) ? (value as T) : "";
   return (
-    <div className={styles.field}>
+    <label className={styles.field}>
       <span className={styles.fieldLabel}>
         {label}
         {required ? <RequiredMark /> : null}
       </span>
-      <div className={styles.choiceRow} role="group" aria-label={label}>
-        {options.map((option) => {
-          const on = option.value === value;
-          return (
-            <button
-              key={option.value}
-              className={styles.choiceOption}
-              type="button"
-              aria-pressed={on}
-              data-cw-ink-control=""
-              onClick={() => onChange(on && clearable ? undefined : option.value)}
-            >
-              {option.swatch ? (
-                <span className={styles.choiceSwatch} data-cw-pack={option.swatch} aria-hidden="true" />
-              ) : null}
-              <InkLabel>{option.label}</InkLabel>
-            </button>
-          );
-        })}
-      </div>
+      <select
+        className={`${styles.input} ${styles.select}`}
+        value={chosen}
+        aria-required={required ? true : undefined}
+        onChange={(event) => onChange((event.target.value || undefined) as T | undefined)}
+      >
+        {clearable ? (
+          <option value="">Не вказано</option>
+        ) : chosen === "" ? (
+          <option value="" disabled>
+            Оберіть…
+          </option>
+        ) : null}
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
       {hint ? <span className={styles.fieldHint}>{hint}</span> : null}
-    </div>
+    </label>
   );
 }
 
@@ -384,7 +424,8 @@ export function ChoiceSet<T extends string>({
 }: {
   label: string;
   hint?: string;
-  options: Array<{ value: T; label: string }>;
+  /** `disabled`: shown, and not the author's to change — a format already on sale. */
+  options: Array<{ value: T; label: string; disabled?: boolean }>;
   values: T[];
   required?: true;
   onChange: (next: T[] | undefined) => void;
@@ -408,6 +449,7 @@ export function ChoiceSet<T extends string>({
               className={styles.choiceOption}
               type="button"
               aria-pressed={on}
+              disabled={option.disabled}
               data-cw-ink-control=""
               onClick={() => write(on ? values.filter((one) => one !== option.value) : [...values, option.value])}
             >

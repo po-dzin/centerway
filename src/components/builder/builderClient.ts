@@ -451,6 +451,8 @@ export type BuilderFormatsDto = {
   formats: BuilderFormatDto[];
   includable: Array<{ slug: string; title: string; status: string }>;
   isOwner: boolean;
+  /** The `admin` role: the price typed here is the live one, with no review. */
+  canSetPrice?: boolean;
 };
 
 export type BuilderFormatInput = {

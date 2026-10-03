@@ -1,9 +1,12 @@
 /**
- * FormatReviewTab — the owner's «Формати» review in the admin.
+ * ProgramFormats — a program's formats, folded under its row in «Ціни й доступ».
  *
  * Guards:
- *  - formats are grouped one card per program, programs with something waiting
- *    first, formats inside a program in the page's order (self, group, guided);
+ *  - the head counts the formats, the ones waiting, and names every format with
+ *    its price (base included, an enquiry marked); it opens by itself when
+ *    something waits and stays folded otherwise;
+ *  - inside, formats keep the page's order (self, group, guided), and the base
+ *    format — the row's own price — is listed only while a decision on it waits;
  *  - a format waits for a decision — and shows the price form — exactly when
  *    `!approved || pendingPrice`: drafts, proposals and declined formats, and a
  *    live format only while a new price waits beside the current one;
@@ -30,7 +33,7 @@ vi.mock("@/components/auth/authorizedFetch", () => ({
   authorizedJson: vi.fn(),
 }));
 
-const { FormatReviewTab } = await import("./FormatReviewTab");
+const { ProgramFormats } = await import("./FormatReviewTab");
 
 function row(overrides: Partial<FormatReviewRow> & Pick<FormatReviewRow, "code" | "format">): FormatReviewRow {
   return {
@@ -50,9 +53,16 @@ function row(overrides: Partial<FormatReviewRow> & Pick<FormatReviewRow, "code" 
   };
 }
 
-function render(formats: FormatReviewRow[], canEdit = true) {
+function render(formats: FormatReviewRow[], canEdit = true, defaultOpen: boolean | "auto" = true) {
   return renderToStaticMarkup(
-    createElement(FormatReviewTab, { formats, canEdit, errorText: (m: string) => m, onChanged: async () => {} }),
+    createElement(ProgramFormats, {
+      formats,
+      baseCode: "course:way21",
+      canEdit,
+      defaultOpen: defaultOpen === "auto" ? undefined : defaultOpen,
+      errorText: (m: string) => m,
+      onChanged: async () => {},
+    }),
   );
 }
 
@@ -66,13 +76,13 @@ function item(html: string, code: string): string {
 }
 
 describe("FormatReviewTab", () => {
-  it("shows the empty state with no formats", () => {
-    expect(render([])).toContain("formats_empty");
+  it("renders nothing for a program sold as its one base offer", () => {
+    expect(render([])).toBe("");
+    expect(render([row({ code: "course:way21", format: "self" })])).toBe("");
   });
 
-  it("groups formats one card per program, waiting programs first, formats in page order", () => {
-    const html = render([
-      row({ code: "a_self", format: "self", courseSlug: "alpha", courseTitle: "Альфа" }),
+  it("names the whole ladder in the head and lists formats in page order, the base only while it waits", () => {
+    const formats = [
       row({
         code: "way21_ind",
         format: "individual",
@@ -89,20 +99,33 @@ describe("FormatReviewTab", () => {
         amount: null,
         proposedAmount: 3900,
       }),
-      row({ code: "course:way21", format: "self" }),
+      row({ code: "course:way21", format: "self", amount: 3900, mode: "lead" }),
+    ];
+    const html = render(formats);
+    expect(html).toContain("formats_count: 3 · <strong");
+    expect(html).toContain("formats_waiting: 2</strong>");
+    expect(html).toContain(
+      "Самостійно 3900 UAH (formats_mode_lead) · Потік products_price_on_request · Супровід products_price_on_request (formats_mode_lead)",
+    );
+    // The base is the row's own price: not listed while nothing waits on it.
+    expect(html).not.toContain("<code>course:way21</code>");
+    expect(html.indexOf("<code>way21_group</code>")).toBeLessThan(html.indexOf("<code>way21_ind</code>"));
+    // …and listed, first, once it does.
+    const waiting = render([
+      ...formats.slice(0, 2),
+      row({ code: "course:way21", format: "self", proposedAmount: 3500 }),
     ]);
-    expect(html).toContain('id="formats-way21"');
-    expect(html).toContain('id="formats-alpha"');
-    // Шлях 21 has two waiting, Альфа none — Шлях 21 first despite the alphabet.
-    expect(html.indexOf('id="formats-way21"')).toBeLessThan(html.indexOf('id="formats-alpha"'));
-    expect(html).toContain("formats_count: 3 · <strong>formats_waiting: 2</strong>");
-    expect(html).toContain("formats_count: 1</p>");
-    // self, group, individual inside a program.
-    const self = html.indexOf("<code>course:way21</code>");
-    const group = html.indexOf("<code>way21_group</code>");
-    const ind = html.indexOf("<code>way21_ind</code>");
-    expect(self).toBeLessThan(group);
-    expect(group).toBeLessThan(ind);
+    expect(waiting.indexOf("<code>course:way21</code>")).toBeLessThan(waiting.indexOf("<code>way21_group</code>"));
+  });
+
+  it("opens by itself when something waits, and stays folded when nothing does", () => {
+    const quiet = [row({ code: "course:way21", format: "self" }), row({ code: "g", format: "group" })];
+    const folded = render(quiet, true, "auto");
+    expect(folded).toContain('aria-expanded="false"');
+    expect(folded).not.toContain("<code>g</code>");
+    const busy = render([...quiet, row({ code: "p", format: "individual", reviewStatus: "proposed" })], true, "auto");
+    expect(busy).toContain('aria-expanded="true"');
+    expect(busy).toContain("<code>p</code>");
   });
 
   it("gives a proposal the price form prefilled with the proposed price, approve and decline", () => {
@@ -181,7 +204,8 @@ describe("FormatReviewTab", () => {
       false,
     );
     expect(html).not.toContain("<input");
-    expect(html).not.toContain("<button");
+    // The chevron is the only button: it opens, it does not decide.
+    expect(html.match(/<button/g)).toHaveLength(1);
     expect(html).toContain("formats_waiting: 1");
   });
 });

@@ -19,7 +19,11 @@ const updateFormat = vi.fn();
 const deleteFormat = vi.fn();
 const revalidateTag = vi.fn();
 
-let grant: { courseId: string; slug: string; identity: { authUserId: string; isAdmin: boolean; email: string } } | null;
+let grant: {
+  courseId: string;
+  slug: string;
+  identity: { authUserId: string; isAdmin: boolean; canSetPrice?: boolean; email: string };
+} | null;
 let denial: "unauthenticated" | "not_found" = "not_found";
 
 vi.mock("server-only", () => ({}));
@@ -72,7 +76,11 @@ const author = {
   slug: "way21",
   identity: { authUserId: "u-author", isAdmin: false, email: "a@x" },
 };
-const owner = { courseId: "c-way21", slug: "way21", identity: { authUserId: "u-admin", isAdmin: true, email: "o@x" } };
+const owner = {
+  courseId: "c-way21",
+  slug: "way21",
+  identity: { authUserId: "u-admin", isAdmin: true, canSetPrice: true, email: "o@x" },
+};
 
 function expectPurged() {
   expect(revalidateTag).toHaveBeenCalledWith("lms-course:way21", { expire: 0 });
@@ -128,6 +136,7 @@ describe("GET", () => {
       formats: [{ code: "course:way21" }],
       includable: [{ slug: "reset-day" }],
       isOwner: false,
+      canSetPrice: false,
     });
     expect(listCourseFormats).toHaveBeenCalledWith("c-way21");
     expect(listIncludablePrograms).toHaveBeenCalledWith({
@@ -142,7 +151,7 @@ describe("GET", () => {
     listCourseFormats.mockResolvedValue([]);
     listIncludablePrograms.mockResolvedValue([]);
     const res = await GET(request("GET"), params);
-    expect((await res.json()).isOwner).toBe(true);
+    expect(await res.json()).toMatchObject({ isOwner: true, canSetPrice: true });
     expect(listIncludablePrograms).toHaveBeenCalledWith({ courseId: "c-way21", authUserId: "u-admin", isAdmin: true });
   });
 
@@ -170,7 +179,13 @@ describe("POST", () => {
     const res = await POST(request("POST", body), params);
     expect(res.status).toBe(201);
     expect(await res.json()).toEqual({ code: "way21-group" });
-    expect(createFormat).toHaveBeenCalledWith({ courseId: "c-way21", authUserId: "u-author", isAdmin: false, body });
+    expect(createFormat).toHaveBeenCalledWith({
+      courseId: "c-way21",
+      authUserId: "u-author",
+      isAdmin: false,
+      canSetPrice: false,
+      body,
+    });
     expectPurged();
   });
 
@@ -178,7 +193,7 @@ describe("POST", () => {
     grant = owner;
     createFormat.mockResolvedValue("way21-self");
     await POST(request("POST", { format: "self" }), params);
-    expect(createFormat.mock.calls[0]![0]).toMatchObject({ authUserId: "u-admin", isAdmin: true });
+    expect(createFormat.mock.calls[0]![0]).toMatchObject({ authUserId: "u-admin", isAdmin: true, canSetPrice: true });
   });
 
   it("hands an unreadable body on as an empty one, for the rules to refuse", async () => {
@@ -218,6 +233,7 @@ describe("PATCH", () => {
       courseId: "c-way21",
       authUserId: "u-author",
       isAdmin: false,
+      canSetPrice: false,
       code: "way21-group",
       body,
     });

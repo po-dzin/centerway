@@ -1,46 +1,18 @@
-/* The Formats tab: one card per program, its formats as ruled rows inside
-   (2026-09-25). A format is a way through ONE program, so it is listed under
-   that program — the first cut printed every format as a card of its own, and
-   Шлях 21 read as three unrelated products.
+/* A program's formats, folded under its price row in «Ціни й доступ»
+   (2026-09-25; moved out of their own tab 2026-10-03). A format is a way
+   through ONE program, so it is listed under that program.
 
-   Cadence: 2xs inside a row's text, sm between a row's lines, md between rows
-   and around the card's head, lg between programs. */
+   Cadence: 2xs inside a row's text, sm between a row's lines, md between rows. */
 
-.intro {
-  margin: 0 0 var(--cw-space-sm);
-  max-width: 44rem;
-  color: var(--cw-platform-muted);
-  font-size: var(--ds-type-body-sm-size);
-  line-height: 1.5;
-}
-
-.programs {
+.program {
   display: grid;
-  gap: var(--cw-space-lg);
+  gap: var(--cw-space-sm);
+  padding-block-start: var(--cw-space-sm);
+  border-block-start: 1px solid var(--cw-mat-stroke-chrome);
+  border-image: var(--cw-rule-fade-x);
 }
 
-.programHead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--cw-space-2xs) var(--cw-space-md);
-}
-
-.programTitle {
-  margin: 0;
-  color: var(--cw-platform-text);
-  font-size: var(--ds-type-body-size);
-  font-weight: 600;
-}
-
-.programCount {
-  margin: 0;
-  color: var(--cw-platform-muted);
-  font-size: var(--ds-type-label-size);
-}
-
-.programCount strong {
+.waiting {
   color: var(--cw-status-pending, var(--cw-platform-text));
   font-weight: 600;
 }

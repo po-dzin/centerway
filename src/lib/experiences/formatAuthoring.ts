@@ -23,6 +23,12 @@ import { FORMAT_DEFAULT_LABELS, isOfferFormat, ukList, type OfferFormat } from "
  *     already paid are owed, and are the owner's to change.
  * An admin editing from the builder is the owner and has no such limits.
  *
+ * AND THE OWNER DOES NOT REVIEW THEMSELVES (G, 2026-10-03). When the caller may
+ * set prices (`canSetPrice` — the `admin` role, never `support`, never an
+ * author), the price typed in the builder IS the live price: sending a format
+ * puts it on sale at that price, and a new price on a format already on sale
+ * replaces the old one at once. Everyone else still proposes, as above.
+ *
  * Every write goes through the service role on the server: RLS on
  * `experience_offers` is admin-only, and this module is where the narrower
  * author rules live.
@@ -310,10 +316,33 @@ async function freeCode(db: Db, base: string): Promise<string> {
   throw new FormatError("format_code_exhausted", 409);
 }
 
+/**
+ * The live-price fields for a write by someone who may set prices: what
+ * `reviewFormat`'s approval writes, minus the list price, which stays the
+ * catalogue's. A priced checkout needs a price; a lead may go without one.
+ */
+function ownerPricing(
+  mode: "checkout" | "lead",
+  amount: number | null,
+  actorId: string,
+  now: string,
+): TablesUpdate<"experience_offers"> {
+  if (mode === "checkout" && amount === null) throw new FormatError("format_invalid_amount");
+  return {
+    amount,
+    review_status: "approved",
+    active: true,
+    proposed_amount: null,
+    reviewed_by: actorId,
+    reviewed_at: now,
+  };
+}
+
 export async function createFormat(input: {
   courseId: string;
   authUserId: string;
   isAdmin: boolean;
+  canSetPrice?: boolean;
   body: FormatInput;
 }): Promise<string> {
   const db = adminClient();
@@ -322,6 +351,12 @@ export async function createFormat(input: {
   if (!parsed.format) throw new FormatError("format_invalid_kind");
   const mode = parsed.mode ?? (parsed.format === "individual" ? "lead" : "checkout");
   const programSlug = course.program_slug ?? course.slug;
+  const now = new Date().toISOString();
+  // Checked before anything is written: a refused price must not leave a format behind.
+  const pricing =
+    input.canSetPrice && parsed.submit
+      ? ownerPricing(mode, parsed.proposedAmount ?? null, input.authUserId, now)
+      : null;
   const allowed = parsed.includes?.length ? await listIncludablePrograms(input) : [];
   if (parsed.includes?.length) refuseForeignIncludes(parsed.includes, allowed);
   const code = await freeCode(db, `${programSlug}-${parsed.format}`.toLowerCase());
@@ -332,7 +367,6 @@ export async function createFormat(input: {
     .eq("experience_id", course.experience_id);
   const sortOrder = Math.max(0, ...(siblings ?? []).map((row) => Number(row.sort_order) || 0)) + 1;
 
-  const now = new Date().toISOString();
   const { data, error } = await db
     .from("experience_offers")
     .insert({
@@ -352,6 +386,7 @@ export async function createFormat(input: {
       proposed_amount: parsed.proposedAmount ?? null,
       proposed_by: input.authUserId,
       proposed_at: parsed.submit ? now : null,
+      ...pricing,
     })
     .select("id")
     .single();
@@ -359,7 +394,7 @@ export async function createFormat(input: {
 
   if (parsed.includes?.length) await writeIncludes(db, data.id as string, parsed.includes, allowed);
 
-  if (parsed.submit) {
+  if (parsed.submit && !pricing) {
     await announceFormatProposed({
       courseSlug: course.slug,
       courseTitle: course.title,
@@ -385,6 +420,7 @@ export async function updateFormat(input: {
   courseId: string;
   authUserId: string;
   isAdmin: boolean;
+  canSetPrice?: boolean;
   code: string;
   body: FormatInput;
 }): Promise<void> {
@@ -432,6 +468,15 @@ export async function updateFormat(input: {
     patch.proposed_by = input.authUserId;
     patch.proposed_at = now;
   }
+  // The owner's price is the live one: on a format already on sale, a new price
+  // replaces the old at once; a draft sent by the owner goes on sale.
+  const mode = parsed.mode ?? (row.mode === "lead" ? "lead" : "checkout");
+  const ownerPrices =
+    input.canSetPrice === true && ((approved && parsed.proposedAmount !== undefined) || (parsed.submit && !approved));
+  if (ownerPrices) {
+    const amount = parsed.proposedAmount !== undefined ? parsed.proposedAmount : (row.proposed_amount ?? row.amount);
+    Object.assign(patch, ownerPricing(mode, amount, input.authUserId, now));
+  }
 
   if (Object.keys(patch).length > 0) {
     const { error } = await db.from("experience_offers").update(patch).eq("id", row.id);
@@ -441,8 +486,9 @@ export async function updateFormat(input: {
 
   // The owner hears about it when something now waits on them: a format sent
   // for review, or a new price proposed beside one already on sale.
-  const submitted = parsed.submit && !approved;
+  const submitted = parsed.submit && !approved && !ownerPrices;
   const newPrice =
+    !ownerPrices &&
     approved &&
     typeof parsed.proposedAmount === "number" &&
     parsed.proposedAmount !== row.proposed_amount &&
