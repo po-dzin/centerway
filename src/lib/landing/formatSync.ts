@@ -18,19 +18,31 @@
  *     <!-- cw:format course:way21 --> …card… <!-- /cw:format -->
  *   <!-- /cw:formats -->
  *
- * Prices are not written here beyond the first figure: every card carries
- * `data-cw-price`, and `priceSync` sets it from the charged offer afterwards,
- * the same way it always has.
+ * THE CARD'S PRICE AND ITS DOOR ARE THE FORMAT'S TOO (G, 2026-10-03). A typed
+ * card used to keep its typed figure and its typed button: `priceSync` could
+ * reprice only a checkout, so an enquiry format's quote never moved, and a
+ * format switched between «оплата» and «заявка» in the builder kept the old
+ * button on the landing. Now the figure is the format's own `amount`, the
+ * price element is keyed by the format's code (so `priceSync` refines a
+ * checkout figure from the charged offer, as before), a group's start date
+ * replaces the typed note, and the button follows the format's mode.
+ *
+ * And the page's headline price follows the formats: an element marked
+ * `data-cw-price-from="<program>"` prints the lowest price anyone pays
+ * («від 3900 грн», `formatFloor` — the catalogue card's and the program page's
+ * figure), or the one price when there is only one format.
  *
  * NO FORMATS IS NOT «REMOVE EVERYTHING». An empty list is what a failed read
  * looks like too, so the typed cards stand untouched.
  */
 
+import { formatFloor } from "@/lib/experiences/formatFloor";
 import type { BundleHost, ProgramFormat } from "@/lib/experiences/formats";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 
 const BLOCK = /<!--\s*cw:formats\s+([a-z0-9-]+)\s*-->([\s\S]*?)<!--\s*\/cw:formats\s*-->/g;
 const CARD = /<!--\s*cw:format\s+([a-z0-9:_-]+)\s*-->([\s\S]*?)<!--\s*\/cw:format\s*-->/g;
+const PRICE_FROM = /<(\w+)((?:\s+[^<>]*?)?\sdata-cw-price-from="([a-z0-9-]+)"(?:\s+[^<>]*?)?)>([\s\S]*?)<\/\1>/g;
 
 const ARROW =
   '<span class="arr"><svg class="ico ico-arr" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-arrow-right"/></svg></span>';
@@ -63,10 +75,21 @@ function cohortLine(format: ProgramFormat): string | null {
   return Number.isNaN(date.getTime()) ? null : `старт потоку ${COHORT_DATE.format(date)}`;
 }
 
+function priceText(format: ProgramFormat): string {
+  return format.amount !== null ? `${format.amount} грн` : "за запитом";
+}
+
+/** The card's door: the enquiry form for a lead, the checkout for the rest. */
+function actionFor(format: ProgramFormat): string {
+  return format.mode === "lead"
+    ? `<button type="button" class="btn btn-primary fc-cta" data-lead-open="${escape(format.code)}">Залишити заявку ${ARROW}</button>`
+    : `<a href="#offer" class="btn btn-primary fc-cta openModal" data-cta-final data-cw-product="${escape(format.code)}" data-cw-offer-id="${escape(format.code.replace(/[^a-z0-9]+/g, "_"))}" data-cw-price-value="${format.amount ?? 0}">${format.format === "group" ? "Приєднатися до потоку" : "Почати"} ${ARROW}</a>`;
+}
+
 /** A card for a format the landing does not have one for, in its own markup. */
 export function renderFormatCard(format: ProgramFormat, programTitle: string): string {
   const dark = format.mode === "checkout";
-  const price = format.amount !== null ? `${format.amount} грн` : "за запитом";
+  const price = priceText(format);
   const note = cohortLine(format) ?? (format.mode === "lead" ? "ціну узгоджуємо в розмові" : "повний доступ");
   // The author's list when there is one — the same lines the program page
   // shows; otherwise the one thing certainly true, and the summary.
@@ -75,10 +98,7 @@ export function renderFormatCard(format: ProgramFormat, programTitle: string): s
       ? format.features.map((feature) => `<li>${escape(feature)}</li>`)
       : [`<li>Уся програма «${escape(programTitle)}»</li>`, format.summary ? `<li>${escape(format.summary)}</li>` : ""];
   const features = [...own, includedItems(format)].join("");
-  const action =
-    format.mode === "lead"
-      ? `<button type="button" class="btn btn-primary fc-cta" data-lead-open="${escape(format.code)}">Залишити заявку ${ARROW}</button>`
-      : `<a href="#offer" class="btn btn-primary fc-cta openModal" data-cta-final data-cw-product="${escape(format.code)}" data-cw-offer-id="${escape(format.code.replace(/[^a-z0-9]+/g, "_"))}" data-cw-price-value="${format.amount ?? 0}">${format.format === "group" ? "Приєднатися до потоку" : "Почати"} ${ARROW}</a>`;
+  const action = actionFor(format);
 
   return [
     `<!-- cw:format ${format.code} -->`,
@@ -109,7 +129,26 @@ export function renderFormatCard(format: ProgramFormat, programTitle: string): s
 function syncCard(card: string, format: ProgramFormat): string {
   const own =
     format.features.length > 0 ? format.features.map((feature) => `<li>${escape(feature)}</li>`).join("") : null;
-  return card.replace(
+  let next = card.replace(
+    /(<div class="fc-price">)([\s\S]*?)(<\/div>)/,
+    (_whole, open: string, inner: string, close: string) => {
+      const priced = inner.replace(
+        /<b\b[^>]*>[\s\S]*?<\/b>/,
+        `<b data-cw-price="${escape(format.code)}">${priceText(format)}</b>`,
+      );
+      const start = cohortLine(format);
+      return `${open}${start ? priced.replace(/<small>[\s\S]*?<\/small>/, `<small>${escape(start)}</small>`) : priced}${close}`;
+    },
+  );
+  // The door follows the mode; a door already of the right kind keeps its typed words.
+  if (format.mode === "lead") {
+    next = next.replace(/<a\b[^>]*\bdata-cw-product="[^"]*"[^>]*>[\s\S]*?<\/a>/, actionFor(format));
+  } else {
+    next = next
+      .replace(/<button\b[^>]*\bdata-lead-open="[^"]*"[^>]*>[\s\S]*?<\/button>/, actionFor(format))
+      .replace(/(\bdata-cw-price-value=")\d+(")/, `$1${format.amount ?? 0}$2`);
+  }
+  return next.replace(
     /(<ul class="fc-features">)([\s\S]*?)(<\/ul>)/,
     (_whole, open: string, inner: string, close: string) => {
       const typed = inner.replace(/<li data-cw-included>[\s\S]*?<\/li>/g, "");
@@ -127,7 +166,17 @@ export function applyFormatSync(
   html: string,
   formatsOf: (programSlug: string) => { title: string; formats: ProgramFormat[] } | null,
 ): string {
-  return html.replace(BLOCK, (whole, programSlug: string, inner: string) => {
+  const headline = html.replace(PRICE_FROM, (whole, tag: string, attrs: string, programSlug: string, inner: string) => {
+    const formats = formatsOf(programSlug)?.formats ?? [];
+    const floor = formatFloor(formats);
+    const only = formats.length === 1 && formats[0]!.amount !== null ? formats[0]!.amount : null;
+    const figure = floor?.amount ?? only;
+    if (figure === null || figure === undefined) return whole;
+    const bare = inner.replace(/^(\s*)від\s+/, "$1");
+    const priced = bare.replace(/\d+(?:[\s\u00a0\u202f]\d+)*/, String(figure));
+    return `<${tag}${attrs}>${floor ? priced.replace(/^(\s*)/, "$1від ") : priced}</${tag}>`;
+  });
+  return headline.replace(BLOCK, (whole, programSlug: string, inner: string) => {
     const program = formatsOf(programSlug);
     if (!program || program.formats.length === 0) return whole;
 
@@ -148,7 +197,12 @@ export function applyFormatSync(
 
 /** The program addresses a page asks formats for. */
 export function collectFormatPrograms(html: string): string[] {
-  return [...new Set([...html.matchAll(BLOCK)].map((match) => match[1]!))];
+  return [
+    ...new Set([
+      ...[...html.matchAll(BLOCK)].map((match) => match[1]!),
+      ...[...html.matchAll(PRICE_FROM)].map((m) => m[3]!),
+    ]),
+  ];
 }
 
 /* ── Bundles, from the included program's side ─────────────────────────────
