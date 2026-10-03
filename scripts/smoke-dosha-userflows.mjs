@@ -299,7 +299,7 @@ async function main() {
     }
     await assertVisible(page, "Ваш профіль", "result header");
     await assertVisible(page, "Що це означає у практиці", "result practice block");
-    await assertVisible(page, "Наступний крок", "result route block");
+    await assertVisible(page, "Межі методу", "result boundary note");
     await assertVisible(page, "Отримати персональні рекомендації", "result primary cta");
     await assertVisible(page, "Переглянути програму", "result secondary cta");
     await assertVisible(page, "Пройти тест ще раз", "result retake cta");

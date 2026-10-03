@@ -21,30 +21,8 @@
   color: color-mix(in srgb, var(--cw-platform-text) 62%, transparent);
 }
 
-.how {
-  margin: 0;
-  font-size: var(--ds-type-body-sm-size);
-  line-height: var(--ds-type-body-sm-line-height);
-  color: var(--cw-platform-muted);
-}
-
-/* Google as the one button, the emailed code as a quiet line under it. */
+/* The one button, at its own width — not stretched across the card. */
 .ways {
   display: grid;
   justify-items: start;
-  gap: var(--cw-space-xs);
-}
-
-/* A word in the sentence that acts: the platform's link rule (ink underline
-   at rest), not a button shape. Padded so the target is taller than the line. */
-.inlineWay {
-  padding: var(--cw-space-2xs) 0;
-  border: 0;
-  background: none;
-  color: var(--cw-platform-text);
-  font: inherit;
-  text-decoration: underline;
-  text-decoration-color: var(--cw-nav-marker);
-  text-underline-offset: 0.2em;
-  cursor: pointer;
 }

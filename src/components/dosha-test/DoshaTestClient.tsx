@@ -58,52 +58,54 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, author
           }}
         >
           <div className={styles.diagnosticStage}>
-            <article className={`${styles.panel} ${styles.diagnosticPanel}`}>
-              {phase === "question" && currentQuestion ? (
-                <DoshaQuestionStep
-                  currentQuestion={currentQuestion}
-                  currentQuestionIndex={attempt.currentQuestionIndex}
-                  totalQuestions={attempt.totalQuestions}
-                  progress={attempt.progress}
-                  answers={attempt.answers}
-                  isBusy={attempt.isBusy}
-                  error={attempt.error}
-                  isLastQuestion={attempt.isLastQuestion}
-                  currentAnswered={attempt.currentAnswered}
-                  selectAnswer={attempt.selectAnswer}
-                  goToStep={attempt.goToStep}
-                  goForward={attempt.goForward}
-                  backToIntro={attempt.backToIntro}
-                />
-              ) : null}
+            {/* The wait is a card of its own, not a panel's contents — see
+                DoshaLoadingStep. */}
+            {phase === "loading" ? <DoshaLoadingStep /> : null}
+            {phase === "loading" ? null : (
+              <article className={`${styles.panel} ${styles.diagnosticPanel}`}>
+                {phase === "question" && currentQuestion ? (
+                  <DoshaQuestionStep
+                    currentQuestion={currentQuestion}
+                    currentQuestionIndex={attempt.currentQuestionIndex}
+                    totalQuestions={attempt.totalQuestions}
+                    progress={attempt.progress}
+                    answers={attempt.answers}
+                    isBusy={attempt.isBusy}
+                    error={attempt.error}
+                    isLastQuestion={attempt.isLastQuestion}
+                    currentAnswered={attempt.currentAnswered}
+                    selectAnswer={attempt.selectAnswer}
+                    goToStep={attempt.goToStep}
+                    goForward={attempt.goForward}
+                    backToIntro={attempt.backToIntro}
+                  />
+                ) : null}
 
-              {phase === "loading" ? <DoshaLoadingStep topbarBadge={topbarBadge} /> : null}
-
-              {phase === "result" && resultType && resultCopy ? (
-                <DoshaResult
-                  topbarBadge={topbarBadge}
-                  uiVariant={uiVariant}
-                  resultType={resultType}
-                  resultCopy={resultCopy}
-                  resultHeading={attempt.resultHeading}
-                  profile={attempt.profile}
-                  confidenceCopy={attempt.confidenceCopy}
-                  scores={attempt.scores}
-                  completedAt={attempt.completedAt}
-                  nextStep={attempt.nextStep}
-                  totalQuestions={attempt.totalQuestions}
-                  telegramLink={attempt.telegramLink}
-                  unlocked={attempt.unlocked}
-                  savedToCabinet={attempt.savedToCabinet}
-                  previousRun={attempt.previousRun}
-                  hasSessionUser={attempt.hasSessionUser}
-                  surfaceHref={attempt.surfaceHref}
-                  emitAttemptEvent={attempt.emitAttemptEvent}
-                  retrySave={attempt.retrySave}
-                  restartTest={attempt.restartTest}
-                />
-              ) : null}
-            </article>
+                {phase === "result" && resultType && resultCopy ? (
+                  <DoshaResult
+                    uiVariant={uiVariant}
+                    resultType={resultType}
+                    resultCopy={resultCopy}
+                    resultHeading={attempt.resultHeading}
+                    profile={attempt.profile}
+                    confidenceCopy={attempt.confidenceCopy}
+                    scores={attempt.scores}
+                    completedAt={attempt.completedAt}
+                    nextStep={attempt.nextStep}
+                    totalQuestions={attempt.totalQuestions}
+                    telegramLink={attempt.telegramLink}
+                    unlocked={attempt.unlocked}
+                    savedToCabinet={attempt.savedToCabinet}
+                    previousRun={attempt.previousRun}
+                    hasSessionUser={attempt.hasSessionUser}
+                    surfaceHref={attempt.surfaceHref}
+                    emitAttemptEvent={attempt.emitAttemptEvent}
+                    retrySave={attempt.retrySave}
+                    restartTest={attempt.restartTest}
+                  />
+                ) : null}
+              </article>
+            )}
           </div>
         </section>
       )}
