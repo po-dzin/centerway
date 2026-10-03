@@ -54,6 +54,8 @@ export async function GET(req: Request) {
   try {
     // Sequential, not parallel: both passes write through the same service-role
     // client and one failing must not leave the other half-run and unreported.
+    // Each pass also carries its email fallback under `email` — counted, never
+    // thrown, so a mail problem cannot turn this into a 500.
     const daily = await runDailyReminders(500, new Date(), policy);
     const unstarted = await runUnstartedReminders(500, new Date(), policy);
     /* Group streams: «завтра старт» and «день 1» by email, on this same
