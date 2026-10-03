@@ -16,7 +16,7 @@ import { emailLink, renderEmailLayout, type EmailBlock } from "./layout";
 
 export type LifecycleEmail = { subject: string; html: string; text: string };
 
-type Line = { text: string } | { link: string; before: string; label: string; after?: string };
+export type Line = { text: string } | { link: string; before: string; label: string; after?: string };
 
 function lineHtml(line: Line, tone: "ink" | "muted" = "ink"): string {
   if ("text" in line) return escapeHtml(line.text);
@@ -28,14 +28,18 @@ function lineText(line: Line): string {
   return `${line.before}${line.label}${line.after ?? ""}: ${line.link}`;
 }
 
-type Step = { title: string; line: Line };
+export type Step = { title: string; line: Line };
 
 /**
  * One letter shape for every lifecycle message, poured into the shared frame:
  * an eyebrow, a serif headline, paragraphs, optional steps or facts, one button,
  * a quiet foot. The plain-text twin is written from the same parts.
+ *
+ * Exported for the learning reminders (`reminderEmails.ts`): they are letters
+ * of the same platform voice, and a second composer would be a second place
+ * for the shape to drift.
  */
-function compose(input: {
+export function compose(input: {
   subject: string;
   preheader: string;
   eyebrow: string;
@@ -92,7 +96,7 @@ function compose(input: {
   return { subject: input.subject, html, text };
 }
 
-function greet(name: string | null | undefined): string {
+export function greet(name: string | null | undefined): string {
   const first = name?.trim().split(/\s+/)[0];
   return first ? `Вітаємо, ${first}!` : "Вітаємо!";
 }
