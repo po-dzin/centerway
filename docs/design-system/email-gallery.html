@@ -27,7 +27,7 @@ iframe{width:100%;height:760px;border:1px solid var(--border);border-radius:16px
 <main>
 <h1>Листи CenterWay</h1>
 <p class="lede">Кожен лист, який надсилає платформа, з прикладовими даними, зібраний тим самим кодом, що й справжній. Одна рамка для всіх: папір, картка, марка і вордмарк, серифний заголовок, тепла кнопка. Опис рамки — docs/design-system.md, розділ «Email».</p>
-<nav><a href="#sign-in-code">Код для входу</a><a href="#receipt-course">Оплату отримано</a><a href="#receipt-stream">Оплату отримано · груповий потік</a><a href="#welcome">Вітаємо в CenterWay</a><a href="#stream-tomorrow">Завтра стартує потік</a><a href="#stream-day1">День 1 потоку</a><a href="#broadcast">Розсилка</a></nav>
+<nav><a href="#sign-in-code">Код для входу</a><a href="#receipt-course">Оплату отримано</a><a href="#receipt-stream">Оплату отримано · груповий потік</a><a href="#welcome">Вітаємо в CenterWay</a><a href="#stream-tomorrow">Завтра стартує потік</a><a href="#stream-day1">День 1 потоку</a><a href="#lesson-reminder">Урок дня готовий</a><a href="#unstarted-reminder">Курс чекає</a><a href="#broadcast">Розсилка</a></nav>
 <section class="letter" id="sign-in-code">
   <header>
     <h2>Код для входу</h2>
@@ -278,6 +278,90 @@ iframe{width:100%;height:760px;border:1px solid var(--border);border-radius:16px
 &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:4px 0 22px&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:14px 18px;background:#f3e4d0;border-left:3px solid #e5ae65;border-radius:4px 12px 12px 4px;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#18261d&quot;&gt;Заходьте до кабінету тим самим email, на який прийшов цей лист, — за ним відкривається доступ.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:10px 0 26px&quot;&gt;&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#e5ae65&quot; style=&quot;border-radius:16px;background:#e5ae65&quot;&gt;&lt;a href=&quot;https://my.centerway.net.ua/&quot; style=&quot;display:inline-block;padding:14px 28px;min-width:180px;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:20px;font-weight:700;color:#203126;text-decoration:none;border-radius:16px;text-align:center&quot;&gt;Відкрити перший урок&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;p style=&quot;margin:0 0 10px;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#48544c&quot;&gt;Якщо щось не відкривається — &lt;a href=&quot;https://t.me/centerway_support_bot&quot; style=&quot;color:#48544c;text-decoration:underline;text-decoration-color:#70766d;text-decoration-thickness:1px;text-underline-offset:3px&quot;&gt;напишіть нам&lt;/a&gt;.&lt;/p&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 16px 0&quot;&gt;&lt;p style=&quot;margin:0;font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-size:18px;line-height:1.2;font-style:italic;color:#18261d&quot;&gt;Команда CenterWay&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;
+
+&lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+</section>
+<section class="letter" id="lesson-reminder">
+  <header>
+    <h2>Урок дня готовий</h2>
+    <dl>
+      <dt>Тема</dt><dd><b>День 3 · Шлях 21</b></dd>
+      <dt>Прехедер</dt><dd>«Ранок без поспіху» — урок готовий. Заходьте, коли буде зручно.</dd>
+      <dt>Коли</dt><dd>Ранковий прогін: відкрився урок дня N, а Telegram до акаунта не підключено.</dd>
+      <dt>Хто шле</dt><dd>Resend</dd>
+      <dt>Умова</dt><dd>LIFECYCLE_EMAILS=on; лише без Telegram; день 1 потоку покриває лист «День 1».</dd>
+      <dt>Код</dt><dd><code>src/lib/email/reminderEmails.ts</code></dd>
+    </dl>
+  </header>
+  <iframe title="Урок дня готовий" loading="lazy" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;uk&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;light&quot;&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&amp;family=Manrope:wght@400;600;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;@media (max-width:480px){.cw-card{padding:22px 20px 22px !important}.cw-title{font-size:28px !important}}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#faefe0;-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased&quot;&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all&quot;&gt;«Ранок без поспіху» — урок готовий. Заходьте, коли буде зручно.&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#faefe0&quot; style=&quot;background:#faefe0&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 16px 40px&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;max-width:560px&quot;&gt;
+&lt;tr&gt;&lt;td class=&quot;cw-card&quot; style=&quot;background:#fff8ef;border:1px solid #dcd4c6;border-radius:20px;padding:28px 36px 30px&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:0 0 30px&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:0 0 22px;border-bottom:1px solid #dcd4c6&quot;&gt;&lt;a href=&quot;https://www.centerway.net.ua&quot; style=&quot;text-decoration:none&quot;&gt;&lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot;&gt;&lt;tr&gt;&lt;td valign=&quot;middle&quot; style=&quot;padding-right:10px&quot;&gt;&lt;img src=&quot;https://www.centerway.net.ua/cw/brand/email/cw-mark-ink@3x.png&quot; width=&quot;32&quot; height=&quot;32&quot; alt=&quot;&quot; style=&quot;display:block;border:0&quot;&gt;&lt;/td&gt;&lt;td valign=&quot;middle&quot;&gt;&lt;img src=&quot;https://www.centerway.net.ua/cw/brand/email/cw-wordmark-ink@3x.png&quot; width=&quot;130&quot; height=&quot;31&quot; alt=&quot;CenterWay&quot; style=&quot;display:block;border:0;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:20px;font-weight:700;color:#18261d&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p style=&quot;margin:0 0 10px;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.4;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#456b58&quot;&gt;День 3 · Шлях 21&lt;/p&gt;&lt;h1 class=&quot;cw-title&quot; style=&quot;margin:0 0 22px;font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-size:34px;line-height:1.12;font-weight:600;letter-spacing:-0.01em;color:#18261d&quot;&gt;Урок дня готовий&lt;/h1&gt;&lt;p style=&quot;margin:0 0 18px;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;color:#18261d&quot;&gt;Вітаємо, Олена!&lt;/p&gt;
+&lt;p style=&quot;margin:0 0 18px;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;color:#18261d&quot;&gt;У програмі «Шлях 21» відкрився урок «Ранок без поспіху».&lt;/p&gt;
+&lt;p style=&quot;margin:0 0 18px;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;color:#18261d&quot;&gt;Заходьте, коли буде зручно, і рухайтеся у своєму темпі. Прогрес зберігається в кабінеті.&lt;/p&gt;
+&lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:10px 0 26px&quot;&gt;&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#e5ae65&quot; style=&quot;border-radius:16px;background:#e5ae65&quot;&gt;&lt;a href=&quot;https://my.centerway.net.ua/learn/way21&quot; style=&quot;display:inline-block;padding:14px 28px;min-width:180px;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:20px;font-weight:700;color:#203126;text-decoration:none;border-radius:16px;text-align:center&quot;&gt;Відкрити урок&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;p style=&quot;margin:0 0 10px;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#48544c&quot;&gt;Якщо щось не відкривається — &lt;a href=&quot;https://t.me/centerway_support_bot&quot; style=&quot;color:#48544c;text-decoration:underline;text-decoration-color:#70766d;text-decoration-thickness:1px;text-underline-offset:3px&quot;&gt;напишіть нам&lt;/a&gt;.&lt;/p&gt;&lt;p style=&quot;margin:0 0 10px;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#48544c&quot;&gt;Нагадування приходять на пошту, бо до вашого акаунта не підключено Telegram.&lt;/p&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 16px 0&quot;&gt;&lt;p style=&quot;margin:0;font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-size:18px;line-height:1.2;font-style:italic;color:#18261d&quot;&gt;Команда CenterWay&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;
+
+&lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+</section>
+<section class="letter" id="unstarted-reminder">
+  <header>
+    <h2>Курс чекає</h2>
+    <dl>
+      <dt>Тема</dt><dd><b>Нагадуємо: «Розвантажувальний день» чекає в кабінеті</b></dd>
+      <dt>Прехедер</dt><dd>Відлік днів починається з першого відкриття, тож ви нічого не пропустили.</dd>
+      <dt>Коли</dt><dd>Курс куплено, але жодного разу не відкрито; кілька м'яких нагадувань.</dd>
+      <dt>Хто шле</dt><dd>Resend</dd>
+      <dt>Умова</dt><dd>LIFECYCLE_EMAILS=on; лише без Telegram.</dd>
+      <dt>Код</dt><dd><code>src/lib/email/reminderEmails.ts</code></dd>
+    </dl>
+  </header>
+  <iframe title="Курс чекає" loading="lazy" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;uk&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;light&quot;&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&amp;family=Manrope:wght@400;600;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;@media (max-width:480px){.cw-card{padding:22px 20px 22px !important}.cw-title{font-size:28px !important}}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#faefe0;-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased&quot;&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all&quot;&gt;Відлік днів починається з першого відкриття, тож ви нічого не пропустили.&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&amp;#8203;&amp;nbsp;&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#faefe0&quot; style=&quot;background:#faefe0&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 16px 40px&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;max-width:560px&quot;&gt;
+&lt;tr&gt;&lt;td class=&quot;cw-card&quot; style=&quot;background:#fff8ef;border:1px solid #dcd4c6;border-radius:20px;padding:28px 36px 30px&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:0 0 30px&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:0 0 22px;border-bottom:1px solid #dcd4c6&quot;&gt;&lt;a href=&quot;https://www.centerway.net.ua&quot; style=&quot;text-decoration:none&quot;&gt;&lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot;&gt;&lt;tr&gt;&lt;td valign=&quot;middle&quot; style=&quot;padding-right:10px&quot;&gt;&lt;img src=&quot;https://www.centerway.net.ua/cw/brand/email/cw-mark-ink@3x.png&quot; width=&quot;32&quot; height=&quot;32&quot; alt=&quot;&quot; style=&quot;display:block;border:0&quot;&gt;&lt;/td&gt;&lt;td valign=&quot;middle&quot;&gt;&lt;img src=&quot;https://www.centerway.net.ua/cw/brand/email/cw-wordmark-ink@3x.png&quot; width=&quot;130&quot; height=&quot;31&quot; alt=&quot;CenterWay&quot; style=&quot;display:block;border:0;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:20px;font-weight:700;color:#18261d&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p style=&quot;margin:0 0 10px;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.4;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#456b58&quot;&gt;Розвантажувальний день&lt;/p&gt;&lt;h1 class=&quot;cw-title&quot; style=&quot;margin:0 0 22px;font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-size:34px;line-height:1.12;font-weight:600;letter-spacing:-0.01em;color:#18261d&quot;&gt;Курс чекає на вас&lt;/h1&gt;&lt;p style=&quot;margin:0 0 18px;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;color:#18261d&quot;&gt;Вітаємо, Олена!&lt;/p&gt;
+&lt;p style=&quot;margin:0 0 18px;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;color:#18261d&quot;&gt;Нагадуємо: «Розвантажувальний день» чекає у вашому кабінеті.&lt;/p&gt;
+&lt;p style=&quot;margin:0 0 18px;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;color:#18261d&quot;&gt;Відлік днів починається з першого відкриття, тож ви нічого не пропустили. Почніть тоді, коли буде зручно.&lt;/p&gt;
+&lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:10px 0 26px&quot;&gt;&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#e5ae65&quot; style=&quot;border-radius:16px;background:#e5ae65&quot;&gt;&lt;a href=&quot;https://my.centerway.net.ua/learn/reset-day&quot; style=&quot;display:inline-block;padding:14px 28px;min-width:180px;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:20px;font-weight:700;color:#203126;text-decoration:none;border-radius:16px;text-align:center&quot;&gt;Почати курс&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;p style=&quot;margin:0 0 10px;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#48544c&quot;&gt;Якщо щось не відкривається — &lt;a href=&quot;https://t.me/centerway_support_bot&quot; style=&quot;color:#48544c;text-decoration:underline;text-decoration-color:#70766d;text-decoration-thickness:1px;text-underline-offset:3px&quot;&gt;напишіть нам&lt;/a&gt;.&lt;/p&gt;&lt;p style=&quot;margin:0 0 10px;font-family:Manrope,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#48544c&quot;&gt;Нагадування приходять на пошту, бо до вашого акаунта не підключено Telegram.&lt;/p&gt;
 &lt;/td&gt;&lt;/tr&gt;
 &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 16px 0&quot;&gt;&lt;p style=&quot;margin:0;font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-size:18px;line-height:1.2;font-style:italic;color:#18261d&quot;&gt;Команда CenterWay&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;
 

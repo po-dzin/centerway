@@ -19,6 +19,7 @@ import { renderBroadcast } from "@/lib/broadcasts/render";
 import { buildSignInCodeTemplate } from "./authEmails";
 import { buildStreamEmail, buildWelcomeEmail, type Links } from "./lifecycleEmails";
 import { buildPurchaseEmail } from "./purchaseEmail";
+import { buildLessonReminderEmail, buildUnstartedReminderEmail } from "./reminderEmails";
 
 export type EmailCatalogEntry = {
   id: string;
@@ -128,6 +129,39 @@ export const EMAIL_CATALOG: EmailCatalogEntry[] = [
         programTitle: "Шлях 21",
         startsOn: "2026-11-01",
         links: SAMPLE_LINKS,
+      }),
+  },
+  {
+    id: "lesson-reminder",
+    name: "Урок дня готовий",
+    trigger: "Ранковий прогін: відкрився урок дня N, а Telegram до акаунта не підключено.",
+    sender: "Resend",
+    gate: "LIFECYCLE_EMAILS=on; лише без Telegram; день 1 потоку покриває лист «День 1».",
+    source: "src/lib/email/reminderEmails.ts",
+    render: () =>
+      buildLessonReminderEmail({
+        name: "Олена",
+        courseTitle: "Шлях 21",
+        lessonTitle: "Ранок без поспіху",
+        dayNumber: 3,
+        lessonUrl: "https://my.centerway.net.ua/learn/way21",
+        supportUrl: SAMPLE_LINKS.supportUrl,
+      }),
+  },
+  {
+    id: "unstarted-reminder",
+    name: "Курс чекає",
+    trigger: "Курс куплено, але жодного разу не відкрито; кілька м'яких нагадувань.",
+    sender: "Resend",
+    gate: "LIFECYCLE_EMAILS=on; лише без Telegram.",
+    source: "src/lib/email/reminderEmails.ts",
+    render: () =>
+      buildUnstartedReminderEmail({
+        name: "Олена",
+        courseTitle: "Розвантажувальний день",
+        nudgeNumber: 2,
+        courseUrl: "https://my.centerway.net.ua/learn/reset-day",
+        supportUrl: SAMPLE_LINKS.supportUrl,
       }),
   },
   {

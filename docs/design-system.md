@@ -907,6 +907,11 @@ offset 3 px. This is the site's thin link rule. Never a blue default.
 - **Unsubscribe.** Broadcasts carry the footer link plus `List-Unsubscribe` and
   `List-Unsubscribe-Post` (one-click). Suppressed addresses (unsubscribed,
   bounced, complained) are never sent to.
+- **Telegram first.** Course reminders go to Telegram when it is linked and
+  by email only when it is not, so nobody gets both.
+- **Sender.** Everything Resend sends comes from `info@send.centerway.net.ua`
+  (`BROADCAST_FROM` can move broadcasts to their own subdomain). The sign-in
+  code comes from the same address once Supabase uses Resend SMTP.
 - **Gates.** Transactional letters (sign-in code, receipt) always go out.
   Lifecycle letters go out only with `LIFECYCLE_EMAILS=on`. Broadcasts go out
   only when the operator sends them.
@@ -921,6 +926,8 @@ offset 3 px. This is the site's thin link rule. Never a blue default.
 | Вітаємо в CenterWay | new account, morning cron | Resend, `LIFECYCLE_EMAILS` | `lifecycleEmails.ts` |
 | Завтра стартує потік | the day before `cohort_starts_on` | Resend, `LIFECYCLE_EMAILS` | `lifecycleEmails.ts` |
 | День 1 потоку | on `cohort_starts_on` | Resend, `LIFECYCLE_EMAILS` | `lifecycleEmails.ts` |
+| Урок дня готовий | morning run, day N opened, no Telegram linked | Resend, `LIFECYCLE_EMAILS` | `reminderEmails.ts` |
+| Курс чекає | bought but never opened, no Telegram linked | Resend, `LIFECYCLE_EMAILS` | `reminderEmails.ts` |
 | Розсилка | the operator sends from the admin | Resend | `broadcasts/render.ts` |
 
 The Supabase templates the platform never triggers are «Invite», «Reset
