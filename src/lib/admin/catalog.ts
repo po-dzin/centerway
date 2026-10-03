@@ -141,6 +141,15 @@ export async function listCatalog(): Promise<CatalogRow[]> {
     )
     .like("code", "course:%");
 
+  /* The owner's storefront flag lives on the course's registry row. */
+  const experienceIds = courses.flatMap((row) => (row.experience_id ? [row.experience_id as string] : []));
+  const { data: flagRows } = experienceIds.length
+    ? await db.from("experiences").select("id, highlight").in("id", experienceIds)
+    : { data: [] as Array<{ id: string; highlight: string | null }> };
+  const flagByExperience = new Map(
+    (flagRows ?? []).map((row) => [row.id as string, row.highlight === "bestseller" ? ("bestseller" as const) : null]),
+  );
+
   const offerByCode = new Map(
     (offerRows ?? []).map((row) => [row.code as string, toOffer(row as Record<string, unknown>)]),
   );
@@ -270,6 +279,7 @@ export async function listCatalog(): Promise<CatalogRow[]> {
       blockers: saleBlockersOf({ status: row.status as string, reviewStatus, visibility, offer, onShelf }),
       cover: (row.cover as Course["cover"] | null) ?? null,
       categories: catalogCategories(row.categories),
+      highlight: flagByExperience.get(row.experience_id as string) ?? null,
       submittedAt:
         ((row.pending_content ? row.pending_submitted_at : row.submitted_at) as string | null) ??
         (row.submitted_at as string | null) ??
@@ -421,6 +431,41 @@ export async function saveOffer(input: SaveOfferInput) {
   });
 
   return { code, created: !existing, courseSlug: course.slug as string };
+}
+
+/**
+ * Sets or clears the owner's «Бестселер» flag on a course's registry row.
+ *
+ * On the REGISTRY row, not the course: the flag is a claim about the thing on
+ * the shelf, like its price, and the registry is where every sellable thing —
+ * course or not — has one row. A course with no registry row cannot carry it.
+ */
+export async function setCourseHighlight(input: { courseId: string; highlight: "bestseller" | null; actorId: string }) {
+  const db = adminClient();
+
+  const { data: course } = await db
+    .from("lms_courses")
+    .select("id, slug, experience_id")
+    .eq("id", input.courseId)
+    .maybeSingle();
+  if (!course) throw new AccessError("course_not_found", 404);
+  if (!course.experience_id) throw new AccessError("course_not_registered", 409);
+
+  const { error } = await db
+    .from("experiences")
+    .update({ highlight: input.highlight })
+    .eq("id", course.experience_id as string);
+  if (error) throw new AccessError(error.message, 500);
+
+  await writeAudit(db, {
+    actorId: input.actorId,
+    action: "catalog.highlight.set",
+    entityType: "experience",
+    entityId: course.experience_id as string,
+    metadata: { course_slug: course.slug, highlight: input.highlight },
+  });
+
+  return { courseSlug: course.slug as string, highlight: input.highlight };
 }
 
 /**

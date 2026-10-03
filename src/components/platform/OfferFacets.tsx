@@ -7,6 +7,7 @@
  */
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
@@ -35,10 +36,13 @@ export function OfferBento({
   audience,
   results,
   format,
+  seam = null,
 }: {
   audience?: readonly string[];
   results?: readonly string[];
   format?: readonly string[];
+  /** The `OfferSeam` that opens this block; it goes when the block does. */
+  seam?: ReactNode;
 }) {
   const facets: Facet[] = (
     [
@@ -66,6 +70,7 @@ export function OfferBento({
       data-cw-token-source="global-app-ds"
       id="program-facts"
     >
+      {seam}
       <ul className={styles.bento}>
         {facets.map((facet) => (
           <li className={styles.bentoCard} key={facet.title}>

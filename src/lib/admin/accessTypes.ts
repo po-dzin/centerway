@@ -94,8 +94,14 @@ export type RoleRow = {
   enrollments: number;
 };
 
-/** Roles `user_roles` accepts — mirrors its CHECK, widened by the 2026-08-21 merge. */
-export const GRANTABLE_ROLES = ["user", "coach", "support", "admin"] as const;
+/**
+ * Roles `user_roles` accepts — mirrors its CHECK.
+ *
+ * No `coach` since 2026-10-02: who writes a course is `lms_courses.author_id`,
+ * per course, and a role on top of it only ever added a free pass to every
+ * course (20261002000000_retire_coach_role.sql).
+ */
+export const GRANTABLE_ROLES = ["user", "support", "admin"] as const;
 
 /**
  * The roles that mean "this person can do something an ordinary account cannot".

@@ -24,6 +24,7 @@
  */
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
@@ -57,7 +58,10 @@ export function OfferCurriculum({
   course,
   landingHref = null,
   formats = [],
+  seam = null,
 }: {
+  /** The `OfferSeam` that opens the outline; it goes when the outline does. */
+  seam?: ReactNode;
   course: Course;
   /** The program's formats, to say which of them open a linked program. */
   formats?: ProgramFormat[];
@@ -131,6 +135,7 @@ export function OfferCurriculum({
       data-cw-token-source="global-app-ds"
       id="program-plan"
     >
+      {seam}
       <article className={offerStyles.panel}>
         <p className={offerStyles.label}>Що всередині</p>
         <h2 className={offerStyles.title}>Програма курсу</h2>

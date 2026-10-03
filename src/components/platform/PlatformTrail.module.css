@@ -188,6 +188,8 @@
    dimmer, exactly as on paper. */
 .trail[data-tone="media"] {
   margin-block-end: 0;
+  /* The marks go gold with the crumbs: PlatformTrail stamps
+     `data-cw-ink-ground="dark"` on a media trail (rule in globals.css). */
 }
 
 .trail[data-tone="media"] .backIcon,

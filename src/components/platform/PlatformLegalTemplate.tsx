@@ -1,7 +1,12 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
-import styles from "@/components/platform/PlatformSurfaceStyles";
+/* The TRUST bundle, not the surface one: a legal panel is a `.card` with a
+   `data-tone`, and the card's own recipe — padding, gap, the tone grounds, the
+   h2 size — lives in PlatformBlocksTrust.module.css. The surface bundle does
+   not carry that module, so the panels rendered as a bare plate with the text
+   pressed against its edge and the heading set like body copy. */
+import styles from "@/components/platform/PlatformTrustStyles";
 import templateStyles from "@/components/platform/PlatformLegalTemplate.module.css";
 
 type LegalPanelTone = "policy" | "proof" | "support";
@@ -23,6 +28,8 @@ type PlatformLegalTemplateProps = {
   title: string;
   lead: string;
   panels?: LegalPanel[];
+  /** The document's full text, set as reading text on its own plate under the header. */
+  document?: ReactNode;
   actions?: LegalAction[];
   children?: ReactNode;
   shellMode?: "platform" | "plain";
@@ -33,6 +40,7 @@ function LegalContent({
   title,
   lead,
   panels = [],
+  document,
   actions = [],
   children,
 }: Omit<PlatformLegalTemplateProps, "shellMode">) {
@@ -55,6 +63,8 @@ function LegalContent({
             ))}
           </div>
         ) : null}
+
+        {document ? <article className={templateStyles.document}>{document}</article> : null}
 
         {children}
 

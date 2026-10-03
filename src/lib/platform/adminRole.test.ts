@@ -36,8 +36,8 @@ describe("isAdminRole", () => {
 });
 
 describe("isStaffRole", () => {
-  it("is wider than admin: coach is staff, not an admin", () => {
-    expect(isStaffRole("coach")).toBe(true);
+  it("no longer admits the retired coach role", () => {
+    expect(isStaffRole("coach")).toBe(false);
     expect(isAdminRole("coach")).toBe(false);
   });
 

@@ -18,6 +18,56 @@
   margin-block-start: auto;
 }
 
+/* EACH FORMAT HAS ITS OWN TONE (2026-09-30). Three cards of one material read
+   as one offer printed three times; a reader comparing «on your own» with «with
+   the author» had only the headings to tell them apart. Each format now takes a
+   tone from the palette's eight, warming as the guidance grows: the living
+   green of practice for going alone, the one cool tone (trust) for a cohort,
+   and the brand's gold for the author beside you. The tone is a WASH from the
+   card's top edge fading into the paper by mid-card — the price and the list
+   below stay on plain paper, so no text sits on colour — a hairline along the
+   top edge, and the ticks. The buttons stay gold on every card: one action
+   colour across the row. */
+.root .card {
+  --format-tone: var(--cw-sem-embodied);
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--format-tone) 20%, var(--cw-mat-surface)) 0%,
+      color-mix(in srgb, var(--format-tone) 7%, var(--cw-mat-surface)) 32%,
+      var(--cw-mat-surface) 58%
+    ),
+    var(--cw-mat-surface);
+  border-color: color-mix(in srgb, var(--format-tone) 28%, var(--cw-mat-stroke-inner));
+}
+
+.root .card::before {
+  position: absolute;
+  inset: 0 0 auto;
+  block-size: 2px;
+  content: "";
+  background: linear-gradient(90deg, transparent, var(--format-tone) 18%, var(--format-tone) 82%, transparent);
+  opacity: 0.85;
+}
+
+.root .card[data-format="group"] {
+  --format-tone: var(--cw-sem-trust);
+}
+
+.root .card[data-format="individual"] {
+  --format-tone: var(--cw-sem-warmth);
+}
+
+/* The ticks take the card's tone; the bonus «+» keeps the gold, because a bonus
+   is the same kind of thing on every card. */
+.root .card > ul .tick {
+  /* Mixed toward the text so the mark holds 3:1 on both grounds: the slate
+     trust tone alone is too dark on the night paper. */
+  color: color-mix(in srgb, var(--format-tone) 72%, var(--cw-platform-text));
+}
+
 /* The bonus programs, under a rule: what this format adds over the others. */
 .bonus {
   display: grid;

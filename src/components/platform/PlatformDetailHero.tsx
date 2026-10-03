@@ -127,7 +127,7 @@ export function PlatformDetailHero({
       </div>
       <div className={styles.heroFeatureContent}>
         {(trail && trail.length > 0) || utility ? (
-          <div className={styles.heroUtilityRow}>
+          <div className={styles.heroUtilityRow} data-cw-ink-ground="dark">
             {trail && trail.length > 0 ? <PlatformTrail steps={trail} tone="media" /> : <span />}
             {utility}
           </div>

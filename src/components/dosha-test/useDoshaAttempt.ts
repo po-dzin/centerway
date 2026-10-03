@@ -4,12 +4,11 @@
    used to declare them, so effects still run in the same sequence. Returns only
    what the phase views need to render and act. */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { classifyDosha, DOSHA_MAX_CHOICES_PER_QUESTION, type DoshaResultType } from "@/lib/dosha/doshaTest";
 import { CONFIDENCE_COPY, RESULT_COPY } from "@/lib/dosha/doshaResultCopy";
 import { DOSHA_PRIMARY_EXIT } from "@/lib/dosha/doshaRouting";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
-import { supabaseClient } from "@/lib/supabaseClient";
 import { useSession } from "@/components/auth/SessionProvider";
 import {
   attachAttempt,
@@ -21,10 +20,13 @@ import {
   type TestDefinitionResponse,
   type TestQuestion,
 } from "./doshaTestApi";
+import { keepResult, markResultClaimed, readKeptResult } from "@/lib/tests/keptResult";
+import { usePreviousRun } from "@/components/platform/usePreviousRun";
+import { DOSHA_TEST_SLUG } from "@/lib/dosha/doshaTest";
 import {
   ATTEMPT_STORAGE_KEY,
   DRAFT_STORAGE_KEY,
-  PENDING_SAVE_KEY,
+  KEPT_RESULT_KEY,
   SESSION_STORAGE_KEY,
   getOrCreateStoredSessionId,
   removeStoredDraft,
@@ -69,6 +71,10 @@ export function useDoshaAttempt(uiVariant: string) {
   const [savedToCabinet, setSavedToCabinet] = useState(false);
   const [telegramLink, setTelegramLink] = useState<string | null>(null);
   const [resumeDraft, setResumeDraft] = useState<DraftState | null>(null);
+  /* An unfinished run found on mount, OFFERED on the intro rather than resumed
+     on its own: dropping a reader into question 7 of a test they opened to
+     look at was the old behaviour. Choosing it moves it to `resumeDraft`. */
+  const [resumableDraft, setResumableDraft] = useState<DraftState | null>(null);
   /* The cabinet lives on the personal host; only this resolver knows whether
      that is a path or a full origin from where the reader currently stands. */
   const surfaceHref = useSurfaceHref();
@@ -122,24 +128,6 @@ export function useDoshaAttempt(uiVariant: string) {
     [attemptId, phase, uiVariant],
   );
 
-  const signInWithGoogle = useCallback(async (pendingSave?: PendingSave) => {
-    if (typeof window !== "undefined" && pendingSave) {
-      window.sessionStorage.setItem(PENDING_SAVE_KEY, JSON.stringify(pendingSave));
-    }
-
-    const redirectTo =
-      typeof window !== "undefined"
-        ? `${window.location.origin}${window.location.pathname}${window.location.search}`
-        : undefined;
-
-    await supabaseClient.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo,
-      },
-    });
-  }, []);
-
   const loadDefinition = useCallback(
     (): Promise<TestDefinitionResponse | null> => fetchDefinition(getOrCreateSessionId()),
     [getOrCreateSessionId],
@@ -173,6 +161,22 @@ export function useDoshaAttempt(uiVariant: string) {
           return;
         }
 
+        /* Kept before it is shown: from here on a reload, a Back from the
+           sign-in, or a visit tomorrow brings this result back. Completed
+           with a session, it is already the account's. */
+        const ownedNow = Boolean(session?.user);
+        keepResult<PendingSave>(
+          KEPT_RESULT_KEY,
+          {
+            attemptId: data.attemptId,
+            resultType: data.resultType,
+            scores: data.scores,
+            completedAt: data.completedAt ?? new Date().toISOString(),
+            nextStep: data.nextStep ?? DOSHA_PRIMARY_EXIT.nextStep,
+          },
+          ownedNow,
+        );
+        setSavedToCabinet(ownedNow);
         setAttemptId(data.attemptId);
         saveAttemptId(data.attemptId);
         setScores(data.scores);
@@ -190,7 +194,7 @@ export function useDoshaAttempt(uiVariant: string) {
         setIsBusy(false);
       }
     },
-    [clearDraft, getOrCreateSessionId, questions, saveAttemptId],
+    [clearDraft, getOrCreateSessionId, questions, saveAttemptId, session],
   );
 
   const runStartFlow = useCallback(async () => {
@@ -206,6 +210,7 @@ export function useDoshaAttempt(uiVariant: string) {
       }
 
       const sessionId = getOrCreateSessionId();
+      setResumableDraft(null);
       saveAttemptId(null);
       setAttemptId(null);
       setQuestions(data.questions ?? []);
@@ -230,47 +235,76 @@ export function useDoshaAttempt(uiVariant: string) {
     }
   }, [clearDraft, getOrCreateSessionId, loadDefinition, saveAttemptId, saveDraft]);
 
-  /* Back from Google with a result in hand: hand the attempt its owner, then
-     put the reader back where they were, on their own result. */
-  const resumePendingSaveIfNeeded = useCallback(async () => {
+  /* Which phase is on screen, for the restore below: it runs on session
+     changes, and must not pull a reader out of a retake in progress. */
+  const phaseRef = useRef<DoshaPhase>("intro");
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
+
+  /* THE RESULT COMES BACK, WHATEVER HAPPENED IN BETWEEN.
+     A reload, a Back from the sign-in, a Google round trip, an emailed code
+     typed into the gate, a visit hours later: each lands here with the result
+     kept in this browser (lib/tests/keptResult). An unfinished retake wins —
+     its draft is newer than the result. With a session, the attempt is handed
+     to the account first, so the screen opens already saved, or says it is not. */
+  const restoreKeptResult = useCallback(async (signedIn: boolean) => {
     if (typeof window === "undefined") return;
-
-    const raw = window.sessionStorage.getItem(PENDING_SAVE_KEY);
-    if (!raw) return;
-    window.sessionStorage.removeItem(PENDING_SAVE_KEY);
-
-    let pending: PendingSave | null = null;
+    if (phaseRef.current === "question" || phaseRef.current === "loading") return;
+    const kept = readKeptResult<PendingSave>(KEPT_RESULT_KEY);
+    if (!kept?.result.attemptId || !kept.result.resultType) return;
     try {
-      pending = JSON.parse(raw) as PendingSave;
+      const draft = JSON.parse(window.localStorage.getItem(DRAFT_STORAGE_KEY) ?? "null") as DraftState | null;
+      if (draft?.answers && Object.keys(draft.answers).length > 0) return;
     } catch {
-      return;
+      // An unreadable draft is no draft.
     }
-    if (!pending?.attemptId || !pending.resultType) return;
 
-    setAttemptId(pending.attemptId);
-    setResultType(pending.resultType);
-    setScores(pending.scores);
-    setCompletedAt(pending.completedAt);
-    setNextStep(pending.nextStep);
+    let claimed = kept.claimed;
+    if (signedIn && !claimed) {
+      const res = await attachAttempt(kept.result.attemptId);
+      claimed = Boolean(res?.ok);
+      if (claimed) markResultClaimed(KEPT_RESULT_KEY);
+    } else {
+      await Promise.resolve();
+    }
+
+    const { result } = kept;
+    setAttemptId(result.attemptId);
+    setResultType(result.resultType);
+    setScores(result.scores);
+    setCompletedAt(result.completedAt);
+    setNextStep(result.nextStep);
+    setSavedToCabinet(claimed);
     setResultViewedSent(true);
     setPhase("result");
-
-    const res = await attachAttempt(pending.attemptId);
-
-    setSavedToCabinet(Boolean(res?.ok));
   }, []);
 
+  /* «Не вдалося зберегти» → «Спробувати ще раз». */
+  const retrySave = useCallback(async () => {
+    const kept = readKeptResult<PendingSave>(KEPT_RESULT_KEY);
+    if (!kept?.result.attemptId) return;
+    const res = await attachAttempt(kept.result.attemptId);
+    if (res?.ok) {
+      markResultClaimed(KEPT_RESULT_KEY);
+      setSavedToCabinet(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (status === "loading") return;
+    void (async () => {
+      await restoreKeptResult(status === "signed-in");
+    })();
+  }, [status, restoreKeptResult]);
+
   /* One subscription for the whole tree lives in the root layout's
-     SessionProvider; this component used to hold its own. Whenever a signed-in
-     session appears or its token changes, the account is mirrored and a save
-     left pending across a Google round trip is picked up. */
+     SessionProvider; whenever a signed-in session appears or its token
+     changes, the account is mirrored into platform_users. */
   useEffect(() => {
     if (status !== "signed-in") return;
-    void (async () => {
-      await syncPlatformUser();
-      await resumePendingSaveIfNeeded();
-    })();
-  }, [status, accessToken, resumePendingSaveIfNeeded]);
+    void syncPlatformUser();
+  }, [status, accessToken]);
 
   /* AN UNFINISHED TEST IS PICKED UP, NOT THROWN AWAY.
      This effect used to wipe the draft, the attempt id and the session id on
@@ -304,7 +338,7 @@ export function useDoshaAttempt(uiVariant: string) {
     }
 
     window.localStorage.setItem(SESSION_STORAGE_KEY, draft.sessionId);
-    setResumeDraft(draft);
+    setResumableDraft(draft);
   }, []);
 
   /* The questions come from the server, so the resume is two steps: the effect
@@ -381,8 +415,13 @@ export function useDoshaAttempt(uiVariant: string) {
      by the server, and a `window.open` after an awaited fetch is what popup
      blockers exist to stop. By the time the reader reaches for it, it is a
      plain link. */
+  const unlocked = !isAuthEnabled || Boolean(session?.user);
+  const previousRun = usePreviousRun(DOSHA_TEST_SLUG, attemptId, phase === "result" && savedToCabinet);
+
   useEffect(() => {
-    if (phase !== "result" || !attemptId) return;
+    /* Only past the door: the Telegram button lives in the full reading, and
+       issuing a link for a locked screen would mint one nobody can press. */
+    if (phase !== "result" || !attemptId || !unlocked) return;
     let cancelled = false;
 
     void requestTelegramLink(attemptId).then((link) => {
@@ -392,7 +431,7 @@ export function useDoshaAttempt(uiVariant: string) {
     return () => {
       cancelled = true;
     };
-  }, [attemptId, phase]);
+  }, [attemptId, phase, unlocked]);
 
   useEffect(() => {
     if (phase === "result" && resultType && resultViewedSent === false) {
@@ -533,7 +572,11 @@ export function useDoshaAttempt(uiVariant: string) {
     isBusy,
     error,
     hasSessionUser: Boolean(session?.user),
+    /* Without auth configured (a bare local checkout) there is no door to
+       go through, so the reading is shown whole rather than locked forever. */
+    unlocked,
     savedToCabinet,
+    previousRun,
     telegramLink,
     surfaceHref,
     isAuthEnabled,
@@ -549,8 +592,21 @@ export function useDoshaAttempt(uiVariant: string) {
     resultHeading,
     topbarBadge,
     emitAttemptEvent,
-    signInWithGoogle,
+    retrySave,
     requestStartTest,
+    resumeOffer: resumableDraft
+      ? {
+          question: Math.min(
+            Math.max(resumableDraft.currentQuestionIndex, Object.keys(resumableDraft.answers).length + 1, 1),
+            totalQuestions,
+          ),
+          total: totalQuestions,
+          onResume: () => {
+            setResumeDraft(resumableDraft);
+            setResumableDraft(null);
+          },
+        }
+      : null,
     selectAnswer,
     goToStep,
     goForward,

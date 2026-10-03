@@ -15,12 +15,16 @@
  * Claude-SearchBot, Claude-User, PerplexityBot…), and those must keep working.
  * A crawler that serves both purposes under one name (Googlebot, Bingbot,
  * Amazonbot) is NOT listed: refusing it would refuse search.
+ *
+ * GOOGLE-EXTENDED IS NOT LISTED, by G's decision on 2026-10-02. It looks like
+ * a training-only token, but Google uses the same token for Gemini reading a
+ * page to answer a person — there is no separate "Gemini may read, may not
+ * train". With it refused, Gemini told users it could not open the site.
  */
 
 export const TRAINING_CRAWLERS = [
   "GPTBot", // OpenAI, training
   "ClaudeBot", // Anthropic, training
-  "Google-Extended", // Gemini training token; Googlebot search is unaffected
   "Applebot-Extended", // Apple training token; Applebot search is unaffected
   "meta-externalagent", // Meta, training
   "CCBot", // Common Crawl, the corpus most models are trained on

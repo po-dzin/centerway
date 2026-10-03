@@ -270,6 +270,8 @@
   flex-wrap: wrap;
   gap: var(--cw-space-xs);
   margin-bottom: var(--cw-space-2xs);
+  /* Its marks go gold on the photograph: `data-cw-ink-ground="dark"` in
+     PlatformDetailHero, rule in globals.css. */
 }
 
 .heroUtilityLink {

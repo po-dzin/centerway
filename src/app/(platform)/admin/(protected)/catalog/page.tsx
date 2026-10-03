@@ -838,6 +838,26 @@ function PricingRow({
     }
   };
 
+  const toggleBestseller = async () => {
+    setBusy(true);
+    try {
+      await authFetch("/api/admin/catalog", {
+        method: "PATCH",
+        body: JSON.stringify({
+          courseId: row.courseId,
+          action: "set_highlight",
+          highlight: row.highlight === "bestseller" ? null : "bestseller",
+        }),
+      });
+      toast.success(t("catalog_highlight_saved"));
+      await onChanged();
+    } catch (e) {
+      toast.error(errorText(getErrorMessage(e)));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <AdminRow
       lead={<CourseThumb row={row} />}
@@ -857,6 +877,7 @@ function PricingRow({
                   : `${row.offer.accessDays} ${t("catalog_term_days")}`}
               </span>
               {!row.offer.active ? <span className="cw-status-failed-text">{t("catalog_offer_inactive")}</span> : null}
+              {row.highlight === "bestseller" ? <span>{t("catalog_bestseller")}</span> : null}
             </>
           ) : (
             <span>{t("catalog_no_offer")}</span>
@@ -921,6 +942,15 @@ function PricingRow({
                   {t(row.offer.active ? "catalog_withdraw_offer" : "catalog_resume_offer")}
                 </button>
               ) : null}
+              <button
+                type="button"
+                onClick={() => void toggleBestseller()}
+                disabled={busy}
+                aria-pressed={row.highlight === "bestseller"}
+                className={`${controls.action} cw-btn-muted`}
+              >
+                {t(row.highlight === "bestseller" ? "catalog_unmark_bestseller" : "catalog_mark_bestseller")}
+              </button>
             </div>
           </div>
         ) : (

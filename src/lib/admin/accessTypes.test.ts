@@ -40,9 +40,10 @@ describe("learnerStatusOf", () => {
 
 describe("isGrantableRole", () => {
   it("accepts exactly what user_roles' CHECK accepts", () => {
-    for (const role of ["user", "coach", "support", "admin"]) {
+    for (const role of ["user", "support", "admin"]) {
       expect(isGrantableRole(role)).toBe(true);
     }
+    expect(isGrantableRole("coach")).toBe(false);
   });
 
   it("rejects anything else, including casing the DB would refuse", () => {

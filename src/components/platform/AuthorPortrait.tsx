@@ -35,8 +35,8 @@ export function AuthorPortrait({
   className,
 }: {
   photo: Author["photo"] | null | undefined;
-  /** `sm` a row's preview · `md` a byline · `lg` the author's own page. */
-  size?: "sm" | "md" | "lg";
+  /** `xs` a line's byline under a title · `sm` a row's preview · `md` a byline block · `lg` the author's own page. */
+  size?: "xs" | "sm" | "md" | "lg";
   /**
    * What to draw with no photograph — an initial where a name is beside it, a
    * glyph where none is. Omitted, the portrait renders nothing at all: a page

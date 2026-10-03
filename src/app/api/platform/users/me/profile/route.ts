@@ -3,6 +3,8 @@ import { adminClient } from "@/lib/auth/adminClient";
 import { emailIlike, sameEmail } from "@/lib/strings";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { getOfferMeta } from "@/lib/platform/profile";
+import { readBalancePayload } from "@/lib/balance/balanceAttempt";
+import { BALANCE_TEST_SLUG } from "@/lib/balance/balanceTest";
 
 export const runtime = "nodejs";
 
@@ -93,6 +95,25 @@ export async function GET(req: NextRequest) {
         }
       : null;
 
+  /* The balance test's latest reading (2026-10-02). Not in the dosha view —
+     its rows carry no `result_type` by design (see lib/balance/balanceAttempt)
+     — so it is read on its own, by test slug. A failed read is «not taken»,
+     never an error for the whole cabinet. */
+  const { data: balanceRow } = await db
+    .from("test_attempts")
+    .select("id, completed_at, result_payload_json, test_definitions!inner(slug)")
+    .eq("user_id", user.id)
+    .eq("status", "completed")
+    .eq("test_definitions.slug", BALANCE_TEST_SLUG)
+    .order("completed_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const balanceReading = readBalancePayload(balanceRow?.result_payload_json);
+  const balanceProfile =
+    balanceRow && balanceReading
+      ? { attemptId: balanceRow.id, primary: balanceReading.primary, completedAt: balanceRow.completed_at }
+      : null;
+
   const ordersQuery = customer?.id
     ? db
         .from("orders")
@@ -161,6 +182,7 @@ export async function GET(req: NextRequest) {
           }
         : null,
       dosha: doshaProfile,
+      balance: balanceProfile,
       purchases,
       progress: {
         items: [],
