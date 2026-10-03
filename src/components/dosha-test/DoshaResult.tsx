@@ -13,7 +13,6 @@ import { DoshaMark } from "@/components/platform/DoshaMark";
 import { BOUNDARY_NOTE } from "@/lib/dosha/doshaResultCopy";
 import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT, doshaExitHref } from "@/lib/dosha/doshaRouting";
 import { TESTS_HUB_ROUTE } from "@/lib/platform/tests";
-import type { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import type {
   DoshaConfidenceCopy,
   DoshaProfile,
@@ -64,7 +63,6 @@ type DoshaResultProps = {
   /** The reader's run before this one, for the comparison line. */
   previousRun: PreviousRun | null;
   hasSessionUser: boolean;
-  surfaceHref: ReturnType<typeof useSurfaceHref>;
   emitAttemptEvent: EmitAttemptEvent;
   /** Claims the attempt again after a failed save. */
   retrySave: () => Promise<void>;
@@ -87,7 +85,6 @@ export function DoshaResult({
   savedToCabinet,
   previousRun,
   hasSessionUser,
-  surfaceHref,
   emitAttemptEvent,
   retrySave,
   restartTest,
@@ -169,11 +166,10 @@ export function DoshaResult({
                 </p>
               ) : null}
               <div className={styles.diagnosticKeptLinks}>
-                {savedToCabinet ? (
-                  <Link className={styles.diagnosticTextButton} href={surfaceHref("/profile")} data-cw-ink-control>
-                    <InteractionInkLabel variant="link">Відкрити кабінет</InteractionInkLabel>
-                  </Link>
-                ) : (
+                {/* No way into the cabinet from here (2026-10-03): the result is kept
+                   there already, and a link out of the flow is noise beside the next
+                   step. G: «убрать переход в кабинет (лишний шум)». */}
+                {savedToCabinet ? null : (
                   <button type="button" className={styles.diagnosticTextButton} onClick={() => void retrySave()}>
                     Спробувати ще раз
                   </button>

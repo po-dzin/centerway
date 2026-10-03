@@ -98,7 +98,6 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, author
                     savedToCabinet={attempt.savedToCabinet}
                     previousRun={attempt.previousRun}
                     hasSessionUser={attempt.hasSessionUser}
-                    surfaceHref={attempt.surfaceHref}
                     emitAttemptEvent={attempt.emitAttemptEvent}
                     retrySave={attempt.retrySave}
                     restartTest={attempt.restartTest}

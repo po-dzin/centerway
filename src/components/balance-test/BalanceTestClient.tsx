@@ -28,7 +28,6 @@ import { ProgressRail } from "@/components/platform/ProgressRail";
 import { ResultGate } from "@/components/platform/ResultGate";
 import { runDay, usePreviousRun, type PreviousRun } from "@/components/platform/usePreviousRun";
 import { keepResult, leadSentences, readKeptResult } from "@/lib/tests/keptResult";
-import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import {
   BALANCE_BOUNDARY_NOTE,
   BALANCE_HOW_IT_WORKS,
@@ -460,7 +459,6 @@ function BalanceResult({
   onRetrySave: () => void;
   onRestart: () => void;
 }) {
-  const surfaceHref = useSurfaceHref();
   const copy = BALANCE_RESULT_COPY[primary];
   const secondaryCopy = secondary ? BALANCE_RESULT_COPY[secondary] : null;
   const secondaryLabel = secondary ? BALANCE_TYPE_LABEL[secondary].toLowerCase() : null;
@@ -554,11 +552,10 @@ function BalanceResult({
                 </p>
               ) : null}
               <div className={styles.diagnosticKeptLinks}>
-                {saved ? (
-                  <Link className={styles.diagnosticTextButton} href={surfaceHref("/profile")} data-cw-ink-control>
-                    <InteractionInkLabel variant="link">Відкрити кабінет</InteractionInkLabel>
-                  </Link>
-                ) : (
+                {/* No way into the cabinet from here (2026-10-03): the result is kept
+                   there already, and a link out of the flow is noise beside the next
+                   step. G: «убрать переход в кабинет (лишний шум)». */}
+                {saved ? null : (
                   <button type="button" className={styles.diagnosticTextButton} onClick={onRetrySave}>
                     Спробувати ще раз
                   </button>
