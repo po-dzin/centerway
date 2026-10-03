@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
+import { SubscribeForm } from "@/components/platform/SubscribeForm";
 import { LEARNING_SHELF_HREF, contact, platformHomeHref, socialLinks } from "@/lib/platform/content";
 import styles from "@/components/platform/PlatformShellStyles";
 import { SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
@@ -160,6 +161,13 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
             ))}
           </div>
         </div>
+      </div>
+      {/* THE ONE PLACE THE LIST IS OFFERED (2026-10-03). The storefront's close
+          is on every page of `www` and on none of `my`, which is the right
+          audience exactly: a reader who has not bought is the one with no other
+          way to hear from us, and a learner is already in the cabinet's mail. */}
+      <div className={styles.container}>
+        <SubscribeForm placement="footer" privacyHref={privacyHref} />
       </div>
       <p className={`${styles.container} ${styles.footerBugNote}`}>
         Платформа наразі неідеальна, як і все у цьому світі. Якщо ви знайшли помилку —{" "}
