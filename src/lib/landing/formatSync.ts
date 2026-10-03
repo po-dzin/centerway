@@ -88,7 +88,6 @@ function actionFor(format: ProgramFormat): string {
 
 /** A card for a format the landing does not have one for, in its own markup. */
 export function renderFormatCard(format: ProgramFormat, programTitle: string): string {
-  const dark = format.mode === "checkout";
   const price = priceText(format);
   const note = cohortLine(format) ?? (format.mode === "lead" ? "ціну узгоджуємо в розмові" : "повний доступ");
   // The author's list when there is one — the same lines the program page
@@ -102,7 +101,7 @@ export function renderFormatCard(format: ProgramFormat, programTitle: string): s
 
   return [
     `<!-- cw:format ${format.code} -->`,
-    `<div class="format-card ${dark ? "self" : "premium"} reveal"${dark ? " data-cw-nav-dark" : ""}>`,
+    `<div class="format-card reveal" data-format="${format.format}">`,
     `<span class="fc-badge">${BADGE[format.format]}</span>`,
     `<div class="fc-title">${escape(programTitle)} — ${escape(format.label.toLowerCase())}</div>`,
     `<div class="fc-price"><b data-cw-price="${escape(format.code)}">${price}</b><small>${escape(note)}</small></div>`,
@@ -111,6 +110,27 @@ export function renderFormatCard(format: ProgramFormat, programTitle: string): s
     `</div>`,
     `<!-- /cw:format -->`,
   ].join("\n");
+}
+
+/**
+ * The card's tone is its format's kind, not its mode (G, 2026-10-03): one
+ * scale shared with the program page, keyed by `data-format`. A typed card's
+ * older material classes (`self` dark, `premium` light) and the dark-nav flag
+ * that went with the dark one are dropped, so a page not yet re-typed still
+ * renders the one card.
+ */
+function toneCard(open: string, format: ProgramFormat): string {
+  const classes = (open.match(/class="([^"]*)"/)?.[1] ?? "format-card")
+    .split(/\s+/)
+    .filter((name) => name && name !== "self" && name !== "premium")
+    .join(" ");
+  const rest = open
+    .replace(/^<div\b/, "")
+    .replace(/>$/, "")
+    .replace(/\s*class="[^"]*"/, "")
+    .replace(/\s*data-format="[^"]*"/, "")
+    .replace(/\s*data-cw-nav-dark(?:="[^"]*")?/, "");
+  return `<div class="${classes}" data-format="${format.format}"${rest}>`;
 }
 
 /**
@@ -129,7 +149,8 @@ export function renderFormatCard(format: ProgramFormat, programTitle: string): s
 function syncCard(card: string, format: ProgramFormat): string {
   const own =
     format.features.length > 0 ? format.features.map((feature) => `<li>${escape(feature)}</li>`).join("") : null;
-  let next = card.replace(
+  let next = card.replace(/<div class="format-card\b[^"]*"[^>]*>/, (open) => toneCard(open, format));
+  next = next.replace(
     /(<div class="fc-price">)([\s\S]*?)(<\/div>)/,
     (_whole, open: string, inner: string, close: string) => {
       const priced = inner.replace(

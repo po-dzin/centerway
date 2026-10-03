@@ -41,6 +41,26 @@ const minis = [
 ];
 
 describe("landing format sync", () => {
+  it("tones every card by its format's kind, dropping the old dark and light materials", () => {
+    const typed = page.replace(
+      '<div class="format-card self">',
+      '<div class="format-card self reveal" data-cw-nav-dark>',
+    );
+    const out = applyFormatSync(typed, () => ({
+      title: "Шлях 21",
+      formats: [
+        format("course:way21", "self"),
+        format("way21-group", "group"),
+        format("way21-support", "individual", { amount: 9000 }),
+      ],
+    }));
+    expect(out).toContain('<div class="format-card reveal" data-format="self">');
+    expect(out).toContain('<div class="format-card reveal" data-format="group">');
+    expect(out).toContain('<div class="format-card" data-format="individual">');
+    expect(out).not.toMatch(/format-card[^"]*\b(self|premium)\b/);
+    expect(out).not.toContain("data-cw-nav-dark");
+  });
+
   it("finds the programs a page asks for", () => {
     expect(collectFormatPrograms(page)).toEqual(["way21"]);
   });
