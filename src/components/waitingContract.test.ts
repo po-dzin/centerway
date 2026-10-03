@@ -28,14 +28,13 @@ const readDoshaTest = () =>
  */
 describe("waiting", () => {
   it("is the mark gaining density, never a rotating ring", () => {
-    for (const file of [
-      "src/components/admin/AdminLoadingState.tsx",
-      "src/components/platform/PlatformLoadingState.tsx",
-    ]) {
-      expect(read(file)).toContain('animate="wait"');
-    }
+    expect(read("src/components/platform/PlatformLoadingState.tsx")).toContain('animate="wait"');
+    /* ONE CARD, NOT ONE GLYPH (2026-10-03). The panel and the diagnostic used
+       to draw the same mark in layouts of their own; both render the shared
+       card now, so the mark, its size and the row it sits on cannot drift. */
+    expect(read("src/components/admin/AdminLoadingState.tsx")).toContain("<PlatformLoadingState");
     // DoshaTestClient.tsx and the files split out of it.
-    expect(readDoshaTest()).toContain('animate="wait"');
+    expect(readDoshaTest()).toContain("<PlatformLoadingState");
     /* No rotating ring anywhere — the class that drew every one of them. The
        source files above name it only in prose, so the check reads the JSX. */
     const spinning = ["src/components/admin/modals/JobDetailsModal.tsx"];

@@ -1,33 +1,20 @@
-/* Split out of DoshaTestClient on 2026-09-13. Owns the loading phase inside
-   the flow panel: the step chip and the waiting mark while the server
-   classifies the answers. */
+/* Split out of DoshaTestClient on 2026-09-13. Owns the loading phase: the
+   wait while the server classifies the answers.
 
-import { LogoMark } from "@/components/brand/LogoMark";
-import styles from "@/components/platform/PlatformDiagnosticStyles";
+   THE PLATFORM'S ONE WAITING CARD (2026-10-03). This used to be its own
+   layout inside the flow panel — the step chip, then the mark on a row of its
+   own, then a display heading and a lead — a panel's height of mostly empty
+   card for one sentence. It is `PlatformLoadingState` now, rendered in place
+   of the panel rather than inside it: the mark and the sentence on one row,
+   the same card every other wait on the platform shows. */
 
-type DoshaLoadingStepProps = {
-  topbarBadge: string;
-};
+import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 
-export function DoshaLoadingStep({ topbarBadge }: DoshaLoadingStepProps) {
+export function DoshaLoadingStep() {
   return (
-    <div className={styles.diagnosticFlowStack}>
-      <div className={styles.diagnosticFlowHead}>
-        <span className={styles.diagnosticStepChip}>{topbarBadge}</span>
-      </div>
-
-      <div className={styles.diagnosticLoadingStack}>
-        {/* THE MARK WAITS, NOT A RING (2026-09-06). `LogoMark`'s
-            `wait` — turns gaining density in turn — has been «the
-            spinner replacement» in its own source since it was
-            written; this screen and the admin panel were the two
-            places still drawing a rotating circle, which is a
-            borrowed glyph that says «something is happening» without
-            saying what, next to a heading that says exactly what. */}
-        <LogoMark className="cw-wait-mark" size={36} animate="wait" tone="brand" aria-hidden="true" />
-        <h2 className={styles.title}>Аналізуємо ваш профіль...</h2>
-        <p className={styles.lead}>Формуємо практичний вектор і наступний крок у платформі.</p>
-      </div>
-    </div>
+    <PlatformLoadingState
+      title="Аналізуємо ваш профіль..."
+      detail="Формуємо практичний вектор і наступний крок у платформі."
+    />
   );
 }

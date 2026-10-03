@@ -8,7 +8,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { classifyDosha, DOSHA_MAX_CHOICES_PER_QUESTION, type DoshaResultType } from "@/lib/dosha/doshaTest";
 import { CONFIDENCE_COPY, RESULT_COPY } from "@/lib/dosha/doshaResultCopy";
 import { DOSHA_PRIMARY_EXIT } from "@/lib/dosha/doshaRouting";
-import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { useSession } from "@/components/auth/SessionProvider";
 import {
   attachAttempt,
@@ -77,7 +76,6 @@ export function useDoshaAttempt(uiVariant: string) {
   const [resumableDraft, setResumableDraft] = useState<DraftState | null>(null);
   /* The cabinet lives on the personal host; only this resolver knows whether
      that is a path or a full origin from where the reader currently stands. */
-  const surfaceHref = useSurfaceHref();
   const isAuthEnabled = useMemo(
     () => Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
     [],
@@ -578,7 +576,6 @@ export function useDoshaAttempt(uiVariant: string) {
     savedToCabinet,
     previousRun,
     telegramLink,
-    surfaceHref,
     isAuthEnabled,
     currentQuestion,
     currentQuestionIndex,

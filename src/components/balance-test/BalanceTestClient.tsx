@@ -28,7 +28,6 @@ import { ProgressRail } from "@/components/platform/ProgressRail";
 import { ResultGate } from "@/components/platform/ResultGate";
 import { runDay, usePreviousRun, type PreviousRun } from "@/components/platform/usePreviousRun";
 import { keepResult, leadSentences, readKeptResult } from "@/lib/tests/keptResult";
-import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import {
   BALANCE_BOUNDARY_NOTE,
   BALANCE_HOW_IT_WORKS,
@@ -460,19 +459,13 @@ function BalanceResult({
   onRetrySave: () => void;
   onRestart: () => void;
 }) {
-  const surfaceHref = useSurfaceHref();
   const copy = BALANCE_RESULT_COPY[primary];
   const secondaryCopy = secondary ? BALANCE_RESULT_COPY[secondary] : null;
   const secondaryLabel = secondary ? BALANCE_TYPE_LABEL[secondary].toLowerCase() : null;
 
   return (
     <div className={styles.diagnosticFlowStack}>
-      {unlocked ? (
-        <div className={styles.diagnosticFlowHead}>
-          <span className={styles.diagnosticStepChip}>Результат готовий</span>
-        </div>
-      ) : null}
-
+      {/* No step chip above the result (2026-10-03) — see DoshaResult. */}
       <div className={styles.card} data-tone="support">
         <p className={styles.label}>Ваш стан зараз</p>
         <div className={styles.doshaResultHead}>
@@ -545,30 +538,29 @@ function BalanceResult({
 
           {/* Printed from the server's answer (see `saved`); a failed claim
               says so and offers the retry. No session, nothing to say. */}
+          {/* A quiet block, not a card, with the paragraph only on failure
+              (2026-10-03) — the same reasoning as DoshaResult's. */}
           {signedIn ? (
-            <div className={styles.card} data-tone="support">
+            <div className={styles.diagnosticKept}>
               <p className={styles.label}>{saved ? "Результат збережено" : "Не вдалося зберегти"}</p>
-              <p>
-                {saved
-                  ? "Стан у вашому кабінеті. Пройдіть тест знову за кілька тижнів — і побачите, що змінилося."
-                  : "Результат відкрито, але в кабінет він ще не потрапив."}
-              </p>
+              {saved ? null : <p>Результат відкрито, але в кабінет він ще не потрапив.</p>}
               {saved && previousRun && previousRun.reading in BALANCE_TYPE_LABEL ? (
-                <p className={styles.diagnosticScoreRow}>
+                <p>
                   Минулого разу, {runDay(previousRun.completedAt)}:{" "}
                   {BALANCE_RESULT_COPY[previousRun.reading as BalanceType].title.toLowerCase()}
                   {previousRun.reading === primary ? " — так само, як зараз." : "."}
                 </p>
               ) : null}
-              {saved ? (
-                <Link className={styles.diagnosticTextButton} href={surfaceHref("/profile")} data-cw-ink-control>
-                  <InteractionInkLabel variant="link">Відкрити кабінет</InteractionInkLabel>
-                </Link>
-              ) : (
-                <button type="button" className={styles.diagnosticTextButton} onClick={onRetrySave}>
-                  Спробувати ще раз
-                </button>
-              )}
+              <div className={styles.diagnosticKeptLinks}>
+                {/* No way into the cabinet from here (2026-10-03): the result is kept
+                   there already, and a link out of the flow is noise beside the next
+                   step. G: «убрать переход в кабинет (лишний шум)». */}
+                {saved ? null : (
+                  <button type="button" className={styles.diagnosticTextButton} onClick={onRetrySave}>
+                    Спробувати ще раз
+                  </button>
+                )}
+              </div>
             </div>
           ) : null}
         </>
@@ -580,27 +572,13 @@ function BalanceResult({
         />
       )}
 
-      {/* Past the door only: before sign-in the screen is the verdict and
-          the gate, on one phone screen. The method's limits are already in
-          the intro's «Як це працює і межі методу», and come back here with
-          the full reading they qualify. */}
-      {unlocked ? (
-        <div className={styles.card} data-tone="policy">
-          <p className={styles.label}>Межі методу</p>
-          <p>{BALANCE_BOUNDARY_NOTE}</p>
-        </div>
-      ) : null}
-
       {/* THE NEXT STEP IS PAST THE DOOR (2026-10-02). Before sign-in the
           screen has one step to offer, and it is the gate above: a
           consultation or a programme beside it splits a reader who has not
           yet seen their own reading between three exits. */}
       {unlocked ? (
         <>
-          <div className={styles.panelIntro}>
-            <p className={styles.label}>Наступний крок</p>
-          </div>
-
+          {/* No «Наступний крок» heading over the two buttons (2026-10-03). */}
           <div className={styles.diagnosticResultActions}>
             <Link href={balanceConsultHref(primary)} className={styles.primaryButton}>
               Отримати персональні рекомендації
@@ -610,8 +588,14 @@ function BalanceResult({
             </Link>
           </div>
 
-          <p className={styles.diagnosticScoreRow}>
+          <p className={styles.diagnosticFinePrint}>
             Тест доші покаже природу, на якій тримається ваш стан, — разом ці два результати дають повнішу картину.
+          </p>
+
+          {/* The method's limits as fine print, past the door only — see
+              DoshaResult. */}
+          <p className={styles.diagnosticFinePrint}>
+            <span className={styles.label}>Межі методу.</span> {BALANCE_BOUNDARY_NOTE}
           </p>
         </>
       ) : null}
