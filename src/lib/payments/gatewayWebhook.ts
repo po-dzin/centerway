@@ -1,0 +1,513 @@
+import { NextRequest, NextResponse } from "next/server";
+import { errorMessage } from "@/lib/errors";
+import { sendConfirmedSaleTelegramReport } from "@/lib/analytics/telegramReports";
+import { sendPurchaseEmail } from "@/lib/email/purchaseEmail";
+import { loadPayableOffer } from "@/lib/platform/offers";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { normalizeCustomerEmail, upsertCustomerByContact } from "@/lib/platform/customerIdentity";
+import { closeWonLeadsForPurchase } from "@/lib/platform/leadStage";
+import type { PaymentGateway, SignatureCheck } from "@/lib/payments/gateway";
+import {
+  eventTypeForOutcome,
+  nextOrderStatus,
+  orderStatusForOutcome,
+  settlementMismatch,
+  statusesProtectedFrom,
+  type PaymentOutcome,
+} from "@/lib/payments/orderStatus";
+import { notifyHouseThread } from "@/lib/telegram/houseThread";
+import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
+import { isStaffOrder } from "@/lib/tracking/staffOrders";
+import { buildPurchaseCapiEventPayload, type PendingPurchaseCapiJobPayload } from "@/lib/jobs/worker";
+
+type Payload = Record<string, string>;
+
+/**
+ * The body, read ONCE. It used to try `req.json()` and then `req.formData()`,
+ * but the first read consumes the stream, so a form-encoded callback came out
+ * empty and was refused as `missing_order_ref`. WayForPay posts JSON and never
+ * hit it; LiqPay posts a form (`data`, `signature`).
+ */
+async function readBodyParams(req: NextRequest): Promise<Payload> {
+  let text: string;
+  try {
+    text = await req.text();
+  } catch {
+    return {};
+  }
+
+  try {
+    const j = JSON.parse(text) as unknown;
+    if (j && typeof j === "object") {
+      const out: Payload = {};
+      for (const [k, v] of Object.entries(j as Record<string, unknown>)) {
+        if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+          out[k] = String(v);
+        }
+      }
+      return out;
+    }
+  } catch {}
+
+  return Object.fromEntries(new URLSearchParams(text));
+}
+
+/**
+ * Attach the no-downgrade rule to a status write as a WHERE clause, so the row
+ * itself refuses the transition instead of relying on a value we read earlier.
+ *
+ * The set of protected statuses lives in `@/lib/payments/orderStatus` and is shared with
+ * `nextOrderStatus`; keeping one source for it is the whole point, because a
+ * guard that disagrees with the decision that preceded it is worse than none.
+ */
+function guardStatus<T extends { not(column: string, operator: string, value: string): T }>(
+  query: T,
+  outcome: PaymentOutcome,
+): T {
+  const protectedStatuses = statusesProtectedFrom(outcome);
+  if (protectedStatuses.length === 0) return query;
+  return query.not("status", "in", `(${protectedStatuses.join(",")})`);
+}
+
+/* One normalisation, shared with the resolver that uses it to match rows —
+   a webhook that lower-cased differently from the lookup would create a second
+   customer for the same person. */
+const normEmail = normalizeCustomerEmail;
+
+async function enqueueTelegramSaleReport(sb: ReturnType<typeof supabaseAdmin>, orderRef: string): Promise<void> {
+  const { data: existingTelegramJob } = await sb
+    .from("jobs")
+    .select("id")
+    .eq("type", "reporting:telegram-sale")
+    .contains("payload", { order_ref: orderRef })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingTelegramJob?.id) return;
+
+  const { error: reportJobErr } = await sb.from("jobs").insert({
+    type: "reporting:telegram-sale",
+    payload: { order_ref: orderRef },
+    status: "pending",
+  });
+
+  if (reportJobErr) {
+    throw reportJobErr;
+  }
+}
+
+/**
+ * The gateway's stop signal, in its own form. WayForPay redelivers for four
+ * days until it reads its exact signed body; LiqPay reads the HTTP status.
+ */
+function acknowledged(gateway: PaymentGateway, orderRef: string): NextResponse {
+  const ack = gateway.acknowledge(orderRef);
+  if (!ack) {
+    // Unreachable in practice: the signature gate already refused the request
+    // when the secret is missing. Kept because "cannot sign" must never
+    // silently become "accepted".
+    console.error(`[${gateway.id} webhook] cannot sign acceptance, secret missing`, { orderRef });
+    return NextResponse.json({ ok: false, error: "missing_secret" }, { status: 500 });
+  }
+  return NextResponse.json(ack.body, { status: ack.status });
+}
+
+/**
+ * ONE CALLBACK HANDLER FOR EVERY GATEWAY (2026-10-03).
+ *
+ * This was the body of `/api/wfp/webhook`. Each gateway keeps its own address,
+ * because the address is baked into every invoice it has issued, and each
+ * address hands its request here with its gateway. Everything the gateway does
+ * NOT decide — the order status machine, the payment row, the customer, Meta,
+ * the receipt, the sale report — is the same for all of them, so it is written
+ * once.
+ */
+export async function handleGatewayCallback(req: NextRequest, gateway: PaymentGateway): Promise<NextResponse> {
+  const tag = `[${gateway.id} webhook]`;
+  const payload = await readBodyParams(req);
+
+  const callback = gateway.readCallback(payload);
+  if (!callback) {
+    return NextResponse.json({ ok: false, error: "missing_order_ref" }, { status: 400 });
+  }
+  const { orderRef } = callback;
+
+  /* What this callback means, kept as its own value rather than a boolean. The
+     status each table ends up holding is decided per row, against what that row
+     already holds — see `nextOrderStatus`. */
+  const outcome = callback.outcome;
+  const paid = outcome === "approved";
+  /* What this callback asserts about the payment, before any row's own history
+     is taken into account. It is what the `events` row records — an event is a
+     report of what arrived, not of what we decided to do about it. */
+  const callbackStatus = orderStatusForOutcome(outcome) ?? "created";
+  const eventType = eventTypeForOutcome(outcome);
+
+  // The signature is the gate, and it stands before every write below: an unsigned or
+  // wrongly-signed callback must not reach `payments`, must not flip `orders.status`,
+  // and must not enqueue a Purchase. Anyone can POST here, so without this check a
+  // forged `orderReference` bought free access and sent Meta a sale that never happened.
+  let sig: SignatureCheck;
+  try {
+    sig = gateway.verifyCallback(payload);
+  } catch (sigErr) {
+    console.error(`[${gateway.id}-sig] verification errored`, {
+      orderRef,
+      error: sigErr instanceof Error ? sigErr.message : String(sigErr),
+    });
+    return NextResponse.json({ ok: false, error: "signature_check_failed" }, { status: 500 });
+  }
+
+  if (!sig.ok) {
+    // Logged, never stored: this endpoint is unauthenticated, so writing a row per
+    // rejected call would hand an attacker a way to fill the database.
+    console.warn(`[${gateway.id}-sig] rejected callback`, { orderRef, reason: sig.reason, present: sig.present });
+    const httpStatus = sig.reason === "missing_secret" ? 500 : 403;
+    return NextResponse.json({ ok: false, error: "invalid_signature" }, { status: httpStatus });
+  }
+
+  const sb = supabaseAdmin();
+
+  const meta = {
+    email: callback.payer.email,
+    phone: callback.payer.phone,
+    amount: callback.amount,
+    currency: callback.currency,
+  };
+  const providerTxId = callback.providerTxId;
+  const safeProviderTxId = providerTxId ?? `order:${orderRef}`;
+
+  try {
+    const errors: string[] = [];
+
+    /* THE ORDER AS IT STANDS BEFORE THIS CALLBACK, read before anything is
+       written, because what it already holds is what decides whether this
+       callback may write at all. */
+    const { data: order, error: oGetErr } = await sb
+      .from("orders")
+      .select("customer_id, product_code, status, amount, currency")
+      .eq("order_ref", orderRef)
+      .maybeSingle();
+
+    if (oGetErr) {
+      errors.push(`orders_get: ${oGetErr.message ?? "unknown"}`);
+    }
+
+    /* A FAILED READ IS NOT AN ABSENT ORDER. Without a known current status we
+       decline to guess one — treating a read error as "no row yet" is exactly
+       how a rejected callback would write `created` over `paid`. The collected
+       error withholds the acceptance further down, and WayForPay redelivers. */
+    const nextStatus = oGetErr ? null : nextOrderStatus(order?.status ?? null, outcome);
+
+    /* A SIGNED CALLBACK THAT THIS ORDER CANNOT ACCOUNT FOR — one naming an order
+       we never opened, or one approving a different sum than the order was
+       opened for. Every order is written by `/api/pay/start` before its invoice
+       exists, so neither should happen; until 2026-10-01 both went through in
+       full anyway: a `payments` row, a Meta Purchase, a receipt and a sale
+       report (meta-audit 2026-09-30, N2/N3).
+
+       Nothing is written and nothing is opened. The house is told, because money
+       may have moved and only a person can decide what it was for, and the
+       callback is accepted, because redelivering it for four days would decide
+       nothing either. */
+    const unknownOrder = !oGetErr && !order;
+    const mismatch =
+      paid && order ? settlementMismatch(order, { amount: callback.amount, currency: callback.currency }) : null;
+    if (unknownOrder || mismatch) {
+      const problem = unknownOrder ? "unknown_order" : `${mismatch}_mismatch`;
+      console.error(`${tag} callback refused, it does not match an order`, {
+        orderRef,
+        outcome,
+        problem,
+        charged: { amount: callback.amount, currency: callback.currency },
+        expected: order ? { amount: order.amount, currency: order.currency } : null,
+      });
+      await notifyHouseThread(
+        [
+          "⚠️ Оплата не збігається із замовленням",
+          `${orderRef} · ${outcome}`,
+          unknownOrder
+            ? "Такого замовлення в нас немає."
+            : `Очікували ${order?.amount ?? "?"} ${order?.currency ?? ""}, прийшло ${callback.amount ?? "?"} ${callback.currency ?? ""}.`,
+          `Доступ не відкрито, нічого не записано. Перевірте платіж у кабінеті ${gateway.label}.`,
+        ].join("\n"),
+      );
+      return acknowledged(gateway, orderRef);
+    }
+
+    // 1) payments: сохраняем как источник правды
+    // ⚠️ provider обязателен (у тебя NOT NULL) — ставим явно
+    // ⚠️ raw_payload NOT NULL — кладём payload
+    const { error: pErr } = await sb.from("payments").insert({
+      provider: gateway.id,
+      order_ref: orderRef,
+      provider_tx_id: safeProviderTxId,
+      status: callbackStatus,
+      raw_payload: callback.raw,
+    });
+
+    if (pErr) {
+      const code = (pErr as { code?: string })?.code;
+      if (code === "23505") {
+        /* ONE ROW PER (provider, order_ref), so the FIRST callback wins and
+           every later one collapsed into this conflict and was thrown away.
+           For a buyer who is declined and then succeeds on the same invoice
+           that leaves the row frozen at the decline: four production orders
+           (2026-04-12, 04-25, 04-27, 06-12) read `created` in `payments` while
+           `orders` reads `paid`. Both `/api/admin/analytics` and the purchases
+           backfill select payments by `status IN ('paid','completed')`, so
+           those four sales are missing from revenue entirely.
+
+           A conflict therefore means "a row for this payment already exists and
+           may be out of date", not "nothing to do". Move it forward under the
+           same guard the order uses, and never backwards.
+
+           `provider_tx_id` is deliberately left as the first attempt's. It
+           carries a unique index of its own, and racing a second row for it is
+           a worse failure than an imprecise reference — `raw_payload`, which
+           IS updated here, carries the authoritative transaction. */
+        if (nextStatus) {
+          const { error: pFixErr } = await guardStatus(
+            sb.from("payments").update({ status: nextStatus, raw_payload: callback.raw }),
+            outcome,
+          )
+            .eq("provider", gateway.id)
+            .eq("order_ref", orderRef);
+          if (pFixErr) errors.push(`payments_reconcile: ${pFixErr.message ?? "unknown"}`);
+        }
+      } else {
+        errors.push(`payments: ${pErr.message ?? "unknown"}`);
+      }
+    }
+
+    // 2) orders.status — only ever forwards; see `statusesProtectedFrom`.
+    if (nextStatus && nextStatus !== (order?.status ?? null)) {
+      /* The guard is repeated as a SQL predicate rather than trusted from the
+         read above. Two redelivered callbacks can be in flight at once, and a
+         decision made from a value read a moment ago is a decision made about
+         a row that may have changed since. */
+      const { error: oErr } = await guardStatus(sb.from("orders").update({ status: nextStatus }), outcome).eq(
+        "order_ref",
+        orderRef,
+      );
+
+      if (oErr) {
+        errors.push(`orders: ${oErr.message ?? "unknown"}`);
+      }
+    } else if (!nextStatus && !oGetErr) {
+      /* Loud on purpose. This is the branch that used to silently un-sell a
+         course, and a refused write is the one thing about it worth being able
+         to find in a log afterwards. */
+      console.warn(`${tag} callback refused, would not move the order forward`, {
+        orderRef,
+        outcome,
+        held: order?.status ?? null,
+      });
+    }
+
+    // 3) customers: материализуем email/phone из платежа
+
+    try {
+      /* `upsertCustomerByContact` answers with `{ id, created }`, not a bare id —
+         taking the whole object here would write a JSON blob into
+         `orders.customer_id` and into the event row. Only the id is wanted. */
+      const { id: customerId } = await upsertCustomerByContact(sb, {
+        email: meta.email ?? null,
+        phone: meta.phone ?? null,
+      });
+      if (customerId && !order?.customer_id) {
+        const { error: ocErr } = await sb
+          .from("orders")
+          .update({ customer_id: customerId })
+          .eq("order_ref", orderRef)
+          .is("customer_id", null);
+        if (ocErr) errors.push(`orders_customer: ${ocErr.message ?? "unknown"}`);
+      }
+
+      if (eventType) {
+        const { data: existing } = await sb
+          .from("events")
+          .select("id")
+          .eq("order_ref", orderRef)
+          .eq("type", eventType)
+          .contains("payload", { provider_tx_id: safeProviderTxId, status: callbackStatus });
+
+        if (!existing || existing.length === 0) {
+          const { error: eErr } = await sb.from("events").insert({
+            type: eventType,
+            order_ref: orderRef,
+            customer_id: order?.customer_id ?? customerId ?? null,
+            payload: {
+              status: callbackStatus,
+              provider: gateway.id,
+              provider_tx_id: safeProviderTxId,
+              amount: meta.amount ?? null,
+              currency: meta.currency ?? null,
+              product_code: order?.product_code ?? null,
+              raw_status: callback.rawStatus,
+            },
+          });
+          if (eErr) errors.push(`events: ${eErr.message ?? "unknown"}`);
+        }
+      }
+    } catch (e) {
+      errors.push(`customers: ${errorMessage(e)}`);
+    }
+
+    if (errors.length) {
+      // WITHHOLD the acceptance. This is the branch where money moved and our
+      // database did not record it, and it used to answer 200 in the belief
+      // that this stopped the gateway retrying. It never did: WayForPay decides
+      // from the signed `accept` body, not the status (see buildWfpAcceptResponse).
+      //
+      // So the correct behaviour was always available and simply unused — do
+      // not accept, and WayForPay redelivers this callback for up to four days.
+      // The writes below it are all idempotent, so a redelivery that succeeds
+      // completes the order exactly once.
+      console.error(`${gateway.id}_webhook_write_failed`, { orderRef, errors });
+      return NextResponse.json({ ok: false, error: "db_write_failed", details: errors.join("; ") }, { status: 500 });
+    }
+
+    // A QA payment made with `cw_staff=1` is a real order and a real WayForPay
+    // callback; only Meta must not hear about it. The flag lived in the browser,
+    // which this request does not have — `/api/pay/start` left the mark for us.
+    const staffOrder = paid ? await isStaffOrder(sb, orderRef) : false;
+    if (staffOrder) {
+      console.log(`${tag} staff order, no Meta Purchase`, { orderRef });
+    }
+
+    // Paid webhook work stays on the queue.
+    // The request path only persists the payment signal and enqueues follow-up delivery.
+    if (paid && !staffOrder) {
+      /* A lead this person is still waiting on is now answered by the money.
+         `same_product` scope on purpose: a self-serve checkout says only that
+         they bought THIS thing, so a consultation request they are still owed
+         an answer to stays open. A staff QA order never gets here, which is
+         correct — a fake purchase must not close a real request.
+
+         Fully wrapped and never awaited for its result: money has already
+         moved by this line, and no bookkeeping write may endanger that. */
+      try {
+        const closed = await closeWonLeadsForPurchase(sb, {
+          email: meta.email ?? null,
+          phone: meta.phone ?? null,
+          productCode: order?.product_code ?? null,
+          scope: "same_product",
+        });
+        if (closed.closed > 0) {
+          console.log(`${tag} leads closed as won`, { orderRef, closed: closed.closed });
+        }
+      } catch (e) {
+        console.warn(`${tag} lead close failed`, { orderRef, error: errorMessage(e) });
+      }
+
+      try {
+        const { data: existingPurchaseJob } = await sb
+          .from("jobs")
+          .select("id")
+          .eq("type", "meta:capi")
+          .contains("payload", { event_name: "Purchase", order_ref: orderRef })
+          .limit(1)
+          .maybeSingle();
+        if (!existingPurchaseJob?.id) {
+          const amountNumber = meta.amount ?? undefined;
+          const capiPayload: PendingPurchaseCapiJobPayload = {
+            event_name: "Purchase",
+            order_ref: orderRef,
+            payment_event_time: callback.occurredAt ?? Math.floor(Date.now() / 1000),
+            value: amountNumber,
+            currency: meta.currency ?? "UAH",
+            email: meta.email ?? null,
+            phone: meta.phone ?? null,
+          };
+
+          const { data: purchaseJob, error: purchaseJobInsertErr } = await sb
+            .from("jobs")
+            .insert({
+              type: "meta:capi",
+              payload: capiPayload,
+              status: "pending",
+            })
+            .select("id")
+            .maybeSingle();
+
+          if (purchaseJobInsertErr) {
+            throw purchaseJobInsertErr;
+          }
+
+          // Send Purchase to Meta immediately (in sync with the browser Pixel on `thanks`)
+          // instead of waiting for the daily cron. The thin job row stays the durable
+          // fallback; the enriched payload is built lazily off the request path.
+          if (purchaseJob?.id) {
+            dispatchCapiEventInline(sb, purchaseJob.id, () => buildPurchaseCapiEventPayload(capiPayload));
+          }
+        }
+      } catch (capiErr) {
+        // Non-fatal: don't fail the webhook for CAPI errors
+        console.warn(`${tag} Failed to queue CAPI job:`, capiErr);
+      }
+    }
+
+    /* THE BUYER'S RECEIPT. Everything above this line tells US about the sale —
+       Meta, the operator's Telegram. This is the only thing that tells the
+       person who paid, and until 2026-08-29 it did not exist: delivery was the
+       `/pay/thanks` tab and nothing else, so closing it lost the purchase until
+       support found it.
+
+       Outside the staff guard on purpose, unlike the Meta Purchase: a QA
+       payment SHOULD produce a real receipt, because a receipt nobody tested is
+       how the first live one turns out to be broken.
+
+       Deliberately not on the job queue. The queue would make it durable, and
+       it would also make it late — the receipt is worth most in the seconds
+       after paying, while the buyer is still looking at the screen. Send is
+       idempotent (`purchase_email_sent`), never throws, and a failure is logged
+       rather than retried: a receipt that arrives a day later is a support
+       message, not a receipt. */
+    if (paid) {
+      const buyerEmail = normEmail(meta.email ?? null);
+      if (buyerEmail) {
+        const offer = order?.product_code ? await loadPayableOffer(order.product_code) : null;
+        await sendPurchaseEmail({
+          email: buyerEmail,
+          /* `pixelContentName` and not `heading`: the heading is a localized
+             record, and this is the same agreed label the Pixel and the CAPI
+             Purchase already carry — so one product reads as one name in the
+             receipt, in Meta and in the operator's report. */
+          productTitle: offer?.pixelContentName ?? "Ваше замовлення",
+          amount: meta.amount,
+          currency: meta.currency ?? "UAH",
+          fulfilment: offer?.fulfilment ?? { kind: "cabinet" },
+          orderRef,
+        });
+      } else {
+        console.warn(`${tag} paid order with no buyer email, no receipt sent`, { orderRef });
+      }
+    }
+
+    // The sale report is not analytics — the operator wants to see a QA payment
+    // land too, so it is deliberately outside the staff guard above.
+    if (paid) {
+      try {
+        await sendConfirmedSaleTelegramReport(orderRef);
+      } catch (telegramErr) {
+        console.warn(`${tag} Failed to send Telegram sale report directly:`, {
+          orderRef,
+          error: telegramErr instanceof Error ? telegramErr.message : String(telegramErr),
+        });
+        try {
+          await enqueueTelegramSaleReport(sb, orderRef);
+        } catch (queueReportErr) {
+          console.warn(`${tag} Failed to queue Telegram sale report fallback:`, {
+            orderRef,
+            error: queueReportErr instanceof Error ? queueReportErr.message : String(queueReportErr),
+          });
+        }
+      }
+    }
+
+    return acknowledged(gateway, orderRef);
+  } catch (e) {
+    return NextResponse.json({ ok: false, error: "webhook_failed", details: errorMessage(e) }, { status: 500 });
+  }
+}

@@ -17,7 +17,7 @@ import type { PaymentOutcome } from "@/lib/payments/orderStatus";
  * (`order_shares`, written by the database when an order becomes paid).
  */
 
-export type GatewayId = "wfp";
+export type GatewayId = "wfp" | "liqpay";
 
 /**
  * One author's part of a payment, for a gateway that can route it at source.
@@ -59,7 +59,7 @@ export type SignatureCheck = {
   reason: "match" | "mismatch" | "missing_signature" | "missing_secret";
 };
 
-/** A server-to-server report, in our words. `raw` is what is stored as `payments.raw_payload`. */
+/** A server-to-server report, in our words. */
 export type GatewayCallback = {
   orderRef: string;
   outcome: PaymentOutcome;
@@ -73,6 +73,7 @@ export type GatewayCallback = {
   amount: number | null;
   currency: string | null;
   payer: { email: string | null; phone: string | null };
+  /** What is stored as `payments.raw_payload`: the callback's fields, decoded, without its envelope. */
   raw: Record<string, string>;
 };
 
@@ -81,7 +82,13 @@ export type CallbackAck = { status: number; body: unknown };
 
 export interface PaymentGateway {
   readonly id: GatewayId;
-  /** Whether an invoice may carry `splits` (money routed to authors at source). */
+  /** The name a person sees in the gateway's own dashboard, for messages to the house. */
+  readonly label: string;
+  /**
+   * Whether an invoice may carry `splits` (money routed to authors at source)
+   * right now. A gateway that can split may still not be configured to: LiqPay
+   * needs a second shop to receive the platform's own part.
+   */
   readonly supportsSplit: boolean;
   /** Our path the gateway posts callbacks to. Baked into issued invoices — never rename. */
   readonly callbackPath: string;

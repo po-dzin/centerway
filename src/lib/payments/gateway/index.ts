@@ -1,9 +1,10 @@
 import type { GatewayId, PaymentGateway } from "./types";
+import { liqpay } from "./liqpay";
 import { wayforpay } from "./wayforpay";
 
 export type * from "./types";
 
-const GATEWAYS: Record<GatewayId, PaymentGateway> = { wfp: wayforpay };
+const GATEWAYS: Record<GatewayId, PaymentGateway> = { wfp: wayforpay, liqpay };
 
 /**
  * The gateway new invoices are issued through.

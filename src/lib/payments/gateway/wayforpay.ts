@@ -199,6 +199,7 @@ function wfpAmount(payload: Record<string, string>): number | null {
 
 export const wayforpay: PaymentGateway = {
   id: "wfp",
+  label: "WayForPay",
   /* No transaction split: WayForPay can hold several payout accounts for ONE
      merchant, not route a payment to another merchant. Authors' parts are
      accrued in `order_shares` and paid out by hand. */

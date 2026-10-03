@@ -5,10 +5,10 @@ import { handleGatewayCallback } from "@/lib/payments/gatewayWebhook";
 export const runtime = "nodejs";
 
 /**
- * WayForPay's address. Baked into every invoice it has issued, so it stays
- * while any of them can still call back. The handler is shared with every
+ * LiqPay's address (`server_url` of every LiqPay invoice). Never rename: it is
+ * baked into the invoices already issued. The handler is shared with every
  * gateway (`lib/payments/gatewayWebhook`).
  */
 export function POST(req: NextRequest) {
-  return handleGatewayCallback(req, gatewayFor("wfp"));
+  return handleGatewayCallback(req, gatewayFor("liqpay"));
 }

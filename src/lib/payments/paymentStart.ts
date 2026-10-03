@@ -9,6 +9,7 @@ import {
   offerHeading,
 } from "@/lib/products";
 import { activeGateway, type PaymentGateway } from "@/lib/payments/gateway";
+import { resolveInvoiceSplits } from "@/lib/payments/invoiceSplits";
 import { buildReturnUrl, invoiceLine } from "@/lib/payments/pay";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
@@ -197,11 +198,16 @@ export async function createPaymentInvoiceWithDeps(
   // stacking them sequentially ahead of the external call.
   const returnUrl = buildReturnUrl(appBaseUrl, product, order_ref);
 
-  /* No `splits` yet: the active gateway cannot route an author's part at
-     source, so the whole payment lands on the platform and the author's share
-     is accrued by the database when the order becomes paid (`order_shares`).
-     A gateway with `supportsSplit` gets them here, and the order is marked
-     `split_at_source` so the share is not paid out a second time. */
+  /* The author's part, routed at source when the gateway can split. Asked
+     only of such a gateway, so a WayForPay checkout pays no extra reads for
+     it. Without a split the whole payment lands on the platform and the
+     author's share is accrued by the database when the order becomes paid
+     (`order_shares`); with one, the order is marked `split_at_source` so the
+     share is not paid out a second time. */
+  const splits = gateway.supportsSplit
+    ? await resolveInvoiceSplits(sb, { productCode: product, amount, gateway: gateway.id })
+    : [];
+
   const invoicePromise = gateway.createInvoice(
     {
       orderRef: order_ref,
@@ -211,6 +217,7 @@ export async function createPaymentInvoiceWithDeps(
       lineTitle: title,
       returnUrl,
       callbackUrl: `${appBaseUrl}${gateway.callbackPath}`,
+      ...(splits.length ? { splits } : {}),
     },
     deps.fetchFn,
   );
@@ -228,6 +235,7 @@ export async function createPaymentInvoiceWithDeps(
     client_ip: input.client_ip,
     client_ua: input.client_ua,
     page_url: input.page_url,
+    ...(splits.length ? { split_at_source: true } : {}),
   });
 
   const clientEventId = typeof input.event_id === "string" && input.event_id.trim() ? input.event_id.trim() : null;
