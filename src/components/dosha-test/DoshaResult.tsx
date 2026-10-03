@@ -230,26 +230,10 @@ export function DoshaResult({
         <>
           {/* No «Наступний крок» heading over the two buttons (2026-10-03):
               they are the next step, and say which. */}
+          {/* THE PROGRAMME LEADS (2026-10-03). The reading is used inside «Шлях
+              21» from its first day, so it is the step the result points to;
+              the consultation stays beside it for whoever wants it in person. */}
           <div className={styles.diagnosticResultActions}>
-            <Link
-              href={doshaExitHref(DOSHA_PRIMARY_EXIT, { resultType, confidence: profile.confidence })}
-              onClick={() => {
-                void emitAttemptEvent("dosha_followup_clicked", {
-                  target: DOSHA_PRIMARY_EXIT.target,
-                  ctaTarget: DOSHA_PRIMARY_EXIT.ctaTarget,
-                  screen: "result",
-                  step: totalQuestions,
-                  uiVariant,
-                  resultType,
-                  scores,
-                  completedAt,
-                  nextStep: DOSHA_PRIMARY_EXIT.nextStep,
-                });
-              }}
-              className={styles.primaryButton}
-            >
-              Отримати персональні рекомендації
-            </Link>
             <Link
               href={doshaExitHref(DOSHA_SECONDARY_EXIT, { resultType, confidence: profile.confidence })}
               onClick={() => {
@@ -265,9 +249,28 @@ export function DoshaResult({
                   nextStep: DOSHA_SECONDARY_EXIT.nextStep,
                 });
               }}
-              className={styles.secondaryButton}
+              className={styles.primaryButton}
             >
               Переглянути програму
+            </Link>
+            <Link
+              href={doshaExitHref(DOSHA_PRIMARY_EXIT, { resultType, confidence: profile.confidence })}
+              onClick={() => {
+                void emitAttemptEvent("dosha_followup_clicked", {
+                  target: DOSHA_PRIMARY_EXIT.target,
+                  ctaTarget: DOSHA_PRIMARY_EXIT.ctaTarget,
+                  screen: "result",
+                  step: totalQuestions,
+                  uiVariant,
+                  resultType,
+                  scores,
+                  completedAt,
+                  nextStep: DOSHA_PRIMARY_EXIT.nextStep,
+                });
+              }}
+              className={styles.secondaryButton}
+            >
+              Отримати персональні рекомендації
             </Link>
           </div>
 
