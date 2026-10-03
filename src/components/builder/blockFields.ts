@@ -16,6 +16,7 @@
  */
 
 import type { LessonBlock, RichTextNode } from "@/lms-core";
+import { isTableListCell } from "@/lms-core";
 import { LESSON_BLOCK_RECIPES } from "@/lms-core/composition";
 
 export type FieldKind = "inline" | "text" | "number" | "boolean" | "youtube" | "image";
@@ -289,11 +290,21 @@ export function describeBlock(block: LessonBlock): BlockField[] {
           kind: "inline" as const,
         })),
         ...block.rows.flatMap((row, rowIndex) =>
-          row.map((_, cellIndex) => ({
-            path: ["rows", rowIndex, cellIndex],
-            label: `Рядок ${rowIndex + 1}, колонка ${cellIndex + 1}`,
-            kind: "inline" as const,
-          })),
+          row.flatMap((cell, cellIndex) =>
+            isTableListCell(cell)
+              ? cell.items.map((_, itemIndex) => ({
+                  path: ["rows", rowIndex, cellIndex, "items", itemIndex],
+                  label: `Рядок ${rowIndex + 1}, колонка ${cellIndex + 1}, пункт ${itemIndex + 1}`,
+                  kind: "inline" as const,
+                }))
+              : [
+                  {
+                    path: ["rows", rowIndex, cellIndex],
+                    label: `Рядок ${rowIndex + 1}, колонка ${cellIndex + 1}`,
+                    kind: "inline" as const,
+                  },
+                ],
+          ),
         ),
       ];
 
