@@ -91,6 +91,17 @@ describe("lifecycle runs", () => {
     expect(sent).toHaveLength(1);
   });
 
+  it("cuts the batch after dropping the greeted, so a full window never starves the newest", async () => {
+    db.tables.platform_users = [
+      { auth_user_id: "u-1", email: "one@x.com", full_name: null, created_at: "2026-09-30T07:00:00.000Z" },
+      { auth_user_id: "u-2", email: "two@x.com", full_name: null, created_at: "2026-09-30T08:00:00.000Z" },
+    ];
+    db.tables.events = [{ type: "lifecycle_email_sent", order_ref: "welcome:u-1" }];
+    const run = await runWelcomeEmails(new Date("2026-09-30T09:00:00.000Z"), 1);
+    expect(run).toEqual({ candidates: 2, sent: 1, skipped: 1, failed: 0 });
+    expect(sent.map((s) => s.to)).toEqual(["two@x.com"]);
+  });
+
   it("sends nothing until LIFECYCLE_EMAILS is on", async () => {
     db.tables.platform_users = [
       { auth_user_id: "u-new", email: "new@x.com", full_name: null, created_at: "2026-09-30T08:00:00.000Z" },
@@ -176,5 +187,31 @@ describe("lifecycle runs", () => {
     const again = await runStreamEmails(new Date("2026-09-30T06:05:00.000Z"));
     expect(again.tomorrow.sent).toBe(0);
     expect(sent).toHaveLength(2);
+  });
+
+  it("does not call last season's buyers to a later cohort of the same offer", async () => {
+    db.tables.experience_offers = [
+      {
+        id: "o-group",
+        code: "way21-group",
+        format: "group",
+        cohort_starts_on: "2026-11-01",
+        experience_id: "x",
+        label: null,
+      },
+    ];
+    db.tables.experiences = [{ id: "x", title: "Шлях 21" }];
+    db.tables.orders = [
+      { order_ref: "a", status: "paid", offer_id: "o-group", customer_id: "c-old" },
+      { order_ref: "b", status: "paid", offer_id: "o-group", customer_id: "c-new" },
+    ];
+    db.tables.customers = [
+      { id: "c-old", email: "old@x.com", display_name: null },
+      { id: "c-new", email: "new@x.com", display_name: null },
+    ];
+    db.tables.events = [{ type: "lifecycle_email_sent", order_ref: "stream:day1:2026-10-01:old@x.com" }];
+    const result = await runStreamEmails(new Date("2026-10-31T06:00:00.000Z"));
+    expect(result.tomorrow.candidates).toBe(1);
+    expect(sent.map((s) => s.to)).toEqual(["new@x.com"]);
   });
 });

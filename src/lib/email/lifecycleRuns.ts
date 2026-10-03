@@ -120,26 +120,38 @@ export async function runWelcomeEmails(now = new Date(), limit = 200): Promise<L
       now.getTime() - WELCOME_LOOKBACK_MS,
     ),
   );
-  const { data, error } = await db
-    .from("platform_users")
-    .select("auth_user_id, email, full_name, created_at")
-    .gte("created_at", since.toISOString())
-    .order("created_at", { ascending: true })
-    .limit(limit);
-  if (error) throw new Error(error.message);
-
-  const people = (data ?? []).filter((row) => typeof row.email === "string" && EMAIL_RE.test(row.email.trim()));
+  // Already-greeted accounts are dropped BEFORE the batch is cut: otherwise a
+  // window holding more than `limit` accounts hands every run the same oldest
+  // page, all of it sent, and the newer accounts wait out the whole lookback.
   const refOf = (authUserId: string) => `welcome:${authUserId}`;
-  const sentBefore = await alreadySent(people.map((p) => refOf(p.auth_user_id)));
-  const result: LifecycleRunResult = { candidates: people.length, sent: 0, skipped: 0, failed: 0 };
+  type Person = { auth_user_id: string; email: string | null; full_name: string | null };
+  const people: Person[] = [];
+  let greeted = 0;
+  for (let from = 0; people.length < limit; from += limit) {
+    const { data, error } = await db
+      .from("platform_users")
+      .select("auth_user_id, email, full_name, created_at")
+      .gte("created_at", since.toISOString())
+      .order("created_at", { ascending: true })
+      .order("auth_user_id", { ascending: true })
+      .range(from, from + limit - 1);
+    if (error) throw new Error(error.message);
+    const page = (data ?? []).filter((row) => typeof row.email === "string" && EMAIL_RE.test(row.email.trim()));
+    const sent = await alreadySent(page.map((p) => refOf(p.auth_user_id)));
+    greeted += sent.size;
+    people.push(...page.filter((p) => !sent.has(refOf(p.auth_user_id))).slice(0, limit - people.length));
+    if ((data ?? []).length < limit) break;
+  }
+  const result: LifecycleRunResult = {
+    candidates: people.length + greeted,
+    sent: 0,
+    skipped: greeted,
+    failed: 0,
+  };
   const links = lifecycleLinks();
 
   for (const person of people) {
     const ref = refOf(person.auth_user_id);
-    if (sentBefore.has(ref)) {
-      result.skipped++;
-      continue;
-    }
     const ok = await deliver(
       ref,
       (person.email as string).trim().toLowerCase(),
@@ -149,6 +161,22 @@ export async function runWelcomeEmails(now = new Date(), limit = 200): Promise<L
     else result.failed++;
   }
   return result;
+}
+
+/** Addresses that got a «День 1» for a stream that started before `date`. */
+async function startedEarlier(date: string): Promise<Set<string>> {
+  const { data, error } = await adminClient()
+    .from("events")
+    .select("order_ref")
+    .eq("type", "lifecycle_email_sent")
+    .like("order_ref", "stream:day1:%");
+  if (error) throw new Error(error.message);
+  const out = new Set<string>();
+  for (const row of data ?? []) {
+    const [, , day, ...rest] = String(row.order_ref).split(":");
+    if (day && day < date && rest.length > 0) out.add(rest.join(":"));
+  }
+  return out;
 }
 
 type StreamRecipient = { email: string; name: string | null; programTitle: string; startsOn: string };
@@ -175,6 +203,7 @@ export async function streamRecipients(date: string): Promise<StreamRecipient[]>
     if (!clean || !EMAIL_RE.test(clean) || byEmail.has(clean)) return;
     byEmail.set(clean, { email: clean, name: name ?? null, programTitle, startsOn: date });
   };
+  const fromOrders = new Map<string, { name: string | null; programTitle: string }>();
 
   const { data: offers, error: offersError } = await db
     .from("experience_offers")
@@ -201,8 +230,21 @@ export async function streamRecipients(date: string): Promise<StreamRecipient[]>
       const customerIds = [...new Set((orders ?? []).map((o) => o.customer_id as string))];
       if (customerIds.length === 0) continue;
       const { data: customers } = await db.from("customers").select("email, display_name").in("id", customerIds);
-      for (const customer of customers ?? []) add(customer.email, customer.display_name, programTitle);
+      for (const customer of customers ?? []) {
+        const clean = customer.email?.trim().toLowerCase();
+        if (clean) fromOrders.set(clean, { name: customer.display_name, programTitle });
+      }
     }
+  }
+
+  // AN ORDER DOES NOT CARRY ITS COHORT. The group offer is reused from season to
+  // season by moving `cohort_starts_on`, so a paid order of that offer also
+  // matches every later cohort. Whoever already got a «День 1» for an earlier
+  // date has started their stream: the order road skips them. A later cohort
+  // still reaches them through an enrollment that carries its date.
+  const started = await startedEarlier(date);
+  for (const [email, person] of fromOrders) {
+    if (!started.has(email)) add(email, person.name, person.programTitle);
   }
 
   const { data: enrollments, error: enrollError } = await db

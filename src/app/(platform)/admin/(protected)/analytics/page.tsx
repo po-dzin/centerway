@@ -130,6 +130,8 @@ export default function AnalyticsPage() {
   const [doshaLoading, setDoshaLoading] = useState(false);
   const [referralsData, setReferralsData] = useState<ReferralAnalytics | null>(null);
   const [referralsLoading, setReferralsLoading] = useState(false);
+  /* The period the referral figures on screen were read for. */
+  const referralsPeriod = useRef<string | null>(null);
   const [openReferralTags, setOpenReferralTags] = useState<Set<string>>(new Set());
   const [diagnosticsPanels, setDiagnosticsPanels] = useState<Record<DiagnosticsPanelKey, boolean>>({
     freshness: false,
@@ -350,6 +352,15 @@ export default function AnalyticsPage() {
       }
     };
   }, [analyticsSection, funnel.length, funnelRangeKey]);
+
+  /* Read on first open and again whenever the period moves while the figures
+     are for another one — a tab that kept last period's numbers under this
+     period's dates would print the wrong month without saying so. */
+  useEffect(() => {
+    if (analyticsSection !== "referrals") return;
+    if (referralsPeriod.current === `${fromDate}|${toDate}`) return;
+    void fetchReferralAnalytics({ from: fromDate, to: toDate });
+  }, [analyticsSection, fromDate, toDate]);
 
   const applyPeriod = async (nextRange?: DateRange) => {
     const rawFrom = nextRange?.from ?? fromDate;
@@ -583,6 +594,7 @@ export default function AnalyticsPage() {
      cost every dashboard load the ten reads it takes to name the people. */
   const fetchReferralAnalytics = async (period?: { from: string; to: string }) => {
     setReferralsLoading(true);
+    referralsPeriod.current = `${period?.from ?? ""}|${period?.to ?? ""}`;
     try {
       const query = new URLSearchParams();
       if (period?.from) query.set("from", period.from);
@@ -636,10 +648,8 @@ export default function AnalyticsPage() {
     if (key === "dosha" && !doshaData) {
       void fetchDoshaAnalytics({ from: fromDate, to: toDate });
     }
-    if (key === "referrals" && !referralsData) {
-      void fetchReferralAnalytics({ from: fromDate, to: toDate });
-    }
   };
+
   const toggleDiagnosticsPanel = (key: DiagnosticsPanelKey) => {
     setDiagnosticsPanels((prev) => ({
       ...prev,

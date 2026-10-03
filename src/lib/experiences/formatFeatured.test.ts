@@ -25,7 +25,7 @@ function format(
   };
 }
 
-const now = new Date("2026-10-03T21:30:00Z");
+const now = new Date("2026-10-03T09:00:00Z");
 
 describe("featured format", () => {
   it("counts whole days to a start and drops a past one", () => {
@@ -33,6 +33,14 @@ describe("featured format", () => {
     expect(daysUntil("2026-10-03", now)).toBe(0);
     expect(daysUntil("2026-10-01", now)).toBeNull();
     expect(daysUntil(null, now)).toBeNull();
+  });
+
+  it("counts on the Kyiv calendar, where a cohort's day begins", () => {
+    // 22:30 UTC on 31.10 is already 1 November in Kyiv: the stream starts today.
+    const kyivMidnight = new Date("2026-10-31T22:30:00Z");
+    expect(daysUntil("2026-11-01", kyivMidnight)).toBe(0);
+    expect(daysUntil("2026-11-02", kyivMidnight)).toBe(1);
+    expect(daysUntil("2026-10-31", kyivMidnight)).toBeNull();
   });
 
   it("gives the gold only to the format the owner marked", () => {

@@ -21,8 +21,16 @@ import type { ProgramFormat } from "./formats";
 
 const DAY_MS = 86_400_000;
 
-function utcDay(date: Date): number {
-  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+const KYIV_DAY = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Europe/Kyiv",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/** Today's calendar date in Kyiv, as UTC midnight: a cohort date names a Kyiv day. */
+function kyivDay(date: Date): number {
+  return Date.parse(`${KYIV_DAY.format(date)}T00:00:00Z`);
 }
 
 /** Whole days from `now` to the ISO date; null when unreadable or past. */
@@ -30,7 +38,7 @@ export function daysUntil(isoDate: string | null, now: Date = new Date()): numbe
   if (!isoDate) return null;
   const start = Date.parse(`${isoDate}T00:00:00Z`);
   if (Number.isNaN(start)) return null;
-  const days = Math.round((start - utcDay(now)) / DAY_MS);
+  const days = Math.round((start - kyivDay(now)) / DAY_MS);
   return days >= 0 ? days : null;
 }
 
