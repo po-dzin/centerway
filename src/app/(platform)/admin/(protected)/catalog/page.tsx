@@ -42,7 +42,7 @@ import type { CatalogRow, SaleBlocker } from "@/lib/admin/catalogTypes";
 import type { AuthorProfileRow, CourseRow } from "@/lib/admin/accessTypes";
 import { CourseAuthorshipTab } from "@/components/admin/CourseAuthorshipTab";
 import { ProductPricingTab } from "@/components/admin/ProductPricingTab";
-import { ProgramFormats } from "@/components/admin/FormatReviewTab";
+import { hasFormatLadder, ProgramFormats } from "@/components/admin/FormatReviewTab";
 import type { FormatReviewRow } from "@/lib/admin/formatReviewTypes";
 import type { ProductOfferRow } from "@/lib/admin/productOfferTypes";
 import { ACCESS_TERM_PRESETS } from "@/lib/admin/catalogTypes";
@@ -943,7 +943,7 @@ function PricingRow({
                 >
                   {t("catalog_save_offer")}
                 </button>
-                {row.offer ? (
+                {row.offer && !hasFormatLadder(formats, courseOfferCode(row.slug)) ? (
                   <button
                     type="button"
                     onClick={() => void toggleActive(!row.offer?.active)}
@@ -967,7 +967,7 @@ function PricingRow({
           ) : (
             <p className={controls.hint}>{t("access_role_admin_only")}</p>
           )}
-          {formats.length > 0 ? (
+          {hasFormatLadder(formats, courseOfferCode(row.slug)) ? (
             <ProgramFormats
               formats={formats}
               baseCode={courseOfferCode(row.slug)}

@@ -5,8 +5,9 @@
  *  - the head counts the formats, the ones waiting, and names every format with
  *    its price (base included, an enquiry marked); it opens by itself when
  *    something waits and stays folded otherwise;
- *  - inside, formats keep the page's order (self, group, guided), and the base
- *    format — the row's own price — is listed only while a decision on it waits;
+ *  - inside, the base format comes first and the rest keep the page's order
+ *    (group, guided); every format is listed with its own sale switch, so the
+ *    price row above does not carry a second one (`hasFormatLadder`);
  *  - a format waits for a decision — and shows the price form — exactly when
  *    `!approved || pendingPrice`: drafts, proposals and declined formats, and a
  *    live format only while a new price waits beside the current one;
@@ -33,7 +34,7 @@ vi.mock("@/components/auth/authorizedFetch", () => ({
   authorizedJson: vi.fn(),
 }));
 
-const { ProgramFormats } = await import("./FormatReviewTab");
+const { hasFormatLadder, ProgramFormats } = await import("./FormatReviewTab");
 
 function row(overrides: Partial<FormatReviewRow> & Pick<FormatReviewRow, "code" | "format">): FormatReviewRow {
   return {
@@ -81,7 +82,7 @@ describe("FormatReviewTab", () => {
     expect(render([row({ code: "course:way21", format: "self" })])).toBe("");
   });
 
-  it("names the whole ladder in the head and lists formats in page order, the base only while it waits", () => {
+  it("names the whole ladder in the head and lists every format, the base first", () => {
     const formats = [
       row({
         code: "way21_ind",
@@ -107,15 +108,18 @@ describe("FormatReviewTab", () => {
     expect(html).toContain(
       "Самостійно 3900 UAH (formats_mode_lead) · Потік products_price_on_request · Супровід products_price_on_request (formats_mode_lead)",
     );
-    // The base is the row's own price: not listed while nothing waits on it.
-    expect(html).not.toContain("<code>course:way21</code>");
+    // The base is listed first, with its own sale switch: the row above has none.
+    expect(html.indexOf("<code>course:way21</code>")).toBeLessThan(html.indexOf("<code>way21_group</code>"));
+    expect(item(html, "course:way21")).toContain("products_withdraw");
     expect(html.indexOf("<code>way21_group</code>")).toBeLessThan(html.indexOf("<code>way21_ind</code>"));
-    // …and listed, first, once it does.
-    const waiting = render([
-      ...formats.slice(0, 2),
-      row({ code: "course:way21", format: "self", proposedAmount: 3500 }),
-    ]);
-    expect(waiting.indexOf("<code>course:way21</code>")).toBeLessThan(waiting.indexOf("<code>way21_group</code>"));
+  });
+
+  it("moves the sale switch out of the price row only when the program has formats", () => {
+    const base = row({ code: "course:way21", format: "self" });
+    expect(hasFormatLadder([], "course:way21")).toBe(false);
+    expect(hasFormatLadder([base], "course:way21")).toBe(false);
+    expect(hasFormatLadder([{ ...base, proposedAmount: 3500 }], "course:way21")).toBe(true);
+    expect(hasFormatLadder([base, row({ code: "g", format: "group" })], "course:way21")).toBe(true);
   });
 
   it("opens by itself when something waits, and stays folded when nothing does", () => {

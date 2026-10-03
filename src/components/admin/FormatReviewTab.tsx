@@ -12,8 +12,14 @@
  * `course:<slug>` is the self-paced one. Two tabs, one number in both. The
  * formats now open under their program's row, behind a chevron that says how
  * many there are and whether one waits for a decision; it opens by itself when
- * one does. The base format is the row's own price and is listed here only
- * while a proposal for it waits.
+ * one does.
+ *
+ * ONE SALE SWITCH PER FORMAT (G, 2026-10-03). The row carried «Зняти з
+ * продажу» for the base offer and every format below carried its own, under
+ * the same words — two buttons that read as one action twice. Where a program
+ * has formats, every one of them, base included, is listed here with its own
+ * switch beside its name, and the row above keeps only price and term. A
+ * program sold as one offer keeps the switch in the row.
  *
  * Nothing is on sale until the owner approves it. Approving sets the LIVE
  * price; the author's proposal is prefilled as a starting point, not a
@@ -47,12 +53,21 @@ function waitsForDecision(row: FormatReviewRow): boolean {
 }
 
 /**
+ * Whether the program is sold through formats rather than as its one base
+ * offer — the case where the sale switches live in the format list and not in
+ * the price row.
+ */
+export function hasFormatLadder(formats: FormatReviewRow[], baseCode: string): boolean {
+  return formats.length >= 2 || formats.some((row) => row.code !== baseCode || waitsForDecision(row));
+}
+
+/**
  * One program's formats, folded under its price row.
  *
  * `baseCode` is the program's own offer (`course:<slug>`): its price is edited
- * in the row above, so it is listed only while a decision on it waits. The
- * head still names every format with its price, base included, so the whole
- * ladder reads without opening anything.
+ * in the row above, its sale switch lives here with the others. It is listed
+ * first. The head names every format with its price, so the whole ladder
+ * reads without opening anything.
  */
 export function ProgramFormats({
   formats,
@@ -76,10 +91,10 @@ export function ProgramFormats({
     [formats],
   );
   const waiting = sorted.filter(waitsForDecision).length;
-  const shown = sorted.filter((row) => row.code !== baseCode || waitsForDecision(row));
+  const shown = [...sorted.filter((row) => row.code === baseCode), ...sorted.filter((row) => row.code !== baseCode)];
   const [open, setOpen] = useState(defaultOpen ?? waiting > 0);
 
-  if (sorted.length < 2 && shown.length === 0) return null;
+  if (!hasFormatLadder(formats, baseCode)) return null;
 
   const ladder = sorted
     .map(
