@@ -54,8 +54,9 @@ describe("landing format sync", () => {
         format("way21-support", "individual", { amount: 9000 }),
       ],
     }));
-    expect(out).toContain('<div class="format-card reveal" data-format="self">');
     expect(out).toContain('<div class="format-card reveal" data-format="group">');
+    // No cohort ahead here: the self-paced card keeps the gold and is marked.
+    expect(out).toContain('<div class="format-card reveal" data-format="self" data-featured>');
     expect(out).toContain('<div class="format-card" data-format="individual">');
     expect(out).not.toMatch(/format-card[^"]*\b(self|premium)\b/);
     expect(out).not.toContain("data-cw-nav-dark");
@@ -155,13 +156,41 @@ const priced = `<div class="hero-price"><b data-cw-price-from="way21">4100 гр�
 <button type="button" class="btn btn-primary fc-cta" data-lead-open="way21-support">Залишити заявку</button></div><!-- /cw:format -->
 <!-- /cw:formats -->`;
 
+describe("landing format sync — one gold button (2026-10-03)", () => {
+  const now = new Date("2026-10-03T12:00:00Z");
+  const formats = [
+    format("course:way21", "self", { amount: 3900 }),
+    format("way21-group", "group", { amount: 4100, cohortStartsOn: "2026-11-01" }),
+    format("way21-support", "individual", { amount: 9500, mode: "lead" }),
+  ];
+  const out = applyFormatSync(priced, () => ({ title: "Шлях 21", formats }), now);
+  const card = (code: string) => {
+    const at = out.indexOf(`cw:format ${code} `);
+    return out.slice(at, out.indexOf("/cw:format", at));
+  };
+
+  it("gives the gold to the nearest cohort, flags it, and turns the other buttons secondary", () => {
+    expect(card("way21-group")).toContain('data-format="group" data-featured>');
+    expect(card("way21-group")).toContain('class="btn btn-primary fc-cta');
+    expect(card("course:way21")).not.toContain("data-featured");
+    expect(card("course:way21")).toContain('class="btn btn-ghost fc-cta openModal"');
+    expect(card("way21-support")).toContain('class="btn btn-ghost fc-cta" data-lead-open="way21-support"');
+    expect(out.match(/btn-primary fc-cta/g)).toHaveLength(1);
+  });
+
+  it("names a generated featured cohort «Найближчий потік»", () => {
+    const html = applyFormatSync(page, () => ({ title: "Шлях 21", formats }), now);
+    expect(html).toContain('<span class="fc-badge">Найближчий потік</span>');
+  });
+});
+
 describe("landing format sync — prices and doors (2026-10-03)", () => {
   const formats = [
     format("course:way21", "self", { amount: 3900, mode: "lead" }),
     format("way21-group", "group", { amount: 4100, cohortStartsOn: "2026-11-01" }),
     format("way21-support", "individual", { amount: 9500 }),
   ];
-  const out = applyFormatSync(priced, () => ({ title: "Шлях 21", formats }));
+  const out = applyFormatSync(priced, () => ({ title: "Шлях 21", formats }), new Date("2026-10-03T12:00:00Z"));
   const card = (code: string) => {
     const at = out.indexOf(`cw:format ${code} `);
     return out.slice(at, out.indexOf("/cw:format", at));
@@ -178,7 +207,7 @@ describe("landing format sync — prices and doors (2026-10-03)", () => {
   });
 
   it("puts a cohort's start in place of the typed note", () => {
-    expect(card("way21-group")).toContain("<small>старт потоку 1 листопада</small>");
+    expect(card("way21-group")).toContain("<small>старт потоку 1 листопада · через 29 днів</small>");
   });
 
   it("gives each card the door its mode asks for", () => {

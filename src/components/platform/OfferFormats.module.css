@@ -68,6 +68,37 @@
   color: color-mix(in srgb, var(--format-tone) 72%, var(--cw-platform-text));
 }
 
+/* THE FEATURED FORMAT (2026-10-03): the one card that keeps the gold button —
+   the nearest cohort, else the self-paced format (lib/experiences/formatFeatured).
+   Its edge takes the tone at full strength and its hairline thickens; the wash
+   stays the same, so the row still reads as one family. */
+.root .card[data-featured] {
+  border-color: color-mix(in srgb, var(--format-tone) 64%, var(--cw-mat-stroke-inner));
+}
+
+.root .card[data-featured]::before {
+  block-size: 3px;
+  opacity: 1;
+}
+
+/* The flag over the featured cohort's name: a label, not a pill. */
+.flag {
+  flex-basis: 100%;
+  margin: 0;
+  color: color-mix(in srgb, var(--format-tone) 72%, var(--cw-platform-text));
+  font-size: var(--ds-type-label-size);
+  font-weight: 560;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Every card but the featured one: one primary per row (docs/design-system.md,
+   «Five roles»). */
+.secondaryAction {
+  composes: secondary from "./PlatformButtons.module.css";
+  composes: fill from "./PlatformButtons.module.css";
+}
+
 /* The bonus programs, under a rule: what this format adds over the others. */
 .bonus {
   display: grid;

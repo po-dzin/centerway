@@ -32,10 +32,16 @@
  * («від 3900 грн», `formatFloor` — the catalogue card's and the program page's
  * figure), or the one price when there is only one format.
  *
+ * ONE GOLD BUTTON (G, 2026-10-03). The nearest cohort ahead — else the
+ * self-paced format — keeps `btn-primary` and is marked `data-featured`; every
+ * other card's button goes `btn-ghost` (`featuredFormat`, the program page's
+ * rule too). A cohort's note says how many days are left to its start.
+ *
  * NO FORMATS IS NOT «REMOVE EVERYTHING». An empty list is what a failed read
  * looks like too, so the typed cards stand untouched.
  */
 
+import { countdownText, daysUntil, featuredFormat } from "@/lib/experiences/formatFeatured";
 import { formatFloor } from "@/lib/experiences/formatFloor";
 import type { BundleHost, ProgramFormat } from "@/lib/experiences/formats";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
@@ -69,10 +75,19 @@ function includedItems(format: ProgramFormat): string {
     .join("");
 }
 
-function cohortLine(format: ProgramFormat): string | null {
+/** How a card stands in its row: whether it keeps the gold, and today. */
+type Standing = { featured: boolean; primary: boolean; now: Date };
+
+function cohortLine(format: ProgramFormat, now: Date): string | null {
   if (!format.cohortStartsOn) return null;
   const date = new Date(`${format.cohortStartsOn}T00:00:00Z`);
-  return Number.isNaN(date.getTime()) ? null : `старт потоку ${COHORT_DATE.format(date)}`;
+  if (Number.isNaN(date.getTime())) return null;
+  const days = daysUntil(format.cohortStartsOn, now);
+  return `старт потоку ${COHORT_DATE.format(date)}${days !== null ? ` · ${countdownText(days)}` : ""}`;
+}
+
+function badgeFor(format: ProgramFormat, standing: Standing): string {
+  return standing.featured && format.format === "group" ? "Найближчий потік" : BADGE[format.format];
 }
 
 function priceText(format: ProgramFormat): string {
@@ -80,16 +95,22 @@ function priceText(format: ProgramFormat): string {
 }
 
 /** The card's door: the enquiry form for a lead, the checkout for the rest. */
-function actionFor(format: ProgramFormat): string {
+function actionFor(format: ProgramFormat, primary: boolean): string {
+  const role = primary ? "btn-primary" : "btn-ghost";
   return format.mode === "lead"
-    ? `<button type="button" class="btn btn-primary fc-cta" data-lead-open="${escape(format.code)}">Залишити заявку ${ARROW}</button>`
-    : `<a href="#offer" class="btn btn-primary fc-cta openModal" data-cta-final data-cw-product="${escape(format.code)}" data-cw-offer-id="${escape(format.code.replace(/[^a-z0-9]+/g, "_"))}" data-cw-price-value="${format.amount ?? 0}">${format.format === "group" ? "Приєднатися до потоку" : "Почати"} ${ARROW}</a>`;
+    ? `<button type="button" class="btn ${role} fc-cta" data-lead-open="${escape(format.code)}">Залишити заявку ${ARROW}</button>`
+    : `<a href="#offer" class="btn ${role} fc-cta openModal" data-cta-final data-cw-product="${escape(format.code)}" data-cw-offer-id="${escape(format.code.replace(/[^a-z0-9]+/g, "_"))}" data-cw-price-value="${format.amount ?? 0}">${format.format === "group" ? "Приєднатися до потоку" : "Почати"} ${ARROW}</a>`;
 }
 
 /** A card for a format the landing does not have one for, in its own markup. */
-export function renderFormatCard(format: ProgramFormat, programTitle: string): string {
+export function renderFormatCard(
+  format: ProgramFormat,
+  programTitle: string,
+  standing: Standing = { featured: false, primary: true, now: new Date() },
+): string {
   const price = priceText(format);
-  const note = cohortLine(format) ?? (format.mode === "lead" ? "ціну узгоджуємо в розмові" : "повний доступ");
+  const note =
+    cohortLine(format, standing.now) ?? (format.mode === "lead" ? "ціну узгоджуємо в розмові" : "повний доступ");
   // The author's list when there is one — the same lines the program page
   // shows; otherwise the one thing certainly true, and the summary.
   const own =
@@ -97,12 +118,12 @@ export function renderFormatCard(format: ProgramFormat, programTitle: string): s
       ? format.features.map((feature) => `<li>${escape(feature)}</li>`)
       : [`<li>Уся програма «${escape(programTitle)}»</li>`, format.summary ? `<li>${escape(format.summary)}</li>` : ""];
   const features = [...own, includedItems(format)].join("");
-  const action = actionFor(format);
+  const action = actionFor(format, standing.primary);
 
   return [
     `<!-- cw:format ${format.code} -->`,
-    `<div class="format-card reveal" data-format="${format.format}">`,
-    `<span class="fc-badge">${BADGE[format.format]}</span>`,
+    `<div class="format-card reveal" data-format="${format.format}"${standing.featured ? " data-featured" : ""}>`,
+    `<span class="fc-badge">${badgeFor(format, standing)}</span>`,
     `<div class="fc-title">${escape(programTitle)} — ${escape(format.label.toLowerCase())}</div>`,
     `<div class="fc-price"><b data-cw-price="${escape(format.code)}">${price}</b><small>${escape(note)}</small></div>`,
     `<ul class="fc-features">${features}</ul>`,
@@ -119,7 +140,7 @@ export function renderFormatCard(format: ProgramFormat, programTitle: string): s
  * that went with the dark one are dropped, so a page not yet re-typed still
  * renders the one card.
  */
-function toneCard(open: string, format: ProgramFormat): string {
+function toneCard(open: string, format: ProgramFormat, featured: boolean): string {
   const classes = (open.match(/class="([^"]*)"/)?.[1] ?? "format-card")
     .split(/\s+/)
     .filter((name) => name && name !== "self" && name !== "premium")
@@ -129,8 +150,9 @@ function toneCard(open: string, format: ProgramFormat): string {
     .replace(/>$/, "")
     .replace(/\s*class="[^"]*"/, "")
     .replace(/\s*data-format="[^"]*"/, "")
+    .replace(/\s*data-featured(?:="[^"]*")?/, "")
     .replace(/\s*data-cw-nav-dark(?:="[^"]*")?/, "");
-  return `<div class="${classes}" data-format="${format.format}"${rest}>`;
+  return `<div class="${classes}" data-format="${format.format}"${featured ? " data-featured" : ""}${rest}>`;
 }
 
 /**
@@ -146,10 +168,13 @@ function toneCard(open: string, format: ProgramFormat): string {
  *
  * Either way the bundle's programs close the list, from `includes`.
  */
-function syncCard(card: string, format: ProgramFormat): string {
+function syncCard(card: string, format: ProgramFormat, standing: Standing): string {
   const own =
     format.features.length > 0 ? format.features.map((feature) => `<li>${escape(feature)}</li>`).join("") : null;
-  let next = card.replace(/<div class="format-card\b[^"]*"[^>]*>/, (open) => toneCard(open, format));
+  let next = card.replace(/<div class="format-card\b[^"]*"[^>]*>/, (open) => toneCard(open, format, standing.featured));
+  if (standing.featured && format.format === "group") {
+    next = next.replace(/(<span class="fc-badge">)[\s\S]*?(<\/span>)/, `$1${badgeFor(format, standing)}$2`);
+  }
   next = next.replace(
     /(<div class="fc-price">)([\s\S]*?)(<\/div>)/,
     (_whole, open: string, inner: string, close: string) => {
@@ -157,18 +182,23 @@ function syncCard(card: string, format: ProgramFormat): string {
         /<b\b[^>]*>[\s\S]*?<\/b>/,
         `<b data-cw-price="${escape(format.code)}">${priceText(format)}</b>`,
       );
-      const start = cohortLine(format);
+      const start = cohortLine(format, standing.now);
       return `${open}${start ? priced.replace(/<small>[\s\S]*?<\/small>/, `<small>${escape(start)}</small>`) : priced}${close}`;
     },
   );
   // The door follows the mode; a door already of the right kind keeps its typed words.
   if (format.mode === "lead") {
-    next = next.replace(/<a\b[^>]*\bdata-cw-product="[^"]*"[^>]*>[\s\S]*?<\/a>/, actionFor(format));
+    next = next.replace(/<a\b[^>]*\bdata-cw-product="[^"]*"[^>]*>[\s\S]*?<\/a>/, actionFor(format, standing.primary));
   } else {
     next = next
-      .replace(/<button\b[^>]*\bdata-lead-open="[^"]*"[^>]*>[\s\S]*?<\/button>/, actionFor(format))
+      .replace(/<button\b[^>]*\bdata-lead-open="[^"]*"[^>]*>[\s\S]*?<\/button>/, actionFor(format, standing.primary))
       .replace(/(\bdata-cw-price-value=")\d+(")/, `$1${format.amount ?? 0}$2`);
   }
+  // …and its paint follows the row: one gold button, the rest secondary.
+  next = next.replace(
+    /(class="btn )btn-(?:primary|ghost)( fc-cta)/,
+    `$1${standing.primary ? "btn-primary" : "btn-ghost"}$2`,
+  );
   return next.replace(
     /(<ul class="fc-features">)([\s\S]*?)(<\/ul>)/,
     (_whole, open: string, inner: string, close: string) => {
@@ -186,6 +216,7 @@ function syncCard(card: string, format: ProgramFormat): string {
 export function applyFormatSync(
   html: string,
   formatsOf: (programSlug: string) => { title: string; formats: ProgramFormat[] } | null,
+  now: Date = new Date(),
 ): string {
   const headline = html.replace(PRICE_FROM, (whole, tag: string, attrs: string, programSlug: string, inner: string) => {
     const formats = formatsOf(programSlug)?.formats ?? [];
@@ -204,12 +235,18 @@ export function applyFormatSync(
     const cards = new Map<string, string>();
     for (const match of inner.matchAll(CARD)) cards.set(match[1]!, match[2]!);
 
+    const featured = featuredFormat(program.formats, now);
     const body = program.formats
       .map((format) => {
+        const standing = {
+          featured: featured === format.code,
+          primary: featured === null || featured === format.code,
+          now,
+        };
         const existing = cards.get(format.code);
         return existing !== undefined
-          ? `<!-- cw:format ${format.code} -->${syncCard(existing, format)}<!-- /cw:format -->`
-          : renderFormatCard(format, program.title);
+          ? `<!-- cw:format ${format.code} -->${syncCard(existing, format, standing)}<!-- /cw:format -->`
+          : renderFormatCard(format, program.title, standing);
       })
       .join("\n");
     return `<!-- cw:formats ${programSlug} -->\n${body}\n<!-- /cw:formats -->`;
