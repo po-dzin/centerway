@@ -13,7 +13,6 @@ import { DoshaMark } from "@/components/platform/DoshaMark";
 import { BOUNDARY_NOTE } from "@/lib/dosha/doshaResultCopy";
 import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT, doshaExitHref } from "@/lib/dosha/doshaRouting";
 import { TESTS_HUB_ROUTE } from "@/lib/platform/tests";
-import type { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import type {
   DoshaConfidenceCopy,
   DoshaProfile,
@@ -47,7 +46,6 @@ function doshasOfType(type: DoshaResultType): BaseDosha[] {
 }
 
 type DoshaResultProps = {
-  topbarBadge: string;
   uiVariant: string;
   resultType: DoshaResultType;
   resultCopy: DoshaResultCopy;
@@ -65,7 +63,6 @@ type DoshaResultProps = {
   /** The reader's run before this one, for the comparison line. */
   previousRun: PreviousRun | null;
   hasSessionUser: boolean;
-  surfaceHref: ReturnType<typeof useSurfaceHref>;
   emitAttemptEvent: EmitAttemptEvent;
   /** Claims the attempt again after a failed save. */
   retrySave: () => Promise<void>;
@@ -73,7 +70,6 @@ type DoshaResultProps = {
 };
 
 export function DoshaResult({
-  topbarBadge,
   uiVariant,
   resultType,
   resultCopy,
@@ -89,22 +85,16 @@ export function DoshaResult({
   savedToCabinet,
   previousRun,
   hasSessionUser,
-  surfaceHref,
   emitAttemptEvent,
   retrySave,
   restartTest,
 }: DoshaResultProps) {
   return (
     <div className={styles.diagnosticFlowStack}>
-      {/* The chip goes before sign-in: the locked screen is the verdict and
-          the door on one phone screen, and «Результат готовий» above a
-          result already on screen is the one line it can spare. */}
-      {unlocked ? (
-        <div className={styles.diagnosticFlowHead}>
-          <span className={styles.diagnosticStepChip}>{topbarBadge}</span>
-        </div>
-      ) : null}
-
+      {/* No step chip above the result (2026-10-03): «Результат готовий»
+          over a result already on screen, under «Ваш профіль» a line below,
+          said the same thing twice. It went before sign-in first; G called
+          the signed-in page overloaded, so it is gone on both. */}
       <div className={styles.card} data-tone="support">
         <p className={styles.label}>Ваш профіль</p>
         {/* The mark says the verdict before the words do, and says
@@ -157,54 +147,58 @@ export function DoshaResult({
               of a session; a failed claim says so and offers the retry.
               Without a session (auth not configured here) there is
               nothing to say about keeping, so the card is absent. */}
+          {/* Kept, said in one line, with the two ways onward as links on
+              one row (2026-10-03). This was a card of its own — a label, a
+              paragraph about the cabinet, the comparison, a link and a
+              full-width Telegram button — and it was most of what made the
+              signed-in page read as overloaded. The paragraph only explained
+              the label, so it stays only where something went wrong. */}
           {hasSessionUser ? (
-            <div className={styles.card} data-tone="support">
+            <div className={styles.diagnosticKept}>
               <p className={styles.label}>{savedToCabinet ? "Результат збережено" : "Не вдалося зберегти"}</p>
-              <p>
-                {savedToCabinet
-                  ? "Профіль у вашому кабінеті — поруч із програмами і прогресом. Наступне проходження покаже, як він змінюється."
-                  : "Профіль відкрито, але в кабінет він ще не потрапив."}
-              </p>
+              {savedToCabinet ? null : <p>Профіль відкрито, але в кабінет він ще не потрапив.</p>}
               {/* WHAT CHANGED. Retaking is sold by the hub and the cabinet as
                   the way to see a change; this is the line that shows it. */}
               {savedToCabinet && previousRun ? (
-                <p className={styles.diagnosticScoreRow}>
+                <p>
                   Минулого разу, {runDay(previousRun.completedAt)}: {formatDoshaResult(previousRun.reading, "uk")}
                   {previousRun.reading === resultType ? " — так само, як зараз." : "."}
                 </p>
               ) : null}
-              {savedToCabinet ? (
-                <Link className={styles.diagnosticTextButton} href={surfaceHref("/profile")} data-cw-ink-control>
-                  <InteractionInkLabel variant="link">Відкрити кабінет</InteractionInkLabel>
-                </Link>
-              ) : (
-                <button type="button" className={styles.diagnosticTextButton} onClick={() => void retrySave()}>
-                  Спробувати ще раз
-                </button>
-              )}
-              {telegramLink ? (
-                <a
-                  className={styles.secondaryButton}
-                  href={telegramLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => {
-                    void emitAttemptEvent("dosha_followup_clicked", {
-                      target: "save_result_telegram",
-                      ctaTarget: "save_result_telegram",
-                      screen: "result",
-                      step: totalQuestions,
-                      uiVariant,
-                      resultType,
-                      scores,
-                      completedAt,
-                      nextStep,
-                    });
-                  }}
-                >
-                  Надіслати в Telegram
-                </a>
-              ) : null}
+              <div className={styles.diagnosticKeptLinks}>
+                {/* No way into the cabinet from here (2026-10-03): the result is kept
+                   there already, and a link out of the flow is noise beside the next
+                   step. G: «убрать переход в кабинет (лишний шум)». */}
+                {savedToCabinet ? null : (
+                  <button type="button" className={styles.diagnosticTextButton} onClick={() => void retrySave()}>
+                    Спробувати ще раз
+                  </button>
+                )}
+                {telegramLink ? (
+                  <a
+                    className={styles.diagnosticTextButton}
+                    href={telegramLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-cw-ink-control
+                    onClick={() => {
+                      void emitAttemptEvent("dosha_followup_clicked", {
+                        target: "save_result_telegram",
+                        ctaTarget: "save_result_telegram",
+                        screen: "result",
+                        step: totalQuestions,
+                        uiVariant,
+                        resultType,
+                        scores,
+                        completedAt,
+                        nextStep,
+                      });
+                    }}
+                  >
+                    <InteractionInkLabel variant="link">Надіслати в Telegram</InteractionInkLabel>
+                  </a>
+                ) : null}
+              </div>
             </div>
           ) : null}
         </>
@@ -212,10 +206,10 @@ export function DoshaResult({
         <ResultGate
           title="Увійдіть — і повний профіль відкриється тут"
           includes={["Співвідношення дош", "Ваш тип поза рівновагою", "Вектор на тиждень", "Профіль у кабінеті"]}
-          onSignInStart={(method) => {
+          onSignInStart={() => {
             void emitAttemptEvent("dosha_followup_clicked", {
-              target: `save_result_${method}`,
-              ctaTarget: `save_result_${method}`,
+              target: "save_result_signin",
+              ctaTarget: "save_result_signin",
               screen: "result",
               step: totalQuestions,
               uiVariant,
@@ -228,27 +222,14 @@ export function DoshaResult({
         />
       )}
 
-      {/* Past the door only: before sign-in the screen is the verdict and
-          the gate, on one phone screen. The method's limits are already in
-          the intro's «Як це працює і межі методу», and come back here with
-          the full reading they qualify. */}
-      {unlocked ? (
-        <div className={styles.card} data-tone="policy">
-          <p className={styles.label}>Межі методу</p>
-          <p>{BOUNDARY_NOTE}</p>
-        </div>
-      ) : null}
-
       {/* THE NEXT STEP IS PAST THE DOOR (2026-10-02). Before sign-in the
           screen has one step to offer, and it is the gate above: a
           consultation or a programme beside it splits a reader who has not
           yet seen their own reading between three exits. */}
       {unlocked ? (
         <>
-          <div className={styles.panelIntro}>
-            <p className={styles.label}>Наступний крок</p>
-          </div>
-
+          {/* No «Наступний крок» heading over the two buttons (2026-10-03):
+              they are the next step, and say which. */}
           <div className={styles.diagnosticResultActions}>
             <Link
               href={doshaExitHref(DOSHA_PRIMARY_EXIT, { resultType, confidence: profile.confidence })}
@@ -294,8 +275,17 @@ export function DoshaResult({
             product — it is read inside the one program — so the screen
             says that plainly instead of implying a personalised
             catalogue it does not have. */}
-          <p className={styles.diagnosticScoreRow}>
+          <p className={styles.diagnosticFinePrint}>
             Програма одна для всіх типів: доші враховані всередині неї, тож ваш профіль стане в пригоді з першого дня.
+          </p>
+
+          {/* THE METHOD'S LIMITS, AS THE PAGE'S FINE PRINT (2026-10-03). It
+              was a tinted card between the reading and the next step — the
+              loudest block on the page for the one thing a reader needs to
+              have been told, not to act on. Past the door only, as before:
+              the intro's «Як це працює і межі методу» carries it until then. */}
+          <p className={styles.diagnosticFinePrint}>
+            <span className={styles.label}>Межі методу.</span> {BOUNDARY_NOTE}
           </p>
         </>
       ) : null}

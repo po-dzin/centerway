@@ -353,13 +353,6 @@
   font-size: var(--ds-type-body-sm-size);
 }
 
-.diagnosticLoadingStack {
-  display: grid;
-  justify-items: start;
-  gap: var(--cw-space-md);
-  padding: var(--cw-space-lg) 0;
-}
-
 /* ── Shared platform loading state ──────────────────
    One content layer inside the route's existing shell. The animated mark is
    the DS spinner replacement; fixed internal geometry reserves the final row
@@ -1181,4 +1174,31 @@
 
 .profileDoorLead {
   max-width: 30rem;
+}
+
+/* WHERE THE RESULT IS KEPT, as a quiet block rather than a card (2026-10-03):
+   a label, at most one line, and the ways onward as links on one row. */
+.diagnosticKept {
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.diagnosticKept > p {
+  margin: 0;
+}
+
+.diagnosticKeptLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs) var(--cw-space-lg);
+}
+
+/* What a reader should have been told, not something to act on: the method's
+   limits, the note under the next step. Small and muted, in the body face. */
+.diagnosticFinePrint {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
 }

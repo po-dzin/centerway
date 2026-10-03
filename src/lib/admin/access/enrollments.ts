@@ -226,10 +226,10 @@ export async function setEnrollmentDeadline(input: {
  * cannot happen. `grantCourse` still re-checks both on its own — this does not
  * change what it validates, only when the operator finds out.
  */
-export async function assertGrantable(db: Db, courseSlug: string, authUserId: string): Promise<void> {
+async function publishedCourse(db: Db, courseSlug: string): Promise<{ id: string; title: string }> {
   const { data: course, error: courseError } = await db
     .from("lms_courses")
-    .select("id, status")
+    .select("id, title, status")
     .eq("slug", courseSlug)
     .maybeSingle();
   if (courseError) throw new AccessError(courseError.message, 500);
@@ -241,6 +241,24 @@ export async function assertGrantable(db: Db, courseSlug: string, authUserId: st
   // learner on a draft, and the enrollment row would then be the only thing
   // blocking the author from ever deleting it (2026-08-28, novyi-kurs).
   if (course.status !== "published") throw new AccessError("course_not_published", 409);
+  return { id: course.id as string, title: course.title as string };
+}
+
+/**
+ * The course half of `assertGrantable`, for a caller that has no person yet.
+ *
+ * The bulk grant asks it ONCE before touching any address. Asked per address
+ * instead, a draft course would fail every line identically — and, with
+ * "create account" ticked, only after `provisionAccess` had already made each
+ * account, leaving two hundred empty accounts behind a list of errors.
+ */
+export async function assertCourseGrantable(courseSlug: string): Promise<{ title: string }> {
+  const course = await publishedCourse(adminClient(), courseSlug);
+  return { title: course.title };
+}
+
+export async function assertGrantable(db: Db, courseSlug: string, authUserId: string): Promise<void> {
+  const course = await publishedCourse(db, courseSlug);
 
   const { data: existing, error: enrollmentError } = await db
     .from("lms_enrollments")

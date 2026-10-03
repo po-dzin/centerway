@@ -444,6 +444,8 @@ export type BuilderFormatDto = {
   cohortStartsOn: string | null;
   reviewStatus: BuilderFormatReview;
   active: boolean;
+  /** The owner's «Бестселер» mark: the gold pill and the row's only primary button. */
+  featured?: boolean;
   includes: Array<{ slug: string; title: string }>;
 };
 
@@ -451,6 +453,8 @@ export type BuilderFormatsDto = {
   formats: BuilderFormatDto[];
   includable: Array<{ slug: string; title: string; status: string }>;
   isOwner: boolean;
+  /** The `admin` role: the price typed here is the live one, with no review. */
+  canSetPrice?: boolean;
 };
 
 export type BuilderFormatInput = {
@@ -462,6 +466,8 @@ export type BuilderFormatInput = {
   proposedAmount?: number | null;
   cohortStartsOn?: string | null;
   includes?: string[];
+  /** Owner only (`canSetPrice`). Marking one format clears the mark on the others. */
+  featured?: boolean;
   submit?: boolean;
 };
 

@@ -15,9 +15,13 @@
  * And the path those rules sit in: claim before send, release on a failed
  * delivery, one nudge per learner per course, closed access stays silent, the
  * day-1 picture goes out once.
+ *
+ * And the letter fallback: a learner Telegram cannot reach gets the same
+ * reminder by email — only under `LIFECYCLE_EMAILS=on`, never on top of a
+ * linked Telegram, claimed on its own `email` row and released on failure.
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { FakeSupabase, type Row } from "@/lib/admin/fakeSupabase";
 import type { Course, CourseModule } from "@/lms-core";
@@ -25,6 +29,7 @@ import type { Course, CourseModule } from "@/lms-core";
 const db = new FakeSupabase();
 let catalog: Course[] = [];
 const notifyLearner = vi.fn();
+const sendEmail = vi.fn();
 
 vi.mock("@/lib/auth/adminClient", () => ({ adminClient: () => db }));
 vi.mock("./liveCatalog", () => ({
@@ -32,6 +37,10 @@ vi.mock("./liveCatalog", () => ({
   getLiveCourse: async (slug: string) => catalog.find((entry) => entry.slug === slug) ?? null,
 }));
 vi.mock("./notify", () => ({ notifyLearner: (...args: unknown[]) => notifyLearner(...args) }));
+vi.mock("@/lib/email/resend", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/email/resend")>()),
+  sendEmail: (...args: unknown[]) => sendEmail(...args),
+}));
 
 const { runUnstartedReminders, runDailyReminders } = await import("./reminders");
 
@@ -128,6 +137,7 @@ function seed(input: { orders?: Row[]; enrollments?: Row[] } = {}) {
     lms_unstarted_reminders: [],
     lms_reminder_log: [],
     lms_progress_events: [],
+    messaging_subscriptions: [],
   };
   db.failures = {};
   db.uniqueKeys = {
@@ -140,6 +150,14 @@ beforeEach(() => {
   seed();
   notifyLearner.mockReset();
   notifyLearner.mockResolvedValue({ delivered: true });
+  sendEmail.mockReset();
+  sendEmail.mockResolvedValue({ sent: true, id: "re_1" });
+  // Off unless a test turns it on — whatever the shell running the suite has.
+  vi.stubEnv("LIFECYCLE_EMAILS", "");
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 const nudgedCourses = () => notifyLearner.mock.calls.map(([arg]) => (arg as { href: string }).href);
@@ -369,5 +387,211 @@ describe("runDailyReminders — the path", () => {
     });
     const result = await runDailyReminders(2, NOW, "single-daily-run");
     expect(result).toMatchObject({ scanned: 5, sent: 5 });
+  });
+});
+
+describe("the email fallback", () => {
+  const NO_TELEGRAM = { delivered: false, channel: null, reason: "no_reachable_channel" };
+
+  /** auth-1 has an account email and no Telegram; auth-2 has Telegram linked. */
+  function seedContacts() {
+    db.tables.platform_users = [
+      { auth_user_id: "auth-1", timezone: "Europe/Kyiv", email: " Anna@Example.com ", full_name: "Анна Коваль" },
+      { auth_user_id: "auth-2", timezone: "Europe/Kyiv", email: "oleh@example.com", full_name: "Олег" },
+    ];
+    db.tables.customers = [
+      { id: "cus-1", auth_user_id: "auth-1", email: "old@example.com", tg_id: null },
+      { id: "cus-2", auth_user_id: "auth-2", email: "oleh@example.com", tg_id: "777" },
+      { id: "cus-guest", auth_user_id: null },
+    ];
+  }
+
+  function onWithoutTelegram() {
+    vi.stubEnv("LIFECYCLE_EMAILS", "on");
+    notifyLearner.mockResolvedValue(NO_TELEGRAM);
+  }
+
+  const rowsOn = (table: string, channel: string) => db.rows(table).filter((row) => row.channel === channel);
+
+  it("writes the day's lesson to a learner with no Telegram, once, on its own claim row", async () => {
+    seed({ enrollments: [enrollment("enr-1", "course-way21")] });
+    seedContacts();
+    onWithoutTelegram();
+
+    const result = await runDailyReminders(500, NOW, "single-daily-run");
+
+    expect(result.sent).toBe(0);
+    expect(result.email).toMatchObject({ enabled: true, sent: 1 });
+    expect(sendEmail).toHaveBeenCalledTimes(1);
+    const letter = sendEmail.mock.calls[0]?.[0] as {
+      to: string;
+      subject: string;
+      text: string;
+      idempotencyKey: string;
+    };
+    // The account email, normalised — not the stale one on the customer row.
+    expect(letter.to).toBe("anna@example.com");
+    expect(letter.subject).toBe("День 2 · way21");
+    // The personal host's canonical path, absolute — the same link the Telegram button carries.
+    expect(letter.text).toContain("Відкрити урок: https://my.centerway.net.ua/way21/day-2");
+    expect(letter.text).toContain("Вітаємо, Анна!");
+    expect(letter.idempotencyKey).toBe("lms-reminder-day:enr-1:2");
+    expect(rowsOn("lms_reminder_log", "email")).toEqual([
+      expect.objectContaining({ enrollment_id: "enr-1", day_number: 2, lesson_id: "course-way21-m-d2" }),
+    ]);
+    // The Telegram claim was still released: the slot is free if they link it later.
+    expect(rowsOn("lms_reminder_log", "telegram")).toHaveLength(0);
+
+    const again = await runDailyReminders(500, NOW, "single-daily-run");
+    expect(again.email).toMatchObject({ sent: 0, skipped: { already_sent: 1 } });
+    expect(sendEmail).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not write to a learner Telegram reached, or to one who has Telegram linked", async () => {
+    seed({
+      enrollments: [
+        enrollment("enr-1", "course-way21"),
+        enrollment("enr-2", "course-reset", { auth_user_id: "auth-2" }),
+      ],
+    });
+    seedContacts();
+    vi.stubEnv("LIFECYCLE_EMAILS", "on");
+    notifyLearner.mockImplementation(async ({ authUserId }: { authUserId: string }) =>
+      // auth-1 delivered by Telegram; auth-2 linked but turned Telegram off.
+      authUserId === "auth-1" ? { delivered: true, channel: "telegram" } : NO_TELEGRAM,
+    );
+
+    const result = await runDailyReminders(500, NOW, "single-daily-run");
+
+    expect(result.sent).toBe(1);
+    expect(result.email).toMatchObject({ sent: 0, skipped: { telegram_linked: 1 } });
+    expect(sendEmail).not.toHaveBeenCalled();
+    expect(rowsOn("lms_reminder_log", "email")).toHaveLength(0);
+  });
+
+  it("does not write to a learner whose Telegram send failed for another reason", async () => {
+    seed({ enrollments: [enrollment("enr-1", "course-way21")] });
+    seedContacts();
+    vi.stubEnv("LIFECYCLE_EMAILS", "on");
+    notifyLearner.mockResolvedValue({ delivered: false, channel: "telegram", reason: "bot_blocked" });
+
+    const result = await runDailyReminders(500, NOW, "single-daily-run");
+
+    expect(result.email).toMatchObject({ sent: 0, skipped: {} });
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("sends nothing and claims nothing while the switch is off", async () => {
+    seed({ enrollments: [enrollment("enr-1", "course-way21")], orders: [order("ord-1", "course:reset-day")] });
+    seedContacts();
+    notifyLearner.mockResolvedValue(NO_TELEGRAM);
+
+    const daily = await runDailyReminders(500, NOW, "single-daily-run");
+    const unstarted = await runUnstartedReminders(500, NOW, "single-daily-run");
+
+    expect(daily.email).toEqual({ enabled: false, sent: 0, skipped: {} });
+    expect(unstarted.email).toEqual({ enabled: false, sent: 0, skipped: {} });
+    expect(sendEmail).not.toHaveBeenCalled();
+    expect(db.rows("lms_reminder_log")).toHaveLength(0);
+    expect(db.rows("lms_unstarted_reminders")).toHaveLength(0);
+  });
+
+  it("skips a slot already claimed by email, without sending", async () => {
+    seed({ enrollments: [enrollment("enr-1", "course-way21")] });
+    seedContacts();
+    db.tables.lms_reminder_log = [
+      { enrollment_id: "enr-1", lesson_id: "course-way21-m-d2", day_number: 2, channel: "email" },
+    ];
+    onWithoutTelegram();
+
+    const result = await runDailyReminders(500, NOW, "single-daily-run");
+
+    expect(result.email).toMatchObject({ sent: 0, skipped: { already_sent: 1 } });
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("releases the email claim when the provider refuses, so the next run tries again", async () => {
+    seed({ enrollments: [enrollment("enr-1", "course-way21")] });
+    seedContacts();
+    onWithoutTelegram();
+    sendEmail.mockResolvedValue({ sent: false, reason: "provider_error", detail: "500" });
+
+    const result = await runDailyReminders(500, NOW, "single-daily-run");
+
+    expect(result.email).toMatchObject({ sent: 0, skipped: { "undelivered:provider_error": 1 } });
+    expect(rowsOn("lms_reminder_log", "email")).toHaveLength(0);
+  });
+
+  it("a mail error is counted, released, and never fails the Telegram pass", async () => {
+    seed({ enrollments: [enrollment("enr-1", "course-way21")] });
+    seedContacts();
+    onWithoutTelegram();
+    sendEmail.mockRejectedValue(new Error("boom"));
+
+    const result = await runDailyReminders(500, NOW, "single-daily-run");
+
+    expect(result).toMatchObject({ scanned: 1, email: { sent: 0, skipped: { "error:boom": 1 } } });
+    expect(rowsOn("lms_reminder_log", "email")).toHaveLength(0);
+  });
+
+  it("respects the suppression list: unsubscribed, bounced or complained is not written to", async () => {
+    seed({ enrollments: [enrollment("enr-1", "course-way21")] });
+    seedContacts();
+    db.tables.messaging_subscriptions = [{ channel: "email", address: "anna@example.com", status: "complained" }];
+    onWithoutTelegram();
+
+    const result = await runDailyReminders(500, NOW, "single-daily-run");
+
+    expect(result.email).toMatchObject({ sent: 0, skipped: { "suppressed:complained": 1 } });
+    expect(sendEmail).not.toHaveBeenCalled();
+    expect(rowsOn("lms_reminder_log", "email")).toHaveLength(0);
+  });
+
+  it("leaves day 1 of a group stream to the stream's own letter", async () => {
+    seed({
+      enrollments: [
+        enrollment("enr-1", "course-way21", { started_at: "2026-09-26T06:00:00.000Z", cohort_starts_on: "2026-09-26" }),
+      ],
+    });
+    seedContacts();
+    onWithoutTelegram();
+
+    const result = await runDailyReminders(500, NOW, "single-daily-run");
+
+    expect(result.email).toMatchObject({ sent: 0, skipped: { stream_day1_letter: 1 } });
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("writes «курс чекає» once per learner and course, however many orders", async () => {
+    seed({
+      orders: [order("ord-1", "course:reset-day"), order("ord-2", "reset-day", "cus-1", "2026-09-23T09:00:00.000Z")],
+    });
+    seedContacts();
+    onWithoutTelegram();
+
+    const result = await runUnstartedReminders(500, NOW, "single-daily-run");
+
+    expect(result.email).toMatchObject({ enabled: true, sent: 1 });
+    expect(result.skipped).toMatchObject({ duplicate_order: 1 });
+    const letter = sendEmail.mock.calls[0]?.[0] as { subject: string; text: string; idempotencyKey: string };
+    expect(letter.subject).toBe("«reset-day» вже у вашому кабінеті");
+    expect(letter.text).toContain("Почати курс: https://my.centerway.net.ua/reset-day");
+    expect(letter.idempotencyKey).toBe("lms-reminder-unstarted:ord-1:1");
+    expect(rowsOn("lms_unstarted_reminders", "email")).toEqual([
+      expect.objectContaining({ order_ref: "ord-1", nudge_number: 1, course_id: "course-reset" }),
+    ]);
+    expect(rowsOn("lms_unstarted_reminders", "telegram")).toHaveLength(0);
+  });
+
+  it("releases the «курс чекає» claim when the letter does not go", async () => {
+    seed({ orders: [order("ord-1", "course:reset-day")] });
+    seedContacts();
+    onWithoutTelegram();
+    sendEmail.mockResolvedValue({ sent: false, reason: "missing_api_key" });
+
+    const result = await runUnstartedReminders(500, NOW, "single-daily-run");
+
+    expect(result.email).toMatchObject({ sent: 0, skipped: { "undelivered:missing_api_key": 1 } });
+    expect(db.rows("lms_unstarted_reminders")).toHaveLength(0);
   });
 });

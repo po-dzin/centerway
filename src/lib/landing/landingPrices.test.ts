@@ -61,6 +61,7 @@ function format(code: string, kind: ProgramFormat["format"], extra: Partial<Prog
     listAmount: null,
     currency: "UAH",
     cohortStartsOn: kind === "group" ? "2026-10-01" : null,
+    featured: false,
     includes: [],
     ...extra,
   };
@@ -112,7 +113,7 @@ describe("Шлях 21 landing", () => {
     const html = await syncLandingCommerce(landing("way21"));
     expect(cardOf(html, "course:way21")).not.toContain("data-cw-included");
     expect(cardOf(html, "way21-group").match(/data-cw-included/g)?.length).toBe(2);
-    expect(cardOf(html, "way21-support")).toContain("Short-Перезавантаження — міні-курс");
+    expect(cardOf(html, "way21-support")).toContain('<span class="fc-kind">Міні-курс</span> Short-Перезавантаження');
   });
 
   it("says in the Reset Day section which formats include it", async () => {

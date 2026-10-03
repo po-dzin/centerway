@@ -56,6 +56,8 @@ export type ProgramFormat = {
   currency: string;
   /** `YYYY-MM-DD`, day 1 of the cohort. Group formats only. */
   cohortStartsOn: string | null;
+  /** The owner's «Бестселер» mark (builder): the gold pill and the row's only primary button. */
+  featured: boolean;
   /** Other programs this format opens, in the order the author set. */
   includes: FormatIncludedProgram[];
 };
@@ -74,10 +76,11 @@ type OfferRow = {
   features: unknown;
   sort_order: number;
   cohort_starts_on: string | null;
+  featured: boolean | null;
 };
 
 const OFFER_COLUMNS =
-  "id, experience_id, code, mode, amount, list_amount, currency, format, label, summary, features, sort_order, cohort_starts_on";
+  "id, experience_id, code, mode, amount, list_amount, currency, format, label, summary, features, sort_order, cohort_starts_on, featured";
 
 function ukLine(value: unknown): string | null {
   if (!value || typeof value !== "object") return null;
@@ -153,6 +156,7 @@ function toFormat(row: OfferRow, includes: FormatIncludedProgram[], ownCode: str
     listAmount: row.list_amount,
     currency: row.currency,
     cohortStartsOn: row.cohort_starts_on,
+    featured: row.featured === true,
     includes,
   };
 }

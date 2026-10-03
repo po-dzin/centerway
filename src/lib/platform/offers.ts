@@ -33,6 +33,7 @@ import {
 } from "@/lib/products";
 import { mediaSources } from "@/lib/lms/media";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { formatFloor } from "@/lib/experiences/formatFloor";
 import { FORMAT_DEFAULT_LABELS, isOfferFormat, loadProgramFormats } from "@/lib/experiences/formats";
 import {
   describeOffer,
@@ -295,12 +296,10 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
     /* SEVERAL WAYS THROUGH IT, SEVERAL PRICES (2026-09-25). A program sold in
        formats quotes the lowest of them as «від …», the same figure its page's
        hero prints — a card showing only the self-paced price would read as the
-       whole offer. `amount` stays the lowest figure, for the price filter. */
-    const priced = (formatSets[index] ?? []).filter(
-      (format) => format.mode === "checkout" && format.amount !== null && format.amount > 0,
-    );
-    const lowest = (formatSets[index] ?? []).length >= 2 ? priced.sort((a, b) => a.amount! - b.amount!)[0] : undefined;
-    if (lowest && lowest.amount !== null) {
+       whole offer. `amount` stays the lowest figure, for the price filter.
+       The figure is `formatFloor`'s, the same one the page's hero prints. */
+    const lowest = formatFloor(formatSets[index] ?? []);
+    if (lowest) {
       return {
         ...storefrontCard(course, index, offer),
         commercialMode: "fixed" as const,

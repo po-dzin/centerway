@@ -64,6 +64,7 @@ function fmt(overrides: Partial<ProgramFormat> & Pick<ProgramFormat, "code" | "f
     listAmount: null,
     currency: "UAH",
     cohortStartsOn: null,
+    featured: false,
     includes: [],
     ...overrides,
   };

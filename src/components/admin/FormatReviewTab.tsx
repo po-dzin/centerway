@@ -3,29 +3,40 @@
 /**
  * The owner's side of the format constructor (2026-09-25).
  *
- * ONE CARD PER PROGRAM, its formats as rows inside it. A format is a way
- * through one program — «Шлях 21» on your own, in a cohort, with a guide — so
- * the three are read together, priced against each other, and listed under the
- * program they belong to rather than as three unrelated products.
+ * A format is a way through one program — «Шлях 21» on your own, in a cohort,
+ * with a guide — so the three are read together and priced against each other.
  *
- * Nothing is on sale until the owner approves it here. Approving sets the LIVE
+ * INSIDE THE PROGRAM'S PRICE ROW, NOT A TAB OF ITS OWN (G, 2026-10-03). The
+ * catalogue had «Ціни й доступ» with one price per program and «Формати» with
+ * the formats' prices, and the program's own price is one of those formats —
+ * `course:<slug>` is the self-paced one. Two tabs, one number in both. The
+ * formats now open under their program's row, behind a chevron that says how
+ * many there are and whether one waits for a decision; it opens by itself when
+ * one does.
+ *
+ * ONE SALE SWITCH PER FORMAT (G, 2026-10-03). The row carried «Зняти з
+ * продажу» for the base offer and every format below carried its own, under
+ * the same words — two buttons that read as one action twice. Where a program
+ * has formats, every one of them, base included, is listed here with its own
+ * switch beside its name, and the row above keeps only price and term. A
+ * program sold as one offer keeps the switch in the row.
+ *
+ * Nothing is on sale until the owner approves it. Approving sets the LIVE
  * price; the author's proposal is prefilled as a starting point, not a
- * decision. A draft the owner set up (Природне тіло's group and guided formats)
- * is priced and approved the same way. A live format shows the decision form
- * only while a new price waits beside the current one.
+ * decision. A live format shows the decision form only while a new price waits
+ * beside the current one.
  */
 
 import { useMemo, useState } from "react";
 
-import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { useI18n } from "@/components/I18nProvider";
 import { useToast } from "@/components/ToastProvider";
 import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
 import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { getErrorMessage } from "@/lib/errors";
 import type { FormatReviewRow } from "@/lib/admin/formatReviewTypes";
 import controls from "@/components/admin/AdminControls.module.css";
-import lists from "@/components/admin/AdminLists.module.css";
 import css from "./FormatReviewTab.module.css";
 
 const REVIEW_KEY = {
@@ -37,78 +48,102 @@ const REVIEW_KEY = {
 
 const ORDER = { self: 0, group: 1, individual: 2 } as const;
 
-function EmptyIcon() {
-  return <Icon className="cw-muted" name="price" size={20} />;
-}
-
 function waitsForDecision(row: FormatReviewRow): boolean {
   return row.reviewStatus !== "approved" || row.proposedAmount !== null;
 }
 
-export function FormatReviewTab({
+/**
+ * Whether the program is sold through formats rather than as its one base
+ * offer — the case where the sale switches live in the format list and not in
+ * the price row.
+ */
+export function hasFormatLadder(formats: FormatReviewRow[], baseCode: string): boolean {
+  return formats.length >= 2 || formats.some((row) => row.code !== baseCode || waitsForDecision(row));
+}
+
+/**
+ * One program's formats, folded under its price row.
+ *
+ * `baseCode` is the program's own offer (`course:<slug>`): its price is edited
+ * in the row above, its sale switch lives here with the others. It is listed
+ * first. The head names every format with its price, so the whole ladder
+ * reads without opening anything.
+ */
+export function ProgramFormats({
   formats,
+  baseCode,
   canEdit,
+  defaultOpen,
   errorText,
   onChanged,
 }: {
   formats: FormatReviewRow[];
+  baseCode: string;
   canEdit: boolean;
+  /** Open on arrival. Unset: open when something waits for a decision. */
+  defaultOpen?: boolean;
   errorText: (message: string) => string;
   onChanged: () => Promise<void>;
 }) {
   const { t } = useI18n();
+  const sorted = useMemo(
+    () => [...formats].sort((a, b) => ORDER[a.format] - ORDER[b.format] || a.code.localeCompare(b.code)),
+    [formats],
+  );
+  const waiting = sorted.filter(waitsForDecision).length;
+  const shown = [...sorted.filter((row) => row.code === baseCode), ...sorted.filter((row) => row.code !== baseCode)];
+  const [open, setOpen] = useState(defaultOpen ?? waiting > 0);
 
-  /* Programs with something waiting come first; inside a program the formats
-     keep one order everywhere — self, group, guided — the order the page
-     shows them in. */
-  const programs = useMemo(() => {
-    const byCourse = new Map<string, { slug: string; title: string; formats: FormatReviewRow[] }>();
-    for (const row of formats) {
-      const entry = byCourse.get(row.courseSlug) ?? { slug: row.courseSlug, title: row.courseTitle, formats: [] };
-      entry.formats.push(row);
-      byCourse.set(row.courseSlug, entry);
-    }
-    return [...byCourse.values()]
-      .map((entry) => ({
-        ...entry,
-        formats: [...entry.formats].sort((a, b) => ORDER[a.format] - ORDER[b.format] || a.code.localeCompare(b.code)),
-        waiting: entry.formats.filter(waitsForDecision).length,
-      }))
-      .sort((a, b) => Number(b.waiting > 0) - Number(a.waiting > 0) || a.title.localeCompare(b.title, "uk"));
-  }, [formats]);
+  if (!hasFormatLadder(formats, baseCode)) return null;
 
-  if (formats.length === 0) return <AdminEmptyState icon={<EmptyIcon />} description={t("formats_empty")} />;
+  const ladder = sorted
+    .map(
+      (row) =>
+        `${row.label} ${row.amount != null ? `${row.amount} ${row.currency}` : t("products_price_on_request")}${
+          row.mode === "lead" ? ` (${t("formats_mode_lead")})` : ""
+        }`,
+    )
+    .join(" · ");
 
   return (
-    <div>
-      <p className={css.intro}>{t("formats_intro")}</p>
-      <div className={css.programs}>
-        {programs.map((program) => (
-          <section key={program.slug} className={lists.item} aria-labelledby={`formats-${program.slug}`}>
-            <div className={css.programHead}>
-              <h3 className={css.programTitle} id={`formats-${program.slug}`}>
-                {program.title}
-              </h3>
-              <p className={css.programCount}>
-                {t("formats_count")}: {program.formats.length}
-                {program.waiting > 0 ? (
-                  <>
-                    {" · "}
-                    <strong>
-                      {t("formats_waiting")}: {program.waiting}
-                    </strong>
-                  </>
-                ) : null}
-              </p>
-            </div>
-            <ul className={css.formats}>
-              {program.formats.map((row) => (
-                <FormatRow key={row.code} row={row} canEdit={canEdit} errorText={errorText} onChanged={onChanged} />
-              ))}
-            </ul>
-          </section>
-        ))}
-      </div>
+    <div className={css.program}>
+      <button
+        type="button"
+        className={controls.disclosureHead}
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <div>
+          <p className={controls.disclosureTitle}>
+            {t("formats_count")}: {sorted.length}
+            {waiting > 0 ? (
+              <>
+                {" · "}
+                <strong className={css.waiting}>
+                  {t("formats_waiting")}: {waiting}
+                </strong>
+              </>
+            ) : null}
+          </p>
+          <p className={controls.disclosureNote}>{ladder}</p>
+        </div>
+        <span className={controls.disclosureMark} aria-hidden="true">
+          <InteractionInkIcon>
+            <Icon
+              className={open ? controls.disclosureChevronOpen : controls.disclosureChevron}
+              name="chevron-down"
+              size={16}
+            />
+          </InteractionInkIcon>
+        </span>
+      </button>
+      {open && shown.length > 0 ? (
+        <ul className={css.formats}>
+          {shown.map((row) => (
+            <FormatRow key={row.code} row={row} canEdit={canEdit} errorText={errorText} onChanged={onChanged} />
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }

@@ -45,6 +45,14 @@
   margin: 0 auto;
 }
 
+/* NO FOOTER UNDER A WAIT (2026-10-03). A page that is only a loading card
+   has no end yet, and a footer under it sits at mid-screen and then drops
+   away when the content lands — a jump, and a «page over» signal on a page
+   that has not begun. The header stays: it is the frame, and the way out. */
+.shell:has([data-cw-wait]) > [data-platform-footer] {
+  display: none;
+}
+
 .shell :where(a, button, input, select, textarea):focus-visible {
   outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
   outline-offset: var(--ds-focus-ring-offset);

@@ -32,7 +32,7 @@ import {
   type CourseVisibility,
 } from "@/lms-core";
 import { BuilderCoverEditor } from "./BuilderCoverEditor";
-import { ACCESS_TERM_NOTES, type AccessTermNote } from "@/lib/lms/accessTerm";
+import { ACCESS_TERM_NOTES, presetNoteFor } from "@/lib/lms/accessTerm";
 import { ChoiceRow, ChoiceSet, FieldInput, RequiredMark } from "./BuilderFields";
 import { PALETTE_LABELS } from "./coursePalettes";
 import styles from "./Builder.module.css";
@@ -97,6 +97,22 @@ const CATEGORY_LABELS: Record<CourseCategory, string> = {
  * catalogue, so the page and the offer can no longer say different things.
  */
 const ACCESS_NOTE_OPTIONS = ACCESS_TERM_NOTES;
+
+/**
+ * The list, plus the course's own words when they are not a preset.
+ *
+ * A note written before the closed list that names a preset in other words
+ * («доступ назавжди») shows as that preset (`presetNoteFor`). One that names
+ * none («доступ до матеріалів лишається після програми») is still what the page
+ * prints today, so it stays visible as the chosen entry rather than reading as
+ * «Не вказано» — the author replaces it by picking a term.
+ */
+function accessTermOptions(note: string | undefined): Array<{ value: string; label: string }> {
+  const presets = ACCESS_NOTE_OPTIONS.map((value) => ({ value, label: value }));
+  const own = note?.trim();
+  if (!own || presetNoteFor(own)) return presets;
+  return [...presets, { value: own, label: `«${own}» — свій текст` }];
+}
 
 const VISIBILITY_LABELS: Record<CourseVisibility, string> = {
   hidden: "Ніхто",
@@ -354,13 +370,13 @@ export function BuilderCourseSettings({
             is still compatible with revoking a refunded seat. Closed list, not
             free text (2026-09-13): the storefront prints exactly what is
             chosen here, so the choice is the words a buyer reads. */}
-          <ChoiceRow
+          <ChoiceRow<string>
             label="Термін доступу"
             required={showcase}
             clearable
             hint="Скільки покупець має доступ до курсу. Друкується поряд з ціною і сам закриває доступ після терміну; для опублікованого курсу — після затвердження змін."
-            options={ACCESS_NOTE_OPTIONS.map((value) => ({ value, label: value }))}
-            value={course.accessNote as AccessTermNote | undefined}
+            options={accessTermOptions(course.accessNote)}
+            value={presetNoteFor(course.accessNote) ?? (course.accessNote?.trim() || undefined)}
             onChange={(next) => onChange(["accessNote"], next)}
           />
           {/* `authorNote` moved to its own tab (2026-08-28) — see

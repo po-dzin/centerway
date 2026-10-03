@@ -68,6 +68,63 @@
   color: color-mix(in srgb, var(--format-tone) 72%, var(--cw-platform-text));
 }
 
+/* THE FEATURED FORMAT (2026-10-03): the one the owner marked «Бестселер» in
+   the builder (`experience_offers.featured`, lib/experiences/formatFeatured).
+   It sits slightly raised, its edge takes the accent, and a gold pill names it
+   in the top-right corner; it keeps the row's only primary button. The wash
+   stays the format's own tone, so the row still reads as one family. */
+.root .card[data-featured] {
+  border-color: color-mix(in srgb, var(--cw-platform-accent) 55%, var(--cw-mat-stroke-inner));
+  box-shadow: var(--cw-mat-shadow-raised);
+  transform: translateY(calc(-1 * var(--cw-space-2xs)));
+}
+
+.bestseller {
+  position: absolute;
+  inset-block-start: var(--cw-space-sm);
+  inset-inline-end: var(--cw-space-sm);
+  z-index: 1;
+  margin: 0;
+  padding: var(--cw-space-2xs) var(--cw-space-sm);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-platform-accent);
+  color: var(--cw-platform-accent-contrast);
+  font-size: var(--ds-type-label-size);
+  font-weight: 640;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+/* The pill sits over the head's end; the head keeps clear of it. */
+.root .card[data-featured] h3 {
+  padding-inline-end: calc(var(--cw-space-3xl) + var(--cw-space-xl));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root .card[data-featured] {
+    transform: none;
+  }
+}
+
+/* «Найближчий потік» over the nearest cohort's name: information, a label, not a pill. */
+.flag {
+  flex-basis: 100%;
+  margin: 0;
+  color: color-mix(in srgb, var(--format-tone) 72%, var(--cw-platform-text));
+  font-size: var(--ds-type-label-size);
+  font-weight: 560;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Every card but the featured one: one primary per row (docs/design-system.md,
+   «Five roles»). */
+.secondaryAction {
+  composes: secondary from "./PlatformButtons.module.css";
+  composes: fill from "./PlatformButtons.module.css";
+}
+
 /* The bonus programs, under a rule: what this format adds over the others. */
 .bonus {
   display: grid;
@@ -79,6 +136,16 @@
 
 .bonusLabel {
   margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-weight: 560;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* A bonus program's kind, before its name: «МІНІ-КУРС Розвантажувальний день». */
+.bonusKind {
+  margin-inline-end: var(--cw-space-2xs);
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-label-size);
   font-weight: 560;

@@ -2,7 +2,15 @@ import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
 import { formatPrice } from "@/lib/products";
+import { bonusKindLabel } from "@/lib/platform/catalogVocabulary";
 import type { ProgramFormat } from "@/lib/experiences/formats";
+import {
+  countdownText,
+  daysUntil,
+  featuredFormat,
+  isPrimaryFormat,
+  nearestCohort,
+} from "@/lib/experiences/formatFeatured";
 import { CheckoutStartLink } from "./CheckoutStartLink";
 import { LeadForm } from "./LeadForm";
 import styles from "./PlatformOfferCommerce.module.css";
@@ -19,20 +27,24 @@ import css from "./OfferFormats.module.css";
  * link to their own pages: they are sold on their own too, and a reader deciding
  * between formats is entitled to see what the extra is.
  *
+ * ONE GOLD BUTTON IN THE ROW (G, 2026-10-03). The format the owner marked
+ * «Бестселер» in the builder wears a gold pill, sits slightly raised, and keeps
+ * the row's only primary button; the others go secondary (`featuredFormat`).
+ * The nearest cohort ahead says so and counts the days to its start — as
+ * information, without the gold.
+ *
  * The anchor is `#formats`: the hero's button and a closed module inside a
  * course both lead here.
  */
 
 const COHORT_DATE = new Intl.DateTimeFormat("uk-UA", { day: "numeric", month: "long", timeZone: "UTC" });
 
-function cohortLine(isoDate: string | null): string | null {
+function cohortLine(isoDate: string | null, now: Date): string | null {
   if (!isoDate) return null;
   const date = new Date(`${isoDate}T00:00:00Z`);
-  return Number.isNaN(date.getTime()) ? null : `Старт потоку — ${COHORT_DATE.format(date)}`;
-}
-
-function kindLabel(kind: ProgramFormat["includes"][number]["kind"]): string {
-  return kind === "mini" ? "міні-курс" : kind === "checklist" ? "чек-лист" : "програма";
+  if (Number.isNaN(date.getTime())) return null;
+  const days = daysUntil(isoDate, now);
+  return `Старт потоку — ${COHORT_DATE.format(date)}${days !== null ? `, ${countdownText(days)}` : ""}`;
 }
 
 function formatCheckoutHref(code: string, programSlug: string): string {
@@ -50,6 +62,9 @@ export function OfferFormats({
   programTitle: string;
   formats: ProgramFormat[];
 }) {
+  const now = new Date();
+  const featured = featuredFormat(formats);
+  const cohort = nearestCohort(formats, now);
   return (
     <section id="formats" aria-labelledby="formats-heading" className={`${offerStyles.panel} ${css.root}`}>
       <p className={offerStyles.label}>Формати</p>
@@ -60,15 +75,24 @@ export function OfferFormats({
 
       <ul className={styles.bento}>
         {formats.map((format) => {
-          const start = cohortLine(format.cohortStartsOn);
+          const start = cohortLine(format.cohortStartsOn, now);
+          const primary = isPrimaryFormat(formats, format.code);
+          const action = primary ? styles.buyAction : css.secondaryAction;
           const price = format.amount !== null ? formatPrice(format.amount, format.currency) : null;
           const compareAt =
             format.listAmount !== null && format.amount !== null && format.listAmount > format.amount
               ? formatPrice(format.listAmount, format.currency)
               : null;
           return (
-            <li key={format.code} className={`${styles.bentoCard} ${css.card}`} data-format={format.format}>
+            <li
+              key={format.code}
+              className={`${styles.bentoCard} ${css.card}`}
+              data-format={format.format}
+              data-featured={featured === format.code ? "" : undefined}
+            >
+              {featured === format.code ? <p className={css.bestseller}>Бестселер</p> : null}
               <div className={styles.bentoCardHead}>
+                {cohort === format.code ? <p className={css.flag}>Найближчий потік</p> : null}
                 <h3 className={styles.bentoCardTitle}>{format.label}</h3>
               </div>
 
@@ -104,8 +128,8 @@ export function OfferFormats({
                       <li key={program.courseSlug}>
                         <Icon className={styles.includeMark} name="plus" size={20} />
                         <span>
-                          <Link href={`/programs/${program.programSlug}`}>{program.title}</Link> —{" "}
-                          {kindLabel(program.kind)}
+                          <span className={css.bonusKind}>{bonusKindLabel(program.kind)}</span>{" "}
+                          <Link href={`/programs/${program.programSlug}`}>{program.title}</Link>
                         </span>
                       </li>
                     ))}
@@ -116,12 +140,12 @@ export function OfferFormats({
               <div className={css.action}>
                 {format.mode === "checkout" && price ? (
                   <CheckoutStartLink
-                    className={styles.buyAction}
+                    className={action}
                     href={formatCheckoutHref(format.code, programSlug)}
                     label={`Оплатити ${price}`}
                   />
                 ) : format.mode === "lead" ? (
-                  <a className={styles.buyAction} href={`#format-request-${format.code}`}>
+                  <a className={action} href={`#format-request-${format.code}`}>
                     Залишити заявку
                   </a>
                 ) : null}

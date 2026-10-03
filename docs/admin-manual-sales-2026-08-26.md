@@ -143,3 +143,37 @@ panel by `[data-admin-scroll]`.
 `FakeSupabase`), `accessRoutes.test.ts` (the wire), `accessTypes.test.ts`
 (deadline normalization), `src/lms-core/lms-core.test.ts` (the pure expiry
 rule), `src/lib/lms/enrollmentDeadline.test.ts` (the gate itself).
+
+## Gift to a list (2026-10-03)
+
+`POST /api/admin/access/learners/bulk` and the «Подарувати списку» dialog
+(`src/components/admin/AccessBulkGrant.tsx`): one course, one reason (default
+`bonus`), one cohort date and an optional ref for up to `BULK_GRANT_LIMIT`
+(200) pasted addresses — the friends and team of a group stream.
+
+- Everything is validated before anything is written: addresses
+  (`parseEmailList`, shared with the panel: trimmed, lower-cased, deduped, and
+  any non-address refused with the list of them), dates, ref, reason, and the
+  course once (`assertCourseGrantable`) so a draft course cannot leave empty
+  accounts behind.
+- Then each address is `provisionAccess` on its own, four at a time; one
+  failing address is that line's answer (`created` / `already` / `error`) and
+  the rest go on. Every seat writes its own `access.course.grant` audit row.
+- No payment and no role: both are refused if sent. `support` may run it, as
+  it may grant one seat.
+
+Email. The grant itself sends nothing: with no payment `provisionAccess` skips
+the receipt, and `createAccount` calls `auth.admin.createUser` with
+`email_confirm: true`, which sends no Supabase invite or confirmation. What
+does follow, only while `LIFECYCLE_EMAILS=on`, is the lifecycle cron
+(`src/lib/email/lifecycleRuns.ts`): «Вітаємо в CenterWay» to an account created
+in the last three days, and «Завтра стартує…» / «День 1» to every active seat
+whose `cohort_starts_on` is tomorrow / today. A single grant causes exactly the
+same letters; the dialog's hint says so.
+
+Not a send, but worth knowing before the stream's campaign goes out: a gifted
+seat has no paid order, so `exclude_buyers` (which matches paid orders) does
+not leave its holder out of a broadcast. A friend given «Шлях 21» here, who is
+also in the campaign's audience (registered — which a created account makes
+them — buyers of something else, or a lead), would be invited to the stream
+they already hold.

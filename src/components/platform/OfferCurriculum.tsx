@@ -32,6 +32,7 @@ import type { CwIconName } from "@/components/iconNames";
 import { useOfferAccess } from "@/components/platform/OfferAccess";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import type { ProgramFormat } from "@/lib/experiences/formats";
+import { bonusKindLabel } from "@/lib/platform/catalogVocabulary";
 import { isLinkedModule, type Course, type LessonAvailability } from "@/lms-core";
 import styles from "./PlatformOfferCommerce.module.css";
 import offerStyles from "./PlatformOfferStyles";
@@ -146,6 +147,12 @@ export function OfferCurriculum({
               const slug = module.linkedCourseSlug;
               const program = formats.flatMap((format) => format.includes).find((entry) => entry.courseSlug === slug);
               const inFormats = slug ? bonusFormats(slug) : [];
+              // The kind is known once a format includes the program; without
+              // that, the card says what it always said.
+              const kindLabel = program ? bonusKindLabel(program.kind) : null;
+              const what = kindLabel
+                ? `${kindLabel === "Програма" ? "Окрема" : "Окремий"} ${kindLabel.toLowerCase()}`
+                : "Окремий міні-курс";
               /* A LINKED PROGRAM IS NOT AN EMPTY MODULE (2026-09-25). It has no
                  lessons here — they live in its own course — so the card says
                  what it is and who gets it instead of a title over nothing.
@@ -157,6 +164,7 @@ export function OfferCurriculum({
                   <div className={`${styles.outlineModule} ${styles.outlineLinked}`}>
                     <div className={styles.outlineModuleHead}>
                       <h3 className={styles.outlineModuleTitle}>
+                        {kindLabel ? <span className={styles.outlineKind}>{kindLabel}</span> : null}{" "}
                         {program ? (
                           <Link href={`/programs/${program.programSlug}`} data-cw-ink-control>
                             <InteractionInkLabel variant="navigation">{module.title}</InteractionInkLabel>
@@ -169,8 +177,8 @@ export function OfferCurriculum({
                     </div>
                     <p className={styles.outlineLinkedNote}>
                       {inFormats.length > 0
-                        ? `Окремий міні-курс у форматах ${inFormats.join(" і ")}`
-                        : "Окремий міні-курс, відкривається разом з особливими форматами програми"}
+                        ? `${what} у форматах ${inFormats.join(" і ")}`
+                        : `${what}, відкривається разом з особливими форматами програми`}
                     </p>
                   </div>
                 </li>

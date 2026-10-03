@@ -50,88 +50,283 @@
   list-style: none;
 }
 
-.item {
+/* ── The formats, as the page will show them (2026-10-03) ──────────────────
+
+   A rule-separated list read three formats as three paragraphs: name, a muted
+   status line, a bullet list, all one weight. The storefront shows them as
+   cards side by side, each in its own tone, and the author is composing exactly
+   that comparison — so the builder draws the same object.
+
+   THE TONES ARE THE STOREFRONT'S, not new ones (`OfferFormats.module.css`):
+   `--cw-sem-embodied` for going alone, `--cw-sem-trust` for a cohort,
+   `--cw-sem-warmth` for the author beside you. A wash from the top edge into
+   the paper by mid-card, a hairline along the top, the ticks — text never sits
+   on colour. Boundary role: structural (a card is a panel). */
+.cards {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+  gap: var(--cw-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card,
+.editorPanel {
+  --format-tone: var(--cw-sem-embodied);
+}
+
+.card[data-format="group"],
+.editorPanel[data-format="group"] {
+  --format-tone: var(--cw-sem-trust);
+}
+
+.card[data-format="individual"],
+.editorPanel[data-format="individual"] {
+  --format-tone: var(--cw-sem-warmth);
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   gap: var(--cw-space-sm);
-  padding-block: var(--cw-space-md);
-  border-block-start: 1px solid var(--builder-rule);
+  padding: var(--cw-space-md);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--format-tone) 28%, var(--cw-mat-stroke-inner));
+  border-radius: var(--cw-radius-sm);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--format-tone) 20%, var(--cw-mat-surface)) 0%,
+      color-mix(in srgb, var(--format-tone) 7%, var(--cw-mat-surface)) 32%,
+      var(--cw-mat-surface) 58%
+    ),
+    var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.card::before,
+.editorPanel::before {
+  position: absolute;
+  inset: 0 0 auto;
+  block-size: 2px;
+  content: "";
+  background: linear-gradient(90deg, transparent, var(--format-tone) 18%, var(--format-tone) 82%, transparent);
+  opacity: 0.85;
+}
+
+/* The card being edited is the one the form below belongs to: its edge takes
+   the tone at full strength, so the pair reads as one object. */
+.card[data-editing="true"] {
+  border-color: color-mix(in srgb, var(--format-tone) 70%, var(--cw-mat-stroke-inner));
+}
+
+/* The owner's «Бестселер» mark — the same gold pill the program page shows on
+   this format. In the flow here, above the head: the status holds the corner. */
+.card[data-featured] {
+  border-color: color-mix(in srgb, var(--cw-platform-accent) 55%, var(--cw-mat-stroke-inner));
+}
+
+.cardBestseller {
+  align-self: flex-start;
+  margin: 0;
+  padding: var(--cw-space-2xs) var(--cw-space-sm);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-platform-accent);
+  color: var(--cw-platform-accent-contrast);
+  font-size: var(--ds-type-label-size);
+  font-weight: 640;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+/* Kind on the left, where the eye starts; the status on the right, with a dot
+   in the state's colour — the one fact an author scans the row for. */
+.cardHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-2xs) var(--cw-space-sm);
+}
+
+.cardKind {
+  color: color-mix(in srgb, var(--format-tone) 60%, var(--cw-platform-text));
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cardStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+}
+
+.cardStatusDot {
+  flex: 0 0 auto;
+  color: var(--cw-platform-muted);
+}
+
+.cardStatus[data-tone="live"] {
+  color: var(--cw-platform-text);
+}
+
+.cardStatus[data-tone="live"] .cardStatusDot {
+  color: var(--cw-status-success);
+}
+
+.cardStatus[data-tone="waiting"] .cardStatusDot {
+  color: var(--cw-status-pending);
+}
+
+.cardStatus[data-tone="declined"] .cardStatusDot {
+  color: var(--cw-status-failed);
+}
+
+.cardTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-lead-size);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+/* The price is the figure the row is compared by, so it is the largest thing
+   on the card; tabular so a row of them lines up. */
+.cardPrice {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  padding-block-end: var(--cw-space-sm);
+  border-block-end: 1px solid transparent;
   border-image: var(--cw-rule-fade-x);
 }
 
-.item:last-child {
-  border-block-end: 1px solid var(--builder-rule);
+.cardPriceValue {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-display-size);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
 }
 
-/* Name on the left, price on the right — the two facts a reader compares down
-   the list. The price is tabular so a column of them lines up. */
-.itemHead {
+.cardPriceNote {
+  margin: 0;
+  min-block-size: 1lh;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: 1.45;
+}
+
+.cardSummary {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.45;
+}
+
+/* What the format gives, with the storefront's tick in the card's tone. */
+.cardFeatures {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.45;
+}
+
+.cardFeatures li {
+  display: flex;
+  align-items: start;
+  gap: var(--cw-space-xs);
+}
+
+.cardTick,
+.cardPlus {
+  flex: none;
+  margin-top: var(--cw-space-2xs);
+}
+
+/* Mixed toward the text so the mark holds 3:1 on both grounds. */
+.cardTick {
+  color: color-mix(in srgb, var(--format-tone) 72%, var(--cw-platform-text));
+}
+
+/* A bonus is the same kind of thing on every card, so its «+» keeps the gold. */
+.cardPlus {
+  color: var(--cw-sem-warmth);
+}
+
+.cardBonus {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  padding-block-start: var(--cw-space-sm);
+  border-block-start: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
+}
+
+.cardBonusLabel {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Every card ends in its actions, at the same height across the row. */
+.cardActions {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--cw-space-2xs) var(--cw-space-md);
+  align-items: center;
+  gap: var(--cw-space-sm);
+  margin-block-start: auto;
+  padding-block-start: var(--cw-space-xs);
 }
 
-.itemName {
+/* The empty seat in the row: where the next format goes. Quiet boundary — a
+   dashed edge says «a place», not «a card». */
+.cardAdd {
+  display: grid;
+  place-items: center;
+  min-block-size: 8rem;
+  border: 1px dashed var(--builder-rule);
+  border-radius: var(--cw-radius-sm);
+}
+
+/* The form opens under the row, as its own panel in the tone of the format it
+   edits — the same object, being changed. */
+.editorPanel {
+  position: relative;
+  display: grid;
+  gap: var(--cw-space-sm);
+  padding: var(--cw-space-md);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--format-tone) 40%, var(--cw-mat-stroke-inner));
+  border-radius: var(--cw-radius-sm);
+  background: var(--cw-mat-surface);
+}
+
+.editorTitle {
   margin: 0;
   color: var(--cw-platform-text);
   font-size: var(--ds-type-body-size);
   font-weight: 600;
 }
 
-.itemPrice {
-  margin: 0;
-  color: var(--cw-platform-text);
-  font-size: var(--ds-type-body-size);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.itemMeta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--cw-space-2xs) var(--cw-space-sm);
-  margin: 0;
-  color: var(--cw-platform-muted);
-  font-size: var(--ds-type-body-sm-size);
-  line-height: 1.45;
-}
-
-.itemIncludes {
-  margin: 0;
-  color: var(--cw-platform-muted);
-  font-size: var(--ds-type-body-sm-size);
-  line-height: 1.45;
-}
-
-.itemIncludes strong {
-  color: var(--cw-platform-text);
-  font-weight: 500;
-}
-
-/* What the format gives, as the page will list it. */
-.itemFeatures {
-  display: grid;
-  gap: var(--cw-space-2xs);
-  margin: 0;
-  padding-inline-start: 1.1em;
-  list-style: disc;
-  color: var(--cw-platform-text);
-  font-size: var(--ds-type-body-sm-size);
-  line-height: 1.45;
-}
-
-.itemFeatures li::marker {
-  color: var(--cw-platform-muted);
-}
-
-/* The line a program sits on: its title, and the one control that removes it. */
+/* The line a program sits on: its title, the control that removes it, and
+   under them which formats open it — the one place a program is set up. */
 .linkedRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--cw-space-sm);
+  display: grid;
+  gap: var(--cw-space-xs);
   padding-block: var(--cw-space-sm);
   border-block-start: 1px solid var(--builder-rule);
   border-image: var(--cw-rule-fade-x);
@@ -141,30 +336,29 @@
   border-block-end: 1px solid var(--builder-rule);
 }
 
+.linkedHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
 .linkedTitle {
   min-width: 0;
   color: var(--cw-platform-text);
   font-size: var(--ds-type-body-size);
 }
 
-.addRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: var(--cw-space-sm);
+/* One select, no button beside it: choosing a program is the act of adding it.
+   As wide as a title needs, not the panel. */
+.addProgram {
+  max-width: 24rem;
 }
 
-.addRow > :first-child {
-  flex: 1 1 16rem;
-  min-width: 0;
-}
-
-/* The editor opens UNDER the item it edits, indented by nothing and set apart
-   by air, not by a card: it is the same item, being changed. */
 .editor {
   display: grid;
   gap: var(--cw-space-md);
-  padding-block-start: var(--cw-space-sm);
   max-width: 38rem;
 }
 

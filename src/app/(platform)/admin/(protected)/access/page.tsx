@@ -22,6 +22,7 @@ import surfaces from "@/components/admin/AdminSurfaces.module.css";
 import { useToast } from "@/components/ToastProvider";
 import { AdminDateField } from "@/components/admin/AdminDateField";
 import { AdminModal } from "@/components/admin/AdminModal";
+import { AccessBulkGrant } from "@/components/admin/AccessBulkGrant";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
@@ -110,6 +111,10 @@ export default function AccessPage() {
         amount_invalid: t("access_error_amount_invalid"),
         currency_invalid: t("access_error_currency_invalid"),
         cannot_change_own_role: t("access_error_cannot_change_own_role"),
+        enrollment_blocked: t("access_error_enrollment_blocked"),
+        grant_failed: t("access_error_grant_failed"),
+        source_invalid: t("access_error_source_invalid"),
+        emails_required: t("access_error_emails_required"),
         Forbidden: t("access_error_forbidden"),
       };
       return known[message] ?? message;
@@ -311,6 +316,8 @@ function PeopleTab({
   const dateLabels = useDateLabels();
   /** The grant form's dialog. Closed on arrival: reading the list is the common visit. */
   const [grantOpen, setGrantOpen] = useState(false);
+  /** The gift-to-a-list dialog — a separate act from the sale above, see `AccessBulkGrant`. */
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [savingDeadline, setSavingDeadline] = useState<string | null>(null);
 
   // Which people have their course list open. Keyed by account id rather than
@@ -574,7 +581,26 @@ function PeopleTab({
           <PlusGlyph />
           {t("access_grant_open")}
         </button>
+        <button type="button" onClick={() => setBulkOpen(true)} className={`${controls.action} cw-surface-2`}>
+          <PlusGlyph />
+          {t("access_bulk_open")}
+        </button>
       </div>
+
+      {bulkOpen ? (
+        <AccessBulkGrant
+          courses={courses}
+          initialCourse={grantCourse}
+          locale={locale}
+          dateLabels={dateLabels}
+          errorText={errorText}
+          onClose={() => setBulkOpen(false)}
+          onGranted={() => {
+            onCoursesChanged();
+            void load();
+          }}
+        />
+      ) : null}
 
       {grantOpen ? (
         <AdminModal

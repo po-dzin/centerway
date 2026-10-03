@@ -29,6 +29,8 @@
     "docs:index:check": "node scripts/docs-index.mjs --check",
     "seo:indexnow": "node scripts/seo-indexnow.mjs",
     "tokens:build": "node scripts/generate-design-tokens.mjs",
+    "email:auth-templates": "CW_WRITE_AUTH_TEMPLATES=1 vitest run src/lib/email/authEmails.test.ts",
+    "email:gallery": "CW_WRITE_EMAIL_GALLERY=1 vitest run src/lib/email/catalog.test.ts",
     "tokens:check": "node scripts/generate-design-tokens.mjs && git diff --exit-code -- src/app/globals.css src/landing-static/shared/css/cw-tokens.generated.css",
     "brand:build": "node scripts/brand-mark-bake.mjs",
     "bot:dosha-cards": "node scripts/bot-dosha-cards.mjs",

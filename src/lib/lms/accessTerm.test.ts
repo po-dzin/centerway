@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ACCESS_TERM_NOTES, accessRuleForNote, noteForAccessRule, sameAccessRule } from "./accessTerm";
+import { ACCESS_TERM_NOTES, accessRuleForNote, noteForAccessRule, presetNoteFor, sameAccessRule } from "./accessTerm";
 
 describe("access term: one choice, the words and the rule", () => {
   it("maps every preset to the rule it promises", () => {
@@ -38,5 +38,20 @@ describe("access term: one choice, the words and the rule", () => {
     expect(sameAccessRule({ accessDays: 30, accessLifetime: false }, { accessDays: null, accessLifetime: true })).toBe(
       false,
     );
+  });
+});
+
+describe("presetNoteFor", () => {
+  it("reads a hand-written note as the preset it names", () => {
+    expect(presetNoteFor("Назавжди")).toBe("Назавжди");
+    expect(presetNoteFor("доступ назавжди")).toBe("Назавжди");
+    expect(presetNoteFor("Доступ назавжди ")).toBe("Назавжди");
+    expect(presetNoteFor("  90  днів")).toBe("90 днів");
+  });
+
+  it("names nothing for prose that is not a term, or for nothing", () => {
+    expect(presetNoteFor("доступ до матеріалів лишається після програми")).toBeNull();
+    expect(presetNoteFor("")).toBeNull();
+    expect(presetNoteFor(undefined)).toBeNull();
   });
 });

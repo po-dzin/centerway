@@ -2,7 +2,7 @@
 
 /**
  * «Формати й набори» — the ways through this program, and the programs it
- * carries inside it (2026-09-25).
+ * carries inside it (2026-09-25; reworked 2026-10-03).
  *
  * TWO HALVES, TWO KINDS OF WRITE.
  *   · «Програми всередині» is CONTENT: a linked module in the course structure
@@ -16,10 +16,24 @@
  * Which formats open which programs (the bundle) lives on the format, not on
  * the linked module: the module says where the program sits in this course,
  * the format says who may open it.
+ *
+ * ONE PLACE TO PUT A PROGRAM IN (G, 2026-10-03). A program used to be added
+ * twice: once as a module in «Програми всередині», then again, ticked, inside
+ * every format that should open it — two lists of the same programs, and the
+ * second one buried in a form. Now a program is added once, and its row says
+ * which formats open it, as toggles. Each toggle writes that format's bundle
+ * at once; the format's own form no longer carries the list. The data did not
+ * move: the row is a view over `format.includes`.
+ *
+ * THE FORMATS ARE CARDS, IN THE STOREFRONT'S TONES. A rule-separated list made
+ * three formats read as three paragraphs; the page shows them as cards, each
+ * washed in its tone (`OfferFormats.module.css`), and the builder now does the
+ * same, so the author edits the thing the buyer will compare.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { HandGraphic, Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
 import { isLinkedModule, type Course, type CourseModule } from "@/lms-core";
 import {
@@ -68,25 +82,31 @@ type Draft = {
   /** One point per line, as the author types it. */
   features: string;
   mode: "checkout" | "lead";
+  /** The price typed in the form: a proposal from an author, the live price from an admin. */
   proposedAmount: string;
   cohortStartsOn: string;
-  includes: string[];
 };
 
 /* `draftOf` / `inputOf` are exported for BuilderFormats.test.ts only. */
-export function draftOf(format: BuilderFormatDto | null): Draft {
+export function draftOf(format: BuilderFormatDto | null, canSetPrice = false): Draft {
+  // The owner edits the price the page shows; an author edits what they propose.
+  const amount = canSetPrice ? (format?.amount ?? format?.proposedAmount) : format?.proposedAmount;
   return {
     format: format?.format ?? "group",
     label: format && !format.labelIsDefault ? format.label : "",
     summary: format?.summary ?? "",
     features: format?.features.join("\n") ?? "",
     mode: format?.mode ?? "checkout",
-    proposedAmount: format?.proposedAmount ? String(format.proposedAmount) : "",
+    proposedAmount: amount ? String(amount) : "",
     cohortStartsOn: format?.cohortStartsOn ?? "",
-    includes: format?.includes.map((program) => program.slug) ?? [],
   };
 }
 
+/**
+ * The form as a write. It never carries `includes`: what a format opens is set
+ * from the program's row, and a form opened before a toggle must not put the
+ * old bundle back when it is saved.
+ */
 export function inputOf(draft: Draft, locked: boolean): BuilderFormatInput | { error: string } {
   const amount = draft.proposedAmount.trim();
   const proposedAmount = amount ? Number(amount) : null;
@@ -106,7 +126,6 @@ export function inputOf(draft: Draft, locked: boolean): BuilderFormatInput | { e
     format: draft.format,
     mode: draft.mode,
     cohortStartsOn: draft.format === "group" ? draft.cohortStartsOn || null : null,
-    includes: draft.includes,
   };
 }
 
@@ -114,6 +133,16 @@ function nextModuleSlug(modules: CourseModule[], base: string): string {
   const taken = new Set(modules.map((module) => module.slug));
   if (!taken.has(base)) return base;
   for (let index = 2; ; index += 1) if (!taken.has(`${base}-${index}`)) return `${base}-${index}`;
+}
+
+/** The status a card wears, and the tone of its dot. */
+function statusOf(format: BuilderFormatDto): { label: string; tone: "live" | "waiting" | "off" | "declined" } {
+  if (format.reviewStatus === "approved") {
+    return format.active ? { label: REVIEW_LABELS.approved, tone: "live" } : { label: "Знято з продажу", tone: "off" };
+  }
+  if (format.reviewStatus === "proposed") return { label: REVIEW_LABELS.proposed, tone: "waiting" };
+  if (format.reviewStatus === "declined") return { label: REVIEW_LABELS.declined, tone: "declined" };
+  return { label: REVIEW_LABELS.draft, tone: "off" };
 }
 
 export function BuilderFormats({
@@ -133,7 +162,6 @@ export function BuilderFormats({
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(draftOf(null));
   const [busy, setBusy] = useState(false);
-  const [adding, setAdding] = useState("");
 
   const refresh = useCallback(async () => {
     const result = await loadCourseFormats(course.slug);
@@ -162,14 +190,16 @@ export function BuilderFormats({
 
   const data = read.slug === course.slug ? read.data : null;
   const failed = read.slug === course.slug && read.failed;
+  const canSetPrice = data?.canSetPrice === true;
   const linked = useMemo(() => course.modules.filter(isLinkedModule), [course.modules]);
   const published = useMemo(
     () => (data?.includable ?? []).filter((program) => program.status === "published"),
     [data?.includable],
   );
   const linkable = published.filter((program) => !linked.some((module) => module.linkedCourseSlug === program.slug));
+  const lockedFor = (format: BuilderFormatDto) => format.reviewStatus === "approved" && !data?.isOwner;
 
-  /* ── Programs inside: content ── */
+  /* ── Programs inside: content, and which formats open each ── */
 
   function addLinked(slug: string) {
     const program = published.find((entry) => entry.slug === slug);
@@ -185,25 +215,87 @@ export function BuilderFormats({
       lessons: [],
     };
     onChange(["modules"], [...course.modules, linkedModule]);
-    setAdding("");
   }
 
-  function removeLinked(id: string) {
+  /** Writes one format's bundle. Returns whether it landed. */
+  async function writeIncludes(format: BuilderFormatDto, slugs: string[]): Promise<boolean> {
+    const result = await updateCourseFormat(course.slug, format.code, { includes: slugs, submit: false });
+    if (!result.ok) {
+      toast.error(
+        result.failure === "forbidden"
+          ? "Вкласти можна лише власну програму"
+          : result.detail === "format_approved_locked"
+            ? "Склад погодженого формату змінює власник"
+            : "Не вдалося змінити, що відкриває формат",
+      );
+    }
+    return result.ok;
+  }
+
+  /** The owner's «Бестселер» mark — one per program; marking one clears the rest. */
+  async function setFeatured(format: BuilderFormatDto, featured: boolean) {
+    setBusy(true);
+    const result = await updateCourseFormat(course.slug, format.code, { featured, submit: false });
+    setBusy(false);
+    if (!result.ok) {
+      toast.error("Не вдалося змінити позначку «Бестселер»");
+      return;
+    }
+    await refresh();
+  }
+
+  async function setOpeners(programSlug: string, codes: string[]) {
+    if (!data) return;
+    const changed = data.formats.filter(
+      (format) =>
+        !lockedFor(format) &&
+        codes.includes(format.code) !== format.includes.some((program) => program.slug === programSlug),
+    );
+    if (changed.length === 0) return;
+    setBusy(true);
+    for (const format of changed) {
+      const rest = format.includes.map((program) => program.slug).filter((slug) => slug !== programSlug);
+      if (!(await writeIncludes(format, codes.includes(format.code) ? [...rest, programSlug] : rest))) break;
+    }
+    setBusy(false);
+    await refresh();
+  }
+
+  async function removeLinked(module: CourseModule) {
     onChange(
       ["modules"],
-      course.modules.filter((module) => module.id !== id),
+      course.modules.filter((entry) => entry.id !== module.id),
     );
+    // A program taken out of the course is taken out of the bundles that can
+    // still be changed; a format on sale keeps what its buyers were promised.
+    const slug = module.linkedCourseSlug!;
+    const opening = (data?.formats ?? []).filter(
+      (format) => !lockedFor(format) && format.includes.some((program) => program.slug === slug),
+    );
+    if (opening.length === 0) return;
+    setBusy(true);
+    for (const format of opening) {
+      if (
+        !(await writeIncludes(
+          format,
+          format.includes.map((program) => program.slug).filter((one) => one !== slug),
+        ))
+      )
+        break;
+    }
+    setBusy(false);
+    await refresh();
   }
 
   /* ── Formats: commerce ── */
 
   function startEdit(format: BuilderFormatDto | null) {
-    setDraft(draftOf(format));
+    setDraft(draftOf(format, canSetPrice));
     setEditing(format ? format.code : "new");
   }
 
   async function save(format: BuilderFormatDto | null, submit: boolean) {
-    const locked = Boolean(format && format.reviewStatus === "approved" && !data?.isOwner);
+    const locked = Boolean(format && lockedFor(format));
     const input = inputOf(draft, locked);
     if ("error" in input) {
       toast.error(input.error);
@@ -220,11 +312,21 @@ export function BuilderFormats({
           ? "Вкласти можна лише власну програму"
           : result.detail === "format_approved_locked"
             ? "Склад і старт погодженого формату змінює власник"
-            : "Не вдалося зберегти формат",
+            : result.detail === "format_invalid_amount"
+              ? "Для оплати на сторінці потрібна ціна"
+              : "Не вдалося зберегти формат",
       );
       return;
     }
-    toast.success(submit ? "Формат надіслано на погодження" : "Формат збережено");
+    toast.success(
+      canSetPrice
+        ? submit || format?.reviewStatus === "approved"
+          ? "Формат у продажу"
+          : "Формат збережено"
+        : submit
+          ? "Формат надіслано на погодження"
+          : "Формат збережено",
+    );
     setEditing(null);
     await refresh();
   }
@@ -243,7 +345,11 @@ export function BuilderFormats({
 
   function editor(format: BuilderFormatDto | null) {
     const approved = format?.reviewStatus === "approved";
-    const locked = approved && !data?.isOwner;
+    const locked = Boolean(format && lockedFor(format));
+    const pending =
+      canSetPrice && format?.proposedAmount != null && format.proposedAmount !== format.amount
+        ? format.proposedAmount
+        : null;
     return (
       <div className={css.editor}>
         {!locked ? (
@@ -313,7 +419,7 @@ export function BuilderFormats({
 
         <label className={styles.field}>
           <span className={styles.fieldLabel}>
-            {approved ? "Нова ціна, яку пропонуєте, ₴" : "Ціна, яку пропонуєте, ₴"}
+            {canSetPrice ? "Ціна, ₴" : approved ? "Нова ціна, яку пропонуєте, ₴" : "Ціна, яку пропонуєте, ₴"}
           </span>
           <input
             className={styles.input}
@@ -324,7 +430,11 @@ export function BuilderFormats({
             onChange={(event) => setDraft((prev) => ({ ...prev, proposedAmount: event.target.value }))}
           />
           <span className={styles.fieldHint}>
-            Остаточну ціну затверджує власник платформи — вона може відрізнятися.
+            {canSetPrice
+              ? `Ціна на сторінці — змінюється одразу, без погодження.${
+                  pending !== null ? ` Чекає пропозиція ${price(pending)}: збережіть її, щоб прийняти.` : ""
+                }`
+              : "Остаточну ціну затверджує власник платформи — вона може відрізнятися."}
           </span>
         </label>
 
@@ -344,21 +454,17 @@ export function BuilderFormats({
           <p className={css.note}>
             Формат уже продається: склад і старт потоку змінює власник платформи — напишіть нам.
           </p>
-        ) : published.length === 0 ? (
-          <p className={css.note}>У вас немає інших опублікованих програм, які можна вкласти.</p>
-        ) : (
-          <ChoiceSet<string>
-            label="Також відкриває"
-            hint="Ці програми відкриються покупцю цього формату разом з основною."
-            options={published.map((program) => ({ value: program.slug, label: program.title }))}
-            values={draft.includes}
-            onChange={(next) => setDraft((prev) => ({ ...prev, includes: next ?? [] }))}
-          />
-        )}
+        ) : null}
 
         <div className={css.actions}>
           <button className={css.submitAction} type="button" disabled={busy} onClick={() => void save(format, true)}>
-            {approved ? "Зберегти й надіслати" : "Надіслати на погодження"}
+            {canSetPrice
+              ? approved
+                ? "Зберегти"
+                : "Відкрити продаж"
+              : approved
+                ? "Зберегти й надіслати"
+                : "Надіслати на погодження"}
           </button>
           {!approved ? (
             <button
@@ -378,54 +484,107 @@ export function BuilderFormats({
     );
   }
 
-  return (
-    <div className={css.root}>
-      <section className={css.block} aria-labelledby="linked-programs-title">
-        <header className={css.blockHead}>
-          <h3 className={css.blockTitle} id="linked-programs-title">
-            Програми всередині
-          </h3>
-          <p className={css.blockLead}>
-            Ваші окремі програми в «Додаткових матеріалах» цієї. Контент не копіюється — у кожної свій прогрес. Хто їх
-            відкриває, вирішує формат нижче.
-          </p>
-        </header>
+  function card(format: BuilderFormatDto) {
+    const status = statusOf(format);
+    const pendingPrice = format.proposedAmount !== null && format.proposedAmount !== format.amount;
+    return (
+      <li
+        key={format.code}
+        className={css.card}
+        data-format={format.format}
+        data-editing={editing === format.code}
+        data-featured={format.featured ? "" : undefined}
+      >
+        {format.featured ? <p className={css.cardBestseller}>Бестселер</p> : null}
+        <div className={css.cardHead}>
+          {/* The kind, unless the name already is the kind's own word. */}
+          <span className={css.cardKind}>{format.labelIsDefault ? null : KIND_LABELS[format.format]}</span>
+          <span className={css.cardStatus} data-tone={status.tone}>
+            <HandGraphic className={css.cardStatusDot} name="dot" size={14} />
+            {status.label}
+          </span>
+        </div>
 
-        {linked.length > 0 ? (
-          <ul className={css.list}>
-            {linked.map((module) => (
-              <li key={module.id} className={css.linkedRow}>
-                <span className={css.linkedTitle}>{module.title}</span>
-                <button className={styles.dangerAction} type="button" onClick={() => removeLinked(module.id)}>
-                  Прибрати
-                </button>
+        <h4 className={css.cardTitle}>{format.label}</h4>
+
+        <div className={css.cardPrice}>
+          <p className={css.cardPriceValue}>
+            {format.mode === "lead" && format.amount === null ? "за запитом" : price(format.amount)}
+          </p>
+          <p className={css.cardPriceNote}>
+            {[
+              format.mode === "lead" ? "через заявку" : null,
+              format.cohortStartsOn ? `старт ${formatDate(format.cohortStartsOn)}` : null,
+              pendingPrice ? `пропозиція ${price(format.proposedAmount)}` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        </div>
+
+        {format.summary ? <p className={css.cardSummary}>{format.summary}</p> : null}
+
+        {format.features.length > 0 ? (
+          <ul className={css.cardFeatures}>
+            {format.features.map((feature) => (
+              <li key={feature}>
+                <Icon className={css.cardTick} name="check" size={20} />
+                <span>{feature}</span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className={css.note}>Поки жодної — програма стоїть сама.</p>
+          <p className={css.note}>Список «що входить» ще не заповнено — на сторінці буде лише назва програми.</p>
         )}
 
-        {linkable.length > 0 ? (
-          <div className={css.addRow}>
-            <label className={styles.field}>
-              <span className={styles.fieldLabel}>Додати програму</span>
-              <select className={styles.input} value={adding} onChange={(event) => setAdding(event.target.value)}>
-                <option value="">Оберіть…</option>
-                {linkable.map((program) => (
-                  <option key={program.slug} value={program.slug}>
-                    {program.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button className={css.secondaryAction} type="button" disabled={!adding} onClick={() => addLinked(adding)}>
-              Додати
-            </button>
+        {format.includes.length > 0 ? (
+          <div className={css.cardBonus}>
+            <p className={css.cardBonusLabel}>Також відкриває</p>
+            <ul className={css.cardFeatures}>
+              {format.includes.map((program) => (
+                <li key={program.slug}>
+                  <Icon className={css.cardPlus} name="plus" size={20} />
+                  <span>{program.title}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         ) : null}
-      </section>
 
+        <div className={css.cardActions}>
+          <button
+            className={css.secondaryAction}
+            type="button"
+            aria-pressed={editing === format.code}
+            onClick={() => (editing === format.code ? setEditing(null) : startEdit(format))}
+          >
+            Змінити
+          </button>
+          {canSetPrice && (data?.formats.length ?? 0) > 1 ? (
+            <button
+              className={css.secondaryAction}
+              type="button"
+              disabled={busy}
+              aria-pressed={format.featured === true}
+              onClick={() => void setFeatured(format, !format.featured)}
+            >
+              {format.featured ? "Зняти «Бестселер»" : "Зробити бестселером"}
+            </button>
+          ) : null}
+          {format.reviewStatus !== "approved" ? (
+            <button className={styles.dangerAction} type="button" disabled={busy} onClick={() => void remove(format)}>
+              Прибрати
+            </button>
+          ) : null}
+        </div>
+      </li>
+    );
+  }
+
+  const editingFormat = data?.formats.find((format) => format.code === editing) ?? null;
+
+  return (
+    <div className={css.root}>
       <section className={css.block} aria-labelledby="course-formats-title">
         <header className={css.blockHead}>
           <h3 className={css.blockTitle} id="course-formats-title">
@@ -440,82 +599,110 @@ export function BuilderFormats({
         {failed ? <p className={css.note}>Не вдалося прочитати формати. Оновіть сторінку.</p> : null}
         {!data && !failed ? <p className={css.note}>Завантаження…</p> : null}
 
-        {data && data.formats.length > 0 ? (
-          <ul className={css.list}>
-            {data.formats.map((format) => (
-              <li key={format.code} className={css.item}>
-                <div className={css.itemHead}>
-                  <h4 className={css.itemName}>{format.label}</h4>
-                  <p className={css.itemPrice}>
-                    {format.mode === "lead" && format.amount === null ? "за запитом" : price(format.amount)}
-                  </p>
-                </div>
-                <p className={css.itemMeta}>
-                  {[
-                    format.labelIsDefault ? null : KIND_LABELS[format.format],
-                    format.reviewStatus === "approved" && !format.active
-                      ? "Знято з продажу"
-                      : REVIEW_LABELS[format.reviewStatus],
-                    format.mode === "lead" ? "через заявку" : null,
-                    format.cohortStartsOn ? `старт ${formatDate(format.cohortStartsOn)}` : null,
-                    format.proposedAmount !== null ? `пропозиція ${price(format.proposedAmount)}` : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
-                {format.features.length > 0 ? (
-                  <ul className={css.itemFeatures}>
-                    {format.features.map((feature) => (
-                      <li key={feature}>{feature}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className={css.itemIncludes}>
-                    Список «що входить» ще не заповнено — на сторінці буде лише назва програми.
-                  </p>
-                )}
-                {format.includes.length > 0 ? (
-                  <p className={css.itemIncludes}>
-                    Також відкриває: <strong>{format.includes.map((program) => program.title).join(" · ")}</strong>
-                  </p>
-                ) : null}
-                {editing === format.code ? (
-                  editor(format)
-                ) : (
-                  <div className={css.actions}>
-                    <button className={css.secondaryAction} type="button" onClick={() => startEdit(format)}>
-                      Змінити
-                    </button>
-                    {format.reviewStatus !== "approved" ? (
-                      <button
-                        className={styles.dangerAction}
-                        type="button"
-                        disabled={busy}
-                        onClick={() => void remove(format)}
-                      >
-                        Прибрати
-                      </button>
-                    ) : null}
-                  </div>
-                )}
+        {data ? (
+          <ul className={css.cards}>
+            {data.formats.map(card)}
+            {editing !== "new" ? (
+              <li className={css.cardAdd}>
+                <button className={css.secondaryAction} type="button" onClick={() => startEdit(null)}>
+                  <Icon name="plus" size={20} />
+                  Додати формат
+                </button>
               </li>
-            ))}
+            ) : null}
           </ul>
         ) : null}
 
-        {data ? (
-          editing === "new" ? (
-            <div className={css.item}>
-              <h4 className={css.itemName}>Новий формат</h4>
-              {editor(null)}
-            </div>
-          ) : (
-            <div className={css.actions}>
-              <button className={css.secondaryAction} type="button" onClick={() => startEdit(null)}>
-                Додати формат
-              </button>
-            </div>
-          )
+        {data && editing !== null ? (
+          <div className={css.editorPanel} data-format={editing === "new" ? draft.format : editingFormat?.format}>
+            <h4 className={css.editorTitle}>{editing === "new" ? "Новий формат" : editingFormat?.label}</h4>
+            {editing === "new" ? editor(null) : editingFormat ? editor(editingFormat) : null}
+          </div>
+        ) : null}
+      </section>
+
+      <section className={css.block} aria-labelledby="linked-programs-title">
+        <header className={css.blockHead}>
+          <h3 className={css.blockTitle} id="linked-programs-title">
+            Програми всередині
+          </h3>
+          <p className={css.blockLead}>
+            Ваші окремі програми в «Додаткових матеріалах» цієї. Контент не копіюється — у кожної свій прогрес. Хто їх
+            відкриває, вирішують формати: позначте їх біля програми.
+          </p>
+        </header>
+
+        {linked.length > 0 ? (
+          <ul className={css.list}>
+            {linked.map((module) => {
+              const slug = module.linkedCourseSlug!;
+              const formats = data?.formats ?? [];
+              const opening = formats
+                .filter((format) => format.includes.some((program) => program.slug === slug))
+                .map((format) => format.code);
+              return (
+                <li key={module.id} className={css.linkedRow}>
+                  <div className={css.linkedHead}>
+                    <span className={css.linkedTitle}>{module.title}</span>
+                    <button
+                      className={styles.dangerAction}
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void removeLinked(module)}
+                    >
+                      Прибрати
+                    </button>
+                  </div>
+                  {formats.length > 0 ? (
+                    <ChoiceSet<string>
+                      label="Відкривають формати"
+                      hint={
+                        [
+                          opening.length === 0
+                            ? "Жоден формат її не відкриває: покупці бачать програму в матеріалах закритою."
+                            : null,
+                          formats.some(lockedFor)
+                            ? "Що відкриває формат у продажу, змінює власник платформи — напишіть нам."
+                            : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" ") || undefined
+                      }
+                      options={formats.map((format) => ({
+                        value: format.code,
+                        label: format.label,
+                        disabled: busy || lockedFor(format),
+                      }))}
+                      values={opening}
+                      onChange={(next) => void setOpeners(slug, next ?? [])}
+                    />
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className={css.note}>Поки жодної — програма стоїть сама.</p>
+        )}
+
+        {linkable.length > 0 ? (
+          <label className={`${styles.field} ${css.addProgram}`}>
+            <span className={styles.fieldLabel}>Додати програму</span>
+            <select
+              className={`${styles.input} ${styles.select}`}
+              value=""
+              onChange={(event) => addLinked(event.target.value)}
+            >
+              <option value="" disabled>
+                Оберіть…
+              </option>
+              {linkable.map((program) => (
+                <option key={program.slug} value={program.slug}>
+                  {program.title}
+                </option>
+              ))}
+            </select>
+          </label>
         ) : null}
       </section>
     </div>

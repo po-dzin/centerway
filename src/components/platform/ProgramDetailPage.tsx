@@ -6,6 +6,7 @@ import {
 } from "@/components/platform/PlatformOfferSurfaceTemplate";
 import { OfferCheckoutPanel, OfferFreePanel, OfferSupportPanel } from "@/components/platform/OfferCommerce";
 import { OfferFormats } from "@/components/platform/OfferFormats";
+import { formatFloor } from "@/lib/experiences/formatFloor";
 import type { ProgramFormat } from "@/lib/experiences/formats";
 import { formatPrice } from "@/lib/products";
 import { OfferCurriculum } from "@/components/platform/OfferCurriculum";
@@ -198,13 +199,9 @@ export function ProgramDetailPage({
      which moved there with the count it protects. */
 
   const choosesFormat = formats.length >= 2;
-  const lowestFormat = formats
-    .filter((format) => format.mode === "checkout" && format.amount !== null)
-    .sort((a, b) => (a.amount ?? 0) - (b.amount ?? 0))[0];
-  const formatFromPrice =
-    choosesFormat && lowestFormat?.amount != null
-      ? `від ${formatPrice(lowestFormat.amount, lowestFormat.currency)}`
-      : null;
+  /* The same floor the catalogue card quotes (`formatFloor`). */
+  const lowestFormat = formatFloor(formats);
+  const formatFromPrice = lowestFormat ? `від ${formatPrice(lowestFormat.amount, lowestFormat.currency)}` : null;
 
   const buyHref = choosesFormat
     ? "#formats"
