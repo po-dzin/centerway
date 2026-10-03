@@ -13,6 +13,12 @@
  * retried or overlapping cron run cannot nudge the same learner twice — which
  * is also what makes a coarse cadence safe. Fire the job twice in one day and
  * the second pass claims nothing.
+ *
+ * EMAIL FALLBACK (2026-10-03). Telegram is linked on a handful of accounts, so
+ * the Telegram nudge alone reached almost nobody. A learner Telegram has no chat
+ * for — and only such a learner — gets the same reminder as a letter, claimed on
+ * its own `channel: "email"` row (see `./reminderEmail`). Off unless
+ * `LIFECYCLE_EMAILS=on`; counted under `email` in the run result, never thrown.
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
@@ -31,12 +37,25 @@ import { listLiveCourses } from "./liveCatalog";
 import { loadProgress } from "./server";
 import { notifyLearner } from "./notify";
 import { REMINDER_LESSON_PHOTO_URL, REMINDER_WAITING_PHOTO_URL } from "@/lib/telegram/tgSupportBotCopy";
+import { buildLessonReminderEmail, buildUnstartedReminderEmail } from "@/lib/email/reminderEmails";
+import { surfaceUrl } from "@/lib/surfaces/catalog";
+import { SUPPORT_BOT_URL } from "@/lib/supportBotUrl";
+import { emptyEmailResult, sendReminderEmail, type ReminderEmailResult } from "./reminderEmail";
 
 export type ReminderRunResult = {
   scanned: number;
   sent: number;
   skipped: Record<string, number>;
+  /** The letter fallback, counted apart: `sent` above stays Telegram's. */
+  email?: ReminderEmailResult;
 };
+
+/**
+ * `notifyLearner` found no chat to write to. The only Telegram outcome a letter
+ * stands in for: any other failure is a learner Telegram DOES know, and writing
+ * to their inbox as well would be the double message the fallback must not be.
+ */
+const NO_TELEGRAM = "no_reachable_channel";
 
 type EnrollmentRow = {
   id: string;
@@ -129,6 +148,7 @@ export async function runUnstartedReminders(
 ): Promise<ReminderRunResult> {
   const db = adminClient();
   const skipped: Record<string, number> = {};
+  const email = emptyEmailResult();
   let scanned = 0;
   let sent = 0;
 
@@ -283,11 +303,46 @@ export async function runUnstartedReminders(
           .eq("channel", "telegram");
         handledUsers.delete(authUserId);
         bump(skipped, `undelivered:${result.reason}`);
+
+        if (result.reason === NO_TELEGRAM) {
+          const nudgeNumber = decision.nudgeNumber;
+          const mailed = await sendReminderEmail({
+            db,
+            authUserId,
+            result: email,
+            claim: () =>
+              db.from("lms_unstarted_reminders").insert({
+                order_ref: orderRef,
+                course_id: course.id,
+                auth_user_id: authUserId,
+                nudge_number: nudgeNumber,
+                channel: "email",
+              }),
+            release: () =>
+              db
+                .from("lms_unstarted_reminders")
+                .delete()
+                .eq("order_ref", orderRef)
+                .eq("nudge_number", nudgeNumber)
+                .eq("channel", "email"),
+            idempotencyKey: `lms-reminder-unstarted:${orderRef}:${nudgeNumber}`,
+            build: (contact) =>
+              buildUnstartedReminderEmail({
+                name: contact.name,
+                courseTitle: course.title,
+                nudgeNumber,
+                courseUrl: surfaceUrl(`/learn/${course.slug}`),
+                supportUrl: SUPPORT_BOT_URL,
+              }),
+          });
+          // A second order of the same course must not bring a second letter.
+          if (mailed) handledUsers.add(authUserId);
+        }
       }
     }
   }
 
-  return { scanned, sent, skipped };
+  return { scanned, sent, skipped, email };
 }
 
 /**
@@ -325,6 +380,7 @@ export async function runDailyReminders(
   if (courses.size === 0) {
     return { scanned: 0, sent: 0, skipped: { no_daily_courses: 1 } };
   }
+  const email = emptyEmailResult();
 
   // Paged the same way, on the enrollment's own id: without an ORDER BY a
   // `.limit()` has no contract to return the same rows twice, so a course past
@@ -445,8 +501,47 @@ export async function runDailyReminders(
         .eq("day_number", decision.dayNumber)
         .eq("channel", "telegram");
       bump(skipped, `undelivered:${result.reason}`);
+
+      if (result.reason !== NO_TELEGRAM) continue;
+      // Day 1 of a group stream already has its letter: «День 1 · …» from
+      // `runStreamEmails`, on this same morning run, under the same switch.
+      // Two letters about the same first lesson is the noise this must not be.
+      if (decision.dayNumber === 1 && enrollment.cohort_starts_on) {
+        if (email.enabled) bump(email.skipped, "stream_day1_letter");
+        continue;
+      }
+      const { dayNumber, lesson } = decision;
+      await sendReminderEmail({
+        db,
+        authUserId: enrollment.auth_user_id,
+        result: email,
+        claim: () =>
+          db.from("lms_reminder_log").insert({
+            enrollment_id: enrollment.id,
+            lesson_id: lesson.id,
+            day_number: dayNumber,
+            channel: "email",
+          }),
+        release: () =>
+          db
+            .from("lms_reminder_log")
+            .delete()
+            .eq("enrollment_id", enrollment.id)
+            .eq("day_number", dayNumber)
+            .eq("channel", "email"),
+        idempotencyKey: `lms-reminder-day:${enrollment.id}:${dayNumber}`,
+        build: (contact) =>
+          buildLessonReminderEmail({
+            name: contact.name,
+            courseTitle: course.title,
+            lessonTitle: lesson.title,
+            dayNumber,
+            lessonUrl: surfaceUrl(`/learn/${course.slug}/${lesson.slug}`),
+            supportUrl: SUPPORT_BOT_URL,
+          }),
+      });
     }
   }
 
-  return { scanned: enrollments.length, sent, skipped };
+  return { scanned: enrollments.length, sent, skipped, email };
 }
