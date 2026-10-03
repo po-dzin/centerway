@@ -664,12 +664,9 @@
 /* The install entry is a BUTTON — it opens the browser's own prompt, there is
    no href to give it — and in a column of links it has to be one of them, not a
    control that arrived from somewhere else. Everything below is written for
-   both, so the two are indistinguishable until pressed.
-   The button half is scoped to the link COLUMNS (2026-10-03): it used to read
-   `.footer button`, which would strip the subscribe form's contract button
-   under the grid down to a bare word. */
+   both, so the two are indistinguishable until pressed. */
 .footer a:not(.footerTextLink),
-.footerLinks button {
+.footer button {
   width: fit-content;
   display: inline-flex;
   align-items: center;
@@ -695,7 +692,7 @@
    the product turned it brass. */
 @media (hover: hover) {
   .footer a:not(.footerTextLink):hover,
-  .footerLinks button:hover {
+  .footer button:hover {
     color: var(--cw-platform-text);
   }
 }
