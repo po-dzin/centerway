@@ -25,13 +25,19 @@ export const ANALYTICS_SECTIONS = [
   "capi",
   "dosha",
   "inputs_quality",
+  "referrals",
 ] as const;
 export type AnalyticsSection = (typeof ANALYTICS_SECTIONS)[number];
 
-/** `courses` first: it is the question asked daily, so it is the default. */
+/**
+ * `courses` first: it is the question asked daily, so it is the default.
+ *
+ * `referrals` sits with traffic: "who brought this person" is a where-from
+ * question, the same one the campaigns tab answers for paid ads.
+ */
 export const MODE_SECTIONS: Record<DashboardMode, readonly AnalyticsSection[]> = {
   courses: ["overview", "products", "dosha"],
-  traffic: ["overview", "funnel", "campaigns", "capi", "inputs_quality"],
+  traffic: ["overview", "funnel", "campaigns", "referrals", "capi", "inputs_quality"],
 };
 
 export const DEFAULT_DASHBOARD_MODE: DashboardMode = "courses";

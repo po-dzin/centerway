@@ -10,6 +10,7 @@
 
 import type { AnalyticsPayload } from "@/lib/analytics/dashboard";
 import type { DoshaAnalyticsPayload } from "@/lib/analytics/dosha";
+import type { ReferralAnalyticsPayload } from "@/lib/analytics/referrals";
 
 export type FunnelData = {
   date: string;
@@ -145,6 +146,8 @@ export type PurchaseTransport = {
 export type DiagnosticsPanelKey = "freshness" | "quality" | "purchase_transport";
 
 export type DoshaAnalytics = DoshaAnalyticsPayload;
+
+export type ReferralAnalytics = ReferralAnalyticsPayload;
 
 export type LeadsSummary = {
   new_in_period: number;

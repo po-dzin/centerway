@@ -12,6 +12,11 @@
   {
     "kind": "read",
     "method": "GET",
+    "path": "/api/admin/analytics/referrals"
+  },
+  {
+    "kind": "read",
+    "method": "GET",
     "path": "/api/admin/audit"
   },
   {
