@@ -190,7 +190,7 @@
 .cardPriceValue {
   margin: 0;
   color: var(--cw-platform-text);
-  font-size: var(--ds-type-title-size);
+  font-size: var(--ds-type-display-size);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;

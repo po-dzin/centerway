@@ -478,9 +478,10 @@ export function BuilderFormats({
     return (
       <li key={format.code} className={css.card} data-format={format.format} data-editing={editing === format.code}>
         <div className={css.cardHead}>
-          <span className={css.cardKind}>{KIND_LABELS[format.format]}</span>
+          {/* The kind, unless the name already is the kind's own word. */}
+          <span className={css.cardKind}>{format.labelIsDefault ? null : KIND_LABELS[format.format]}</span>
           <span className={css.cardStatus} data-tone={status.tone}>
-            <HandGraphic className={css.cardStatusDot} name="dot" size={12} />
+            <HandGraphic className={css.cardStatusDot} name="dot" size={14} />
             {status.label}
           </span>
         </div>
@@ -626,9 +627,16 @@ export function BuilderFormats({
                     <ChoiceSet<string>
                       label="Відкривають формати"
                       hint={
-                        opening.length === 0
-                          ? "Жоден формат її не відкриває: покупці бачать програму в матеріалах закритою."
-                          : undefined
+                        [
+                          opening.length === 0
+                            ? "Жоден формат її не відкриває: покупці бачать програму в матеріалах закритою."
+                            : null,
+                          formats.some(lockedFor)
+                            ? "Що відкриває формат у продажу, змінює власник платформи — напишіть нам."
+                            : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" ") || undefined
                       }
                       options={formats.map((format) => ({
                         value: format.code,
