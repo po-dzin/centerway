@@ -4,7 +4,10 @@
  * GET   /api/admin/offer-formats — every format of every program, proposals first.
  * PATCH /api/admin/offer-formats { code, action, amount?, listAmount? }
  *       approve (sets the LIVE price, which may differ from the proposal),
+ *       save (approved format terms, preserves sale/review state),
  *       decline, withdraw, resume.
+ * Save also takes mode, accessDays and accessLifetime. The service determines
+ * the owning course for cache invalidation; caller-supplied slugs have no authority.
  *
  * Read by any admin session, like the catalogue; decided only by an admin,
  * because a price is the owner's (creator contract, 2026-08-22).
@@ -56,16 +59,32 @@ export async function PATCH(req: NextRequest) {
     action?: unknown;
     amount?: unknown;
     listAmount?: unknown;
+    mode?: unknown;
+    accessDays?: unknown;
+    accessLifetime?: unknown;
   };
   if (typeof body.code !== "string" || !body.code) return badRequestResponse("format_code_required");
 
   let decision: ReviewAction;
-  if (body.action === "approve") {
+  if (body.action === "approve" || body.action === "save") {
     const amount = optionalInteger(body.amount);
     const listAmount = optionalInteger(body.listAmount);
     if (Number.isNaN(amount)) return badRequestResponse("format_invalid_amount");
     if (Number.isNaN(listAmount)) return badRequestResponse("format_invalid_list_amount");
-    decision = { action: "approve", amount, listAmount };
+    if (body.action === "save") {
+      if (body.mode !== "checkout" && body.mode !== "lead") return badRequestResponse("format_invalid_mode");
+      const accessDays = optionalInteger(body.accessDays);
+      if (Number.isNaN(accessDays) || typeof body.accessLifetime !== "boolean")
+        return badRequestResponse("access_rule_required");
+      decision = {
+        action: "save",
+        amount,
+        listAmount,
+        mode: body.mode,
+        accessDays,
+        accessLifetime: body.accessLifetime,
+      };
+    } else decision = { action: "approve", amount, listAmount };
   } else if (body.action === "decline" || body.action === "withdraw" || body.action === "resume") {
     decision = { action: body.action };
   } else {
@@ -73,10 +92,10 @@ export async function PATCH(req: NextRequest) {
   }
 
   try {
-    await reviewFormat({ code: body.code, actorId: session.user.id, decision });
+    const result = await reviewFormat({ code: body.code, actorId: session.user.id, decision });
     // The page reads formats through a tagged cache: an approval that is not
     // purged would not be on sale for five minutes, a withdrawal would keep selling.
-    if (typeof body.courseSlug === "string" && body.courseSlug) revalidateTag(courseTag(body.courseSlug), PURGE);
+    revalidateTag(courseTag(result.courseSlug), PURGE);
     revalidateTag(COURSE_LIST_TAG, PURGE);
     revalidateTag(PRODUCT_OFFERS_TAG, PURGE);
     return NextResponse.json({ ok: true });

@@ -1,22 +1,6 @@
-/**
- * ProgramFormats — a program's formats, folded under its row in «Ціни й доступ».
- *
- * Guards:
- *  - the head counts the formats, the ones waiting, and names every format with
- *    its price (base included, an enquiry marked); it opens by itself when
- *    something waits and stays folded otherwise;
- *  - inside, the base format comes first and the rest keep the page's order
- *    (group, guided); every format is listed with its own sale switch, so the
- *    price row above does not carry a second one (`hasFormatLadder`);
- *  - a format waits for a decision — and shows the price form — exactly when
- *    `!approved || pendingPrice`: drafts, proposals and declined formats, and a
- *    live format only while a new price waits beside the current one;
- *  - the price form is prefilled with the proposal (else the current price),
- *    a draft cannot be declined, a pending price is declined as a price;
- *  - a live format with nothing waiting offers withdraw / resume instead;
- *  - a viewer without edit rights sees no controls at all.
- *
- * `t` is mocked to echo its key, so assertions name i18n keys, not copy.
+/** Server-markup checks for the unified format list: one price/access editor
+ * and one sale command per approved format; author proposals keep their explicit
+ * approval flow. No client rendering harness is introduced.
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -43,6 +27,9 @@ function row(overrides: Partial<FormatReviewRow> & Pick<FormatReviewRow, "code" 
     mode: "checkout",
     amount: 1500,
     proposedAmount: null,
+    listAmount: null,
+    accessDays: 90,
+    accessLifetime: false,
     currency: "UAH",
     cohortStartsOn: null,
     reviewStatus: "approved",
@@ -122,9 +109,10 @@ describe("FormatReviewTab", () => {
     expect(hasFormatLadder([base, row({ code: "g", format: "group" })], "course:way21")).toBe(true);
   });
 
-  it("opens by itself when something waits, and stays folded when nothing does", () => {
+  it("shows all formats on arrival, and allows an explicit folded state", () => {
     const quiet = [row({ code: "course:way21", format: "self" }), row({ code: "g", format: "group" })];
-    const folded = render(quiet, true, "auto");
+    const folded = render(quiet, true, false);
+    expect(render(quiet, true, "auto")).toContain('aria-expanded="true"');
     expect(folded).toContain('aria-expanded="false"');
     expect(folded).not.toContain("<code>g</code>");
     const busy = render([...quiet, row({ code: "p", format: "individual", reviewStatus: "proposed" })], true, "auto");
@@ -163,7 +151,7 @@ describe("FormatReviewTab", () => {
     );
     expect(li).toContain("formats_review_draft");
     expect(li).toContain("formats_mode_lead");
-    expect(li).toContain("formats_final_amount");
+    expect(li).toContain("products_amount");
     expect(li).toContain('value=""');
     expect(li).toContain("formats_approve");
     expect(li).not.toContain("formats_decline");
@@ -191,7 +179,9 @@ describe("FormatReviewTab", () => {
     expect(live).toContain("formats_review_approved");
     expect(live).toContain("products_withdraw");
     expect(live).not.toContain("formats_approve");
-    expect(live).not.toContain("<input");
+    expect(live).toContain("<input");
+    expect(live).toContain("catalog_save_offer");
+    expect(live).toContain("catalog_term");
 
     const off = item(html, "off");
     expect(off).toContain("formats_withdrawn");

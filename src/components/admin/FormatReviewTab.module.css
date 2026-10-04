@@ -80,20 +80,20 @@
   line-height: 1.5;
 }
 
-.decision {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: var(--cw-space-sm);
+.priceForm {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.decision > label {
-  flex: 0 1 12rem;
-  min-width: 0;
+.priceForm > label[class]:nth-of-type(3) {
+  grid-column: auto;
 }
 
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--cw-space-sm);
+.priceForm > div {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 900px) {
+  .priceForm {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }

@@ -141,9 +141,11 @@ export default function CatalogPage() {
   const [canAssignAuthor, setCanAssignAuthor] = useState(false);
   /* Same lazy-load shape as authorship: a different table, fetched only when
        the tab is first opened. */
-  const [productOffers, setProductOffers] = useState<ProductOfferRow[]>([]);
+  const [productOffers, setProductOffers] = useState<ProductOfferRow[] | null>(null);
+  const [productsError, setProductsError] = useState<string | null>(null);
   const [canEditProducts, setCanEditProducts] = useState(false);
-  const [formats, setFormats] = useState<FormatReviewRow[]>([]);
+  const [formats, setFormats] = useState<FormatReviewRow[] | null>(null);
+  const [formatsError, setFormatsError] = useState<string | null>(null);
   const [canEditFormats, setCanEditFormats] = useState(false);
   const [rows, setRows] = useState<CatalogRow[] | null>(null);
   const [canEdit, setCanEdit] = useState(false);
@@ -169,6 +171,11 @@ export default function CatalogPage() {
         product_list_amount_without_amount: t("products_error_list_amount_without_amount"),
         product_unknown: t("products_error_product_unknown"),
         product_kind_invalid: t("products_error_kind"),
+        format_invalid_amount: t("products_error_amount"),
+        format_invalid_list_amount: t("catalog_error_list_amount"),
+        format_invalid_mode: t("products_error_kind"),
+        format_not_approved: t("formats_error_not_approved"),
+        format_early_below_amount: t("formats_error_early_amount"),
         Forbidden: t("access_error_forbidden"),
       };
       return known[message] ?? message;
@@ -209,11 +216,12 @@ export default function CatalogPage() {
         canEdit?: boolean;
       };
       setProductOffers(payload.items ?? []);
+      setProductsError(null);
       setCanEditProducts(Boolean(payload.canEdit));
-    } catch (e) {
-      setError(errorText(getErrorMessage(e)));
+    } catch {
+      setProductsError(t("products_error_load"));
     }
-  }, [errorText]);
+  }, [t]);
 
   const loadFormats = useCallback(async () => {
     try {
@@ -222,11 +230,12 @@ export default function CatalogPage() {
         canEdit?: boolean;
       };
       setFormats(payload.formats ?? []);
+      setFormatsError(null);
       setCanEditFormats(Boolean(payload.canEdit));
-    } catch (e) {
-      setError(errorText(getErrorMessage(e)));
+    } catch {
+      setFormatsError(t("formats_error_load"));
     }
-  }, [errorText]);
+  }, [t]);
 
   /* A price row and its formats are one ladder: the base format IS the row's
      price, so a write to either re-reads both. */
@@ -308,12 +317,30 @@ export default function CatalogPage() {
           onChanged={loadAuthorship}
         />
       ) : tab === "products" ? (
-        <ProductPricingTab
-          products={productOffers}
-          canEdit={canEditProducts}
-          errorText={errorText}
-          onChanged={loadProductOffers}
-        />
+        productsError ? (
+          <AdminErrorState
+            title={t("catalog_tab_products")}
+            message={productsError}
+            action={
+              <button
+                type="button"
+                className={`${controls.action} cw-surface-2`}
+                onClick={() => void loadProductOffers()}
+              >
+                {t("analytics_retry")}
+              </button>
+            }
+          />
+        ) : productOffers === null ? (
+          <AdminLoadingState variant="skeleton" />
+        ) : (
+          <ProductPricingTab
+            products={productOffers}
+            canEdit={canEditProducts}
+            errorText={errorText}
+            onChanged={loadProductOffers}
+          />
+        )
       ) : (
         <>
           <AdminSearchInput value={q} onChange={setQ} placeholder={t("catalog_search")} />
@@ -358,17 +385,21 @@ export default function CatalogPage() {
             </div>
           ) : null}
 
-          {error ? (
+          {error || (tab === "pricing" && formatsError) ? (
             <AdminErrorState
               title={t("catalog_title")}
-              message={error}
+              message={error ?? formatsError ?? ""}
               action={
-                <button type="button" className={`${controls.action} cw-surface-2`} onClick={() => void load()}>
+                <button
+                  type="button"
+                  className={`${controls.action} cw-surface-2`}
+                  onClick={() => void (tab === "pricing" ? reloadPricing() : load())}
+                >
                   {t("analytics_retry")}
                 </button>
               }
             />
-          ) : filtered === null || groups === null ? (
+          ) : filtered === null || groups === null || (tab === "pricing" && formats === null) ? (
             <AdminLoadingState variant="skeleton" />
           ) : filtered.length === 0 ? (
             <AdminEmptyState icon={<EmptyIcon />} description={t("catalog_empty")} />
@@ -398,7 +429,7 @@ export default function CatalogPage() {
                           key={row.courseId}
                           row={row}
                           canEdit={canEdit}
-                          formats={formats.filter((format) => format.courseSlug === row.slug)}
+                          formats={(formats ?? []).filter((format) => format.courseSlug === row.slug)}
                           canEditFormats={canEditFormats}
                           errorText={errorText}
                           onChanged={reloadPricing}
@@ -805,6 +836,8 @@ function PricingRow({
     row.offer ? (row.offer.accessLifetime ? "lifetime" : String(row.offer.accessDays ?? "")) : "",
   );
 
+  const ladder = hasFormatLadder(formats, courseOfferCode(row.slug));
+
   const save = async () => {
     if (!term) {
       toast.error(t("catalog_error_access_rule"));
@@ -898,60 +931,68 @@ function PricingRow({
         <>
           {canEdit ? (
             <div className={controls.priceForm}>
-              <label className={controls.field}>
-                <span className={controls.fieldCaption}>{t("catalog_amount")}</span>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  inputMode="numeric"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className={controls.input}
-                />
-              </label>
-              <label className={controls.field}>
-                <span className={controls.fieldCaption}>{t("catalog_list_amount")}</span>
-                <input
-                  type="number"
-                  min={1}
-                  step={1}
-                  inputMode="numeric"
-                  value={listAmount}
-                  onChange={(e) => setListAmount(e.target.value)}
-                  className={controls.input}
-                />
-              </label>
-              <label className={controls.field}>
-                <span className={controls.fieldCaption}>{t("catalog_term")}</span>
-                <select value={term} onChange={(e) => setTerm(e.target.value)} className={controls.select}>
-                  <option value="">{t("catalog_term_unset")}</option>
-                  {ACCESS_TERM_PRESETS.map((days) => (
-                    <option key={days} value={String(days)}>
-                      {days} {t("catalog_term_days")}
-                    </option>
-                  ))}
-                  <option value="lifetime">{t("catalog_term_lifetime")}</option>
-                </select>
-              </label>
+              {!ladder ? (
+                <>
+                  <label className={controls.field}>
+                    <span className={controls.fieldCaption}>{t("catalog_amount")}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      inputMode="numeric"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className={controls.input}
+                    />
+                  </label>
+                  <label className={controls.field}>
+                    <span className={controls.fieldCaption}>{t("catalog_list_amount")}</span>
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      inputMode="numeric"
+                      value={listAmount}
+                      onChange={(e) => setListAmount(e.target.value)}
+                      className={controls.input}
+                    />
+                  </label>
+                  <label className={controls.field}>
+                    <span className={controls.fieldCaption}>{t("catalog_term")}</span>
+                    <select value={term} onChange={(e) => setTerm(e.target.value)} className={controls.select}>
+                      <option value="">{t("catalog_term_unset")}</option>
+                      {ACCESS_TERM_PRESETS.map((days) => (
+                        <option key={days} value={String(days)}>
+                          {days} {t("catalog_term_days")}
+                        </option>
+                      ))}
+                      <option value="lifetime">{t("catalog_term_lifetime")}</option>
+                    </select>
+                  </label>
+                </>
+              ) : null}
               <div className={controls.priceActions}>
-                <button
-                  type="button"
-                  onClick={() => void save()}
-                  disabled={busy || !amount || !term}
-                  className={`${controls.action} cw-surface-2`}
-                >
-                  {t("catalog_save_offer")}
-                </button>
-                {row.offer && !hasFormatLadder(formats, courseOfferCode(row.slug)) ? (
-                  <button
-                    type="button"
-                    onClick={() => void toggleActive(!row.offer?.active)}
-                    disabled={busy}
-                    className={`${controls.action} cw-btn-muted`}
-                  >
-                    {t(row.offer.active ? "catalog_withdraw_offer" : "catalog_resume_offer")}
-                  </button>
+                {!ladder ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => void save()}
+                      disabled={busy || !amount || !term}
+                      className={`${controls.action} cw-surface-2`}
+                    >
+                      {t("catalog_save_offer")}
+                    </button>
+                    {row.offer && !hasFormatLadder(formats, courseOfferCode(row.slug)) ? (
+                      <button
+                        type="button"
+                        onClick={() => void toggleActive(!row.offer?.active)}
+                        disabled={busy}
+                        className={`${controls.action} cw-btn-muted`}
+                      >
+                        {t(row.offer.active ? "catalog_withdraw_offer" : "catalog_resume_offer")}
+                      </button>
+                    ) : null}
+                  </>
                 ) : null}
                 <button
                   type="button"
