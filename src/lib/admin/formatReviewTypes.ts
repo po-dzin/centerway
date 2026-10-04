@@ -13,6 +13,9 @@ export type FormatReviewRow = {
   mode: "checkout" | "lead";
   amount: number | null;
   proposedAmount: number | null;
+  listAmount: number | null;
+  accessDays: number | null;
+  accessLifetime: boolean;
   currency: string;
   cohortStartsOn: string | null;
   reviewStatus: "draft" | "proposed" | "approved" | "declined";

@@ -96,6 +96,19 @@ function cohortLine(format: ProgramFormat, now: Date): string | null {
   return `старт потоку ${COHORT_DATE.format(date)}${days !== null ? ` · ${countdownText(days)}` : ""}`;
 }
 
+/** «до 15 жовтня 3400 грн, далі 4100 грн» while the early price holds. */
+function earlyLine(format: ProgramFormat): string | null {
+  if (!format.early || format.amount === null) return null;
+  const until = COHORT_DATE.format(new Date(`${format.early.until}T00:00:00Z`));
+  return `до ${until} ${format.amount} грн, далі ${format.early.laterAmount} грн`;
+}
+
+/** The small line under the price: the start and the early price, whichever are true. */
+function noteFor(format: ProgramFormat, now: Date): string | null {
+  const parts = [cohortLine(format, now), earlyLine(format)].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
 function badgeFor(format: ProgramFormat, standing: Standing): string {
   return standing.nearest ? "Найближчий потік" : BADGE[format.format];
 }
@@ -120,7 +133,7 @@ export function renderFormatCard(
 ): string {
   const price = priceText(format);
   const note =
-    cohortLine(format, standing.now) ?? (format.mode === "lead" ? "ціну узгоджуємо в розмові" : "повний доступ");
+    noteFor(format, standing.now) ?? (format.mode === "lead" ? "ціну узгоджуємо в розмові" : "повний доступ");
   // The author's list when there is one — the same lines the program page
   // shows; otherwise the one thing certainly true, and the summary.
   const own =
@@ -196,7 +209,7 @@ function syncCard(card: string, format: ProgramFormat, standing: Standing): stri
         /<b\b[^>]*>[\s\S]*?<\/b>/,
         `<b data-cw-price="${escape(format.code)}">${priceText(format)}</b>`,
       );
-      const start = cohortLine(format, standing.now);
+      const start = noteFor(format, standing.now);
       return `${open}${start ? priced.replace(/<small>[\s\S]*?<\/small>/, `<small>${escape(start)}</small>`) : priced}${close}`;
     },
   );

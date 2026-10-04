@@ -62,6 +62,11 @@ function format(code: string, kind: ProgramFormat["format"], extra: Partial<Prog
     currency: "UAH",
     cohortStartsOn: kind === "group" ? "2026-10-01" : null,
     featured: false,
+    early: null,
+    earlyAmount: null,
+    earlyUntil: null,
+    regularAmount: null,
+    regularListAmount: null,
     includes: [],
     ...extra,
   };

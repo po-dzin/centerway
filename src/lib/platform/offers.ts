@@ -20,6 +20,7 @@
  * reaches it through `loadPayableOffer` below.
  */
 
+import { currentPrice } from "@/lib/experiences/earlyPrice";
 import { coverArtworkFraming } from "@/lib/lms/courseCover";
 import { unstable_cache } from "next/cache";
 
@@ -414,6 +415,7 @@ export async function loadPayableOffer(code: unknown): Promise<PayableOffer | nu
   }
   if (!target || !isPayable(target.offer)) return null;
   const { offer } = target;
+  const price = currentPrice(offer);
 
   let title = target.experience.title ?? offer.code;
   let summary = "";
@@ -440,8 +442,10 @@ export async function loadPayableOffer(code: unknown): Promise<PayableOffer | nu
     code: offer.code as PayableProductCode,
     heading: offer.invoiceHeading ?? { uk: fallbackHeading, en: fallbackHeading },
     description: offer.invoiceDescription ?? { uk: fallbackDescription, en: fallbackDescription },
-    amount: offer.amount,
-    listAmount: offer.listAmount ?? offer.amount,
+    /* What the gateway is asked for is the price NOW: the early price while it
+       holds, the regular one from 00:00 Kyiv on its date (`earlyPrice.ts`). */
+    amount: price.amount ?? offer.amount,
+    listAmount: price.listAmount ?? price.amount ?? offer.amount,
     currency: offer.currency,
     pixelContentName: offer.pixelContentName ?? title,
     fulfilment: offerFulfilment(target),

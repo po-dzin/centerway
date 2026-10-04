@@ -34,6 +34,9 @@ export type ExperienceOffer = {
   /** Whole currency units. `null` is «ціна за запитом» and only ever on a lead offer; 0 only on a free one. */
   amount: number | null;
   listAmount: number | null;
+  /** The early price and the date it ends; the checkout charges it until then (`earlyPrice.ts`). */
+  earlyAmount: number | null;
+  earlyUntil: string | null;
   currency: string;
   accessDays: number | null;
   accessLifetime: boolean;
@@ -51,7 +54,7 @@ export type ExperienceOffer = {
 };
 
 const COLUMNS =
-  "id, experience_id, code, mode, amount, list_amount, currency, access_days, access_lifetime, invoice_heading, invoice_description, share_pct, pixel_content_name, active, format, label";
+  "id, experience_id, code, mode, amount, list_amount, early_amount, early_until, currency, access_days, access_lifetime, invoice_heading, invoice_description, share_pct, pixel_content_name, active, format, label";
 
 type OfferRow = {
   id: string;
@@ -60,6 +63,8 @@ type OfferRow = {
   mode: string;
   amount: number | null;
   list_amount: number | null;
+  early_amount: number | null;
+  early_until: string | null;
   currency: string;
   access_days: number | null;
   access_lifetime: boolean;
@@ -89,6 +94,8 @@ function fromRow(row: OfferRow): ExperienceOffer {
     mode: row.mode as OfferMode,
     amount: row.amount,
     listAmount: row.list_amount,
+    earlyAmount: row.early_amount ?? null,
+    earlyUntil: row.early_until ?? null,
     currency: row.currency,
     accessDays: row.access_days,
     accessLifetime: row.access_lifetime,

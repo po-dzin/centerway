@@ -85,6 +85,9 @@ type Draft = {
   /** The price typed in the form: a proposal from an author, the live price from an admin. */
   proposedAmount: string;
   cohortStartsOn: string;
+  /** The owner's early price and its last day's next date, as typed. */
+  earlyAmount: string;
+  earlyUntil: string;
 };
 
 /* `draftOf` / `inputOf` are exported for BuilderFormats.test.ts only. */
@@ -99,6 +102,8 @@ export function draftOf(format: BuilderFormatDto | null, canSetPrice = false): D
     mode: format?.mode ?? "checkout",
     proposedAmount: amount ? String(amount) : "",
     cohortStartsOn: format?.cohortStartsOn ?? "",
+    earlyAmount: format?.earlyAmount ? String(format.earlyAmount) : "",
+    earlyUntil: format?.earlyUntil ?? "",
   };
 }
 
@@ -107,7 +112,7 @@ export function draftOf(format: BuilderFormatDto | null, canSetPrice = false): D
  * from the program's row, and a form opened before a toggle must not put the
  * old bundle back when it is saved.
  */
-export function inputOf(draft: Draft, locked: boolean): BuilderFormatInput | { error: string } {
+export function inputOf(draft: Draft, locked: boolean, canSetPrice = false): BuilderFormatInput | { error: string } {
   const amount = draft.proposedAmount.trim();
   const proposedAmount = amount ? Number(amount) : null;
   if (proposedAmount !== null && (!Number.isInteger(proposedAmount) || proposedAmount <= 0)) {
@@ -120,6 +125,21 @@ export function inputOf(draft: Draft, locked: boolean): BuilderFormatInput | { e
   if (features.length > 12) return { error: "Не більше 12 пунктів у списку" };
   if (features.some((line) => line.length > 160)) return { error: "Пункт списку — до 160 символів" };
   const shared: BuilderFormatInput = { label: draft.label, summary: draft.summary, features, proposedAmount };
+  // The early price is the owner's, like the price: both halves or neither.
+  if (canSetPrice && draft.mode === "checkout") {
+    const earlyText = draft.earlyAmount.trim();
+    const until = draft.earlyUntil.trim();
+    if (!earlyText && !until) shared.early = null;
+    else {
+      const early = Number(earlyText);
+      if (!earlyText || !Number.isInteger(early) || early <= 0) {
+        return { error: "Рання ціна — ціле число гривень, більше нуля" };
+      }
+      if (!until) return { error: "Вкажіть, до якої дати діє рання ціна" };
+      if (proposedAmount === null || early >= proposedAmount) return { error: "Рання ціна має бути нижчою за ціну" };
+      shared.early = { amount: early, until };
+    }
+  }
   if (locked) return shared;
   return {
     ...shared,
@@ -296,7 +316,7 @@ export function BuilderFormats({
 
   async function save(format: BuilderFormatDto | null, submit: boolean) {
     const locked = Boolean(format && lockedFor(format));
-    const input = inputOf(draft, locked);
+    const input = inputOf(draft, locked, canSetPrice);
     if ("error" in input) {
       toast.error(input.error);
       return;
@@ -314,7 +334,9 @@ export function BuilderFormats({
             ? "Склад і старт погодженого формату змінює власник"
             : result.detail === "format_invalid_amount"
               ? "Для оплати на сторінці потрібна ціна"
-              : "Не вдалося зберегти формат",
+              : result.detail === "format_early_not_lower"
+                ? "Рання ціна має бути нижчою за ціну"
+                : "Не вдалося зберегти формат",
       );
       return;
     }
@@ -438,6 +460,35 @@ export function BuilderFormats({
           </span>
         </label>
 
+        {canSetPrice && draft.mode === "checkout" ? (
+          <div className={css.earlyFields}>
+            <label className={styles.field}>
+              <span className={styles.fieldLabel}>Рання ціна, ₴</span>
+              <input
+                className={styles.input}
+                type="number"
+                inputMode="numeric"
+                min={1}
+                value={draft.earlyAmount}
+                onChange={(event) => setDraft((prev) => ({ ...prev, earlyAmount: event.target.value }))}
+              />
+            </label>
+            <label className={styles.field}>
+              <span className={styles.fieldLabel}>Діє до</span>
+              <input
+                className={styles.input}
+                type="date"
+                value={draft.earlyUntil}
+                onChange={(event) => setDraft((prev) => ({ ...prev, earlyUntil: event.target.value }))}
+              />
+            </label>
+            <span className={`${styles.fieldHint} ${css.earlyHint}`}>
+              До 00:00 за Києвом цієї дати оплата йде за ранньою ціною, далі за звичайною. На сторінці: таймер і рядок
+              «До … ранньої ціни, далі …». Порожні поля прибирають ранню ціну.
+            </span>
+          </div>
+        ) : null}
+
         {!locked && draft.format === "group" ? (
           <label className={styles.field}>
             <span className={styles.fieldLabel}>Старт потоку</span>
@@ -516,6 +567,9 @@ export function BuilderFormats({
               format.mode === "lead" ? "через заявку" : null,
               format.cohortStartsOn ? `старт ${formatDate(format.cohortStartsOn)}` : null,
               pendingPrice ? `пропозиція ${price(format.proposedAmount)}` : null,
+              format.earlyAmount && format.earlyUntil
+                ? `рання ${price(format.earlyAmount)} до ${formatDate(format.earlyUntil)}`
+                : null,
             ]
               .filter(Boolean)
               .join(" · ")}

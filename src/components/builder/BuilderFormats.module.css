@@ -384,3 +384,14 @@
 .secondaryAction {
   composes: secondary from "../platform/PlatformButtons.module.css";
 }
+
+/* The owner's early price: two fields side by side, the rule under them. */
+.earlyFields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+  gap: var(--cw-space-2xs) var(--cw-space-md);
+}
+
+.earlyHint {
+  grid-column: 1 / -1;
+}

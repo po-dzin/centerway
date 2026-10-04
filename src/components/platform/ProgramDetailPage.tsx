@@ -13,7 +13,7 @@ import { OfferCurriculum } from "@/components/platform/OfferCurriculum";
 import { OfferAccessProvider } from "@/components/platform/OfferAccess";
 import { OfferHeroActions, OfferHeroCommitment } from "@/components/platform/OfferHeroState";
 import { OfferAuthor, OfferBento } from "@/components/platform/OfferFacets";
-import { OfferSeam } from "@/components/platform/OfferSeam";
+import { OfferSeam, type RouteStep } from "@/components/platform/OfferSeam";
 import { OfferStickyBar } from "@/components/platform/OfferStickyBar";
 import { OfferSupport } from "@/components/platform/OfferSupportState";
 import offerPanelStyles from "@/components/platform/PlatformOfferStyles";
@@ -219,6 +219,14 @@ export function ProgramDetailPage({
         : "Записатися на програму";
   const heroPrice = choosesFormat ? formatFromPrice : isCheckout || isFree ? commerce.price : null;
 
+  /* Each seam draws the page's steps. Section facts stay in their own blocks. */
+  const route: RouteStep[] = [
+    { icon: "leaf", label: "Метод" },
+    { icon: "sprout", label: "Чи це про вас" },
+    ...(course ? [{ icon: "calendar" as const, label: "Програма" }] : []),
+    { icon: "price", label: choosesFormat ? "Формати" : "Участь" },
+  ];
+
   return (
     /* EVERYTHING INSIDE ONE PROVIDER, and only two things read it. The hero and
        the outline are the parts of an offer page that stop being an offer once
@@ -351,14 +359,14 @@ export function ProgramDetailPage({
               audience={program.audience}
               results={program.results}
               format={program.format}
-              seam={<OfferSeam icon="sprout" caption="Чи це про вас" />}
+              seam={<OfferSeam steps={route} current={1} />}
             />
             {course ? (
               <OfferCurriculum
                 course={course}
                 landingHref={offerLandingUrl(program.slug)}
                 formats={formats}
-                seam={<OfferSeam icon="calendar" caption={program.duration} />}
+                seam={<OfferSeam steps={route} current={2} />}
               />
             ) : null}
             <OfferAuthor author={author} note={program.authorNote} />
@@ -374,7 +382,12 @@ export function ProgramDetailPage({
             title={program.title}
             sales={
               choosesFormat ? (
-                <OfferFormats programSlug={program.slug} programTitle={program.title} formats={formats} />
+                <OfferFormats
+                  programSlug={program.slug}
+                  programTitle={program.title}
+                  formats={formats}
+                  seam={<OfferSeam steps={route} current={route.length - 1} />}
+                />
               ) : (
                 <>
                   <article className={offerPanelStyles.panel}>

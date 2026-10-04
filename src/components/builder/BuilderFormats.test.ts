@@ -343,3 +343,23 @@ describe("BuilderFormats — render", () => {
     expect(form.slice(0, form.indexOf("Програми всередині"))).not.toContain("Також відкриває");
   });
 });
+
+describe("inputOf — the owner's early price", () => {
+  it("sends both halves, refuses half of one or one not lower, and clears it when emptied", () => {
+    const base = { proposedAmount: "4100", mode: "checkout" as const };
+    expect(inputOf(draft({ ...base, earlyAmount: "3400", earlyUntil: "2026-10-15" }), false, true)).toMatchObject({
+      early: { amount: 3400, until: "2026-10-15" },
+    });
+    expect(inputOf(draft({ ...base, earlyAmount: "3400" }), false, true)).toEqual({
+      error: "Вкажіть, до якої дати діє рання ціна",
+    });
+    expect(inputOf(draft({ ...base, earlyAmount: "4100", earlyUntil: "2026-10-15" }), false, true)).toEqual({
+      error: "Рання ціна має бути нижчою за ціну",
+    });
+    expect(inputOf(draft(base), false, true)).toMatchObject({ early: null });
+    // An author never sends it.
+    expect(inputOf(draft({ ...base, earlyAmount: "3400", earlyUntil: "2026-10-15" }), false)).not.toHaveProperty(
+      "early",
+    );
+  });
+});
