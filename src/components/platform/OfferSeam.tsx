@@ -7,16 +7,15 @@
  * карток», «Шов-маршрут»): the page's steps in a row — the method, whether it
  * is for you, the programme, the formats — the steps behind outlined in gold,
  * the one this block opens filled, the thread between them filling as the
- * reader goes. Under it one line says what the block holds, in facts the
- * program already has: «Формати: три способи пройти, від 3 400 ₴, потік
- * стартує 1 листопада».
+ * reader goes. Icons and their labels are the complete signpost; the section
+ * below owns its facts.
  *
  * NOT TIED TO SCROLL. Each seam draws the step of its own block, server-side,
  * without JavaScript; the route reads the same at every seam, only the filled
  * ring moves.
  *
  * Decorative to assistive tech: the section it opens has its own heading, and
- * the line is a signpost of what that section says. It lives INSIDE the
+ * the route is a signpost of what that section says. It lives INSIDE the
  * section so a block that does not render takes its seam with it.
  */
 
@@ -29,14 +28,10 @@ export type RouteStep = { icon: CwIconName; label: string };
 export function OfferSeam({
   steps,
   current,
-  lead,
-  text,
 }: {
   steps: RouteStep[];
   /** Index in `steps` of the block this seam opens. */
   current: number;
-  lead: string;
-  text: string;
 }) {
   return (
     <div aria-hidden="true" className={styles.seam} data-cw-offer-seam="">
@@ -54,9 +49,6 @@ export function OfferSeam({
           </li>
         ))}
       </ol>
-      <p className={styles.line}>
-        <b>{lead}:</b> {text}
-      </p>
     </div>
   );
 }
