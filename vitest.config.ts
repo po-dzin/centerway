@@ -44,10 +44,9 @@ export default defineConfig({
       ],
       reporter: ["text-summary"],
       reportsDirectory: "coverage",
-      // Raised 2026-10-02 from 23/21/21/23, which had fallen seven points
-      // behind (meta-audit 2026-09-30). Actual that day: 31.5/28.8/29.3/32.1,
-      // set one point under so a branch that adds a file is not failed for it.
-      thresholds: { statements: 30, branches: 27, functions: 28, lines: 31 },
+      // Ratcheted 2026-10-05 after the date-dependent format-sync test was fixed.
+      // Measured 32.82/30.03/30.67/33.35; baseline rounded down per AGENTS.md.
+      thresholds: { statements: 32, branches: 30, functions: 30, lines: 33 },
     },
   },
 });

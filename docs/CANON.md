@@ -26,7 +26,7 @@ Use `docs/**` for:
 
 Update the shared canon store only when a local decision becomes durable enough to govern future work across the project. Until then, `docs/**` remains derived / implementation-only.
 
-The repo runtime manifest layer serializes RAverse into execution artifacts. These files are not equal sources of semantic truth:
+The repo data layer derives from RAverse. Tokens are live runtime data; generator manifests are a dormant specification under ADR-0004, not the renderer of public React pages. These files are not equal sources of semantic truth:
 
 - `data/design-tokens/cw.tokens.json`
 - `data/generator/screen_manifests.json`
@@ -84,7 +84,7 @@ The important future check is not legacy coverage.
 
 The important check is:
 
-- the runtime manifests still serialize the active canon;
+- live runtime and dormant specifications retain their declared boundaries;
 - materially changed behavior still matches the canon;
 - when a notable product, brand, интерфейс, architecture, route-family, data, or release invariant changes, the canon is updated accordingly;
 - every agent completes preflight before starting substantial work.
@@ -147,3 +147,17 @@ These local documents are intentionally not part of the shared canon:
 - `docs/platform_agent_preflight.md`
 
 They remain local unless their contents become durable cross-project canon.
+
+## Executable Metadata Boundary
+
+`data/canon/registry.snapshot.json` is the deterministic metadata derivative of
+shared RAverse notes and registry rows, with full-source hashes. Generate it with
+`npm run docs:canon:sync` only after changing the shared source. `guard:canon-metadata`
+validates paths, runnable hooks, roles, links and registry/frontmatter correspondence.
+With reachable RAverse it also checks the live projection for drift; in CI without
+RAverse it explicitly validates the committed snapshot only. Snapshot PASS never
+means live external canon was verified. `guard:canon-metadata-rules` checks the gate
+against clean and invalid fixtures. Both run under `verify:guards`.
+
+Icon reproduction needs the lockfile's Chromium and runs in `verify:icons` plus
+the design CI browser-tool step. It is deliberately separate from file-only guards.

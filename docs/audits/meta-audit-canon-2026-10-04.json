@@ -1,0 +1,144 @@
+[
+  {
+    "note": "CenterWay.md",
+    "role": "project",
+    "dead_validation_commands": ["canon:guard"],
+    "missing_paths": [],
+    "unresolved_local_links": []
+  },
+  {
+    "note": "UI-UX канон.md",
+    "role": "reference",
+    "dead_validation_commands": ["canon:guard"],
+    "missing_paths": ["implemented_in:src/lib/generator/**"],
+    "unresolved_local_links": []
+  },
+  {
+    "note": "Админка.md",
+    "role": "spec+contract",
+    "dead_validation_commands": [
+      "smoke:admin:a11y-contract",
+      "smoke:admin:ci",
+      "smoke:admin:governance",
+      "smoke:admin:i18n-tone"
+    ],
+    "missing_paths": ["source_of_truth:src/app/admin/**", "implemented_in:src/app/admin/**"],
+    "unresolved_local_links": []
+  },
+  {
+    "note": "Архитектура.md",
+    "role": "spec",
+    "dead_validation_commands": ["canon:guard"],
+    "missing_paths": [],
+    "unresolved_local_links": []
+  },
+  {
+    "note": "Бизнес-метааудит 2026-07.md",
+    "role": "audit",
+    "dead_validation_commands": [],
+    "missing_paths": [],
+    "unresolved_local_links": []
+  },
+  {
+    "note": "Блоки и компоненты.md",
+    "role": "reference",
+    "dead_validation_commands": [],
+    "missing_paths": ["implemented_in:src/lib/generator/**"],
+    "unresolved_local_links": []
+  },
+  {
+    "note": "Боты.md",
+    "role": "ops",
+    "dead_validation_commands": [],
+    "missing_paths": [
+      "source_of_truth:src/lib/reporting/analyticsReports.ts",
+      "implemented_in:src/lib/reporting/analyticsReports.ts"
+    ],
+    "unresolved_local_links": []
+  },
+  {
+    "note": "Бренд-контракт.md",
+    "role": "decision",
+    "dead_validation_commands": ["smoke:landing:qa"],
+    "missing_paths": [
+      "implemented_in:src/app/short/**",
+      "implemented_in:src/app/reboot/**",
+      "implemented_in:src/app/irem/**"
+    ],
+    "unresolved_local_links": []
+  },
+  {
+    "note": "Брендбук.md",
+    "role": "resource",
+    "dead_validation_commands": ["canon:guard"],
+    "missing_paths": [],
+    "unresolved_local_links": []
+  },
+  {
+    "note": "Генератор экранов.md",
+    "role": "spec+contract",
+    "dead_validation_commands": [],
+    "missing_paths": ["implemented_in:src/lib/generator/**", "implemented_in:src/components/generator/**"],
+    "unresolved_local_links": []
+  },
+  {
+    "note": "Дизайн-токены.md",
+    "role": "reference",
+    "dead_validation_commands": [],
+    "missing_paths": [],
+    "unresolved_local_links": []
+  },
+  {
+    "note": "Доша-тест.md",
+    "role": "spec+contract",
+    "dead_validation_commands": [],
+    "missing_paths": ["implemented_in:src/app/dosha-test/**"],
+    "unresolved_local_links": []
+  },
+  {
+    "note": "Лендинги.md",
+    "role": "contract",
+    "dead_validation_commands": ["baseline:landing:short-irem"],
+    "missing_paths": [
+      "implemented_in:src/app/short/**",
+      "implemented_in:src/app/reboot/**",
+      "implemented_in:src/app/irem/**"
+    ],
+    "unresolved_local_links": []
+  },
+  {
+    "note": "Мета-аудит.md",
+    "role": "audit",
+    "dead_validation_commands": ["canon:guard"],
+    "missing_paths": ["implemented_in:docs/legacy/**"],
+    "unresolved_local_links": []
+  },
+  {
+    "note": "Миграция и SQL.md",
+    "role": "ops+spec",
+    "dead_validation_commands": ["smoke:admin:ci", "smoke:dosha:qa", "smoke:landing:qa"],
+    "missing_paths": [],
+    "unresolved_local_links": []
+  },
+  {
+    "note": "Мини-сеть 2.0 — план запуска.md",
+    "role": "spec+contract",
+    "dead_validation_commands": [],
+    "missing_paths": [],
+    "unresolved_local_links": []
+  },
+  {
+    "note": "Реестр.md",
+    "role": "contract",
+    "dead_validation_commands": ["canon:guard"],
+    "missing_paths": [],
+    "unresolved_local_links": []
+  },
+  {
+    "note": "Релизный чеклист.md",
+    "role": "ops+audit",
+    "dead_validation_commands": [],
+    "missing_paths": [],
+    "unresolved_local_links": []
+  }
+]

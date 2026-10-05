@@ -1,0 +1,942 @@
+{
+  "schemaVersion": 1,
+  "sourceNamespace": "ReOS/Projects/CenterWay",
+  "sourceFiles": [
+    "ABOUT.md",
+    "AGENTS.md",
+    "CenterWay.md",
+    "UI-UX канон.md",
+    "Админка.md",
+    "Архитектура.md",
+    "Бизнес-метааудит 2026-07.md",
+    "Блоки и компоненты.md",
+    "Боты.md",
+    "Бренд-контракт.md",
+    "Брендбук.md",
+    "Генератор экранов.md",
+    "Дизайн-токены.md",
+    "Доша-тест.md",
+    "Лендинги.md",
+    "Мета-аудит.md",
+    "Миграция и SQL.md",
+    "Мини-сеть 2.0 — план запуска.md",
+    "Реестр.md",
+    "Релизный чеклист.md",
+    "Семиотический паспорт.md"
+  ],
+  "notes": [
+    {
+      "file": "CenterWay.md",
+      "metadata": {
+        "authority": "docs-first",
+        "implemented_in": "src/**; data/**; scripts/**; supabase/**",
+        "legacy_source": "docs/legacy/BRAND.md; docs/legacy/centerway_system_passport.md; docs/legacy/center_way_architecture_frame.md",
+        "related": [
+          "[[ReOS/Projects/CenterWay/Реестр]]",
+          "[[Архитектура]]",
+          "[[Брендбук]]",
+          "[[Бренд-контракт]]",
+          "[[Семиотический паспорт]]",
+          "[[Дизайн-токены]]",
+          "[[UI-UX канон]]",
+          "[[Генератор экранов]]",
+          "[[Блоки и компоненты]]",
+          "[[Лендинги]]",
+          "[[Доша-тест]]",
+          "[[Админка]]",
+          "[[Боты]]",
+          "[[Релизный чеклист]]",
+          "[[Миграция и SQL]]",
+          "[[Мета-аудит]]"
+        ],
+        "role": "project",
+        "source_of_truth": "ReOS/Projects/CenterWay/CenterWay.md",
+        "status": "active",
+        "title": "CenterWay",
+        "uid": "project-20260418-centerway",
+        "use_case": "Живой проектный поток CenterWay для единого индекса, активных волн, зафиксированных контрактов и границ.",
+        "validated_by": "cmd:npm run lint; cmd:npm run build; cmd:npm run guard:canon"
+      },
+      "sourceHash": "5e5c0f540871e6f243420dee28ca9d15493a0c4ae59731bf68b672d05386ff5c",
+      "internalLinks": [
+        "ReOS/Projects/CenterWay/Реестр",
+        "UI-UX канон",
+        "Админка",
+        "Архитектура",
+        "Блоки и компоненты",
+        "Боты",
+        "Бренд-контракт",
+        "Брендбук",
+        "Генератор экранов",
+        "Дизайн-токены",
+        "Доша-тест",
+        "Лендинги",
+        "Мета-аудит",
+        "Миграция и SQL",
+        "Релизный чеклист",
+        "Семиотический паспорт"
+      ]
+    },
+    {
+      "file": "UI-UX канон.md",
+      "metadata": {
+        "authority": "docs-first",
+        "implemented_in": "src/components/**; scripts/lib/generator-manifests.mjs; data/generator/**",
+        "legacy_source": "docs/legacy/centerway_ui_ux_canon_v_0_1.md; docs/legacy/uupm_core_principles_canon.md",
+        "merged_from": [
+          "centerway_ui_ux_canon_v_0_1.md",
+          "uupm_core_principles_canon.md"
+        ],
+        "related": [
+          "[[CenterWay]]",
+          "[[Дизайн-токены]]",
+          "[[Блоки и компоненты]]",
+          "[[Генератор экранов]]",
+          "[[Семиотический паспорт]]",
+          "[[ReOS/Projects/CenterWay/Реестр]]"
+        ],
+        "role": "canon",
+        "source_of_truth": "этот файл",
+        "status": "active",
+        "title": "UI-UX канон",
+        "uid": "canonical-20260418-ui-ux-canon",
+        "use_case": "Оперативный канон интерфейса CenterWay: область, ветки, архетипы экранов, закон экрана, смысловые роли, законы интерфейса и адаптация UUPM. Базовый фильтр для любого нового экрана или функции.",
+        "validated_by": "cmd:npm run generator:validate; cmd:npm run guard:canon"
+      },
+      "sourceHash": "0a8e40eddc96f24532070b2bb63b276ccceef4f5824f0cd0280a9924de512ae6",
+      "internalLinks": [
+        "CenterWay",
+        "ReOS/Projects/CenterWay/Реестр",
+        "Админка",
+        "Блоки и компоненты",
+        "Генератор экранов",
+        "Дизайн-токены",
+        "Лендинги",
+        "Релизный чеклист",
+        "Семиотический паспорт"
+      ]
+    },
+    {
+      "file": "Админка.md",
+      "metadata": {
+        "authority": "mixed",
+        "implemented_in": "src/app/(platform)/admin/**; src/components/admin/**; src/app/api/admin/**; .github/workflows/admin-smoke.yml",
+        "legacy_source": "docs/legacy/centerway_admin_passport.md; docs/legacy/admin_ui_governance_contract.md",
+        "merged_from": [
+          "centerway_admin_passport.md",
+          "admin_ui_governance_contract.md"
+        ],
+        "related": [
+          "[[CenterWay]]",
+          "[[Архитектура]]",
+          "[[UI-UX канон]]",
+          "[[Дизайн-токены]]",
+          "[[Миграция и SQL]]",
+          "[[Релизный чеклист]]",
+          "[[ReOS/Projects/CenterWay/Реестр]]"
+        ],
+        "revised_at": "2026-10-05",
+        "role": "spec+contract",
+        "source_of_truth": "этот файл; src/app/(platform)/admin/**; src/app/api/admin/**",
+        "status": "active",
+        "supersedes": "canonical-20260418-admin@2026-10-04",
+        "title": "Админка",
+        "uid": "canonical-20260418-admin",
+        "use_case": "Снимок контура админки и контракта управления интерфейсом: карта вкладок, API, синхронизация cron и pulse, модель аналитики, инварианты UX, запреты, проверки на merge и осознанные упрощения.",
+        "validated_by": "cmd:npm run lint; cmd:npm run build; cmd:npm run guard:admin:governance; cmd:npm run guard:admin:i18n-tone; cmd:npm run guard:admin:a11y-contract; cmd:npm run verify:admin; cmd:npm run smoke:admin:ui; cmd:npm run smoke:admin:responsive"
+      },
+      "sourceHash": "74ec701aa2df7a6003009e83e032187734fe7f20074660def83dce3e2a949162",
+      "internalLinks": [
+        "CenterWay",
+        "ReOS/Projects/CenterWay/Реестр",
+        "UI-UX канон",
+        "Архитектура",
+        "Дизайн-токены",
+        "Доша-тест",
+        "Миграция и SQL",
+        "Релизный чеклист"
+      ]
+    },
+    {
+      "file": "Архитектура.md",
+      "metadata": {
+        "authority": "mixed",
+        "implemented_in": "src/**; supabase/**; src/app/api/**",
+        "legacy_source": "docs/legacy/center_way_architecture_frame.md; docs/legacy/centerway_system_passport.md; docs/legacy/centerway_control_panel_arch_build_algorithm.md",
+        "merged_from": [
+          "center_way_architecture_frame.md",
+          "centerway_system_passport.md",
+          "centerway_control_panel_arch_build_algorithm.md"
+        ],
+        "related": [
+          "[[CenterWay]]",
+          "[[ReOS/Projects/CenterWay/Реестр]]",
+          "[[Бренд-контракт]]",
+          "[[Админка]]",
+          "[[Миграция и SQL]]"
+        ],
+        "revised_at": "2026-10-05",
+        "role": "spec",
+        "source_of_truth": "этот файл",
+        "status": "active",
+        "supersedes": "canonical-20260418-architecture@2026-10-04",
+        "title": "Архитектура",
+        "uid": "canonical-20260418-architecture",
+        "use_case": "Карта доменного ядра CenterWay, слоёв A-G, Control Panel и модели событий. Единая точка ответа на вопрос, как устроена платформа и где проходят границы ответственности.",
+        "validated_by": "cmd:npm run lint; cmd:npm run build; cmd:npm run guard:canon"
+      },
+      "sourceHash": "b62c5f489e86a1b23d4f2f4f20f2c24259b4ce5e225daf3742e608339567879e",
+      "internalLinks": [
+        "CenterWay",
+        "ReOS/Projects/CenterWay/Реестр",
+        "Админка",
+        "Бренд-контракт",
+        "Генератор экранов",
+        "Дизайн-токены",
+        "Лендинги",
+        "Миграция и SQL",
+        "Релизный чеклист"
+      ]
+    },
+    {
+      "file": "Бизнес-метааудит 2026-07.md",
+      "metadata": {
+        "authority": "mixed",
+        "legacy_source": "–",
+        "related": [
+          "[[CenterWay]]",
+          "[[Лендинги]]",
+          "[[Мета-аудит]]",
+          "[[Боты]]",
+          "[[Админка]]"
+        ],
+        "revised_at": "2026-10-05",
+        "role": "audit",
+        "source_of_truth": "этот файл",
+        "status": "active",
+        "supersedes": "audit-20260708-business-meta-audit@2026-10-04",
+        "title": "Бизнес-метааудит 2026-07",
+        "uid": "audit-20260708-business-meta-audit",
+        "use_case": "Ответ на вопрос «почему система на нуле и как сделать её прибыльной». Не про канон и токены — про деньги, воронку и распределение усилий."
+      },
+      "sourceHash": "137c222dd36ab29601c4916fd7f85f230e37c80d86390333ebfada107b1523ab",
+      "internalLinks": [
+        "CenterWay",
+        "Админка",
+        "Боты",
+        "Лендинги",
+        "Мета-аудит"
+      ]
+    },
+    {
+      "file": "Блоки и компоненты.md",
+      "metadata": {
+        "authority": "docs-first",
+        "implemented_in": "src/components/**; scripts/lib/generator-manifests.mjs",
+        "legacy_source": "docs/legacy/centerway_semantic_block_library_v_0_1.md; docs/legacy/centerway_component_canon_matrix_v_0_1.md",
+        "merged_from": [
+          "centerway_semantic_block_library_v_0_1.md",
+          "centerway_component_canon_matrix_v_0_1.md"
+        ],
+        "related": [
+          "[[CenterWay]]",
+          "[[UI-UX канон]]",
+          "[[Дизайн-токены]]",
+          "[[Генератор экранов]]",
+          "[[Семиотический паспорт]]",
+          "[[ReOS/Projects/CenterWay/Реестр]]"
+        ],
+        "role": "canon",
+        "source_of_truth": "этот файл",
+        "status": "active",
+        "title": "Блоки и компоненты",
+        "uid": "canonical-20260418-blocks-components",
+        "use_case": "Единая библиотека семантических блоков и семейств компонентов CenterWay: роли, формулы, состояния, канон состояний, антипаттерны и план внедрения по уровням. Блоки и компоненты определяются смыслом, а не стилем.",
+        "validated_by": "cmd:npm run generator:validate; cmd:npm run build"
+      },
+      "sourceHash": "a92d95f6fe8bcb57e4c3dd1ff77f111a78cfa0b40bb1f6d56014628c808c66c4",
+      "internalLinks": [
+        "CenterWay",
+        "ReOS/Projects/CenterWay/Реестр",
+        "UI-UX канон",
+        "Админка",
+        "Генератор экранов",
+        "Дизайн-токены",
+        "Лендинги",
+        "Релизный чеклист",
+        "Семиотический паспорт"
+      ]
+    },
+    {
+      "file": "Боты.md",
+      "metadata": {
+        "authority": "mixed",
+        "implemented_in": "src/lib/landing/content.ts; src/lib/landing/prepareLandingHtml.ts; src/app/api/wfp/webhook/route.ts; src/app/api/cron/analytics-reports/route.ts; src/lib/analytics/telegramReports.ts; src/lib/jobs/worker.ts; vercel.json",
+        "legacy_source": "–",
+        "related": [
+          "[[CenterWay]]",
+          "[[Архитектура]]",
+          "[[Лендинги]]",
+          "[[Админка]]",
+          "[[Миграция и SQL]]",
+          "[[ReOS/Projects/CenterWay/Реестр]]"
+        ],
+        "revised_at": "2026-10-05",
+        "role": "ops",
+        "source_of_truth": "этот файл; src/lib/landing/content.ts; src/lib/landing/prepareLandingHtml.ts; src/app/api/wfp/webhook/route.ts; src/app/api/cron/analytics-reports/route.ts; src/lib/analytics/telegramReports.ts; src/lib/jobs/worker.ts; vercel.json",
+        "status": "active",
+        "supersedes": "canonical-20260527-bots@2026-10-04",
+        "title": "Боты",
+        "uid": "canonical-20260527-bots",
+        "use_case": "Карта бот-контуров CenterWay: пользовательский Telegram-переход после оплаты, внутренний канал аналитических отчётов, границы каналов и активные или отложенные контракты.",
+        "validated_by": "cmd:npm run lint; cmd:npm run build; manual: open short/irem thanks flow and confirm Telegram handoff; manual: trigger analytics reporting flow and confirm Telegram delivery"
+      },
+      "sourceHash": "3243895fdb9a6287bc67f3c66e7dfd280831af464752f70e462c4a94677c2e63",
+      "internalLinks": [
+        "CenterWay",
+        "ReOS/Projects/CenterWay/Реестр",
+        "Админка",
+        "Архитектура",
+        "Бренд-контракт",
+        "Лендинги",
+        "Миграция и SQL"
+      ]
+    },
+    {
+      "file": "Бренд-контракт.md",
+      "metadata": {
+        "authority": "docs-first",
+        "implemented_in": "src/lib/landing/**; src/landing-static/**; src/app/(funnels)/short/**; src/app/(funnels)/reboot/**; src/app/(funnels)/irem/**",
+        "legacy_source": "docs/legacy/BRAND.md; docs/legacy/centerway_brand_ssot_v1.md; docs/legacy/centerway_brand_style_hardening_v1_2.md",
+        "merged_from": [
+          "BRAND.md",
+          "centerway_brand_ssot_v1.md",
+          "centerway_brand_style_hardening_v1_2.md"
+        ],
+        "related": [
+          "[[CenterWay]]",
+          "[[Семиотический паспорт]]",
+          "[[Дизайн-токены]]",
+          "[[Лендинги]]",
+          "[[UI-UX канон]]",
+          "[[ReOS/Projects/CenterWay/Реестр]]"
+        ],
+        "role": "decision",
+        "source_of_truth": "этот файл",
+        "status": "active",
+        "title": "Бренд-контракт",
+        "uid": "canonical-20260418-brand-contract",
+        "use_case": "Единый замкнутый контракт бренда CenterWay: позиционирование, архитектура воронок, тон, политика заявлений, топология воронки и правило изоляции. Все решения по лендингам и контенту проходят через эти границы.",
+        "validated_by": "manual: claim matrix and route isolation; cmd:npm run verify:landing"
+      },
+      "sourceHash": "330217bb0eb423d94b0534eaa308756ca7c1e314afbb7c9efedc6d80b5ca1ea9",
+      "internalLinks": [
+        "CenterWay",
+        "ReOS/Projects/CenterWay/Реестр",
+        "UI-UX канон",
+        "Генератор экранов",
+        "Дизайн-токены",
+        "Лендинги",
+        "Релизный чеклист",
+        "Семиотический паспорт"
+      ]
+    },
+    {
+      "file": "Брендбук.md",
+      "metadata": {
+        "authority": "mixed",
+        "implemented_in": "data/design-tokens/cw.tokens.json; data/generator/**; src/app/globals.css; src/components/**; src/landing-static/shared/css/**",
+        "legacy_source": "–",
+        "related": [
+          "[[CenterWay]]",
+          "[[Бренд-контракт]]",
+          "[[Дизайн-токены]]",
+          "[[UI-UX канон]]",
+          "[[Блоки и компоненты]]",
+          "[[ReOS/Projects/CenterWay/Реестр]]"
+        ],
+        "revised_at": "2026-10-05",
+        "role": "resource",
+        "source_of_truth": "этот файл; data/design-tokens/cw.tokens.json; src/app/globals.css",
+        "status": "active",
+        "supersedes": "canonical-20260627-brandbook@2026-10-04",
+        "title": "Брендбук",
+        "uid": "canonical-20260627-brandbook",
+        "use_case": "Читаемый проектный брендбук CenterWay, собранный из активного канона и живого runtime-кода. Нужен как вход в дизайн-систему для имплементации, аудита и handoff без разрыва между семантикой и CSS-токенами.",
+        "validated_by": "manual: brandbook sections match active runtime and canon; cmd:npm run guard:ds-contract; cmd:npm run tokens:build; cmd:npm run guard:canon"
+      },
+      "sourceHash": "77c4cdd85f36e2e22d3fa8ad5b1d06c66ff8a92a8a8a528b273544fb204c145e",
+      "internalLinks": [
+        "CenterWay",
+        "ReOS/Projects/CenterWay/Реестр",
+        "UI-UX канон",
+        "Блоки и компоненты",
+        "Бренд-контракт",
+        "Дизайн-токены"
+      ]
+    },
+    {
+      "file": "Генератор экранов.md",
+      "metadata": {
+        "authority": "data-first",
+        "implemented_in": "scripts/lib/generator-manifests.mjs; scripts/generator-*.mjs",
+        "legacy_source": "docs/legacy/centerway_parametric_ui_generator_spec_v_0_1.md; docs/legacy/centerway_screen_assembly_spec_v_0_1.md; docs/legacy/migration/PARAMETRIC_REVORK_V1.md",
+        "merged_from": [
+          "centerway_parametric_ui_generator_spec_v_0_1.md",
+          "centerway_screen_assembly_spec_v_0_1.md",
+          "migration/PARAMETRIC_REVORK_V1.md"
+        ],
+        "related": [
+          "[[CenterWay]]",
+          "[[UI-UX канон]]",
+          "[[Дизайн-токены]]",
+          "[[Блоки и компоненты]]",
+          "[[Семиотический паспорт]]",
+          "[[ReOS/Projects/CenterWay/Реестр]]"
+        ],
+        "role": "spec+contract",
+        "source_of_truth": "data/generator/screen_manifests.json; data/generator/archetype_contracts_v0_1.json",
+        "status": "active",
+        "title": "Генератор экранов",
+        "uid": "canonical-20260418-screen-generator",
+        "use_case": "Dormant-спецификация параметрической сборки: манифесты, архетипы и детерминированные проверки. Не является renderer текущих продуктовых страниц.",
+        "validated_by": "cmd:npm run generator:validate; cmd:npm run generator:determinism; cmd:npm run generator:snapshot; cmd:npm run build"
+      },
+      "sourceHash": "e5237bbf916b2185c35810114f94df97c59fc36039bab185f0f73ea50ead2f43",
+      "internalLinks": [
+        "CenterWay",
+        "ReOS/Projects/CenterWay/Реестр",
+        "UI-UX канон",
+        "Блоки и компоненты",
+        "Дизайн-токены",
+        "Лендинги",
+        "Релизный чеклист",
+        "Семиотический паспорт"
+      ]
+    },
+    {
+      "file": "Дизайн-токены.md",
+      "metadata": {
+        "authority": "data-first",
+        "implemented_in": "src/app/globals.css; src/landing-static/shared/css/**",
+        "legacy_source": "docs/legacy/centerway_brand_design_tokens_foundation.md; docs/legacy/centerway_generator_token_schema_v_0_1.md; docs/legacy/centerway_material_depth_spec_v_0_1.md",
+        "merged_from": [
+          "centerway_brand_design_tokens_foundation.md",
+          "centerway_generator_token_schema_v_0_1.md",
+          "centerway_material_depth_spec_v_0_1.md"
+        ],
+        "related": [
+          "[[CenterWay]]",
+          "[[Семиотический паспорт]]",
+          "[[Генератор экранов]]",
+          "[[UI-UX канон]]",
+          "[[ReOS/Projects/CenterWay/Реестр]]"
+        ],
+        "role": "canon",
+        "source_of_truth": "data/design-tokens/cw.tokens.json",
+        "status": "active",
+        "title": "Дизайн-токены",
+        "uid": "canonical-20260418-design-tokens",
+        "use_case": "Канон токенов: восемь слоёв, правила именования, смысловые инварианты, семьи тем и материальная глубина. Слой документации фиксирует намерение, а источник правды в рантайме – `data/design-tokens/cw.tokens.json`.",
+        "validated_by": "cmd:npm run guard:ds-contract; cmd:npm run tokens:build; cmd:npm run tokens:check; cmd:npm run guard:contrast"
+      },
+      "sourceHash": "61b3bc34f6a853108177f5fb5c3ffa7f3eb3d82c61b109eb289e3d65ae62b925",
+      "internalLinks": [
+        "CenterWay",
+        "ReOS/Projects/CenterWay/Реестр",
+        "UI-UX канон",
+        "Блоки и компоненты",
+        "Бренд-контракт",
+        "Генератор экранов",
+        "Семиотический паспорт"
+      ]
+    },
+    {
+      "file": "Доша-тест.md",
+      "metadata": {
+        "authority": "mixed",
+        "implemented_in": "src/app/(platform)/dosha-test/**; src/components/dosha-test/**; src/app/api/tests/**; scripts/smoke-dosha-*.mjs",
+        "legacy_source": "docs/legacy/center_way_dosha_test_spec_agent_ready.md; docs/legacy/dosha_test_ui_contract_v1.md",
+        "related": [
+          "[[CenterWay]]",
+          "[[Архитектура]]",
+          "[[Бренд-контракт]]",
+          "[[UI-UX канон]]",
+          "[[Лендинги]]",
+          "[[Миграция и SQL]]",
+          "[[ReOS/Projects/CenterWay/Реестр]]"
+        ],
+        "revised_at": "2026-10-05",
+        "role": "spec+contract",
+        "source_of_truth": "этот файл; supabase/migrations/**; src/components/dosha-test/DoshaTestClient.tsx",
+        "status": "active",
+        "supersedes": "canonical-20260418-dosha-test@2026-10-04",
+        "title": "Доша-тест",
+        "uid": "canonical-20260418-dosha-test",
+        "use_case": "Спецификация и UI-контракт модуля `/dosha-test`: двенадцать вопросов, детерминированный расчёт семи результатов, жизненный цикл попытки, API, аналитика и критерии приёмки.",
+        "validated_by": "cmd:npm run build; cmd:npm run smoke:dosha:result; cmd:npm run smoke:dosha:userflows; cmd:npm run smoke:dosha:api"
+      },
+      "sourceHash": "f2c5d776218ea50efc61de30105a47586aacae30ef79d81917f054bffd25b59c",
+      "internalLinks": [
+        "CenterWay",
+        "ReOS/Projects/CenterWay/Реестр",
+        "UI-UX канон",
+        "Админка",
+        "Архитектура",
+        "Блоки и компоненты",
+        "Бренд-контракт",
+        "Лендинги",
+        "Миграция и SQL"
+      ]
+    },
+    {
+      "file": "Лендинги.md",
+      "metadata": {
+        "authority": "docs-first",
+        "implemented_in": "src/app/(funnels)/short/**; src/app/(funnels)/reboot/**; src/app/(funnels)/irem/**; src/app/way21/**; src/app/reset-day/**; src/lib/landing/**; src/lib/surfaces/catalog.ts; src/landing-static/**",
+        "legacy_source": "docs/legacy/centerway_landing_contract_consult_v1.md; docs/legacy/landing-short-irem-baseline.md; docs/legacy/landing-short-irem-ds-gaps.md",
+        "merged_from": [
+          "centerway_landing_contract_consult_v1.md",
+          "landing-short-irem-baseline.md",
+          "landing-short-irem-ds-gaps.md"
+        ],
+        "related": [
+          "[[CenterWay]]",
+          "[[Бренд-контракт]]",
+          "[[UI-UX канон]]",
+          "[[Дизайн-токены]]",
+          "[[Генератор экранов]]",
+          "[[Блоки и компоненты]]",
+          "[[Релизный чеклист]]",
+          "[[ReOS/Projects/CenterWay/Реестр]]"
+        ],
+        "role": "contract",
+        "source_of_truth": "этот файл; src/lib/landing/contracts.ts; src/lib/surfaces/catalog.ts; src/landing-static/**",
+        "status": "active",
+        "title": "Лендинги",
+        "uid": "canonical-20260418-landings",
+        "use_case": "Контракты лендингов CenterWay: consult как первая воронка v1, short/irem как паритет с прежней платформой в текущем рантайме и план закрытия разрывов дизайн-системы. Фиксирует порядок страницы, контракты CTA и аналитики, контракты компонентов, приёмку и политику релиза R1/R2.",
+        "validated_by": "cmd:npm run smoke:landing:short-irem; cmd:npm run smoke:landing:baseline; cmd:npm run smoke:landing:next-contract; manual: claim matrix"
+      },
+      "sourceHash": "3c41262d46322682e740e2dfa4203ce986711759f38ac78d66e7c57e5f430bed",
+      "internalLinks": [
+        "CenterWay",
+        "ReOS/Projects/CenterWay/Реестр",
+        "UI-UX канон",
+        "Блоки и компоненты",
+        "Бренд-контракт",
+        "Генератор экранов",
+        "Дизайн-токены",
+        "Доша-тест",
+        "Релизный чеклист"
+      ]
+    },
+    {
+      "file": "Мета-аудит.md",
+      "metadata": {
+        "authority": "docs-first",
+        "implemented_in": "ReOS/Projects/CenterWay/**; AGENTS.md; docs/CANON.md; scripts/guard-canon-metadata.mjs; data/canon/registry.snapshot.json",
+        "legacy_source": "–",
+        "related": [
+          "[[CenterWay]]",
+          "[[ReOS/Projects/CenterWay/Реестр]]",
+          "[[Релизный чеклист]]",
+          "[[Архитектура]]",
+          "[[UI-UX канон]]",
+          "[[Бренд-контракт]]",
+          "[[Дизайн-токены]]",
+          "[[Генератор экранов]]",
+          "[[Блоки и компоненты]]",
+          "[[Лендинги]]",
+          "[[Доша-тест]]",
+          "[[Админка]]",
+          "[[Миграция и SQL]]"
+        ],
+        "role": "audit",
+        "source_of_truth": "этот файл",
+        "status": "active",
+        "title": "Мета-аудит",
+        "uid": "canonical-20260418-meta-audit",
+        "use_case": "Управляющий журнал заметок CenterWay для единой модели ролей, компактного метадата-контракта, правил drift-gate, политики карантина legacy и фиксации открытых разрывов.",
+        "validated_by": "manual: audit; cmd:npm run guard:canon-metadata; cmd:npm run guard:canon-metadata-rules; cmd:npm run guard:canon"
+      },
+      "sourceHash": "9b79d7522c895f21287ae3f10c45c6f6e77da7807ecffeead33599aee3555b7c",
+      "internalLinks": [
+        "CenterWay",
+        "ReOS/Projects/CenterWay/Реестр",
+        "UI-UX канон",
+        "Админка",
+        "Архитектура",
+        "Блоки и компоненты",
+        "Бренд-контракт",
+        "Генератор экранов",
+        "Дизайн-токены",
+        "Доша-тест",
+        "Лендинги",
+        "Миграция и SQL",
+        "Релизный чеклист",
+        "Семиотический паспорт"
+      ]
+    },
+    {
+      "file": "Миграция и SQL.md",
+      "metadata": {
+        "authority": "code-first",
+        "implemented_in": "src/app/api/**; src/proxy.ts; supabase/migrations/**; supabase/**",
+        "legacy_source": "docs/legacy/migration/README.md; docs/legacy/migration/MONOREPO_CUTOVER_PLAN.md; docs/legacy/migration/ROUTE_MAPPING.md; docs/legacy/migration/API_CONTRACTS.md; docs/legacy/migration/CUTOVER_CHECKLIST.md; docs/legacy/migration/FLOW_TEST_MATRIX.md; docs/legacy/backlog.md",
+        "merged_from": [
+          "migration/README.md",
+          "migration/MONOREPO_CUTOVER_PLAN.md",
+          "migration/ROUTE_MAPPING.md",
+          "migration/API_CONTRACTS.md",
+          "migration/CUTOVER_CHECKLIST.md",
+          "migration/FLOW_TEST_MATRIX.md",
+          "backlog.md"
+        ],
+        "related": [
+          "[[CenterWay]]",
+          "[[Архитектура]]",
+          "[[Админка]]",
+          "[[Лендинги]]",
+          "[[Доша-тест]]",
+          "[[Релизный чеклист]]",
+          "[[ReOS/Projects/CenterWay/Реестр]]"
+        ],
+        "role": "ops+spec",
+        "source_of_truth": "этот файл; supabase/migrations/**; src/proxy.ts; src/app/api/**",
+        "status": "active",
+        "title": "Миграция и SQL",
+        "uid": "canonical-20260418-migration-sql",
+        "use_case": "Оперативный контур перевода на единую платформу: контракт маршрутизации, план перехода на монорепо, контракты API чекаута, чеклист переключения, матрица прогонов сценариев, хронологический реестр SQL-миграций Supabase и бэклог отложенных пунктов.",
+        "validated_by": "cmd:npm run lint; cmd:npm run build; cmd:npm run verify:admin; cmd:npm run verify:dosha; cmd:npm run verify:landing"
+      },
+      "sourceHash": "5c44ad819d93ae79f6b112bcc5d7c8364d435b5cd45f7aad9fa9bb4ca040f335",
+      "internalLinks": [
+        "CenterWay",
+        "ReOS/Projects/CenterWay/Реестр",
+        "Админка",
+        "Архитектура",
+        "Бренд-контракт",
+        "Доша-тест",
+        "Лендинги",
+        "Релизный чеклист"
+      ]
+    },
+    {
+      "file": "Мини-сеть 2.0 — план запуска.md",
+      "metadata": {
+        "authority": "docs-first",
+        "implemented_in": "src/landing-static/**; src/app/(platform)/**; src/app/api/**; src/lib/surfaces/catalog.ts",
+        "legacy_source": "–",
+        "related": [
+          "[[Бизнес-метааудит 2026-07]]",
+          "[[Лендинги]]",
+          "[[Доша-тест]]",
+          "[[Боты]]"
+        ],
+        "role": "spec+contract",
+        "source_of_truth": "этот файл",
+        "status": "active",
+        "title": "Мини-сеть 2.0 — план запуска",
+        "uid": "plan-20260708-mini-network-launch",
+        "use_case": "Рабочий план для агента разработки — перевод мини-сети платформы из «построено, но не запущено» в основную коммерческую воронку. Роутинг, юзер-сценарии, задачи с приёмкой, метрики.",
+        "validated_by": "cmd:npm run lint; cmd:npm run build; manual: сквозной проход всех сценариев S1–S6"
+      },
+      "sourceHash": "bb90ee1f86d1f008dcec06ce2a310b828406db75af80ea948cb836e3f8587433",
+      "internalLinks": [
+        "Бизнес-метааудит 2026-07",
+        "Боты",
+        "Доша-тест",
+        "Лендинги"
+      ]
+    },
+    {
+      "file": "Реестр.md",
+      "metadata": {
+        "authority": "mixed",
+        "implemented_in": "ReOS/Projects/CenterWay/**; data/canon/registry.snapshot.json; scripts/lib/canon-metadata.mjs; scripts/guard-canon-metadata.mjs",
+        "legacy_source": "docs/legacy/centerway_system_passport.md",
+        "related": [
+          "[[CenterWay]]",
+          "[[Архитектура]]",
+          "[[Дизайн-токены]]",
+          "[[Генератор экранов]]",
+          "[[Лендинги]]",
+          "[[Доша-тест]]",
+          "[[Админка]]",
+          "[[Боты]]"
+        ],
+        "revised_at": "2026-10-05",
+        "role": "contract",
+        "source_of_truth": "этот файл",
+        "status": "active",
+        "supersedes": "canonical-20260418-registry@2026-10-04",
+        "title": "Registry",
+        "uid": "canonical-20260418-registry",
+        "use_case": "Единый реестр соответствий между каноническими заметками CenterWay и их владельцами в runtime и тестах. Реестр дает быстрый ответ на три вопроса: что читать первым, что является первоисточником и чем это проверяется.",
+        "validated_by": "cmd:npm run guard:canon-metadata; cmd:npm run guard:canon"
+      },
+      "sourceHash": "c15909310cf3c489a105f9f1f1cd0cfe9015541e30320f6894d3ad4104993b4a",
+      "internalLinks": [
+        "CenterWay",
+        "Админка",
+        "Архитектура",
+        "Боты",
+        "Генератор экранов",
+        "Дизайн-токены",
+        "Доша-тест",
+        "Лендинги",
+        "Мета-аудит"
+      ]
+    },
+    {
+      "file": "Релизный чеклист.md",
+      "metadata": {
+        "authority": "code-first",
+        "implemented_in": ".github/workflows/**; scripts/smoke-*.mjs; scripts/generator-*.mjs",
+        "legacy_source": "docs/legacy/centerway_ship_checklist_v1.md; docs/legacy/meta_audit_yws_vs_centerway_v1.md",
+        "merged_from": [
+          "centerway_ship_checklist_v1.md",
+          "meta_audit_yws_vs_centerway_v1.md"
+        ],
+        "related": [
+          "[[CenterWay]]",
+          "[[Архитектура]]",
+          "[[Бренд-контракт]]",
+          "[[Лендинги]]",
+          "[[Админка]]",
+          "[[Миграция и SQL]]",
+          "[[ReOS/Projects/CenterWay/Реестр]]"
+        ],
+        "role": "ops+audit",
+        "source_of_truth": "этот файл; scripts/smoke-*.mjs; package.json",
+        "status": "active",
+        "title": "Релизный чеклист",
+        "uid": "canonical-20260418-ship-checklist",
+        "use_case": "Релизный гейт CenterWay для безопасности, укрепления API, слоя данных, целостности воронки, базовой QA-проверки и аудита канона. Применяется для оперативной сверки перед каждым релизом.",
+        "validated_by": "cmd:npm run verify; cmd:npm run verify:guards; cmd:npm run icons:check; cmd:npm run smoke:thanks:browser; cmd:npm run check:migration-drift; manual: authenticated smoke and claim review"
+      },
+      "sourceHash": "c3d81ee71f55617cd6f1ce5bd789b25ce737dcb9c49082f48b30b3f2a9b76480",
+      "internalLinks": [
+        "CenterWay",
+        "ReOS/Projects/CenterWay/Реестр",
+        "Админка",
+        "Архитектура",
+        "Бренд-контракт",
+        "Генератор экранов",
+        "Лендинги",
+        "Миграция и SQL"
+      ]
+    },
+    {
+      "file": "Семиотический паспорт.md",
+      "metadata": {
+        "authority": "docs-first",
+        "implemented_in": "–",
+        "legacy_source": "docs/legacy/centerway_universal_brand_system_passport_filled_v_0_1.md; docs/legacy/centerway_semiotic_brand_research.md; docs/legacy/SDB_wellness_edu_ecosystem.md",
+        "merged_from": [
+          "centerway_universal_brand_system_passport_filled_v_0_1.md",
+          "centerway_semiotic_brand_research.md",
+          "SDB_wellness_edu_ecosystem.md"
+        ],
+        "related": [
+          "[[CenterWay]]",
+          "[[Бренд-контракт]]",
+          "[[UI-UX канон]]",
+          "[[Дизайн-токены]]",
+          "[[Блоки и компоненты]]",
+          "[[ReOS/Projects/CenterWay/Реестр]]"
+        ],
+        "role": "resource",
+        "source_of_truth": "этот файл",
+        "status": "snapshot",
+        "title": "Семиотический паспорт",
+        "uid": "canonical-20260418-semiotic-passport",
+        "use_case": "Снимок v0.1 семиотики, бренд-сущности и визуального закона CenterWay: идентичность, суть, визуальный канон, грамматика компонентов и закон экрана. Исследовательский фундамент под замкнутым контрактом.",
+        "validated_by": "–"
+      },
+      "sourceHash": "66c76e2f31b17c9544aa3fec8681a7663db168e7992bdcfc6d2a50c80308c4d2",
+      "internalLinks": [
+        "CenterWay",
+        "ReOS/Projects/CenterWay/Реестр",
+        "UI-UX канон",
+        "Блоки и компоненты",
+        "Бренд-контракт",
+        "Дизайн-токены"
+      ]
+    }
+  ],
+  "registry": [
+    {
+      "doc": "CenterWay",
+      "role": "project",
+      "authority": "docs-first",
+      "status": "active",
+      "source_of_truth": "ReOS/Projects/CenterWay/CenterWay.md",
+      "implemented_in": "src/**; data/**; scripts/**; supabase/**",
+      "validated_by": "cmd:npm run lint; cmd:npm run build; cmd:npm run guard:canon"
+    },
+    {
+      "doc": "UI-UX канон",
+      "role": "canon",
+      "authority": "docs-first",
+      "status": "active",
+      "source_of_truth": "этот файл",
+      "implemented_in": "src/components/**; scripts/lib/generator-manifests.mjs; data/generator/**",
+      "validated_by": "cmd:npm run generator:validate; cmd:npm run guard:canon"
+    },
+    {
+      "doc": "Админка",
+      "role": "spec+contract",
+      "authority": "mixed",
+      "status": "active",
+      "source_of_truth": "этот файл; src/app/(platform)/admin/**; src/app/api/admin/**",
+      "implemented_in": "src/app/(platform)/admin/**; src/components/admin/**; src/app/api/admin/**; .github/workflows/admin-smoke.yml",
+      "validated_by": "cmd:npm run lint; cmd:npm run build; cmd:npm run guard:admin:governance; cmd:npm run guard:admin:i18n-tone; cmd:npm run guard:admin:a11y-contract; cmd:npm run verify:admin; cmd:npm run smoke:admin:ui; cmd:npm run smoke:admin:responsive"
+    },
+    {
+      "doc": "Архитектура",
+      "role": "spec",
+      "authority": "mixed",
+      "status": "active",
+      "source_of_truth": "этот файл",
+      "implemented_in": "src/**; supabase/**; src/app/api/**",
+      "validated_by": "cmd:npm run lint; cmd:npm run build; cmd:npm run guard:canon"
+    },
+    {
+      "doc": "Бизнес-метааудит 2026-07",
+      "role": "audit",
+      "authority": "mixed",
+      "status": "active",
+      "source_of_truth": "этот файл",
+      "implemented_in": "–",
+      "validated_by": "–"
+    },
+    {
+      "doc": "Блоки и компоненты",
+      "role": "canon",
+      "authority": "docs-first",
+      "status": "active",
+      "source_of_truth": "этот файл",
+      "implemented_in": "src/components/**; scripts/lib/generator-manifests.mjs",
+      "validated_by": "cmd:npm run generator:validate; cmd:npm run build"
+    },
+    {
+      "doc": "Боты",
+      "role": "ops",
+      "authority": "mixed",
+      "status": "active",
+      "source_of_truth": "этот файл; src/lib/landing/content.ts; src/lib/landing/prepareLandingHtml.ts; src/app/api/wfp/webhook/route.ts; src/app/api/cron/analytics-reports/route.ts; src/lib/analytics/telegramReports.ts; src/lib/jobs/worker.ts; vercel.json",
+      "implemented_in": "src/lib/landing/content.ts; src/lib/landing/prepareLandingHtml.ts; src/app/api/wfp/webhook/route.ts; src/app/api/cron/analytics-reports/route.ts; src/lib/analytics/telegramReports.ts; src/lib/jobs/worker.ts; vercel.json",
+      "validated_by": "cmd:npm run lint; cmd:npm run build; manual: open short/irem thanks flow and confirm Telegram handoff; manual: trigger analytics reporting flow and confirm Telegram delivery"
+    },
+    {
+      "doc": "Бренд-контракт",
+      "role": "decision",
+      "authority": "docs-first",
+      "status": "active",
+      "source_of_truth": "этот файл",
+      "implemented_in": "src/lib/landing/**; src/landing-static/**; src/app/(funnels)/short/**; src/app/(funnels)/reboot/**; src/app/(funnels)/irem/**",
+      "validated_by": "manual: claim matrix and route isolation; cmd:npm run verify:landing"
+    },
+    {
+      "doc": "Брендбук",
+      "role": "resource",
+      "authority": "mixed",
+      "status": "active",
+      "source_of_truth": "этот файл; data/design-tokens/cw.tokens.json; src/app/globals.css",
+      "implemented_in": "data/design-tokens/cw.tokens.json; data/generator/**; src/app/globals.css; src/components/**; src/landing-static/shared/css/**",
+      "validated_by": "manual: brandbook sections match active runtime and canon; cmd:npm run guard:ds-contract; cmd:npm run tokens:build; cmd:npm run guard:canon"
+    },
+    {
+      "doc": "Генератор экранов",
+      "role": "spec+contract",
+      "authority": "data-first",
+      "status": "active",
+      "source_of_truth": "data/generator/screen_manifests.json; data/generator/archetype_contracts_v0_1.json",
+      "implemented_in": "scripts/lib/generator-manifests.mjs; scripts/generator-*.mjs",
+      "validated_by": "cmd:npm run generator:validate; cmd:npm run generator:determinism; cmd:npm run generator:snapshot; cmd:npm run build"
+    },
+    {
+      "doc": "Дизайн-токены",
+      "role": "canon",
+      "authority": "data-first",
+      "status": "active",
+      "source_of_truth": "data/design-tokens/cw.tokens.json",
+      "implemented_in": "src/app/globals.css; src/landing-static/shared/css/**",
+      "validated_by": "cmd:npm run guard:ds-contract; cmd:npm run tokens:build; cmd:npm run tokens:check; cmd:npm run guard:contrast"
+    },
+    {
+      "doc": "Доша-тест",
+      "role": "spec+contract",
+      "authority": "mixed",
+      "status": "active",
+      "source_of_truth": "этот файл; supabase/migrations/**; src/components/dosha-test/DoshaTestClient.tsx",
+      "implemented_in": "src/app/(platform)/dosha-test/**; src/components/dosha-test/**; src/app/api/tests/**; scripts/smoke-dosha-*.mjs",
+      "validated_by": "cmd:npm run build; cmd:npm run smoke:dosha:result; cmd:npm run smoke:dosha:userflows; cmd:npm run smoke:dosha:api"
+    },
+    {
+      "doc": "Лендинги",
+      "role": "contract",
+      "authority": "docs-first",
+      "status": "active",
+      "source_of_truth": "этот файл; src/lib/landing/contracts.ts; src/lib/surfaces/catalog.ts; src/landing-static/**",
+      "implemented_in": "src/app/(funnels)/short/**; src/app/(funnels)/reboot/**; src/app/(funnels)/irem/**; src/app/way21/**; src/app/reset-day/**; src/lib/landing/**; src/lib/surfaces/catalog.ts; src/landing-static/**",
+      "validated_by": "cmd:npm run smoke:landing:short-irem; cmd:npm run smoke:landing:baseline; cmd:npm run smoke:landing:next-contract; manual: claim matrix"
+    },
+    {
+      "doc": "Мета-аудит",
+      "role": "audit",
+      "authority": "docs-first",
+      "status": "active",
+      "source_of_truth": "этот файл",
+      "implemented_in": "ReOS/Projects/CenterWay/**; AGENTS.md; docs/CANON.md; scripts/guard-canon-metadata.mjs; data/canon/registry.snapshot.json",
+      "validated_by": "manual: audit; cmd:npm run guard:canon-metadata; cmd:npm run guard:canon-metadata-rules; cmd:npm run guard:canon"
+    },
+    {
+      "doc": "Миграция и SQL",
+      "role": "ops+spec",
+      "authority": "code-first",
+      "status": "active",
+      "source_of_truth": "этот файл; supabase/migrations/**; src/proxy.ts; src/app/api/**",
+      "implemented_in": "src/app/api/**; src/proxy.ts; supabase/migrations/**; supabase/**",
+      "validated_by": "cmd:npm run lint; cmd:npm run build; cmd:npm run verify:admin; cmd:npm run verify:dosha; cmd:npm run verify:landing"
+    },
+    {
+      "doc": "Мини-сеть 2.0 — план запуска",
+      "role": "spec+contract",
+      "authority": "docs-first",
+      "status": "active",
+      "source_of_truth": "этот файл",
+      "implemented_in": "src/landing-static/**; src/app/(platform)/**; src/app/api/**; src/lib/surfaces/catalog.ts",
+      "validated_by": "cmd:npm run lint; cmd:npm run build; manual: сквозной проход всех сценариев S1–S6"
+    },
+    {
+      "doc": "Реестр",
+      "role": "contract",
+      "authority": "mixed",
+      "status": "active",
+      "source_of_truth": "этот файл",
+      "implemented_in": "ReOS/Projects/CenterWay/**; data/canon/registry.snapshot.json; scripts/lib/canon-metadata.mjs; scripts/guard-canon-metadata.mjs",
+      "validated_by": "cmd:npm run guard:canon-metadata; cmd:npm run guard:canon"
+    },
+    {
+      "doc": "Релизный чеклист",
+      "role": "ops+audit",
+      "authority": "code-first",
+      "status": "active",
+      "source_of_truth": "этот файл; scripts/smoke-*.mjs; package.json",
+      "implemented_in": ".github/workflows/**; scripts/smoke-*.mjs; scripts/generator-*.mjs",
+      "validated_by": "cmd:npm run verify; cmd:npm run verify:guards; cmd:npm run icons:check; cmd:npm run smoke:thanks:browser; cmd:npm run check:migration-drift; manual: authenticated smoke and claim review"
+    },
+    {
+      "doc": "Семиотический паспорт",
+      "role": "resource",
+      "authority": "docs-first",
+      "status": "snapshot",
+      "source_of_truth": "этот файл",
+      "implemented_in": "–",
+      "validated_by": "–"
+    }
+  ]
+}

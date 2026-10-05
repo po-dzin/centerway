@@ -9,7 +9,7 @@ Next.js runtime for the current CenterWay product surface.
 - admin surface and admin API endpoints
 - host-based landing routing for `reboot.*` and `irem.*`
 - static landing assets under `src/landing-static/*`
-- design-token, generator, and canon runtime manifests
+- live design tokens, dormant generator specifications and canon metadata derivative
 
 ## Canon
 
@@ -17,7 +17,7 @@ Next.js runtime for the current CenterWay product surface.
 - local implementation notes: `docs/**`
 - local canon policy: `docs/CANON.md`
 - local platform preflight: `docs/platform_agent_preflight.md`
-- local DS spec: `docs/design-system-spec-2026-05-17.md`
+- local DS spec: `docs/design-system.md`
 - `docs/legacy/**` is read-only provenance, not active guidance
 
 ## Run
@@ -34,9 +34,10 @@ App runs on `http://localhost:8000`.
 ```bash
 npm run lint
 npm run build
-npm run canon:guard
+npm run guard:canon
+npm run guard:canon-metadata
 npm run guard:ds-contract
-npm run semantic:audit
+npm run guard:semantic
 ```
 
 ## Generator checks
@@ -52,7 +53,7 @@ npm run guard:rhythm
 Combined gate:
 
 ```bash
-npm run generator:gate
+npm run verify:generator
 ```
 
 ## Route and surface smoke
@@ -61,7 +62,7 @@ npm run generator:gate
 
 ```bash
 npm run smoke:admin
-npm run smoke:admin:ci
+npm run verify:admin
 npm run smoke:admin:ui
 npm run smoke:admin:responsive
 ```
@@ -81,7 +82,7 @@ npm run smoke:dosha:brand-fit
 Combined gate:
 
 ```bash
-npm run smoke:dosha:qa
+npm run verify:dosha
 ```
 
 ### Landings
@@ -90,23 +91,23 @@ npm run smoke:dosha:qa
 npm run smoke:landing:short-irem
 npm run smoke:landing:next-contract
 npm run smoke:landing:cutover-toggle
-npm run baseline:landing:short-irem
+npm run smoke:landing:baseline
 ```
 
 Combined gate:
 
 ```bash
-npm run gate:landing:short-irem
+npm run verify:landing
 ```
 
 ## Main runtime areas
 
 - app routes: `src/app/**`
 - platform UI: `src/components/platform/**`
-- generator runtime: `src/lib/generator/**`
+- dormant generator specification: `data/generator/**`, validated by `scripts/lib/generator-manifests.mjs` (ADR-0004)
 - landing runtime: `src/landing-static/**`
 - scripts and guards: `scripts/**`
-- design/runtime manifests:
+- data and specification manifests:
   - `data/design-tokens/cw.tokens.json`
   - `data/generator/screen_manifests.json`
   - `data/generator/block_manifests.json`
@@ -117,3 +118,15 @@ npm run gate:landing:short-irem
 - repo docs are derived / operational
 - promote only stable cross-project rules into RAverse
 - for public UI work, use `docs/platform_agent_preflight.md`
+
+## Canon and icon gates
+
+`npm run verify:guards` runs file-only gates. `guard:canon-metadata` checks the
+committed derivative and, locally when reachable, live RAverse. CI without the
+external source reports snapshot-only, not live-canon PASS. After changing shared
+canon, run `npm run docs:canon:sync` and include its derivative in the change.
+
+Icon reproduction is a separate offline browser tool: install Chromium with
+`npx playwright install chromium`, then run `npm run verify:icons`. Design CI
+runs both file guards and this tool. Generator gates validate a dormant design
+specification; they are not browser evidence for the current public pages.

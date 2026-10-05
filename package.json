@@ -19,7 +19,7 @@
     "clean": "rm -rf .next .next-dev output artifacts test-results playwright-report tsconfig.tsbuildinfo && find . -name .DS_Store -not -path './node_modules/*' -delete",
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build",
     "verify:guards": "node scripts/verify-guards.mjs",
-    "verify:ds": "npm run guard:canon && npm run guard:assets && npm run tokens:check && npm run ds:sync:check && npm run brand:check && npm run guard:ds-contract && npm run guard:contrast && npm run guard:buttons && npm run guard:geometry && npm run guard:motion && npm run guard:pointer && npm run ds:drift:gate && npm run generator:validate && npm run guard:semantic && npm run lint && npm run build",
+    "verify:ds": "npm run guard:canon && npm run guard:canon-metadata && npm run guard:assets && npm run tokens:check && npm run ds:sync:check && npm run brand:check && npm run verify:icons && npm run guard:ds-contract && npm run guard:contrast && npm run guard:buttons && npm run guard:geometry && npm run guard:motion && npm run guard:pointer && npm run ds:drift:gate && npm run generator:validate && npm run guard:semantic && npm run lint && npm run build",
     "verify:lms": "npm run guard:lms-core && npm run lms:validate && npm run lint && npm run build",
     "verify:landing": "node scripts/verify-landing.mjs",
     "verify:admin": "node scripts/verify-admin.mjs",
@@ -123,7 +123,11 @@
     "ds:drift": "node scripts/design/ds-drift.mjs",
     "ds:drift:report": "node scripts/design/ds-drift.mjs --write",
     "ds:drift:gate": "node scripts/design/ds-drift.mjs --gate",
-    "db:types": "node scripts/db-types.mjs"
+    "db:types": "node scripts/db-types.mjs",
+    "docs:canon:sync": "node scripts/docs-canon-sync.mjs",
+    "guard:canon-metadata": "node scripts/guard-canon-metadata.mjs",
+    "guard:canon-metadata-rules": "node scripts/guard-canon-metadata-rules.mjs",
+    "verify:icons": "npm run icons:check"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

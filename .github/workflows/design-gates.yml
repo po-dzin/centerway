@@ -55,3 +55,11 @@ jobs:
       # the first failure, so a red run names every broken gate.
       - name: Static guards
         run: npm run -s verify:guards
+
+      # The sprite check needs a browser tool, not a live server. Keep it out of
+      # the file-only guard list and install the exact lockfile browser first.
+      - name: Install icon-bake Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Icon reproduction
+        run: npm run -s verify:icons

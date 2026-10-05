@@ -204,7 +204,8 @@ describe("landing format sync — prices and doors (2026-10-03)", () => {
     format("way21-group", "group", { amount: 4100, cohortStartsOn: "2026-11-01" }),
     format("way21-support", "individual", { amount: 9500 }),
   ];
-  const out = applyFormatSync(priced, () => ({ title: "Шлях 21", formats }), new Date("2026-10-03T12:00:00Z"));
+  const now = new Date("2026-10-03T12:00:00Z");
+  const out = applyFormatSync(priced, () => ({ title: "Шлях 21", formats }), now);
   const card = (code: string) => {
     const at = out.indexOf(`cw:format ${code} `);
     return out.slice(at, out.indexOf("/cw:format", at));
@@ -247,7 +248,7 @@ describe("landing format sync — prices and doors (2026-10-03)", () => {
   });
 
   it("is stable when synced again, and leaves the headline as typed when formats cannot be read", () => {
-    expect(applyFormatSync(out, () => ({ title: "Шлях 21", formats }))).toBe(out);
+    expect(applyFormatSync(out, () => ({ title: "Шлях 21", formats }), now)).toBe(out);
     expect(applyFormatSync(priced, () => null)).toBe(priced);
   });
 });

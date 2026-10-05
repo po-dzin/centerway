@@ -32,10 +32,12 @@ Local implementation references are derived / implementation-only:
 - `data/generator/screen_manifests.json`
 - `data/generator/block_manifests.json`
 - `data/generator/route_family_contracts.json`
-- `src/lib/generator/canon.ts`
-- `src/components/generator/GeneratedRouteScreen.tsx`
-- `src/components/platform/PlatformGeneratedBlock.tsx`
-- `src/components/platform/PlatformSite.module.css`
+- `docs/adr/0004-the-screen-generator-is-a-dormant-spec-not-runtime-code.md`
+- `src/components/platform/PlatformStandalonePages.tsx`
+- `src/components/platform/PlatformOfferSurfaceTemplate.tsx`
+- `src/components/platform/PlatformStyles.ts`
+- `scripts/lib/generator-manifests.mjs`
+- `data/canon/registry.snapshot.json`
 - `scripts/semantic-audit.mjs`
 
 ## Pre-Edit Output Required In Agent Reasoning
@@ -45,7 +47,7 @@ Before editing, determine:
 - `surface`: platform hub, expert page, program page, product funnel, legal, admin, dosha, or utility.
 - `semantic_role`: orientation, route, method, offer, trust, proof, support, care, progress, or boundary.
 - `user_question`: the concrete question this block answers.
-- `token_source`: generated runtime token pack, global app DS delivery token, or explicitly approved component recipe token.
+- `token_source`: global/data DS token, global app DS delivery token, or explicitly approved component recipe token.
 - `content_source`: canon, old Wix content, existing landing, database/API, or new product copy.
 - `route_boundary`: platform route or separate funnel route.
 
@@ -60,13 +62,27 @@ Use this rule:
 - local implementation detail only -> document locally if needed;
 - durable cross-page or cross-route rule change -> update the relevant RAverse canon note.
 
-## Current Platform Debt
+## Current Runtime Boundary
 
-Public platform pages now route through generator screen manifests and `GeneratedRouteScreen`. The remaining platform debt is that `src/components/platform/PlatformSite.module.css` still contains legacy shell/block/component/responsive recipes in one module. Treat it as a compatibility layer to split, not a pattern to expand.
+Public platform pages use typed React composition. Static landing runtime owns
+funnels. `data/generator/**` is a dormant specification held under generator
+and semantic gates (ADR-0004); its successful validation does not prove a live
+React page's composition. `PlatformSite.module.css` is a deprecated compatibility
+entrypoint; shared recipes are already split and consumed through `PlatformStyles`.
 
-Any new platform page must move toward:
+New platform pages use shared DS/global tokens, semantic reusable route/offer/
+trust/proof components and the current typed renderer. Route-file composition is
+checked by ESLint; route/component behavior by relevant contracts and browser smoke.
 
-- DS/global token consumption;
-- semantic block composition from manifest contracts;
-- reusable route/offer/trust/proof components;
-- no ad hoc page-level palette.
+## Canon Metadata Verification
+
+Run `npm run guard:canon-metadata`. It checks the committed metadata derivative,
+paths, hooks, links and registry correspondence. When RAverse is reachable it
+also compares the live projection; without it, output explicitly says snapshot-only.
+After an authorized canon update, run `npm run docs:canon:sync` and commit the
+updated derivative with the implementation. The derivative is not a second canon.
+
+For changed interactive controls also declare `selection_family` (contour, ink,
+hybrid), boundary role, and the reading/editing selection boundary under the
+contracts in `docs/design-system.md`. Ink states reuse `InteractionInkLabel` /
+`InteractionInkIcon`; transient results reuse the shared application toast provider.

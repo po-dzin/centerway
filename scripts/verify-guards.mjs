@@ -26,26 +26,8 @@ import { spawnSync } from "node:child_process";
 
 const only = process.argv.slice(2).filter((argument) => !argument.startsWith("-"));
 
-/*
- * ONE GATE IS NOT IN THIS LIST, and it is named rather than quietly omitted:
- *
- *   icons:check   the committed sprite and src/lib/brand/iconNames.ts carry a
- *                 `cw-ink-rule` symbol that scripts/lib/icon-glyphs.mjs does
- *                 not define, so the bake cannot reproduce them. It is not a
- *                 stale output — the glyph ships and InteractionInk.tsx renders
- *                 it. Running `npm run icons:build` today DELETES a live
- *                 interaction primitive, which is the real danger here. The
- *                 geometry is being written on another branch, along with the
- *                 straight-line exception the bake needs (a rule has to hold
- *                 its line, and the hand bake wobbles every path). This goes
- *                 back in the list the day that lands.
- *
- * The other three that sat here on 2026-09-11 are in the list now: the carrier
- * guard was missing `arrow-down` from its chrome set, the rhythm guard became a
- * ratchet after two months of never once being green, and the language guard
- * was reading markup as copy through a regex that could not tell an apostrophe
- * in Ukrainian from the start of a string.
- */
+// Icon reproduction uses Chromium. `verify:icons` and design CI run it separately
+// from this file-only suite; its generator source now includes every live glyph.
 
 /** `npm run <script>` — with the reason it exists, where the reason is not obvious. */
 const gates = [
@@ -80,6 +62,8 @@ const gates = [
     // `lint` proves the code is clean; this proves the rules would have said so.
   },
   { script: "guard:canon", title: "Platform canon" },
+  { script: "guard:canon-metadata", title: "Canon metadata and registry correspondence" },
+  { script: "guard:canon-metadata-rules", title: "Canon metadata rules still bite" },
   { script: "guard:assets", title: "Assets referenced exist" },
   { script: "brand:check", title: "Brand mark" },
   { script: "guard:ds-contract", title: "Shared DS contract" },
@@ -106,7 +90,7 @@ const gates = [
     // :hover rule sits inside @media (hover: hover), because touch browsers
     // latch hover onto the last thing tapped. See docs "Hover is a pointer state".
   },
-  { script: "generator:validate", title: "Generated screens" },
+  { script: "generator:validate", title: "Dormant screen specification" },
   {
     script: "generator:determinism",
     title: "The generator gives the same answer twice",
@@ -116,7 +100,7 @@ const gates = [
     title: "One language per string",
     // Ukrainian or English, never both in one line. Proper nouns are exempt.
   },
-  { script: "guard:semantic", title: "Semantic architecture" },
+  { script: "guard:semantic", title: "Dormant manifest semantic contracts" },
   {
     script: "guard:carriers",
     title: "One carrier per block",
