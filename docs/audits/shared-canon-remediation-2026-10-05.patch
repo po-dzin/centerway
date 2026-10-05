@@ -1,72 +1,36 @@
 --- a/ReOS/Projects/CenterWay/ABOUT.md
 +++ b/ReOS/Projects/CenterWay/ABOUT.md
-@@ -1,5 +1,5 @@
- ---
+@@ -2 +2 @@
 -uid: about-reos-projects-centerway
 +uid: "about-reos-projects-centerway"
- ---
- 
- # CenterWay
 --- a/ReOS/Projects/CenterWay/AGENTS.md
 +++ b/ReOS/Projects/CenterWay/AGENTS.md
-@@ -1,5 +1,5 @@
- ---
+@@ -2 +2 @@
 -uid: contract-centerway-agents
 +uid: "contract-centerway-agents"
- ---
- 
- # AGENTS.md
-@@ -25,7 +25,7 @@
- 
- Before editing any CenterWay note, read:
- 
+@@ -28 +28 @@
 -- Always: `CenterWay.md`, `ABOUT.md`, `Registry.md`
 +- Always: `CenterWay.md`, `ABOUT.md`, `Реестр.md`
- - Routing/copy/claims/CTA/funnels: `Бренд-контракт.md`
- - UI/surfaces/semantic roles/CTA sizes: `Дизайн-токены.md`
- - Screen assembly/manifests/archetypes: `Генератор экранов.md`
-@@ -37,9 +37,9 @@
- 
- ## Source Of Truth
- 
+@@ -40 +40 @@
 -- `Registry.md` owns doc ↔ runtime ↔ validation mapping.
 +- `Реестр.md` owns doc ↔ runtime ↔ validation mapping.
- - `data/design-tokens/cw.tokens.json` owns runtime token structure.
+@@ -42 +42 @@
 -- `data/generator/screen_manifests.json`, `data/generator/block_manifests.json`, `data/generator/archetype_contracts_v0_1.json`, `data/generator/route_family_contracts.json` own generator runtime behavior.
 +- `data/generator/screen_manifests.json`, `data/generator/block_manifests.json`, `data/generator/archetype_contracts_v0_1.json`, `data/generator/route_family_contracts.json` own the dormant generator specification; current typed React/static landing runtime is governed by its own contracts (repo ADR-0004).
- - Notes explain and constrain runtime; they must not fork it into a second semantic dialect.
- - `docs/legacy/**` is provenance only.
- 
-@@ -80,7 +80,7 @@
- 
- Exclusive write ownership by slice:
- 
+@@ -83 +83 @@
 -- Agent A – `ReOS/Projects/CenterWay/*.md`, `Registry.md`, `Мета-аудит.md`
 +- Agent A – `ReOS/Projects/CenterWay/*.md`, `Реестр.md`, `Мета-аудит.md`
- - Agent B – `data/design-tokens/**`, `data/generator/**`, `scripts/generator-*.mjs`
- - Agent C – `src/app/short/**`, `src/app/reboot/**`, `src/app/irem/**`, `src/landing-static/**`, `src/lib/landing/**`
- - Agent D – `src/app/admin/**`, `src/components/admin/**`, `src/app/api/**`, `supabase/**`, `docs/migration/sql/**`
-@@ -110,8 +110,8 @@
- - If behavior, tokens, route logic, CTA logic, generator logic, analytics/event semantics, runtime contracts, release gates, or Supabase/RLS/API contracts changed, update canon in the same cycle.
- - Keep `implemented_in` and `validated_by` machine-readable for contract/spec/ops notes.
- - Keep wiki-links as normal markdown/Obsidian links, not inline-code spans. Backticks are only for code-form terms, paths, commands, or intentionally non-linked markers.
+@@ -113,2 +113,2 @@
 -- If note scope or authority changes materially, update `Registry.md`.
 -- Do not duplicate runtime mapping across many notes; point back to `Registry.md`.
 +- If note scope or authority changes materially, update `Реестр.md`.
 +- Do not duplicate runtime mapping across many notes; point back to `Реестр.md`.
- 
- ---
- 
-@@ -130,4 +130,4 @@
- - Do not treat `docs/legacy/**` as current truth.
- - Do not add implementation folklore that has no runtime or review consequence.
- - Do not turn project notes into migration diaries.
+@@ -133 +133 @@
 -- Do not preserve contradictory statements across `CenterWay.md`, `Registry.md`, and note-level contracts.
 +- Do not preserve contradictory statements across `CenterWay.md`, `Реестр.md`, and note-level contracts.
 --- a/ReOS/Projects/CenterWay/CenterWay.md
 +++ b/ReOS/Projects/CenterWay/CenterWay.md
-@@ -1,9 +1,9 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: project-20260418-centerway
 -role: project
 -authority: docs-first
@@ -77,13 +41,7 @@
 +authority: "docs-first"
 +status: "active"
 +title: "CenterWay"
- related:
-   - "[[ReOS/Projects/CenterWay/Реестр]]"
-   - "[[Архитектура]]"
-@@ -21,16 +21,16 @@
-   - "[[Релизный чеклист]]"
-   - "[[Миграция и SQL]]"
-   - "[[Мета-аудит]]"
+@@ -24,5 +24,5 @@
 -use_case: Живой проектный поток CenterWay для единого индекса, активных волн, зафиксированных контрактов и границ.
 -source_of_truth: ReOS/Projects/CenterWay/CenterWay.md
 -implemented_in: src/**; data/**; scripts/**; supabase/**
@@ -94,22 +52,13 @@
 +implemented_in: "src/**; data/**; scripts/**; supabase/**"
 +validated_by: "cmd:npm run lint; cmd:npm run build; cmd:npm run guard:canon"
 +legacy_source: "docs/legacy/BRAND.md; docs/legacy/centerway_system_passport.md; docs/legacy/center_way_architecture_frame.md"
- ---
- # CenterWay
- 
- > [!Abstract]
+@@ -33 +33 @@
 -> CenterWay – мультипродуктовая велнес-образовательная экосистема, построенная как платформа с доменным ядром, структурированным контентом, режимным UI-генератором и несколькими ветками входа. Этот проектный индекс удерживает карту канонов, активную волну и решения без дублирования их тел.
 +> CenterWay – мультипродуктовая велнес-образовательная экосистема, построенная как платформа с доменным ядром, структурированным контентом, typed UI-оболочками и dormant-спецификацией генератора и несколькими ветками входа. Этот проектный индекс удерживает карту канонов, активную волну и решения без дублирования их тел.
- 
- ___
- 
-@@ -63,19 +63,13 @@
- 
- ## Текущая волна
- 
+@@ -66 +66 @@
 -Активна волна «укрепление канона + переход платформы»:
 +Активный рабочий контур на 2026-10-05 — соответствие shared canon, typed runtime и исполняемых проверок. Архитектурные границы — [[Архитектура]] и [[Генератор экранов]]; актуальный schema record и порядок применения — [[Миграция и SQL]]; проверочные команды и ограничения подтверждения — [[Релизный чеклист]]; correspondence matrix и snapshot enforcement — [[ReOS/Projects/CenterWay/Реестр]] и [[Мета-аудит]].
- 
+@@ -68,7 +68 @@
 -1. Зафиксировать канонические ключи архетипов в `screen_manifests.json` (убрать слой алиасов из runtime)
 -2. Перенести размеры primary CTA в слой токенов (`--cw-btn-primary-width-*`) и унифицировать в hero, прайсинге, блоке следующего шага и липком CTA
 -3. Усилить разницу ролей для поверхностей proof/boundary/support без потери дисциплины поверхности
@@ -118,34 +67,18 @@
 -
 -Подробная разбивка – в [[Релизный чеклист]] и [[Мета-аудит]].
 +Ранние задачи архетипов и token packs относятся к сохранённой спецификации, а не доказывают использование generated renderer в production.
- 
- ___
- 
+@@ -78 +72 @@
 -## Ближайший бэклог
 +## Исторический бэклог спецификации (апрель 2026)
- 
- - Канонические архетипы как SSoT в манифестах и удаление слоя алиасов в runtime
- - Размеры primary CTA через токены и удаление переопределений на уровне страницы
-@@ -91,13 +85,13 @@
- - Платформа единая: текущее репо – единственный runtime; устаревшие репозитории остаются только как локальные снимки
- - Токены именуются `--cw-{group}-{name}` (CSS) и `{group}.{name}` (JSON/TS); точечные переопределения CSS запрещены
- - Любое сообщение, связанное со здоровьем, проходит матрицу заявлений и содержит блок границы
+@@ -94 +88 @@
 -- Выдача доступа оперативно реализована через `access_tokens + token_consumed` до финальной ветки LMS
 +- Модель текущего LMS-доступа и legacy access compatibility определяется [[Архитектура]], не историческим token-only состоянием
- - Изоляция субдоменов: `reboot.*` и `irem.*` не ссылаются на `centerway.net.ua` и друг на друга
- - Политика бренда и заявлений CenterWay приоритетнее паттернов UUPM
- 
- ___
- 
+@@ -100 +94 @@
 -## Маркеры прогресса
 +## Исторические маркеры прогресса (апрель 2026)
- 
- - [x] переход на единый runtime текущего репо
- - [x] 5 рабочих паков токенов: `warm-mineral`, `living-mineral`, `natural-premium`, `natural3`, `curcuma`
 --- a/ReOS/Projects/CenterWay/UI-UX канон.md
 +++ b/ReOS/Projects/CenterWay/UI-UX канон.md
-@@ -1,9 +1,9 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: canonical-20260418-ui-ux-canon
 -role: reference
 -authority: docs-first
@@ -156,13 +89,7 @@
 +authority: "docs-first"
 +status: "active"
 +title: "UI-UX канон"
- related:
-   - "[[CenterWay]]"
-   - "[[Дизайн-токены]]"
-@@ -12,10 +12,10 @@
-   - "[[Семиотический паспорт]]"
-   - "[[ReOS/Projects/CenterWay/Реестр]]"
- use_case: "Оперативный канон интерфейса CenterWay: область, ветки, архетипы экранов, закон экрана, смысловые роли, законы интерфейса и адаптация UUPM. Базовый фильтр для любого нового экрана или функции."
+@@ -15,4 +15,4 @@
 -source_of_truth: этот файл
 -implemented_in: src/components/**; src/lib/generator/**; data/generator/**
 -validated_by: npm run generator:validate; npm run canon:guard
@@ -171,13 +98,9 @@
 +implemented_in: "src/components/**; scripts/lib/generator-manifests.mjs; data/generator/**"
 +validated_by: "cmd:npm run generator:validate; cmd:npm run guard:canon"
 +legacy_source: "docs/legacy/centerway_ui_ux_canon_v_0_1.md; docs/legacy/uupm_core_principles_canon.md"
- merged_from:
-   - centerway_ui_ux_canon_v_0_1.md
-   - uupm_core_principles_canon.md
 --- a/ReOS/Projects/CenterWay/Админка.md
 +++ b/ReOS/Projects/CenterWay/Админка.md
-@@ -1,9 +1,9 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: canonical-20260418-admin
 -role: spec+contract
 -authority: mixed
@@ -188,13 +111,7 @@
 +authority: "mixed"
 +status: "active"
 +title: "Админка"
- related:
-   - "[[CenterWay]]"
-   - "[[Архитектура]]"
-@@ -13,13 +13,15 @@
-   - "[[Релизный чеклист]]"
-   - "[[ReOS/Projects/CenterWay/Реестр]]"
- use_case: "Снимок контура админки и контракта управления интерфейсом: карта вкладок, API, синхронизация cron и pulse, модель аналитики, инварианты UX, запреты, проверки на merge и осознанные упрощения."
+@@ -16,4 +16,4 @@
 -source_of_truth: этот файл; src/app/admin/**; src/app/api/admin/**
 -implemented_in: src/app/admin/**; src/components/admin/**; src/app/api/admin/**; .github/workflows/admin-smoke.yml
 -validated_by: npm run lint; npm run build; npm run smoke:admin:governance; npm run smoke:admin:i18n-tone; npm run smoke:admin:a11y-contract; npm run smoke:admin:ci; npm run smoke:admin:ui; npm run smoke:admin:responsive
@@ -203,18 +120,12 @@
 +implemented_in: "src/app/(platform)/admin/**; src/components/admin/**; src/app/api/admin/**; .github/workflows/admin-smoke.yml"
 +validated_by: "cmd:npm run lint; cmd:npm run build; cmd:npm run guard:admin:governance; cmd:npm run guard:admin:i18n-tone; cmd:npm run guard:admin:a11y-contract; cmd:npm run verify:admin; cmd:npm run smoke:admin:ui; cmd:npm run smoke:admin:responsive"
 +legacy_source: "docs/legacy/centerway_admin_passport.md; docs/legacy/admin_ui_governance_contract.md"
- merged_from:
-   - centerway_admin_passport.md
-   - admin_ui_governance_contract.md
+@@ -22,0 +23,2 @@
 +revised_at: "2026-10-05"
 +supersedes: "canonical-20260418-admin@2026-10-04"
- ---
- # Админка
- 
 --- a/ReOS/Projects/CenterWay/Архитектура.md
 +++ b/ReOS/Projects/CenterWay/Архитектура.md
-@@ -1,24 +1,26 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: canonical-20260418-architecture
 -role: spec
 -authority: mixed
@@ -225,12 +136,7 @@
 +authority: "mixed"
 +status: "active"
 +title: "Архитектура"
- related:
-   - "[[CenterWay]]"
-   - "[[ReOS/Projects/CenterWay/Реестр]]"
-   - "[[Бренд-контракт]]"
-   - "[[Админка]]"
-   - "[[Миграция и SQL]]"
+@@ -13,5 +13,5 @@
 -use_case: Карта доменного ядра CenterWay, слоёв A-G, Control Panel и модели событий. Единая точка ответа на вопрос, как устроена платформа и где проходят границы ответственности.
 -source_of_truth: этот файл
 -implemented_in: src/**; supabase/**; src/app/api/**
@@ -241,30 +147,17 @@
 +implemented_in: "src/**; supabase/**; src/app/api/**"
 +validated_by: "cmd:npm run lint; cmd:npm run build; cmd:npm run guard:canon"
 +legacy_source: "docs/legacy/center_way_architecture_frame.md; docs/legacy/centerway_system_passport.md; docs/legacy/centerway_control_panel_arch_build_algorithm.md"
- merged_from:
-   - center_way_architecture_frame.md
-   - centerway_system_passport.md
-   - centerway_control_panel_arch_build_algorithm.md
+@@ -21,0 +22,2 @@
 +revised_at: "2026-10-05"
 +supersedes: "canonical-20260418-architecture@2026-10-04"
- ---
- # Архитектура
- 
-@@ -97,7 +99,9 @@
- 
- Уровни UI-модулей: L0 пользователи/роли + аудит, L1 customer 360 + таймлайн, L2 заказы/платежи/сверка, L3 доступы и выдача, L4 реестр контента и LMS-lite, L5 поддержка inbox-lite, L6 атрибуция + воронка + выручка, L7 задачи и автоматизации, L8 здоровье и алерты (отложено), L9 флаги и эксперименты (отложено).
- 
+@@ -100 +102,3 @@
 -Текущее состояние (2026-03): вместо канонических `entitlements` оперативно используется `access_tokens + token_consumed`; L8/L9 отложены; платёжный хребет прагматичный (идемпотентность есть, полная проверка подписи webhook – следующий виток укрепления); основные маршруты: `/api/checkout/start`, `/api/pay/start`, `/api/wfp/webhook`, `/api/events`, `/api/admin/*`.
 +Срез кода 2026-10-05: `src/app/api/wfp/webhook/route.ts` проверяет WFP-подпись до записи; route tests покрывают поддельный callback и повторную доставку. LMS использует enrollment/access contracts в `src/lib/lms/**`, legacy access tokens остаются совместимостью, а не универсальной моделью доступа. Общий Postgres limiter `src/lib/api/rateLimit.ts` используется на публичных events/leads/pay/test маршрутах; это не утверждение о покрытии каждого API. Авторизация server writes — TypeScript guards и entitlement checks: service role обходит RLS, политики БД остаются defence in depth для user tokens. Schema record — `supabase/migrations/` по [[Миграция и SQL]].
 +
 +Публичные оболочки — typed React и static landing runtime; генератор хранит dormant-спецификацию по [[Генератор экранов]], не текущий renderer. Тесты и файловые gates показывают проверенные контракты кода; production-доставка, live policies и аутентифицированные сценарии подтверждаются отдельно. Историческое состояние марта не используется как текущая оценка готовности.
- 
- ___
- 
 --- a/ReOS/Projects/CenterWay/Бизнес-метааудит 2026-07.md
 +++ b/ReOS/Projects/CenterWay/Бизнес-метааудит 2026-07.md
-@@ -1,17 +1,20 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: audit-20260708-business-meta-audit
 -role: audit
 -authority: mixed
@@ -275,12 +168,7 @@
 +authority: "mixed"
 +status: "active"
 +title: "Бизнес-метааудит 2026-07"
- related:
-   - "[[CenterWay]]"
-   - "[[Лендинги]]"
-   - "[[Мета-аудит]]"
-   - "[[Боты]]"
-   - "[[Админка]]"
+@@ -13,2 +13,5 @@
 -use_case: Ответ на вопрос «почему система на нуле и как сделать её прибыльной». Не про канон и токены — про деньги, воронку и распределение усилий.
 -source_of_truth: этот файл
 +use_case: "Ответ на вопрос «почему система на нуле и как сделать её прибыльной». Не про канон и токены — про деньги, воронку и распределение усилий."
@@ -288,13 +176,9 @@
 +legacy_source: "–"
 +revised_at: "2026-10-05"
 +supersedes: "audit-20260708-business-meta-audit@2026-10-04"
- ---
- # Бизнес-метааудит CenterWay · июль 2026
- 
 --- a/ReOS/Projects/CenterWay/Блоки и компоненты.md
 +++ b/ReOS/Projects/CenterWay/Блоки и компоненты.md
-@@ -1,9 +1,9 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: canonical-20260418-blocks-components
 -role: reference
 -authority: docs-first
@@ -305,13 +189,7 @@
 +authority: "docs-first"
 +status: "active"
 +title: "Блоки и компоненты"
- related:
-   - "[[CenterWay]]"
-   - "[[UI-UX канон]]"
-@@ -12,10 +12,10 @@
-   - "[[Семиотический паспорт]]"
-   - "[[ReOS/Projects/CenterWay/Реестр]]"
- use_case: "Единая библиотека семантических блоков и семейств компонентов CenterWay: роли, формулы, состояния, канон состояний, антипаттерны и план внедрения по уровням. Блоки и компоненты определяются смыслом, а не стилем."
+@@ -15,4 +15,4 @@
 -source_of_truth: этот файл
 -implemented_in: src/components/**; src/lib/generator/**
 -validated_by: npm run generator:validate; npm run build
@@ -320,13 +198,9 @@
 +implemented_in: "src/components/**; scripts/lib/generator-manifests.mjs"
 +validated_by: "cmd:npm run generator:validate; cmd:npm run build"
 +legacy_source: "docs/legacy/centerway_semantic_block_library_v_0_1.md; docs/legacy/centerway_component_canon_matrix_v_0_1.md"
- merged_from:
-   - centerway_semantic_block_library_v_0_1.md
-   - centerway_component_canon_matrix_v_0_1.md
 --- a/ReOS/Projects/CenterWay/Боты.md
 +++ b/ReOS/Projects/CenterWay/Боты.md
-@@ -1,9 +1,9 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: canonical-20260527-bots
 -role: ops
 -authority: mixed
@@ -337,29 +211,19 @@
 +authority: "mixed"
 +status: "active"
 +title: "Боты"
- related:
-   - "[[CenterWay]]"
-   - "[[Архитектура]]"
-@@ -12,10 +12,12 @@
-   - "[[Миграция и SQL]]"
-   - "[[ReOS/Projects/CenterWay/Реестр]]"
- use_case: "Карта бот-контуров CenterWay: пользовательский Telegram-переход после оплаты, внутренний канал аналитических отчётов, границы каналов и активные или отложенные контракты."
+@@ -15,2 +15,2 @@
 -source_of_truth: этот файл; src/lib/landing/content.ts; src/lib/landing/prepareLandingHtml.ts; src/app/api/wfp/webhook/route.ts; src/app/api/cron/analytics-reports/route.ts; src/lib/reporting/analyticsReports.ts; src/lib/jobs/worker.ts; vercel.json
 -implemented_in: src/lib/landing/content.ts; src/lib/landing/prepareLandingHtml.ts; src/app/api/wfp/webhook/route.ts; src/app/api/cron/analytics-reports/route.ts; src/lib/reporting/analyticsReports.ts; src/lib/jobs/worker.ts; vercel.json
 +source_of_truth: "этот файл; src/lib/landing/content.ts; src/lib/landing/prepareLandingHtml.ts; src/app/api/wfp/webhook/route.ts; src/app/api/cron/analytics-reports/route.ts; src/lib/analytics/telegramReports.ts; src/lib/jobs/worker.ts; vercel.json"
 +implemented_in: "src/lib/landing/content.ts; src/lib/landing/prepareLandingHtml.ts; src/app/api/wfp/webhook/route.ts; src/app/api/cron/analytics-reports/route.ts; src/lib/analytics/telegramReports.ts; src/lib/jobs/worker.ts; vercel.json"
- validated_by: "cmd:npm run lint; cmd:npm run build; manual: open short/irem thanks flow and confirm Telegram handoff; manual: trigger analytics reporting flow and confirm Telegram delivery"
+@@ -18 +18,3 @@
 -legacy_source: –
 +legacy_source: "–"
 +revised_at: "2026-10-05"
 +supersedes: "canonical-20260527-bots@2026-10-04"
- ---
- # Боты
- 
 --- a/ReOS/Projects/CenterWay/Бренд-контракт.md
 +++ b/ReOS/Projects/CenterWay/Бренд-контракт.md
-@@ -1,9 +1,9 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: canonical-20260418-brand-contract
 -role: decision
 -authority: docs-first
@@ -370,13 +234,7 @@
 +authority: "docs-first"
 +status: "active"
 +title: "Бренд-контракт"
- related:
-   - "[[CenterWay]]"
-   - "[[Семиотический паспорт]]"
-@@ -12,10 +12,10 @@
-   - "[[UI-UX канон]]"
-   - "[[ReOS/Projects/CenterWay/Реестр]]"
- use_case: "Единый замкнутый контракт бренда CenterWay: позиционирование, архитектура воронок, тон, политика заявлений, топология воронки и правило изоляции. Все решения по лендингам и контенту проходят через эти границы."
+@@ -15,4 +15,4 @@
 -source_of_truth: этот файл
 -implemented_in: src/lib/landing/**; src/landing-static/**; src/app/short/**; src/app/reboot/**; src/app/irem/**
 -validated_by: "manual QA: claim matrix and route isolation; npm run smoke:landing:qa"
@@ -385,13 +243,9 @@
 +implemented_in: "src/lib/landing/**; src/landing-static/**; src/app/(funnels)/short/**; src/app/(funnels)/reboot/**; src/app/(funnels)/irem/**"
 +validated_by: "manual: claim matrix and route isolation; cmd:npm run verify:landing"
 +legacy_source: "docs/legacy/BRAND.md; docs/legacy/centerway_brand_ssot_v1.md; docs/legacy/centerway_brand_style_hardening_v1_2.md"
- merged_from:
-   - BRAND.md
-   - centerway_brand_ssot_v1.md
 --- a/ReOS/Projects/CenterWay/Брендбук.md
 +++ b/ReOS/Projects/CenterWay/Брендбук.md
-@@ -1,9 +1,9 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: canonical-20260627-brandbook
 -role: resource
 -authority: mixed
@@ -402,13 +256,7 @@
 +authority: "mixed"
 +status: "active"
 +title: "Брендбук"
- related:
-   - "[[CenterWay]]"
-   - "[[Бренд-контракт]]"
-@@ -12,9 +12,12 @@
-   - "[[Блоки и компоненты]]"
-   - "[[ReOS/Projects/CenterWay/Реестр]]"
- use_case: "Читаемый проектный брендбук CenterWay, собранный из активного канона и живого runtime-кода. Нужен как вход в дизайн-систему для имплементации, аудита и handoff без разрыва между семантикой и CSS-токенами."
+@@ -15,3 +15,6 @@
 -source_of_truth: этот файл; data/design-tokens/cw.tokens.json; src/app/globals.css
 -implemented_in: data/design-tokens/cw.tokens.json; data/generator/**; src/app/globals.css; src/components/**; src/landing-static/shared/css/**
 -validated_by: "manual: brandbook sections match active runtime and canon; cmd:npm run guard:ds-contract; cmd:npm run tokens:build; cmd:npm run canon:guard"
@@ -418,13 +266,9 @@
 +legacy_source: "–"
 +revised_at: "2026-10-05"
 +supersedes: "canonical-20260627-brandbook@2026-10-04"
- ---
- # Брендбук
- 
 --- a/ReOS/Projects/CenterWay/Генератор экранов.md
 +++ b/ReOS/Projects/CenterWay/Генератор экранов.md
-@@ -1,9 +1,9 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: canonical-20260418-screen-generator
 -role: spec+contract
 -authority: data-first
@@ -435,13 +279,7 @@
 +authority: "data-first"
 +status: "active"
 +title: "Генератор экранов"
- related:
-   - "[[CenterWay]]"
-   - "[[UI-UX канон]]"
-@@ -11,11 +11,11 @@
-   - "[[Блоки и компоненты]]"
-   - "[[Семиотический паспорт]]"
-   - "[[ReOS/Projects/CenterWay/Реестр]]"
+@@ -14,5 +14,5 @@
 -use_case: "Параметрическая сборка экранов CenterWay: инварианты против переменных, шесть слоёв генератора, контекстные режимы, наложения ветки, контракты архетипов, правила сборки и управление CTA. Машиночитаемая основа для любого нового экрана."
 -source_of_truth: data/generator/screen_manifests.json; data/generator/archetype_contracts_v0_1.json
 -implemented_in: src/lib/generator/**; src/components/generator/**
@@ -452,13 +290,7 @@
 +implemented_in: "scripts/lib/generator-manifests.mjs; scripts/generator-*.mjs"
 +validated_by: "cmd:npm run generator:validate; cmd:npm run generator:determinism; cmd:npm run generator:snapshot; cmd:npm run build"
 +legacy_source: "docs/legacy/centerway_parametric_ui_generator_spec_v_0_1.md; docs/legacy/centerway_screen_assembly_spec_v_0_1.md; docs/legacy/migration/PARAMETRIC_REVORK_V1.md"
- merged_from:
-   - centerway_parametric_ui_generator_spec_v_0_1.md
-   - centerway_screen_assembly_spec_v_0_1.md
-@@ -24,7 +24,13 @@
- # Генератор экранов
- 
- > [!Abstract]
+@@ -27 +27,7 @@
 -> CenterWay UI Generator – параметрическая система сборки экранов, которая производит варианты одного канонического языка, а не разные бренды. Формула: **канонические смыслы × параметрическая структура × логика режима × наложения ветки × грамматика компонентов**. Авторитетный рантайм – JSON-манифесты в `data/generator/**`; эта заметка фиксирует намерение, инварианты, оси вариативности, контракты архетипов и правила сборки.
 +> CenterWay UI Generator – параметрическая система сборки экранов, которая производит варианты одного канонического языка, а не разные бренды. Формула: **канонические смыслы × параметрическая структура × логика режима × наложения ветки × грамматика компонентов**. Авторитетная dormant-спецификация – JSON-манифесты в `data/generator/**`; эта заметка фиксирует намерение, инварианты, оси вариативности, контракты архетипов и правила сборки.
 +
@@ -467,13 +299,7 @@
 +## Граница исполнения
 +
 +С 2026-09-11 генератор является dormant-спецификацией (repo ADR-0004). `data/generator/**` сохраняет модель и её проверки; `src/lib/generator/**` и `GeneratedRouteScreen` не являются частью текущего runtime. Публичные страницы собираются typed React-компонентами, воронки используют static landing runtime. `generator:*` и `guard:semantic` проверяют манифесты спецификации и не доказывают композицию текущей React-страницы. Изменение публичной композиции проверяется контрактом её компонентов, ESLint и browser smoke; возвращение generated renderer требует отдельной ревизии этого решения.
- 
- ___
- 
-@@ -279,20 +285,4 @@
- 
- ## Применение и связи
- 
+@@ -282,17 +288 @@
 -Авторитетный рантайм – `data/generator/screen_manifests.json` и `data/generator/archetype_contracts_v0_1.json`; ядро генератора – `src/lib/generator/canon.ts`. Контракт токенов и материальная глубина – в [[Дизайн-токены]]. Семейства компонентов и рецепты – в [[Блоки и компоненты]]. Закон экрана и UX-фильтр – в [[UI-UX канон]]. Смысловой закон – в [[Семиотический паспорт]]. Контракты лендингов поверх генератора – в [[Лендинги]]. Релизный гейт – в [[Релизный чеклист]].
 -
 -## Public Platform Renderer Contract
@@ -494,8 +320,7 @@
 +Dormant-спецификация – `data/generator/screen_manifests.json` и `data/generator/archetype_contracts_v0_1.json`; проверки – `scripts/lib/generator-manifests.mjs` и `scripts/generator-*.mjs`. Контракт токенов и материальная глубина – в [[Дизайн-токены]]. Семейства компонентов и рецепты – в [[Блоки и компоненты]]. Закон экрана и UX-фильтр – в [[UI-UX канон]]. Смысловой закон – в [[Семиотический паспорт]]. Контракты действующих лендингов – в [[Лендинги]]. Релизный гейт – в [[Релизный чеклист]].
 --- a/ReOS/Projects/CenterWay/Дизайн-токены.md
 +++ b/ReOS/Projects/CenterWay/Дизайн-токены.md
-@@ -1,9 +1,9 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: canonical-20260418-design-tokens
 -role: reference
 -authority: data-first
@@ -506,13 +331,7 @@
 +authority: "data-first"
 +status: "active"
 +title: "Дизайн-токены"
- related:
-   - "[[CenterWay]]"
-   - "[[Семиотический паспорт]]"
-@@ -11,10 +11,10 @@
-   - "[[UI-UX канон]]"
-   - "[[ReOS/Projects/CenterWay/Реестр]]"
- use_case: "Канон токенов: восемь слоёв, правила именования, смысловые инварианты, семьи тем и материальная глубина. Слой документации фиксирует намерение, а источник правды в рантайме – `data/design-tokens/cw.tokens.json`."
+@@ -14,4 +14,4 @@
 -source_of_truth: data/design-tokens/cw.tokens.json
 -implemented_in: src/app/globals.css; src/landing-static/shared/css/**
 -validated_by: npm run guard:ds-contract; npm run tokens:build; npm run tokens:check; npm run guard:contrast
@@ -521,13 +340,9 @@
 +implemented_in: "src/app/globals.css; src/landing-static/shared/css/**"
 +validated_by: "cmd:npm run guard:ds-contract; cmd:npm run tokens:build; cmd:npm run tokens:check; cmd:npm run guard:contrast"
 +legacy_source: "docs/legacy/centerway_brand_design_tokens_foundation.md; docs/legacy/centerway_generator_token_schema_v_0_1.md; docs/legacy/centerway_material_depth_spec_v_0_1.md"
- merged_from:
-   - centerway_brand_design_tokens_foundation.md
-   - centerway_generator_token_schema_v_0_1.md
 --- a/ReOS/Projects/CenterWay/Доша-тест.md
 +++ b/ReOS/Projects/CenterWay/Доша-тест.md
-@@ -1,9 +1,9 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: canonical-20260418-dosha-test
 -role: spec+contract
 -authority: mixed
@@ -538,13 +353,7 @@
 +authority: "mixed"
 +status: "active"
 +title: "Доша-тест"
- related:
-   - "[[CenterWay]]"
-   - "[[Архитектура]]"
-@@ -13,10 +13,12 @@
-   - "[[Миграция и SQL]]"
-   - "[[ReOS/Projects/CenterWay/Реестр]]"
- use_case: "Спецификация и UI-контракт модуля `/dosha-test`: двенадцать вопросов, детерминированный расчёт семи результатов, жизненный цикл попытки, API, аналитика и критерии приёмки."
+@@ -16,4 +16,6 @@
 -source_of_truth: этот файл; supabase/migrations/**; src/components/dosha-test/DoshaTestClient.tsx
 -implemented_in: src/app/dosha-test/**; src/components/dosha-test/**; src/app/api/tests/**; scripts/smoke-dosha-*.mjs
 -validated_by: npm run build; npm run smoke:dosha:result; npm run smoke:dosha:userflows; npm run smoke:dosha:api
@@ -555,13 +364,9 @@
 +legacy_source: "docs/legacy/center_way_dosha_test_spec_agent_ready.md; docs/legacy/dosha_test_ui_contract_v1.md"
 +revised_at: "2026-10-05"
 +supersedes: "canonical-20260418-dosha-test@2026-10-04"
- ---
- # Доша-тест
- 
 --- a/ReOS/Projects/CenterWay/Лендинги.md
 +++ b/ReOS/Projects/CenterWay/Лендинги.md
-@@ -1,9 +1,9 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: canonical-20260418-landings
 -role: contract
 -authority: docs-first
@@ -572,13 +377,7 @@
 +authority: "docs-first"
 +status: "active"
 +title: "Лендинги"
- related:
-   - "[[CenterWay]]"
-   - "[[Бренд-контракт]]"
-@@ -14,10 +14,10 @@
-   - "[[Релизный чеклист]]"
-   - "[[ReOS/Projects/CenterWay/Реестр]]"
- use_case: "Контракты лендингов CenterWay: consult как первая воронка v1, short/irem как паритет с прежней платформой в текущем рантайме и план закрытия разрывов дизайн-системы. Фиксирует порядок страницы, контракты CTA и аналитики, контракты компонентов, приёмку и политику релиза R1/R2."
+@@ -17,4 +17,4 @@
 -source_of_truth: этот файл; src/lib/landing/contracts.ts; src/lib/surfaces/catalog.ts; src/landing-static/**
 -implemented_in: src/app/short/**; src/app/reboot/**; src/app/irem/**; src/app/way21/**; src/app/reset-day/**; src/lib/landing/**; src/lib/surfaces/catalog.ts; src/landing-static/**
 -validated_by: "npm run smoke:landing:short-irem; npm run baseline:landing:short-irem; npm run smoke:landing:next-contract; manual QA: claim matrix"
@@ -587,13 +386,9 @@
 +implemented_in: "src/app/(funnels)/short/**; src/app/(funnels)/reboot/**; src/app/(funnels)/irem/**; src/app/way21/**; src/app/reset-day/**; src/lib/landing/**; src/lib/surfaces/catalog.ts; src/landing-static/**"
 +validated_by: "cmd:npm run smoke:landing:short-irem; cmd:npm run smoke:landing:baseline; cmd:npm run smoke:landing:next-contract; manual: claim matrix"
 +legacy_source: "docs/legacy/centerway_landing_contract_consult_v1.md; docs/legacy/landing-short-irem-baseline.md; docs/legacy/landing-short-irem-ds-gaps.md"
- merged_from:
-   - centerway_landing_contract_consult_v1.md
-   - landing-short-irem-baseline.md
 --- a/ReOS/Projects/CenterWay/Мета-аудит.md
 +++ b/ReOS/Projects/CenterWay/Мета-аудит.md
-@@ -1,9 +1,9 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: canonical-20260418-meta-audit
 -role: audit
 -authority: docs-first
@@ -604,13 +399,7 @@
 +authority: "docs-first"
 +status: "active"
 +title: "Мета-аудит"
- related:
-   - "[[CenterWay]]"
-   - "[[ReOS/Projects/CenterWay/Реестр]]"
-@@ -18,11 +18,11 @@
-   - "[[Доша-тест]]"
-   - "[[Админка]]"
-   - "[[Миграция и SQL]]"
+@@ -21,5 +21,5 @@
 -use_case: Управляющий журнал заметок CenterWay для единой модели ролей, компактного метадата-контракта, правил drift-gate, политики карантина legacy и фиксации открытых разрывов.
 -source_of_truth: этот файл
 -implemented_in: ReOS/Projects/CenterWay/**; docs/legacy/**; AGENTS.md; docs/CANON.md
@@ -621,22 +410,10 @@
 +implemented_in: "ReOS/Projects/CenterWay/**; AGENTS.md; docs/CANON.md; scripts/guard-canon-metadata.mjs; data/canon/registry.snapshot.json"
 +validated_by: "manual: audit; cmd:npm run guard:canon-metadata; cmd:npm run guard:canon-metadata-rules; cmd:npm run guard:canon"
 +legacy_source: "–"
- ---
- # Мета-аудит
- 
-@@ -142,7 +142,7 @@
- ### Карта источников
- 
- - Legacy reservoir живёт в `docs/legacy/**` и `docs/legacy/migration/**`
+@@ -145 +145 @@
 -- Текущая SQL-provenance живёт в `docs/migration/sql/**`
 +- Текущий schema record живёт в `supabase/migrations/**`; `docs/migration/sql/**` — историческая provenance
- - Active governance больше не измеряет качество канона через coverage legacy-файлов
- ___
- 
-@@ -155,6 +155,18 @@
- 3. Если сработал canon sync trigger, обновляется local operational doc;
- 4. Если изменение durable и cross-project, обновляется минимально нужная active canon note;
- 5. Legacy-reservoir используется только для provenance и восстановления старого контекста.
+@@ -157,0 +158,12 @@
 +___
 +
 +## Действующий enforcement (2026-10-05)
@@ -649,13 +426,9 @@
 +
 +Генератор является dormant-спецификацией по [[Генератор экранов]]; schema record находится в `supabase/migrations/` по [[Миграция и SQL]]. Ни успешный manifest gate, ни metadata gate не являются доказательством поведения каждой публичной страницы. Датированные разрывы и планы ниже — история; G1/G3 закрываются текущим enforcement, исторические статусы не используются как активная очередь.
 +
- ___
- 
- ## Открытые разрывы (на апрель 2026)
 --- a/ReOS/Projects/CenterWay/Миграция и SQL.md
 +++ b/ReOS/Projects/CenterWay/Миграция и SQL.md
-@@ -1,9 +1,9 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: canonical-20260418-migration-sql
 -role: ops+spec
 -authority: code-first
@@ -666,13 +439,7 @@
 +authority: "code-first"
 +status: "active"
 +title: "Миграция и SQL"
- related:
-   - "[[CenterWay]]"
-   - "[[Архитектура]]"
-@@ -13,10 +13,10 @@
-   - "[[Релизный чеклист]]"
-   - "[[ReOS/Projects/CenterWay/Реестр]]"
- use_case: "Оперативный контур перевода на единую платформу: контракт маршрутизации, план перехода на монорепо, контракты API чекаута, чеклист переключения, матрица прогонов сценариев, хронологический реестр SQL-миграций Supabase и бэклог отложенных пунктов."
+@@ -16,4 +16,4 @@
 -source_of_truth: этот файл; docs/migration/sql/**; src/proxy.ts; src/app/api/**
 -implemented_in: src/app/api/**; src/proxy.ts; docs/migration/sql/**; supabase/**
 -validated_by: npm run lint; npm run build; npm run smoke:admin:ci; npm run smoke:dosha:qa; npm run smoke:landing:qa
@@ -681,60 +448,26 @@
 +implemented_in: "src/app/api/**; src/proxy.ts; supabase/migrations/**; supabase/**"
 +validated_by: "cmd:npm run lint; cmd:npm run build; cmd:npm run verify:admin; cmd:npm run verify:dosha; cmd:npm run verify:landing"
 +legacy_source: "docs/legacy/migration/README.md; docs/legacy/migration/MONOREPO_CUTOVER_PLAN.md; docs/legacy/migration/ROUTE_MAPPING.md; docs/legacy/migration/API_CONTRACTS.md; docs/legacy/migration/CUTOVER_CHECKLIST.md; docs/legacy/migration/FLOW_TEST_MATRIX.md; docs/legacy/backlog.md"
- merged_from:
-   - migration/README.md
-   - migration/MONOREPO_CUTOVER_PLAN.md
-@@ -35,7 +35,7 @@
- 
- ## Определение
- 
+@@ -38 +38 @@
 -Миграция CenterWay – перевод трёх устаревших репозиториев (`centerway-backend`, `irem-gym`, `short-reboot-main`) в единый рантайм текущего репо, плюс стабилизация схемы Supabase под задачи админки, аналитики и доша-теста. Контур делится на три оси: (1) **маршрутизация** – как хосты и пути разводятся внутри единого деплоя; (2) **контракты API** – что обещает чекаут и платёжный слой и что ломается при отклонении от контракта; (3) **SQL-миграции** – хронологическая история изменений БД, применяемых вручную через Supabase SQL Editor. Гейт миграции – repo-level smoke set `npm run smoke:landing:qa`, `npm run smoke:admin:ci`, `npm run smoke:dosha:qa`; после DNS – 48-72ч мониторинг `orders/events/leads`.
 +Миграция CenterWay – перевод трёх устаревших репозиториев (`centerway-backend`, `irem-gym`, `short-reboot-main`) в единый рантайм текущего репо, плюс стабилизация схемы Supabase под задачи админки, аналитики и доша-теста. Контур делится на три оси: (1) **маршрутизация** – как хосты и пути разводятся внутри единого деплоя; (2) **контракты API** – что обещает чекаут и платёжный слой и что ломается при отклонении от контракта; (3) **SQL-миграции** – схемный record в `supabase/migrations/` и журнал `supabase_migrations.schema_migrations`. Гейт миграции – repo-level smoke set `npm run verify:landing`, `npm run verify:admin`, `npm run verify:dosha`; после DNS – 48-72ч мониторинг `orders/events/leads`.
- 
- ___
- 
-@@ -46,7 +46,7 @@
- - Единый рантайм: текущее репо (единственный активный источник)
- - Мастер-SSoT по бренду: [[Бренд-контракт]] (правило разделения экосистемы и продуктов)
- - SSoT по контракту маршрутизации: этот файл
+@@ -49 +49 @@
 -- SSoT по реестру SQL: `docs/migration/sql/**` + этот файл (хронологический список)
 +- SSoT по реестру SQL: `supabase/migrations/**`; production-журнал `supabase_migrations.schema_migrations`. Старый список ниже — provenance, не очередь применения
- 
- ___
- 
-@@ -67,9 +67,9 @@
- ### 3. Проверить функциональность
- 
- 1. `npm ci`
+@@ -70,3 +70,3 @@
 -2. `npm run smoke:landing:qa`
 -3. `npm run smoke:admin:ci`
 -4. `npm run smoke:dosha:qa`
 +2. `npm run verify:landing`
 +3. `npm run verify:admin`
 +4. `npm run verify:dosha`
- 5. Убедиться:
- 	- Маршрутизация отдаёт контент из `/lps/{brand}/*`
- 	- `GET /api/health` → `{ ok: true }`
-@@ -228,13 +228,13 @@
- 
- ### Исполняется через
- 
+@@ -231 +231 @@
 -`npm run smoke:landing:qa`; `npm run smoke:dosha:qa`; `npm run smoke:admin:ci`.
 +`npm run verify:landing`; `npm run verify:dosha`; `npm run verify:admin`.
- 
- ___
- 
- ## Реестр SQL (хронологический)
- 
+@@ -237 +237 @@
 -SQL-скрипты применяются вручную через Supabase SQL Editor. Каждый файл – атомарная дельта с явной датой в имени. После каждого применения – рекомендуемый постфикс `select public.refresh_analytics_views();` (если скрипт затрагивает аналитику).
 +Следующий список — исторический снимок миграции февраля–апреля 2026, а не актуальная очередь применения. Канонические версии и SQL находятся в `supabase/migrations/`, включая решение не применять отдельные эксперименты в `docs/migration/declined/`. Исторические имена не используются для повторного применения.
- 
- ### 2026-02
- 
-@@ -269,11 +269,12 @@
- 
- ### Оперативный порядок применения
- 
+@@ -272,5 +272,6 @@
 -1. Выполнить SQL-скрипт в Supabase SQL Editor
 -2. При скриптах, затрагивающих аналитику, – `select public.refresh_analytics_views();`
 -3. Проверить `/admin/analytics` (раздел «модель аналитики» в [[Админка]])
@@ -746,32 +479,19 @@
 +4. При применении через `psql` вручную добавить ту же version в `supabase_migrations.schema_migrations`; SQL Editor без файла и journal row не является миграцией.
 +5. `npm run db:types` (Docker), закоммитить regenerated `src/lib/db/database.types.ts` вместе с SQL.
 +6. `npm run check:migration-drift`: journal → файлы; проверка не доказывает live schema и не видит незарегистрированный SQL. Полный runbook — `docs/migration/README.md`.
- 
- ___
- 
-@@ -295,9 +296,9 @@
- 
- ## Гейт релиза (миграция)
- 
+@@ -298,3 +299,3 @@
 -- `npm run smoke:landing:qa` – PASS
 -- `npm run smoke:admin:ci` – PASS
 -- `npm run smoke:dosha:qa` – PASS
 +- `npm run verify:landing` – PASS
 +- `npm run verify:admin` – PASS
 +- `npm run verify:dosha` – PASS
- - Чеклист перед переключением – все пункты ✅
- - Переключение DNS – только после PASS на предпроверке
- - Мониторинг 48-72ч после переключения – `orders/events/leads` без аномалий
-@@ -308,4 +309,4 @@
- 
- ## Применение и связи
- 
+@@ -311 +312 @@
 -Единый runtime и контракт маршрутизации – через [[Архитектура]] (слои плоскости Control Panel). Инварианты DOM и трекинга, специфичные для лендингов, – через [[Лендинги]]. Рантайм админки и представления аналитики – через [[Админка]]. Модель данных доша-теста и отложенные напоминания – через [[Доша-тест]]. Инварианты релизного гейта CI – через [[Релизный чеклист]]. Импорты runtime: `src/proxy.ts`, `src/app/api/checkout/**`, `src/app/api/pay/**`, `src/landing-static/{short,irem}/**`, схема Supabase через `docs/migration/sql/**`.
 +Единый runtime и контракт маршрутизации – через [[Архитектура]] (слои плоскости Control Panel). Инварианты DOM и трекинга, специфичные для лендингов, – через [[Лендинги]]. Рантайм админки и представления аналитики – через [[Админка]]. Модель данных доша-теста и отложенные напоминания – через [[Доша-тест]]. Инварианты релизного гейта CI – через [[Релизный чеклист]]. Импорты runtime: `src/proxy.ts`, `src/app/api/checkout/**`, `src/app/api/pay/**`, `src/landing-static/{short,irem}/**`, схема Supabase через `supabase/migrations/**`.
 --- a/ReOS/Projects/CenterWay/Мини-сеть 2.0 — план запуска.md
 +++ b/ReOS/Projects/CenterWay/Мини-сеть 2.0 — план запуска.md
-@@ -1,18 +1,19 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: plan-20260708-mini-network-launch
 -role: spec+contract
 -authority: docs-first
@@ -782,26 +502,18 @@
 +authority: "docs-first"
 +status: "active"
 +title: "Мини-сеть 2.0 — план запуска"
- related:
-   - "[[Бизнес-метааудит 2026-07]]"
-   - "[[Лендинги]]"
-   - "[[Доша-тест]]"
-   - "[[Боты]]"
+@@ -12,3 +12,3 @@
 -use_case: Рабочий план для агента разработки — перевод мини-сети платформы из «построено, но не запущено» в основную коммерческую воронку. Роутинг, юзер-сценарии, задачи с приёмкой, метрики.
 -source_of_truth: этот файл
 -implemented_in: src/landing-static/**; src/app/(platform)/**; src/app/api/**; src/lib/surfaces/catalog.ts
 +use_case: "Рабочий план для агента разработки — перевод мини-сети платформы из «построено, но не запущено» в основную коммерческую воронку. Роутинг, юзер-сценарии, задачи с приёмкой, метрики."
 +source_of_truth: "этот файл"
 +implemented_in: "src/landing-static/**; src/app/(platform)/**; src/app/api/**; src/lib/surfaces/catalog.ts"
- validated_by: "cmd:npm run lint; cmd:npm run build; manual: сквозной проход всех сценариев S1–S6"
+@@ -15,0 +16 @@
 +legacy_source: "–"
- ---
- # Мини-сеть 2.0 — план запуска
- 
 --- a/ReOS/Projects/CenterWay/Реестр.md
 +++ b/ReOS/Projects/CenterWay/Реестр.md
-@@ -1,8 +1,8 @@
- ---
+@@ -2,4 +2,4 @@
 -uid: canonical-20260418-registry
 -role: contract
 -authority: mixed
@@ -810,27 +522,15 @@
 +role: "contract"
 +authority: "mixed"
 +status: "active"
- title: "Registry"
- related:
-   - "[[CenterWay]]"
-@@ -15,9 +15,11 @@
-   - "[[Боты]]"
- use_case: "Единый реестр соответствий между каноническими заметками CenterWay и их владельцами в runtime и тестах. Реестр дает быстрый ответ на три вопроса: что читать первым, что является первоисточником и чем это проверяется."
- source_of_truth: "этот файл"
+@@ -18,2 +18,2 @@
 -implemented_in: "ReOS/Projects/CenterWay/**; src/**; data/**; scripts/**"
 -validated_by: "manual: registry rows match note frontmatter; cmd:npm run canon:guard"
 +implemented_in: "ReOS/Projects/CenterWay/**; data/canon/registry.snapshot.json; scripts/lib/canon-metadata.mjs; scripts/guard-canon-metadata.mjs"
 +validated_by: "cmd:npm run guard:canon-metadata; cmd:npm run guard:canon"
- legacy_source: "docs/legacy/centerway_system_passport.md"
+@@ -20,0 +21,2 @@
 +revised_at: "2026-10-05"
 +supersedes: "canonical-20260418-registry@2026-10-04"
- ---
- # Registry
- 
-@@ -47,23 +49,26 @@
- 
- | doc | role | authority | status | source_of_truth | implemented_in | validated_by |
- | --- | --- | --- | --- | --- | --- | --- |
+@@ -50,17 +52,20 @@
 -| `CenterWay` | `project` | `docs-first` | `active` | `ReOS/Projects/CenterWay/CenterWay.md` | `src/**; data/**; scripts/**; supabase/**` | `cmd:npm run lint; cmd:npm run build; cmd:npm run canon:guard` |
 -| `Архитектура` | `spec` | `mixed` | `active` | `этот файл` | `src/**; supabase/**; src/app/api/**` | `cmd:npm run lint; cmd:npm run build; cmd:npm run canon:guard` |
 -| `Брендбук` | `resource` | `mixed` | `active` | `этот файл; data/design-tokens/cw.tokens.json; src/app/globals.css` | `data/design-tokens/cw.tokens.json; data/generator/**; src/app/globals.css; src/components/**; src/landing-static/shared/css/**` | `manual: brandbook sections match active runtime and canon; cmd:npm run guard:ds-contract; cmd:npm run tokens:build; cmd:npm run canon:guard` |
@@ -868,33 +568,23 @@
 +| `Релизный чеклист` | `ops+audit` | `code-first` | `active` | `этот файл; scripts/smoke-*.mjs; package.json` | `.github/workflows/**; scripts/smoke-*.mjs; scripts/generator-*.mjs` | `cmd:npm run verify; cmd:npm run verify:guards; cmd:npm run icons:check; cmd:npm run smoke:thanks:browser; cmd:npm run check:migration-drift; manual: authenticated smoke and claim review` |
 +| `Семиотический паспорт` | `resource` | `docs-first` | `snapshot` | `этот файл` | `–` | `–` |
 +
- ___
- 
- ## Карта legacy-источников
-@@ -115,13 +120,15 @@
- 
- ## Дополнение к реестру рантайма
- 
+@@ -118 +123 @@
 -Runtime manifests in the CenterWay repository are execution serialization of RAverse, not independent canon.
 +`data/canon/registry.snapshot.json` — проверяемая производная этого реестра и frontmatter RAverse. `docs:canon:sync` обновляет её; `guard:canon-metadata` проверяет пути, hooks, роли, wikilinks и совпадение live source при его доступности. CI без RAverse явно проверяет только committed snapshot.
- 
+@@ -120 +125,3 @@
 -Текущий смысловой слой рантайма:
 +Токены являются execution data; `data/generator/**` — dormant-спецификация по [[Генератор экранов]], не renderer действующих публичных страниц.
 +
 +Слой данных и сохранённой спецификации:
- 
- - Data/design-tokens/cw.tokens.json: примитивы, смысловые алиасы, переопределения режимов, рецепты компонентов, наложения маршрутов.
- - Data/generator/route_family_contracts.json: границы семейств маршрутов, допустимый порядок блоков, обязательные смысловые роли, разрешённые рендереры.
- - Data/generator/block_manifests.json: смысловую роль блока, семейство, вопрос пользователя, границу маршрута, рендерер, рецепты токенов и варианты раскладки.
+@@ -125 +132 @@
 -- Data/generator/screen_manifests.json: сборку маршрутов и стек блоков для каждой публичной поверхности.
 +- Data/generator/screen_manifests.json: проектируемую сборку маршрутов и стек блоков dormant-спецификации; typed React runtime ими не рендерится.
- 
+@@ -127 +134 @@
 -Проверочные шлюзы: npm run canon:guard, npm run generator:validate, npm run semantic:audit, npm run ds:qa.
 +Проверочные шлюзы: `npm run guard:canon-metadata`, `npm run guard:canon`, `npm run verify:guards`, `npm run verify:generator`, `npm run verify:ds`.
 --- a/ReOS/Projects/CenterWay/Релизный чеклист.md
 +++ b/ReOS/Projects/CenterWay/Релизный чеклист.md
-@@ -1,9 +1,9 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: canonical-20260418-ship-checklist
 -role: ops+audit
 -authority: code-first
@@ -905,13 +595,7 @@
 +authority: "code-first"
 +status: "active"
 +title: "Релизный чеклист"
- related:
-   - "[[CenterWay]]"
-   - "[[Архитектура]]"
-@@ -12,11 +12,11 @@
-   - "[[Админка]]"
-   - "[[Миграция и SQL]]"
-   - "[[ReOS/Projects/CenterWay/Реестр]]"
+@@ -15,5 +15,5 @@
 -use_case: Релизный гейт CenterWay для безопасности, укрепления API, слоя данных, целостности воронки, базовой QA-проверки и аудита канона. Применяется для оперативной сверки перед каждым релизом.
 -source_of_truth: этот файл; scripts/smoke-*.mjs; package.json
 -implemented_in: .github/workflows/**; scripts/smoke-*.mjs; scripts/generator-*.mjs
@@ -922,21 +606,10 @@
 +implemented_in: ".github/workflows/**; scripts/smoke-*.mjs; scripts/generator-*.mjs"
 +validated_by: "cmd:npm run verify; cmd:npm run verify:guards; cmd:npm run icons:check; cmd:npm run smoke:thanks:browser; cmd:npm run check:migration-drift; manual: authenticated smoke and claim review"
 +legacy_source: "docs/legacy/centerway_ship_checklist_v1.md; docs/legacy/meta_audit_yws_vs_centerway_v1.md"
- merged_from:
-   - centerway_ship_checklist_v1.md
-   - meta_audit_yws_vs_centerway_v1.md
-@@ -24,13 +24,28 @@
- # Релизный чеклист
- 
- > [!Abstract]
+@@ -27 +27 @@
 -> Оперативный релизный гейт CenterWay: пять блоков соответствия (безопасность / API / данные / воронка / QA) + аудит канона против внешнего эталона и внутренних контрактов. Блокирующие условия перед релизом зафиксированы. Критерий готовности для канонически укреплённого релиза – шесть условий. Дата последнего рабочего слепка: 2026-04-02 (релиз) + 2026-04-09 (мета-аудит).
 +> Оперативный релизный гейт CenterWay: пять блоков соответствия (безопасность / API / данные / воронка / QA) + аудит канона против внешнего эталона и внутренних контрактов. Блокирующие условия перед релизом зафиксированы. Критерий готовности для канонически укреплённого релиза – шесть условий. Действующий проверочный контракт уточнён 2026-10-05; таблицы апреля ниже сохранены как исторический снимок, не статус текущего релиза.
- 
- ___
- 
- ## Определение
- 
- Релизный чеклист – машиночитаемый гейт, который должен пройти каждый релиз. Покрывает: базовую безопасность, укрепление API, слой данных и Supabase, целостность воронки и продукта, QA и тестирование. Поверх – аудит канона (мета-аудит против эталона YWS + внутренние контракты канона + базовый срез интерфейса Pro Max) с упорядоченным бэклогом P0/P1/P2.
+@@ -33,0 +34,15 @@
 +
 +___
 +
@@ -952,58 +625,24 @@
 +- После авторизованного push проверяются CI и deployment ровно для pushed SHA до зелёного состояния либо явного внешнего блокера. Публикация не используется как локальный preview.
 +
 +Исторические разделы ниже сохраняют апрельскую диагностику. Их «Сейчас», «Fail/Partial», команды и backlog не являются текущим verdict; действующие команды и обязательства задаёт этот раздел и frontmatter.
- 
- ___
- 
-@@ -88,7 +103,7 @@
- 
- ___
- 
+@@ -91 +106 @@
 -## Гейт релиза (минимум)
 +## Исторический гейт релиза (апрель 2026)
- 
- Блокирующие условия перед релизом:
- 
-@@ -99,7 +114,7 @@
- 
- ___
- 
+@@ -102 +117 @@
 -## Команды проверки
 +## Исторические команды проверки (апрель 2026)
- 
- ```bash
- npm run lint
-@@ -177,7 +192,7 @@
- 
- ___
- 
+@@ -180 +195 @@
 -## Приоритетный бэклог (решения приняты)
 +## Исторический бэклог (апрель 2026)
- 
- ### P0 (в первую очередь)
- 
-@@ -198,7 +213,7 @@
- 
- ___
- 
+@@ -201 +216 @@
 -## Критерий готовности (канонически укреплённый)
 +## Исторический критерий готовности (апрель 2026)
- 
- Релиз считается канонически укреплённым только при всех шести:
- 
-@@ -211,7 +226,7 @@
- 
- ___
- 
+@@ -214 +229 @@
 -## Вывод
 +## Исторический вывод (апрель 2026)
- 
- CenterWay превосходит YWS в управляемости системой (типизированные манифесты + контроль контрактов + архитектура генератора). Остаётся визуальное и смысловое укрепление: SSoT канонических архетипов, размеры CTA через токены, более сильное разделение ролей доверия/границы/поддержки, финальная вычистка устаревших путей реестра dosha.
- 
 --- a/ReOS/Projects/CenterWay/Семиотический паспорт.md
 +++ b/ReOS/Projects/CenterWay/Семиотический паспорт.md
-@@ -1,9 +1,9 @@
- ---
+@@ -2,5 +2,5 @@
 -uid: canonical-20260418-semiotic-passport
 -role: reference
 -authority: docs-first
@@ -1014,13 +653,7 @@
 +authority: "docs-first"
 +status: "snapshot"
 +title: "Семиотический паспорт"
- related:
-   - "[[CenterWay]]"
-   - "[[Бренд-контракт]]"
-@@ -12,10 +12,10 @@
-   - "[[Блоки и компоненты]]"
-   - "[[ReOS/Projects/CenterWay/Реестр]]"
- use_case: "Снимок v0.1 семиотики, бренд-сущности и визуального закона CenterWay: идентичность, суть, визуальный канон, грамматика компонентов и закон экрана. Исследовательский фундамент под замкнутым контрактом."
+@@ -15,4 +15,4 @@
 -source_of_truth: этот файл
 -implemented_in: –
 -validated_by: –
@@ -1029,6 +662,3 @@
 +implemented_in: "–"
 +validated_by: "–"
 +legacy_source: "docs/legacy/centerway_universal_brand_system_passport_filled_v_0_1.md; docs/legacy/centerway_semiotic_brand_research.md; docs/legacy/SDB_wellness_edu_ecosystem.md"
- merged_from:
-   - centerway_universal_brand_system_passport_filled_v_0_1.md
-   - centerway_semiotic_brand_research.md
