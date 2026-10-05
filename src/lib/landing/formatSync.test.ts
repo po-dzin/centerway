@@ -31,6 +31,11 @@ function format(code: string, kind: ProgramFormat["format"], extra: Partial<Prog
     currency: "UAH",
     cohortStartsOn: null,
     featured: false,
+    early: null,
+    earlyAmount: null,
+    earlyUntil: null,
+    regularAmount: null,
+    regularListAmount: null,
     includes: [],
     ...extra,
   };
@@ -223,6 +228,26 @@ describe("landing format sync — prices and doors (2026-10-03)", () => {
 
   it("puts a cohort's start in place of the typed note", () => {
     expect(card("way21-group")).toContain("<small>старт потоку 1 листопада · через 29 днів</small>");
+  });
+
+  it("says the early price beside the start while it holds", () => {
+    const early = [
+      format("way21-group", "group", {
+        amount: 3400,
+        listAmount: 4100,
+        cohortStartsOn: "2026-11-01",
+        early: { until: "2026-10-15", endsAt: "2026-10-14T21:00:00.000Z", laterAmount: 4100 },
+      }),
+    ];
+    const html = applyFormatSync(
+      priced,
+      () => ({ title: "Шлях 21", formats: early }),
+      new Date("2026-10-03T12:00:00Z"),
+    );
+    expect(html).toContain('<b data-cw-price="way21-group">3400 грн</b>');
+    expect(html).toContain(
+      "<small>старт потоку 1 листопада · через 29 днів · до 15 жовтня 3400 грн, далі 4100 грн</small>",
+    );
   });
 
   it("gives each card the door its mode asks for", () => {

@@ -21,6 +21,11 @@ function format(
     currency: "UAH",
     cohortStartsOn,
     featured,
+    early: null,
+    earlyAmount: null,
+    earlyUntil: null,
+    regularAmount: null,
+    regularListAmount: null,
     includes: [],
   };
 }

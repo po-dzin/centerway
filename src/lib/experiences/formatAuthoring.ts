@@ -3,6 +3,7 @@ import "server-only";
 import { adminClient } from "@/lib/auth/adminClient";
 import type { TablesUpdate } from "@/lib/db/database.types";
 import { courseOfferCode } from "@/lms-core";
+import { noteForAccessRule } from "@/lib/lms/accessTerm";
 
 import { announceFormatProposed } from "./formatAnnounce";
 import { FORMAT_DEFAULT_LABELS, isOfferFormat, ukList, type OfferFormat } from "./formats";
@@ -56,12 +57,18 @@ export type AuthoredFormat = {
   mode: "checkout" | "lead";
   amount: number | null;
   proposedAmount: number | null;
+  listAmount: number | null;
+  accessDays: number | null;
+  accessLifetime: boolean;
   currency: string;
   cohortStartsOn: string | null;
   reviewStatus: FormatReviewStatus;
   active: boolean;
   /** The owner's «Бестселер» mark: the gold pill and the row's only primary button. */
   featured: boolean;
+  /** The owner's early price and the date it ends (00:00 Kyiv); both null when there is none. */
+  earlyAmount: number | null;
+  earlyUntil: string | null;
   includes: Array<{ slug: string; title: string }>;
 };
 
@@ -77,6 +84,8 @@ export type FormatInput = {
   cohortStartsOn?: unknown;
   includes?: unknown;
   featured?: unknown;
+  /** `{amount, until}` sets the early price, `null` removes it. Owner only. */
+  early?: unknown;
   submit?: unknown;
 };
 
@@ -90,7 +99,7 @@ export class FormatError extends Error {
 }
 
 const COLUMNS =
-  "id, code, format, label, summary, features, mode, amount, proposed_amount, currency, cohort_starts_on, review_status, active, featured, sort_order, experience_id";
+  "id, code, format, label, summary, features, mode, amount, list_amount, access_days, access_lifetime, proposed_amount, currency, cohort_starts_on, review_status, active, featured, early_amount, early_until, sort_order, experience_id";
 
 type Row = {
   id: string;
@@ -102,11 +111,16 @@ type Row = {
   mode: string;
   amount: number | null;
   proposed_amount: number | null;
+  list_amount: number | null;
+  access_days: number | null;
+  access_lifetime: boolean;
   currency: string;
   cohort_starts_on: string | null;
   review_status: string;
   active: boolean;
   featured: boolean;
+  early_amount: number | null;
+  early_until: string | null;
   sort_order: number;
   experience_id: string;
 };
@@ -172,11 +186,16 @@ export async function listCourseFormats(courseId: string): Promise<AuthoredForma
         mode: row.mode === "lead" ? "lead" : "checkout",
         amount: row.amount,
         proposedAmount: row.proposed_amount,
+        listAmount: row.list_amount ?? null,
+        accessDays: row.access_days ?? null,
+        accessLifetime: row.access_lifetime === true,
         currency: row.currency,
         cohortStartsOn: row.cohort_starts_on,
         reviewStatus: row.review_status as FormatReviewStatus,
         active: row.active,
         featured: row.featured === true,
+        earlyAmount: row.early_amount ?? null,
+        earlyUntil: row.early_until ?? null,
         includes: [...(items ?? [])]
           .filter((item) => item.offer_id === row.id)
           .sort((a, b) => Number(a.sort_order) - Number(b.sort_order))
@@ -219,6 +238,7 @@ type Parsed = {
   cohortStartsOn?: string | null;
   includes?: string[];
   featured?: boolean;
+  early?: { amount: number; until: string } | null;
   submit: boolean;
 };
 
@@ -273,6 +293,22 @@ function parseInput(input: FormatInput): Parsed {
   if (input.featured !== undefined) {
     if (typeof input.featured !== "boolean") throw new FormatError("format_invalid_featured");
     parsed.featured = input.featured;
+  }
+  if (input.early !== undefined) {
+    if (input.early === null) parsed.early = null;
+    else {
+      const { amount, until } = (typeof input.early === "object" ? input.early : {}) as {
+        amount?: unknown;
+        until?: unknown;
+      };
+      if (typeof amount !== "number" || !Number.isInteger(amount) || amount <= 0) {
+        throw new FormatError("format_invalid_early_price");
+      }
+      if (typeof until !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(until) || Number.isNaN(Date.parse(until))) {
+        throw new FormatError("format_invalid_early_date");
+      }
+      parsed.early = { amount, until };
+    }
   }
   if (input.includes !== undefined) {
     if (!Array.isArray(input.includes) || !input.includes.every((slug) => typeof slug === "string")) {
@@ -367,6 +403,16 @@ export async function createFormat(input: {
     input.canSetPrice && parsed.submit
       ? ownerPricing(mode, parsed.proposedAmount ?? null, input.authUserId, now)
       : null;
+  // An early price goes on only with the owner's live price, and under it.
+  let early: TablesUpdate<"experience_offers"> = {};
+  if (parsed.early) {
+    if (input.canSetPrice !== true) throw new FormatError("format_early_owner_only", 403);
+    const regular = pricing?.amount ?? null;
+    if (regular === null || regular === undefined || parsed.early.amount >= regular) {
+      throw new FormatError("format_early_not_lower");
+    }
+    early = { early_amount: parsed.early.amount, early_until: parsed.early.until };
+  }
   const allowed = parsed.includes?.length ? await listIncludablePrograms(input) : [];
   if (parsed.includes?.length) refuseForeignIncludes(parsed.includes, allowed);
   const code = await freeCode(db, `${programSlug}-${parsed.format}`.toLowerCase());
@@ -397,6 +443,7 @@ export async function createFormat(input: {
       proposed_by: input.authUserId,
       proposed_at: parsed.submit ? now : null,
       ...pricing,
+      ...early,
     })
     .select("id")
     .single();
@@ -453,6 +500,25 @@ export async function updateFormat(input: {
   if (parsed.featured !== undefined && input.canSetPrice !== true) {
     throw new FormatError("format_featured_owner_only", 403);
   }
+  // So is the early price: it is a price. Lower than the regular one, or it is
+  // not early, and only on a priced format.
+  if (parsed.early !== undefined) {
+    if (input.canSetPrice !== true) throw new FormatError("format_early_owner_only", 403);
+    const regular = parsed.proposedAmount !== undefined ? parsed.proposedAmount : row.amount;
+    if (parsed.early && (regular === null || parsed.early.amount >= regular)) {
+      throw new FormatError("format_early_not_lower");
+    }
+  }
+  // A new regular price may not fall to or below an early price still stored.
+  if (
+    parsed.early === undefined &&
+    parsed.proposedAmount !== undefined &&
+    input.canSetPrice === true &&
+    row.early_amount !== null &&
+    (parsed.proposedAmount === null || row.early_amount >= parsed.proposedAmount)
+  ) {
+    throw new FormatError("format_early_not_lower");
+  }
 
   const allowed = parsed.includes !== undefined ? await listIncludablePrograms(input) : [];
   if (parsed.includes !== undefined) refuseForeignIncludes(parsed.includes, allowed);
@@ -484,6 +550,10 @@ export async function updateFormat(input: {
   }
   if (parsed.cohortStartsOn !== undefined) patch.cohort_starts_on = parsed.cohortStartsOn;
   if (parsed.featured !== undefined) patch.featured = parsed.featured;
+  if (parsed.early !== undefined) {
+    patch.early_amount = parsed.early?.amount ?? null;
+    patch.early_until = parsed.early?.until ?? null;
+  }
   if (parsed.proposedAmount !== undefined) {
     patch.proposed_amount = parsed.proposedAmount;
     patch.proposed_by = input.authUserId;
@@ -582,6 +652,14 @@ export async function listFormatsForReview(): Promise<FormatForReview[]> {
 }
 
 export type ReviewAction =
+  | {
+      action: "save";
+      amount: number | null;
+      listAmount: number | null;
+      mode: "checkout" | "lead";
+      accessDays: number | null;
+      accessLifetime: boolean;
+    }
   | { action: "approve"; amount: number | null; listAmount?: number | null }
   | { action: "decline" }
   | { action: "withdraw" }
@@ -594,13 +672,82 @@ export type ReviewAction =
  * Every price lives in `experience_offers` alone since 2026-09-25 — the
  * copies from the two older tables are gone — so this writes it there.
  */
-export async function reviewFormat(input: { code: string; actorId: string; decision: ReviewAction }): Promise<void> {
+export async function reviewFormat(input: {
+  code: string;
+  actorId: string;
+  decision: ReviewAction;
+}): Promise<{ courseSlug: string }> {
   const db = adminClient();
   const { data, error } = await db.from("experience_offers").select(COLUMNS).eq("code", input.code).maybeSingle();
   if (error) throw new FormatError(`format_read_failed:${error.message}`, 500);
   if (!data) throw new FormatError("format_not_found", 404);
   const row = data as Row;
+  const { data: courses, error: courseError } = await db
+    .from("lms_courses")
+    .select("id, slug")
+    .eq("experience_id", row.experience_id);
+  if (courseError) throw new FormatError(`format_course_read_failed:${courseError.message}`, 500);
+  const course = (courses ?? []).find(
+    (candidate) => row.format != null || courseOfferCode(candidate.slug as string) === row.code,
+  );
+  if (!course) throw new FormatError("format_not_found", 404);
+  const result = { courseSlug: course.slug as string };
   const now = new Date().toISOString();
+
+  if (input.decision.action === "save") {
+    if (row.review_status !== "approved") throw new FormatError("format_not_approved", 409);
+    const decision = input.decision;
+    const { amount, listAmount } = decision;
+    if (decision.mode !== "checkout" && decision.mode !== "lead") throw new FormatError("format_invalid_mode");
+    if (amount !== null && (!Number.isInteger(amount) || amount < 0 || amount > FORMAT_AMOUNT_MAX)) {
+      throw new FormatError("format_invalid_amount");
+    }
+    if (decision.mode === "checkout" && amount === null) throw new FormatError("format_invalid_amount");
+    if (decision.mode === "lead" && amount === 0) throw new FormatError("format_invalid_amount");
+    if (listAmount !== null && (amount === null || !Number.isInteger(listAmount) || listAmount <= amount)) {
+      throw new FormatError("format_invalid_list_amount");
+    }
+    if (row.early_amount != null && (amount === null || row.early_amount >= amount)) {
+      throw new FormatError("format_early_below_amount");
+    }
+    const accessDays = decision.accessLifetime ? null : decision.accessDays;
+    if (
+      !decision.accessLifetime &&
+      !(decision.mode === "lead" && accessDays === null) &&
+      (!Number.isInteger(accessDays) || (accessDays ?? 0) <= 0)
+    ) {
+      throw new FormatError("access_rule_required");
+    }
+    // Edit commercial terms without publishing, approving a proposal, or changing
+    // the format's contents. Sale/review decisions remain explicit commands.
+    const { error: writeError } = await db
+      .from("experience_offers")
+      .update({
+        amount,
+        list_amount: listAmount,
+        mode: decision.mode === "checkout" && amount === 0 ? "free" : decision.mode,
+        access_days: accessDays,
+        access_lifetime: decision.accessLifetime,
+        reviewed_by: input.actorId,
+        reviewed_at: now,
+      })
+      .eq("id", row.id);
+    if (writeError) throw new FormatError(`format_write_failed:${writeError.message}`, 500);
+    const base = courseOfferCode(course.slug as string) === row.code ? course : null;
+    if (base) {
+      const { error: noteError } = await db
+        .from("lms_courses")
+        .update({
+          access_note:
+            accessDays === null && !decision.accessLifetime
+              ? null
+              : noteForAccessRule({ accessDays, accessLifetime: decision.accessLifetime }),
+        })
+        .eq("id", base.id);
+      if (noteError) throw new FormatError(`format_write_failed:${noteError.message}`, 500);
+    }
+    return result;
+  }
 
   if (input.decision.action === "approve") {
     const amount = input.decision.amount;
@@ -611,10 +758,13 @@ export async function reviewFormat(input: { code: string; actorId: string; decis
       throw new FormatError("format_invalid_amount");
     }
     const listAmount = input.decision.listAmount ?? null;
-    if (listAmount !== null && (!Number.isInteger(listAmount) || listAmount <= 0)) {
+    if (listAmount !== null && (amount === null || !Number.isInteger(listAmount) || listAmount <= amount)) {
       throw new FormatError("format_invalid_list_amount");
     }
 
+    if (row.early_amount != null && (amount === null || row.early_amount >= amount)) {
+      throw new FormatError("format_early_below_amount");
+    }
     const { error: writeError } = await db
       .from("experience_offers")
       .update({
@@ -628,7 +778,7 @@ export async function reviewFormat(input: { code: string; actorId: string; decis
       })
       .eq("id", row.id);
     if (writeError) throw new FormatError(`format_write_failed:${writeError.message}`, 500);
-    return;
+    return result;
   }
 
   if (input.decision.action === "decline") {
@@ -639,18 +789,19 @@ export async function reviewFormat(input: { code: string; actorId: string; decis
         .update({ proposed_amount: null, reviewed_by: input.actorId, reviewed_at: now })
         .eq("id", row.id);
       if (writeError) throw new FormatError(`format_write_failed:${writeError.message}`, 500);
-      return;
+      return result;
     }
     const { error: writeError } = await db
       .from("experience_offers")
       .update({ review_status: "declined", active: false, reviewed_by: input.actorId, reviewed_at: now })
       .eq("id", row.id);
     if (writeError) throw new FormatError(`format_write_failed:${writeError.message}`, 500);
-    return;
+    return result;
   }
 
   if (row.review_status !== "approved") throw new FormatError("format_not_approved", 409);
   const active = input.decision.action === "resume";
   const { error: writeError } = await db.from("experience_offers").update({ active }).eq("id", row.id);
   if (writeError) throw new FormatError(`format_write_failed:${writeError.message}`, 500);
+  return result;
 }

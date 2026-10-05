@@ -276,7 +276,28 @@ export const access = {
     en: "Set an access term — in days, or no end date",
   },
   catalog_error_offer_not_found: { uk: "У курсу ще немає офера", en: "This course has no offer yet" },
-  catalog_tab_products: { uk: "Пакети й заявки", en: "Packages and enquiries" },
+  catalog_tab_products: { uk: "Послуги й товари", en: "Services and products" },
+  catalog_term_agreed: { uk: "Узгоджується після заявки", en: "Agreed after enquiry" },
+  products_error_load: {
+    uk: "Не вдалося завантажити послуги й товари. Повторіть спробу.",
+    en: "Could not load services and products. Please retry.",
+  },
+  catalog_products_scope: {
+    uk: "Самостійні послуги й товари. Формати проходження курсу та їхні ціни — у вкладці «Ціни й доступ», під відповідним курсом.",
+    en: "Standalone services and products. Course formats and their prices are under each course in Prices and access.",
+  },
+  formats_error_load: {
+    uk: "Не вдалося завантажити формати. Повторіть спробу, щоб редагувати ціни.",
+    en: "Could not load formats. Retry to edit prices.",
+  },
+  formats_error_not_approved: {
+    uk: "Спочатку погодьте формат, щоб змінювати його умови продажу.",
+    en: "Approve the format before editing its commercial terms.",
+  },
+  formats_error_early_amount: {
+    uk: "Основна ціна має бути вищою за ранню. Спочатку змініть або приберіть ранню ціну в білдері.",
+    en: "The regular price must exceed the early price. Update or remove the early price in the builder first.",
+  },
   catalog_tab_formats: { uk: "Формати", en: "Formats" },
   formats_empty: { uk: "Жодна програма ще не має форматів", en: "No program has formats yet" },
   formats_intro: {
