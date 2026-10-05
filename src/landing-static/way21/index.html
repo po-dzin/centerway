@@ -92,7 +92,8 @@
           <span>Індивідуально</span>
         </div>
         <div class="hero-price">
-          <b data-cw-price="way21">4100 грн</b>
+          <!-- The lowest price across the formats («від …»), from the formats themselves. -->
+          <b data-cw-price-from="way21">4100 грн</b>
           <small>повний доступ</small>
         </div>
         <a href="#offer" class="btn btn-primary" data-cta-hero>Почати Шлях 21 <span class="arr"><svg class="ico ico-arr" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-arrow-right"/></svg></span></a>
@@ -773,7 +774,7 @@
       <!-- cw:formats way21 -->
 
       <!-- cw:format course:way21 -->
-      <div class="format-card self reveal" data-cw-nav-dark>
+      <div class="format-card reveal" data-format="self">
         <span class="fc-badge">Програма</span>
         <div class="fc-title">Шлях 21 — самостійно</div>
         <div class="fc-price">
@@ -792,7 +793,7 @@
       <!-- /cw:format -->
 
       <!-- cw:format way21-support -->
-      <div class="format-card premium reveal">
+      <div class="format-card reveal" data-format="individual">
         <span class="fc-badge">Повне занурення</span>
         <div class="fc-title">Шлях 21 — індивідуальний супровід</div>
         <div class="fc-price">
@@ -809,7 +810,7 @@
              in conversation before money changes hands, so the price here is a
              quote and the `way21-support` offer exists for invoicing that follows.
              The submission reaches the support group through /api/leads. -->
-        <button type="button" class="btn btn-primary fc-cta" data-lead-open="way21-support">Залишити заявку <span class="arr"><svg class="ico ico-arr" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-arrow-right"/></svg></span></button>
+        <button type="button" class="btn btn-ghost fc-cta" data-lead-open="way21-support">Залишити заявку <span class="arr"><svg class="ico ico-arr" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-arrow-right"/></svg></span></button>
         <div class="fc-guarantee"><svg class="ico" width="13" height="13" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-shield-check"/></svg>Максимальний результат</div>
       </div>
       <!-- /cw:format -->

@@ -173,7 +173,7 @@ async function sendReconciledReceipt(
 
   return sendPurchaseEmail({
     email,
-    productTitle: offer?.pixelContentName ?? "Ваше замовлення",
+    productTitle: offer?.heading.uk || offer?.pixelContentName || "Ваше замовлення",
     amount: Number.isFinite(amount) && amount > 0 ? amount : null,
     currency: typeof order?.currency === "string" ? order.currency : "UAH",
     fulfilment: offer?.fulfilment ?? { kind: "cabinet" },

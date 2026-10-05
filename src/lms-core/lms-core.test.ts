@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { isSafeHref, validateInlineText } from "./inline";
 
 import { validateLessonBlock, collectRequiredChecklistItemIds, youtubeIdFrom } from "./blocks";
 import {
@@ -956,5 +957,38 @@ describe("youtubeIdFrom", () => {
     expect(youtubeIdFrom("")).toBeNull();
     expect(youtubeIdFrom("https://vimeo.com/12345")).toBeNull();
     expect(youtubeIdFrom("не посилання")).toBeNull();
+  });
+});
+
+describe("isSafeHref — what an author's link may point at (meta-audit 2026-09-30)", () => {
+  it("follows web, mail and phone links, and paths with no scheme", () => {
+    for (const href of [
+      "https://x.com",
+      "http://x.com",
+      "mailto:a@b.c",
+      "tel:+380",
+      "/dosha-test",
+      "#step",
+      "t.me/x",
+    ]) {
+      expect(isSafeHref(href)).toBe(true);
+    }
+  });
+
+  it("refuses a scheme that runs or embeds, however it is spelled", () => {
+    for (const href of [
+      "javascript:alert(1)",
+      "JavaScript:alert(1)",
+      " java\nscript:alert(1)",
+      "data:text/html,x",
+      "vbscript:x",
+    ]) {
+      expect(isSafeHref(href)).toBe(false);
+    }
+  });
+
+  it("is enforced when inline text and call-to-action blocks are validated", () => {
+    expect(() => validateInlineText([{ text: "x", href: "javascript:alert(1)" }], "p")).toThrow(/unsafe_href/);
+    expect(() => validateInlineText([{ text: "x", href: "https://x.com" }], "p")).not.toThrow();
   });
 });

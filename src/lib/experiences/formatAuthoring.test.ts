@@ -52,6 +52,7 @@ function offer(row: Row): Row {
     cohort_starts_on: null,
     review_status: "draft",
     active: false,
+    featured: false,
     sort_order: 1,
     experience_id: "exp-way21",
     ...row,
@@ -76,6 +77,8 @@ async function expectFormatError(promise: Promise<unknown>, code: string, status
 
 const author = { courseId: "c-way21", authUserId: AUTHOR, isAdmin: false };
 const admin = { courseId: "c-way21", authUserId: ADMIN, isAdmin: true };
+/** The `admin` role: sets the live price itself. `admin` above is `support`-shaped — admin surface, no prices. */
+const owner = { ...admin, canSetPrice: true };
 
 beforeEach(() => {
   db.failures = {};
@@ -403,6 +406,53 @@ describe("updateFormat", () => {
     expect(offerRow("way21-group").cohort_starts_on).toBeNull();
   });
 
+  it("lets only the owner mark a «Бестселер», one per program", async () => {
+    await expectFormatError(
+      updateFormat({ ...admin, code: "way21-group", body: { featured: true } }),
+      "format_featured_owner_only",
+      403,
+    );
+    await expectFormatError(
+      updateFormat({ ...owner, code: "way21-group", body: { featured: "yes" } }),
+      "format_invalid_featured",
+    );
+    offerRow("course:other").featured = true;
+    await updateFormat({ ...owner, code: "way21-group", body: { featured: true } });
+    expect(offerRow("way21-group").featured).toBe(true);
+    await updateFormat({ ...owner, code: "course:way21", body: { featured: true } });
+    expect(offerRow("course:way21").featured).toBe(true);
+    expect(offerRow("way21-group").featured).toBe(false);
+    // Another program's mark is its own.
+    expect(offerRow("course:other").featured).toBe(true);
+    await updateFormat({ ...owner, code: "course:way21", body: { featured: false } });
+    expect(offerRow("course:way21").featured).toBe(false);
+  });
+
+  it("lets only the owner set an early price, lower than the regular one, and remove it", async () => {
+    await expectFormatError(
+      updateFormat({ ...admin, code: "way21-group", body: { early: { amount: 3400, until: "2026-10-15" } } }),
+      "format_early_owner_only",
+      403,
+    );
+    await expectFormatError(
+      updateFormat({ ...owner, code: "way21-group", body: { early: { amount: 4800, until: "2026-10-15" } } }),
+      "format_early_not_lower",
+    );
+    await expectFormatError(
+      updateFormat({ ...owner, code: "way21-group", body: { early: { amount: 3400, until: "15.10" } } }),
+      "format_invalid_early_date",
+    );
+    await updateFormat({ ...owner, code: "way21-group", body: { early: { amount: 3400, until: "2026-10-15" } } });
+    expect(offerRow("way21-group")).toMatchObject({ amount: 4800, early_amount: 3400, early_until: "2026-10-15" });
+    // The regular price cannot drop under the early one while it is stored.
+    await expectFormatError(
+      updateFormat({ ...owner, code: "way21-group", body: { proposedAmount: 3000 } }),
+      "format_early_not_lower",
+    );
+    await updateFormat({ ...owner, code: "way21-group", body: { early: null } });
+    expect(offerRow("way21-group")).toMatchObject({ early_amount: null, early_until: null });
+  });
+
   it("submitting sends a draft and a reworked decline to the owner", async () => {
     await updateFormat({ ...author, code: "way21-individual", body: { submit: true } });
     await updateFormat({ ...author, code: "way21-self", body: { submit: true } });
@@ -681,6 +731,154 @@ describe("reviewFormat", () => {
       reviewFormat({ code: "way21-self", actorId: ADMIN, decision: { action: "approve", amount: 100 } }),
       "format_write_failed:down",
       500,
+    );
+  });
+});
+
+describe("the owner prices without review (2026-10-03)", () => {
+  it("puts a format the owner sends on sale at the price typed, with nothing left to approve", async () => {
+    const code = await createFormat({ ...owner, body: { format: "self", proposedAmount: 2900, submit: true } });
+    expect(offerRow(code)).toMatchObject({
+      amount: 2900,
+      proposed_amount: null,
+      review_status: "approved",
+      active: true,
+      reviewed_by: ADMIN,
+    });
+  });
+
+  it("keeps an owner's draft a draft", async () => {
+    const code = await createFormat({ ...owner, body: { format: "self", proposedAmount: 2900 } });
+    expect(offerRow(code)).toMatchObject({
+      amount: null,
+      proposed_amount: 2900,
+      review_status: "draft",
+      active: false,
+    });
+  });
+
+  it("refuses to put a checkout on sale with no price — and writes nothing", async () => {
+    const before = db.rows("experience_offers").length;
+    await expectFormatError(
+      createFormat({ ...owner, body: { format: "self", submit: true } }),
+      "format_invalid_amount",
+    );
+    expect(db.rows("experience_offers")).toHaveLength(before);
+  });
+
+  it("replaces the live price of a format on sale at once", async () => {
+    await updateFormat({ ...owner, code: "way21-group", body: { proposedAmount: 5200, label: "Потік 2" } });
+    expect(offerRow("way21-group")).toMatchObject({
+      amount: 5200,
+      proposed_amount: null,
+      review_status: "approved",
+      active: true,
+      label: { uk: "Потік 2", en: "Потік 2" },
+    });
+  });
+
+  it("accepts a waiting proposal when the owner saves it as the price", async () => {
+    offerRow("way21-group").proposed_amount = 5200;
+    await updateFormat({ ...owner, code: "way21-group", body: { proposedAmount: 5200 } });
+    expect(offerRow("way21-group")).toMatchObject({ amount: 5200, proposed_amount: null });
+  });
+
+  it("sends a draft straight to sale", async () => {
+    offerRow("way21-group").review_status = "draft";
+    offerRow("way21-group").active = false;
+    await updateFormat({ ...owner, code: "way21-group", body: { proposedAmount: 3000, submit: true } });
+    expect(offerRow("way21-group")).toMatchObject({ amount: 3000, review_status: "approved", active: true });
+  });
+
+  it("leaves `support` — admin surface, not prices — on the proposal path", async () => {
+    await updateFormat({ ...admin, code: "way21-group", body: { proposedAmount: 5200 } });
+    expect(offerRow("way21-group")).toMatchObject({ amount: 4800, proposed_amount: 5200 });
+  });
+});
+
+describe("saving approved format terms", () => {
+  const terms = {
+    action: "save" as const,
+    amount: 5000,
+    listAmount: 6000,
+    mode: "checkout" as const,
+    accessDays: 90,
+    accessLifetime: false,
+  };
+  it("changes price, mode and access without publishing a withdrawn format or accepting a proposal", async () => {
+    Object.assign(offerRow("way21-group"), { active: false, proposed_amount: 5500 });
+    await reviewFormat({ code: "way21-group", actorId: ADMIN, decision: terms });
+    expect(offerRow("way21-group")).toMatchObject({
+      amount: 5000,
+      list_amount: 6000,
+      access_days: 90,
+      access_lifetime: false,
+      active: false,
+      review_status: "approved",
+      proposed_amount: 5500,
+    });
+  });
+  it("keeps an enquiry as an enquiry, including a price on request", async () => {
+    await reviewFormat({
+      code: "way21-group",
+      actorId: ADMIN,
+      decision: { ...terms, amount: null, listAmount: null, mode: "lead" },
+    });
+    expect(offerRow("way21-group")).toMatchObject({ mode: "lead", amount: null });
+  });
+  it("allows an enquiry's term to be agreed later, but checkout requires an explicit rule", async () => {
+    await reviewFormat({ code: "way21-group", actorId: ADMIN, decision: { ...terms, mode: "lead", accessDays: null } });
+    expect(offerRow("way21-group")).toMatchObject({ access_days: null, access_lifetime: false, mode: "lead" });
+    await expectFormatError(
+      reviewFormat({ code: "way21-group", actorId: ADMIN, decision: { ...terms, accessDays: null } }),
+      "access_rule_required",
+    );
+  });
+  it("supports a free format and synchronizes the base course access note", async () => {
+    await reviewFormat({
+      code: "course:way21",
+      actorId: ADMIN,
+      decision: { ...terms, amount: 0, accessDays: null, accessLifetime: true },
+    });
+    expect(offerRow("course:way21")).toMatchObject({
+      mode: "free",
+      amount: 0,
+      access_days: null,
+      access_lifetime: true,
+    });
+    expect(db.tables.lms_courses![0]).toMatchObject({ access_note: "Назавжди" });
+  });
+  it("does not approve a draft through save", async () => {
+    offerRow("way21-group").review_status = "draft";
+    await expectFormatError(
+      reviewFormat({ code: "way21-group", actorId: ADMIN, decision: terms }),
+      "format_not_approved",
+      409,
+    );
+  });
+  it.each([
+    [{ amount: null }, "format_invalid_amount"],
+    [{ amount: -1 }, "format_invalid_amount"],
+    [{ listAmount: 4000 }, "format_invalid_list_amount"],
+    [{ accessDays: null }, "access_rule_required"],
+  ])("refuses invalid commercial terms %j", async (patch, error) => {
+    await expectFormatError(
+      reviewFormat({ code: "way21-group", actorId: ADMIN, decision: { ...terms, ...patch } }),
+      error,
+    );
+    expect(offerRow("way21-group").amount).toBe(4800);
+  });
+  it("refuses to edit an unrelated product through the format route", async () => {
+    db.tables.experience_offers!.push(
+      offer({ id: "product", code: "herbs", experience_id: "exp-herbs", review_status: "approved" }),
+    );
+    await expectFormatError(reviewFormat({ code: "herbs", actorId: ADMIN, decision: terms }), "format_not_found", 404);
+  });
+  it("refuses a regular price below the existing early price", async () => {
+    offerRow("way21-group").early_amount = 5200;
+    await expectFormatError(
+      reviewFormat({ code: "way21-group", actorId: ADMIN, decision: terms }),
+      "format_early_below_amount",
     );
   });
 });

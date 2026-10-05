@@ -8,10 +8,9 @@ import type { DraftState } from "./doshaTestTypes";
 export const ATTEMPT_STORAGE_KEY = "centerway_dosha_test_attempt_id";
 export const DRAFT_STORAGE_KEY = "centerway_dosha_test_draft_v1";
 export const SESSION_STORAGE_KEY = "centerway_dosha_test_session_id";
-/* The result has to survive the round trip to Google and back: the page
-   reloads, state is gone, and the attempt it belongs to is anonymous until we
-   say otherwise. sessionStorage is the right shelf — same tab, one journey. */
-export const PENDING_SAVE_KEY = "centerway_dosha_test_pending_save";
+/* The finished result, kept for a day so a reload, a Back from the sign-in or
+   a later visit brings it back (lib/tests/keptResult). */
+export const KEPT_RESULT_KEY = "centerway_dosha_test_result_v1";
 
 export function getOrCreateStoredSessionId(): string {
   if (typeof window === "undefined") return crypto.randomUUID();

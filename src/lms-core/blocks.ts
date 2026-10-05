@@ -11,7 +11,7 @@
  * subset needed for reset-day and way21, and no more.
  */
 
-import { assert, isNonEmptyString, isRecord, validateInlineText, type InlineText } from "./inline";
+import { assert, isNonEmptyString, isRecord, isSafeHref, validateInlineText, type InlineText } from "./inline";
 
 export type LessonBlockType =
   | "group"
@@ -397,6 +397,7 @@ export function validateLessonBlock(block: unknown, path: string, depth = 0): as
     case "cta":
       assert(isNonEmptyString(block.label), `lms_block_missing_cta_label:${path}`);
       assert(isNonEmptyString(block.href), `lms_block_missing_cta_href:${path}`);
+      assert(isSafeHref(block.href), `lms_block_unsafe_cta_href:${path}`);
       if (block.text !== undefined) validateInlineText(block.text, `${path}.text`);
       return;
   }

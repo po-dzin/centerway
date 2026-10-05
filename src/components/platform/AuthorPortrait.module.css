@@ -71,6 +71,15 @@
    `sm` is a row's portrait (a preview beside a name), `md` a byline's, `lg` the
    author's own page, where the picture is the second thing on the screen and
    grows with the viewport. */
+/* `xs` is a line's portrait: the byline under a title, where the face says
+   whose it is and the name beside it says who. Same circle, same rule — a
+   caller picks how big, never what shape. */
+.xs {
+  --portrait-size: 2.75rem;
+  --portrait-radius: var(--cw-radius-pill);
+  font-size: var(--ds-type-label-size);
+}
+
 .sm {
   --portrait-size: 4.5rem;
   --portrait-radius: var(--cw-radius-pill);

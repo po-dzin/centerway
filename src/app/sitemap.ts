@@ -24,12 +24,19 @@ import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
-  const staticRoutes = getMainDomainSitemapRoutes().map((route) => ({
-    url: `${PLATFORM_ORIGIN}${route}`,
-    lastModified: now,
-    changeFrequency: (route === "/" ? "weekly" : "monthly") as "weekly" | "monthly",
-    priority: route === "/" ? 1 : 0.7,
-  }));
+  // The legal pages stay indexable — a buyer looks for the offer before paying
+  // — but they are not what the brand should be found by, and a search for the
+  // name once returned the public offer above the home page. Google ignores
+  // `priority`; other engines do not, and it is the honest weight either way.
+  const staticRoutes = getMainDomainSitemapRoutes().map((route) => {
+    const legalPage = route.startsWith("/legal/");
+    return {
+      url: `${PLATFORM_ORIGIN}${route}`,
+      lastModified: now,
+      changeFrequency: (route === "/" ? "weekly" : legalPage ? "yearly" : "monthly") as "weekly" | "monthly" | "yearly",
+      priority: route === "/" ? 1 : legalPage ? 0.2 : 0.7,
+    };
+  });
 
   const [courses, authors] = await Promise.all([listStorefrontCourses(), listListedAuthors()]);
   const known = new Set(staticRoutes.map((entry) => entry.url));

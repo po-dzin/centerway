@@ -24,6 +24,13 @@ export type BuilderIdentity = {
   authUserId: string;
   email: string | null;
   isAdmin: boolean;
+  /**
+   * May set a format's live price from the builder without the review step
+   * (G, 2026-10-03). The `admin` role only: `support` opens the admin surface
+   * but is not the owner of prices, and an author always proposes. Absent
+   * means no — every identity built without it stays on the review path.
+   */
+  canSetPrice?: boolean;
 };
 
 export async function resolveBuilderIdentity(user: { id: string; email?: string | null }): Promise<BuilderIdentity> {
@@ -34,6 +41,7 @@ export async function resolveBuilderIdentity(user: { id: string; email?: string 
     authUserId: user.id,
     email: user.email ?? null,
     isAdmin: isAdminRole(data?.role),
+    canSetPrice: typeof data?.role === "string" && data.role.trim().toLowerCase() === "admin",
   };
 }
 

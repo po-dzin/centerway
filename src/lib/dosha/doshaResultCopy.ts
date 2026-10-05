@@ -128,8 +128,8 @@ export const RESULT_COPY: Record<
    reassurance that costs the CTA its place stops reassuring anyone. */
 export const HOW_IT_WORKS_STEPS = [
   "12 коротких питань про тіло, сон, енергію, емоційні реакції і мислення.",
-  "Профіль доші як робоча гіпотеза про ваш поточний стан.",
-  "Наступний крок: консультація, програма або самостійний старт.",
+  "Профіль доші — робоча гіпотеза про вашу природу.",
+  "Тип видно одразу; повний профіль і збереження — після входу через Google або код на пошту.",
 ];
 
 /* Three sentences that say the same thing at three strengths. The old screen

@@ -18,6 +18,102 @@
   margin-block-start: auto;
 }
 
+/* EACH FORMAT HAS ITS OWN TONE (2026-09-30). Three cards of one material read
+   as one offer printed three times; a reader comparing «on your own» with «with
+   the author» had only the headings to tell them apart. Each format now takes a
+   tone from the palette's eight, warming as the guidance grows: the living
+   green of practice for going alone, the one cool tone (trust) for a cohort,
+   and the brand's gold for the author beside you. The tone is a WASH from the
+   card's top edge fading into the paper by mid-card — the price and the list
+   below stay on plain paper, so no text sits on colour — a hairline along the
+   top edge, and the ticks. The buttons stay gold on every card: one action
+   colour across the row. */
+.root .card {
+  --format-tone: var(--cw-sem-embodied);
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--format-tone) 20%, var(--cw-mat-surface)) 0%,
+      color-mix(in srgb, var(--format-tone) 7%, var(--cw-mat-surface)) 32%,
+      var(--cw-mat-surface) 58%
+    ),
+    var(--cw-mat-surface);
+  border-color: color-mix(in srgb, var(--format-tone) 28%, var(--cw-mat-stroke-inner));
+}
+
+.root .card::before {
+  position: absolute;
+  inset: 0 0 auto;
+  block-size: 2px;
+  content: "";
+  background: linear-gradient(90deg, transparent, var(--format-tone) 18%, var(--format-tone) 82%, transparent);
+  opacity: 0.85;
+}
+
+.root .card[data-format="group"] {
+  --format-tone: var(--cw-sem-trust);
+}
+
+.root .card[data-format="individual"] {
+  --format-tone: var(--cw-sem-warmth);
+}
+
+/* The ticks take the card's tone; the bonus «+» keeps the gold, because a bonus
+   is the same kind of thing on every card. */
+.root .card > ul .tick {
+  /* Mixed toward the text so the mark holds 3:1 on both grounds: the slate
+     trust tone alone is too dark on the night paper. */
+  color: color-mix(in srgb, var(--format-tone) 72%, var(--cw-platform-text));
+}
+
+/* THE FEATURED FORMAT (2026-10-03): the one the owner marked «Бестселер» in
+   the builder (`experience_offers.featured`, lib/experiences/formatFeatured).
+   It sits slightly raised, its edge takes the accent, and a gold pill names it
+   in the top-right corner; it keeps the row's only primary button. The wash
+   stays the format's own tone, so the row still reads as one family. */
+.root .card[data-featured] {
+  border-color: color-mix(in srgb, var(--cw-platform-accent) 55%, var(--cw-mat-stroke-inner));
+  box-shadow: var(--cw-mat-shadow-raised);
+  transform: translateY(calc(-1 * var(--cw-space-2xs)));
+}
+
+.bestseller {
+  position: absolute;
+  inset-block-start: var(--cw-space-sm);
+  inset-inline-end: var(--cw-space-sm);
+  z-index: 1;
+  margin: 0;
+  padding: var(--cw-space-2xs) var(--cw-space-sm);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-platform-accent);
+  color: var(--cw-platform-accent-contrast);
+  font-size: var(--ds-type-label-size);
+  font-weight: 640;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+/* The pill sits over the head's end; the head keeps clear of it. */
+.root .card[data-featured] h3 {
+  padding-inline-end: calc(var(--cw-space-3xl) + var(--cw-space-xl));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root .card[data-featured] {
+    transform: none;
+  }
+}
+
+/* Every card but the featured one: one primary per row (docs/design-system.md,
+   «Five roles»). */
+.secondaryAction {
+  composes: secondary from "./PlatformButtons.module.css";
+  composes: fill from "./PlatformButtons.module.css";
+}
+
 /* The bonus programs, under a rule: what this format adds over the others. */
 .bonus {
   display: grid;
@@ -29,6 +125,16 @@
 
 .bonusLabel {
   margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-weight: 560;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* A bonus program's kind, before its name: «МІНІ-КУРС Розвантажувальний день». */
+.bonusKind {
+  margin-inline-end: var(--cw-space-2xs);
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-label-size);
   font-weight: 560;
@@ -48,4 +154,130 @@
   max-width: 36rem;
   padding-block-start: var(--cw-space-md);
   scroll-margin-block-start: var(--cw-space-3xl);
+}
+
+/* THE EARLY PRICE (G, 2026-10-03, «Оптимізація 1»): a quiet box under the
+   price — what is left in days, hours and minutes, a bar, and one line with
+   the whole ladder. A fact of the schedule; the accent only on its edge and
+   the bar, the figures on paper. `EarlyPriceTimer.tsx`. */
+.early {
+  display: grid;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-sm);
+  border: 1px solid color-mix(in srgb, var(--cw-platform-accent) 45%, var(--cw-mat-stroke-inner));
+  border-radius: var(--cw-radius-sm);
+  background: var(--cw-mat-surface);
+}
+
+.earlyHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+}
+
+.earlyLabel,
+.earlyLine {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.4;
+}
+
+.earlyClock {
+  display: flex;
+  gap: var(--cw-space-2xs);
+  margin: 0;
+}
+
+.earlyClock span {
+  display: grid;
+  justify-items: center;
+  min-inline-size: 2.75rem;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-radius: var(--cw-radius-inset);
+  background: var(--cw-platform-surface-muted);
+}
+
+.earlyClock b {
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-size);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.earlyClock small {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: 1.2;
+}
+
+.earlyBar {
+  display: block;
+  block-size: 3px;
+  overflow: hidden;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-platform-surface-muted);
+}
+
+.earlyBar span {
+  display: block;
+  block-size: 100%;
+  border-radius: inherit;
+  background: var(--cw-platform-accent);
+}
+
+/* A BONUS AS A ROW OF THE CARD SYSTEM (G, 2026-10-03): its cover, the badge
+   and length its own card prints, the name, and what it costs on its own. */
+.bonusList {
+  display: grid;
+  gap: var(--cw-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bonusRow {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: var(--cw-space-sm);
+  align-items: center;
+  padding: var(--cw-space-xs);
+  border-radius: var(--cw-radius-sm);
+  background: var(--cw-platform-surface-muted);
+}
+
+.bonusRow:not(:has(img)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.bonusThumb {
+  display: block;
+  inline-size: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--cw-radius-inset);
+}
+
+.bonusText {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-inline-size: 0;
+}
+
+.bonusTitle {
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+  line-height: 1.3;
+  text-decoration: none;
+}
+
+.bonusPrice {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.3;
 }

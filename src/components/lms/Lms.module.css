@@ -272,6 +272,16 @@
   line-height: 1.35;
 }
 
+/* A bundled program's kind, before its name (`bonusKindLabel`). */
+.outlineKind {
+  margin-inline-end: var(--cw-space-2xs);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-weight: 560;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .outlineMeta {
   margin: var(--cw-space-2xs) 0 0;
   font-size: var(--ds-type-label-size);

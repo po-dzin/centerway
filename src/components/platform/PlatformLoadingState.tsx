@@ -9,11 +9,36 @@ import styles from "./PlatformShellStyles";
  * route width while this node answers only "the current content is loading".
  * That prevents a second full-page layer from replacing the first one midway
  * through session + data restoration.
+ *
+ * EVERY WAIT IS THIS CARD (2026-10-03). The diagnostic stacked a chip, the
+ * mark, a display heading and a lead down a whole panel, and the admin panel
+ * centred the mark over its line in a column of padding — two more shapes for
+ * the same sentence. G: «текст можно в одну линию с лого загрузки… ЕДИНУЮ
+ * карточку загрузки ДЛЯ ВСЕХ вариантов». Both now render this node: the mark
+ * and the words on one row, the card as tall as they are.
+ *
+ * NO FOOTER WHILE IT WAITS (same day). The header stays: it is the frame and
+ * the way out, and it does not move when the content lands. The footer is the
+ * END of a page, and under a short card it rose to mid-screen, then fell away
+ * when the content arrived. `data-cw-wait` is what the shell reads to hold it
+ * back (PlatformShell.module.css).
  */
-export function PlatformLoadingState({ label, title, detail }: { label?: string; title: string; detail?: string }) {
+export function PlatformLoadingState({
+  label,
+  title,
+  detail,
+  className,
+}: {
+  label?: string;
+  title: string;
+  detail?: string;
+  /** Placement only (a panel's plate, a margin) — never a second look. */
+  className?: string;
+}) {
   return (
     <section
-      className={styles.platformLoadingState}
+      className={className ? `${styles.platformLoadingState} ${className}` : styles.platformLoadingState}
+      data-cw-wait=""
       data-cw-material="matte"
       data-cw-edge="none"
       role="status"

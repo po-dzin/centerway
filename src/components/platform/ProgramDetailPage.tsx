@@ -6,12 +6,14 @@ import {
 } from "@/components/platform/PlatformOfferSurfaceTemplate";
 import { OfferCheckoutPanel, OfferFreePanel, OfferSupportPanel } from "@/components/platform/OfferCommerce";
 import { OfferFormats } from "@/components/platform/OfferFormats";
+import { formatFloor } from "@/lib/experiences/formatFloor";
 import type { ProgramFormat } from "@/lib/experiences/formats";
 import { formatPrice } from "@/lib/products";
 import { OfferCurriculum } from "@/components/platform/OfferCurriculum";
 import { OfferAccessProvider } from "@/components/platform/OfferAccess";
 import { OfferHeroActions, OfferHeroCommitment } from "@/components/platform/OfferHeroState";
 import { OfferAuthor, OfferBento } from "@/components/platform/OfferFacets";
+import { OfferSeam, type RouteStep } from "@/components/platform/OfferSeam";
 import { OfferStickyBar } from "@/components/platform/OfferStickyBar";
 import { OfferSupport } from "@/components/platform/OfferSupportState";
 import offerPanelStyles from "@/components/platform/PlatformOfferStyles";
@@ -197,13 +199,9 @@ export function ProgramDetailPage({
      which moved there with the count it protects. */
 
   const choosesFormat = formats.length >= 2;
-  const lowestFormat = formats
-    .filter((format) => format.mode === "checkout" && format.amount !== null)
-    .sort((a, b) => (a.amount ?? 0) - (b.amount ?? 0))[0];
-  const formatFromPrice =
-    choosesFormat && lowestFormat?.amount != null
-      ? `від ${formatPrice(lowestFormat.amount, lowestFormat.currency)}`
-      : null;
+  /* The same floor the catalogue card quotes (`formatFloor`). */
+  const lowestFormat = formatFloor(formats);
+  const formatFromPrice = lowestFormat ? `від ${formatPrice(lowestFormat.amount, lowestFormat.currency)}` : null;
 
   const buyHref = choosesFormat
     ? "#formats"
@@ -220,6 +218,14 @@ export function ProgramDetailPage({
         ? "Почати безкоштовно"
         : "Записатися на програму";
   const heroPrice = choosesFormat ? formatFromPrice : isCheckout || isFree ? commerce.price : null;
+
+  /* Each seam draws the page's steps. Section facts stay in their own blocks. */
+  const route: RouteStep[] = [
+    { icon: "leaf", label: "Метод" },
+    { icon: "sprout", label: "Чи це про вас" },
+    ...(course ? [{ icon: "calendar" as const, label: "Програма" }] : []),
+    { icon: "price", label: choosesFormat ? "Формати" : "Участь" },
+  ];
 
   return (
     /* EVERYTHING INSIDE ONE PROVIDER, and only two things read it. The hero and
@@ -349,9 +355,19 @@ export function ProgramDetailPage({
                 repeating it — and «Формат» is said once, by the panel that
                 means the commitment (see `OfferBento`'s own note on the
                 rename). */}
-            <OfferBento audience={program.audience} results={program.results} format={program.format} />
+            <OfferBento
+              audience={program.audience}
+              results={program.results}
+              format={program.format}
+              seam={<OfferSeam steps={route} current={1} />}
+            />
             {course ? (
-              <OfferCurriculum course={course} landingHref={offerLandingUrl(program.slug)} formats={formats} />
+              <OfferCurriculum
+                course={course}
+                landingHref={offerLandingUrl(program.slug)}
+                formats={formats}
+                seam={<OfferSeam steps={route} current={2} />}
+              />
             ) : null}
             <OfferAuthor author={author} note={program.authorNote} />
           </>
@@ -366,7 +382,12 @@ export function ProgramDetailPage({
             title={program.title}
             sales={
               choosesFormat ? (
-                <OfferFormats programSlug={program.slug} programTitle={program.title} formats={formats} />
+                <OfferFormats
+                  programSlug={program.slug}
+                  programTitle={program.title}
+                  formats={formats}
+                  seam={<OfferSeam steps={route} current={route.length - 1} />}
+                />
               ) : (
                 <>
                   <article className={offerPanelStyles.panel}>

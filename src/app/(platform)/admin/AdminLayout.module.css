@@ -52,7 +52,14 @@
   min-width: 0;
   flex: 0 1 auto;
   max-width: 13rem;
-  overflow: hidden;
+  /* CLIPPED ACROSS, NEVER BELOW (2026-10-03). The clip is for the width that
+     animates; `overflow: hidden` clipped both axes and cut off the ink stroke,
+     which hangs `--cw-ink-stroke-offset` under the word, so the open rail lost
+     its underline on hover and on the current row. The margin lets the stroke's
+     ends past the word through. */
+  overflow-x: clip;
+  overflow-y: visible;
+  overflow-clip-margin: var(--cw-space-2xs);
   opacity: 1;
   transform: translateX(0);
   transition:

@@ -20,6 +20,7 @@
  * reaches it through `loadPayableOffer` below.
  */
 
+import { currentPrice } from "@/lib/experiences/earlyPrice";
 import { coverArtworkFraming } from "@/lib/lms/courseCover";
 import { unstable_cache } from "next/cache";
 
@@ -33,6 +34,7 @@ import {
 } from "@/lib/products";
 import { mediaSources } from "@/lib/lms/media";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { formatFloor } from "@/lib/experiences/formatFloor";
 import { FORMAT_DEFAULT_LABELS, isOfferFormat, loadProgramFormats } from "@/lib/experiences/formats";
 import {
   describeOffer,
@@ -42,6 +44,7 @@ import {
   type OfferTarget,
 } from "@/lib/experiences/offers";
 import { isContentKind } from "@/lib/experiences/registry";
+import { loadHighlights, type OfferHighlight } from "@/lib/experiences/highlight";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 import { toOfferSurface } from "@/lib/platform/courseOffer";
 import { COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
@@ -241,6 +244,12 @@ export type StorefrontCard = {
    * narrowed by the printed word would break the day a badge is reworded.
    */
   kind?: CourseKind;
+  /**
+   * The one flag the photograph may carry, opposite the kind badge:
+   * «Бестселер» (the owner's, from the admin catalogue) or «Новинка» (its first
+   * 30 days on the shelf). See `src/lib/experiences/highlight.ts`.
+   */
+  highlight?: OfferHighlight;
 };
 
 /** Course palette → the card variant closest to it. */
@@ -275,22 +284,23 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
   const listed = courses
     .filter((course) => isPublicCourse(course, ["listed"]))
     .sort((a, b) => (a.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.sortOrder ?? Number.MAX_SAFE_INTEGER));
-  const [offers, formatSets] = await Promise.all([
+  const [offers, formatSets, highlights] = await Promise.all([
     Promise.all(listed.map((course) => loadCourseOffer(course.slug))),
     Promise.all(listed.map((course) => loadProgramFormats(course))),
+    readHighlights(listed.map((course) => course.programSlug)),
   ]);
 
-  return listed.map((course, index) => {
+  return listed.map((course, index) => withHighlight(cardFor(course, index), highlights.get(course.programSlug)));
+
+  function cardFor(course: Course, index: number): StorefrontCard {
     const offer = offers[index] ?? null;
     /* SEVERAL WAYS THROUGH IT, SEVERAL PRICES (2026-09-25). A program sold in
        formats quotes the lowest of them as «від …», the same figure its page's
        hero prints — a card showing only the self-paced price would read as the
-       whole offer. `amount` stays the lowest figure, for the price filter. */
-    const priced = (formatSets[index] ?? []).filter(
-      (format) => format.mode === "checkout" && format.amount !== null && format.amount > 0,
-    );
-    const lowest = (formatSets[index] ?? []).length >= 2 ? priced.sort((a, b) => a.amount! - b.amount!)[0] : undefined;
-    if (lowest && lowest.amount !== null) {
+       whole offer. `amount` stays the lowest figure, for the price filter.
+       The figure is `formatFloor`'s, the same one the page's hero prints. */
+    const lowest = formatFloor(formatSets[index] ?? []);
+    if (lowest) {
       return {
         ...storefrontCard(course, index, offer),
         commercialMode: "fixed" as const,
@@ -301,7 +311,7 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
       };
     }
     return storefrontCard(course, index, offer);
-  });
+  }
 
   function storefrontCard(course: Course, index: number, offer: CourseOffer | null): StorefrontCard {
     /* THE CARD SAYS WHAT THE PAGE SAYS. The eyebrow, the name and the
@@ -382,6 +392,19 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
  * hidden course all refuse the checkout. A read that fails refuses it too — a
  * price that cannot be read is not a price.
  */
+function withHighlight(card: StorefrontCard, highlight: OfferHighlight | undefined): StorefrontCard {
+  return highlight ? { ...card, highlight } : card;
+}
+
+/** The registry's flags for the listed programs; empty (no flags) when the registry cannot be read. */
+async function readHighlights(programSlugs: string[]) {
+  try {
+    return await loadHighlights(supabaseAdmin(), programSlugs);
+  } catch {
+    return new Map<string, OfferHighlight>();
+  }
+}
+
 export async function loadPayableOffer(code: unknown): Promise<PayableOffer | null> {
   let target: OfferTarget | null;
   try {
@@ -392,6 +415,7 @@ export async function loadPayableOffer(code: unknown): Promise<PayableOffer | nu
   }
   if (!target || !isPayable(target.offer)) return null;
   const { offer } = target;
+  const price = currentPrice(offer);
 
   let title = target.experience.title ?? offer.code;
   let summary = "";
@@ -418,8 +442,10 @@ export async function loadPayableOffer(code: unknown): Promise<PayableOffer | nu
     code: offer.code as PayableProductCode,
     heading: offer.invoiceHeading ?? { uk: fallbackHeading, en: fallbackHeading },
     description: offer.invoiceDescription ?? { uk: fallbackDescription, en: fallbackDescription },
-    amount: offer.amount,
-    listAmount: offer.listAmount ?? offer.amount,
+    /* What the gateway is asked for is the price NOW: the early price while it
+       holds, the regular one from 00:00 Kyiv on its date (`earlyPrice.ts`). */
+    amount: price.amount ?? offer.amount,
+    listAmount: price.listAmount ?? price.amount ?? offer.amount,
     currency: offer.currency,
     pixelContentName: offer.pixelContentName ?? title,
     fulfilment: offerFulfilment(target),

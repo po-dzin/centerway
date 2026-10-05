@@ -300,6 +300,16 @@ From 1200px «Усі тести» stands on the label's line (`.videoDecisionHea
 
 **A card's CTA keeps the right end of its footer with or without a price.** The footer spaced price and CTA with `space-between`, which only works with two children; a test card has no price, so the CTA was the only child and fell to the left, and one catalogue row showed its buttons on two sides. `.programLink` takes `margin-inline-start: auto`.
 
+**A test's intro answers four questions and stops (2026-09-30).** The intro had grown into a card of numbered steps that repeated the format badge and the lead, a disclosure, a second card for the author, and the button below all of it — on a phone the start button was past the fold. A person deciding whether to spend three minutes needs: what it is (title, lead), how long (the badge), whose it is (the byline), and the button. (A «Безкоштовно · без реєстрації» line beside the button was dropped the same day: a free test says so by having no price, and the flow does offer an account at the end — to keep the result — so «no registration» promised more than it meant.) That is the whole visible screen (`DiagnosticIntro`, one object for every test; the dosha and balance intros are thin wrappers with their own copy). Everything else — the steps, what the test is and is not, the limit of the method — is ONE closed disclosure, «Як це працює і межі методу». Measured: the card went from ~1000px to 510–570px on desktop, the button sits at 445–507px from the top (436px on a phone), and opening the disclosure does not move the card.
+
+**A test's verdict is free; its full reading opens with an account (2026-10-02).** Nothing is asked before question one (2026-09-05 still holds). The result screen shows the verdict to everybody — the marks, the name of the type or state, and its meaning cut at a sentence, never mid-phrase (`leadSentences`: the dosha summary's opening sentences; the balance test's quote whole plus the first sentence of what the state is — a name without its meaning is a label, not a result). Then `ResultGate`, which IS the door: the title carries the reassurance («Увійдіть — і повний результат відкриється тут»), four locked lines say what opens (a lock, not a tick: the reader does not have them yet), one primary «Продовжити з Google» returns to this very address, and «Або кодом на пошту, без пароля» opens `EmailSignIn` inside the card. The reader never leaves the page their result lives on — the first version linked to the cabinet's wall on `my`, whose heading spoke of purchases and whose email hint spoke of payment, with no way back. **The result outlives every exit**: it is kept in this browser for a day from the moment the test finishes (`lib/tests/keptResult`), restored on any visit — a reload, a Back, a Google round trip, an emailed code, a return hours later — and replaced only when the next run finishes, so «Пройти тест ще раз» costs nothing. With a session the page claims the attempt (`/api/test-attempts/[id]/attach`) and prints «Результат збережено» only from the server's answer; a failed claim reads «Не вдалося зберегти» with «Спробувати ще раз». Before sign-in the screen is ONLY the verdict and the door, and the door fits one phone screen (390×844: the gate ends at 806–815px, Google at 749–758px): no «Результат готовий» chip, no «Наступний крок» (the next step before sign-in IS the door), «Межі методу» past the door with the reading it qualifies; the foot keeps «← Усі тести» left and «Пройти тест ще раз» right. Why: the optional «Зберегти у кабінеті» was pressed by nobody from 2026-09-07 and no anonymous result reached an account after 2026-09-10; a critique on the first gate found that leaving the door lost the result. The balance test keeps its result too (`test_attempts`, `result_type` NULL so no dosha reader sees it as a constitution) and the cabinet prints it under the dosha tile as «Баланс зараз: …».
+
+**A test says what it will ask, offers the way back in, and shows what changed (2026-10-02).** Three rules that close the same critique. (1) The intro's «Як це працює» says the price before the test, not after it: «Тип видно одразу; повний профіль і збереження — після входу через Google або код на пошту.» — the account was a surprise at the end. The dosha intro now speaks of «вашу природу», not «поточний стан» (that is the balance test's subject), and no longer promises a next step the locked result does not show. (2) An unfinished run is OFFERED, not imposed: `DiagnosticIntro` takes `resume` and shows «Продовжити з питання N» (primary) and «Почати заново» (secondary) as one pair — side by side where they fit, stacked full width on a phone, the same pair as the result's next step; a text link between the button and the disclosure read as a stray third thing. While a run is unfinished the intro drops «Як це працює і межі методу»: the reader has read it once already, and the screen's only question is continue or start over. The dosha test used to drop a reader into question 7 of a test they opened to look at; the balance test forgot every answer on a reload and now writes a draft (answers, step, option seed) on each step. A draft outranks a kept result: the intro offers the retake rather than reopening the old result. (3) A saved result reads the reader's previous run (`/api/tests/[slug]/history`, signed-in, own rows, two at most) and prints one line in the saved card: «Минулого разу, 12.09: … — так само, як зараз.» or the old reading; absent on a first run or a failed read, never invented.
+
+**A program page turns at a route seam (2026-10-04).** `OfferSeam` draws the page's stages with shared icons and labels: method, whether it is for you, curriculum when present, and formats (or participation for a single offer). Past stages have an accent outline, the current stage is filled, and the connecting thread follows progress. The seam is decorative (`aria-hidden`), lives inside the section it introduces, and uses the existing DS surface, accent, spacing and label tokens. Only icons and their labels belong in the seam; explanatory sentences, prices and dates stay in the section they describe. The indicators are not clickable controls, so they do not introduce a selection family or ink gesture.
+
+**A test signs its intro with a byline, not a card (2026-09-30).** The intro carried a full `AuthorCard` — a 4:5 portrait, credentials, a button — inside its own card, which read as a second page pasted into the first. Authorship on a test needs what it needs on a programme: a face, a name, a way to the person. `AuthorByline` is that as one line under the title: `AuthorPortrait size="xs"` (2.75rem, round like every face), the name in the UI face, the role in one line with an ellipsis. The row links to the profile only when the author has published one (the programme page's rule); the name takes the selection stroke, so at rest the line is plain. `AuthorCard` stays the object for previewing a person; the byline is the object for signing a piece of work.
+
 **A diagnostic hero's photograph is the screen's, not the section's.** Opening the intro card's disclosure made the section taller, the `cover` crop re-solved and the centred card moved under the pointer. At every width the image is now one screen tall and `position: sticky` under an `overflow: clip` (not `hidden`, which would make the section a scrollport and pin the image to nothing), and on desktop the card is anchored from the top at the offset centring gave it closed. Both tests share the recipe through `main[data-cw-detail-template="dosha"]`, and both intros carry `data-dosha-test` because the test surfaces' token scope keys on it.
 
 ### One offer card, one size (2026-08-27)
@@ -810,6 +820,121 @@ fills it and may be magnified inside.
 builder, the admin and the catalogue filters still carry their own numbers; the
 job is finished by a `guard:fields` in the shape of `guard:buttons` — a rule
 that a component stylesheet may not mint a field width, only take a step.
+
+## Email — one frame, every letter (2026-10-03)
+
+Every letter the platform sends is poured into one frame,
+`renderEmailLayout` in `src/lib/email/layout.ts`. No letter writes its own
+skeleton. The gallery `docs/design-system/email-gallery.html` shows each one,
+rendered with sample data by the same builder the sender calls. Regenerate it
+with `npm run email:gallery`. `src/lib/email/catalog.test.ts` fails when the
+gallery drifts from the code, and when a `build…Email` / `build…Template` in
+`src/lib/email/` is missing from `catalog.ts`.
+
+### Why a frame and not a stylesheet
+
+Mail clients strip `<style>` (Gmail keeps a little, Outlook renders with Word),
+and none of them know custom properties or `color-mix()`. So the skeleton is
+tables, every rule is inline, and the DS travels as **values**: the light-side
+platform tokens resolved to hex in `EMAIL_TOKENS`. There is no dark letter.
+`color-scheme: light` is declared so that clients which invert colours leave
+the paper alone.
+
+| Mail token | Platform token | Hex | Used for |
+|---|---|---|---|
+| `paper` | `--cw-platform-bg` | `#faefe0` | body ground |
+| `surface` | `--cw-platform-surface` | `#fff8ef` | the one card |
+| `surfaceMuted` | `--cw-platform-surface-muted` | `#f3e4d0` | facts, note, code panels |
+| `border` | `--cw-platform-border` | `#dcd4c6` | card hairline, rules between rows |
+| `ink` | `--cw-platform-text` | `#18261d` | text, title, links |
+| `muted` | `--cw-platform-muted` | `#48544c` | secondary lines, labels |
+| `faint` | `--cw-text-tertiary` | `#747b73` | footer small print |
+| `accent` | `--cw-btn-primary-bg` | `#e5ae65` | button fill, list bullets, note edge |
+| `onAccent` | `--cw-btn-primary-text` | `#203126` | button label |
+| `linkRule` | `--cw-link-rule` (light) | `#70766d` | the thin underline of a link |
+| `guide` | `--cw-sem-guide-primary` | `#456b58` | eyebrow, step numbers |
+
+When a platform token changes, change the hex here in the same commit. Then
+run `npm run email:auth-templates` and `npm run email:gallery`, because the
+sign-in letter in Supabase is a copy.
+
+### Anatomy, top to bottom
+
+1. **Preheader.** A hidden line: what an inbox shows after the subject. Every
+   letter has one.
+2. **Card** (`surface`, 1 px `border`, radius 20, max 560 px, padding 28/36,
+   and 22/20 under 480 px). The letter is one object, like a page of the
+   platform.
+3. **Brand row inside the card.** The mark (32 px) and the wordmark
+   (130×31) as PNG at 3×, because Gmail does not show SVG. A hairline sits
+   under them, and the row links to the site. It is the site header at its own
+   sizes. There is no logo floating above the card.
+4. **Eyebrow.** 12 px Manrope, 0.14em tracking, uppercase, `guide`. It names
+   the kind of letter: «Вхід», «Оплату отримано», «Потік · Шлях 21».
+5. **Title.** The one serif line: Cormorant 34 px, and 28 px on a phone.
+6. **Blocks.** These kinds and no others:
+   - `paragraph`: 16/1.65 Manrope.
+   - `heading`: serif 24.
+   - `list`: warm bullets.
+   - `steps`: numbered rows in the data face, with a hairline between rows.
+   - `facts`: a muted panel of label → value rows (date, order, sum).
+   - `note`: a muted panel with a warm left edge. Use it for the one thing not
+     to miss.
+   - `code`: a one-time code, IBM Plex Mono 34 px, tracked out so it can be
+     typed back.
+7. **Button.** At most one. It is the site's primary button: warm fill, ink
+   label, 48 px tall, radius 16. It is built bulletproof (the padded `<a>` is
+   the hit area, and the cell carries the fill).
+8. **After-lines.** 14 px `muted`: support, how to sign in.
+9. **Signature** under the card: serif italic «Команда CenterWay».
+10. **Footer.** 12 px `faint`: why you got this letter, and the unsubscribe
+    link.
+
+Links inside text use `emailLink()`: ink, with a 1 px `linkRule` underline
+offset 3 px. This is the site's thin link rule. Never a blue default.
+
+### Rules every letter keeps
+
+- **One voice.** Ukrainian, «ви», calm. No promise of a result and no
+  pressure. Wellness education and practice, not treatment
+  (`docs/platform-copy-voice-2026-09-23.md`). Copy changes need the owner's
+  yes before they ship.
+- **Plain-text twin.** Letters sent through Resend carry `text` built from
+  the same parts as the HTML. The sign-in letter is the exception, because
+  Supabase sends only HTML.
+- **The sign-in letter carries a code, never a link.** A link would sign in a
+  different browser than the tab that is waiting (`EmailSignIn.tsx`).
+- **Unsubscribe.** Broadcasts carry the footer link plus `List-Unsubscribe` and
+  `List-Unsubscribe-Post` (one-click). Suppressed addresses (unsubscribed,
+  bounced, complained) are never sent to.
+- **Telegram first.** Course reminders go to Telegram when it is linked and
+  by email only when it is not, so nobody gets both.
+- **Sender.** Everything Resend sends comes from `info@send.centerway.net.ua`
+  (`BROADCAST_FROM` can move broadcasts to their own subdomain). The sign-in
+  code comes from the same address once Supabase uses Resend SMTP.
+- **Gates.** Transactional letters (sign-in code, receipt) always go out.
+  Lifecycle letters go out only with `LIFECYCLE_EMAILS=on`. Broadcasts go out
+  only when the operator sends them.
+
+### The letters
+
+| Letter | Goes out when | Sent by | Builder |
+|---|---|---|---|
+| Код для входу | email typed on the sign-in page (new or existing account) | Supabase Auth, templates «Magic Link» + «Confirm signup» | `authEmails.ts` → `supabase/templates/*.html` |
+| Оплату отримано | gateway confirms a payment, or the operator records a sale | Resend | `purchaseEmail.ts` |
+| Оплату отримано · груповий потік | the same, for a group offer with a start date | Resend | `purchaseEmail.ts` |
+| Вітаємо в CenterWay | new account, morning cron | Resend, `LIFECYCLE_EMAILS` | `lifecycleEmails.ts` |
+| Завтра стартує потік | the day before `cohort_starts_on` | Resend, `LIFECYCLE_EMAILS` | `lifecycleEmails.ts` |
+| День 1 потоку | on `cohort_starts_on` | Resend, `LIFECYCLE_EMAILS` | `lifecycleEmails.ts` |
+| Урок дня готовий | morning run, day N opened, no Telegram linked | Resend, `LIFECYCLE_EMAILS` | `reminderEmails.ts` |
+| Курс чекає | bought but never opened, no Telegram linked | Resend, `LIFECYCLE_EMAILS` | `reminderEmails.ts` |
+| Розсилка | the operator sends from the admin | Resend | `broadcasts/render.ts` |
+
+The Supabase templates the platform never triggers are «Invite», «Reset
+password», «Change email» and «Reauthentication». Sign-in is a code, there
+are no passwords, and accounts made by a gift are created confirmed without a
+letter. They stay at Supabase's default. A flow that starts using one of them
+builds its template from this frame first.
 
 ## Vocabulary — the one table
 

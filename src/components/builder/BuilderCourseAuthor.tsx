@@ -260,7 +260,7 @@ export function BuilderCourseAuthor({
               Передати авторство іншому профілю
             </label>
             <select
-              className={styles.input}
+              className={`${styles.input} ${styles.select}`}
               id="course-author-assign"
               value={picked}
               disabled={busy}

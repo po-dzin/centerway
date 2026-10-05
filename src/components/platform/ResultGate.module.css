@@ -1,0 +1,28 @@
+/* The door between a test's verdict and its full reading — see ResultGate.tsx. */
+
+.includes {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.includes li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--cw-space-xs);
+  align-items: start;
+}
+
+.mark {
+  /* A lock, not a tick: these are what the reader does NOT have yet, and a
+     tick reads as done. Ink at 62% keeps the glyph above 3:1 on the card. */
+  color: color-mix(in srgb, var(--cw-platform-text) 62%, transparent);
+}
+
+/* The one button, at its own width — not stretched across the card. */
+.ways {
+  display: grid;
+  justify-items: start;
+}

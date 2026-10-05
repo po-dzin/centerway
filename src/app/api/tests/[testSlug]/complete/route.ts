@@ -13,6 +13,8 @@ import {
 import { DOSHA_PRIMARY_EXIT } from "@/lib/dosha/doshaRouting";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
+import { balanceAttemptPayload, checkBalanceAnswers } from "@/lib/balance/balanceAttempt";
+import { BALANCE_TEST_SLUG } from "@/lib/balance/balanceTest";
 import {
   createTestAttempt,
   emitDoshaTestEvent,
@@ -97,6 +99,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tes
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
   const { testSlug } = await params;
+  if (testSlug === BALANCE_TEST_SLUG) return completeBalance(req);
   if (testSlug !== DOSHA_TEST_SLUG) {
     return NextResponse.json({ error: "test_not_found" }, { status: 404 });
   }
@@ -314,6 +317,69 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tes
       confidence: profile.confidence,
       completedAt,
       nextStep,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown_error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+/**
+ * The balance test's completion: one finished row, scored here from the codes
+ * (see `lib/balance/balanceAttempt`). Owned at once when the reader is signed
+ * in; otherwise anonymous until the sign-in that opens the full result claims
+ * it through the attach route, exactly as a dosha attempt is.
+ */
+async function completeBalance(req: NextRequest) {
+  const body = (await req.json().catch(() => ({}))) as CompleteBody;
+  const checked = checkBalanceAnswers(body.answers);
+  if (!checked.ok) return NextResponse.json({ error: checked.error }, { status: 400 });
+
+  const sessionId = asString(body.sessionId) ?? crypto.randomUUID();
+  const source = asString(body.source) ?? "balance_test_route";
+
+  try {
+    const db = adminClient();
+    const { data: test, error: testError } = await db
+      .from("test_definitions")
+      .select("id, version")
+      .eq("slug", BALANCE_TEST_SLUG)
+      .maybeSingle();
+    if (testError) return NextResponse.json({ error: testError.message }, { status: 500 });
+    if (!test) return NextResponse.json({ error: "test_not_available" }, { status: 404 });
+
+    const user = await requireUserFromBearer(req.headers.get("authorization"));
+    const completedAt = new Date().toISOString();
+    const payload = balanceAttemptPayload(checked.types, checked.byQuestion, completedAt);
+
+    const { data: attempt, error } = await db
+      .from("test_attempts")
+      .insert({
+        test_id: test.id,
+        session_id: sessionId,
+        source,
+        user_id: user?.id ?? null,
+        version: test.version,
+        status: "completed",
+        completed_at: completedAt,
+        last_activity_at: completedAt,
+        current_question_index: checked.types.length,
+        score_vata: payload.scores.vata,
+        score_pitta: payload.scores.pitta,
+        score_kapha: payload.scores.kapha,
+        result_payload_json: payload,
+      })
+      .select("id")
+      .single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    return NextResponse.json({
+      attemptId: attempt.id,
+      isCompleted: true,
+      primary: payload.primary,
+      secondary: payload.secondary,
+      scores: payload.scores,
+      completedAt,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown_error";

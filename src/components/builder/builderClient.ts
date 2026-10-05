@@ -444,6 +444,11 @@ export type BuilderFormatDto = {
   cohortStartsOn: string | null;
   reviewStatus: BuilderFormatReview;
   active: boolean;
+  /** The owner's «Бестселер» mark: the gold pill and the row's only primary button. */
+  featured?: boolean;
+  /** The owner's early price and the date it ends (00:00 Kyiv). */
+  earlyAmount?: number | null;
+  earlyUntil?: string | null;
   includes: Array<{ slug: string; title: string }>;
 };
 
@@ -451,6 +456,8 @@ export type BuilderFormatsDto = {
   formats: BuilderFormatDto[];
   includable: Array<{ slug: string; title: string; status: string }>;
   isOwner: boolean;
+  /** The `admin` role: the price typed here is the live one, with no review. */
+  canSetPrice?: boolean;
 };
 
 export type BuilderFormatInput = {
@@ -462,6 +469,10 @@ export type BuilderFormatInput = {
   proposedAmount?: number | null;
   cohortStartsOn?: string | null;
   includes?: string[];
+  /** Owner only (`canSetPrice`). Marking one format clears the mark on the others. */
+  featured?: boolean;
+  /** Owner only: the early price until a date; `null` removes it. */
+  early?: { amount: number; until: string } | null;
   submit?: boolean;
 };
 

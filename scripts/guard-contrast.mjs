@@ -677,6 +677,33 @@ const glassPairs = [
     min: AA_BODY,
     context: "way21 card fine print (scoped bump from the shared .45 default)",
   },
+  // --- landing format cards (landing.css .format-card) ----------------------
+  // One paper for every format, the format's tone washed from the top edge
+  // (20% at the top). The eyebrow and ticks wear the tone mixed 40% toward the
+  // page ink (--cw-net-ink → --cw-sem-guide-strong). The eyebrow sits on the
+  // strongest stop, so that is the backdrop asserted; the ticks lower down only
+  // get more contrast. Same scale as OfferFormats.module.css on the platform.
+  {
+    theme: "light",
+    fg: "color-mix(in srgb, var(--cw-sem-embodied) 40%, var(--cw-sem-guide-strong) 60%)",
+    glass: { plain: "color-mix(in srgb, var(--cw-sem-embodied) 20%, var(--cw-mat-surface) 80%)" },
+    min: AA_BODY,
+    context: "landing self format card eyebrow on its tone wash at the strongest stop",
+  },
+  {
+    theme: "light",
+    fg: "color-mix(in srgb, var(--cw-sem-trust) 40%, var(--cw-sem-guide-strong) 60%)",
+    glass: { plain: "color-mix(in srgb, var(--cw-sem-trust) 20%, var(--cw-mat-surface) 80%)" },
+    min: AA_BODY,
+    context: "landing group format card eyebrow on its tone wash at the strongest stop",
+  },
+  {
+    theme: "light",
+    fg: "color-mix(in srgb, var(--cw-sem-warmth) 40%, var(--cw-sem-guide-strong) 60%)",
+    glass: { plain: "color-mix(in srgb, var(--cw-sem-warmth) 20%, var(--cw-mat-surface) 80%)" },
+    min: AA_BODY,
+    context: "landing individual format card eyebrow on its tone wash at the strongest stop",
+  },
   // --- builder course card, the status badge worn on the cover --------------
   // `.coverPill` / `.coverPillPublished` in Builder.module.css. The badge sits
   // on an author-supplied photograph, so the backdrop asserted here is a white

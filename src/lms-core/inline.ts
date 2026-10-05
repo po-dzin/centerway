@@ -46,8 +46,30 @@ export function validateInlineText(value: unknown, path: string): asserts value 
     assert(isNonEmptyString(span.text), `lms_inline_span_missing_text:${path}[${index}]`);
     if (span.href !== undefined) {
       assert(isNonEmptyString(span.href), `lms_inline_span_invalid_href:${path}[${index}]`);
+      assert(isSafeHref(span.href), `lms_inline_span_unsafe_href:${path}[${index}]`);
     }
   });
+}
+
+const SAFE_SCHEMES = new Set(["http", "https", "mailto", "tel"]);
+
+/**
+ * Whether a link an author wrote may be followed.
+ *
+ * A scheme other than http(s), mailto or tel is refused — `javascript:`,
+ * `data:`, `vbscript:` and anything else that runs or embeds rather than
+ * navigates. React drops `javascript:` in the reader, but the builder's inline
+ * editor writes links through innerHTML, and a native client or a digest has no
+ * React at all (meta-audit 2026-09-30). A link with no scheme (`/dosha-test`,
+ * `#step-2`, `t.me/x`) is a path and passes.
+ *
+ * Whitespace and control characters are removed before the scheme is read,
+ * because browsers ignore them inside it: `java\nscript:` is `javascript:`.
+ */
+export function isSafeHref(href: string): boolean {
+  const compact = href.replace(/[\u0000-\u0020\u007f]/g, "");
+  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(compact)?.[1];
+  return scheme === undefined || SAFE_SCHEMES.has(scheme.toLowerCase());
 }
 
 /** Normalizes authoring shorthand into the canonical span list. */

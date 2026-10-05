@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
+import { HIGHLIGHT_LABELS, type OfferHighlight } from "@/lib/experiences/highlight";
 import { Icon } from "@/components/Icon";
 import styles from "@/components/platform/PlatformOfferStyles";
 import { COURSE_CATEGORIES_MAX, type CourseCategory } from "@/lms-core";
@@ -92,6 +93,8 @@ export type PlatformOfferCardProps = {
   commercialMode?: "fixed" | "free" | "inquiry";
   price?: string | null;
   compareAtPrice?: string | null;
+  /** «Бестселер» / «Новинка» on the photograph, opposite the kind badge. */
+  highlight?: OfferHighlight;
 };
 
 function initialsOf(title: string): string {
@@ -131,6 +134,7 @@ export function PlatformOfferCard({
   commercialMode,
   price,
   compareAtPrice,
+  highlight,
 }: PlatformOfferCardProps) {
   /* THE CARD IS NOT A HERO. The 960px copy covers this frame on a 2× screen at
      about a fifth of the full plate's weight; `desktop` stays the fallback for a
@@ -203,6 +207,11 @@ export function PlatformOfferCard({
           </span>
         )}
         {badge ? <p className={styles.programTileBadge}>{badge}</p> : null}
+        {highlight && !isPlanned ? (
+          <p className={`${styles.programTileBadge} ${styles.programTileFlag}`} data-flag={highlight}>
+            {HIGHLIGHT_LABELS[highlight]}
+          </p>
+        ) : null}
       </div>
       <div className={styles.programTileBody}>
         {/* PROMO ABOVE, NAME BELOW — one headline slot, so the description under

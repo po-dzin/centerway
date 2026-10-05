@@ -7,9 +7,12 @@
  *    most 160 chars; the price must be a positive whole number; a format that is
  *    already on sale and edited by a non-owner sends only the wording, never
  *    kind / mode / start / bundle; a start date only travels with a group;
- *  - the list and editor as rendered: each format with its price, status line,
- *    features (or the «not filled» note) and included programs; the editor
- *    pre-fills «Що входить» one feature per line; linked programs listed.
+ *  - the cards and editor as rendered: each format with its kind, status,
+ *    price, features (or the «not filled» note) and included programs; the
+ *    editor pre-fills «Що входить» one feature per line and asks either/or as
+ *    a select; an admin sets the live price with no review; each linked program
+ *    says which formats open it, and a format on sale is not the author's to
+ *    toggle.
  *
  * The list arrives through `useEffect` in the real component, which a static
  * render never runs — so the render tests seed the component's `useState`
@@ -23,7 +26,7 @@ import type { BuilderFormatDto, BuilderFormatsDto } from "./builderClient";
 import type { Course } from "@/lms-core";
 
 /* Values for BuilderFormats' own useState calls, in declaration order:
-   read, editing, draft, busy, adding. Consumed by the parent's first render
+   read, editing, draft, busy. Consumed by the parent's first render
    only; children (ChoiceRow etc.) fall through to the real hook. */
 const seeded = vi.hoisted(() => ({ queue: [] as unknown[] }));
 
@@ -136,10 +139,7 @@ describe("inputOf — «Що входить» parsing", () => {
   });
 
   it("sends only the wording for a locked (approved, non-owner) format", () => {
-    const input = inputOf(
-      draft({ format: "group", mode: "lead", cohortStartsOn: "2026-10-01", includes: ["reset-day"], features: "А" }),
-      true,
-    );
+    const input = inputOf(draft({ format: "group", mode: "lead", cohortStartsOn: "2026-10-01", features: "А" }), true);
     expect(Object.keys(input).sort()).toEqual(["features", "label", "proposedAmount", "summary"]);
   });
 });
@@ -158,7 +158,6 @@ describe("draftOf", () => {
     );
     expect(d.features).toBe("Перший\nДругий");
     expect(d.label).toBe("");
-    expect(d.includes).toEqual(["reset-day"]);
     expect(d.proposedAmount).toBe("4200");
     expect(d.cohortStartsOn).toBe("2026-10-01");
     // Round trip: the draft parses back to the same features.
@@ -167,7 +166,22 @@ describe("draftOf", () => {
 
   it("keeps an author-written label, and defaults a new format to a group checkout", () => {
     expect(draftOf(dto({ code: "s", format: "self", label: "Сам", labelIsDefault: false })).label).toBe("Сам");
-    expect(draftOf(null)).toMatchObject({ format: "group", mode: "checkout", features: "", includes: [] });
+    expect(draftOf(null)).toMatchObject({ format: "group", mode: "checkout", features: "" });
+  });
+
+  it("gives an admin the live price to edit, and an author their proposal", () => {
+    const live = dto({ code: "s", format: "self", amount: 4100, proposedAmount: 3900 });
+    expect(draftOf(live).proposedAmount).toBe("3900");
+    expect(draftOf(live, true).proposedAmount).toBe("4100");
+    expect(draftOf(dto({ code: "d", format: "group", amount: null, proposedAmount: 2500 }), true).proposedAmount).toBe(
+      "2500",
+    );
+  });
+});
+
+describe("inputOf — the bundle is not the form's", () => {
+  it("never sends `includes`, so a save cannot undo a toggle made after the form opened", () => {
+    expect(inputOf(draft({ format: "group" }), false)).not.toHaveProperty("includes");
   });
 });
 
@@ -229,9 +243,8 @@ function renderWith(state: {
   seeded.queue = [
     { slug: COURSE.slug, data: state.data, failed: false },
     state.editing ?? null,
-    draftOf(state.draftFrom ?? null),
+    draftOf(state.draftFrom ?? null, state.data?.canSetPrice === true),
     false,
-    "",
   ];
   const html = renderToStaticMarkup(createElement(BuilderFormats, { course: COURSE, onChange: () => {} }));
   seeded.queue = [];
@@ -253,17 +266,27 @@ describe("BuilderFormats — render", () => {
     expect(html).toContain("1&nbsp;500 ₴".replace("&nbsp;", " "));
     expect(html).toContain("21 урок");
     expect(html).toContain("Довідкові матеріали");
+    // Each card carries its kind's tone and its state's dot.
+    expect(html).toContain('data-format="self"');
+    expect(html).toContain('data-format="group"');
+    expect(html).toContain('data-tone="live"');
     // Group: author label + kind, proposal, start date, bundle.
     expect(html).toContain("Потік з друзями");
-    expect(html).toContain("Група потоку · На погодженні · старт 1 жовтня · пропозиція 3 900 ₴");
-    expect(html).toContain("Також відкриває: <strong>Розвантажувальний день · Short</strong>");
+    expect(html).toContain("Група потоку");
+    expect(html).toContain('data-tone="waiting"');
+    expect(html).toContain("На погодженні");
+    expect(html).toContain("старт 1 жовтня · пропозиція 3 900 ₴");
+    expect(html).toContain("Також відкриває");
+    expect(html).toContain("<span>Short</span>");
     // A format without features says so.
     expect(html).toContain("Список «що входить» ще не заповнено");
     // Lead without a price.
     expect(html).toContain("за запитом");
     expect(html).toContain("через заявку");
-    // Only the published, not-yet-linked program is offered to link.
+    // Only the published, not-yet-linked program is offered to link — by the
+    // select alone, with no button beside it.
     expect(html).toContain('<option value="short">Short</option>');
+    expect(html).not.toContain(">Додати</button>");
     expect(html).not.toContain('<option value="reset-day"');
     expect(html).not.toContain('<option value="wip"');
   });
@@ -280,13 +303,63 @@ describe("BuilderFormats — render", () => {
     expect(html).not.toContain("Зберегти чернетку");
   });
 
-  it("opens a full editor for a new format with the published programs to include", () => {
+  it("asks an admin for the live price and puts a format on sale without review", () => {
+    const owner = { ...DATA, isOwner: true, canSetPrice: true };
+    const self = owner.formats[0]!;
+    const edit = renderWith({ data: owner, editing: self.code, draftFrom: self });
+    expect(edit).toContain("Ціна, ₴");
+    expect(edit).toContain("змінюється одразу, без погодження");
+    expect(edit).not.toContain("Остаточну ціну затверджує власник");
+    expect(edit).toContain(">Зберегти</button>");
+    expect(edit).not.toContain("Зберегти й надіслати");
+    // The live price is what the field holds.
+    expect(edit).toMatch(/type="number"[^>]*value="1500"/);
+    const fresh = renderWith({ data: owner, editing: "new" });
+    expect(fresh).toContain("Відкрити продаж");
+    expect(fresh).not.toContain("Надіслати на погодження");
+  });
+
+  it("lets each linked program say which formats open it, and locks a format on sale for an author", () => {
+    const html = renderWith({ data: DATA });
+    const row = html.slice(html.indexOf("Відкривають формати"));
+    expect(row.length).toBeGreaterThan(0);
+    // Reset Day is opened by the group format only.
+    expect(row).toMatch(/aria-pressed="true"[^>]*>(?:(?!<\/button>).)*Потік з друзями/s);
+    // The self format is on sale: the author sees it and cannot toggle it.
+    expect(row).toMatch(/aria-pressed="false" disabled=""[^>]*>(?:(?!<\/button>).)*Самостійно/s);
+  });
+
+  it("opens a full editor for a new format, asking either/or as a select", () => {
     const html = renderWith({ data: DATA, editing: "new" });
     expect(html).toContain("Новий формат");
-    expect(html).toContain("Також відкриває");
     expect(html).toContain("Старт потоку");
     expect(html).toContain("Надіслати на погодження");
     expect(html).toContain("Зберегти чернетку");
-    expect(html).not.toContain("Чернетка</"); // the draft program is not includable
+    // Kind and the way of buying are dropdowns, not rows of options.
+    expect(html).toMatch(/<option value="group" selected="">Група потоку<\/option>/);
+    expect(html).toMatch(/<option value="checkout" selected="">Оплата на сторінці<\/option>/);
+    // The bundle is set from the program's row, not in the form.
+    const form = html.slice(html.indexOf("Новий формат"));
+    expect(form.slice(0, form.indexOf("Програми всередині"))).not.toContain("Також відкриває");
+  });
+});
+
+describe("inputOf — the owner's early price", () => {
+  it("sends both halves, refuses half of one or one not lower, and clears it when emptied", () => {
+    const base = { proposedAmount: "4100", mode: "checkout" as const };
+    expect(inputOf(draft({ ...base, earlyAmount: "3400", earlyUntil: "2026-10-15" }), false, true)).toMatchObject({
+      early: { amount: 3400, until: "2026-10-15" },
+    });
+    expect(inputOf(draft({ ...base, earlyAmount: "3400" }), false, true)).toEqual({
+      error: "Вкажіть, до якої дати діє рання ціна",
+    });
+    expect(inputOf(draft({ ...base, earlyAmount: "4100", earlyUntil: "2026-10-15" }), false, true)).toEqual({
+      error: "Рання ціна має бути нижчою за ціну",
+    });
+    expect(inputOf(draft(base), false, true)).toMatchObject({ early: null });
+    // An author never sends it.
+    expect(inputOf(draft({ ...base, earlyAmount: "3400", earlyUntil: "2026-10-15" }), false)).not.toHaveProperty(
+      "early",
+    );
   });
 });

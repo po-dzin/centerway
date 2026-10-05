@@ -44,6 +44,13 @@ export function getProfileCopy(lang: ProfileLang, counts: ProfileCopyCounts): Pr
       doshaEmptyLead:
         "There is no completed dosha test in this account yet, so the personal state map is not assembled.",
       startTest: "Start the dosha test",
+      balanceNow: "Balance now",
+      balanceLabels: {
+        balance: "Elements in balance",
+        vata: "Vata out of balance",
+        pitta: "Pitta out of balance",
+        kapha: "Kapha out of balance",
+      },
       routeSummaryLabel: "At a glance",
       routeSummaryTitle: "Your account at a glance",
       summaryActivePrograms: "Active programs",
@@ -119,6 +126,13 @@ export function getProfileCopy(lang: ProfileLang, counts: ProfileCopyCounts): Pr
     doshaEmptyLead:
       "Ви ще не проходили тест доші. Він займає кілька хвилин і допомагає побачити ваш поточний стан і перший крок.",
     startTest: "Почати доша-тест",
+    balanceNow: "Баланс зараз",
+    balanceLabels: {
+      balance: "Баланс стихій",
+      vata: "Дисбаланс вати",
+      pitta: "Дисбаланс пітти",
+      kapha: "Дисбаланс капхи",
+    },
     routeSummaryLabel: "Коротко",
     routeSummaryTitle: "Коротко про ваш кабінет",
     summaryActivePrograms: "Активні програми",

@@ -13,10 +13,11 @@
  * message to three hundred people. Everything typed is escaped first and the
  * markup applied to the escaped text, so a `<` in a letter is a `<` on screen.
  *
- * Inline styles and no tables, as in the purchase receipt: mail clients strip
- * <style> blocks.
+ * The words are poured into the platform's one mail frame (`email/layout.ts`),
+ * the same paper, card and button as the receipt and the lifecycle letters.
  */
 
+import { emailLink, renderEmailLayout, type EmailBlock } from "@/lib/email/layout";
 import { escapeHtml } from "@/lib/strings";
 
 export type BroadcastContent = {
@@ -33,10 +34,6 @@ export type RenderedBroadcast = {
   text: string;
   headers: Record<string, string>;
 };
-
-const INK = "#2b2723";
-const MUTED = "#6b625a";
-const FAINT = "#9a9089";
 
 /* Placeholders are swapped for a sentinel before markup and for the escaped
    name after it, so a name that happens to contain `**` or `[x](https://…)`
@@ -97,7 +94,7 @@ function inlineHtml(escaped: string): string {
       // The URL was escaped with the rest; undo it to test it, re-escape to print it.
       const raw = url.replace(/&amp;/g, "&").replace(/&quot;/g, '"');
       if (!isSafeUrl(raw)) return match;
-      return `<a href="${escapeHtml(raw)}" style="color:${INK}">${label}</a>`;
+      return emailLink(raw, label);
     })
     .replace(BOLD, "<strong>$1</strong>");
 }
@@ -141,16 +138,12 @@ export function renderBroadcast(
   const { source, values } = marked(content.body, recipient.name);
   const blocks = parseBlocks(source);
 
-  const htmlBlocks = blocks.map((block) => {
-    if (block.kind === "heading") {
-      return `<h2 style="margin:0 0 16px;font-size:20px;line-height:1.3">${inlineHtml(escapeHtml(block.text))}</h2>`;
-    }
-    if (block.kind === "list") {
-      const items = block.items.map((item) => `<li style="margin:0 0 6px">${inlineHtml(escapeHtml(item))}</li>`);
-      return `<ul style="margin:0 0 20px;padding-left:22px">${items.join("")}</ul>`;
-    }
-    return `<p style="margin:0 0 20px">${block.lines.map((line) => inlineHtml(escapeHtml(line))).join("<br>")}</p>`;
+  const htmlBlocks = blocks.map((block): EmailBlock => {
+    if (block.kind === "heading") return { kind: "heading", html: inlineHtml(escapeHtml(block.text)) };
+    if (block.kind === "list") return { kind: "list", items: block.items.map((item) => inlineHtml(escapeHtml(item))) };
+    return { kind: "paragraph", html: block.lines.map((line) => inlineHtml(escapeHtml(line))).join("<br>") };
   });
+  const finish = (html: string) => unmark(html, values, true);
 
   const textBlocks = blocks.map((block) => {
     if (block.kind === "heading") return inlineText(block.text).toUpperCase();
@@ -168,13 +161,16 @@ export function renderBroadcast(
   const footerWhy = "Ви отримали цей лист, бо ви з нами в CenterWay.";
   const footerOut = "Відписатися від розсилки";
 
-  const html = `<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(subject)}</title></head><body style="margin:0;background:#ffffff">
-${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(preheader)}</div>` : ""}
-<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:${INK};max-width:560px;margin:0 auto;padding:24px">
-${unmark(htmlBlocks.join("\n"), values, true)}
-${cta ? `<p style="margin:8px 0 28px"><a href="${escapeHtml(cta.url)}" style="display:inline-block;background:${INK};color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:700">${escapeHtml(cta.label)}</a></p>` : ""}
-<p style="margin:32px 0 0;color:${FAINT};font-size:13px;line-height:1.5">${escapeHtml(footerWhy)}<br><a href="${escapeHtml(unsubscribeUrl)}" style="color:${MUTED}">${escapeHtml(footerOut)}</a></p>
-</div></body></html>`;
+  const html = renderEmailLayout({
+    preheader,
+    blocks: htmlBlocks.map((block): EmailBlock => {
+      if (block.kind === "list") return { ...block, items: block.items.map(finish) };
+      if (block.kind === "paragraph" || block.kind === "heading") return { ...block, html: finish(block.html) };
+      return block;
+    }),
+    cta: cta ? { label: cta.label, href: cta.url } : null,
+    footer: [escapeHtml(footerWhy), emailLink(unsubscribeUrl, escapeHtml(footerOut), "muted")],
+  });
 
   const text = [
     unmark(textBlocks.join("\n\n"), values, false),

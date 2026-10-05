@@ -116,24 +116,21 @@ describe("saveProductOffer", () => {
     ).rejects.toThrow("product_kind_invalid");
   });
 
-  it("never rebinds an offer whose experience_id was deliberately moved elsewhere", async () => {
-    // `way21-support`'s registry row is the retired package; the migration
-    // that turned it into a way21 format moved its OFFER onto the way21
-    // experience while leaving the package row in place (past orders point at
-    // it). This screen still finds the code by the package's slug, but saving
-    // a price through it must not write the package's id back as
-    // `experience_id` — that would silently undo the move.
-    db.tables = {
-      experiences: [
-        ...db.tables.experiences!,
-        { id: "exp-way21-support", slug: "way21-support", kind: "package", title: "Шлях 21 — супровід" },
-      ],
-      experience_offers: [offerOf({ code: "way21-support", experience_id: "exp-way21", amount: 9000, mode: "lead" })],
-    };
-    const offer = await saveProductOffer({ code: "way21-support", amount: 9500, listAmount: null, kind: "lead" });
-    expect(offer.amount).toBe(9500);
-    const row = db.tables.experience_offers!.find((r) => r.code === "way21-support");
-    expect(row?.experience_id).toBe("exp-way21");
+  it("excludes a retired package alias and refuses both price and sale writes to its course format", async () => {
+    db.tables.experiences!.push({ id: "exp-way21-support", slug: "way21-support", kind: "package", title: "Супровід" });
+    db.tables.experience_offers = [
+      offerOf({ code: "way21-support", experience_id: "exp-way21", format: "individual", amount: 9000, mode: "lead" }),
+    ];
+    expect((await listProductOffers()).map((row) => row.code)).not.toContain("way21-support");
+    await expect(
+      saveProductOffer({ code: "way21-support", amount: 9500, listAmount: null, kind: "lead" }),
+    ).rejects.toThrow("product_unknown");
+    await expect(setProductOfferActive("way21-support", false)).rejects.toThrow("product_unknown");
+    expect(db.tables.experience_offers[0]).toMatchObject({ amount: 9000, active: true, experience_id: "exp-way21" });
+  });
+  it("also excludes a rebound offer before its format marker is set", async () => {
+    db.tables.experience_offers = [offerOf({ code: "herbs", experience_id: "exp-way21", format: null })];
+    expect((await listProductOffers()).map((row) => row.code)).not.toContain("herbs");
   });
 });
 

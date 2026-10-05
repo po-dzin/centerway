@@ -28,6 +28,12 @@ export type ProfileResponse = {
         kapha: number | null;
       };
     } | null;
+    /** The balance test's latest reading; absent from older responses. */
+    balance?: {
+      attemptId: string;
+      primary: "balance" | "vata" | "pitta" | "kapha";
+      completedAt: string | null;
+    } | null;
     purchases: Array<{
       orderRef: string;
       offerCode: string;
@@ -80,6 +86,9 @@ export type ProfileCopy = {
   completedShort: string;
   retakeTest: string;
   doshaEmptyLead: string;
+  /** The balance line under the dosha tile: its label and the four readings. */
+  balanceNow: string;
+  balanceLabels: { balance: string; vata: string; pitta: string; kapha: string };
   startTest: string;
   routeSummaryLabel: string;
   routeSummaryTitle: string;
