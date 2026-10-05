@@ -729,9 +729,6 @@
   width: var(--ds-icon-in-control);
   height: var(--ds-icon-in-control);
   display: block;
-  background: currentColor;
-  -webkit-mask: url("/cw/brand/profile-outline.svg") center / contain no-repeat;
-  mask: url("/cw/brand/profile-outline.svg") center / contain no-repeat;
 }
 
 .profileAvatar {

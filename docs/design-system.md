@@ -3224,3 +3224,7 @@ Kept out of the descriptive sections above on purpose:
 - **`organic` visual role** — named in old spec, no token exists.
 - ~~`trust` as a first-class token~~ — resolved 2026-07-03: `--cw-sem-trust: #35535f` exists in `layers.semanticAliases` (value carried over from the historic trust palette). Consumers migrate as they are touched.
 - **Per-author theming in production** — mechanism exists (`token_packs.json`), zero consumers; activation is stage 3.3.
+
+### Pencil geometry recipe (2026-10-05)
+
+Drawn CenterWay primitives share `data/brand/cw-pencil.json`: quiet centreline wander and continuous pressure along a stroke. Runtime icons use the baked `hand2` preset; other presets are comparison tools. Illustration-only hatch and short lifts stay clear of text and countable meter gaps. This recipe adds no palette, border hierarchy or runtime filter. Selected text and standalone icon marks still belong exclusively to `InteractionInkLabel` / `InteractionInkIcon`. See `docs/design-system/pencil-unification-2026-10-05.md` for inventory and visual evidence.

@@ -20,35 +20,31 @@ import { ICONS, GRAPHICS, HAND_PRESETS, DEFAULT_PRESET, groupsOf } from "./lib/i
 const ROOT = path.resolve(import.meta.dirname, "..");
 const PRESETS = ["base", "hand1", "hand2", "hand3"];
 
-/**
- * Cards live in the project's `guidelines/` folder and pick up its tokens via
- * `../styles.css`. The literal fallbacks (mirrored from src/app/globals.css)
- * keep the same file readable straight off disk, where that stylesheet is
- * absent.
- */
+const tokens = JSON.parse(await fs.readFile(path.join(ROOT, "data/design-tokens/cw.tokens.json"), "utf8"));
+const common = { ...tokens.layers.primitives.color, ...tokens.layers.semanticAliases };
+const resolve = (value, scope) =>
+  value.replace(/var\((--[\w-]+)\)/g, (_, key) => resolve(scope[key] ?? common[key] ?? "currentColor", scope));
+const palette = (scope) =>
+  Object.fromEntries(
+    Object.entries({
+      bg: "--cw-platform-bg",
+      surface: "--cw-platform-surface",
+      ink: "--cw-platform-text",
+      muted: "--cw-platform-muted",
+      line: "--cw-platform-border",
+      icon: "--cw-platform-ink-strong",
+      accent: "--cw-platform-accent",
+    }).map(([role, key]) => [role, resolve(scope[key], scope)]),
+  );
 const TOKENS = {
-  light: {
-    bg: "var(--cw-platform-bg, #f6f2ea)",
-    surface: "var(--cw-platform-surface, #fbfaf6)",
-    ink: "var(--cw-platform-text, #0d1b17)",
-    muted: "var(--cw-platform-muted, #31403e)",
-    line: "var(--cw-platform-border, rgba(13, 27, 23, 0.1))",
-    icon: "var(--cw-sem-guide-strong, #1e3d34)",
-    accent: "var(--cw-sem-warmth, #dba54f)",
-  },
-  dark: {
-    bg: "#0f1c18",
-    surface: "#16261f",
-    ink: "#eef2ec",
-    muted: "rgba(238, 242, 236, 0.68)",
-    line: "rgba(238, 242, 236, 0.16)",
-    icon: "#cfe0d6",
-    accent: "#dba54f",
-  },
+  light: palette(tokens.layers.modeOverrides.platform),
+  dark: palette(tokens.layers.modeOverrides.platformDark),
 };
 
 const BASE_CSS = `
-:root{color-scheme:light dark}
+:root{color-scheme:light dark;${Object.entries(common)
+  .map(([key, value]) => `${key}:${resolve(value, tokens.layers.modeOverrides.platform)}`)
+  .join(";")}}
 *{box-sizing:border-box}
 body{margin:0;font:400 14px/1.6 Manrope,ui-sans-serif,system-ui,sans-serif;
   background:${TOKENS.light.bg};color:${TOKENS.light.ink};padding:32px 28px 48px}
@@ -106,7 +102,7 @@ li{margin:4px 0}
    glyph lightens toward the surface ink while keeping the hue. Stated here
    rather than left to the card's own .panel.dark rule, which wins on
    specificity and would have silently turned all three the same grey. */
-.panel.dark .dosha-glyph{color:color-mix(in srgb, var(--dosha) 42%, #e7efe6)}
+.panel.dark .dosha-glyph{color:color-mix(in srgb, var(--dosha) 42%, ${TOKENS.dark.ink})}
 @media (prefers-color-scheme:dark){
   body{background:${TOKENS.dark.bg};color:${TOKENS.dark.ink}}
   h2,p.lede,.cell small,.rowlabel,th,td{color:${TOKENS.dark.muted}}
@@ -115,7 +111,7 @@ li{margin:4px 0}
   .cell,.panel,.swatch{background:${TOKENS.dark.surface};border-color:${TOKENS.dark.line}}
   th,td{border-color:${TOKENS.dark.line}}
   svg.ico{color:${TOKENS.dark.icon}}
-  .panel.dark{background:#0b1512}
+  .panel.dark{background:${TOKENS.dark.bg}}
 }
 `.trim();
 
@@ -126,7 +122,7 @@ function page({ card, title, sprite, body }) {
 <head>
 <meta charset="utf-8" />
 <title>${title}</title>
-<link rel="stylesheet" href="../styles.css" />
+
 <style>${BASE_CSS}</style>
 </head>
 <body>
@@ -161,7 +157,7 @@ function overviewPage(sprite) {
       group: "Icons",
       viewport: "1080x1500",
       name: "Icon set v1",
-      subtitle: "38 glyphs · 24 grid · stroke 1.5 · baked hand2",
+      subtitle: `${Object.keys(ICONS).length} glyphs · 24 grid · pencil hand2`,
     },
     title: "CenterWay icons — set v1",
     sprite,
@@ -222,7 +218,7 @@ function characterPage(baked) {
     body: `<h1>Hand character ladder</h1>
 <p class="lede">One geometric base, four amplitudes of the same seeded displacement field.
 Every glyph in a row carries the identical hand — that is the point, and the reason this is
-generated rather than drawn by hand 38 times.</p>
+generated from a shared pressure recipe.</p>
 ${rows}`,
   });
 }
@@ -390,16 +386,16 @@ function specPage(sprite) {
 <tr><th>Property</th><th>Value</th><th>Why</th></tr>
 <tr><td>Grid</td><td>24 × 24</td><td>Phosphor Light metric — closest open set to our monoline</td></tr>
 <tr><td>Stroke</td><td>1.5, round cap and join</td><td>Same weight as the hand-graphics layer</td></tr>
-<tr><td>Fill</td><td>none, except accent dots</td><td>A dot is a node, not a shape</td></tr>
-<tr><td>Character</td><td>preset <code>hand2</code> · baseFrequency .05 · scale 2.4</td><td>Approved in the 2026-08-15 study</td></tr>
+<tr><td>Fill</td><td>open contours; filled pigment ribbons, dots and saved-bookmark</td><td>A dot is a node, not a shape</td></tr>
+<tr><td>Character</td><td>preset <code>hand2</code> · frequency .05 · scale 1.8 · pressure .13</td><td>Shared pencil profile · 2026-10-05</td></tr>
 <tr><td>Colour</td><td><code>currentColor</code> + <code>--cw-icon-accent</code></td><td>Inherits the tone scope it sits in; works in dark unchanged</td></tr>
 </table>
 
 <h2>Colour</h2>
 <div class="swatchrow">
-${swatch("icon ink · --cw-sem-guide-strong", TOKENS.light.icon, "#1e3d34")}
-${swatch("icon ink · dark", TOKENS.dark.icon, "#cfe0d6")}
-${swatch("accent · --cw-sem-warmth", TOKENS.light.accent, "#dba54f")}
+${swatch("icon ink · --cw-sem-guide-strong", TOKENS.light.icon, TOKENS.light.icon)}
+${swatch("icon ink · dark", TOKENS.dark.icon, TOKENS.dark.icon)}
+${swatch("accent · --cw-sem-warmth", TOKENS.light.accent, TOKENS.light.accent)}
 </div>
 
 <h2>Pipeline</h2>

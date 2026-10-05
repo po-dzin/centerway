@@ -564,6 +564,10 @@
   fill: var(--face-side);
 }
 
+.bookDraw :global(.pencil) {
+  color: var(--face-line);
+}
+
 .bookDraw :global(.line) {
   fill: none;
   stroke: var(--face-line);
@@ -871,59 +875,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* THE STROKE UNDER THE NAME, IN TWO STRENGTHS. The weaker one is where
-   attention is pointing — pointer, keyboard, or the shelf on the wall; the
-   full one would be what is currently open, which this view does not yet have.
-   Same object either way, so two states can never merge into one. The weights
-   are the platform's own ink tokens (`--cw-ink-hover-*`), not numbers invented
-   here: hover in this product is a stroke of ink, never a filled highlight. */
-.inkLabel {
-  position: relative;
-  display: inline-block;
-  max-inline-size: 100%;
-}
-
-.rowMark {
-  position: absolute;
-  inset-inline: -0.2rem;
-  inset-block-end: -0.42rem;
-  block-size: var(--cw-ink-stroke-height, 0.85rem);
-  color: var(--room-select-ink);
-  opacity: 0;
-  pointer-events: none;
-  transform: scaleX(0.58);
-  transform-origin: center;
-  transition:
-    opacity 160ms ease,
-    transform 160ms ease;
-}
-
-.rowMark svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  overflow: visible;
-}
-
-.row:focus-visible .rowMark,
-.row[data-hot="true"] .rowMark {
-  opacity: var(--cw-ink-hover-opacity, 0.42);
-  transform: scaleX(var(--cw-ink-hover-scale, 0.74));
-}
-
-@media (hover: hover) {
-  .row:hover .rowMark {
-    opacity: var(--cw-ink-hover-opacity, 0.42);
-    transform: scaleX(var(--cw-ink-hover-scale, 0.74));
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rowMark {
-    transition: none;
-  }
 }
 
 .rowState {
