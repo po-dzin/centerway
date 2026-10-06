@@ -75,8 +75,8 @@ export function getLandingShellAssets(product: StaticLandingProduct) {
 
   const scripts =
     product === "irem"
-      ? [`${assetPrefix}/js/common.js`, `${assetPrefix}/js/irem-enhance.js`, "/shared/js/lead-form.js"]
-      : [`${assetPrefix}/js/lazysizes.min.js`, `${assetPrefix}/js/common.js`];
+      ? ["/shared/js/funnel-common.js", `${assetPrefix}/js/irem-enhance.js`, "/shared/js/lead-form.js"]
+      : [`${assetPrefix}/js/lazysizes.min.js`, "/shared/js/funnel-common.js"];
 
   return {
     styles,

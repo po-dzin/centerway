@@ -110,6 +110,9 @@ export function PlatformDetailHero({
   actions,
 }: PlatformDetailHeroProps) {
   const heroStyle = heroFraming(artwork);
+  // Fragment-only actions stay native so the same anchor scrolls on every click.
+  const PrimaryLink = primaryAction.href.startsWith("#") ? "a" : Link;
+  const SecondaryLink = secondaryAction?.href.startsWith("#") ? "a" : Link;
 
   return (
     <section
@@ -152,13 +155,13 @@ export function PlatformDetailHero({
         {commitment}
         {actions ?? (
           <div className={styles.heroFeatureActions}>
-            <Link className={styles.heroPrimaryButton} href={primaryAction.href}>
+            <PrimaryLink className={styles.heroPrimaryButton} href={primaryAction.href}>
               {primaryAction.label}
-            </Link>
+            </PrimaryLink>
             {secondaryAction ? (
-              <Link className={styles.heroSecondaryButton} href={secondaryAction.href}>
+              <SecondaryLink className={styles.heroSecondaryButton} href={secondaryAction.href}>
                 <span>{secondaryAction.label}</span>
-              </Link>
+              </SecondaryLink>
             ) : null}
           </div>
         )}
