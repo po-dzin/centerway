@@ -1,6 +1,7 @@
 "use client";
 
 import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 
 import type { CourseHistory } from "./useCourseHistory";
 import styles from "./Builder.module.css";
@@ -28,8 +29,11 @@ export function BuilderHistory({ history, disabled }: { history: CourseHistory; 
         disabled={disabled || !history.canUndo}
         aria-label="Скасувати останню зміну"
         title="Скасувати — ⌘Z"
+        data-cw-ink-control
       >
-        <Icon name="undo" size={18} />
+        <InteractionInkIcon>
+          <Icon name="undo" size={18} />
+        </InteractionInkIcon>
       </button>
       <button
         className={styles.historyButton}
@@ -38,8 +42,11 @@ export function BuilderHistory({ history, disabled }: { history: CourseHistory; 
         disabled={disabled || !history.canRedo}
         aria-label="Повернути скасовану зміну"
         title="Повернути — ⇧⌘Z"
+        data-cw-ink-control
       >
-        <Icon name="redo" size={18} />
+        <InteractionInkIcon>
+          <Icon name="redo" size={18} />
+        </InteractionInkIcon>
       </button>
     </div>
   );

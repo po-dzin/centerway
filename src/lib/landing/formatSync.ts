@@ -53,7 +53,6 @@ import {
 import { formatFloor } from "@/lib/experiences/formatFloor";
 import { bonusKindLabel } from "@/lib/platform/catalogVocabulary";
 import type { BundleHost, ProgramFormat } from "@/lib/experiences/formats";
-import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 
 const BLOCK = /<!--\s*cw:formats\s+([a-z0-9-]+)\s*-->([\s\S]*?)<!--\s*\/cw:formats\s*-->/g;
 const CARD = /<!--\s*cw:format\s+([a-z0-9:_-]+)\s*-->([\s\S]*?)<!--\s*\/cw:format\s*-->/g;
@@ -321,9 +320,9 @@ export function renderBundleNote(programTitle: string, hosts: BundleHost[]): str
     entry.labels.push(host.label);
     byProgram.set(host.programSlug, entry);
   }
-  const parts = [...byProgram].map(
-    ([slug, entry]) =>
-      `у <a href="${PLATFORM_ORIGIN}/programs/${escape(slug)}#formats">«${escape(entry.title)}»</a> — ${
+  const parts = [...byProgram.values()].map(
+    (entry) =>
+      `у «${escape(entry.title)}» — ${
         entry.labels.length === 1 ? "у форматі" : "у форматах"
       } ${joinLabels(entry.labels)}`,
   );

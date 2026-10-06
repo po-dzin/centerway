@@ -38,6 +38,7 @@ export function PlatformOrgans({
   locked = false,
   scope = "all",
   label,
+  fixedTone,
 }: {
   /** Leading island: what is in this place. Omit where the surface has none. */
   left?: ReactNode;
@@ -62,6 +63,8 @@ export function PlatformOrgans({
    */
   scope?: "all" | "mobile";
   label?: string;
+  /** Fixed document chrome for workspaces whose canvas does not switch tone. */
+  fixedTone?: "light" | "dark";
 }) {
   const rowRef = useRef<HTMLDivElement>(null);
   const { hidden } = useChromeReveal(reveal === "gesture", rowRef, { locked });
@@ -76,7 +79,8 @@ export function PlatformOrgans({
      Frozen while a sheet this row opened is on screen: the sheet is above the
      islands and portalled over the page, so sampling would read the panel
      rather than the article, and the row drops its plate there anyway. */
-  const tone = useHeaderTone("light", undefined, locked);
+  const sampledTone = useHeaderTone("light", undefined, locked || fixedTone !== undefined);
+  const tone = fixedTone ?? sampledTone;
 
   return (
     <div
@@ -177,7 +181,7 @@ export function PlatformBackOrgan({
   ) : (
     <Icon name="arrow-left" size={18} />
   );
-  const className = text ? `${styles.organ} ${styles.organLabelled}` : styles.organ;
+  const className = `${styles.organ} ${styles.organBack}${text ? ` ${styles.organLabelled}` : ""}`;
 
   if (onNavigate) {
     return (

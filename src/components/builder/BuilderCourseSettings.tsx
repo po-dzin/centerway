@@ -12,6 +12,7 @@
 import { useState, type ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { plural } from "@/lib/plural";
 import {
   COURSE_CATEGORIES,
@@ -200,9 +201,12 @@ function StringListField({
             type="button"
             title="Прибрати"
             aria-label={`Прибрати: ${itemLabel} ${index + 1}`}
+            data-cw-ink-control
             onClick={() => write(items.filter((_, at) => at !== index))}
           >
-            <Icon name="close" size={18} />
+            <InteractionInkIcon>
+              <Icon name="close" size={18} />
+            </InteractionInkIcon>
           </button>
         </div>
       ))}

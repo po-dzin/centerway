@@ -32,7 +32,8 @@
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { HandGraphic, Icon } from "@/components/Icon";
+import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import type { CW_ICON_NAMES } from "@/components/iconNames";
 import styles from "./Builder.module.css";
 
@@ -298,17 +299,16 @@ export function BuilderMenu({
         title={shortLabel}
         aria-expanded={open}
         aria-haspopup="menu"
+        data-cw-ink-control
         onClick={() => (open ? close() : openAtTrigger())}
       >
         {/* Positioned so it paints ABOVE the scrim the course card draws in
             `::before`: an absolutely positioned pseudo-element outranks in-flow
             content, and the builder's layering rule keeps `z-index` for the
             six overlay rungs, so tree order is what settles it here. */}
-        <Icon className={styles.menuTriggerGlyph} name="more" size={18} />
-        {/* Same as every other icon control in the shell — and the rules for it
-            (`.menuTrigger:hover .inkRing`, `[aria-expanded="true"] .inkRing`)
-            were already written; only the graphic was missing. */}
-        <HandGraphic className={styles.inkRing} name="ink-ring" size={42} />
+        <InteractionInkIcon>
+          <Icon className={styles.menuTriggerGlyph} name="more" size={18} />
+        </InteractionInkIcon>
       </button>
 
       {open && typeof document !== "undefined"

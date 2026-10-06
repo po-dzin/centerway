@@ -36,6 +36,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import styles from "./Builder.module.css";
 
 /** The width at which `side` stops being a bottom sheet and becomes a drawer. */
@@ -129,8 +130,16 @@ export function BuilderSheet({
       <div className={styles.sheetBody}>
         <div className={styles.sheetHead}>
           <h2 className={styles.panelTitle}>{title}</h2>
-          <button className={styles.menuTrigger} type="button" aria-label="Закрити" onClick={onClose}>
-            <Icon name="close" size={18} />
+          <button
+            className={styles.menuTrigger}
+            type="button"
+            aria-label="Закрити"
+            data-cw-ink-control
+            onClick={onClose}
+          >
+            <InteractionInkIcon>
+              <Icon name="close" size={18} />
+            </InteractionInkIcon>
           </button>
         </div>
         <div className={styles.sheetScroll}>{children}</div>

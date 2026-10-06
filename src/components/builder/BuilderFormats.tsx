@@ -31,7 +31,7 @@
  * same, so the author edits the thing the buyer will compare.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AdminDateField } from "@/components/admin/AdminDateField";
 import { useI18n } from "@/components/I18nProvider";
@@ -185,6 +185,13 @@ export function BuilderFormats({
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(draftOf(null));
   const [busy, setBusy] = useState(false);
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (editing === null) return;
+    editorRef.current?.focus({ preventScroll: true });
+    editorRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
+  }, [editing]);
 
   const refresh = useCallback(async () => {
     const result = await loadCourseFormats(course.slug);
@@ -629,7 +636,8 @@ export function BuilderFormats({
           <button
             className={css.secondaryAction}
             type="button"
-            aria-pressed={editing === format.code}
+            aria-expanded={editing === format.code}
+            aria-controls={`format-editor-${course.slug}`}
             onClick={() => (editing === format.code ? setEditing(null) : startEdit(format))}
           >
             Змінити
@@ -688,8 +696,18 @@ export function BuilderFormats({
         ) : null}
 
         {data && editing !== null ? (
-          <div className={css.editorPanel} data-format={editing === "new" ? draft.format : editingFormat?.format}>
-            <h4 className={css.editorTitle}>{editing === "new" ? "Новий формат" : editingFormat?.label}</h4>
+          <div
+            ref={editorRef}
+            id={`format-editor-${course.slug}`}
+            role="region"
+            aria-labelledby={`format-editor-title-${course.slug}`}
+            tabIndex={-1}
+            className={css.editorPanel}
+            data-format={editing === "new" ? draft.format : editingFormat?.format}
+          >
+            <h4 className={css.editorTitle} id={`format-editor-title-${course.slug}`}>
+              {editing === "new" ? "Новий формат" : editingFormat?.label}
+            </h4>
             {editing === "new" ? editor(null) : editingFormat ? editor(editingFormat) : null}
           </div>
         ) : null}

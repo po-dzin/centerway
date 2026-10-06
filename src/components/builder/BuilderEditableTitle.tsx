@@ -3,9 +3,33 @@
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEventHandler } from "react";
 
-import { HandGraphic, Icon } from "@/components/Icon";
+import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { PLACEHOLDER_MARKER } from "@/lms-core";
 import styles from "./Builder.module.css";
+
+function observeTitleHeight(element: HTMLTextAreaElement) {
+  let width = -1;
+  const fit = () => {
+    element.style.height = "auto";
+    element.style.height = `${element.scrollHeight}px`;
+  };
+  fit();
+  const observer = new ResizeObserver(([entry]) => {
+    if (!entry || entry.contentRect.width === width) return;
+    width = entry.contentRect.width;
+    fit();
+  });
+  observer.observe(element);
+  let disposed = false;
+  void document.fonts.ready.then(() => {
+    if (!disposed) fit();
+  });
+  return () => {
+    disposed = true;
+    observer.disconnect();
+  };
+}
 
 /**
  * A title, in one of two registers.
@@ -74,8 +98,7 @@ export function BuilderEditableTitle({
   useLayoutEffect(() => {
     const element = field.current;
     if (!element) return;
-    element.style.height = "auto";
-    element.style.height = `${element.scrollHeight}px`;
+    return observeTitleHeight(element);
   }, [visibleValue, compact, asRecord]);
 
   useEffect(() => {
@@ -88,8 +111,7 @@ export function BuilderEditableTitle({
   useLayoutEffect(() => {
     const element = input.current;
     if (!element) return;
-    element.style.height = "auto";
-    element.style.height = `${element.scrollHeight}px`;
+    return observeTitleHeight(element);
   }, [editing, draft]);
 
   if (!asRecord) {
@@ -169,13 +191,10 @@ export function BuilderEditableTitle({
           visibleValue || placeholder
         )}
       </Heading>
-      {/* The ring the stylesheet has been styling all along. `.titleEditAction
-          :hover .inkRing` existed and matched nothing, because no ring was
-          rendered — so the pencil answered the pointer with the sunk plate
-          instead, the one highlight the builder is not supposed to draw. */}
-      <button className={styles.titleEditAction} type="button" aria-label={label} onClick={open}>
-        <Icon name="edit" size={16} />
-        <HandGraphic className={styles.inkRing} name="ink-ring" size={42} />
+      <button className={styles.titleEditAction} type="button" aria-label={label} onClick={open} data-cw-ink-control>
+        <InteractionInkIcon>
+          <Icon name="edit" size={16} />
+        </InteractionInkIcon>
       </button>
     </div>
   );

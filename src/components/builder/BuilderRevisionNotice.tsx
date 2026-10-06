@@ -1,6 +1,7 @@
 "use client";
 
 import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 
 import { InkLabel } from "./BuilderInkLabel";
 import styles from "./Builder.module.css";
@@ -95,9 +96,12 @@ export function BuilderRevisionNotice({
             type="button"
             onClick={onOpenRelease}
             aria-label={`Лишилось блокерів: ${blockerCount}. Показати, яких саме`}
+            data-cw-ink-control
           >
             <InkLabel>Лишилось блокерів: {blockerCount}</InkLabel>
-            <Icon name="arrow-right" size={16} aria-hidden="true" />
+            <InteractionInkIcon>
+              <Icon name="arrow-right" size={16} aria-hidden="true" />
+            </InteractionInkIcon>
           </button>
         ) : null}
       </p>

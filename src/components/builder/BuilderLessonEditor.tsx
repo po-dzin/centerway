@@ -703,7 +703,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
               вопрос «что происходило с этим уроком» задают, глядя на урок, а не
               на список курсов. */}
           <button
-            className={styles.menuTrigger}
+            className={`${styles.menuTrigger} ${styles.workspaceTopbarAction}`}
             type="button"
             aria-label="Історія цього уроку"
             title="Історія цього уроку"
@@ -873,7 +873,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
           <>
             <BuilderHistory history={history} disabled={working} />
             <span className={styles.saveState} role="status" aria-live="polite">
-              {autosave.message ?? (dirty ? "Зміни збережуться автоматично" : "Усі зміни збережено")}
+              {autosave.message ?? (dirty ? "Зміни збережуться автоматично" : "Збережено")}
             </span>
             <button
               className={styles.commitAction}

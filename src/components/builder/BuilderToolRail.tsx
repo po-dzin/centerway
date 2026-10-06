@@ -2,7 +2,8 @@
 
 import type { ReactNode } from "react";
 
-import { HandGraphic, Icon } from "@/components/Icon";
+import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import type { CwIconName } from "@/components/iconNames";
 import styles from "./Builder.module.css";
 
@@ -48,10 +49,12 @@ export function BuilderToolTabs({
             aria-label={tab.label}
             title={tab.label}
             aria-pressed={active && open}
+            data-cw-ink-control
             onClick={() => onMode(tab.mode)}
           >
-            <Icon name={tab.icon} size={20} />
-            <HandGraphic className={styles.toolTabRing} name="ink-ring" size={42} />
+            <InteractionInkIcon>
+              <Icon name={tab.icon} size={20} />
+            </InteractionInkIcon>
           </button>
         );
       })}
@@ -138,9 +141,16 @@ export function BuilderToolRail({
             <div className={styles.toolDrawerTabs}>
               <BuilderToolTabs mode={mode} open={open} onMode={onMode} />
             </div>
-            <button className={styles.toolClose} type="button" onClick={onClose} aria-label="Згорнути панель">
-              <Icon name="close" size={20} />
-              <HandGraphic className={styles.toolTabRing} name="ink-ring" size={42} />
+            <button
+              className={styles.toolClose}
+              type="button"
+              onClick={onClose}
+              aria-label="Згорнути панель"
+              data-cw-ink-control
+            >
+              <InteractionInkIcon>
+                <Icon name="close" size={20} />
+              </InteractionInkIcon>
             </button>
           </header>
           <div className={styles.toolDrawerBody}>{children}</div>
@@ -158,9 +168,11 @@ export function BuilderToolRail({
         onClick={() => (open ? onClose() : onMode(mode))}
         aria-label={open ? "Згорнути панель інструментів" : "Розгорнути панель інструментів"}
         aria-expanded={open}
+        data-cw-ink-control
       >
-        <Icon name={open ? "arrow-right" : "arrow-left"} size={18} />
-        <HandGraphic className={styles.toolTabRing} name="ink-ring" size={42} />
+        <InteractionInkIcon>
+          <Icon name={open ? "arrow-right" : "arrow-left"} size={18} />
+        </InteractionInkIcon>
       </button>
     </aside>
   );

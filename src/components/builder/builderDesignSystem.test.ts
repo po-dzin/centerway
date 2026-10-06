@@ -190,6 +190,63 @@ describe("icons sit on the scale", () => {
   });
 });
 
+describe("ink controls share the platform selection mark", () => {
+  it("does not redraw selection rings in builder components or CSS", () => {
+    const localRingConsumers = builderTsx.filter(({ source }) => /name=["']ink-ring["']/.test(source));
+    expect(localRingConsumers.map(({ name }) => name)).toEqual([]);
+    expect(code).not.toMatch(/\.inkRing\b|\.iconInkRing\b|\.blockInsertInkRing\b/);
+  });
+
+  it("keeps icon selection controls free of hover plates", () => {
+    for (const selector of [
+      ".workspacePreviewAction:hover",
+      ".historyButton:hover",
+      ".formatIconAction:hover",
+      ".courseSettingEdit:hover",
+      ".blockerOpen:hover",
+    ]) {
+      const rule = new RegExp(`${selector.replaceAll(".", "\\.")}[^\\{]*\\{([^}]+)\\}`).exec(code)?.[1] ?? "";
+      expect(rule, selector).not.toMatch(/\bbackground(?:-color)?\s*:/);
+    }
+  });
+
+  it("keeps document topbar commands color-only", () => {
+    for (const name of ["BuilderCourseView.tsx", "BuilderLessonEditor.tsx"]) {
+      const source = builderTsx.find((entry) => entry.name === name)?.source ?? "";
+      const organs = /organs=\{([\s\S]*?)\n\s*tools=/.exec(source)?.[1] ?? "";
+      expect(organs, name).not.toContain("data-cw-ink-control");
+      expect(organs, name).not.toContain("InteractionInkIcon");
+    }
+
+    expect(code).toMatch(
+      /\.menuTrigger\.workspaceTopbarAction\[aria-expanded="true"\]\s*,\s*\.menuTrigger\.workspaceTopbarAction:focus-visible\s*\{[^}]*color:\s*var\(--cw-platform-text\)/,
+    );
+    expect(code).toMatch(
+      /:is\(\.workspacePreviewAction, \.workspaceTopbarAction\):hover:not\(:disabled\)\s*\{[^}]*color:\s*var\(--cw-platform-text\)[^}]*background:\s*transparent/,
+    );
+    expect(code).toMatch(/\.workspacePreviewAction\s*\{[^}]*composes:\s*square from/);
+    expect(code).toMatch(/\.contentsAction\s*\{[^}]*composes:\s*square from/);
+  });
+});
+
+describe("Builder disclosure chevrons stay free of ink rings", () => {
+  it("keeps every chevron outside the standalone icon-mark wrapper", () => {
+    const wrappedChevron = builderTsx.some(({ source }) =>
+      /<InteractionInkIcon>\s*<Icon(?=[^>]*chevron)[^>]*>/.test(source),
+    );
+    expect(wrappedChevron).toBe(false);
+  });
+
+  it("retains open-state color on the chevron controls", () => {
+    expect(code).toMatch(/\.moduleCollapse\[aria-expanded="true"\][\s\S]*?color:\s*var\(--cw-platform-text\)/);
+    expect(code).toMatch(/\.contentsModuleToggle\[aria-expanded="true"\][\s\S]*?\.contentsModuleChevron/);
+    expect(code).toMatch(/\.courseSettingEdit\[aria-expanded="true"\][\s\S]*?color:\s*var\(--cw-platform-text\)/);
+    expect(code).toMatch(
+      /\.structureReplace\[open\] > summary \.courseSettingsAdvancedGlyph\s*\{[^}]*color:\s*var\(--cw-platform-text\)/,
+    );
+  });
+});
+
 describe("spacing steps exist", () => {
   /**
    * `var(--cw-space-3xs, 0.25rem)` read like a scale step and was not one: the
@@ -232,7 +289,19 @@ describe("the course tabs sit below the chrome, not under it", () => {
   it("runs the modes along one scrolling line", () => {
     const rule = /\.courseMobileNav\s*\{([\s\S]*?)\n\}/.exec(code)?.[1] ?? "";
     expect(rule).toContain("overflow-x: auto");
+    expect(rule).toContain("overflow-y: hidden");
+    const tab = /\.courseMobileNavItem\s*\{([\s\S]*?)\n\}/.exec(code)?.[1] ?? "";
+    expect(tab).toContain("overflow-y: clip");
     expect(rule).not.toContain("grid-template-columns");
+  });
+
+  it("uses deep neutral ink for hovered and current navigation labels", () => {
+    expect(code).toMatch(
+      /\.courseMobileNavItem:focus-visible,\s*\.courseMobileNavItem\[aria-current="page"\]\s*\{[^}]*color:\s*var\(--cw-platform-text\)/,
+    );
+    expect(code).toMatch(
+      /@media \(hover: hover\)\s*\{\s*\.courseMobileNavItem:hover\s*\{[^}]*color:\s*var\(--cw-platform-text\)/,
+    );
   });
 });
 

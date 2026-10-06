@@ -66,6 +66,22 @@ describe("listProductOffers", () => {
     const herbs = rows.find((r) => r.code === "herbs");
     expect(herbs?.offer?.amount).toBe(640);
   });
+
+  it("lists a package only until its offer becomes a format of another experience", async () => {
+    db.tables.experiences!.push({
+      id: "exp-way21-support",
+      slug: "way21-support",
+      title: "Супровід",
+      kind: "package",
+    });
+    expect((await listProductOffers()).some((row) => row.code === "way21-support")).toBe(true);
+    db.tables.experience_offers!.push(
+      offerOf({ code: "way21-support", experience_id: "exp-way21", format: "individual", amount: 9000 }),
+    );
+    const rows = await listProductOffers();
+    expect(rows.some((row) => row.code === "way21-support")).toBe(false);
+    expect(rows.map((row) => row.code).sort()).toEqual(["consult", "herbs", "irem-individual"]);
+  });
 });
 
 describe("saveProductOffer", () => {

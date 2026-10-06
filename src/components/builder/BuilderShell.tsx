@@ -1,8 +1,10 @@
 "use client";
 
-import type { MouseEvent, ReactNode } from "react";
+import { useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
+import Link from "next/link";
 
-import { HandGraphic, Icon } from "@/components/Icon";
+import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { PlatformAccountMenu } from "@/components/platform/layout/PlatformAccountMenu";
 import { PlatformHeader } from "@/components/platform/layout/PlatformHeader";
 import {
@@ -11,7 +13,7 @@ import {
   PlatformOrgans,
   chromeOrgans,
 } from "@/components/platform/layout/PlatformOrgans";
-import { PlatformTrail, type TrailStep } from "@/components/platform/PlatformTrail";
+import type { TrailStep } from "@/components/platform/PlatformTrail";
 import { supabaseClient } from "@/lib/supabaseClient";
 import type { BuilderFailure } from "./builderClient";
 import { leadingBack } from "./leadingBack";
@@ -30,7 +32,7 @@ import styles from "./Builder.module.css";
  * system; the material becomes a flat warm panel rather than storefront glass.
  *
  * Route context and document-level actions share the workspace topbar: the
- * brand remains application chrome, while breadcrumb, preview and save state
+ * brand remains application chrome, while back navigation, preview and save state
  * describe the exact course or lesson currently being edited.
  *
  * THE RAIL is course-local navigation. In the lesson editor it carries the
@@ -92,19 +94,16 @@ export function BuilderShell({
      three builder levels changed the height of the chrome itself — the one
      part of the screen that should never move. The row is now unconditional:
      a level with nothing to say renders it empty, and the frame stays put.
-     The TRAIL still needs two steps, because a breadcrumb showing only its own
-     root is not a path — it is the application's name written twice. */
-  const showTrail = trail.length > 1;
+     The nearest parent supplies the arrow destination on both viewport classes. */
 
   /* «Ліворуч — вихід звідси». The trail already knows the parent, so the phone's
      leading island is derived rather than configured: the workshop's root shows
      the mark, a course shows the way back to the courses, a lesson shows the way
      back to its course. A control that leaves the APPLICATION from inside an
      unsaved lesson was the wrong answer to the only question that corner
-     answers. Which step, and which word — `leadingBack`. */
+     answers. The parent destination comes from `leadingBack`. */
   const back = leadingBack(trail);
   const parent = back?.step ?? null;
-  const parentText = back?.text;
 
   /* Two ways to fold one panel, one thing the control has to say. `collapsed`
      empties the rail, `compact` narrows it to its icon column — but from the
@@ -160,13 +159,14 @@ export function BuilderShell({
           gesture its user makes most. See PlatformOrgans. */}
       <PlatformOrgans
         scope="mobile"
+        fixedTone="light"
         reveal="always"
         label="Майстерня"
         left={
           parent?.onNavigate ? (
-            <PlatformBackOrgan onNavigate={parent.onNavigate} label={`Назад: ${parent.label}`} text={parentText} />
+            <PlatformBackOrgan onNavigate={parent.onNavigate} label={`Назад: ${parent.label}`} />
           ) : parent?.href ? (
-            <PlatformBackOrgan href={parent.href} label={`Назад: ${parent.label}`} text={parentText} />
+            <PlatformBackOrgan href={parent.href} label={`Назад: ${parent.label}`} />
           ) : (
             <PlatformMarkOrgan />
           )
@@ -192,7 +192,28 @@ export function BuilderShell({
         scope="desktop"
         workspaceContent={
           <div className={styles.workspaceTopbarContext}>
-            {showTrail ? <PlatformTrail steps={trail} /> : <span />}
+            {parent?.onNavigate ? (
+              <button
+                type="button"
+                className={`${styles.menuTrigger} ${styles.workspaceTopbarAction}`}
+                onClick={parent.onNavigate}
+                aria-label={`Назад: ${parent.label}`}
+                title={`Назад: ${parent.label}`}
+              >
+                <Icon name="arrow-left" size={18} />
+              </button>
+            ) : parent?.href ? (
+              <Link
+                className={`${styles.menuTrigger} ${styles.workspaceTopbarAction}`}
+                href={parent.href}
+                aria-label={`Назад: ${parent.label}`}
+                title={`Назад: ${parent.label}`}
+              >
+                <Icon name="arrow-left" size={18} />
+              </Link>
+            ) : (
+              <span />
+            )}
             {tools || organs ? (
               <div className={styles.workspaceTopbarTools}>
                 {organs}
@@ -259,9 +280,11 @@ export function BuilderShell({
                 onClick={onAsideToggle}
                 aria-label={asideFolded ? "Розгорнути структуру курсу" : "Згорнути структуру курсу"}
                 aria-expanded={!asideFolded}
+                data-cw-ink-control
               >
-                <Icon name={asideFolded ? "arrow-right" : "arrow-left"} size={18} />
-                <HandGraphic className={styles.stepInkRing} name="ink-ring" size={42} />
+                <InteractionInkIcon>
+                  <Icon name={asideFolded ? "arrow-right" : "arrow-left"} size={18} />
+                </InteractionInkIcon>
               </button>
             ) : null}
           </aside>
@@ -319,9 +342,11 @@ export function BuilderStep({
       disabled={!onNavigate}
       aria-label={label}
       title={label}
+      data-cw-ink-control
     >
-      <Icon name={direction === "prev" ? "arrow-left" : "arrow-right"} size={20} />
-      <HandGraphic className={styles.stepInkRing} name="ink-ring" size={42} />
+      <InteractionInkIcon>
+        <Icon name={direction === "prev" ? "arrow-left" : "arrow-right"} size={20} />
+      </InteractionInkIcon>
     </button>
   );
 }
@@ -334,16 +359,80 @@ export function BuilderStep({
  * signed out. Without this control the "потрібен вхід" panel would be a dead end
  * — the state every first visit lands in, with nothing to press.
  *
- * `redirectTo` is the current URL, so the deep link an author followed survives
- * the round trip instead of dumping them on the course list.
+ * Production uses Google and returns to the exact deep link. The local stack
+ * disables that provider, so its door uses the seeded email/password account
+ * instead of sending the author to an unsupported GoTrue page.
  */
 export function BuilderSignIn() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const localAuth = process.env.NEXT_PUBLIC_AUTH_GOOGLE === "off";
+
   const signIn = async () => {
     await supabaseClient.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: typeof window === "undefined" ? undefined : window.location.href },
     });
   };
+
+  const signInLocally = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+
+    try {
+      const { error: authError } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (authError) {
+        setError("Не вдалося увійти. Перевірте адресу й пароль та спробуйте ще раз.");
+        setBusy(false);
+        return;
+      }
+      window.location.reload();
+    } catch {
+      setError("Локальний сервіс входу недоступний. Перевірте, чи запущений Supabase.");
+      setBusy(false);
+    }
+  };
+
+  if (localAuth) {
+    return (
+      <form className={styles.builderSignInForm} onSubmit={signInLocally}>
+        <label className={styles.builderSignInField}>
+          <span className={styles.fieldLabel}>Електронна пошта</span>
+          <input
+            className={styles.input}
+            type="email"
+            autoComplete="username"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+        </label>
+        <label className={styles.builderSignInField}>
+          <span className={styles.fieldLabel}>Пароль</span>
+          <input
+            className={styles.input}
+            type="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        </label>
+        {error ? (
+          <p className={styles.builderSignInError} role="alert">
+            {error}
+          </p>
+        ) : null}
+        <button className={styles.commitAction} type="submit" disabled={busy}>
+          {busy ? "Входимо…" : "Увійти"}
+        </button>
+        <p className={styles.fieldHint}>Для локальної бази: author1@local.test · пароль local-dev</p>
+      </form>
+    );
+  }
 
   return (
     <button className={styles.commitAction} type="button" onClick={signIn}>

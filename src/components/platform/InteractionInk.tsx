@@ -58,9 +58,9 @@ export function InteractionInkLabel({
   );
 }
 
-export function InteractionInkIcon({ children }: { children: ReactNode }) {
+export function InteractionInkIcon({ children, active = false }: { children: ReactNode; active?: boolean }) {
   return (
-    <span className="cw-ink-icon">
+    <span className="cw-ink-icon" data-cw-ink-active={active || undefined}>
       <span className="cw-ink-icon-glyph">{children}</span>
       <HandGraphic className="cw-ink-icon-mark" name="ink-ring" size={42} />
     </span>

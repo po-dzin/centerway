@@ -1295,85 +1295,28 @@
   composes: hug from "../platform/PlatformButtons.module.css";
 }
 
-/* ── The ink ring, once ────────────────────────────
-
-   Four controls draw this mark — the header's step arrows, the tool rail's
-   tabs, the icon options in the course list, and the block inserter — and all
-   four render the SAME graphic: <HandGraphic name="ink-ring" size={42} />.
-   They had four stylesheets between them: rest scale 0.6 / 0.62 / 0.72 / none,
-   rotation -4deg / -5deg, and one that hardcoded a 2.65rem box while the other
-   three read --cw-ink-ring-size. Two of them were also missing from the
-   reduced-motion block, so a reader who asked for no motion still got the ring
-   springing open on hover.
-
-   One recipe, and the axes that vary are tokens: size and the hover pair come
-   from globals, and the rest scale is the single literal below because it is
-   the same number for every consumer. Anything that needs a different ring is
-   a different mark and needs a reason written next to it. */
-.inkRing {
-  position: absolute;
-  inset: 50% auto auto 50%;
-  width: var(--cw-ink-ring-size);
-  height: var(--cw-ink-ring-size);
-  overflow: visible;
-  color: var(--cw-nav-marker);
-  pointer-events: none;
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.6) rotate(-4deg);
-  /* The dash draws the stroke now, so it has to be in here: without it the
-     line jumps to its new length instead of being drawn to it. */
-  transition:
-    opacity var(--builder-motion-ink) ease,
-    stroke-dashoffset var(--builder-motion-ink) ease,
-    transform var(--builder-motion-ink) ease;
+.contentsAction {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: square from "../platform/PlatformButtons.module.css";
+  color: var(--cw-platform-muted);
+  background: transparent;
 }
 
-/* The tool rail's tab draws the same mark; `composes` resolves only against a
-   class already declared above it in this file. */
-.toolTabRing {
-  composes: inkRing;
+.contentsAction[aria-expanded="true"] {
+  color: var(--cw-platform-text);
+  background: transparent;
 }
 
-/* Every way the ring is asked to appear, in one place: hover, keyboard focus,
-   and the two "this one is current" states (a pressed toggle, an open menu).
-   The selected states hold the ring at full strength; hover and focus show it
-   at the token's hover weight. */
-.stepAction:focus-visible .inkRing,
-.moduleImportAction:focus-visible .inkRing,
-.toolTab:focus-visible .inkRing,
-.toolClose:focus-visible .inkRing,
-.menuTrigger:focus-visible .inkRing,
-.slugEditAction:focus-visible .inkRing,
-.titleEditAction:focus-visible .inkRing {
-  opacity: var(--cw-ink-hover-opacity);
-  transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
-}
 @media (hover: hover) {
-  .stepAction:hover:not(:disabled) .inkRing,
-  .moduleImportAction:hover:not(:disabled) .inkRing,
-  .toolTab:hover .inkRing,
-  .toolClose:hover .inkRing,
-  .menuTrigger:hover .inkRing,
-  .slugEditAction:hover .inkRing,
-  .titleEditAction:hover .inkRing {
-    opacity: var(--cw-ink-hover-opacity);
-    transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
+  .contentsAction:hover:not(:disabled) {
+    color: var(--cw-platform-text);
+    background: transparent;
   }
 }
 
-.toolTab[aria-pressed="true"] .inkRing,
-.menuTrigger[aria-expanded="true"] .inkRing {
-  opacity: 0.9;
-  transform: translate(-50%, -50%) scale(1) rotate(-4deg);
-}
-
-.stepInkRing {
-  composes: inkRing;
-}
-
-.contentsAction {
-  composes: chrome from "../platform/PlatformButtons.module.css";
-  gap: var(--cw-space-2xs);
+.contentsAction:focus-visible,
+.workspacePreviewAction:focus-visible {
+  color: var(--cw-platform-text);
 }
 
 /* The outline becomes permanent only when it fits outside the shared content
@@ -1488,6 +1431,24 @@
   justify-content: flex-start;
   gap: var(--cw-space-xs);
   text-align: start;
+}
+
+/* Keep the open/closed cue on the chevron itself; only the module label owns
+   the row's shared ink mark. */
+.contentsModuleChevron {
+  color: inherit;
+  transition: color var(--builder-motion-ink) ease;
+}
+
+.contentsModuleToggle[aria-expanded="true"] .contentsModuleChevron,
+.contentsModuleToggle:focus-visible .contentsModuleChevron {
+  color: var(--cw-platform-text);
+}
+
+@media (hover: hover) {
+  .contentsModuleToggle:hover .contentsModuleChevron {
+    color: var(--cw-platform-text);
+  }
 }
 
 /* The lesson line: the row that navigates, plus the two controls that
@@ -1832,6 +1793,24 @@
   composes: primary from "../platform/PlatformButtons.module.css";
 }
 
+.builderSignInForm {
+  display: grid;
+  gap: var(--cw-space-sm);
+  width: min(100%, 24rem);
+  margin-block-start: var(--cw-space-sm);
+}
+
+.builderSignInField {
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.builderSignInError {
+  margin: 0;
+  color: var(--cw-sem-boundary);
+  font-size: var(--ds-type-body-sm-size);
+}
+
 /* Unpublishing is not the same act as publishing. It is a retreat, and dressing
    it in the gold that means "this advances your work" would make the loudest
    control on a published course the one that takes it away from learners. */
@@ -1843,40 +1822,29 @@
   composes: secondary from "../platform/PlatformButtons.module.css";
 }
 
-/* IT CARRIES ITS OWN CONTOUR, and that is the fix. `chrome` paints nothing at
-   rest — right for a control standing in a row of others, wrong for this one:
-   below 901px the label drops (see `.workspaceActionLabel`) and what is left is
-   an 18px glyph alone on the bar, with no box, no ground and no neighbour to be
-   grouped with. It read as decoration. A drawn rule and a larger glyph give it
-   back the "you can press this" the label used to carry. */
-/* IT CARRIES A CONTOUR, and only the contour is written here. `chrome` paints
-   nothing at rest — right for a control standing in a row of others, wrong for
-   this one: below 901px the label drops (see `.workspaceActionLabel`) and what
-   is left is a glyph alone on the bar, with no box and no neighbour to be
-   grouped with. It read as decoration.
-
-   The RADIUS AND THE BOX ARE THE CONTRACT'S, not this file's — `guard:buttons`
-   owns both, and it is right to: a hand-set radius here is how one button ends
-   up a different shape from the five beside it. `chrome` already brings the
-   soft-rect and a touch-sized minimum, so with the label gone the glyph sits in
-   a square box without this file measuring one. All that is added is the rule
-   around it and the ink it moves to. */
+/* The surrounding topbar capsule supplies the surface and hit target. This
+   command signals hover and availability with foreground colour only. */
 .workspacePreviewAction {
-  composes: chrome from "../platform/PlatformButtons.module.css";
-  composes: hug from "../platform/PlatformButtons.module.css";
-  border: 1px solid var(--builder-rule);
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: square from "../platform/PlatformButtons.module.css";
+  border-color: transparent;
+  color: var(--cw-platform-muted);
+}
+
+.workspaceTopbarAction {
+  color: var(--cw-platform-muted);
+  background: transparent;
+}
+
+.workspaceTopbarAction[aria-expanded="true"] {
   color: var(--cw-platform-text);
 }
 
-.workspacePreviewAction:focus-visible {
-  border-color: color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
-  background: var(--cw-mat-surface-sunk);
-}
-
 @media (hover: hover) {
-  .workspacePreviewAction:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
-    background: var(--cw-mat-surface-sunk);
+  :is(.workspacePreviewAction, .workspaceTopbarAction):hover:not(:disabled) {
+    color: var(--cw-platform-text);
+    background: transparent;
+    border-color: transparent;
   }
 }
 
@@ -1898,6 +1866,15 @@
 @media (min-width: 901px) {
   .workspaceActionLabel {
     display: inline;
+  }
+
+  .workspacePreviewAction {
+    width: fit-content;
+    height: auto;
+    min-height: var(--ds-button-min-height);
+    max-width: var(--ds-button-max-width);
+    padding-inline: var(--ds-button-padding-inline);
+    aspect-ratio: auto;
   }
 }
 
@@ -2352,7 +2329,7 @@
    a box marks itself (see «Ink marks text; a box marks itself» in
    docs/design-system.md): the plate fills the control, deepens on hover, focus
    and while its menu is open, and the ring is not drawn here. */
-.courseCard > .menuRoot > .menuTrigger .inkRing {
+.courseCard > .menuRoot > .menuTrigger .cw-ink-icon-mark {
   display: none;
 }
 
@@ -2646,18 +2623,6 @@
 
 .slugControlTooltip {
   display: inline-grid;
-}
-
-.slugEditAction:focus-visible .iconInkRing {
-  opacity: var(--cw-ink-hover-opacity);
-  transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
-}
-
-@media (hover: hover) {
-  .slugEditAction:hover .iconInkRing {
-    opacity: var(--cw-ink-hover-opacity);
-    transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
-  }
 }
 
 .slugLockState {
@@ -3184,35 +3149,25 @@
 
 /* ── Editor ───────────────────────────────────────── */
 
-/* THE CANVAS UNDER THE LAST BLOCK, AND IT IS A CONSTANT.
-
-   There was no canvas — there was a REMAINDER. The document pane is the
-   scroller and fills the frame, so whatever the lesson did not use showed up as
-   blank paper at the bottom: a three-block lesson had 335px of it, a long one
-   had the 72px of padding and nothing more, and the same lesson had a different
-   amount on a different window. Nothing was wrong with any single number; the
-   quantity simply meant nothing, and it moved every time anything else did.
-
-   Written as a fraction of the VIEWPORT rather than of the content, so it is
-   the same on every lesson of a course and only changes when the window does.
-   Roughly half a screen: enough that the last paragraph can always be scrolled
-   up to where the eye is instead of sitting on the bottom edge — the reason a
-   writing surface has room under its last line at all — and not so much that
-   the scrollbar starts lying about how long the lesson is.
-
-   On the LIST rather than the page: the save bar is a sibling after it, so
-   padding on the page would put the empty paper below the bar instead of
-   between the writing and it. */
+/* Desktop keeps writing room below the last block. Compact layouts place the
+   save row directly after the document with the shared small spacing token. */
 .blockList {
   display: grid;
   gap: 0;
-  padding-block-end: 45svh;
+  padding-block-end: var(--cw-space-xs);
 }
 
 @media (min-width: 901px) {
   .page[data-mode="document"] .blockList {
+    padding-block-end: 45svh;
     min-block-size: calc(100dvh - var(--builder-topbar-height) - 12rem);
     align-content: start;
+  }
+}
+
+@media (max-width: 900px) {
+  .page[data-mode="document"] {
+    padding-block-end: max(var(--cw-space-lg), env(safe-area-inset-bottom));
   }
 }
 
@@ -3385,16 +3340,6 @@
     background: var(--cw-platform-bg);
     color: var(--cw-platform-text);
   }
-}
-
-/* The one ring that is always on: it marks WHERE a block will be inserted, so
-   it is a target rather than a response to the pointer. Same geometry, held
-   open at full size. */
-.blockInsertInkRing {
-  composes: inkRing;
-  color: var(--cw-platform-text);
-  opacity: 0.72;
-  transform: translate(-50%, -50%) rotate(-4deg);
 }
 
 /* The floating chooser. Fixed against the ring that opened it, so the document
@@ -3580,34 +3525,31 @@
   animation: builderDocEnter var(--builder-motion-ink) var(--builder-ease-page) both;
 }
 
-/* THE LEADING GUTTER — the side the author's eye starts every line on.
-
-   The handles have been on both sides of this document. They hung off the
-   leading edge first, went to the trailing gutter to get out of «the pointer's
-   natural path to the words», and are back on the leading side now because
-   that objection was about a construction this no longer is: the rail sat in
-   the block's own MARGIN then, sharing a strip with the text, so a drag that
-   started a hair too far in grabbed the block instead of placing the caret.
-   `--builder-doc-gutter` is a reserved 3rem OUTSIDE the measure, on both sides
-   (see `.page[data-mode="document"]`) — nothing in it is on the way to a word.
-
-   Leading, rather than trailing, because that is where a document's handles
-   are: the reader arrives at the left edge of every line, so the control that
-   says «this paragraph, this block» is found without hunting for it, and the
-   trailing gutter stops being a second place to look. `.nodeCard`'s own handle
-   mirrors this construction one level down, so a block's controls and the
-   controls of the node inside it read as one family. */
+/* Commands live at the trailing corner; the grip keeps its leading gutter.
+   The rail spans the document without intercepting clicks in the manuscript. */
 .blockRail {
   position: absolute;
   inset-block-start: 0;
-  inset-inline-end: 100%;
+  inset-inline: calc(-1 * var(--builder-doc-gutter));
   z-index: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  justify-content: space-between;
   align-items: center;
   gap: var(--cw-space-2xs);
   opacity: 0;
+  pointer-events: none;
   transition: opacity var(--builder-motion-reveal) ease;
+}
+
+.blockRail > *,
+.nodeHead > * {
+  pointer-events: auto;
+}
+
+.blockRail > :last-child,
+.nodeHead > :last-child {
+  margin-inline-start: auto;
 }
 
 .blockRail > .rowGrip {
@@ -3616,6 +3558,7 @@
 
 .blockCard:focus-within > .blockRail,
 .blockCard[data-selected] > .blockRail,
+.blockRail:has([aria-expanded="true"]),
 .blockRail:focus-within {
   opacity: 1;
 }
@@ -3626,16 +3569,14 @@
   }
 }
 
-/* No gutter to hang in below the desktop measure: the rail comes inside, at
-   the block's own leading edge, above the content rather than beside it — the
-   same side it takes in the gutter on a wide screen, so the handle does not
-   change edges when the layout does. */
+/* Compact documents have no outer gutter: reserve one command row, with
+   the menu at its trailing corner and the grip at the leading edge. */
 @media (max-width: 900px) {
   .blockRail {
     position: static;
     inset: auto;
     flex-direction: row;
-    justify-content: flex-start;
+    justify-content: space-between;
   }
 }
 
@@ -3673,31 +3614,24 @@
 /* Reveal, not furniture. A paragraph should look like a paragraph until the
    author reaches for it; this row used to carry a kind dropdown on every line
    of prose, which is what made a lesson read as a form about a lesson. */
-/* SAME GUTTER, SAME CONSTRUCTION, ONE LEVEL DEEPER.
-
-   This was an in-flow row above the node's own content at every width — the
-   block's mobile shape, worn permanently, because the desktop counterpart
-   `.blockRail` gets was never written for it. On a wide screen that put a
-   grip-and-menu row inside the manuscript's own measure, floating over
-   whichever paragraph or list happened to render there — "the menu is in a
-   random place" was this row landing in the text column because nothing ever
-   moved it to the gutter.
-
-   Base styles stay the in-flow, right-justified shape used below 901px, where
-   there IS no gutter to hang controls in (matches `.blockRail`'s own
-   `@media (max-width: 900px)` override). The desktop form — absolute, in the
-   gutter, aligned to this node's own top via `.nodeCard`'s new
-   `position: relative` — is declared further down, mirroring `.blockRail`
-   exactly so a block's rail and a node's head read as the same family stacked
-   one level apart, not two unrelated mechanisms. */
+/* Paragraph actions use the same corners as block actions. Rich-text menus
+   retain their separate paragraph/block groups; only their placement changes. */
 .nodeHead {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: var(--cw-space-2xs);
   min-height: 1.25rem;
   opacity: 0;
+  pointer-events: none;
   transition: opacity var(--builder-motion-reveal) ease;
+}
+
+@media (hover: none) {
+  .blockRail,
+  .nodeHead {
+    opacity: 1;
+  }
 }
 
 .nodeCard:focus-within .nodeHead,
@@ -3711,19 +3645,15 @@
   }
 }
 
-/* The desktop form — `.blockRail`'s own construction, one level deeper. Lands
-   in the same leading gutter, aligned to THIS node's top rather than the
-   block's, because `.nodeCard` is now the positioned ancestor instead of
-   `.blockCard`. Nothing here decides visibility; the reveal rule above already
-   covers both shapes. */
+/* Desktop gutters keep commands outside the reading/editing measure. */
 @media (min-width: 901px) {
   .nodeHead {
     position: absolute;
     inset-block-start: 0;
-    inset-inline-end: 100%;
+    inset-inline: calc(-1 * var(--builder-doc-gutter));
     z-index: 1;
-    flex-direction: column;
-    justify-content: center;
+    flex-direction: row;
+    justify-content: space-between;
     min-height: 0;
   }
 }
@@ -4342,13 +4272,11 @@
 
 .blockerOpen:focus-visible {
   color: var(--cw-platform-text);
-  background: var(--cw-mat-surface);
 }
 
 @media (hover: hover) {
   .blockerOpen:hover {
     color: var(--cw-platform-text);
-    background: var(--cw-mat-surface);
   }
 }
 
@@ -4500,8 +4428,20 @@
   color: var(--cw-platform-text);
   background: transparent;
 }
+
+.menuTrigger.workspaceTopbarAction[aria-expanded="true"],
+.menuTrigger.workspaceTopbarAction:focus-visible {
+  color: var(--cw-platform-text);
+  background: transparent;
+}
+
 @media (hover: hover) {
   .menuTrigger:hover:not(:disabled) {
+    color: var(--cw-platform-text);
+    background: transparent;
+  }
+
+  .menuTrigger.workspaceTopbarAction:hover:not(:disabled) {
     color: var(--cw-platform-text);
     background: transparent;
   }
@@ -4937,13 +4877,15 @@
 
 .courseSettingEdit[aria-expanded="true"] {
   color: var(--cw-platform-text);
-  background: var(--cw-mat-surface-sunk);
+}
+
+.courseSettingEdit:focus-visible {
+  color: var(--cw-platform-text);
 }
 
 @media (hover: hover) {
   .courseSettingEdit:hover:not(:disabled) {
     color: var(--cw-platform-text);
-    background: var(--cw-mat-surface-sunk);
   }
 }
 
@@ -5014,6 +4956,11 @@
   transition:
     transform var(--builder-motion-reveal) ease,
     color var(--builder-motion-reveal) ease;
+}
+
+.courseSettingsAdvanced[open] > summary .courseSettingsAdvancedGlyph,
+.courseSettingsAdvanced > summary:focus-visible .courseSettingsAdvancedGlyph {
+  color: var(--cw-platform-text);
 }
 
 .courseSettingsAdvanced[open] > summary .courseSettingsAdvancedGlyph {
@@ -5230,7 +5177,6 @@
 @media (hover: hover) {
   .historyButton:hover:not(:disabled) {
     color: var(--cw-platform-text);
-    background: var(--cw-mat-surface-sunk);
   }
 }
 
@@ -5815,13 +5761,11 @@
 
 .formatIconAction:focus-visible {
   color: var(--cw-platform-text);
-  background: var(--cw-mat-surface-sunk);
 }
 
 @media (hover: hover) {
   .formatIconAction:hover:not(:disabled) {
     color: var(--cw-platform-text);
-    background: var(--cw-mat-surface-sunk);
   }
 }
 
@@ -5959,7 +5903,9 @@
   scroll-snap-type: x proximity;
   scroll-padding-inline: var(--cw-space-xs);
   overflow-x: auto;
+  overflow-y: hidden;
   overscroll-behavior-x: contain;
+  overscroll-behavior-y: none;
   /* The track is chrome inside chrome on a 48px strip — see the same
      suppression on the account sheet. The row scrolls by touch, wheel and
      keyboard without painting a bar across the modes. */
@@ -5986,6 +5932,9 @@
   flex: none;
   min-height: var(--ds-touch-target-min);
   padding: 0 var(--cw-space-2xs);
+  /* Clip the empty SVG viewport beyond the ink paint, so the horizontal
+     track never acquires vertical scroll extent. The shared mark stays intact. */
+  overflow-y: clip;
   /* The pressed mode comes to rest at the leading edge rather than half off
      it — the strip is scrolled by the browser, and this is what it scrolls to. */
   scroll-snap-align: start;
@@ -6209,6 +6158,17 @@
   color: var(--cw-platform-muted);
 }
 
+.moduleCollapse[aria-expanded="true"],
+.moduleCollapse:focus-visible {
+  color: var(--cw-platform-text);
+}
+
+@media (hover: hover) {
+  .moduleCollapse:hover:not(:disabled) {
+    color: var(--cw-platform-text);
+  }
+}
+
 .moduleLessonCount {
   flex: 0 0 auto;
   padding: var(--cw-space-2xs) var(--cw-space-xs);
@@ -6230,11 +6190,6 @@
   color: var(--cw-platform-muted);
 }
 
-.iconInkRing {
-  composes: inkRing;
-  z-index: 1;
-}
-
 .courseSaveBar {
   position: static;
   border-radius: 0;
@@ -6242,8 +6197,7 @@
      Was a straight hairline; the file already draws every other
      separator with the token. */
   --cw-rule-ink: var(--builder-rule);
-  border-block-start: 1px solid transparent;
-  border-image: var(--cw-rule-fade-x);
+  border-block-start: 0;
   background: transparent;
   box-shadow: none;
 }
@@ -6724,10 +6678,19 @@
   .structureReplace > summary:hover {
     color: var(--cw-platform-text);
   }
+
+  .structureReplace > summary:hover .courseSettingsAdvancedGlyph {
+    color: var(--cw-platform-text);
+  }
 }
 
 .structureReplace[open] > summary .courseSettingsAdvancedGlyph {
+  color: var(--cw-platform-text);
   transform: rotate(180deg);
+}
+
+.structureReplace > summary:focus-visible .courseSettingsAdvancedGlyph {
+  color: var(--cw-platform-text);
 }
 
 .structureReplaceBody {

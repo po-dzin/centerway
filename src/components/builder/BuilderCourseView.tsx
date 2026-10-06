@@ -4,7 +4,8 @@ import { BUILDER_COURSES_PATH } from "@/lib/surfaces/catalog";
 import { useToast } from "@/components/ToastProvider";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { HandGraphic, Icon } from "@/components/Icon";
+import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import {
   newCourseFromTemplate,
   courseForSave,
@@ -668,15 +669,12 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       organs={
         <>
           <button
-            className={styles.menuTrigger}
+            className={`${styles.menuTrigger} ${styles.workspaceTopbarAction}`}
             type="button"
             aria-label="Історія версій"
             title="Історія версій"
-            /* `.menuTrigger[aria-expanded="true"]` already carries the hover
-               background — this was the one caller that never set the
-               attribute, so the trigger gave no sign the drawer it opens is
-               open: it looked pressed for as long as the pointer sat on it and
-               forgot the moment it moved away. */
+            /* Open state is communicated by the icon colour, without a plate
+               or ink mark, matching the Builder topbar command treatment. */
             aria-expanded={versionHistoryOpen}
             onClick={() => setVersionHistoryOpen(true)}
           >
@@ -913,13 +911,15 @@ export function BuilderCourseView({ slug }: { slug: string }) {
                       aria-label={dirty ? "Спочатку збережіть зміни курсу" : "Змінити автоматично створену адресу"}
                       aria-describedby="course-address-hint"
                       disabled={dirty || busy}
+                      data-cw-ink-control
                       onClick={() => {
                         setSlugDraft(course.slug);
                         setSlugEditing(true);
                       }}
                     >
-                      <Icon name="edit" size={16} />
-                      <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+                      <InteractionInkIcon>
+                        <Icon name="edit" size={16} />
+                      </InteractionInkIcon>
                     </button>
                   </span>
                 ) : (
@@ -1255,7 +1255,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
                    learners are reading. */
                   state.data.hasPendingRevision
                   ? "Наступна версія збережена — учні бачать поточну"
-                  : "Усі зміни збережено"))}
+                  : "Збережено"))}
         </span>
         {/* The label never changes. It names what the button DOES, and the line
             beside it already says what is happening — a button that relabels

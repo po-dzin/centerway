@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 
 import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { inlineToPlainText, type InlineText } from "@/lms-core";
 import { BuilderInlineEditor } from "./BuilderInlineEditor";
 import styles from "./Builder.module.css";
@@ -70,9 +71,12 @@ export function BuilderRecordField({
         type="button"
         aria-label={label}
         title={label}
+        data-cw-ink-control
         onClick={() => setEditing(true)}
       >
-        <Icon name="edit" size={16} />
+        <InteractionInkIcon>
+          <Icon name="edit" size={16} />
+        </InteractionInkIcon>
       </button>
     </div>
   );

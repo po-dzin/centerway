@@ -62,6 +62,13 @@ describe("PlatformBackOrgan", () => {
     // The arrow keeps its box: the labelled island is the same touch height.
     expect(rule(css, ".organ")).toContain("height: var(--ds-touch-target-min)");
   });
+
+  it("signals hover and keyboard focus on the labelled route command with deep neutral ink", () => {
+    const css = read("src/components/platform/layout/ChromeOrgans.module.css");
+    expect(rule(css, ".organBack")).toContain("color: var(--cw-platform-muted)");
+    expect(css).toMatch(/\.organBack:focus-visible\s*\{[^}]*color:\s*var\(--cw-platform-text\)/);
+    expect(css).toMatch(/@media \(hover: hover\)\s*\{\s*\.organBack:hover\s*\{[^}]*color:\s*var\(--cw-platform-text\)/);
+  });
 });
 
 describe("where the labelled way back is used", () => {
@@ -72,9 +79,10 @@ describe("where the labelled way back is used", () => {
     expect(read("src/components/platform/PlatformLayout.tsx")).toContain("text={back.text}");
   });
 
-  it("derives the workshop's word from the trail on every builder screen", () => {
+  it("keeps Builder back commands arrow-only, with the destination accessible", () => {
     const shell = read("src/components/builder/BuilderShell.tsx");
     expect(shell).toContain("leadingBack(trail)");
-    expect(shell.match(/text=\{parentText\}/g)).toHaveLength(2);
+    expect(shell).not.toContain("text={parentText}");
+    expect(shell.match(/<PlatformBackOrgan[^>]*label=\{`Назад: \$\{parent.label\}`\}/g)).toHaveLength(2);
   });
 });

@@ -2192,6 +2192,11 @@
     transform: scale(1) rotate(-7deg);
   }
 
+  .cw-ink-icon[data-cw-ink-active="true"] .cw-ink-icon-mark {
+    opacity: 1;
+    transform: scale(1) rotate(-7deg);
+  }
+
   /* Same compound-specificity fix as the label mark above, and gated the same
      way: without the `:hover` copy, hovering an already-current icon ring
      lost to the plain hover rule and dimmed back to the hover ring. */

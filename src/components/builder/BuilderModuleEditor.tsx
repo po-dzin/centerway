@@ -458,9 +458,11 @@ export function ModuleEditor({
               onClick={() => importPicker.current?.click()}
               title={busy ? "Опрацьовуємо…" : "Імпортувати уроки з файлів"}
               aria-label={busy ? "Опрацьовуємо…" : "Імпортувати уроки з файлів"}
+              data-cw-ink-control
             >
-              <Icon name="import" size={20} />
-              <HandGraphic className={styles.stepInkRing} name="ink-ring" size={42} />
+              <InteractionInkIcon>
+                <Icon name="import" size={20} />
+              </InteractionInkIcon>
             </button>
             <input
               ref={importPicker}
