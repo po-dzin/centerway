@@ -1,31 +1,7 @@
 "use client";
 
-/**
- * Prices for the products that have no course of their own.
- *
- * WHY THIS TAB EXISTS. `admin/catalog`'s pricing tab writes `lms_course_offers`,
- * which is unique on `course_id` — one course, one row. Two products were never
- * going to fit: `way21-support` is a second offer against the way21 course, and
- * `herbs` is not a course at all. Their price lived in `products.ts`, so
- * changing it took a deployment. `consult` and `irem-individual` had no price
- * anywhere — they are not even in that file — so "what does this cost" was a
- * question only a developer could answer for them.
- *
- * `product_offers` (2026-09-03) is their table, this is its screen, and
- * `/api/admin/catalog/products` is the endpoint. Same split as the course
- * price: any admin session may read (knowing the cost answers a buyer),
- * writing is admin-only (the price is the owner's).
- *
- * A CHECKOUT PRICE AND A QUOTE ARE NOT THE SAME FIELD. `herbs` is charged at a
- * checkout; `way21-support` and `consult` are agreed in conversation and
- * invoiced afterward — their landing prints a figure beside a lead form, with
- * no buy button. `kind` says which, and `loadPayableOffer` refuses a checkout
- * for a "lead" row even when it carries a number, so a price typed here cannot
- * silently open a buy button that never existed.
- *
- * AN EMPTY AMOUNT IS «ЦІНА ЗА ЗАПИТОМ», not zero and not "unset" — the row and
- * the checkout both treat it as a real, meaningful state. The input is left
- * blank on purpose rather than defaulting to a placeholder number.
+/** Prices for standalone services and products. Course formats belong to the
+ * program's editor in «Ціни й доступ». Blank price means «за запитом».
  */
 
 import { useState } from "react";
@@ -64,6 +40,7 @@ export function ProductPricingTab({
 
   return (
     <div className={lists.list}>
+      <p className={controls.hint}>{t("catalog_products_scope")}</p>
       {products.map((row) => (
         <ProductPricingRow key={row.code} row={row} canEdit={canEdit} errorText={errorText} onChanged={onChanged} />
       ))}
@@ -142,7 +119,9 @@ function ProductPricingRow({
           ) : (
             <span>{t("products_price_on_request")}</span>
           )}
-          <span>{t(row.expectedKind === "lead" ? "products_kind_lead" : "products_kind_checkout")}</span>
+          <span>
+            {t((row.offer?.kind ?? row.expectedKind) === "lead" ? "products_kind_lead" : "products_kind_checkout")}
+          </span>
           {row.offer && !row.offer.active ? (
             <span className="cw-status-failed-text">{t("products_inactive")}</span>
           ) : null}
@@ -215,7 +194,7 @@ function ProductPricingRow({
           <p className={controls.hint}>{t("products_amount_hint")}</p>
         </>
       }
-      note={t(row.expectedKind === "lead" ? "products_offer_lead" : "products_offer_checkout")}
+      note={t((row.offer?.kind ?? row.expectedKind) === "lead" ? "products_offer_lead" : "products_offer_checkout")}
     />
   );
 }

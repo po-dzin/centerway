@@ -3,6 +3,7 @@ import "server-only";
 import { adminClient } from "@/lib/auth/adminClient";
 import type { TablesUpdate } from "@/lib/db/database.types";
 import { courseOfferCode } from "@/lms-core";
+import { noteForAccessRule } from "@/lib/lms/accessTerm";
 
 import { announceFormatProposed } from "./formatAnnounce";
 import { FORMAT_DEFAULT_LABELS, isOfferFormat, ukList, type OfferFormat } from "./formats";
@@ -56,6 +57,9 @@ export type AuthoredFormat = {
   mode: "checkout" | "lead";
   amount: number | null;
   proposedAmount: number | null;
+  listAmount: number | null;
+  accessDays: number | null;
+  accessLifetime: boolean;
   currency: string;
   cohortStartsOn: string | null;
   reviewStatus: FormatReviewStatus;
@@ -95,7 +99,7 @@ export class FormatError extends Error {
 }
 
 const COLUMNS =
-  "id, code, format, label, summary, features, mode, amount, proposed_amount, currency, cohort_starts_on, review_status, active, featured, early_amount, early_until, sort_order, experience_id";
+  "id, code, format, label, summary, features, mode, amount, list_amount, access_days, access_lifetime, proposed_amount, currency, cohort_starts_on, review_status, active, featured, early_amount, early_until, sort_order, experience_id";
 
 type Row = {
   id: string;
@@ -107,6 +111,9 @@ type Row = {
   mode: string;
   amount: number | null;
   proposed_amount: number | null;
+  list_amount: number | null;
+  access_days: number | null;
+  access_lifetime: boolean;
   currency: string;
   cohort_starts_on: string | null;
   review_status: string;
@@ -179,6 +186,9 @@ export async function listCourseFormats(courseId: string): Promise<AuthoredForma
         mode: row.mode === "lead" ? "lead" : "checkout",
         amount: row.amount,
         proposedAmount: row.proposed_amount,
+        listAmount: row.list_amount ?? null,
+        accessDays: row.access_days ?? null,
+        accessLifetime: row.access_lifetime === true,
         currency: row.currency,
         cohortStartsOn: row.cohort_starts_on,
         reviewStatus: row.review_status as FormatReviewStatus,
@@ -642,6 +652,14 @@ export async function listFormatsForReview(): Promise<FormatForReview[]> {
 }
 
 export type ReviewAction =
+  | {
+      action: "save";
+      amount: number | null;
+      listAmount: number | null;
+      mode: "checkout" | "lead";
+      accessDays: number | null;
+      accessLifetime: boolean;
+    }
   | { action: "approve"; amount: number | null; listAmount?: number | null }
   | { action: "decline" }
   | { action: "withdraw" }
@@ -654,13 +672,82 @@ export type ReviewAction =
  * Every price lives in `experience_offers` alone since 2026-09-25 — the
  * copies from the two older tables are gone — so this writes it there.
  */
-export async function reviewFormat(input: { code: string; actorId: string; decision: ReviewAction }): Promise<void> {
+export async function reviewFormat(input: {
+  code: string;
+  actorId: string;
+  decision: ReviewAction;
+}): Promise<{ courseSlug: string }> {
   const db = adminClient();
   const { data, error } = await db.from("experience_offers").select(COLUMNS).eq("code", input.code).maybeSingle();
   if (error) throw new FormatError(`format_read_failed:${error.message}`, 500);
   if (!data) throw new FormatError("format_not_found", 404);
   const row = data as Row;
+  const { data: courses, error: courseError } = await db
+    .from("lms_courses")
+    .select("id, slug")
+    .eq("experience_id", row.experience_id);
+  if (courseError) throw new FormatError(`format_course_read_failed:${courseError.message}`, 500);
+  const course = (courses ?? []).find(
+    (candidate) => row.format != null || courseOfferCode(candidate.slug as string) === row.code,
+  );
+  if (!course) throw new FormatError("format_not_found", 404);
+  const result = { courseSlug: course.slug as string };
   const now = new Date().toISOString();
+
+  if (input.decision.action === "save") {
+    if (row.review_status !== "approved") throw new FormatError("format_not_approved", 409);
+    const decision = input.decision;
+    const { amount, listAmount } = decision;
+    if (decision.mode !== "checkout" && decision.mode !== "lead") throw new FormatError("format_invalid_mode");
+    if (amount !== null && (!Number.isInteger(amount) || amount < 0 || amount > FORMAT_AMOUNT_MAX)) {
+      throw new FormatError("format_invalid_amount");
+    }
+    if (decision.mode === "checkout" && amount === null) throw new FormatError("format_invalid_amount");
+    if (decision.mode === "lead" && amount === 0) throw new FormatError("format_invalid_amount");
+    if (listAmount !== null && (amount === null || !Number.isInteger(listAmount) || listAmount <= amount)) {
+      throw new FormatError("format_invalid_list_amount");
+    }
+    if (row.early_amount != null && (amount === null || row.early_amount >= amount)) {
+      throw new FormatError("format_early_below_amount");
+    }
+    const accessDays = decision.accessLifetime ? null : decision.accessDays;
+    if (
+      !decision.accessLifetime &&
+      !(decision.mode === "lead" && accessDays === null) &&
+      (!Number.isInteger(accessDays) || (accessDays ?? 0) <= 0)
+    ) {
+      throw new FormatError("access_rule_required");
+    }
+    // Edit commercial terms without publishing, approving a proposal, or changing
+    // the format's contents. Sale/review decisions remain explicit commands.
+    const { error: writeError } = await db
+      .from("experience_offers")
+      .update({
+        amount,
+        list_amount: listAmount,
+        mode: decision.mode === "checkout" && amount === 0 ? "free" : decision.mode,
+        access_days: accessDays,
+        access_lifetime: decision.accessLifetime,
+        reviewed_by: input.actorId,
+        reviewed_at: now,
+      })
+      .eq("id", row.id);
+    if (writeError) throw new FormatError(`format_write_failed:${writeError.message}`, 500);
+    const base = courseOfferCode(course.slug as string) === row.code ? course : null;
+    if (base) {
+      const { error: noteError } = await db
+        .from("lms_courses")
+        .update({
+          access_note:
+            accessDays === null && !decision.accessLifetime
+              ? null
+              : noteForAccessRule({ accessDays, accessLifetime: decision.accessLifetime }),
+        })
+        .eq("id", base.id);
+      if (noteError) throw new FormatError(`format_write_failed:${noteError.message}`, 500);
+    }
+    return result;
+  }
 
   if (input.decision.action === "approve") {
     const amount = input.decision.amount;
@@ -671,10 +758,13 @@ export async function reviewFormat(input: { code: string; actorId: string; decis
       throw new FormatError("format_invalid_amount");
     }
     const listAmount = input.decision.listAmount ?? null;
-    if (listAmount !== null && (!Number.isInteger(listAmount) || listAmount <= 0)) {
+    if (listAmount !== null && (amount === null || !Number.isInteger(listAmount) || listAmount <= amount)) {
       throw new FormatError("format_invalid_list_amount");
     }
 
+    if (row.early_amount != null && (amount === null || row.early_amount >= amount)) {
+      throw new FormatError("format_early_below_amount");
+    }
     const { error: writeError } = await db
       .from("experience_offers")
       .update({
@@ -688,7 +778,7 @@ export async function reviewFormat(input: { code: string; actorId: string; decis
       })
       .eq("id", row.id);
     if (writeError) throw new FormatError(`format_write_failed:${writeError.message}`, 500);
-    return;
+    return result;
   }
 
   if (input.decision.action === "decline") {
@@ -699,18 +789,19 @@ export async function reviewFormat(input: { code: string; actorId: string; decis
         .update({ proposed_amount: null, reviewed_by: input.actorId, reviewed_at: now })
         .eq("id", row.id);
       if (writeError) throw new FormatError(`format_write_failed:${writeError.message}`, 500);
-      return;
+      return result;
     }
     const { error: writeError } = await db
       .from("experience_offers")
       .update({ review_status: "declined", active: false, reviewed_by: input.actorId, reviewed_at: now })
       .eq("id", row.id);
     if (writeError) throw new FormatError(`format_write_failed:${writeError.message}`, 500);
-    return;
+    return result;
   }
 
   if (row.review_status !== "approved") throw new FormatError("format_not_approved", 409);
   const active = input.decision.action === "resume";
   const { error: writeError } = await db.from("experience_offers").update({ active }).eq("id", row.id);
   if (writeError) throw new FormatError(`format_write_failed:${writeError.message}`, 500);
+  return result;
 }
