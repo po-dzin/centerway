@@ -1616,6 +1616,53 @@
   border-bottom: 0;
 }
 
+/* A list inside a cell: one item per line, read at a glance mid-practice, so
+   tighter than prose lists. Markers are drawn the way `.list` / `.listOrdered`
+   draw theirs — `display: grid` drops the native marker — and an ordered cell
+   counts from its own `start`, set inline as the counter's reset value. */
+.tableList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--cw-space-2xs);
+  counter-reset: cw-cell;
+}
+
+.tableList > li {
+  position: relative;
+  padding-inline-start: var(--cw-space-xl);
+}
+
+ol.tableList > li {
+  counter-increment: cw-cell;
+}
+
+ol.tableList > li::before {
+  content: counter(cw-cell) ".";
+  position: absolute;
+  left: 0;
+  font-family: var(--cw-font-data);
+  font-size: 0.82em;
+  line-height: calc(1.45 / 0.82);
+  color: var(--cw-platform-muted);
+}
+
+ul.tableList > li {
+  padding-inline-start: var(--cw-space-md);
+}
+
+ul.tableList > li::before {
+  content: "";
+  position: absolute;
+  left: 0.2rem;
+  top: 0.6em;
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cw-platform-accent) 68%, transparent);
+}
+
 /* The video's frame plus the one authored value that renders beside it. A bare
    iframe carried no room for the duration, which is why `video.durationMin`
    sat in the contract with no consumer until 2026-08-21. */

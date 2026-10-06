@@ -122,6 +122,35 @@ describe("block validation", () => {
     ).toThrow(/lms_block_checklist_duplicate_item_id/);
   });
 
+  it("accepts a table cell that holds a numbered list", () => {
+    expect(() =>
+      validateLessonBlock(
+        {
+          id: "b",
+          type: "table",
+          head: ["Група", "Вправи"],
+          rows: [
+            ["Вхід", { kind: "ol", items: ["оболонка", "простір"] }],
+            ["Кисті", { kind: "ol", start: 3, items: ["розтирання", [{ text: "перекат", bold: true }]] }],
+            ["Шия", "одна лінія"],
+          ],
+        },
+        "test",
+      ),
+    ).not.toThrow();
+  });
+
+  it("rejects an empty list cell, an unknown cell kind and a start on a bullet list", () => {
+    const table = (cell: unknown) => ({ id: "b", type: "table", rows: [["a", cell]] });
+    expect(() => validateLessonBlock(table({ kind: "ol", items: [] }), "t")).toThrow(/lms_block_empty_list/);
+    expect(() => validateLessonBlock(table({ kind: "grid", items: ["x"] }), "t")).toThrow(
+      /lms_block_unknown_cell_kind/,
+    );
+    expect(() => validateLessonBlock(table({ kind: "ul", start: 2, items: ["x"] }), "t")).toThrow(
+      /lms_block_invalid_list_start/,
+    );
+  });
+
   it("rejects a non-youtube video provider while the decision stands", () => {
     expect(() => validateLessonBlock({ id: "b", type: "video", provider: "mux", videoId: "x" }, "t")).toThrow(
       /lms_block_unsupported_video_provider/,

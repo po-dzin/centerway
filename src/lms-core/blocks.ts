@@ -177,8 +177,52 @@ export type TableBlock = BlockBase & {
   type: "table";
   title?: InlineText;
   head?: InlineText[];
-  rows: InlineText[][];
+  rows: TableCell[][];
 };
+
+/**
+ * A cell that holds a list instead of a line.
+ *
+ * Added for the cheat sheets: "Monday" against nine exercises reads as one
+ * run-on line when the cell is a single span, and the span model has no line
+ * break to split it with. A list is the shape the author actually meant, and
+ * it is the same `ol` / `ul` the prose already speaks, so every renderer that
+ * can draw a lesson can draw this. `start` numbers an `ol` from somewhere other
+ * than 1 — a group that holds exercises 7–10 of a sequence.
+ */
+export type TableListCell = {
+  kind: "ol" | "ul";
+  items: InlineText[];
+  start?: number;
+};
+
+/** A table cell: one line of inline text, or a list of them. */
+export type TableCell = InlineText | TableListCell;
+
+export function isTableListCell(cell: TableCell | undefined): cell is TableListCell {
+  return isRecord(cell) && (cell.kind === "ol" || cell.kind === "ul");
+}
+
+/** Every text leaf in a cell, in reading order. */
+export function tableCellLeaves(cell: TableCell): InlineText[] {
+  return isTableListCell(cell) ? cell.items : [cell];
+}
+
+function validateTableCell(cell: unknown, path: string): asserts cell is TableCell {
+  if (!isRecord(cell)) {
+    validateInlineText(cell, path);
+    return;
+  }
+  assert(cell.kind === "ol" || cell.kind === "ul", `lms_block_unknown_cell_kind:${path}`);
+  assert(Array.isArray(cell.items) && cell.items.length > 0, `lms_block_empty_list:${path}`);
+  cell.items.forEach((item, index) => validateInlineText(item, `${path}.items[${index}]`));
+  if (cell.start !== undefined) {
+    assert(
+      cell.kind === "ol" && typeof cell.start === "number" && Number.isInteger(cell.start) && cell.start > 0,
+      `lms_block_invalid_list_start:${path}`,
+    );
+  }
+}
 
 export type CtaBlock = BlockBase & {
   type: "cta";
@@ -345,7 +389,7 @@ export function validateLessonBlock(block: unknown, path: string, depth = 0): as
         // Ragged rows are rejected here rather than padded: a renderer that
         // guesses the missing cell writes content the author never wrote.
         assert(row.length === columns, `lms_block_ragged_table:${path}.rows[${rowIndex}]`);
-        row.forEach((cell, cellIndex) => validateInlineText(cell, `${path}.rows[${rowIndex}][${cellIndex}]`));
+        row.forEach((cell, cellIndex) => validateTableCell(cell, `${path}.rows[${rowIndex}][${cellIndex}]`));
       });
       return;
     }

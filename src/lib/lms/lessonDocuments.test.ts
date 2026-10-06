@@ -66,6 +66,23 @@ describe("lesson documents", () => {
     expect(text).not.toContain("```js");
   });
 
+  it("keeps list cells numbered and line-broken in plain text", () => {
+    const withList: Lesson = {
+      ...lesson,
+      blocks: [
+        {
+          id: "plan",
+          type: "table",
+          head: ["День", "Вправи"],
+          rows: [["Пн", { kind: "ol", start: 3, items: ["Присідання", "Планка"] }]],
+        },
+      ],
+    };
+    const text = lessonToText(withList);
+    expect(text).not.toContain("<br>");
+    expect(text).toContain("3. Присідання\n4. Планка");
+  });
+
   it("creates a DOCX that can be imported back as an editable lesson", async () => {
     const file = await exportLessonDocument(lesson, "docx");
     expect(file.filename).toBe("dykhalna-praktyka.docx");
