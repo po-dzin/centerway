@@ -2218,8 +2218,8 @@
 /* One corner command at every width; it cannot wrap under the course link. */
 .courseRow > .menuRoot {
   position: absolute;
-  inset-block-start: var(--cw-space-md);
-  inset-inline-end: var(--cw-space-md);
+  inset-block-start: calc(var(--cw-space-md) - (var(--ds-touch-target-min) - var(--ds-icon-in-control)) / 2);
+  inset-inline-end: calc(var(--cw-space-md) - (var(--ds-touch-target-min) - var(--ds-icon-in-control)) / 2);
 }
 
 .courseRowTitle {

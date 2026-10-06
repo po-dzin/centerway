@@ -57,3 +57,9 @@ thumbnails and fixed corner placement in both catalogues; native admin popover
 opens/closes and preserves actions. 38 targeted tests pass; lint has only its
 existing PlatformAccountMenu warning; typecheck, production build and admin
 UK/EN i18n/tone guard pass.
+
+Corner optical correction: the shared inset aligns the visible glyph, not the
+outer touch box. Offset the box by half its unpainted margin using existing
+`ds-touch-target-min` / `ds-icon-in-control` tokens in Builder and admin. The
+selection_family remains ink, quiet command popup; no ink drawing or touch target
+changes. Learner library rows have progress at the trailing edge, no overflow menu.
