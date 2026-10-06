@@ -542,6 +542,28 @@ on a desktop — the hero CTA included — and no nested button on a phone. The
 fine-pointer alias now carries only `--ds-touch-target-min`, the topbar's 36px
 icon controls, which are not buttons.
 
+### One calendar, no native picker (2026-10-06)
+
+Every date is picked in `AdminDateField`, and a span is picked in the analytics
+`DateRangePicker`. Both draw the same calendar from `AdminCalendar.module.css`:
+weeks start on Monday, and you can still type `dd.mm.yyyy`. No surface uses
+`<input type="date">`, `time` or `datetime-local`, because the browser draws
+that picker in its own colours. `calendarContract.test.ts` fails on one.
+
+### One two-line exception: «Продовжити як …» (2026-10-06)
+
+A button is one line. The single exception is the sign-in button for an account
+this device already knows (`signInFaceButton` in
+`PlatformComponents.module.css`): an avatar, the name on the first line, the
+address under it at the label step. Two people share a phone often enough that
+«which of me is this» belongs on the button itself.
+
+It grows with its content (`height: auto`) and never below
+`--ds-touch-target-min`. Its padding above and below is `--cw-space-xs`, the gap
+between the lines is `--cw-space-xs`, and the avatar is 2.5rem. At the smallest
+step the lines pressed against the edges (G, 2026-10-06). No other button takes
+a second line. A label that does not fit is shortened.
+
 ### `composes` does not chain — name `base` explicitly (2026-08-21)
 
 `.chromeBare` composed `chrome`, and `chrome` composes `base`. That transitive

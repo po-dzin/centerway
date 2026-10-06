@@ -76,7 +76,7 @@ export function DateRangePicker({ value, onApply, applyLabel, locale, className 
     return Array.from({ length: 7 }, (_, idx) => {
       const date = new Date(monday);
       date.setUTCDate(monday.getUTCDate() + idx);
-      return new Intl.DateTimeFormat(locale, { weekday: "short" }).format(date);
+      return new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(date);
     });
   }, [locale]);
   const days = useMemo(() => buildMonthGrid(viewMonth), [viewMonth]);

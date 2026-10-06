@@ -492,6 +492,11 @@ describe("updateFormat", () => {
     expect(db.rows("experience_offer_items")).toHaveLength(3);
   });
 
+  it("lets the owner move the cohort date of an approved format, which stays on sale", async () => {
+    await updateFormat({ ...admin, code: "way21-group", body: { cohortStartsOn: "2026-11-01" } });
+    expect(offerRow("way21-group")).toMatchObject({ cohort_starts_on: "2026-11-01", review_status: "approved" });
+  });
+
   it("lets the owner change what an approved format opens", async () => {
     await updateFormat({ ...admin, code: "way21-group", body: { includes: ["other"], mode: "lead" } });
     const items = db.rows("experience_offer_items").filter((item) => item.offer_id === "o-group");

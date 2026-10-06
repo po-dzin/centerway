@@ -33,6 +33,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { AdminDateField } from "@/components/admin/AdminDateField";
+import { useI18n } from "@/components/I18nProvider";
+import { getAdminLocale } from "@/lib/admin/adminLocale";
 import { HandGraphic, Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
 import { isLinkedModule, type Course, type CourseModule } from "@/lms-core";
@@ -211,6 +214,17 @@ export function BuilderFormats({
   const data = read.slug === course.slug ? read.data : null;
   const failed = read.slug === course.slug && read.failed;
   const canSetPrice = data?.canSetPrice === true;
+  // The design system's one calendar (AdminDateField), never the browser's.
+  const { lang, t } = useI18n();
+  const dateLabels = useMemo(
+    () => ({
+      open: t("access_date_open"),
+      clear: t("access_deadline_clear"),
+      today: t("access_date_today"),
+      placeholder: t("access_date_placeholder"),
+    }),
+    [t],
+  );
   const linked = useMemo(() => course.modules.filter(isLinkedModule), [course.modules]);
   const published = useMemo(
     () => (data?.includable ?? []).filter((program) => program.status === "published"),
@@ -473,15 +487,18 @@ export function BuilderFormats({
                 onChange={(event) => setDraft((prev) => ({ ...prev, earlyAmount: event.target.value }))}
               />
             </label>
-            <label className={styles.field}>
-              <span className={styles.fieldLabel}>Діє до</span>
-              <input
-                className={styles.input}
-                type="date"
+            <div className={styles.field}>
+              <label className={styles.fieldLabel} htmlFor={`format-early-until-${format?.code ?? "new"}`}>
+                Діє до
+              </label>
+              <AdminDateField
+                id={`format-early-until-${format?.code ?? "new"}`}
                 value={draft.earlyUntil}
-                onChange={(event) => setDraft((prev) => ({ ...prev, earlyUntil: event.target.value }))}
+                onChange={(next) => setDraft((prev) => ({ ...prev, earlyUntil: next }))}
+                locale={getAdminLocale(lang)}
+                labels={dateLabels}
               />
-            </label>
+            </div>
             <span className={`${styles.fieldHint} ${css.earlyHint}`}>
               До 00:00 за Києвом цієї дати оплата йде за ранньою ціною, далі за звичайною. На сторінці: таймер і рядок
               «До … ранньої ціни, далі …». Порожні поля прибирають ранню ціну.
@@ -490,15 +507,18 @@ export function BuilderFormats({
         ) : null}
 
         {!locked && draft.format === "group" ? (
-          <label className={styles.field}>
-            <span className={styles.fieldLabel}>Старт потоку</span>
-            <input
-              className={styles.input}
-              type="date"
+          <div className={styles.field}>
+            <label className={styles.fieldLabel} htmlFor={`format-cohort-${format?.code ?? "new"}`}>
+              Старт потоку
+            </label>
+            <AdminDateField
+              id={`format-cohort-${format?.code ?? "new"}`}
               value={draft.cohortStartsOn}
-              onChange={(event) => setDraft((prev) => ({ ...prev, cohortStartsOn: event.target.value }))}
+              onChange={(next) => setDraft((prev) => ({ ...prev, cohortStartsOn: next }))}
+              locale={getAdminLocale(lang)}
+              labels={dateLabels}
             />
-          </label>
+          </div>
         ) : null}
 
         {locked ? (

@@ -153,7 +153,7 @@ export function isGrantableRole(value: unknown): value is GrantableRole {
 /**
  * Turns what an operator typed into a deadline the database can hold.
  *
- * The panel uses `<input type="date">`, so the common value is a bare
+ * The panel's date field (`AdminDateField`) hands over a bare
  * `YYYY-MM-DD`. A bare date means "through the end of that day", not "at
  * midnight, when the day begins" — an operator who types today's date is giving
  * access for today, not taking it away retroactively. The end of day is fixed in
@@ -275,7 +275,7 @@ export type BulkGrantResult = {
   error: string | null;
 };
 
-/** The `<input type="date">` value for a stored deadline, in UTC to match how it was written. */
+/** The `AdminDateField` value (`YYYY-MM-DD`) for a stored deadline, in UTC to match how it was written. */
 export function deadlineInputValue(expiresAt: string | null): string {
   if (!expiresAt) return "";
   const parsed = new Date(expiresAt);
