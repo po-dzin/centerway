@@ -49,6 +49,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
+import { localConnectionEnv } from "./lib/local-supabase.mjs";
 
 const rootDir = process.cwd();
 const localDir = path.join(rootDir, "supabase", "local");
@@ -288,7 +289,7 @@ function assertLocal() {
      stack owns 127.0.0.1:54322. Anything else still refuses. */
   if (answer === "54322") return;
   if (answer === "5432") {
-    const status = spawnSync("supabase", ["status", "-o", "env"], { encoding: "utf8" });
+    const status = localConnectionEnv();
     const reported = /^DB_URL="?([^"\n]+)"?$/m.exec(status.stdout ?? "")?.[1];
     if (status.status === 0 && reported === LOCAL_DB_URL) return;
   }
@@ -428,6 +429,12 @@ function reset() {
     );
   }
 
+  // The snapshot contains public schema only. Restore the idempotent Storage
+  // configuration even when its migration is already in the production journal.
+  psql(LOCAL_SUPERUSER_URL, ["-f", path.join(rootDir, "supabase/migrations/20260822010000_course_media_bucket.sql")], {
+    stdio: ["ignore", "ignore", "inherit"],
+  });
+
   for (const view of MATVIEWS) {
     // pg_dump creates matviews unpopulated; anything reading them would error.
     psql(LOCAL_DB_URL, ["-c", `refresh materialized view public.${view};`], {
@@ -451,7 +458,7 @@ function env(off) {
     console.log("removed .env.development.local — `npm run dev` is back on production");
     return;
   }
-  const status = spawnSync("supabase", ["status", "-o", "env"], { encoding: "utf8" });
+  const status = localConnectionEnv();
   if (status.status !== 0) {
     throw new Error("supabase status failed — is the stack running? `supabase start`");
   }
@@ -463,6 +470,9 @@ function env(off) {
   const anon = read("ANON_KEY");
   const service = read("SERVICE_ROLE_KEY");
   if (!api || !anon || !service) throw new Error("could not read keys from supabase status");
+  if (read("DB_URL") !== LOCAL_DB_URL || api !== "http://127.0.0.1:54321") {
+    throw new Error("The reported endpoints are not the fixed local stack; refusing to change development env.");
+  }
   fs.writeFileSync(
     target,
     [

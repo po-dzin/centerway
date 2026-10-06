@@ -36,7 +36,7 @@ change goes to become unfindable.
 
    The stamp in the row and the stamp in the filename are the same string. That
    identity is what the guard below compares.
-5. `npm run db:types` (needs Docker) and commit the regenerated types with the
+5. `npm run db:types` (uses the pinned native CLI; `db:local:prepare` first) and commit the regenerated types with the
    migration.
 6. Close the cycle: `npm run check:migration-drift`.
 
