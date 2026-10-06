@@ -36,3 +36,10 @@ Cycle checks: 28 targeted test files / 304 tests pass; `npm run lint` completes
 with one existing navigation warning in PlatformAccountMenu; `npm run typecheck`,
 `npm run build` (102 routes, local native database reachable),
 `npm run guard:ds-contract` and `git diff --check` pass.
+
+Compact course-tab spacing follow-up: the hidden course command row still made a
+zero-height grid track and therefore an extra grid gap. Hide that row at ≤900px
+and remove course-page top padding; retain the shell's chrome clearance. Tabs
+are orientation / selection_family `ink`, structural boundary, existing global
+spacing and current course-mode labels, `/build/**`. No control paint, reading
+content, desktop or lesson spacing changes.

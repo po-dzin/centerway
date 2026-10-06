@@ -1563,6 +1563,19 @@
   align-content: start;
 }
 
+/* Course tabs are the first compact workspace row. The course command row is
+   already represented in the floating topbar; its empty grid track must not
+   add a second gap below the reserved chrome clearance. */
+@media (max-width: 900px) {
+  .page:has(> .courseMobileNav) {
+    padding-block-start: 0;
+  }
+
+  .page:has(> .courseMobileNav) > .pageTrail {
+    display: none;
+  }
+}
+
 /* The pane only becomes its own scroller where the shell is pinned. Below that
    the document scrolls and this must NOT claim a height, or it would restore
    exactly the inner scroller the shell just stopped creating — including
