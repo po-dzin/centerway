@@ -2287,25 +2287,9 @@
   z-index: 2;
 }
 
-/* The scrim, not a plate: the neutral scrim ink — fixed in both themes, so it
-   darkens a bright cover and a dark one alike — with no elevation, no blur and
-   no stroke, so it reads as ground beneath the glyph rather than as a box
-   drawn around it. The ink ring `BuilderMenu` already renders stays the only
-   thing that moves with state, which is why the hover rule below restates the
-   same background instead of deepening it: a floor is not a state.
-
-   THE PAINT IS NOT THE TARGET (2026-08-29). It used to be: the scrim filled
-   the whole 3rem control in a full pill, so a photograph carried a dark COIN
-   the size of a primary button, for a control that is a secondary way into
-   four menu items. The problem was not a circle itself, but a soft rect nested
-   under a separate circular hover mark: two geometries competing on the same
-   small control.
-
-   So the target keeps its 3rem — a finger still gets the floor the contract
-   owns, and shrinking it would have been buying looks with reachability. The
-   scrim now uses the hover ring's optical diameter, not its SVG viewport or
-   selected size. The sprite occupies about 82% of its 36-unit viewBox.
-   The shared ink drawing and its hover/selected animation stay unchanged. */
+/* Media commands use contour selection: a stable contrast scrim deepens on
+   hover/open, while only keyboard focus adds an outline. No ink ring is mounted.
+   The shared touch target and optical scrim dimensions are preserved. */
 .courseCard > .menuRoot > .menuTrigger {
   padding-inline: 0;
   color: var(--cw-mat-inverse-text);
@@ -2341,19 +2325,6 @@
   transition: background-color var(--builder-motion-ink) ease;
 }
 
-/* A SOFT RECT THE SIZE OF THE CONTROL, AND THE PLATE IS THE STATE
-   (2026-09-13, corner geometry corrected 2026-09-16).
-   The scrim above was cut to the ring's optical diameter — about 29px inside a
-   36–48px target — and hover then drew the ink ring around that coin: a small
-   dark dot with a thin circle appearing at its edge, which read as a glitch
-   rather than as a control answering. On a photograph the scrim is the box, and
-   a box marks itself (see «Ink marks text; a box marks itself» in
-   docs/design-system.md): the plate fills the control, deepens on hover, focus
-   and while its menu is open, and the ring is not drawn here. */
-.courseCard > .menuRoot > .menuTrigger .cw-ink-icon-mark {
-  display: none;
-}
-
 .courseCard > .menuRoot > .menuTrigger:focus-visible::before,
 .courseCard > .menuRoot > .menuTrigger[aria-expanded="true"]::before {
   background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 64%, transparent);
@@ -2383,6 +2354,11 @@
    on every other menu trigger, which draws no plate at all. */
 .menuTriggerGlyph {
   position: relative;
+}
+
+.courseCard > .menuRoot > .menuTrigger:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--cw-mat-inverse-text);
+  outline-offset: var(--ds-focus-ring-offset);
 }
 
 .courseCard > .menuRoot > .menuTrigger:focus-visible,

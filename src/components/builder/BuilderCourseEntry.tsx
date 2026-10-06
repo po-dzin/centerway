@@ -56,6 +56,7 @@ type EntryProps = {
   /** True while this course is playing its leaving animation. */
   removing?: boolean;
   onExport: (slug: string) => void;
+  menuSelection?: "ink" | "contour";
 };
 
 /**
@@ -167,7 +168,7 @@ export function CourseCard(props: EntryProps) {
           <span className={styles.courseMeta}>{blockerLine(course.blockerCount)}</span>
         </span>
       </Link>
-      <EntryControls {...props} />
+      <EntryControls {...props} menuSelection="contour" />
     </article>
   );
 }
@@ -184,6 +185,7 @@ export function EntryControls({
   onCancel,
   onConfirm,
   onExport,
+  menuSelection = "ink",
 }: EntryProps) {
   const focusRef = useRef<HTMLButtonElement>(null);
 
@@ -239,6 +241,7 @@ export function EntryControls({
 
   return (
     <BuilderMenu
+      selectionFamily={menuSelection}
       label={`Дії з курсом «${course.title}»`}
       items={[
         {

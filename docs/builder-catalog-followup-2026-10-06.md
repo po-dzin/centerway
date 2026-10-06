@@ -63,3 +63,10 @@ outer touch box. Offset the box by half its unpainted margin using existing
 `ds-touch-target-min` / `ds-icon-in-control` tokens in Builder and admin. The
 selection_family remains ink, quiet command popup; no ink drawing or touch target
 changes. Learner library rows have progress at the trailing edge, no overflow menu.
+
+Card-view media overflow: selection_family `contour`, quiet command on media.
+The stable neutral scrim deepens on hover/open, keyboard focus alone outlines
+the trigger. BuilderMenu receives an explicit selection family so photo controls
+do not mount an ink ring; list rows retain the canonical ink interaction. Tokens:
+existing inverse text, scrim, focus and optical media-command geometry. Content:
+existing course actions; boundary `/build/courses`.

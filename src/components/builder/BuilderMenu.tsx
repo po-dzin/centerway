@@ -125,9 +125,11 @@ const MIN_HEIGHT = 168;
 export function BuilderMenu({
   label,
   items,
+  selectionFamily = "ink",
 }: {
   label: string;
   items: MenuItem[];
+  selectionFamily?: "ink" | "contour";
   /**
    * Whether right-clicking the surrounding row opens this menu.
    *
@@ -299,16 +301,20 @@ export function BuilderMenu({
         title={shortLabel}
         aria-expanded={open}
         aria-haspopup="menu"
-        data-cw-ink-control
+        data-cw-ink-control={selectionFamily === "ink" || undefined}
         onClick={() => (open ? close() : openAtTrigger())}
       >
         {/* Positioned so it paints ABOVE the scrim the course card draws in
             `::before`: an absolutely positioned pseudo-element outranks in-flow
             content, and the builder's layering rule keeps `z-index` for the
             six overlay rungs, so tree order is what settles it here. */}
-        <InteractionInkIcon>
+        {selectionFamily === "ink" ? (
+          <InteractionInkIcon>
+            <Icon className={styles.menuTriggerGlyph} name="more" size={18} />
+          </InteractionInkIcon>
+        ) : (
           <Icon className={styles.menuTriggerGlyph} name="more" size={18} />
-        </InteractionInkIcon>
+        )}
       </button>
 
       {open && typeof document !== "undefined"
