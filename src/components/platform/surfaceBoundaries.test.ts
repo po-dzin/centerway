@@ -31,7 +31,10 @@ describe("shared surface boundaries", () => {
     expect(paint).toContain("border-radius: var(--cw-radius-inset)");
     expect(paint).not.toMatch(/border-radius:\s*\d/);
     expect(paint).not.toContain("--cw-ink-hover-paint-size");
-    expect(block(css, ".courseCard > .menuRoot > .menuTrigger .inkRing")).toContain("display: none");
+    const menu = read("src/components/builder/BuilderMenu.tsx");
+    expect(menu).toContain('selectionFamily === "ink"');
+    expect(menu).toContain('selectionFamily?: "ink" | "contour"');
+    expect(read("src/components/builder/BuilderCourseEntry.tsx")).toContain('menuSelection="contour"');
     expect(css).toMatch(
       /\.courseCard > \.menuRoot > \.menuTrigger\[aria-expanded="true"\]::before \{\s*background-color: color-mix\(in srgb, var\(--cw-mat-scrim-ink\) 64%/,
     );

@@ -143,10 +143,10 @@ describe("Шлях 21 landing", () => {
 });
 
 describe("Reset Day landing", () => {
-  it("says it comes as a bonus with Шлях 21, linking to the formats", async () => {
+  it("says the bonus comes with Шлях 21 without an unnecessary platform link", async () => {
     const html = await syncLandingCommerce(landing("reset-day"));
-    expect(html).toContain('href="https://www.centerway.net.ua/programs/way21#formats"');
-    expect(html).toContain("Розвантажувальний день також входить бонусом у");
+    expect(html).toContain("Розвантажувальний день також входить бонусом у «Шлях 21»");
+    expect(html).not.toContain('href="https://www.centerway.net.ua/programs/way21#formats"');
   });
 
   it("says nothing once no format includes it", async () => {
