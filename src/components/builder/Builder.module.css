@@ -2111,7 +2111,7 @@
   flex-wrap: wrap;
   align-items: flex-start;
   gap: var(--cw-space-2xs);
-  padding: var(--cw-space-sm);
+  padding: var(--cw-space-md);
   border-radius: var(--cw-radius-lg);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-soft);
@@ -2134,11 +2134,11 @@
 }
 
 .courseRowMain {
-  flex: 1 1 auto;
+  flex: 1 1 100%;
   min-width: 0;
   display: grid;
   grid-template-columns: var(--ds-card-thumb-width) minmax(0, 1fr);
-  align-items: center;
+  align-items: start;
   column-gap: var(--cw-space-sm);
   min-height: var(--ds-touch-target-min);
   color: inherit;
@@ -2153,7 +2153,7 @@
   display: grid;
   place-items: center;
   width: var(--ds-card-thumb-width);
-  aspect-ratio: var(--ds-card-media-ratio);
+  aspect-ratio: var(--ds-card-portrait-ratio);
   overflow: hidden;
   border-radius: calc(var(--cw-radius-lg) - var(--cw-space-sm));
   background: linear-gradient(
@@ -2215,7 +2215,15 @@
   z-index: 2;
 }
 
+/* One corner command at every width; it cannot wrap under the course link. */
+.courseRow > .menuRoot {
+  position: absolute;
+  inset-block-start: var(--cw-space-md);
+  inset-inline-end: var(--cw-space-md);
+}
+
 .courseRowTitle {
+  padding-inline-end: var(--ds-touch-target-min);
   font-weight: 600;
   overflow-wrap: anywhere;
   line-height: 1.35;

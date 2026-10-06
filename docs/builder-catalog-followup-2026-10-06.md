@@ -43,3 +43,17 @@ and remove course-page top padding; retain the shell's chrome clearance. Tabs
 are orientation / selection_family `ink`, structural boundary, existing global
 spacing and current course-mode labels, `/build/**`. No control paint, reading
 content, desktop or lesson spacing changes.
+
+Course shelf row parity: Builder and admin catalogue now use the existing
+portrait crop (4:5, standard thumbnail width) with overflow at the upper trailing
+corner. Course rows are collection objects (boundary none); overflow is a method
+command, selection_family `ink`, quiet popup. Content comes from course/cover
+data, tokens from shared card and spacing roles. Builder retains its action menu;
+admin course actions move into its existing accessible native popover alongside
+full row information. Other admin rows and the Builder large-card view are unchanged.
+
+Row-parity verification: mobile and desktop browser checks confirm portrait
+thumbnails and fixed corner placement in both catalogues; native admin popover
+opens/closes and preserves actions. 38 targeted tests pass; lint has only its
+existing PlatformAccountMenu warning; typecheck, production build and admin
+UK/EN i18n/tone guard pass.

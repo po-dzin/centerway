@@ -6,7 +6,7 @@
  * Split out of BuilderCourseList.tsx (1,115 lines) on 2026-09-11; nothing inside any declaration changed.
  */
 
-import { coverCardStyle } from "@/lib/lms/courseCover";
+import { coverCardStyle, coverPortraitStyle } from "@/lib/lms/courseCover";
 import { plural } from "@/lib/plural";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
@@ -86,7 +86,7 @@ export function CourseRow(props: EntryProps) {
               alt=""
               loading="lazy"
               decoding="async"
-              style={coverCardStyle(course.cover)}
+              style={coverPortraitStyle(course.cover)}
             />
           ) : (
             initialsOf(course.title)
