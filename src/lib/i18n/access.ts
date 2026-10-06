@@ -297,6 +297,7 @@ export const access = {
   formats_live_price: { uk: "Ціна", en: "Price" },
   formats_proposed_price: { uk: "Пропонує автор", en: "Author proposes" },
   formats_cohort: { uk: "Старт потоку", en: "Cohort starts" },
+  formats_edit_in_builder: { uk: "Змінити в білдері", en: "Edit in the builder" },
   formats_includes: { uk: "Також відкриває", en: "Also opens" },
   formats_final_amount: { uk: "Фінальна ціна, ₴", en: "Final price, ₴" },
   formats_list_amount: { uk: "Стара ціна, ₴ (необов’язково)", en: "Former price, ₴ (optional)" },

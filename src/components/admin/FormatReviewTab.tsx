@@ -33,10 +33,13 @@ import { useI18n } from "@/components/I18nProvider";
 import { useToast } from "@/components/ToastProvider";
 import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
 import { Icon } from "@/components/Icon";
-import { InteractionInkIcon } from "@/components/platform/InteractionInk";
+import { InteractionInkIcon, InteractionInkLabel } from "@/components/platform/InteractionInk";
+import { useBuilderHref } from "@/components/platform/AuthorEntry";
+import { COURSE_WORKSPACE_HASH } from "@/components/builder/courseWorkspace";
 import { getErrorMessage } from "@/lib/errors";
 import type { FormatReviewRow } from "@/lib/admin/formatReviewTypes";
 import controls from "@/components/admin/AdminControls.module.css";
+import lists from "@/components/admin/AdminLists.module.css";
 import css from "./FormatReviewTab.module.css";
 
 const REVIEW_KEY = {
@@ -160,6 +163,7 @@ function FormatRow({
   onChanged: () => Promise<void>;
 }) {
   const { t } = useI18n();
+  const builderHref = useBuilderHref();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [amount, setAmount] = useState(() => {
@@ -235,6 +239,20 @@ function FormatRow({
         <code>{row.code}</code> · {meta.join(" · ")}
       </p>
       {row.summary ? <p className={css.formatSummary}>{row.summary}</p> : null}
+      {/* The cohort date, the copy and what the format opens are edited on its
+          card in the builder, not here. G could not find that card from this
+          row (2026-10-06), so the row points at it. */}
+      {canEdit ? (
+        <div className={lists.itemLinks}>
+          <a
+            className={lists.itemLink}
+            data-cw-ink-control
+            href={builderHref(`/${encodeURIComponent(row.courseSlug)}${COURSE_WORKSPACE_HASH.offer}`)}
+          >
+            <InteractionInkLabel variant="link">{t("formats_edit_in_builder")}</InteractionInkLabel>
+          </a>
+        </div>
+      ) : null}
 
       {canEdit ? (
         deciding ? (

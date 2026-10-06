@@ -542,6 +542,14 @@ on a desktop — the hero CTA included — and no nested button on a phone. The
 fine-pointer alias now carries only `--ds-touch-target-min`, the topbar's 36px
 icon controls, which are not buttons.
 
+### One calendar, no native picker (2026-10-06)
+
+Every date is picked in `AdminDateField`, and a span is picked in the analytics
+`DateRangePicker`. Both draw the same calendar from `AdminCalendar.module.css`:
+weeks start on Monday, and you can still type `dd.mm.yyyy`. No surface uses
+`<input type="date">`, `time` or `datetime-local`, because the browser draws
+that picker in its own colours. `calendarContract.test.ts` fails on one.
+
 ### One two-line exception: «Продовжити як …» (2026-10-06)
 
 A button is one line. The single exception is the sign-in button for an account

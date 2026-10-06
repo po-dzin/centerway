@@ -272,7 +272,7 @@ describe("landing format sync — prices and doors (2026-10-03)", () => {
   });
 
   it("is stable when synced again, and leaves the headline as typed when formats cannot be read", () => {
-    expect(applyFormatSync(out, () => ({ title: "Шлях 21", formats }))).toBe(out);
+    expect(applyFormatSync(out, () => ({ title: "Шлях 21", formats }), new Date("2026-10-03T12:00:00Z"))).toBe(out);
     expect(applyFormatSync(priced, () => null)).toBe(priced);
   });
 });
