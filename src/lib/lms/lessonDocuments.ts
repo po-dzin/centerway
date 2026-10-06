@@ -17,7 +17,6 @@ import {
   isRecord,
   isTableListCell,
   slugify,
-  tableCellLeaves,
   uniqueSlug,
   validateInlineText,
   validateLessonBlock,
@@ -339,7 +338,11 @@ function markdownCell(cell: TableCell): string {
 }
 
 function plainCell(cell: TableCell): string {
-  return tableCellLeaves(cell).map(inlineToPlainText).join("; ");
+  if (!isTableListCell(cell)) return inlineToPlainText(cell);
+  const first = cell.start ?? 1;
+  return cell.items
+    .map((item, index) => `${cell.kind === "ol" ? `${first + index}.` : "•"} ${inlineToPlainText(item)}`)
+    .join("; ");
 }
 
 function markdownInline(value: InlineText): string {
@@ -459,6 +462,8 @@ export function lessonToText(lesson: Lesson): string {
       .replace(/^[-*+] \[[ xX]\]\s+/gm, "• ")
       .replace(/^[-*+]\s+/gm, "• ")
       .replace(/^\d+[.)]\s+/gm, "")
+      // After the numbering strip, so list-cell numbers survive on their own lines.
+      .replace(/<br\s*\/?>/g, "\n")
       .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, "$1 — $2")
       .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1 — $2")
       .replace(/\*\*([^*]+)\*\*/g, "$1")
