@@ -69,6 +69,11 @@ jobs:
       - name: Thanks-page browser smoke (no secrets)
         run: npm run -s smoke:thanks:browser
 
+      - name: Anchor navigation browser suite
+        env:
+          SMOKE_UI_BASE_URL: ""
+        run: npm run -s smoke:anchors:browser
+
       - name: Admin API Smoke Suite (optional)
         if: ${{ env.SMOKE_BASE_URL != '' }}
         run: npm run -s verify:admin

@@ -699,7 +699,7 @@
   backdrop-filter: saturate(1.4) blur(12px);
   -webkit-backdrop-filter: saturate(1.4) blur(12px);
   border-bottom: 1px solid var(--ds-color-border-soft, #e7eaf0);
-  transition: transform 0.3s ease;
+  transition: transform var(--cw-motion-surface) var(--cw-ease-network);
   /* NB: no `transform`/`will-change` in the base state on purpose — either would
      make .cw-nav a containing block for the fixed drawer panel nested inside it,
      breaking the panel's viewport positioning. The hide transform is applied
@@ -771,7 +771,9 @@
 .cw-nav__burger-ico {
   grid-area: 1 / 1;
   color: currentColor;
-  transition: opacity 0.2s ease, transform 0.25s ease;
+  transition:
+    opacity var(--cw-motion-state) var(--cw-ease-network),
+    transform var(--cw-motion-state) var(--cw-ease-network);
 }
 .cw-nav__burger-ico--close,
 .cw-nav__burger[aria-expanded="true"] .cw-nav__burger-ico {
@@ -816,7 +818,7 @@ body.cw-nav-open .cw-nav__drawer { visibility: visible; pointer-events: auto; }
   background: var(--ds-color-bg-canvas, #fffdf7);
   box-shadow: var(--ds-shadow-md, 0 6px 16px rgba(17, 17, 17, 0.12));
   transform: translateX(100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform var(--cw-motion-surface) var(--cw-ease-network);
   overflow-y: auto;
   overscroll-behavior: contain;
 }

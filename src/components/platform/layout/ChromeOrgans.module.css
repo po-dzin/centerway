@@ -88,8 +88,8 @@
   /* Transform only: nothing here reflows, and the column's top padding does
      not move when the chrome does. */
   transition:
-    transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 180ms ease;
+    transform var(--cw-motion-surface) var(--cw-ease-surface),
+    opacity var(--cw-motion-surface) var(--cw-ease-surface);
 }
 
 .row > * {
