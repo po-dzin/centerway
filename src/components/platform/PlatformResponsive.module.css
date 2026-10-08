@@ -1102,7 +1102,8 @@
   }
 
   .section {
-    padding: clamp(1.9rem, 8vw, 3.2rem) 0;
+    --platform-anchor-inset: clamp(1.9rem, 8vw, 3.2rem);
+    padding: var(--platform-anchor-inset) 0;
   }
 
   .videoPanel {

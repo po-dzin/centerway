@@ -24,6 +24,7 @@
      visible in `--platform-topbar-clearance` resolving to its desktop clamp on
      a phone, and not one to paper over from this side. */
   --platform-topbar-top: 0.75rem;
+  --platform-topbar-block: calc(var(--platform-topbar-top) + 4rem);
   background:
     radial-gradient(
       circle at 12% 0%,

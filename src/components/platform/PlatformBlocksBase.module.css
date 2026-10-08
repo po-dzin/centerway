@@ -2,8 +2,14 @@
    Extracted from PlatformBlocks.module.css during semantic family split. */
 
 .section {
-  padding: clamp(2.3rem, 6.2vw, 4.8rem) 0;
-  scroll-margin-top: 5.25rem;
+  --platform-anchor-inset: clamp(2.3rem, 6.2vw, 4.8rem);
+  padding: var(--platform-anchor-inset) 0;
+  /* Keep the section's content one DS step below the floating chrome. The
+     section padding already supplies most of that distance, so only the
+     remainder belongs in scroll-margin. */
+  scroll-margin-block-start: calc(
+    var(--platform-topbar-block, 4.75rem) + var(--cw-space-md) - var(--platform-anchor-inset)
+  );
 }
 
 .sectionFlow {
@@ -17,7 +23,7 @@
   justify-content: space-between;
   gap: var(--cw-space-md);
   margin-bottom: var(--cw-space-md);
-  scroll-margin-top: 5.25rem;
+  scroll-margin-block-start: calc(var(--platform-topbar-block, 4.75rem) + var(--cw-space-md));
 }
 
 .panelIntro,
@@ -178,8 +184,11 @@
 }
 
 .panel {
-  padding: clamp(1.15rem, 3vw, 2rem);
-  scroll-margin-top: 5.25rem;
+  --platform-anchor-inset: clamp(1.15rem, 3vw, 2rem);
+  padding: var(--platform-anchor-inset);
+  scroll-margin-block-start: calc(
+    var(--platform-topbar-block, 4.75rem) + var(--cw-space-md) - var(--platform-anchor-inset)
+  );
 }
 
 /* The platform's one plain list. Every item used to be its own soft-rect plate
@@ -245,7 +254,7 @@
   align-items: end;
   justify-content: space-between;
   gap: var(--cw-space-md);
-  scroll-margin-top: 5.25rem;
+  scroll-margin-block-start: calc(var(--platform-topbar-block, 4.75rem) + var(--cw-space-md));
 }
 
 .blockHeadText {
