@@ -19,6 +19,8 @@
  * character-for-character so the two meters wobble in the same hand.
  */
 
+import { PENCIL_METER } from "@/lib/brand/pencil";
+
 /** Angles are degrees clockwise from twelve o'clock — the way reading goes. */
 export type HandArcSpec = {
   cx: number;
@@ -42,9 +44,17 @@ export function jitter(index: number, salt: number): number {
 }
 
 /** Degrees between sampled points. Small enough that no chord shows at 4rem. */
-const STEP_DEG = 3;
+const STEP_DEG = PENCIL_METER.stepDegrees;
 
-export function handArcPath({ cx, cy, radius, fromDeg, toDeg, seed, amplitude = 1.1 }: HandArcSpec): string {
+export function handArcPath({
+  cx,
+  cy,
+  radius,
+  fromDeg,
+  toDeg,
+  seed,
+  amplitude = PENCIL_METER.wander,
+}: HandArcSpec): string {
   /* THE OVERSHOOT IS THE HAND. A drawn stroke starts a little before and stops
      a little after where it was meant to; without it the segments end on a
      machined boundary and the wobble reads as a rendering artefact rather than

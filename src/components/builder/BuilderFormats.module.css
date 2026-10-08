@@ -306,6 +306,9 @@
    edits — the same object, being changed. */
 .editorPanel {
   position: relative;
+  scroll-margin-block-start: calc(
+    max(var(--cw-page-gutter), env(safe-area-inset-top)) + 2 * var(--ds-touch-target-min) + var(--cw-space-md)
+  );
   display: grid;
   gap: var(--cw-space-sm);
   padding: var(--cw-space-md);

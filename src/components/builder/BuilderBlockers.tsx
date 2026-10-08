@@ -4,6 +4,7 @@ import type { Course, ReadinessBlocker } from "@/lms-core";
 import { plural } from "@/lib/plural";
 
 import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { blockerTarget } from "./blockerTargets";
 import styles from "./Builder.module.css";
 
@@ -108,12 +109,15 @@ export function BuilderBlockers({
                   href={target.href}
                   aria-label={`Відкрити: ${target.label}`}
                   title={`Відкрити: ${target.label}`}
+                  data-cw-ink-control
                   onClick={(event) => {
                     event.preventDefault();
                     onNavigate(target.href);
                   }}
                 >
-                  <Icon name="arrow-right" size={18} />
+                  <InteractionInkIcon>
+                    <Icon name="arrow-right" size={18} />
+                  </InteractionInkIcon>
                 </a>
               ) : null}
             </li>

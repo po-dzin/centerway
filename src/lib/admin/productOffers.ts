@@ -74,6 +74,15 @@ async function priceableThings(): Promise<PriceableThing[]> {
 async function priceableThing(code: string): Promise<PriceableThing> {
   const known = (await priceableThings()).find((thing) => thing.code === code);
   if (!known) throw new AccessError("product_unknown", 404);
+  const { data, error } = await adminClient()
+    .from("experience_offers")
+    .select("experience_id, format")
+    .eq("code", code)
+    .maybeSingle();
+  if (error) throw new AccessError(error.message, 500);
+  if (data?.format != null && data.experience_id !== known.id) {
+    throw new AccessError("product_is_course_format", 409);
+  }
   return known;
 }
 
@@ -97,12 +106,24 @@ export async function listProductOffers(): Promise<ProductOfferRow[]> {
 
   /* Driven by the registry, not by the table of prices: a thing with no price
        yet has to appear on the screen, or the owner cannot give it its first. */
-  return things.map((thing) => ({
-    code: thing.code,
-    title: thing.title,
-    expectedKind: thing.kind,
-    offer: byCode.get(thing.code) ?? null,
-  }));
+  return (
+    things
+      // A retired package may now be a course format (way21-support). It is
+      // managed under that course in “Prices and access”, never in two tabs.
+      // Standalone products, including ones without a price yet, remain here.
+      .filter(
+        (thing) =>
+          !(data ?? []).some(
+            (row) => row.code === thing.code && typeof row.format === "string" && row.experience_id !== thing.id,
+          ),
+      )
+      .map((thing) => ({
+        code: thing.code,
+        title: thing.title,
+        expectedKind: thing.kind,
+        offer: byCode.get(thing.code) ?? null,
+      }))
+  );
 }
 
 export type SaveProductOfferInput = {

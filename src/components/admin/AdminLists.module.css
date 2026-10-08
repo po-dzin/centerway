@@ -988,3 +988,33 @@
   composes: itemMeta;
   margin-top: var(--cw-space-xs);
 }
+
+/* Catalogue courses use the same portrait size and corner inset as Builder. */
+.row[data-course-row] > .rowLead > .itemThumb {
+  width: var(--ds-card-thumb-width);
+  height: auto;
+  min-height: 0;
+  aspect-ratio: var(--ds-card-portrait-ratio);
+  align-self: start;
+}
+
+.row[data-course-row] > .rowCorner {
+  grid-area: auto;
+  position: absolute;
+  inset-block-start: calc(var(--cw-space-md) - (var(--ds-touch-target-min) - var(--ds-icon-in-control)) / 2);
+  inset-inline-end: calc(var(--cw-space-md) - (var(--ds-touch-target-min) - var(--ds-icon-in-control)) / 2);
+  margin: 0;
+}
+
+.row[data-course-row] {
+  position: relative;
+}
+
+.row[data-course-row] .rowTitle {
+  padding-inline-end: var(--ds-touch-target-min);
+}
+
+.rowInfoActions {
+  display: flex;
+  gap: var(--cw-space-xs);
+}

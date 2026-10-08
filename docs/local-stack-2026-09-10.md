@@ -2,6 +2,11 @@
 
 2026-09-10
 
+Launch update, 2026-10-06: the ordinary development path now uses the native
+Supabase runtime without OrbStack. See [the native operating notes](local-native-stack-2026-10-06.md).
+The Docker setup described below remains historical context; its volumes are
+preserved during the transition.
+
 ## What was wrong
 
 There was one database. `npm run dev` on port 8000 read and wrote the same rows
@@ -35,6 +40,11 @@ stranger. Password for all of them is `local-dev`.
 - `expired@local.test` — paid once, `expires_at` in the past
 - `author1@local.test`, `author2@local.test` — the accounts the seeded courses
   belong to, re-created under production's ids so the foreign keys resolve
+
+The Builder uses Google only outside local mode. With
+`NEXT_PUBLIC_AUTH_GOOGLE=off`, it shows email/password sign-in instead; use an
+author account above and the shared `local-dev` password. Google OAuth is not
+configured on the local Supabase stack.
 
 ## The commands
 

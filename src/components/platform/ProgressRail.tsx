@@ -1,3 +1,5 @@
+import { Icon } from "@/components/Icon";
+import { jitter } from "./handArc";
 import styles from "./ProgressRail.module.css";
 
 /**
@@ -23,50 +25,10 @@ import styles from "./ProgressRail.module.css";
 /** Beyond this the dashes stop being countable and start being texture. */
 const MAX_DASHES = 32;
 
-/**
- * Seeded, not random: the rail has to render identically on the server and the
- * client, and it has to look the same on every visit. Same principle as the
- * icon bake, which displaces its glyphs from a seeded noise field rather than
- * from Math.random.
- */
-function jitter(index: number, salt: number): number {
-  const n = Math.sin((index + 1) * 12.9898 + salt * 78.233) * 43758.5453;
-  return n - Math.floor(n);
-}
-
-/**
- * The reader, mid-stride, facing the way the rail runs.
- *
- * Drawn to the icon contract — 24 grid, stroke 1.5, round caps, monoline, no
- * fills — and derived from `body` in scripts/lib/icon-glyphs.mjs: same head,
- * same spine, the arms and legs split into a step. Inline rather than pulled
- * from the sprite because the sprite carries the STILL figure; a walking pose
- * that only ever appears here would be one more name in a set whose whole
- * discipline is that every name earns its place.
- *
- * In ink, not accent: the gold is what the course has spent, and the reader is
- * not a unit of progress.
- */
+/** The walking reader uses the shared baked icon material. Gold continues
+ * to mean completed progress; the reader inherits the surrounding ink. */
 function Walker() {
-  return (
-    <svg
-      className={styles.walkerGlyph}
-      viewBox="0 0 22 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <circle cx="11" cy="4.6" r="2.1" />
-      <path d="M11 6.7v6.6" />
-      <path d="M7.5 11.6 11 9.4l3.7 2.4" />
-      <path d="m11 13.3 3.8 3.9.6 4.2" />
-      <path d="M11 13.3 7.4 18.4 6.2 21.6" />
-    </svg>
-  );
+  return <Icon name="walker" className={styles.walkerGlyph} />;
 }
 
 type ProgressRailProps = {

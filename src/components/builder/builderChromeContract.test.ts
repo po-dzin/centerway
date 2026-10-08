@@ -37,8 +37,9 @@ describe("workshop chrome on a phone", () => {
 
   it("prints no breadcrumb in the document, where the arrow already says it", () => {
     expect(shell).not.toContain("<PlatformTrail steps={trail} />\n              {tools");
-    // The path survives in the wide bar, which has room for one.
-    expect(shell).toContain("{showTrail ? <PlatformTrail steps={trail} /> : <span />}");
+    // Both viewport classes use the parent arrow; its label retains the destination.
+    expect(shell).not.toContain("<PlatformTrail steps={trail}");
+    expect(shell).toContain('<Icon name="arrow-left" size={18} />');
   });
 
   it("opens the contents over the lesson, not above it", () => {

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "pressure": { "tipFloor": 0.86, "primaryWave": 0.65, "secondaryWave": 0.35 },
+  "illustration": { "pressure": 0.24, "tipFloor": 0.26, "wander": 0.009, "liftFraction": 0.025 },
+  "meter": { "wander": 0.8, "stepDegrees": 3 },
+  "presets": {
+    "base": { "frequency": 0, "scale": 0, "seed": 0, "pressure": 0 },
+    "hand1": { "frequency": 0.03, "scale": 1.2, "seed": 7, "pressure": 0.08 },
+    "hand2": { "frequency": 0.05, "scale": 1.8, "seed": 3, "pressure": 0.13 },
+    "hand3": { "frequency": 0.05, "scale": 2.4, "seed": 11, "pressure": 0.18 }
+  }
+}

@@ -1936,6 +1936,7 @@
      local CSS module. */
   .cw-ink-label[data-cw-ink-variant="menu"] {
     width: fit-content;
+    max-width: 100%;
   }
 
   /* `menu` IS THE SELECTION STROKE, and no longer a third geometry: it used to
@@ -2077,7 +2078,8 @@
      here rather than inherited: this selector and the variants' carry equal
      specificity and this one comes later, so leaving `scaleY` out made a
      pointed-at row go thin exactly while it was being pointed at. */
-  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible .cw-ink-label-mark {
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible .cw-ink-label-mark,
+  [data-cw-ink-pointed="true"] .cw-ink-label-mark {
     opacity: var(--cw-ink-hover-opacity);
     transform:
       scaleY(var(--cw-ink-stroke-weight))
@@ -2190,6 +2192,11 @@
     transform: scale(1) rotate(-7deg);
   }
 
+  .cw-ink-icon[data-cw-ink-active="true"] .cw-ink-icon-mark {
+    opacity: 1;
+    transform: scale(1) rotate(-7deg);
+  }
+
   /* Same compound-specificity fix as the label mark above, and gated the same
      way: without the `:hover` copy, hovering an already-current icon ring
      lost to the plain hover rule and dimmed back to the hover ring. */
@@ -2225,6 +2232,7 @@
       clip-path 0.36s cubic-bezier(0.3, 0.7, 0.2, 1);
   }
 
+  [data-cw-ink-pointed="true"] .cw-ink-label-mark,
   .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark,
   :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible .cw-ink-label-mark,
   :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):active .cw-ink-label-mark,

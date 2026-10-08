@@ -100,7 +100,7 @@ by hand. Never as a statement typed into the SQL editor and nowhere else; that
 is how 47 migrations went unregistered. `docs/migration/README.md` has the
 procedure and the two unapplied files awaiting a decision.
 
-Regenerate `src/lib/db/database.types.ts` (`npm run db:types`, needs Docker)
+Regenerate `src/lib/db/database.types.ts` (`npm run db:types`, pinned native CLI; run `db:local:prepare` first)
 in the same change as the migration, and commit it with it.
 
 **Row Level Security is not the application's guard.** Decided 2026-09-10: the

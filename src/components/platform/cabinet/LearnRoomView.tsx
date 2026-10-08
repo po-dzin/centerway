@@ -47,6 +47,7 @@
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { MotionLink } from "@/components/platform/MotionLink";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 
 import type { LearnerShelfCourseDto } from "@/components/lms/lmsClient";
 import { courseAction } from "./CourseCard";
@@ -57,7 +58,7 @@ import styles from "./LearnRoomView.module.css";
 /* Where a niche lands and what it is drawn with are two separate questions,
    and neither of them is a React one — see both modules' own headers. */
 import { CAMERA_MS, CATEGORY_ORDER, frameCase, layoutRoom, toCases } from "./roomGeometry";
-import { codeInk, markInk, nicheInk, rowInk, spineInk } from "./roomInk";
+import { codeInk, markInk, nicheInk, spineInk } from "./roomInk";
 
 export function LearnRoomView({
   courses,
@@ -457,24 +458,18 @@ export function LearnRoomView({
                   className={styles.row}
                   href={courseAction(course, copy).href}
                   data-hot={hot === course.slug}
+                  data-cw-ink-control
+                  data-cw-ink-pointed={hot === course.slug}
                   onMouseEnter={() => setHot(course.slug)}
                   onFocus={() => setHot(course.slug)}
                 >
                   <span className={styles.rowIndex}>{String(i + 1).padStart(2, "0")}</span>
                   <span className={styles.rowMain}>
-                    {/* THE STROKE UNDER THE NAME, IN TWO STRENGTHS. The weaker
-                        one is where attention is pointing (pointer, keyboard,
-                        or the shelf on the wall). It is the same pen the room
-                        is drawn with, and it is the product's one way of saying
-                        "here" — never a filled highlight. */}
-                    <span className={styles.inkLabel}>
+                    {/* selection_family: ink. The menu gesture belongs to the
+                        shared primitive; the room never draws its own label. */}
+                    <InteractionInkLabel variant="menu">
                       <span className={styles.rowTitle}>{course.title}</span>
-                      <span
-                        className={styles.rowMark}
-                        aria-hidden="true"
-                        dangerouslySetInnerHTML={{ __html: rowInk(i * 5 + 3, dark) }}
-                      />
-                    </span>
+                    </InteractionInkLabel>
                     <span className={styles.rowNote}>
                       {course.categories.map((c) => copy.courseCategories[c]).join(" · ")}
                     </span>

@@ -638,6 +638,7 @@ function PublicationRow({
   return (
     <>
       <AdminRow
+        courseActions
         lead={<CourseThumb row={row} />}
         title={row.title}
         badges={<StateChips row={row} withVisibility={!canEdit} />}
@@ -903,6 +904,7 @@ function PricingRow({
 
   return (
     <AdminRow
+      courseActions
       lead={<CourseThumb row={row} />}
       title={row.title}
       meta={

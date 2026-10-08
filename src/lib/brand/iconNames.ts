@@ -2,7 +2,7 @@
 // Geometry source: scripts/lib/icon-glyphs.mjs
 
 // Cache key for the sprite URL — see spriteVersion() in scripts/icons-bake.mjs.
-export const CW_SPRITE_VERSION = "248c0e4d";
+export const CW_SPRITE_VERSION = "f6a60e4b";
 
 export const CW_ICON_NAMES = [
   "arrow-right",
@@ -14,6 +14,7 @@ export const CW_ICON_NAMES = [
   "chevron-right",
   "chevron-down",
   "body",
+  "walker",
   "rhythm",
   "support",
   "day",

@@ -24,6 +24,7 @@
 import { useEffect, useRef, useState, type DragEvent } from "react";
 
 import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 
 import { MEDIA_SIZES, mediaSources } from "@/lib/lms/media";
 
@@ -272,9 +273,12 @@ export function BuilderImageField({
               type="button"
               title="Прибрати зображення"
               aria-label={`Прибрати ${label.toLowerCase()}`}
+              data-cw-ink-control
               onClick={() => onChange(undefined)}
             >
-              <Icon name="close" size={18} />
+              <InteractionInkIcon>
+                <Icon name="close" size={18} />
+              </InteractionInkIcon>
             </button>
           ) : null}
         </div>

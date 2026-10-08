@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 
-import { HandGraphic } from "@/components/Icon";
+import { HandGraphic, Icon } from "@/components/Icon";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { supabaseClient } from "@/lib/supabaseClient";
 import styles from "@/components/platform/PlatformShellStyles";
@@ -345,7 +345,7 @@ export function PlatformAccountMenu({
           aria-label={label}
           data-auth-state={isAuthEnabled ? "guest" : "fallback"}
         >
-          {compact ? <span className={styles.profileGlyph} aria-hidden="true" /> : null}
+          {compact ? <Icon name="user" className={styles.profileGlyph} /> : null}
           {compact ? null : <span className={styles.profileLabel}>{label}</span>}
         </button>
         <ChromeSheetPanel

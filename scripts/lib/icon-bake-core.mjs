@@ -6,6 +6,7 @@
 
 import { chromium } from "@playwright/test";
 import { ICONS, GRAPHICS, ICON_VIEWBOX, GRAPHIC_VIEWBOX, HAND_PRESETS } from "./icon-glyphs.mjs";
+import pencil from "../../data/brand/cw-pencil.json" with { type: "json" };
 
 export const STROKE_WIDTH = { icon: 1.5, graphic: 1.5 };
 
@@ -65,6 +66,49 @@ function bakeInPage(job) {
 
   const round = (n) => Math.round(n * 100) / 100;
 
+  /* A pencil leaves a ribbon of pigment, with pressure varying ALONG its
+     centreline. This is geometry baked once, not a filter or an opacity
+     effect. Counters stay open: a closed line is two contours, even-odd filled.
+     Tiny functional glyphs keep an uninterrupted silhouette. Dash geometry
+     (countable route marks) and the solid bookmark retain their own contract. */
+  const pencilRibbon = (pts, closed, width, strength, salt) => {
+    const side = (sign) =>
+      pts.map((p, i) => {
+        const prev = pts[closed ? (i + pts.length - 1) % pts.length : Math.max(0, i - 1)];
+        const next = pts[closed ? (i + 1) % pts.length : Math.min(pts.length - 1, i + 1)];
+        const dx = next.x - prev.x;
+        const dy = next.y - prev.y;
+        const length = Math.hypot(dx, dy) || 1;
+        const t = i / Math.max(1, closed ? pts.length : pts.length - 1);
+        const wave =
+          Math.sin(t * Math.PI * 2 + salt) * job.pressure.primaryWave +
+          Math.sin(t * Math.PI * (closed ? 6 : 5) + salt * 1.7) * job.pressure.secondaryWave;
+        const tip = closed ? 1 : job.pressure.tipFloor + (1 - job.pressure.tipFloor) * Math.sin(Math.PI * t);
+        const half = (width * (1 + strength * wave) * tip) / 2;
+        return { x: p.x - ((sign * dy) / length) * half, y: p.y + ((sign * dx) / length) * half };
+      });
+    const top = side(1);
+    const bottom = side(-1);
+    if (closed) return toPathData(top, true) + toPathData(bottom.reverse(), true);
+    // A point beyond each end rounds the cap without adding another element.
+    const cap = (at, near, a, b) => {
+      const dx = pts[at].x - pts[near].x;
+      const dy = pts[at].y - pts[near].y;
+      const length = Math.hypot(dx, dy) || 1;
+      const half = Math.hypot(a.x - b.x, a.y - b.y) / 2;
+      return { x: pts[at].x + (dx / length) * half, y: pts[at].y + (dy / length) * half };
+    };
+    return toPathData(
+      [
+        ...top,
+        cap(pts.length - 1, pts.length - 2, top.at(-1), bottom.at(-1)),
+        ...bottom.reverse(),
+        cap(0, 1, top[0], bottom.at(-1)),
+      ],
+      true,
+    );
+  };
+
   /** Catmull-Rom through the samples -> cubic Beziers, so the wobble stays soft. */
   const toPathData = (pts, closed) => {
     if (pts.length < 2) return "";
@@ -94,7 +138,7 @@ function bakeInPage(job) {
   host.appendChild(probe);
 
   /** Resample one path's data, displaced. Subpaths are split on M commands. */
-  const bakePath = (data, hand) => {
+  const bakePath = (data, hand, width, salt, pencil = true) => {
     const subpaths = data
       .split(/(?=[Mm])/)
       .map((s) => s.trim())
@@ -112,7 +156,10 @@ function bakeInPage(job) {
         const at = total * (closed ? i / steps : i / steps);
         pts.push(displaceWith(probe.getPointAtLength(Math.min(at, total)), hand));
       }
-      out.push(toPathData(pts, closed));
+      out.push({
+        d: toPathData(pts, closed),
+        pigment: pencil && hand.pressure ? pencilRibbon(pts, closed, width, hand.pressure, salt) : null,
+      });
     }
     return out.filter(Boolean);
   };
@@ -123,19 +170,23 @@ function bakeInPage(job) {
 
   const result = {};
   for (const item of items) {
+    const itemIndex = [...item.name].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 0) % 997;
     const hand = item.hand ?? preset;
+    const width = item.strokeWidth ?? job.strokeWidth;
     const paths = [];
-    for (const entry of item.d ?? []) {
+    for (const [index, entry] of (item.d ?? []).entries()) {
       const data = typeof entry === "string" ? entry : entry.path;
       const dash = typeof entry === "string" ? null : (entry.dash ?? null);
-      for (const baked of bakePath(data, hand)) paths.push({ d: baked, dash });
+      for (const baked of bakePath(data, hand, width, itemIndex * 1.37 + index, !item.filled && !dash)) {
+        paths.push({ ...baked, dash });
+      }
     }
     const rings = [];
     const dots = [];
     for (const dot of item.dots ?? []) {
       if (dot.ring || dot.stroke) {
-        for (const baked of bakePath(circleToPath(dot.cx, dot.cy, dot.r), hand)) {
-          rings.push({ d: baked, accent: Boolean(dot.accent) });
+        for (const baked of bakePath(circleToPath(dot.cx, dot.cy, dot.r), hand, width, itemIndex)) {
+          rings.push({ ...baked, accent: Boolean(dot.accent) });
         }
       } else {
         dots.push({ cx: round(dot.cx), cy: round(dot.cy), r: round(dot.r), accent: Boolean(dot.accent) });
@@ -164,7 +215,12 @@ function symbolMarkup(name, baked, viewBox, strokeWidth) {
   for (const p of [...baked.paths, ...baked.rings]) {
     const dash = p.dash ? ` stroke-dasharray="${p.dash}"` : "";
     const accent = p.accent ? ` stroke="var(--cw-icon-accent, currentColor)"` : "";
-    lines.push(`      <path d="${p.d}"${dash}${accent}/>`);
+    if (p.pigment) {
+      const fill = p.accent ? "var(--cw-icon-accent, currentColor)" : "currentColor";
+      lines.push(`      <path d="${p.pigment}" fill="${fill}" fill-rule="evenodd" stroke="none"/>`);
+    } else {
+      lines.push(`      <path d="${p.d}"${dash}${accent}/>`);
+    }
   }
   lines.push("    </g>");
   for (const dot of baked.dots) {
@@ -212,11 +268,15 @@ export async function bakeSprites(presetNames) {
         items: iconItems,
         preset,
         sampleStep: SAMPLE_STEP,
+        strokeWidth: STROKE_WIDTH.icon,
+        pressure: pencil.pressure,
       });
       const graphics = await page.evaluate(bakeInPage, {
         items: graphicItems,
         preset,
         sampleStep: SAMPLE_STEP * 1.5,
+        strokeWidth: STROKE_WIDTH.graphic,
+        pressure: pencil.pressure,
       });
       out.set(presetName, {
         sprite: spriteMarkup(presetName, icons, graphics),

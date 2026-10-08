@@ -20,6 +20,7 @@
 import { useState } from "react";
 
 import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { isLinkedModule, type Course, type CourseModule } from "@/lms-core";
 import { BuilderGrip } from "./BuilderGrip";
 import { BuilderMenu } from "./BuilderMenu";
@@ -125,7 +126,9 @@ export function BuilderContents({
           type="button"
           onClick={() => onNavigate(`/build/${course.slug}`)}
         >
-          <Icon name="arrow-left" size={18} />
+          <InteractionInkIcon>
+            <Icon name="arrow-left" size={18} />
+          </InteractionInkIcon>
           <InkLabel>Структура курсу</InkLabel>
         </button>
       </div>
@@ -158,7 +161,11 @@ export function BuilderContents({
                   aria-expanded={!closed}
                   onClick={() => toggleModule(entry.id)}
                 >
-                  <Icon name={closed ? "chevron-right" : "chevron-down"} size={16} />
+                  <Icon
+                    className={styles.contentsModuleChevron}
+                    name={closed ? "chevron-right" : "chevron-down"}
+                    size={16}
+                  />
                   <InkLabel>{moduleLabel}</InkLabel>
                 </button>
                 {editing ? (

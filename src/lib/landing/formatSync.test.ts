@@ -292,10 +292,10 @@ describe("landing bundle sync", () => {
     expect(collectBundledPrograms("<p>none</p>")).toEqual([]);
   });
 
-  it("names the host program and every format that opens this one, linking to its formats", () => {
+  it("names the host program and its formats without sending the landing visitor to the platform", () => {
     const note = renderBundleNote("Розвантажувальний день", hosts);
     expect(note).toContain("Розвантажувальний день також входить бонусом");
-    expect(note).toContain('href="https://www.centerway.net.ua/programs/way21#formats"');
+    expect(note).not.toContain("href=");
     expect(note).toContain("у форматах «У групі потоку» і «Індивідуальний супровід»");
   });
 
@@ -304,8 +304,8 @@ describe("landing bundle sync", () => {
       hosts[0]!,
       { code: "natural-body-group", label: "У групі", programSlug: "natural-body", programTitle: "Природне тіло" },
     ]);
-    expect(note).toContain("«Шлях 21»</a> — у форматі «У групі потоку»; у ");
-    expect(note).toContain("«Природне тіло»</a> — у форматі «У групі»");
+    expect(note).toContain("«Шлях 21» — у форматі «У групі потоку»; у ");
+    expect(note).toContain("«Природне тіло» — у форматі «У групі»");
   });
 
   it("fills the marker, and filling it twice changes nothing", () => {

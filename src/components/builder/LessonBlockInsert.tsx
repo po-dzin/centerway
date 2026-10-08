@@ -7,7 +7,8 @@
  */
 
 import { useRef, useState } from "react";
-import { HandGraphic, Icon } from "@/components/Icon";
+import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import type { LessonBlockType } from "@/lms-core";
 import { BuilderBlockPicker } from "./BuilderBlockPicker";
 import styles from "./Builder.module.css";
@@ -66,13 +67,15 @@ export function BlockInsert({
         aria-label="Додати блок"
         title="Додати блок"
         aria-expanded={anchor !== null}
+        data-cw-ink-control
         onClick={() => {
           onActivate(position);
           setAnchor(ring.current?.getBoundingClientRect() ?? null);
         }}
       >
-        <Icon name="plus" size={18} />
-        <HandGraphic className={styles.blockInsertInkRing} name="ink-ring" size={42} />
+        <InteractionInkIcon active>
+          <Icon name="plus" size={18} />
+        </InteractionInkIcon>
       </button>
       {anchor ? (
         <BuilderBlockPicker

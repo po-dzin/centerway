@@ -1,7 +1,7 @@
 /**
  * THE ROOM'S INK — every mark in the library, drawn as an SVG string.
  *
- * Lifted out of `LearnRoomView.tsx` on 2026-09-11, unchanged. These are the
+ * Lifted out of `LearnRoomView.tsx` on 2026-09-11. These build on the
  * prototype's own pen functions (зб. 59): a stroke is a filled polygon with a
  * seeded bow, so the same line drawn twice is never quite the same line, and
  * the whole room is deterministic in `seeded` — the same course list draws
@@ -12,6 +12,7 @@
  */
 
 import { seeded } from "./roomGeometry";
+import { pencilPressure, PENCIL_ILLUSTRATION } from "@/lib/brand/pencil";
 
 function penStroke(
   x1: number,
@@ -30,16 +31,15 @@ function penStroke(
   const len = Math.sqrt(dx * dx + dy * dy) || 1;
   const nx = -dy / len;
   const ny = dx / len;
-  const bow = (jr(n + 900) * 2 - 1) * Math.min(1.6, len * 0.012);
-  const N = 7;
+  const bow = (jr(n + 900) * 2 - 1) * Math.min(1.6, len * PENCIL_ILLUSTRATION.wander);
+  const N = Math.max(8, Math.min(32, Math.ceil(len / 8)));
   const top: string[] = [];
   const bot: string[] = [];
   for (let i = 0; i <= N; i++) {
     const t = i / N;
     const cx = x1 + dx * t + nx * bow * Math.sin(Math.PI * t);
     const cy = y1 + dy * t + ny * bow * Math.sin(Math.PI * t);
-    let w = wMax * (0.3 + 0.7 * Math.sin(Math.PI * t)) * (0.75 + jr(n * 7 + i) * 0.5);
-    if (i === 0 || i === N) w = wMax * 0.1;
+    const w = wMax * pencilPressure(t, jr(n) * Math.PI * 2);
     top.push(`${(cx + (nx * w) / 2).toFixed(1)},${(cy + (ny * w) / 2).toFixed(1)}`);
     bot.push(`${(cx - (nx * w) / 2).toFixed(1)},${(cy - (ny * w) / 2).toFixed(1)}`);
   }
@@ -57,28 +57,19 @@ function penLine(
   inkW: number,
   jr: (n: number) => number,
 ): string {
-  let out = penStroke(x1, y1, x2, y2, wMax, op, n, inkW, jr);
-  if (jr(n + 300) > 0.45) {
-    const t0 = jr(n + 310) * 0.35;
-    const t1 = t0 + 0.35 + jr(n + 320) * 0.3;
-    out += penStroke(
-      x1 + (x2 - x1) * t0,
-      y1 + (y2 - y1) * t0,
-      x1 + (x2 - x1) * t1,
-      y1 + (y2 - y1) * t1,
-      wMax * 0.8,
-      op * 0.5,
-      n + 17,
-      inkW,
-      jr,
-    );
-  }
-  return out;
+  const length = Math.hypot(x2 - x1, y2 - y1);
+  if (length < 48 || jr(n + 300) <= 0.6) return penStroke(x1, y1, x2, y2, wMax, op, n, inkW, jr);
+  const lift = 0.32 + jr(n + 310) * 0.3;
+  const resume = lift + PENCIL_ILLUSTRATION.liftFraction;
+  return (
+    penStroke(x1, y1, x1 + (x2 - x1) * lift, y1 + (y2 - y1) * lift, wMax, op, n, inkW, jr) +
+    penStroke(x1 + (x2 - x1) * resume, y1 + (y2 - y1) * resume, x2, y2, wMax, op, n + 17, inkW, jr)
+  );
 }
 
 /** The drawn niche border — one-point perspective in ink, seeded per case
     index so three niches are three different hands drawing the same
-    session's line. Ported verbatim from the prototype's `nicheSvg`. */
+    session's line. Derived from the prototype's `nicheSvg`. */
 function nicheSvg(ci: number, W: number, H: number, inkW: number): string {
   const jr = (n: number) => seeded(ci * 53 + n);
   const bx = W * 0.14;
@@ -86,6 +77,14 @@ function nicheSvg(ci: number, W: number, H: number, inkW: number): string {
   const bX = W * 0.87;
   const bY = H * 0.86;
   let out = "";
+  // Sparse directional hatch on the recessed back plane, away from labels.
+  // Its density is capped: a narrow/mobile niche never turns into a moiré field.
+  const hatchCount = Math.min(9, Math.floor((bX - bx) / 22));
+  for (let i = 0; i < hatchCount; i++) {
+    const x = bx + 12 + i * 22;
+    const reach = Math.min(26, bX - x - 4, (bY - by) * 0.3);
+    if (reach > 4) out += penStroke(x, by + 4, x + reach, by + 4 + reach, 0.65, 0.2, 120 + i, inkW, jr);
+  }
   for (let i = 1; i <= 4; i++) {
     const t = i / 5;
     out += penStroke(
@@ -127,7 +126,7 @@ function nicheSvg(ci: number, W: number, H: number, inkW: number): string {
 }
 
 /** The drawn spine — one SVG, three faces sharing edges, so nothing doubles
-    a line or drops one at the seam. Ported verbatim from the prototype's
+    a line or drops one at the seam. Derived from the prototype's
     `bookInk`. */
 function bookInk(w: number, h: number): string {
   const d = Math.max(1.5, Math.min(6, w * 0.42));
@@ -159,18 +158,33 @@ function bookInk(w: number, h: number): string {
   const px = (w - pw) / 2;
   const py = r + h * 0.27;
   const ph = h * 0.22;
+  const jr = (n: number) => seeded(Math.round(w * 31 + h * 7) + n);
+  const edges: [number, number, number, number][] = [
+    [0, r, d, 0],
+    [d, 0, W, 0],
+    [W, 0, W, h],
+    [W, h, w, r + h],
+    [w, r + h, 0, r + h],
+    [0, r + h, 0, r],
+    [0, r, w, r],
+    [w, r, W, 0],
+    [w, r, w, r + h],
+    [1, band1, w - 1, band1],
+    [1, band2, w - 1, band2],
+  ];
+  const contour = edges.map(([x1, y1, x2, y2], i) => penLine(x1, y1, x2, y2, 0.7, 1, i, 1, jr)).join("");
+  let hatch = "";
+  for (let y = 12; y < h - 8; y += 14) {
+    hatch += penStroke(w + 0.8, y + r, W - 0.8, y, 0.45, 0.32, y + 40, 1, jr);
+  }
   return (
     `<svg viewBox="0 0 ${W.toFixed(1)} ${H.toFixed(1)}" style="position:absolute;left:0;top:${(-r).toFixed(1)}px;width:${W.toFixed(1)}px;height:${H.toFixed(1)}px;overflow:visible" aria-hidden="true">` +
     `<polygon class="side" points="${p(side)}"/>` +
     `<polygon class="top" points="${p(top)}"/>` +
     `<polygon class="front" points="${p(front)}"/>` +
-    `<g class="band"><path class="line" d="M1,${band1.toFixed(1)} H${(w - 1).toFixed(1)}"/><path class="line" d="M1,${band2.toFixed(1)} H${(w - 1).toFixed(1)}"/></g>` +
     `<rect class="plate" x="${px.toFixed(1)}" y="${py.toFixed(1)}" width="${pw.toFixed(1)}" height="${ph.toFixed(1)}" rx="1"/>` +
     `<rect class="foot" x="0" y="${(r + h - 3).toFixed(1)}" width="${w.toFixed(1)}" height="3"/>` +
-    `<path class="line" d="M0,${r.toFixed(1)} L${d.toFixed(1)},0 L${W.toFixed(1)},0 L${W.toFixed(1)},${h.toFixed(1)} L${w.toFixed(1)},${(r + h).toFixed(1)} L0,${(r + h).toFixed(1)} Z"/>` +
-    `<path class="line" d="M0,${r.toFixed(1)} H${w.toFixed(1)} L${W.toFixed(1)},0"/>` +
-    `<path class="line" d="M${w.toFixed(1)},${r.toFixed(1)} V${(r + h).toFixed(1)}"/>` +
-    `</svg>`
+    `<g class="pencil">${hatch}${contour}</g></svg>`
   );
 }
 
@@ -230,7 +244,7 @@ function attentionSvg(ci: number, W: number, H: number, inkW: number): string {
       continue;
     }
     const pt = pointAt(p);
-    const drift = (jr(i * 3 + 44) - 0.5) * 1.6;
+    const drift = Math.sin(i * 0.12 + jr(44) * Math.PI * 2) * 0.8;
     /* The weight is the slow wave of a confident movement — but a FINE one.
        The prototype wrote this frame at 1.7–3.1px because there it was seen
        through a camera that could pull back from the wall; here the room is
@@ -238,7 +252,7 @@ function attentionSvg(ci: number, W: number, H: number, inkW: number): string {
        marker line round a pen drawing. Halved, and the hand steadied (the drift
        came down with it), the frame reads as the same pen that drew the niche
        instead of as something laid on top of it. */
-    const wgt = (0.85 + 0.7 * Math.abs(Math.sin(i * 0.09 + jr(3) * 6)) + (jr(i + 7) - 0.5) * 0.3) * inkW;
+    const wgt = 1.15 * pencilPressure(i / N, jr(3) * Math.PI * 2, true) * inkW;
     if (!cur) cur = [];
     cur.push([pt[0] + drift * 0.6, pt[1] + drift * 0.6, wgt]);
   }
@@ -267,64 +281,6 @@ function attentionSvg(ci: number, W: number, H: number, inkW: number): string {
     out += `<polygon points="${top.join(" ")} ${bot.reverse().join(" ")}" fill="currentColor" opacity="0.78"/>`;
   }
   return `<svg viewBox="0 0 ${W + M * 2} ${H + M * 2}" aria-hidden="true" style="overflow:visible">${out}</svg>`;
-}
-
-/** ONE PEN-STROKE THE LENGTH OF A LINE — thin at the start, heavier through
-    the body, with a barely-visible bow and one lift of the brush. The same
-    profile as the niche's own lines, and the same stroke the platform draws
-    under everything it points at (see the `feedback-ink-not-highlights`
-    rule: attention here is ink, never a filled highlight). Ported verbatim
-    from the prototype's `rayInk`. */
-function rayInk(len: number, vertical: boolean, seed: number, inkW: number): string {
-  const T = 18;
-  const mid = T / 2;
-  const jr = (n: number) => seeded(seed * 37 + n);
-  const bow = (jr(1) * 2 - 1) * Math.min(3.4, len * 0.016);
-  /* One lift, and not always: two breaks turned the stroke into a dashed
-     line, and this has to stay ONE line — just one written by a hand. */
-  const lifts: [number, number][] = [];
-  if (jr(4) > 0.45) {
-    const g0 = 0.3 + jr(2) * 0.3;
-    lifts.push([g0, g0 + 0.02 + jr(3) * 0.03]);
-  }
-  const inLift = (t: number) => lifts.some(([a, b]) => t > a && t < b);
-
-  const N = 48;
-  let out = "";
-  let run: [number, number, number][] = [];
-  function flush() {
-    if (run.length < 2) {
-      run = [];
-      return;
-    }
-    const s1: string[] = [];
-    const s2: string[] = [];
-    for (const [a, c, w] of run) {
-      const hw = w / 2;
-      s1.push(vertical ? `${(c - hw).toFixed(1)},${a.toFixed(1)}` : `${a.toFixed(1)},${(c - hw).toFixed(1)}`);
-      s2.push(vertical ? `${(c + hw).toFixed(1)},${a.toFixed(1)}` : `${a.toFixed(1)},${(c + hw).toFixed(1)}`);
-    }
-    out += `<polygon points="${s1.join(" ")} ${s2.reverse().join(" ")}" fill="currentColor"/>`;
-    run = [];
-  }
-  for (let i = 0; i <= N; i++) {
-    const t = i / N;
-    if (inLift(t)) {
-      flush();
-      continue;
-    }
-    const along = len * t;
-    const across = mid + bow * Math.sin(Math.PI * t) + (jr(i + 40) - 0.5) * 0.7;
-    /* The pressure builds towards the middle and comes to nothing at the ends. */
-    let wdt = (0.3 + 1.5 * Math.sin(Math.PI * t)) * (0.72 + jr(i + 90) * 0.5) * inkW;
-    if (i === 0 || i === N) wdt = 0.22;
-    run.push([along, across, wdt]);
-  }
-  flush();
-  return (
-    `<svg viewBox="0 0 ${vertical ? `${T} ${Math.round(len)}` : `${Math.round(len)} ${T}`}"` +
-    ` preserveAspectRatio="none" aria-hidden="true">${out}</svg>`
-  );
 }
 
 /** THE NAME ON A SPINE IS NOT READ — IT IS RECOGNISED.
@@ -392,16 +348,6 @@ export function codeInk(title: string, w: number, h: number): string {
   let hit = inkCache.get(key);
   if (!hit) {
     hit = spineCode(title, w, h);
-    inkCache.set(key, hit);
-  }
-  return hit;
-}
-
-export function rowInk(seed: number, dark: boolean): string {
-  const key = `row|${seed}|${dark ? "d" : "l"}`;
-  let hit = inkCache.get(key);
-  if (!hit) {
-    hit = rayInk(120, false, seed, dark ? 1.7 : 1);
     inkCache.set(key, hit);
   }
   return hit;

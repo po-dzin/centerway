@@ -34,6 +34,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { createPortal } from "react-dom";
 
 import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { BuilderMenu } from "./BuilderMenu";
 import { inlineToHtml, nodesToInline, type MarkupNode } from "@/lib/lms/inlineDom";
 import { PLACEHOLDER_MARKER, inlineToPlainText, type InlineText } from "@/lms-core";
@@ -620,24 +621,31 @@ export function BuilderInlineEditor({
                     type="button"
                     title="Жирний"
                     aria-label="Жирний"
+                    data-cw-ink-control
                     onClick={() => exec("bold")}
                   >
-                    <Icon name="bold" size={18} />
+                    <InteractionInkIcon>
+                      <Icon name="bold" size={18} />
+                    </InteractionInkIcon>
                   </button>
                   <button
                     className={styles.formatIconAction}
                     type="button"
                     title="Курсив"
                     aria-label="Курсив"
+                    data-cw-ink-control
                     onClick={() => exec("italic")}
                   >
-                    <Icon name="italic" size={18} />
+                    <InteractionInkIcon>
+                      <Icon name="italic" size={18} />
+                    </InteractionInkIcon>
                   </button>
                   <button
                     className={styles.formatIconAction}
                     type="button"
                     title="Посилання"
                     aria-label="Посилання"
+                    data-cw-ink-control
                     onClick={() => {
                       const element = ref.current;
                       if (!element) return;
@@ -653,7 +661,9 @@ export function BuilderInlineEditor({
                       setLinkDraft("");
                     }}
                   >
-                    <Icon name="link" size={18} />
+                    <InteractionInkIcon>
+                      <Icon name="link" size={18} />
+                    </InteractionInkIcon>
                   </button>
                   {/* PARAGRAPH SHAPE AND «AS TEXT», BEHIND ONE OVERFLOW BELOW
                       901PX. Seven icon buttons plus three dividers do not fit
@@ -675,36 +685,45 @@ export function BuilderInlineEditor({
                           type="button"
                           title="Список"
                           aria-label="Список"
+                          data-cw-ink-control
                           onClick={() => {
                             onCommand("ul");
                             closeBar();
                           }}
                         >
-                          <Icon name="list" size={18} />
+                          <InteractionInkIcon>
+                            <Icon name="list" size={18} />
+                          </InteractionInkIcon>
                         </button>
                         <button
                           className={styles.formatIconAction}
                           type="button"
                           title="Нумерований список"
                           aria-label="Нумерований список"
+                          data-cw-ink-control
                           onClick={() => {
                             onCommand("ol");
                             closeBar();
                           }}
                         >
-                          <Icon name="list-ordered" size={18} />
+                          <InteractionInkIcon>
+                            <Icon name="list-ordered" size={18} />
+                          </InteractionInkIcon>
                         </button>
                         <button
                           className={styles.formatIconAction}
                           type="button"
                           title="Чек-лист"
                           aria-label="Чек-лист"
+                          data-cw-ink-control
                           onClick={() => {
                             onCommand("block:checklist");
                             closeBar();
                           }}
                         >
-                          <Icon name="check" size={18} />
+                          <InteractionInkIcon>
+                            <Icon name="check" size={18} />
+                          </InteractionInkIcon>
                         </button>
                         <span className={styles.formatDivider} aria-hidden="true" />
                         <button
@@ -712,24 +731,30 @@ export function BuilderInlineEditor({
                           type="button"
                           title="Цитата"
                           aria-label="Цитата"
+                          data-cw-ink-control
                           onClick={() => {
                             onCommand("block:quote");
                             closeBar();
                           }}
                         >
-                          <Icon name="quote" size={18} />
+                          <InteractionInkIcon>
+                            <Icon name="quote" size={18} />
+                          </InteractionInkIcon>
                         </button>
                         <button
                           className={styles.formatIconAction}
                           type="button"
                           title="Код"
                           aria-label="Код"
+                          data-cw-ink-control
                           onClick={() => {
                             onCommand("block:code");
                             closeBar();
                           }}
                         >
-                          <Icon name="code" size={18} />
+                          <InteractionInkIcon>
+                            <Icon name="code" size={18} />
+                          </InteractionInkIcon>
                         </button>
                       </>
                     ) : null}

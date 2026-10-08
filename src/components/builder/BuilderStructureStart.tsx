@@ -101,7 +101,7 @@ export function BuilderStructureStart({
 
   return (
     <details className={styles.structureReplace}>
-      <summary>
+      <summary data-cw-ink-control>
         Замінити структуру
         <Icon className={styles.courseSettingsAdvancedGlyph} name="chevron-down" size={18} />
       </summary>

@@ -6,7 +6,7 @@
  * Split out of BuilderCourseList.tsx (1,115 lines) on 2026-09-11; nothing inside any declaration changed.
  */
 
-import { coverCardStyle } from "@/lib/lms/courseCover";
+import { coverCardStyle, coverPortraitStyle } from "@/lib/lms/courseCover";
 import { plural } from "@/lib/plural";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
@@ -56,6 +56,7 @@ type EntryProps = {
   /** True while this course is playing its leaving animation. */
   removing?: boolean;
   onExport: (slug: string) => void;
+  menuSelection?: "ink" | "contour";
 };
 
 /**
@@ -86,7 +87,7 @@ export function CourseRow(props: EntryProps) {
               alt=""
               loading="lazy"
               decoding="async"
-              style={coverCardStyle(course.cover)}
+              style={coverPortraitStyle(course.cover)}
             />
           ) : (
             initialsOf(course.title)
@@ -167,7 +168,7 @@ export function CourseCard(props: EntryProps) {
           <span className={styles.courseMeta}>{blockerLine(course.blockerCount)}</span>
         </span>
       </Link>
-      <EntryControls {...props} />
+      <EntryControls {...props} menuSelection="contour" />
     </article>
   );
 }
@@ -184,6 +185,7 @@ export function EntryControls({
   onCancel,
   onConfirm,
   onExport,
+  menuSelection = "ink",
 }: EntryProps) {
   const focusRef = useRef<HTMLButtonElement>(null);
 
@@ -239,6 +241,7 @@ export function EntryControls({
 
   return (
     <BuilderMenu
+      selectionFamily={menuSelection}
       label={`Дії з курсом «${course.title}»`}
       items={[
         {

@@ -44,6 +44,7 @@ export function AdminRow({
   controls,
   actions,
   footer,
+  courseActions = false,
 }: {
   lead?: ReactNode;
   title: string;
@@ -56,6 +57,8 @@ export function AdminRow({
   controls?: ReactNode;
   actions?: ReactNode;
   footer?: ReactNode;
+  /** Course catalogue rows share the Builder portrait/corner recipe. */
+  courseActions?: boolean;
 }) {
   const { t } = useI18n();
   const id = useId();
@@ -63,10 +66,10 @@ export function AdminRow({
      give every row's «i» the same name, and each popover would open beside the
      last row's. Without anchor positioning it opens centred in the top layer. */
   const anchor = `--cw-row-info-${id.replace(/[^a-zA-Z0-9]/g, "")}`;
-  const label = t("catalog_row_info");
+  const label = t(courseActions ? "catalog_course_actions" : "catalog_row_info");
 
   return (
-    <div className={lists.row} data-has-lead={lead ? "true" : undefined}>
+    <div className={lists.row} data-has-lead={lead ? "true" : undefined} data-course-row={courseActions || undefined}>
       {lead ? <div className={lists.rowLead}>{lead}</div> : null}
       <div className={lists.rowBody}>
         <p className={lists.rowTitle} title={title}>
@@ -104,11 +107,11 @@ export function AdminRow({
           title={label}
         >
           <InteractionInkIcon>
-            <Icon name="info" size={24} />
+            <Icon name={courseActions ? "more" : "info"} size={courseActions ? 18 : 24} />
           </InteractionInkIcon>
           {note ? <span className={lists.rowNoteDot} data-tone={noteTone} aria-hidden="true" /> : null}
         </button>
-        {actions}
+        {!courseActions ? actions : null}
       </div>
       <div
         className={lists.rowInfo}
@@ -118,6 +121,7 @@ export function AdminRow({
         id={id}
       >
         <p className={lists.rowInfoTitle}>{title}</p>
+        {courseActions && actions ? <div className={lists.rowInfoActions}>{actions}</div> : null}
         {sub ? <p className={lists.rowInfoLine}>{sub}</p> : null}
         {badges !== undefined ? <div className={lists.rowInfoBadges}>{badges}</div> : null}
         {meta !== undefined ? <div className={lists.rowInfoLine}>{meta}</div> : null}

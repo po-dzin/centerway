@@ -191,6 +191,23 @@
   max-width: min(12rem, 45vw);
   gap: var(--cw-space-2xs);
   padding-inline: var(--cw-space-sm) var(--cw-space-md);
+  color: var(--cw-platform-muted);
+}
+
+/* Back is a route command, with or without a visible destination word.
+   Its shared island supplies the contour; the foreground supplies feedback. */
+.organBack {
+  color: var(--cw-platform-muted);
+}
+
+.organBack:focus-visible {
+  color: var(--cw-platform-text);
+}
+
+@media (hover: hover) {
+  .organBack:hover {
+    color: var(--cw-platform-text);
+  }
 }
 
 .organText {

@@ -2,9 +2,9 @@
  * CenterWay icon + hand-graphics geometry — the single source of truth.
  *
  * Contract (docs/design-system.md § Icons):
- *   - 24 grid, stroke 1.5, round caps and joins, no fills except accent dots;
- *   - monoline character shared with the dot/path/orbit graphics language;
- *   - the "hand" character is NOT authored here — it is baked from this clean
+ *   - 24 grid, stroke 1.5, round caps and joins, open contours with accent dots;
+ *   - shared pencil pressure; only the saved bookmark is a solid silhouette;
+ *   - the pencil character is NOT authored here — it is baked from this clean
  *     geometry by scripts/icons-bake.mjs (preset hand2). Keep these paths
  *     editable and geometric.
  *
@@ -25,6 +25,8 @@
  * READER earns a solid. If a third case appears, argue it here before baking it.
  */
 
+import pencil from "../../data/brand/cw-pencil.json" with { type: "json" };
+
 /** Icons live on a 24x24 grid. */
 export const ICON_VIEWBOX = "0 0 24 24";
 
@@ -36,12 +38,7 @@ export const GRAPHIC_VIEWBOX = "0 0 36 36";
  * (docs/archive/working-notes/ds-icon-character-study-2026-08-15.html).
  * `hand2` is the author-approved character.
  */
-export const HAND_PRESETS = {
-  base: { frequency: 0, scale: 0, seed: 0 },
-  hand1: { frequency: 0.03, scale: 1.4, seed: 7 },
-  hand2: { frequency: 0.05, scale: 2.4, seed: 3 },
-  hand3: { frequency: 0.08, scale: 3.6, seed: 11 },
-};
+export const HAND_PRESETS = pencil.presets;
 
 export const DEFAULT_PRESET = "hand2";
 
@@ -102,6 +99,18 @@ export const ICONS = {
       "M7.4 11.2c2 1.1 3.1 1.6 4.6 1.6s2.6-.5 4.6-1.6",
       "M12 14.8 9.2 20",
       "M12 14.8 14.8 20",
+    ],
+  },
+  /* The progress rail's walker belongs to the same bake as the still body,
+     so a course never switches from pencil to an unbaked inline figure. */
+  walker: {
+    group: "Tagline",
+    d: [
+      "M12 2.5a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2z",
+      "M12 6.7v6.6",
+      "M8.5 11.6 12 9.4l3.7 2.4",
+      "m12 13.3 3.8 3.9.6 4.2",
+      "M12 13.3 8.4 18.4 7.2 21.6",
     ],
   },
   rhythm: {
@@ -768,24 +777,13 @@ export const GRAPHICS = {
      and that slope is the first thing the eye finds, because a separator has
      nothing but its own straightness to be judged against.
 
-     SO THIS ONE HOLDS ITS LINE, and it holds it literally: the hand pass is
-     switched off (`scale: 0`) rather than merely quietened. That is not a
-     style preference, it is what was already shipped — the symbol reached the
-     sprite by hand on 2026-09-11 as a bare `M3.5 18.4H32.5`, and this entry
-     reproduces it through the generator so the artifact stops being
-     hand-authored. A drawn variant at this weight was baked beside it and
-     compared at five times size before choosing; the difference at the size
-     this renders is not visible, and a hotfix is the wrong place to spend a
-     visual change. The generator now supports `hand` and `strokeWidth` per
-     glyph, so switching to a drawn line later is one line here.
-
-     What keeps it a drawn mark and not a border is what is left: the round pen
-     tips and the ink pressed in at both ends — heavier where the pen lands,
-     lighter where it lifts. */
+     The centreline remains straight so the selected label does not change
+     its optical baseline. Pencil pressure is baked along that centreline by
+     the shared recipe; InteractionInk owns every runtime state. */
   "ink-rule": {
     group: "Graphics",
     d: ["M3.5 18.4C13.2 18.4 22.8 18.4 32.5 18.4"],
-    hand: { frequency: 0, scale: 0, seed: 0 },
+    hand: { frequency: 0, scale: 0, seed: 0, pressure: 0.13 },
     strokeWidth: 1.5,
     dots: [
       { cx: 3.4, cy: 18.4, r: 1.1 },

@@ -25,3 +25,5 @@ __pycache__/
 *.pyc
 dist-library-depth.html
 coverage/
+# Pinned local CLI, native Supabase processes, database and service artifacts.
+.local/
