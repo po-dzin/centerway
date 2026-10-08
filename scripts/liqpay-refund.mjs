@@ -4,12 +4,16 @@
  *
  *   node scripts/liqpay-refund.mjs <order_ref>                        # dry run: prints the request, sends nothing
  *   node scripts/liqpay-refund.mjs <order_ref> --confirm              # sends the refund call
- *   node scripts/liqpay-refund.mjs <order_ref> --amount 100 --confirm # partial refund
  *
  * The twin of scripts/wfp-refund.mjs, with the same rules: the amount comes
  * from the order row, only a `paid` order is refunded, money moves only with
  * --confirm, and the script never writes to the database — the `reversed`
  * callback reaches /api/liqpay/webhook, which owns `paid -> refunded`.
+ *
+ * FULL REFUNDS ONLY. The webhook reads LiqPay's `reversed` as the whole order
+ * refunded (access removed, author share reversed), and has no state for a
+ * part-refunded order, so a partial amount would leave the books saying more
+ * than was returned. Partial refunds come back when that state exists.
  *
  * A SPLIT PAYMENT is refunded the same way, by the shop that started it.
  * LiqPay takes the money back from the shops the payment was split to; how it
@@ -41,7 +45,7 @@ async function main() {
   loadDotEnv();
   const orderRef = process.argv[2];
   if (!orderRef || orderRef.startsWith("--")) {
-    console.error("usage: node scripts/liqpay-refund.mjs <order_ref> [--amount N] [--confirm]");
+    console.error("usage: node scripts/liqpay-refund.mjs <order_ref> [--confirm]");
     process.exit(2);
   }
   const confirm = process.argv.includes("--confirm");
@@ -76,11 +80,18 @@ async function main() {
     process.exit(1);
   }
 
-  const amount = Number(arg("--amount") ?? order.amount);
-  if (!Number.isFinite(amount) || amount <= 0 || amount > Number(order.amount)) {
-    console.error(`refund amount ${amount} must be in (0, ${order.amount}]`);
+  if (arg("--amount") !== undefined) {
+    console.error(
+      "partial refunds are not supported yet: the order would read fully refunded. Refund the whole order.",
+    );
     process.exit(1);
   }
+  const amount = Number(order.amount);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    console.error(`order amount ${order.amount} is not refundable`);
+    process.exit(1);
+  }
+
   // Same envelope as every LiqPay call: base64 JSON `data`, and
   // base64(sha1(private_key + data + private_key)) — src/lib/payments/gateway/liqpay.ts.
   const params = { version: 3, public_key: publicKey, action: "refund", order_id: orderRef, amount };
