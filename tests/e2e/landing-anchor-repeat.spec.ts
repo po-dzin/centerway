@@ -32,18 +32,38 @@ async function returnToTop(page: Page, navigation = false) {
 }
 
 async function expectAtAnchorClearance(target: Locator) {
-  await expect
-    .poll(async () =>
-      target.evaluate((element) => {
-        const style = getComputedStyle(element);
-        const margin = Number.parseFloat(style.scrollMarginBlockStart || style.scrollMarginTop) || 0;
-        const current = window.scrollY;
-        const desired = element.getBoundingClientRect().top + current - margin;
-        const maximum = document.documentElement.scrollHeight - window.innerHeight;
-        return Math.abs(current - Math.max(0, Math.min(maximum, desired)));
-      }),
-    )
-    .toBeLessThan(3);
+  try {
+    await expect
+      .poll(async () =>
+        target.evaluate((element) => {
+          const style = getComputedStyle(element);
+          const margin = Number.parseFloat(style.scrollMarginBlockStart || style.scrollMarginTop) || 0;
+          const current = window.scrollY;
+          const desired = element.getBoundingClientRect().top + current - margin;
+          const maximum = document.documentElement.scrollHeight - window.innerHeight;
+          return Math.abs(current - Math.max(0, Math.min(maximum, desired)));
+        }),
+      )
+      .toBeLessThan(3);
+  } catch (error) {
+    console.log(
+      "anchor geometry",
+      await target.evaluate((element) => ({
+        id: element.id,
+        top: element.getBoundingClientRect().top,
+        margin: getComputedStyle(element).scrollMarginBlockStart,
+        scrollY: window.scrollY,
+        innerHeight: window.innerHeight,
+        documentHeight: document.documentElement.scrollHeight,
+        clientHeight: document.documentElement.clientHeight,
+        bodyHeight: document.body.scrollHeight,
+        bodyTop: document.body.scrollTop,
+        viewportHeight: window.visualViewport?.height,
+        fonts: document.fonts.status,
+      })),
+    );
+    throw error;
+  }
 }
 
 async function repeatActivation(page: Page, control: Locator, target: Locator, open?: () => Promise<void>) {
