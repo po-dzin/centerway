@@ -6,6 +6,7 @@ import {
   isPaymentCurrency,
   learnerStatusOf,
   normalizeDeadline,
+  parseEmailList,
   STALLED_AFTER_DAYS,
 } from "./accessTypes";
 import type { LearnerRow, LearnerStatus } from "./accessTypes";
@@ -40,9 +41,10 @@ describe("learnerStatusOf", () => {
 
 describe("isGrantableRole", () => {
   it("accepts exactly what user_roles' CHECK accepts", () => {
-    for (const role of ["user", "coach", "support", "admin"]) {
+    for (const role of ["user", "support", "admin"]) {
       expect(isGrantableRole(role)).toBe(true);
     }
+    expect(isGrantableRole("coach")).toBe(false);
   });
 
   it("rejects anything else, including casing the DB would refuse", () => {
@@ -175,5 +177,34 @@ describe("isPaymentCurrency", () => {
     expect(isPaymentCurrency("uah")).toBe(false);
     expect(isPaymentCurrency("BTC")).toBe(false);
     expect(isPaymentCurrency(980)).toBe(false);
+  });
+});
+
+describe("parseEmailList", () => {
+  it("reads a pasted column, a comma list and an array alike", () => {
+    expect(parseEmailList("a@b.co\nc@d.co").emails).toEqual(["a@b.co", "c@d.co"]);
+    expect(parseEmailList("a@b.co, c@d.co; e@f.co").emails).toEqual(["a@b.co", "c@d.co", "e@f.co"]);
+    expect(parseEmailList(["a@b.co", " c@d.co\ne@f.co "]).emails).toEqual(["a@b.co", "c@d.co", "e@f.co"]);
+  });
+
+  it("folds case and repeats into one address, keeping the first one's place", () => {
+    expect(parseEmailList("B@x.co\na@x.co\nb@X.CO")).toEqual({
+      emails: ["b@x.co", "a@x.co"],
+      invalid: [],
+      duplicates: 1,
+    });
+  });
+
+  it("strips what a mail client copies around an address", () => {
+    expect(parseEmailList("<a@b.co>\nmailto:c@d.co").emails).toEqual(["a@b.co", "c@d.co"]);
+  });
+
+  it("names what is not an address, once each, as it was typed", () => {
+    expect(parseEmailList("Anna\na@b.co\nanna@\nAnna").invalid).toEqual(["Anna", "anna@"]);
+  });
+
+  it("reads nothing out of nothing", () => {
+    expect(parseEmailList(undefined)).toEqual({ emails: [], invalid: [], duplicates: 0 });
+    expect(parseEmailList(42)).toEqual({ emails: [], invalid: [], duplicates: 0 });
   });
 });

@@ -122,9 +122,9 @@ export async function PlatformProgramsIndexPage() {
               Короткі входи, довші програми і різна глибина роботи з тілом, ритмом, харчуванням та увагою.
             </p>
             <div className={heroStyles.heroFeatureActions}>
-              <Link className={heroStyles.heroPrimaryButton} href="#program-catalog">
+              <a className={heroStyles.heroPrimaryButton} href="#program-catalog">
                 Перейти до програм
-              </Link>
+              </a>
             </div>
           </div>
         </section>
@@ -204,9 +204,9 @@ export async function PlatformTestsHubPage() {
             </h1>
             <p className={heroStyles.heroFeatureLead}>{testsHubCopy.lead}</p>
             <div className={heroStyles.heroFeatureActions}>
-              <Link className={heroStyles.heroPrimaryButton} href="#tests-available">
+              <a className={heroStyles.heroPrimaryButton} href="#tests-available">
                 Перейти до тестів
-              </Link>
+              </a>
             </div>
           </div>
         </section>
@@ -400,9 +400,9 @@ export async function PlatformProductsIndexPage() {
               того, що ви вже проходите.
             </p>
             <div className={heroStyles.heroFeatureActions}>
-              <Link className={heroStyles.heroPrimaryButton} href="#product-focus">
+              <a className={heroStyles.heroPrimaryButton} href="#product-focus">
                 Дивитися трави
-              </Link>
+              </a>
             </div>
           </div>
         </section>

@@ -7,6 +7,11 @@
  *
  * H1 registers exactly one channel: telegram. `email` and `webpush` are declared
  * so the shape is real, and refuse to pretend they delivered anything.
+ *
+ * The reminder LETTERS do not go through here (2026-10-03): they need their own
+ * per-channel claim row, which this dispatcher has no notion of. They are the
+ * fallback for a `no_reachable_channel` answer from it — see
+ * `./reminderEmail.ts`.
  */
 
 import { adminClient } from "@/lib/auth/adminClient";

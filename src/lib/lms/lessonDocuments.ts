@@ -15,6 +15,7 @@ import {
   inlineToPlainText,
   isNonEmptyString,
   isRecord,
+  isTableListCell,
   slugify,
   uniqueSlug,
   validateInlineText,
@@ -25,6 +26,7 @@ import {
   type Lesson,
   type LessonBlock,
   type RichTextNode,
+  type TableCell,
 } from "@/lms-core";
 
 export const LESSON_DOCUMENT_FORMATS = ["md", "docx", "txt"] as const;
@@ -325,6 +327,24 @@ export async function importLessonDocument(
   };
 }
 
+/* A list cell has no Markdown of its own inside a pipe table; `<br>` is the
+   line break every Markdown table renderer honours. */
+function markdownCell(cell: TableCell): string {
+  if (!isTableListCell(cell)) return markdownInline(cell);
+  const first = cell.start ?? 1;
+  return cell.items
+    .map((item, index) => `${cell.kind === "ol" ? `${first + index}.` : "•"} ${markdownInline(item)}`)
+    .join("<br>");
+}
+
+function plainCell(cell: TableCell): string {
+  if (!isTableListCell(cell)) return inlineToPlainText(cell);
+  const first = cell.start ?? 1;
+  return cell.items
+    .map((item, index) => `${cell.kind === "ol" ? `${first + index}.` : "•"} ${inlineToPlainText(item)}`)
+    .join("; ");
+}
+
 function markdownInline(value: InlineText): string {
   if (typeof value === "string") return value;
   return value
@@ -413,7 +433,7 @@ export function lessonToMarkdown(lesson: Lesson): string {
           // a table with neither head nor rows has no columns to name.
           const head = block.head ?? block.rows[0]?.map((_, index) => `Колонка ${index + 1}`) ?? [];
           out.push(`| ${head.map(markdownInline).join(" | ")} |`, `| ${head.map(() => "---").join(" | ")} |`);
-          out.push(...block.rows.map((row) => `| ${row.map(markdownInline).join(" | ")} |`));
+          out.push(...block.rows.map((row) => `| ${row.map(markdownCell).join(" | ")} |`));
         }
         break;
       case "cta":
@@ -442,6 +462,8 @@ export function lessonToText(lesson: Lesson): string {
       .replace(/^[-*+] \[[ xX]\]\s+/gm, "• ")
       .replace(/^[-*+]\s+/gm, "• ")
       .replace(/^\d+[.)]\s+/gm, "")
+      // After the numbering strip, so list-cell numbers survive on their own lines.
+      .replace(/<br\s*\/?>/g, "\n")
       .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, "$1 — $2")
       .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1 — $2")
       .replace(/\*\*([^*]+)\*\*/g, "$1")
@@ -542,7 +564,7 @@ function lessonDocxParagraphs(lesson: Lesson): Paragraph[] {
         if (block.title)
           paragraphs.push(new Paragraph({ children: textRuns(block.title), heading: HeadingLevel.HEADING_3 }));
         [...(block.head ? [block.head] : []), ...block.rows].forEach((row) =>
-          paragraphs.push(new Paragraph({ text: row.map(inlineToPlainText).join(" | ") })),
+          paragraphs.push(new Paragraph({ text: row.map(plainCell).join(" | ") })),
         );
         break;
       case "cta":

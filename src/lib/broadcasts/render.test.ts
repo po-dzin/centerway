@@ -20,7 +20,7 @@ describe("renderBroadcast", () => {
   it("turns the small markup into HTML and plain text", () => {
     const out = renderBroadcast(content, { name: "Олена" }, "https://u");
     expect(out.html).toContain("<h2");
-    expect(out.html).toContain('<li style="margin:0 0 6px">21 день</li>');
+    expect(out.html).toMatch(/<td[^>]*>21 день<\/td>/);
     expect(out.html).toContain("<strong>група</strong>");
     expect(out.html).toContain('<a href="https://www.centerway.net.ua/programs"');
     expect(out.text).toContain("ЩО БУДЕ");

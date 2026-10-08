@@ -20,6 +20,7 @@
  * reaches it through `loadPayableOffer` below.
  */
 
+import { currentPrice } from "@/lib/experiences/earlyPrice";
 import { coverArtworkFraming } from "@/lib/lms/courseCover";
 import { unstable_cache } from "next/cache";
 
@@ -33,6 +34,7 @@ import {
 } from "@/lib/products";
 import { mediaSources } from "@/lib/lms/media";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { formatFloor } from "@/lib/experiences/formatFloor";
 import { FORMAT_DEFAULT_LABELS, isOfferFormat, loadProgramFormats } from "@/lib/experiences/formats";
 import {
   describeOffer,
@@ -295,12 +297,10 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
     /* SEVERAL WAYS THROUGH IT, SEVERAL PRICES (2026-09-25). A program sold in
        formats quotes the lowest of them as «від …», the same figure its page's
        hero prints — a card showing only the self-paced price would read as the
-       whole offer. `amount` stays the lowest figure, for the price filter. */
-    const priced = (formatSets[index] ?? []).filter(
-      (format) => format.mode === "checkout" && format.amount !== null && format.amount > 0,
-    );
-    const lowest = (formatSets[index] ?? []).length >= 2 ? priced.sort((a, b) => a.amount! - b.amount!)[0] : undefined;
-    if (lowest && lowest.amount !== null) {
+       whole offer. `amount` stays the lowest figure, for the price filter.
+       The figure is `formatFloor`'s, the same one the page's hero prints. */
+    const lowest = formatFloor(formatSets[index] ?? []);
+    if (lowest) {
       return {
         ...storefrontCard(course, index, offer),
         commercialMode: "fixed" as const,
@@ -415,6 +415,7 @@ export async function loadPayableOffer(code: unknown): Promise<PayableOffer | nu
   }
   if (!target || !isPayable(target.offer)) return null;
   const { offer } = target;
+  const price = currentPrice(offer);
 
   let title = target.experience.title ?? offer.code;
   let summary = "";
@@ -441,8 +442,10 @@ export async function loadPayableOffer(code: unknown): Promise<PayableOffer | nu
     code: offer.code as PayableProductCode,
     heading: offer.invoiceHeading ?? { uk: fallbackHeading, en: fallbackHeading },
     description: offer.invoiceDescription ?? { uk: fallbackDescription, en: fallbackDescription },
-    amount: offer.amount,
-    listAmount: offer.listAmount ?? offer.amount,
+    /* What the gateway is asked for is the price NOW: the early price while it
+       holds, the regular one from 00:00 Kyiv on its date (`earlyPrice.ts`). */
+    amount: price.amount ?? offer.amount,
+    listAmount: price.listAmount ?? price.amount ?? offer.amount,
     currency: offer.currency,
     pixelContentName: offer.pixelContentName ?? title,
     fulfilment: offerFulfilment(target),

@@ -1,27 +1,20 @@
 "use client";
 
-/**
- * The owner's side of the format constructor (2026-09-25).
- *
- * ONE CARD PER PROGRAM, its formats as rows inside it. A format is a way
- * through one program — «Шлях 21» on your own, in a cohort, with a guide — so
- * the three are read together, priced against each other, and listed under the
- * program they belong to rather than as three unrelated products.
- *
- * Nothing is on sale until the owner approves it here. Approving sets the LIVE
- * price; the author's proposal is prefilled as a starting point, not a
- * decision. A draft the owner set up (Природне тіло's group and guided formats)
- * is priced and approved the same way. A live format shows the decision form
- * only while a new price waits beside the current one.
+/** Every course format has one commercial editor in «Ціни й доступ».
+ * Saving terms preserves its sale and review state; approval and sale switches
+ * are separate decisions. Course formats never appear in the product editor.
  */
 
 import { useMemo, useState } from "react";
 
-import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { useI18n } from "@/components/I18nProvider";
 import { useToast } from "@/components/ToastProvider";
 import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
 import { Icon } from "@/components/Icon";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
+import { useBuilderHref } from "@/components/platform/AuthorEntry";
+import { COURSE_WORKSPACE_HASH } from "@/components/builder/courseWorkspace";
+import { ACCESS_TERM_PRESETS } from "@/lib/admin/catalogTypes";
 import { getErrorMessage } from "@/lib/errors";
 import type { FormatReviewRow } from "@/lib/admin/formatReviewTypes";
 import controls from "@/components/admin/AdminControls.module.css";
@@ -37,78 +30,106 @@ const REVIEW_KEY = {
 
 const ORDER = { self: 0, group: 1, individual: 2 } as const;
 
-function EmptyIcon() {
-  return <Icon className="cw-muted" name="price" size={20} />;
-}
-
 function waitsForDecision(row: FormatReviewRow): boolean {
   return row.reviewStatus !== "approved" || row.proposedAmount !== null;
 }
 
-export function FormatReviewTab({
+/**
+ * Whether the program is sold through formats rather than as its one base
+ * offer — the case where the sale switches live in the format list and not in
+ * the price row.
+ */
+export function hasFormatLadder(formats: FormatReviewRow[], baseCode: string): boolean {
+  return formats.length >= 2 || formats.some((row) => row.code !== baseCode || waitsForDecision(row));
+}
+
+/**
+ * One program's formats, folded under its price row.
+ *
+ * `baseCode` is the program's own offer (`course:<slug>`): its price, term
+ * and sale switch live here with the others. It is listed
+ * first. The head names every format with its price, so the whole ladder
+ * reads without opening anything.
+ */
+export function ProgramFormats({
   formats,
+  baseCode,
   canEdit,
+  defaultOpen,
   errorText,
   onChanged,
 }: {
   formats: FormatReviewRow[];
+  baseCode: string;
   canEdit: boolean;
+  /** Open on arrival. Unset: open, so commercial terms are visible on arrival. */
+  defaultOpen?: boolean;
   errorText: (message: string) => string;
   onChanged: () => Promise<void>;
 }) {
   const { t } = useI18n();
+  const sorted = useMemo(
+    () => [...formats].sort((a, b) => ORDER[a.format] - ORDER[b.format] || a.code.localeCompare(b.code)),
+    [formats],
+  );
+  const waiting = sorted.filter(waitsForDecision).length;
+  const shown = [...sorted.filter((row) => row.code === baseCode), ...sorted.filter((row) => row.code !== baseCode)];
+  const [open, setOpen] = useState(defaultOpen ?? true);
 
-  /* Programs with something waiting come first; inside a program the formats
-     keep one order everywhere — self, group, guided — the order the page
-     shows them in. */
-  const programs = useMemo(() => {
-    const byCourse = new Map<string, { slug: string; title: string; formats: FormatReviewRow[] }>();
-    for (const row of formats) {
-      const entry = byCourse.get(row.courseSlug) ?? { slug: row.courseSlug, title: row.courseTitle, formats: [] };
-      entry.formats.push(row);
-      byCourse.set(row.courseSlug, entry);
-    }
-    return [...byCourse.values()]
-      .map((entry) => ({
-        ...entry,
-        formats: [...entry.formats].sort((a, b) => ORDER[a.format] - ORDER[b.format] || a.code.localeCompare(b.code)),
-        waiting: entry.formats.filter(waitsForDecision).length,
-      }))
-      .sort((a, b) => Number(b.waiting > 0) - Number(a.waiting > 0) || a.title.localeCompare(b.title, "uk"));
-  }, [formats]);
+  if (!hasFormatLadder(formats, baseCode)) return null;
 
-  if (formats.length === 0) return <AdminEmptyState icon={<EmptyIcon />} description={t("formats_empty")} />;
+  const ladder = sorted
+    .map(
+      (row) =>
+        `${row.label} ${row.amount != null ? `${row.amount} ${row.currency}` : t("products_price_on_request")}${
+          row.mode === "lead" ? ` (${t("formats_mode_lead")})` : ""
+        }`,
+    )
+    .join(" · ");
 
   return (
-    <div>
-      <p className={css.intro}>{t("formats_intro")}</p>
-      <div className={css.programs}>
-        {programs.map((program) => (
-          <section key={program.slug} className={lists.item} aria-labelledby={`formats-${program.slug}`}>
-            <div className={css.programHead}>
-              <h3 className={css.programTitle} id={`formats-${program.slug}`}>
-                {program.title}
-              </h3>
-              <p className={css.programCount}>
-                {t("formats_count")}: {program.formats.length}
-                {program.waiting > 0 ? (
-                  <>
-                    {" · "}
-                    <strong>
-                      {t("formats_waiting")}: {program.waiting}
-                    </strong>
-                  </>
-                ) : null}
-              </p>
-            </div>
-            <ul className={css.formats}>
-              {program.formats.map((row) => (
-                <FormatRow key={row.code} row={row} canEdit={canEdit} errorText={errorText} onChanged={onChanged} />
-              ))}
-            </ul>
-          </section>
-        ))}
-      </div>
+    <div className={css.program}>
+      <button
+        type="button"
+        className={controls.disclosureHead}
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <div>
+          <p className={controls.disclosureTitle}>
+            {t("formats_count")}: {sorted.length}
+            {waiting > 0 ? (
+              <>
+                {" · "}
+                <strong className={css.waiting}>
+                  {t("formats_waiting")}: {waiting}
+                </strong>
+              </>
+            ) : null}
+          </p>
+          <p className={controls.disclosureNote}>{ladder}</p>
+        </div>
+        <span className={controls.disclosureMark} aria-hidden="true">
+          <Icon
+            className={open ? controls.disclosureChevronOpen : controls.disclosureChevron}
+            name="chevron-down"
+            size={16}
+          />
+        </span>
+      </button>
+      {open && shown.length > 0 ? (
+        <ul className={css.formats}>
+          {shown.map((row) => (
+            <FormatRow
+              key={`${row.code}:${row.amount}:${row.listAmount}:${row.proposedAmount}:${row.mode}:${row.accessDays}:${row.accessLifetime}:${row.active}:${row.reviewStatus}`}
+              row={row}
+              canEdit={canEdit}
+              errorText={errorText}
+              onChanged={onChanged}
+            />
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
@@ -125,19 +146,30 @@ function FormatRow({
   onChanged: () => Promise<void>;
 }) {
   const { t } = useI18n();
+  const builderHref = useBuilderHref();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [amount, setAmount] = useState(() => {
     const start = row.proposedAmount ?? row.amount;
     return start != null ? String(start) : "";
   });
-  const [listAmount, setListAmount] = useState("");
+  const [listAmount, setListAmount] = useState(row.listAmount != null ? String(row.listAmount) : "");
+  const [mode, setMode] = useState(row.mode);
+  const [term, setTerm] = useState(
+    row.accessLifetime
+      ? "lifetime"
+      : row.accessDays != null
+        ? String(row.accessDays)
+        : row.mode === "lead"
+          ? "agreed"
+          : "",
+  );
 
   const approved = row.reviewStatus === "approved";
   const pendingPrice = approved && row.proposedAmount !== null;
   const deciding = waitsForDecision(row);
 
-  const act = async (action: "approve" | "decline" | "withdraw" | "resume") => {
+  const act = async (action: "save" | "approve" | "decline" | "withdraw" | "resume") => {
     setBusy(true);
     try {
       await authFetch("/api/admin/offer-formats", {
@@ -146,19 +178,24 @@ function FormatRow({
           code: row.code,
           courseSlug: row.courseSlug,
           action,
+          mode,
+          accessDays: term === "lifetime" || term === "agreed" ? null : Number(term),
+          accessLifetime: term === "lifetime",
           amount: amount.trim() === "" ? null : Number(amount),
           listAmount: listAmount.trim() === "" ? null : Number(listAmount),
         }),
       });
       toast.success(
         t(
-          action === "approve"
-            ? "formats_approved"
-            : action === "decline"
-              ? "formats_declined"
-              : action === "resume"
-                ? "products_resumed"
-                : "products_withdrawn",
+          action === "save"
+            ? "catalog_offer_saved"
+            : action === "approve"
+              ? "formats_approved"
+              : action === "decline"
+                ? "formats_declined"
+                : action === "resume"
+                  ? "products_resumed"
+                  : "products_withdrawn",
         ),
       );
       await onChanged();
@@ -172,6 +209,13 @@ function FormatRow({
   const state = approved && !row.active ? t("formats_withdrawn") : t(REVIEW_KEY[row.reviewStatus]);
   const meta = [
     row.mode === "lead" ? t("formats_mode_lead") : null,
+    row.accessLifetime
+      ? t("catalog_term_lifetime")
+      : row.accessDays != null
+        ? `${row.accessDays} ${t("catalog_term_days")}`
+        : row.mode === "lead"
+          ? t("catalog_term_agreed")
+          : t("catalog_term_unset"),
     row.cohortStartsOn ? `${t("formats_cohort")}: ${row.cohortStartsOn}` : null,
     row.includes.length > 0
       ? `${t("formats_includes")}: ${row.includes.map((program) => program.title).join(" · ")}`
@@ -197,73 +241,130 @@ function FormatRow({
         </p>
       </div>
       <p className={css.formatMeta}>
-        <code>{row.code}</code> · {meta.join(" · ")}
+        <code>{row.code}</code>
+        {meta.length ? ` · ${meta.join(" · ")}` : ""}
       </p>
       {row.summary ? <p className={css.formatSummary}>{row.summary}</p> : null}
+      {/* The cohort date, the copy and what the format opens are edited on its
+          card in the builder, not here. G could not find that card from this
+          row (2026-10-06), so the row points at it. */}
+      {canEdit ? (
+        <div className={lists.itemLinks}>
+          <a
+            className={lists.itemLink}
+            data-cw-ink-control
+            href={builderHref(`/${encodeURIComponent(row.courseSlug)}${COURSE_WORKSPACE_HASH.offer}`)}
+          >
+            <InteractionInkLabel variant="link">{t("formats_edit_in_builder")}</InteractionInkLabel>
+          </a>
+        </div>
+      ) : null}
 
       {canEdit ? (
-        deciding ? (
-          <div className={css.decision}>
-            <label className={controls.field}>
-              <span className={controls.fieldCaption}>
-                {row.proposedAmount != null ? t("formats_proposed_price") : t("formats_final_amount")}
-              </span>
-              <input
-                type="number"
-                min={1}
-                step={1}
-                inputMode="numeric"
-                placeholder={row.mode === "lead" ? t("products_price_on_request") : undefined}
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className={controls.input}
-              />
-            </label>
-            <label className={controls.field}>
-              <span className={controls.fieldCaption}>{t("formats_list_amount")}</span>
-              <input
-                type="number"
-                min={1}
-                step={1}
-                inputMode="numeric"
-                value={listAmount}
-                onChange={(e) => setListAmount(e.target.value)}
-                className={controls.input}
-              />
-            </label>
-            <div className={css.actions}>
-              <button
-                type="button"
-                onClick={() => void act("approve")}
-                disabled={busy}
-                className={`${controls.action} cw-surface-2`}
-              >
-                {t("formats_approve")}
-              </button>
-              {row.reviewStatus !== "draft" ? (
-                <button
-                  type="button"
-                  onClick={() => void act("decline")}
+        <div className={`${controls.priceForm} ${css.priceForm}`}>
+          <label className={controls.field}>
+            <span className={controls.fieldCaption}>
+              {row.proposedAmount != null
+                ? t("formats_proposed_price")
+                : t(mode === "lead" ? "products_amount" : deciding ? "formats_final_amount" : "catalog_amount")}
+            </span>
+            <input
+              type="number"
+              min={deciding || mode === "lead" ? 1 : 0}
+              step={1}
+              inputMode="numeric"
+              placeholder={mode === "lead" ? t("products_price_on_request") : undefined}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              disabled={busy}
+              className={controls.input}
+            />
+          </label>
+          <label className={controls.field}>
+            <span className={controls.fieldCaption}>{t("formats_list_amount")}</span>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              inputMode="numeric"
+              value={listAmount}
+              onChange={(e) => setListAmount(e.target.value)}
+              disabled={busy}
+              className={controls.input}
+            />
+          </label>
+          {!deciding ? (
+            <>
+              <label className={controls.field}>
+                <span className={controls.fieldCaption}>{t("products_kind")}</span>
+                <select
+                  value={mode}
+                  onChange={(event) => setMode(event.target.value as typeof mode)}
+                  className={controls.select}
                   disabled={busy}
-                  className={`${controls.action} cw-btn-muted`}
                 >
-                  {t(pendingPrice ? "formats_decline_price" : "formats_decline")}
-                </button>
-              ) : null}
-            </div>
-          </div>
-        ) : (
-          <div className={css.actions}>
+                  <option value="checkout">{t("products_kind_checkout")}</option>
+                  <option value="lead">{t("products_kind_lead")}</option>
+                </select>
+              </label>
+              <label className={controls.field}>
+                <span className={controls.fieldCaption}>{t("catalog_term")}</span>
+                <select
+                  value={term}
+                  onChange={(event) => setTerm(event.target.value)}
+                  className={controls.select}
+                  disabled={busy}
+                >
+                  <option value="">{t("catalog_term_unset")}</option>
+                  {mode === "lead" ? <option value="agreed">{t("catalog_term_agreed")}</option> : null}
+                  {row.accessDays != null && !ACCESS_TERM_PRESETS.some((days) => days === row.accessDays) ? (
+                    <option value={String(row.accessDays)}>
+                      {row.accessDays} {t("catalog_term_days")}
+                    </option>
+                  ) : null}
+                  {ACCESS_TERM_PRESETS.map((days) => (
+                    <option key={days} value={String(days)}>
+                      {days} {t("catalog_term_days")}
+                    </option>
+                  ))}
+                  <option value="lifetime">{t("catalog_term_lifetime")}</option>
+                </select>
+              </label>
+            </>
+          ) : null}
+          <div className={controls.priceActions}>
             <button
               type="button"
-              onClick={() => void act(row.active ? "withdraw" : "resume")}
-              disabled={busy}
-              className={`${controls.action} cw-btn-muted`}
+              onClick={() => void act(deciding ? "approve" : "save")}
+              disabled={
+                busy || (!deciding && (!term || (mode === "checkout" && (!amount.trim() || term === "agreed"))))
+              }
+              className={`${controls.action} cw-surface-2`}
             >
-              {t(row.active ? "products_withdraw" : "products_resume")}
+              {t(deciding ? "formats_approve" : "catalog_save_offer")}
             </button>
+            {deciding && row.reviewStatus !== "draft" ? (
+              <button
+                type="button"
+                onClick={() => void act("decline")}
+                disabled={busy}
+                className={`${controls.action} cw-btn-muted`}
+              >
+                {t(pendingPrice ? "formats_decline_price" : "formats_decline")}
+              </button>
+            ) : null}
+            {!deciding ? (
+              <button
+                type="button"
+                onClick={() => void act(row.active ? "withdraw" : "resume")}
+                disabled={busy}
+                className={`${controls.action} cw-btn-muted`}
+              >
+                {t(row.active ? "products_withdraw" : "products_resume")}
+              </button>
+            ) : null}
           </div>
-        )
+        </div>
       ) : null}
     </li>
   );

@@ -19,7 +19,7 @@
  */
 
 import type { LessonBlock, RichTextNode } from "./blocks";
-import { addressedBlocks } from "./blocks";
+import { addressedBlocks, tableCellLeaves } from "./blocks";
 import { COURSE_CATEGORIES_MIN, flattenLessons, type Course } from "./course";
 import { isDefaultDraftSlug } from "./drafts";
 import { inlineToPlainText, type InlineText } from "./inline";
@@ -80,7 +80,11 @@ function inlineValues(block: LessonBlock): InlineText[] {
     case "faq_block":
       return block.items.flatMap((item) => [item.question, item.answer]);
     case "table":
-      return [...(block.title ? [block.title] : []), ...(block.head ?? []), ...block.rows.flat()];
+      return [
+        ...(block.title ? [block.title] : []),
+        ...(block.head ?? []),
+        ...block.rows.flat().flatMap(tableCellLeaves),
+      ];
     case "cta":
       return block.text ? [block.text] : [];
     case "code":
@@ -112,7 +116,7 @@ function blockText(block: LessonBlock): string {
       return [
         textOf(block.title),
         ...(block.head ?? []).map((cell) => textOf(cell)),
-        ...block.rows.flatMap((row) => row.map((cell) => textOf(cell))),
+        ...block.rows.flatMap((row) => row.flatMap(tableCellLeaves).map((cell) => textOf(cell))),
       ].join(" ");
     case "cta":
       return `${block.label} ${block.href} ${textOf(block.text)}`;

@@ -32,6 +32,7 @@ const notifyHouseThread = vi.fn(async () => "sent");
 const isStaffOrder = vi.fn(async () => false);
 const loadPayableOffer = vi.fn(async () => ({
   pixelContentName: "Way21 Detox",
+  heading: { uk: "Шлях 21 — інтегративна детокс-програма", en: "Way 21 — integrative detox program" },
   fulfilment: { kind: "course", courseSlug: "way21", programSlug: "way21" },
 }));
 
@@ -165,7 +166,8 @@ describe("POST /api/wfp/webhook", () => {
     expect(sendPurchaseEmail).toHaveBeenCalledTimes(1);
     expect(sendPurchaseEmail.mock.calls[0]![0]).toMatchObject({
       email: "buyer@example.com",
-      productTitle: "Way21 Detox",
+      // The heading the buyer paid against, not Meta's label.
+      productTitle: "Шлях 21 — інтегративна детокс-програма",
       amount: 4100,
       orderRef: ORDER,
     });

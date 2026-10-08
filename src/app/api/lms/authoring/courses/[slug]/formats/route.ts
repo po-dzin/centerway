@@ -8,7 +8,8 @@
  * DELETE …/formats?code=…          — withdraw one that never went on sale.
  *
  * Author or admin of THIS course (`withCourseAccess`). What an author may change
- * — and that the live price is never theirs — is decided in
+ * — that the live price is never theirs, and that an `admin` sets it directly —
+ * is decided in
  * `lib/experiences/formatAuthoring`, not here.
  */
 
@@ -55,7 +56,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
             isAdmin: grant.identity.isAdmin,
           }),
         ]);
-        return NextResponse.json({ formats, includable, isOwner: grant.identity.isAdmin });
+        return NextResponse.json({
+          formats,
+          includable,
+          isOwner: grant.identity.isAdmin,
+          canSetPrice: grant.identity.canSetPrice === true,
+        });
       } catch (error) {
         return failed(error);
       }
@@ -76,6 +82,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
           courseId: grant.courseId,
           authUserId: grant.identity.authUserId,
           isAdmin: grant.identity.isAdmin,
+          canSetPrice: grant.identity.canSetPrice === true,
           body,
         });
         refresh(slug);
@@ -102,6 +109,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
           courseId: grant.courseId,
           authUserId: grant.identity.authUserId,
           isAdmin: grant.identity.isAdmin,
+          canSetPrice: grant.identity.canSetPrice === true,
           code: body.code,
           body,
         });

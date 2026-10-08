@@ -24,8 +24,8 @@ import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
 
 const rootDir = process.cwd();
-// Mirrors user_roles' CHECK, which gained `coach` when the stores merged.
-const GRANTABLE = new Set(["admin", "support", "coach", "user"]);
+// Mirrors user_roles' CHECK. `coach` was retired on 2026-10-02 (20261002000000_retire_coach_role.sql).
+const GRANTABLE = new Set(["admin", "support", "user"]);
 
 function loadEnv() {
   const envPath = path.join(rootDir, ".env.local");
@@ -77,14 +77,14 @@ async function gatingRole(authUserId) {
 }
 
 function report(email, role) {
-  const elevated = ["admin", "support", "coach"].includes((role ?? "").toLowerCase());
+  const elevated = ["admin", "support"].includes((role ?? "").toLowerCase());
   console.log(`  ${elevated ? "✓" : "·"} ${email.padEnd(38)} ${role ?? "(none)"}`);
 }
 
 async function list() {
   const { data, error } = await db.from("user_roles").select("user_id, role");
   if (error) fail(error.message);
-  const elevated = (data ?? []).filter((r) => ["admin", "support", "coach"].includes((r.role ?? "").toLowerCase()));
+  const elevated = (data ?? []).filter((r) => ["admin", "support"].includes((r.role ?? "").toLowerCase()));
   if (!elevated.length) {
     console.log("admin:role — nobody holds admin or support in user_roles.");
     return;

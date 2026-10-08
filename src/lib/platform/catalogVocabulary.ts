@@ -28,6 +28,17 @@ export const COURSE_KIND_BADGES: Record<CourseKind, string> = {
   checklist: "Чек-лист",
 };
 
+/**
+ * What a program bundled into another is called, said BEFORE its name (G,
+ * 2026-10-03): «Міні-курс · Розвантажувальний день», on the format card, in
+ * the course plan, inside the course and on the landing alike. The card's word
+ * for a kind, so a bundled mini-course is called what the shelf calls it; a
+ * program whose kind is unset is a «Програма».
+ */
+export function bonusKindLabel(kind: CourseKind | null | undefined): string {
+  return kind ? COURSE_KIND_BADGES[kind] : "Програма";
+}
+
 /** What each subject is called, in the reader's language. */
 export const COURSE_CATEGORY_LABELS: Record<CourseCategory, string> = {
   movement: "Рух",

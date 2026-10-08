@@ -35,6 +35,7 @@ vi.mock("@/lib/platform/offers", () => ({
   loadPayableOffer: async () => ({
     code: "course:reset-day",
     pixelContentName: "Reset Day",
+    heading: { uk: "Розвантажувальний день — міні-курс", en: "Reset Day — mini course" },
     fulfilment: { kind: "course", courseSlug: "reset-day" },
     currency: "UAH",
   }),

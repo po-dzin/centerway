@@ -71,7 +71,7 @@ function get() {
 beforeEach(() => {
   vi.clearAllMocks();
   requireAdminSession.mockResolvedValue(adminSession);
-  reviewFormat.mockResolvedValue(undefined);
+  reviewFormat.mockResolvedValue({ courseSlug: "way21" });
 });
 
 describe("GET", () => {
@@ -148,6 +148,34 @@ describe("PATCH", () => {
     });
   });
 
+  it("saves approved commercial terms through the admin-only route", async () => {
+    const res = await patch({
+      code: "way21-support",
+      courseSlug: "way21",
+      action: "save",
+      amount: "9000",
+      listAmount: null,
+      mode: "lead",
+      accessDays: "90",
+      accessLifetime: false,
+    });
+    expect(res.status).toBe(200);
+    expect(reviewFormat).toHaveBeenCalledWith({
+      code: "way21-support",
+      actorId: "u-admin",
+      decision: { action: "save", amount: 9000, listAmount: null, mode: "lead", accessDays: 90, accessLifetime: false },
+    });
+    expect(revalidateTag).toHaveBeenCalledWith("lms-course:way21", { expire: 0 });
+  });
+  it("rejects invalid save mode and access input before writing", async () => {
+    expect((await patch({ code: "g", action: "save", amount: 10, mode: "free" })).status).toBe(400);
+    expect(
+      (await patch({ code: "g", action: "save", amount: 10, mode: "checkout", accessDays: 1.5, accessLifetime: false }))
+        .status,
+    ).toBe(400);
+    expect(reviewFormat).not.toHaveBeenCalled();
+  });
+
   it("reads an empty price as no price, for the rules to decide", async () => {
     await patch({ code: "way21-individual", action: "approve", amount: "", listAmount: null });
     expect(reviewFormat.mock.calls[0]![0].decision).toEqual({ action: "approve", amount: null, listAmount: null });
@@ -176,9 +204,9 @@ describe("PATCH", () => {
     expect(revalidateTag).toHaveBeenCalledWith("product-offers", { expire: 0 });
   });
 
-  it("still purges the shared lists when no course slug came with the decision", async () => {
+  it("purges the actual owning course even without a caller-supplied slug", async () => {
     await patch({ code: "way21-group", action: "resume" });
-    expect(revalidateTag.mock.calls.map(([tag]) => tag)).toEqual(["lms-courses", "product-offers"]);
+    expect(revalidateTag.mock.calls.map(([tag]) => tag)).toEqual(["lms-course:way21", "lms-courses", "product-offers"]);
   });
 
   it("keeps a rule refusal's code and status, and purges nothing", async () => {

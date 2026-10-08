@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { isSafeHref, validateInlineText } from "./inline";
 
 import { validateLessonBlock, collectRequiredChecklistItemIds, youtubeIdFrom } from "./blocks";
 import {
@@ -119,6 +120,35 @@ describe("block validation", () => {
         "test",
       ),
     ).toThrow(/lms_block_checklist_duplicate_item_id/);
+  });
+
+  it("accepts a table cell that holds a numbered list", () => {
+    expect(() =>
+      validateLessonBlock(
+        {
+          id: "b",
+          type: "table",
+          head: ["Група", "Вправи"],
+          rows: [
+            ["Вхід", { kind: "ol", items: ["оболонка", "простір"] }],
+            ["Кисті", { kind: "ol", start: 3, items: ["розтирання", [{ text: "перекат", bold: true }]] }],
+            ["Шия", "одна лінія"],
+          ],
+        },
+        "test",
+      ),
+    ).not.toThrow();
+  });
+
+  it("rejects an empty list cell, an unknown cell kind and a start on a bullet list", () => {
+    const table = (cell: unknown) => ({ id: "b", type: "table", rows: [["a", cell]] });
+    expect(() => validateLessonBlock(table({ kind: "ol", items: [] }), "t")).toThrow(/lms_block_empty_list/);
+    expect(() => validateLessonBlock(table({ kind: "grid", items: ["x"] }), "t")).toThrow(
+      /lms_block_unknown_cell_kind/,
+    );
+    expect(() => validateLessonBlock(table({ kind: "ul", start: 2, items: ["x"] }), "t")).toThrow(
+      /lms_block_invalid_list_start/,
+    );
   });
 
   it("rejects a non-youtube video provider while the decision stands", () => {
@@ -927,5 +957,38 @@ describe("youtubeIdFrom", () => {
     expect(youtubeIdFrom("")).toBeNull();
     expect(youtubeIdFrom("https://vimeo.com/12345")).toBeNull();
     expect(youtubeIdFrom("не посилання")).toBeNull();
+  });
+});
+
+describe("isSafeHref — what an author's link may point at (meta-audit 2026-09-30)", () => {
+  it("follows web, mail and phone links, and paths with no scheme", () => {
+    for (const href of [
+      "https://x.com",
+      "http://x.com",
+      "mailto:a@b.c",
+      "tel:+380",
+      "/dosha-test",
+      "#step",
+      "t.me/x",
+    ]) {
+      expect(isSafeHref(href)).toBe(true);
+    }
+  });
+
+  it("refuses a scheme that runs or embeds, however it is spelled", () => {
+    for (const href of [
+      "javascript:alert(1)",
+      "JavaScript:alert(1)",
+      " java\nscript:alert(1)",
+      "data:text/html,x",
+      "vbscript:x",
+    ]) {
+      expect(isSafeHref(href)).toBe(false);
+    }
+  });
+
+  it("is enforced when inline text and call-to-action blocks are validated", () => {
+    expect(() => validateInlineText([{ text: "x", href: "javascript:alert(1)" }], "p")).toThrow(/unsafe_href/);
+    expect(() => validateInlineText([{ text: "x", href: "https://x.com" }], "p")).not.toThrow();
   });
 });

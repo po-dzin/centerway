@@ -13,12 +13,15 @@ import { createContext, useContext, type JSX, type ReactNode } from "react";
 import Link from "next/link";
 
 import {
+  isTableListCell,
   parseInternalReference,
   toSpans,
   type InlineText,
   type InternalReferenceTarget,
   type LessonBlock,
   type RichTextNode,
+  type TableCell,
+  type TableListCell,
 } from "@/lms-core";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { MEDIA_SIZES, mediaSources } from "@/lib/lms/media";
@@ -94,19 +97,38 @@ const ReferenceContext = createContext<ReferenceContextValue>({ route: "learn", 
  * supplies a render function for those addresses. This file stays ignorant of
  * the builder: it hands over a path and a value and takes back a node.
  */
+/** What a field does at its edges — the keys only its container can answer. */
+export type FieldBehaviour = {
+  onEnter?: () => void;
+  onEmptyBackspace?: () => void;
+};
+
 export type BlockAuthoring = {
-  field: (path: (string | number)[], value: InlineText) => ReactNode;
+  field: (path: (string | number)[], value: InlineText, behaviour?: FieldBehaviour) => ReactNode;
+  /**
+   * Replaces whatever sits at a path, then moves the caret to `focus`. For the
+   * edits a text field cannot express on its own — a table cell becoming a list.
+   */
+  set?: (path: (string | number)[], value: unknown, focus?: (string | number)[]) => void;
 };
 
 const AuthoringContext = createContext<BlockAuthoring | null>(null);
 
-function Inline({ value, path }: { value: InlineText | undefined; path?: (string | number)[] }) {
+function Inline({
+  value,
+  path,
+  behaviour,
+}: {
+  value: InlineText | undefined;
+  path?: (string | number)[];
+  behaviour?: FieldBehaviour;
+}) {
   const surfaceHref = useSurfaceHref();
   const references = useContext(ReferenceContext);
   const authoring = useContext(AuthoringContext);
   // An optional leaf the author has not written yet is an empty field, not a
   // missing one — that is the whole reason the wrappers render regardless.
-  if (authoring && path) return <>{authoring.field(path, value ?? "")}</>;
+  if (authoring && path) return <>{authoring.field(path, value ?? "", behaviour)}</>;
   if (value === undefined) return null;
   return (
     <>
@@ -136,6 +158,72 @@ function Inline({ value, path }: { value: InlineText | undefined; path?: (string
         return <span key={index}>{node}</span>;
       })}
     </>
+  );
+}
+
+/* "1. Присідання" typed into a plain cell, then Enter: the author is starting a
+   numbered list, and the number they typed is where it starts. */
+const NUMBERED_START = /^(\d+)[.)]?\s+(.*)$/s;
+
+function TableCellContent({ cell, path }: { cell: TableCell; path: (string | number)[] }) {
+  const authoring = useContext(AuthoringContext);
+  const set = authoring?.set;
+
+  if (!isTableListCell(cell)) {
+    // Enter in a cell is a new line, and a new line in a cell is a list: the
+    // span model has no line break, and the cell's one line becomes item one.
+    const behaviour: FieldBehaviour | undefined = set
+      ? {
+          onEnter: () => {
+            const text = typeof cell === "string" ? cell : null;
+            const numbered = text ? NUMBERED_START.exec(text) : null;
+            const next: TableListCell = numbered
+              ? { kind: "ol", start: Number(numbered[1]), items: [numbered[2] ?? "", ""] }
+              : { kind: "ul", items: [cell, ""] };
+            if (next.kind === "ol" && next.start === 1) delete next.start;
+            set(path, next, [...path, "items", 1]);
+          },
+        }
+      : undefined;
+    return <Inline value={cell} path={path} behaviour={behaviour} />;
+  }
+
+  const List = cell.kind;
+  return (
+    <List
+      className={styles.tableList}
+      start={cell.kind === "ol" ? cell.start : undefined}
+      style={cell.kind === "ol" && cell.start ? { counterReset: `cw-cell ${cell.start - 1}` } : undefined}
+    >
+      {cell.items.map((item, index) => {
+        const itemPath = [...path, "items", index];
+        const behaviour: FieldBehaviour | undefined = set
+          ? {
+              onEnter: () => {
+                const items = [...cell.items];
+                items.splice(index + 1, 0, "");
+                set(path, { ...cell, items }, [...path, "items", index + 1]);
+              },
+              onEmptyBackspace: () => {
+                const items = cell.items.filter((_, position) => position !== index);
+                // One line left is a plain cell again — the way back out of a
+                // list is the way in, reversed. An empty list is not a shape the
+                // validator accepts, so the last item becomes an empty line.
+                if (items.length <= 1) {
+                  set(path, items[0] ?? "", path);
+                  return;
+                }
+                set(path, { ...cell, items }, [...path, "items", Math.max(0, index - 1)]);
+              },
+            }
+          : undefined;
+        return (
+          <li key={index}>
+            <Inline value={item} path={itemPath} behaviour={behaviour} />
+          </li>
+        );
+      })}
+    </List>
   );
 }
 
@@ -436,7 +524,7 @@ function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }
                   <tr key={rowIndex}>
                     {row.map((cell, cellIndex) => (
                       <td key={cellIndex}>
-                        <Inline value={cell} path={["rows", rowIndex, cellIndex]} />
+                        <TableCellContent cell={cell} path={["rows", rowIndex, cellIndex]} />
                       </td>
                     ))}
                   </tr>

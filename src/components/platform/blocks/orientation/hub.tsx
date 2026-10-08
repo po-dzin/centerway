@@ -76,9 +76,9 @@ export function HubHero() {
           дня.
         </p>
         <div className={styles.heroFeatureActions}>
-          <Link className={styles.heroPrimaryButton} href="#intro-video">
+          <a className={styles.heroPrimaryButton} href="#intro-video">
             Почати шлях
-          </Link>
+          </a>
         </div>
       </div>
     </section>

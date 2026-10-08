@@ -306,7 +306,7 @@ From 1200px «Усі тести» stands on the label's line (`.videoDecisionHea
 
 **A test says what it will ask, offers the way back in, and shows what changed (2026-10-02).** Three rules that close the same critique. (1) The intro's «Як це працює» says the price before the test, not after it: «Тип видно одразу; повний профіль і збереження — після входу через Google або код на пошту.» — the account was a surprise at the end. The dosha intro now speaks of «вашу природу», not «поточний стан» (that is the balance test's subject), and no longer promises a next step the locked result does not show. (2) An unfinished run is OFFERED, not imposed: `DiagnosticIntro` takes `resume` and shows «Продовжити з питання N» (primary) and «Почати заново» (secondary) as one pair — side by side where they fit, stacked full width on a phone, the same pair as the result's next step; a text link between the button and the disclosure read as a stray third thing. While a run is unfinished the intro drops «Як це працює і межі методу»: the reader has read it once already, and the screen's only question is continue or start over. The dosha test used to drop a reader into question 7 of a test they opened to look at; the balance test forgot every answer on a reload and now writes a draft (answers, step, option seed) on each step. A draft outranks a kept result: the intro offers the retake rather than reopening the old result. (3) A saved result reads the reader's previous run (`/api/tests/[slug]/history`, signed-in, own rows, two at most) and prints one line in the saved card: «Минулого разу, 12.09: … — так само, як зараз.» or the old reading; absent on a first run or a failed read, never invented.
 
-**A program page turns at a seam, not at a gap (2026-10-02).** With nothing between them the page's panels read as a stack of cards rather than one walk through one thing. `OfferSeam` marks the turn: a 1px gold thread fading at both ends, a 2.625rem ring with an icon from the set, a mono caption under it — before «Для кого / Що зміниться / Що входить» (`sprout`, «Чи це про вас») and before the outline (`calendar`, the program's duration). It lives inside the section it opens, so a block that does not render takes its seam with it, and it climbs back through the previous section's fluid padding (`clamp(2.3rem, 6.2vw, 4.8rem)` plus `md`), so the gap between panels does not grow: measured 30–61px above and 16–24px below from 390 to 1600px. Decorative (`aria-hidden`): the section keeps its own heading. Photo pauses between blocks were prototyped the same week and deferred — a program is an author's, and which picture belongs in it is theirs to choose, so a pause waits for the builder to carry one; the seam draws only from the icon set and facts every program has.
+**A program page turns at a route seam (2026-10-04).** `OfferSeam` draws the page's stages with shared icons and labels: method, whether it is for you, curriculum when present, and formats (or participation for a single offer). Past stages have an accent outline, the current stage is filled, and the connecting thread follows progress. The seam is decorative (`aria-hidden`), lives inside the section it introduces, and uses the existing DS surface, accent, spacing and label tokens. Only icons and their labels belong in the seam; explanatory sentences, prices and dates stay in the section they describe. The indicators are not clickable controls, so they do not introduce a selection family or ink gesture.
 
 **A test signs its intro with a byline, not a card (2026-09-30).** The intro carried a full `AuthorCard` — a 4:5 portrait, credentials, a button — inside its own card, which read as a second page pasted into the first. Authorship on a test needs what it needs on a programme: a face, a name, a way to the person. `AuthorByline` is that as one line under the title: `AuthorPortrait size="xs"` (2.75rem, round like every face), the name in the UI face, the role in one line with an ellipsis. The row links to the profile only when the author has published one (the programme page's rule); the name takes the selection stroke, so at rest the line is plain. `AuthorCard` stays the object for previewing a person; the byline is the object for signing a piece of work.
 
@@ -541,6 +541,28 @@ This replaces the 2026-09-10 `(pointer: fine)` alias, which shrank every button
 on a desktop — the hero CTA included — and no nested button on a phone. The
 fine-pointer alias now carries only `--ds-touch-target-min`, the topbar's 36px
 icon controls, which are not buttons.
+
+### One calendar, no native picker (2026-10-06)
+
+Every date is picked in `AdminDateField`, and a span is picked in the analytics
+`DateRangePicker`. Both draw the same calendar from `AdminCalendar.module.css`:
+weeks start on Monday, and you can still type `dd.mm.yyyy`. No surface uses
+`<input type="date">`, `time` or `datetime-local`, because the browser draws
+that picker in its own colours. `calendarContract.test.ts` fails on one.
+
+### One two-line exception: «Продовжити як …» (2026-10-06)
+
+A button is one line. The single exception is the sign-in button for an account
+this device already knows (`signInFaceButton` in
+`PlatformComponents.module.css`): an avatar, the name on the first line, the
+address under it at the label step. Two people share a phone often enough that
+«which of me is this» belongs on the button itself.
+
+It grows with its content (`height: auto`) and never below
+`--ds-touch-target-min`. Its padding above and below is `--cw-space-xs`, the gap
+between the lines is `--cw-space-xs`, and the avatar is 2.5rem. At the smallest
+step the lines pressed against the edges (G, 2026-10-06). No other button takes
+a second line. A label that does not fit is shortened.
 
 ### `composes` does not chain — name `base` explicitly (2026-08-21)
 
@@ -820,6 +842,121 @@ fills it and may be magnified inside.
 builder, the admin and the catalogue filters still carry their own numbers; the
 job is finished by a `guard:fields` in the shape of `guard:buttons` — a rule
 that a component stylesheet may not mint a field width, only take a step.
+
+## Email — one frame, every letter (2026-10-03)
+
+Every letter the platform sends is poured into one frame,
+`renderEmailLayout` in `src/lib/email/layout.ts`. No letter writes its own
+skeleton. The gallery `docs/design-system/email-gallery.html` shows each one,
+rendered with sample data by the same builder the sender calls. Regenerate it
+with `npm run email:gallery`. `src/lib/email/catalog.test.ts` fails when the
+gallery drifts from the code, and when a `build…Email` / `build…Template` in
+`src/lib/email/` is missing from `catalog.ts`.
+
+### Why a frame and not a stylesheet
+
+Mail clients strip `<style>` (Gmail keeps a little, Outlook renders with Word),
+and none of them know custom properties or `color-mix()`. So the skeleton is
+tables, every rule is inline, and the DS travels as **values**: the light-side
+platform tokens resolved to hex in `EMAIL_TOKENS`. There is no dark letter.
+`color-scheme: light` is declared so that clients which invert colours leave
+the paper alone.
+
+| Mail token | Platform token | Hex | Used for |
+|---|---|---|---|
+| `paper` | `--cw-platform-bg` | `#faefe0` | body ground |
+| `surface` | `--cw-platform-surface` | `#fff8ef` | the one card |
+| `surfaceMuted` | `--cw-platform-surface-muted` | `#f3e4d0` | facts, note, code panels |
+| `border` | `--cw-platform-border` | `#dcd4c6` | card hairline, rules between rows |
+| `ink` | `--cw-platform-text` | `#18261d` | text, title, links |
+| `muted` | `--cw-platform-muted` | `#48544c` | secondary lines, labels |
+| `faint` | `--cw-text-tertiary` | `#747b73` | footer small print |
+| `accent` | `--cw-btn-primary-bg` | `#e5ae65` | button fill, list bullets, note edge |
+| `onAccent` | `--cw-btn-primary-text` | `#203126` | button label |
+| `linkRule` | `--cw-link-rule` (light) | `#70766d` | the thin underline of a link |
+| `guide` | `--cw-sem-guide-primary` | `#456b58` | eyebrow, step numbers |
+
+When a platform token changes, change the hex here in the same commit. Then
+run `npm run email:auth-templates` and `npm run email:gallery`, because the
+sign-in letter in Supabase is a copy.
+
+### Anatomy, top to bottom
+
+1. **Preheader.** A hidden line: what an inbox shows after the subject. Every
+   letter has one.
+2. **Card** (`surface`, 1 px `border`, radius 20, max 560 px, padding 28/36,
+   and 22/20 under 480 px). The letter is one object, like a page of the
+   platform.
+3. **Brand row inside the card.** The mark (32 px) and the wordmark
+   (130×31) as PNG at 3×, because Gmail does not show SVG. A hairline sits
+   under them, and the row links to the site. It is the site header at its own
+   sizes. There is no logo floating above the card.
+4. **Eyebrow.** 12 px Manrope, 0.14em tracking, uppercase, `guide`. It names
+   the kind of letter: «Вхід», «Оплату отримано», «Потік · Шлях 21».
+5. **Title.** The one serif line: Cormorant 34 px, and 28 px on a phone.
+6. **Blocks.** These kinds and no others:
+   - `paragraph`: 16/1.65 Manrope.
+   - `heading`: serif 24.
+   - `list`: warm bullets.
+   - `steps`: numbered rows in the data face, with a hairline between rows.
+   - `facts`: a muted panel of label → value rows (date, order, sum).
+   - `note`: a muted panel with a warm left edge. Use it for the one thing not
+     to miss.
+   - `code`: a one-time code, IBM Plex Mono 34 px, tracked out so it can be
+     typed back.
+7. **Button.** At most one. It is the site's primary button: warm fill, ink
+   label, 48 px tall, radius 16. It is built bulletproof (the padded `<a>` is
+   the hit area, and the cell carries the fill).
+8. **After-lines.** 14 px `muted`: support, how to sign in.
+9. **Signature** under the card: serif italic «Команда CenterWay».
+10. **Footer.** 12 px `faint`: why you got this letter, and the unsubscribe
+    link.
+
+Links inside text use `emailLink()`: ink, with a 1 px `linkRule` underline
+offset 3 px. This is the site's thin link rule. Never a blue default.
+
+### Rules every letter keeps
+
+- **One voice.** Ukrainian, «ви», calm. No promise of a result and no
+  pressure. Wellness education and practice, not treatment
+  (`docs/platform-copy-voice-2026-09-23.md`). Copy changes need the owner's
+  yes before they ship.
+- **Plain-text twin.** Letters sent through Resend carry `text` built from
+  the same parts as the HTML. The sign-in letter is the exception, because
+  Supabase sends only HTML.
+- **The sign-in letter carries a code, never a link.** A link would sign in a
+  different browser than the tab that is waiting (`EmailSignIn.tsx`).
+- **Unsubscribe.** Broadcasts carry the footer link plus `List-Unsubscribe` and
+  `List-Unsubscribe-Post` (one-click). Suppressed addresses (unsubscribed,
+  bounced, complained) are never sent to.
+- **Telegram first.** Course reminders go to Telegram when it is linked and
+  by email only when it is not, so nobody gets both.
+- **Sender.** Everything Resend sends comes from `info@send.centerway.net.ua`
+  (`BROADCAST_FROM` can move broadcasts to their own subdomain). The sign-in
+  code comes from the same address once Supabase uses Resend SMTP.
+- **Gates.** Transactional letters (sign-in code, receipt) always go out.
+  Lifecycle letters go out only with `LIFECYCLE_EMAILS=on`. Broadcasts go out
+  only when the operator sends them.
+
+### The letters
+
+| Letter | Goes out when | Sent by | Builder |
+|---|---|---|---|
+| Код для входу | email typed on the sign-in page (new or existing account) | Supabase Auth, templates «Magic Link» + «Confirm signup» | `authEmails.ts` → `supabase/templates/*.html` |
+| Оплату отримано | gateway confirms a payment, or the operator records a sale | Resend | `purchaseEmail.ts` |
+| Оплату отримано · груповий потік | the same, for a group offer with a start date | Resend | `purchaseEmail.ts` |
+| Вітаємо в CenterWay | new account, morning cron | Resend, `LIFECYCLE_EMAILS` | `lifecycleEmails.ts` |
+| Завтра стартує потік | the day before `cohort_starts_on` | Resend, `LIFECYCLE_EMAILS` | `lifecycleEmails.ts` |
+| День 1 потоку | on `cohort_starts_on` | Resend, `LIFECYCLE_EMAILS` | `lifecycleEmails.ts` |
+| Урок дня готовий | morning run, day N opened, no Telegram linked | Resend, `LIFECYCLE_EMAILS` | `reminderEmails.ts` |
+| Курс чекає | bought but never opened, no Telegram linked | Resend, `LIFECYCLE_EMAILS` | `reminderEmails.ts` |
+| Розсилка | the operator sends from the admin | Resend | `broadcasts/render.ts` |
+
+The Supabase templates the platform never triggers are «Invite», «Reset
+password», «Change email» and «Reauthentication». Sign-in is a code, there
+are no passwords, and accounts made by a gift are created confirmed without a
+letter. They stay at Supabase's default. A flow that starts using one of them
+builds its template from this frame first.
 
 ## Vocabulary — the one table
 

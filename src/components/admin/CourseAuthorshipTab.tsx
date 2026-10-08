@@ -10,9 +10,8 @@
  *
  * WHY THIS IS NOT A ROLE, which is the question the old placement invited.
  * `lms_courses.author_id` is per row. An "author" role would say "may edit
- * courses"; this says "may edit THIS course". `coach` and `author_id` look
- * adjacent because one person usually holds both, not because they are one
- * field — see the authorship migration.
+ * courses"; this says "may edit THIS course". The `coach` role that once sat
+ * beside it was retired on 2026-10-02 for exactly that reason.
  */
 
 import { useState } from "react";

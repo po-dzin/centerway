@@ -104,6 +104,27 @@ function extractExportedMethods(fileText) {
   return [...methods].sort();
 }
 
+/*
+ * Which exported handlers never ask who is calling.
+ *
+ * Until 2026-10-02 this guard only compared route paths with the matrix: delete
+ * `requireAdminSession` from a handler and it stayed green (meta-audit
+ * 2026-09-30). Each handler's text — from its export to the next one — must now
+ * call it. A route that is meant for any signed-in account says so in the
+ * matrix with `"auth": "signed-in"`, so the exception is written down where the
+ * route is, not implied by its absence.
+ */
+function handlersWithoutAuthCheck(fileText) {
+  const exportRegex = /\bexport\s+(?:async\s+function|const)\s+(GET|POST|PATCH|PUT|DELETE)\b/g;
+  const exports = [...fileText.matchAll(exportRegex)];
+  return exports
+    .filter((match, index) => {
+      const end = index + 1 < exports.length ? exports[index + 1].index : fileText.length;
+      return !/\brequireAdminSession\(/.test(fileText.slice(match.index, end));
+    })
+    .map((match) => match[1]);
+}
+
 function formatCase(method, routePath) {
   return `${method.padEnd(6, " ")} ${routePath}`;
 }
@@ -124,6 +145,7 @@ function main() {
 
   const routeFiles = walkRouteFiles(apiRoot);
   const actualByKey = new Map();
+  const unchecked = [];
 
   for (const filePath of routeFiles) {
     const routePath = routeFileToPath(filePath);
@@ -132,9 +154,15 @@ function main() {
     for (const method of methods) {
       actualByKey.set(keyFor(method, routePath), { method, path: routePath, filePath });
     }
+    for (const method of handlersWithoutAuthCheck(fileText)) {
+      unchecked.push({ method, path: routePath, filePath });
+    }
   }
 
   const matrixByKey = new Map(matrix.map((entry) => [keyFor(entry.method, getMatrixRoutePath(entry)), entry]));
+  const unguarded = unchecked.filter(
+    (entry) => matrixByKey.get(keyFor(entry.method, entry.path))?.auth !== "signed-in",
+  );
   const missing = [];
   const extra = [];
 
@@ -172,7 +200,16 @@ function main() {
     }
   }
 
-  if (missing.length > 0) {
+  if (unguarded.length === 0) {
+    console.log("handlers without requireAdminSession: none");
+  } else {
+    console.log('handlers without requireAdminSession (call it, or mark the matrix entry "auth": "signed-in"):');
+    for (const entry of unguarded) {
+      console.log(`  - ${formatCase(entry.method, entry.path)} <- ${path.relative(repoRoot, entry.filePath)}`);
+    }
+  }
+
+  if (missing.length > 0 || unguarded.length > 0) {
     process.exitCode = 1;
   }
 }

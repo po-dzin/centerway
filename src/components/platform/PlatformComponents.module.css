@@ -353,13 +353,6 @@
   font-size: var(--ds-type-body-sm-size);
 }
 
-.diagnosticLoadingStack {
-  display: grid;
-  justify-items: start;
-  gap: var(--cw-space-md);
-  padding: var(--cw-space-lg) 0;
-}
-
 /* ── Shared platform loading state ──────────────────
    One content layer inside the route's existing shell. The animated mark is
    the DS spinner replacement; fixed internal geometry reserves the final row
@@ -1121,10 +1114,14 @@
    provider gave, and the address underneath in case two of them share a name.
    Two lines, so the plate gives up the fixed control height and takes padding
    instead — a 48px box would clip the address or push it out of the button. */
+/* The one two-line button in the system (docs/design-system.md, Buttons →
+   «One two-line exception»): it grows with its content and never below the
+   touch target. A step of padding above and below, so the two lines do not
+   press against its edges (G, 2026-10-06). */
 .signInFaceButton {
   height: auto;
   min-height: var(--ds-touch-target-min);
-  padding-block: var(--cw-space-2xs);
+  padding-block: var(--cw-space-xs);
   gap: var(--cw-space-xs);
   justify-content: flex-start;
   text-align: left;
@@ -1132,8 +1129,8 @@
 
 .signInFace {
   flex: 0 0 auto;
-  width: 2rem;
-  height: 2rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 50%;
   overflow: hidden;
   display: grid;
@@ -1151,9 +1148,9 @@
 
 .signInFaceText {
   display: grid;
-  /* The two lines are one label, so they sit at the scale's smallest step and
-     not at a hand-picked hairline gap. */
-  gap: var(--cw-space-2xs);
+  /* The two lines are one label, a step apart on the space scale: at the
+     smallest step they read cramped (G, 2026-10-06). */
+  gap: var(--cw-space-xs);
   min-width: 0;
   text-align: left;
 }
@@ -1181,4 +1178,31 @@
 
 .profileDoorLead {
   max-width: 30rem;
+}
+
+/* WHERE THE RESULT IS KEPT, as a quiet block rather than a card (2026-10-03):
+   a label, at most one line, and the ways onward as links on one row. */
+.diagnosticKept {
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.diagnosticKept > p {
+  margin: 0;
+}
+
+.diagnosticKeptLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs) var(--cw-space-lg);
+}
+
+/* What a reader should have been told, not something to act on: the method's
+   limits, the note under the next step. Small and muted, in the body face. */
+.diagnosticFinePrint {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
 }

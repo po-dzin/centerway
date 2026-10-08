@@ -1119,45 +1119,79 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .offer-pay .pill{border:1px solid rgba(255,255,255,.2);border-radius: var(--cw-radius-inset);padding:.3em .6em}
 
 /* ============ FORMAT GRID ============ */
-.format-grid{display:grid;grid-template-columns:1fr 1fr;gap: var(--cw-space-md);align-items:start}
+/* ONE SIZE, ONE SCALE (G, 2026-10-03). The cards were two materials — a dark
+   gradient for whatever sold by checkout, light paper for whatever sold by
+   enquiry — and each grew to its own content, so a row of three read as three
+   unrelated things at three heights. They are now one card, the platform's:
+   the same paper for every format, the format's own tone washed down from the
+   top edge with a hairline along it, and the ticks and the eyebrow in that tone.
+   The tones are the program page's (OfferFormats.module.css), keyed the same
+   way — `data-format` — so a reader who saw the group card in green-slate on
+   the landing finds it in green-slate on the platform:
+     self       --cw-sem-embodied   the living green of practice
+     group      --cw-sem-trust      the one cool tone, the cohort
+     individual --cw-sem-warmth     the brand's gold, the author beside you
+   The button stays the one action colour on every card. */
+.format-grid{display:grid;grid-template-columns:1fr 1fr;gap: var(--cw-space-md);align-items:stretch}
 @media(max-width:700px){.format-grid{grid-template-columns:1fr}}
 /* Three formats (self · cohort · guided) sit in three columns while each still
    has room for its price and list; below that they stack, never two-and-one. */
 @media(min-width:1000px){.format-grid:has(>.format-card:nth-of-type(3)){grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(min-width:701px) and (max-width:999px){.format-grid:has(>.format-card:nth-of-type(3)){grid-template-columns:1fr}}
-.format-card{border-radius:var(--r-lg);padding: var(--cw-space-xl) 1.8rem;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.format-card{--fc-tone:var(--cw-sem-embodied);
+  --fc-ink:color-mix(in srgb, var(--fc-tone) 40%, var(--ink) 60%);
+  border-radius:var(--r-lg);padding: var(--cw-space-xl) var(--cw-space-lg);position:relative;overflow:hidden;display:flex;flex-direction:column;
+  color:var(--ink);box-shadow:var(--shadow-soft);
+  background:linear-gradient(180deg,
+    color-mix(in srgb, var(--fc-tone) 20%, var(--surface) 80%) 0%,
+    color-mix(in srgb, var(--fc-tone) 7%, var(--surface) 93%) 32%,
+    var(--surface) 58%),var(--surface)}
+.format-card::before{content:"";position:absolute;inset:0 0 auto;block-size:2px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,var(--fc-tone) 18%,var(--fc-tone) 82%,transparent);opacity:.85}
+.format-card[data-format="group"]{--fc-tone:var(--cw-sem-trust)}
+.format-card[data-format="individual"]{--fc-tone:var(--cw-sem-warmth)}
 .format-card>*{position:relative;z-index:1}
-.format-card.self{background:var(--irem-grad-dark);color:#fff}
-.format-card.self::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 70% 10%,rgba(232,162,90,.12) 0%,transparent 60%);pointer-events:none}
-.format-card.premium{background:var(--surface);border:0;box-shadow:var(--shadow-soft)}
+/* The featured card — the format the owner marked «Бестселер» in the builder
+   (lib/experiences/formatFeatured). It sits slightly raised, its edge takes the
+   gold, a gold pill names it in the top-right corner, and it keeps the row's
+   only .btn-primary; the other buttons are .btn-ghost. The wash stays the
+   format's own tone, so the row is one family. */
+.format-card[data-featured]{box-shadow:0 0 0 1px color-mix(in srgb, var(--cta) 70%, transparent),var(--shadow-med);transform:translateY(calc(-1 * var(--cw-space-2xs)))}
+.format-card[data-featured] .fc-badge{padding-right:calc(var(--cw-space-3xl) + var(--cw-space-lg))}
+.fc-bestseller{position:absolute;top:var(--cw-space-md);right:var(--cw-space-md);z-index:2;
+  padding:.35em .8em;border-radius:var(--r-pill);background:var(--cta);color:var(--ink);
+  font-family:var(--f-mono);font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;line-height:1.2}
+@media (prefers-reduced-motion: reduce){.format-card[data-featured]{transform:none}}
+/* Side by side, the cards share their rows: eyebrow, title, price, list,
+   button and guarantee line up across the row however long each title or
+   list runs, so the eye compares price with price and button with button. */
+@supports (grid-template-rows:subgrid){
+  @media(min-width:701px){
+    .format-grid{row-gap:var(--cw-space-md)}
+    .format-card{display:grid;grid-template-rows:subgrid;grid-row:span 6;row-gap:0;align-content:start}
+    .format-card .fc-features{align-self:stretch}
+  }
+}
 /* Same call as .sci-point .tag: the format card names itself with a bare mono
-   line, not with a pill. Both pills were failing, each in its own way. On the
-   dark card the pill was an 18%-white hairline around an inline-flex box that,
-   as a flex item in a column card, stretched to the full width — an empty
-   outlined field with the label parked at its left end, which is what an input
-   looks like, not a label. On the light card it was the glass recipe over a
-   solid surface: nothing behind it to see through, so the blur cost paint and
-   bought nothing, and the tint landed within a hair of the card underneath.
-   Ink moved onto the tokens actually asserted for these grounds — the on-dark
-   label on the gradient card, the route green on the light one. */
+   line, not with a pill. The ink is the card's tone, mixed toward the page ink
+   so the warm and green tones hold body contrast on the wash. */
 .fc-badge{display:block;margin-bottom: var(--cw-space-md);line-height:1;
   font-family:var(--f-mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--irem-on-dark-label)}
-.format-card.premium .fc-badge{color:var(--indigo)}
-.fc-title{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:1.65rem;font-weight:700;color:#fff;line-height:1.15;margin-bottom: var(--cw-space-md)}
-.format-card.premium .fc-title{color:var(--ink)}
+  color:var(--fc-ink)}
+.fc-title{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:1.65rem;font-weight:700;color:var(--ink);line-height:1.15;margin-bottom: var(--cw-space-md)}
 .fc-price{margin-bottom: var(--cw-space-lg)}
-.fc-price b{display:block;font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:2.6rem;font-weight:700;color:#fff;line-height:1}
-.format-card.premium .fc-price b{color:var(--ink)}
-.fc-price small{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.09em;text-transform:uppercase;color:var(--irem-on-dark-label);margin-top: var(--cw-space-2xs);display:block}
-.format-card.premium .fc-price small{color:var(--text-muted)}
+.fc-price b{display:block;font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:2.6rem;font-weight:700;color:var(--ink);line-height:1}
+.fc-price small{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.09em;text-transform:uppercase;color:var(--text-muted);margin-top: var(--cw-space-2xs);display:block}
 .fc-features{list-style:none;padding:0;margin: 0 0 var(--cw-space-xl);display:flex;flex-direction:column;gap: var(--cw-space-xs);flex:1}
-.fc-features li{display:flex;align-items:flex-start;gap: var(--cw-space-xs);font-size:.93rem;color:rgba(255,255,255,.8);line-height:1.45}
-.format-card.premium .fc-features li{color:var(--text-muted)}
-.fc-features li::before{content:"✓";color:var(--irem-gold-bright);font-weight:700;flex:0 0 auto;font-size:.85rem;margin-top:.12em}
-.format-card.premium .fc-features li::before{color:var(--indigo)}
-.fc-cta{display:flex;width:100%;justify-content:center}
-.fc-guarantee{display:flex;align-items:center;justify-content:center;gap:.4em;margin-top: var(--cw-space-md);font-family:var(--f-mono);font-size:.72rem;letter-spacing:.1em;color:var(--irem-on-dark-label)}
+.fc-features li{display:flex;align-items:flex-start;gap: var(--cw-space-xs);font-size:.93rem;color:var(--text-muted);line-height:1.45}
+.fc-features li::before{content:"✓";color:var(--fc-ink);font-weight:700;flex:0 0 auto;font-size:.85rem;margin-top:.12em}
+/* What else the format opens closes the list with a «+», not a tick. */
+.fc-features li[data-cw-included]::before{content:"+"}
+/* A bonus program's kind, before its name (lib/platform/catalogVocabulary
+   bonusKindLabel — the platform's word too). */
+.fc-kind{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--fc-ink);margin-right:.35em}
+.fc-cta{display:flex;width:100%;justify-content:center;align-self:end}
+.fc-guarantee{display:flex;align-items:center;justify-content:center;gap:.4em;margin-top: var(--cw-space-md);font-family:var(--f-mono);font-size:.72rem;letter-spacing:.1em;color:var(--text-muted)}
 /* The Telegram action keeps its own fill — it names a destination, not a role —
    but its depth is the material's and its lift is the contract's. The two rgba
    literals it carried were a blue-grey mixed for an indigo this skin no longer
@@ -1189,7 +1223,6 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 /* ---- audit cleanup: scoped rules replacing former inline styles ---- */
 .lead.lead-sm{font-size:.95rem}
 .sci-grid .sec-title,.sci-grid .lead{margin-top: var(--cw-space-md)}
-.format-card.premium .fc-guarantee{color:var(--text-muted)}
 .author .a-name{margin-top: var(--cw-space-md)}
 .footer-col p{max-width:30ch}
 .footer-bottom .pay-mark{height:52px;opacity:.85}

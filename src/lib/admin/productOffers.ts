@@ -1,17 +1,6 @@
-/**
- * The owner's prices for products that are not a course of their own.
- *
- * WHY THIS SERVICE EXISTS. `admin/catalog` gave the owner the price of a
- * COURSE. Everything else was unreachable: `way21-support` and `herbs` were
- * priced in `products.ts`, so changing them meant a deployment, and the
- * enquiry products (`consult`, `irem-individual`) had no price anywhere at all
- * — they are not even in that file. «Поставить цену пакета супровода» was not
- * an act the admin surface could perform.
- *
- * SAME SPLIT AS THE COURSE PRICE: read is open to any admin session, because
- * knowing what something costs is part of answering a buyer; write is
- * admin-only, because the price is the owner's. `product_offers` carries a
- * single admin policy to say so, mirroring `lms_course_offers`.
+/** Standalone services and products. A course format is priced under its
+ * program in the catalogue, including former packages rebound to that program.
+ * Readers may include support; only the admin API authorizes writes.
  */
 
 import { AccessError } from "@/lib/admin/access";
@@ -21,7 +10,8 @@ import type { ProductOffer, ProductOfferKind, ProductOfferRow } from "@/lib/admi
 
 // From the one table of prices (2026-09-25); `mode` there is `kind` here,
 // translated in `fromRow` rather than by a column alias.
-const COLUMNS = "code, amount, list_amount, currency, mode, pixel_content_name, active, updated_at";
+const COLUMNS =
+  "experience_id, format, code, amount, list_amount, currency, mode, pixel_content_name, active, updated_at";
 
 function fromRow(row: Record<string, unknown>): ProductOffer {
   return toProductOffer({ ...row, kind: row.mode === "lead" ? "lead" : "checkout" } as Parameters<
@@ -43,7 +33,7 @@ const PRICEABLE_KINDS = ["consultation", "package", "physical"] as const;
 
 type PriceableThing = { id: string; code: string; title: string; kind: ProductOfferKind };
 
-async function priceableThings(): Promise<PriceableThing[]> {
+async function registeredThings(): Promise<PriceableThing[]> {
   const { data, error } = await adminClient()
     .from("experiences")
     .select("id, slug, title, kind")
@@ -59,6 +49,26 @@ async function priceableThings(): Promise<PriceableThing[]> {
       kind: (row.kind === "physical" ? "checkout" : "lead") as ProductOfferKind,
     }))
     .sort((a, b) => a.code.localeCompare(b.code));
+}
+
+async function priceableThings(): Promise<PriceableThing[]> {
+  const things = await registeredThings();
+  if (!things.length) return [];
+  const { data, error } = await adminClient()
+    .from("experience_offers")
+    .select("code, experience_id, format")
+    .in(
+      "code",
+      things.map((thing) => thing.code),
+    );
+  if (error) throw new AccessError(error.message, 500);
+  const offers = new Map((data ?? []).map((row) => [row.code, row]));
+  // A package alias can survive for historical orders after its offer has
+  // become a course format. It must neither appear nor be writable here.
+  return things.filter((thing) => {
+    const offer = offers.get(thing.code);
+    return !offer || (offer.format == null && (!offer.experience_id || offer.experience_id === thing.id));
+  });
 }
 
 async function priceableThing(code: string): Promise<PriceableThing> {
@@ -126,17 +136,8 @@ export async function saveProductOffer(input: SaveProductOfferInput): Promise<Pr
     }
   }
 
-  /* Written to the one table of prices (2026-09-25), against the thing it
-     prices. A missing figure is stored as a lead: a checkout without an amount
-     has never opened.
-
-     `experience_id` is set from `thing.id` only for a FIRST price — an offer
-     that already has a row keeps whatever `experience_id` it holds. This
-     screen prices `way21-support` by its old package slug, but that offer was
-     deliberately rebound to the way21 experience (`20260925000000_offer_formats`:
-     the guided package became a format of the course it guides). Writing
-     `thing.id` here on every save would silently undo that move and drop the
-     format out of way21's page. */
+  // Existing offers retain their registry identity. Formats are excluded by
+  // priceableThing before either save or sale-switch writes reach this table.
   const db = adminClient();
   const existing = await db.from("experience_offers").select("experience_id").eq("code", input.code).maybeSingle();
   if (existing.error) throw new AccessError(existing.error.message, 500);

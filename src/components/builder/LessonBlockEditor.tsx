@@ -65,6 +65,9 @@ export function BlockEditor({
   depth?: number;
 }) {
   const editField = (path: (string | number)[], value: unknown) => onChange(["blocks", index, ...path], value);
+  /* The field a structural edit just created — a table cell's next list item.
+     An address, because the field it names does not exist until the edit lands. */
+  const [fieldFocus, setFieldFocus] = useState<string | null>(null);
 
   /* The field descriptors are already the one place that knows what each
      address is CALLED; an empty leaf in the document borrows that name as its
@@ -260,7 +263,7 @@ export function BlockEditor({
               referenceTargets={referenceTargets}
               referenceRoute="build"
               authoring={{
-                field: (path, value) => (
+                field: (path, value, behaviour) => (
                   <BuilderInlineEditor
                     bare
                     phrasing
@@ -268,10 +271,17 @@ export function BlockEditor({
                     value={value}
                     label={labels.get(path.join(".")) ?? "Текст блоку"}
                     placeholder={labels.get(path.join(".")) ?? "Текст"}
+                    autoFocus={fieldFocus === path.join(".")}
                     references={referenceOptions}
                     onChange={(next) => editField(path, next)}
+                    onEnter={behaviour?.onEnter}
+                    onEmptyBackspace={behaviour?.onEmptyBackspace}
                   />
                 ),
+                set: (path, value, focus) => {
+                  editField(path, value);
+                  setFieldFocus(focus ? focus.join(".") : null);
+                },
               }}
             />
           </div>

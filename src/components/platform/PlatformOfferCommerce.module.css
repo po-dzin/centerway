@@ -166,6 +166,17 @@
   text-decoration: none;
 }
 
+/* A bundled program's kind, before its name — the same word the format card
+   and the landing put there (`bonusKindLabel`). */
+.outlineKind {
+  margin-inline-end: var(--cw-space-2xs);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-weight: 560;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .outlineLinkedTag {
   flex: none;
   margin: 0 0 0 auto;

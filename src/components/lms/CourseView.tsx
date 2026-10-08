@@ -29,6 +29,7 @@ import { CourseNotes } from "./CourseNotes";
 import { useAnnotations } from "./useAnnotations";
 import { LmsNotice } from "./LmsNotice";
 import { ReaderTopButton } from "./ReaderTopButton";
+import { bonusKindLabel } from "@/lib/platform/catalogVocabulary";
 import styles from "./Lms.module.css";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 
@@ -333,8 +334,7 @@ export function CourseView({
           <p className={styles.referenceLead}>Окремі програми всередині цієї — зі своїм прогресом.</p>
           <ul className={styles.outline}>
             {linkedPrograms.map((program) => {
-              const kindLabel =
-                program.kind === "mini" ? "Міні-курс" : program.kind === "checklist" ? "Чек-лист" : "Програма";
+              const kindLabel = bonusKindLabel(program.kind);
               const size = `${program.lessonCount} ${plural(program.lessonCount, "урок", "уроки", "уроків")}`;
               const locked = program.access === "locked";
               return (
@@ -347,9 +347,11 @@ export function CourseView({
                       <Icon name={locked ? "lock" : "star"} size={18} />
                     </span>
                     <div className={styles.outlineBody}>
-                      <h3 className={styles.outlineTitle}>{program.title}</h3>
+                      <h3 className={styles.outlineTitle}>
+                        <span className={styles.outlineKind}>{kindLabel}</span> {program.title}
+                      </h3>
                       <p className={styles.outlineMeta}>
-                        {kindLabel} · {size}
+                        {size}
                         {locked ? " · входить у формати з супроводом" : ""}
                       </p>
                     </div>
