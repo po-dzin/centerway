@@ -14,8 +14,9 @@ scroll and post-font correction.
 Topbar and navigation surfaces that move on an anchor gesture use
 `--cw-motion-surface` (180ms), with the platform's `--cw-ease-surface` or the
 landing network's `--cw-ease-network`. Anchor scrolling itself remains an
-instant jump on the platform and managed landings; the remaining static funnels
-keep their native smooth scrolling, whose duration the browser determines. The
+instant jump on the platform, managed landings and network navigation menus;
+other static-funnel controls keep their native smooth scrolling, whose duration
+the browser determines. The
 DS does not assign a duration to long document scrolling. Reduced-motion keeps
 the platform and managed landing nav transitions disabled.
 
@@ -53,3 +54,15 @@ direct-fragment/CPU edge scenarios), 2026 unit tests, production build,
 typecheck, lint, canon and motion guards. Existing lint warning in
 PlatformAccountMenu remains. No new canon rule or palette is introduced;
 the change applies the existing geometry and motion contracts.
+
+## CI follow-through
+
+The first remote browser run passed 33 scenarios and exposed an 8.23px
+clearance mismatch on the mobile dosha page using native smooth navigation.
+Network menu fragment links now read the current CSS scroll margin and jump
+instantly, preserving hash history and leaving missing targets untouched.
+Managed landing capture handlers continue to own their existing navigation.
+The geometric assertion keeps its 3px tolerance.
+
+After the network menu correction, the complete local 34-scenario browser
+suite, production build, lint and canon guard passed again.
