@@ -26,6 +26,7 @@ const notifyHouseThread = vi.fn(async () => "sent");
 const isStaffOrder = vi.fn(async () => false);
 const loadPayableOffer = vi.fn(async () => ({
   pixelContentName: "Way21 Detox",
+  heading: { uk: "Шлях 21 — інтегративна детокс-програма", en: "Way 21" },
   fulfilment: { kind: "course", courseSlug: "way21", programSlug: "way21" },
 }));
 
