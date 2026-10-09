@@ -125,20 +125,33 @@
 
     var lastY = getY();
 
+    function getAnchorOffset(target) {
+      var style = window.getComputedStyle(target);
+      var offset = parseFloat(style.scrollMarginBlockStart || style.scrollMarginTop);
+      return isFinite(offset) ? offset : 0;
+    }
+
     // Web fonts (and other late-loading content above the target) can still be
     // swapping in when we jump — that reflows everything above `target` and
     // slides it out from under our landing spot. Re-measure once things settle
     // and correct — but only if the user hasn't scrolled away from where we put
     // them in the meantime.
     function settleScroll(target, askedTop, offset) {
+      var targetTop = target.getBoundingClientRect().top + getY();
       function reCheck() {
-        if (Math.abs(getY() - askedTop) > 40) return;
+        var measuredTop = target.getBoundingClientRect().top + getY();
+        var layoutShift = measuredTop - targetTop;
+        // Browser scroll anchoring follows late media/layout changes too. Only
+        // treat a displacement unrelated to that layout shift as reader input.
+        if (Math.abs(getY() - askedTop) > 40 && Math.abs(getY() - askedTop - layoutShift) > 40) return;
         var freshTop = target.getBoundingClientRect().top + getY() - offset;
         if (freshTop < 0) freshTop = 0;
         if (Math.abs(freshTop - getY()) > 2) {
           window.scrollTo({ top: freshTop, left: 0, behavior: "instant" });
           lastY = getY();
         }
+        askedTop = getY();
+        targetTop = measuredTop;
       }
       if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(reCheck).catch(function () {});
@@ -176,12 +189,10 @@
         // Close first: on mobile the open drawer sets body overflow:hidden, which
         // blocks the scroll below. Releasing it before scrolling is essential.
         close();
-        // No header offset: land on the target's true top edge and let the
-        // floating (translucent, sticky) header sit on top of it, same as it
-        // would if the user had scrolled there by hand. Offsetting by the
-        // header's height instead leaves a gap between the header and the
-        // section below it, exposing blank space above the content.
-        var offset = 0;
+        // Match native anchor scrolling: the target's DS scroll-margin carries
+        // the space needed below the fixed navigation, including any section
+        // padding already accounted for by that surface's CSS.
+        var offset = getAnchorOffset(target);
         var top = target.getBoundingClientRect().top + getY() - offset;
         if (top < 0) top = 0;
         // Instant jump: sections sit far down a long page, so a smooth scroll

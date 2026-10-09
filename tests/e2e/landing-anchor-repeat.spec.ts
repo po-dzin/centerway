@@ -1,6 +1,8 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
+test.use({ baseURL: process.env.SMOKE_UI_BASE_URL || "http://127.0.0.1:8000" });
+
 const landings = [
   { route: "/reboot", hero: "[data-cta-primary][data-scroll-to]", target: "offer" },
   { route: "/reboot-b", hero: "[data-cta-hero]", target: "offer" },
@@ -29,6 +31,41 @@ async function returnToTop(page: Page, navigation = false) {
   if (!navigation) await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(30);
 }
 
+async function expectAtAnchorClearance(target: Locator) {
+  try {
+    await expect
+      .poll(async () =>
+        target.evaluate((element) => {
+          const style = getComputedStyle(element);
+          const margin = Number.parseFloat(style.scrollMarginBlockStart || style.scrollMarginTop) || 0;
+          const current = window.scrollY;
+          const desired = element.getBoundingClientRect().top + current - margin;
+          const maximum = document.documentElement.scrollHeight - window.innerHeight;
+          return Math.abs(current - Math.max(0, Math.min(maximum, desired)));
+        }),
+      )
+      .toBeLessThan(3);
+  } catch (error) {
+    console.log(
+      "anchor geometry",
+      await target.evaluate((element) => ({
+        id: element.id,
+        top: element.getBoundingClientRect().top,
+        margin: getComputedStyle(element).scrollMarginBlockStart,
+        scrollY: window.scrollY,
+        innerHeight: window.innerHeight,
+        documentHeight: document.documentElement.scrollHeight,
+        clientHeight: document.documentElement.clientHeight,
+        bodyHeight: document.body.scrollHeight,
+        bodyTop: document.body.scrollTop,
+        viewportHeight: window.visualViewport?.height,
+        fonts: document.fonts.status,
+      })),
+    );
+    throw error;
+  }
+}
+
 async function repeatActivation(page: Page, control: Locator, target: Locator, open?: () => Promise<void>) {
   for (const keyboard of [false, false, true]) {
     await returnToTop(page, !!open);
@@ -42,9 +79,7 @@ async function repeatActivation(page: Page, control: Locator, target: Locator, o
       await control.click();
     }
     await expect(target).toBeInViewport();
-    // Wait for smooth scrolling to finish before manually returning to the hero.
-    await page.waitForTimeout(1400); // Existing layout correction runs at 1200ms.
-    await expect(target).toBeInViewport();
+    await expectAtAnchorClearance(target);
   }
 }
 

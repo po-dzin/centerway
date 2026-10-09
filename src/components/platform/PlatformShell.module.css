@@ -24,6 +24,7 @@
      visible in `--platform-topbar-clearance` resolving to its desktop clamp on
      a phone, and not one to paper over from this side. */
   --platform-topbar-top: 0.75rem;
+  --platform-topbar-block: calc(var(--platform-topbar-top) + 4rem);
   background:
     radial-gradient(
       circle at 12% 0%,
@@ -188,9 +189,13 @@
   display: none;
 }
 
+.shellOverlay {
+  --platform-topbar-top: 0.95rem;
+}
+
 .shellOverlay .header {
   position: fixed;
-  top: 0.95rem;
+  top: var(--platform-topbar-top);
   right: 0;
   left: 0;
   width: min(100% - 2 * var(--cw-bar-inset), var(--cw-max-width));
@@ -303,10 +308,7 @@
    line hanging at the top of the page, which reads as a rendering fault rather
    than as a bar that left. */
 .header[data-cw-header-autohide="true"] {
-  /* The literal is deliberate: this module carries no easing token — its
-     neighbours all write `ease` inline — and a `var()` whose only backing is
-     its own fallback is a token that does not exist. */
-  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--cw-motion-surface) var(--cw-ease-surface);
   will-change: transform;
 }
 

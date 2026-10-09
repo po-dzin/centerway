@@ -84,7 +84,10 @@
   pointer-events: none;
   transform: translateY(-10px);
   visibility: hidden;
-  transition: transform 220ms ease-out, opacity 180ms ease-out, visibility 0s linear 220ms;
+  transition:
+    transform var(--cw-motion-surface) var(--cw-ease-network),
+    opacity var(--cw-motion-surface) var(--cw-ease-network),
+    visibility 0s linear var(--cw-motion-surface);
 }
 
 /* Blur lives on its own layer, not on .cwn: backdrop-filter makes an element a
@@ -259,7 +262,10 @@
   pointer-events: auto;
   transform: translateY(0);
   visibility: visible;
-  transition: transform 220ms ease-out, opacity 180ms ease-out, visibility 0s;
+  transition:
+    transform var(--cw-motion-surface) var(--cw-ease-network),
+    opacity var(--cw-motion-surface) var(--cw-ease-network),
+    visibility 0s;
 }
 
 /* Per-landing semantic mapping — the funnel cw-pages expose --cw-*. */
@@ -291,7 +297,10 @@
    rather than for the hero alone. */
 [data-cw-hero="photo"] .cwn.cwn--anchored,
 .cwn.cwn--anchored.cwn--tucked {
-  transition: transform 220ms ease-out, opacity 180ms ease-out, visibility 0s;
+  transition:
+    transform var(--cw-motion-surface) var(--cw-ease-network),
+    opacity var(--cw-motion-surface) var(--cw-ease-network),
+    visibility 0s;
 }
 
 /* THE BAR STEPS ASIDE, in the two situations that ask for it. Over a photo hero
@@ -314,7 +323,10 @@
   pointer-events: none;
   transform: translateY(-12px);
   visibility: hidden;
-  transition: transform 220ms ease-out, opacity 180ms ease-out, visibility 0s linear 220ms;
+  transition:
+    transform var(--cw-motion-surface) var(--cw-ease-network),
+    opacity var(--cw-motion-surface) var(--cw-ease-network),
+    visibility 0s linear var(--cw-motion-surface);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -438,7 +450,7 @@
      capsule is gone. The box is now only a touch target. */
   color: var(--cw-nav-text);
   text-decoration: none;
-  transition: color 160ms ease;
+  transition: color var(--cw-motion-state) var(--cw-ease-network);
 }
 
 @media (hover: hover) {
@@ -498,7 +510,9 @@
 .cwn__toggle-ico {
   grid-area: 1 / 1;
   color: var(--cw-nav-ink);
-  transition: transform 200ms ease, opacity 160ms ease;
+  transition:
+    transform var(--cw-motion-state) var(--cw-ease-network),
+    opacity var(--cw-motion-state) var(--cw-ease-network);
 }
 
 .cwn__toggle-ico--close,
@@ -594,10 +608,10 @@
     visibility: hidden;
     pointer-events: none;
     transition:
-      max-height 280ms cubic-bezier(.2, .8, .2, 1),
-      padding 280ms cubic-bezier(.2, .8, .2, 1),
-      opacity 160ms ease,
-      visibility 0s linear 280ms;
+      max-height var(--cw-motion-surface) var(--cw-ease-network),
+      padding var(--cw-motion-surface) var(--cw-ease-network),
+      opacity var(--cw-motion-surface) var(--cw-ease-network),
+      visibility 0s linear var(--cw-motion-surface);
   }
 
   .cwn.is-open .cwn__menu {
@@ -608,9 +622,9 @@
     visibility: visible;
     pointer-events: auto;
     transition:
-      max-height 280ms cubic-bezier(.2, .8, .2, 1),
-      padding 280ms cubic-bezier(.2, .8, .2, 1),
-      opacity 160ms ease 40ms,
+      max-height var(--cw-motion-surface) var(--cw-ease-network),
+      padding var(--cw-motion-surface) var(--cw-ease-network),
+      opacity var(--cw-motion-surface) var(--cw-ease-network) 40ms,
       visibility 0s;
   }
 

@@ -218,6 +218,10 @@
     );
   }
 
+  .shell[data-cw-organs="mobile"] {
+    --platform-topbar-block: calc(max(var(--cw-page-gutter), env(safe-area-inset-top)) + var(--ds-touch-target-min));
+  }
+
   .header.header[data-cw-header-mode="workspace"] {
     top: 0;
     width: 100%;
@@ -1102,7 +1106,8 @@
   }
 
   .section {
-    padding: clamp(1.9rem, 8vw, 3.2rem) 0;
+    --platform-anchor-inset: clamp(1.9rem, 8vw, 3.2rem);
+    padding: var(--platform-anchor-inset) 0;
   }
 
   .videoPanel {

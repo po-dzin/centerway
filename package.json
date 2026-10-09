@@ -110,6 +110,7 @@
     "smoke:admin:ui": "node scripts/smoke-admin-ui.mjs",
     "smoke:landing:dynamic-offer": "node scripts/smoke-landing-dynamic-offer.mjs",
     "smoke:platform:browser": "npx playwright test tests/e2e/platform-unification.spec.ts --reporter=list",
+    "smoke:anchors:browser": "npx playwright test tests/e2e/platform-anchor-repeat.spec.ts tests/e2e/landing-anchor-repeat.spec.ts tests/e2e/anchor-scroll-contract.spec.ts --workers=1 --reporter=list",
     "smoke:thanks:browser": "npx playwright test tests/e2e/thanks-redirect-order.spec.ts --reporter=list",
     "smoke:dosha:result": "vitest run src/lib/dosha",
     "smoke:dosha:api": "node scripts/smoke-dosha-api-flow.mjs",

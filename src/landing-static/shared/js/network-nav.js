@@ -109,10 +109,44 @@
     setOpen(toggle.getAttribute("aria-expanded") !== "true");
   });
 
+  var anchorSequence = 0;
   menu.addEventListener("click", function (event) {
-    if (event.target instanceof Element && event.target.closest("a")) {
-      setOpen(false);
+    if (!(event.target instanceof Element)) return;
+    var anchor = event.target.closest("a");
+    if (!anchor) return;
+    setOpen(false);
+
+    // Managed landings intercept at document capture. The remaining network
+    // pages land with the same CSS clearance here, including a repeated hash.
+    // Use the same explicit endpoint as managed anchors rather than leaving
+    // alignment to the browser's smooth-scroll endpoint.
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    var href = anchor.getAttribute("href");
+    if (!href || href.charAt(0) !== "#" || href.length < 2) return;
+    var target = document.getElementById(href.slice(1));
+    if (!target) return;
+    event.preventDefault();
+    var style = window.getComputedStyle(target);
+    var margin = parseFloat(style.scrollMarginBlockStart || style.scrollMarginTop) || 0;
+    var top = target.getBoundingClientRect().top + window.scrollY - margin;
+    window.scrollTo({ top: top, left: 0, behavior: "instant" });
+    if (window.location.hash !== href) window.history.pushState(null, "", href);
+
+    // Match managed landing-runtime's bounded late-layout correction. A new
+    // anchor or a reader's manual scroll takes ownership away from this jump.
+    var sequence = ++anchorSequence;
+    var lastTop = window.scrollY;
+    function correctAfterLayout() {
+      if (sequence !== anchorSequence || Math.abs(window.scrollY - lastTop) > 2) return;
+      var currentStyle = window.getComputedStyle(target);
+      var currentMargin = parseFloat(currentStyle.scrollMarginBlockStart || currentStyle.scrollMarginTop) || 0;
+      var freshTop = target.getBoundingClientRect().top + window.scrollY - currentMargin;
+      window.scrollTo({ top: freshTop, left: 0, behavior: "instant" });
+      lastTop = window.scrollY;
     }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(correctAfterLayout);
+    window.setTimeout(correctAfterLayout, 400);
+    window.setTimeout(correctAfterLayout, 1200);
   });
 
   document.addEventListener("click", function (event) {
