@@ -128,6 +128,20 @@ describe("POST /api/liqpay/webhook", () => {
     expect(sendPurchaseEmail.mock.calls[0]![0]).toMatchObject({ email: "buyer@example.com", orderRef: ORDER });
   });
 
+  it("credits the account that started the payment when the gateway echoes no email", async () => {
+    db.tables.customers = [{ id: "c1", email: "account@example.com", phone: null, created_at: "2026-10-01" }];
+    db.tables.orders![0]!.customer_id = "c1";
+    await post(callback());
+    expect(sendPurchaseEmail.mock.calls[0]![0]).toMatchObject({ email: "account@example.com", orderRef: ORDER });
+  });
+
+  it("prefers the account's address over one typed on the gateway page", async () => {
+    db.tables.customers = [{ id: "c1", email: "account@example.com", phone: null, created_at: "2026-10-01" }];
+    db.tables.orders![0]!.customer_id = "c1";
+    await post(callback({ sender_email: "other@example.com" }));
+    expect(sendPurchaseEmail.mock.calls[0]![0]).toMatchObject({ email: "account@example.com" });
+  });
+
   it("does not open access for a test-mode payment", async () => {
     await post(callback({ status: "sandbox" }));
     expect(db.tables.orders![0]!.status).toBe("created");

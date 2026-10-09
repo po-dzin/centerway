@@ -193,6 +193,17 @@ export async function handleGatewayCallback(req: NextRequest, gateway: PaymentGa
       errors.push(`orders_get: ${oGetErr.message ?? "unknown"}`);
     }
 
+    /* THE ACCOUNT THAT STARTED THE PAYMENT OUTRANKS WHAT THE GATEWAY ECHOES.
+       Checkout now requires a signed-in buyer and binds the order to their
+       customer (`/api/pay/start`). That address is verified; the gateway's is
+       whatever was typed on its page, or absent (LiqPay documents none). The
+       receipt, the access and the Meta match all follow the account. */
+    if (order?.customer_id) {
+      const { data: bound } = await sb.from("customers").select("email").eq("id", order.customer_id).maybeSingle();
+      const accountEmail = typeof bound?.email === "string" && bound.email.trim() ? bound.email.trim() : null;
+      if (accountEmail) meta.email = accountEmail;
+    }
+
     /* A FAILED READ IS NOT AN ABSENT ORDER. Without a known current status we
        decline to guess one — treating a read error as "no row yet" is exactly
        how a rejected callback would write `created` over `paid`. The collected

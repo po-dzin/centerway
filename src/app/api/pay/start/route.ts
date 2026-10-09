@@ -6,6 +6,8 @@ import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import { createPaymentInvoice, resolveLocaleFromRequest } from "@/lib/payments/paymentStart";
 import { readAttribution } from "@/lib/referral/attribution";
+import { userFromCookies } from "@/lib/auth/serverSession";
+import { personalUrl } from "@/lib/surfaces/catalog";
 import { AGENT_COOKIE, isAgentRequest } from "@/lib/tracking/agentTraffic";
 
 export const runtime = "nodejs";
@@ -25,6 +27,22 @@ export async function GET(req: NextRequest) {
   const offer = await loadPayableOffer(url.searchParams.get("product"));
   if (!offer) {
     return NextResponse.json({ ok: false, error: "unknown_product" }, { status: 404 });
+  }
+  /* NO PAYMENT WITHOUT AN ACCOUNT (owner's decision, 2026-10-09, «Везде»).
+     Access is matched by email and a gateway may not return the payer's address
+     at all, so the buyer signs in FIRST and the order is bound to the verified
+     account before they leave for the gateway. A browser navigation is sent to
+     the email door and comes back to this very address; `format=json` callers
+     get a 401 naming the door. The session cookies are shared across
+     `.centerway.net.ua`, so this works from the landings too. */
+  const user = await userFromCookies();
+  const buyerEmail = user?.email?.trim().toLowerCase() || null;
+  if (!user || !buyerEmail || !user.email_confirmed_at) {
+    const signInUrl = personalUrl(`/signin/email?next=${encodeURIComponent(req.url)}`);
+    if (url.searchParams.get("format") === "json") {
+      return NextResponse.json({ ok: false, error: "sign_in_required", signInUrl }, { status: 401 });
+    }
+    return NextResponse.redirect(signInUrl, 302);
   }
   const product = offer.code;
   const resolvedOffer = product === IREM_OFFER_CODE ? await resolveIremLandingOffer(url.searchParams) : null;
@@ -71,6 +89,7 @@ export async function GET(req: NextRequest) {
       (forwardedIp || null) ?? req.headers.get("cf-connecting-ip") ?? req.headers.get("x-real-ip") ?? undefined,
     client_ua: req.headers.get("user-agent") ?? undefined,
     page_url: req.headers.get("referer") ?? undefined,
+    buyer: { email: buyerEmail },
     staff: req.cookies.get("cw_staff")?.value === "1",
     agent: isAgentRequest(req.headers, req.cookies.get(AGENT_COOKIE)?.value),
   });
