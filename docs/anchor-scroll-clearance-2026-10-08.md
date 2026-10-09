@@ -66,3 +66,14 @@ The geometric assertion keeps its 3px tolerance.
 
 After the network menu correction, the complete local 34-scenario browser
 suite, production build, lint and canon guard passed again.
+
+CI diagnostics confirmed a post-click layout displacement: FAQ top 32.23px
+with a 24px margin, scrollY 7081, body scrollTop 0 and fonts loaded. Network
+menu anchors now use the managed runtime's bounded 400/1200ms correction,
+abandoning it after a new anchor or manual scroll. A deterministic browser
+scenario inserts 32px above the target and then checks both realignment and
+manual-scroll ownership at both viewport sizes (36 scenarios total).
+
+Managed anchors also distinguish browser scroll anchoring caused by layout
+from manual displacement and update their baseline after each correction.
+The desktop reboot-b repeat scenario passed three consecutive local runs.

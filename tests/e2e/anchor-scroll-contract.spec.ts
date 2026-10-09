@@ -219,6 +219,29 @@ for (const viewport of [
       await expectAtAnchorClearance(page.locator("#offer"));
     });
 
+    test("network menu corrects late layout without taking over manual scrolling", async ({ page }) => {
+      await page.goto("/dosha/index.html");
+      await page.evaluate(() => document.fonts.ready);
+      const control = page.locator('.cwn__menu a[href="#faq"]').first();
+      const target = page.locator("#faq");
+      await page.evaluate(() => {
+        document.documentElement.style.overflowAnchor = "none";
+        document.body.style.overflowAnchor = "none";
+      });
+      await control.evaluate((element) => (element as HTMLElement).click());
+      await expectAtAnchorClearance(target);
+      await target.evaluate((element) => {
+        const spacer = document.createElement("div");
+        spacer.style.height = "32px";
+        element.before(spacer);
+      });
+      await expectAtAnchorClearance(target);
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+      await page.waitForTimeout(1400);
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(2);
+      await expect(page).toHaveURL(/#faq$/);
+    });
+
     test("rapid activation stays responsive under CPU throttling and respects a manual scroll", async ({ page }) => {
       await page.goto("/irem");
       await expect(page.locator("[data-cw-nav]")).toHaveAttribute("data-cw-nav-ready", "1");

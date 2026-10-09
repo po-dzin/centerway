@@ -109,6 +109,7 @@
     setOpen(toggle.getAttribute("aria-expanded") !== "true");
   });
 
+  var anchorSequence = 0;
   menu.addEventListener("click", function (event) {
     if (!(event.target instanceof Element)) return;
     var anchor = event.target.closest("a");
@@ -130,6 +131,22 @@
     var top = target.getBoundingClientRect().top + window.scrollY - margin;
     window.scrollTo({ top: top, left: 0, behavior: "instant" });
     if (window.location.hash !== href) window.history.pushState(null, "", href);
+
+    // Match managed landing-runtime's bounded late-layout correction. A new
+    // anchor or a reader's manual scroll takes ownership away from this jump.
+    var sequence = ++anchorSequence;
+    var lastTop = window.scrollY;
+    function correctAfterLayout() {
+      if (sequence !== anchorSequence || Math.abs(window.scrollY - lastTop) > 2) return;
+      var currentStyle = window.getComputedStyle(target);
+      var currentMargin = parseFloat(currentStyle.scrollMarginBlockStart || currentStyle.scrollMarginTop) || 0;
+      var freshTop = target.getBoundingClientRect().top + window.scrollY - currentMargin;
+      window.scrollTo({ top: freshTop, left: 0, behavior: "instant" });
+      lastTop = window.scrollY;
+    }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(correctAfterLayout);
+    window.setTimeout(correctAfterLayout, 400);
+    window.setTimeout(correctAfterLayout, 1200);
   });
 
   document.addEventListener("click", function (event) {

@@ -137,14 +137,21 @@
     // and correct — but only if the user hasn't scrolled away from where we put
     // them in the meantime.
     function settleScroll(target, askedTop, offset) {
+      var targetTop = target.getBoundingClientRect().top + getY();
       function reCheck() {
-        if (Math.abs(getY() - askedTop) > 40) return;
+        var measuredTop = target.getBoundingClientRect().top + getY();
+        var layoutShift = measuredTop - targetTop;
+        // Browser scroll anchoring follows late media/layout changes too. Only
+        // treat a displacement unrelated to that layout shift as reader input.
+        if (Math.abs(getY() - askedTop) > 40 && Math.abs(getY() - askedTop - layoutShift) > 40) return;
         var freshTop = target.getBoundingClientRect().top + getY() - offset;
         if (freshTop < 0) freshTop = 0;
         if (Math.abs(freshTop - getY()) > 2) {
           window.scrollTo({ top: freshTop, left: 0, behavior: "instant" });
           lastY = getY();
         }
+        askedTop = getY();
+        targetTop = measuredTop;
       }
       if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(reCheck).catch(function () {});
