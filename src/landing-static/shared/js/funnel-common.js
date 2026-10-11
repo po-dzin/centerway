@@ -477,17 +477,27 @@
         }
         return;
       }
-      isRedirecting = true;
-      setButtonsLoading(true);
       var selection = resolveSelection(trigger);
-      var attrib = collectAttrib();
-      var eventId = makeEventId("checkout_" + selection.product);
-      trackInitialCheckout(attrib, eventId, selection);
-      window.location.assign(buildPayUrl(attrib, eventId, selection));
-      window.setTimeout(function() {
-        isRedirecting = false;
-        setButtonsLoading(false);
-      }, REDIRECT_RESET_MS);
+      var startPayment = function(email) {
+        isRedirecting = true;
+        setButtonsLoading(true);
+        var attrib = collectAttrib();
+        var eventId = makeEventId("checkout_" + selection.product);
+        trackInitialCheckout(attrib, eventId, selection);
+        // The address goes to /api/pay/start only; it is kept out of `attrib`
+        // so it never reaches the pixel payload.
+        var payUrl = new URL(buildPayUrl(attrib, eventId, selection), window.location.origin);
+        if (email) payUrl.searchParams.set("email", email);
+        window.location.assign(payUrl.toString());
+        window.setTimeout(function() {
+          isRedirecting = false;
+          setButtonsLoading(false);
+        }, REDIRECT_RESET_MS);
+      };
+      // Ask where to send access first (email-gate.js). Without it the server
+      // falls back to the sign-in door, so a missing script cannot charge anyone.
+      if (typeof window.CW_askEmail === "function") window.CW_askEmail(startPayment);
+      else startPayment("");
       return;
     }
   });

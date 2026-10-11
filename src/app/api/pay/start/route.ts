@@ -7,10 +7,19 @@ import { loadPayableOffer } from "@/lib/platform/offers";
 import { createPaymentInvoice, resolveLocaleFromRequest } from "@/lib/payments/paymentStart";
 import { readAttribution } from "@/lib/referral/attribution";
 import { userFromCookies } from "@/lib/auth/serverSession";
+import { normalizeCustomerEmail } from "@/lib/platform/customerIdentity";
 import { personalUrl } from "@/lib/surfaces/catalog";
 import { AGENT_COOKIE, isAgentRequest } from "@/lib/tracking/agentTraffic";
 
 export const runtime = "nodejs";
+
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/** A typed address in a shape worth binding an order to, normalised; else null. */
+function typedBuyerEmail(raw: string | null): string | null {
+  const email = normalizeCustomerEmail(raw);
+  return email && email.length <= 254 && EMAIL_SHAPE.test(email) ? email : null;
+}
 
 export async function GET(req: NextRequest) {
   const rl = await enforceRateLimit(req, { name: "pay_start", limit: 30, windowSeconds: 60 });
@@ -28,16 +37,21 @@ export async function GET(req: NextRequest) {
   if (!offer) {
     return NextResponse.json({ ok: false, error: "unknown_product" }, { status: 404 });
   }
-  /* NO PAYMENT WITHOUT AN ACCOUNT (owner's decision, 2026-10-09, «Везде»).
-     Access is matched by email and a gateway may not return the payer's address
-     at all, so the buyer signs in FIRST and the order is bound to the verified
-     account before they leave for the gateway. A browser navigation is sent to
-     the email door and comes back to this very address; `format=json` callers
-     get a 401 naming the door. The session cookies are shared across
-     `.centerway.net.ua`, so this works from the landings too. */
+  /* NO PAYMENT WITHOUT AN ADDRESS TO CREDIT (owner, 2026-10-09 and 2026-10-11).
+     Access is matched by email and a gateway may not return the payer's
+     address at all, so the order is bound to one BEFORE the buyer leaves.
+     Two sources, in this order:
+     1. the signed-in session — a verified address; the session cookies are
+        shared across `.centerway.net.ua`, so this works from the landings too;
+     2. `?email=` typed on a landing's «Куди надіслати доступ?» step
+        (email-gate.js) — NOT verified, which the landing's hint says.
+     With neither, a browser navigation is sent to the email door and comes
+     back to this very address; `format=json` callers get a 401 naming it. */
   const user = await userFromCookies();
-  const buyerEmail = user?.email?.trim().toLowerCase() || null;
-  if (!user || !buyerEmail || !user.email_confirmed_at) {
+  const sessionEmail = user?.email_confirmed_at ? user.email?.trim().toLowerCase() || null : null;
+  const typedEmail = sessionEmail ? null : typedBuyerEmail(url.searchParams.get("email"));
+  const buyerEmail = sessionEmail ?? typedEmail;
+  if (!buyerEmail) {
     const signInUrl = personalUrl(`/signin/email?next=${encodeURIComponent(req.url)}`);
     if (url.searchParams.get("format") === "json") {
       return NextResponse.json({ ok: false, error: "sign_in_required", signInUrl }, { status: 401 });
