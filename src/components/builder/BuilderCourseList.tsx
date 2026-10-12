@@ -446,6 +446,7 @@ export function BuilderCourseList() {
       <BuilderSheet open={state.canCreate && importing} title="Імпорт курсу" onClose={() => setImporting(false)}>
         {state.canCreate && importing ? (
           <ImportPanel
+            courses={state.courses}
             onCancel={() => setImporting(false)}
             onImported={async (slug) => {
               setImporting(false);

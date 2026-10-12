@@ -68,6 +68,7 @@ const SAFE_SCHEMES = new Set(["http", "https", "mailto", "tel"]);
  */
 export function isSafeHref(href: string): boolean {
   const compact = href.replace(/[\u0000-\u0020\u007f]/g, "");
+  if (/^cw-ref:(?:lesson:[^:]+|block:[^:]+:[^:]+)$/.test(compact)) return true;
   const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(compact)?.[1];
   return scheme === undefined || SAFE_SCHEMES.has(scheme.toLowerCase());
 }

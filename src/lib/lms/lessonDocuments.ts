@@ -6,10 +6,21 @@
  * No HTML enters the LMS model: every document becomes typed Lesson blocks.
  */
 
-import { Document, HeadingLevel, LevelFormat, Packer, Paragraph, TextRun } from "docx";
+import {
+  Document,
+  HeadingLevel,
+  LevelFormat,
+  Packer,
+  Paragraph,
+  Table,
+  TableRow,
+  TableCell as DocxTableCell,
+  TextRun,
+} from "docx";
 import mammoth from "mammoth";
 
 import {
+  youtubeIdFrom,
   assert,
   flattenBlocks,
   inlineToPlainText,
@@ -44,7 +55,7 @@ const MIME_BY_FORMAT: Record<LessonDocumentFormat, string> = {
 const mammothMarkdown = mammoth as typeof mammoth & {
   convertToMarkdown(
     input: { buffer: Buffer },
-    options?: { convertImage?: typeof mammoth.images.dataUri },
+    options?: { convertImage?: typeof mammoth.images.dataUri; transformDocument?: (element: unknown) => unknown },
   ): Promise<{ value: string; messages: Array<{ message: string }> }>;
 };
 
@@ -80,6 +91,8 @@ type ParsedUnit =
   | { kind: "quote"; text: InlineText }
   | { kind: "code"; code: string; language?: string }
   | { kind: "checklist"; items: InlineText[] }
+  | { kind: "table"; head?: InlineText[]; rows: TableCell[][] }
+  | { kind: "video"; videoId: string; title?: string }
   | { kind: "image"; src: string; alt: string };
 
 function extension(filename: string): string {
@@ -129,9 +142,28 @@ function parseInline(source: string): InlineText {
     : cleaned.map((span) => ({ ...span, text: span.text.replace(/\\([\\`*_{}\[\]()#+.!-])/g, "$1") }));
 }
 
+function videoLine(source: string): { videoId: string; title?: string } | null {
+  const line = source.replace(/\\([\\`*_{}\[\]()#+.!-])/g, "$1");
+  const link = /^\[([^\]]+)\]\((https?:\/\/[^)]+)\)$/.exec(line);
+  const url = link?.[2] ?? line.replace(/^<(.*)>$/, "$1");
+  if (!/^https?:\/\/(?:www\.|m\.)?(?:youtube\.com|youtu\.be)\//i.test(url)) return null;
+  const videoId = youtubeIdFrom(url);
+  return videoId ? { videoId, title: link?.[1] } : null;
+}
+
+function tableCells(line: string): InlineText[] {
+  return line
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split(/(?<!\\)\|/)
+    .map((cell) => parseInline(cell.trim().replace(/\\\|/g, "|")));
+}
+
 function isSpecial(line: string): boolean {
   return (
     /^(#{1,6})\s+/.test(line) ||
+    line.includes("|") ||
+    videoLine(line) !== null ||
     /^```/.test(line) ||
     /^>\s?/.test(line) ||
     /^[-*+]\s+/.test(line) ||
@@ -155,6 +187,22 @@ function parseMarkdown(source: string, fallbackTitle: string): { title: string; 
   while (cursor < lines.length) {
     const line = lineAt(cursor).trim();
     if (!line || /^<!--.*-->$/.test(line) || /^---+$/.test(line)) {
+      cursor += 1;
+      continue;
+    }
+
+    if (line.includes("|") && /^\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?$/.test(lineAt(cursor + 1).trim())) {
+      const head = tableCells(line);
+      cursor += 2;
+      const rows: TableCell[][] = [];
+      while (cursor < lines.length && lineAt(cursor).trim().includes("|"))
+        rows.push(tableCells(lineAt(cursor++).trim()));
+      units.push({ kind: "table", head, rows });
+      continue;
+    }
+    const video = videoLine(line);
+    if (video) {
+      units.push({ kind: "video", ...video });
       cursor += 1;
       continue;
     }
@@ -259,6 +307,9 @@ function unitsToBlocks(units: ParsedUnit[], ids: IdSource): LessonBlock[] {
       continue;
     }
     flush();
+    if (unit.kind === "table") blocks.push({ id: ids(), type: "table", head: unit.head, rows: unit.rows });
+    if (unit.kind === "video")
+      blocks.push({ id: ids(), type: "video", provider: "youtube", videoId: unit.videoId, title: unit.title });
     if (unit.kind === "quote") blocks.push({ id: ids(), type: "quote", text: unit.text });
     if (unit.kind === "code") blocks.push({ id: ids(), type: "code", code: unit.code, language: unit.language });
     if (unit.kind === "checklist") {
@@ -277,6 +328,7 @@ export async function importLessonDocument(
   const format = lessonDocumentFormat(input.filename, input.mime);
   if (!format) throw new Error("lms_lesson_document_unsupported_format");
 
+  const tables: ParsedUnit[] = [];
   let markdown: string;
   if (format === "docx") {
     try {
@@ -286,6 +338,43 @@ export async function importLessonDocument(
           // A Word file is a lesson transfer, not a media archive. Do not put
           // multi-megabyte data URIs into the course JSON; leave an explicit
           // editorial note where the image was so it cannot disappear silently.
+          transformDocument: (document) => {
+            const text = (node: unknown): string => {
+              if (!isRecord(node)) return "";
+              if (node.type === "text") return typeof node.value === "string" ? node.value : "";
+              const children = Array.isArray(node.children)
+                ? node.children.map(text).join(node.type === "tableCell" ? " " : "")
+                : "";
+              return node.type === "hyperlink" && typeof node.href === "string"
+                ? `[${children}](${node.href})`
+                : children;
+            };
+            const walk = (node: unknown): unknown => {
+              if (!isRecord(node)) return node;
+              if (node.type === "table" && Array.isArray(node.children)) {
+                const rows = node.children.map((row) => {
+                  if (!isRecord(row) || !Array.isArray(row.children))
+                    throw new Error("lms_lesson_document_invalid_table");
+                  return row.children.map((cell) => {
+                    if (
+                      !isRecord(cell) ||
+                      (typeof cell.colSpan === "number" && cell.colSpan > 1) ||
+                      (typeof cell.rowSpan === "number" && cell.rowSpan > 1)
+                    )
+                      throw new Error("lms_lesson_document_merged_table");
+                    return parseInline(text(cell).trim());
+                  });
+                });
+                const first = node.children[0];
+                const head = isRecord(first) && first.isHeader ? rows.shift() : undefined;
+                const marker = `CWTABLE${tables.length}END`;
+                tables.push({ kind: "table", head, rows });
+                return { type: "paragraph", children: [{ type: "run", children: [{ type: "text", value: marker }] }] };
+              }
+              return { ...node, ...(Array.isArray(node.children) ? { children: node.children.map(walk) } : {}) };
+            };
+            return walk(document);
+          },
           convertImage: mammoth.images.imgElement(async () => ({ src: EMBEDDED_IMAGE_MARKER })),
         },
       );
@@ -293,7 +382,8 @@ export async function importLessonDocument(
         new RegExp(`!\\[[^\\]]*\\]\\(${EMBEDDED_IMAGE_MARKER}\\)`, "g"),
         "> Вбудоване зображення пропущено — додайте його через медіа-поле Builder.",
       );
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith("lms_lesson_document_")) throw error;
       throw new Error("lms_lesson_document_invalid_docx");
     }
   } else {
@@ -302,18 +392,15 @@ export async function importLessonDocument(
     } catch {
       throw new Error("lms_lesson_document_invalid_utf8");
     }
-    if (format === "txt") {
-      markdown = markdown
-        .replace(/\r\n?/g, "\n")
-        .split(/\n{2,}/)
-        .map((paragraph) => paragraph.replace(/\n+/g, " ").trim())
-        .filter(Boolean)
-        .join("\n\n");
-    }
   }
 
   const parsed = parseMarkdown(markdown, filenameTitle(input.filename));
-  const blocks = unitsToBlocks(parsed.units, options.ids);
+  const units = parsed.units.flatMap((unit) => {
+    if (unit.kind !== "rich" || unit.node.kind !== "p") return [unit];
+    const marker = /^CWTABLE(\d+)END$/.exec(inlineToPlainText(unit.node.text).trim());
+    return marker && tables[Number(marker[1])] ? [tables[Number(marker[1])]!] : [unit];
+  });
+  const blocks = unitsToBlocks(units, options.ids);
   if (!blocks.length) throw new Error("lms_lesson_document_empty");
   blocks.forEach((block, index) => validateLessonBlock(block, `lesson.blocks[${index}]`));
 
@@ -478,8 +565,8 @@ function textRuns(value: InlineText): TextRun[] {
   return spans.map((span) => new TextRun({ text: span.text, bold: span.bold, italics: span.italic }));
 }
 
-function lessonDocxParagraphs(lesson: Lesson): Paragraph[] {
-  const paragraphs: Paragraph[] = [new Paragraph({ text: lesson.title, heading: HeadingLevel.HEADING_1 })];
+function lessonDocxParagraphs(lesson: Lesson): Array<Paragraph | Table> {
+  const paragraphs: Array<Paragraph | Table> = [new Paragraph({ text: lesson.title, heading: HeadingLevel.HEADING_1 })];
   if (lesson.summary) paragraphs.push(new Paragraph({ children: textRuns(lesson.summary), style: "Subtitle" }));
 
   const heading = (text: string) => paragraphs.push(new Paragraph({ text, heading: HeadingLevel.HEADING_2 }));
@@ -563,8 +650,18 @@ function lessonDocxParagraphs(lesson: Lesson): Paragraph[] {
       case "table":
         if (block.title)
           paragraphs.push(new Paragraph({ children: textRuns(block.title), heading: HeadingLevel.HEADING_3 }));
-        [...(block.head ? [block.head] : []), ...block.rows].forEach((row) =>
-          paragraphs.push(new Paragraph({ text: row.map(plainCell).join(" | ") })),
+        paragraphs.push(
+          new Table({
+            rows: [...(block.head ? [block.head] : []), ...block.rows].map(
+              (row, index) =>
+                new TableRow({
+                  tableHeader: Boolean(block.head && index === 0),
+                  children: row.map(
+                    (cell) => new DocxTableCell({ children: [new Paragraph({ text: plainCell(cell) })] }),
+                  ),
+                }),
+            ),
+          }),
         );
         break;
       case "cta":

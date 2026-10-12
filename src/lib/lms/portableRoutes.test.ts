@@ -42,6 +42,8 @@ const builder = {
   previewBuilderCourseImport: vi.fn(),
   importBuilderCourse: vi.fn(),
   loadBuilderCourse: vi.fn(),
+  saveBuilderCourse: vi.fn(),
+  isDraftGeneration: (value: unknown) => typeof value === "number" && value >= 0 && Number.isInteger(value),
   // The ownership probe `courseAccess` runs before the full load.
   readCourseOwnership: vi.fn(),
 };
@@ -85,7 +87,7 @@ function post(body: unknown) {
 
 beforeEach(() => {
   auth.allowed = true;
-  for (const fn of Object.values(builder)) fn.mockReset();
+  for (const fn of Object.values(builder)) if ("mockReset" in fn) fn.mockReset();
   builder.listBuilderCourses.mockResolvedValue([]);
   builder.previewBuilderCourseImport.mockResolvedValue({
     course,
@@ -101,7 +103,7 @@ beforeEach(() => {
     },
   });
   builder.importBuilderCourse.mockResolvedValue({ slug: course.slug });
-  builder.loadBuilderCourse.mockResolvedValue({ course, authorId: "author-1", updatedAt: null });
+  builder.loadBuilderCourse.mockResolvedValue({ course, authorId: "author-1", updatedAt: null, draftGeneration: 4 });
   builder.readCourseOwnership.mockResolvedValue({ id: course.id, slug: course.slug, authorId: "author-1" });
 });
 
@@ -118,6 +120,50 @@ describe("portable course import route", () => {
     const response = await importRoute.POST(post({ course: { any: "source" }, commit: true }));
     expect(response.status).toBe(201);
     expect(builder.importBuilderCourse).toHaveBeenCalledWith(course, "author-1");
+  });
+
+  it("updates only the authorized target using its preview generation", async () => {
+    builder.saveBuilderCourse.mockResolvedValue({ slug: course.slug, staged: true });
+    const inspected = await importRoute.POST(post({ course, targetSlug: course.slug }));
+    expect(await inspected.json()).toMatchObject({ preview: { slug: course.slug, expectedGeneration: 4 } });
+    const response = await importRoute.POST(
+      post({ course, targetSlug: course.slug, commit: true, expectedGeneration: 4 }),
+    );
+    expect(response.status).toBe(201);
+    expect(builder.saveBuilderCourse).toHaveBeenCalledWith(
+      expect.objectContaining({ id: course.id, slug: course.slug }),
+      4,
+      { actorId: "author-1" },
+    );
+    expect(builder.importBuilderCourse).not.toHaveBeenCalled();
+  });
+
+  it("refuses a missing generation and returns stale writes as conflicts", async () => {
+    expect((await importRoute.POST(post({ course, targetSlug: course.slug, commit: true }))).status).toBe(422);
+    expect(builder.saveBuilderCourse).not.toHaveBeenCalled();
+    builder.saveBuilderCourse.mockRejectedValue(new Error("lms_builder_draft_conflict"));
+    expect(
+      (await importRoute.POST(post({ course, targetSlug: course.slug, commit: true, expectedGeneration: 3 }))).status,
+    ).toBe(409);
+  });
+
+  it("does not preview or write a target outside the ownership boundary", async () => {
+    builder.readCourseOwnership.mockResolvedValue(null);
+    expect(
+      (await importRoute.POST(post({ course, targetSlug: "someone-else", commit: true, expectedGeneration: 4 })))
+        .status,
+    ).toBe(404);
+    expect(builder.previewBuilderCourseImport).not.toHaveBeenCalled();
+    expect(builder.saveBuilderCourse).not.toHaveBeenCalled();
+  });
+
+  it("returns Ukrainian structural errors with one-based location", async () => {
+    builder.previewBuilderCourseImport.mockRejectedValue(
+      new Error("lms_block_empty_content:portable.modules[0].lessons[0].blocks[0]"),
+    );
+    const response = await importRoute.POST(post({ course }));
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({ message: expect.stringContaining("Модуль 1, урок 1, блок 1") });
   });
 
   it("refuses the boundary before reading any course when signed out", async () => {

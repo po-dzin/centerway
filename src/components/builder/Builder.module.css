@@ -1786,6 +1786,7 @@
 }
 
 .importPreview {
+  min-width: 0;
   display: grid;
   gap: var(--cw-space-2xs);
   padding-block: var(--cw-space-xs);
@@ -4153,6 +4154,7 @@
    width. */
 .panelChoice {
   flex: 1 1 calc(2 * var(--ds-button-min-width) + var(--cw-space-xs));
+  min-width: 0;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(var(--ds-button-min-width), 1fr));
   gap: var(--cw-space-xs);

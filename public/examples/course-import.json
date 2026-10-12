@@ -1,0 +1,24 @@
+{
+  "title": "Ранкова практика",
+  "slug": "morning-practice",
+  "locale": "uk",
+  "schedule": { "mode": "open" },
+  "modules": [
+    {
+      "title": "Початок",
+      "slug": "start",
+      "lessons": [
+        {
+          "title": "Знайомство",
+          "slug": "welcome",
+          "blocks": [
+            { "type": "lesson_objective", "text": "Познайомитися з маршрутом практики." },
+            { "type": "rich_text", "content": [{ "kind": "p", "text": "Додайте сюди матеріал уроку." }] },
+            { "type": "checklist", "items": [{ "text": "Підготувати місце для практики" }] },
+            { "type": "boundary_note", "text": "Практика не замінює медичну консультацію. При дискомфорті зупиніться." }
+          ]
+        }
+      ]
+    }
+  ]
+}
