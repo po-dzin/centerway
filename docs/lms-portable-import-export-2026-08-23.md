@@ -12,10 +12,14 @@ SendPulse, SmartSender, or any other vendor. The portable file is the canonical
 Builder exposes a two-step authenticated flow:
 
 1. `POST /api/lms/authoring/import` with `{ "course": <Course>, "commit": false }`
-   validates the file and returns a preview. It does not write.
-2. The same request with `commit: true` validates again and creates a new course.
+   validates the file and returns a preview. It does not write. The panel also
+   accepts author-written JSON with only a course title and module/lesson/block
+   content; technical identities, order, translation group, draft status,
+   version, visibility, schedule, locale, and empty entitlements are generated.
+2. The same request with `commit: true` validates again and either creates a
+   new course or replaces the selected course's draft content.
 
-An imported course is always a copy:
+Creating a course makes a copy:
 
 - `status` becomes `draft`;
 - `visibility` becomes `hidden`;
@@ -26,10 +30,23 @@ An imported course is always a copy:
   identifiers are regenerated;
 - a colliding slug receives a numeric suffix.
 
-Readiness blockers do not reject a draft. They are shown in the preview and
-remain visible in Builder. A structurally invalid course is rejected before any
-normalization or write. The request body limit is 5 MiB; course media stays in
-the JSON as URLs rather than uploaded binary data.
+Updating an existing course preserves its slug, course identity, program,
+visibility, and entitlement codes. Existing module, lesson, and block
+identities are retained where their authored route/content keys still match;
+unchanged lesson content also retains its IDs and completion identity. The
+published revision remains available to learners until the author publishes
+the updated draft. An expected draft generation prevents overwriting edits made
+after preview. Internal lesson/block links are remapped with copied identities.
+
+Readiness blockers do not reject a draft. Their Ukrainian explanations and
+module/lesson/block positions are shown in the preview and remain visible in
+Builder. A structurally invalid course is rejected with a localized message
+before any write. The request body limit is 5 MiB; course media stays in the
+JSON as URLs rather than uploaded binary data. The sample file is available at
+`public/examples/course-import.json` and from the import panel.
+
+Authors linked through `lms_authors.auth_user_id` may create their first
+course; this permission does not grant access to edit another author's courses.
 
 ## Export contract
 
@@ -62,7 +79,8 @@ The import control lives inside a module. Multiple files may be selected; each
 file becomes one lesson appended to that module. The first level-one heading is
 the title, otherwise the filename is used. Paragraphs, headings, ordered and
 unordered lists, task lists, quotes, fenced code, and Markdown images become
-typed LMS blocks. Every imported lesson receives fresh IDs and a course-wide
+typed LMS blocks. Markdown pipe tables and DOCX tables become table blocks;
+YouTube/Vimeo URLs become video blocks. Every imported lesson receives fresh IDs and a course-wide
 collision-free slug. Daily courses receive the next available day index;
 reference modules do not. Import changes only the in-browser draft until the
 author explicitly saves the course.

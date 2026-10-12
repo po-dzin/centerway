@@ -96,3 +96,52 @@ describe("lesson documents", () => {
     expect(imported.blocks.length).toBeGreaterThan(0);
   });
 });
+
+describe("quick document assembly", () => {
+  it.each(["md", "txt"])("keeps pipe tables and YouTube links as blocks in %s", async (format) => {
+    const source =
+      "# План\n\n| День | Практика |\n| --- | --- |\n| Пн | Дихання |\n\n[Відео](https://youtu.be/dQw4w9WgXcQ)\n\nЗвичайний текст.";
+    const imported = await importLessonDocument(
+      { filename: `plan.${format}`, bytes: new TextEncoder().encode(source) },
+      { ids: ids(), takenSlugs: [], order: 1 },
+    );
+    expect(imported.blocks).toMatchObject([
+      { type: "table", head: ["День", "Практика"], rows: [["Пн", "Дихання"]] },
+      { type: "video", provider: "youtube", videoId: "dQw4w9WgXcQ", title: "Відео" },
+      { type: "rich_text" },
+    ]);
+  });
+
+  it("imports a real Word table at its document position", async () => {
+    const { Document, Packer, Paragraph, Table, TableRow, TableCell } = await import("docx");
+    const document = new Document({
+      sections: [
+        {
+          children: [
+            new Paragraph("Перед таблицею"),
+            new Table({
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({ children: [new Paragraph("Пн")] }),
+                    new TableCell({ children: [new Paragraph("Дихання")] }),
+                  ],
+                }),
+              ],
+            }),
+            new Paragraph("https://youtu.be/dQw4w9WgXcQ"),
+          ],
+        },
+      ],
+    });
+    const imported = await importLessonDocument(
+      { filename: "plan.docx", bytes: await Packer.toBuffer(document) },
+      { ids: ids(), takenSlugs: [], order: 1 },
+    );
+    expect(imported.blocks).toMatchObject([
+      { type: "rich_text" },
+      { type: "table", rows: [["Пн", "Дихання"]] },
+      { type: "video" },
+    ]);
+  });
+});

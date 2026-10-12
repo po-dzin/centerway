@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { canEditCourse, courseFilterFor, type BuilderIdentity } from "./builderAccess";
+import { canCreateCourse, canEditCourse, courseFilterFor, type BuilderIdentity } from "./builderAccess";
 
 const admin: BuilderIdentity = { authUserId: "admin-1", email: "a@example.com", isAdmin: true };
 const author: BuilderIdentity = { authUserId: "author-1", email: "b@example.com", isAdmin: false };
@@ -42,5 +42,14 @@ describe("builder access", () => {
     // because the query only applies `.eq` when the field is truthy.
     const filter = courseFilterFor(author);
     expect(filter.authorId).toBeTruthy();
+  });
+});
+
+describe("first course permission", () => {
+  it("admits a linked author profile without a course, but not an ordinary learner", () => {
+    expect(canCreateCourse({ ...author, hasAuthorProfile: true }, 0)).toBe(true);
+    expect(canCreateCourse(author, 0)).toBe(false);
+    expect(canCreateCourse(author, 1)).toBe(true);
+    expect(canEditCourse({ ...author, hasAuthorProfile: true }, "author-2")).toBe(false);
   });
 });

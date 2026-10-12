@@ -10,9 +10,17 @@ import { randomUUID } from "node:crypto";
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
-import { importBuilderCourse, listBuilderCourses, previewBuilderCourseImport } from "@/lib/lms/builder";
+import {
+  importBuilderCourse,
+  listBuilderCourses,
+  previewBuilderCourseImport,
+  saveBuilderCourse,
+  isDraftGeneration,
+} from "@/lib/lms/builder";
 import { canCreateCourse, courseFilterFor } from "@/lib/lms/builderAccess";
-import { withBuilderIdentity } from "@/lib/lms/courseAccess";
+import { portableCourseUpdate, courseReadiness } from "@/lms-core";
+import { importIssueCopy, importBlockerCopy } from "@/lib/lms/importCopy";
+import { resolveCourseAccessForIdentity, isDenied, denialResponse, withBuilderIdentity } from "@/lib/lms/courseAccess";
 import { LMS_COURSE_CREATE } from "@/lib/lms/rateRules";
 import { COURSE_LIST_TAG, PURGE, courseTag } from "@/lib/lms/liveCatalog";
 
@@ -34,17 +42,20 @@ export async function POST(req: NextRequest) {
 
       const owned = await listBuilderCourses(courseFilterFor(identity)).catch(() => null);
       if (!owned) return NextResponse.json({ error: "lms_builder_list_failed" }, { status: 500 });
-      if (!canCreateCourse(identity, owned.length)) {
-        return NextResponse.json({ error: "forbidden" }, { status: 403 });
-      }
 
       const rawBody = await req.text();
       if (Buffer.byteLength(rawBody, "utf8") > MAX_BODY_BYTES) {
         return NextResponse.json({ error: "lms_builder_import_too_large" }, { status: 413 });
       }
-      let body: { course?: unknown; commit?: unknown } | null = null;
+      let body: { course?: unknown; commit?: unknown; targetSlug?: unknown; expectedGeneration?: unknown } | null =
+        null;
       try {
-        body = JSON.parse(rawBody) as { course?: unknown; commit?: unknown };
+        body = JSON.parse(rawBody) as {
+          course?: unknown;
+          commit?: unknown;
+          targetSlug?: unknown;
+          expectedGeneration?: unknown;
+        };
       } catch {
         // Kept distinct from a structurally invalid course: this is a broken
         // transport file, so the author should choose/fix the JSON itself.
@@ -53,28 +64,59 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "lms_builder_import_missing_course" }, { status: 400 });
       }
 
+      if (body.targetSlug !== undefined && (typeof body.targetSlug !== "string" || !body.targetSlug)) {
+        return NextResponse.json({ error: "lms_builder_import_invalid_target" }, { status: 400 });
+      }
+      const access =
+        typeof body.targetSlug === "string" ? await resolveCourseAccessForIdentity(identity, body.targetSlug) : null;
+      if (access && isDenied(access)) return denialResponse(access);
+      if (!access && !canCreateCourse(identity, owned.length))
+        return NextResponse.json({ error: "forbidden" }, { status: 403 });
+
       try {
         const preview = await previewBuilderCourseImport(body.course, randomUUID);
+
+        const target = access && !isDenied(access) ? await access.grant.load() : null;
+        const incoming = target ? portableCourseUpdate(preview.course, target.course) : preview.course;
+        const readiness = courseReadiness(incoming);
 
         if (body.commit !== true) {
           return NextResponse.json({
             preview: {
               ...preview.summary,
-              blockerCount: preview.readiness.blockers.length,
-              blockers: preview.readiness.blockers.slice(0, 20),
-              changes: ["status:draft", "visibility:hidden", "commerce:detached", "ids:remapped"],
+              slug: incoming.slug,
+              expectedGeneration: target?.draftGeneration,
+              blockerCount: readiness.blockers.length,
+              blockers: readiness.blockers.map((blocker) => ({
+                ...blocker,
+                message: importBlockerCopy(incoming, blocker),
+              })),
+              changes: target
+                ? ["content:draft", "live:preserved", "access:preserved"]
+                : ["status:draft", "visibility:hidden", "commerce:detached", "ids:remapped"],
             },
           });
         }
 
-        const result = await importBuilderCourse(preview.course, identity.authUserId);
+        if (target && !isDraftGeneration(body.expectedGeneration)) {
+          return NextResponse.json(
+            { error: "lms_builder_invalid_draft_generation", message: "Повторіть перевірку перед оновленням курсу." },
+            { status: 422 },
+          );
+        }
+        const result = target
+          ? await saveBuilderCourse(incoming, body.expectedGeneration, { actorId: identity.authUserId })
+          : await importBuilderCourse(incoming, identity.authUserId);
         revalidateTag(courseTag(result.slug), PURGE);
         revalidateTag(COURSE_LIST_TAG, PURGE);
         return NextResponse.json(result, { status: 201 });
       } catch (error) {
         const message = error instanceof Error ? error.message : "unknown_error";
         const isAuthorError = message.startsWith("lms_");
-        return NextResponse.json({ error: message }, { status: isAuthorError ? 422 : 500 });
+        return NextResponse.json(
+          { error: message, message: importIssueCopy(message) },
+          { status: message === "lms_builder_draft_conflict" ? 409 : isAuthorError ? 422 : 500 },
+        );
       }
     },
     LMS_COURSE_CREATE,

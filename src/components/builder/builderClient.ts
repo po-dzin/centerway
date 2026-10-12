@@ -105,8 +105,9 @@ export type CourseImportPreview = {
   lessonCount: number;
   blockCount: number;
   blockerCount: number;
-  blockers: ReadinessBlocker[];
+  blockers: Array<ReadinessBlocker & { message?: string }>;
   changes: string[];
+  expectedGeneration?: number;
 };
 
 export type BuilderResult<T> = { ok: true; data: T } | { ok: false; failure: BuilderFailure; detail?: string };
@@ -128,22 +129,22 @@ async function request<T>(path: string, init?: RequestInit): Promise<BuilderResu
   if (response.status === 403) return { ok: false, failure: "forbidden" };
   if (response.status === 404) return { ok: false, failure: "not_found" };
   if (response.status === 409) {
-    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-    return { ok: false, failure: "conflict", detail: payload?.error };
+    const payload = (await response.json().catch(() => null)) as { error?: string; message?: string } | null;
+    return { ok: false, failure: "conflict", detail: payload?.message ?? payload?.error };
   }
 
-  const payload = (await response.json().catch(() => null)) as (T & { error?: string }) | null;
+  const payload = (await response.json().catch(() => null)) as (T & { error?: string; message?: string }) | null;
 
   if (response.status === 422) {
     // The author's own error — a validation code or a readiness gate refusal.
     // Carried through verbatim: `lms_block_missing_text:way21.week-1.day-2
     // .blocks[3]` names the exact place, and softening it into "щось не так"
     // would throw away the only useful part.
-    return { ok: false, failure: "invalid", detail: payload?.error };
+    return { ok: false, failure: "invalid", detail: payload?.message ?? payload?.error };
   }
 
   if (!response.ok || !payload) {
-    return { ok: false, failure: "network", detail: payload?.error };
+    return { ok: false, failure: "network", detail: payload?.message ?? payload?.error };
   }
 
   return { ok: true, data: payload };
@@ -180,17 +181,24 @@ export function publishCourseNow(slug: string): Promise<BuilderResult<{ status: 
   return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/publish`, { method: "POST" });
 }
 
-export function previewCourseImport(course: unknown): Promise<BuilderResult<{ preview: CourseImportPreview }>> {
+export function previewCourseImport(
+  course: unknown,
+  targetSlug?: string,
+): Promise<BuilderResult<{ preview: CourseImportPreview }>> {
   return request("/api/lms/authoring/import", {
     method: "POST",
-    body: JSON.stringify({ course, commit: false }),
+    body: JSON.stringify({ course, targetSlug, commit: false }),
   });
 }
 
-export function commitCourseImport(course: unknown): Promise<BuilderResult<{ slug: string }>> {
+export function commitCourseImport(
+  course: unknown,
+  targetSlug?: string,
+  expectedGeneration?: number,
+): Promise<BuilderResult<{ slug: string }>> {
   return request("/api/lms/authoring/import", {
     method: "POST",
-    body: JSON.stringify({ course, commit: true }),
+    body: JSON.stringify({ course, targetSlug, expectedGeneration, commit: true }),
   });
 }
 
@@ -212,8 +220,12 @@ export async function exportCourseFile(slug: string): Promise<BuilderResult<{ fi
   if (response.status === 403) return { ok: false, failure: "forbidden" };
   if (response.status === 404) return { ok: false, failure: "not_found" };
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-    return { ok: false, failure: response.status === 422 ? "invalid" : "network", detail: payload?.error };
+    const payload = (await response.json().catch(() => null)) as { error?: string; message?: string } | null;
+    return {
+      ok: false,
+      failure: response.status === 422 ? "invalid" : "network",
+      detail: payload?.message ?? payload?.error,
+    };
   }
 
   const disposition = response.headers.get("content-disposition") ?? "";
@@ -414,8 +426,12 @@ export async function exportLessonFile(
   if (response.status === 403) return { ok: false, failure: "forbidden" };
   if (response.status === 404) return { ok: false, failure: "not_found" };
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-    return { ok: false, failure: response.status === 422 ? "invalid" : "network", detail: payload?.error };
+    const payload = (await response.json().catch(() => null)) as { error?: string; message?: string } | null;
+    return {
+      ok: false,
+      failure: response.status === 422 ? "invalid" : "network",
+      detail: payload?.message ?? payload?.error,
+    };
   }
 
   const disposition = response.headers.get("content-disposition") ?? "";

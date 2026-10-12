@@ -24,6 +24,7 @@ export type BuilderIdentity = {
   authUserId: string;
   email: string | null;
   isAdmin: boolean;
+  hasAuthorProfile?: boolean;
   /**
    * May set a format's live price from the builder without the review step
    * (G, 2026-10-03). The `admin` role only: `support` opens the admin surface
@@ -37,7 +38,10 @@ export async function resolveBuilderIdentity(user: { id: string; email?: string 
   const db = adminClient();
   const { data } = await db.from("user_roles").select("role").eq("user_id", user.id).maybeSingle();
 
+  const { data: author } = await db.from("lms_authors").select("id").eq("auth_user_id", user.id).limit(1);
+
   return {
+    hasAuthorProfile: Array.isArray(author) && author.length > 0,
     authUserId: user.id,
     email: user.email ?? null,
     isAdmin: isAdminRole(data?.role),
@@ -70,11 +74,10 @@ export function courseFilterFor(identity: BuilderIdentity): { authorId?: string 
  * authenticated session here; a bare `user !== null` check would make "create
  * a course" a public endpoint that writes rows.
  *
- * Two who may: an admin, and someone who already owns a course. The second is
- * the rule that keeps ownership per-row while still letting a real author work
- * — an author is a person the house has already handed something to, and
- * handing them the first course is the deliberate act that makes them one.
+ * Admins, existing course owners, and accounts linked to an author profile
+ * may create. The profile link admits an author before their first course;
+ * it grants no permission to edit another account’s course.
  */
 export function canCreateCourse(identity: BuilderIdentity, ownedCourseCount: number): boolean {
-  return identity.isAdmin || ownedCourseCount > 0;
+  return identity.isAdmin || identity.hasAuthorProfile === true || ownedCourseCount > 0;
 }

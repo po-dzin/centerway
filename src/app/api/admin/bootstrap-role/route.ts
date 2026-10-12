@@ -53,9 +53,12 @@ export async function POST(req: NextRequest) {
      a link rather than offering one the builder would then 404. */
   const { data: authored } = await db.from("lms_courses").select("id").eq("author_id", userId).limit(1);
 
+  const { data: authorProfile } = await db.from("lms_authors").select("id").eq("auth_user_id", userId).limit(1);
+
   return NextResponse.json({
     ok: true,
     role: typeof data?.role === "string" ? data.role : "user",
-    authorsCourses: Array.isArray(authored) && authored.length > 0,
+    authorsCourses:
+      (Array.isArray(authored) && authored.length > 0) || (Array.isArray(authorProfile) && authorProfile.length > 0),
   });
 }

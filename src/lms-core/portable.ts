@@ -12,6 +12,9 @@ import { validateCourse, type Course } from "./course";
 import { courseReadiness, type CourseReadiness } from "./readiness";
 import { uniqueSlug, type IdSource } from "./drafts";
 import type { LessonBlock } from "./blocks";
+import { isRecord } from "./inline";
+import { slugify } from "./drafts";
+import { parseInternalReference, internalReferenceKey } from "./references";
 
 export type PortableCoursePreview = {
   course: Course;
@@ -27,40 +30,202 @@ export type PortableCoursePreview = {
   };
 };
 
-function freshBlock(block: LessonBlock, ids: IdSource): LessonBlock {
-  const copied = { ...block, id: ids() } as LessonBlock;
-  if (copied.type === "group") return { ...copied, children: copied.children.map((child) => freshBlock(child, ids)) };
+function replacementId(source: unknown, ids: IdSource, identities: Map<string, string>): string {
+  const next = ids();
+  if (typeof source === "string") identities.set(source, next);
+  return next;
+}
 
-  if (copied.type === "checklist") {
-    return {
-      ...copied,
-      items: copied.items.map((item) => ({ ...item, id: ids() })),
-    };
+function remapReferences<T>(value: T, identities: Map<string, string>): T {
+  const walk = (item: unknown): unknown => {
+    if (Array.isArray(item)) return item.map(walk);
+    if (!isRecord(item)) return item;
+    return Object.fromEntries(
+      Object.entries(item).map(([key, child]) => {
+        if (key === "href" && typeof child === "string") {
+          const ref = parseInternalReference(child);
+          if (ref)
+            return [
+              key,
+              internalReferenceKey(
+                ref.kind === "lesson"
+                  ? { ...ref, lessonId: identities.get(ref.lessonId) ?? ref.lessonId }
+                  : {
+                      ...ref,
+                      lessonId: identities.get(ref.lessonId) ?? ref.lessonId,
+                      blockId: identities.get(ref.blockId) ?? ref.blockId,
+                    },
+              ),
+            ];
+        }
+        return [key, walk(child)];
+      }),
+    );
+  };
+  return walk(value) as T;
+}
+
+/** Fill identities only; authored content still passes the ordinary validator. */
+function normalizeBlock(input: unknown, ids: IdSource, identities: Map<string, string>): unknown {
+  if (!isRecord(input)) return input;
+  const block: Record<string, unknown> = { ...input, id: replacementId(input.id, ids, identities) };
+  if (block.type === "group" && Array.isArray(block.children)) {
+    block.children = block.children.map((child) => normalizeBlock(child, ids, identities));
   }
-
-  if (copied.type === "faq_block") {
-    return {
-      ...copied,
-      items: copied.items.map((item) => ({ ...item, id: ids() })),
-    };
+  if ((block.type === "checklist" || block.type === "faq_block") && Array.isArray(block.items)) {
+    block.items = block.items.map((item) => (isRecord(item) ? { ...item, id: ids() } : item));
   }
+  return block;
+}
 
-  return copied;
+export function normalizePortableCourse(input: unknown, ids: IdSource): unknown {
+  if (!isRecord(input)) return input;
+  const identities = new Map<string, string>();
+  const slug = input.slug ?? (typeof input.title === "string" ? slugify(input.title) : undefined);
+  const lessonsTaken = new Set<string>();
+  const modulesTaken = new Set<string>();
+  const course: Record<string, unknown> = {
+    ...input,
+    id: ids(),
+    slug,
+    translationGroupId: ids(),
+    status: "draft",
+    version: 1,
+    entitlementProductCodes: [],
+    visibility: "hidden",
+    programSlug: input.programSlug ?? slug,
+    brand: input.brand ?? "centerway",
+    locale: input.locale ?? "uk",
+    schedule: input.schedule ?? { mode: "open" },
+    modules: Array.isArray(input.modules)
+      ? input.modules.map((module, index) => {
+          if (!isRecord(module)) return module;
+          const moduleSlug =
+            module.slug ?? (typeof module.title === "string" ? uniqueSlug(module.title, modulesTaken) : undefined);
+          if (typeof moduleSlug === "string") modulesTaken.add(moduleSlug);
+          return {
+            ...module,
+            id: replacementId(module.id, ids, identities),
+            slug: moduleSlug,
+            order: module.order ?? index + 1,
+            lessons: Array.isArray(module.lessons)
+              ? module.lessons.map((lesson, lessonIndex) => {
+                  if (!isRecord(lesson)) return lesson;
+                  const lessonSlug =
+                    lesson.slug ??
+                    (typeof lesson.title === "string" ? uniqueSlug(lesson.title, lessonsTaken) : undefined);
+                  if (typeof lessonSlug === "string") lessonsTaken.add(lessonSlug);
+                  return {
+                    ...lesson,
+                    id: replacementId(lesson.id, ids, identities),
+                    slug: lessonSlug,
+                    order: lesson.order ?? lessonIndex + 1,
+                    blocks: Array.isArray(lesson.blocks)
+                      ? lesson.blocks.map((block) => normalizeBlock(block, ids, identities))
+                      : lesson.blocks,
+                  };
+                })
+              : module.lessons,
+          };
+        })
+      : input.modules,
+  };
+  delete course.sortOrder;
+  return remapReferences(course, identities);
+}
+
+function contentKey(value: unknown): string {
+  return JSON.stringify(value, (key, item: unknown) =>
+    key === "id"
+      ? undefined
+      : isRecord(item)
+        ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b)))
+        : item,
+  );
+}
+
+/** Preserve progress-bearing identities only for unchanged authored content. */
+function retainBlockIds(blocks: LessonBlock[], previous: LessonBlock[]): LessonBlock[] {
+  const unused = [...previous];
+  return blocks.map((block) => {
+    const index = unused.findIndex((old) => contentKey(old) === contentKey(block));
+    const old = index >= 0 ? unused.splice(index, 1)[0] : undefined;
+    if (!old) return block;
+    if (block.type === "group" && old.type === "group")
+      return { ...block, id: old.id, children: retainBlockIds(block.children, old.children) };
+    if (
+      (block.type === "checklist" && old.type === "checklist") ||
+      (block.type === "faq_block" && old.type === "faq_block")
+    )
+      return {
+        ...block,
+        id: old.id,
+        items: block.items.map((item, index) => ({ ...item, id: old.items[index]!.id })),
+      } as LessonBlock;
+    return { ...block, id: old.id };
+  });
+}
+
+/** Match stable route keys; foreign file ids never authorize a write. */
+export function portableCourseUpdate(imported: Course, target: Course): Course {
+  const course: Course = {
+    ...imported,
+    id: target.id,
+    slug: target.slug,
+    programSlug: target.programSlug,
+    translationGroupId: target.translationGroupId,
+    entitlementProductCodes: target.entitlementProductCodes,
+    visibility: target.visibility,
+    sortOrder: target.sortOrder,
+    version: target.version,
+    modules: imported.modules.map((module) => {
+      const oldModule = target.modules.find((old) => old.slug === module.slug);
+      return {
+        ...module,
+        id: oldModule?.id ?? module.id,
+        lessons: module.lessons.map((lesson) => {
+          const oldLesson = target.modules.flatMap((old) => old.lessons).find((old) => old.slug === lesson.slug);
+          return {
+            ...lesson,
+            id: oldLesson?.id ?? lesson.id,
+            blocks: oldLesson ? retainBlockIds(lesson.blocks, oldLesson.blocks) : lesson.blocks,
+          };
+        }),
+      };
+    }),
+  };
+  const identities = new Map<string, string>();
+  const collect = (before: LessonBlock[], after: LessonBlock[]) =>
+    before.forEach((block, index) => {
+      const next = after[index]!;
+      identities.set(block.id, next.id);
+      if (block.type === "group" && next.type === "group") collect(block.children, next.children);
+    });
+  imported.modules.forEach((module, mi) =>
+    module.lessons.forEach((lesson, li) => {
+      const next = course.modules[mi]!.lessons[li]!;
+      identities.set(lesson.id, next.id);
+      collect(lesson.blocks, next.blocks);
+    }),
+  );
+  const remapped = remapReferences(course, identities);
+  validateCourse(remapped, "portable.update");
+  return remapped;
 }
 
 /**
  * Validate and turn an exported course into a new, inert Builder draft.
  *
- * The source is validated before any normalization. This matters: silently
- * filling missing fields would turn an incomplete transfer into content the
- * author may mistake for a faithful copy.
+ * Technical identities are generated before validation; authored content is
+ * never invented. Existing exports and minimal author-written JSON share this boundary.
  */
 export function preparePortableCourse(
   input: unknown,
   options: { takenSlugs: Iterable<string>; ids: IdSource },
 ): PortableCoursePreview {
-  validateCourse(input, "portable");
-  const source = input as Course;
+  const normalized = normalizePortableCourse(input, options.ids);
+  validateCourse(normalized, "portable");
+  const source = normalized;
 
   const course: Course = {
     ...source,
@@ -71,15 +236,7 @@ export function preparePortableCourse(
     version: 1,
     entitlementProductCodes: [],
     visibility: "hidden",
-    modules: source.modules.map((module) => ({
-      ...module,
-      id: options.ids(),
-      lessons: module.lessons.map((lesson) => ({
-        ...lesson,
-        id: options.ids(),
-        blocks: lesson.blocks.map((block) => freshBlock(block, options.ids)),
-      })),
-    })),
+    modules: source.modules,
   };
   delete course.sortOrder;
 

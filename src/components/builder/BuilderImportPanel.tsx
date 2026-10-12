@@ -7,7 +7,12 @@
  */
 
 import { useRef, useState } from "react";
-import { commitCourseImport, previewCourseImport, type CourseImportPreview } from "./builderClient";
+import {
+  commitCourseImport,
+  previewCourseImport,
+  type BuilderCourseSummary,
+  type CourseImportPreview,
+} from "./builderClient";
 import styles from "./Builder.module.css";
 
 const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
@@ -20,7 +25,16 @@ type ImportState =
   | { status: "committing"; filename: string; course: unknown; preview: CourseImportPreview };
 
 /** A two-step boundary: inspect first, write only after explicit confirmation. */
-export function ImportPanel({ onCancel, onImported }: { onCancel: () => void; onImported: (slug: string) => void }) {
+export function ImportPanel({
+  onCancel,
+  onImported,
+  courses,
+}: {
+  onCancel: () => void;
+  onImported: (slug: string) => void;
+  courses: BuilderCourseSummary[];
+}) {
+  const [targetSlug, setTargetSlug] = useState("");
   const picker = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<ImportState>({ status: "empty" });
 
@@ -39,7 +53,7 @@ export function ImportPanel({ onCancel, onImported }: { onCancel: () => void; on
     }
 
     setState({ status: "checking", filename: file.name });
-    const result = await previewCourseImport(course);
+    const result = await previewCourseImport(course, targetSlug || undefined);
     if (!result.ok) {
       setState({ status: "failed", message: result.detail ?? "Структура курсу не пройшла перевірку." });
       return;
@@ -51,7 +65,11 @@ export function ImportPanel({ onCancel, onImported }: { onCancel: () => void; on
     if (state.status !== "ready") return;
     const current = state;
     setState({ ...current, status: "committing" });
-    const result = await commitCourseImport(current.course);
+    const result = await commitCourseImport(
+      current.course,
+      targetSlug || undefined,
+      current.preview.expectedGeneration,
+    );
     if (!result.ok) {
       setState({ status: "failed", message: result.detail ?? "Не вдалося імпортувати курс." });
       return;
@@ -68,10 +86,38 @@ export function ImportPanel({ onCancel, onImported }: { onCancel: () => void; on
        radius holding one form. */
     <div className={styles.importForm}>
       <p className={styles.panelText}>
-        Виберіть JSON, експортований з Builder або сумісний з <code>lms:import</code>. Спершу ми покажемо перевірку;
-        запис відбудеться лише після підтвердження.
+        Виберіть JSON з Builder або напишіть курс за зразком. ID та інші технічні поля заповнимо автоматично. Спершу ми
+        покажемо перевірку; запис відбудеться лише після підтвердження.
       </p>
 
+      <label className={styles.fieldLabel}>
+        Куди імпортувати
+        <select
+          className="cw-input"
+          value={targetSlug}
+          disabled={waiting}
+          onChange={(event) => {
+            setTargetSlug(event.target.value);
+            setState({ status: "empty" });
+          }}
+        >
+          <option value="">Створити новий курс</option>
+          {courses.map((course) => (
+            <option key={course.slug} value={course.slug}>
+              Оновити: {course.title}
+            </option>
+          ))}
+        </select>
+      </label>
+      {targetSlug ? (
+        <p className={styles.fieldHint}>
+          JSON замінить вміст чернетки вибраного курсу. Адреса й доступи збережуться; опублікована версія залишиться
+          доступною учням до окремої публікації.
+        </p>
+      ) : null}
+      <a className={styles.quietAction} href="/examples/course-import.json" download>
+        Завантажити зразок JSON
+      </a>
       <div className={styles.addRow}>
         <button className={styles.quietAction} type="button" disabled={waiting} onClick={() => picker.current?.click()}>
           {state.status === "checking" ? "Перевіряємо…" : "Вибрати JSON"}
@@ -106,12 +152,27 @@ export function ImportPanel({ onCancel, onImported }: { onCancel: () => void; on
             Адреса: <code>{ready.preview.slug}</code> · {ready.preview.moduleCount} мод. · {ready.preview.lessonCount}{" "}
             ур. · {ready.preview.blockCount} блоків
           </span>
-          <span>Імпорт створить приховану чернетку, нові ID і не перенесе прив’язки до оплат.</span>
+          <span>
+            {targetSlug
+              ? "Оновиться чернетка вибраного курсу; адреса та доступи збережуться."
+              : "Імпорт створить приховану чернетку з новими ID без прив’язки до оплат."}
+          </span>
           <span>
             {ready.preview.blockerCount === 0
               ? "Структура готова до подальшого редагування."
               : `${ready.preview.blockerCount} блокерів публікації залишаться видимими в Builder.`}
           </span>
+          {ready.preview.blockers.length ? (
+            <ul className={styles.blockerList}>
+              {ready.preview.blockers.map((blocker, index) => (
+                <li key={index} className={styles.blockerItem}>
+                  <span className={styles.blockerDetail}>
+                    {blocker.message ?? blocker.detail ?? "Доповніть матеріал перед публікацією"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
       ) : null}
 
@@ -129,7 +190,7 @@ export function ImportPanel({ onCancel, onImported }: { onCancel: () => void; on
             onClick={() => void commit()}
             disabled={!ready || waiting}
           >
-            {state.status === "committing" ? "Імпортуємо…" : "Імпортувати чернетку"}
+            {state.status === "committing" ? "Імпортуємо…" : targetSlug ? "Оновити чернетку" : "Імпортувати чернетку"}
           </button>
         </div>
       </div>

@@ -61,6 +61,8 @@ function prepareConfig() {
   // Starting the services must not also replay every production migration on an empty DB.
   config = setSectionValue(config, "db.migrations", "enabled", "false");
   config = setSectionValue(config, "db.seed", "enabled", "false");
+  // Native Auth does not serve the production email template files.
+  config = config.replace(/\n\[auth\.email\.template\.[^\]]+\][\s\S]*?(?=\n\[|$)/g, "\n");
   config = setSectionValue(config, "storage.vector", "enabled", "false");
   config = setSectionValue(config, "auth", "site_url", '"http://localhost:8000"');
   config = setSectionValue(config, "auth", "additional_redirect_urls", '["http://localhost:8000/**"]');

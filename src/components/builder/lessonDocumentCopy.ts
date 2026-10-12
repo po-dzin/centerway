@@ -4,6 +4,8 @@ export function lessonDocumentFailureCopy(detail: string | undefined, fallback: 
     lms_lesson_document_too_large: "Файл завеликий. Максимум — 5 МБ на урок.",
     lms_lesson_document_too_many_files: "В один урок можна імпортувати лише один файл за раз.",
     lms_lesson_document_empty: "У документі немає тексту, який можна перетворити на урок.",
+    lms_lesson_document_merged_table: "Таблиця містить об’єднані клітинки. Розділіть їх перед імпортом.",
+    lms_lesson_document_invalid_table: "Перевірте рядки та клітинки таблиці у Word.",
     lms_lesson_document_invalid_docx: "Word-файл пошкоджений або має неочікувану структуру.",
     lms_lesson_document_invalid_utf8: "Текстовий файл має бути збережений у UTF-8.",
   };
