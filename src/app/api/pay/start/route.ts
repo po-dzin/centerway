@@ -41,16 +41,19 @@ export async function GET(req: NextRequest) {
      Access is matched by email and a gateway may not return the payer's
      address at all, so the order is bound to one BEFORE the buyer leaves.
      Two sources, in this order:
-     1. the signed-in session — a verified address; the session cookies are
-        shared across `.centerway.net.ua`, so this works from the landings too;
-     2. `?email=` typed on a landing's «Куди надіслати доступ?» step
-        (email-gate.js) — NOT verified, which the landing's hint says.
+     1. `?email=` typed on a landing's «Куди надіслати доступ?» step
+        (email-gate.js). It is what that step promised the buyer, so it is
+        honoured even for a signed-in buyer (a gift, a stale remembered
+        address). NOT verified, which the step's hint says;
+     2. the signed-in session — a verified address; the session cookies are
+        shared across `.centerway.net.ua`, so the platform's own pay links,
+        which carry no `?email=`, work from the cabinet too.
      With neither, a browser navigation is sent to the email door and comes
      back to this very address; `format=json` callers get a 401 naming it. */
-  const user = await userFromCookies();
+  const typedEmail = typedBuyerEmail(url.searchParams.get("email"));
+  const user = typedEmail ? null : await userFromCookies();
   const sessionEmail = user?.email_confirmed_at ? user.email?.trim().toLowerCase() || null : null;
-  const typedEmail = sessionEmail ? null : typedBuyerEmail(url.searchParams.get("email"));
-  const buyerEmail = sessionEmail ?? typedEmail;
+  const buyerEmail = typedEmail ?? sessionEmail;
   if (!buyerEmail) {
     const signInUrl = personalUrl(`/signin/email?next=${encodeURIComponent(req.url)}`);
     if (url.searchParams.get("format") === "json") {

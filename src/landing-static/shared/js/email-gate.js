@@ -44,7 +44,10 @@
     "border:1px solid var(--cw-sem-guide-primary,#456b58);background:#fff;color:inherit}" +
     ".cw-eg__input:focus-visible,.cw-eg__go:focus-visible,.cw-eg__back:focus-visible{outline:3px solid var(--cw-sem-guide-primary,#456b58);outline-offset:2px}" +
     ".cw-eg__error{margin:0;min-height:1.2em;font-size:.85rem;color:var(--cw-sem-boundary,#b76045)}" +
-    ".cw-eg__go{padding:13px 16px;font:inherit;font-weight:700;border-radius:14px;border:0;cursor:pointer;" +
+    ".cw-eg__go,.cw-eg__back{-webkit-user-select:none;user-select:none}" +
+    ".cw-eg__go{min-height:var(--ds-button-min-height,3rem);padding:0 var(--ds-button-padding-inline,1.15rem);font:inherit;" +
+    "font-size:var(--ds-button-font-size,1rem);font-weight:var(--ds-button-font-weight,700);" +
+    "border-radius:var(--ds-button-radius,var(--cw-radius-btn,16px));border:0;cursor:pointer;" +
     "background:var(--cw-sem-warmth,#e5ae65);color:var(--cw-sem-on-warmth,#203126)}" +
     ".cw-eg__back{padding:8px;font:inherit;font-size:.9rem;border:0;background:none;cursor:pointer;color:var(--cw-sem-muted-ink,#48544c)}";
 
@@ -57,6 +60,9 @@
   }
 
   function ask(onDone, onCancel) {
+    // One dialog at a time: a second CTA pressed behind it must not stack a
+    // duplicate (the overlay already blocks pointer clicks; this covers keys).
+    if (document.querySelector(".cw-eg")) return;
     ensureStyle();
     var opener = document.activeElement;
 
@@ -93,6 +99,23 @@
       if (event.key === "Escape") {
         event.preventDefault();
         cancel();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      // Keep focus inside the dialog: wrap at both ends, pull it back in if it left.
+      var items = Array.prototype.slice.call(form.querySelectorAll("input,button"));
+      var first = items[0];
+      var last = items[items.length - 1];
+      var active = document.activeElement;
+      if (!form.contains(active)) {
+        event.preventDefault();
+        first.focus();
+      } else if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
       }
     }
 

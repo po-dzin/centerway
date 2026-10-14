@@ -151,12 +151,12 @@ describe("GET /api/pay/start — sign-in before payment", () => {
     expect((db.tables.orders as Row[])[0]?.customer_id).toBe(customers[0]?.id);
   });
 
-  it("ignores a typed address that is not one, and the session wins over a typed one", async () => {
+  it("ignores a typed address that is not one, and honours a valid typed one over the session", async () => {
     hoisted.user = null;
     expect((await get("product=way21-group&email=not-an-email")).status).toBe(302);
     hoisted.user = { id: "u1", email: "Buyer@Example.com", email_confirmed_at: "2026-10-01T00:00:00Z" };
     await get("product=way21-group&format=json&email=other%40example.com");
-    expect((db.tables.customers as Row[]).map((c) => c.email)).toEqual(["buyer@example.com"]);
+    expect((db.tables.customers as Row[]).map((c) => c.email)).toEqual(["other@example.com"]);
   });
 
   it("treats an unconfirmed email as signed out", async () => {
