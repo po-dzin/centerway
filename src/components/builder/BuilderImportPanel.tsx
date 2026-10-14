@@ -18,6 +18,12 @@ import styles from "./Builder.module.css";
 
 const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
 
+/** A chat answer saved as-is keeps its ```json fence; the JSON is inside it. */
+function withoutCodeFence(text: string): string {
+  const fenced = /^\s*```(?:json)?\s*\n([\s\S]*?)\n\s*```\s*$/.exec(text);
+  return fenced ? fenced[1]! : text;
+}
+
 type ImportState =
   | { status: "empty" }
   | { status: "checking"; filename: string }
@@ -47,7 +53,7 @@ export function ImportPanel({
 
     let course: unknown;
     try {
-      course = JSON.parse(await file.text()) as unknown;
+      course = JSON.parse(withoutCodeFence(await file.text())) as unknown;
     } catch {
       setState({ status: "failed", message: "Файл не є коректним JSON." });
       return;
@@ -87,12 +93,12 @@ export function ImportPanel({
        radius holding one form. */
     <div className={styles.importForm}>
       <p className={styles.panelText}>
-        Виберіть JSON з Builder або напишіть курс за зразком. ID та інші технічні поля заповнимо автоматично. Спершу ми
-        покажемо перевірку; запис відбудеться лише після підтвердження.
+        Виберіть JSON з Builder або курс, зібраний нейронкою за інструкцією нижче. ID та інші технічні поля заповнимо
+        автоматично. Спершу ми покажемо перевірку; запис відбудеться лише після підтвердження.
       </p>
 
-      <a className={styles.importSampleLink} href="/examples/course-import.json" download data-cw-ink-control>
-        <InteractionInkLabel variant="link">Завантажити зразок JSON</InteractionInkLabel>
+      <a className={styles.importSampleLink} href="/examples/course-ai-guide.md" download data-cw-ink-control>
+        <InteractionInkLabel variant="link">Інструкція для нейронки</InteractionInkLabel>
       </a>
 
       <label className={styles.field}>

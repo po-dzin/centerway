@@ -43,7 +43,16 @@ module/lesson/block positions are shown in the preview and remain visible in
 Builder. A structurally invalid course is rejected with a localized message
 before any write. The request body limit is 5 MiB; course media stays in the
 JSON as URLs rather than uploaded binary data. The sample file is available at
-`public/examples/course-import.json` and from the import panel.
+`public/examples/course-import.json`.
+
+For a course written by a neural network, the import panel offers one file,
+`public/examples/course-ai-guide.md`: how to use it, the instructions for the
+network, a JSON Schema of the author-facing subset (no ids, no `group`/`code`
+blocks) and the same example. `src/lib/lms/courseAiGuide.test.ts` keeps the
+schema's enums and limits equal to the validator's and proves the example
+passes both the schema and the importer. A course-level `{ "course": … }`
+envelope is unwrapped, a daily course without `dayIndex` is numbered in written
+order, and a file saved with its chat ```json fence is read from inside it.
 
 Authors linked through `lms_authors.auth_user_id` may create their first
 course; this permission does not grant access to edit another author's courses.
