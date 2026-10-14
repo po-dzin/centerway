@@ -22,7 +22,8 @@ const LABELS: Record<string, string> = {
   lms_block_empty_content: "Додайте текст блоку.",
   lms_course_missing_title: "Додайте назву курсу.",
   lms_course_missing_slug: "Додайте назву курсу (title): з неї складемо адресу.",
-  lms_course_title_too_long: "Скоротіть назву курсу: назва до 48 символів, разом із підзаголовком до 120.",
+  lms_course_title_too_long:
+    "Назва курсу задовга: до 48 символів до « — », разом із підзаголовком до 120. Вона має бути «Назва — підзаголовок», двокрапка не ділить.",
   lms_course_empty_modules: "Додайте масив modules з хоча б одним модулем, як у зразку JSON.",
   lms_lesson_missing_day_index: "Вкажіть dayIndex: у щоденному курсі кожен урок має свій день.",
   lms_block_unsupported_video_provider: 'Відео поки лише з YouTube: provider "youtube" і videoId.',
@@ -36,7 +37,7 @@ const LABELS: Record<string, string> = {
   lms_builder_draft_conflict: "Курс змінився після перевірки. Виберіть файл ще раз перед оновленням.",
 };
 
-export function importIssueCopy(error: string): string {
+export function importIssueCopy(error: string, context?: string): string {
   const [code = "", path = ""] = error.split(":");
   const label =
     LABELS[code] ??
@@ -50,7 +51,12 @@ export function importIssueCopy(error: string): string {
   // The location already names a course-level problem; a path with nothing
   // after its stage prefix used to print as «Поле: .».
   const field = path.replace(/^portable(?:\.(?:draft|update))?\.?/, "");
-  return `${importLocation(path)}: ${label}${field ? ` Поле: ${field}.` : ""}`;
+  return `${importLocation(path)}: ${label}${context ? ` ${context}` : ""}${field ? ` Поле: ${field}.` : ""}`;
+}
+
+/** All problems of a file, each already worded for the author. */
+export function importIssueList(issues: { error: string; context?: string }[]): string[] {
+  return issues.map((issue) => importIssueCopy(issue.error, issue.context));
 }
 
 const BLOCKERS: Record<string, string> = {

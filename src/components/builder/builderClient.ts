@@ -106,11 +106,14 @@ export type CourseImportPreview = {
   blockCount: number;
   blockerCount: number;
   blockers: Array<ReadinessBlocker & { message?: string }>;
+  /** What the import adjusted in the author's words, shown before writing. */
+  notes?: string[];
   changes: string[];
   expectedGeneration?: number;
 };
 
-export type BuilderResult<T> = { ok: true; data: T } | { ok: false; failure: BuilderFailure; detail?: string };
+export type BuilderResult<T> =
+  { ok: true; data: T } | { ok: false; failure: BuilderFailure; detail?: string; issues?: string[] };
 
 async function request<T>(path: string, init?: RequestInit): Promise<BuilderResult<T>> {
   const token = await accessToken();
@@ -133,14 +136,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<BuilderResu
     return { ok: false, failure: "conflict", detail: payload?.message ?? payload?.error };
   }
 
-  const payload = (await response.json().catch(() => null)) as (T & { error?: string; message?: string }) | null;
+  const payload = (await response.json().catch(() => null)) as
+    (T & { error?: string; message?: string; issues?: string[] }) | null;
 
   if (response.status === 422) {
     // The author's own error — a validation code or a readiness gate refusal.
     // Carried through verbatim: `lms_block_missing_text:way21.week-1.day-2
     // .blocks[3]` names the exact place, and softening it into "щось не так"
     // would throw away the only useful part.
-    return { ok: false, failure: "invalid", detail: payload?.message ?? payload?.error };
+    return { ok: false, failure: "invalid", detail: payload?.message ?? payload?.error, issues: payload?.issues };
   }
 
   if (!response.ok || !payload) {

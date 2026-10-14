@@ -27,7 +27,7 @@ function withoutCodeFence(text: string): string {
 type ImportState =
   | { status: "empty" }
   | { status: "checking"; filename: string }
-  | { status: "failed"; message: string }
+  | { status: "failed"; message: string; issues?: string[] }
   | { status: "ready"; filename: string; course: unknown; preview: CourseImportPreview }
   | { status: "committing"; filename: string; course: unknown; preview: CourseImportPreview };
 
@@ -62,7 +62,11 @@ export function ImportPanel({
     setState({ status: "checking", filename: file.name });
     const result = await previewCourseImport(course, targetSlug || undefined);
     if (!result.ok) {
-      setState({ status: "failed", message: result.detail ?? "Структура курсу не пройшла перевірку." });
+      setState({
+        status: "failed",
+        message: result.detail ?? "Структура курсу не пройшла перевірку.",
+        issues: result.issues,
+      });
       return;
     }
     setState({ status: "ready", filename: file.name, course, preview: result.data.preview });
@@ -146,9 +150,20 @@ export function ImportPanel({
           </span>
         </div>
         {state.status === "failed" ? (
-          <p className={styles.fieldError} role="alert">
-            {state.message}
-          </p>
+          <div>
+            <p className={styles.fieldError} role="alert">
+              {state.issues?.length ? `Проблем у файлі: ${state.issues.length}` : state.message}
+            </p>
+            {state.issues?.length ? (
+              <ul className={styles.blockerList}>
+                {state.issues.map((issue, index) => (
+                  <li key={index} className={styles.blockerItem}>
+                    <span className={styles.blockerDetail}>{issue}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
         ) : null}
       </div>
       <input
@@ -181,6 +196,9 @@ export function ImportPanel({
               ? "Структура готова до подальшого редагування."
               : `${ready.preview.blockerCount} блокерів публікації залишаться видимими в Builder.`}
           </span>
+          {ready.preview.notes?.map((note, index) => (
+            <span key={index}>{note}</span>
+          ))}
           {ready.preview.blockers.length ? (
             <ul className={styles.blockerList}>
               {ready.preview.blockers.map((blocker, index) => (

@@ -15,6 +15,8 @@ import type { LessonBlock } from "./blocks";
 import { isRecord } from "./inline";
 import { slugify } from "./drafts";
 import { parseInternalReference, internalReferenceKey } from "./references";
+import { COURSE_TITLE_MAX, COURSE_TITLE_RAW_MAX } from "./course";
+import { courseTitleName } from "./title";
 
 export type PortableCoursePreview = {
   course: Course;
@@ -88,9 +90,36 @@ function unwrapCourse(input: unknown): unknown {
   return input;
 }
 
+/**
+ * «Назва: підзаголовок» is how a document heading is usually written, but only
+ * a spaced dash splits a title in two. When the name would be too long as it
+ * stands and the colon cuts it to a fitting one, the colon becomes « — ». The
+ * words are the author's own; only the separator changes, and the import says so.
+ */
+export function splitColonTitle(title: unknown): string | null {
+  if (typeof title !== "string") return null;
+  const trimmed = title.trim();
+  if (courseTitleName(trimmed).length <= COURSE_TITLE_MAX || trimmed.length > COURSE_TITLE_RAW_MAX) return null;
+  const at = trimmed.indexOf(": ");
+  if (at <= 0 || /\s[—–-]\s/u.test(trimmed)) return null;
+  const name = trimmed.slice(0, at).trim();
+  const tail = trimmed.slice(at + 2).trim();
+  if (!name || !tail || name.length > COURSE_TITLE_MAX) return null;
+  return `${name} — ${tail}`;
+}
+
+/** What `normalizePortableCourse` changed in the author's words, for the preview. */
+export function portableImportNotes(raw: unknown): string[] {
+  const input = unwrapCourse(raw);
+  if (!isRecord(input)) return [];
+  const split = splitColonTitle(input.title);
+  return split ? [`Назву розділено на назву й підзаголовок: «${split}».`] : [];
+}
+
 export function normalizePortableCourse(raw: unknown, ids: IdSource): unknown {
   const input = unwrapCourse(raw);
   if (!isRecord(input)) return input;
+  const splitTitle = splitColonTitle(input.title);
   const identities = new Map<string, string>();
   const slug = input.slug ?? (typeof input.title === "string" ? slugify(input.title) : undefined);
   const lessonsTaken = new Set<string>();
@@ -111,6 +140,7 @@ export function normalizePortableCourse(raw: unknown, ids: IdSource): unknown {
     : 0;
   const course: Record<string, unknown> = {
     ...input,
+    ...(splitTitle ? { title: splitTitle } : {}),
     id: ids(),
     slug,
     translationGroupId: ids(),
@@ -288,4 +318,120 @@ export function preparePortableCourse(
       blockCount: lessons.reduce((count, lesson) => count + lesson.blocks.length, 0),
     },
   };
+}
+
+export type PortableIssue = { error: string; context?: string };
+
+const COURSE_KEY_BY_CODE: Record<string, string> = {
+  lms_course_invalid_tagline: "tagline",
+  lms_course_invalid_pretitle: "pretitle",
+  lms_course_pretitle_too_long: "pretitle",
+  lms_course_invalid_kind: "kind",
+  lms_course_invalid_categories: "categories",
+  lms_course_duplicate_categories: "categories",
+  lms_course_too_many_categories: "categories",
+  lms_course_invalid_duration_days: "durationDays",
+  lms_course_invalid_results: "results",
+  lms_course_invalid_audience: "audience",
+  lms_course_invalid_format: "format",
+  lms_course_invalid_accessnote: "accessNote",
+  lms_course_invalid_authornote: "authorNote",
+  lms_course_invalid_visibility: "visibility",
+  lms_course_invalid_cover: "cover",
+  lms_course_cover_missing_src: "cover",
+  lms_course_cover_missing_alt: "cover",
+  lms_course_invalid_cover_mobile_src: "cover",
+  lms_course_invalid_cover_crop: "cover",
+};
+
+const ISSUES_MAX = 40;
+
+/**
+ * Every problem in a file, not just the first.
+ *
+ * The validator stops at the first failure, so an author fixing a file one
+ * error per upload (or one error per round trip through a chat) never learns
+ * how far from valid it is. This walks the same validator repeatedly on a
+ * scratch copy, noting each failure and replacing only the offending block,
+ * lesson, module or optional field with an inert stand-in so the next one can
+ * surface. The stand-ins never leave this function: nothing here is imported.
+ */
+export function collectPortableIssues(raw: unknown, ids: IdSource = () => `probe-${Math.random()}`): PortableIssue[] {
+  const work = structuredClone(normalizePortableCourse(raw, ids)) as Record<string, unknown>;
+  if (!isRecord(work)) return [];
+  const issues: PortableIssue[] = [];
+  const seen = new Set<string>();
+
+  for (let pass = 0; pass < ISSUES_MAX; pass++) {
+    let error: string;
+    try {
+      validateCourse(work, "portable");
+      return issues;
+    } catch (caught) {
+      error = caught instanceof Error ? caught.message : "";
+    }
+    if (!error.startsWith("lms_") || seen.has(error)) {
+      if (error && !seen.has(error)) issues.push({ error });
+      return issues;
+    }
+    seen.add(error);
+    const [code = ""] = error.split(":");
+    const path = error.slice(code.length + 1);
+    const at = (name: string) => {
+      const found = new RegExp(`${name}\\[(\\d+)\\]`).exec(path);
+      return found ? Number(found[1]) : undefined;
+    };
+    const mi = at("modules");
+    const li = at("lessons");
+    const bi = at("blocks");
+    const modules = Array.isArray(work.modules) ? (work.modules as Record<string, unknown>[]) : [];
+    const courseModule = mi === undefined ? undefined : modules[mi];
+    const lessons =
+      courseModule && Array.isArray(courseModule.lessons) ? (courseModule.lessons as Record<string, unknown>[]) : [];
+    const lesson = li === undefined ? undefined : lessons[li];
+    const standIn = () => ({
+      id: ids(),
+      type: "rich_text",
+      content: [{ kind: "p", text: "-" }],
+    });
+
+    if (code === "lms_course_title_too_long") {
+      const title = String(work.title ?? "");
+      const name = courseTitleName(title);
+      issues.push({
+        error,
+        context:
+          name.length > COURSE_TITLE_MAX
+            ? `Зараз назва має ${name.length} символів (ліміт ${COURSE_TITLE_MAX}).`
+            : `Зараз назва разом із підзаголовком має ${title.trim().length} символів (ліміт ${COURSE_TITLE_RAW_MAX}).`,
+      });
+      work.title = "Курс";
+    } else if (COURSE_KEY_BY_CODE[code] && mi === undefined) {
+      issues.push({ error });
+      delete work[COURSE_KEY_BY_CODE[code]!];
+    } else if (lesson && bi !== undefined && Array.isArray(lesson.blocks) && lesson.blocks[bi] !== undefined) {
+      issues.push({ error });
+      (lesson.blocks as unknown[])[bi] = standIn();
+    } else if (lesson && courseModule) {
+      issues.push({ error });
+      lessons[li!] = {
+        ...lesson,
+        slug: `probe-${mi}-${li}-${pass}`,
+        ...(typeof lesson.title === "string" && lesson.title.trim() ? {} : { title: "-" }),
+        ...(code === "lms_lesson_missing_day_index" ? { dayIndex: 900 + pass } : {}),
+        blocks: [standIn()],
+      };
+    } else if (courseModule) {
+      issues.push({ error });
+      modules[mi!] = {
+        ...courseModule,
+        slug: `probe-${mi}-${pass}`,
+        lessons: [{ ...(isRecord(lessons[0]) ? lessons[0] : {}), blocks: [standIn()] }],
+      };
+    } else {
+      issues.push({ error });
+      return issues;
+    }
+  }
+  return issues;
 }
