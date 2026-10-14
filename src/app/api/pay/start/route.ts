@@ -6,9 +6,20 @@ import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import { createPaymentInvoice, resolveLocaleFromRequest } from "@/lib/payments/paymentStart";
 import { readAttribution } from "@/lib/referral/attribution";
+import { userFromCookies } from "@/lib/auth/serverSession";
+import { normalizeCustomerEmail } from "@/lib/platform/customerIdentity";
+import { personalUrl } from "@/lib/surfaces/catalog";
 import { AGENT_COOKIE, isAgentRequest } from "@/lib/tracking/agentTraffic";
 
 export const runtime = "nodejs";
+
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/** A typed address in a shape worth binding an order to, normalised; else null. */
+function typedBuyerEmail(raw: string | null): string | null {
+  const email = normalizeCustomerEmail(raw);
+  return email && email.length <= 254 && EMAIL_SHAPE.test(email) ? email : null;
+}
 
 export async function GET(req: NextRequest) {
   const rl = await enforceRateLimit(req, { name: "pay_start", limit: 30, windowSeconds: 60 });
@@ -25,6 +36,30 @@ export async function GET(req: NextRequest) {
   const offer = await loadPayableOffer(url.searchParams.get("product"));
   if (!offer) {
     return NextResponse.json({ ok: false, error: "unknown_product" }, { status: 404 });
+  }
+  /* NO PAYMENT WITHOUT AN ADDRESS TO CREDIT (owner, 2026-10-09 and 2026-10-11).
+     Access is matched by email and a gateway may not return the payer's
+     address at all, so the order is bound to one BEFORE the buyer leaves.
+     Two sources, in this order:
+     1. `?email=` typed on a landing's «Куди надіслати доступ?» step
+        (email-gate.js). It is what that step promised the buyer, so it is
+        honoured even for a signed-in buyer (a gift, a stale remembered
+        address). NOT verified, which the step's hint says;
+     2. the signed-in session — a verified address; the session cookies are
+        shared across `.centerway.net.ua`, so the platform's own pay links,
+        which carry no `?email=`, work from the cabinet too.
+     With neither, a browser navigation is sent to the email door and comes
+     back to this very address; `format=json` callers get a 401 naming it. */
+  const typedEmail = typedBuyerEmail(url.searchParams.get("email"));
+  const user = typedEmail ? null : await userFromCookies();
+  const sessionEmail = user?.email_confirmed_at ? user.email?.trim().toLowerCase() || null : null;
+  const buyerEmail = typedEmail ?? sessionEmail;
+  if (!buyerEmail) {
+    const signInUrl = personalUrl(`/signin/email?next=${encodeURIComponent(req.url)}`);
+    if (url.searchParams.get("format") === "json") {
+      return NextResponse.json({ ok: false, error: "sign_in_required", signInUrl }, { status: 401 });
+    }
+    return NextResponse.redirect(signInUrl, 302);
   }
   const product = offer.code;
   const resolvedOffer = product === IREM_OFFER_CODE ? await resolveIremLandingOffer(url.searchParams) : null;
@@ -71,6 +106,7 @@ export async function GET(req: NextRequest) {
       (forwardedIp || null) ?? req.headers.get("cf-connecting-ip") ?? req.headers.get("x-real-ip") ?? undefined,
     client_ua: req.headers.get("user-agent") ?? undefined,
     page_url: req.headers.get("referer") ?? undefined,
+    buyer: { email: buyerEmail },
     staff: req.cookies.get("cw_staff")?.value === "1",
     agent: isAgentRequest(req.headers, req.cookies.get(AGENT_COOKIE)?.value),
   });

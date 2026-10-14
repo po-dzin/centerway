@@ -174,6 +174,11 @@ async function assertIremCheckoutRedirect(page, label) {
     .evaluate((node) => {
       node.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
     });
+  // The CTA now opens the «Куди надіслати доступ?» step (email-gate.js); the
+  // payment request is made only once an address is submitted.
+  await page.waitForSelector(".cw-eg__card", { timeout: 2000 });
+  await page.fill("#cw-eg-email", "smoke@example.com");
+  await page.click(".cw-eg__go");
   await page.waitForTimeout(200);
 
   if (!payStartUrl) {
@@ -182,7 +187,11 @@ async function assertIremCheckoutRedirect(page, label) {
   }
 
   const parsed = new URL(payStartUrl);
-  if (parsed.pathname !== "/api/pay/start" || parsed.searchParams.get("product") !== "irem") {
+  if (
+    parsed.pathname !== "/api/pay/start" ||
+    parsed.searchParams.get("product") !== "irem" ||
+    parsed.searchParams.get("email") !== "smoke@example.com"
+  ) {
     fail(`${label}: checkout CTA requested unexpected URL ${payStartUrl}`);
     return;
   }

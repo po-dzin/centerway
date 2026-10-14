@@ -19,6 +19,7 @@ import type { PaymentGateway } from "@/lib/payments/gateway/types";
 const hoisted = vi.hoisted(() => ({
   db: null as unknown as import("@/lib/admin/fakeSupabase").FakeSupabase,
   liveCourses: new Map<string, unknown>(),
+  user: null as null | { id: string; email: string; email_confirmed_at: string | null },
 }));
 hoisted.db = new FakeSupabase();
 const db = hoisted.db;
@@ -35,6 +36,7 @@ const gateway = {
   createInvoice,
 } as unknown as PaymentGateway;
 
+vi.mock("@/lib/auth/serverSession", () => ({ userFromCookies: async () => hoisted.user }));
 vi.mock("@/lib/supabaseAdmin", () => ({ supabaseAdmin: () => hoisted.db }));
 vi.mock("next/cache", () => ({ unstable_cache: (fn: () => unknown) => fn }));
 vi.mock("@/lib/lms/liveCatalog", () => ({
@@ -101,6 +103,7 @@ beforeEach(() => {
     experiences: [{ id: "exp-way21", kind: "course", slug: "way21", title: "Шлях 21" }],
     lms_courses: [{ slug: "way21", program_slug: "way21", experience_id: "exp-way21", created_at: "2026-01-01" }],
     orders: [],
+    customers: [],
     jobs: [],
     events: [],
   };
@@ -117,6 +120,59 @@ beforeEach(() => {
     schedule: { mode: "daily" },
   });
   createInvoice.mockClear();
+  hoisted.user = { id: "u1", email: "Buyer@Example.com", email_confirmed_at: "2026-10-01T00:00:00Z" };
+});
+
+describe("GET /api/pay/start — sign-in before payment", () => {
+  it("sends a signed-out browser to the email door and back to the same pay link", async () => {
+    hoisted.user = null;
+    const res = await get("product=way21-group");
+    expect(res.status).toBe(302);
+    const location = new URL(res.headers.get("location")!);
+    expect(location.origin + location.pathname).toBe("https://my.centerway.net.ua/signin/email");
+    expect(location.searchParams.get("next")).toBe("https://www.centerway.net.ua/api/pay/start?product=way21-group");
+    expect(createInvoice).not.toHaveBeenCalled();
+    expect(db.tables.orders).toHaveLength(0);
+  });
+
+  it("answers a json caller with 401 and the door's address", async () => {
+    hoisted.user = null;
+    const res = await get("product=way21-group&format=json");
+    expect(res.status).toBe(401);
+    expect(await res.json()).toMatchObject({ ok: false, error: "sign_in_required" });
+  });
+
+  it("takes the address typed on a landing when nobody is signed in, and binds the order to it", async () => {
+    hoisted.user = null;
+    const res = await get("product=way21-group&format=json&email=Anna%40Example.com");
+    expect(res.status).toBe(200);
+    const customers = db.tables.customers as Row[];
+    expect(customers[0]?.email).toBe("anna@example.com");
+    expect((db.tables.orders as Row[])[0]?.customer_id).toBe(customers[0]?.id);
+  });
+
+  it("ignores a typed address that is not one, and honours a valid typed one over the session", async () => {
+    hoisted.user = null;
+    expect((await get("product=way21-group&email=not-an-email")).status).toBe(302);
+    hoisted.user = { id: "u1", email: "Buyer@Example.com", email_confirmed_at: "2026-10-01T00:00:00Z" };
+    await get("product=way21-group&format=json&email=other%40example.com");
+    expect((db.tables.customers as Row[]).map((c) => c.email)).toEqual(["other@example.com"]);
+  });
+
+  it("treats an unconfirmed email as signed out", async () => {
+    hoisted.user = { id: "u1", email: "a@b.co", email_confirmed_at: null };
+    expect((await get("product=way21-group")).status).toBe(302);
+    expect(createInvoice).not.toHaveBeenCalled();
+  });
+
+  it("binds the order to the signed-in account's customer before the gateway", async () => {
+    const res = await get("product=way21-group&format=json");
+    expect(res.status).toBe(200);
+    const customers = db.tables.customers as Row[];
+    expect(customers).toHaveLength(1);
+    expect(customers[0]?.email).toBe("buyer@example.com");
+    expect((db.tables.orders as Row[])[0]?.customer_id).toBe(customers[0]?.id);
+  });
 });
 
 describe("GET /api/pay/start — formats of a program", () => {

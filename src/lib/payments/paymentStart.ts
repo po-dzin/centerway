@@ -10,6 +10,7 @@ import {
 } from "@/lib/products";
 import { activeGateway, type PaymentGateway } from "@/lib/payments/gateway";
 import { resolveInvoiceSplits } from "@/lib/payments/invoiceSplits";
+import { upsertCustomerByContact } from "@/lib/platform/customerIdentity";
 import { buildReturnUrl, invoiceLine } from "@/lib/payments/pay";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
@@ -64,6 +65,13 @@ export type PaymentStartInput = {
   page_url?: string | null; // URL лендинга (event_source_url для CAPI)
   event_id?: string | null; // event_id для dedupe Pixel + CAPI (InitiateCheckout)
   staff?: boolean; // internal/QA traffic — skip Meta CAPI (InitiateCheckout)
+  /**
+   * WHO IS PAYING, from a verified session. Access is matched by email, and a
+   * gateway may not return the payer's address at all (LiqPay's callback does
+   * not document it), so the order is bound to the account's customer BEFORE
+   * the buyer leaves for the gateway. The webhook then credits this customer.
+   */
+  buyer?: { email: string } | null;
   agent?: boolean; // automated visitor — skip InitiateCheckout, mark the order via_agent (lib/tracking/agentTraffic)
 };
 
@@ -192,6 +200,18 @@ export async function createPaymentInvoiceWithDeps(
   const order_ref = makeOrderRef(product, deps.nowMs, deps.randomHex);
   const sb = deps.db;
 
+  let customerId: string | null = null;
+  if (input.buyer?.email) {
+    try {
+      customerId = (await upsertCustomerByContact(sb, { email: input.buyer.email })).id;
+    } catch (e) {
+      console.error("[pay/start] customer bind failed", e, { order_ref });
+    }
+    // A signed-in buyer whose order cannot be tied to them would be paid for
+    // and then not found: refuse before any money moves.
+    if (!customerId) return { ok: false, status: 500, error: "customer_bind_failed", order_ref };
+  }
+
   // The gateway round-trip is the slowest leg of this request and depends only
   // on locally-computed values (order_ref, amount). Kick it off first and let
   // the order/analytics writes run concurrently underneath it instead of
@@ -224,6 +244,7 @@ export async function createPaymentInvoiceWithDeps(
 
   const orderInsertPromise = sb.from("orders").insert({
     order_ref,
+    ...(customerId ? { customer_id: customerId } : {}),
     product_code: product,
     amount,
     currency: cfg.currency,
