@@ -8,7 +8,7 @@ import { createPaymentInvoice, resolveLocaleFromRequest } from "@/lib/payments/p
 import { readAttribution } from "@/lib/referral/attribution";
 import { userFromCookies } from "@/lib/auth/serverSession";
 import { normalizeCustomerEmail } from "@/lib/platform/customerIdentity";
-import { personalUrl } from "@/lib/surfaces/catalog";
+import { PROFILE_PATH_PREFIX, personalUrl } from "@/lib/surfaces/catalog";
 import { AGENT_COOKIE, isAgentRequest } from "@/lib/tracking/agentTraffic";
 
 export const runtime = "nodejs";
@@ -48,14 +48,14 @@ export async function GET(req: NextRequest) {
      2. the signed-in session — a verified address; the session cookies are
         shared across `.centerway.net.ua`, so the platform's own pay links,
         which carry no `?email=`, work from the cabinet too.
-     With neither, a browser navigation is sent to the email door and comes
-     back to this very address; `format=json` callers get a 401 naming it. */
+     With neither, a browser navigation is sent to the cabinet's own sign-in door (Google, last account, email: the one every other sign-in uses) and comes
+     back to this very address through the cabinet's own door (Google, the last account, email), the one every other sign-in uses; `format=json` callers get a 401 naming it. */
   const typedEmail = typedBuyerEmail(url.searchParams.get("email"));
   const user = typedEmail ? null : await userFromCookies();
   const sessionEmail = user?.email_confirmed_at ? user.email?.trim().toLowerCase() || null : null;
   const buyerEmail = typedEmail ?? sessionEmail;
   if (!buyerEmail) {
-    const signInUrl = personalUrl(`/signin/email?next=${encodeURIComponent(req.url)}`);
+    const signInUrl = personalUrl(`${PROFILE_PATH_PREFIX}?next=${encodeURIComponent(req.url)}`);
     if (url.searchParams.get("format") === "json") {
       return NextResponse.json({ ok: false, error: "sign_in_required", signInUrl }, { status: 401 });
     }
