@@ -132,12 +132,19 @@ export function PlatformCatalogBrowser({
   const narrowed = !isCatalogQueryEmpty(query);
 
   /* A CONTROL WITH NOTHING BEHIND IT IS NOT SHOWN. One card cannot be narrowed
-     to fewer than one, so a catalogue of one renders exactly the grid it
-     rendered before this component existed — and grows the control the day a
-     second offer lands. Same rule the shelf's filter applies to its chips. */
+     to fewer than one, so a catalogue of one renders the plain grid — and grows
+     the control the day a second offer lands. Same rule the shelf's filter
+     applies to its chips.
+
+     A LONE CARD KEEPS THE GRID'S COLUMN (2026-10-14). It used to be told to
+     fill the row, which made one product a 1140px plate with a 640px photo and
+     a lot of empty paper under a one-line title — a different object from the
+     program cards on the same page. In the grid's own column it is the same
+     card at the same size as a mini-course on the home page; a phone still
+     gives it the full measure, as it gives every catalogue card. */
   if (entries.length < 2) {
     return (
-      <div className={offerStyles.aggregateRail} data-layout={entries.length === 1 ? "single" : layout}>
+      <div className={offerStyles.aggregateRail} data-layout={layout}>
         {entries.map((entry) => (
           <PlatformOfferCard key={entry.key} {...entry.card} />
         ))}
