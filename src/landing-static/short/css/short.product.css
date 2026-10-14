@@ -432,19 +432,20 @@ img {
 }
 /* The hero also carries its own benefits lead and list (the copy pipeline
    fills the first `.benefits-block`), so they sit on footage too and need the
-   same remap — left on the cream-surface tokens they render dark on dark. */
+   same remap — left on the cream-surface tokens they render dark on dark.
+   The badge and the check circles are solid cream like the quote card below:
+   translucent white plates washed out against the footage. */
 .section-hero.has-video-bg .benefits-block > p,
 .section-hero.has-video-bg .benefits__item {
   color: rgba(255, 255, 255, 0.88);
 }
 .section-hero.has-video-bg .benefits__icon {
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--landing-color-surface-base);
 }
 .section-hero.has-video-bg .badge {
-  background: rgba(255, 255, 255, 0.22);
-  color: #fff;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: var(--landing-color-surface-base);
+  color: var(--landing-color-text-strong);
+  font-weight: 600;
   /* Smaller than the shared 14px/8x16 badge default: over footage a
      full-size badge competes with the H1 for attention. */
   padding: var(--cw-space-2xs) var(--cw-space-sm);
