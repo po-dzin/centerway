@@ -7,8 +7,8 @@ import styles from "./PlatformCheckout.module.css";
  * ORDER SUMMARY — what is being bought, as information to check.
  *
  * A design-system component of its own (docs/design-system.md → «Checkout: two
- * components»): the sunk material and no shadow, because nothing here is a
- * control; the sum sits at the foot under the system's fading rule, so beside
+ * components»): the platform card's raised material and soft shadow, so it
+ * holds its edge on the warm canvas (owner, 2026-10-14); the sum sits at the foot under the system's fading rule, so beside
  * a taller neighbour the card stretches and the total stays at the bottom.
  * Every value is passed in — the checkout page reads them from the offer row
  * (`checkoutSummary.ts`) — so the card cannot quote a price of its own.

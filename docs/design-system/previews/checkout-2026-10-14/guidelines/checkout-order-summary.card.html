@@ -30,7 +30,7 @@
   li::before { content: "✓"; color: var(--cw-sem-warmth); }
 </style>
 <style>
-  .summary { background: var(--cw-mat-surface-sunk); min-height: 420px; }
+  .summary { background: var(--cw-mat-surface); box-shadow: var(--cw-mat-shadow-soft); min-height: 420px; }
   .product { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; }
   .cover { width: 72px; aspect-ratio: 1; border-radius: var(--cw-radius-sm); background: var(--cw-sem-texture-rings), var(--cw-sem-calm-surface-muted); }
   .total { margin-top: auto; display: flex; justify-content: space-between; align-items: baseline; padding-top: 14px;
@@ -40,7 +40,7 @@
 </head>
 <body>
 <h1>Order summary</h1>
-<p class="lede">The left half of <code>/pay/checkout</code> (<code>OrderSummary.tsx</code>). Information to check, not a control: the sunk material and no shadow. The sum sits at the foot, so beside a taller address panel the card stretches and the total stays at the bottom.</p>
+<p class="lede">The left half of <code>/pay/checkout</code> (<code>OrderSummary.tsx</code>). The platform card's raised material and soft shadow, so it holds its edge on the warm canvas. The sum sits at the foot, so beside a taller address panel the card stretches and the total stays at the bottom.</p>
 <div class="pair">
   <div class="theme">
     <article class="card summary">
@@ -49,7 +49,7 @@
       <ul><li>16 уроків у 5 модулях</li><li>Курс відкриється у вашому кабінеті одразу після оплати</li><li>Разова оплата, без підписки і автоплатежів</li></ul>
       <div class="total"><p class="muted"><b>До сплати</b></p><p class="price">4 100 ₴</p></div>
     </article>
-    <p class="tokens">--cw-mat-surface-sunk · --cw-card-radius · --cw-sem-warmth (ticks) · rule: --cw-rule-fade-x</p>
+    <p class="tokens">--cw-mat-surface · --cw-mat-shadow-soft · --cw-card-radius · --cw-sem-warmth (ticks) · rule: --cw-rule-fade-x</p>
   </div>
   <div class="theme" data-cw-theme="dark">
     <article class="card summary">

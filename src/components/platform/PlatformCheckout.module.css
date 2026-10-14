@@ -1,7 +1,7 @@
 /* The checkout page (`CheckoutScreen`): what is bought beside where access goes.
-   Nothing here names a colour, a radius or a shadow of its own — the summary
-   takes the sunk material, the form takes the offer panel's raised one, and the
-   controls compose the platform's button roles. */
+   Nothing here names a colour, a radius or a shadow of its own — both halves
+   wear the platform card's raised material, and the controls compose the
+   platform's button roles. */
 
 /* Two columns from the width where both halves still hold a comfortable
    measure; one column below it, summary first, so a phone reads the order
@@ -40,7 +40,10 @@
   margin-inline-end: var(--cw-space-2xs);
 }
 
-/* Information to check, not a control: the sunk material, no shadow. */
+/* THE CARD'S OWN MATERIAL, SHADOW INCLUDED (owner, 2026-10-14). The summary
+   was the sunk material with no shadow, and on the warm canvas it all but
+   dissolved into the page. It is a card like the panel beside it: the same
+   surface, the same soft shadow (`PlatformShell .card`). */
 .summary {
   /* A column, so the sum can take `margin-top: auto` and sit at the foot. */
   display: flex;
@@ -49,7 +52,8 @@
   min-width: 0;
   padding: clamp(1.15rem, 3vw, 2rem);
   border-radius: var(--cw-card-radius);
-  background: var(--cw-mat-surface-sunk);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
 }
 
 .product {
@@ -195,58 +199,7 @@
   composes: fill from "./PlatformButtons.module.css";
 }
 
-/* THE MESSENGER CHOICE. Two radios drawn as the quiet `secondary` plate; the
-   chosen one takes the accent edge and the full text colour. The radio itself
-   stays in the DOM (keyboard, form submit, no-JS) and is only hidden from
-   sight. */
-.channel {
-  display: grid;
-  gap: var(--cw-space-2xs);
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.channel legend {
-  padding: 0;
-  margin-bottom: var(--cw-space-2xs);
-  color: var(--cw-platform-muted);
-  font-size: var(--ds-type-label-size);
-  line-height: var(--ds-type-label-line-height);
-  font-weight: 700;
-}
-
-.channelOptions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--cw-space-xs);
-}
-
-.channelOption {
-  composes: secondary from "./PlatformButtons.module.css";
-  composes: fill from "./PlatformButtons.module.css";
-  position: relative;
-  color: var(--cw-platform-muted);
-  cursor: pointer;
-}
-
-.channelOption input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-  width: 1px;
-  height: 1px;
-}
-
-.channelOption:has(input:checked) {
-  border-color: var(--cw-platform-accent);
-  color: var(--cw-platform-text);
-}
-
-/* The focus answer every button role gives (`.base:focus-visible`). */
-.channelOption:has(input:focus-visible) {
-  box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 28%, transparent),
-    var(--cw-mat-shadow-soft);
+/* «(необов'язково)» beside a label: the label's size, not its weight. */
+.optional {
+  font-weight: 400;
 }

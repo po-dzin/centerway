@@ -52,7 +52,8 @@ export async function GET(req: NextRequest) {
      the checkout page — a browser is sent to that page with the same query,
      and `format=json` callers get a 401 naming it.
 
-     A NAME AND A MESSENGER ARE ASKED TOO (owner, 2026-10-14), and the same
+     A NAME AND A PHONE OR TELEGRAM ARE ASKED TOO, WhatsApp optional (owner,
+     2026-10-14), and the same
      way: without them the buyer goes back to the page, which shows what was
      already typed (`email` included) so nothing is typed twice. They are the
      buyer's own claim, unverified, and are kept on the order (`orders.meta`);
@@ -64,8 +65,8 @@ export async function GET(req: NextRequest) {
   const buyerEmail = typedEmail ?? sessionEmail;
   const details = readBuyerDetails({
     name: url.searchParams.get("name"),
-    channel: url.searchParams.get("channel"),
     contact: url.searchParams.get("contact"),
+    whatsapp: url.searchParams.get("whatsapp"),
   });
   if (!buyerEmail || !details) {
     const checkout = new URL(CHECKOUT_PAGE_PATH, req.url);

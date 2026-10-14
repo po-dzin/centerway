@@ -1,20 +1,25 @@
 /**
  * WHO IS PAYING, BEYOND AN ADDRESS (owner, 2026-10-14): a name to address the
- * buyer by and one messenger to reach them in — Telegram or WhatsApp. An email
- * can bounce, land in spam or carry a typo; a group program needs a channel a
- * person actually reads.
+ * buyer by, and a phone or Telegram to reach them by, with WhatsApp beside it
+ * if they like. An email can bounce, land in spam or carry a typo; a group
+ * program needs a channel a person actually reads.
  *
  * Pure, so the checkout form answers in the buyer's words before a round trip
  * and `/api/pay/start` checks the same rules again as the authority.
  */
 
-export type ContactChannel = "telegram" | "whatsapp";
-
-export const CONTACT_CHANNELS: readonly ContactChannel[] = ["telegram", "whatsapp"];
+/** How a buyer can be reached: a phone, a Telegram username, or WhatsApp (always a phone). */
+export type ContactChannel = "phone" | "telegram" | "whatsapp";
 
 export type BuyerContact = { channel: ContactChannel; value: string };
 
-export type BuyerDetails = { name: string; contact: BuyerContact };
+export type BuyerDetails = {
+  name: string;
+  /** Required: a phone or a Telegram username, typed in one field. */
+  contact: BuyerContact;
+  /** Optional: a WhatsApp number, when it differs or the buyer prefers it. */
+  whatsapp: string | null;
+};
 
 export const NAME_MAX = 80;
 
@@ -26,7 +31,7 @@ export function normalizeBuyerName(raw: string | null | undefined): string | nul
 }
 
 export function parseContactChannel(raw: string | null | undefined): ContactChannel | null {
-  return raw === "telegram" || raw === "whatsapp" ? raw : null;
+  return raw === "phone" || raw === "telegram" || raw === "whatsapp" ? raw : null;
 }
 
 /**
@@ -34,8 +39,8 @@ export function parseContactChannel(raw: string | null | undefined): ContactChan
  * typed the local way, `0XX XXX XX XX`, gets its `+38`, because that is how
  * almost every buyer here will type it.
  */
-export function normalizeContactPhone(raw: string): string | null {
-  const compact = raw.replace(/[\s().-]/g, "");
+export function normalizeContactPhone(raw: string | null | undefined): string | null {
+  const compact = (raw ?? "").trim().replace(/[\s().-]/g, "");
   if (!/^\+?\d+$/.test(compact)) return null;
   let digits = compact.replace(/^\+/, "");
   if (!compact.startsWith("+") && /^0\d{9}$/.test(digits)) digits = `38${digits}`;
@@ -48,41 +53,48 @@ export function normalizeContactPhone(raw: string): string | null {
 const TELEGRAM_USERNAME = /^[A-Za-z][A-Za-z0-9_]{4,31}$/;
 
 /**
- * Telegram: `@username`, `username`, a `t.me/username` link, or the phone the
- * account is on. WhatsApp: a phone, nothing else — WhatsApp has no usernames.
+ * THE ONE REQUIRED FIELD, «Телефон або Telegram» (owner, 2026-10-14): a phone
+ * number, or a Telegram username however it is pasted — `@anna`, `anna`, a
+ * `t.me/anna` link. What was typed decides the channel; the buyer picks none.
  */
-export function normalizeContactValue(channel: ContactChannel, raw: string | null | undefined): string | null {
+export function readPrimaryContact(raw: string | null | undefined): BuyerContact | null {
   const value = (raw ?? "").trim();
   if (!value) return null;
-  if (channel === "telegram") {
-    const handle = value.replace(/^(?:https?:\/\/)?(?:t\.me|telegram\.me)\//i, "").replace(/^@/, "");
-    if (TELEGRAM_USERNAME.test(handle)) return `@${handle}`;
-  }
-  return normalizeContactPhone(value);
+  const handle = value.replace(/^(?:https?:\/\/)?(?:t\.me|telegram\.me)\//i, "").replace(/^@/, "");
+  if (TELEGRAM_USERNAME.test(handle)) return { channel: "telegram", value: `@${handle}` };
+  const phone = normalizeContactPhone(value);
+  return phone ? { channel: "phone", value: phone } : null;
 }
 
-/** The whole set the checkout asks for, normalised; null when any part is missing or malformed. */
+/**
+ * The whole set the checkout asks for, normalised; null when the name or the
+ * required contact is missing or malformed, or when a WhatsApp number was
+ * typed but is not one (an optional field still may not be wrong).
+ */
 export function readBuyerDetails(input: {
   name: string | null | undefined;
-  channel: string | null | undefined;
   contact: string | null | undefined;
+  whatsapp?: string | null | undefined;
 }): BuyerDetails | null {
   const name = normalizeBuyerName(input.name);
-  const channel = parseContactChannel(input.channel);
-  if (!name || !channel) return null;
-  const value = normalizeContactValue(channel, input.contact);
-  return value ? { name, contact: { channel, value } } : null;
+  const contact = readPrimaryContact(input.contact);
+  if (!name || !contact) return null;
+  const typedWhatsapp = (input.whatsapp ?? "").trim();
+  const whatsapp = typedWhatsapp ? normalizeContactPhone(typedWhatsapp) : null;
+  if (typedWhatsapp && !whatsapp) return null;
+  return { name, contact, whatsapp };
 }
 
-/** Where a person in the admin taps to write to the buyer. */
+/** Where a person in the admin taps to reach the buyer. */
 export function contactHref(contact: BuyerContact): string {
-  // Telegram opens `t.me/username` and `t.me/+380…` alike; WhatsApp wants bare digits.
-  return contact.channel === "telegram"
-    ? `https://t.me/${contact.value.replace(/^@/, "")}`
-    : `https://wa.me/${contact.value.replace(/^\+/, "")}`;
+  // Telegram opens `t.me/username`; WhatsApp wants bare digits.
+  if (contact.channel === "telegram") return `https://t.me/${contact.value.replace(/^@/, "")}`;
+  if (contact.channel === "whatsapp") return `https://wa.me/${contact.value.replace(/^\+/, "")}`;
+  return `tel:${contact.value}`;
 }
 
 export const CONTACT_CHANNEL_LABEL: Record<ContactChannel, string> = {
+  phone: "Телефон",
   telegram: "Telegram",
   whatsapp: "WhatsApp",
 };

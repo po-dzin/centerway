@@ -47,14 +47,21 @@ interface Order {
     display_name: string | null;
   } | null;
   /** What the buyer typed on the checkout page: a name and one messenger (`/api/pay/start`). */
-  meta?: { buyer?: { name?: string | null; contact?: { channel?: string; value?: string } | null } } | null;
+  meta?: {
+    buyer?: { name?: string | null; contact?: { channel?: string; value?: string } | null; whatsapp?: string | null };
+  } | null;
 }
 
-/* The checkout's messenger, when the order carries a well-formed one. */
-function orderContact(order: Order): BuyerContact | null {
+/* How the checkout says to reach the buyer: «Телефон або Telegram», then the
+   optional WhatsApp — each only when well-formed. */
+function orderContacts(order: Order): BuyerContact[] {
+  const out: BuyerContact[] = [];
   const raw = order.meta?.buyer?.contact;
   const channel = parseContactChannel(raw?.channel);
-  return channel && typeof raw?.value === "string" && raw.value ? { channel, value: raw.value } : null;
+  if (channel && typeof raw?.value === "string" && raw.value) out.push({ channel, value: raw.value });
+  const whatsapp = order.meta?.buyer?.whatsapp;
+  if (typeof whatsapp === "string" && whatsapp) out.push({ channel: "whatsapp", value: whatsapp });
+  return out;
 }
 
 interface IssuedLandingOffer {
@@ -1025,7 +1032,7 @@ export default function OrdersPage() {
                 const customer = order.customers;
                 const customerLabel =
                   customer?.display_name ?? order.meta?.buyer?.name ?? customer?.email ?? customer?.phone ?? null;
-                const contact = orderContact(order);
+                const contacts = orderContacts(order);
 
                 return (
                   /* THE ROW STACKS; THE REFERENCE IS NOT TRUNCATED.
@@ -1106,20 +1113,22 @@ export default function OrdersPage() {
                               )}
                             </>
                           )}
-                          {contact && (
-                            <>
-                              <span className={lists.orderSubMuted}>·</span>
+                          {contacts.map((contact) => (
+                            <span key={contact.channel} className={lists.orderCustomerMeasure}>
+                              <span className={lists.orderSubMuted}>· </span>
                               <a
                                 href={contactHref(contact)}
                                 target="_blank"
                                 rel="noreferrer"
-                                className={`cw-link-hover ${lists.orderCustomerMeasure}`}
+                                className="cw-link-hover"
                                 title={`${CONTACT_CHANNEL_LABEL[contact.channel]} ${contact.value}`}
                               >
-                                {CONTACT_CHANNEL_LABEL[contact.channel]} {contact.value}
+                                {contact.channel === "phone"
+                                  ? contact.value
+                                  : `${CONTACT_CHANNEL_LABEL[contact.channel]} ${contact.value}`}
                               </a>
-                            </>
-                          )}
+                            </span>
+                          ))}
                         </div>
                       </div>
 

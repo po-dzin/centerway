@@ -17,9 +17,9 @@ import styles from "./PlatformCheckout.module.css";
  * the order before the gateway's page and every order is bound to an address
  * before it exists (`/api/pay/start`).
  *
- * The page only arranges two design-system components: `OrderSummary` (the
- * quieter, sunk half: information to check) and `AddressPanel` (the raised
- * panel with the page's one primary action). On a desktop the two stand at
+ * The page only arranges two design-system components: `OrderSummary`
+ * (information to check) and `AddressPanel` (the page's one primary action),
+ * both on the platform card's raised material. On a desktop the two stand at
  * one height.
  */
 export function CheckoutScreen({
