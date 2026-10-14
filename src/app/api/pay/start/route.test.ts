@@ -124,12 +124,12 @@ beforeEach(() => {
 });
 
 describe("GET /api/pay/start — sign-in before payment", () => {
-  it("sends a signed-out browser to the email door and back to the same pay link", async () => {
+  it("sends a signed-out browser to the cabinet's sign-in door and back to the same pay link", async () => {
     hoisted.user = null;
     const res = await get("product=way21-group");
     expect(res.status).toBe(302);
     const location = new URL(res.headers.get("location")!);
-    expect(location.origin + location.pathname).toBe("https://my.centerway.net.ua/signin/email");
+    expect(location.origin + location.pathname).toBe("https://my.centerway.net.ua/profile");
     expect(location.searchParams.get("next")).toBe("https://www.centerway.net.ua/api/pay/start?product=way21-group");
     expect(createInvoice).not.toHaveBeenCalled();
     expect(db.tables.orders).toHaveLength(0);
