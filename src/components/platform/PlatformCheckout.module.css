@@ -198,8 +198,3 @@
   composes: primary from "./PlatformButtons.module.css";
   composes: fill from "./PlatformButtons.module.css";
 }
-
-/* «(необов'язково)» beside a label: the label's size, not its weight. */
-.optional {
-  font-weight: 400;
-}

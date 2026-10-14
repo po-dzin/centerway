@@ -1,15 +1,14 @@
 /**
  * WHO IS PAYING, BEYOND AN ADDRESS (owner, 2026-10-14): a name to address the
- * buyer by, and a phone or Telegram to reach them by, with WhatsApp beside it
- * if they like. An email can bounce, land in spam or carry a typo; a group
+ * buyer by, and a phone or Telegram to reach them by, in one field. An email can bounce, land in spam or carry a typo; a group
  * program needs a channel a person actually reads.
  *
  * Pure, so the checkout form answers in the buyer's words before a round trip
  * and `/api/pay/start` checks the same rules again as the authority.
  */
 
-/** How a buyer can be reached: a phone, a Telegram username, or WhatsApp (always a phone). */
-export type ContactChannel = "phone" | "telegram" | "whatsapp";
+/** How a buyer can be reached: a phone, or a Telegram username. */
+export type ContactChannel = "phone" | "telegram";
 
 export type BuyerContact = { channel: ContactChannel; value: string };
 
@@ -17,8 +16,6 @@ export type BuyerDetails = {
   name: string;
   /** Required: a phone or a Telegram username, typed in one field. */
   contact: BuyerContact;
-  /** Optional: a WhatsApp number, when it differs or the buyer prefers it. */
-  whatsapp: string | null;
 };
 
 export const NAME_MAX = 80;
@@ -31,7 +28,7 @@ export function normalizeBuyerName(raw: string | null | undefined): string | nul
 }
 
 export function parseContactChannel(raw: string | null | undefined): ContactChannel | null {
-  return raw === "phone" || raw === "telegram" || raw === "whatsapp" ? raw : null;
+  return raw === "phone" || raw === "telegram" ? raw : null;
 }
 
 /**
@@ -66,35 +63,22 @@ export function readPrimaryContact(raw: string | null | undefined): BuyerContact
   return phone ? { channel: "phone", value: phone } : null;
 }
 
-/**
- * The whole set the checkout asks for, normalised; null when the name or the
- * required contact is missing or malformed, or when a WhatsApp number was
- * typed but is not one (an optional field still may not be wrong).
- */
+/** The whole set the checkout asks for, normalised; null when the name or the contact is missing or malformed. */
 export function readBuyerDetails(input: {
   name: string | null | undefined;
   contact: string | null | undefined;
-  whatsapp?: string | null | undefined;
 }): BuyerDetails | null {
   const name = normalizeBuyerName(input.name);
   const contact = readPrimaryContact(input.contact);
-  if (!name || !contact) return null;
-  const typedWhatsapp = (input.whatsapp ?? "").trim();
-  const whatsapp = typedWhatsapp ? normalizeContactPhone(typedWhatsapp) : null;
-  if (typedWhatsapp && !whatsapp) return null;
-  return { name, contact, whatsapp };
+  return name && contact ? { name, contact } : null;
 }
 
 /** Where a person in the admin taps to reach the buyer. */
 export function contactHref(contact: BuyerContact): string {
-  // Telegram opens `t.me/username`; WhatsApp wants bare digits.
-  if (contact.channel === "telegram") return `https://t.me/${contact.value.replace(/^@/, "")}`;
-  if (contact.channel === "whatsapp") return `https://wa.me/${contact.value.replace(/^\+/, "")}`;
-  return `tel:${contact.value}`;
+  return contact.channel === "telegram" ? `https://t.me/${contact.value.replace(/^@/, "")}` : `tel:${contact.value}`;
 }
 
 export const CONTACT_CHANNEL_LABEL: Record<ContactChannel, string> = {
   phone: "Телефон",
   telegram: "Telegram",
-  whatsapp: "WhatsApp",
 };

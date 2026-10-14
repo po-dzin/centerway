@@ -1,4 +1,4 @@
-<!-- @dsCard group="Commerce" viewport="1080x980" name="Address panel" subtitle="checkout, right half: name, address or the signed-in account, phone or Telegram, optional WhatsApp, one gold action" -->
+<!-- @dsCard group="Commerce" viewport="1080x900" name="Address panel" subtitle="checkout, right half: name, address or the signed-in account, one phone-or-Telegram field, one gold action" -->
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -41,12 +41,11 @@
   .account b { color: var(--cw-platform-text); }
   .account u { color: var(--cw-platform-text); }
   .foot { margin-top: auto; display: grid; gap: 8px; }
-  .field small { font-weight: 400; }
 </style>
 </head>
 <body>
 <h1>Address panel</h1>
-<p class="lede">The right half of <code>/pay/checkout</code> (<code>AddressPanel.tsx</code>). The offer panel's raised material, because it holds the page's one primary action. It asks a name, an address (signed in: names the account and offers «Інша адреса») one required «Телефон або Telegram» field (what is typed decides which) and an optional WhatsApp number. Fine print sits at the foot.</p>
+<p class="lede">The right half of <code>/pay/checkout</code> (<code>AddressPanel.tsx</code>). The offer panel's raised material, because it holds the page's one primary action. It asks a name, an address (signed in: names the account and offers «Інша адреса») and one required «Телефон або Telegram» field (what is typed decides which). Fine print sits at the foot.</p>
 <div class="pair">
   <div class="theme">
     <article class="card panel">
@@ -55,7 +54,6 @@
       <label class="field"><span>Електронна пошта</span><div class="input">anna@gmail.com</div></label>
       <p class="muted">На неї прийдуть чек і вхід у кабінет. Перевірте літери.</p>
       <label class="field"><span>Телефон або Telegram</span><div class="input">@anna</div></label>
-      <label class="field"><span>WhatsApp <small>(необов'язково)</small></span><div class="input">+380 67 123 45 67</div></label>
       <div class="go">Перейти до оплати</div>
       <div class="foot"><p class="muted">Оплата на захищеній сторінці LiqPay: картка, Apple Pay або Google Pay.</p></div>
     </article>
@@ -67,7 +65,6 @@
       <label class="field"><span>Ім'я</span><div class="input">Анна</div></label>
       <div class="account"><span>Доступ прийде в ваш акаунт <b>anna@gmail.com</b></span><u>Інша адреса</u></div>
       <label class="field"><span>Телефон або Telegram</span><div class="input">+380 67 123 45 67</div></label>
-      <label class="field"><span>WhatsApp <small>(необов'язково)</small></span><div class="input">+380 67 123 45 67</div></label>
       <div class="go">Перейти до оплати</div>
       <div class="foot"><p class="muted">Оплата на захищеній сторінці LiqPay: картка, Apple Pay або Google Pay.</p></div>
     </article>

@@ -73,7 +73,7 @@ export type PaymentStartInput = {
    * not document it), so the order is bound to the account's customer BEFORE
    * the buyer leaves for the gateway. The webhook then credits this customer.
    *
-   * `name`, `contact` and `whatsapp` are what the checkout page asks beside the address
+   * `name` and `contact` are what the checkout page asks beside the address
    * (lib/platform/buyerContact). `verified` says the address came from the
    * signed-in session rather than from a field anyone can type into.
    */
@@ -193,17 +193,14 @@ async function fillCustomerDetails(
   created: boolean,
 ) {
   if (!created && !buyer.verified) return;
-  if (!buyer.name && !buyer.contact && !buyer.whatsapp) return;
+  if (!buyer.name && !buyer.contact) return;
   try {
     const { data } = await sb.from("customers").select("display_name, meta").eq("id", customerId).maybeSingle();
     const row = (data ?? {}) as { display_name?: string | null; meta?: Record<string, unknown> | null };
     const meta = row.meta && typeof row.meta === "object" ? row.meta : {};
     const patch: { display_name?: string; meta?: ReturnType<typeof asJson> } = {};
     if (buyer.name && !row.display_name) patch.display_name = buyer.name;
-    const nextMeta = { ...meta };
-    if (buyer.contact && !meta.contact) nextMeta.contact = buyer.contact;
-    if (buyer.whatsapp && !meta.whatsapp) nextMeta.whatsapp = buyer.whatsapp;
-    if (Object.keys(nextMeta).length !== Object.keys(meta).length) patch.meta = asJson(nextMeta);
+    if (buyer.contact && !meta.contact) patch.meta = asJson({ ...meta, contact: buyer.contact });
     if (Object.keys(patch).length === 0) return;
     const { error } = await sb.from("customers").update(patch).eq("id", customerId);
     if (error) console.warn("[pay/start] customer details not saved", error.message, { customerId });
@@ -307,7 +304,6 @@ export async function createPaymentInvoiceWithDeps(
             buyer: {
               name: input.buyer.name ?? null,
               contact: input.buyer.contact ?? null,
-              whatsapp: input.buyer.whatsapp ?? null,
             },
           },
         }

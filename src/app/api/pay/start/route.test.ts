@@ -197,24 +197,19 @@ describe("GET /api/pay/start — a name and a phone or Telegram before payment",
     expect(createInvoice).not.toHaveBeenCalled();
   });
 
-  it("refuses an optional WhatsApp that is not a phone, and names the missing part to a json caller", async () => {
-    const res = await get("product=way21-group&format=json&name=Anna&contact=%40anna_k&whatsapp=anna", {
-      details: false,
-    });
+  it("refuses a contact that is neither a phone nor a Telegram username, and names it to a json caller", async () => {
+    const res = await get("product=way21-group&format=json&name=Anna&contact=ann", { details: false });
     expect(res.status).toBe(401);
     await expect(res.json()).resolves.toMatchObject({ ok: false, error: "contact_required" });
     expect(db.tables.orders).toHaveLength(0);
   });
 
   it("keeps them on the order, normalised", async () => {
-    await get(
-      "product=way21-group&format=json&name=+%D0%90%D0%BD%D0%BD%D0%B0+&contact=067+123+45+67&whatsapp=%2B48+512+345+678",
-      {
-        details: false,
-      },
-    );
+    await get("product=way21-group&format=json&name=+%D0%90%D0%BD%D0%BD%D0%B0+&contact=067+123+45+67", {
+      details: false,
+    });
     expect((db.tables.orders as Row[])[0]?.meta).toEqual({
-      buyer: { name: "Анна", contact: { channel: "phone", value: "+380671234567" }, whatsapp: "+48512345678" },
+      buyer: { name: "Анна", contact: { channel: "phone", value: "+380671234567" } },
     });
   });
 

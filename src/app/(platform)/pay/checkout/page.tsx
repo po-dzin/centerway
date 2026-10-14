@@ -25,7 +25,7 @@ export const dynamic = "force-dynamic";
    printed, the pixel's event id. The buyer's own fields are not among them —
    they are what this page asks for, and come back here filled in when
    /api/pay/start sends the buyer back for a missing one. */
-const BUYER_FIELDS = new Set(["email", "name", "contact", "whatsapp"]);
+const BUYER_FIELDS = new Set(["email", "name", "contact"]);
 
 function first(params: SearchParams, key: string): string | null {
   const raw = params[key];
@@ -43,11 +43,11 @@ function passthrough(params: SearchParams): [string, string][] {
   return out;
 }
 
-/* A returning buyer is not asked twice: the name and contacts their customer
+/* A returning buyer is not asked twice: the name and contact their customer
    row already holds. Read for the signed-in buyer only — the session proves
    whose row it is. */
-type Saved = { name: string | null; contact: string | null; whatsapp: string | null };
-const NOTHING_SAVED: Saved = { name: null, contact: null, whatsapp: null };
+type Saved = { name: string | null; contact: string | null };
+const NOTHING_SAVED: Saved = { name: null, contact: null };
 
 async function savedDetails(email: string): Promise<Saved> {
   try {
@@ -58,11 +58,10 @@ async function savedDetails(email: string): Promise<Saved> {
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();
-    const meta = (data?.meta ?? null) as { contact?: { value?: unknown }; whatsapp?: unknown } | null;
+    const meta = (data?.meta ?? null) as { contact?: { value?: unknown } } | null;
     return {
       name: data?.display_name ?? null,
       contact: typeof meta?.contact?.value === "string" ? meta.contact.value : null,
-      whatsapp: typeof meta?.whatsapp === "string" ? meta.whatsapp : null,
     };
   } catch {
     return NOTHING_SAVED;
@@ -91,7 +90,6 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
         email: first(params, "email"),
         name: first(params, "name") ?? saved.name ?? accountName,
         contact: first(params, "contact") ?? saved.contact,
-        whatsapp: first(params, "whatsapp") ?? saved.whatsapp,
       }}
       gatewayLabel={activeGateway().label}
     />

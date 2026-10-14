@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type MouseEvent } from "react";
 
 import { LogoMark } from "@/components/brand/LogoMark";
-import { normalizeBuyerName, normalizeContactPhone, readPrimaryContact } from "@/lib/platform/buyerContact";
+import { normalizeBuyerName, readPrimaryContact } from "@/lib/platform/buyerContact";
 import pendingStyles from "./CheckoutStartLink.module.css";
 import styles from "./PlatformCheckout.module.css";
 
@@ -17,12 +17,12 @@ const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const EMAIL_KEY = "cw_buyer_email";
 const DETAILS_KEY = "cw_buyer_details";
 
-type Remembered = { email: string; name: string; contact: string; whatsapp: string };
+type Remembered = { email: string; name: string; contact: string };
 
 /* One frozen snapshot per page: `useSyncExternalStore` compares by identity,
    so a fresh object on every read would never settle. */
 let rememberedCache: Remembered | null = null;
-const NOTHING_REMEMBERED: Remembered = { email: "", name: "", contact: "", whatsapp: "" };
+const NOTHING_REMEMBERED: Remembered = { email: "", name: "", contact: "" };
 
 function text(value: unknown): string {
   return typeof value === "string" ? value : "";
@@ -36,7 +36,6 @@ function remembered(): Remembered {
       email: window.localStorage.getItem(EMAIL_KEY) ?? "",
       name: text(details.name),
       contact: text(details.contact),
-      whatsapp: text(details.whatsapp),
     };
   } catch {
     rememberedCache = NOTHING_REMEMBERED;
@@ -47,7 +46,7 @@ function remembered(): Remembered {
 /* Neither the address bar nor storage changes while this form is mounted. */
 const subscribeToNothing = () => () => {};
 
-function remember(email: string | null, details: { name: string; contact: string; whatsapp: string }) {
+function remember(email: string | null, details: { name: string; contact: string }) {
   try {
     if (email) window.localStorage.setItem(EMAIL_KEY, email);
     window.localStorage.setItem(DETAILS_KEY, JSON.stringify(details));
@@ -61,10 +60,9 @@ export type CheckoutInitial = {
   email: string | null;
   name: string | null;
   contact: string | null;
-  whatsapp: string | null;
 };
 
-type FieldName = "name" | "email" | "contact" | "whatsapp";
+type FieldName = "name" | "email" | "contact";
 
 /**
  * Who is paying, and the button that leaves for the gateway.
@@ -79,8 +77,8 @@ type FieldName = "name" | "email" | "contact" | "whatsapp";
  *
  * WHAT IS ASKED (owner, 2026-10-14): a name, the address access and the
  * receipt go to, and «Телефон або Telegram» — one required field, whichever
- * the buyer types — for when an email is not enough. WhatsApp is optional,
- * below it. No either-or buttons: the buyer types, the field decides. SIGNED IN, THE ADDRESS IS NOT ASKED: the session's is
+ * the buyer types — for when an email is not enough. No either-or buttons
+ * and no second field: the buyer types, the field decides. SIGNED IN, THE ADDRESS IS NOT ASKED: the session's is
  * verified, and the route uses it when the form carries none. «Інша адреса»
  * opens the field for a gift; what is typed there wins, exactly as the route
  * already decides.
@@ -103,11 +101,9 @@ export function CheckoutForm({
   const [typedName, setName] = useState<string | null>(null);
   const [typedEmail, setEmail] = useState<string | null>(null);
   const [typedContact, setContact] = useState<string | null>(null);
-  const [typedWhatsapp, setWhatsapp] = useState<string | null>(null);
   const name = typedName ?? initial.name ?? stored.name;
   const email = typedEmail ?? initial.email ?? stored.email;
   const contact = typedContact ?? initial.contact ?? stored.contact;
-  const whatsapp = typedWhatsapp ?? initial.whatsapp ?? stored.whatsapp;
 
   const [errors, setErrors] = useState<Partial<Record<FieldName, boolean>>>({});
   const [pending, setPending] = useState(false);
@@ -121,7 +117,6 @@ export function CheckoutForm({
   const nameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const contactRef = useRef<HTMLInputElement>(null);
-  const whatsappRef = useRef<HTMLInputElement>(null);
 
   /* COMING BACK MUST NOT FIND IT STILL WAITING — the back button restores this
      page from the bfcache with React state intact (see CheckoutStartLink). */
@@ -147,20 +142,18 @@ export function CheckoutForm({
         name: !normalizeBuyerName(name),
         email: !useAccount && !EMAIL_SHAPE.test(typed),
         contact: !readPrimaryContact(contact),
-        // Optional, so only a typed number that is not one is wrong.
-        whatsapp: whatsapp.trim() !== "" && !normalizeContactPhone(whatsapp),
       };
-      if (found.name || found.email || found.contact || found.whatsapp) {
+      if (found.name || found.email || found.contact) {
         event.preventDefault();
         setErrors(found);
         // The first wrong field, in reading order.
-        (found.name ? nameRef : found.email ? emailRef : found.contact ? contactRef : whatsappRef).current?.focus();
+        (found.name ? nameRef : found.email ? emailRef : contactRef).current?.focus();
         return;
       }
-      remember(useAccount ? null : typed, { name: name.trim(), contact: contact.trim(), whatsapp: whatsapp.trim() });
+      remember(useAccount ? null : typed, { name: name.trim(), contact: contact.trim() });
       setPending(true);
     },
-    [contact, email, name, pending, useAccount, whatsapp],
+    [contact, email, name, pending, useAccount],
   );
 
   const otherAddress = useCallback(() => {
@@ -264,7 +257,7 @@ export function CheckoutForm({
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
-          enterKeyHint="next"
+          enterKeyHint="go"
           placeholder="+380 67 123 45 67 або @anna"
           value={contact}
           aria-invalid={errors.contact || undefined}
@@ -284,34 +277,6 @@ export function CheckoutForm({
             ? "Введіть номер, як +380 67 123 45 67, або нік у Telegram, як @anna"
             : "Напишемо сюди, якщо щось зміниться або знадобиться допомога."}
         </p>
-      </div>
-
-      <div className={styles.field}>
-        <label htmlFor="cw-checkout-whatsapp">
-          WhatsApp <span className={styles.optional}>(необов&apos;язково)</span>
-        </label>
-        <input
-          id="cw-checkout-whatsapp"
-          ref={whatsappRef}
-          name="whatsapp"
-          type="tel"
-          inputMode="tel"
-          autoComplete="off"
-          enterKeyHint="go"
-          placeholder="+380 67 123 45 67"
-          value={whatsapp}
-          aria-invalid={errors.whatsapp || undefined}
-          aria-describedby={errors.whatsapp ? "cw-checkout-whatsapp-error" : undefined}
-          onChange={(event) => {
-            setWhatsapp(event.target.value);
-            clearError("whatsapp");
-          }}
-        />
-        {errors.whatsapp ? (
-          <p id="cw-checkout-whatsapp-error" className={styles.fieldError} role="alert">
-            Введіть номер, як +380 67 123 45 67, або залиште поле порожнім
-          </p>
-        ) : null}
       </div>
 
       <button

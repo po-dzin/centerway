@@ -48,20 +48,15 @@ interface Order {
   } | null;
   /** What the buyer typed on the checkout page: a name and one messenger (`/api/pay/start`). */
   meta?: {
-    buyer?: { name?: string | null; contact?: { channel?: string; value?: string } | null; whatsapp?: string | null };
+    buyer?: { name?: string | null; contact?: { channel?: string; value?: string } | null };
   } | null;
 }
 
-/* How the checkout says to reach the buyer: «Телефон або Telegram», then the
-   optional WhatsApp — each only when well-formed. */
+/* How the checkout says to reach the buyer: a phone or Telegram, when well-formed. */
 function orderContacts(order: Order): BuyerContact[] {
-  const out: BuyerContact[] = [];
   const raw = order.meta?.buyer?.contact;
   const channel = parseContactChannel(raw?.channel);
-  if (channel && typeof raw?.value === "string" && raw.value) out.push({ channel, value: raw.value });
-  const whatsapp = order.meta?.buyer?.whatsapp;
-  if (typeof whatsapp === "string" && whatsapp) out.push({ channel: "whatsapp", value: whatsapp });
-  return out;
+  return channel && typeof raw?.value === "string" && raw.value ? [{ channel, value: raw.value }] : [];
 }
 
 interface IssuedLandingOffer {

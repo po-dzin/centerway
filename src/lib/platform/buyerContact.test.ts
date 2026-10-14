@@ -39,29 +39,16 @@ describe("«Телефон або Telegram»", () => {
   });
 });
 
-describe("a WhatsApp number", () => {
-  it("is a phone and nothing else", () => {
-    expect(normalizeContactPhone("+48 512 345 678")).toBe("+48512345678");
-    expect(normalizeContactPhone("@anna_k")).toBeNull();
-  });
-});
-
 describe("the whole set", () => {
   it("is null when the name or the required contact is missing", () => {
     expect(readBuyerDetails({ name: "", contact: "@anna_k" })).toBeNull();
     expect(readBuyerDetails({ name: "Анна", contact: "" })).toBeNull();
   });
 
-  it("leaves WhatsApp optional, but refuses one that is not a number", () => {
-    expect(readBuyerDetails({ name: "Анна", contact: "@anna_k", whatsapp: "" })?.whatsapp).toBeNull();
-    expect(readBuyerDetails({ name: "Анна", contact: "@anna_k", whatsapp: "anna" })).toBeNull();
-  });
-
   it("comes back normalised", () => {
-    expect(readBuyerDetails({ name: " Анна ", contact: "067 123 45 67", whatsapp: "+48 512 345 678" })).toEqual({
+    expect(readBuyerDetails({ name: " Анна ", contact: "067 123 45 67" })).toEqual({
       name: "Анна",
       contact: { channel: "phone", value: "+380671234567" },
-      whatsapp: "+48512345678",
     });
   });
 });
@@ -70,6 +57,5 @@ describe("the admin's link to the buyer", () => {
   it("opens the right app", () => {
     expect(contactHref({ channel: "telegram", value: "@anna_k" })).toBe("https://t.me/anna_k");
     expect(contactHref({ channel: "phone", value: "+380671234567" })).toBe("tel:+380671234567");
-    expect(contactHref({ channel: "whatsapp", value: "+380671234567" })).toBe("https://wa.me/380671234567");
   });
 });
