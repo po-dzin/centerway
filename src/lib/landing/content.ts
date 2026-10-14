@@ -73,7 +73,7 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
         preface: "Почніть вже сьогодні 👇",
         old: null,
         current: "795 грн",
-        notes: ["500+ людей вже придбали курс і почали відновлення"],
+        notes: ["500+ людей вже придбали курс"],
       },
     },
     utility: {
