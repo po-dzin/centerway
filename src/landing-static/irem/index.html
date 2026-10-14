@@ -671,8 +671,7 @@
      prepareLandingHtml strips these tags and re-injects the same files via config.scripts;
      on the raw static host path these tags are what actually load. irem-enhance.js is
      idempotent (window.__iremEnhanceInit guard), so double-injection is safe. -->
-<!-- checkout + attribution + pixel wiring (same flow as /irem): redirects .openModal → /api/pay/start -->
-<script src="/shared/js/email-gate.js" defer></script>
+<!-- checkout + attribution + pixel wiring (same flow as /irem): .openModal → /pay/checkout -->
 <script src="/shared/js/funnel-common.js" async></script>
 <script src="/shared/js/landing-widgets.js" defer></script>
 <script src="js/irem-enhance.js"></script>

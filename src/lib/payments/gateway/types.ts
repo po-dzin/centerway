@@ -84,6 +84,8 @@ export interface PaymentGateway {
   readonly id: GatewayId;
   /** The name a person sees in the gateway's own dashboard, for messages to the house. */
   readonly label: string;
+  /** The gateway's own mark, shown to the buyer under the pay button (`AddressPanel`). */
+  readonly logo?: { src: string; width: number; height: number };
   /**
    * Whether an invoice may carry `splits` (money routed to authors at source)
    * right now. A gateway that can split may still not be configured to: LiqPay

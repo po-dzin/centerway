@@ -73,20 +73,10 @@ export function getLandingShellAssets(product: StaticLandingProduct) {
           `${assetPrefix}/css/${assetName}.product.responsive.css`,
         ];
 
-  /* THE PRE-PAYMENT EMAIL STEP (email-gate.js) HAS TO BE NAMED HERE TOO. These two
-     landings are served through `prepareLandingHtml`, which takes its script
-     list from this table and not from the page's own <script> tags: the gate
-     was added to the HTML only, so on /reboot and /irem `CW_askEmail` never
-     existed and the CTA fell through to the sign-in door (2026-10-14). */
   const scripts =
     product === "irem"
-      ? [
-          "/shared/js/email-gate.js",
-          "/shared/js/funnel-common.js",
-          `${assetPrefix}/js/irem-enhance.js`,
-          "/shared/js/lead-form.js",
-        ]
-      : [`${assetPrefix}/js/lazysizes.min.js`, "/shared/js/email-gate.js", "/shared/js/funnel-common.js"];
+      ? ["/shared/js/funnel-common.js", `${assetPrefix}/js/irem-enhance.js`, "/shared/js/lead-form.js"]
+      : [`${assetPrefix}/js/lazysizes.min.js`, "/shared/js/funnel-common.js"];
 
   return {
     styles,

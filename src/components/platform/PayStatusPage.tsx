@@ -9,7 +9,7 @@ import { SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
 import { PROFILE_PATH_PREFIX, surfaceUrl } from "@/lib/surfaces/catalog";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import type { ReturnStatus } from "@/lib/payments/payReturn";
-import { formatPrice, type ProductFulfilment, type SearchParams } from "@/lib/products";
+import { CHECKOUT_PAGE_PATH, formatPrice, type ProductFulfilment, type SearchParams } from "@/lib/products";
 
 /**
  * One confirmation page for every product, on the platform's own design system.
@@ -66,7 +66,7 @@ export async function PayStatusPage({ status, searchParams }: { status: ReturnSt
      way back to the same checkout is one link — a buyer whose bank refused the
      first card is trying again, not shopping. */
   const retryHref = offer?.code
-    ? `/api/pay/start?product=${encodeURIComponent(offer.code)}&cta_place=pay_failed_retry`
+    ? `${CHECKOUT_PAGE_PATH}?product=${encodeURIComponent(offer.code)}&cta_place=pay_failed_retry`
     : null;
 
   const destination = paid

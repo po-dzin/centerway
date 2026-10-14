@@ -18,7 +18,9 @@
    through the same attributes; that override is unchanged. */
 (function() {
   var API_BASE = window.CW_API_BASE || window.location.origin;
-  var DIRECT_PAY_ENDPOINT = API_BASE + "/api/pay/start";
+  // The platform's checkout page (order summary + the address for access); its
+  // form starts the payment. A funnel host forwards /pay/… to the platform.
+  var DIRECT_PAY_ENDPOINT = API_BASE + "/pay/checkout";
   var EVENTS_ENDPOINT = API_BASE + "/api/events";
   var CLARITY_PROJECT_ID = "vy9u7jygno";
   var REDIRECT_RESET_MS = 5000;
@@ -478,26 +480,16 @@
         return;
       }
       var selection = resolveSelection(trigger);
-      var startPayment = function(email) {
-        isRedirecting = true;
-        setButtonsLoading(true);
-        var attrib = collectAttrib();
-        var eventId = makeEventId("checkout_" + selection.product);
-        trackInitialCheckout(attrib, eventId, selection);
-        // The address goes to /api/pay/start only; it is kept out of `attrib`
-        // so it never reaches the pixel payload.
-        var payUrl = new URL(buildPayUrl(attrib, eventId, selection), window.location.origin);
-        if (email) payUrl.searchParams.set("email", email);
-        window.location.assign(payUrl.toString());
-        window.setTimeout(function() {
-          isRedirecting = false;
-          setButtonsLoading(false);
-        }, REDIRECT_RESET_MS);
-      };
-      // Ask where to send access first (email-gate.js). Without it the server
-      // falls back to the sign-in door, so a missing script cannot charge anyone.
-      if (typeof window.CW_askEmail === "function") window.CW_askEmail(startPayment);
-      else startPayment("");
+      isRedirecting = true;
+      setButtonsLoading(true);
+      var attrib = collectAttrib();
+      var eventId = makeEventId("checkout_" + selection.product);
+      trackInitialCheckout(attrib, eventId, selection);
+      window.location.assign(buildPayUrl(attrib, eventId, selection));
+      window.setTimeout(function() {
+        isRedirecting = false;
+        setButtonsLoading(false);
+      }, REDIRECT_RESET_MS);
       return;
     }
   });

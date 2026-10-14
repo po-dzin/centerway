@@ -19,6 +19,12 @@ import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
 import { FULFILMENT_STATUSES, type FulfilmentStatus } from "@/lib/admin/fulfilmentStatus";
 import { Icon } from "@/components/Icon";
+import {
+  CONTACT_CHANNEL_LABEL,
+  contactHref,
+  parseContactChannel,
+  type BuyerContact,
+} from "@/lib/platform/buyerContact";
 import pageStyles from "@/components/admin/AdminPage.module.css";
 import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
@@ -40,6 +46,17 @@ interface Order {
     phone: string | null;
     display_name: string | null;
   } | null;
+  /** What the buyer typed on the checkout page: a name and one messenger (`/api/pay/start`). */
+  meta?: {
+    buyer?: { name?: string | null; contact?: { channel?: string; value?: string } | null };
+  } | null;
+}
+
+/* How the checkout says to reach the buyer: a phone or Telegram, when well-formed. */
+function orderContacts(order: Order): BuyerContact[] {
+  const raw = order.meta?.buyer?.contact;
+  const channel = parseContactChannel(raw?.channel);
+  return channel && typeof raw?.value === "string" && raw.value ? [{ channel, value: raw.value }] : [];
 }
 
 interface IssuedLandingOffer {
@@ -1008,7 +1025,9 @@ export default function OrdersPage() {
             <div className={lists.list}>
               {data.map((order) => {
                 const customer = order.customers;
-                const customerLabel = customer?.display_name ?? customer?.email ?? customer?.phone ?? null;
+                const customerLabel =
+                  customer?.display_name ?? order.meta?.buyer?.name ?? customer?.email ?? customer?.phone ?? null;
+                const contacts = orderContacts(order);
 
                 return (
                   /* THE ROW STACKS; THE REFERENCE IS NOT TRUNCATED.
@@ -1089,6 +1108,22 @@ export default function OrdersPage() {
                               )}
                             </>
                           )}
+                          {contacts.map((contact) => (
+                            <span key={contact.channel} className={lists.orderCustomerMeasure}>
+                              <span className={lists.orderSubMuted}>· </span>
+                              <a
+                                href={contactHref(contact)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="cw-link-hover"
+                                title={`${CONTACT_CHANNEL_LABEL[contact.channel]} ${contact.value}`}
+                              >
+                                {contact.channel === "phone"
+                                  ? contact.value
+                                  : `${CONTACT_CHANNEL_LABEL[contact.channel]} ${contact.value}`}
+                              </a>
+                            </span>
+                          ))}
                         </div>
                       </div>
 

@@ -11,6 +11,8 @@ import {
 import { activeGateway, type PaymentGateway } from "@/lib/payments/gateway";
 import { resolveInvoiceSplits } from "@/lib/payments/invoiceSplits";
 import { upsertCustomerByContact } from "@/lib/platform/customerIdentity";
+import type { BuyerDetails } from "@/lib/platform/buyerContact";
+import { asJson } from "@/lib/db/types";
 import { buildReturnUrl, invoiceLine } from "@/lib/payments/pay";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
@@ -70,8 +72,12 @@ export type PaymentStartInput = {
    * gateway may not return the payer's address at all (LiqPay's callback does
    * not document it), so the order is bound to the account's customer BEFORE
    * the buyer leaves for the gateway. The webhook then credits this customer.
+   *
+   * `name` and `contact` are what the checkout page asks beside the address
+   * (lib/platform/buyerContact). `verified` says the address came from the
+   * signed-in session rather than from a field anyone can type into.
    */
-  buyer?: { email: string } | null;
+  buyer?: ({ email: string; verified?: boolean } & Partial<BuyerDetails>) | null;
   agent?: boolean; // automated visitor — skip InitiateCheckout, mark the order via_agent (lib/tracking/agentTraffic)
 };
 
@@ -172,6 +178,37 @@ export function resolveLocaleFromRequest(headers: Headers, search: URLSearchPara
   return "en";
 }
 
+/**
+ * The checkout's name and messenger onto the customer's row — only where that
+ * takes nothing from anybody: a row this checkout has just created, or the
+ * signed-in buyer's own row, and there only into empty places. A typed address
+ * can name somebody else's account (the same rule as `/api/leads`), so for it
+ * the claim stays on the order alone. Best effort: a buyer is never stopped
+ * at the gateway's door over a display name.
+ */
+async function fillCustomerDetails(
+  sb: PaymentDb,
+  customerId: string,
+  buyer: { verified?: boolean } & Partial<BuyerDetails>,
+  created: boolean,
+) {
+  if (!created && !buyer.verified) return;
+  if (!buyer.name && !buyer.contact) return;
+  try {
+    const { data } = await sb.from("customers").select("display_name, meta").eq("id", customerId).maybeSingle();
+    const row = (data ?? {}) as { display_name?: string | null; meta?: Record<string, unknown> | null };
+    const meta = row.meta && typeof row.meta === "object" ? row.meta : {};
+    const patch: { display_name?: string; meta?: ReturnType<typeof asJson> } = {};
+    if (buyer.name && !row.display_name) patch.display_name = buyer.name;
+    if (buyer.contact && !meta.contact) patch.meta = asJson({ ...meta, contact: buyer.contact });
+    if (Object.keys(patch).length === 0) return;
+    const { error } = await sb.from("customers").update(patch).eq("id", customerId);
+    if (error) console.warn("[pay/start] customer details not saved", error.message, { customerId });
+  } catch (e) {
+    console.warn("[pay/start] customer details not saved", e, { customerId });
+  }
+}
+
 export async function createPaymentInvoiceWithDeps(
   input: PaymentStartInput,
   deps: PaymentDeps,
@@ -203,7 +240,12 @@ export async function createPaymentInvoiceWithDeps(
   let customerId: string | null = null;
   if (input.buyer?.email) {
     try {
-      customerId = (await upsertCustomerByContact(sb, { email: input.buyer.email })).id;
+      /* The typed messenger number is NOT passed as `phone`: the phone is a
+         key the customer is matched by, and an unverified claim must not be
+         able to pull an order onto somebody else's history. */
+      const bound = await upsertCustomerByContact(sb, { email: input.buyer.email });
+      customerId = bound.id;
+      if (customerId) await fillCustomerDetails(sb, customerId, input.buyer, bound.created);
     } catch (e) {
       console.error("[pay/start] customer bind failed", e, { order_ref });
     }
@@ -256,6 +298,16 @@ export async function createPaymentInvoiceWithDeps(
     client_ip: input.client_ip,
     client_ua: input.client_ua,
     page_url: input.page_url,
+    ...(input.buyer?.name || input.buyer?.contact
+      ? {
+          meta: {
+            buyer: {
+              name: input.buyer.name ?? null,
+              contact: input.buyer.contact ?? null,
+            },
+          },
+        }
+      : {}),
     ...(splits.length ? { split_at_source: true } : {}),
   });
 

@@ -4,15 +4,26 @@
   // Staff opt-out: keep internal / QA traffic out of Meta. Visiting any landing with
   // `?cw_staff=1` stores a durable flag (cookie + localStorage); `?cw_staff=0` clears it.
   // The cookie is also read server-side by /api/events and /api/pay/start to drop CAPI.
+  // ON THE PARENT DOMAIN in production: the payment now starts from the checkout
+  // page on www (/pay/checkout), so a flag set on reboot.centerway.net.ua has to
+  // reach www's /api/pay/start too, or a staff test is filed as a real sale.
+  var STAFF_DOMAIN = /(^|\.)centerway\.net\.ua$/.test(window.location.hostname) ? "; domain=.centerway.net.ua" : "";
+  function writeStaffCookie(on) {
+    document.cookie = on
+      ? "cw_staff=1; path=/; max-age=" + (10 * 365 * 24 * 60 * 60) + "; SameSite=Lax" + STAFF_DOMAIN
+      : "cw_staff=; path=/; max-age=0; SameSite=Lax" + STAFF_DOMAIN;
+  }
   (function () {
     try {
       var param = new URLSearchParams(window.location.search).get("cw_staff");
       if (param === "1") {
         try { localStorage.setItem("cw_staff", "1"); } catch (_) {}
-        document.cookie = "cw_staff=1; path=/; max-age=" + (10 * 365 * 24 * 60 * 60) + "; SameSite=Lax";
+        writeStaffCookie(true);
       } else if (param === "0") {
         try { localStorage.removeItem("cw_staff"); } catch (_) {}
+        // The host-only cookie an older visit set, as well as the shared one.
         document.cookie = "cw_staff=; path=/; max-age=0; SameSite=Lax";
+        writeStaffCookie(false);
       }
     } catch (_) {}
   })();
@@ -20,6 +31,10 @@
   var isStaff = false;
   try { isStaff = localStorage.getItem("cw_staff") === "1"; } catch (_) {}
   if (!isStaff) isStaff = /(?:^|;\s*)cw_staff=1(?:;|$)/.test(document.cookie || "");
+  // A flag stored before the cookie moved to the parent domain is lifted there.
+  if (isStaff) {
+    try { writeStaffCookie(true); } catch (_) {}
+  }
   // Automated visitors are silenced the same way: an agent on checkout is not an
   // ad-driven person. `cw_agent=1` is set by the proxy (it alone sees the
   // Signature-Agent header); the pattern is a copy of AGENT_USER_AGENT in

@@ -32,7 +32,6 @@ const RESEND_COOLDOWN_SECONDS = 60;
 
 const copy = {
   emailLabel: "Електронна пошта",
-  emailHint: "Та сама, що й під час оплати.",
   send: "Надіслати код",
   sending: "Надсилаємо...",
   codeLabel: `Код із листа (${OTP_CODE_LENGTH} цифр)`,
@@ -60,13 +59,14 @@ type Step = "email" | "code";
 export function EmailSignIn({
   onSignedIn,
   onBack,
-  hint = copy.emailHint,
+  hint,
 }: {
   onSignedIn?: () => void;
   /** The way out of this door and back to the choice of doors. */
   onBack?: () => void;
-  /** The line under the field. Defaults to the buyer's — the receipt is why
-   *  most people arrive here — and the staff door passes its own. */
+  /** A line under the field, when a door needs one (the staff door does).
+   *  The buyer's door has none: «Та сама, що й під час оплати» was an unclear
+   *  caption there (owner, 2026-10-14). */
   hint?: string;
 }) {
   const [step, setStep] = useState<Step>("email");
@@ -263,7 +263,7 @@ export function EmailSignIn({
         />
       </div>
 
-      <p className={styles.status}>{hint}</p>
+      {hint ? <p className={styles.status}>{hint}</p> : null}
 
       {/* Primary here, unlike on the choice screen: this step is a screen of
           its own now, and the only thing on it to do. */}

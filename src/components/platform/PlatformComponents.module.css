@@ -1107,6 +1107,16 @@
   width: 100%;
 }
 
+/* «НАЗАД» SITS ON THE CARD'S EDGE, NOT UNDER EMPTY SPACE (owner, 2026-10-14).
+   The quiet row is one line of small text in a 48px touch target, so 16px of
+   that target is invisible above and below the word — added to the form's gap
+   and the panel's padding, the card ended in a band of nothing. The row keeps
+   its full target and lends the invisible part back to the gap and the
+   padding around it. */
+.profileDoorPanel .signInQuietRow {
+  margin-block: calc(var(--cw-space-sm) * -1);
+}
+
 /* ── «Продовжити як …» ────────────────────────────
 
    The one control in the product that carries a FACE. It is what makes the row
