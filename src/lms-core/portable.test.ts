@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { preparePortableCourse } from "./portable";
+import { collectPortableIssues, portableImportNotes, preparePortableCourse } from "./portable";
 import { validateCourse, type Course } from "./course";
 
 function sourceCourse(): Course {
@@ -264,5 +264,73 @@ describe("author-written portable files", () => {
     named.modules[0]!.lessons[0]!.dayIndex = 3;
     const result = preparePortableCourse({ ...named, schedule: { mode: "daily" } }, { takenSlugs: [], ids: ids() });
     expect(result.course.modules[0]!.lessons.map((lesson) => lesson.dayIndex)).toEqual([3, 4]);
+  });
+});
+
+describe("title with a colon", () => {
+  const withTitle = (title: string) => ({
+    title,
+    modules: [{ title: "М", lessons: [{ title: "У", blocks: [{ type: "lesson_objective", text: "Мета." }] }] }],
+  });
+  const long = "Аюрведичний протокол: Шлях до центру та баланс Вата-доші";
+
+  it("turns the colon into the dash that splits name and subtitle, and says so", () => {
+    const result = preparePortableCourse(withTitle(long), { takenSlugs: [], ids: ids() });
+    expect(result.course.title).toBe("Аюрведичний протокол — Шлях до центру та баланс Вата-доші");
+    expect(portableImportNotes(withTitle(long))[0]).toContain("Аюрведичний протокол — Шлях");
+  });
+
+  it("leaves a title that already fits, and one that has no fitting name before the colon", () => {
+    expect(portableImportNotes(withTitle("Ранок: легкий старт"))).toEqual([]);
+    expect(() =>
+      preparePortableCourse(withTitle("Х".repeat(60) + ": підзаголовок"), { takenSlugs: [], ids: ids() }),
+    ).toThrow("lms_course_title_too_long");
+  });
+});
+
+describe("collectPortableIssues", () => {
+  it("lists every problem of a file, not only the first, and names the title's length", () => {
+    const broken = {
+      title: "Х".repeat(60),
+      categories: ["nope"],
+      modules: [
+        {
+          title: "Модуль",
+          lessons: [
+            { title: "Порожній", blocks: [] },
+            {
+              title: "Блоки",
+              blocks: [
+                { type: "paragraph", text: "x" },
+                { type: "lesson_objective", text: "Ок." },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const issues = collectPortableIssues(broken, ids());
+    const codes = issues.map((issue) => issue.error.split(":")[0]);
+    expect(codes).toEqual(
+      expect.arrayContaining([
+        "lms_course_title_too_long",
+        "lms_course_invalid_categories",
+        "lms_lesson_empty_blocks",
+        "lms_block_unknown_type",
+      ]),
+    );
+    expect(issues.find((issue) => issue.context)?.context).toContain("60");
+  });
+
+  it("returns nothing for a valid file", () => {
+    expect(
+      collectPortableIssues(
+        {
+          title: "Курс",
+          modules: [{ title: "М", lessons: [{ title: "У", blocks: [{ type: "lesson_objective", text: "Мета." }] }] }],
+        },
+        ids(),
+      ),
+    ).toEqual([]);
   });
 });

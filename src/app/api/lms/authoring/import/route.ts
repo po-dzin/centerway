@@ -18,8 +18,8 @@ import {
   isDraftGeneration,
 } from "@/lib/lms/builder";
 import { canCreateCourse, courseFilterFor } from "@/lib/lms/builderAccess";
-import { portableCourseUpdate, courseReadiness } from "@/lms-core";
-import { importIssueCopy, importBlockerCopy } from "@/lib/lms/importCopy";
+import { portableCourseUpdate, courseReadiness, collectPortableIssues, portableImportNotes } from "@/lms-core";
+import { importIssueCopy, importIssueList, importBlockerCopy } from "@/lib/lms/importCopy";
 import { resolveCourseAccessForIdentity, isDenied, denialResponse, withBuilderIdentity } from "@/lib/lms/courseAccess";
 import { LMS_COURSE_CREATE } from "@/lib/lms/rateRules";
 import { COURSE_LIST_TAG, PURGE, courseTag } from "@/lib/lms/liveCatalog";
@@ -86,6 +86,7 @@ export async function POST(req: NextRequest) {
               ...preview.summary,
               slug: incoming.slug,
               expectedGeneration: target?.draftGeneration,
+              notes: portableImportNotes(body.course),
               blockerCount: readiness.blockers.length,
               blockers: readiness.blockers.map((blocker) => ({
                 ...blocker,
@@ -113,8 +114,12 @@ export async function POST(req: NextRequest) {
       } catch (error) {
         const message = error instanceof Error ? error.message : "unknown_error";
         const isAuthorError = message.startsWith("lms_");
+        const issues =
+          isAuthorError && message !== "lms_builder_draft_conflict"
+            ? importIssueList(collectPortableIssues(body.course, randomUUID))
+            : [];
         return NextResponse.json(
-          { error: message, message: importIssueCopy(message) },
+          { error: message, message: issues[0] ?? importIssueCopy(message), ...(issues.length > 1 ? { issues } : {}) },
           { status: message === "lms_builder_draft_conflict" ? 409 : isAuthorError ? 422 : 500 },
         );
       }
