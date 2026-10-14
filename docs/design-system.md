@@ -3216,6 +3216,25 @@ to the hand, so the refusal covers it. Verified: 2 ticks with motion allowed, 0
 with reduced motion, and 0 from twelve non-`primary` controls pressed in the
 same run.
 
+## Checkout: two components (2026-10-14)
+
+`/pay/checkout` is the one step between every buy button and the gateway, and it is two design-system components side by side, not a page-specific layout:
+
+| Component | File | Material | Holds |
+| --- | --- | --- | --- |
+| `OrderSummary` | `src/components/platform/OrderSummary.tsx` | `--cw-mat-surface-sunk`, no shadow | label, cover, name and format, the includes list (`purchaseIncludes`, shared with the program page's checkout panel), the sum at the foot |
+| `AddressPanel` | `src/components/platform/AddressPanel.tsx` | the offer panel's raised `formPanel` | the question, one email field or the signed-in account with «Інша адреса», the primary button, fine print at the foot |
+
+Rules:
+
+- **Sunk for information, raised for action.** The summary is read and checked; the panel holds the page's only primary control. A second filled card would make the page ask two questions.
+- **One height on a desktop (owner, 2026-10-14).** From 861px the two stand in equal columns and stretch to the taller one. Each keeps its last row at its foot (`margin-top: auto` on the sum, a `1fr` row above the fine print), so the extra height opens between content and foot, never under it. On a phone they stack, summary first.
+- **No figure of its own.** Every value is passed in from the offer row (`loadCheckoutSummary` → `loadPayableOffer`, the same function `/api/pay/start` charges from).
+- **The gateway is named from the active driver** (`activeGateway().label`), never written into copy.
+- **Controls compose roles.** The field is `PlatformComponents .field`; the button is `primary` + `fill` with `CheckoutStartLink`'s waiting state; «Назад» and «Інша адреса» are the `text` role.
+
+Specimens for the Claude Design mirror: `docs/design-system/previews/checkout-2026-10-14/guidelines/checkout-order-summary.card.html` and `checkout-address-panel.card.html` (`@dsCard group="Commerce"`). They reach the project only through `DesignSync` from an interactive session, per the mirror protocol above.
+
 ## Aspirational Ledger (not implemented)
 
 Kept out of the descriptive sections above on purpose:

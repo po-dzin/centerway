@@ -13,10 +13,14 @@
   margin-inline: auto;
 }
 
+/* ONE HEIGHT ON A DESKTOP (owner, 2026-10-14). Two cards of different
+   heights side by side read as two unrelated blocks; stretched, they read as
+   one order. Each card keeps its last row (the sum, the fine print) at its foot,
+   so the extra height opens between content and foot, never under it. */
 @media (min-width: 861px) {
   .layout {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: start;
+    align-items: stretch;
   }
 
   .back {
@@ -38,8 +42,9 @@
 
 /* Information to check, not a control: the sunk material, no shadow. */
 .summary {
-  display: grid;
-  align-content: start;
+  /* A column, so the sum can take `margin-top: auto` and sit at the foot. */
+  display: flex;
+  flex-direction: column;
   gap: clamp(0.9rem, 2.4vw, 1.15rem);
   min-width: 0;
   padding: clamp(1.15rem, 3vw, 2rem);
@@ -88,6 +93,7 @@
 /* The system's fading rule above the sum, the same separator the outline and
    the bento heads draw. */
 .total {
+  margin-top: auto;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -107,6 +113,14 @@
 
 .formPanel {
   padding: clamp(1.15rem, 3vw, 2rem);
+  /* A grid, so the fine print can take the last row and sit at the foot. */
+  grid-template-rows: auto auto 1fr;
+}
+
+.fineprint {
+  display: grid;
+  align-content: end;
+  gap: var(--cw-space-sm);
 }
 
 .formTitle {

@@ -1,12 +1,9 @@
-import Link from "next/link";
-
-import { Icon } from "@/components/Icon";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import offerStyles from "@/components/platform/PlatformOfferStyles";
-import commerceStyles from "@/components/platform/PlatformOfferCommerce.module.css";
-import { SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
 import type { CheckoutSummary } from "@/lib/platform/checkoutSummary";
-import { CheckoutBackLink, CheckoutForm } from "./CheckoutForm";
+import { AddressPanel } from "./AddressPanel";
+import { CheckoutBackLink } from "./CheckoutForm";
+import { OrderSummary } from "./OrderSummary";
 import styles from "./PlatformCheckout.module.css";
 
 /**
@@ -19,8 +16,10 @@ import styles from "./PlatformCheckout.module.css";
  * the order before the gateway's page and every order is bound to an address
  * before it exists (`/api/pay/start`).
  *
- * The summary is the quieter, sunk half: it is information to check. The form
- * is the raised panel with the page's one primary action.
+ * The page only arranges two design-system components: `OrderSummary` (the
+ * quieter, sunk half: information to check) and `AddressPanel` (the raised
+ * panel with the page's one primary action). On a desktop the two stand at
+ * one height.
  */
 export function CheckoutScreen({
   summary,
@@ -46,58 +45,22 @@ export function CheckoutScreen({
           <div className={styles.layout}>
             <CheckoutBackLink href={summary.offerHref} />
 
-            <article className={styles.summary} aria-labelledby="cw-checkout-product">
-              <p className={offerStyles.label}>Ваше замовлення</p>
-              <div className={styles.product}>
-                {summary.cover ? (
-                  /* Plain <img>, as on the catalogue card: a cover can be an
-                     author's upload on any host. The name beside it says what
-                     the picture is. */
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img className={styles.cover} src={summary.cover.src} alt="" decoding="async" />
-                ) : null}
-                <div className={styles.productText}>
-                  <h1 id="cw-checkout-product" className={styles.productTitle}>
-                    {summary.title}
-                  </h1>
-                  {summary.formatLabel ? <p className={styles.productFormat}>{summary.formatLabel}</p> : null}
-                </div>
-              </div>
+            <OrderSummary
+              titleId="cw-checkout-product"
+              title={summary.title}
+              formatLabel={summary.formatLabel}
+              cover={summary.cover}
+              includes={summary.includes}
+              price={summary.price}
+              compareAtPrice={summary.compareAtPrice}
+            />
 
-              <ul className={commerceStyles.includes}>
-                {summary.includes.map((item) => (
-                  <li key={item}>
-                    <Icon className={commerceStyles.includeMark} name="check" size={20} />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className={styles.total}>
-                <p className={styles.totalLabel}>До сплати</p>
-                <div className={commerceStyles.priceRow}>
-                  {summary.compareAtPrice ? <s className={commerceStyles.priceOld}>{summary.compareAtPrice}</s> : null}
-                  <p className={commerceStyles.priceValue}>{summary.price}</p>
-                </div>
-              </div>
-            </article>
-
-            <article className={`${offerStyles.formPanel} ${styles.formPanel}`} aria-labelledby="cw-checkout-title">
-              <h2 id="cw-checkout-title" className={styles.formTitle}>
-                Куди надіслати доступ?
-              </h2>
-
-              <CheckoutForm fields={fields} accountEmail={accountEmail} />
-
-              <p className={commerceStyles.fineprint}>
-                Оплата на захищеній сторінці {gatewayLabel}: картка, Apple Pay або Google Pay. Дані картки до нас не
-                потрапляють. Натискаючи кнопку, ви приймаєте <Link href="/legal/public-offer">публічну оферту</Link> і{" "}
-                <Link href="/legal/privacy">політику конфіденційності</Link>.
-              </p>
-              <p className={commerceStyles.fineprint}>
-                Є питання? <a href={SUPPORT_BOT_URL}>Напишіть у підтримку</a> в Telegram.
-              </p>
-            </article>
+            <AddressPanel
+              titleId="cw-checkout-title"
+              fields={fields}
+              accountEmail={accountEmail}
+              gatewayLabel={gatewayLabel}
+            />
           </div>
         </section>
       </main>
