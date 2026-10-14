@@ -48,8 +48,9 @@ export async function GET(req: NextRequest) {
      2. the signed-in session — a verified address; the session cookies are
         shared across `.centerway.net.ua`, so the platform's own pay links,
         which carry no `?email=`, work from the cabinet too.
-     With neither, a browser navigation is sent to the cabinet's own sign-in door (Google, last account, email: the one every other sign-in uses) and comes
-     back to this very address through the cabinet's own door (Google, the last account, email), the one every other sign-in uses; `format=json` callers get a 401 naming it. */
+     With neither, a browser navigation is sent to the cabinet's own sign-in
+     door (Google, last account, email: the one every other sign-in uses) and
+     comes back to this very address; `format=json` callers get a 401 naming it. */
   const typedEmail = typedBuyerEmail(url.searchParams.get("email"));
   const user = typedEmail ? null : await userFromCookies();
   const sessionEmail = user?.email_confirmed_at ? user.email?.trim().toLowerCase() || null : null;
