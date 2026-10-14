@@ -938,7 +938,10 @@
   white-space: nowrap;
   gap: var(--cw-space-2xs) var(--cw-space-xs);
   color: var(--cw-platform-text);
-  font-family: var(--cw-font-data);
+  /* The body face with tabular figures, not the data face — see
+     `.programTileMeta`: a card carries two typefaces, never three. */
+  font-family: var(--cw-font-ui);
+  font-variant-numeric: tabular-nums;
   line-height: 1.15;
 }
 
@@ -992,11 +995,14 @@
   background: var(--cw-platform-accent);
 }
 
+/* THE AUTHOR AND THE FORMAT LINE SPEAK IN THE DESCRIPTION'S VOICE (2026-10-14).
+   They were set in the data face — a third typeface on a card that already has
+   the display serif for the name and the body face for everything else. Two
+   faces per card: the line is told apart by weight and colour, not by font. */
 .programTileMeta {
-  font-family: var(--cw-font-data);
+  font-family: var(--cw-font-ui);
   font-size: var(--ds-type-body-sm-size);
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-weight: 600;
 }
 
 .programTileMeta.programTileMeta {
@@ -1119,4 +1125,18 @@
   .programLinkShort {
     display: inline;
   }
+}
+
+/* A CARD ALONE IN ITS GRID HAS NO NEIGHBOUR TO LINE UP WITH (2026-10-14).
+   The fixed slots exist so the same field sits at the same height across a
+   row; with one card on the shelf (the products catalogue today) they only
+   leave empty paper under a one-line name. So the lone card's headline takes
+   its own height and an empty category row takes none. The day a second card
+   lands, `:only-child` stops matching and the slots are back. */
+.aggregateRail > .programTile:only-child .programTileHeadline {
+  height: auto;
+}
+
+.aggregateRail > .programTile:only-child .programTileCategories:empty {
+  display: none;
 }
