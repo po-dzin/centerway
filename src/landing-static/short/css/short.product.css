@@ -430,6 +430,16 @@ img {
 .section-hero.has-video-bg #divprice .cta-note {
   color: rgba(255, 255, 255, 0.88);
 }
+/* The hero also carries its own benefits lead and list (the copy pipeline
+   fills the first `.benefits-block`), so they sit on footage too and need the
+   same remap — left on the cream-surface tokens they render dark on dark. */
+.section-hero.has-video-bg .benefits-block > p,
+.section-hero.has-video-bg .benefits__item {
+  color: rgba(255, 255, 255, 0.88);
+}
+.section-hero.has-video-bg .benefits__icon {
+  background: rgba(255, 255, 255, 0.16);
+}
 .section-hero.has-video-bg .badge {
   background: rgba(255, 255, 255, 0.22);
   color: #fff;
@@ -447,7 +457,9 @@ img {
 .section-hero.has-video-bg .section-hero-preprice,
 .section-hero.has-video-bg .price .price-current,
 .section-hero.has-video-bg #divprice .price-note,
-.section-hero.has-video-bg #divprice .cta-note {
+.section-hero.has-video-bg #divprice .cta-note,
+.section-hero.has-video-bg .benefits-block > p,
+.section-hero.has-video-bg .benefits__item {
   text-shadow: 0 1px 2px rgba(12, 9, 7, 0.5), 0 2px 16px rgba(12, 9, 7, 0.65);
 }
 
