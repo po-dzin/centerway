@@ -319,19 +319,21 @@
    Tiles share the platform's card media ratio, so a gallery photo and a
    course cover are the same shape on one page. The lightbox is a native
    dialog over a dimmed page; the picture is shown whole (`contain`). */
-.galleryGrid {
+/* A row of squares under the author's words, inside the header column.
+   Three across on a phone, six across from the tablet boundary up. */
+.galleryStrip {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(45%, 16rem), 1fr));
-  gap: var(--cw-space-md);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--cw-space-xs);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.galleryFigure {
-  display: grid;
-  gap: var(--cw-space-xs);
-  margin: 0;
+@media (min-width: 561px) {
+  .galleryStrip {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
 }
 
 .galleryTile {
@@ -339,10 +341,10 @@
   display: block;
   width: 100%;
   overflow: hidden;
-  aspect-ratio: var(--ds-card-media-ratio);
+  aspect-ratio: 1;
   padding: 0;
   border: 1px solid var(--cw-platform-border);
-  border-radius: var(--cw-radius-lg);
+  border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
   cursor: zoom-in;
 }
@@ -357,7 +359,7 @@
 
 @media (hover: hover) {
   .galleryTile:hover img {
-    transform: scale(1.03);
+    transform: scale(1.04);
   }
 }
 
@@ -380,10 +382,16 @@
   pointer-events: none;
 }
 
-.galleryCaption {
-  color: var(--cw-platform-muted);
-  font-size: var(--ds-type-body-sm-size);
-  line-height: 1.5;
+/* The last tile when there are more: the picture dimmed, the count on it. */
+.galleryMore {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--cw-platform-ink-strong) 55%, transparent);
+  color: var(--cw-mat-surface);
+  font-size: var(--ds-type-body-size);
+  font-weight: 700;
 }
 
 .lightbox {

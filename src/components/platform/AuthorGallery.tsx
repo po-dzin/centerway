@@ -24,6 +24,9 @@ function itemLabel(item: AuthorGalleryItem, authorName: string, index: number): 
   return item.caption || `Відео ${index + 1} · ${authorName}`;
 }
 
+/** Tiles the strip shows; the last one opens the rest when there are more. */
+const STRIP_MAX = 6;
+
 export function AuthorGallery({ items, authorName }: { items: AuthorGalleryItem[]; authorName: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState<number | null>(null);
@@ -55,14 +58,26 @@ export function AuthorGallery({ items, authorName }: { items: AuthorGalleryItem[
 
   return (
     <>
-      <ul className={styles.galleryGrid}>
-        {items.map((item, index) => (
-          <li key={item.id}>
-            <figure className={styles.galleryFigure}>
+      {/* A STRIP INSIDE THE HEADER, NOT A SECTION OF ITS OWN (2026-10-14).
+          It was a titled grid of large captioned tiles under the text blocks,
+          and read as a separate page bolted on. Here it is a row of small
+          squares under the author's own words — part of who they are, the
+          way a profile shows its pictures. Captions live in the lightbox. */}
+      <ul className={styles.galleryStrip} aria-label="Галерея">
+        {items.slice(0, STRIP_MAX).map((item, index) => {
+          const rest = index === STRIP_MAX - 1 ? items.length - STRIP_MAX : 0;
+          return (
+            <li key={item.id}>
               <button
                 type="button"
                 className={styles.galleryTile}
-                aria-label={item.kind === "video" ? `Дивитися: ${itemLabel(item, authorName, index)}` : item.alt}
+                aria-label={
+                  rest > 0
+                    ? `Галерея: ще ${rest + 1}`
+                    : item.kind === "video"
+                      ? `Дивитися: ${itemLabel(item, authorName, index)}`
+                      : item.alt
+                }
                 onClick={() => setOpen(index)}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element -- the author's own public upload or YouTube's still; see AuthorPortrait */}
@@ -72,16 +87,19 @@ export function AuthorGallery({ items, authorName }: { items: AuthorGalleryItem[
                   loading="lazy"
                   decoding="async"
                 />
-                {item.kind === "video" ? (
+                {rest > 0 ? (
+                  <span className={styles.galleryMore} aria-hidden="true">
+                    +{rest + 1}
+                  </span>
+                ) : item.kind === "video" ? (
                   <span className={styles.galleryPlay} aria-hidden="true">
-                    <Icon name="play" size={24} />
+                    <Icon name="play" size={20} />
                   </span>
                 ) : null}
               </button>
-              {item.caption ? <figcaption className={styles.galleryCaption}>{item.caption}</figcaption> : null}
-            </figure>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
 
       <dialog

@@ -92,6 +92,7 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
               ))}
             </ul>
           ) : null}
+          {author.gallery?.length ? <AuthorGallery items={author.gallery} authorName={author.name} /> : null}
         </div>
       </header>
 
@@ -159,17 +160,6 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
           </div>
         </section>
       ))}
-
-      {/* After the author's own words and before the offer: the work, shown,
-          once the page has said who this is. */}
-      {author.gallery?.length ? (
-        <section className={styles.profileSection} id="gallery">
-          <div className={styles.sectionHeader}>
-            <h2 className={styles.courseTitle}>Галерея</h2>
-          </div>
-          <AuthorGallery items={author.gallery} authorName={author.name} />
-        </section>
-      ) : null}
 
       {author.consultation?.enabled ? (
         <section className={styles.consultation} id="consultation">
