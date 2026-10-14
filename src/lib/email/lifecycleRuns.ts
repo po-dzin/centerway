@@ -163,13 +163,18 @@ export async function runWelcomeEmails(now = new Date(), limit = 200): Promise<L
   return result;
 }
 
-/** Addresses that got a «День 1» for a stream that started before `date`. */
+/**
+ * Addresses that got a «День 1» for a stream that started before `date`, by
+ * letter or in Telegram (`lib/lms/streamTelegram.ts` writes the same shape
+ * under its own prefix): either one means that person's stream has begun.
+ */
 async function startedEarlier(date: string): Promise<Set<string>> {
   const { data, error } = await adminClient()
     .from("events")
     .select("order_ref")
-    .eq("type", "lifecycle_email_sent")
-    .like("order_ref", "stream:day1:%");
+    .in("type", ["lifecycle_email_sent", STREAM_TELEGRAM_EVENT])
+    // `stream:day1:` (a letter) and `stream-tg:day1:` (a Telegram message) alike.
+    .like("order_ref", "stream%:day1:%");
   if (error) throw new Error(error.message);
   const out = new Set<string>();
   for (const row of data ?? []) {
@@ -179,7 +184,22 @@ async function startedEarlier(date: string): Promise<Set<string>> {
   return out;
 }
 
-type StreamRecipient = { email: string; name: string | null; programTitle: string; startsOn: string };
+/** The `events.type` a stream message sent in Telegram leaves behind. */
+export const STREAM_TELEGRAM_EVENT = "lifecycle_tg_sent";
+
+export type StreamRecipient = {
+  email: string;
+  name: string | null;
+  programTitle: string;
+  startsOn: string;
+  /** The buyer's linked Telegram chat, when there is one. */
+  tgId: string | null;
+  /**
+   * Holds an enrollment carrying this start date — the course was opened or
+   * granted. Such a learner gets the daily «День N» in Telegram already.
+   */
+  enrolled: boolean;
+};
 
 function ukText(value: unknown): string | null {
   const uk = value && typeof value === "object" ? (value as { uk?: unknown }).uk : null;
@@ -198,12 +218,24 @@ function ukText(value: unknown): string | null {
 export async function streamRecipients(date: string): Promise<StreamRecipient[]> {
   const db = adminClient();
   const byEmail = new Map<string, StreamRecipient>();
-  const add = (email: string | null | undefined, name: string | null | undefined, programTitle: string) => {
+  const add = (
+    email: string | null | undefined,
+    name: string | null | undefined,
+    programTitle: string,
+    extra: { tgId: string | null; enrolled: boolean },
+  ) => {
     const clean = email?.trim().toLowerCase();
-    if (!clean || !EMAIL_RE.test(clean) || byEmail.has(clean)) return;
-    byEmail.set(clean, { email: clean, name: name ?? null, programTitle, startsOn: date });
+    if (!clean || !EMAIL_RE.test(clean)) return;
+    const known = byEmail.get(clean);
+    if (known) {
+      // Whichever road found the person first names them; both roads add what they know.
+      known.tgId ??= extra.tgId;
+      known.enrolled ||= extra.enrolled;
+      return;
+    }
+    byEmail.set(clean, { email: clean, name: name ?? null, programTitle, startsOn: date, ...extra });
   };
-  const fromOrders = new Map<string, { name: string | null; programTitle: string }>();
+  const fromOrders = new Map<string, { name: string | null; programTitle: string; tgId: string | null }>();
 
   const { data: offers, error: offersError } = await db
     .from("experience_offers")
@@ -229,10 +261,16 @@ export async function streamRecipients(date: string): Promise<StreamRecipient[]>
       if (error) throw new Error(error.message);
       const customerIds = [...new Set((orders ?? []).map((o) => o.customer_id as string))];
       if (customerIds.length === 0) continue;
-      const { data: customers } = await db.from("customers").select("email, display_name").in("id", customerIds);
+      const { data: customers } = await db.from("customers").select("email, display_name, tg_id").in("id", customerIds);
       for (const customer of customers ?? []) {
         const clean = customer.email?.trim().toLowerCase();
-        if (clean) fromOrders.set(clean, { name: customer.display_name, programTitle });
+        if (clean) {
+          fromOrders.set(clean, {
+            name: customer.display_name,
+            programTitle,
+            tgId: customer.tg_id ? String(customer.tg_id) : null,
+          });
+        }
       }
     }
   }
@@ -244,7 +282,7 @@ export async function streamRecipients(date: string): Promise<StreamRecipient[]>
   // still reaches them through an enrollment that carries its date.
   const started = await startedEarlier(date);
   for (const [email, person] of fromOrders) {
-    if (!started.has(email)) add(email, person.name, person.programTitle);
+    if (!started.has(email)) add(email, person.name, person.programTitle, { tgId: person.tgId, enrolled: false });
   }
 
   const { data: enrollments, error: enrollError } = await db
@@ -255,21 +293,24 @@ export async function streamRecipients(date: string): Promise<StreamRecipient[]>
     .is("revoked_at", null);
   if (enrollError) throw new Error(enrollError.message);
   if (enrollments && enrollments.length > 0) {
-    const [{ data: users }, { data: courses }] = await Promise.all([
-      db
-        .from("platform_users")
-        .select("auth_user_id, email, full_name")
-        .in("auth_user_id", [...new Set(enrollments.map((e) => e.auth_user_id))]),
+    const authUserIds = [...new Set(enrollments.map((e) => e.auth_user_id))];
+    const [{ data: users }, { data: courses }, { data: chats }] = await Promise.all([
+      db.from("platform_users").select("auth_user_id, email, full_name").in("auth_user_id", authUserIds),
       db
         .from("lms_courses")
         .select("id, title")
         .in("id", [...new Set(enrollments.map((e) => e.course_id))]),
+      db.from("customers").select("auth_user_id, tg_id").in("auth_user_id", authUserIds).not("tg_id", "is", null),
     ]);
     const userOf = new Map((users ?? []).map((u) => [u.auth_user_id, u]));
     const courseTitle = new Map((courses ?? []).map((c) => [c.id, c.title]));
+    const chatOf = new Map((chats ?? []).map((c) => [c.auth_user_id as string, String(c.tg_id)]));
     for (const enrollment of enrollments) {
       const user = userOf.get(enrollment.auth_user_id);
-      add(user?.email, user?.full_name, courseTitle.get(enrollment.course_id) ?? "Шлях 21");
+      add(user?.email, user?.full_name, courseTitle.get(enrollment.course_id) ?? "Шлях 21", {
+        tgId: chatOf.get(enrollment.auth_user_id) ?? null,
+        enrolled: true,
+      });
     }
   }
 

@@ -182,6 +182,17 @@ export const botCopy = {
   linkExpired: "Посилання застаріло. Відкрийте кабінет і натисніть «Підключити Telegram» ще раз.",
   linkBroken: "Не вдалося перевірити посилання. Спробуйте ще раз із кабінету.",
 
+  /* The link from the page after payment and from the receipt: it names the
+     ORDER, so it works before any sign-in. The answer says what this chat now
+     is for, because the buyer tapped it a minute after paying, not to "link"
+     anything. */
+  orderLinkedButton: "Відкрити кабінет",
+  orderLinkExpired:
+    "Посилання застаріло. Увійдіть у кабінет і натисніть «Підключити Telegram» — нагадування прийдуть сюди так само.",
+  orderLinkBroken: "Не вдалося перевірити посилання. Напишіть нам тут — допоможемо.",
+  orderLinkUnpaid:
+    "Ще не бачимо підтвердження оплати. Зазвичай воно приходить за хвилину — натисніть посилання ще раз трохи згодом.",
+
   /* The dosha result arrives here from the test, for a reader who may have no
      account at all — so the copy explains what this chat now is, rather than
      assuming they know they linked something. */

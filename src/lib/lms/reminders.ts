@@ -41,6 +41,8 @@ import { buildLessonReminderEmail, buildUnstartedReminderEmail } from "@/lib/ema
 import { surfaceUrl } from "@/lib/surfaces/catalog";
 import { SUPPORT_BOT_URL } from "@/lib/supportBotUrl";
 import { emptyEmailResult, sendReminderEmail, type ReminderEmailResult } from "./reminderEmail";
+import { ukDate } from "@/lib/email/lifecycleEmails";
+import { kyivDate } from "@/lib/email/lifecycleRuns";
 
 export type ReminderRunResult = {
   scanned: number;
@@ -69,6 +71,23 @@ type EnrollmentRow = {
   source?: string | null;
   order_ref?: string | null;
 };
+
+/**
+ * The «ви ще не почали» words. A course in the buyer's own pace counts its days
+ * from the first visit, so «you missed nothing» is true there. A GROUP stream
+ * counts from its shared start (`cohortStartsOn`), so for its buyers that
+ * sentence was false: the stream runs whether they opened it or not.
+ */
+export function unstartedReminderText(courseTitle: string, nudgeNumber: number, cohortStartsOn: string | null): string {
+  if (cohortStartsOn) {
+    return nudgeNumber === 1
+      ? `Потік «${courseTitle}» іде з ${ukDate(cohortStartsOn)}. Уроки вже відкриті в кабінеті — почніть з першого, коли буде зручно.`
+      : `Нагадуємо: потік «${courseTitle}» триває, а уроки чекають у кабінеті. Почніть з першого — наздогнати можна у своєму темпі.`;
+  }
+  return nudgeNumber === 1
+    ? `«${courseTitle}» вже відкритий у вашому кабінеті. Перший урок можна пройти тоді, коли буде зручно.`
+    : `Нагадуємо: «${courseTitle}» чекає в кабінеті. Відлік днів починається з першого відкриття, тож ви нічого не пропустили.`;
+}
 
 function bump(counter: Record<string, number>, key: string): void {
   counter[key] = (counter[key] ?? 0) + 1;
@@ -175,7 +194,7 @@ export async function runUnstartedReminders(
     const orderRows = await fetchAllRows(limit, (from, to) =>
       db
         .from("orders")
-        .select("order_ref, customer_id, created_at")
+        .select("order_ref, customer_id, created_at, offer_id")
         .eq("status", "paid")
         .in("product_code", productCodes)
         .order("created_at", { ascending: true })
@@ -185,6 +204,21 @@ export async function runUnstartedReminders(
 
     const orders = orderRows.filter((order) => order.order_ref && order.customer_id);
     if (orders.length === 0) continue;
+
+    // A group offer's shared start, per order. Before (and on) that day the
+    // stream's own «завтра / сьогодні старт» speak to its buyers; this pass
+    // takes over only once the stream is running.
+    const offerIds = [...new Set(orders.map((order) => order.offer_id).filter((id): id is string => Boolean(id)))];
+    const { data: groupOffers } = offerIds.length
+      ? await db
+          .from("experience_offers")
+          .select("id, cohort_starts_on")
+          .in("id", offerIds)
+          .eq("format", "group")
+          .not("cohort_starts_on", "is", null)
+      : { data: [] as Array<{ id: string; cohort_starts_on: string | null }> };
+    const cohortByOffer = new Map((groupOffers ?? []).map((offer) => [offer.id, offer.cohort_starts_on as string]));
+    const today = kyivDate(now);
 
     // Only buyers with a platform account can be addressed: notification
     // channels resolve through auth_user_id. A buyer who never signed in is a
@@ -248,6 +282,12 @@ export async function runUnstartedReminders(
         continue;
       }
 
+      const cohortStartsOn = order.offer_id ? (cohortByOffer.get(order.offer_id) ?? null) : null;
+      if (cohortStartsOn && today <= cohortStartsOn) {
+        bump(skipped, "stream_not_started");
+        continue;
+      }
+
       const decision = decideUnstartedReminder(course, {
         purchasedAt: new Date(order.created_at ?? now.toISOString()),
         timeZone: resolveTimeZone(timeZoneByUser.get(authUserId) ?? undefined),
@@ -280,10 +320,7 @@ export async function runUnstartedReminders(
       const result = await notifyLearner({
         authUserId,
         title: course.title,
-        text:
-          decision.nudgeNumber === 1
-            ? `«${course.title}» вже відкритий у вашому кабінеті. Перший урок можна пройти тоді, коли буде зручно.`
-            : `Нагадуємо: «${course.title}» чекає в кабінеті. Відлік днів починається з першого відкриття, тож ви нічого не пропустили.`,
+        text: unstartedReminderText(course.title, decision.nudgeNumber, cohortStartsOn),
         href: `/learn/${course.slug}`,
         actionLabel: "Почати курс",
         // The course's own cover when it has one — "here is what you bought";
@@ -331,6 +368,7 @@ export async function runUnstartedReminders(
                 name: contact.name,
                 courseTitle: course.title,
                 nudgeNumber,
+                cohortStartsOn,
                 courseUrl: surfaceUrl(`/learn/${course.slug}`),
                 supportUrl: SUPPORT_BOT_URL,
               }),

@@ -31,6 +31,9 @@ import {
 } from "@/lib/telegram/tg";
 import { verifyTelegramLinkToken } from "@/lib/platform/telegramLink";
 import { verifyDoshaResultToken } from "@/lib/platform/doshaTelegramLink";
+import { verifyOrderTelegramToken } from "@/lib/platform/orderTelegramLink";
+import { kyivDate } from "@/lib/email/lifecycleRuns";
+import { orderLinkedHtml } from "./orderLinkCopy";
 import { classifyDosha, type DoshaResultType } from "@/lib/dosha/doshaTest";
 import { buildDoshaResultHtml, RESULT_COPY } from "@/lib/dosha/doshaResultCopy";
 import { DOSHA_PRIMARY_EXIT, doshaExitHref } from "@/lib/dosha/doshaRouting";
@@ -723,6 +726,107 @@ async function tryLinkAccount(db: Supabase, chatId: number, user: TelegramUser, 
   return true;
 }
 
+/**
+ * Handles a `/start` payload from the page after payment or from the receipt
+ * (`lib/platform/orderTelegramLink.ts`). The token names an ORDER, so the
+ * buyer is found through it without a sign-in: this is how a group buyer who
+ * has not opened the course yet still hears «старт завтра».
+ *
+ * Writes the chat to the order's customer as `tg_id` — the address reminders
+ * resolve through — and records it in `messaging_subscriptions` without
+ * overwriting a row that is already there, so a chat that once unsubscribed
+ * from mailings stays unsubscribed.
+ */
+async function tryLinkOrder(db: Supabase, chatId: number, user: TelegramUser, payload: string): Promise<boolean> {
+  const verdict = verifyOrderTelegramToken(payload);
+
+  if (!verdict.ok) {
+    if (verdict.reason === "malformed") return false;
+    await sendMessage(chatId, verdict.reason === "expired" ? botCopy.orderLinkExpired : botCopy.orderLinkBroken);
+    return true;
+  }
+
+  const { data: order } = await db
+    .from("orders")
+    .select("id, order_ref, status, customer_id, offer_id, product_code, meta")
+    .eq("id", verdict.orderId)
+    .maybeSingle();
+
+  if (!order?.customer_id) {
+    await sendMessage(chatId, botCopy.orderLinkBroken);
+    return true;
+  }
+  if (order.status !== "paid") {
+    await sendMessage(chatId, botCopy.orderLinkUnpaid);
+    return true;
+  }
+
+  const { data: customer } = await db
+    .from("customers")
+    .select("id, auth_user_id, display_name")
+    .eq("id", order.customer_id)
+    .maybeSingle();
+  if (!customer) {
+    await sendMessage(chatId, botCopy.orderLinkBroken);
+    return true;
+  }
+
+  const tgId = String(user.id);
+
+  // One chat belongs to one person, as in `tryLinkAccount`: another person's
+  // row stops holding this chat. Rows of the same account keep it.
+  const others = db.from("customers").update({ tg_id: null }).eq("tg_id", tgId).neq("id", customer.id);
+  await (customer.auth_user_id ? others.or(`auth_user_id.is.null,auth_user_id.neq.${customer.auth_user_id}`) : others);
+  await db.from("customers").update({ tg_id: tgId }).eq("id", customer.id);
+
+  const buyer = (order.meta as { buyer?: { name?: unknown } } | null)?.buyer;
+  const name = customer.display_name ?? (typeof buyer?.name === "string" ? buyer.name : null);
+
+  await db
+    .from("messaging_subscriptions")
+    .upsert(
+      { channel: "telegram", address: tgId, customer_id: customer.id, name, source: "purchase" },
+      { onConflict: "channel,address", ignoreDuplicates: true },
+    );
+
+  const { programTitle, cohortStartsOn } = await describeOrderOffer(db, order);
+
+  await saveSession(db, user, { state: "idle", contact: null });
+  await sendMessage(chatId, orderLinkedHtml({ name, programTitle, cohortStartsOn, today: kyivDate(new Date()) }), {
+    inline_keyboard: [[{ text: botCopy.orderLinkedButton, url: CABINET_URL }]],
+  });
+  await logEventBestEffort(db, "tg_order_linked", {
+    order_ref: order.order_ref,
+    customer_id: customer.id,
+    telegram_user_id: tgId,
+  }).catch(() => undefined);
+  return true;
+}
+
+/** The program's name and, for a group stream, its shared start date. */
+async function describeOrderOffer(
+  db: Supabase,
+  order: { offer_id: string | null; product_code: string },
+): Promise<{ programTitle: string; cohortStartsOn: string | null }> {
+  const known = assertProduct(order.product_code);
+  const fallback = known ? PRODUCT_LABELS[known] : "CenterWay";
+  if (!order.offer_id) return { programTitle: fallback, cohortStartsOn: null };
+
+  const { data: offer } = await db
+    .from("experience_offers")
+    .select("format, cohort_starts_on, experience_id")
+    .eq("id", order.offer_id)
+    .maybeSingle();
+  const { data: experience } = offer?.experience_id
+    ? await db.from("experiences").select("title").eq("id", offer.experience_id).maybeSingle()
+    : { data: null };
+
+  return {
+    programTitle: experience?.title ?? fallback,
+    cohortStartsOn: offer?.format === "group" ? (offer.cohort_starts_on ?? null) : null,
+  };
+}
+
 async function handleTextMessage(db: Supabase, message: TelegramMessage): Promise<void> {
   const user = message.from;
   const text = message.text?.trim();
@@ -742,6 +846,7 @@ async function handleTextMessage(db: Supabase, message: TelegramMessage): Promis
     }
     if (payload && (await tryDeliverDoshaResult(db, chatId, user, payload))) return;
     if (payload && (await tryLinkAccount(db, chatId, user, payload))) return;
+    if (payload && (await tryLinkOrder(db, chatId, user, payload))) return;
 
     await saveSession(db, user, { state: "idle", contact: null });
     await sendGreeting(chatId);

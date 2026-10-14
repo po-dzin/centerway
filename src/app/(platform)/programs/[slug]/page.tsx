@@ -36,6 +36,7 @@ import { isContentKind, resolveExperience } from "@/lib/experiences/registry";
 import { ProgramDetailPage } from "@/components/platform/ProgramDetailPage";
 import { CourseNextStep } from "@/components/platform/CourseNextStep";
 import { OfferPurchaseReturn, readPurchaseReturn } from "@/components/platform/OfferPurchaseReturn";
+import { returnPageTelegramUrl } from "@/lib/payments/purchaseTelegram";
 import { getCourseAuthor, withAuthorNames } from "@/lib/lms/authors";
 import { toOfferSurface } from "@/lib/platform/courseOffer";
 import { listLiveCourses } from "@/lib/lms/liveCatalog";
@@ -157,6 +158,8 @@ export default async function CourseOfferPage({
     typeof query.product === "string" && query.product ? query.product : courseOfferCode(course.slug);
   const payable = await loadPayableOffer(returnedCode);
   const returned = readPurchaseReturn(query, payable);
+  // The one-tap Telegram link, while it is still the buyer's own return (see purchaseTelegram.ts).
+  const telegramHref = returned ? await returnPageTelegramUrl(returned.orderRef) : null;
 
   // Passed in rather than looked up: this page has already read the course, and
   // the snapshot lookup inside would find nothing for a course that exists only
@@ -168,7 +171,11 @@ export default async function CourseOfferPage({
       commerce={courseOfferCommerce(course.programSlug, offer)}
       author={author}
       formats={formats}
-      purchase={returned ? <OfferPurchaseReturn purchase={{ ...returned, product: returnedCode }} /> : undefined}
+      purchase={
+        returned ? (
+          <OfferPurchaseReturn purchase={{ ...returned, product: returnedCode }} telegramHref={telegramHref} />
+        ) : undefined
+      }
       nextStep={<CourseNextStep currentSlug={course.slug} courses={storefrontCourses} />}
     />
   );

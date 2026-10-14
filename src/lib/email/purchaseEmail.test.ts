@@ -83,4 +83,31 @@ describe("buildPurchaseEmail", () => {
     const mail = buildPurchaseEmail({ ...base, fulfilment: { kind: "course", courseSlug: "reset-day" } });
     expect(mail.text).not.toMatch(/\bти\b|\bтвій\b|\bтвоя\b|\bзаходь\b/i);
   });
+
+  it("offers the one-tap Telegram link when there is one, and only for a course", () => {
+    const telegramUrl = "https://telegram.me/centerway_support_bot?start=cwo123";
+    const course = buildPurchaseEmail({
+      ...base,
+      telegramUrl,
+      fulfilment: { kind: "course", courseSlug: "reset-day" },
+    });
+    expect(course.text).toContain(telegramUrl);
+    expect(course.html).toContain(telegramUrl);
+    expect(course.html).toContain("підключіть його одним натисканням");
+
+    const none = buildPurchaseEmail({
+      ...base,
+      telegramUrl: null,
+      fulfilment: { kind: "course", courseSlug: "reset-day" },
+    });
+    expect(none.text).not.toContain("?start=cwo");
+
+    /* A bot hand-off is already a Telegram chat. */
+    const bot = buildPurchaseEmail({
+      ...base,
+      telegramUrl,
+      fulfilment: { kind: "bot", url: "https://telegram.me/ShortRebotBot?start=x" },
+    });
+    expect(bot.text).not.toContain(telegramUrl);
+  });
 });

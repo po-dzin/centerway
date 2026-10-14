@@ -24,6 +24,7 @@ import { SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
 import type { ProductFulfilment } from "@/lib/products";
 import { emailLink, renderEmailLayout, type EmailBlock } from "./layout";
 import { ukDate } from "./lifecycleEmails";
+import { receiptTelegramUrl } from "@/lib/payments/purchaseTelegram";
 import { sendEmail } from "./resend";
 
 export type PurchaseEmailContent = {
@@ -41,6 +42,11 @@ export type PurchaseEmailInput = {
   orderRef: string;
   /** A group-format offer's shared start date (YYYY-MM-DD); null for self-paced. */
   cohortStartsOn?: string | null;
+  /**
+   * The order's one-tap link to the bot (`lib/platform/orderTelegramLink.ts`);
+   * null once the buyer's chat is linked. Left out, `sendPurchaseEmail` reads it.
+   */
+  telegramUrl?: string | null;
 };
 
 function formatAmount(amount: number | null, currency: string): string | null {
@@ -74,6 +80,10 @@ export function buildPurchaseEmail(input: PurchaseEmailInput): PurchaseEmailCont
     ? `Потік стартує ${ukDate(input.cohortStartsOn)}. Напередодні надішлемо лист, а в день старту — перший урок.`
     : null;
 
+  /* A bot hand-off is already a Telegram chat; there is nothing to link. */
+  const telegramUrl = input.fulfilment.kind === "bot" ? null : (input.telegramUrl ?? null);
+  const telegramNote = "Нагадування про старт і уроки можуть приходити в Telegram";
+
   const lines = [
     `Дякуємо! Оплату прийнято.`,
     ``,
@@ -87,6 +97,8 @@ export function buildPurchaseEmail(input: PurchaseEmailInput): PurchaseEmailCont
     ``,
     signInNote,
     signInNote ? `` : null,
+    telegramUrl ? `${telegramNote}. Підключити одним натисканням: ${telegramUrl}` : null,
+    telegramUrl ? `` : null,
     `Якщо щось не відкривається — напишіть нам: ${SUPPORT_BOT_URL}`,
     ``,
     `CenterWay`,
@@ -111,6 +123,11 @@ export function buildPurchaseEmail(input: PurchaseEmailInput): PurchaseEmailCont
   if (streamNote)
     blocks.push({ kind: "paragraph", html: "Напередодні надішлемо лист, а в день старту — перший урок." });
   if (signInNote) blocks.push({ kind: "note", html: escapeHtml(signInNote) });
+  if (telegramUrl)
+    blocks.push({
+      kind: "paragraph",
+      html: `${telegramNote} — ${emailLink(telegramUrl, "підключіть його одним натисканням")}.`,
+    });
 
   const html = renderEmailLayout({
     preheader: `${title} — доступ і деталі замовлення.`,
@@ -201,6 +218,7 @@ export async function sendPurchaseEmail(input: PurchaseEmailInput): Promise<Send
     const content = buildPurchaseEmail({
       ...input,
       cohortStartsOn: input.cohortStartsOn === undefined ? await cohortOfOrder(input.orderRef) : input.cohortStartsOn,
+      telegramUrl: input.telegramUrl === undefined ? await receiptTelegramUrl(input.orderRef) : input.telegramUrl,
     });
     const result = await sendEmail({
       to: input.email,

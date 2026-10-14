@@ -81,7 +81,10 @@ async function resolveChannels(authUserId: string): Promise<Array<{ channel: Not
 
   const [{ data: profile }, { data: customer }] = await Promise.all([
     db.from("platform_users").select("notification_channels").eq("auth_user_id", authUserId).maybeSingle(),
-    db.from("customers").select("tg_id").eq("auth_user_id", authUserId).maybeSingle(),
+    // An account can own two customer rows (one found by email, one by phone);
+    // `.maybeSingle()` on both errored and the reminder found no chat at all.
+    // Any row that holds a chat will do.
+    db.from("customers").select("tg_id").eq("auth_user_id", authUserId).not("tg_id", "is", null).limit(1).maybeSingle(),
   ]);
 
   const preferred = (profile?.notification_channels ?? ["telegram"]) as NotificationChannel[];

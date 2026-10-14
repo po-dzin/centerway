@@ -37,6 +37,7 @@ import { NextResponse } from "next/server";
 import { requireCronAuth } from "@/lib/cron/auth";
 import { runStreamEmails } from "@/lib/email/lifecycleRuns";
 import { runDailyReminders, runUnstartedReminders } from "@/lib/lms/reminders";
+import { runStreamTelegram } from "@/lib/lms/streamTelegram";
 import type { ReminderHourPolicy } from "@/lms-core";
 
 export const runtime = "nodejs";
@@ -68,7 +69,16 @@ export async function GET(req: Request) {
       streams = { error: error instanceof Error ? error.message : "unknown_error" };
     }
 
-    return NextResponse.json({ success: true, policy, daily, unstarted, streams });
+    /* The same two stream messages in Telegram, to the buyers with a linked
+       chat — isolated the same way. */
+    let streamsTelegram: unknown = null;
+    try {
+      streamsTelegram = await runStreamTelegram(new Date());
+    } catch (error) {
+      streamsTelegram = { error: error instanceof Error ? error.message : "unknown_error" };
+    }
+
+    return NextResponse.json({ success: true, policy, daily, unstarted, streams, streamsTelegram });
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown_error";
     return NextResponse.json({ success: false, policy, error: message }, { status: 500 });

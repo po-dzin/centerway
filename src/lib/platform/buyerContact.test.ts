@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  contactHref,
-  normalizeBuyerName,
-  normalizeContactPhone,
-  readBuyerDetails,
-  readPrimaryContact,
-} from "./buyerContact";
+import { contactHref, normalizeBuyerName, readBuyerDetails, readPrimaryContact } from "./buyerContact";
 
 describe("the buyer's name", () => {
   it("is trimmed and its inner spaces collapsed", () => {
