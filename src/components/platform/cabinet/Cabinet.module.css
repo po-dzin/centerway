@@ -2135,6 +2135,94 @@
   background-color: var(--cw-mat-tone-boundary);
 }
 
+/* ── Author gallery editor ─────────────────────────
+   A wrapping grid of tiles in the order the page prints them. Each tile is
+   the picture (with the same corner remove control the portrait has), and
+   under it the caption between two arrows that move it one place. */
+.authorGalleryList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--cw-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.authorGalleryItem {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+.authorGalleryThumb {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: var(--ds-card-media-ratio);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.authorGalleryThumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.authorGalleryVideoMark {
+  composes: onMedia square from "../PlatformButtons.module.css";
+  position: absolute;
+  inset-block-end: var(--cw-space-2xs);
+  inset-inline-start: var(--cw-space-2xs);
+  pointer-events: none;
+}
+
+.authorGalleryControls {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+}
+
+.authorGalleryAdd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-sm);
+}
+
+.authorGalleryAdd > label {
+  cursor: pointer;
+}
+
+.authorGalleryAdd > label[aria-disabled] {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.authorGalleryAdd > label:has(.visuallyHidden:focus-visible) {
+  outline: none;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 28%, transparent),
+    var(--cw-mat-shadow-soft);
+}
+
+/* The link field takes the row; on a phone the button wraps under it rather
+   than squeezing the field to a few characters. */
+.authorGalleryVideo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  flex: 1 1 100%;
+  gap: var(--cw-space-xs);
+}
+
+.authorGalleryVideo > .authorInput {
+  flex: 1 1 14rem;
+  width: auto;
+  min-width: 0;
+}
+
 /* ── Wider viewports: additive only ───────────────── */
 
 /* 561px is the platform's tablet boundary (docs/design-system.md: mobile ≤ 560,

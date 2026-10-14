@@ -28,7 +28,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
-import type { Author } from "@/lms-core";
+import { AUTHOR_GALLERY_MAX, type Author } from "@/lms-core";
 import type { ProfileLang } from "@/components/platform/profile/types";
 import type { AuthorProfileInput } from "./useCabinet";
 import styles from "./Cabinet.module.css";
@@ -41,6 +41,7 @@ import { useAuthorUpload } from "./useAuthorUpload";
 import { AuthorSectionYou } from "./AuthorSectionYou";
 import { AuthorSectionAbout } from "./AuthorSectionAbout";
 import { AuthorSectionPage } from "./AuthorSectionPage";
+import { AuthorSectionGallery } from "./AuthorSectionGallery";
 import { AuthorSectionConsultation } from "./AuthorSectionConsultation";
 
 const CropEditor = dynamic(() => import("@/components/media/CropEditor").then((m) => m.CropEditor), { ssr: false });
@@ -120,6 +121,23 @@ export function AuthorProfileFold({
     }));
   }
 
+  /* One file at a time, in the order picked, so the gallery keeps the author's
+     order and a failure stops at the file that failed. */
+  async function handleGalleryFiles(files: File[]) {
+    for (const file of files) {
+      const src = await upload("gallery", file);
+      if (!src) return;
+      setDraft((prev) =>
+        prev.gallery.length >= AUTHOR_GALLERY_MAX
+          ? prev
+          : {
+              ...prev,
+              gallery: [...prev.gallery, { id: `g-${crypto.randomUUID()}`, kind: "image", src, alt: prev.name }],
+            },
+      );
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
 
@@ -139,6 +157,9 @@ export function AuthorProfileFold({
       consultation: next.consultation,
       photo: next.photo,
       background: next.background,
+      /* Always sent, empty included: the save writes the whole row, and an
+         absent gallery is how the author clears the last item. */
+      gallery: next.gallery ?? [],
       listed: next.listed,
       slug: next.slug || undefined,
     });
@@ -202,6 +223,14 @@ export function AuthorProfileFold({
           />
           <AuthorSectionAbout draft={draft} setDraft={setDraft} t={t} />
           <AuthorSectionPage draft={draft} setDraft={setDraft} t={t} />
+          <AuthorSectionGallery
+            draft={draft}
+            setDraft={setDraft}
+            t={t}
+            uploading={uploading && uploadTarget === "gallery"}
+            uploadError={uploadTarget === "gallery" ? uploadError : null}
+            onFiles={handleGalleryFiles}
+          />
           <AuthorSectionConsultation draft={draft} setDraft={setDraft} t={t} />
 
           <div className={styles.actions}>

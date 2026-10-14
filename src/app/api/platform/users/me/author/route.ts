@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { clampCropScale } from "@/lib/media/imageCrop";
 import { getAuthorProfileForUser, upsertAuthorProfile, type AuthorProfileInput } from "@/lib/lms/authors";
+import { AUTHOR_GALLERY_MAX, youtubeIdFrom, type AuthorGalleryItem } from "@/lms-core";
 
 export const runtime = "nodejs";
 
@@ -122,6 +123,37 @@ function readProfileBlocks(value: unknown): AuthorProfileInput["profileBlocks"] 
   return blocks.length ? blocks : undefined;
 }
 
+function readText(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+/* An item that cannot be shown is dropped rather than failing the save: the
+   rest of the profile is still worth keeping, and the editor never sends one.
+   A video arrives as whatever link the author pasted and leaves as an id. */
+function readGallery(value: unknown): AuthorProfileInput["gallery"] {
+  if (!Array.isArray(value)) return undefined;
+  const items = value.slice(0, AUTHOR_GALLERY_MAX).flatMap((entry): AuthorGalleryItem[] => {
+    if (!entry || typeof entry !== "object") return [];
+    const item = entry as Record<string, unknown>;
+    const id = readText(item.id);
+    const caption = readText(item.caption);
+    if (!id) return [];
+    if (item.kind === "image") {
+      const src = readText(item.src);
+      const alt = readText(item.alt);
+      if (!src || !alt) return [];
+      return [{ id, kind: "image", src, alt, ...(caption ? { caption } : {}) }];
+    }
+    if (item.kind === "video") {
+      const videoId = youtubeIdFrom(readText(item.videoId) ?? "");
+      if (!videoId) return [];
+      return [{ id, kind: "video", provider: "youtube", videoId, ...(caption ? { caption } : {}) }];
+    }
+    return [];
+  });
+  return items.length ? items : undefined;
+}
+
 export async function POST(req: NextRequest) {
   const user = await requireUserFromBearer(req.headers.get("authorization"));
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -153,6 +185,7 @@ export async function POST(req: NextRequest) {
     ...(readConsultation(body.consultation) ? { consultation: readConsultation(body.consultation) } : {}),
     ...(readPhoto(body.photo) ? { photo: readPhoto(body.photo) } : {}),
     ...(readBackground(body.background) ? { background: readBackground(body.background) } : {}),
+    ...(readGallery(body.gallery) ? { gallery: readGallery(body.gallery) } : {}),
     ...(typeof body.listed === "boolean" ? { listed: body.listed } : {}),
     ...(typeof body.slug === "string" && body.slug.trim() ? { slug: body.slug.trim() } : {}),
   };

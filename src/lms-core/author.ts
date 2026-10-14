@@ -21,6 +21,22 @@ export type AuthorProfileBlock = {
   items?: string[];
 };
 
+/**
+ * One piece of an author's gallery — a photograph they uploaded, or a video
+ * they host on YouTube.
+ *
+ * A VIDEO IS A LINK, NOT A FILE. Lessons already hold their video as a YouTube
+ * id (`VideoBlock`), and where platform media should live is still an open
+ * question; uploading video into the same bucket as covers would decide it by
+ * accident. So the gallery stores the id, exactly the way a lesson does.
+ */
+export type AuthorGalleryItem =
+  | { id: string; kind: "image"; src: string; alt: string; caption?: string }
+  | { id: string; kind: "video"; provider: "youtube"; videoId: string; caption?: string };
+
+/** The gallery's ceiling — enough for a body of work, few enough for one page. */
+export const AUTHOR_GALLERY_MAX = 24;
+
 export type Author = {
   id: string;
   /**
@@ -99,6 +115,8 @@ export type Author = {
    * is what the band drew before this field could be aimed.
    */
   background?: { src: string; cropX?: number; cropY?: number; cropScale?: number };
+  /** Ordered photographs and videos for the author's own page. Absent means none. */
+  gallery?: AuthorGalleryItem[];
   /**
    * Whether strangers may reach the profile page. Absent means no.
    *
@@ -257,6 +275,31 @@ export function validateAuthor(input: unknown, path = "author"): asserts input i
           input.background.cropScale <= 4,
         `lms_author_invalid_background_cropScale:${path}`,
       );
+    }
+  }
+
+  if (input.gallery !== undefined) {
+    assert(
+      Array.isArray(input.gallery) && input.gallery.length <= AUTHOR_GALLERY_MAX,
+      `lms_author_invalid_gallery:${path}`,
+    );
+    for (const [index, item] of input.gallery.entries()) {
+      const itemPath = `${path}.gallery.${index}`;
+      assert(isRecord(item), `lms_author_invalid_gallery_item:${itemPath}`);
+      assert(isNonEmptyString(item.id), `lms_author_gallery_item_missing_id:${itemPath}`);
+      if (item.caption !== undefined)
+        assert(isNonEmptyString(item.caption), `lms_author_gallery_item_invalid_caption:${itemPath}`);
+      if (item.kind === "image") {
+        assert(isNonEmptyString(item.src), `lms_author_gallery_item_missing_src:${itemPath}`);
+        assert(isNonEmptyString(item.alt), `lms_author_gallery_item_missing_alt:${itemPath}`);
+      } else {
+        assert(item.kind === "video", `lms_author_gallery_item_invalid_kind:${itemPath}`);
+        assert(item.provider === "youtube", `lms_author_gallery_item_invalid_provider:${itemPath}`);
+        assert(
+          typeof item.videoId === "string" && /^[\w-]{11}$/.test(item.videoId),
+          `lms_author_gallery_item_invalid_video:${itemPath}`,
+        );
+      }
     }
   }
 

@@ -68,6 +68,9 @@ function authorFromRow(row: Row): Author {
       : {}),
     ...(row.photo ? { photo: row.photo as Author["photo"] } : {}),
     ...(row.background ? { background: row.background as Author["background"] } : {}),
+    ...(Array.isArray(row.gallery) && row.gallery.length > 0
+      ? { gallery: row.gallery as NonNullable<Author["gallery"]> }
+      : {}),
     // `false` reads back as ABSENT, the same way `visibility: "hidden"` does on
     // a course: it is the column's own default, and carrying it explicitly would
     // put a field on every author that says what its absence already says.
@@ -323,6 +326,7 @@ export type AuthorProfileInput = {
      nothing said so. */
   photo?: Author["photo"];
   background?: Author["background"];
+  gallery?: Author["gallery"];
   listed?: boolean;
   slug?: string;
 };
@@ -389,6 +393,7 @@ export async function upsertAuthorProfile(
     ...(input.consultation ? { consultation: input.consultation } : {}),
     ...(input.photo ? { photo: input.photo } : {}),
     ...(input.background ? { background: input.background } : {}),
+    ...(input.gallery?.length ? { gallery: input.gallery } : {}),
     ...(input.listed ? { listed: true } : {}),
   };
 
@@ -420,6 +425,7 @@ export async function upsertAuthorProfile(
         consultation_contact_url: input.consultation?.contactUrl ?? null,
         photo: input.photo ?? null,
         background: input.background ?? null,
+        gallery: input.gallery?.length ? input.gallery : null,
         listed: input.listed ?? false,
       },
       { onConflict: "auth_user_id" },

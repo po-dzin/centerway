@@ -39,4 +39,28 @@ describe("validateAuthor", () => {
     const author = { ...base, photo: { src: "/author.jpg", alt: "Автор", cropY: 140 } };
     expect(() => validateAuthor(author)).toThrow("lms_author_invalid_photo_cropY");
   });
+
+  it("accepts a gallery of photographs and YouTube videos", () => {
+    const author: Author = {
+      ...base,
+      gallery: [
+        { id: "g1", kind: "image", src: "/work.jpg", alt: "Практика в залі", caption: "Ранкова група" },
+        { id: "g2", kind: "video", provider: "youtube", videoId: "6jmhNMj_Duo" },
+      ],
+    };
+    expect(() => validateAuthor(author)).not.toThrow();
+  });
+
+  it("rejects a gallery photograph without a description", () => {
+    const author = { ...base, gallery: [{ id: "g1", kind: "image", src: "/work.jpg", alt: "" }] };
+    expect(() => validateAuthor(author)).toThrow("lms_author_gallery_item_missing_alt");
+  });
+
+  it("rejects a gallery video that is not a YouTube id", () => {
+    const author = {
+      ...base,
+      gallery: [{ id: "g1", kind: "video", provider: "youtube", videoId: "https://vimeo.com/1" }],
+    };
+    expect(() => validateAuthor(author)).toThrow("lms_author_gallery_item_invalid_video");
+  });
 });

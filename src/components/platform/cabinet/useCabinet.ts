@@ -307,6 +307,7 @@ export type AuthorProfileInput = {
      sending three crop numbers through it, and a variable (rather than an
      object literal) slips past excess-property checking, so nothing said so. */
   background?: Author["background"];
+  gallery?: Author["gallery"];
   listed?: boolean;
   slug?: string;
 };

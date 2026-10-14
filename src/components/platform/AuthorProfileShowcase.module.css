@@ -315,6 +315,160 @@
   line-height: 1.6;
 }
 
+/* ── Gallery ─────────────────────────────────────────
+   Tiles share the platform's card media ratio, so a gallery photo and a
+   course cover are the same shape on one page. The lightbox is a native
+   dialog over a dimmed page; the picture is shown whole (`contain`). */
+.galleryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(45%, 16rem), 1fr));
+  gap: var(--cw-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.galleryFigure {
+  display: grid;
+  gap: var(--cw-space-xs);
+  margin: 0;
+}
+
+.galleryTile {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  aspect-ratio: var(--ds-card-media-ratio);
+  padding: 0;
+  border: 1px solid var(--cw-platform-border);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface-sunk);
+  cursor: zoom-in;
+}
+
+.galleryTile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--cw-motion-state) var(--cw-ease-state);
+}
+
+@media (hover: hover) {
+  .galleryTile:hover img {
+    transform: scale(1.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .galleryTile img {
+    transition: none;
+  }
+}
+
+.galleryTile:focus-visible {
+  outline: 2px solid var(--cw-platform-accent);
+  outline-offset: 2px;
+}
+
+.galleryPlay {
+  composes: onMedia square from "./PlatformButtons.module.css";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+
+.galleryCaption {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+}
+
+.lightbox {
+  width: min(100% - 2 * var(--cw-page-gutter), 72rem);
+  max-width: none;
+  max-height: calc(100dvh - 2 * var(--cw-space-lg));
+  padding: 0;
+  border: 0;
+  border-radius: var(--cw-radius-xl);
+  background: var(--cw-mat-surface);
+  color: var(--cw-platform-text);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.lightbox::backdrop {
+  background: color-mix(in srgb, var(--cw-platform-ink-strong) 72%, transparent);
+}
+
+.lightboxBody {
+  position: relative;
+  display: grid;
+  gap: var(--cw-space-sm);
+  padding: var(--cw-space-md);
+}
+
+.lightboxClose {
+  composes: onMedia square from "./PlatformButtons.module.css";
+  position: absolute;
+  inset: var(--cw-space-lg) var(--cw-space-lg) auto auto;
+  z-index: 1;
+}
+
+.lightboxFigure {
+  display: grid;
+  gap: var(--cw-space-xs);
+  margin: 0;
+}
+
+.lightboxImage {
+  display: block;
+  width: 100%;
+  max-height: calc(100dvh - 12rem);
+  object-fit: contain;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.lightboxVideo {
+  aspect-ratio: 16 / 9;
+  max-height: calc(100dvh - 12rem);
+  overflow: hidden;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.lightboxVideo iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.lightboxCaption {
+  color: var(--cw-platform-muted);
+  line-height: 1.5;
+}
+
+.lightboxNav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cw-space-md);
+}
+
+.lightboxStep {
+  composes: secondary square from "./PlatformButtons.module.css";
+}
+
+.lightboxCount {
+  min-width: 4ch;
+  color: var(--cw-platform-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
 .courseHeader {
   display: flex;
   align-items: end;

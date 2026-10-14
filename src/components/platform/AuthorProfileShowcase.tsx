@@ -5,6 +5,7 @@ import type { StorefrontCard } from "@/lib/platform/offers";
 import type { Author } from "@/lms-core";
 import { PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import { AuthorPortrait } from "./AuthorPortrait";
+import { AuthorGallery } from "./AuthorGallery";
 import styles from "./AuthorProfileShowcase.module.css";
 import { ConsultBoundary, ConsultFaq } from "@/components/platform/ConsultPageSections";
 import { consultationSteps } from "@/components/platform/consultPageContract";
@@ -158,6 +159,17 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
           </div>
         </section>
       ))}
+
+      {/* After the author's own words and before the offer: the work, shown,
+          once the page has said who this is. */}
+      {author.gallery?.length ? (
+        <section className={styles.profileSection} id="gallery">
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.courseTitle}>Галерея</h2>
+          </div>
+          <AuthorGallery items={author.gallery} authorName={author.name} />
+        </section>
+      ) : null}
 
       {author.consultation?.enabled ? (
         <section className={styles.consultation} id="consultation">

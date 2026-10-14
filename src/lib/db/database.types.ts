@@ -1182,6 +1182,7 @@ export type Database = {
           created_at: string
           credentials: Json | null
           experience_badge: string | null
+          gallery: Json | null
           id: string
           listed: boolean
           name: string
@@ -1206,6 +1207,7 @@ export type Database = {
           created_at?: string
           credentials?: Json | null
           experience_badge?: string | null
+          gallery?: Json | null
           id?: string
           listed?: boolean
           name: string
@@ -1230,6 +1232,7 @@ export type Database = {
           created_at?: string
           credentials?: Json | null
           experience_badge?: string | null
+          gallery?: Json | null
           id?: string
           listed?: boolean
           name?: string

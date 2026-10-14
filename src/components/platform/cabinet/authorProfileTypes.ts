@@ -14,7 +14,7 @@ import type { STRINGS } from "./authorProfileStrings";
 
 export type AuthorProfileStrings = (typeof STRINGS)[ProfileLang];
 
-export type AuthorUploadTarget = "photo" | "background";
+export type AuthorUploadTarget = "photo" | "background" | "gallery";
 
 export type AuthorSectionProps = {
   draft: Draft;

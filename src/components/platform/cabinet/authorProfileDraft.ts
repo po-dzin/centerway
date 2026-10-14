@@ -4,7 +4,7 @@
  * Split out of AuthorProfileFold.tsx (1,573 lines) on 2026-09-11; nothing inside any declaration changed.
  */
 
-import type { Author, AuthorProfileBlock } from "@/lms-core";
+import type { Author, AuthorGalleryItem, AuthorProfileBlock } from "@/lms-core";
 import { CROP_SCALE_MIN } from "@/lib/media/imageCrop";
 
 export type Draft = {
@@ -19,6 +19,7 @@ export type Draft = {
   consultation: { enabled: boolean; title: string; summary: string; points: string[]; contactUrl: string };
   photo: NonNullable<Author["photo"]> | null;
   background: NonNullable<Author["background"]> | null;
+  gallery: AuthorGalleryItem[];
   listed: boolean;
   slug: string;
 };
@@ -63,6 +64,7 @@ export function draftFromAuthor(author: Author | null): Draft {
        visible rather than felt as a dead gesture, and this stays a copy. */
     photo: author?.photo ? { ...author.photo } : null,
     background: author?.background ? { ...author.background } : null,
+    gallery: author?.gallery ? author.gallery.map((item) => ({ ...item })) : [],
     listed: author?.listed ?? false,
     slug: author?.slug ?? "",
   };
@@ -121,6 +123,19 @@ export function authorFromDraft(draft: Draft, base: Author | null): Author {
       }
     : undefined;
 
+  /* ONE FIELD FOR THE WORDS UNDER A PHOTOGRAPH. The editor asks only for a
+     caption; the description a screen reader needs is that caption, or the
+     author's name when there is none — still true of every photo they add,
+     and never empty, so a gallery photo cannot block a save. */
+  const gallery = draft.gallery.map((item): AuthorGalleryItem => {
+    const caption = item.caption?.trim();
+    const words = caption ? { caption } : {};
+    if (item.kind === "video")
+      return { id: item.id, kind: "video", provider: "youtube", videoId: item.videoId, ...words };
+    const alt = caption || draft.name.trim() || item.alt;
+    return { id: item.id, kind: "image", src: item.src, alt, ...words };
+  });
+
   return {
     id: base?.id ?? "draft",
     slug: draft.slug.trim() || base?.slug || "",
@@ -173,6 +188,7 @@ export function authorFromDraft(draft: Draft, base: Author | null): Author {
        storing "no zoom" as absence and the other as 1 is two answers to one
        question, and the reader of the row cannot tell which means what. */
     ...(background ? { background } : {}),
+    ...(gallery.length ? { gallery } : {}),
     listed: draft.listed,
   };
 }
