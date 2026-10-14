@@ -123,23 +123,27 @@ beforeEach(() => {
   hoisted.user = { id: "u1", email: "Buyer@Example.com", email_confirmed_at: "2026-10-01T00:00:00Z" };
 });
 
-describe("GET /api/pay/start — sign-in before payment", () => {
-  it("sends a signed-out browser to the cabinet's sign-in door and back to the same pay link", async () => {
+describe("GET /api/pay/start — an address before payment", () => {
+  it("sends a request with no address to the checkout page with the same query", async () => {
     hoisted.user = null;
-    const res = await get("product=way21-group");
+    const res = await get("product=way21-group&utm_source=meta&event_id=e1");
     expect(res.status).toBe(302);
     const location = new URL(res.headers.get("location")!);
-    expect(location.origin + location.pathname).toBe("https://my.centerway.net.ua/profile");
-    expect(location.searchParams.get("next")).toBe("https://www.centerway.net.ua/api/pay/start?product=way21-group");
+    expect(location.origin + location.pathname).toBe("https://www.centerway.net.ua/pay/checkout");
+    expect(location.searchParams.get("product")).toBe("way21-group");
+    expect(location.searchParams.get("utm_source")).toBe("meta");
+    expect(location.searchParams.get("event_id")).toBe("e1");
     expect(createInvoice).not.toHaveBeenCalled();
     expect(db.tables.orders).toHaveLength(0);
   });
 
-  it("answers a json caller with 401 and the door's address", async () => {
+  it("answers a json caller with 401 and the checkout page's address", async () => {
     hoisted.user = null;
     const res = await get("product=way21-group&format=json");
     expect(res.status).toBe(401);
-    expect(await res.json()).toMatchObject({ ok: false, error: "sign_in_required" });
+    const body = await res.json();
+    expect(body).toMatchObject({ ok: false, error: "address_required" });
+    expect(body.checkoutUrl).toBe("https://www.centerway.net.ua/pay/checkout?product=way21-group");
   });
 
   it("takes the address typed on a landing when nobody is signed in, and binds the order to it", async () => {

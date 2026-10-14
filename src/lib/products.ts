@@ -18,6 +18,13 @@ export type SearchParams = Record<string, string | string[] | undefined>;
  * stores the return URL with the invoice, so a payment started before this
  * shipped still comes back to the old address.
  */
+/**
+ * The checkout page: every buy button leads here, and its form starts the
+ * payment (`/api/pay/start`). Site-relative, so it works on localhost and
+ * preview; a funnel host forwards `/pay/…` to the platform (platformEscape.ts).
+ */
+export const CHECKOUT_PAGE_PATH = "/pay/checkout";
+
 export const PLATFORM_THANKS_URL = "https://www.centerway.net.ua/pay/thanks";
 export const PLATFORM_FAILED_URL = "https://www.centerway.net.ua/pay/failed";
 /**

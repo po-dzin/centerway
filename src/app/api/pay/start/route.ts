@@ -7,8 +7,8 @@ import { loadPayableOffer } from "@/lib/platform/offers";
 import { createPaymentInvoice, resolveLocaleFromRequest } from "@/lib/payments/paymentStart";
 import { readAttribution } from "@/lib/referral/attribution";
 import { userFromCookies } from "@/lib/auth/serverSession";
+import { CHECKOUT_PAGE_PATH } from "@/lib/products";
 import { normalizeCustomerEmail } from "@/lib/platform/customerIdentity";
-import { PROFILE_PATH_PREFIX, personalUrl } from "@/lib/surfaces/catalog";
 import { AGENT_COOKIE, isAgentRequest } from "@/lib/tracking/agentTraffic";
 
 export const runtime = "nodejs";
@@ -41,26 +41,32 @@ export async function GET(req: NextRequest) {
      Access is matched by email and a gateway may not return the payer's
      address at all, so the order is bound to one BEFORE the buyer leaves.
      Two sources, in this order:
-     1. `?email=` typed on a landing's «Куди надіслати доступ?» step
-        (email-gate.js). It is what that step promised the buyer, so it is
-        honoured even for a signed-in buyer (a gift, a stale remembered
-        address). NOT verified, which the step's hint says;
+     1. `?email=` typed on the checkout page (`/pay/checkout`). It is what that
+        page promised the buyer, so it is honoured even for a signed-in buyer
+        (a gift). NOT verified, which the page's note says;
      2. the signed-in session — a verified address; the session cookies are
-        shared across `.centerway.net.ua`, so the platform's own pay links,
-        which carry no `?email=`, work from the cabinet too.
-     With neither, a browser navigation is sent to the cabinet's own sign-in
-     door (Google, last account, email: the one every other sign-in uses) and
-     comes back to this very address; `format=json` callers get a 401 naming it. */
+        shared across `.centerway.net.ua`, so the checkout page sends no
+        address for a signed-in buyer and this reads it here.
+     With neither — an old link, a bookmark, a landing still cached from before
+     the checkout page — a browser is sent to that page with the same query,
+     and `format=json` callers get a 401 naming it. */
   const typedEmail = typedBuyerEmail(url.searchParams.get("email"));
   const user = typedEmail ? null : await userFromCookies();
   const sessionEmail = user?.email_confirmed_at ? user.email?.trim().toLowerCase() || null : null;
   const buyerEmail = typedEmail ?? sessionEmail;
   if (!buyerEmail) {
-    const signInUrl = personalUrl(`${PROFILE_PATH_PREFIX}?next=${encodeURIComponent(req.url)}`);
+    const checkout = new URL(CHECKOUT_PAGE_PATH, req.url);
+    url.searchParams.forEach((value, key) => {
+      if (key !== "email") checkout.searchParams.append(key, value);
+    });
     if (url.searchParams.get("format") === "json") {
-      return NextResponse.json({ ok: false, error: "sign_in_required", signInUrl }, { status: 401 });
+      checkout.searchParams.delete("format");
+      return NextResponse.json(
+        { ok: false, error: "address_required", checkoutUrl: checkout.toString() },
+        { status: 401 },
+      );
     }
-    return NextResponse.redirect(signInUrl, 302);
+    return NextResponse.redirect(checkout, 302);
   }
   const product = offer.code;
   const resolvedOffer = product === IREM_OFFER_CODE ? await resolveIremLandingOffer(url.searchParams) : null;

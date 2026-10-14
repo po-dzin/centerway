@@ -155,10 +155,10 @@ async function assertIremEntryContract(page, label) {
 }
 
 async function assertIremCheckoutRedirect(page, label) {
-  let payStartUrl = "";
+  let checkoutUrl = "";
 
-  await page.route("**/api/pay/start**", async (route) => {
-    payStartUrl = route.request().url();
+  await page.route("**/pay/checkout**", async (route) => {
+    checkoutUrl = route.request().url();
     await route.fulfill({
       status: 200,
       contentType: "text/plain; charset=utf-8",
@@ -174,29 +174,20 @@ async function assertIremCheckoutRedirect(page, label) {
     .evaluate((node) => {
       node.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
     });
-  // The CTA now opens the «Куди надіслати доступ?» step (email-gate.js); the
-  // payment request is made only once an address is submitted.
-  await page.waitForSelector(".cw-eg__card", { timeout: 2000 });
-  await page.fill("#cw-eg-email", "smoke@example.com");
-  await page.click(".cw-eg__go");
   await page.waitForTimeout(200);
 
-  if (!payStartUrl) {
-    fail(`${label}: checkout CTA did not request /api/pay/start`);
+  if (!checkoutUrl) {
+    fail(`${label}: checkout CTA did not open /pay/checkout`);
     return;
   }
 
-  const parsed = new URL(payStartUrl);
-  if (
-    parsed.pathname !== "/api/pay/start" ||
-    parsed.searchParams.get("product") !== "irem" ||
-    parsed.searchParams.get("email") !== "smoke@example.com"
-  ) {
-    fail(`${label}: checkout CTA requested unexpected URL ${payStartUrl}`);
+  const parsed = new URL(checkoutUrl);
+  if (parsed.pathname !== "/pay/checkout" || parsed.searchParams.get("product") !== "irem") {
+    fail(`${label}: checkout CTA requested unexpected URL ${checkoutUrl}`);
     return;
   }
 
-  pass(`${label}: checkout CTA hits /api/pay/start for IREM`);
+  pass(`${label}: checkout CTA opens /pay/checkout for IREM`);
 }
 
 async function assertRouteStatus(browser, label, path, expectedStatus, verify) {

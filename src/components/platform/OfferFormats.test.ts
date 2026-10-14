@@ -141,9 +141,9 @@ describe("OfferFormats", () => {
     expect(render([SELF])).not.toContain("Бонусом");
   });
 
-  it("gives a priced checkout format a checkout link to /api/pay/start", () => {
+  it("gives a priced checkout format a link to the checkout page", () => {
     const html = render([SELF]);
-    const href = `/api/pay/start?product=${encodeURIComponent("course:way21")}&amp;cta_place=${encodeURIComponent(
+    const href = `/pay/checkout?product=${encodeURIComponent("course:way21")}&amp;cta_place=${encodeURIComponent(
       "way21_format_course:way21",
     )}&amp;source=platform_offer`;
     expect(html).toContain(`href="${href}"`);
