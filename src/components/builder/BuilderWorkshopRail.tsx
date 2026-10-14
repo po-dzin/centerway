@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
-import { BUILDER_COURSES_PATH, BUILDER_PATH_PREFIX } from "@/lib/surfaces/catalog";
+import { BUILDER_COURSES_PATH, BUILDER_LEDGER_PATH, BUILDER_PATH_PREFIX } from "@/lib/surfaces/catalog";
 import { InkLabel } from "./BuilderInkLabel";
 import styles from "./Builder.module.css";
 
@@ -21,10 +21,10 @@ import styles from "./Builder.module.css";
  * left track is the honest answer to the question that track answers — «what is
  * in this place» (`docs/design-system.md`, the chrome's two pairs).
  *
- * TWO ROWS, AND THE SECOND ONE IS THE SHELF. `/build` states standing,
- * `/build/courses` holds the courses. They are the workshop's two rooms, and
- * naming them here is what makes the split navigable rather than a link buried
- * beside a page title.
+ * THREE ROWS. `/build` states standing, `/build/courses` holds the courses,
+ * `/build/oblik` is the author's ledger — what sold, from which post, what is
+ * already theirs (2026-10-14, P0 of the authors map). Naming the rooms here is
+ * what makes the split navigable rather than a link buried beside a page title.
  *
  * `selection_family = ink`: a change of place on an unmaterialised panel, so the
  * current row is the shared stroke at full strength and the icon takes the
@@ -34,7 +34,7 @@ import styles from "./Builder.module.css";
  * class. Every row carries an `aria-label` because that compact rail shows only
  * the icon. No plate, no contour, no local geometry.
  */
-export function BuilderWorkshopRail({ current }: { current: "overview" | "courses" }) {
+export function BuilderWorkshopRail({ current }: { current: "overview" | "courses" | "ledger" }) {
   return (
     <div className={styles.courseRail}>
       <nav className={styles.courseRailNav} aria-label="Розділи майстерні">
@@ -63,6 +63,19 @@ export function BuilderWorkshopRail({ current }: { current: "overview" | "course
             </InteractionInkIcon>
           </span>
           <InkLabel>Матеріали</InkLabel>
+        </Link>
+        <Link
+          className={`cw-nav-link ${styles.courseRailLink}`}
+          href={BUILDER_LEDGER_PATH}
+          aria-label="Облік"
+          aria-current={current === "ledger" ? "page" : undefined}
+        >
+          <span className={styles.courseRailIcon}>
+            <InteractionInkIcon>
+              <Icon name="price" size={20} />
+            </InteractionInkIcon>
+          </span>
+          <InkLabel>Облік</InkLabel>
         </Link>
       </nav>
     </div>

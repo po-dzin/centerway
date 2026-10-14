@@ -508,6 +508,44 @@ export type Database = {
         }
         Relationships: []
       }
+      author_links: {
+        Row: {
+          archived_at: string | null
+          author_id: string
+          channel: string | null
+          created_at: string
+          label: string
+          tag: string
+          target_path: string
+        }
+        Insert: {
+          archived_at?: string | null
+          author_id: string
+          channel?: string | null
+          created_at?: string
+          label: string
+          tag: string
+          target_path?: string
+        }
+        Update: {
+          archived_at?: string | null
+          author_id?: string
+          channel?: string | null
+          created_at?: string
+          label?: string
+          tag?: string
+          target_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "author_links_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "lms_authors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       author_payout_accounts: {
         Row: {
           active: boolean
@@ -517,6 +555,7 @@ export type Database = {
           gateway: string | null
           iban: string | null
           legal_name: string | null
+          own_share_pct: number | null
           receiver_ref: string | null
           tax_id: string | null
           updated_at: string
@@ -529,6 +568,7 @@ export type Database = {
           gateway?: string | null
           iban?: string | null
           legal_name?: string | null
+          own_share_pct?: number | null
           receiver_ref?: string | null
           tax_id?: string | null
           updated_at?: string
@@ -541,6 +581,7 @@ export type Database = {
           gateway?: string | null
           iban?: string | null
           legal_name?: string | null
+          own_share_pct?: number | null
           receiver_ref?: string | null
           tax_id?: string | null
           updated_at?: string
@@ -2062,7 +2103,9 @@ export type Database = {
           order_ref: string
           paid_out_at: string | null
           payout_note: string | null
+          ref: string | null
           share_pct: number
+          source: string
           status: string
           updated_at: string
         }
@@ -2077,7 +2120,9 @@ export type Database = {
           order_ref: string
           paid_out_at?: string | null
           payout_note?: string | null
+          ref?: string | null
           share_pct: number
+          source?: string
           status: string
           updated_at?: string
         }
@@ -2092,7 +2137,9 @@ export type Database = {
           order_ref?: string
           paid_out_at?: string | null
           payout_note?: string | null
+          ref?: string | null
           share_pct?: number
+          source?: string
           status?: string
           updated_at?: string
         }
@@ -2116,6 +2163,8 @@ export type Database = {
       orders: {
         Row: {
           amount: number | null
+          author_share_pct: number | null
+          author_share_source: string | null
           campaign: string | null
           client_ip: string | null
           client_ua: string | null
@@ -2141,6 +2190,8 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          author_share_pct?: number | null
+          author_share_source?: string | null
           campaign?: string | null
           client_ip?: string | null
           client_ua?: string | null
@@ -2166,6 +2217,8 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          author_share_pct?: number | null
+          author_share_source?: string | null
           campaign?: string | null
           client_ip?: string | null
           client_ua?: string | null

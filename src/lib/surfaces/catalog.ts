@@ -44,6 +44,9 @@ export const BUILDER_PATH_PREFIX = "/build";
  */
 export const BUILDER_COURSES_PATH = `${BUILDER_PATH_PREFIX}/courses`;
 
+/** The workshop's «Облік»: the author's shares, their sources and links (2026-10-14). */
+export const BUILDER_LEDGER_PATH = `${BUILDER_PATH_PREFIX}/oblik`;
+
 /**
  * Segments under `/build` that a course slug may never take.
  *
@@ -55,7 +58,7 @@ export const BUILDER_COURSES_PATH = `${BUILDER_PATH_PREFIX}/courses`;
  */
 // `examples` is a `public/` root that bypasses routing on every host
 // (lib/proxy/bypass.ts); a course under that name could not serve its lessons.
-export const BUILDER_RESERVED_SLUGS = ["courses", "examples"] as const;
+export const BUILDER_RESERVED_SLUGS = ["courses", "examples", "oblik"] as const;
 
 export function isReservedBuilderSlug(slug: string): boolean {
   return (BUILDER_RESERVED_SLUGS as readonly string[]).includes(slug);

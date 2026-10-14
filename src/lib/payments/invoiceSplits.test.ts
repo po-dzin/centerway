@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FakeSupabase } from "@/lib/admin/fakeSupabase";
 import type { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-import { resolveInvoiceSplits } from "./invoiceSplits";
+import { resolveInvoiceShare, resolveInvoiceSplits } from "./invoiceSplits";
 
 const db = new FakeSupabase();
 const sb = db as unknown as ReturnType<typeof supabaseAdmin>;
@@ -58,5 +58,45 @@ describe("resolveInvoiceSplits", () => {
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
     db.failures = { "experience_offers:select": "boom" };
     expect(await ask()).toEqual([]);
+  });
+});
+
+describe("resolveInvoiceShare", () => {
+  const share = (ref: string | null) =>
+    resolveInvoiceShare(sb, { productCode: "way21", amount: 4100, gateway: "liqpay", ref });
+
+  beforeEach(() => {
+    db.tables.experience_offers![0]!.share_pct = 50;
+    db.tables.author_payout_accounts![0]!.own_share_pct = 90;
+    db.tables.author_links = [
+      { tag: "anna-ig-reel", author_id: "auth-1" },
+      { tag: "other-post", author_id: "auth-2" },
+    ];
+  });
+
+  it("gives the author's own share when the buyer came by the author's link", async () => {
+    expect(await share("anna-ig-reel")).toEqual({
+      splits: [expect.objectContaining({ amount: 3690 })],
+      snapshot: { pct: 90, source: "author" },
+    });
+  });
+
+  it("keeps the platform share for no link, a stranger's link, or another author's link", async () => {
+    for (const ref of [null, "friend-ref", "other-post"]) {
+      expect(await share(ref)).toEqual({
+        splits: [expect.objectContaining({ amount: 2050 })],
+        snapshot: { pct: 50, source: "platform" },
+      });
+    }
+  });
+
+  it("falls back to the platform share when the author's own share is not set", async () => {
+    db.tables.author_payout_accounts![0]!.own_share_pct = null;
+    expect((await share("anna-ig-reel")).snapshot).toEqual({ pct: 50, source: "author" });
+  });
+
+  it("still fixes the share on the order when nothing can be split at the gateway", async () => {
+    db.tables.author_payout_accounts![0]!.receiver_ref = null;
+    expect(await share("anna-ig-reel")).toEqual({ splits: [], snapshot: { pct: 90, source: "author" } });
   });
 });
