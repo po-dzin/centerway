@@ -15,7 +15,7 @@
 
 /* ONE HEIGHT ON A DESKTOP (owner, 2026-10-14). Two cards of different
    heights side by side read as two unrelated blocks; stretched, they read as
-   one order. Each card keeps its last row (the sum, the fine print) at its foot,
+   one order. The summary keeps its sum at its foot,
    so the extra height opens between content and foot, never under it. */
 @media (min-width: 861px) {
   .layout {
@@ -117,14 +117,24 @@
 
 .formPanel {
   padding: clamp(1.15rem, 3vw, 2rem);
-  /* A grid, so the fine print can take the last row and sit at the foot. */
-  grid-template-rows: auto auto 1fr;
+  /* Rows stay at the top (`align-content: start`, the panel's own): beside a
+     taller summary the spare height opens under the gateway line. */
 }
 
-.fineprint {
-  display: grid;
-  align-content: end;
-  gap: var(--cw-space-sm);
+/* The gateway line: one icon, one fact, under the button. */
+.gateway {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cw-space-2xs);
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+.gateway b {
+  color: var(--cw-platform-text);
 }
 
 .formTitle {

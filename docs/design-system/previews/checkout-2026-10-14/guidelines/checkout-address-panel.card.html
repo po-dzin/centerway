@@ -45,7 +45,7 @@
 </head>
 <body>
 <h1>Address panel</h1>
-<p class="lede">The right half of <code>/pay/checkout</code> (<code>AddressPanel.tsx</code>). The offer panel's raised material, because it holds the page's one primary action. It asks a name, an address (signed in: names the account and offers «Інша адреса») and one required «Телефон або Telegram» field (what is typed decides which). Fine print sits at the foot.</p>
+<p class="lede">The right half of <code>/pay/checkout</code> (<code>AddressPanel.tsx</code>). The offer panel's raised material, because it holds the page's one primary action. It asks a name, an address (signed in: names the account and offers «Інша адреса») and one required «Телефон або Telegram» field (what is typed decides which). One line under the button names the gateway.</p>
 <div class="pair">
   <div class="theme">
     <article class="card panel">
@@ -55,7 +55,7 @@
       <p class="muted">На неї прийдуть чек і вхід у кабінет. Перевірте літери.</p>
       <label class="field"><span>Телефон або Telegram</span><div class="input">@anna</div></label>
       <div class="go">Перейти до оплати</div>
-      <div class="foot"><p class="muted">Оплата на захищеній сторінці LiqPay: картка, Apple Pay або Google Pay.</p></div>
+      <p class="muted" style="text-align:center">Оплата через <b>LiqPay</b></p>
     </article>
     <p class="tokens">--cw-mat-surface · --cw-mat-shadow-soft · field: --cw-platform-border, --cw-radius-sm · action: primary role (--cw-sem-warmth, --ds-button-*)</p>
   </div>
@@ -66,7 +66,7 @@
       <div class="account"><span>Доступ прийде в ваш акаунт <b>anna@gmail.com</b></span><u>Інша адреса</u></div>
       <label class="field"><span>Телефон або Telegram</span><div class="input">+380 67 123 45 67</div></label>
       <div class="go">Перейти до оплати</div>
-      <div class="foot"><p class="muted">Оплата на захищеній сторінці LiqPay: картка, Apple Pay або Google Pay.</p></div>
+      <p class="muted" style="text-align:center">Оплата через <b>LiqPay</b></p>
     </article>
     <p class="tokens">signed in: no address field, name and contacts prefilled from the account; «Інша адреса» is the text role</p>
   </div>

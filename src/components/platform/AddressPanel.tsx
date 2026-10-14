@@ -1,21 +1,16 @@
-import Link from "next/link";
-
+import { Icon } from "@/components/Icon";
 import offerStyles from "@/components/platform/PlatformOfferStyles";
-import commerceStyles from "@/components/platform/PlatformOfferCommerce.module.css";
-import { SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
 import { CheckoutForm, type CheckoutInitial } from "./CheckoutForm";
 import styles from "./PlatformCheckout.module.css";
 
 /**
- * ADDRESS PANEL — who access goes to (a name, an address, one messenger),
+ * ADDRESS PANEL — who access goes to (a name, an address, a phone or Telegram),
  * and the one action that leaves for the gateway.
  *
  * A design-system component of its own (docs/design-system.md → «Checkout: two
  * components»): the offer panel's raised material, because it holds the page's
  * one primary control. Question first, field (or the signed-in account) and
- * the gold button under it; the fine print sits at the foot, so beside a
- * taller summary the panel stretches without the button drifting away from
- * the field it submits.
+ * the gold button under it, and one line naming the gateway under that.
  */
 export function AddressPanel({
   fields,
@@ -31,7 +26,7 @@ export function AddressPanel({
   accountEmail: string | null;
   /** What the page already knows: fields sent back by the route, or the signed-in buyer's saved name and messenger. */
   initial: CheckoutInitial;
-  /** The active gateway's own name, so the fine print never names the wrong one. */
+  /** The active gateway's own name, so the gateway line never names the wrong one. */
   gatewayLabel: string;
   title?: string;
   titleId?: string;
@@ -44,16 +39,16 @@ export function AddressPanel({
 
       <CheckoutForm fields={fields} accountEmail={accountEmail} initial={initial} />
 
-      <div className={styles.fineprint}>
-        <p className={commerceStyles.fineprint}>
-          Оплата на захищеній сторінці {gatewayLabel}: картка, Apple Pay або Google Pay. Дані картки до нас не
-          потрапляють. Натискаючи кнопку, ви приймаєте <Link href="/legal/public-offer">публічну оферту</Link> і{" "}
-          <Link href="/legal/privacy">політику конфіденційності</Link>.
-        </p>
-        <p className={commerceStyles.fineprint}>
-          Є питання? <a href={SUPPORT_BOT_URL}>Напишіть у підтримку</a> в Telegram.
-        </p>
-      </div>
+      {/* ONE LINE UNDER THE BUTTON (owner, 2026-10-14). It was a paragraph:
+          card types, where card data goes, the offer, support. The buyer needs
+          one fact here — who takes the money — and the gateway's own page says
+          the rest. */}
+      <p className={styles.gateway}>
+        <Icon name="lock" size={20} aria-hidden />
+        <span>
+          Оплата через <b>{gatewayLabel}</b>
+        </span>
+      </p>
     </article>
   );
 }
