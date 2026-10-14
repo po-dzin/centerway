@@ -28,12 +28,14 @@ export function CheckoutScreen({
   accountEmail,
   initial,
   gatewayLabel,
+  gatewayLogo = null,
 }: {
   summary: CheckoutSummary;
   fields: [string, string][];
   accountEmail: string | null;
   initial: CheckoutInitial;
   gatewayLabel: string;
+  gatewayLogo?: { src: string; width: number; height: number } | null;
 }) {
   return (
     /* `default`: the page opens on the canvas, not on a photograph. */
@@ -64,6 +66,7 @@ export function CheckoutScreen({
               accountEmail={accountEmail}
               initial={initial}
               gatewayLabel={gatewayLabel}
+              gatewayLogo={gatewayLogo}
             />
           </div>
         </section>

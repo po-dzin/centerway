@@ -121,7 +121,7 @@
      taller summary the spare height opens under the gateway line. */
 }
 
-/* The gateway line: one icon, one fact, under the button. */
+/* The gateway line: one fact and the gateway's own mark, under the button. */
 .gateway {
   display: flex;
   align-items: center;
@@ -135,6 +135,14 @@
 
 .gateway b {
   color: var(--cw-platform-text);
+}
+
+/* The gateway's mark at the text's cap height, so the line reads as one line
+   and the mark does not outshout the button above it. */
+.gatewayLogo {
+  display: block;
+  width: auto;
+  height: 0.8em;
 }
 
 .formTitle {

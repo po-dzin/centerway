@@ -81,6 +81,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   const accountName =
     typeof user?.user_metadata?.full_name === "string" ? (user.user_metadata.full_name as string) : null;
 
+  const gateway = activeGateway();
+
   return (
     <CheckoutScreen
       summary={summary}
@@ -91,7 +93,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
         name: first(params, "name") ?? saved.name ?? accountName,
         contact: first(params, "contact") ?? saved.contact,
       }}
-      gatewayLabel={activeGateway().label}
+      gatewayLabel={gateway.label}
+      gatewayLogo={gateway.logo ?? null}
     />
   );
 }

@@ -1,4 +1,3 @@
-import { Icon } from "@/components/Icon";
 import offerStyles from "@/components/platform/PlatformOfferStyles";
 import { CheckoutForm, type CheckoutInitial } from "./CheckoutForm";
 import styles from "./PlatformCheckout.module.css";
@@ -17,6 +16,7 @@ export function AddressPanel({
   accountEmail,
   initial,
   gatewayLabel,
+  gatewayLogo = null,
   title = "Кому надіслати доступ?",
   titleId,
 }: {
@@ -28,6 +28,8 @@ export function AddressPanel({
   initial: CheckoutInitial;
   /** The active gateway's own name, so the gateway line never names the wrong one. */
   gatewayLabel: string;
+  /** The active gateway's mark; without one the line names it in words. */
+  gatewayLogo?: { src: string; width: number; height: number } | null;
   title?: string;
   titleId?: string;
 }) {
@@ -44,10 +46,21 @@ export function AddressPanel({
           one fact here — who takes the money — and the gateway's own page says
           the rest. */}
       <p className={styles.gateway}>
-        <Icon name="lock" size={20} aria-hidden />
-        <span>
-          Оплата через <b>{gatewayLabel}</b>
-        </span>
+        <span>Оплата через</span>
+        {gatewayLogo ? (
+          /* Plain <img>, as the cover: a small static SVG gains nothing from
+             the image optimiser. The name is its alt text. */
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            className={styles.gatewayLogo}
+            src={gatewayLogo.src}
+            width={gatewayLogo.width}
+            height={gatewayLogo.height}
+            alt={gatewayLabel}
+          />
+        ) : (
+          <b>{gatewayLabel}</b>
+        )}
       </p>
     </article>
   );

@@ -3223,7 +3223,7 @@ same run.
 | Component | File | Material | Holds |
 | --- | --- | --- | --- |
 | `OrderSummary` | `src/components/platform/OrderSummary.tsx` | `--cw-mat-surface` + `--cw-mat-shadow-soft` (the card material) | label, cover, name and format, the includes list (`purchaseIncludes`, shared with the program page's checkout panel), the sum at the foot |
-| `AddressPanel` | `src/components/platform/AddressPanel.tsx` | the offer panel's raised `formPanel` | the question, a name, one email field or the signed-in account with «Інша адреса», one «Телефон або Telegram» field, the primary button, one gateway line under it (lock icon + «Оплата через LiqPay») |
+| `AddressPanel` | `src/components/platform/AddressPanel.tsx` | the offer panel's raised `formPanel` | the question, a name, one email field or the signed-in account with «Інша адреса», one «Телефон або Telegram» field, the primary button, one gateway line under it («Оплата через» + the gateway's own mark) |
 
 Rules:
 
@@ -3232,7 +3232,7 @@ Rules:
 - **No figure of its own.** Every value is passed in from the offer row (`loadCheckoutSummary` → `loadPayableOffer`, the same function `/api/pay/start` charges from).
 - **The gateway is named from the active driver** (`activeGateway().label`), never written into copy.
 - **Controls compose roles.** The field is `PlatformComponents .field`; the button is `primary` + `fill` with `CheckoutStartLink`'s waiting state; «Назад» and «Інша адреса» are the `text` role.
-- **One line under the button (owner, 2026-10-14).** The paragraph of fine print (card types, card data, offer, support) became one line: the `lock` icon and «Оплата через {gateway}». The gateway's own page says the rest.
+- **One line under the button (owner, 2026-10-14).** The paragraph of fine print (card types, card data, offer, support) became one line: «Оплата через» and the gateway's own mark (`PaymentGateway.logo`, at 0.8em; the name in words when a gateway has none). LiqPay's wordmark is `public/cw/platform/payments/liqpay.svg`, taken from the MIT `fondy-checkout` package because liqpay.ua is unreachable from the build environment. The gateway's own page says the rest.
 - **One contact field (owner, 2026-10-14).** Beside the address: a required name and one required field «Телефон або Telegram»: what is typed decides which (a number or a username). No either-or buttons and no second messenger field. Rules live in `lib/platform/buyerContact`.
 
 Specimens for the Claude Design mirror: `docs/design-system/previews/checkout-2026-10-14/guidelines/checkout-order-summary.card.html` and `checkout-address-panel.card.html` (`@dsCard group="Commerce"`). They reach the project only through `DesignSync` from an interactive session, per the mirror protocol above.
