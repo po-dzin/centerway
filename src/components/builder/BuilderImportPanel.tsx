@@ -13,9 +13,16 @@ import {
   type BuilderCourseSummary,
   type CourseImportPreview,
 } from "./builderClient";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "./Builder.module.css";
 
 const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
+
+/** A chat answer saved as-is keeps its ```json fence; the JSON is inside it. */
+function withoutCodeFence(text: string): string {
+  const fenced = /^\s*```(?:json)?\s*\n([\s\S]*?)\n\s*```\s*$/.exec(text);
+  return fenced ? fenced[1]! : text;
+}
 
 type ImportState =
   | { status: "empty" }
@@ -46,7 +53,7 @@ export function ImportPanel({
 
     let course: unknown;
     try {
-      course = JSON.parse(await file.text()) as unknown;
+      course = JSON.parse(withoutCodeFence(await file.text())) as unknown;
     } catch {
       setState({ status: "failed", message: "Файл не є коректним JSON." });
       return;
@@ -86,14 +93,18 @@ export function ImportPanel({
        radius holding one form. */
     <div className={styles.importForm}>
       <p className={styles.panelText}>
-        Виберіть JSON з Builder або напишіть курс за зразком. ID та інші технічні поля заповнимо автоматично. Спершу ми
-        покажемо перевірку; запис відбудеться лише після підтвердження.
+        Виберіть JSON з Builder або курс, зібраний нейронкою за інструкцією нижче. ID та інші технічні поля заповнимо
+        автоматично. Спершу ми покажемо перевірку; запис відбудеться лише після підтвердження.
       </p>
 
-      <label className={styles.fieldLabel}>
-        Куди імпортувати
+      <a className={styles.importSampleLink} href="/examples/course-ai-guide.md" download data-cw-ink-control>
+        <InteractionInkLabel variant="link">Інструкція для нейронки</InteractionInkLabel>
+      </a>
+
+      <label className={styles.field}>
+        <span className={styles.fieldLabel}>Куди імпортувати</span>
         <select
-          className="cw-input"
+          className={`${styles.input} ${styles.select}`}
           value={targetSlug}
           disabled={waiting}
           onChange={(event) => {
@@ -108,23 +119,37 @@ export function ImportPanel({
             </option>
           ))}
         </select>
+        {targetSlug ? (
+          <span className={styles.fieldHint}>
+            JSON замінить вміст чернетки вибраного курсу. Адреса й доступи збережуться; опублікована версія залишиться
+            доступною учням до окремої публікації.
+          </span>
+        ) : null}
       </label>
-      {targetSlug ? (
-        <p className={styles.fieldHint}>
-          JSON замінить вміст чернетки вибраного курсу. Адреса й доступи збережуться; опублікована версія залишиться
-          доступною учням до окремої публікації.
-        </p>
-      ) : null}
-      <a className={styles.quietAction} href="/examples/course-import.json" download>
-        Завантажити зразок JSON
-      </a>
-      <div className={styles.addRow}>
-        <button className={styles.quietAction} type="button" disabled={waiting} onClick={() => picker.current?.click()}>
-          {state.status === "checking" ? "Перевіряємо…" : "Вибрати JSON"}
-        </button>
-        <span className={styles.fieldHint}>
-          {"filename" in state ? state.filename : "До 5 МБ; медіа залишаються посиланнями"}
-        </span>
+
+      {/* The file is a field like the target above it: a label, the control,
+          then what the control says back — the file's name, or why it did not
+          land, in the boundary tone and in place rather than on a plate. */}
+      <div className={styles.field}>
+        <span className={styles.fieldLabel}>Файл курсу</span>
+        <div className={styles.addRow}>
+          <button
+            className={styles.quietAction}
+            type="button"
+            disabled={waiting}
+            onClick={() => picker.current?.click()}
+          >
+            {state.status === "checking" ? "Перевіряємо…" : "Вибрати JSON"}
+          </button>
+          <span className={styles.fieldHint}>
+            {"filename" in state ? state.filename : "До 5 МБ; медіа залишаються посиланнями"}
+          </span>
+        </div>
+        {state.status === "failed" ? (
+          <p className={styles.fieldError} role="alert">
+            {state.message}
+          </p>
+        ) : null}
       </div>
       <input
         ref={picker}
@@ -138,12 +163,6 @@ export function ImportPanel({
           if (file) void inspect(file);
         }}
       />
-
-      {state.status === "failed" ? (
-        <p className={styles.noticeLine} role="alert">
-          {state.message}
-        </p>
-      ) : null}
 
       {ready ? (
         <div className={styles.importPreview} aria-live="polite">

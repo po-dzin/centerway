@@ -143,6 +143,9 @@ describe("personal host, through the full proxy", () => {
       "/icon.svg",
       "/sw.js",
       "/offline.html",
+      // The builder's import sheet downloads these from its own host.
+      "/examples/course-import.json",
+      "/examples/course-ai-guide.md",
     ]) {
       const res = proxy(request(PERSONAL_HOST, path));
       expect(rewriteOf(res), path).toBeNull();

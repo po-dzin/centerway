@@ -25,7 +25,7 @@ describe("one notification contract for four application surfaces", () => {
       ]
         .map(read)
         .join("\n"),
-    ).toContain('className={styles.noticeLine} role="alert"');
+    ).toMatch(/className=\{styles\.(noticeLine|fieldError)\} role="alert"/);
   });
   it("uses fixed token-based geometry, semantic announcements and the shared close glyph", () => {
     const css = read("src/components/ToastProvider.module.css");

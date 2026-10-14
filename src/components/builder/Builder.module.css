@@ -1785,6 +1785,20 @@
   color: var(--cw-platform-muted);
 }
 
+/* The sample is a reference beside the form, not a step in it: a link in the
+   text role under the intro, never a second full-width plate above the one
+   control the form is for. `base` is named because `composes` does not chain
+   (docs/design-system.md). */
+.importSampleLink {
+  composes: base from "../platform/PlatformButtons.module.css";
+  composes: text from "../platform/PlatformButtons.module.css";
+  justify-self: start;
+}
+
+.importForm .fieldError {
+  margin: 0;
+}
+
 .importPreview {
   min-width: 0;
   display: grid;

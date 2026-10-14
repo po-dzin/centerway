@@ -21,8 +21,11 @@ export function importLocation(path: string): string {
 const LABELS: Record<string, string> = {
   lms_block_empty_content: "Додайте текст блоку.",
   lms_course_missing_title: "Додайте назву курсу.",
+  lms_course_missing_slug: "Додайте назву курсу (title): з неї складемо адресу.",
   lms_course_title_too_long: "Скоротіть назву курсу: назва до 48 символів, разом із підзаголовком до 120.",
-  lms_course_empty_modules: "Додайте хоча б один модуль.",
+  lms_course_empty_modules: "Додайте масив modules з хоча б одним модулем, як у зразку JSON.",
+  lms_lesson_missing_day_index: "Вкажіть dayIndex: у щоденному курсі кожен урок має свій день.",
+  lms_block_unsupported_video_provider: 'Відео поки лише з YouTube: provider "youtube" і videoId.',
   lms_module_empty_lessons: "Додайте хоча б один урок.",
   lms_lesson_empty_blocks: "Додайте хоча б один блок.",
   lms_block_missing_text: "Додайте текст блоку.",
@@ -44,7 +47,10 @@ export function importIssueCopy(error: string): string {
         : code.includes("empty")
           ? "Заповніть порожній елемент."
           : "Перевірте значення та структуру JSON за зразком.");
-  return `${importLocation(path)}: ${label}${path ? ` Поле: ${path.replace(/^portable(?:\.draft)?\.?/, "")}.` : ""}`;
+  // The location already names a course-level problem; a path with nothing
+  // after its stage prefix used to print as «Поле: .».
+  const field = path.replace(/^portable(?:\.(?:draft|update))?\.?/, "");
+  return `${importLocation(path)}: ${label}${field ? ` Поле: ${field}.` : ""}`;
 }
 
 const BLOCKERS: Record<string, string> = {

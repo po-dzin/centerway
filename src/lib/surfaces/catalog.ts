@@ -53,7 +53,9 @@ export const BUILDER_COURSES_PATH = `${BUILDER_PATH_PREFIX}/courses`;
  * (creation/import derive one, rename asks for one) rather than to discover the
  * collision from a support message.
  */
-export const BUILDER_RESERVED_SLUGS = ["courses"] as const;
+// `examples` is a `public/` root that bypasses routing on every host
+// (lib/proxy/bypass.ts); a course under that name could not serve its lessons.
+export const BUILDER_RESERVED_SLUGS = ["courses", "examples"] as const;
 
 export function isReservedBuilderSlug(slug: string): boolean {
   return (BUILDER_RESERVED_SLUGS as readonly string[]).includes(slug);

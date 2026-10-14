@@ -149,6 +149,6 @@ function route(req: NextRequest): NextResponse {
  */
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|sitemap\.xml|robots\.txt|fonts/|cw/|sw\.js|offline\.html|favicon\.ico|manifest\.webmanifest|icon\.svg|apple-icon\.png).*)",
+    "/((?!_next/static|_next/image|sitemap\.xml|robots\.txt|fonts/|cw/|examples/|sw\.js|offline\.html|favicon\.ico|manifest\.webmanifest|icon\.svg|apple-icon\.png).*)",
   ],
 };

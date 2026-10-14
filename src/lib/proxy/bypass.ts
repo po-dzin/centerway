@@ -20,6 +20,12 @@ const INFRA_BYPASS_PREFIXES = [
      2026-09-10: every `/fonts/platform/*.woff2` returned 404 on irem, resetday,
      way21 and my, and 200 on www. */
   "/fonts/",
+  /* Downloadable reference files under `public/examples/` — the course sample
+     and the guide the builder's import sheet offers. Missing here, the personal
+     host read `/examples/course-import.json` as a course address and answered
+     with an HTML page, which the browser saved as `course-import.html`
+     (2026-10-14). */
+  "/examples/",
 ] as const;
 
 const LANDING_BRAND_PREFIXES = Array.from(LANDING_STATIC_BRANDS, (brand) => `/${brand}/`);
