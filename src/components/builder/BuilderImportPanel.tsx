@@ -152,7 +152,7 @@ export function ImportPanel({
         {state.status === "failed" ? (
           <div>
             <p className={styles.fieldError} role="alert">
-              {state.issues?.length ? `Знайшли ${state.issues.length} проблем у файлі:` : state.message}
+              {state.issues?.length ? `Проблем у файлі: ${state.issues.length}` : state.message}
             </p>
             {state.issues?.length ? (
               <ul className={styles.blockerList}>
