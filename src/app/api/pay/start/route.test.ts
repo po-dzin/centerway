@@ -67,8 +67,12 @@ vi.mock("@/lib/payments/paymentStart", async (importOriginal) => {
 
 const { GET } = await import("./route");
 
-function get(query: string) {
-  return GET(new NextRequest(`https://www.centerway.net.ua/api/pay/start?${query}`));
+/* What the checkout page sends beside the address: a name and one messenger.
+   Every request carries them unless a case is about their absence. */
+const DETAILS = "name=%D0%90%D0%BD%D0%BD%D0%B0&channel=telegram&contact=%40anna_k";
+
+function get(query: string, { details = true }: { details?: boolean } = {}) {
+  return GET(new NextRequest(`https://www.centerway.net.ua/api/pay/start?${query}${details ? `&${DETAILS}` : ""}`));
 }
 
 const offerRow = (over: Partial<Row>): Row => ({
@@ -126,7 +130,7 @@ beforeEach(() => {
 describe("GET /api/pay/start — an address before payment", () => {
   it("sends a request with no address to the checkout page with the same query", async () => {
     hoisted.user = null;
-    const res = await get("product=way21-group&utm_source=meta&event_id=e1");
+    const res = await get("product=way21-group&utm_source=meta&event_id=e1", { details: false });
     expect(res.status).toBe(302);
     const location = new URL(res.headers.get("location")!);
     expect(location.origin + location.pathname).toBe("https://www.centerway.net.ua/pay/checkout");
@@ -139,7 +143,7 @@ describe("GET /api/pay/start — an address before payment", () => {
 
   it("answers a json caller with 401 and the checkout page's address", async () => {
     hoisted.user = null;
-    const res = await get("product=way21-group&format=json");
+    const res = await get("product=way21-group&format=json", { details: false });
     expect(res.status).toBe(401);
     const body = await res.json();
     expect(body).toMatchObject({ ok: false, error: "address_required" });
@@ -176,6 +180,79 @@ describe("GET /api/pay/start — an address before payment", () => {
     expect(customers).toHaveLength(1);
     expect(customers[0]?.email).toBe("buyer@example.com");
     expect((db.tables.orders as Row[])[0]?.customer_id).toBe(customers[0]?.id);
+  });
+});
+
+describe("GET /api/pay/start — a name and a messenger before payment", () => {
+  it("sends a buyer without them back to the checkout page, with what was typed", async () => {
+    hoisted.user = null;
+    const res = await get("product=way21-group&email=anna%40example.com&name=%D0%90%D0%BD%D0%BD%D0%B0", {
+      details: false,
+    });
+    expect(res.status).toBe(302);
+    const location = new URL(res.headers.get("location")!);
+    expect(location.pathname).toBe("/pay/checkout");
+    expect(location.searchParams.get("email")).toBe("anna@example.com");
+    expect(location.searchParams.get("name")).toBe("Анна");
+    expect(createInvoice).not.toHaveBeenCalled();
+  });
+
+  it("refuses a WhatsApp contact that is not a phone, and names the missing part to a json caller", async () => {
+    const res = await get("product=way21-group&format=json&name=Anna&channel=whatsapp&contact=%40anna_k", {
+      details: false,
+    });
+    expect(res.status).toBe(401);
+    await expect(res.json()).resolves.toMatchObject({ ok: false, error: "contact_required" });
+    expect(db.tables.orders).toHaveLength(0);
+  });
+
+  it("keeps them on the order, normalised", async () => {
+    await get(
+      "product=way21-group&format=json&name=+%D0%90%D0%BD%D0%BD%D0%B0+&channel=whatsapp&contact=067+123+45+67",
+      {
+        details: false,
+      },
+    );
+    expect((db.tables.orders as Row[])[0]?.meta).toEqual({
+      buyer: { name: "Анна", contact: { channel: "whatsapp", value: "+380671234567" } },
+    });
+  });
+
+  it("writes them onto a customer this checkout created", async () => {
+    hoisted.user = null;
+    await get("product=way21-group&format=json&email=new%40example.com");
+    expect((db.tables.customers as Row[])[0]).toMatchObject({
+      display_name: "Анна",
+      meta: { contact: { channel: "telegram", value: "@anna_k" } },
+    });
+  });
+
+  it("does not let a typed address rename somebody else's customer", async () => {
+    hoisted.user = null;
+    db.tables.customers = [
+      { id: "victim", email: "olena@example.com", display_name: null, meta: null, created_at: "2026-01-01" },
+    ];
+    await get("product=way21-group&format=json&email=olena%40example.com");
+    expect((db.tables.customers as Row[])[0]).toMatchObject({ display_name: null, meta: null });
+    // The claim is still kept, on the order.
+    expect((db.tables.orders as Row[])[0]?.meta).toMatchObject({ buyer: { name: "Анна" } });
+  });
+
+  it("fills only the empty places of the signed-in buyer's own row", async () => {
+    db.tables.customers = [
+      {
+        id: "me",
+        email: "buyer@example.com",
+        display_name: "Олена",
+        meta: { source: "lead" },
+        created_at: "2026-01-01",
+      },
+    ];
+    await get("product=way21-group&format=json");
+    expect((db.tables.customers as Row[])[0]).toMatchObject({
+      display_name: "Олена",
+      meta: { source: "lead", contact: { channel: "telegram", value: "@anna_k" } },
+    });
   });
 });
 

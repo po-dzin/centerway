@@ -19,6 +19,12 @@ import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
 import { FULFILMENT_STATUSES, type FulfilmentStatus } from "@/lib/admin/fulfilmentStatus";
 import { Icon } from "@/components/Icon";
+import {
+  CONTACT_CHANNEL_LABEL,
+  contactHref,
+  parseContactChannel,
+  type BuyerContact,
+} from "@/lib/platform/buyerContact";
 import pageStyles from "@/components/admin/AdminPage.module.css";
 import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
@@ -40,6 +46,15 @@ interface Order {
     phone: string | null;
     display_name: string | null;
   } | null;
+  /** What the buyer typed on the checkout page: a name and one messenger (`/api/pay/start`). */
+  meta?: { buyer?: { name?: string | null; contact?: { channel?: string; value?: string } | null } } | null;
+}
+
+/* The checkout's messenger, when the order carries a well-formed one. */
+function orderContact(order: Order): BuyerContact | null {
+  const raw = order.meta?.buyer?.contact;
+  const channel = parseContactChannel(raw?.channel);
+  return channel && typeof raw?.value === "string" && raw.value ? { channel, value: raw.value } : null;
 }
 
 interface IssuedLandingOffer {
@@ -1008,7 +1023,9 @@ export default function OrdersPage() {
             <div className={lists.list}>
               {data.map((order) => {
                 const customer = order.customers;
-                const customerLabel = customer?.display_name ?? customer?.email ?? customer?.phone ?? null;
+                const customerLabel =
+                  customer?.display_name ?? order.meta?.buyer?.name ?? customer?.email ?? customer?.phone ?? null;
+                const contact = orderContact(order);
 
                 return (
                   /* THE ROW STACKS; THE REFERENCE IS NOT TRUNCATED.
@@ -1087,6 +1104,20 @@ export default function OrdersPage() {
                               ) : (
                                 <span className={lists.orderCustomer}>{customerLabel}</span>
                               )}
+                            </>
+                          )}
+                          {contact && (
+                            <>
+                              <span className={lists.orderSubMuted}>·</span>
+                              <a
+                                href={contactHref(contact)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className={`cw-link-hover ${lists.orderCustomerMeasure}`}
+                                title={`${CONTACT_CHANNEL_LABEL[contact.channel]} ${contact.value}`}
+                              >
+                                {CONTACT_CHANNEL_LABEL[contact.channel]} {contact.value}
+                              </a>
                             </>
                           )}
                         </div>

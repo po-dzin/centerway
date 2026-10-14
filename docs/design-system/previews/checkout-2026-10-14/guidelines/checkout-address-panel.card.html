@@ -1,4 +1,4 @@
-<!-- @dsCard group="Commerce" viewport="1080x820" name="Address panel" subtitle="checkout, right half: one field or the signed-in account, one gold action" -->
+<!-- @dsCard group="Commerce" viewport="1080x980" name="Address panel" subtitle="checkout, right half: name, address or the signed-in account, one messenger, one gold action" -->
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -41,17 +41,24 @@
   .account b { color: var(--cw-platform-text); }
   .account u { color: var(--cw-platform-text); }
   .foot { margin-top: auto; display: grid; gap: 8px; }
+  .choice { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .chip { min-height: var(--ds-button-min-height); border-radius: var(--ds-button-radius); display: grid; place-items: center;
+    border: 1px solid var(--cw-mat-stroke-quiet); background: var(--cw-mat-surface-sunk); color: var(--cw-platform-muted); font-weight: var(--ds-button-font-weight); }
+  .chip.on { border-color: var(--cw-platform-accent); color: var(--cw-platform-text); }
 </style>
 </head>
 <body>
 <h1>Address panel</h1>
-<p class="lede">The right half of <code>/pay/checkout</code> (<code>AddressPanel.tsx</code>). The offer panel's raised material, because it holds the page's one primary action. Signed out it asks for one address; signed in it names the account and offers «Інша адреса». Fine print sits at the foot.</p>
+<p class="lede">The right half of <code>/pay/checkout</code> (<code>AddressPanel.tsx</code>). The offer panel's raised material, because it holds the page's one primary action. It asks a name, an address (signed in: names the account and offers «Інша адреса») and one messenger, Telegram or WhatsApp, chosen by two radios on the <code>secondary</code> plate. Fine print sits at the foot.</p>
 <div class="pair">
   <div class="theme">
     <article class="card panel">
-      <p class="title">Куди надіслати доступ?</p>
+      <p class="title">Кому надіслати доступ?</p>
+      <label class="field"><span>Ім'я</span><div class="input">Анна</div></label>
       <label class="field"><span>Електронна пошта</span><div class="input">anna@gmail.com</div></label>
       <p class="muted">На неї прийдуть чек і вхід у кабінет. Перевірте літери.</p>
+      <div class="field"><span>Месенджер для зв'язку</span><div class="choice"><div class="chip on">Telegram</div><div class="chip">WhatsApp</div></div></div>
+      <label class="field"><span>Нік або номер у Telegram</span><div class="input">@anna</div></label>
       <div class="go">Перейти до оплати</div>
       <div class="foot"><p class="muted">Оплата на захищеній сторінці LiqPay: картка, Apple Pay або Google Pay.</p></div>
     </article>
@@ -59,12 +66,15 @@
   </div>
   <div class="theme">
     <article class="card panel">
-      <p class="title">Куди надіслати доступ?</p>
+      <p class="title">Кому надіслати доступ?</p>
+      <label class="field"><span>Ім'я</span><div class="input">Анна</div></label>
       <div class="account"><span>Доступ прийде в ваш акаунт <b>anna@gmail.com</b></span><u>Інша адреса</u></div>
+      <div class="field"><span>Месенджер для зв'язку</span><div class="choice"><div class="chip">Telegram</div><div class="chip on">WhatsApp</div></div></div>
+      <label class="field"><span>Номер у WhatsApp</span><div class="input">+380 67 123 45 67</div></label>
       <div class="go">Перейти до оплати</div>
       <div class="foot"><p class="muted">Оплата на захищеній сторінці LiqPay: картка, Apple Pay або Google Pay.</p></div>
     </article>
-    <p class="tokens">signed in: no field; «Інша адреса» is the text role</p>
+    <p class="tokens">signed in: no address field, name and messenger prefilled from the account; «Інша адреса» is the text role; chosen messenger: --cw-platform-accent edge</p>
   </div>
 </div>
 <p class="rule">Rule: one primary action per checkout; the gateway is named from the active driver, never hard-coded.</p>

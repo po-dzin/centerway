@@ -9,6 +9,7 @@ import { readAttribution } from "@/lib/referral/attribution";
 import { userFromCookies } from "@/lib/auth/serverSession";
 import { CHECKOUT_PAGE_PATH } from "@/lib/products";
 import { normalizeCustomerEmail } from "@/lib/platform/customerIdentity";
+import { readBuyerDetails } from "@/lib/platform/buyerContact";
 import { AGENT_COOKIE, isAgentRequest } from "@/lib/tracking/agentTraffic";
 
 export const runtime = "nodejs";
@@ -49,20 +50,30 @@ export async function GET(req: NextRequest) {
         address for a signed-in buyer and this reads it here.
      With neither — an old link, a bookmark, a landing still cached from before
      the checkout page — a browser is sent to that page with the same query,
-     and `format=json` callers get a 401 naming it. */
+     and `format=json` callers get a 401 naming it.
+
+     A NAME AND A MESSENGER ARE ASKED TOO (owner, 2026-10-14), and the same
+     way: without them the buyer goes back to the page, which shows what was
+     already typed (`email` included) so nothing is typed twice. They are the
+     buyer's own claim, unverified, and are kept on the order (`orders.meta`);
+     the customer's row takes them only where nobody else's history is at stake
+     (`createPaymentInvoice`). */
   const typedEmail = typedBuyerEmail(url.searchParams.get("email"));
   const user = typedEmail ? null : await userFromCookies();
   const sessionEmail = user?.email_confirmed_at ? user.email?.trim().toLowerCase() || null : null;
   const buyerEmail = typedEmail ?? sessionEmail;
-  if (!buyerEmail) {
+  const details = readBuyerDetails({
+    name: url.searchParams.get("name"),
+    channel: url.searchParams.get("channel"),
+    contact: url.searchParams.get("contact"),
+  });
+  if (!buyerEmail || !details) {
     const checkout = new URL(CHECKOUT_PAGE_PATH, req.url);
-    url.searchParams.forEach((value, key) => {
-      if (key !== "email") checkout.searchParams.append(key, value);
-    });
+    url.searchParams.forEach((value, key) => checkout.searchParams.append(key, value));
     if (url.searchParams.get("format") === "json") {
       checkout.searchParams.delete("format");
       return NextResponse.json(
-        { ok: false, error: "address_required", checkoutUrl: checkout.toString() },
+        { ok: false, error: buyerEmail ? "contact_required" : "address_required", checkoutUrl: checkout.toString() },
         { status: 401 },
       );
     }
@@ -113,7 +124,7 @@ export async function GET(req: NextRequest) {
       (forwardedIp || null) ?? req.headers.get("cf-connecting-ip") ?? req.headers.get("x-real-ip") ?? undefined,
     client_ua: req.headers.get("user-agent") ?? undefined,
     page_url: req.headers.get("referer") ?? undefined,
-    buyer: { email: buyerEmail },
+    buyer: { email: buyerEmail, verified: !typedEmail, ...details },
     staff: req.cookies.get("cw_staff")?.value === "1",
     agent: isAgentRequest(req.headers, req.cookies.get(AGENT_COOKIE)?.value),
   });

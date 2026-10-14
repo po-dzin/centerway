@@ -3223,7 +3223,7 @@ same run.
 | Component | File | Material | Holds |
 | --- | --- | --- | --- |
 | `OrderSummary` | `src/components/platform/OrderSummary.tsx` | `--cw-mat-surface-sunk`, no shadow | label, cover, name and format, the includes list (`purchaseIncludes`, shared with the program page's checkout panel), the sum at the foot |
-| `AddressPanel` | `src/components/platform/AddressPanel.tsx` | the offer panel's raised `formPanel` | the question, one email field or the signed-in account with «Інша адреса», the primary button, fine print at the foot |
+| `AddressPanel` | `src/components/platform/AddressPanel.tsx` | the offer panel's raised `formPanel` | the question, a name, one email field or the signed-in account with «Інша адреса», one messenger (Telegram or WhatsApp), the primary button, fine print at the foot |
 
 Rules:
 
@@ -3232,6 +3232,7 @@ Rules:
 - **No figure of its own.** Every value is passed in from the offer row (`loadCheckoutSummary` → `loadPayableOffer`, the same function `/api/pay/start` charges from).
 - **The gateway is named from the active driver** (`activeGateway().label`), never written into copy.
 - **Controls compose roles.** The field is `PlatformComponents .field`; the button is `primary` + `fill` with `CheckoutStartLink`'s waiting state; «Назад» and «Інша адреса» are the `text` role.
+- **One messenger, chosen (owner, 2026-10-14).** Name and a Telegram or WhatsApp contact are required beside the address. The choice is two native radios drawn as the `secondary` plate (`secondary` + `fill`); the chosen one takes the `--cw-platform-accent` edge and the full text colour, focus is the buttons' own ring. One field follows the choice; its label, keyboard and check change with it (`lib/platform/buyerContact`).
 
 Specimens for the Claude Design mirror: `docs/design-system/previews/checkout-2026-10-14/guidelines/checkout-order-summary.card.html` and `checkout-address-panel.card.html` (`@dsCard group="Commerce"`). They reach the project only through `DesignSync` from an interactive session, per the mirror protocol above.
 

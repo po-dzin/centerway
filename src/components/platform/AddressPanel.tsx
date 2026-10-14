@@ -3,12 +3,12 @@ import Link from "next/link";
 import offerStyles from "@/components/platform/PlatformOfferStyles";
 import commerceStyles from "@/components/platform/PlatformOfferCommerce.module.css";
 import { SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
-import { CheckoutForm } from "./CheckoutForm";
+import { CheckoutForm, type CheckoutInitial } from "./CheckoutForm";
 import styles from "./PlatformCheckout.module.css";
 
 /**
- * ADDRESS PANEL — where access goes, and the one action that leaves for the
- * gateway.
+ * ADDRESS PANEL — who access goes to (a name, an address, one messenger),
+ * and the one action that leaves for the gateway.
  *
  * A design-system component of its own (docs/design-system.md → «Checkout: two
  * components»): the offer panel's raised material, because it holds the page's
@@ -20,14 +20,17 @@ import styles from "./PlatformCheckout.module.css";
 export function AddressPanel({
   fields,
   accountEmail,
+  initial,
   gatewayLabel,
-  title = "Куди надіслати доступ?",
+  title = "Кому надіслати доступ?",
   titleId,
 }: {
   /** Hidden fields carried to `/api/pay/start` (product, attribution, event id). */
   fields: [string, string][];
   /** A verified session address; when present the field is not asked. */
   accountEmail: string | null;
+  /** What the page already knows: fields sent back by the route, or the signed-in buyer's saved name and messenger. */
+  initial: CheckoutInitial;
   /** The active gateway's own name, so the fine print never names the wrong one. */
   gatewayLabel: string;
   title?: string;
@@ -39,7 +42,7 @@ export function AddressPanel({
         {title}
       </h2>
 
-      <CheckoutForm fields={fields} accountEmail={accountEmail} />
+      <CheckoutForm fields={fields} accountEmail={accountEmail} initial={initial} />
 
       <div className={styles.fineprint}>
         <p className={commerceStyles.fineprint}>

@@ -194,3 +194,59 @@
   composes: primary from "./PlatformButtons.module.css";
   composes: fill from "./PlatformButtons.module.css";
 }
+
+/* THE MESSENGER CHOICE. Two radios drawn as the quiet `secondary` plate; the
+   chosen one takes the accent edge and the full text colour. The radio itself
+   stays in the DOM (keyboard, form submit, no-JS) and is only hidden from
+   sight. */
+.channel {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.channel legend {
+  padding: 0;
+  margin-bottom: var(--cw-space-2xs);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: var(--ds-type-label-line-height);
+  font-weight: 700;
+}
+
+.channelOptions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--cw-space-xs);
+}
+
+.channelOption {
+  composes: secondary from "./PlatformButtons.module.css";
+  composes: fill from "./PlatformButtons.module.css";
+  position: relative;
+  color: var(--cw-platform-muted);
+  cursor: pointer;
+}
+
+.channelOption input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 1px;
+  height: 1px;
+}
+
+.channelOption:has(input:checked) {
+  border-color: var(--cw-platform-accent);
+  color: var(--cw-platform-text);
+}
+
+/* The focus answer every button role gives (`.base:focus-visible`). */
+.channelOption:has(input:focus-visible) {
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 28%, transparent),
+    var(--cw-mat-shadow-soft);
+}

@@ -3,6 +3,15 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type MouseEvent } from "react";
 
 import { LogoMark } from "@/components/brand/LogoMark";
+import {
+  CONTACT_CHANNEL_LABEL,
+  CONTACT_CHANNELS,
+  normalizeBuyerName,
+  normalizeContactValue,
+  parseContactChannel,
+  type BuyerContact,
+  type ContactChannel,
+} from "@/lib/platform/buyerContact";
 import pendingStyles from "./CheckoutStartLink.module.css";
 import styles from "./PlatformCheckout.module.css";
 
@@ -10,61 +19,119 @@ import styles from "./PlatformCheckout.module.css";
    to answer before a round trip; the route checks again and is the authority. */
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-/* The last address typed on this device, so a buyer coming back for a second
-   course does not type it twice. The same key the landing step used. */
-const STORE_KEY = "cw_buyer_email";
+/* What this device typed last time, so a buyer coming back for a second
+   course types nothing twice. The address keeps the key the landing step used;
+   the name and the messenger sit beside it. */
+const EMAIL_KEY = "cw_buyer_email";
+const DETAILS_KEY = "cw_buyer_details";
 
-function remembered(): string {
+type Remembered = { email: string; name: string; channel: ContactChannel | null; contact: string };
+
+/* One frozen snapshot per page: `useSyncExternalStore` compares by identity,
+   so a fresh object on every read would never settle. */
+let rememberedCache: Remembered | null = null;
+const NOTHING_REMEMBERED: Remembered = { email: "", name: "", channel: null, contact: "" };
+
+function remembered(): Remembered {
+  if (rememberedCache) return rememberedCache;
   try {
-    return window.localStorage.getItem(STORE_KEY) ?? "";
+    const details = JSON.parse(window.localStorage.getItem(DETAILS_KEY) ?? "{}") as Record<string, unknown>;
+    rememberedCache = {
+      email: window.localStorage.getItem(EMAIL_KEY) ?? "",
+      name: typeof details.name === "string" ? details.name : "",
+      channel: parseContactChannel(typeof details.channel === "string" ? details.channel : null),
+      contact: typeof details.contact === "string" ? details.contact : "",
+    };
   } catch {
-    return "";
+    rememberedCache = NOTHING_REMEMBERED;
   }
+  return rememberedCache;
 }
 
 /* Neither the address bar nor storage changes while this form is mounted. */
 const subscribeToNothing = () => () => {};
 
-function remember(email: string) {
+function remember(email: string | null, details: { name: string; channel: ContactChannel; contact: string }) {
   try {
-    window.localStorage.setItem(STORE_KEY, email);
+    if (email) window.localStorage.setItem(EMAIL_KEY, email);
+    window.localStorage.setItem(DETAILS_KEY, JSON.stringify(details));
   } catch {
-    /* A private window: the address still goes with this order. */
+    /* A private window: the details still go with this order. */
   }
 }
 
+/** What the page already knows: fields sent back by the route, or the signed-in buyer's own row. */
+export type CheckoutInitial = { email: string | null; name: string | null; contact: BuyerContact | null };
+
+type FieldName = "name" | "email" | "contact";
+
+const CONTACT_COPY: Record<ContactChannel, { label: string; placeholder: string; error: string }> = {
+  telegram: {
+    label: "Нік або номер у Telegram",
+    placeholder: "@anna або +380 67 123 45 67",
+    error: "Введіть нік, як @anna, або номер, як +380 67 123 45 67",
+  },
+  whatsapp: {
+    label: "Номер у WhatsApp",
+    placeholder: "+380 67 123 45 67",
+    error: "Введіть номер, як +380 67 123 45 67",
+  },
+};
+
 /**
- * The address step and the button that leaves for the gateway.
+ * Who is paying, and the button that leaves for the gateway.
  *
  * A PLAIN GET FORM to `/api/pay/start`, so it works before (and without) this
- * component's JavaScript: the browser's own `type="email"` check and the
- * route's redirect do the whole job. The script adds three things on top — a
- * remembered address, a message in our words instead of the browser's, and the
- * waiting state `CheckoutStartLink` gives every other buy button, including
- * its guard against the second tap that used to raise a second invoice.
+ * component's JavaScript: the browser's own `required`/`type="email"` checks
+ * and the route's redirect back here do the whole job. The script adds three
+ * things on top — remembered details, messages in our words instead of the
+ * browser's, and the waiting state `CheckoutStartLink` gives every other buy
+ * button, including its guard against the second tap that used to raise a
+ * second invoice.
  *
- * SIGNED IN, NOTHING IS ASKED. The session's address is verified, and the
- * route uses it when the form carries none. «Інша адреса» opens the field for
- * a gift; what is typed there wins, exactly as the route already decides.
+ * THREE THINGS ARE ASKED (owner, 2026-10-14): a name, the address access and
+ * the receipt go to, and one messenger, Telegram or WhatsApp, for when an
+ * email is not enough. SIGNED IN, THE ADDRESS IS NOT ASKED: the session's is
+ * verified, and the route uses it when the form carries none. «Інша адреса»
+ * opens the field for a gift; what is typed there wins, exactly as the route
+ * already decides.
  */
-export function CheckoutForm({ fields, accountEmail }: { fields: [string, string][]; accountEmail: string | null }) {
-  const [useAccount, setUseAccount] = useState(accountEmail !== null);
-  /* Null until the buyer types: until then the field shows the address this
-     device remembers. Read as an external store, so the server render (no
-     storage) and the first client render agree without an effect. */
+export function CheckoutForm({
+  fields,
+  accountEmail,
+  initial,
+}: {
+  fields: [string, string][];
+  accountEmail: string | null;
+  initial: CheckoutInitial;
+}) {
+  const [useAccount, setUseAccount] = useState(accountEmail !== null && !initial.email);
+  /* Null until the buyer types: until then each field shows what the page
+     knows, else what this device remembers. Storage is read as an external
+     store, so the server render (no storage) and the first client render agree
+     without an effect. */
+  const stored = useSyncExternalStore(subscribeToNothing, remembered, () => NOTHING_REMEMBERED);
+  const [typedName, setName] = useState<string | null>(null);
   const [typedEmail, setEmail] = useState<string | null>(null);
-  const rememberedEmail = useSyncExternalStore(subscribeToNothing, remembered, () => "");
-  const email = typedEmail ?? rememberedEmail;
-  const [error, setError] = useState(false);
+  const [pickedChannel, setChannel] = useState<ContactChannel | null>(null);
+  const [typedContact, setContact] = useState<string | null>(null);
+  const name = typedName ?? initial.name ?? stored.name;
+  const email = typedEmail ?? initial.email ?? stored.email;
+  const channel = pickedChannel ?? initial.contact?.channel ?? stored.channel ?? "telegram";
+  const contact = typedContact ?? initial.contact?.value ?? stored.contact;
+
+  const [errors, setErrors] = useState<Partial<Record<FieldName, boolean>>>({});
   const [pending, setPending] = useState(false);
-  /* The browser checks the field until this script is running; after that the
-     check below does, in our words rather than the browser's. */
+  /* The browser checks the fields until this script is running; after that the
+     checks below do, in our words rather than the browser's. */
   const hydrated = useSyncExternalStore(
     subscribeToNothing,
     () => true,
     () => false,
   );
-  const inputRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const contactRef = useRef<HTMLInputElement>(null);
 
   /* COMING BACK MUST NOT FIND IT STILL WAITING — the back button restores this
      page from the bfcache with React state intact (see CheckoutStartLink). */
@@ -76,38 +143,75 @@ export function CheckoutForm({ fields, accountEmail }: { fields: [string, string
     return () => window.removeEventListener("pageshow", onPageShow);
   }, []);
 
+  const clearError = (field: FieldName) =>
+    setErrors((current) => (current[field] ? { ...current, [field]: false } : current));
+
   const onSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       if (pending) {
         event.preventDefault();
         return;
       }
-      if (!useAccount) {
-        const typed = email.trim().toLowerCase();
-        if (!EMAIL_SHAPE.test(typed)) {
-          event.preventDefault();
-          setError(true);
-          inputRef.current?.focus();
-          return;
-        }
-        remember(typed);
+      const typed = email.trim().toLowerCase();
+      const found: Partial<Record<FieldName, boolean>> = {
+        name: !normalizeBuyerName(name),
+        email: !useAccount && !EMAIL_SHAPE.test(typed),
+        contact: !normalizeContactValue(channel, contact),
+      };
+      if (found.name || found.email || found.contact) {
+        event.preventDefault();
+        setErrors(found);
+        // The first wrong field, in reading order.
+        (found.name ? nameRef : found.email ? emailRef : contactRef).current?.focus();
+        return;
       }
+      remember(useAccount ? null : typed, { name: name.trim(), channel, contact: contact.trim() });
       setPending(true);
     },
-    [email, pending, useAccount],
+    [channel, contact, email, name, pending, useAccount],
   );
 
   const otherAddress = useCallback(() => {
     setUseAccount(false);
     // After the field renders, not before: there is nothing to focus yet.
-    window.requestAnimationFrame(() => inputRef.current?.focus());
+    window.requestAnimationFrame(() => emailRef.current?.focus());
   }, []);
+
+  const contactCopy = CONTACT_COPY[channel];
 
   return (
     <form className={styles.form} action="/api/pay/start" method="get" onSubmit={onSubmit} noValidate={hydrated}>
-      {fields.map(([name, value]) => (
-        <input key={name} type="hidden" name={name} value={value} />
+      {fields.map(([key, value]) => (
+        <input key={key} type="hidden" name={key} value={value} />
       ))}
+
+      <div className={styles.field}>
+        <label htmlFor="cw-checkout-name">Ім&apos;я</label>
+        <input
+          id="cw-checkout-name"
+          ref={nameRef}
+          name="name"
+          type="text"
+          autoComplete="name"
+          autoCapitalize="words"
+          enterKeyHint="next"
+          maxLength={80}
+          placeholder="Анна"
+          value={name}
+          aria-invalid={errors.name || undefined}
+          aria-describedby={errors.name ? "cw-checkout-name-error" : undefined}
+          onChange={(event) => {
+            setName(event.target.value);
+            clearError("name");
+          }}
+          required
+        />
+        {errors.name ? (
+          <p id="cw-checkout-name-error" className={styles.fieldError} role="alert">
+            Напишіть, як до вас звертатися
+          </p>
+        ) : null}
+      </div>
 
       {useAccount && accountEmail ? (
         <div className={styles.account}>
@@ -126,7 +230,7 @@ export function CheckoutForm({ fields, accountEmail }: { fields: [string, string
               address the buyer did not type. */}
           <input
             id="cw-checkout-email"
-            ref={inputRef}
+            ref={emailRef}
             name="email"
             type="email"
             inputMode="email"
@@ -134,28 +238,83 @@ export function CheckoutForm({ fields, accountEmail }: { fields: [string, string
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
-            enterKeyHint="go"
+            enterKeyHint="next"
             placeholder="anna@gmail.com"
             value={email}
-            aria-invalid={error || undefined}
+            aria-invalid={errors.email || undefined}
             aria-describedby="cw-checkout-email-note"
             onChange={(event) => {
               setEmail(event.target.value);
-              if (error) setError(false);
+              clearError("email");
             }}
             required
           />
           <p
             id="cw-checkout-email-note"
-            className={error ? styles.fieldError : styles.fieldNote}
-            role={error ? "alert" : undefined}
+            className={errors.email ? styles.fieldError : styles.fieldNote}
+            role={errors.email ? "alert" : undefined}
           >
-            {error
+            {errors.email
               ? "Введіть адресу у форматі anna@gmail.com"
               : "На неї прийдуть чек і вхід у кабінет. Перевірте літери."}
           </p>
         </div>
       )}
+
+      {/* ONE MESSENGER, CHOSEN, THEN ITS FIELD. Two radios rather than two
+          fields: the buyer answers once, in the app they actually read. */}
+      <fieldset className={styles.channel}>
+        <legend>Месенджер для зв&apos;язку</legend>
+        <div className={styles.channelOptions}>
+          {CONTACT_CHANNELS.map((option) => (
+            <label key={option} className={styles.channelOption}>
+              <input
+                type="radio"
+                name="channel"
+                value={option}
+                checked={channel === option}
+                onChange={() => {
+                  setChannel(option);
+                  clearError("contact");
+                }}
+              />
+              {CONTACT_CHANNEL_LABEL[option]}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <div className={styles.field}>
+        <label htmlFor="cw-checkout-contact">{contactCopy.label}</label>
+        <input
+          id="cw-checkout-contact"
+          ref={contactRef}
+          name="contact"
+          type={channel === "whatsapp" ? "tel" : "text"}
+          inputMode={channel === "whatsapp" ? "tel" : "text"}
+          autoComplete={channel === "whatsapp" ? "tel" : "off"}
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          enterKeyHint="go"
+          placeholder={contactCopy.placeholder}
+          value={contact}
+          aria-invalid={errors.contact || undefined}
+          aria-describedby="cw-checkout-contact-note"
+          onChange={(event) => {
+            setContact(event.target.value);
+            clearError("contact");
+          }}
+          required
+        />
+        <p
+          id="cw-checkout-contact-note"
+          className={errors.contact ? styles.fieldError : styles.fieldNote}
+          role={errors.contact ? "alert" : undefined}
+        >
+          {errors.contact ? contactCopy.error : "Напишемо сюди, якщо щось зміниться або знадобиться допомога."}
+        </p>
+      </div>
 
       <button
         className={`${styles.payAction} ${pendingStyles.control}`}
