@@ -225,3 +225,44 @@ describe("portable internal references", () => {
     );
   });
 });
+
+describe("author-written portable files", () => {
+  const minimal = {
+    title: "Ранкова практика",
+    modules: [
+      {
+        title: "Початок",
+        lessons: [
+          { title: "Знайомство", blocks: [{ type: "lesson_objective", text: "Познайомитися." }] },
+          { title: "Практика", blocks: [{ type: "lesson_objective", text: "Спробувати." }] },
+        ],
+      },
+      {
+        title: "Довідник",
+        reference: true,
+        lessons: [{ title: "Рецепти", blocks: [{ type: "lesson_objective", text: "Довідка." }] }],
+      },
+    ],
+  };
+
+  it("accepts a file saved with the request's { course } envelope", () => {
+    const result = preparePortableCourse({ course: minimal }, { takenSlugs: [], ids: ids() });
+    expect(result.summary).toMatchObject({ title: "Ранкова практика", moduleCount: 2, lessonCount: 3 });
+  });
+
+  it("numbers days in a daily course when the file leaves them out", () => {
+    const result = preparePortableCourse({ ...minimal, schedule: { mode: "daily" } }, { takenSlugs: [], ids: ids() });
+    const [start, reference] = result.course.modules;
+    expect(start!.lessons.map((lesson) => lesson.dayIndex)).toEqual([1, 2]);
+    expect(reference!.lessons[0]!.dayIndex).toBeUndefined();
+  });
+
+  it("counts on from the days a file does name", () => {
+    const named = structuredClone(minimal) as typeof minimal & {
+      modules: Array<{ lessons: Array<{ dayIndex?: number }> }>;
+    };
+    named.modules[0]!.lessons[0]!.dayIndex = 3;
+    const result = preparePortableCourse({ ...named, schedule: { mode: "daily" } }, { takenSlugs: [], ids: ids() });
+    expect(result.course.modules[0]!.lessons.map((lesson) => lesson.dayIndex)).toEqual([3, 4]);
+  });
+});

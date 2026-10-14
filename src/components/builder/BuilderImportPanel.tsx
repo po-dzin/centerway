@@ -13,6 +13,7 @@ import {
   type BuilderCourseSummary,
   type CourseImportPreview,
 } from "./builderClient";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "./Builder.module.css";
 
 const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
@@ -90,10 +91,14 @@ export function ImportPanel({
         покажемо перевірку; запис відбудеться лише після підтвердження.
       </p>
 
-      <label className={styles.fieldLabel}>
-        Куди імпортувати
+      <a className={styles.importSampleLink} href="/examples/course-import.json" download data-cw-ink-control>
+        <InteractionInkLabel variant="link">Завантажити зразок JSON</InteractionInkLabel>
+      </a>
+
+      <label className={styles.field}>
+        <span className={styles.fieldLabel}>Куди імпортувати</span>
         <select
-          className="cw-input"
+          className={`${styles.input} ${styles.select}`}
           value={targetSlug}
           disabled={waiting}
           onChange={(event) => {
@@ -108,23 +113,37 @@ export function ImportPanel({
             </option>
           ))}
         </select>
+        {targetSlug ? (
+          <span className={styles.fieldHint}>
+            JSON замінить вміст чернетки вибраного курсу. Адреса й доступи збережуться; опублікована версія залишиться
+            доступною учням до окремої публікації.
+          </span>
+        ) : null}
       </label>
-      {targetSlug ? (
-        <p className={styles.fieldHint}>
-          JSON замінить вміст чернетки вибраного курсу. Адреса й доступи збережуться; опублікована версія залишиться
-          доступною учням до окремої публікації.
-        </p>
-      ) : null}
-      <a className={styles.quietAction} href="/examples/course-import.json" download>
-        Завантажити зразок JSON
-      </a>
-      <div className={styles.addRow}>
-        <button className={styles.quietAction} type="button" disabled={waiting} onClick={() => picker.current?.click()}>
-          {state.status === "checking" ? "Перевіряємо…" : "Вибрати JSON"}
-        </button>
-        <span className={styles.fieldHint}>
-          {"filename" in state ? state.filename : "До 5 МБ; медіа залишаються посиланнями"}
-        </span>
+
+      {/* The file is a field like the target above it: a label, the control,
+          then what the control says back — the file's name, or why it did not
+          land, in the boundary tone and in place rather than on a plate. */}
+      <div className={styles.field}>
+        <span className={styles.fieldLabel}>Файл курсу</span>
+        <div className={styles.addRow}>
+          <button
+            className={styles.quietAction}
+            type="button"
+            disabled={waiting}
+            onClick={() => picker.current?.click()}
+          >
+            {state.status === "checking" ? "Перевіряємо…" : "Вибрати JSON"}
+          </button>
+          <span className={styles.fieldHint}>
+            {"filename" in state ? state.filename : "До 5 МБ; медіа залишаються посиланнями"}
+          </span>
+        </div>
+        {state.status === "failed" ? (
+          <p className={styles.fieldError} role="alert">
+            {state.message}
+          </p>
+        ) : null}
       </div>
       <input
         ref={picker}
@@ -138,12 +157,6 @@ export function ImportPanel({
           if (file) void inspect(file);
         }}
       />
-
-      {state.status === "failed" ? (
-        <p className={styles.noticeLine} role="alert">
-          {state.message}
-        </p>
-      ) : null}
 
       {ready ? (
         <div className={styles.importPreview} aria-live="polite">

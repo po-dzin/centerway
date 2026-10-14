@@ -78,12 +78,37 @@ function normalizeBlock(input: unknown, ids: IdSource, identities: Map<string, s
   return block;
 }
 
-export function normalizePortableCourse(input: unknown, ids: IdSource): unknown {
+/**
+ * `{ "course": {…} }` is the import request's own envelope, and a file saved
+ * from it (or written by someone copying the request) carries it. A course
+ * has no `course` key of its own, so unwrapping cannot misread one.
+ */
+function unwrapCourse(input: unknown): unknown {
+  if (isRecord(input) && isRecord(input.course) && input.modules === undefined) return input.course;
+  return input;
+}
+
+export function normalizePortableCourse(raw: unknown, ids: IdSource): unknown {
+  const input = unwrapCourse(raw);
   if (!isRecord(input)) return input;
   const identities = new Map<string, string>();
   const slug = input.slug ?? (typeof input.title === "string" ? slugify(input.title) : undefined);
   const lessonsTaken = new Set<string>();
   const modulesTaken = new Set<string>();
+  // A daily course needs a day on every lesson outside reference modules. A
+  // file that leaves days out means «in the order written», so they are
+  // counted on from the highest day the file does name.
+  const schedule = input.schedule ?? { mode: "open" };
+  const daily = isRecord(schedule) && schedule.mode === "daily";
+  let nextDay = Array.isArray(input.modules)
+    ? input.modules
+        .flatMap((module) => (isRecord(module) && Array.isArray(module.lessons) ? module.lessons : []))
+        .reduce<number>(
+          (max, lesson) =>
+            isRecord(lesson) && typeof lesson.dayIndex === "number" ? Math.max(max, lesson.dayIndex) : max,
+          0,
+        )
+    : 0;
   const course: Record<string, unknown> = {
     ...input,
     id: ids(),
@@ -96,7 +121,7 @@ export function normalizePortableCourse(input: unknown, ids: IdSource): unknown 
     programSlug: input.programSlug ?? slug,
     brand: input.brand ?? "centerway",
     locale: input.locale ?? "uk",
-    schedule: input.schedule ?? { mode: "open" },
+    schedule,
     modules: Array.isArray(input.modules)
       ? input.modules.map((module, index) => {
           if (!isRecord(module)) return module;
@@ -120,6 +145,9 @@ export function normalizePortableCourse(input: unknown, ids: IdSource): unknown 
                     id: replacementId(lesson.id, ids, identities),
                     slug: lessonSlug,
                     order: lesson.order ?? lessonIndex + 1,
+                    ...(daily && module.reference !== true && lesson.dayIndex === undefined
+                      ? { dayIndex: ++nextDay }
+                      : {}),
                     blocks: Array.isArray(lesson.blocks)
                       ? lesson.blocks.map((block) => normalizeBlock(block, ids, identities))
                       : lesson.blocks,
