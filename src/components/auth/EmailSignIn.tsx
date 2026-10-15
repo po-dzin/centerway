@@ -19,9 +19,10 @@ import styles from "@/components/platform/PlatformSurfaceStyles";
 import { useOptionalToast } from "@/components/ToastProvider";
 import { supabaseClient } from "@/lib/supabaseClient";
 import {
-  OTP_CODE_LENGTH,
+  OTP_CODE_MAX_LENGTH,
   classifySignInError,
   isCompleteOtpCode,
+  isWholeCodeArrival,
   normalizeOtpCode,
   normalizeSignInEmail,
   type SignInFailure,
@@ -34,7 +35,8 @@ const copy = {
   emailLabel: "Електронна пошта",
   send: "Надіслати код",
   sending: "Надсилаємо...",
-  codeLabel: `Код із листа (${OTP_CODE_LENGTH} цифр)`,
+  codeLabel: "Код із листа",
+  signIn: "Увійти",
   codeSentTo: (email: string) => `Код надіслано на ${email}. Немає листа — подивіться у спамі.`,
   verifying: "Перевіряємо...",
   resend: "Надіслати ще раз",
@@ -172,24 +174,30 @@ export function EmailSignIn({
     [email, onSignedIn, report],
   );
 
-  /* THE SIXTH DIGIT IS THE SUBMIT. There is nothing left to decide once the
-     code is complete — a button under it only asks the person to confirm that
-     they meant the digits they just typed, and on a phone that button sits
-     under the keyboard that typed them. This runs on the change that completes
-     the code, autofill included, and not from an effect watching the value:
-     the typing IS the submit event. */
+  /* A PASTE OR AUTOFILL IS THE SUBMIT. When the whole code lands in one
+     change there is nothing left to decide. A code typed digit by digit waits
+     for the button (or Enter): the length is a server setting the client
+     cannot see, so six typed digits may still be two short. */
   const onChangeCode = useCallback(
     (value: string) => {
       const next = normalizeOtpCode(value);
+      const previous = code;
       setCode(next);
-      if (!busy && isCompleteOtpCode(next)) void verify(next);
+      if (!busy && isWholeCodeArrival(previous, next)) void verify(next);
     },
-    [busy, verify],
+    [busy, code, verify],
   );
 
   if (step === "code") {
     return (
-      <form className={styles.form} onSubmit={(event) => event.preventDefault()} noValidate>
+      <form
+        className={styles.form}
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!busy) void verify(code);
+        }}
+        noValidate
+      >
         <p className={styles.status}>{busy ? copy.verifying : copy.codeSentTo(email)}</p>
 
         <div className={styles.field}>
@@ -206,13 +214,17 @@ export function EmailSignIn({
             inputMode="numeric"
             autoComplete="one-time-code"
             enterKeyHint="go"
-            maxLength={OTP_CODE_LENGTH}
+            maxLength={OTP_CODE_MAX_LENGTH}
             value={code}
             disabled={busy}
             onChange={(event) => onChangeCode(event.target.value)}
             required
           />
         </div>
+
+        <button className={styles.primaryButton} type="submit" disabled={busy || !isCompleteOtpCode(code)}>
+          {busy ? copy.verifying : copy.signIn}
+        </button>
 
         <div className={styles.signInQuietRow}>
           <button
