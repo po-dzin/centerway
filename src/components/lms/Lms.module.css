@@ -139,6 +139,25 @@
   margin-bottom: var(--cw-space-xl);
 }
 
+/* ── Stream feed (a daily course) ─────────────────── */
+
+/* See `streamFeed.ts`: the step line itself is the shared `StepLine`; this
+   only places it and its fold. */
+.streamFeed {
+  display: grid;
+  gap: var(--cw-space-md);
+  margin-bottom: var(--cw-space-xl);
+}
+
+.feedFoldButton {
+  composes: text from "../platform/PlatformButtons.module.css";
+  justify-self: start;
+}
+
+.feedAction {
+  composes: primary from "../platform/PlatformButtons.module.css";
+}
+
 /* ── Restart (a finished, repeatable protocol) ────── */
 
 .restartRow {

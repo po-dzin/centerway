@@ -25,7 +25,8 @@ export type StepLineStep = {
   /** What the ring shows: a number, usually. A done step shows a check. */
   marker: ReactNode;
   kicker?: string;
-  title: string;
+  /** A link here covers the whole step (see `.title a` in the CSS). */
+  title: ReactNode;
   description?: string | null;
   /** Rendered only on the `current` step. */
   action?: ReactNode;

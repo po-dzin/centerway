@@ -86,8 +86,10 @@
   text-transform: uppercase;
 }
 
+/* Ink, not gold: the accent as small text on the light paper is under 3:1.
+   The filled ring already says which step is now. */
 .step[data-state="current"] .kicker {
-  color: var(--cw-platform-accent);
+  color: var(--cw-platform-text);
 }
 
 .title {
@@ -97,6 +99,30 @@
   line-height: var(--ds-type-body-sm-line-height);
 }
 
+/* A step that opens something is one target, not a title-sized one: the link
+   stretches over the whole step, and the action above it keeps its own hit. */
+.title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.title a::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+}
+
+.title a:focus-visible {
+  outline: none;
+}
+
+/* The ring goes round the whole step, the same ring the course outline's rows
+   take. */
+.title a:focus-visible::after {
+  border-radius: var(--cw-radius-sm);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 40%, transparent);
+}
+
 .description {
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-body-sm-size);
@@ -104,6 +130,9 @@
 }
 
 .action {
+  composes: compact from "./PlatformButtons.module.css";
+  position: relative;
+  z-index: 1;
   justify-self: start;
   margin-block-start: var(--cw-space-xs);
 }

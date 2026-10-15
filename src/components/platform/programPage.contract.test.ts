@@ -111,3 +111,17 @@ describe("program page — the stages line (G, 2026-10-15)", () => {
     expect(css).toMatch(/\[data-state="done"\]::after\s*\{\s*--step-thread:\s*var\(--cw-platform-accent\)/);
   });
 });
+
+describe("cabinet — the stream feed (G, 2026-10-15)", () => {
+  const view = read("../lms/CourseView.tsx");
+
+  it("draws a daily course as the step line and drops the rail there, so «how far» is said once", () => {
+    expect(view).toContain('const isStream = course.scheduleMode === "daily"');
+    expect(view).toMatch(/\{!isStream \? \(\s*<ProgressRail/);
+    expect(view).toMatch(/<StepLine/);
+  });
+
+  it("keeps the outline for courses that are not a stream", () => {
+    expect(view).toMatch(/\{!feed \? \(\s*<ul className=\{styles\.outline\}>/);
+  });
+});
