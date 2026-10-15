@@ -2199,9 +2199,44 @@ have is a change to this canon, not a local recipe.
 
 | primitive | what it is | what it marks | entry point |
 | --- | --- | --- | --- |
-| **ink mark under text** | a baked drawn line under text (`ink-rule` in `cw-icons.svg`, since 2026-09-09) in one of two weights — see "Two marks, one shape" below | a text choice: a link, a nav row, a tab, a selected label | `InteractionInkLabel` |
+| **ink mark under text** | a baked drawn stroke under text (`ink-stroke` in `cw-icons.svg`) | a text choice: a nav row, a menu item, a tab, a selected label — a link takes the hairline below instead | `InteractionInkLabel` |
 | **ink ring** | a baked open loop around a glyph (`ink-ring`) | an icon-only choice: a mode, a toggle, a pressed utility | `InteractionInkIcon` |
 | **contour** | a dashed line on the object's own edge | a chosen or empty *object*: a selected block, a library cell, a slot with nothing in it | `--cw-contour-*` tokens |
+
+### The link rule is a hairline (2026-09-28)
+
+**This supersedes the link row of the table below.** A link in running copy no
+longer carries a drawn mark. It carries the line the letters themselves carry:
+one hairline under the words.
+
+| token | value | what it sets |
+| --- | --- | --- |
+| `--cw-link-rule-width` | `1px` | the line's thickness, in every state |
+| `--cw-link-rule-offset` | `0.22em` | the gap under the baseline |
+| `--cw-link-rule-color` | ink at 62% (light) · gold at 72% (night) | the line at rest |
+| `--cw-link-rule-color-strong` | ink (light) · gold (night) | the line on hover, focus, press, current |
+
+The colours follow `--cw-nav-marker` — ink on the light side, gold on the night
+one — and are declared in the marker's own scopes, because a custom property
+that reads another resolves where it is declared: written once on `:root`, the
+night side would inherit the light ink.
+
+**Why.** Beside the thin line the letters draw in a letter from the platform, the
+half-weight `ink-rule` read as a second, heavier mark — the hand that says «you
+are here» in a menu, pressed into a sentence. The heavy drawn stroke now means one
+thing only: navigation, menus and tabs (`navigation` / `menu` / `tab`), with its
+hover and current states unchanged.
+
+**Where it is drawn.** `InteractionInkLabel variant="link"` renders no sprite and
+underlines its text; `.cw-link-rule` is the same line for a bare anchor (lesson
+prose, the journal crossing); the `text` button role and the builder's editor
+spell the same tokens where a global class cannot reach. States: the word takes
+`--cw-nav-marker` and the line goes whole — never thicker, so a link never turns
+into a selection stroke. Headings and buttons do not carry it.
+
+Not reached by this rule, on purpose: the static landings (`src/landing-static`)
+and the mail frame, which resolves the light value to hex
+(`src/lib/email/layout.ts`, `linkRule`).
 
 ### Two marks, one shape (2026-09-09)
 
@@ -2220,7 +2255,7 @@ things a reader actually reads — how heavy the line is, and what colour it is:
 | mark | variant | weight | colour | when it is drawn |
 | --- | --- | --- | --- | --- |
 | **selection stroke** | `navigation`, `menu` | `--cw-ink-stroke-weight` (3.4) | the navigation marker's brass | absent at rest; `--cw-ink-hover-opacity` (0.68) under the pointer; full when this is the row you are on |
-| **link rule** | `link` | `--cw-ink-link-weight` (1.7) — about half | `currentColor` | always: `--cw-ink-link-rest-opacity` (0.62) at rest, opacity 1 when pointed at |
+| ~~link rule~~ | `link` | superseded 2026-09-28: no sprite, the `--cw-link-rule-*` hairline above; `--cw-ink-link-weight` and `--cw-ink-link-rest-opacity` no longer exist | | |
 
 Both are **level** (`--cw-ink-stroke-tilt` is `0deg`) and both run the **full
 word** plus the small overhang a drawn line has. The element was always
@@ -2271,10 +2306,12 @@ correction a consumer still owes is the band squeeze and nothing else: at
 lands at a third of a pixel and wants ≈2.9 to reach one. That number is written
 in `PlatformComponents.module.css` and belongs in `cw.tokens.json` as
 `--cw-ink-rule-weight` beside `--cw-ink-stroke-weight`; it is not there yet.
-`InteractionInkLabel` still renders `ink-stroke` for every variant — the rule is
-not a replacement for the selection mark and was never meant to become one.
+`InteractionInkLabel` renders `ink-stroke` for `navigation`, `menu` and `tab`, and
+no sprite for `link` (since 2026-09-28) — the rule is not a replacement for the
+selection mark and was never meant to become one.
 
-**The weight is restated in the link rules, not inherited.** The selection
+**The weight is restated in the link rules, not inherited** (historical: since
+2026-09-28 a link has no sprite to thicken). The selection
 stroke's hover rule also matches a link's mark and carries `scaleY(3.4)`; without
 the thin weight restated on the more specific link selectors, a link would
 thicken into a selection stroke under the cursor — the one thing these two marks
@@ -2282,7 +2319,8 @@ must never do to each other.
 
 **Loose end.** `--cw-ink-rest-opacity` (0.34) is still declared in
 `cw.tokens.json` and reaches `globals.css` and the bundle, but nothing consumes
-it any more: the link's rest strength moved to `--cw-ink-link-rest-opacity` and
+it any more: the link's rest strength moved to `--cw-ink-link-rest-opacity` (itself retired
+2026-09-28 with the hairline) and
 the selection stroke has no rest state at all. It should be retired from the
 token source in a pass of its own.
 
@@ -2359,22 +2397,22 @@ status colour, opacity) and must not borrow the selection line.
 | `selection_family` | mark | examples |
 | --- | --- | --- |
 | `contour` | material boundary + focus ring, or `--cw-contour-selected` for a chosen object | search field, icon+text button, CTA, checkbox box, popover, selected block, library cell |
-| `ink` | stroke under a label, ring around a glyph | link, route navigation, tab, current view mode |
+| `ink` | stroke under a label, ring around a glyph; a link takes the `--cw-link-rule-*` hairline | link, route navigation, tab, current view mode |
 | `hybrid` | contour on the input, ink bounded to the selected label | multi-select filter option |
 
 ### Selection grammar: contour, ink, hybrid (2026-08-30)
 
 ### Text links: visible ink, warm interaction (2026-08-31)
 
-Ordinary inline and footer text links remain visibly marked at rest, so a link
+Ordinary inline text links remain visibly marked at rest, so a link
 does not depend on hover or colour alone to announce itself. Since 2026-09-02
 that mark is an ink mark, not the browser underline — see "Ink and contour: the
 interaction primitives" above, which supersedes this paragraph's
-`text-decoration` recipe. Since 2026-09-09 it is specifically the **link rule**:
-thin, `currentColor`, visible at `--cw-ink-link-rest-opacity`. On hover and
-keyboard focus the label as a whole moves to the warm guide accent — the word and
-its rule together, because the mark reads the text's own colour — and the rule
-goes to full opacity at its own thin weight. Full opacity on a *link* is not the
+`text-decoration` recipe. Since 2026-09-28 it is the **hairline** of "The link
+rule is a hairline" above: `--cw-link-rule-color` at rest, and on hover and
+keyboard focus the word takes `--cw-nav-marker` while the line goes to
+`--cw-link-rule-color-strong` at the same 1px. Footer rows keep the navigation
+stroke. Full opacity on a *link* is not the
 current state; the two marks are told apart by weight and colour, not by how far
 the line has been drawn. Do not apply this treatment to icon-only links or plated
 route actions.

@@ -460,8 +460,11 @@
   box-shadow: none;
   font-size: var(--ds-type-body-sm-size);
   font-weight: 600;
+  /* The fallback line is the DS link rule, not the browser default. */
   text-decoration: underline;
-  text-underline-offset: 0.24em;
+  text-decoration-thickness: var(--cw-link-rule-width);
+  text-underline-offset: var(--cw-link-rule-offset);
+  text-decoration-color: var(--cw-link-rule-color);
 }
 
 .text[data-cw-ink-control] {
@@ -471,6 +474,7 @@
 @media (hover: hover) {
   .text:hover:not(:disabled) {
     color: var(--cw-platform-text);
+    text-decoration-color: var(--cw-link-rule-color-strong);
   }
 }
 
