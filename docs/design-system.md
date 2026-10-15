@@ -138,6 +138,12 @@ The walker is what fixes that, not the dashes: he stands on the edge actually
 reached, so position exists from the first question instead of starting at a
 length of zero.
 
+The program page's route seam (`OfferSeam`) is the one rail drawn heavier:
+**2px, 6 on / 5 off**, as a repeating gradient because `border-style: dashed`
+cannot be sized (G, 2026-10-15 — at 1.5px between two large panels the dashes
+read as dust). It stands exactly between the two blocks, the same gap above the
+rings and below the labels, and its labels stay on one line.
+
 The dosha **score** bars stay solid — they are proportions of a whole, not
 countable steps.
 

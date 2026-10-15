@@ -1681,27 +1681,18 @@ ul.tableList > li::before {
   inset-block-end: max(var(--cw-space-md), env(safe-area-inset-bottom));
   inset-inline-end: max(var(--cw-space-md), env(safe-area-inset-right));
   z-index: var(--ds-z-sticky);
-  /* It stands ON the reading, so it brings a ground — the chrome material the
-     topbar and the workshop's card menu already use, not a new one. A glyph
-     with nothing under it is unreadable the moment a line of text passes
-     behind it. */
+  /* THE TOPBAR'S GLASS (G, 2026-10-15). It stands on the reading, so it
+     brings a ground — the island material the floating chrome wears
+     (layout/ChromeOrgans.module.css), not a new one. From 2026-08-28 it was an
+     opaque disc, because the bare 30% tint over the same paper let a line of
+     body copy run straight through the glyph; the blur is what fixes that, not
+     opacity — text behind it goes soft and the glyph stays the sharpest thing
+     there. Shadow, not contour, as on the islands. */
   color: var(--cw-platform-text);
-  /* OPAQUE, for the same reason the offer page's thumb bar is (2026-08-28). The
-     chrome tint is 30% of the surface, which is a ground only when there is a
-     PHOTOGRAPH behind it — the topbar's case. Here the thing behind it is the
-     reading page in that same colour, so 30% of it over 100% of it came out as
-     a glyph and a faint ring with a line of body copy running through both. A
-     control standing on the reading brings the reading's own paper with it. */
-  /* `--cw-mat-stroke-control`, not `--cw-mat-stroke`: the page under this button
-     is the reading surface and the button's own ground is the same paper, so an
-     opaque circle on it is still invisible — only the soft shadow separated
-     them. The control stroke is the one outline in the material the contrast
-     gate holds at 3:1 on both surfaces in both themes, and it exists for
-     exactly this: a secondary control that otherwise does not read as one. */
-  border: 1px solid var(--cw-mat-stroke-control);
-  background-color: var(--cw-mat-surface);
-  background-image: var(--cw-mat-grain-image);
-  box-shadow: var(--cw-mat-shadow-raised);
+  border: 0;
+  background-color: var(--cw-mat-tint-chrome);
+  backdrop-filter: var(--cw-mat-filter);
+  box-shadow: var(--cw-mat-shadow-soft);
   /* Not `display: none`: the control fades and lifts into place, and an element
      that is not laid out cannot transition. Pointer events go with the opacity
      so an invisible button is never in the way of the text under it. */

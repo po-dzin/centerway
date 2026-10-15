@@ -62,11 +62,36 @@ describe("program page — the price in the button", () => {
 describe("program page — the route", () => {
   const css = read("OfferSeam.module.css");
 
-  it("draws the thread as the system's 1.5px dashed rail", () => {
-    expect(css).toMatch(/border-block-start:\s*1\.5px dashed/);
+  it("draws the thread as a 2px rail, 6 on and 5 off (G, 2026-10-15)", () => {
+    expect(css).toMatch(/block-size:\s*2px/);
+    expect(css).toMatch(/repeating-linear-gradient\([^)]*var\(--seam-thread\) 0 6px,\s*transparent 6px 11px\)/);
+  });
+
+  it("stands exactly between the two blocks: one gap above and below", () => {
+    expect(css).toMatch(
+      /margin-block:\s*calc\(var\(--seam-gap\) - 2 \* var\(--platform-anchor-inset\)\)\s+var\(--seam-gap\)/,
+    );
   });
 
   it("is as wide as the card above it", () => {
     expect(css).toMatch(/\.route\s*\{[^}]*inline-size:\s*100%/);
+  });
+});
+
+describe("floating actions — no plate under them (G, 2026-10-15)", () => {
+  it("the offer's sticky bar is a transparent row; only the button takes pointer events", () => {
+    const css = read("PlatformOfferCommerce.module.css");
+    const bar = css.slice(css.indexOf("@media (max-width: 900px)"));
+    expect(bar).toMatch(/\.stickyBar\s*\{[^}]*background:\s*transparent/);
+    expect(bar).toMatch(/\.stickyBar\s*\{[^}]*pointer-events:\s*none/);
+    expect(bar).not.toMatch(/\.stickyBar\s*\{[^}]*--cw-mat-surface\b/);
+    expect(css).toMatch(/\.stickyAction\s*\{[^}]*pointer-events:\s*auto/);
+  });
+
+  it("the reader's round button wears the topbar's glass", () => {
+    const css = read("../lms/Lms.module.css");
+    const button = css.slice(css.indexOf(".topButton {"), css.indexOf(".topButton[data-shown"));
+    expect(button).toContain("background-color: var(--cw-mat-tint-chrome)");
+    expect(button).toContain("backdrop-filter: var(--cw-mat-filter)");
   });
 });
