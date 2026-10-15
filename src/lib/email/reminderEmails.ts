@@ -16,7 +16,7 @@
  * voice doc (docs/platform-copy-voice-2026-09-23.md); not yet read by the owner.
  */
 
-import { compose, greet, type Line } from "./lifecycleEmails";
+import { compose, greet, ukDate, type Line } from "./lifecycleEmails";
 
 export type ReminderEmail = { subject: string; preheader: string; html: string; text: string };
 
@@ -71,11 +71,39 @@ export function buildUnstartedReminderEmail(input: {
   name?: string | null;
   courseTitle: string;
   nudgeNumber: number;
+  /** A group stream's shared start; its days do not wait for the first visit. */
+  cohortStartsOn?: string | null;
   courseUrl: string;
   supportUrl: string;
 }): ReminderEmail {
   const { courseTitle } = input;
   const first = input.nudgeNumber === 1;
+  if (input.cohortStartsOn) {
+    const preheader = first
+      ? `Потік іде з ${ukDate(input.cohortStartsOn)}, уроки вже відкриті.`
+      : "Наздогнати потік можна у своєму темпі.";
+    return withPreheader(
+      preheader,
+      compose({
+        subject: first ? `Потік «${courseTitle}» уже йде` : `Нагадуємо: «${courseTitle}» чекає в кабінеті`,
+        preheader,
+        eyebrow: courseTitle,
+        title: first ? "Потік уже йде" : "Уроки чекають на вас",
+        greeting: greet(input.name),
+        paragraphs: first
+          ? [
+              { text: `Потік «${courseTitle}» іде з ${ukDate(input.cohortStartsOn)}. Уроки вже відкриті в кабінеті.` },
+              { text: "Почніть з першого, коли буде зручно." },
+            ]
+          : [
+              { text: `Нагадуємо: потік «${courseTitle}» триває, а уроки чекають у вашому кабінеті.` },
+              { text: "Почніть з першого — наздогнати можна у своєму темпі." },
+            ],
+        cta: { label: "Почати курс", href: input.courseUrl },
+        foot: [help(input.supportUrl), WHY_EMAIL],
+      }),
+    );
+  }
   const preheader = first
     ? "Перший урок можна пройти тоді, коли буде зручно."
     : "Відлік днів починається з першого відкриття, тож ви нічого не пропустили.";

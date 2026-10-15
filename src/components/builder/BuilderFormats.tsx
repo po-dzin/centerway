@@ -46,6 +46,7 @@ import {
   updateCourseFormat,
   type BuilderFormatDto,
   type BuilderFormatInput,
+  type BuilderStreamChat,
   type BuilderFormatKind,
   type BuilderFormatsDto,
 } from "./builderClient";
@@ -91,6 +92,8 @@ type Draft = {
   /** The owner's early price and its last day's next date, as typed. */
   earlyAmount: string;
   earlyUntil: string;
+  /** The stream's Telegram group (`chat_id` as text), "" for none. Owner only. */
+  streamChatId: string;
 };
 
 /* `draftOf` / `inputOf` are exported for BuilderFormats.test.ts only. */
@@ -107,6 +110,7 @@ export function draftOf(format: BuilderFormatDto | null, canSetPrice = false): D
     cohortStartsOn: format?.cohortStartsOn ?? "",
     earlyAmount: format?.earlyAmount ? String(format.earlyAmount) : "",
     earlyUntil: format?.earlyUntil ?? "",
+    streamChatId: format?.streamChatId ? String(format.streamChatId) : "",
   };
 }
 
@@ -144,12 +148,61 @@ export function inputOf(draft: Draft, locked: boolean, canSetPrice = false): Bui
     }
   }
   if (locked) return shared;
-  return {
+  const unlocked: BuilderFormatInput = {
     ...shared,
     format: draft.format,
     mode: draft.mode,
     cohortStartsOn: draft.format === "group" ? draft.cohortStartsOn || null : null,
   };
+  // The stream chat is the owner's pick, and only a group stream has one.
+  if (canSetPrice && draft.format === "group")
+    unlocked.streamChatId = draft.streamChatId ? Number(draft.streamChatId) : null;
+  return unlocked;
+}
+
+/**
+ * «Чат потоку»: the Telegram group whose personal invite links the bot hands to
+ * this stream's buyers. Groups appear here after /connect in them.
+ */
+function StreamChatField(props: {
+  id: string;
+  code: string | null;
+  chats: BuilderStreamChat[];
+  value: string;
+  dateChanged: boolean;
+  onChange: (next: string) => void;
+}) {
+  const picked = props.chats.find((chat) => String(chat.chatId) === props.value) ?? null;
+  const elsewhere = picked ? picked.usedBy.filter((code) => code !== props.code) : [];
+  let hint: string;
+  if (props.dateChanged && !props.value) hint = "Дата старту змінилась: оберіть чат нового потоку.";
+  else if (picked && !picked.botCanInvite) {
+    hint = "Бот не може запрошувати в цей чат: дайте йому право «Додавати учасників» і надішліть /connect у групі.";
+  } else if (elsewhere.length) hint = "Цей чат уже видається іншому формату. Для нового потоку краще нова група.";
+  else if (!props.chats.length) {
+    hint = "Підключених чатів ще немає. Додайте бота адміністратором у групу потоку й надішліть там /connect.";
+  } else hint = "Покупцям цього потоку бот видасть особисте посилання в цю групу.";
+  return (
+    <div className={styles.field}>
+      <label className={styles.fieldLabel} htmlFor={props.id}>
+        Чат потоку
+      </label>
+      <select
+        id={props.id}
+        className={`${styles.input} ${styles.select}`}
+        value={props.value}
+        onChange={(event) => props.onChange(event.target.value)}
+      >
+        <option value="">Без чату</option>
+        {props.chats.map((chat) => (
+          <option key={chat.chatId} value={String(chat.chatId)}>
+            {chat.title}
+          </option>
+        ))}
+      </select>
+      <span className={styles.fieldHint}>{hint}</span>
+    </div>
+  );
 }
 
 function nextModuleSlug(modules: CourseModule[], base: string): string {
@@ -521,11 +574,27 @@ export function BuilderFormats({
             <AdminDateField
               id={`format-cohort-${format?.code ?? "new"}`}
               value={draft.cohortStartsOn}
-              onChange={(next) => setDraft((prev) => ({ ...prev, cohortStartsOn: next }))}
+              // A new date is a new stream: last stream's chat does not carry over.
+              onChange={(next) =>
+                setDraft((prev) =>
+                  next === prev.cohortStartsOn ? prev : { ...prev, cohortStartsOn: next, streamChatId: "" },
+                )
+              }
               locale={getAdminLocale(lang)}
               labels={dateLabels}
             />
           </div>
+        ) : null}
+
+        {!locked && canSetPrice && draft.format === "group" ? (
+          <StreamChatField
+            id={`format-chat-${format?.code ?? "new"}`}
+            code={format?.code ?? null}
+            chats={data?.streamChats ?? []}
+            value={draft.streamChatId}
+            dateChanged={Boolean(format?.streamChatId) && draft.cohortStartsOn !== (format?.cohortStartsOn ?? "")}
+            onChange={(next) => setDraft((prev) => ({ ...prev, streamChatId: next }))}
+          />
         ) : null}
 
         {locked ? (
