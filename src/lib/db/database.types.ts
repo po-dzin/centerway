@@ -1149,8 +1149,9 @@ export type Database = {
       learner_notices: {
         Row: {
           announcement_id: string | null
-          auth_user_id: string
+          auth_user_id: string | null
           course_id: string | null
+          customer_id: string | null
           created_at: string
           id: string
           kind: string
@@ -1160,8 +1161,9 @@ export type Database = {
         }
         Insert: {
           announcement_id?: string | null
-          auth_user_id: string
+          auth_user_id?: string | null
           course_id?: string | null
+          customer_id?: string | null
           created_at?: string
           id?: string
           kind: string
@@ -1171,8 +1173,9 @@ export type Database = {
         }
         Update: {
           announcement_id?: string | null
-          auth_user_id?: string
+          auth_user_id?: string | null
           course_id?: string | null
+          customer_id?: string | null
           created_at?: string
           id?: string
           kind?: string
@@ -1186,6 +1189,13 @@ export type Database = {
             columns: ["announcement_id"]
             isOneToOne: false
             referencedRelation: "lms_announcements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learner_notices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
             referencedColumns: ["id"]
           },
           {

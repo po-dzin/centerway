@@ -14,6 +14,10 @@
 --      что переход — единственная честная синхронизация.
 --      `kind` открыт для других источников (старт потока и т. п.): будущий
 --      колокольчик — это просто выборка по этим строкам.
+--      `customer_id` без `auth_user_id` — покупатель, который ещё не входил
+--      (сообщения потока идут по customers.tg_id); строку привязывают к
+--      аккаунту при первом входе. Платформенная строка — это входящие, она
+--      сама ничего не шлёт: канал доставки один, Telegram или письмо.
 --
 -- Откат: drop table if exists public.learner_notices; drop table if exists public.lms_announcements;
 
@@ -39,7 +43,8 @@ create index if not exists idx_lms_announcements_course on public.lms_announceme
 
 create table if not exists public.learner_notices (
   id               uuid        primary key default gen_random_uuid(),
-  auth_user_id     uuid        not null,
+  auth_user_id     uuid        null,
+  customer_id      uuid        null references public.customers (id) on delete cascade,
   kind             text        not null,
   announcement_id  uuid        null references public.lms_announcements (id) on delete cascade,
   course_id        uuid        null references public.lms_courses (id) on delete cascade,
@@ -47,7 +52,8 @@ create table if not exists public.learner_notices (
   tg_status        text        not null default 'pending',
   tg_sent_at       timestamptz null,
   read_at          timestamptz null,
-  constraint learner_notices_kind_known check (kind in ('author_announcement')),
+  constraint learner_notices_addressed check (auth_user_id is not null or customer_id is not null),
+  constraint learner_notices_kind_known check (kind in ('author_announcement', 'stream_start')),
   constraint learner_notices_tg_status_known check (tg_status in ('pending', 'sending', 'sent', 'unreachable', 'failed')),
   constraint learner_notices_one_per_person unique (announcement_id, auth_user_id)
 );

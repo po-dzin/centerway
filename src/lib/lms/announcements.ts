@@ -397,6 +397,7 @@ export async function sendAnnouncementBatch(announcementId: string, now: Date = 
 
     const href = announcementHref(courseSlug, announcement.lesson_slug);
     for (const notice of claimed ?? []) {
+      if (!notice.auth_user_id) continue;
       const result = await notifyLearner({
         authUserId: notice.auth_user_id,
         title: author?.name ? `${courseTitle} · ${author.name}` : courseTitle,
