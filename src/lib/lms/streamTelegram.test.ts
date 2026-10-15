@@ -23,6 +23,8 @@ const person = (over: Partial<StreamRecipient>): StreamRecipient => ({
   startsOn: "2026-11-01",
   tgId: "100",
   enrolled: false,
+  streamChat: false,
+  chatLink: null,
   ...over,
 });
 
@@ -53,6 +55,15 @@ describe("stream messages in Telegram", () => {
     const day1 = buildStreamTelegram({ ...base, stage: "day1", streamChatUrl: "https://t.me/+chat" });
     expect(day1.html).toContain("<b>День 1 · Шлях 21</b>");
     expect(day1.replyMarkup.inline_keyboard[1]).toEqual([{ text: "Чат потоку", url: "https://t.me/+chat" }]);
+
+    // A picked group: the bot makes a personal link on tap; the shared one is never sent.
+    const picked = buildStreamTelegram({
+      ...base,
+      stage: "day1",
+      streamChat: true,
+      streamChatUrl: "https://t.me/+chat",
+    });
+    expect(picked.replyMarkup.inline_keyboard[1]).toEqual([{ text: "Чат потоку", callback_data: "streamchat" }]);
   });
 
   it("escapes the program title", () => {

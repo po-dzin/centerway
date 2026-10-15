@@ -2,7 +2,8 @@
  * The formats of one program, from the builder (2026-09-25).
  *
  * GET    /api/lms/authoring/courses/:slug/formats — every format (any review
- *        state), and the programs this identity may put inside one.
+ *        state), the programs this identity may put inside one, and (owner
+ *        only) the Telegram groups a stream may hand out.
  * POST   …/formats                 — a new format, as a draft or sent for approval.
  * PATCH  …/formats  { code, … }    — edit one; `submit: true` sends it to the owner.
  * DELETE …/formats?code=…          — withdraw one that never went on sale.
@@ -22,6 +23,7 @@ import {
   deleteFormat,
   listCourseFormats,
   listIncludablePrograms,
+  listStreamChats,
   updateFormat,
   type FormatInput,
 } from "@/lib/experiences/formatAuthoring";
@@ -48,17 +50,21 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     slug,
     async (grant) => {
       try {
-        const [formats, includable] = await Promise.all([
+        const canSetPrice = grant.identity.canSetPrice === true;
+        const [formats, includable, streamChats] = await Promise.all([
           listCourseFormats(grant.courseId),
           listIncludablePrograms({
             courseId: grant.courseId,
             authUserId: grant.identity.authUserId,
             isAdmin: grant.identity.isAdmin,
           }),
+          // The stream chats are the owner's to pick; an author never sees the list.
+          canSetPrice ? listStreamChats() : Promise.resolve([]),
         ]);
         return NextResponse.json({
           formats,
           includable,
+          streamChats,
           isOwner: grant.identity.isAdmin,
           canSetPrice: grant.identity.canSetPrice === true,
         });

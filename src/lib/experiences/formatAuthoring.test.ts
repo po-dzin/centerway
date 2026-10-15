@@ -31,6 +31,7 @@ const {
   listCourseFormats,
   listFormatsForReview,
   listIncludablePrograms,
+  listStreamChats,
   reviewFormat,
   updateFormat,
 } = await import("./formatAuthoring");
@@ -453,6 +454,56 @@ describe("updateFormat", () => {
     expect(offerRow("way21-group")).toMatchObject({ early_amount: null, early_until: null });
   });
 
+  it("lets only the owner pick a stream's Telegram chat, only a connected one, only on a group", async () => {
+    db.tables.telegram_stream_chats = [
+      { chat_id: -1001, title: "Шлях 21 · потік XI", bot_can_invite: true, connected_at: "2026-10-15T09:00:00Z" },
+    ];
+    await expectFormatError(
+      updateFormat({ ...admin, code: "way21-group", body: { streamChatId: -1001 } }),
+      "format_stream_chat_owner_only",
+      403,
+    );
+    await expectFormatError(
+      updateFormat({ ...owner, code: "way21-group", body: { streamChatId: "chat" } }),
+      "format_invalid_stream_chat",
+    );
+    await expectFormatError(
+      updateFormat({ ...owner, code: "way21-group", body: { streamChatId: -2002 } }),
+      "format_stream_chat_unknown",
+      404,
+    );
+    await expectFormatError(
+      updateFormat({ ...owner, code: "course:way21", body: { streamChatId: -1001 } }),
+      "format_stream_chat_group_only",
+    );
+    await updateFormat({ ...owner, code: "way21-group", body: { streamChatId: "-1001" } });
+    expect(offerRow("way21-group").stream_chat_id).toBe(-1001);
+    await updateFormat({ ...owner, code: "way21-group", body: { streamChatId: null } });
+    expect(offerRow("way21-group").stream_chat_id).toBeNull();
+  });
+
+  it("a new start date clears last stream's chat, unless the same save picks one", async () => {
+    db.tables.telegram_stream_chats = [
+      { chat_id: -1001, title: "потік XI", bot_can_invite: true, connected_at: "2026-10-01T09:00:00Z" },
+      { chat_id: -1002, title: "потік XII", bot_can_invite: true, connected_at: "2026-10-15T09:00:00Z" },
+    ];
+    offerRow("way21-group").stream_chat_id = -1001;
+    // The same date, saved again, keeps the chat.
+    await updateFormat({ ...owner, code: "way21-group", body: { cohortStartsOn: "2026-10-01" } });
+    expect(offerRow("way21-group").stream_chat_id).toBe(-1001);
+    await updateFormat({ ...owner, code: "way21-group", body: { cohortStartsOn: "2026-11-01" } });
+    expect(offerRow("way21-group").stream_chat_id).toBeNull();
+    await updateFormat({
+      ...owner,
+      code: "way21-group",
+      body: { cohortStartsOn: "2026-12-01", streamChatId: -1002 },
+    });
+    expect(offerRow("way21-group").stream_chat_id).toBe(-1002);
+    // A format that stops being a group has no stream chat.
+    await updateFormat({ ...owner, code: "way21-group", body: { format: "self" } });
+    expect(offerRow("way21-group").stream_chat_id).toBeNull();
+  });
+
   it("submitting sends a draft and a reworked decline to the owner", async () => {
     await updateFormat({ ...author, code: "way21-individual", body: { submit: true } });
     await updateFormat({ ...author, code: "way21-self", body: { submit: true } });
@@ -548,6 +599,20 @@ describe("updateFormat", () => {
       "format_write_failed:locked",
       500,
     );
+  });
+});
+
+describe("listStreamChats", () => {
+  it("lists connected groups newest first, with the formats already handing each out", async () => {
+    db.tables.telegram_stream_chats = [
+      { chat_id: -1001, title: "потік XI", bot_can_invite: true, connected_at: "2026-10-01T09:00:00Z" },
+      { chat_id: -1002, title: "потік XII", bot_can_invite: false, connected_at: "2026-10-15T09:00:00Z" },
+    ];
+    offerRow("way21-group").stream_chat_id = -1001;
+    expect(await listStreamChats()).toEqual([
+      { chatId: -1002, title: "потік XII", botCanInvite: false, usedBy: [] },
+      { chatId: -1001, title: "потік XI", botCanInvite: true, usedBy: ["way21-group"] },
+    ]);
   });
 });
 

@@ -69,7 +69,19 @@ export type AuthoredFormat = {
   /** The owner's early price and the date it ends (00:00 Kyiv); both null when there is none. */
   earlyAmount: number | null;
   earlyUntil: string | null;
+  /** A group stream's Telegram group, picked by the owner (lib/telegram/streamChat.ts). */
+  streamChatId: number | null;
   includes: Array<{ slug: string; title: string }>;
+};
+
+/** A group the support bot was connected to with /connect, offered for a stream. */
+export type StreamChatOption = {
+  chatId: number;
+  title: string;
+  /** The bot could create invite links there at the last /connect. */
+  botCanInvite: boolean;
+  /** Codes of the formats (any program) that already hand this chat out. */
+  usedBy: string[];
 };
 
 export type IncludableProgram = { slug: string; title: string; status: string };
@@ -86,6 +98,8 @@ export type FormatInput = {
   featured?: unknown;
   /** `{amount, until}` sets the early price, `null` removes it. Owner only. */
   early?: unknown;
+  /** The stream's Telegram group (`telegram_stream_chats.chat_id`), `null` clears it. Owner only. */
+  streamChatId?: unknown;
   submit?: unknown;
 };
 
@@ -99,7 +113,7 @@ export class FormatError extends Error {
 }
 
 const COLUMNS =
-  "id, code, format, label, summary, features, mode, amount, list_amount, access_days, access_lifetime, proposed_amount, currency, cohort_starts_on, review_status, active, featured, early_amount, early_until, sort_order, experience_id";
+  "id, code, format, label, summary, features, mode, amount, list_amount, access_days, access_lifetime, proposed_amount, currency, cohort_starts_on, review_status, active, featured, early_amount, early_until, sort_order, experience_id, stream_chat_id";
 
 type Row = {
   id: string;
@@ -123,6 +137,7 @@ type Row = {
   early_until: string | null;
   sort_order: number;
   experience_id: string;
+  stream_chat_id: number | null;
 };
 
 function uk(value: unknown): string {
@@ -196,6 +211,7 @@ export async function listCourseFormats(courseId: string): Promise<AuthoredForma
         featured: row.featured === true,
         earlyAmount: row.early_amount ?? null,
         earlyUntil: row.early_until ?? null,
+        streamChatId: row.stream_chat_id ?? null,
         includes: [...(items ?? [])]
           .filter((item) => item.offer_id === row.id)
           .sort((a, b) => Number(a.sort_order) - Number(b.sort_order))
@@ -228,6 +244,32 @@ export async function listIncludablePrograms(input: {
   }));
 }
 
+/**
+ * The Telegram groups connected with /connect, for the owner to pick a stream's
+ * chat from. Newest first: the group made for the coming stream is on top.
+ */
+export async function listStreamChats(): Promise<StreamChatOption[]> {
+  const db = adminClient();
+  const { data, error } = await db
+    .from("telegram_stream_chats")
+    .select("chat_id, title, bot_can_invite")
+    .order("connected_at", { ascending: false });
+  if (error) throw new FormatError(`format_stream_chats_read_failed:${error.message}`, 500);
+  const { data: users, error: usersError } = await db
+    .from("experience_offers")
+    .select("code, stream_chat_id")
+    .not("stream_chat_id", "is", null);
+  if (usersError) throw new FormatError(`format_stream_chats_read_failed:${usersError.message}`, 500);
+  return (data ?? []).map((row) => ({
+    chatId: Number(row.chat_id),
+    title: row.title as string,
+    botCanInvite: row.bot_can_invite === true,
+    usedBy: (users ?? [])
+      .filter((offer) => Number(offer.stream_chat_id) === Number(row.chat_id))
+      .map((offer) => offer.code as string),
+  }));
+}
+
 type Parsed = {
   format?: OfferFormat;
   label?: string;
@@ -239,6 +281,7 @@ type Parsed = {
   includes?: string[];
   featured?: boolean;
   early?: { amount: number; until: string } | null;
+  streamChatId?: number | null;
   submit: boolean;
 };
 
@@ -315,6 +358,15 @@ function parseInput(input: FormatInput): Parsed {
       throw new FormatError("format_invalid_includes");
     }
     parsed.includes = [...new Set(input.includes as string[])];
+  }
+  if (input.streamChatId !== undefined) {
+    const raw = input.streamChatId;
+    if (raw === null || raw === "") parsed.streamChatId = null;
+    else {
+      const id = typeof raw === "number" ? raw : typeof raw === "string" && /^-?\d+$/.test(raw) ? Number(raw) : NaN;
+      if (!Number.isSafeInteger(id)) throw new FormatError("format_invalid_stream_chat");
+      parsed.streamChatId = id;
+    }
   }
   return parsed;
 }
@@ -520,6 +572,22 @@ export async function updateFormat(input: {
     throw new FormatError("format_early_not_lower");
   }
 
+  // The stream's Telegram group is the owner's pick, and only a group stream has one.
+  if (parsed.streamChatId !== undefined) {
+    if (input.canSetPrice !== true) throw new FormatError("format_stream_chat_owner_only", 403);
+    if (parsed.streamChatId !== null) {
+      const format = parsed.format ?? row.format;
+      if (format !== "group") throw new FormatError("format_stream_chat_group_only");
+      const { data: chat, error } = await db
+        .from("telegram_stream_chats")
+        .select("chat_id")
+        .eq("chat_id", parsed.streamChatId)
+        .maybeSingle();
+      if (error) throw new FormatError(`format_read_failed:${error.message}`, 500);
+      if (!chat) throw new FormatError("format_stream_chat_unknown", 404);
+    }
+  }
+
   const allowed = parsed.includes !== undefined ? await listIncludablePrograms(input) : [];
   if (parsed.includes !== undefined) refuseForeignIncludes(parsed.includes, allowed);
 
@@ -549,6 +617,14 @@ export async function updateFormat(input: {
       : null;
   }
   if (parsed.cohortStartsOn !== undefined) patch.cohort_starts_on = parsed.cohortStartsOn;
+  // A new start date is a new stream: last stream's chat must not leak into it
+  // (G 15.10), so the pick clears unless this same save names the chat.
+  if (parsed.streamChatId !== undefined) patch.stream_chat_id = parsed.streamChatId;
+  else if (parsed.cohortStartsOn !== undefined && parsed.cohortStartsOn !== row.cohort_starts_on) {
+    patch.stream_chat_id = null;
+  }
+  // A format that stops being a group has no stream chat.
+  if (parsed.format !== undefined && parsed.format !== "group") patch.stream_chat_id = null;
   if (parsed.featured !== undefined) patch.featured = parsed.featured;
   if (parsed.early !== undefined) {
     patch.early_amount = parsed.early?.amount ?? null;

@@ -867,6 +867,7 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           share_pct: number | null
+          stream_chat_id: number | null
           sort_order: number
           summary: Json | null
           updated_at: string
@@ -900,6 +901,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           share_pct?: number | null
+          stream_chat_id?: number | null
           sort_order?: number
           summary?: Json | null
           updated_at?: string
@@ -933,6 +935,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           share_pct?: number | null
+          stream_chat_id?: number | null
           sort_order?: number
           summary?: Json | null
           updated_at?: string
@@ -2425,6 +2428,33 @@ export type Database = {
           state?: string
           telegram_user_id?: string
           telegram_username?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      telegram_stream_chats: {
+        Row: {
+          bot_can_invite: boolean
+          chat_id: number
+          connected_at: string
+          connected_by: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          bot_can_invite?: boolean
+          chat_id: number
+          connected_at?: string
+          connected_by?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          bot_can_invite?: boolean
+          chat_id?: number
+          connected_at?: string
+          connected_by?: string | null
+          title?: string
           updated_at?: string
         }
         Relationships: []

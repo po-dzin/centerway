@@ -34,11 +34,13 @@ import { verifyDoshaResultToken } from "@/lib/platform/doshaTelegramLink";
 import { verifyOrderTelegramToken } from "@/lib/platform/orderTelegramLink";
 import { kyivDate } from "@/lib/email/lifecycleRuns";
 import { orderLinkedHtml } from "./orderLinkCopy";
+import { channelButton, connectStreamChat, personalInvite, streamChatFor, streamChatOfOffer } from "./streamChat";
 import { classifyDosha, type DoshaResultType } from "@/lib/dosha/doshaTest";
 import { buildDoshaResultHtml, RESULT_COPY } from "@/lib/dosha/doshaResultCopy";
 import { DOSHA_PRIMARY_EXIT, doshaExitHref } from "@/lib/dosha/doshaRouting";
 import { captureQuestion } from "@/lib/agent/questions/store";
 import { platformUrl } from "@/lib/surfaces/catalog";
+import { SUPPORT_BOT_URL } from "@/lib/supportBotUrl";
 import {
   botCopy,
   ACCESS_PHOTO_URL,
@@ -80,6 +82,9 @@ type TelegramUser = {
 
 type TelegramChat = {
   id: number;
+  /** `private`, `group`, `supergroup` or `channel`. */
+  type?: string;
+  title?: string;
 };
 
 type TelegramMessage = {
@@ -791,9 +796,20 @@ async function tryLinkOrder(db: Supabase, chatId: number, user: TelegramUser, pa
 
   const { programTitle, cohortStartsOn } = await describeOrderOffer(db, order);
 
+  // The stream's group (a personal link) and the channel, when they are not
+  // joined yet: one message, one set of doors.
+  const streamChat = await streamChatOfOffer(db, order.offer_id);
+  const invite = streamChat
+    ? await personalInvite({ chatId: streamChat, userId: user.id, name: order.order_ref })
+    : null;
+  const channel = await channelButton(user.id);
+  const rows: InlineKeyboardMarkup["inline_keyboard"] = [[{ text: botCopy.orderLinkedButton, url: CABINET_URL }]];
+  if (invite && "url" in invite) rows.push([{ text: botCopy.streamChatButton, url: invite.url }]);
+  if (channel) rows.push([channel]);
+
   await saveSession(db, user, { state: "idle", contact: null });
   await sendMessage(chatId, orderLinkedHtml({ name, programTitle, cohortStartsOn, today: kyivDate(new Date()) }), {
-    inline_keyboard: [[{ text: botCopy.orderLinkedButton, url: CABINET_URL }]],
+    inline_keyboard: rows,
   });
   await logEventBestEffort(db, "tg_order_linked", {
     order_ref: order.order_ref,
@@ -801,6 +817,30 @@ async function tryLinkOrder(db: Supabase, chatId: number, user: TelegramUser, pa
     telegram_user_id: tgId,
   }).catch(() => undefined);
   return true;
+}
+
+/**
+ * «Чат потоку» under the stream's «Завтра старт» and «День 1»: the person's own
+ * one-use link, made when they tap, for whichever stream their chat holds.
+ */
+async function handleStreamChat(db: Supabase, chatId: number, user: TelegramUser): Promise<void> {
+  const stream = await streamChatFor(db, String(user.id));
+  if (!stream) {
+    await sendMessage(chatId, botCopy.streamChatNotFound, backKeyboard());
+    return;
+  }
+  const invite = await personalInvite({ chatId: stream.chatId, userId: user.id, name: `tg ${user.id}` });
+  if (!invite) {
+    await sendMessage(chatId, botCopy.streamChatMissing, backKeyboard());
+    return;
+  }
+  if ("already" in invite) {
+    await sendMessage(chatId, botCopy.streamChatAlready);
+    return;
+  }
+  await sendMessage(chatId, botCopy.streamChatInvite, {
+    inline_keyboard: [[{ text: botCopy.streamChatButton, url: invite.url }]],
+  });
 }
 
 /** The program's name and, for a group stream, its shared start date. */
@@ -827,12 +867,36 @@ async function describeOrderOffer(
   };
 }
 
+/** A group, supergroup or channel: anywhere the private menu must stay quiet. */
+export function inGroup(chatType: string | undefined): boolean {
+  return Boolean(chatType) && chatType !== "private";
+}
+
+/** `/connect`, bare or addressed to this bot — never to another bot in the same group. */
+export function isConnectCommand(text: string): boolean {
+  const match = /^\/connect(?:@(\w+))?$/i.exec(text.trim());
+  if (!match) return false;
+  return !match[1] || match[1].toLowerCase() === supportBotUsername().toLowerCase();
+}
+
+function supportBotUsername(): string {
+  return SUPPORT_BOT_URL.split("/").pop() ?? "";
+}
+
 async function handleTextMessage(db: Supabase, message: TelegramMessage): Promise<void> {
   const user = message.from;
   const text = message.text?.trim();
   if (!user || !text) return;
 
   const chatId = message.chat.id;
+
+  /* IN A GROUP THE BOT ONLY LISTENS FOR /connect. As an administrator of a
+     stream's group it receives every message there, and the private-chat
+     menu answering each of them would be the bot talking over the group. */
+  if (inGroup(message.chat.type)) {
+    if (isConnectCommand(text)) await sendMessage(chatId, await connectStreamChat(db, message.chat, user.id));
+    return;
+  }
 
   if (text === "/start" || text.startsWith("/start ")) {
     // A deep link from the cabinet carries a signed account token. Anything
@@ -929,6 +993,11 @@ async function handleCallbackQuery(db: Supabase, callbackQuery: TelegramCallback
       contact: null,
     });
     await sendMessage(chatId, botCopy.accessAskContact);
+    return;
+  }
+
+  if (data === "streamchat") {
+    await handleStreamChat(db, chatId, callbackQuery.from);
     return;
   }
 

@@ -469,7 +469,18 @@ export type BuilderFormatDto = {
   /** The owner's early price and the date it ends (00:00 Kyiv). */
   earlyAmount?: number | null;
   earlyUntil?: string | null;
+  /** A group stream's Telegram group; the bot hands buyers a personal link into it. */
+  streamChatId?: number | null;
   includes: Array<{ slug: string; title: string }>;
+};
+
+/** A Telegram group connected with /connect, offered for a stream. */
+export type BuilderStreamChat = {
+  chatId: number;
+  title: string;
+  botCanInvite: boolean;
+  /** Codes of the formats that already hand this chat out. */
+  usedBy: string[];
 };
 
 export type BuilderFormatsDto = {
@@ -478,6 +489,8 @@ export type BuilderFormatsDto = {
   isOwner: boolean;
   /** The `admin` role: the price typed here is the live one, with no review. */
   canSetPrice?: boolean;
+  /** Owner only: the groups a stream may hand out. */
+  streamChats?: BuilderStreamChat[];
 };
 
 export type BuilderFormatInput = {
@@ -493,6 +506,8 @@ export type BuilderFormatInput = {
   featured?: boolean;
   /** Owner only: the early price until a date; `null` removes it. */
   early?: { amount: number; until: string } | null;
+  /** Owner only: the stream's Telegram group; `null` clears it. A new start date clears it too. */
+  streamChatId?: number | null;
   submit?: boolean;
 };
 

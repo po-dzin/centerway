@@ -39,7 +39,10 @@ export function buildStreamTelegram(input: {
   programTitle: string;
   startsOn: string;
   cabinetUrl: string;
+  /** The shared link from the env — only when the stream has no group picked. */
   streamChatUrl: string | null;
+  /** The stream's group is picked in the builder: the bot hands a personal link on tap. */
+  streamChat?: boolean;
 }): { html: string; replyMarkup: InlineKeyboardMarkup } {
   const title = `«${escapeTelegramHtml(input.programTitle)}»`;
   const html =
@@ -59,7 +62,8 @@ export function buildStreamTelegram(input: {
   const rows: InlineKeyboardMarkup["inline_keyboard"] = [
     [{ text: input.stage === "tomorrow" ? "Відкрити кабінет" : "Відкрити перший урок", url: input.cabinetUrl }],
   ];
-  if (input.streamChatUrl) rows.push([{ text: "Чат потоку", url: input.streamChatUrl }]);
+  if (input.streamChat) rows.push([{ text: "Чат потоку", callback_data: "streamchat" }]);
+  else if (input.streamChatUrl) rows.push([{ text: "Чат потоку", url: input.streamChatUrl }]);
   return { html, replyMarkup: { inline_keyboard: rows } };
 }
 
@@ -109,6 +113,7 @@ export async function runStreamTelegram(now = new Date()): Promise<Record<Stream
         startsOn: date,
         cabinetUrl: links.cabinetUrl,
         streamChatUrl: links.streamChatUrl ?? null,
+        streamChat: recipient.streamChat,
       });
       try {
         await sendTelegramCard(chat, message);
