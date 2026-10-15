@@ -119,6 +119,15 @@ describe("stream messages in Telegram", () => {
       expect(chats).toHaveLength(2);
     });
 
+    it("does not reach a chat twice through its second address on a retry", async () => {
+      // Two buyers' addresses, one chat; the first run recorded only the first address.
+      db.tables.customers!.find((c) => c.id === "c-mail")!.tg_id = "111";
+      db.tables.events = [{ type: "lifecycle_tg_sent", order_ref: "stream-tg:tomorrow:2026-11-01:chat@x.com" }];
+      const run = await runStreamTelegram(new Date("2026-10-31T06:00:00.000Z"));
+      expect(chats.map((c) => c.chat)).toEqual(["333"]);
+      expect(run.tomorrow.sent).toBe(1);
+    });
+
     it("on day one, writes only to the buyer who has not opened the course", async () => {
       const run = await runStreamTelegram(new Date("2026-11-01T06:00:00.000Z"));
       expect(run.day1.sent).toBe(1);

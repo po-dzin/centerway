@@ -97,7 +97,9 @@ export async function runStreamTelegram(now = new Date()): Promise<Record<Stream
     const done = await sentBefore(audience.map(refOf));
     const result: StreamTelegramResult = { candidates: audience.length, sent: 0, skipped: 0, failed: 0 };
     // One message per chat: two addresses linked to one chat must not hear it twice.
-    const chats = new Set<string>();
+    // A chat already messaged under any of its addresses counts as messaged,
+    // so a retry does not reach it again through the other address.
+    const chats = new Set(audience.filter((r) => done.has(refOf(r))).map((r) => r.tgId as string));
 
     for (const recipient of audience) {
       const ref = refOf(recipient);

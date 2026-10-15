@@ -288,8 +288,13 @@ export async function runUnstartedReminders(
         continue;
       }
 
+      // A group bought ahead counts its nudges from the start, not the purchase:
+      // otherwise both are overdue on the first day after the start and go out
+      // on two mornings in a row.
+      const purchasedAt = new Date(order.created_at ?? now.toISOString());
+      const streamStart = cohortStartsOn ? new Date(`${cohortStartsOn}T00:00:00Z`) : null;
       const decision = decideUnstartedReminder(course, {
-        purchasedAt: new Date(order.created_at ?? now.toISOString()),
+        purchasedAt: streamStart && streamStart > purchasedAt ? streamStart : purchasedAt,
         timeZone: resolveTimeZone(timeZoneByUser.get(authUserId) ?? undefined),
         now,
         sentNudgeNumbers: sentByOrder.get(orderRef) ?? [],

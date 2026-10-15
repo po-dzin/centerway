@@ -122,7 +122,7 @@ export async function streamChatFor(db: Db, tgId: string): Promise<StreamOfferCh
 
   const { data: offers } = await db
     .from("experience_offers")
-    .select("id, cohort_starts_on, stream_chat_id")
+    .select("id, experience_id, cohort_starts_on, stream_chat_id")
     .eq("format", "group")
     .not("stream_chat_id", "is", null)
     .not("cohort_starts_on", "is", null);
@@ -145,19 +145,29 @@ export async function streamChatFor(db: Db, tgId: string): Promise<StreamOfferCh
     authIds.length
       ? db
           .from("lms_enrollments")
-          .select("cohort_starts_on")
+          .select("course_id, cohort_starts_on")
           .in("auth_user_id", authIds)
           .eq("status", "active")
           .not("cohort_starts_on", "is", null)
-      : Promise.resolve({ data: [] as Array<{ cohort_starts_on: string | null }> }),
+      : Promise.resolve({ data: [] as Array<{ course_id: string; cohort_starts_on: string | null }> }),
   ]);
 
+  // A seat opens the chat of ITS program's stream on that date, never another
+  // program's stream that happens to start the same day.
+  const seatCourseIds = [...new Set((seats ?? []).map((row) => row.course_id))];
+  const { data: courses } = seatCourseIds.length
+    ? await db.from("lms_courses").select("id, experience_id").in("id", seatCourseIds)
+    : { data: [] as Array<{ id: string; experience_id: string | null }> };
+  const experienceOfCourse = new Map((courses ?? []).map((row) => [row.id, row.experience_id]));
+  const seatKeys = new Set(
+    (seats ?? []).map((row) => `${experienceOfCourse.get(row.course_id) ?? ""}|${row.cohort_starts_on}`),
+  );
+
   const bought = new Set((orders ?? []).map((row) => row.offer_id as string));
-  const seatDates = new Set((seats ?? []).map((row) => row.cohort_starts_on as string));
   const candidates: StreamOfferChat[] = [];
   for (const offer of offers) {
     const date = offer.cohort_starts_on as string;
-    const viaSeat = seatDates.has(date);
+    const viaSeat = Boolean(offer.experience_id) && seatKeys.has(`${offer.experience_id}|${date}`);
     if (!viaSeat && !bought.has(offer.id)) continue;
     if (!viaSeat) {
       const started = await startedEarlier(date);
@@ -166,13 +176,6 @@ export async function streamChatFor(db: Db, tgId: string): Promise<StreamOfferCh
     candidates.push({ offerId: offer.id, chatId: offer.stream_chat_id as number, cohortStartsOn: date });
   }
   return pickStream(candidates);
-}
-
-/** The stream chat of one order, when its format has one. */
-export async function streamChatOfOffer(db: Db, offerId: string | null): Promise<number | null> {
-  if (!offerId) return null;
-  const { data } = await db.from("experience_offers").select("format, stream_chat_id").eq("id", offerId).maybeSingle();
-  return data?.format === "group" && data.stream_chat_id ? Number(data.stream_chat_id) : null;
 }
 
 /**

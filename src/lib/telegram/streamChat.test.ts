@@ -25,7 +25,7 @@ vi.mock("./tg", () => ({
 const started = vi.hoisted(() => ({ emails: new Set<string>() }));
 vi.mock("@/lib/email/lifecycleRuns", () => ({ startedEarlier: async () => started.emails }));
 
-const { channelButton, connectStreamChat, personalInvite, pickStream, statusIsIn, streamChatFor, streamChatOfOffer } =
+const { channelButton, connectStreamChat, personalInvite, pickStream, statusIsIn, streamChatFor } =
   await import("./streamChat");
 const { inGroup, isConnectCommand } = await import("./tgSupportBot");
 
@@ -39,9 +39,32 @@ beforeEach(() => {
   db.tables = {
     customers: [{ id: "cu-1", email: "Olena@Example.com", auth_user_id: "auth-1", tg_id: "77" }],
     experience_offers: [
-      { id: "o-old", format: "group", cohort_starts_on: "2026-09-01", stream_chat_id: -1001 },
-      { id: "o-new", format: "group", cohort_starts_on: "2026-11-01", stream_chat_id: -1002 },
-      { id: "o-self", format: "self", cohort_starts_on: null, stream_chat_id: null },
+      {
+        id: "o-old",
+        experience_id: "exp-way21",
+        format: "group",
+        cohort_starts_on: "2026-09-01",
+        stream_chat_id: -1001,
+      },
+      {
+        id: "o-new",
+        experience_id: "exp-way21",
+        format: "group",
+        cohort_starts_on: "2026-11-01",
+        stream_chat_id: -1002,
+      },
+      {
+        id: "o-yoga",
+        experience_id: "exp-yoga",
+        format: "group",
+        cohort_starts_on: "2026-11-01",
+        stream_chat_id: -1009,
+      },
+      { id: "o-self", experience_id: "exp-way21", format: "self", cohort_starts_on: null, stream_chat_id: null },
+    ],
+    lms_courses: [
+      { id: "c-way21", experience_id: "exp-way21" },
+      { id: "c-yoga", experience_id: "exp-yoga" },
     ],
     orders: [],
     lms_enrollments: [],
@@ -119,15 +142,22 @@ describe("which stream's chat", () => {
   it("finds the chat through a granted seat, and ignores unpaid orders and strangers", async () => {
     db.tables.orders = [{ id: "ord", customer_id: "cu-1", offer_id: "o-old", status: "pending" }];
     expect(await streamChatFor(db as never, "77")).toBeNull();
-    db.tables.lms_enrollments = [{ auth_user_id: "auth-1", status: "active", cohort_starts_on: "2026-09-01" }];
+    db.tables.lms_enrollments = [
+      { auth_user_id: "auth-1", course_id: "c-way21", status: "active", cohort_starts_on: "2026-09-01" },
+    ];
     expect(await streamChatFor(db as never, "77")).toMatchObject({ chatId: -1001 });
     expect(await streamChatFor(db as never, "999")).toBeNull();
   });
 
-  it("gives an order's chat only for a group format", async () => {
-    expect(await streamChatOfOffer(db as never, "o-new")).toBe(-1002);
-    expect(await streamChatOfOffer(db as never, "o-self")).toBeNull();
-    expect(await streamChatOfOffer(db as never, null)).toBeNull();
+  it("opens a seat's own program's stream, never another program starting the same day", async () => {
+    db.tables.lms_enrollments = [
+      { auth_user_id: "auth-1", course_id: "c-yoga", status: "active", cohort_starts_on: "2026-11-01" },
+    ];
+    expect(await streamChatFor(db as never, "77")).toEqual({
+      offerId: "o-yoga",
+      chatId: -1009,
+      cohortStartsOn: "2026-11-01",
+    });
   });
 });
 

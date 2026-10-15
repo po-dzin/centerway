@@ -34,7 +34,7 @@ import { verifyDoshaResultToken } from "@/lib/platform/doshaTelegramLink";
 import { verifyOrderTelegramToken } from "@/lib/platform/orderTelegramLink";
 import { kyivDate } from "@/lib/email/lifecycleRuns";
 import { orderLinkedHtml } from "./orderLinkCopy";
-import { channelButton, connectStreamChat, personalInvite, streamChatFor, streamChatOfOffer } from "./streamChat";
+import { channelButton, connectStreamChat, personalInvite, streamChatFor } from "./streamChat";
 import { classifyDosha, type DoshaResultType } from "@/lib/dosha/doshaTest";
 import { buildDoshaResultHtml, RESULT_COPY } from "@/lib/dosha/doshaResultCopy";
 import { DOSHA_PRIMARY_EXIT, doshaExitHref } from "@/lib/dosha/doshaRouting";
@@ -797,11 +797,14 @@ async function tryLinkOrder(db: Supabase, chatId: number, user: TelegramUser, pa
   const { programTitle, cohortStartsOn } = await describeOrderOffer(db, order);
 
   // The stream's group (a personal link) and the channel, when they are not
-  // joined yet: one message, one set of doors.
-  const streamChat = await streamChatOfOffer(db, order.offer_id);
-  const invite = streamChat
-    ? await personalInvite({ chatId: streamChat, userId: user.id, name: order.order_ref })
-    : null;
+  // joined yet: one message, one set of doors. The chat comes through the same
+  // rule as «Чат потоку» (streamChatFor): a group offer moved to its next date
+  // must not let last stream's receipt link into the new stream's group.
+  const stream = await streamChatFor(db, tgId);
+  const invite =
+    stream && stream.offerId === order.offer_id
+      ? await personalInvite({ chatId: stream.chatId, userId: user.id, name: order.order_ref })
+      : null;
   const channel = await channelButton(user.id);
   const rows: InlineKeyboardMarkup["inline_keyboard"] = [[{ text: botCopy.orderLinkedButton, url: CABINET_URL }]];
   if (invite && "url" in invite) rows.push([{ text: botCopy.streamChatButton, url: invite.url }]);
