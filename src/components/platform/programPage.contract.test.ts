@@ -95,3 +95,19 @@ describe("floating actions — no plate under them (G, 2026-10-15)", () => {
     expect(button).toContain("backdrop-filter: var(--cw-mat-filter)");
   });
 });
+
+describe("program page — the stages line (G, 2026-10-15)", () => {
+  it("shows the program's stages as the shared step line, and keeps the list without them", () => {
+    const page = read("ProgramDetailPage.tsx");
+    expect(page).toContain("programStages(course)");
+    expect(page).toMatch(/stages \?\s*\(\s*<StepLine/);
+    expect(page).toContain("<PlatformOfferMetaList items={formatMeta} />");
+  });
+
+  it("draws the step line in the route's terms: 2px thread, 6 on and 5 off, gold behind", () => {
+    const css = read("StepLine.module.css");
+    expect(css).toMatch(/inline-size:\s*2px/);
+    expect(css).toMatch(/repeating-linear-gradient\(to bottom, var\(--step-thread\) 0 6px, transparent 6px 11px\)/);
+    expect(css).toMatch(/\[data-state="done"\]::after\s*\{\s*--step-thread:\s*var\(--cw-platform-accent\)/);
+  });
+});

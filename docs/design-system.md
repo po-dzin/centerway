@@ -144,6 +144,14 @@ cannot be sized (G, 2026-10-15 — at 1.5px between two large panels the dashes
 read as dust). It stands exactly between the two blocks, the same gap above the
 rings and below the labels, and its labels stay on one line.
 
+The same terms run vertically in `StepLine` (`src/components/platform/StepLine.tsx`,
+2026-10-15): a ring per step, the 2px 6/5 thread between rings, done outlined in
+gold with a check, current filled, ahead grey. One component for every vertical
+walk — a program's stages in «Як побудовано», a stream's days in the cabinet, the
+steps after a purchase — and at most one action, on the current step. On a card
+its outline is `--cw-mat-stroke-control`: the seam's inner stroke vanished against
+the card surface on the night palette.
+
 The dosha **score** bars stay solid — they are proportions of a whole, not
 countable steps.
 

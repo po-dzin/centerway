@@ -15,6 +15,8 @@ import { OfferAccessProvider } from "@/components/platform/OfferAccess";
 import { OfferHeroActions, OfferHeroCommitment } from "@/components/platform/OfferHeroState";
 import { OfferAuthor, OfferBento } from "@/components/platform/OfferFacets";
 import { OfferSeam, type RouteStep } from "@/components/platform/OfferSeam";
+import { StepLine } from "@/components/platform/StepLine";
+import { programStages } from "@/lib/platform/programStages";
 import { OfferStickyBar } from "@/components/platform/OfferStickyBar";
 import { OfferSupport } from "@/components/platform/OfferSupportState";
 import offerPanelStyles from "@/components/platform/PlatformOfferStyles";
@@ -156,6 +158,26 @@ export function ProgramDetailPage({
       : []),
     "Проходити можна з телефона і з компʼютера",
   ];
+
+  /* THE STAGES, WHEN THERE ARE STAGES (G, 2026-10-15). A program walked in
+     phases shows them as a line — what comes first, what follows, which days —
+     instead of four facts about its format. The facts the line does not carry
+     sit under it as one quiet row, after the rhythm sentence — the day ranges
+     say which days, not whether a learner may look ahead or must wait for the
+     start. One module, or none, keeps the list. Nobody is walking
+     the program on this page, so every step is `next`. */
+  const stages = course ? programStages(course) : null;
+  const stageReference = course ? referenceLessons(course) : 0;
+  const stageFacts = [
+    ...(lessonLabel !== program.duration ? [lessonLabel] : []),
+    ...(stageReference > 0
+      ? [
+          `${stageReference} ${plural(stageReference, "довідковий матеріал", "довідкові матеріали", "довідкових матеріалів")}`,
+        ]
+      : []),
+    "з телефона і з компʼютера",
+  ];
+  const stageFootnote = course ? `${rhythmLine(course)}. ${stageFacts.join(" · ")}` : null;
 
   /* WHAT THE PANEL IS TITLED, now that the duration is the badge's.
      A course is either walked a day at a time or read at the reader's own
@@ -319,7 +341,21 @@ export function ProgramDetailPage({
         detailRight={{
           label: "Як побудовано",
           title: rhythmTitle,
-          body: <PlatformOfferMetaList items={formatMeta} />,
+          body: stages ? (
+            <StepLine
+              steps={stages.map((stage, index) => ({
+                id: stage.id,
+                state: "next",
+                marker: index + 1,
+                kicker: stage.kicker,
+                title: stage.title,
+                description: stage.summary,
+              }))}
+              footnote={stageFootnote}
+            />
+          ) : (
+            <PlatformOfferMetaList items={formatMeta} />
+          ),
         }}
         beforeSupport={
           <>
