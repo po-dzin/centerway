@@ -14,7 +14,7 @@ export type ShareSnapshot = { pct: number; source: ShareSource };
  * THE AUTHOR'S PART OF AN INVOICE, decided before the buyer pays (2026-10-03).
  *
  * The same rule the database applies when the order becomes paid
- * (`orders_accrue_shares`, migration 20261014160000): a buyer who came through
+ * (`orders_accrue_shares`, migration 20261015200000): a buyer who came through
  * one of the author's own links (`author_links`, matched on `?ref`) earns the
  * author's `own_share_pct`; everyone else earns the platform-traffic share —
  * the offer's own `share_pct` first, the author's `default_share_pct` second.
