@@ -23,8 +23,18 @@
  * which also works when the mail is on another device entirely.
  */
 
-/** How many digits Supabase's `{{ .Token }}` carries. */
-export const OTP_CODE_LENGTH = 6;
+/**
+ * How many digits Supabase's `{{ .Token }}` carries.
+ *
+ * Eight is the project setting (Authentication → Email → Email OTP Length) and
+ * the default the form is built for (G, 2026-10-15). The length is not
+ * something the client can read, and when the two disagreed the extra digits
+ * were cut off and every code came back as expired; so a shorter code down to
+ * Supabase's minimum of six is still accepted and the server judges it.
+ */
+export const OTP_CODE_LENGTH = 8;
+export const OTP_CODE_MIN_LENGTH = 6;
+export const OTP_CODE_MAX_LENGTH = OTP_CODE_LENGTH;
 
 /**
  * Trim and lowercase, or reject.
@@ -59,11 +69,22 @@ export function normalizeSignInEmail(raw: string): string | null {
  * server regardless.
  */
 export function normalizeOtpCode(raw: string): string {
-  return raw.replace(/\D/g, "").slice(0, OTP_CODE_LENGTH);
+  return raw.replace(/\D/g, "").slice(0, OTP_CODE_MAX_LENGTH);
 }
 
 export function isCompleteOtpCode(code: string): boolean {
-  return code.length === OTP_CODE_LENGTH;
+  return code.length >= OTP_CODE_MIN_LENGTH && code.length <= OTP_CODE_MAX_LENGTH;
+}
+
+/**
+ * Submit without a tap when the code is plainly whole: the eighth digit, or a
+ * complete code arriving in one change (a paste or the keyboard's one-time-code
+ * suggestion). Six typed digits may be the start of an eight-digit code, so a
+ * shorter code typed by hand waits for the button.
+ */
+export function shouldSubmitCode(previous: string, next: string): boolean {
+  if (!isCompleteOtpCode(next)) return false;
+  return next.length === OTP_CODE_LENGTH || next.length - previous.length > 1;
 }
 
 export type SignInFailure =

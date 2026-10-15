@@ -5,7 +5,7 @@
  * selection, scroll depth, deferred video) and bind checkout inside it. consult
  * and herbs are single-offer pages with none of that machinery, so they get this
  * instead of a copy of a 580-line file: one delegated click handler that turns
- * any `[data-cw-checkout]` element into a WayForPay redirect.
+ * any `[data-cw-checkout]` element into a step to the checkout page.
  *
  * Contract, read off the clicked element:
  *   data-cw-checkout      — presence marks the trigger (value unused)
@@ -25,7 +25,9 @@
   if (typeof window === "undefined" || typeof document === "undefined") return;
 
   var API_BASE = window.CW_API_BASE || window.location.origin;
-  var PAY_ENDPOINT = API_BASE + "/api/pay/start";
+  // The platform's checkout page (order summary + the address for access); its
+  // form starts the payment. A funnel host forwards /pay/… to the platform.
+  var PAY_ENDPOINT = API_BASE + "/pay/checkout";
   var CURRENCY = "UAH";
   var REDIRECT_RESET_MS = 5000;
   var isRedirecting = false;
@@ -108,38 +110,28 @@
     // than a dead button, which shows up immediately in QA.
     if (!selection.product) return;
 
-    var startPayment = function (email) {
-      isRedirecting = true;
-      setLoading(true);
+    isRedirecting = true;
+    setLoading(true);
 
-      var attrib = collectAttrib();
-      var eventId = makeEventId("checkout_" + selection.product);
+    var attrib = collectAttrib();
+    var eventId = makeEventId("checkout_" + selection.product);
 
-      if (typeof fbq === "function") {
-        var payload = { currency: CURRENCY };
-        if (selection.value > 0) payload.value = selection.value;
-        if (selection.contentName) payload.content_name = selection.contentName;
-        if (selection.offerId) payload.offer_id = selection.offerId;
-        Object.assign(payload, attrib);
-        fbq("track", "InitiateCheckout", payload, { eventID: eventId });
-      }
+    if (typeof fbq === "function") {
+      var payload = { currency: CURRENCY };
+      if (selection.value > 0) payload.value = selection.value;
+      if (selection.contentName) payload.content_name = selection.contentName;
+      if (selection.offerId) payload.offer_id = selection.offerId;
+      Object.assign(payload, attrib);
+      fbq("track", "InitiateCheckout", payload, { eventID: eventId });
+    }
 
-      // The address goes to /api/pay/start only, never into the pixel payload.
-      var payUrl = new URL(buildPayUrl(selection, attrib, eventId));
-      if (email) payUrl.searchParams.set("email", email);
-      window.location.assign(payUrl.toString());
+    window.location.assign(buildPayUrl(selection, attrib, eventId));
 
-      // If the browser blocks or defers the navigation the page stays usable
-      // instead of leaving every CTA permanently disabled.
-      window.setTimeout(function () {
-        isRedirecting = false;
-        setLoading(false);
-      }, REDIRECT_RESET_MS);
-    };
-
-    // Ask where to send access first (email-gate.js); without the script the
-    // server falls back to the sign-in door.
-    if (typeof window.CW_askEmail === "function") window.CW_askEmail(startPayment);
-    else startPayment("");
+    // If the browser blocks or defers the navigation the page stays usable
+    // instead of leaving every CTA permanently disabled.
+    window.setTimeout(function () {
+      isRedirecting = false;
+      setLoading(false);
+    }, REDIRECT_RESET_MS);
   });
 })();

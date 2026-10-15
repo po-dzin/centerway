@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const listCourseFormats = vi.fn();
 const listIncludablePrograms = vi.fn();
+const listStreamChats = vi.fn();
 const createFormat = vi.fn();
 const updateFormat = vi.fn();
 const deleteFormat = vi.fn();
@@ -53,7 +54,15 @@ vi.mock("@/lib/experiences/formatAuthoring", () => {
       super(code);
     }
   }
-  return { FormatError, listCourseFormats, listIncludablePrograms, createFormat, updateFormat, deleteFormat };
+  return {
+    FormatError,
+    listCourseFormats,
+    listIncludablePrograms,
+    listStreamChats,
+    createFormat,
+    updateFormat,
+    deleteFormat,
+  };
 });
 
 const { GET, POST, PATCH, DELETE } = await import("./route");
@@ -103,7 +112,14 @@ describe("access", () => {
     grant = null;
     const res = await call();
     expect(res.status).toBe(404);
-    for (const fn of [listCourseFormats, listIncludablePrograms, createFormat, updateFormat, deleteFormat]) {
+    for (const fn of [
+      listCourseFormats,
+      listIncludablePrograms,
+      listStreamChats,
+      createFormat,
+      updateFormat,
+      deleteFormat,
+    ]) {
       expect(fn).not.toHaveBeenCalled();
     }
     expect(revalidateTag).not.toHaveBeenCalled();
@@ -135,9 +151,12 @@ describe("GET", () => {
     expect(await res.json()).toEqual({
       formats: [{ code: "course:way21" }],
       includable: [{ slug: "reset-day" }],
+      streamChats: [],
       isOwner: false,
       canSetPrice: false,
     });
+    // The stream chats are the owner's; an author's read never touches them.
+    expect(listStreamChats).not.toHaveBeenCalled();
     expect(listCourseFormats).toHaveBeenCalledWith("c-way21");
     expect(listIncludablePrograms).toHaveBeenCalledWith({
       courseId: "c-way21",
@@ -150,8 +169,13 @@ describe("GET", () => {
     grant = owner;
     listCourseFormats.mockResolvedValue([]);
     listIncludablePrograms.mockResolvedValue([]);
+    listStreamChats.mockResolvedValue([{ chatId: -1001, title: "Потік", botCanInvite: true, usedBy: [] }]);
     const res = await GET(request("GET"), params);
-    expect(await res.json()).toMatchObject({ isOwner: true, canSetPrice: true });
+    expect(await res.json()).toMatchObject({
+      isOwner: true,
+      canSetPrice: true,
+      streamChats: [{ chatId: -1001, title: "Потік", botCanInvite: true, usedBy: [] }],
+    });
     expect(listIncludablePrograms).toHaveBeenCalledWith({ courseId: "c-way21", authUserId: "u-admin", isAdmin: true });
   });
 

@@ -18,14 +18,14 @@
  * anything else. There is no hand-written price to fall back to any more.
  */
 
-import { formatPrice, type PayableOffer, type PayableProductCode } from "@/lib/products";
+import { CHECKOUT_PAGE_PATH, formatPrice, type PayableOffer, type PayableProductCode } from "@/lib/products";
 import type { CourseOffer } from "@/lib/platform/offers";
 
 export type OfferCommerce =
   | {
       mode: "checkout";
       productCode: PayableProductCode;
-      /** Site-relative; a plain link, because /api/pay/start redirects on GET. */
+      /** Site-relative: the checkout page, whose form starts the payment. */
       checkoutHref: string;
       /** Already formatted — a checkout without a quoted price is not offered. */
       price: string;
@@ -75,9 +75,9 @@ function leadCode(slug: string): string {
   return slug;
 }
 
-/** The site-relative link that starts a checkout for one payable code. */
+/** The site-relative link to the checkout page for one payable code. */
 function checkoutHref(productCode: PayableProductCode, slug: string): string {
-  return `/api/pay/start?product=${encodeURIComponent(productCode)}&cta_place=${encodeURIComponent(
+  return `${CHECKOUT_PAGE_PATH}?product=${encodeURIComponent(productCode)}&cta_place=${encodeURIComponent(
     `${slug}_platform_offer`,
   )}&source=platform_offer`;
 }

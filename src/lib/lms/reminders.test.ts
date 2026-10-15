@@ -201,6 +201,50 @@ describe("runUnstartedReminders — a bundle is one purchase, not three", () => 
   });
 });
 
+describe("runUnstartedReminders — a group stream counts from its own start", () => {
+  function seedStream(startsOn: string) {
+    seed({ orders: [{ ...order("ord-group", "way21-group"), offer_id: "offer-way21-group" }] });
+    db.tables.experience_offers = db.tables.experience_offers!.map((offer) =>
+      offer.id === "offer-way21-group" ? { ...offer, format: "group", cohort_starts_on: startsOn } : offer,
+    );
+  }
+
+  it("stays quiet until the stream has started — its own «завтра / сьогодні» speak first", async () => {
+    seedStream("2026-09-26");
+    const result = await runUnstartedReminders(500, NOW, "single-daily-run");
+    expect(result).toMatchObject({ sent: 0, skipped: { stream_not_started: 1 } });
+    expect(notifyLearner).not.toHaveBeenCalled();
+  });
+
+  it("once the stream runs, says so instead of «відлік з першого відкриття»", async () => {
+    seedStream("2026-09-24");
+    await runUnstartedReminders(500, NOW, "single-daily-run");
+    const text = (notifyLearner.mock.calls[0]?.[0] as { text: string }).text;
+    expect(text).toContain("Потік «way21» іде з 24 вересня");
+    expect(text).not.toContain("першого відкриття");
+  });
+
+  it("counts the nudges from the start for a group bought ahead, not from the purchase", async () => {
+    // Bought 01.09, started 25.09, the first nudge went out 26.09. Counted from
+    // the purchase the second would be long overdue and follow the next
+    // morning; counted from the start it waits for the stream's day 7.
+    seed({
+      orders: [
+        { ...order("ord-group", "way21-group", "cus-1", "2026-09-01T09:00:00.000Z"), offer_id: "offer-way21-group" },
+      ],
+    });
+    db.tables.experience_offers = db.tables.experience_offers!.map((offer) =>
+      offer.id === "offer-way21-group" ? { ...offer, format: "group", cohort_starts_on: "2026-09-25" } : offer,
+    );
+    db.tables.lms_unstarted_reminders = [
+      { order_ref: "ord-group", course_id: "course-way21", auth_user_id: "auth-1", nudge_number: 1 },
+    ];
+    const result = await runUnstartedReminders(500, new Date("2026-09-27T12:00:00.000Z"), "single-daily-run");
+    expect(result.sent).toBe(0);
+    expect(notifyLearner).not.toHaveBeenCalled();
+  });
+});
+
 describe("runUnstartedReminders — the path", () => {
   it("skips a learner who already opened the course, and one who never signed in", async () => {
     seed({

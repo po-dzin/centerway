@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
-import { formatPrice } from "@/lib/products";
+import { CHECKOUT_PAGE_PATH, formatPrice } from "@/lib/products";
 import { bonusKindLabel } from "@/lib/platform/catalogVocabulary";
 import type { ProgramFormat } from "@/lib/experiences/formats";
 import {
@@ -62,7 +62,7 @@ function earlyLine(format: ProgramFormat): string | null {
 }
 
 function formatCheckoutHref(code: string, programSlug: string): string {
-  return `/api/pay/start?product=${encodeURIComponent(code)}&cta_place=${encodeURIComponent(
+  return `${CHECKOUT_PAGE_PATH}?product=${encodeURIComponent(code)}&cta_place=${encodeURIComponent(
     `${programSlug}_format_${code}`,
   )}&source=platform_offer`;
 }

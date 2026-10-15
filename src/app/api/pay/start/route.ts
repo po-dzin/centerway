@@ -7,8 +7,9 @@ import { loadPayableOffer } from "@/lib/platform/offers";
 import { createPaymentInvoice, resolveLocaleFromRequest } from "@/lib/payments/paymentStart";
 import { readAttribution } from "@/lib/referral/attribution";
 import { userFromCookies } from "@/lib/auth/serverSession";
+import { CHECKOUT_PAGE_PATH } from "@/lib/products";
 import { normalizeCustomerEmail } from "@/lib/platform/customerIdentity";
-import { PROFILE_PATH_PREFIX, personalUrl } from "@/lib/surfaces/catalog";
+import { readBuyerDetails } from "@/lib/platform/buyerContact";
 import { AGENT_COOKIE, isAgentRequest } from "@/lib/tracking/agentTraffic";
 
 export const runtime = "nodejs";
@@ -41,26 +42,42 @@ export async function GET(req: NextRequest) {
      Access is matched by email and a gateway may not return the payer's
      address at all, so the order is bound to one BEFORE the buyer leaves.
      Two sources, in this order:
-     1. `?email=` typed on a landing's «Куди надіслати доступ?» step
-        (email-gate.js). It is what that step promised the buyer, so it is
-        honoured even for a signed-in buyer (a gift, a stale remembered
-        address). NOT verified, which the step's hint says;
+     1. `?email=` typed on the checkout page (`/pay/checkout`). It is what that
+        page promised the buyer, so it is honoured even for a signed-in buyer
+        (a gift). NOT verified, which the page's note says;
      2. the signed-in session — a verified address; the session cookies are
-        shared across `.centerway.net.ua`, so the platform's own pay links,
-        which carry no `?email=`, work from the cabinet too.
-     With neither, a browser navigation is sent to the cabinet's own sign-in
-     door (Google, last account, email: the one every other sign-in uses) and
-     comes back to this very address; `format=json` callers get a 401 naming it. */
+        shared across `.centerway.net.ua`, so the checkout page sends no
+        address for a signed-in buyer and this reads it here.
+     With neither — an old link, a bookmark, a landing still cached from before
+     the checkout page — a browser is sent to that page with the same query,
+     and `format=json` callers get a 401 naming it.
+
+     A NAME AND A PHONE OR TELEGRAM ARE ASKED TOO, in one field (owner,
+     2026-10-14), and the same
+     way: without them the buyer goes back to the page, which shows what was
+     already typed (`email` included) so nothing is typed twice. They are the
+     buyer's own claim, unverified, and are kept on the order (`orders.meta`);
+     the customer's row takes them only where nobody else's history is at stake
+     (`createPaymentInvoice`). */
   const typedEmail = typedBuyerEmail(url.searchParams.get("email"));
   const user = typedEmail ? null : await userFromCookies();
   const sessionEmail = user?.email_confirmed_at ? user.email?.trim().toLowerCase() || null : null;
   const buyerEmail = typedEmail ?? sessionEmail;
-  if (!buyerEmail) {
-    const signInUrl = personalUrl(`${PROFILE_PATH_PREFIX}?next=${encodeURIComponent(req.url)}`);
+  const details = readBuyerDetails({
+    name: url.searchParams.get("name"),
+    contact: url.searchParams.get("contact"),
+  });
+  if (!buyerEmail || !details) {
+    const checkout = new URL(CHECKOUT_PAGE_PATH, req.url);
+    url.searchParams.forEach((value, key) => checkout.searchParams.append(key, value));
     if (url.searchParams.get("format") === "json") {
-      return NextResponse.json({ ok: false, error: "sign_in_required", signInUrl }, { status: 401 });
+      checkout.searchParams.delete("format");
+      return NextResponse.json(
+        { ok: false, error: buyerEmail ? "contact_required" : "address_required", checkoutUrl: checkout.toString() },
+        { status: 401 },
+      );
     }
-    return NextResponse.redirect(signInUrl, 302);
+    return NextResponse.redirect(checkout, 302);
   }
   const product = offer.code;
   const resolvedOffer = product === IREM_OFFER_CODE ? await resolveIremLandingOffer(url.searchParams) : null;
@@ -107,7 +124,7 @@ export async function GET(req: NextRequest) {
       (forwardedIp || null) ?? req.headers.get("cf-connecting-ip") ?? req.headers.get("x-real-ip") ?? undefined,
     client_ua: req.headers.get("user-agent") ?? undefined,
     page_url: req.headers.get("referer") ?? undefined,
-    buyer: { email: buyerEmail },
+    buyer: { email: buyerEmail, verified: !typedEmail, ...details },
     staff: req.cookies.get("cw_staff")?.value === "1",
     agent: isAgentRequest(req.headers, req.cookies.get(AGENT_COOKIE)?.value),
   });

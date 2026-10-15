@@ -25,14 +25,17 @@ const buttonUrl = (index = 0) => sent[index]!.card.replyMarkup?.inline_keyboard[
  */
 vi.mock("@/lib/auth/adminClient", () => ({
   adminClient: () => ({
-    from: (table: string) => ({
-      select: () => ({
-        eq: () => ({
-          maybeSingle: async () =>
-            table === "platform_users" ? { data: { notification_channels: ["telegram"] } } : { data: { tg_id: "555" } },
-        }),
-      }),
-    }),
+    from: (table: string) => {
+      const query = {
+        select: () => query,
+        eq: () => query,
+        not: () => query,
+        limit: () => query,
+        maybeSingle: async () =>
+          table === "platform_users" ? { data: { notification_channels: ["telegram"] } } : { data: { tg_id: "555" } },
+      };
+      return query;
+    },
   }),
 }));
 

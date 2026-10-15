@@ -1,0 +1,218 @@
+/* The checkout page (`CheckoutScreen`): what is bought beside where access goes.
+   Nothing here names a colour, a radius or a shadow of its own — both halves
+   wear the platform card's raised material, and the controls compose the
+   platform's button roles. */
+
+/* Two columns from the width where both halves still hold a comfortable
+   measure; one column below it, summary first, so a phone reads the order
+   before the field. */
+.layout {
+  display: grid;
+  gap: var(--cw-space-lg);
+  width: min(100%, 60rem);
+  margin-inline: auto;
+}
+
+/* ONE HEIGHT ON A DESKTOP (owner, 2026-10-14). Two cards of different
+   heights side by side read as two unrelated blocks; stretched, they read as
+   one order. The summary keeps its sum at its foot,
+   so the extra height opens between content and foot, never under it. */
+@media (min-width: 861px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .back {
+    grid-column: 1 / -1;
+  }
+}
+
+.back {
+  composes: text from "./PlatformButtons.module.css";
+  composes: hug from "./PlatformButtons.module.css";
+  justify-self: start;
+  text-decoration: none;
+}
+
+.back::before {
+  content: "←";
+  margin-inline-end: var(--cw-space-2xs);
+}
+
+/* THE CARD'S OWN MATERIAL, SHADOW INCLUDED (owner, 2026-10-14). The summary
+   was the sunk material with no shadow, and on the warm canvas it all but
+   dissolved into the page. It is a card like the panel beside it: the same
+   surface, the same soft shadow (`PlatformShell .card`). */
+.summary {
+  /* A column, so the sum can take `margin-top: auto` and sit at the foot. */
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.9rem, 2.4vw, 1.15rem);
+  min-width: 0;
+  padding: clamp(1.15rem, 3vw, 2rem);
+  border-radius: var(--cw-card-radius);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.product {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--cw-space-md);
+}
+
+.cover {
+  width: clamp(4.5rem, 14vw, 6rem);
+  aspect-ratio: 1;
+  max-width: 100%;
+  border-radius: var(--cw-radius-sm);
+  object-fit: cover;
+}
+
+.productText {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+.productTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-title-size);
+  font-weight: 700;
+  line-height: var(--ds-type-title-line-height);
+  text-wrap: balance;
+}
+
+.productFormat {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+/* The system's fading rule above the sum, the same separator the outline and
+   the bento heads draw. */
+.total {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+  padding-top: var(--cw-space-md);
+  border-top: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
+}
+
+.totalLabel {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 700;
+}
+
+.formPanel {
+  padding: clamp(1.15rem, 3vw, 2rem);
+  /* Rows stay at the top (`align-content: start`, the panel's own): beside a
+     taller summary the spare height opens under the gateway line. */
+}
+
+/* The gateway line: one fact and the gateway's own mark, under the button. */
+.gateway {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cw-space-2xs);
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+.gateway b {
+  color: var(--cw-platform-text);
+}
+
+/* The gateway's mark at the text's cap height, so the line reads as one line
+   and the mark does not outshout the button above it. */
+.gatewayLogo {
+  display: block;
+  width: auto;
+  height: 0.8em;
+}
+
+.formTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-title-size);
+  font-weight: 700;
+  line-height: var(--ds-type-title-line-height);
+  text-wrap: balance;
+}
+
+.form {
+  composes: form from "./PlatformComponents.module.css";
+}
+
+.field {
+  composes: field from "./PlatformComponents.module.css";
+}
+
+.fieldNote,
+.fieldError {
+  margin: 0;
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+.fieldNote {
+  color: var(--cw-platform-muted);
+}
+
+.fieldError {
+  color: var(--cw-danger);
+}
+
+.field input[aria-invalid="true"] {
+  border-color: var(--cw-danger);
+}
+
+/* Signed in: the address the order goes to, said once, with the way to change
+   it beside it. */
+.account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cw-space-xs) var(--cw-space-md);
+}
+
+.accountLine {
+  margin: 0;
+  min-width: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line-height);
+  overflow-wrap: anywhere;
+}
+
+.accountLine b {
+  color: var(--cw-platform-text);
+}
+
+.quietAction {
+  composes: text from "./PlatformButtons.module.css";
+  composes: hug from "./PlatformButtons.module.css";
+}
+
+/* The page's one primary action, the same role and width as the offer page's
+   buy button. */
+.payAction {
+  composes: primary from "./PlatformButtons.module.css";
+  composes: fill from "./PlatformButtons.module.css";
+}

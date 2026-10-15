@@ -1,4 +1,5 @@
 import { plural } from "@/lib/plural";
+import { deliveryLine as deliveryLineFor, purchaseIncludes } from "@/lib/platform/purchaseIncludes";
 import type { OfferSurface } from "@/lib/platform/offerSurface";
 import {
   PlatformOfferMetaList,
@@ -107,28 +108,12 @@ export function ProgramDetailPage({
   const lessonCount = course ? course.modules.reduce((total, module) => total + module.lessons.length, 0) : 0;
   const isMiniCourse = program.surfaceType === "mini-course";
 
-  /* Where the thing you bought actually appears. Everything is delivered on the
-     platform now: since 2026-08-29 no bot issues a course, and the bots are
-     support and conversation only. A course opens in the library; a product
-     with no course behind it (the herbal blend) appears in the cabinet. */
-  const deliveryLine = course
-    ? isFree
-      ? "Курс відкриється у вашому кабінеті одразу після старту"
-      : "Курс відкриється у вашому кабінеті одразу після оплати"
-    : "Одразу після оплати замовлення зʼявиться у вашому кабінеті на платформі";
-
-  /* SENTENCE CASE THROUGHOUT (2026-09-11). These lines are list items, and
-     every other list on the page — what the reader gets, who it is for, what it
-     is made of — is written by the author in sentence case. Lowercase here made
-     the platform's own lines read as a footnote beside them. */
-  const includes = [
-    course
-      ? `${lessonCount} ${plural(lessonCount, "урок", "уроки", "уроків")} у ${course.modules.length} ${plural(course.modules.length, "модулі", "модулях", "модулях")}`
-      : `${program.duration} за структурою автора`,
-    deliveryLine,
-    isFree ? "Без оплати, підписки й автоплатежів" : "Разова оплата, без підписки і автоплатежів",
-    "Проходити можна з телефона і з компʼютера",
-  ];
+  /* Where the thing you bought actually appears, with the rest of what one
+     payment includes — shared with the checkout page (`purchaseIncludes`), so
+     the two cannot promise different things. The delivery line is also quoted
+     in the panel lead below. */
+  const deliveryLine = deliveryLineFor(Boolean(course), isFree);
+  const includes = purchaseIncludes({ course: course ?? null, duration: program.duration, isFree });
 
   /* ONE FACT, ONE PLACE (2026-09-08).
      Neither the duration nor the access promise is in here. Every fact this

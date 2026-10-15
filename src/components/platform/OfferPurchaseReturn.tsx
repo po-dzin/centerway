@@ -22,6 +22,7 @@
 
 import { PurchaseSignal } from "@/components/platform/PurchaseSignal";
 import { formatPrice } from "@/lib/products";
+import commerceStyles from "./PlatformOfferCommerce.module.css";
 import styles from "./PlatformOfferStyles";
 
 export type PurchaseReturn = {
@@ -33,7 +34,14 @@ export type PurchaseReturn = {
   currency: string;
 };
 
-export function OfferPurchaseReturn({ purchase }: { purchase: PurchaseReturn }) {
+export function OfferPurchaseReturn({
+  purchase,
+  telegramHref = null,
+}: {
+  purchase: PurchaseReturn;
+  /** The order's one-tap link to the bot; null once a chat is linked or the return is old. */
+  telegramHref?: string | null;
+}) {
   const receipt = [
     `Номер платежу: ${purchase.transactionId || purchase.orderRef}`,
     purchase.value ? formatPrice(purchase.value, purchase.currency) : null,
@@ -73,6 +81,28 @@ export function OfferPurchaseReturn({ purchase }: { purchase: PurchaseReturn }) 
             <li key={line}>{line}</li>
           ))}
         </ul>
+        {/* THE ONE TAP AFTER PAYING (owner, 2026-10-14). Reminders and «старт
+            завтра» reach a buyer only through a linked chat, and a minute after
+            paying is when a person is most willing to open the bot. The link
+            names the order, so it works before any sign-in. Secondary: the
+            page's filled button stays the course's own. */}
+        {telegramHref ? (
+          <>
+            <p className={styles.lead}>
+              Щоб не пропустити старт і уроки, підключіть Telegram — нагадування приходитимуть туди.
+            </p>
+            <div className={commerceStyles.statusActions}>
+              <a
+                className={commerceStyles.statusSecondaryAction}
+                href={telegramHref}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Отримувати нагадування в Telegram
+              </a>
+            </div>
+          </>
+        ) : null}
       </article>
     </section>
   );

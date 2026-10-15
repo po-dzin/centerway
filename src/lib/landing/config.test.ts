@@ -14,14 +14,3 @@ describe("managed landing script delivery", () => {
     });
   }
 });
-
-describe("landing shell scripts", () => {
-  it("loads the pre-payment email step before the checkout binder on every Next-rendered landing", async () => {
-    for (const product of ["short", "irem"] as const) {
-      const { scripts } = getLandingShellAssets(product);
-      const gate = scripts.indexOf("/shared/js/email-gate.js");
-      expect(gate).toBeGreaterThanOrEqual(0);
-      expect(gate).toBeLessThan(scripts.indexOf("/shared/js/funnel-common.js"));
-    }
-  });
-});

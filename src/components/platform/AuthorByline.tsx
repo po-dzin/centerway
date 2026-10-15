@@ -23,7 +23,7 @@ export function AuthorByline({ author }: { author: Author }) {
       <AuthorPortrait photo={author.photo} size="xs" fallback={author.name.trim().charAt(0).toUpperCase()} />
       <span className={styles.text}>
         <span className={styles.name}>
-          {author.listed ? <InteractionInkLabel variant="navigation">{author.name}</InteractionInkLabel> : author.name}
+          {author.listed ? <InteractionInkLabel variant="link">{author.name}</InteractionInkLabel> : author.name}
         </span>
         {author.role ? <span className={styles.role}>{author.role}</span> : null}
       </span>

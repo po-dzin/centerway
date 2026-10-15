@@ -117,7 +117,10 @@ describe("platform interaction layers", () => {
        other consumer of a row of ways out — the footer's link row, a nav, a set
        of tabs — is already marked out by being a row, and takes the navigation
        strength: invisible at rest, ink on hover. */
-    expect(css).toContain('.cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark');
+    /* Since 2026-09-28 the resting mark is the hairline link rule, not a drawn
+       stroke: the label's own text carries it, and no sprite is rendered. */
+    expect(css).toContain('.cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-text,\n  .cw-link-rule {');
+    expect(css).toContain("text-decoration-thickness: var(--cw-link-rule-width)");
 
     for (const [rel, allowed] of [
       // One survivor inside a sentence: «якщо ви знайшли помилку — …».

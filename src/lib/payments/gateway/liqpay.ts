@@ -165,6 +165,11 @@ function decodedFields(payload: Record<string, string>): Record<string, string> 
 export const liqpay: PaymentGateway = {
   id: "liqpay",
   label: "LiqPay",
+  /* The LiqPay wordmark, «LIQPAY»» in its green. liqpay.ua is not reachable
+     from where this was built; the file is the one bundled by the MIT
+     `fondy-checkout` package (dist/icons/svg/liqpay.svg), trimmed of an empty
+     frame and given a viewBox. */
+  logo: { src: "/cw/platform/payments/liqpay.svg", width: 54, height: 11 },
 
   get supportsSplit() {
     return Boolean(norm(process.env.LIQPAY_PLATFORM_RECEIVER_PUBLIC_KEY));

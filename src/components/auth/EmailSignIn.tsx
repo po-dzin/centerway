@@ -20,8 +20,10 @@ import { useOptionalToast } from "@/components/ToastProvider";
 import { supabaseClient } from "@/lib/supabaseClient";
 import {
   OTP_CODE_LENGTH,
+  OTP_CODE_MAX_LENGTH,
   classifySignInError,
   isCompleteOtpCode,
+  shouldSubmitCode,
   normalizeOtpCode,
   normalizeSignInEmail,
   type SignInFailure,
@@ -32,10 +34,10 @@ const RESEND_COOLDOWN_SECONDS = 60;
 
 const copy = {
   emailLabel: "Електронна пошта",
-  emailHint: "Та сама, що й під час оплати.",
   send: "Надіслати код",
   sending: "Надсилаємо...",
   codeLabel: `Код із листа (${OTP_CODE_LENGTH} цифр)`,
+  signIn: "Увійти",
   codeSentTo: (email: string) => `Код надіслано на ${email}. Немає листа — подивіться у спамі.`,
   verifying: "Перевіряємо...",
   resend: "Надіслати ще раз",
@@ -60,13 +62,14 @@ type Step = "email" | "code";
 export function EmailSignIn({
   onSignedIn,
   onBack,
-  hint = copy.emailHint,
+  hint,
 }: {
   onSignedIn?: () => void;
   /** The way out of this door and back to the choice of doors. */
   onBack?: () => void;
-  /** The line under the field. Defaults to the buyer's — the receipt is why
-   *  most people arrive here — and the staff door passes its own. */
+  /** A line under the field, when a door needs one (the staff door does).
+   *  The buyer's door has none: «Та сама, що й під час оплати» was an unclear
+   *  caption there (owner, 2026-10-14). */
   hint?: string;
 }) {
   const [step, setStep] = useState<Step>("email");
@@ -172,24 +175,29 @@ export function EmailSignIn({
     [email, onSignedIn, report],
   );
 
-  /* THE SIXTH DIGIT IS THE SUBMIT. There is nothing left to decide once the
-     code is complete — a button under it only asks the person to confirm that
-     they meant the digits they just typed, and on a phone that button sits
-     under the keyboard that typed them. This runs on the change that completes
-     the code, autofill included, and not from an effect watching the value:
-     the typing IS the submit event. */
+  /* THE EIGHTH DIGIT IS THE SUBMIT, and so is a paste or autofill that lands
+     the whole code at once. A shorter code typed by hand waits for the button
+     (or Enter): six typed digits may still be two short. */
   const onChangeCode = useCallback(
     (value: string) => {
       const next = normalizeOtpCode(value);
+      const previous = code;
       setCode(next);
-      if (!busy && isCompleteOtpCode(next)) void verify(next);
+      if (!busy && shouldSubmitCode(previous, next)) void verify(next);
     },
-    [busy, verify],
+    [busy, code, verify],
   );
 
   if (step === "code") {
     return (
-      <form className={styles.form} onSubmit={(event) => event.preventDefault()} noValidate>
+      <form
+        className={styles.form}
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!busy) void verify(code);
+        }}
+        noValidate
+      >
         <p className={styles.status}>{busy ? copy.verifying : copy.codeSentTo(email)}</p>
 
         <div className={styles.field}>
@@ -206,13 +214,17 @@ export function EmailSignIn({
             inputMode="numeric"
             autoComplete="one-time-code"
             enterKeyHint="go"
-            maxLength={OTP_CODE_LENGTH}
+            maxLength={OTP_CODE_MAX_LENGTH}
             value={code}
             disabled={busy}
             onChange={(event) => onChangeCode(event.target.value)}
             required
           />
         </div>
+
+        <button className={styles.primaryButton} type="submit" disabled={busy || !isCompleteOtpCode(code)}>
+          {busy ? copy.verifying : copy.signIn}
+        </button>
 
         <div className={styles.signInQuietRow}>
           <button
@@ -263,7 +275,7 @@ export function EmailSignIn({
         />
       </div>
 
-      <p className={styles.status}>{hint}</p>
+      {hint ? <p className={styles.status}>{hint}</p> : null}
 
       {/* Primary here, unlike on the choice screen: this step is a screen of
           its own now, and the only thing on it to do. */}

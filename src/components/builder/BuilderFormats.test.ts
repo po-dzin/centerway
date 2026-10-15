@@ -319,6 +319,22 @@ describe("BuilderFormats — render", () => {
     expect(fresh).not.toContain("Надіслати на погодження");
   });
 
+  it("shows the owner «Чат потоку» on a group, never an author, and warns about a chat in use", () => {
+    const group = { ...DATA.formats[1]!, streamChatId: -1001 };
+    const chats = [
+      { chatId: -1001, title: "Шлях 21 · потік XI", botCanInvite: true, usedBy: ["way21_group", "other_group"] },
+    ];
+    const owner = { ...DATA, isOwner: true, canSetPrice: true, streamChats: chats, formats: [group] };
+    const edit = renderWith({ data: owner, editing: group.code, draftFrom: group });
+    expect(edit).toContain("Чат потоку");
+    expect(edit).toContain("Шлях 21 · потік XI");
+    expect(edit).toContain("уже видається іншому формату");
+    const authorEdit = renderWith({ data: { ...DATA, formats: [group] }, editing: group.code, draftFrom: group });
+    expect(authorEdit).not.toContain("Чат потоку");
+    const none = renderWith({ data: { ...owner, streamChats: [] }, editing: "new" });
+    expect(none).toContain("надішліть там /connect");
+  });
+
   it("lets each linked program say which formats open it, and locks a format on sale for an author", () => {
     const html = renderWith({ data: DATA });
     const row = html.slice(html.indexOf("Відкривають формати"));
@@ -341,6 +357,22 @@ describe("BuilderFormats — render", () => {
     // The bundle is set from the program's row, not in the form.
     const form = html.slice(html.indexOf("Новий формат"));
     expect(form.slice(0, form.indexOf("Програми всередині"))).not.toContain("Також відкриває");
+  });
+});
+
+describe("inputOf — the stream chat", () => {
+  it("sends the owner's pick only on an unlocked group, and null for none", () => {
+    expect(inputOf(draft({ format: "group", streamChatId: "-1001" }), false, true)).toMatchObject({
+      streamChatId: -1001,
+    });
+    expect(inputOf(draft({ format: "group", streamChatId: "" }), false, true)).toMatchObject({ streamChatId: null });
+    expect(inputOf(draft({ format: "group", streamChatId: "-1001" }), false, false)).not.toHaveProperty("streamChatId");
+    expect(inputOf(draft({ format: "self", streamChatId: "-1001" }), false, true)).not.toHaveProperty("streamChatId");
+  });
+
+  it("reads the picked chat into the draft", () => {
+    expect(draftOf(dto({ code: "g", format: "group", streamChatId: -1001 })).streamChatId).toBe("-1001");
+    expect(draftOf(dto({ code: "g", format: "group" })).streamChatId).toBe("");
   });
 });
 

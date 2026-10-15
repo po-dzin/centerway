@@ -88,6 +88,7 @@ export const EMAIL_CATALOG: EmailCatalogEntry[] = [
         fulfilment: { kind: "course", courseSlug: "way21", programSlug: "way21" },
         orderRef: "cw_way21g_2m9x1",
         cohortStartsOn: "2026-11-01",
+        telegramUrl: "https://telegram.me/centerway_support_bot?start=cwo-sample",
       }),
   },
   {
