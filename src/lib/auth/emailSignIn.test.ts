@@ -4,7 +4,7 @@ import {
   OTP_CODE_MAX_LENGTH,
   classifySignInError,
   isCompleteOtpCode,
-  isWholeCodeArrival,
+  shouldSubmitCode,
   normalizeOtpCode,
   normalizeSignInEmail,
 } from "./emailSignIn";
@@ -60,22 +60,26 @@ describe("normalizeOtpCode", () => {
     expect(isCompleteOtpCode("12345678")).toBe(true);
   });
 
-  it("accepts every length Supabase can be set to, and nothing shorter", () => {
+  it("accepts six to eight digits, and nothing shorter or longer", () => {
     expect(isCompleteOtpCode("12345")).toBe(false);
     expect(isCompleteOtpCode("123456")).toBe(true);
-    expect(isCompleteOtpCode("1234567890")).toBe(true);
+    expect(isCompleteOtpCode("123456789")).toBe(false);
   });
 });
 
-describe("isWholeCodeArrival", () => {
+describe("shouldSubmitCode", () => {
   it("submits a pasted or autofilled code of either length", () => {
-    expect(isWholeCodeArrival("", "123456")).toBe(true);
-    expect(isWholeCodeArrival("", "12345678")).toBe(true);
+    expect(shouldSubmitCode("", "123456")).toBe(true);
+    expect(shouldSubmitCode("", "12345678")).toBe(true);
   });
 
-  it("does not submit while a code is typed digit by digit", () => {
-    expect(isWholeCodeArrival("12345", "123456")).toBe(false);
-    expect(isWholeCodeArrival("1234567", "12345678")).toBe(false);
+  it("submits on the eighth typed digit", () => {
+    expect(shouldSubmitCode("1234567", "12345678")).toBe(true);
+  });
+
+  it("does not submit a shorter code typed digit by digit", () => {
+    expect(shouldSubmitCode("12345", "123456")).toBe(false);
+    expect(shouldSubmitCode("123456", "1234567")).toBe(false);
   });
 });
 

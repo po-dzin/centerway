@@ -19,10 +19,11 @@ import styles from "@/components/platform/PlatformSurfaceStyles";
 import { useOptionalToast } from "@/components/ToastProvider";
 import { supabaseClient } from "@/lib/supabaseClient";
 import {
+  OTP_CODE_LENGTH,
   OTP_CODE_MAX_LENGTH,
   classifySignInError,
   isCompleteOtpCode,
-  isWholeCodeArrival,
+  shouldSubmitCode,
   normalizeOtpCode,
   normalizeSignInEmail,
   type SignInFailure,
@@ -35,7 +36,7 @@ const copy = {
   emailLabel: "Електронна пошта",
   send: "Надіслати код",
   sending: "Надсилаємо...",
-  codeLabel: "Код із листа",
+  codeLabel: `Код із листа (${OTP_CODE_LENGTH} цифр)`,
   signIn: "Увійти",
   codeSentTo: (email: string) => `Код надіслано на ${email}. Немає листа — подивіться у спамі.`,
   verifying: "Перевіряємо...",
@@ -174,16 +175,15 @@ export function EmailSignIn({
     [email, onSignedIn, report],
   );
 
-  /* A PASTE OR AUTOFILL IS THE SUBMIT. When the whole code lands in one
-     change there is nothing left to decide. A code typed digit by digit waits
-     for the button (or Enter): the length is a server setting the client
-     cannot see, so six typed digits may still be two short. */
+  /* THE EIGHTH DIGIT IS THE SUBMIT, and so is a paste or autofill that lands
+     the whole code at once. A shorter code typed by hand waits for the button
+     (or Enter): six typed digits may still be two short. */
   const onChangeCode = useCallback(
     (value: string) => {
       const next = normalizeOtpCode(value);
       const previous = code;
       setCode(next);
-      if (!busy && isWholeCodeArrival(previous, next)) void verify(next);
+      if (!busy && shouldSubmitCode(previous, next)) void verify(next);
     },
     [busy, code, verify],
   );

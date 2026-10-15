@@ -24,15 +24,17 @@
  */
 
 /**
- * How many digits Supabase's `{{ .Token }}` may carry.
+ * How many digits Supabase's `{{ .Token }}` carries.
  *
- * The length is a project setting (Authentication → Email → Email OTP Length,
- * 6 to 10), not something the client can read, and prod has sent 8 while this
- * form expected 6 — the eighth digit was cut off and every code came back as
- * expired. So the form accepts the whole range and lets the server judge.
+ * Eight is the project setting (Authentication → Email → Email OTP Length) and
+ * the default the form is built for (G, 2026-10-15). The length is not
+ * something the client can read, and when the two disagreed the extra digits
+ * were cut off and every code came back as expired; so a shorter code down to
+ * Supabase's minimum of six is still accepted and the server judges it.
  */
+export const OTP_CODE_LENGTH = 8;
 export const OTP_CODE_MIN_LENGTH = 6;
-export const OTP_CODE_MAX_LENGTH = 10;
+export const OTP_CODE_MAX_LENGTH = OTP_CODE_LENGTH;
 
 /**
  * Trim and lowercase, or reject.
@@ -75,13 +77,14 @@ export function isCompleteOtpCode(code: string): boolean {
 }
 
 /**
- * Submit without a tap only when the whole code arrived in one change — a
- * paste or the keyboard's one-time-code suggestion. Typed by hand, six digits
- * may be the start of an eight-digit code, so a typed code waits for the
- * button: a premature attempt would fail, clear the field and spend a try.
+ * Submit without a tap when the code is plainly whole: the eighth digit, or a
+ * complete code arriving in one change (a paste or the keyboard's one-time-code
+ * suggestion). Six typed digits may be the start of an eight-digit code, so a
+ * shorter code typed by hand waits for the button.
  */
-export function isWholeCodeArrival(previous: string, next: string): boolean {
-  return isCompleteOtpCode(next) && next.length - previous.length > 1;
+export function shouldSubmitCode(previous: string, next: string): boolean {
+  if (!isCompleteOtpCode(next)) return false;
+  return next.length === OTP_CODE_LENGTH || next.length - previous.length > 1;
 }
 
 export type SignInFailure =
