@@ -148,6 +148,24 @@ export function BuilderCourseRail({
           </span>
           <BuilderInkLabel>Публікація</BuilderInkLabel>
         </a>
+        <a
+          className={`cw-nav-link ${styles.courseRailLink}`}
+          data-cw-ink-control=""
+          href="#course-announcements"
+          aria-label="Оголошення"
+          aria-current={activeMode === "announce" ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            onMode("announce");
+          }}
+        >
+          <span className={styles.courseRailIcon}>
+            <InteractionInkIcon>
+              <Icon name="mail" size={20} />
+            </InteractionInkIcon>
+          </span>
+          <BuilderInkLabel>Оголошення</BuilderInkLabel>
+        </a>
       </nav>
       <div className={styles.courseRailStatus}>
         <span className={styles.courseRailStatusLine}>

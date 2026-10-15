@@ -1754,3 +1754,61 @@ ul.tableList > li::before {
     transform: none;
   }
 }
+
+/* ── The author's notes (L1 announcements, 2026-10-15) ─────
+   One quiet card above the lessons, on the course's own surface. The newest
+   unread note carries the warmth tint; the rest fold under «Ще N». Structural
+   boundary only: no new radius, shadow or colour beyond the platform tokens. */
+.announcements {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+  margin-block: var(--cw-space-lg);
+}
+
+.announcement {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-md);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.announcement[data-unread] {
+  background: color-mix(in srgb, var(--cw-sem-warmth) 12%, var(--cw-mat-surface));
+}
+
+.announcementWho {
+  margin: 0;
+  font-size: var(--ds-type-label-size);
+  color: var(--cw-platform-muted);
+}
+
+.announcementWho strong {
+  color: var(--cw-platform-text);
+  font-weight: 600;
+}
+
+.announcementBody {
+  margin: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.announcementLink {
+  color: var(--cw-platform-text);
+  text-underline-offset: 3px;
+}
+
+.announcementMore {
+  align-self: flex-start;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: var(--ds-type-body-sm-size);
+  color: var(--cw-platform-muted);
+  cursor: pointer;
+}

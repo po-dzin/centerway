@@ -21,6 +21,7 @@ import {
   fetchCourse,
   postProgress,
   progressClientId,
+  type CourseAnnouncementDto,
   type CourseViewDto,
   type LmsFailure,
 } from "./lmsClient";
@@ -245,6 +246,13 @@ export function CourseView({
         </div>
       ) : null}
 
+      {!draftPreview && (state.data.announcements ?? []).length > 0 ? (
+        <CourseAnnouncements
+          entries={state.data.announcements ?? []}
+          lessonHref={(lessonSlug) => href(`/learn/${course.slug}/${lessonSlug}`)}
+        />
+      ) : null}
+
       <ul className={styles.outline}>
         {steps.map((entry) => {
           const lessonHref = href(`/learn/${course.slug}/${entry.slug}${previewQuery}`);
@@ -380,5 +388,51 @@ export function CourseView({
           the plain corner. */}
       <ReaderTopButton />
     </main>
+  );
+}
+
+/**
+ * «Від автора» — the author's notes above the lessons. The newest is open; the
+ * rest wait under one quiet «Ще N», so a course with a long history still opens
+ * on its lessons. Opening the course is what marks them read (the API does it
+ * after answering), which is also where the Telegram card's button leads.
+ */
+function CourseAnnouncements({
+  entries,
+  lessonHref,
+}: {
+  entries: CourseAnnouncementDto[];
+  lessonHref: (lessonSlug: string) => string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const shown = expanded ? entries : entries.slice(0, 1);
+  const rest = entries.length - 1;
+  return (
+    <section className={styles.announcements} aria-label="Оголошення автора">
+      {shown.map((entry) => (
+        <article key={entry.id} className={styles.announcement} data-unread={entry.unread || undefined}>
+          <p className={styles.announcementWho}>
+            <strong>Від автора</strong>{" "}
+            {new Date(entry.createdAt).toLocaleString("uk-UA", {
+              day: "numeric",
+              month: "long",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
+          <p className={styles.announcementBody}>{entry.body}</p>
+          {entry.lessonSlug && entry.lessonTitle ? (
+            <MotionLink className={styles.announcementLink} href={lessonHref(entry.lessonSlug)}>
+              {entry.lessonTitle}
+            </MotionLink>
+          ) : null}
+        </article>
+      ))}
+      {rest > 0 && !expanded ? (
+        <button type="button" className={styles.announcementMore} onClick={() => setExpanded(true)}>
+          Ще {rest} {plural(rest, "оголошення", "оголошення", "оголошень")}
+        </button>
+      ) : null}
+    </section>
   );
 }

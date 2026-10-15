@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
+import { unreadNoticeCounts } from "@/lib/lms/announcements";
 import { listLearnerCourses } from "@/lib/lms/server";
 import { inlineToPlainText } from "@/lms-core";
 
@@ -19,11 +20,14 @@ export async function GET(req: NextRequest) {
   const user = await requireUserFromBearer(req.headers.get("authorization"));
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const shelf = await listLearnerCourses({
-    authUserId: user.id,
-    email: user.email ?? null,
-    emailVerified: Boolean(user.email_confirmed_at),
-  });
+  const [shelf, unread] = await Promise.all([
+    listLearnerCourses({
+      authUserId: user.id,
+      email: user.email ?? null,
+      emailVerified: Boolean(user.email_confirmed_at),
+    }),
+    unreadNoticeCounts(user.id),
+  ]);
 
   return NextResponse.json({
     courses: shelf.map((entry) => ({
@@ -51,6 +55,9 @@ export async function GET(req: NextRequest) {
          so a signed-in reader's shelf never has to handle "no category" as a
          real state, only as an empty array on the type. */
       categories: entry.course.categories ?? [],
+      // The author wrote something this learner has not opened the course to read.
+      unreadAnnouncements:
+        entry.access === "enrolled" || entry.access === "available" ? (unread.get(entry.course.id) ?? 0) : 0,
     })),
   });
 }

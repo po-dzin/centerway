@@ -240,6 +240,39 @@ export async function exportAuthorLedger(month: string | null): Promise<Blob | n
   }
 }
 
+export type AnnouncementView = {
+  id: string;
+  body: string;
+  lessonSlug: string | null;
+  lessonTitle: string | null;
+  createdAt: string;
+  recipients: number;
+  telegram: number;
+  read: number;
+  pending: number;
+};
+
+export type CourseAnnouncementsView = {
+  reach: { recipients: number; telegram: number };
+  nextAt: string | null;
+  lessons: { slug: string; title: string }[];
+  announcements: AnnouncementView[];
+};
+
+export function getCourseAnnouncements(slug: string): Promise<BuilderResult<CourseAnnouncementsView>> {
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/announcements`);
+}
+
+export function sendCourseAnnouncement(
+  slug: string,
+  input: { body: string; lessonSlug: string | null },
+): Promise<BuilderResult<{ id: string; recipients: number }>> {
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/announcements`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
 export function createCourse(): Promise<BuilderResult<{ slug: string }>> {
   return request("/api/lms/authoring/courses", { method: "POST", body: "{}" });
 }

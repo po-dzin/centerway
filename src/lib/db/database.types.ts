@@ -1146,6 +1146,108 @@ export type Database = {
         }
         Relationships: []
       }
+      learner_notices: {
+        Row: {
+          announcement_id: string | null
+          auth_user_id: string
+          course_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          read_at: string | null
+          tg_sent_at: string | null
+          tg_status: string
+        }
+        Insert: {
+          announcement_id?: string | null
+          auth_user_id: string
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          read_at?: string | null
+          tg_sent_at?: string | null
+          tg_status?: string
+        }
+        Update: {
+          announcement_id?: string | null
+          auth_user_id?: string
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          read_at?: string | null
+          tg_sent_at?: string | null
+          tg_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learner_notices_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "lms_announcements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learner_notices_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "lms_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lms_announcements: {
+        Row: {
+          author_id: string | null
+          body: string
+          course_id: string
+          created_at: string
+          created_by: string
+          hidden_at: string | null
+          id: string
+          lesson_slug: string | null
+          recipients: number
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          course_id: string
+          created_at?: string
+          created_by: string
+          hidden_at?: string | null
+          id?: string
+          lesson_slug?: string | null
+          recipients?: number
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          course_id?: string
+          created_at?: string
+          created_by?: string
+          hidden_at?: string | null
+          id?: string
+          lesson_slug?: string | null
+          recipients?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_announcements_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "lms_authors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_announcements_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "lms_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lms_annotations: {
         Row: {
           block_id: string | null

@@ -108,6 +108,8 @@ export type CabinetCopy = {
   startsIn: (days: number) => string;
   courseFinished: string;
   courseNotStarted: string;
+  /** The mark on a course card when its author wrote something not yet read. */
+  authorNews: string;
   /** The draft badge on the cover corner — one word, the corner is small. */
   courseDraft: string;
   courseLocked: string;
@@ -241,6 +243,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       startsIn: (days) => (days === 1 ? "Starts tomorrow" : `Starts in ${days} days`),
       courseFinished: "Completed",
       courseNotStarted: "Not started",
+      authorNews: "New from the author",
       courseDraft: COURSE_STATE_LABELS.draft.en,
       courseLocked: "No access yet",
       courseExpired: "Access expired",
@@ -353,6 +356,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     startsIn: (days) => (days === 1 ? "Старт завтра" : `Старт через ${days} ${plural(days, "день", "дні", "днів")}`),
     courseFinished: "Пройдено",
     courseNotStarted: "Ще не розпочато",
+    authorNews: "Нове від автора",
     courseDraft: COURSE_STATE_LABELS.draft.uk,
     courseLocked: "Доступу поки немає",
     courseExpired: "Термін доступу минув",

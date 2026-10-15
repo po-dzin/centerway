@@ -145,6 +145,7 @@ export function CourseCard({
         ) : course.standing?.startsInDays ? (
           <span className={styles.chip}>{copy.startsIn(course.standing.startsInDays)}</span>
         ) : null}
+        {course.unreadAnnouncements ? <span className={styles.chipDone}>{copy.authorNews}</span> : null}
       </div>
 
       <h3 className={styles.courseCardTitle}>{course.title}</h3>
@@ -260,6 +261,7 @@ export function CompactCourseCard({
             ? copy.courseFinished
             : copy.courseNotStarted}
       </p>
+      {course.unreadAnnouncements ? <p className={styles.shelfCardMeta}>{copy.authorNews}</p> : null}
       {resumable ? (
         <>
           <ProgressRail value={done} total={total} label={course.title} />
