@@ -49,7 +49,7 @@ const copy = {
 const failureCopy: Record<SignInFailure, string> = {
   unavailable: "Вхід тимчасово недоступний. Напишіть нам, і ми відкриємо доступ вручну.",
   rate_limited: "Забагато спроб поспіль. Зачекайте хвилину і спробуйте ще раз.",
-  invalid_code: "Код не підійшов. Перевірте цифри або надішліть новий.",
+  invalid_code: "Код не підійшов. Перевірте цифри або надішліть новий — діє лише код з останнього листа.",
   expired_code: "Термін дії коду минув. Надішліть новий.",
   invalid_email: "Перевірте адресу — здається, у ній помилка.",
   unknown: "Не вдалося увійти. Спробуйте ще раз або напишіть нам у підтримку.",
@@ -78,6 +78,15 @@ export function EmailSignIn({
   const [busy, setBusy] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const codeInputRef = useRef<HTMLInputElement>(null);
+  /* Guards against a second request while one is in flight. `busy` is state
+     and lands a render later; a double click or a paste racing a keypress can
+     reach the handler before it does. A second send would replace the code in
+     the letter the person is already reading, and a second verify would spend
+     the code the first one just used. */
+  const inFlightRef = useRef(false);
+  /* The code the server last refused, kept so a paste of the same digits does
+     not auto-submit it again. */
+  const rejectedCodeRef = useRef<string | null>(null);
   /* Failures leave as notifications, not as a paragraph inside the panel. A
      line that appears between the form and its button re-lays out the card
      under the reader's thumb — the same reason every other surface on the
@@ -99,6 +108,8 @@ export function EmailSignIn({
 
   const sendCode = useCallback(
     async (address: string) => {
+      if (inFlightRef.current) return false;
+      inFlightRef.current = true;
       setBusy(true);
 
       const { error: sendError } = await supabaseClient.auth.signInWithOtp({
@@ -115,6 +126,7 @@ export function EmailSignIn({
         },
       });
 
+      inFlightRef.current = false;
       setBusy(false);
 
       const failure = classifySignInError(sendError);
@@ -123,6 +135,7 @@ export function EmailSignIn({
         return false;
       }
 
+      rejectedCodeRef.current = null;
       setStep("code");
       setCooldown(RESEND_COOLDOWN_SECONDS);
       return true;
@@ -148,6 +161,8 @@ export function EmailSignIn({
     async (token: string) => {
       const address = normalizeSignInEmail(email);
       if (!address || !isCompleteOtpCode(token)) return;
+      if (inFlightRef.current) return;
+      inFlightRef.current = true;
 
       setBusy(true);
 
@@ -157,13 +172,22 @@ export function EmailSignIn({
         type: "email",
       });
 
+      inFlightRef.current = false;
       setBusy(false);
 
       const failure = classifySignInError(verifyError);
       if (failure) {
         report(failureCopy[failure]);
-        setCode("");
-        codeInputRef.current?.focus();
+        /* The digits stay. Clearing them took away the one thing the person
+           needs to see what went wrong (G, 2026-10-15); they are selected
+           instead, so typing or pasting a new code replaces them in one go.
+           Focus waits a frame: the input is still disabled until `busy`
+           clears on the next render. */
+        rejectedCodeRef.current = token;
+        window.requestAnimationFrame(() => {
+          codeInputRef.current?.focus();
+          codeInputRef.current?.select();
+        });
         return;
       }
 
@@ -183,7 +207,7 @@ export function EmailSignIn({
       const next = normalizeOtpCode(value);
       const previous = code;
       setCode(next);
-      if (!busy && shouldSubmitCode(previous, next)) void verify(next);
+      if (!busy && shouldSubmitCode(previous, next, rejectedCodeRef.current)) void verify(next);
     },
     [busy, code, verify],
   );
