@@ -163,11 +163,9 @@ export function ProgramDetailPage({
      `schedule.mode` has been in the data since the LMS shipped and only the
      lesson player ever read it. With no course to ask (a page whose offer is
      not delivered here), the duration is still the honest title. */
-  const rhythmTitle = course
-    ? course.schedule.mode === "daily"
-      ? "День за днем"
-      : "У своєму темпі"
-    : program.duration;
+  const rhythmTitle =
+    program.sectionTitles?.shape ??
+    (course ? (course.schedule.mode === "daily" ? "День за днем" : "У своєму темпі") : program.duration);
   /* «Формат» was also the name of the formats block further down — two panels
      a screen apart under one word, one about the course's shape and one about
      ways to buy it. This one is the shape. */
@@ -315,7 +313,7 @@ export function ProgramDetailPage({
            decided to. */
         detailLeft={{
           label: "Про метод",
-          title: isMiniCourse ? "Що дає цей короткий вхід" : "Коротко про результат",
+          title: program.sectionTitles?.method ?? (isMiniCourse ? "Що дає цей короткий вхід" : "Коротко про результат"),
           lead: program.longDescription,
         }}
         detailRight={{
@@ -344,6 +342,7 @@ export function ProgramDetailPage({
               audience={program.audience}
               results={program.results}
               format={program.format}
+              titles={program.sectionTitles}
               seam={<OfferSeam steps={route} current={1} />}
             />
             {course ? (
@@ -424,7 +423,9 @@ export function ProgramDetailPage({
             }
           />
         }
-        trailing={<OfferStickyBar price={heroPrice} buyHref={buyHref} buyLabel={buyLabel} />}
+        trailing={
+          <OfferStickyBar price={isFree && !choosesFormat ? null : heroPrice} buyHref={buyHref} buyLabel={buyLabel} />
+        }
         boundary={{
           label: "Межі методу",
           title: "Чесний формат без медичних обіцянок",

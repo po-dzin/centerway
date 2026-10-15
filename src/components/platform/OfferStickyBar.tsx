@@ -74,6 +74,14 @@ export function OfferStickyBar({
 
   const owned = access.state === "owned";
 
+  /* THE PRICE IS IN THE BUTTON (G, 2026-10-15; it used to stand beside it, and
+     the note here argued a bare number on a button is pressed to find out what
+     it costs). The label keeps its verb, which is what answers that: «Оплатити
+     320 ₴» says what happens and what it costs in one line, the same wording the
+     format cards use, and the whole bar is one target for the thumb. A choice of
+     formats has no single price, so it reads «Обрати формат · від 4 100 ₴». */
+  const label = price ? (buyLabel === "Купити" ? `Оплатити ${price}` : `${buyLabel} · ${price}`) : buyLabel;
+
   if (owned) {
     const { shelf } = access;
     const finished = shelf.standing?.isFinished ?? false;
@@ -93,13 +101,6 @@ export function OfferStickyBar({
 
   return (
     <div className={styles.stickyBar} data-shown={shown}>
-      {/* The price sits beside the button rather than inside it: a button whose
-          label is a number is a button people press to find out what it costs. */}
-      {price ? (
-        <p className={styles.stickyPrice}>
-          <span>{price}</span>
-        </p>
-      ) : null}
       {/* A plain anchor when it is a checkout, exactly as the panel's button is:
           /api/pay/start creates an order on GET, and a prefetched next/link
           would open an invoice for everyone who scrolled past. */}
@@ -109,13 +110,13 @@ export function OfferStickyBar({
         <CheckoutStartLink
           className={styles.stickyAction}
           href={buyHref}
-          label={buyLabel}
+          label={label}
           pendingLabel="Відкриваємо…"
           isPageCta={false}
         />
       ) : (
         <Link className={styles.stickyAction} href={surfaceHref(buyHref)}>
-          {buyLabel}
+          {label}
         </Link>
       )}
     </div>

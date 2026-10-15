@@ -67,15 +67,6 @@
   }
 }
 
-.stickyPrice {
-  flex: none;
-  margin: 0;
-  color: var(--cw-platform-text);
-  font-family: var(--cw-font-data);
-  font-size: var(--ds-type-body-size);
-  line-height: 1.1;
-}
-
 /* Takes the rest of the row. The 44px touch floor the mobile spec asks for is
    NOT set here — `primary` already carries `--ds-button-min-height`, which
    resolves to `--ds-touch-target-min`. Restating it locally would have been a
@@ -343,6 +334,28 @@
   border-bottom: 1px solid transparent;
   border-image: var(--cw-rule-fade-x);
   color: var(--cw-platform-muted);
+}
+
+.bentoCardHeading {
+  display: grid;
+  gap: var(--cw-space-2xs, 0.25rem);
+  min-inline-size: 0;
+}
+
+/* The shared line above an authored title — same voice as every other panel
+   label on the page (`.label` in PlatformBlocksBase). */
+.bentoCardPretitle {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: var(--ds-type-label-line-height);
+  text-transform: uppercase;
 }
 
 .bentoCardTitle {

@@ -185,6 +185,20 @@ export const COURSE_TITLE_RAW_MAX = 120;
 export const COURSE_PRETITLE_MAX = 44;
 
 /**
+ * The blocks of an offer page whose TITLE an author may write (2026-10-15).
+ *
+ * Every program printed the same headings — «Що дає цей короткий вхід», «Для
+ * кого», «Що зміниться» — because they were derived from the course's kind, not
+ * written for the course. G wanted them per program, with the small line above
+ * each kept shared so the page's structure still reads the same everywhere. The
+ * shared line is the platform's word and is not stored: only the title is.
+ */
+export const COURSE_SECTION_TITLE_KEYS = ["method", "shape", "audience", "results", "included"] as const;
+export type CourseSectionTitleKey = (typeof COURSE_SECTION_TITLE_KEYS)[number];
+export type CourseSectionTitles = Partial<Record<CourseSectionTitleKey, string>>;
+export const COURSE_SECTION_TITLE_MAX = 60;
+
+/**
  * The most days a course may claim, and the reason there is a ceiling at all:
  * a typo in a number field is silent. «210 днів» is a plausible-looking string
  * and an impossible product, and the badge would print it without blinking.
@@ -339,6 +353,13 @@ export type Course = {
    * fasting protocol and a breathing course by the same person.
    */
   authorNote?: string;
+  /**
+   * The author's own titles for the blocks of the offer page, one per block.
+   * Every key is optional and an absent one keeps the platform's generic title,
+   * so a course that says nothing here reads exactly as it did before.
+   * See `COURSE_SECTION_TITLE_KEYS`.
+   */
+  sectionTitles?: CourseSectionTitles;
   /**
    * Whether strangers may find this course. Independent of `status`, which says
    * whether the material is published to the people who already own it — a live
@@ -502,6 +523,27 @@ export function validateCourse(
     const value = input[textKey];
     if (value === undefined) continue;
     assert(isNonEmptyString(value), `lms_course_invalid_${textKey.toLowerCase()}:${path}`);
+  }
+
+  if (input.sectionTitles !== undefined) {
+    const titles = input.sectionTitles as unknown;
+    assert(
+      typeof titles === "object" && titles !== null && !Array.isArray(titles),
+      `lms_course_invalid_section_titles:${path}`,
+    );
+    const entries = Object.entries(titles as Record<string, unknown>);
+    // «Nothing to say» is the absent field, never an empty object.
+    assert(entries.length > 0, `lms_course_invalid_section_titles:${path}`);
+    for (const [key, value] of entries) {
+      assert(
+        (COURSE_SECTION_TITLE_KEYS as readonly string[]).includes(key) && isNonEmptyString(value),
+        `lms_course_invalid_section_titles:${path}`,
+      );
+      assert(
+        !bounded || (value as string).trim().length <= COURSE_SECTION_TITLE_MAX,
+        `lms_course_section_title_too_long:${path}`,
+      );
+    }
   }
 
   if (input.visibility !== undefined) {

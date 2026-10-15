@@ -326,6 +326,8 @@ const COURSE_KEY_BY_CODE: Record<string, string> = {
   lms_course_invalid_tagline: "tagline",
   lms_course_invalid_pretitle: "pretitle",
   lms_course_pretitle_too_long: "pretitle",
+  lms_course_invalid_section_titles: "sectionTitles",
+  lms_course_section_title_too_long: "sectionTitles",
   lms_course_invalid_kind: "kind",
   lms_course_invalid_categories: "categories",
   lms_course_duplicate_categories: "categories",

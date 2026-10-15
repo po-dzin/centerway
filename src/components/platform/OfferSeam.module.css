@@ -21,7 +21,11 @@
   display: grid;
   grid-auto-columns: minmax(0, 1fr);
   grid-auto-flow: column;
-  inline-size: min(100%, 34rem);
+  /* The width of the card above it, not a narrower column of its own: with the
+     route inset from the cards, the rings and the panels did not share an edge
+     and the row read as lopsided (G, 2026-10-15). The columns are equal, so the
+     first and last ring sit the same distance from the two edges. */
+  inline-size: 100%;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -35,20 +39,22 @@
   min-inline-size: 0;
 }
 
-/* The thread from the previous ring to this one, behind both; gold up to the
-   step this block opens, quiet after it. */
+/* The thread from the previous ring to this one: the system's dashed rail
+   (docs/design-system.md, «Progress is a dashed rail» — 1.5px, dashed, accent
+   for what is behind, border for what is ahead), broken just short of each ring
+   so a dash never runs into one. Gold up to the step this block opens. */
 .step + .step::before {
   position: absolute;
-  inset-block-start: calc(var(--seam-ring) / 2);
-  inset-inline: -50% 50%;
-  block-size: 1px;
+  inset-block-start: calc(var(--seam-ring) / 2 - 0.75px);
+  inset-inline: calc(-50% + var(--seam-ring) / 2 + 0.3rem) calc(50% + var(--seam-ring) / 2 + 0.3rem);
+  block-size: 0;
   content: "";
-  background: var(--cw-mat-stroke-inner);
+  border-block-start: 1.5px dashed var(--cw-mat-stroke-inner);
 }
 
 .step[data-state="done"] + .step::before,
 .step[data-state="done"] + .step[data-state="current"]::before {
-  background: color-mix(in srgb, var(--cw-platform-accent) 75%, transparent);
+  border-block-start-color: var(--cw-platform-accent);
 }
 
 .seam {
