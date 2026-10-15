@@ -5,7 +5,7 @@
  *
  * It exists as a ROUTE and not as a second state of the wall for three
  * reasons, in the order they cost something: a reload in the middle of typing
- * a six-digit code used to drop the person back to the choice of doors; the
+ * the emailed code used to drop the person back to the choice of doors; the
  * receipt can now link straight here, which is the one place the instruction
  * "use the address you paid with" is actionable; and the code step gets a
  * screen instead of a panel that grows under a thumb.
