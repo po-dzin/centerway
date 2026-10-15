@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  OTP_CODE_LENGTH,
+  OTP_CODE_MAX_LENGTH,
   classifySignInError,
   isCompleteOtpCode,
+  shouldSubmitCode,
   normalizeOtpCode,
   normalizeSignInEmail,
 } from "./emailSignIn";
@@ -50,13 +51,35 @@ describe("normalizeOtpCode", () => {
     expect(isCompleteOtpCode(normalizeOtpCode("012345"))).toBe(true);
   });
 
-  it("stops at the code length so a pasted paragraph cannot overflow the field", () => {
-    expect(normalizeOtpCode("1234567890")).toHaveLength(OTP_CODE_LENGTH);
+  it("stops at the longest code so a pasted paragraph cannot overflow the field", () => {
+    expect(normalizeOtpCode("123456789012345")).toHaveLength(OTP_CODE_MAX_LENGTH);
   });
 
-  it("is not complete until every digit is there", () => {
+  it("keeps all eight digits of an eight-digit code", () => {
+    expect(normalizeOtpCode("1234 5678")).toBe("12345678");
+    expect(isCompleteOtpCode("12345678")).toBe(true);
+  });
+
+  it("accepts six to eight digits, and nothing shorter or longer", () => {
     expect(isCompleteOtpCode("12345")).toBe(false);
     expect(isCompleteOtpCode("123456")).toBe(true);
+    expect(isCompleteOtpCode("123456789")).toBe(false);
+  });
+});
+
+describe("shouldSubmitCode", () => {
+  it("submits a pasted or autofilled code of either length", () => {
+    expect(shouldSubmitCode("", "123456")).toBe(true);
+    expect(shouldSubmitCode("", "12345678")).toBe(true);
+  });
+
+  it("submits on the eighth typed digit", () => {
+    expect(shouldSubmitCode("1234567", "12345678")).toBe(true);
+  });
+
+  it("does not submit a shorter code typed digit by digit", () => {
+    expect(shouldSubmitCode("12345", "123456")).toBe(false);
+    expect(shouldSubmitCode("123456", "1234567")).toBe(false);
   });
 });
 

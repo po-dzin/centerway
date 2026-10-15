@@ -67,8 +67,8 @@ fail in a way that looks like "the email never arrived".
 Auth → Emails → **Magic Link** template. It must contain `{{ .Token }}`.
 
 Supabase's default template contains only `{{ .ConfirmationURL }}`, i.e. a link.
-If it is left that way, `signInWithOtp` sends a link, the person never sees six
-digits, and the screen asking for them cannot be completed. Suggested body:
+If it is left that way, `signInWithOtp` sends a link, the person never sees the
+code, and the screen asking for them cannot be completed. Suggested body:
 
 ```html
 <h2>Вхід у CenterWay</h2>
@@ -79,6 +79,24 @@ digits, and the screen asking for them cannot be completed. Suggested body:
 
 While there: Auth → Providers → Email → set **OTP expiry** to 900 seconds. The
 default is an hour, which is a long time for a credential sitting in an inbox.
+
+### 3.1a The code is eight digits (2026-10-15)
+
+Auth → Providers → Email → **Email OTP Length** is 8 in prod, and 8 is the
+default the form is built for (`OTP_CODE_LENGTH` in `src/lib/auth/emailSignIn.ts`;
+`otp_length` in `supabase/config.toml` matches it locally). The form used to cut
+input at six, so every eight-digit code reached Supabase truncated and came back
+as expired.
+
+The code step: the label says «Код із листа (8 цифр)»; the eighth typed digit
+signs in, and so does a whole code pasted or autofilled in one go. A primary
+«Увійти» button (and Enter) submits a code typed by hand. Six or seven digits are
+still accepted through the button, so a later change of the setting down to
+Supabase's minimum of six does not lock anyone out; a shorter typed code never
+auto-submits, because it may be the start of an eight-digit one.
+
+To check: request a code at `/signin/email`, see eight digits in the letter, type
+them, and land signed in without pressing anything.
 
 ### 3.2 Custom SMTP, or almost nobody gets a code
 
