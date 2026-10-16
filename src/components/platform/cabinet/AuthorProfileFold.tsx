@@ -137,6 +137,8 @@ export function AuthorProfileFold({
       experienceBadge: next.experienceBadge,
       achievementBadge: next.achievementBadge,
       consultation: next.consultation,
+      /* Sent empty too, so removing the last link clears it. */
+      socialLinks: next.socialLinks ?? [],
       photo: next.photo,
       background: next.background,
       listed: next.listed,

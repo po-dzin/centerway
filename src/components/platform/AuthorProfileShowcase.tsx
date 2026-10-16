@@ -2,7 +2,7 @@ import { Icon } from "@/components/Icon";
 import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
 import { PlatformOfferCarousel } from "@/components/platform/PlatformOfferCarousel";
 import type { StorefrontCard } from "@/lib/platform/offers";
-import type { Author } from "@/lms-core";
+import { socialLinkLabel, type Author } from "@/lms-core";
 import { PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import { AuthorPortrait } from "./AuthorPortrait";
 import styles from "./AuthorProfileShowcase.module.css";
@@ -22,7 +22,8 @@ import type { FeedPage } from "@/lib/feed/server";
  * consultation (a consultation is something you can take from them, and the
  * hubs send people here to book it, so it lives on the tab a link opens by
  * default); «Дописи» — the author's own posts from «Стрічка»; «Про мене» — the
- * biography, facts and profile blocks. «Портфоліо» waits for its own mockup.
+ * biography, facts, profile blocks and the author's own pages elsewhere.
+ * «Портфоліо» waits for its own mockup.
  *
  * A tab is an address (`?tab=posts`), so a link can open the posts directly
  * and the back button walks between them. A tab with nothing in it is not
@@ -60,7 +61,12 @@ export function AuthorProfileShowcase({
   );
 
   const hasAbout = Boolean(
-    author.bio || author.quote || author.credentials?.length || author.facts?.length || author.profileBlocks?.length,
+    author.bio ||
+    author.quote ||
+    author.credentials?.length ||
+    author.facts?.length ||
+    author.profileBlocks?.length ||
+    author.socialLinks?.length,
   );
   const tabs = [
     { key: "programs" as const, label: "Програми і продукти" },
@@ -282,6 +288,26 @@ export function AuthorProfileShowcase({
               </div>
             </section>
           ))}
+
+          {/* WHERE TO FOLLOW THEM, NOT HOW TO BOOK THEM (G, 16.10). Plain
+              profile links at the end of «Про мене»; a consultation is asked
+              for through the form on «Програми і продукти». */}
+          {author.socialLinks?.length ? (
+            <section className={styles.profileSection}>
+              <div className={styles.sectionHeader}>
+                <h2 className={styles.courseTitle}>Де мене знайти</h2>
+              </div>
+              <ul className={styles.socialList}>
+                {author.socialLinks.map((link) => (
+                  <li key={link}>
+                    <a className="cw-link-rule" href={link} target="_blank" rel="me noopener noreferrer">
+                      {socialLinkLabel(link)}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
         </>
       ) : null}
     </main>

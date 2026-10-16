@@ -1577,6 +1577,7 @@ export type Database = {
           quote: string | null
           role: string | null
           slug: string
+          social_links: Json | null
           updated_at: string
         }
         Insert: {
@@ -1601,6 +1602,7 @@ export type Database = {
           quote?: string | null
           role?: string | null
           slug: string
+          social_links?: Json | null
           updated_at?: string
         }
         Update: {
@@ -1625,6 +1627,7 @@ export type Database = {
           quote?: string | null
           role?: string | null
           slug?: string
+          social_links?: Json | null
           updated_at?: string
         }
         Relationships: []

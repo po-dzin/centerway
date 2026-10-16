@@ -4,7 +4,7 @@
  * Split out of AuthorProfileFold.tsx (1,573 lines) on 2026-09-11; nothing inside any declaration changed.
  */
 
-import type { Author, AuthorProfileBlock } from "@/lms-core";
+import { AUTHOR_SOCIAL_LINKS_MAX, normalizeSocialLink, type Author, type AuthorProfileBlock } from "@/lms-core";
 import { CROP_SCALE_MIN } from "@/lib/media/imageCrop";
 
 export type Draft = {
@@ -17,6 +17,7 @@ export type Draft = {
   profileBlocks: AuthorProfileBlock[];
   experienceBadge: string;
   consultation: { enabled: boolean; title: string; summary: string; points: string[]; contactUrl: string };
+  socialLinks: string[];
   photo: NonNullable<Author["photo"]> | null;
   background: NonNullable<Author["background"]> | null;
   listed: boolean;
@@ -56,6 +57,7 @@ export function draftFromAuthor(author: Author | null): Draft {
       points: author?.consultation?.points?.length ? author.consultation.points : [""],
       contactUrl: author?.consultation?.contactUrl ?? "",
     },
+    socialLinks: author?.socialLinks?.length ? author.socialLinks : [""],
     /* THE DRAFT OPENS ON WHAT IS STORED, AND SEEDS NOTHING. A zoom was briefly
        seeded here so both axes had room to drag; it meant opening the cabinet
        and pressing save re-cropped every photograph already published by 15% of
@@ -88,6 +90,11 @@ export function authorFromDraft(draft: Draft, base: Author | null): Author {
      would print the same sentence twice on `/expert`, once in the hero badge
      row and once in the starred list under it. */
   const [achievementBadge, ...credentials] = credentialLines;
+  /* Normalised here so the row stores exactly what the page links to; a row
+     that is not an address yet is left out, the same as an empty fact. */
+  const socialLinks = [
+    ...new Set(draft.socialLinks.map(normalizeSocialLink).filter((link): link is string => Boolean(link))),
+  ].slice(0, AUTHOR_SOCIAL_LINKS_MAX);
   const alt = draft.photo?.alt.trim();
   const photo =
     draft.photo?.src && alt
@@ -166,6 +173,7 @@ export function authorFromDraft(draft: Draft, base: Author | null): Author {
         .slice(0, 3),
       ...(draft.consultation.contactUrl.trim() ? { contactUrl: draft.consultation.contactUrl.trim() } : {}),
     },
+    ...(socialLinks.length > 0 ? { socialLinks } : {}),
     ...(photo ? { photo } : {}),
     /* NORMALISED THE SAME WAY THE PHOTO IS, and it was not: this passed the
        draft object through raw, so the band wrote `cropScale: 1` into the row —

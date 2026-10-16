@@ -54,6 +54,13 @@ export type Author = {
     points?: string[];
     contactUrl?: string;
   };
+  /**
+   * The author's own pages elsewhere — Instagram, Telegram, YouTube, a site.
+   * Up to six https addresses, printed in «Про мене» as plain links (G,
+   * 16.10). They are where to follow the author, not a way to book them:
+   * consultations go through the platform's request form.
+   */
+  socialLinks?: string[];
   photo?: {
     src: string;
     /** Mandatory wherever an image is — a11y is a release gate in this repo. */
@@ -203,6 +210,16 @@ export function validateAuthor(input: unknown, path = "author"): asserts input i
       );
   }
 
+  if (input.socialLinks !== undefined) {
+    assert(
+      Array.isArray(input.socialLinks) &&
+        input.socialLinks.length > 0 &&
+        input.socialLinks.length <= AUTHOR_SOCIAL_LINKS_MAX &&
+        input.socialLinks.every((link) => typeof link === "string" && normalizeSocialLink(link) === link),
+      `lms_author_invalid_social_links:${path}`,
+    );
+  }
+
   if (input.credentials !== undefined) {
     // Empty is rejected rather than tolerated, same as `Course.results`: the way
     // to say "none" is to leave the field out, not to store a heading over
@@ -263,4 +280,53 @@ export function validateAuthor(input: unknown, path = "author"): asserts input i
   if (input.listed !== undefined) {
     assert(typeof input.listed === "boolean", `lms_author_invalid_listed:${path}`);
   }
+}
+
+/* ─────────────── social links ─────────────── */
+
+export const AUTHOR_SOCIAL_LINKS_MAX = 6;
+
+/**
+ * One social address as the profile stores it, or null when it is not one.
+ *
+ * Forgiving on the way in — «instagram.com/name» and «http://…» are what people
+ * paste — and strict on the way out: always https, a dotted host, no spaces.
+ * A `t.me` handle typed as «@name» is not guessed at; the field asks for an
+ * address, and a guess would send readers to a stranger's page.
+ */
+export function normalizeSocialLink(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed || /\s/.test(trimmed)) return null;
+  const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed.replace(/^http:\/\//i, "https://") : `https://${trimmed}`;
+  const match = /^https:\/\/([^/?#@:]+)(?::\d+)?([/?#].*)?$/i.exec(withScheme);
+  if (!match) return null;
+  const host = match[1]!.toLowerCase();
+  if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(host)) return null;
+  return `https://${host}${match[2] ?? ""}`;
+}
+
+const SOCIAL_NAMES: Array<[RegExp, string]> = [
+  [/(^|\.)instagram\.com$/, "Instagram"],
+  [/(^|\.)(t\.me|telegram\.me)$/, "Telegram"],
+  [/(^|\.)(youtube\.com|youtu\.be)$/, "YouTube"],
+  [/(^|\.)(facebook\.com|fb\.com)$/, "Facebook"],
+  [/(^|\.)threads\.(net|com)$/, "Threads"],
+  [/(^|\.)tiktok\.com$/, "TikTok"],
+  [/(^|\.)linkedin\.com$/, "LinkedIn"],
+  [/(^|\.)(x\.com|twitter\.com)$/, "X"],
+  [/(^|\.)spotify\.com$/, "Spotify"],
+];
+
+/**
+ * What a reader sees for the link: the network's own name when the host is a
+ * known one, otherwise the bare host — «centerway.net.ua», never the whole
+ * address with its path.
+ */
+export function socialLinkLabel(link: string): string {
+  const host =
+    /^https?:\/\/([^/?#:]+)/i
+      .exec(link)?.[1]
+      ?.toLowerCase()
+      .replace(/^www\./, "") ?? link;
+  return SOCIAL_NAMES.find(([pattern]) => pattern.test(host))?.[1] ?? host;
 }

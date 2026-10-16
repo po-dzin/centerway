@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { clampCropScale } from "@/lib/media/imageCrop";
 import { getAuthorProfileForUser, upsertAuthorProfile, type AuthorProfileInput } from "@/lib/lms/authors";
+import { AUTHOR_SOCIAL_LINKS_MAX, normalizeSocialLink } from "@/lms-core";
 
 export const runtime = "nodejs";
 
@@ -95,6 +96,18 @@ function readConsultation(value: unknown): AuthorProfileInput["consultation"] {
   };
 }
 
+/* An address that does not normalise is dropped rather than refusing the
+   whole save: the editor already shows which rows it kept. */
+function readSocialLinks(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const links = [
+    ...new Set(
+      value.flatMap((entry) => (typeof entry === "string" ? [normalizeSocialLink(entry)] : [])).filter(Boolean),
+    ),
+  ] as string[];
+  return links.length ? links.slice(0, AUTHOR_SOCIAL_LINKS_MAX) : undefined;
+}
+
 function readProfileBlocks(value: unknown): AuthorProfileInput["profileBlocks"] {
   if (!Array.isArray(value)) return undefined;
   const blocks = value.slice(0, 12).flatMap((entry) => {
@@ -151,6 +164,7 @@ export async function POST(req: NextRequest) {
       ? { achievementBadge: body.achievementBadge.trim() }
       : {}),
     ...(readConsultation(body.consultation) ? { consultation: readConsultation(body.consultation) } : {}),
+    ...(readSocialLinks(body.socialLinks) ? { socialLinks: readSocialLinks(body.socialLinks) } : {}),
     ...(readPhoto(body.photo) ? { photo: readPhoto(body.photo) } : {}),
     ...(readBackground(body.background) ? { background: readBackground(body.background) } : {}),
     ...(typeof body.listed === "boolean" ? { listed: body.listed } : {}),
