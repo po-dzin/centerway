@@ -304,6 +304,7 @@ export type AuthorProfileInput = {
   experienceBadge?: string;
   achievementBadge?: string;
   consultation?: Author["consultation"];
+  socialLinks?: string[];
   photo?: Author["photo"];
   /* The author's own type, not a narrowing of it — the same correction
      `AuthorProfileInput` in src/lib/lms/authors.ts already carries. `{ src }`

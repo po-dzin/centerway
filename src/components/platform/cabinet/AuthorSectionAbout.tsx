@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * «About» — bio, quote, facts, credentials and the experience badge.
+ * «About» — bio, quote, facts, credentials, social links and the experience badge.
  *
  * Split out of AuthorProfileFold.tsx (1,163 lines) on 2026-09-13; the markup
  * is unchanged.
@@ -9,6 +9,7 @@
 
 import { useId } from "react";
 import { Icon } from "@/components/Icon";
+import { AUTHOR_SOCIAL_LINKS_MAX } from "@/lms-core";
 import styles from "./Cabinet.module.css";
 import { RequiredMark } from "./AuthorProfileMedia";
 import type { AuthorSectionProps } from "./authorProfileTypes";
@@ -132,6 +133,55 @@ export function AuthorSectionAbout({ draft, setDraft, t }: AuthorSectionProps) {
                   title={t.credentialRemove}
                   onClick={() =>
                     setDraft((prev) => ({ ...prev, credentials: prev.credentials.filter((_, i) => i !== index) }))
+                  }
+                >
+                  <Icon name="close" size={18} />
+                </button>
+              ) : null}
+            </div>
+          ))}
+        </div>
+        <div className={styles.authorField}>
+          <div className={styles.authorFieldHead}>
+            <span>{t.socialLinks}</span>
+            {draft.socialLinks.length < AUTHOR_SOCIAL_LINKS_MAX ? (
+              <button
+                type="button"
+                className={styles.authorAddIcon}
+                aria-label={t.socialLinkAdd}
+                title={t.socialLinkAdd}
+                onClick={() => setDraft((prev) => ({ ...prev, socialLinks: [...prev.socialLinks, ""] }))}
+              >
+                <Icon name="plus" size={18} />
+              </button>
+            ) : null}
+          </div>
+          <p className={styles.authorNotice}>{t.socialLinksHint}</p>
+          {draft.socialLinks.map((line, index) => (
+            <div className={styles.authorCredentialRow} key={index}>
+              <input
+                className={styles.authorInput}
+                type="url"
+                inputMode="url"
+                autoComplete="url"
+                placeholder="https://instagram.com/…"
+                aria-label={`${t.socialLinks} ${index + 1}`}
+                value={line}
+                onChange={(e) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    socialLinks: prev.socialLinks.map((v, i) => (i === index ? e.target.value : v)),
+                  }))
+                }
+              />
+              {draft.socialLinks.length > 1 ? (
+                <button
+                  type="button"
+                  className={styles.authorIconAction}
+                  aria-label={t.socialLinkRemove}
+                  title={t.socialLinkRemove}
+                  onClick={() =>
+                    setDraft((prev) => ({ ...prev, socialLinks: prev.socialLinks.filter((_, i) => i !== index) }))
                   }
                 >
                   <Icon name="close" size={18} />

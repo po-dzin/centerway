@@ -66,6 +66,9 @@ function authorFromRow(row: Row): Author {
           },
         }
       : {}),
+    ...(Array.isArray(row.social_links) && row.social_links.length > 0
+      ? { socialLinks: row.social_links as string[] }
+      : {}),
     ...(row.photo ? { photo: row.photo as Author["photo"] } : {}),
     ...(row.background ? { background: row.background as Author["background"] } : {}),
     // `false` reads back as ABSENT, the same way `visibility: "hidden"` does on
@@ -317,6 +320,7 @@ export type AuthorProfileInput = {
   experienceBadge?: string;
   achievementBadge?: string;
   consultation?: Author["consultation"];
+  socialLinks?: string[];
   /* The author's own type, not a narrowing of it. This said `{src, alt}` while
      the route beside it had been writing four crop numbers through a spread
      that excess-property checking does not see — the shape was wrong and
@@ -387,6 +391,7 @@ export async function upsertAuthorProfile(
     ...(input.experienceBadge ? { experienceBadge: input.experienceBadge } : {}),
     ...(input.achievementBadge ? { achievementBadge: input.achievementBadge } : {}),
     ...(input.consultation ? { consultation: input.consultation } : {}),
+    ...(input.socialLinks?.length ? { socialLinks: input.socialLinks } : {}),
     ...(input.photo ? { photo: input.photo } : {}),
     ...(input.background ? { background: input.background } : {}),
     ...(input.listed ? { listed: true } : {}),
@@ -418,6 +423,7 @@ export async function upsertAuthorProfile(
         consultation_summary: input.consultation?.summary ?? null,
         consultation_points: input.consultation?.points ?? null,
         consultation_contact_url: input.consultation?.contactUrl ?? null,
+        social_links: input.socialLinks?.length ? input.socialLinks : null,
         photo: input.photo ?? null,
         background: input.background ?? null,
         listed: input.listed ?? false,

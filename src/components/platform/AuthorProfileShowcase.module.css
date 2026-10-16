@@ -432,3 +432,20 @@
 .profileSection > .body {
   margin-top: 0;
 }
+
+/* The author's pages elsewhere: a row of plain links, each a full touch
+   target, wrapping on a phone. */
+.socialList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-2xs) var(--cw-space-lg);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.socialList li {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ds-touch-target-min);
+}
