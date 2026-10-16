@@ -492,7 +492,7 @@ export async function createFeedPost(
 
 /**
  * The author edits a post that came back (`returned`) and sends it again: the
- * text and topic change, the check runs again.
+ * text, topic and attachment change, the check runs again.
  */
 export async function resubmitFeedPost(
   db: Db,
@@ -510,6 +510,9 @@ export async function resubmitFeedPost(
   const body = normalizeFeedText(input.body, FEED_POST_MAX);
   if (!body) throw new FeedError("body_invalid");
   if (!isFeedTopic(input.topic)) throw new FeedError("topic_invalid");
+  /* Checked exactly as on creation: the composer sends the attachment again,
+     changed or removed, and it must land as validated or not at all. */
+  const attachment = await checkedAttachment(db, author, input);
   const verdict = checkFeedText(body);
   const at = now.toISOString();
   const { data, error } = await db
@@ -517,6 +520,7 @@ export async function resubmitFeedPost(
     .update({
       body,
       topic: input.topic,
+      ...attachment,
       status: verdict.pass ? "published" : "held",
       gate: verdict as unknown as Json,
       held_reason: verdict.pass ? null : verdict.findings.map((finding) => finding.label).join("; "),
@@ -812,10 +816,14 @@ export async function removeComment(db: Db, commentId: string, userId: string, n
   const { data: postRow } = await db.from("feed_posts").select("created_by").eq("id", row.post_id).maybeSingle();
   const post = postRow as { created_by: string } | null;
   if (post?.created_by !== userId) throw new FeedError("forbidden", 403);
+  /* The thread goes with it: a reply whose parent is hidden has nowhere to
+     be drawn, and would still be counted on the card. Deleting cascades the
+     same way through `parent_id`. */
   const { error } = await db
     .from("feed_comments")
     .update({ hidden_at: now.toISOString(), hidden_by: userId })
-    .eq("id", commentId);
+    .or(`id.eq.${commentId},parent_id.eq.${commentId}`)
+    .is("hidden_at", null);
   if (error) throw new Error(`feed_comment_hide_failed:${error.message}`);
 }
 

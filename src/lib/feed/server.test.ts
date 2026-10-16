@@ -154,11 +154,23 @@ describe("the team's decision", () => {
     expect(await setReturnReason(db, 77, "Приберіть обіцянку")).toBe(true);
     expect(await getFeedPost(db, second.post.id, AUTHOR_USER)).toMatchObject({ returnedReason: "Приберіть обіцянку" });
 
+    await db.from("feed_posts").update({ course_id: COURSE }).eq("id", second.post.id);
     const again = await resubmitFeedPost(db, await author(), second.post.id, {
       body: "Тиша допомагає.",
       topic: "focus",
     });
     expect(again.post.status).toBe("published");
+    // The attachment is what was sent this time: none.
+    expect(again.post.attachment).toBeNull();
+
+    await db.from("feed_posts").update({ status: "returned" }).eq("id", second.post.id);
+    await expect(
+      resubmitFeedPost(db, await author(), second.post.id, {
+        body: "Тиша допомагає.",
+        topic: "focus",
+        courseId: FOREIGN_COURSE,
+      }),
+    ).rejects.toMatchObject({ code: "attachment_not_yours" });
   });
 });
 
@@ -228,7 +240,9 @@ describe("comments", () => {
     ]);
 
     await removeComment(db, top.comment.id, AUTHOR_USER);
-    expect((await listComments(db, post.id, null)).map((entry) => entry.body)).toEqual(["Радий!", "Ще раз"]);
+    // The thread goes with its first comment: replies have nowhere to hang.
+    expect(await listComments(db, post.id, null)).toEqual([]);
+    expect((await getFeedPost(db, post.id, null))?.commentCount).toBe(0);
     await expect(removeComment(db, reply.comment.id, READER)).rejects.toMatchObject({ code: "forbidden" });
   });
 

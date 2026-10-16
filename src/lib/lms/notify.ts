@@ -20,8 +20,11 @@ import { escapeTelegramHtml, sendTelegramCard } from "@/lib/telegram/tg";
 
 export type NotificationChannel = "telegram" | "email" | "webpush";
 
-export type LearnerNotification = {
-  authUserId: string;
+/**
+ * Addressed to an account, or — for a buyer who paid but never signed in — to
+ * the customer row whose Telegram chat the bot already knows.
+ */
+export type LearnerNotification = ({ authUserId: string } | { customerId: string }) & {
   /** Short plain-text body. Channel senders may decorate it. */
   text: string;
   /** Optional bold lead line — the course, the day. Plain text; senders escape it. */
@@ -76,8 +79,17 @@ const senders: Partial<Record<NotificationChannel, ChannelSender>> = {
  * Resolves which channels a learner accepts and where to reach them.
  * Telegram address comes from `customers.tg_id`, the identity the funnel already owns.
  */
-async function resolveChannels(authUserId: string): Promise<Array<{ channel: NotificationChannel; address: string }>> {
+async function resolveChannels(
+  to: { authUserId: string } | { customerId: string },
+): Promise<Array<{ channel: NotificationChannel; address: string }>> {
   const db = adminClient();
+
+  if ("customerId" in to) {
+    // No account means no saved preference: the chat is the one channel.
+    const { data: guest } = await db.from("customers").select("tg_id").eq("id", to.customerId).maybeSingle();
+    return guest?.tg_id ? [{ channel: "telegram", address: String(guest.tg_id) }] : [];
+  }
+  const authUserId = to.authUserId;
 
   const [{ data: profile }, { data: customer }] = await Promise.all([
     db.from("platform_users").select("notification_channels").eq("auth_user_id", authUserId).maybeSingle(),
@@ -106,7 +118,7 @@ async function resolveChannels(authUserId: string): Promise<Array<{ channel: Not
  * Not a fan-out: a learner should get one nudge, not one per channel.
  */
 export async function notifyLearner(notification: LearnerNotification): Promise<DeliveryResult> {
-  const channels = await resolveChannels(notification.authUserId);
+  const channels = await resolveChannels(notification);
 
   if (channels.length === 0) {
     return { delivered: false, channel: null, reason: "no_reachable_channel" };

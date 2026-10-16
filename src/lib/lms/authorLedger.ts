@@ -227,6 +227,10 @@ export function ledgerCsv(rows: readonly LedgerRow[]): string {
   return `﻿${[header.join(";"), ...lines].join("\r\n")}\r\n`;
 }
 
+const LEDGER_PAGE = 1000;
+/* An `in (...)` list travels in the URL; 300 refs keep it well inside limits. */
+const LEDGER_IN_CHUNK = 300;
+
 /** The caller's own author row, or null — admins without a byline have no ledger of their own. */
 export async function findLedgerAuthor(authUserId: string): Promise<LedgerAuthor | null> {
   const db = adminClient();
@@ -248,24 +252,44 @@ export async function findLedgerAuthor(authUserId: string): Promise<LedgerAuthor
  */
 export async function readLedgerRows(authorId: string, sinceIso: string | null): Promise<LedgerRow[]> {
   const db = adminClient();
-  const { data: shares, error } = await db
-    .from("order_shares")
-    .select("order_ref, share_pct, base_amount, amount, currency, status, source, ref")
-    .eq("author_id", authorId);
-  if (error) throw new Error(`ledger_shares_read_failed: ${error.message}`);
-  if (!shares || shares.length === 0) return [];
+  /* PAGED, because PostgREST caps one response: an author past that cap would
+     see totals and a CSV that silently stop at the first page. */
+  const shares: Array<{
+    order_ref: string;
+    share_pct: number | string;
+    base_amount: number | string;
+    amount: number | string;
+    currency: string;
+    status: string;
+    source: string | null;
+    ref: string | null;
+  }> = [];
+  for (let from = 0; ; from += LEDGER_PAGE) {
+    const { data, error } = await db
+      .from("order_shares")
+      .select("order_ref, share_pct, base_amount, amount, currency, status, source, ref")
+      .eq("author_id", authorId)
+      .order("order_ref", { ascending: true })
+      .range(from, from + LEDGER_PAGE - 1);
+    if (error) throw new Error(`ledger_shares_read_failed: ${error.message}`);
+    shares.push(...(data ?? []));
+    if (!data || data.length < LEDGER_PAGE) break;
+  }
+  if (shares.length === 0) return [];
 
   const refs = shares.map((share) => share.order_ref);
-  const { data: orders, error: ordersError } = await db
-    .from("orders")
-    .select("order_ref, created_at, experience_id")
-    .in("order_ref", refs);
-  if (ordersError) throw new Error(`ledger_orders_read_failed: ${ordersError.message}`);
-  const orderBy = new Map((orders ?? []).map((order) => [order.order_ref, order]));
+  const orders: Array<{ order_ref: string; created_at: string; experience_id: string | null }> = [];
+  for (let i = 0; i < refs.length; i += LEDGER_IN_CHUNK) {
+    const { data, error: ordersError } = await db
+      .from("orders")
+      .select("order_ref, created_at, experience_id")
+      .in("order_ref", refs.slice(i, i + LEDGER_IN_CHUNK));
+    if (ordersError) throw new Error(`ledger_orders_read_failed: ${ordersError.message}`);
+    orders.push(...(data ?? []));
+  }
+  const orderBy = new Map(orders.map((order) => [order.order_ref, order]));
 
-  const experienceIds = [
-    ...new Set((orders ?? []).flatMap((order) => (order.experience_id ? [order.experience_id] : []))),
-  ];
+  const experienceIds = [...new Set(orders.flatMap((order) => (order.experience_id ? [order.experience_id] : [])))];
   const titles = new Map<string, string>();
   if (experienceIds.length > 0) {
     const { data: experiences } = await db.from("experiences").select("id, title").in("id", experienceIds);

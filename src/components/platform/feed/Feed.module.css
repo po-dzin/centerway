@@ -7,8 +7,10 @@
  * filter composes the shelf's popover recipe, as the catalogue's does.
  *
  * selection_family: the filter disclosure is `contour` and its rows `hybrid`
- * (the shelf's own recipe); reaction chips and topic chips are `fill` — a
- * pressed chip takes the soft gold ground, never a ring; text actions are `ink`.
+ * (the shelf's own recipe). Reaction chips, picker cells and topic chips are
+ * `contour` too — each is a pressable command on its own material, so the
+ * pressed state is its boundary drawn in gold over a soft gold ground, and the
+ * focus ring; there is no ink under them. Text actions are `ink`.
  */
 
 /* ─────────────── the column ─────────────── */
@@ -281,7 +283,9 @@
   gap: var(--cw-space-2xs);
   min-block-size: 2.25rem;
   padding: var(--cw-space-2xs) var(--cw-space-xs);
-  border: 0;
+  /* The contour is always there, transparent at rest, so pressing changes
+     only its colour and never the chip's size. */
+  border: 1px solid transparent;
   border-radius: var(--cw-radius-pill);
   background: var(--cw-mat-surface-sunk);
   color: var(--cw-platform-text);
@@ -292,12 +296,13 @@
   cursor: pointer;
   transition:
     background-color var(--cw-motion-state) var(--cw-ease-state),
+    border-color var(--cw-motion-state) var(--cw-ease-state),
     box-shadow var(--cw-motion-state) var(--cw-ease-state);
 }
 
 .reactionChip[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--cw-platform-accent) 62%, transparent);
   background: color-mix(in srgb, var(--cw-platform-accent) 20%, var(--cw-mat-surface));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-platform-accent) 62%, transparent);
 }
 
 .reactionChip:focus-visible {
@@ -401,7 +406,7 @@
   gap: var(--cw-space-2xs);
   min-inline-size: 0;
   padding: var(--cw-space-2xs) var(--cw-space-2xs);
-  border: 0;
+  border: 1px solid transparent;
   border-radius: var(--cw-radius-inset);
   background: transparent;
   color: var(--cw-platform-text);
@@ -410,8 +415,8 @@
 }
 
 .pickerItem[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--cw-platform-accent) 62%, transparent);
   background: color-mix(in srgb, var(--cw-platform-accent) 20%, var(--cw-mat-surface));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-platform-accent) 62%, transparent);
 }
 
 .pickerItem:focus-visible {
@@ -712,7 +717,7 @@
   font-size: var(--ds-type-body-sm-size);
 }
 
-/* A topic or a tool: a pressable chip, filled when chosen. */
+/* A topic or a tool: a pressable chip, its contour drawn when chosen. */
 .topicChip {
   composes: reactionChip;
   gap: var(--cw-space-2xs);

@@ -72,12 +72,21 @@ describe("readAnnouncementAudience", () => {
         { order_ref: "o2", customer_id: "cust-expired", status: "paid", product_code: "course:way21" },
         { order_ref: "o3", customer_id: "cust-refund", status: "refunded", product_code: "course:way21" },
         { order_ref: "o4", customer_id: "cust-bundle", status: "paid", product_code: "bundle" },
+        { order_ref: "o5", customer_id: "cust-guest", status: "paid", product_code: "course:way21" },
+        { order_ref: "o6", customer_id: "cust-guest-no-chat", status: "paid", product_code: "course:way21" },
+        { order_ref: "o7", customer_id: "cust-guest-expired-chat", status: "paid", product_code: "course:way21" },
       ],
       customers: [
-        { id: "cust-new", auth_user_id: "u-new" },
-        { id: "cust-expired", auth_user_id: "u-expired" },
-        { id: "cust-refund", auth_user_id: "u-refund" },
-        { id: "cust-bundle", auth_user_id: "u-bundle" },
+        { id: "cust-new", auth_user_id: "u-new", tg_id: null },
+        { id: "cust-expired", auth_user_id: "u-expired", tg_id: "900" },
+        { id: "cust-refund", auth_user_id: "u-refund", tg_id: null },
+        { id: "cust-bundle", auth_user_id: "u-bundle", tg_id: null },
+        // Paid, never signed in, the bot knows the chat: reached as a guest.
+        { id: "cust-guest", auth_user_id: null, tg_id: "701" },
+        // Paid, never signed in, no chat: nothing can reach them yet.
+        { id: "cust-guest-no-chat", auth_user_id: null, tg_id: null },
+        // The same chat as an expired account: the account's «no» stands.
+        { id: "cust-guest-expired-chat", auth_user_id: null, tg_id: "900" },
       ],
       lms_courses: [{ id: "c1", experience_id: null }],
     });
@@ -86,6 +95,7 @@ describe("readAnnouncementAudience", () => {
       { id: "c1", slug: "way21", entitlementProductCodes: [] },
       new Date("2026-10-15T12:00:00Z"),
     );
-    expect(audience.sort()).toEqual(["u-new", "u-open"]);
+    expect(audience.accounts.sort()).toEqual(["u-new", "u-open"]);
+    expect(audience.guests).toEqual(["cust-guest"]);
   });
 });

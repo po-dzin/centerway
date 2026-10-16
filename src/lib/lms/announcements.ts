@@ -128,12 +128,18 @@ async function readAll<T>(
   }
 }
 
-/** Account ids of everyone with open access to the course right now. */
+/**
+ * Who hears the announcement: account ids of everyone with open access right
+ * now, and the customer ids of paid buyers who never signed in but whose
+ * Telegram the bot already knows — they are reached there, by the customer row.
+ */
+export type AnnouncementAudience = { accounts: string[]; guests: string[] };
+
 export async function readAnnouncementAudience(
   db: Db,
   course: Pick<Course, "id" | "slug" | "entitlementProductCodes">,
   now: Date = new Date(),
-): Promise<string[]> {
+): Promise<AnnouncementAudience> {
   const enrollments = await readAll<{
     auth_user_id: string;
     status: string;
@@ -168,21 +174,39 @@ export async function readAnnouncementAudience(
       .range(from, to),
   );
   const customerIds = [...new Set(orders.map((order) => order.customer_id).filter((id): id is string => Boolean(id)))];
+  const guestByChat = new Map<string, string>();
   for (let i = 0; i < customerIds.length; i += 500) {
     const { data, error } = await db
       .from("customers")
-      .select("auth_user_id")
-      .in("id", customerIds.slice(i, i + 500))
-      .not("auth_user_id", "is", null);
+      .select("id, auth_user_id, tg_id")
+      .in("id", customerIds.slice(i, i + 500));
     if (error) throw new Error(`lms_announcement_audience_failed:${error.message}`);
     for (const row of data ?? []) {
-      const id = row.auth_user_id as string;
-      // An enrollment, when there is one, has the last word: a blocked or
-      // expired learner is not re-admitted to the author's notes by an old order.
-      if (!enrolled.has(id)) open.add(id);
+      const id = row.auth_user_id as string | null;
+      if (id) {
+        // An enrollment, when there is one, has the last word: a blocked or
+        // expired learner is not re-admitted to the author's notes by an old order.
+        if (!enrolled.has(id)) open.add(id);
+      } else if (row.tg_id !== null && row.tg_id !== undefined) {
+        guestByChat.set(String(row.tg_id), row.id as string);
+      }
     }
   }
-  return [...open];
+
+  /* A chat that also belongs to an account is that account's to decide: it is
+     either in the audience already or was left out on purpose (blocked,
+     expired). Either way the guest row must not send it a second time. */
+  const chats = [...guestByChat.keys()];
+  for (let i = 0; i < chats.length; i += 500) {
+    const { data, error } = await db
+      .from("customers")
+      .select("tg_id")
+      .in("tg_id", chats.slice(i, i + 500))
+      .not("auth_user_id", "is", null);
+    if (error) throw new Error(`lms_announcement_audience_failed:${error.message}`);
+    for (const row of data ?? []) guestByChat.delete(String(row.tg_id));
+  }
+  return { accounts: [...open], guests: [...new Set(guestByChat.values())] };
 }
 
 /** How many will receive it, and how many of them can be reached in Telegram. */
@@ -190,17 +214,21 @@ export async function readAnnouncementReach(
   course: Pick<Course, "id" | "slug" | "entitlementProductCodes">,
 ): Promise<AnnouncementReach> {
   const db = adminClient();
-  const audience = await readAnnouncementAudience(db, course);
+  const { accounts, guests } = await readAnnouncementAudience(db, course);
   let telegram = 0;
-  for (let i = 0; i < audience.length; i += 500) {
+  for (let i = 0; i < accounts.length; i += 500) {
     const { count } = await db
       .from("customers")
       .select("id", { count: "exact", head: true })
-      .in("auth_user_id", audience.slice(i, i + 500))
+      .in("auth_user_id", accounts.slice(i, i + 500))
       .not("tg_id", "is", null);
     telegram += count ?? 0;
   }
-  return { recipients: audience.length, telegram: Math.min(telegram, audience.length) };
+  // Every guest is in the audience because the bot knows their chat.
+  return {
+    recipients: accounts.length + guests.length,
+    telegram: Math.min(telegram, accounts.length) + guests.length,
+  };
 }
 
 /* ─────────────────────────── author side ─────────────────────────── */
@@ -292,8 +320,9 @@ export async function createAnnouncement(input: {
   if (next) throw new AnnouncementError("lms_announcement_too_soon", 429, { nextAt: next });
 
   const db = adminClient();
-  const audience = await readAnnouncementAudience(db, input.course, now);
-  if (audience.length === 0) throw new AnnouncementError("lms_announcement_no_audience");
+  const { accounts, guests } = await readAnnouncementAudience(db, input.course, now);
+  const recipients = accounts.length + guests.length;
+  if (recipients === 0) throw new AnnouncementError("lms_announcement_no_audience");
 
   const { data: author } = await db
     .from("lms_courses")
@@ -309,26 +338,58 @@ export async function createAnnouncement(input: {
       created_by: input.createdBy,
       body,
       lesson_slug: lessonSlug,
-      recipients: audience.length,
+      recipients,
     })
-    .select("id")
+    .select("id, created_at")
     .single();
   if (error || !created) throw new Error(`lms_announcement_insert_failed:${error?.message ?? "no_row"}`);
 
-  for (let i = 0; i < audience.length; i += 500) {
-    const { error: noticeError } = await db.from("learner_notices").insert(
-      audience.slice(i, i + 500).map((authUserId) => ({
-        auth_user_id: authUserId,
-        kind: "author_announcement",
-        announcement_id: created.id,
-        course_id: input.course.id,
-      })),
-    );
-    if (noticeError) throw new Error(`lms_announcement_notices_failed:${noticeError.message}`);
+  /* THE COOLDOWN, DECIDED AFTER THE WRITE. Two requests can both read «none
+     today» above and both insert. Each now looks at what is really there: the
+     earliest of the day's rows stands, and any later one withdraws before a
+     single notice exists — so the course hears once. */
+  const { data: rivals, error: rivalsError } = await db
+    .from("lms_announcements")
+    .select("id, created_at")
+    .eq("course_id", input.course.id)
+    .gt("created_at", new Date(Date.parse(created.created_at) - ANNOUNCEMENT_COOLDOWN_MS).toISOString())
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true })
+    .limit(1);
+  const first = rivals?.[0];
+  if (rivalsError || (first && first.id !== created.id)) {
+    await db.from("lms_announcements").delete().eq("id", created.id);
+    if (rivalsError) throw new Error(`lms_announcement_insert_failed:${rivalsError.message}`);
+    throw new AnnouncementError("lms_announcement_too_soon", 429, {
+      nextAt: new Date(Date.parse(first!.created_at) + ANNOUNCEMENT_COOLDOWN_MS).toISOString(),
+    });
   }
 
-  await enqueueAnnouncementJob(db, created.id);
-  return { id: created.id, recipients: audience.length };
+  try {
+    const notices = [
+      ...accounts.map((authUserId) => ({ auth_user_id: authUserId, customer_id: null as string | null })),
+      ...guests.map((customerId) => ({ auth_user_id: null as string | null, customer_id: customerId })),
+    ];
+    for (let i = 0; i < notices.length; i += 500) {
+      const { error: noticeError } = await db.from("learner_notices").insert(
+        notices.slice(i, i + 500).map((notice) => ({
+          ...notice,
+          kind: "author_announcement",
+          announcement_id: created.id,
+          course_id: input.course.id,
+        })),
+      );
+      if (noticeError) throw new Error(`lms_announcement_notices_failed:${noticeError.message}`);
+    }
+    await enqueueAnnouncementJob(db, created.id);
+  } catch (failure) {
+    /* Nothing half-made is left behind: without its job the rows past the first
+       batch would wait forever, and the cooldown would refuse the retry. The
+       notices go with the announcement (on delete cascade). */
+    await db.from("lms_announcements").delete().eq("id", created.id);
+    throw failure;
+  }
+  return { id: created.id, recipients };
 }
 
 async function enqueueAnnouncementJob(db: Db, announcementId: string, runAt?: Date) {
@@ -338,7 +399,9 @@ async function enqueueAnnouncementJob(db: Db, announcementId: string, runAt?: Da
     payload: { announcement_id: announcementId },
     run_at: (runAt ?? new Date()).toISOString(),
   });
-  if (error) console.error("lms_announcement_job_enqueue_failed", { announcementId, error: error.message });
+  // Thrown, not logged: the caller undoes the announcement, or the worker
+  // retries the job that could not hand over to the next one.
+  if (error) throw new Error(`lms_announcement_job_enqueue_failed:${error.message}`);
 }
 
 /* ─────────────────────────── sending ─────────────────────────── */
@@ -393,13 +456,18 @@ export async function sendAnnouncementBatch(announcementId: string, now: Date = 
       .update({ tg_status: "sending", tg_sent_at: now.toISOString() })
       .in("id", ids)
       .or(`tg_status.eq.pending,and(tg_status.eq.sending,tg_sent_at.lt.${staleBefore})`)
-      .select("id, auth_user_id");
+      .select("id, auth_user_id, customer_id");
 
     const href = announcementHref(courseSlug, announcement.lesson_slug);
     for (const notice of claimed ?? []) {
-      if (!notice.auth_user_id) continue;
+      const to = notice.auth_user_id
+        ? { authUserId: notice.auth_user_id as string }
+        : notice.customer_id
+          ? { customerId: notice.customer_id as string }
+          : null;
+      if (!to) continue;
       const result = await notifyLearner({
-        authUserId: notice.auth_user_id,
+        ...to,
         title: author?.name ? `${courseTitle} · ${author.name}` : courseTitle,
         text: announcement.body,
         href,
