@@ -1,4 +1,5 @@
 import type { PlatformOfferSurfaceType } from "@/lib/platform/content";
+import type { CourseSectionTitles } from "@/lms-core";
 
 /**
  * What this page actually needs, declared instead of inferred.
@@ -55,4 +56,6 @@ export type OfferSurface = {
   accessNote?: string;
   /** Why this author for this course. One sentence; the profile is joined separately. */
   authorNote?: string;
+  /** The author's own block titles (`Course.sectionTitles`); an absent key keeps the generic one. */
+  sectionTitles?: CourseSectionTitles;
 };

@@ -16,6 +16,8 @@ import { courseThemeAttributes, inlineToPlainText } from "@/lms-core";
 import { Icon } from "@/components/Icon";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { ProgressRail } from "@/components/platform/ProgressRail";
+import { StepLine } from "@/components/platform/StepLine";
+import { streamFeed } from "./streamFeed";
 import {
   ensureTimeZoneSynced,
   fetchCourse,
@@ -92,6 +94,9 @@ export function CourseView({
       : { status: "loading" };
 
   const [restarting, setRestarting] = useState(false);
+  /* The stream feed folds the early done days into one link; opening it is
+     this visit's choice and is not remembered. */
+  const [feedExpanded, setFeedExpanded] = useState(false);
   /* The reader's own marks for this course — the map is where they are read
      back. Not fetched at all in the builder's draft preview: an author looking
      at their own draft has no marks in it. */
@@ -187,6 +192,13 @@ export function CourseView({
   // consult, not a step you complete.
   const steps = outline.filter((entry) => !entry.isReference);
   const reference = outline.filter((entry) => entry.isReference);
+  /* A DAILY COURSE IS A STREAM, AND ITS MAP IS A FEED (G, 2026-10-15): the
+     days behind, today, the days ahead on the shared step line. It replaces
+     both the outline and the progress rail — the rail and the feed said «how
+     far» twice on one screen (G: «не дубль ли это»). The shelf card keeps the
+     rail; open, sequential and draft-preview courses keep the outline. */
+  const isStream = course.scheduleMode === "daily";
+  const feed = isStream ? streamFeed(steps, currentLessonSlug, standing.currentDay, feedExpanded) : null;
 
   return (
     <main
@@ -222,12 +234,14 @@ export function CourseView({
         {standing.isFinished ? <span className={styles.chip}>Курс завершено</span> : null}
       </div>
 
-      <ProgressRail
-        value={standing.completedLessons}
-        total={standing.totalLessons}
-        label="Прогрес курсу"
-        className={styles.courseProgress}
-      />
+      {!isStream ? (
+        <ProgressRail
+          value={standing.completedLessons}
+          total={standing.totalLessons}
+          label="Прогрес курсу"
+          className={styles.courseProgress}
+        />
+      ) : null}
 
       {/* A finished protocol is meant to be repeated, so the end of the course
           offers the beginning of it rather than a dead end. */}
@@ -245,55 +259,99 @@ export function CourseView({
         </div>
       ) : null}
 
-      <ul className={styles.outline}>
-        {steps.map((entry) => {
-          const lessonHref = href(`/learn/${course.slug}/${entry.slug}${previewQuery}`);
-          const badgeLabel = entry.dayIndex ?? "•";
-          const isCurrent = entry.slug === currentLessonSlug;
+      {feed ? (
+        <section className={styles.streamFeed} aria-label="Дні потоку">
+          {feed.folded > 0 ? (
+            <button className={styles.feedFoldButton} type="button" onClick={() => setFeedExpanded(true)}>
+              Ще {feed.folded} {plural(feed.folded, "пройдений день", "пройдені дні", "пройдених днів")}
+            </button>
+          ) : null}
+          <StepLine
+            steps={feed.visible.map(({ entry, state, today }) => {
+              const lessonHref = href(`/learn/${course.slug}/${entry.slug}${previewQuery}`);
+              const day = entry.dayIndex;
+              const locked = !entry.availability.available;
+              const kicker = [
+                day === null ? null : today ? `Сьогодні · день ${day}` : `День ${day}`,
+                locked ? lockNote(entry.availability) : null,
+              ]
+                .filter(Boolean)
+                .join(" · ");
+              const description = [
+                entry.durationMin ? `${entry.durationMin} хв` : null,
+                scheduleNote(entry.availability),
+              ]
+                .filter(Boolean)
+                .join(" · ");
+              return {
+                id: entry.lessonId,
+                state,
+                marker: day ?? "•",
+                kicker: kicker || undefined,
+                title: locked ? entry.title : <MotionLink href={lessonHref}>{entry.title}</MotionLink>,
+                description: description || null,
+                action: locked ? undefined : (
+                  <MotionLink className={styles.feedAction} href={lessonHref}>
+                    Відкрити урок
+                  </MotionLink>
+                ),
+              };
+            })}
+          />
+        </section>
+      ) : null}
 
-          const meta = [
-            entry.durationMin ? `${entry.durationMin} хв` : null,
-            scheduleNote(entry.availability),
-            isCurrent && !entry.completed ? "продовжити" : null,
-          ]
-            .filter(Boolean)
-            .join(" · ");
+      {!feed ? (
+        <ul className={styles.outline}>
+          {steps.map((entry) => {
+            const lessonHref = href(`/learn/${course.slug}/${entry.slug}${previewQuery}`);
+            const badgeLabel = entry.dayIndex ?? "•";
+            const isCurrent = entry.slug === currentLessonSlug;
 
-          // A hard-gated course still exists in the model; it renders as a row
-          // that states its date instead of opening.
-          if (!entry.availability.available) {
+            const meta = [
+              entry.durationMin ? `${entry.durationMin} хв` : null,
+              scheduleNote(entry.availability),
+              isCurrent && !entry.completed ? "продовжити" : null,
+            ]
+              .filter(Boolean)
+              .join(" · ");
+
+            // A hard-gated course still exists in the model; it renders as a row
+            // that states its date instead of opening.
+            if (!entry.availability.available) {
+              return (
+                <li key={entry.lessonId} className={styles.outlineItem}>
+                  <div className={styles.outlineLocked} aria-disabled="true">
+                    <span className={styles.dayBadge} aria-hidden="true">
+                      {badgeLabel}
+                    </span>
+                    <div className={styles.outlineBody}>
+                      <h2 className={styles.outlineTitle}>{entry.title}</h2>
+                      <p className={styles.outlineMeta}>{lockNote(entry.availability)}</p>
+                    </div>
+                    <Icon name="lock" size={20} className={styles.outlineGlyph} />
+                  </div>
+                </li>
+              );
+            }
+
             return (
-              <li key={entry.lessonId} className={styles.outlineItem}>
-                <div className={styles.outlineLocked} aria-disabled="true">
-                  <span className={styles.dayBadge} aria-hidden="true">
-                    {badgeLabel}
+              <li key={entry.lessonId} className={styles.outlineItem} data-current={isCurrent || undefined}>
+                <MotionLink className={styles.outlineLink} href={lessonHref}>
+                  <span className={entry.completed ? styles.dayBadgeDone : styles.dayBadge} aria-hidden="true">
+                    {entry.completed ? <Icon name="check" size={18} /> : badgeLabel}
                   </span>
                   <div className={styles.outlineBody}>
                     <h2 className={styles.outlineTitle}>{entry.title}</h2>
-                    <p className={styles.outlineMeta}>{lockNote(entry.availability)}</p>
+                    {meta ? <p className={styles.outlineMeta}>{meta}</p> : null}
                   </div>
-                  <Icon name="lock" size={20} className={styles.outlineGlyph} />
-                </div>
+                  <Icon name="chevron-right" size={20} className={styles.outlineGlyph} />
+                </MotionLink>
               </li>
             );
-          }
-
-          return (
-            <li key={entry.lessonId} className={styles.outlineItem} data-current={isCurrent || undefined}>
-              <MotionLink className={styles.outlineLink} href={lessonHref}>
-                <span className={entry.completed ? styles.dayBadgeDone : styles.dayBadge} aria-hidden="true">
-                  {entry.completed ? <Icon name="check" size={18} /> : badgeLabel}
-                </span>
-                <div className={styles.outlineBody}>
-                  <h2 className={styles.outlineTitle}>{entry.title}</h2>
-                  {meta ? <p className={styles.outlineMeta}>{meta}</p> : null}
-                </div>
-                <Icon name="chevron-right" size={20} className={styles.outlineGlyph} />
-              </MotionLink>
-            </li>
-          );
-        })}
-      </ul>
+          })}
+        </ul>
+      ) : null}
 
       {reference.length > 0 ? (
         <section className={styles.referenceSection}>

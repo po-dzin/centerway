@@ -5,6 +5,7 @@ import { validateLessonBlock, collectRequiredChecklistItemIds, youtubeIdFrom } f
 import {
   COURSE_DURATION_DAYS_MAX,
   COURSE_PRETITLE_MAX,
+  COURSE_SECTION_TITLE_MAX,
   COURSE_TITLE_MAX,
   COURSE_TITLE_RAW_MAX,
   flattenLessons,
@@ -274,6 +275,22 @@ describe("course validation", () => {
     const course = dailyCourse() as unknown as Record<string, unknown>;
     course.pretitle = "я".repeat(COURSE_PRETITLE_MAX + 1);
     expect(() => validateCourse(course)).toThrow(/lms_course_pretitle_too_long/);
+  });
+
+  it("accepts the author's block titles and rejects unknown keys, empty values and long ones", () => {
+    const ok = dailyCourse() as unknown as Record<string, unknown>;
+    ok.sectionTitles = { method: "Десять хвилин, що повертають тіло", audience: "Якщо тіло тримає напругу" };
+    expect(() => validateCourse(ok)).not.toThrow();
+
+    for (const bad of [{}, { nope: "x" }, { method: "" }, [], "text"]) {
+      const course = dailyCourse() as unknown as Record<string, unknown>;
+      course.sectionTitles = bad;
+      expect(() => validateCourse(course)).toThrow(/lms_course_invalid_section_titles/);
+    }
+
+    const long = dailyCourse() as unknown as Record<string, unknown>;
+    long.sectionTitles = { method: "я".repeat(COURSE_SECTION_TITLE_MAX + 1) };
+    expect(() => validateCourse(long)).toThrow(/lms_course_section_title_too_long/);
   });
 
   it("holds the title to two mobile catalogue lines for every writer", () => {
