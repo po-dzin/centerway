@@ -23,6 +23,11 @@ import { CW_EMOJI, type CwEmojiId } from "@/lib/brand/emojiSet";
 
 export const FEED_PATH = "/feed";
 
+/** One post's own address — shared links and the journal lead here. */
+export function feedPostPath(id: string): string {
+  return `${FEED_PATH}/${id}`;
+}
+
 export const FEED_POST_MAX = 4000;
 export const FEED_COMMENT_MAX = 1000;
 /** How many posts a page of the feed carries; «Показати ще» asks for the next. */

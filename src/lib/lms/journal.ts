@@ -27,6 +27,9 @@ import {
   type JournalPlace,
 } from "@/lms-core";
 
+import { listFeedMarks } from "@/lib/feed/server";
+import { feedPostPath } from "@/lib/feed/model";
+
 import { listJournalMarks } from "./annotations";
 import { listLiveCourses } from "./liveCatalog";
 import { getLearnerSettings, type LearnerIdentity } from "./server";
@@ -61,7 +64,12 @@ export async function loadJournal(identity: LearnerIdentity, now = new Date()): 
   const enrollments = (enrollmentRows ?? []) as EnrollmentRow[];
   const timeZone = resolveTimeZone(settings.timeZone);
 
-  if (enrollments.length === 0) return { entries: [], timeZone };
+  // Marks made on feed posts («Стрічка», 2026-10-16) have no enrollment; they
+  // are read by account here — the same crossing, one more table — and woven
+  // into the same timeline by time.
+  const feedEntries = await readFeedEntries(db, identity.authUserId);
+
+  if (enrollments.length === 0) return { entries: feedEntries, timeZone };
 
   // The catalogue read is the cached one the shelf already warms, so a journal
   // costs no per-course lookup. It carries drafts too, which is what lets an
@@ -95,5 +103,34 @@ export async function loadJournal(identity: LearnerIdentity, now = new Date()): 
     ];
   });
 
-  return { entries: buildJournalEntries(marks, places), timeZone };
+  return { entries: mergeByTime(buildJournalEntries(marks, places), feedEntries), timeZone };
+}
+
+async function readFeedEntries(db: ReturnType<typeof adminClient>, authUserId: string): Promise<JournalEntry[]> {
+  try {
+    const marks = await listFeedMarks(db, authUserId);
+    return marks.map((mark) => ({
+      clientId: mark.clientId,
+      kind: "highlight" as const,
+      quote: mark.quote,
+      note: mark.note,
+      createdAt: mark.createdAt,
+      updatedAt: mark.updatedAt,
+      course: null,
+      lesson: null,
+      feed: { authorName: mark.authorName ?? "автор" },
+      path: feedPostPath(mark.postId),
+    }));
+  } catch (error) {
+    // The feed is the newer half; a failure there must not cost the reader
+    // their lesson notes.
+    console.error("journal_feed_marks_failed:", error instanceof Error ? error.message : error);
+    return [];
+  }
+}
+
+/** Newest first, the order `buildJournalEntries` already keeps. */
+function mergeByTime(a: JournalEntry[], b: JournalEntry[]): JournalEntry[] {
+  if (b.length === 0) return a;
+  return [...a, ...b].sort((x, y) => y.createdAt.localeCompare(x.createdAt) || x.clientId.localeCompare(y.clientId));
 }

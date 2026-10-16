@@ -370,8 +370,8 @@ export async function listOwnPosts(db: Db, author: FeedAuthor & { userId: string
 /* ─────────────────────────── writing a post ─────────────────────────── */
 
 export type FeedPostInput = {
-  body: unknown;
-  topic: unknown;
+  body?: unknown;
+  topic?: unknown;
   courseId?: unknown;
   lessonId?: unknown;
   blockId?: unknown;
@@ -724,7 +724,7 @@ export async function addComment(
   db: Db,
   postId: string,
   userId: string,
-  input: { body: unknown; parentId?: unknown },
+  input: { body?: unknown; parentId?: unknown },
   now: Date = new Date(),
 ): Promise<CreatedComment> {
   const post = await publishedPostExists(db, postId);
@@ -851,9 +851,9 @@ export async function saveFeedMark(
   db: Db,
   userId: string,
   input: {
-    clientId: unknown;
-    postId: unknown;
-    quote: unknown;
+    clientId?: unknown;
+    postId?: unknown;
+    quote?: unknown;
     prefix?: unknown;
     start?: unknown;
     end?: unknown;
