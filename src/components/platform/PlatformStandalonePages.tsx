@@ -72,7 +72,6 @@ export function PlatformConsultPage({ authors = [] }: { authors?: Author[] }) {
         primaryAction: { href: "#consultants", label: "Обрати автора" },
         secondaryAction: { href: "#consult-details", label: "Як це відбувається" },
       }}
-      afterHero={<ConsultantDirectory authors={authors} />}
       detailSectionId="consult-details"
       detailSemanticFamily="method-progress"
       detailLeft={{
@@ -87,6 +86,9 @@ export function PlatformConsultPage({ authors = [] }: { authors?: Author[] }) {
       }}
       beforeSupport={
         <>
+          {/* Under «Як це відбувається» (G, 16.10): the reader learns how a
+              consultation goes, then chooses the person. */}
+          <ConsultantDirectory authors={authors} />
           <ConsultBoundary />
           <ConsultFaq />
         </>
