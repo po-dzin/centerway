@@ -71,7 +71,7 @@ export function PlatformConsultPage({ authors = [] }: { authors?: Author[] }) {
       detailSemanticFamily="method-progress"
       detailLeft={{
         label: "Коли це доречно",
-        title: "Запит починається зі стану, а не з випадкової покупки",
+        title: "Коли варто прийти на розмову",
         body: <PlatformOfferResultList items={bodySignals} />,
       }}
       detailRight={{
