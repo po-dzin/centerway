@@ -33,6 +33,9 @@ export type NavItem = { label: string; href: string; match: "exact" | "prefix" }
 /** The public platform bar. `Головна` is intentionally explicit here. */
 export const platformNav: NavItem[] = [
   { label: "Головна", href: platformHomeHref, match: "exact" },
+  /* Right after Головна (G, 16.10): what the authors are saying now is the
+     first thing after the front door, before the catalogue's own sections. */
+  { label: "Стрічка", href: "/feed", match: "prefix" as const },
   { label: "Діагностика", href: "/tests", match: "prefix" as const },
   { label: "Програми", href: "/programs", match: "prefix" as const },
   { label: "Продукти", href: "/products", match: "prefix" as const },

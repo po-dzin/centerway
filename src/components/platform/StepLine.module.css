@@ -137,6 +137,14 @@
   margin-block-start: var(--cw-space-xs);
 }
 
+/* A step's own content (the journal's entries under a day). Block, not the
+   body's grid gap alone: it is a different kind of thing from the title. */
+.content {
+  display: block;
+  min-inline-size: 0;
+  margin-block-start: var(--cw-space-xs);
+}
+
 .withFootnote {
   display: grid;
   gap: var(--cw-space-md);

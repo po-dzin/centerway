@@ -508,6 +508,44 @@ export type Database = {
         }
         Relationships: []
       }
+      author_links: {
+        Row: {
+          archived_at: string | null
+          author_id: string
+          channel: string | null
+          created_at: string
+          label: string
+          tag: string
+          target_path: string
+        }
+        Insert: {
+          archived_at?: string | null
+          author_id: string
+          channel?: string | null
+          created_at?: string
+          label: string
+          tag: string
+          target_path?: string
+        }
+        Update: {
+          archived_at?: string | null
+          author_id?: string
+          channel?: string | null
+          created_at?: string
+          label?: string
+          tag?: string
+          target_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "author_links_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "lms_authors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       author_payout_accounts: {
         Row: {
           active: boolean
@@ -517,6 +555,7 @@ export type Database = {
           gateway: string | null
           iban: string | null
           legal_name: string | null
+          own_share_pct: number | null
           receiver_ref: string | null
           tax_id: string | null
           updated_at: string
@@ -529,6 +568,7 @@ export type Database = {
           gateway?: string | null
           iban?: string | null
           legal_name?: string | null
+          own_share_pct?: number | null
           receiver_ref?: string | null
           tax_id?: string | null
           updated_at?: string
@@ -541,6 +581,7 @@ export type Database = {
           gateway?: string | null
           iban?: string | null
           legal_name?: string | null
+          own_share_pct?: number | null
           receiver_ref?: string | null
           tax_id?: string | null
           updated_at?: string
@@ -1006,6 +1047,236 @@ export type Database = {
           },
         ]
       }
+      feed_comments: {
+        Row: {
+          auth_user_id: string
+          body: string
+          created_at: string
+          gate: Json | null
+          hidden_at: string | null
+          hidden_by: string | null
+          id: string
+          parent_id: string | null
+          post_id: string
+          status: string
+        }
+        Insert: {
+          auth_user_id: string
+          body: string
+          created_at?: string
+          gate?: Json | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          parent_id?: string | null
+          post_id: string
+          status?: string
+        }
+        Update: {
+          auth_user_id?: string
+          body?: string
+          created_at?: string
+          gate?: Json | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          parent_id?: string | null
+          post_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "feed_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feed_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "feed_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_marks: {
+        Row: {
+          auth_user_id: string
+          client_id: string
+          created_at: string
+          end_offset: number | null
+          id: string
+          kind: string
+          note: string | null
+          post_id: string
+          prefix: string | null
+          quote: string | null
+          start_offset: number | null
+          updated_at: string
+        }
+        Insert: {
+          auth_user_id: string
+          client_id: string
+          created_at?: string
+          end_offset?: number | null
+          id?: string
+          kind?: string
+          note?: string | null
+          post_id: string
+          prefix?: string | null
+          quote?: string | null
+          start_offset?: number | null
+          updated_at?: string
+        }
+        Update: {
+          auth_user_id?: string
+          client_id?: string
+          created_at?: string
+          end_offset?: number | null
+          id?: string
+          kind?: string
+          note?: string | null
+          post_id?: string
+          prefix?: string | null
+          quote?: string | null
+          start_offset?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_marks_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "feed_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_posts: {
+        Row: {
+          author_id: string
+          block_display: string
+          block_id: string | null
+          body: string
+          course_id: string | null
+          created_at: string
+          created_by: string
+          decided_by: string | null
+          gate: Json | null
+          held_reason: string | null
+          hidden_at: string | null
+          id: string
+          lesson_id: string | null
+          photo_alt: string | null
+          photo_path: string | null
+          published_at: string | null
+          returned_reason: string | null
+          status: string
+          tg_message_id: number | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          block_display?: string
+          block_id?: string | null
+          body: string
+          course_id?: string | null
+          created_at?: string
+          created_by: string
+          decided_by?: string | null
+          gate?: Json | null
+          held_reason?: string | null
+          hidden_at?: string | null
+          id?: string
+          lesson_id?: string | null
+          photo_alt?: string | null
+          photo_path?: string | null
+          published_at?: string | null
+          returned_reason?: string | null
+          status?: string
+          tg_message_id?: number | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          block_display?: string
+          block_id?: string | null
+          body?: string
+          course_id?: string | null
+          created_at?: string
+          created_by?: string
+          decided_by?: string | null
+          gate?: Json | null
+          held_reason?: string | null
+          hidden_at?: string | null
+          id?: string
+          lesson_id?: string | null
+          photo_alt?: string | null
+          photo_path?: string | null
+          published_at?: string | null
+          returned_reason?: string | null
+          status?: string
+          tg_message_id?: number | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "lms_authors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feed_posts_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "lms_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feed_posts_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lms_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_reactions: {
+        Row: {
+          auth_user_id: string
+          created_at: string
+          emoji: string
+          post_id: string
+        }
+        Insert: {
+          auth_user_id: string
+          created_at?: string
+          emoji: string
+          post_id: string
+        }
+        Update: {
+          auth_user_id?: string
+          created_at?: string
+          emoji?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "feed_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           attempts: number | null
@@ -1104,6 +1375,118 @@ export type Database = {
           stage_changed_at?: string | null
         }
         Relationships: []
+      }
+      learner_notices: {
+        Row: {
+          announcement_id: string | null
+          auth_user_id: string | null
+          course_id: string | null
+          customer_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          read_at: string | null
+          tg_sent_at: string | null
+          tg_status: string
+        }
+        Insert: {
+          announcement_id?: string | null
+          auth_user_id?: string | null
+          course_id?: string | null
+          customer_id?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          read_at?: string | null
+          tg_sent_at?: string | null
+          tg_status?: string
+        }
+        Update: {
+          announcement_id?: string | null
+          auth_user_id?: string | null
+          course_id?: string | null
+          customer_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          read_at?: string | null
+          tg_sent_at?: string | null
+          tg_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learner_notices_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "lms_announcements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learner_notices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learner_notices_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "lms_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lms_announcements: {
+        Row: {
+          author_id: string | null
+          body: string
+          course_id: string
+          created_at: string
+          created_by: string
+          hidden_at: string | null
+          id: string
+          lesson_slug: string | null
+          recipients: number
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          course_id: string
+          created_at?: string
+          created_by: string
+          hidden_at?: string | null
+          id?: string
+          lesson_slug?: string | null
+          recipients?: number
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          course_id?: string
+          created_at?: string
+          created_by?: string
+          hidden_at?: string | null
+          id?: string
+          lesson_slug?: string | null
+          recipients?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_announcements_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "lms_authors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_announcements_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "lms_courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lms_annotations: {
         Row: {
@@ -2068,7 +2451,9 @@ export type Database = {
           order_ref: string
           paid_out_at: string | null
           payout_note: string | null
+          ref: string | null
           share_pct: number
+          source: string
           status: string
           updated_at: string
         }
@@ -2083,7 +2468,9 @@ export type Database = {
           order_ref: string
           paid_out_at?: string | null
           payout_note?: string | null
+          ref?: string | null
           share_pct: number
+          source?: string
           status: string
           updated_at?: string
         }
@@ -2098,7 +2485,9 @@ export type Database = {
           order_ref?: string
           paid_out_at?: string | null
           payout_note?: string | null
+          ref?: string | null
           share_pct?: number
+          source?: string
           status?: string
           updated_at?: string
         }
@@ -2122,6 +2511,8 @@ export type Database = {
       orders: {
         Row: {
           amount: number | null
+          author_share_pct: number | null
+          author_share_source: string | null
           campaign: string | null
           client_ip: string | null
           client_ua: string | null
@@ -2147,6 +2538,8 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          author_share_pct?: number | null
+          author_share_source?: string | null
           campaign?: string | null
           client_ip?: string | null
           client_ua?: string | null
@@ -2172,6 +2565,8 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          author_share_pct?: number | null
+          author_share_source?: string | null
           campaign?: string | null
           client_ip?: string | null
           client_ua?: string | null

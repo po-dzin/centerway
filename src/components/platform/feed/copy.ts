@@ -1,0 +1,99 @@
+/**
+ * The feed's words, in one place (Ukrainian; the voice is not final, so a
+ * change here is a copy change and waits for G's yes like any other).
+ */
+
+export const feedCopy = {
+  title: "Стрічка",
+  lead: "Дописи авторів CenterWay: практики, думки, події.",
+  empty: "Тут поки порожньо. Автори скоро напишуть перші дописи.",
+  emptyFiltered: "За цим фільтром дописів немає.",
+  more: "Показати ще",
+  loading: "Завантажуємо…",
+  loadFailed: "Не вдалося завантажити дописи. Спробуйте ще раз.",
+
+  filter: "Фільтри",
+  filterTitle: "Фільтр стрічки за темою і автором",
+  filterAll: "Усі",
+  filterTopics: "Тема",
+  filterAuthors: "Автор",
+  filterReset: "Скинути",
+
+  reactionsLabel: "Реакції",
+  addReaction: "Додати реакцію",
+  pickerTitle: "Реакції",
+  close: "Закрити",
+
+  comments: ["коментар", "коментарі", "коментарів"] as [string, string, string],
+  commentsNone: "Коментувати",
+  commentsHide: "Сховати коментарі",
+  writeComment: "Написати коментар…",
+  writeReply: "Ваша відповідь…",
+  send: "Надіслати",
+  reply: "Відповісти",
+  replyingTo: "Відповідь для",
+  cancel: "Скасувати",
+  hide: "Приховати",
+  remove: "Видалити",
+  byAuthor: "автор",
+  commentHeld: "Чекає перевірки команди: поки бачите тільки ви.",
+  commentHeldToast: "Коментар чекає перевірки команди.",
+  commentFailed: "Не вдалося надіслати коментар.",
+
+  signInTo: "Увійдіть, щоб реагувати, коментувати й позначати.",
+  signIn: "Увійти",
+
+  markAdd: "Позначити",
+  markNote: "Нотатка",
+  markSave: "Зберегти",
+  markRemove: "Прибрати позначку",
+  markSaved: "Збережено в «Мій журнал».",
+  markFailed: "Не вдалося зберегти позначку.",
+  notePlaceholder: "Ваша думка про це…",
+
+  openProgram: "Відкрити програму",
+  video: "відео",
+  image: "зображення",
+  minutes: "хв",
+
+  composerLabel: "Новий допис",
+  composerHint: "Це поле бачать лише автори.",
+  composerPlaceholder: "Що хочете сказати учням?",
+  topic: "Тема",
+  topicHint: "обирає автор",
+  attachBlock: "Блок з програми",
+  attachProgram: "Програма",
+  attachNone: "Без вкладення",
+  pickCourse: "Програма",
+  pickLesson: "Урок",
+  pickBlock: "Блок",
+  showFull: "Показувати у стрічці повністю",
+  showFullHint: "інакше уривок і кнопка програми",
+  publish: "Опублікувати",
+  publishHint: "Виходить одразу, якщо проходить автоперевірку.",
+  published: "Опубліковано у стрічці.",
+  held: "Автоперевірка зупинила допис. Команда вирішить і відповість у «Мої дописи».",
+  publishFailed: "Не вдалося опублікувати.",
+  needTopic: "Оберіть тему допису.",
+  needText: "Напишіть текст допису.",
+
+  freshLabel: "Стрічка",
+  freshTitle: "Свіже від авторів",
+  freshLead: "Що автори CenterWay пишуть цього тижня: практики, думки, події.",
+  freshAll: "Уся стрічка",
+} as const;
+
+/** «Сьогодні 10:40», «вчора», «3 дні тому», then a date. */
+export function relativeTime(iso: string | null, now: Date = new Date()): string {
+  if (!iso) return "";
+  const then = new Date(iso);
+  const minutes = Math.round((now.getTime() - then.getTime()) / 60000);
+  if (minutes < 1) return "щойно";
+  if (minutes < 60) return `${minutes} хв тому`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} год тому`;
+  const days = Math.round(hours / 24);
+  if (days === 1) return "вчора";
+  if (days < 7) return `${days} ${days < 5 ? "дні" : "днів"} тому`;
+  return then.toLocaleDateString("uk-UA", { day: "numeric", month: "long" });
+}

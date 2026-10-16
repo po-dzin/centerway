@@ -1,0 +1,982 @@
+/*
+ * «СТРІЧКА» — one column of authors' posts (2026-10-16).
+ *
+ * Mockup: https://claude.ai/artifact/1ntoi3FtLYCqxA9kSRYuB5. Every value is a
+ * delivery token: no palette, radius, shadow or type scale of its own. Buttons
+ * compose their role from PlatformButtons.module.css (guard:buttons); the
+ * filter composes the shelf's popover recipe, as the catalogue's does.
+ *
+ * selection_family: the filter disclosure is `contour` and its rows `hybrid`
+ * (the shelf's own recipe). Reaction chips, picker cells and topic chips are
+ * `contour` too — each is a pressable command on its own material, so the
+ * pressed state is its boundary drawn in gold over a soft gold ground, and the
+ * focus ring; there is no ink under them. Text actions are `ink`.
+ */
+
+/* ─────────────── the column ─────────────── */
+
+.page {
+  display: grid;
+  gap: var(--cw-space-lg);
+  inline-size: min(100% - 2 * var(--cw-page-gutter), 42rem);
+  margin: 0 auto;
+  padding-block: var(--cw-space-xl) var(--cw-space-3xl);
+}
+
+/* The author's page lays the same posts in its own column. */
+.embedded {
+  display: grid;
+  gap: var(--cw-space-lg);
+  max-inline-size: 42rem;
+  min-inline-size: 0;
+}
+
+.posts {
+  display: grid;
+  gap: var(--cw-space-md);
+  min-inline-size: 0;
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+}
+
+.moreButton {
+  composes: base secondary from "../PlatformButtons.module.css";
+}
+
+.empty {
+  margin: 0;
+  padding: var(--cw-space-lg) var(--cw-card-padding);
+  border-radius: var(--cw-card-radius);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  text-align: center;
+}
+
+/* ─────────────── one post ─────────────── */
+
+.post {
+  position: relative;
+  display: grid;
+  gap: var(--cw-space-sm);
+  min-inline-size: 0;
+  padding: var(--cw-card-padding);
+  border-radius: var(--cw-card-radius);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+  color: var(--cw-platform-text);
+}
+
+.byline {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  min-inline-size: 0;
+}
+
+.face {
+  flex: 0 0 auto;
+}
+
+.who {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-inline-size: 0;
+}
+
+.whoName {
+  margin: 0;
+  font-weight: 700;
+  font-size: var(--ds-type-body-size);
+}
+
+.whoName a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .whoName a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: var(--cw-link-rule-width);
+    text-underline-offset: var(--cw-link-rule-offset);
+    text-decoration-color: var(--cw-link-rule-color-strong);
+  }
+}
+
+.when {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.when a {
+  color: inherit;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: var(--cw-space-2xs);
+  padding: 0 var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+/* The words. Pre-line keeps the author's own paragraphs; a long link breaks. */
+.body {
+  margin: 0;
+  font-size: var(--ds-type-body-size);
+  line-height: 1.55;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* A reader's own mark, the lesson reader's highlight in the feed. */
+.mark {
+  border-radius: var(--cw-radius-inset);
+  background-color: color-mix(in srgb, var(--cw-platform-accent) 26%, transparent);
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--cw-platform-accent);
+  text-decoration-thickness: var(--cw-link-rule-width);
+  text-underline-offset: var(--cw-link-rule-offset);
+  cursor: pointer;
+}
+
+.mark[data-note] {
+  background-color: color-mix(in srgb, var(--cw-platform-accent) 40%, transparent);
+}
+
+/* ─────────────── the selection toolbar ─────────────── */
+
+.selectionBar {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  gap: var(--cw-space-2xs);
+  inline-size: max-content;
+  max-inline-size: min(22rem, calc(100% - 2 * var(--cw-space-sm)));
+  padding: var(--cw-space-2xs);
+  border: 1px solid var(--cw-mat-stroke-quiet);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-medium);
+}
+
+.selectionRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+}
+
+.selectionAction {
+  composes: base chromeBare compact from "../PlatformButtons.module.css";
+}
+
+.noteField {
+  inline-size: 100%;
+  min-inline-size: 14rem;
+  min-block-size: 4.5rem;
+  padding: var(--cw-space-xs);
+  border: 1px solid var(--cw-mat-stroke-quiet);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: var(--ds-type-body-sm-size);
+  resize: vertical;
+}
+
+.noteField:focus {
+  outline: none;
+  border-color: var(--cw-nav-marker);
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+/* ─────────────── the attached block or programme ─────────────── */
+
+.attach {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--cw-space-sm);
+  align-items: start;
+  padding: var(--cw-space-sm) var(--cw-space-md);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.attachIcon {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  color: var(--cw-platform-text);
+}
+
+.attachBody {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-inline-size: 0;
+}
+
+.attachTitle {
+  margin: 0;
+  font-weight: 700;
+}
+
+.attachMeta {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.attachText {
+  margin: var(--cw-space-2xs) 0 0;
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+  white-space: pre-line;
+}
+
+.attachGo {
+  justify-self: start;
+  margin-block-start: var(--cw-space-2xs);
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+}
+
+/* ─────────────── reactions and the comment count ─────────────── */
+
+.social {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs) var(--cw-space-sm);
+}
+
+.reactions {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+}
+
+/* A chip that presses. Not a button plate: a word with air around it, which
+   is what a reaction is. */
+.reactionChip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  min-block-size: 2.25rem;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  /* The contour is always there, transparent at rest, so pressing changes
+     only its colour and never the chip's size. */
+  border: 1px solid transparent;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background-color var(--cw-motion-state) var(--cw-ease-state),
+    border-color var(--cw-motion-state) var(--cw-ease-state),
+    box-shadow var(--cw-motion-state) var(--cw-ease-state);
+}
+
+.reactionChip[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--cw-platform-accent) 62%, transparent);
+  background: color-mix(in srgb, var(--cw-platform-accent) 20%, var(--cw-mat-surface));
+}
+
+.reactionChip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+.reactionChip:disabled {
+  cursor: progress;
+}
+
+/* The reaction's name, on hover: the set is drawn, and a drawing alone does
+   not say whether it means «спокій» or «сон». */
+.reactionChip[data-tip]::after {
+  display: none;
+}
+
+@media (hover: hover) {
+  .reactionChip:hover {
+    background: color-mix(in srgb, var(--cw-platform-accent) 12%, var(--cw-mat-surface));
+  }
+
+  .reactionChip[data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-end: calc(100% + var(--cw-space-2xs));
+    z-index: 4;
+    display: block;
+    padding: var(--cw-space-2xs) var(--cw-space-xs);
+    border-radius: var(--cw-radius-inset);
+    background: var(--cw-mat-inverse-bg);
+    color: var(--cw-mat-inverse-text);
+    font-size: var(--ds-type-label-size);
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+}
+
+.emoji {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  flex: 0 0 auto;
+}
+
+.addChip {
+  composes: reactionChip;
+  color: var(--cw-platform-muted);
+}
+
+.countLink {
+  composes: base text from "../PlatformButtons.module.css";
+}
+
+/* ─────────────── the reaction picker ─────────────── */
+
+.picker {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: calc(100% + var(--cw-space-2xs));
+  z-index: 5;
+  display: grid;
+  gap: var(--cw-space-sm);
+  inline-size: min(26rem, calc(100vw - 2 * var(--cw-page-gutter)));
+  max-block-size: min(26rem, calc(100vh - 8rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--cw-space-md);
+  /* The filter popover's own material: a solid sheet, so the post under it
+     never reads through the names. */
+  border: 1px solid var(--cw-mat-stroke-quiet);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-medium);
+}
+
+.pickerGroup {
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.pickerLabel {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pickerGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.25rem, 1fr));
+  gap: var(--cw-space-2xs);
+}
+
+.pickerItem {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: var(--cw-space-2xs);
+  min-inline-size: 0;
+  padding: var(--cw-space-2xs) var(--cw-space-2xs);
+  border: 1px solid transparent;
+  border-radius: var(--cw-radius-inset);
+  background: transparent;
+  color: var(--cw-platform-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.pickerItem[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--cw-platform-accent) 62%, transparent);
+  background: color-mix(in srgb, var(--cw-platform-accent) 20%, var(--cw-mat-surface));
+}
+
+.pickerItem:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+@media (hover: hover) {
+  .pickerItem:hover {
+    background: var(--cw-mat-surface-sunk);
+  }
+}
+
+.pickerEmoji {
+  inline-size: 2rem;
+  block-size: 2rem;
+}
+
+.pickerName {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: 1.2;
+  text-align: center;
+  hyphens: auto;
+}
+
+/* On a phone the set opens as a sheet at the bottom: an anchored panel 26rem
+   wide does not fit beside a chip near the right edge of a 360px screen. */
+@media (max-width: 40rem) {
+  .picker {
+    position: fixed;
+    inset: auto var(--cw-space-xs) var(--cw-space-xs);
+    inline-size: auto;
+    max-block-size: 70vh;
+  }
+}
+
+/* ─────────────── comments ─────────────── */
+
+.comments {
+  display: grid;
+  gap: var(--cw-space-sm);
+  padding-block-start: var(--cw-space-sm);
+  border-block-start: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
+}
+
+.commentList {
+  display: grid;
+  gap: var(--cw-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comment {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--cw-space-xs);
+  align-items: start;
+}
+
+.replies {
+  display: grid;
+  gap: var(--cw-space-sm);
+  margin: var(--cw-space-xs) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.initial {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border-radius: 50%;
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-label-size);
+  font-weight: 700;
+}
+
+.commentBody {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-inline-size: 0;
+}
+
+.commentHead {
+  margin: 0;
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 700;
+}
+
+.commentHead .when {
+  display: inline;
+  margin-inline-start: var(--cw-space-2xs);
+  font-weight: 500;
+}
+
+.commentText {
+  margin: 0;
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.commentHeld {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+}
+
+.commentActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-sm);
+}
+
+.commentAction {
+  composes: base text from "../PlatformButtons.module.css";
+}
+
+.writeRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--cw-space-xs);
+  align-items: end;
+}
+
+.writeField {
+  inline-size: 100%;
+  min-block-size: var(--ds-touch-target-min);
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border: 1px solid var(--cw-mat-stroke-quiet);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: var(--ds-type-body-sm-size);
+  resize: vertical;
+}
+
+.writeField:focus {
+  outline: none;
+  border-color: var(--cw-nav-marker);
+  background: var(--cw-mat-surface);
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+.sendButton {
+  composes: base secondary compact from "../PlatformButtons.module.css";
+}
+
+.replyingTo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--cw-space-xs);
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+}
+
+.guestLine {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+/* ─────────────── the filter (the shelf's popover) ─────────────── */
+
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs) var(--cw-space-sm);
+}
+
+.filterMenu {
+  composes: filterMenu from "../cabinet/ShelfFilter.module.css";
+}
+
+.filterToggle {
+  composes: compact from "../PlatformButtons.module.css";
+  composes: filterToggle from "../cabinet/ShelfFilter.module.css";
+}
+
+.filterCount {
+  composes: filterCount from "../cabinet/ShelfFilter.module.css";
+}
+
+.filterPopover {
+  composes: filterPopover from "../cabinet/ShelfFilter.module.css";
+  /* The shelf's control sits at the end of its row and opens leftwards; the
+     feed's sits at the start of the column, so it opens rightwards and stays
+     on a phone's screen. */
+  inset-inline-start: 0;
+  inset-inline-end: auto;
+  inline-size: min(19rem, calc(100vw - 2 * var(--cw-page-gutter)));
+  max-block-size: min(30rem, calc(100vh - 8rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.filterPopoverHead {
+  composes: filterPopoverHead from "../cabinet/ShelfFilter.module.css";
+}
+
+.filterClear {
+  composes: filterClear from "../cabinet/ShelfFilter.module.css";
+}
+
+.filterOptions {
+  composes: filterOptions from "../cabinet/ShelfFilter.module.css";
+}
+
+.filterOption {
+  composes: filterOption from "../cabinet/ShelfFilter.module.css";
+}
+
+.filterCheckbox {
+  composes: filterCheckbox from "../cabinet/ShelfFilter.module.css";
+}
+
+.groupLabel {
+  margin: 0;
+  padding: var(--cw-space-2xs) var(--ds-button-padding-inline) 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.optionText {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-inline-size: 0;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--cw-space-2xs) var(--cw-space-sm);
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.summaryReset {
+  composes: base text from "../PlatformButtons.module.css";
+}
+
+/* ─────────────── the composer (authors only) ─────────────── */
+
+.composer {
+  composes: post;
+}
+
+.composerField {
+  inline-size: 100%;
+  min-block-size: 7.5rem;
+  padding: var(--cw-space-sm);
+  border: 1px solid var(--cw-mat-stroke-quiet);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: var(--ds-type-body-size);
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.composerField:focus {
+  outline: none;
+  border-color: var(--cw-nav-marker);
+  background: var(--cw-mat-surface);
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+.composerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+.composerLabel {
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 700;
+}
+
+.muted {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+/* A topic or a tool: a pressable chip, its contour drawn when chosen. */
+.topicChip {
+  composes: reactionChip;
+  gap: var(--cw-space-2xs);
+  padding-inline: var(--cw-space-sm);
+}
+
+.blockPicker {
+  display: grid;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.select {
+  inline-size: 100%;
+  min-block-size: var(--ds-touch-target-min);
+  padding: 0 var(--cw-space-sm);
+  border: 1px solid var(--cw-mat-stroke-quiet);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--cw-nav-marker);
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.check input {
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  accent-color: var(--cw-platform-accent);
+}
+
+.publishButton {
+  composes: base primary from "../PlatformButtons.module.css";
+}
+
+.secondaryButton {
+  composes: base secondary compact from "../PlatformButtons.module.css";
+}
+
+.findings {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  margin: 0;
+  padding: var(--cw-space-sm) var(--cw-space-md);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+  list-style: none;
+}
+
+.findings strong {
+  font-weight: 700;
+}
+
+/* ─────────────── the author's own posts: state and reasons ─────────────── */
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  padding: 0 var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+  background: color-mix(in srgb, var(--state) 15%, var(--cw-mat-surface));
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-label-size);
+  font-weight: 700;
+  white-space: nowrap;
+  --state: var(--cw-sem-state-success);
+}
+
+.state::before {
+  content: "";
+  inline-size: 0.4rem;
+  block-size: 0.4rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--state);
+}
+
+.state[data-state="held"],
+.state[data-state="checking"] {
+  --state: var(--cw-sem-state-pending);
+}
+
+.state[data-state="returned"] {
+  --state: var(--cw-sem-state-failed);
+}
+
+.reason {
+  margin: 0;
+  padding: var(--cw-space-sm) var(--cw-space-md);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+.reason strong {
+  font-weight: 700;
+}
+
+.postTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+}
+
+.postTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-sm);
+}
+
+/* ─────────────── the home strip: three latest ─────────────── */
+
+.fresh {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--cw-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.freshCard {
+  composes: post;
+  align-content: start;
+}
+
+.freshText {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.freshLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.freshLink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.freshLink:focus-visible {
+  outline: none;
+}
+
+.freshLink:focus-visible::after {
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+.freshMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-2xs) var(--cw-space-sm);
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.freshReaction {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  color: var(--cw-platform-text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 56rem) {
+  .fresh {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding-block-end: var(--cw-space-sm);
+  }
+
+  .fresh::-webkit-scrollbar {
+    display: none;
+  }
+
+  .fresh > li {
+    flex: 0 0 min(80%, 20rem);
+    scroll-snap-align: start;
+  }
+}
+
+/* ─────────────── tabs on the author's page ─────────────── */
+
+.tabs {
+  display: flex;
+  min-inline-size: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-block-end: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  min-block-size: var(--ds-touch-target-min);
+  padding: 0 var(--cw-space-sm);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 680;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tab:first-child {
+  padding-inline-start: 0;
+}
+
+.tab[aria-current="page"] {
+  color: var(--cw-platform-text);
+  font-weight: 780;
+}
+
+.tabCount {
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reactionChip {
+    transition: none;
+  }
+}

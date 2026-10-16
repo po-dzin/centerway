@@ -6,9 +6,10 @@
  * lesson as started is a side effect of a successful read.
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
+import { markCourseNoticesRead } from "@/lib/lms/announcements";
 import { loadLearnerCourse, recordProgressEvent } from "@/lib/lms/server";
 import { isDenied, resolveCourseAccess } from "@/lib/lms/courseAccess";
 import {
@@ -68,6 +69,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       return NextResponse.json({ error: result.reason }, { status: FAILURE_STATUS[result.reason] ?? 400 });
     }
     context = result.context;
+    // The Telegram button of an announcement can land here directly: arriving
+    // is reading it, so the course does not show it again as new.
+    const courseId = result.context.course.id;
+    after(() => markCourseNoticesRead(user.id, courseId));
   }
 
   const { course, enrollment, progress, timeZone } = context;

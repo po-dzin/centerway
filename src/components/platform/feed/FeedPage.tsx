@@ -1,0 +1,43 @@
+/**
+ * «Стрічка» — `/feed` and `/feed/[id]` (2026-10-16).
+ *
+ * SEMANTIC PREFLIGHT (RAverse canon not read — unreachable from the cloud
+ * session; docs/CANON.md and docs/platform_agent_preflight.md used).
+ * - semantic_role: спільнота (primary), орієнтація (secondary): what the
+ *   authors are saying now, and where it leads in the catalogue.
+ * - user_question: «Що нового від авторів, про що мені це, і куди піти далі?»
+ * - token_source: global DS — card, chip, shelf filter popover, button roles;
+ *   no palette, radius, shadow or type scale of its own (Feed.module.css).
+ * - content_source: `feed_posts` and their reactions and comments through
+ *   lib/feed/server; attached blocks read live from `lms_lessons`.
+ * - route_boundary: `/feed` on the public host, open without sign-in;
+ *   reacting, commenting and marking ask for an account.
+ * - selection_family: filter `contour` + `hybrid` rows (the shelf's recipe);
+ *   reaction and topic chips `fill`; text actions `ink`.
+ */
+
+import { PlatformPageHead } from "@/components/platform/PlatformPageHead";
+import type { FeedFilter } from "@/lib/feed/model";
+import type { FeedAuthor, FeedPage as Page, FeedPost } from "@/lib/feed/server";
+
+import { feedCopy } from "./copy";
+import { FeedSingle, FeedView } from "./FeedView";
+import styles from "./Feed.module.css";
+
+export function FeedPage({ page, authors, filter }: { page: Page; authors: FeedAuthor[]; filter: FeedFilter }) {
+  return (
+    <main className={styles.page}>
+      <PlatformPageHead title={feedCopy.title} lead={feedCopy.lead} />
+      <FeedView initial={page} authors={authors} filter={filter} />
+    </main>
+  );
+}
+
+export function FeedPostPage({ post }: { post: FeedPost }) {
+  return (
+    <main className={styles.page}>
+      <PlatformPageHead label={feedCopy.title} title={`Допис: ${post.author.name}`} />
+      <FeedSingle initial={post} />
+    </main>
+  );
+}

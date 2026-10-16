@@ -9,9 +9,10 @@
  * Returns outline + lock state + progress, never lesson bodies.
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
+import { listLearnerAnnouncements, markCourseNoticesRead, type LearnerAnnouncement } from "@/lib/lms/announcements";
 import { loadLinkedPrograms } from "@/lib/lms/linkedPrograms";
 import { loadLearnerCourse } from "@/lib/lms/server";
 import { readAttribution } from "@/lib/referral/attribution";
@@ -94,6 +95,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   // sees Reset Day closed inside Шлях 21 and the group buyer sees it open.
   const linkedPrograms = await loadLinkedPrograms(identity, course, now);
 
+  // The author's notes, with what is unread as of THIS visit — then the visit
+  // reads them, so the mark in Бібліотека and the Telegram card agree.
+  let announcements: LearnerAnnouncement[] = [];
+  if (!draftPreview) {
+    announcements = await listLearnerAnnouncements(user.id, course).catch(() => []);
+    if (announcements.some((entry) => entry.unread)) after(() => markCourseNoticesRead(user.id, course.id));
+  }
+
   return NextResponse.json({
     course: {
       slug: course.slug,
@@ -117,5 +126,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     currentLessonSlug: resolveCurrentLesson(navigableCourse, progress, learner)?.slug ?? null,
     outline,
     linkedPrograms,
+    announcements,
   });
 }

@@ -67,6 +67,7 @@ import { BuilderDraftRecovery } from "./BuilderDraftRecovery";
 import { BuilderExitPrompt } from "./BuilderExitPrompt";
 import { useBuilderExit } from "./useBuilderExit";
 import { BuilderVersionHistory } from "./BuilderVersionHistory";
+import { BuilderAnnouncements } from "./BuilderAnnouncements";
 import { BuilderCourseRail, BuilderInkLabel, ModuleEditor, normalize, reviewStatusLabel } from "./BuilderModuleEditor";
 import {
   STRUCTURE_VIEW_EVENT,
@@ -807,6 +808,18 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         >
           <BuilderInkLabel>Публікація</BuilderInkLabel>
         </a>
+        <a
+          className={styles.courseMobileNavItem}
+          data-cw-ink-control=""
+          href="#course-announcements"
+          aria-current={workspaceMode === "announce" ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            selectWorkspaceMode("announce");
+          }}
+        >
+          <BuilderInkLabel>Оголошення</BuilderInkLabel>
+        </a>
       </nav>
 
       {/* THE ONE FACT EVERY EDITING TAB WAS MISSING — see BuilderRevisionNotice.
@@ -1097,6 +1110,20 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             wrecking ball, so this one is closed by default, sits after
             everything it would destroy, and asks before it does. */}
         {isPristineStructure(course) ? null : <BuilderStructureStart format="replace" onApply={applyTemplate} />}
+      </section>
+
+      <section
+        className={styles.courseWorkspacePanel}
+        id="course-announcements"
+        hidden={workspaceMode !== "announce"}
+        aria-labelledby="course-announcements-title"
+      >
+        <div className={styles.coursePageWorkspaceBody}>
+          <h2 className={styles.visuallyHidden} id="course-announcements-title">
+            Оголошення
+          </h2>
+          {workspaceMode === "announce" ? <BuilderAnnouncements slug={course.slug} published={published} /> : null}
+        </div>
       </section>
 
       <section

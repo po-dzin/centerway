@@ -119,6 +119,10 @@
   }
 }
 
+/* Ink on the marker is the paper surface, not `--cw-platform-on-accent`
+   (2026-10-16): on the day gamma the marker is the dark text colour, and the
+   accent's own ink is a dark green, so the count and the tick vanished into
+   the dot. Paper reads on both: dark ink in the day, gold at night. */
 .filterCount {
   display: inline-grid;
   flex: 0 0 1.15rem;
@@ -130,7 +134,7 @@
   padding: 0;
   border-radius: 50%;
   background: var(--cw-nav-marker);
-  color: var(--cw-platform-on-accent);
+  color: var(--cw-mat-surface);
   font-family: var(--cw-font-data);
   font-size: var(--ds-type-label-size);
   line-height: 1;
@@ -250,7 +254,7 @@
 .filterOption input:checked + .filterCheckbox {
   border-color: var(--cw-nav-marker);
   background: var(--cw-nav-marker);
-  color: var(--cw-platform-on-accent);
+  color: var(--cw-mat-surface);
 }
 
 .filterOption:has(input:focus-visible) .filterCheckbox {

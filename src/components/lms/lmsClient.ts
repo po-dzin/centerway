@@ -74,6 +74,17 @@ export type CourseViewDto = {
   outline: CourseOutlineEntryDto[];
   /** Other programs this one carries as modules; each opens by its own access. */
   linkedPrograms: LinkedProgramDto[];
+  /** The author's notes to this course, newest first; `unread` as of this visit. */
+  announcements?: CourseAnnouncementDto[];
+};
+
+export type CourseAnnouncementDto = {
+  id: string;
+  body: string;
+  createdAt: string;
+  lessonSlug: string | null;
+  lessonTitle: string | null;
+  unread: boolean;
 };
 
 export type LinkedProgramDto = {
@@ -121,6 +132,8 @@ export type LearnerShelfCourseDto = {
   includedIn: { slug: string; title: string } | null;
   /** Programs held inside this one. */
   carries: Array<{ slug: string; title: string }>;
+  /** The author's notes to this course not yet read; absent or 0 when none. */
+  unreadAnnouncements?: number;
 };
 
 export type LearnerShelfDto = { courses: LearnerShelfCourseDto[] };

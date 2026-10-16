@@ -33,6 +33,7 @@ const PLATFORM_ESCAPE_PREFIXES = [
      instead, and the redirect never runs. */
   "/expert",
   "/consult",
+  "/feed",
   "/tests",
   "/dosha-test",
 ] as const;
