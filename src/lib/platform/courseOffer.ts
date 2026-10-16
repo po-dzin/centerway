@@ -138,6 +138,7 @@ export function toOfferSurface(course: Course): OfferSurface {
     ...(course.format ? { format: course.format } : {}),
     ...(course.accessNote ? { accessNote: course.accessNote } : {}),
     ...(course.authorNote ? { authorNote: course.authorNote } : {}),
+    ...(course.sectionTitles ? { sectionTitles: course.sectionTitles } : {}),
     ...(course.cover
       ? {
           artwork: {

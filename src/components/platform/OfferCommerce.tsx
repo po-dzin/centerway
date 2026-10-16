@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { activeGateway } from "@/lib/payments/gateway";
+
 import { Icon } from "@/components/Icon";
 import { CheckoutStartLink } from "./CheckoutStartLink";
 import { SurfaceLink } from "./layout/SurfaceHost";
@@ -58,7 +60,7 @@ export function OfferCheckoutPanel({
       <CheckoutStartLink className={styles.buyAction} href={commerce.checkoutHref} label={ctaLabel} />
 
       <p className={styles.fineprint}>
-        Оплата карткою через WayForPay. Натискаючи кнопку, ви приймаєте{" "}
+        Оплата карткою через {activeGateway().label}. Натискаючи кнопку, ви приймаєте{" "}
         <Link href="/legal/public-offer">публічну оферту</Link> і{" "}
         <Link href="/legal/privacy">політику конфіденційності</Link>.
       </p>

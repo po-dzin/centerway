@@ -131,7 +131,8 @@ describe("ProgramDetailPage — «Як побудовано»", () => {
     // way21: 11 protocol lessons, 5 in «Матеріали» (reference), 2 linked modules with none.
     const html = await render();
     expect(html).toContain("11 уроків");
-    expect(html).toContain("Окремо від уроків — 5 довідкових матеріалів");
+    // way21 has stages, so the facts sit under the step line as one row (2026-10-15).
+    expect(html).toContain("5 довідкових матеріалів");
   });
 
   it("omits the reference line when the course has no reference lessons", async () => {

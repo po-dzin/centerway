@@ -9,6 +9,7 @@
  * anchor to the folded enquiry form for a lead format. Also the legal line.
  */
 import { createElement } from "react";
+import { activeGateway } from "@/lib/payments/gateway";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -171,7 +172,7 @@ describe("OfferFormats", () => {
     const html = render([SELF]);
     expect(html).toContain('href="/legal/public-offer"');
     expect(html).toContain('href="/legal/privacy"');
-    expect(html).toContain("WayForPay");
+    expect(html).toContain(activeGateway().label);
   });
 
   describe("early price and bonus rows (G, 2026-10-03)", () => {

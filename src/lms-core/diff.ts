@@ -45,6 +45,7 @@ const COURSE_FIELDS = [
   "durationDays",
   "accessNote",
   "authorNote",
+  "sectionTitles",
   "schedule",
   "theme",
   "cover",

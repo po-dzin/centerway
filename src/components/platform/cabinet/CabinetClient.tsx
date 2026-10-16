@@ -30,7 +30,6 @@ import { getProfileCopy } from "@/components/platform/profile/copy";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 import { JOURNAL_HREF, LEARNING_SHELF_HREF } from "@/lib/platform/content";
 import { PwaInstallCard } from "./PwaInstallCard";
-import { useSignInReturn } from "@/components/auth/useSignInReturn";
 import { cabinetGate } from "./CabinetGate";
 import { CabinetFold } from "./CabinetFold";
 import { CabinetHero } from "./CabinetHero";
@@ -53,7 +52,7 @@ import {
   isProgramKind,
 } from "./format";
 import { getCabinetCopy } from "./copy";
-import { pickResumeCourse } from "./resumeCourse";
+import { heldCourses, pickResumeCourse } from "./resumeCourse";
 import {
   useAuthorProfile,
   useCabinetSession,
@@ -115,10 +114,6 @@ export function CabinetClient() {
 
   const lang = useProfileLang();
   const { session, loading: sessionLoading, signInWithGoogle, signOut } = useCabinetSession();
-  /* A SIGN-IN THAT BEGAN ELSEWHERE ENDS WHERE IT BEGAN. The header's door is a
-     link to the cabinet, so without this the round trip lands here and stops —
-     see `useSignInReturn`. */
-  useSignInReturn(session);
   const identity = usePlatformIdentity(session);
   const { profile, loading: profileLoading, error, clear: clearProfile } = useProfileData(session);
   const { shelf, failed: shelfFailed, reload: reloadShelf } = useLearnerShelf(session);
@@ -156,7 +151,7 @@ export function CabinetClient() {
   const shelfHref = href(LEARNING_SHELF_HREF);
   const journalHref = href(JOURNAL_HREF);
 
-  const ownedCourses = useMemo(() => (shelf ?? []).filter((course) => course.access !== "locked"), [shelf]);
+  const ownedCourses = useMemo(() => heldCourses(shelf ?? []), [shelf]);
 
   /** The single course the dashboard offers to resume: latest real activity wins. */
   const resumeCourse = useMemo(() => pickResumeCourse(ownedCourses), [ownedCourses]);

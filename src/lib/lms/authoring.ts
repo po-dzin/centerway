@@ -70,6 +70,7 @@ const OPTIONAL_COURSE_COLUMNS: ReadonlyArray<readonly [column: string, field: st
   ["duration_days", "durationDays"],
   ["access_note", "accessNote"],
   ["author_note", "authorNote"],
+  ["section_titles", "sectionTitles"],
 ];
 
 export type WriteCourseOptions = {
@@ -127,6 +128,7 @@ export function courseRows(course: Course): CourseRows {
       duration_days: course.durationDays ?? null,
       access_note: course.accessNote ?? null,
       author_note: course.authorNote ?? null,
+      section_titles: course.sectionTitles ?? null,
     },
     modules: course.modules.map((module) => ({
       id: module.id,
@@ -267,6 +269,12 @@ export function courseFromRows(
       : { durationDays: Number(courseRow.duration_days) }),
     ...(courseRow.access_note ? { accessNote: courseRow.access_note as string } : {}),
     ...(courseRow.author_note ? { authorNote: courseRow.author_note as string } : {}),
+    // Read as tolerantly as the storefront columns: a database without the
+    // 2026-10-15 migration has no titles of its own, and the page then prints
+    // the generic ones it always did.
+    ...(courseRow.section_titles && typeof courseRow.section_titles === "object"
+      ? { sectionTitles: courseRow.section_titles as never }
+      : {}),
     modules,
   };
 

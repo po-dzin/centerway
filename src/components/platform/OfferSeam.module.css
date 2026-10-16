@@ -10,10 +10,13 @@
   /* Across the whole row when the block it opens sits in the two-column
      support split (the formats do). */
   grid-column: 1 / -1;
-  /* It climbs back through the previous section's bottom padding — the same
-     fluid value `.section` sets (PlatformBlocksBase.module.css) — so at every
-     width the seam takes the gap rather than adding its own height to it. */
-  margin-block: calc(-1 * clamp(2.3rem, 6.2vw, 4.8rem) + var(--cw-space-md)) var(--cw-space-lg);
+  /* THE ROUTE STANDS EXACTLY BETWEEN THE TWO BLOCKS (G, 2026-10-15): the same
+     `--seam-gap` above its rings and below its labels. The previous section's
+     bottom padding and this section's top padding are both already in the way,
+     each `--platform-anchor-inset` — the section's own variable, read rather
+     than restated, because the phone layout (PlatformResponsive) sets a
+     different one — so the top margin takes the gap and subtracts both. */
+  margin-block: calc(var(--seam-gap) - 2 * var(--platform-anchor-inset)) var(--seam-gap);
   pointer-events: none;
 }
 
@@ -21,7 +24,11 @@
   display: grid;
   grid-auto-columns: minmax(0, 1fr);
   grid-auto-flow: column;
-  inline-size: min(100%, 34rem);
+  /* The width of the card above it, not a narrower column of its own: with the
+     route inset from the cards, the rings and the panels did not share an edge
+     and the row read as lopsided (G, 2026-10-15). The columns are equal, so the
+     first and last ring sit the same distance from the two edges. */
+  inline-size: 100%;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -35,24 +42,30 @@
   min-inline-size: 0;
 }
 
-/* The thread from the previous ring to this one, behind both; gold up to the
-   step this block opens, quiet after it. */
+/* The thread from the previous ring to this one: the system's dashed rail
+   (docs/design-system.md, «Progress is a dashed rail» — 1.5px, dashed, accent
+   for what is behind, border for what is ahead), broken just short of each ring
+   so a dash never runs into one. Gold up to the step this block opens. */
 .step + .step::before {
   position: absolute;
-  inset-block-start: calc(var(--seam-ring) / 2);
-  inset-inline: -50% 50%;
-  block-size: 1px;
+  inset-block-start: calc(var(--seam-ring) / 2 - 1px);
+  inset-inline: calc(-50% + var(--seam-ring) / 2 + 0.3rem) calc(50% + var(--seam-ring) / 2 + 0.3rem);
+  block-size: 2px;
   content: "";
-  background: var(--cw-mat-stroke-inner);
+  /* 2px, 6 on / 5 off. `border-style: dashed` cannot be sized, and at 1.5px the
+     dashes read as dust (G, 2026-10-15), so the rail is drawn as a gradient. */
+  background: repeating-linear-gradient(to right, var(--seam-thread) 0 6px, transparent 6px 11px);
 }
 
 .step[data-state="done"] + .step::before,
 .step[data-state="done"] + .step[data-state="current"]::before {
-  background: color-mix(in srgb, var(--cw-platform-accent) 75%, transparent);
+  --seam-thread: var(--cw-platform-accent);
 }
 
 .seam {
   --seam-ring: 2.625rem;
+  --seam-gap: 2.5rem;
+  --seam-thread: var(--cw-mat-stroke-inner);
 }
 
 .ring {
@@ -98,14 +111,25 @@
 @media (max-width: 560px) {
   .seam {
     --seam-ring: 2.375rem;
-    margin-block: 0 var(--cw-space-md);
+    --seam-gap: 2rem;
   }
 
-  /* Four steps across a phone: a label that does not fit takes a second line
-     rather than an ellipsis. */
+  /* ONE LINE, ALWAYS (G, 2026-10-15). On a narrow phone «Чи це про вас» is a
+     few pixels wider than its quarter of the row; its neighbours are short
+     words, so the label may spill past its column, centred, rather than wrap
+     or lose its last word to an ellipsis. */
   .label {
+    justify-self: unsafe center;
+    max-inline-size: none;
     overflow: visible;
-    white-space: normal;
-    text-wrap: balance;
+  }
+}
+
+/* Below 340px the spill would touch the next label; the old ellipsis is the
+   lesser loss on a screen that small. */
+@media (max-width: 340px) {
+  .label {
+    max-inline-size: 100%;
+    overflow: hidden;
   }
 }

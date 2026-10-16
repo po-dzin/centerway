@@ -82,8 +82,12 @@ export function isCompleteOtpCode(code: string): boolean {
  * suggestion). Six typed digits may be the start of an eight-digit code, so a
  * shorter code typed by hand waits for the button.
  */
-export function shouldSubmitCode(previous: string, next: string): boolean {
+export function shouldSubmitCode(previous: string, next: string, rejected: string | null = null): boolean {
   if (!isCompleteOtpCode(next)) return false;
+  /* The code the server just refused stays in the field so it can be read and
+     corrected; pasting the same digits again must not spend another attempt
+     on them by itself. The button still sends it, on purpose. */
+  if (next === rejected) return false;
   return next.length === OTP_CODE_LENGTH || next.length - previous.length > 1;
 }
 
@@ -105,6 +109,12 @@ export function classifySignInError(error: { message?: string; status?: number }
   if (error.status === 429 || message.includes("rate limit") || message.includes("only request this after")) {
     return "rate_limited";
   }
+  /* "Token has expired or is invalid" is ONE answer from Supabase Auth for a
+     wrong code, a stale one replaced by a newer letter, and a used one
+     (supabase/auth, internal/api/verify.go). Calling it "expired" told a person
+     holding a minute-old code that time was the problem; «не підійшов» is what
+     the server actually knows. */
+  if (message.includes("expired") && message.includes("invalid")) return "invalid_code";
   if (message.includes("expired")) return "expired_code";
   if (
     message.includes("invalid") &&

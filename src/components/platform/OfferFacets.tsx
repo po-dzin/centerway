@@ -13,11 +13,13 @@ import { Icon } from "@/components/Icon";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { AuthorPortrait } from "./AuthorPortrait";
 import type { CwIconName } from "@/components/iconNames";
-import type { Author } from "@/lms-core";
+import type { Author, CourseSectionTitles } from "@/lms-core";
 import styles from "./PlatformOfferCommerce.module.css";
 import offerStyles from "./PlatformOfferStyles";
 
 type Facet = {
+  /** The shared small line above the title; printed only above an authored title. */
+  label: string;
   title: string;
   icon: CwIconName;
   items: readonly string[];
@@ -36,25 +38,32 @@ export function OfferBento({
   audience,
   results,
   format,
+  titles,
   seam = null,
 }: {
   audience?: readonly string[];
   results?: readonly string[];
   format?: readonly string[];
+  /**
+   * The author's own titles for the three cards. The line above each stays the
+   * platform's and is printed only when a title was written, so a course with
+   * none reads exactly as it did.
+   */
+  titles?: Pick<CourseSectionTitles, "audience" | "results" | "included">;
   /** The `OfferSeam` that opens this block; it goes when the block does. */
   seam?: ReactNode;
 }) {
   const facets: Facet[] = (
     [
-      { title: "Для кого", icon: "user", items: audience ?? [] },
-      { title: "Що зміниться", icon: "rhythm", items: results ?? [] },
+      { label: "Для кого", title: titles?.audience ?? "Для кого", icon: "user", items: audience ?? [] },
+      { label: "Що зміниться", title: titles?.results ?? "Що зміниться", icon: "rhythm", items: results ?? [] },
       /* «Що входить», not «Формат та інструменти» (2026-09-08). The panel two
          sections above is titled «Формат» and answers the SHAPE of the
          commitment — how long, how many lessons, for how long it is yours. This
          card answers what is in the box. While both carried the word «формат» a
          reader met it twice on one page with two different meanings, and the
          second one read as the first one repeated. */
-      { title: "Що входить", icon: "play", items: format ?? [] },
+      { label: "Що входить", title: titles?.included ?? "Що входить", icon: "play", items: format ?? [] },
     ] satisfies Facet[]
   ).filter((facet) => facet.items.length > 0);
 
@@ -73,10 +82,25 @@ export function OfferBento({
       {seam}
       <ul className={styles.bento}>
         {facets.map((facet) => (
-          <li className={styles.bentoCard} key={facet.title}>
+          <li className={styles.bentoCard} key={facet.label}>
             <div className={styles.bentoCardHead} data-cw-rule="inner">
-              <Icon name={facet.icon} size={20} />
-              <h2 className={styles.bentoCardTitle}>{facet.title}</h2>
+              {facet.title === facet.label ? (
+                <>
+                  <Icon name={facet.icon} size={20} />
+                  <h2 className={styles.bentoCardTitle}>{facet.title}</h2>
+                </>
+              ) : (
+                /* An authored title can run to two lines, so the icon moves up
+                   to the shared line instead of floating beside the middle of
+                   them. */
+                <div className={styles.bentoCardHeading}>
+                  <p className={styles.bentoCardPretitle}>
+                    <Icon name={facet.icon} size={20} />
+                    {facet.label}
+                  </p>
+                  <h2 className={styles.bentoCardTitle}>{facet.title}</h2>
+                </div>
+              )}
             </div>
             <ul className={styles.bentoList}>
               {facet.items.map((item) => (

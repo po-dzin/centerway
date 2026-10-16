@@ -1577,6 +1577,7 @@ export type Database = {
           audience: Json | null
           author_id: string | null
           author_note: string | null
+          section_titles: Json | null
           author_profile_id: string | null
           brand: string
           categories: Json | null
@@ -1623,6 +1624,7 @@ export type Database = {
           audience?: Json | null
           author_id?: string | null
           author_note?: string | null
+          section_titles?: Json | null
           author_profile_id?: string | null
           brand?: string
           categories?: Json | null
@@ -1669,6 +1671,7 @@ export type Database = {
           audience?: Json | null
           author_id?: string | null
           author_note?: string | null
+          section_titles?: Json | null
           author_profile_id?: string | null
           brand?: string
           categories?: Json | null

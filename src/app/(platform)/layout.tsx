@@ -9,6 +9,7 @@ import { BfcacheRestore } from "@/components/platform/BfcacheRestore";
 import { PressHaptics } from "@/components/platform/PressHaptics";
 import { ToastProvider } from "@/components/ToastProvider";
 import { SessionProvider } from "@/components/auth/SessionProvider";
+import { SignInReturn } from "@/components/auth/SignInReturn";
 import "../globals.css";
 import { PLATFORM_GROUND } from "@/lib/platform/chrome";
 import { THEME_BOOT_SCRIPT } from "@/lib/platform/theme";
@@ -136,6 +137,9 @@ export default function RootLayout({
         <BfcacheRestore />
         <PressHaptics />
         <SessionProvider>
+          {/* Puts a finished sign-in back on the page it began from, wherever
+              the round trip lands — see `useSignInReturn`. */}
+          <SignInReturn />
           <ToastProvider>{children}</ToastProvider>
         </SessionProvider>
         <Analytics />
