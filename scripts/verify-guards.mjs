@@ -82,6 +82,12 @@ const gates = [
   { script: "guard:canon", title: "Platform canon" },
   { script: "guard:assets", title: "Assets referenced exist" },
   { script: "brand:check", title: "Brand mark" },
+  {
+    script: "emoji:check",
+    title: "Reaction emoji baked and within the detail gate",
+    // Re-runs the 20px detail gate in scripts/lib/emoji-glyphs.mjs and fails if
+    // the sprite or src/lib/brand/emojiSet.ts drifts from the drawings.
+  },
   { script: "guard:ds-contract", title: "Shared DS contract" },
   { script: "guard:contrast", title: "Contrast" },
   { script: "guard:buttons", title: "Button contract" },
