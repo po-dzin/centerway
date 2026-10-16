@@ -1,33 +1,55 @@
 /**
  * Content contract for the platform consultation page.
  *
- * The copy is adapted from the active consult funnel, but the route remains a
- * platform offer surface: one request form, no checkout and no cross-funnel
- * navigation. Keeping the steps and answers as data lets the page structure be
+ * The copy is adapted from the active consult funnel. Since 2026-10-16 the hub
+ * holds no form: a request is always to one author, so it is left on that
+ * author's page and the hub only helps a reader choose. Keeping the steps and answers as data lets the page structure be
  * checked without coupling the contract test to React markup.
+ */
+/**
+ * The way a consultation goes, said from the author's page — where the request
+ * is left. The reader has already chosen the person, so the steps start at the
+ * request and stop at the plan.
  */
 export const consultationSteps = [
   {
     id: "request",
     title: "Запит",
-    text: "Ви коротко описуєте, що хочете прояснити. Ми зв’язуємося і узгоджуємо зручний час онлайн-зустрічі.",
+    text: "Ви описуєте, що хочете прояснити.",
   },
   {
-    id: "assessment",
-    title: "Розбір стану",
-    text: "На зустрічі розбираємо конституцію, травлення, сон, енергію, емоційний фон, харчування і ритм життя як одну картину.",
+    id: "time",
+    title: "Час",
+    text: "Ми пишемо вам і узгоджуємо зустріч.",
   },
   {
     id: "plan",
-    title: "Особистий план",
-    text: "Після розмови у вас є пріоритети на 2-4 тижні і зрозумілий наступний крок: практика, програма або інша підтримка.",
+    title: "Розмова і план",
+    text: "Пріоритети на 2–4 тижні.",
   },
 ] as const;
 
-export const consultationExpectations = [
-  "Онлайн-зустріч тривалістю до 90 хвилин",
-  "Розбір поточного стану, конституції, харчування і ритму",
-  "Персональні пріоритети та план дій на 2-4 тижні",
+/**
+ * The same way, said from `/consult`, where nobody has been chosen yet. One
+ * step longer at the front: choosing the person is the first thing the hub
+ * asks of a reader, and the request itself happens on that person's page.
+ */
+export const consultationHubSteps = [
+  {
+    id: "choose",
+    title: "Оберіть автора",
+    text: "Подивіться напрям, досвід і про що консультація.",
+  },
+  {
+    id: "request",
+    title: "Запит на сторінці автора",
+    text: "Коротко опишіть, що хочете прояснити. Ми узгоджуємо зручний час онлайн.",
+  },
+  {
+    id: "plan",
+    title: "Розмова і план",
+    text: "Після зустрічі у вас пріоритети на 2–4 тижні й зрозумілий наступний крок.",
+  },
 ] as const;
 
 export const consultationFaq = [
@@ -35,6 +57,11 @@ export const consultationFaq = [
     id: "online",
     question: "Це онлайн? Я не в Україні.",
     answer: "Так. Консультація проходить онлайн, а час узгоджуємо з урахуванням вашого часового поясу.",
+  },
+  {
+    id: "choose",
+    question: "Як обрати автора?",
+    answer: "Подивіться, про що кожна консультація. Якщо вагаєтеся, почніть з тесту доші: він підкаже, з чого почати.",
   },
   {
     id: "prepare",

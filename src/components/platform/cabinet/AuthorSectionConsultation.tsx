@@ -145,7 +145,6 @@ export function AuthorSectionConsultation({ draft, setDraft, t }: AuthorSectionP
             <div className={styles.authorField}>
               <span className={styles.authorFieldLabel}>
                 <label htmlFor={contactId}>{t.consultationContactLabel}</label>
-                <RequiredMark tooltip={t.consultationRequired} />
               </span>
               <input
                 id={contactId}
@@ -153,7 +152,6 @@ export function AuthorSectionConsultation({ draft, setDraft, t }: AuthorSectionP
                 type="url"
                 inputMode="url"
                 value={draft.consultation.contactUrl}
-                required
                 onChange={(e) =>
                   setDraft((prev) => ({
                     ...prev,
