@@ -21,7 +21,6 @@ import type { CourseCategory } from "@/lms-core";
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { asOneMovement } from "@/components/platform/viewTransition";
-import { useSignInReturn } from "@/components/auth/useSignInReturn";
 import { cabinetGate } from "./CabinetGate";
 import { CourseCard, CourseRow, ShelfEmptyCard, ShelfErrorCard } from "./CourseCard";
 import { LearnRoomView } from "./LearnRoomView";
@@ -83,10 +82,6 @@ let rememberedShelfQuery: ShelfQuery = EMPTY_SHELF_QUERY;
 export function LearnShelfClient() {
   const lang = useProfileLang();
   const { session, loading, signInWithGoogle } = useCabinetSession();
-  /* A SIGN-IN THAT BEGAN ELSEWHERE ENDS WHERE IT BEGAN. The header's door is a
-     link to the cabinet, so without this the round trip lands here and stops —
-     see `useSignInReturn`. */
-  useSignInReturn(session);
   const { shelf, failed, reload } = useLearnerShelf(session);
 
   const cab = useMemo(() => getCabinetCopy(lang), [lang]);

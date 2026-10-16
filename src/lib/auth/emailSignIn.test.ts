@@ -77,6 +77,12 @@ describe("shouldSubmitCode", () => {
     expect(shouldSubmitCode("1234567", "12345678")).toBe(true);
   });
 
+  it("does not auto-submit again the code the server just refused", () => {
+    expect(shouldSubmitCode("", "39596363", "39596363")).toBe(false);
+    expect(shouldSubmitCode("3959636", "39596363", "39596363")).toBe(false);
+    expect(shouldSubmitCode("", "39596364", "39596363")).toBe(true);
+  });
+
   it("does not submit a shorter code typed digit by digit", () => {
     expect(shouldSubmitCode("12345", "123456")).toBe(false);
     expect(shouldSubmitCode("123456", "1234567")).toBe(false);
@@ -95,8 +101,13 @@ describe("classifySignInError", () => {
     );
   });
 
-  it("separates an expired code from a wrong one, since only one of them means try again", () => {
-    expect(classifySignInError({ message: "Token has expired or is invalid" })).toBe("expired_code");
+  it("reads Supabase's one answer for a wrong, stale or used code as «did not fit», not «expired»", () => {
+    expect(classifySignInError({ message: "Token has expired or is invalid" })).toBe("invalid_code");
+    expect(classifySignInError({ message: "Email link is invalid or has expired" })).toBe("invalid_code");
+  });
+
+  it("keeps «expired» for a message that says only that", () => {
+    expect(classifySignInError({ message: "Token has expired" })).toBe("expired_code");
     expect(classifySignInError({ message: "Invalid token" })).toBe("invalid_code");
     expect(classifySignInError({ message: "Invalid OTP" })).toBe("invalid_code");
   });
