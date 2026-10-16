@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { activeGateway } from "@/lib/payments/gateway";
+
 import { Icon } from "@/components/Icon";
 import { CHECKOUT_PAGE_PATH, formatPrice } from "@/lib/products";
 import { bonusKindLabel } from "@/lib/platform/catalogVocabulary";
@@ -214,7 +216,7 @@ export function OfferFormats({
           ))}
 
         <p className={styles.fineprint}>
-          Оплата карткою через WayForPay. Натискаючи кнопку, ви приймаєте{" "}
+          Оплата карткою через {activeGateway().label}. Натискаючи кнопку, ви приймаєте{" "}
           <Link href="/legal/public-offer">публічну оферту</Link> і{" "}
           <Link href="/legal/privacy">політику конфіденційності</Link>.
         </p>
