@@ -34,8 +34,8 @@ export default async function ExpertsIndexPage() {
         <PlatformBlock
           id="authors"
           label="Автори"
-          title="Хто веде курси й програми"
-          lead="У профілі — досвід, напрям і курси, які веде автор."
+          title="Автори CenterWay"
+          lead="За кожною програмою і тестом стоїть людина, яка за них відповідає. Тут — їхній досвід, підхід і все, що вони ведуть на платформі."
         >
           <PlatformOfferCarousel label="Автори CenterWay">
             {/* One card everywhere an author is previewed — the home block,

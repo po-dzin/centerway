@@ -1,5 +1,6 @@
 import { Icon } from "@/components/Icon";
 import styles from "@/components/platform/PlatformTrustStyles";
+import faq from "./ConsultFaq.module.css";
 import { consultationBoundary, consultationFaq } from "@/components/platform/consultPageContract";
 
 /**
@@ -29,6 +30,10 @@ export function ConsultBoundary({ route = "platform:/consult" }: { route?: strin
   );
 }
 
+/* One panel of rows, not a stack of buttons (G, 16.10: the separate pills
+   read cramped and odd). The shape is the lesson FAQ's — a row per question,
+   a faded rule between rows, the answer under its question in the muted ink —
+   so a question looks the same wherever the product asks one. */
 export function ConsultFaq({ route = "platform:/consult" }: { route?: string }) {
   return (
     <section
@@ -46,16 +51,14 @@ export function ConsultFaq({ route = "platform:/consult" }: { route?: string }) 
           <h2 className={styles.sectionTitle}>Що варто знати перед зустріччю</h2>
         </div>
       </div>
-      <div className={styles.copyStack}>
+      <div className={faq.panel}>
         {consultationFaq.map((item) => (
-          <details className={styles.collapsibleBlock} key={item.id}>
-            <summary className={styles.collapsibleSummary}>
+          <details className={faq.item} key={item.id}>
+            <summary className={faq.question}>
               <span>{item.question}</span>
-              <Icon name="chevron-down" size={18} className={styles.collapsibleMarker} />
+              <Icon name="chevron-down" size={18} className={faq.marker} />
             </summary>
-            <article className={styles.panel}>
-              <p className={styles.lead}>{item.answer}</p>
-            </article>
+            <p className={faq.answer}>{item.answer}</p>
           </details>
         ))}
       </div>

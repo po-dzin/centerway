@@ -353,12 +353,12 @@ export type PlatformGuide = {
 
 export const platformGuides = [
   {
-    slug: "koriakin",
+    slug: "yevhenii-koriakin",
     name: "Євгеній Корякін",
     role: "Дослідник і практик аюрведи · засновник CenterWay",
     note: "Веде програми, консультації і супровід практики — від першої діагностики стану до довгих циклів відновлення.",
     photo: { src: "/shared/img/author-evgeniy-2026-08.webp", alt: "Євгеній Корякін" },
-    href: "/expert/koriakin",
+    href: "/expert/yevhenii-koriakin",
     linkLabel: "Більше про автора",
     facts: [
       { label: "20 років практики", icon: "clock" },
@@ -384,13 +384,10 @@ export const doshas = [
 ];
 
 export const consultationCopy = {
-  /* No name in the hero title since the 2026-08-22 merge with /expert — the
-     page now carries a full author section (facts, path, portrait) a few
-     scrolls down, so the title repeating "з Євгенієм Корякіним" was saying the
-     same thing twice on one page. The name still opens the body copy just
-     below and the metadata title. */
-  title: "Особиста консультація",
-  text: "Не «просто порада», а персональний план відновлення: стан, конституція, харчування, очищення, ритм і наступні кроки без зайвого тиску.",
+  /* The hub's own words since 2026-10-16, when it stopped being one author's
+     page and became the list of everyone who takes consultations. */
+  title: "Особиста розмова з автором",
+  text: "Оберіть людину, чий підхід вам відгукується. Запит залишаєте на сторінці автора, а час зустрічі узгоджуємо з вами.",
 };
 
 /* Each note carries its own glyph. A column of three text plates reads as a

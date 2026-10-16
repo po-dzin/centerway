@@ -347,10 +347,7 @@ export async function upsertAuthorProfile(
   if (input.listed && (!input.experienceBadge?.trim() || !input.achievementBadge?.trim())) {
     return { ok: false, error: "invalid_profile" };
   }
-  if (
-    input.consultation?.enabled &&
-    (!input.consultation.title?.trim() || !input.consultation.summary?.trim() || !input.consultation.contactUrl?.trim())
-  ) {
+  if (input.consultation?.enabled && (!input.consultation.title?.trim() || !input.consultation.summary?.trim())) {
     return { ok: false, error: "invalid_profile" };
   }
 

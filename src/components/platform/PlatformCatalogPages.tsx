@@ -8,7 +8,7 @@ import offerStyles from "@/components/platform/PlatformOfferStyles";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { heroFraming } from "@/components/platform/heroFraming";
 import { platformAggregateArtwork, platformPageArtwork, platformProductOffers } from "@/lib/platform/content";
-import { activePlatformTests, plannedPlatformTests, testsHubCopy } from "@/lib/platform/tests";
+import { activePlatformTests, testsHubCopy } from "@/lib/platform/tests";
 import { heroTitleFit } from "@/components/platform/heroTitleFit";
 import { listStorefrontCourses, type StorefrontCard } from "@/lib/platform/offers";
 import { testAuthorNames, withAuthorNames } from "@/lib/lms/authors";
@@ -119,7 +119,8 @@ export async function PlatformProgramsIndexPage() {
               Програми
             </h1>
             <p className={heroStyles.heroFeatureLead}>
-              Короткі входи, довші програми і різна глибина роботи з тілом, ритмом, харчуванням та увагою.
+              Короткі кроки і довгі шляхи — для тіла, харчування, ритму й уваги. Оберіть глибину, до якої ви готові
+              зараз.
             </p>
             <div className={heroStyles.heroFeatureActions}>
               <a className={heroStyles.heroPrimaryButton} href="#program-catalog">
@@ -152,7 +153,7 @@ export async function PlatformProgramsIndexPage() {
           <div className={offerStyles.sectionHeader}>
             <div>
               <p className={offerStyles.label}>Усі програми</p>
-              <h2 className={offerStyles.sectionTitle}>Оберіть глибину і ритм практики</h2>
+              <h2 className={offerStyles.sectionTitle}>Оберіть свій темп</h2>
             </div>
           </div>
           {/* The same one continuous catalogue, now narrowable. The filter
@@ -271,37 +272,6 @@ export async function PlatformTestsHubPage() {
         </section>
 
         <section
-          id="tests-planned"
-          className={`${offerStyles.container} ${offerStyles.section} ${offerStyles.sectionFlow}`}
-          data-cw-semantic-role="offer-index"
-          data-cw-semantic-family="guide-progress"
-          data-cw-token-source="global-app-ds"
-        >
-          <div className={offerStyles.sectionHeader}>
-            <div>
-              <p className={offerStyles.label}>{testsHubCopy.plannedLabel}</p>
-              <h2 className={offerStyles.sectionTitle}>{testsHubCopy.plannedTitle}</h2>
-            </div>
-          </div>
-          <div className={offerStyles.aggregateRail}>
-            {plannedPlatformTests.map((test) => (
-              <PlatformOfferCard
-                key={test.slug}
-                title={test.title}
-                tag={test.tag}
-                meta={test.format}
-                description={test.description}
-                href={test.href}
-                visual={test.visual}
-                slug={test.slug}
-                status="planned"
-                statusLabel={testsHubCopy.soonLabel}
-              />
-            ))}
-          </div>
-        </section>
-
-        <section
           id="tests-consult"
           className={`${offerStyles.container} ${offerStyles.section} ${offerStyles.sectionFlow}`}
           data-cw-semantic-role="route-bridge"
@@ -390,18 +360,18 @@ export async function PlatformProductsIndexPage() {
           </div>
           <div className={heroStyles.heroFeatureContent}>
             <p className={heroStyles.heroBadge}>
-              <span>Підтримка · Придатність · Контекст</span>
+              <span>Трави · Олії · Практика вдома</span>
             </p>
             <h1 className={heroStyles.heroFeatureTitle} style={heroTitleFit("Продукти")}>
               Продукти
             </h1>
             <p className={heroStyles.heroFeatureLead}>
-              Окремий шар підтримки: трави й інші продуктові формати, які мають сенс тільки в контексті стану, режиму та
-              того, що ви вже проходите.
+              Усе, що знадобиться в практиці: трави, олії та інші речі, які радять експерти — з поясненням, кому і
+              навіщо.
             </p>
             <div className={heroStyles.heroFeatureActions}>
               <a className={heroStyles.heroPrimaryButton} href="#product-focus">
-                Дивитися трави
+                Переглянути продукти
               </a>
             </div>
           </div>
@@ -470,7 +440,7 @@ export async function PlatformProductsIndexPage() {
           <div className={offerStyles.sectionHeader}>
             <div>
               <p className={offerStyles.label}>Пов&apos;язані програми</p>
-              <h2 className={offerStyles.sectionTitle}>Де продукт має найбільше сенсу</h2>
+              <h2 className={offerStyles.sectionTitle}>Програми, до яких він підходить</h2>
             </div>
             <PlatformBlockLink href="/programs" label="Усі курси" />
           </div>

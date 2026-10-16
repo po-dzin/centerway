@@ -1,30 +1,24 @@
-import { AuthorCard } from "@/components/platform/AuthorCard";
+import { ConsultationCard } from "@/components/platform/ConsultationCard";
 import { PlatformBlock } from "@/components/platform/PlatformBlock";
 import { PlatformOfferCarousel } from "@/components/platform/PlatformOfferCarousel";
 import type { Author } from "@/lms-core";
 
 /**
- * The authors, on the consultation page.
+ * The authors who take consultations, on `/consult` — the hub's whole job since
+ * 2026-10-16, when its form moved to each author's page.
  *
- * The card itself is `AuthorCard` and nothing else — this block used to draw
- * its own, and the same founder read as two different objects depending on
- * whether you met him here or on the home page.
+ * Each card is that author's consultation (`ConsultationCard`), not their
+ * general preview: the card and its button lead to the request on the
+ * author's page. The page decides who is in the list (consent is
+ * `consultation.enabled`); this block trusts what it is handed.
  */
 export function ConsultantDirectory({ authors }: { authors: Author[] }) {
   if (authors.length === 0) return null;
   return (
-    <PlatformBlock
-      id="consultants"
-      /* One word for these people across the product — see `HubGuides`. This
-       block used to label them «Провідники» and title them «Автори» in the
-       same header. */
-      label="Автори"
-      title="З ким можна продовжити розмову"
-      lead="Досвід, напрям і курси — у профілі кожного автора."
-    >
-      <PlatformOfferCarousel label="Автори для консультації">
+    <PlatformBlock id="consultants" label="Автори" title="З ким можна поговорити">
+      <PlatformOfferCarousel label="Консультації авторів">
         {authors.map((author) => (
-          <AuthorCard key={author.slug} author={author} />
+          <ConsultationCard key={author.slug} author={author} primary={authors.length === 1} />
         ))}
       </PlatformOfferCarousel>
     </PlatformBlock>

@@ -6,8 +6,7 @@ import type { Author } from "@/lms-core";
 import { PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import { AuthorPortrait } from "./AuthorPortrait";
 import styles from "./AuthorProfileShowcase.module.css";
-import { ConsultBoundary, ConsultFaq } from "@/components/platform/ConsultPageSections";
-import { consultationSteps } from "@/components/platform/consultPageContract";
+import { AuthorConsultation } from "@/components/platform/AuthorConsultation";
 import { AUTHOR_BANNER_CROP_DEFAULT } from "@/lib/lms/authorPhoto";
 import { cropBackgroundStyle } from "@/lib/media/imageCrop";
 import Link from "next/link";
@@ -186,53 +185,9 @@ export function AuthorProfileShowcase({
               <p className={styles.empty}>Публічних курсів цього автора поки немає.</p>
             )}
           </section>
-          {author.consultation?.enabled ? (
-            <section className={styles.consultation} id="consultation">
-              {/* No eyebrow: the heading already carries the word. When the author
-            leaves the title empty it falls back to «Консультація з …», and
-            when they write their own, their word is the better one. Either
-            way the eyebrow was never the best available line. */}
-              <h2 className={styles.courseTitle}>{author.consultation.title || `Консультація з ${author.name}`}</h2>
-              {author.consultation.summary ? <p className={styles.bio}>{author.consultation.summary}</p> : null}
-              {author.consultation.points?.length ? (
-                <ul className={styles.credentials}>
-                  {author.consultation.points.map((point) => (
-                    <li className={styles.credential} key={point}>
-                      <Icon name="check" size={20} />
-                      <span>{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              <h2 className={styles.courseTitle}>Як це відбувається</h2>
-              <ol className={styles.steps}>
-                {consultationSteps.map((step) => (
-                  <li key={step.id}>
-                    <strong>{step.title}</strong>
-                    <span>{step.text}</span>
-                  </li>
-                ))}
-              </ol>
-              {author.consultation.contactUrl ? (
-                <a
-                  className={styles.consultationAction}
-                  href={author.consultation.contactUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Домовитися про консультацію
-                </a>
-              ) : null}
-            </section>
-          ) : null}
-          {/* The author's route, not the consultation page's — these two sections
-          render on both, and they used to declare `/consult` here. */}
-          {author.consultation?.enabled ? (
-            <>
-              <ConsultBoundary route="platform:/expert/[slug]" />
-              <ConsultFaq route="platform:/expert/[slug]" />
-            </>
-          ) : null}
+          {/* The consultation and its request form — its own component so the
+              author page's layout and the request flow change apart. */}
+          <AuthorConsultation author={author} />
         </>
       ) : null}
 

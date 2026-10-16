@@ -1,13 +1,29 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./PlatformSurfaceStyles";
 
 type LeadFormProps = {
   source?: string;
   productCode?: string;
   ctaPlace?: string;
+  /**
+   * The author this request is to. A consultation is always with one person,
+   * so a form on an author's page names them; the server checks the slug
+   * against a listed author who takes consultations before it trusts it.
+   */
+  authorSlug?: string;
+  /**
+   * Starts as one button, «Залишити запит», and opens into the fields on
+   * click (G, 2026-10-16: the open form was the heaviest thing on the
+   * author's page). A link to `#request` — the hub's «Записатися» — arrives
+   * with it already open, because that reader has already decided.
+   */
+  collapsed?: boolean;
 };
+
+/** The anchor a link uses to arrive at an author's request form already open. */
+export const LEAD_FORM_ANCHOR = "request";
 
 type SubmitState = "idle" | "submitting" | "success" | "error";
 
@@ -43,8 +59,22 @@ export function LeadForm({
   source = "platform_consult_form",
   productCode = "consult",
   ctaPlace = "consultation_form",
+  authorSlug,
+  collapsed = false,
 }: LeadFormProps) {
   const [state, setState] = useState<SubmitState>("idle");
+  const [open, setOpen] = useState(!collapsed);
+  const nameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!collapsed) return;
+    const openOnAnchor = () => {
+      if (window.location.hash === `#${LEAD_FORM_ANCHOR}`) setOpen(true);
+    };
+    openOnAnchor();
+    window.addEventListener("hashchange", openOnAnchor);
+    return () => window.removeEventListener("hashchange", openOnAnchor);
+  }, [collapsed]);
   const [message, setMessage] = useState("");
   const submitLabel = useMemo(() => {
     if (state === "submitting") return "Надсилаємо...";
@@ -72,6 +102,7 @@ export function LeadForm({
          words. */
       message: String(data.get("message") ?? ""),
       product_code: productCode,
+      ...(authorSlug ? { author: authorSlug } : {}),
       source,
       cta_place: ctaPlace,
       event_id: leadEventId,
@@ -109,6 +140,24 @@ export function LeadForm({
     }
   }
 
+  if (!open) {
+    return (
+      <button
+        className={styles.primaryButton}
+        type="button"
+        aria-expanded="false"
+        onClick={() => {
+          setOpen(true);
+          /* After the fields exist: the click asked to write, so the caret
+             goes where the writing starts. */
+          requestAnimationFrame(() => nameRef.current?.focus());
+        }}
+      >
+        Залишити запит
+      </button>
+    );
+  }
+
   return (
     <form className={styles.form} onSubmit={onSubmit}>
       <div className={styles.field}>
@@ -121,6 +170,7 @@ export function LeadForm({
             makes the browser's saved contact offerable at all. A name is the
             one field here that WANTS capitals. */}
         <input
+          ref={nameRef}
           id="lead-name"
           name="name"
           type="text"
