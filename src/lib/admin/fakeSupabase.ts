@@ -127,6 +127,14 @@ class FakeQuery implements PromiseLike<{
     return this;
   }
 
+  /** Strictly earlier — the feed's «before this post» cursor. */
+  lt(column: string, value: string | number) {
+    this.filters.push(
+      (row) => row[column] !== null && row[column] !== undefined && (row[column] as string | number) < value,
+    );
+    return this;
+  }
+
   in(column: string, values: unknown[]) {
     const set = new Set(values);
     this.filters.push((row) => set.has(row[column]));
@@ -179,11 +187,15 @@ class FakeQuery implements PromiseLike<{
     return this;
   }
 
-  /** `or("email.ilike.%x%,full_name.ilike.%x%")` — only the ilike form is used. */
+  /** `or("email.ilike.%x%,full_name.ilike.%x%")` and `or("a.eq.1,b.eq.2")` — ilike and eq. */
   or(expression: string) {
     const clauses = expression.split(",").map((clause) => {
       const [column, operator, ...rest] = clause.split(".");
       if (column === undefined) throw new Error(`fake: unparseable or(${clause})`);
+      if (operator === "eq") {
+        const value = rest.join(".");
+        return (row: Row) => String(row[column]) === value;
+      }
       if (operator !== "ilike") throw new Error(`fake: unsupported or(${operator})`);
       const re = ilikeToRegExp(rest.join("."));
       return (row: Row) => typeof row[column] === "string" && re.test(row[column] as string);
@@ -261,8 +273,11 @@ class FakeQuery implements PromiseLike<{
         }
       }
       const inserted = this.payload.map((row) => {
-        const key = this.db.conflictKey;
-        const existing = key ? this.rows().find((candidate) => candidate[key] === row[key]) : undefined;
+        // A composite key («auth_user_id,client_id») matches on every column of it.
+        const keys = this.db.conflictKey ? this.db.conflictKey.split(",").map((key) => key.trim()) : [];
+        const existing = keys.length
+          ? this.rows().find((candidate) => keys.every((key) => candidate[key] === row[key]))
+          : undefined;
         if (existing) {
           Object.assign(existing, row);
           return existing;

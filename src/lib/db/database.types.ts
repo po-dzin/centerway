@@ -1047,6 +1047,236 @@ export type Database = {
           },
         ]
       }
+      feed_comments: {
+        Row: {
+          auth_user_id: string
+          body: string
+          created_at: string
+          gate: Json | null
+          hidden_at: string | null
+          hidden_by: string | null
+          id: string
+          parent_id: string | null
+          post_id: string
+          status: string
+        }
+        Insert: {
+          auth_user_id: string
+          body: string
+          created_at?: string
+          gate?: Json | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          parent_id?: string | null
+          post_id: string
+          status?: string
+        }
+        Update: {
+          auth_user_id?: string
+          body?: string
+          created_at?: string
+          gate?: Json | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          parent_id?: string | null
+          post_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "feed_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feed_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "feed_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_marks: {
+        Row: {
+          auth_user_id: string
+          client_id: string
+          created_at: string
+          end_offset: number | null
+          id: string
+          kind: string
+          note: string | null
+          post_id: string
+          prefix: string | null
+          quote: string | null
+          start_offset: number | null
+          updated_at: string
+        }
+        Insert: {
+          auth_user_id: string
+          client_id: string
+          created_at?: string
+          end_offset?: number | null
+          id?: string
+          kind?: string
+          note?: string | null
+          post_id: string
+          prefix?: string | null
+          quote?: string | null
+          start_offset?: number | null
+          updated_at?: string
+        }
+        Update: {
+          auth_user_id?: string
+          client_id?: string
+          created_at?: string
+          end_offset?: number | null
+          id?: string
+          kind?: string
+          note?: string | null
+          post_id?: string
+          prefix?: string | null
+          quote?: string | null
+          start_offset?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_marks_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "feed_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_posts: {
+        Row: {
+          author_id: string
+          block_display: string
+          block_id: string | null
+          body: string
+          course_id: string | null
+          created_at: string
+          created_by: string
+          decided_by: string | null
+          gate: Json | null
+          held_reason: string | null
+          hidden_at: string | null
+          id: string
+          lesson_id: string | null
+          photo_alt: string | null
+          photo_path: string | null
+          published_at: string | null
+          returned_reason: string | null
+          status: string
+          tg_message_id: number | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          block_display?: string
+          block_id?: string | null
+          body: string
+          course_id?: string | null
+          created_at?: string
+          created_by: string
+          decided_by?: string | null
+          gate?: Json | null
+          held_reason?: string | null
+          hidden_at?: string | null
+          id?: string
+          lesson_id?: string | null
+          photo_alt?: string | null
+          photo_path?: string | null
+          published_at?: string | null
+          returned_reason?: string | null
+          status?: string
+          tg_message_id?: number | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          block_display?: string
+          block_id?: string | null
+          body?: string
+          course_id?: string | null
+          created_at?: string
+          created_by?: string
+          decided_by?: string | null
+          gate?: Json | null
+          held_reason?: string | null
+          hidden_at?: string | null
+          id?: string
+          lesson_id?: string | null
+          photo_alt?: string | null
+          photo_path?: string | null
+          published_at?: string | null
+          returned_reason?: string | null
+          status?: string
+          tg_message_id?: number | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "lms_authors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feed_posts_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "lms_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feed_posts_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lms_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_reactions: {
+        Row: {
+          auth_user_id: string
+          created_at: string
+          emoji: string
+          post_id: string
+        }
+        Insert: {
+          auth_user_id: string
+          created_at?: string
+          emoji: string
+          post_id: string
+        }
+        Update: {
+          auth_user_id?: string
+          created_at?: string
+          emoji?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "feed_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           attempts: number | null
