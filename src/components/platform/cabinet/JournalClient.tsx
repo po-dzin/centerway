@@ -24,13 +24,15 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { Icon } from "@/components/Icon";
-import { groupJournalByDay, localCalendarDate } from "@/lms-core";
+import { formatCalendarDate, groupJournalByDay, localCalendarDate, resolveTimeZone } from "@/lms-core";
 import { fetchMyJournal, type LearnerJournalDto } from "@/components/lms/lmsClient";
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { PlatformPageHead } from "@/components/platform/PlatformPageHead";
+import { StepLine, type StepLineStep } from "@/components/platform/StepLine";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
+import { plural } from "@/lib/plural";
 import { cabinetGate } from "./CabinetGate";
 import { getCabinetCopy } from "./copy";
 import { dateLocaleFor } from "./format";
@@ -68,6 +70,40 @@ function formatDayKey(key: string, locale: string, timeZone: string): string {
   // "This year" in the reader's own zone, for the same reason the day key was
   // cut there: on 1 January the browser's zone and the reader's disagree.
   return year === localCalendarDate(new Date(), timeZone).year ? day : `${day} ${year}`;
+}
+
+/** The day of the month a key names — the number in the day's ring. */
+function dayOfMonth(key: string): string {
+  const match = /^\d{4}-\d{2}-(\d{2})$/.exec(key);
+  return match ? String(Number(match[1])) : "•";
+}
+
+/** The weekday a local day key falls on, by the same UTC route `formatDayKey` takes. */
+function weekdayOf(key: string, locale: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
+  if (!match) return "";
+  const at = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  return new Intl.DateTimeFormat(locale, { weekday: "long", timeZone: "UTC" }).format(at);
+}
+
+/** Today's and yesterday's keys in the reader's zone, so the line can name them. */
+function nearKeys(timeZone: string): { today: string; yesterday: string } {
+  const now = new Date();
+  return {
+    today: formatCalendarDate(localCalendarDate(now, timeZone)),
+    yesterday: formatCalendarDate(localCalendarDate(new Date(now.getTime() - 24 * 3600 * 1000), timeZone)),
+  };
+}
+
+/** The hour an entry was written, in the reader's zone. Empty when unreadable. */
+function timeOf(value: string, locale: string, timeZone: string): string {
+  const at = new Date(value);
+  if (Number.isNaN(at.getTime())) return "";
+  return new Intl.DateTimeFormat(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: resolveTimeZone(timeZone),
+  }).format(at);
 }
 
 export function JournalClient() {
@@ -174,64 +210,91 @@ export function JournalClient() {
               </Link>
             </div>
           ) : (
-            days.map((day) => (
-              <section className={styles.day} key={day.date || "undated"}>
-                <h2 className={styles.dayHeading}>
-                  {formatDayKey(day.date, locale, journal?.timeZone ?? "") || cab.journalUndated}
-                </h2>
+            /* A TIMELINE, ON THE STEP LINE'S TERMS (G, 2026-10-16): a ring per
+               day with its number, the dashed thread between days, today
+               filled. Days without entries are not drawn — this is a record of
+               what was written, not a calendar. Past days take the neutral
+               ring, not the «done» check: a day of notes is not a task. */
+            <StepLine
+              className={styles.timeline}
+              steps={days.map((day): StepLineStep => {
+                const zone = journal?.timeZone ?? "";
+                const near = nearKeys(zone);
+                const isToday = day.date !== "" && day.date === near.today;
+                const named = isToday ? cab.journalToday : day.date === near.yesterday ? cab.journalYesterday : null;
+                const date = formatDayKey(day.date, locale, zone) || cab.journalUndated;
+                const count = day.entries.length;
+                return {
+                  id: day.date || "undated",
+                  state: isToday ? "current" : "next",
+                  marker: dayOfMonth(day.date),
+                  kicker: named ?? (weekdayOf(day.date, locale) || undefined),
+                  title: date,
+                  description: `${count} ${plural(count, ...cab.journalCount)}`,
+                  content: (
+                    <ul className={styles.entries}>
+                      {day.entries.map((entry) => {
+                        const place = entry.feed
+                          ? `${cab.journalFeed} · ${entry.feed.authorName}`
+                          : entry.course
+                            ? [entry.course.title, entry.lesson?.title].filter(Boolean).join(" · ")
+                            : cab.journalDetached;
+                        const time = timeOf(entry.createdAt, locale, zone);
 
-                <ul className={styles.entries}>
-                  {day.entries.map((entry) => {
-                    const place = entry.course
-                      ? [entry.course.title, entry.lesson?.title].filter(Boolean).join(" · ")
-                      : cab.journalDetached;
+                        return (
+                          <li className={styles.entry} key={entry.clientId}>
+                            <span className={styles.glyph} aria-hidden="true">
+                              <Icon name={entry.kind === "bookmark" ? "bookmark-marked" : "quote"} size={14} />
+                            </span>
 
-                    return (
-                      <li className={styles.entry} key={entry.clientId}>
-                        <span className={styles.glyph} aria-hidden="true">
-                          <Icon name={entry.kind === "bookmark" ? "bookmark-marked" : "quote"} size={14} />
-                        </span>
+                            <div className={styles.body}>
+                              {entry.note ? <p className={styles.note}>{entry.note}</p> : null}
 
-                        <div className={styles.body}>
-                          {entry.note ? <p className={styles.note}>{entry.note}</p> : null}
+                              {entry.quote ? (
+                                <p className={styles.quote}>{entry.quote}</p>
+                              ) : entry.kind === "bookmark" ? (
+                                /* Not `.quote`: that class carries the margin rule
+                                   that says «these are the lesson's words», and a
+                                   bookmark quotes nothing. It marks a lesson, so
+                                   its row says so in the platform's own voice. */
+                                <p className={styles.kind}>{cab.journalBookmark}</p>
+                              ) : null}
 
-                          {entry.quote ? (
-                            <p className={styles.quote}>{entry.quote}</p>
-                          ) : entry.kind === "bookmark" ? (
-                            /* Not `.quote`: that class carries the margin rule
-                               that says «these are the lesson's words», and a
-                               bookmark quotes nothing. It marks a lesson, so
-                               its row says so in the platform's own voice. */
-                            <p className={styles.kind}>{cab.journalBookmark}</p>
-                          ) : null}
+                              <p className={styles.place}>
+                                {entry.path ? (
+                                  /* Straight to the block. The lesson treats an
+                                     explicit hash as «take me here», so it wins
+                                     over the saved reading position. The link is
+                                     offered even when the window has closed: the
+                                     door is the authority on access, and a page
+                                     that decided for it would be re-deciding a
+                                     contract on a READ path. */
+                                  <Link className={styles.placeLink} href={href(entry.path)}>
+                                    {place}
+                                  </Link>
+                                ) : (
+                                  <span className={styles.placeGone}>{place}</span>
+                                )}
 
-                          <p className={styles.place}>
-                            {entry.path ? (
-                              /* Straight to the block. The lesson treats an
-                                 explicit hash as «take me here», so it wins
-                                 over the saved reading position. The link is
-                                 offered even when the window has closed: the
-                                 door is the authority on access, and a page
-                                 that decided for it would be re-deciding a
-                                 contract on a READ path. */
-                              <Link className={styles.placeLink} href={href(entry.path)}>
-                                {place}
-                              </Link>
-                            ) : (
-                              <span className={styles.placeGone}>{place}</span>
-                            )}
+                                {entry.course && !entry.course.open ? (
+                                  <span className={styles.closed}>{cab.journalClosed}</span>
+                                ) : null}
+                              </p>
+                            </div>
 
-                            {entry.course && !entry.course.open ? (
-                              <span className={styles.closed}>{cab.journalClosed}</span>
+                            {time ? (
+                              <time className={styles.time} dateTime={entry.createdAt}>
+                                {time}
+                              </time>
                             ) : null}
-                          </p>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
-            ))
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ),
+                };
+              })}
+            />
           )}
         </div>
       </div>

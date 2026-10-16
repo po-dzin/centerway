@@ -65,6 +65,11 @@ export type JournalEntry = {
   course: { slug: string; title: string; open: boolean } | null;
   lesson: { slug: string; title: string } | null;
   /**
+   * Set when the mark was made on a post in the feed («Стрічка», 2026-10-16)
+   * rather than in a lesson; `course` and `lesson` are then null.
+   */
+  feed?: { authorName: string } | null;
+  /**
    * The INTERNAL path to the passage — `/learn/…` — or `null` when there is no
    * place to send the reader. The caller turns it into an address for the
    * surface it is rendering on; this module does not know which host that is.
