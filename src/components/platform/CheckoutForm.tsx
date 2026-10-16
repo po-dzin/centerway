@@ -79,9 +79,9 @@ type FieldName = "name" | "email" | "contact";
  * receipt go to, and «Телефон або Telegram» — one required field, whichever
  * the buyer types — for when an email is not enough. No either-or buttons
  * and no second field: the buyer types, the field decides. SIGNED IN, THE ADDRESS IS NOT ASKED: the session's is
- * verified, and the route uses it when the form carries none. «Інша адреса»
- * opens the field for a gift; what is typed there wins, exactly as the route
- * already decides.
+ * verified, and the route uses it when the form carries none. There is no
+ * «another address» for a signed-in buyer (owner, 2026-10-16): the account is
+ * the address.
  */
 export function CheckoutForm({
   fields,
@@ -92,7 +92,8 @@ export function CheckoutForm({
   accountEmail: string | null;
   initial: CheckoutInitial;
 }) {
-  const [useAccount, setUseAccount] = useState(accountEmail !== null && !initial.email);
+  /* Signed in, the account is the address: nothing else is offered. */
+  const useAccount = accountEmail !== null;
   /* Null until the buyer types: until then each field shows what the page
      knows, else what this device remembers. Storage is read as an external
      store, so the server render (no storage) and the first client render agree
@@ -156,12 +157,6 @@ export function CheckoutForm({
     [contact, email, name, pending, useAccount],
   );
 
-  const otherAddress = useCallback(() => {
-    setUseAccount(false);
-    // After the field renders, not before: there is nothing to focus yet.
-    window.requestAnimationFrame(() => emailRef.current?.focus());
-  }, []);
-
   return (
     <form className={styles.form} action="/api/pay/start" method="get" onSubmit={onSubmit} noValidate={hydrated}>
       {fields.map(([key, value]) => (
@@ -201,9 +196,6 @@ export function CheckoutForm({
           <p className={styles.accountLine}>
             Доступ прийде в ваш акаунт <b>{accountEmail}</b>
           </p>
-          <button className={styles.quietAction} type="button" onClick={otherAddress}>
-            Інша адреса
-          </button>
         </div>
       ) : (
         <div className={styles.field}>

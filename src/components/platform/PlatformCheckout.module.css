@@ -77,14 +77,18 @@
   min-width: 0;
 }
 
+/* The card is half a row, beside the cover: the page's title size would not
+   fit «Розвантажувальний» in it (owner, 2026-10-16), so the product's name
+   takes the subtitle size and may break inside a word before it leaves the card. */
 .productTitle {
   margin: 0;
   color: var(--cw-platform-text);
   font-family: var(--cw-font-editorial);
-  font-size: var(--ds-type-title-size);
+  font-size: var(--ds-type-hero-subtitle-size);
   font-weight: 700;
-  line-height: var(--ds-type-title-line-height);
+  line-height: var(--ds-type-hero-subtitle-line-height);
   text-wrap: balance;
+  overflow-wrap: anywhere;
 }
 
 .productFormat {
@@ -182,8 +186,8 @@
   border-color: var(--cw-danger);
 }
 
-/* Signed in: the address the order goes to, said once, with the way to change
-   it beside it. */
+/* Signed in: the address the order goes to, said once. The account is the
+   address; a gift goes to another buyer's own account (owner, 2026-10-16). */
 .account {
   display: flex;
   flex-wrap: wrap;
@@ -203,11 +207,6 @@
 
 .accountLine b {
   color: var(--cw-platform-text);
-}
-
-.quietAction {
-  composes: text from "./PlatformButtons.module.css";
-  composes: hug from "./PlatformButtons.module.css";
 }
 
 /* The page's one primary action, the same role and width as the offer page's
