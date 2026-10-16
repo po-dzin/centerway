@@ -94,6 +94,13 @@ export type CabinetCopy = {
   journalDetached: string;
   /** A heading for entries whose timestamp could not be read at all. */
   journalUndated: string;
+  /** The day line (2026-10-16): today and yesterday are named, older days by weekday. */
+  journalToday: string;
+  journalYesterday: string;
+  /** How many entries a day holds: one, few, many. */
+  journalCount: [string, string, string];
+  /** Where an entry made on a feed post came from: «Стрічка · <author>». */
+  journalFeed: string;
   browsePrograms: string;
   /** The empty PRODUCTS fold's way out. Not `browsePrograms`: that fold is
       about products, and offering programmes from it answered a question the
@@ -108,6 +115,8 @@ export type CabinetCopy = {
   startsIn: (days: number) => string;
   courseFinished: string;
   courseNotStarted: string;
+  /** The mark on a course card when its author wrote something not yet read. */
+  authorNews: string;
   /** The draft badge on the cover corner — one word, the corner is small. */
   courseDraft: string;
   courseLocked: string;
@@ -231,6 +240,10 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       journalClosed: "access closed",
       journalDetached: "this lesson can no longer be found",
       journalUndated: "Without a date",
+      journalToday: "Today",
+      journalYesterday: "Yesterday",
+      journalCount: ["entry", "entries", "entries"],
+      journalFeed: "Feed",
       browsePrograms: "Browse programs",
       browseProducts: "See products",
 
@@ -241,6 +254,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       startsIn: (days) => (days === 1 ? "Starts tomorrow" : `Starts in ${days} days`),
       courseFinished: "Completed",
       courseNotStarted: "Not started",
+      authorNews: "New from the author",
       courseDraft: COURSE_STATE_LABELS.draft.en,
       courseLocked: "No access yet",
       courseExpired: "Access expired",
@@ -343,6 +357,10 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     journalClosed: "доступ закрито",
     journalDetached: "цей урок більше не знайти",
     journalUndated: "Без дати",
+    journalToday: "Сьогодні",
+    journalYesterday: "Учора",
+    journalCount: ["запис", "записи", "записів"],
+    journalFeed: "Стрічка",
     browsePrograms: "Подивитися програми",
     browseProducts: "Подивитися продукти",
 
@@ -353,6 +371,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     startsIn: (days) => (days === 1 ? "Старт завтра" : `Старт через ${days} ${plural(days, "день", "дні", "днів")}`),
     courseFinished: "Пройдено",
     courseNotStarted: "Ще не розпочато",
+    authorNews: "Нове від автора",
     courseDraft: COURSE_STATE_LABELS.draft.uk,
     courseLocked: "Доступу поки немає",
     courseExpired: "Термін доступу минув",

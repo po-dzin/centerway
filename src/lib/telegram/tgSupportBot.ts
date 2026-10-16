@@ -39,6 +39,8 @@ import { classifyDosha, type DoshaResultType } from "@/lib/dosha/doshaTest";
 import { buildDoshaResultHtml, RESULT_COPY } from "@/lib/dosha/doshaResultCopy";
 import { DOSHA_PRIMARY_EXIT, doshaExitHref } from "@/lib/dosha/doshaRouting";
 import { captureQuestion } from "@/lib/agent/questions/store";
+import { handleFeedCallback, handleFeedReply, isFeedCallback } from "@/lib/feed/telegram";
+import type { Db as FeedDb } from "@/lib/feed/server";
 import { platformUrl } from "@/lib/surfaces/catalog";
 import { SUPPORT_BOT_URL } from "@/lib/supportBotUrl";
 import {
@@ -92,6 +94,8 @@ type TelegramMessage = {
   text?: string;
   chat: TelegramChat;
   from?: TelegramUser;
+  /** Set when the message answers another — the feed's «why returned» reply. */
+  reply_to_message?: { message_id: number };
 };
 
 type TelegramCallbackQuery = {
@@ -897,6 +901,12 @@ async function handleTextMessage(db: Supabase, message: TelegramMessage): Promis
      stream's group it receives every message there, and the private-chat
      menu answering each of them would be the bot talking over the group. */
   if (inGroup(message.chat.type)) {
+    // …and for a reply to a returned feed post's card in the work group: the
+    // reason the author reads (src/lib/feed/telegram.ts).
+    if (await handleFeedReply(db as unknown as FeedDb, message)) {
+      await reactToTelegramMessage(chatId, message.message_id, "✍");
+      return;
+    }
     if (isConnectCommand(text)) await sendMessage(chatId, await connectStreamChat(db, message.chat, user.id));
     return;
   }
@@ -978,6 +988,13 @@ async function handleCallbackQuery(db: Supabase, callbackQuery: TelegramCallback
   const data = callbackQuery.data ?? "";
   const chatId = callbackQuery.message?.chat.id;
   if (!chatId) return;
+
+  // The feed's cards in the work group answer their own presses, with a line
+  // the presser sees; they must never fall through to the private menu below.
+  if (isFeedCallback(data)) {
+    await handleFeedCallback(db as unknown as FeedDb, callbackQuery);
+    return;
+  }
 
   await answerCallbackQuery(callbackQuery.id);
 

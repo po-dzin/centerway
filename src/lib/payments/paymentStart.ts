@@ -9,7 +9,7 @@ import {
   offerHeading,
 } from "@/lib/products";
 import { activeGateway, type PaymentGateway } from "@/lib/payments/gateway";
-import { resolveInvoiceSplits } from "@/lib/payments/invoiceSplits";
+import { resolveInvoiceShare } from "@/lib/payments/invoiceSplits";
 import { upsertCustomerByContact } from "@/lib/platform/customerIdentity";
 import type { BuyerDetails } from "@/lib/platform/buyerContact";
 import { asJson } from "@/lib/db/types";
@@ -265,10 +265,12 @@ export async function createPaymentInvoiceWithDeps(
      it. Without a split the whole payment lands on the platform and the
      author's share is accrued by the database when the order becomes paid
      (`order_shares`); with one, the order is marked `split_at_source` so the
-     share is not paid out a second time. */
-  const splits = gateway.supportsSplit
-    ? await resolveInvoiceSplits(sb, { productCode: product, amount, gateway: gateway.id })
-    : [];
+     share is not paid out a second time. The share decided here is also
+     written onto the order (`author_share_pct`), so the ledger row the
+     database writes on payment matches what the gateway already sent. */
+  const { splits, snapshot } = gateway.supportsSplit
+    ? await resolveInvoiceShare(sb, { productCode: product, amount, gateway: gateway.id, ref: input.ref ?? null })
+    : { splits: [], snapshot: null };
 
   const invoicePromise = gateway.createInvoice(
     {
@@ -309,6 +311,7 @@ export async function createPaymentInvoiceWithDeps(
         }
       : {}),
     ...(splits.length ? { split_at_source: true } : {}),
+    ...(snapshot ? { author_share_pct: snapshot.pct, author_share_source: snapshot.source } : {}),
   });
 
   const clientEventId = typeof input.event_id === "string" && input.event_id.trim() ? input.event_id.trim() : null;

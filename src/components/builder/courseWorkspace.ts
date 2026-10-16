@@ -1,4 +1,4 @@
-export type WorkspaceMode = "course" | "content" | "offer" | "author" | "release";
+export type WorkspaceMode = "course" | "content" | "offer" | "author" | "release" | "announce";
 export const DEFAULT_COURSE_WORKSPACE_MODE: WorkspaceMode = "course";
 
 /** Stable hashes are shared by the rail, mobile navigation and blocker links. */
@@ -8,6 +8,7 @@ export const COURSE_WORKSPACE_HASH: Record<WorkspaceMode, string> = {
   offer: "#course-offer",
   author: "#course-author",
   release: "#course-release",
+  announce: "#course-announcements",
 };
 
 export function courseWorkspaceModeFromHash(hash: string): WorkspaceMode {

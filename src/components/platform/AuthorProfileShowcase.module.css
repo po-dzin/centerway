@@ -418,3 +418,17 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* The rooms under the header (2026-10-16): the same column as the sections
+   they open, so the first word of a tab and the first card below it share one
+   left edge. */
+.tabs {
+  width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
+  margin: 0 auto var(--cw-space-xl);
+}
+
+/* The biography opened the header's second column; inside «Про мене» it is the
+   first thing in the room, so it takes no gap of its own above it. */
+.profileSection > .body {
+  margin-top: 0;
+}

@@ -172,6 +172,107 @@ export function listAuthoringActivity(): Promise<BuilderResult<{ activity: Build
   return request("/api/lms/authoring/activity");
 }
 
+/* «Облік» — the author's own shares; never a buyer (see `src/lib/lms/authorLedger.ts`). */
+export type LedgerPeriod = "7" | "30" | "all";
+export type LedgerStatus = "accrued" | "split_at_source" | "paid_out" | "reversed" | "clawback";
+export type LedgerRowView = {
+  orderRef: string;
+  createdAt: string;
+  courseTitle: string | null;
+  baseAmount: number;
+  amount: number;
+  sharePct: number;
+  currency: string;
+  status: LedgerStatus;
+  source: "author" | "platform";
+  ref: string | null;
+};
+export type LedgerLinkView = {
+  tag: string;
+  label: string;
+  channel: string | null;
+  targetPath: string;
+  createdAt: string;
+  orders: number;
+};
+export type LedgerView = {
+  author: { slug: string; name: string } | null;
+  origin?: string;
+  totals?: {
+    gross: number;
+    share: number;
+    received: number;
+    awaiting: number;
+    orders: number;
+    ownOrders: number;
+    platformOrders: number;
+    refunds: number;
+    refunded: number;
+  };
+  sources?: { key: string; label: string; source: "author" | "platform"; orders: number; share: number }[];
+  rows?: LedgerRowView[];
+  rowsTotal?: number;
+  links?: LedgerLinkView[];
+  destinations?: { path: string; label: string }[];
+};
+
+export function getAuthorLedger(period: LedgerPeriod): Promise<BuilderResult<LedgerView>> {
+  return request(`/api/lms/authoring/ledger?period=${period}`);
+}
+
+export function createAuthorLink(input: {
+  label: string;
+  channel: string | null;
+  targetPath: string;
+}): Promise<BuilderResult<{ link: LedgerLinkView }>> {
+  return request("/api/lms/authoring/ledger/links", { method: "POST", body: JSON.stringify(input) });
+}
+
+/** The month's ledger as a CSV blob, for the author to save; null when it could not be read. */
+export async function exportAuthorLedger(month: string | null): Promise<Blob | null> {
+  try {
+    const response = await authorizedFetch(
+      `/api/lms/authoring/ledger/export${month ? `?month=${encodeURIComponent(month)}` : ""}`,
+    );
+    return response.ok ? await response.blob() : null;
+  } catch {
+    return null;
+  }
+}
+
+export type AnnouncementView = {
+  id: string;
+  body: string;
+  lessonSlug: string | null;
+  lessonTitle: string | null;
+  createdAt: string;
+  recipients: number;
+  telegram: number;
+  read: number;
+  pending: number;
+};
+
+export type CourseAnnouncementsView = {
+  reach: { recipients: number; telegram: number };
+  nextAt: string | null;
+  lessons: { slug: string; title: string }[];
+  announcements: AnnouncementView[];
+};
+
+export function getCourseAnnouncements(slug: string): Promise<BuilderResult<CourseAnnouncementsView>> {
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/announcements`);
+}
+
+export function sendCourseAnnouncement(
+  slug: string,
+  input: { body: string; lessonSlug: string | null },
+): Promise<BuilderResult<{ id: string; recipients: number }>> {
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/announcements`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
 export function createCourse(): Promise<BuilderResult<{ slug: string }>> {
   return request("/api/lms/authoring/courses", { method: "POST", body: "{}" });
 }

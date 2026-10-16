@@ -6,6 +6,7 @@ import { normalizeTrackingString } from "@/lib/tracking/metaClickIds";
 import { getErrorMessage } from "@/lib/errors";
 import { processDoshaReminderJob } from "@/lib/dosha/doshaReminder";
 import { describeOffer } from "@/lib/experiences/offers";
+import { ANNOUNCEMENT_JOB, processAnnouncementJob } from "@/lib/lms/announcements";
 
 // Simple job registry
 type JobHandler = (payload: unknown) => Promise<void>;
@@ -189,6 +190,10 @@ const handlers: Record<string, JobHandler> = {
       throw new Error("Invalid payload for reporting:telegram-sale job");
     }
     await sendConfirmedSaleTelegramReport(payload.order_ref);
+  },
+  // An author's announcement, one Telegram batch per run (`lib/lms/announcements.ts`).
+  [ANNOUNCEMENT_JOB]: async (payload) => {
+    await processAnnouncementJob(payload);
   },
 };
 
