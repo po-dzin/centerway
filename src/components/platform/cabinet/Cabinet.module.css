@@ -1720,7 +1720,7 @@
 .authorVisibilityInput:checked + .authorVisibilityMark {
   border-color: var(--cw-nav-marker);
   background: var(--cw-nav-marker);
-  color: var(--cw-platform-on-accent);
+  color: var(--cw-mat-surface);
 }
 
 .authorVisibilityRow:has(.authorVisibilityInput:focus-visible) .authorVisibilityMark {
