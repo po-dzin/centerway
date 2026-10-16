@@ -53,7 +53,7 @@ import {
   isProgramKind,
 } from "./format";
 import { getCabinetCopy } from "./copy";
-import { pickResumeCourse } from "./resumeCourse";
+import { heldCourses, pickResumeCourse } from "./resumeCourse";
 import {
   useAuthorProfile,
   useCabinetSession,
@@ -156,7 +156,7 @@ export function CabinetClient() {
   const shelfHref = href(LEARNING_SHELF_HREF);
   const journalHref = href(JOURNAL_HREF);
 
-  const ownedCourses = useMemo(() => (shelf ?? []).filter((course) => course.access !== "locked"), [shelf]);
+  const ownedCourses = useMemo(() => heldCourses(shelf ?? []), [shelf]);
 
   /** The single course the dashboard offers to resume: latest real activity wins. */
   const resumeCourse = useMemo(() => pickResumeCourse(ownedCourses), [ownedCourses]);

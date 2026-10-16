@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { LearnerShelfCourseDto } from "@/components/lms/lmsClient";
-import { pickResumeCourse } from "./resumeCourse";
+import { heldCourses, pickResumeCourse } from "./resumeCourse";
 
 function course(
   slug: string,
@@ -73,5 +73,31 @@ describe("pickResumeCourse", () => {
     });
 
     expect(pickResumeCourse([older, latest])?.slug).toBe("latest-finished");
+  });
+});
+
+describe("heldCourses", () => {
+  const untouchedFree = course("soul-daily-ritual", null, {
+    access: "available",
+    source: "free",
+    startedAt: null,
+    standing: null,
+    currentLessonSlug: null,
+    currentLessonTitle: null,
+  });
+
+  it("leaves out a free course nobody has started, so an empty cabinet stays empty", () => {
+    expect(heldCourses([untouchedFree])).toEqual([]);
+  });
+
+  it("counts a free course once it is started", () => {
+    const started = course("soul-daily-ritual", "2026-10-16T08:00:00.000Z", { source: "free" });
+    expect(heldCourses([started])).toEqual([started]);
+  });
+
+  it("keeps a paid course that has not been opened yet, and drops locked ones", () => {
+    const paid = course("way21", null, { access: "available", source: "order", startedAt: null });
+    const locked = course("reset-day", null, { access: "locked" });
+    expect(heldCourses([paid, locked, untouchedFree])).toEqual([paid]);
   });
 });
