@@ -18,11 +18,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { AuthorProfileShowcase } from "@/components/platform/AuthorProfileShowcase";
+import { AuthorProfileShowcase, authorTabOf } from "@/components/platform/AuthorProfileShowcase";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import { getAuthor, listCoursesByAuthor } from "@/lib/lms/authors";
 import { describe } from "@/lib/brand/identity";
 import { pageMetadata } from "@/lib/seo/metadata";
+import { EMPTY_FEED_FILTER } from "@/lib/feed/model";
+import { readFeedFirstPage } from "@/lib/feed/page";
 
 async function listedAuthor(slug: string) {
   const author = await getAuthor(slug);
@@ -42,16 +44,28 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   });
 }
 
-export default async function AuthorProfilePage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function AuthorProfilePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ tab?: string | string[] }>;
+}) {
   const { slug } = await params;
   const author = await listedAuthor(slug);
   if (!author) notFound();
 
-  const courses = await listCoursesByAuthor(author.id);
+  const [courses, feed, { tab }] = await Promise.all([
+    listCoursesByAuthor(author.id),
+    /* The author's posts: whether «Дописи» is offered at all, and its first
+       page when it is the room asked for. */
+    readFeedFirstPage(EMPTY_FEED_FILTER, { authorId: author.id }),
+    searchParams,
+  ]);
 
   return (
     <PlatformShell>
-      <AuthorProfileShowcase author={author} courses={courses} />
+      <AuthorProfileShowcase author={author} courses={courses} tab={authorTabOf(tab)} posts={feed.page} />
     </PlatformShell>
   );
 }

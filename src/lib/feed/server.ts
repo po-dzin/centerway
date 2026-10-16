@@ -52,7 +52,8 @@ export class FeedError extends Error {
 
 /* ─────────────────────────── shapes ─────────────────────────── */
 
-export type FeedAuthor = { id: string; slug: string; name: string; photo: { src: string; alt: string } | null };
+/** `photo` carries the author's own crop, so a byline frames the face as the cabinet's editor aimed it. */
+export type FeedAuthor = { id: string; slug: string; name: string; photo: Author["photo"] | null };
 
 export type FeedAttachment = {
   /** A block of a lesson, or the programme itself. */
@@ -85,6 +86,8 @@ export type FeedPost = {
   /** Only the post's own author sees why it waits or came back. */
   heldReason?: string | null;
   returnedReason?: string | null;
+  /** What it carries, by id — the author's own copy, for sending a returned post again. */
+  source?: { courseId: string | null; lessonId: string | null; blockId: string | null; blockDisplay: FeedBlockDisplay };
 };
 
 export type FeedComment = {
@@ -136,7 +139,7 @@ function authorOf(row: AuthorRow): FeedAuthor {
     id: row.id,
     slug: row.slug,
     name: row.name,
-    photo: photo && typeof photo.src === "string" ? { src: photo.src, alt: photo.alt ?? row.name } : null,
+    photo: photo && typeof photo.src === "string" ? { ...photo, alt: photo.alt || row.name } : null,
   };
 }
 
@@ -287,7 +290,18 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
         reactions: countReactions(reactionsByPost.get(row.id) ?? [], me),
         commentCount: commentsByPost.get(row.id) ?? 0,
         mine,
-        ...(mine ? { heldReason: row.held_reason, returnedReason: row.returned_reason } : {}),
+        ...(mine
+          ? {
+              heldReason: row.held_reason,
+              returnedReason: row.returned_reason,
+              source: {
+                courseId: row.course_id,
+                lessonId: row.lesson_id,
+                blockId: row.block_id,
+                blockDisplay: (row.block_display === "excerpt" ? "excerpt" : "full") as FeedBlockDisplay,
+              },
+            }
+          : {}),
       },
     ];
   });

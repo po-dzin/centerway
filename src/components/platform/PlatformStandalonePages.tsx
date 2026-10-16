@@ -13,6 +13,7 @@ import { consultationExpectations, consultationSteps } from "@/components/platfo
 import { HubFree, HubMini, HubPrograms } from "@/components/platform/blocks/offer/hub";
 import { HubHero, HubIntro } from "@/components/platform/blocks/orientation/hub";
 import { HubGuides } from "@/components/platform/blocks/trust/guides";
+import { FeedFresh } from "@/components/platform/feed/FeedFresh";
 import { HubProof, HubSupport } from "@/components/platform/blocks/trust/hub";
 import { bodySignals, consultationCopy, platformPageArtwork } from "@/lib/platform/content";
 
@@ -29,6 +30,10 @@ export function PlatformHomePage() {
         <HubFree />
         <HubProof />
         <HubSupport />
+        {/* Right above «Автори» (feed mockup, 16.10): what the authors are
+            saying now, and directly under it who they are. Absent while the
+            feed is empty. */}
+        <FeedFresh />
         <HubGuides />
       </main>
     </PlatformShell>
