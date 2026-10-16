@@ -214,7 +214,7 @@ export function OfferFormats({
           ))}
 
         <p className={styles.fineprint}>
-          Оплата карткою через WayForPay. Натискаючи кнопку, ви приймаєте{" "}
+          Оплата карткою через LiqPay. Натискаючи кнопку, ви приймаєте{" "}
           <Link href="/legal/public-offer">публічну оферту</Link> і{" "}
           <Link href="/legal/privacy">політику конфіденційності</Link>.
         </p>

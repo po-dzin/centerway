@@ -171,7 +171,7 @@ describe("OfferFormats", () => {
     const html = render([SELF]);
     expect(html).toContain('href="/legal/public-offer"');
     expect(html).toContain('href="/legal/privacy"');
-    expect(html).toContain("WayForPay");
+    expect(html).toContain("LiqPay");
   });
 
   describe("early price and bonus rows (G, 2026-10-03)", () => {
