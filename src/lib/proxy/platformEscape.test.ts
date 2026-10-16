@@ -53,3 +53,25 @@ describe("platform routes on a funnel host", () => {
     expect(response?.headers.get("x-middleware-rewrite")).toContain("/tests/dosha");
   });
 });
+
+/* ERR_TOO_MANY_REDIRECTS on /pay/checkout (2026-10-16): pressing «Купити» on
+   /programs/reset-day sends that page as the Referer, the same-host referer
+   names the reset-day brand, and the escape then redirected www to itself. */
+describe("a platform page reached from a product page on the platform itself", () => {
+  function fromProductPage(path: string): NextRequest {
+    return new NextRequest(new URL(path, "https://www.centerway.net.ua"), {
+      headers: { host: "www.centerway.net.ua", referer: "https://www.centerway.net.ua/programs/reset-day" },
+    });
+  }
+
+  it("is served in place, not redirected to its own address", () => {
+    const url = "/pay/checkout?product=course%3Areset-day&cta_place=x&source=platform_offer";
+    expect(rewriteFunnelHostRequest(fromProductPage(url))).toBeNull();
+  });
+
+  it("still escapes from a funnel host", () => {
+    const response = rewriteFunnelHostRequest(request("resetday.centerway.net.ua", "/pay/checkout?product=x"));
+    expect(response?.status).toBe(307);
+    expect(response?.headers.get("location")).toBe("https://www.centerway.net.ua/pay/checkout?product=x");
+  });
+});

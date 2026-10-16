@@ -6,7 +6,7 @@ import {
   isLandingRootAssetPath,
   isNextLandingEnabled,
 } from "@/lib/landing/routing";
-import { isPlatformEscapePath, redirectToPlatformOrigin } from "@/lib/proxy/platformEscape";
+import { isOnOwnerOrigin, isPlatformEscapePath, redirectToPlatformOrigin } from "@/lib/proxy/platformEscape";
 import { resolveRequestBrand } from "@/lib/proxy/requestBrand";
 import { CW_SURFACE_KIND_HEADER } from "@/lib/surfaces/headers";
 import { getProductSurfaceEntry, isActiveFunnelProduct, type ProductKey } from "@/lib/surfaces/catalog";
@@ -96,6 +96,8 @@ export function rewriteFunnelHostRequest(req: NextRequest): NextResponse | null 
      whole point — the dosha host still serves /tests itself, because that case
      returned above. See ./platformEscape.ts. */
   if (isPlatformEscapePath(req.nextUrl.pathname)) {
+    /* Already there: the platform serves the page itself. See isOnOwnerOrigin. */
+    if (isOnOwnerOrigin(req)) return null;
     return redirectToPlatformOrigin(req);
   }
 
