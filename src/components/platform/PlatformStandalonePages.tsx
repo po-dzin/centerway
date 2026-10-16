@@ -15,7 +15,7 @@ import { HubHero, HubIntro } from "@/components/platform/blocks/orientation/hub"
 import { HubGuides } from "@/components/platform/blocks/trust/guides";
 import { FeedFresh } from "@/components/platform/feed/FeedFresh";
 import { HubProof, HubSupport } from "@/components/platform/blocks/trust/hub";
-import { bodySignals, consultationCopy, platformPageArtwork } from "@/lib/platform/content";
+import { bodySignals, consultationCopy, platformGuides, platformPageArtwork } from "@/lib/platform/content";
 
 export function PlatformHomePage() {
   return (
@@ -74,7 +74,13 @@ export function PlatformConsultPage({ authors = [] }: { authors?: Author[] }) {
         badge: "Консультації · онлайн",
         artwork: platformPageArtwork.consult,
         imageAlt: "Аюрведична консультація CenterWay",
-        primaryAction: { href: "#consultants", label: "Обрати автора" },
+        /* With no listed author (a failed read, or nobody has consultations on)
+           the directory is not rendered, so the button goes to the founder's
+           profile instead of an anchor that is not there. */
+        primaryAction:
+          authors.length > 0
+            ? { href: "#consultants", label: "Обрати автора" }
+            : { href: platformGuides[0]?.href ?? "/experts", label: "Обрати автора" },
         secondaryAction: { href: "#consult-details", label: "Як це відбувається" },
       }}
       detailSectionId="consult-details"
