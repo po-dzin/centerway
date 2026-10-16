@@ -9,6 +9,10 @@
  * what spends it: the moment a session exists on a surface holding a return
  * address, the reader is put back where they were.
  *
+ * MOUNTED ONCE, in the platform layout (`SignInReturn`), so it also runs on
+ * whatever page a Google round trip lands on when Supabase falls back to its
+ * Site URL — the copy stashed before leaving brings the reader back from there.
+ *
  * IT WATCHES THE SESSION, not the click. The session can arrive three ways —
  * an OAuth redirect back into this page, a code typed into the door, or a
  * second tab signing in — and all three surface as the same auth event. One
@@ -24,7 +28,13 @@ import { useEffect, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 
-import { goToReturnTarget, readReturnTarget, returnQuery, returnTargetFromHere } from "@/lib/auth/signInReturn";
+import {
+  goToReturnTarget,
+  readReturnTarget,
+  returnQuery,
+  returnTargetFromHere,
+  takeStashedReturnTarget,
+} from "@/lib/auth/signInReturn";
 
 export function useSignInReturn(session: Session | null): void {
   const router = useRouter();
@@ -32,7 +42,11 @@ export function useSignInReturn(session: Session | null): void {
 
   useEffect(() => {
     if (!signedIn || typeof window === "undefined") return;
-    const target = readReturnTarget();
+    /* The query wins; the tab's own copy is the fallback for a Google round
+       trip that came back without it. Taking the copy also clears it, so a
+       return that did arrive in the query leaves nothing stale behind. */
+    const stashed = takeStashedReturnTarget();
+    const target = readReturnTarget() ?? stashed;
     if (!target) return;
 
     const resolved = new URL(target, window.location.origin);

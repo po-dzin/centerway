@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { returnQuery, safeReturnTarget } from "./signInReturn";
+import { readStashedTarget, returnQuery, safeReturnTarget } from "./signInReturn";
 import { PERSONAL_ORIGIN, PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 
 /**
@@ -56,5 +56,28 @@ describe("returnQuery", () => {
 
   it("is empty when there is nothing to carry", () => {
     expect(returnQuery(null)).toBe("");
+  });
+});
+
+describe("readStashedTarget", () => {
+  const here = PERSONAL_ORIGIN;
+  const now = 1_000_000_000;
+  const record = (target: unknown, at: unknown) => JSON.stringify({ target, at });
+
+  it("returns a fresh address kept before the Google hop", () => {
+    expect(readStashedTarget(record(`${PLATFORM_ORIGIN}/programs`, now - 60_000), now, here)).toBe(
+      `${PLATFORM_ORIGIN}/programs`,
+    );
+  });
+
+  it("forgets an address older than a quarter of an hour", () => {
+    expect(readStashedTarget(record("/learn", now - 16 * 60_000), now, here)).toBeNull();
+  });
+
+  it("refuses a foreign origin, a broken record, and nothing at all", () => {
+    expect(readStashedTarget(record("https://evil.example/", now), now, here)).toBeNull();
+    expect(readStashedTarget("{not json", now, here)).toBeNull();
+    expect(readStashedTarget(record(42, now), now, here)).toBeNull();
+    expect(readStashedTarget(null, now, here)).toBeNull();
   });
 });

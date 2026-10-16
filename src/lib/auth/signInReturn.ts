@@ -116,3 +116,59 @@ export function goToReturnTarget(target: string, replace: (path: string) => void
   }
   replace(target);
 }
+
+/*
+ * THE SAME ADDRESS, KEPT ON THIS SIDE OF THE GOOGLE HOP (G, 2026-10-16:
+ * «должно возвращать где было»).
+ *
+ * Google sign-in asks Supabase to come back to the page that offered it,
+ * `?next=` and all. Supabase honours that only when the address matches its
+ * Redirect URLs list; anything else is sent to the Site URL — the library —
+ * and the `next` is gone with the query that carried it. That list lives in
+ * the dashboard, not here, so the return address may not depend on it.
+ *
+ * So the address is also written to this tab before leaving, and the landing
+ * page — whichever it turns out to be — reads it back. `sessionStorage`
+ * because the round trip stays in one tab and one origin, and a short life so
+ * an abandoned Google screen cannot redirect a sign-in made an hour later some
+ * other way. Spending it removes it.
+ */
+
+const STASH_KEY = "cw.auth.return";
+const STASH_TTL_MS = 15 * 60 * 1000;
+
+/** The stored record as a destination, or null when it is stale, broken or not ours. */
+export function readStashedTarget(raw: string | null, now: number, currentOrigin: string): string | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as { target?: unknown; at?: unknown };
+    if (typeof parsed.target !== "string" || typeof parsed.at !== "number") return null;
+    if (now - parsed.at > STASH_TTL_MS || parsed.at > now) return null;
+    return safeReturnTarget(parsed.target, currentOrigin);
+  } catch {
+    return null;
+  }
+}
+
+/** Remember where to come back to before a hop that may lose the query string. */
+export function stashReturnTarget(target: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (target) window.sessionStorage.setItem(STASH_KEY, JSON.stringify({ target, at: Date.now() }));
+    else window.sessionStorage.removeItem(STASH_KEY);
+  } catch {
+    // Storage off: the query string is the only carrier, as before.
+  }
+}
+
+/** Read and forget the stashed address. */
+export function takeStashedReturnTarget(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(STASH_KEY);
+    window.sessionStorage.removeItem(STASH_KEY);
+    return readStashedTarget(raw, Date.now(), window.location.origin);
+  } catch {
+    return null;
+  }
+}

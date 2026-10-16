@@ -17,6 +17,7 @@ import type { Session } from "@supabase/supabase-js";
 
 import { supabaseClient } from "@/lib/supabaseClient";
 import { googleQueryParams, type GoogleSignInIntent } from "@/lib/auth/lastAccount";
+import { returnTargetFromHere, stashReturnTarget } from "@/lib/auth/signInReturn";
 import { fetchMyCourses, type LearnerShelfCourseDto } from "@/components/lms/lmsClient";
 import { recall, remember, shelfMemo, subscribeLibraryMemory } from "@/components/lms/libraryMemory";
 import type { ProfileLang, ProfileResponse } from "@/components/platform/profile/types";
@@ -87,6 +88,9 @@ export function useCabinetSession(): CabinetSessionState {
      door rather than to a default. */
   const signInWithGoogle = useCallback(async (intent?: GoogleSignInIntent) => {
     const redirectTo = typeof window !== "undefined" ? window.location.href : undefined;
+    /* And the same return address kept in this tab, for when Supabase does not
+       recognise `redirectTo` and lands on its Site URL instead (2026-10-16). */
+    if (typeof window !== "undefined") stashReturnTarget(returnTargetFromHere() ?? window.location.href);
     await supabaseClient.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo, queryParams: googleQueryParams(intent) },
