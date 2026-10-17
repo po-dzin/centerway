@@ -1,11 +1,12 @@
 /**
  * «Стрічка · початок» (feed mockup, 16.10): the pinned word from CenterWay
- * that opens the unfiltered feed, and on launch day — before any author has
- * posted — three cards for what the feed will carry, instead of an empty page.
+ * that opens the unfiltered feed. What the feed carries — practices, thoughts,
+ * events — is three lines inside that one post (G 17.10: «одного поста
+ * достатньо, 3 картки вбудуй у перший пост»), not cards of their own.
  *
- * Once posts appear the welcome stays first and the three cards go: they
- * describe a feed that does not exist yet. A filtered feed shows neither — the
- * reader asked for one topic or author, not for the introduction.
+ * On launch day, before any author has posted, only its opening sentence
+ * changes. A filtered feed does not show it — the reader asked for one topic
+ * or author, not for the introduction.
  *
  * The mockup's practice («Дихання 4–6») was a placeholder; the card leads to
  * the real free shelf (`/programs?free=1`, the home page's «Усі безкоштовні»).
@@ -26,43 +27,40 @@ const FREE = {
 };
 
 const KINDS = [
-  { icon: "breath", title: feedCopy.willPractices, text: feedCopy.willPracticesText },
+  { icon: "body", title: feedCopy.willPractices, text: feedCopy.willPracticesText },
   { icon: "quote", title: feedCopy.willThoughts, text: feedCopy.willThoughtsText },
   { icon: "calendar", title: feedCopy.willEvents, text: feedCopy.willEventsText },
 ] as const;
 
 export function FeedWelcome({ launch }: { launch: boolean }) {
   return (
-    <>
-      <article className={styles.post} aria-labelledby="feed-welcome-title">
-        <div className={styles.byline}>
-          <span className={styles.face} aria-hidden="true">
-            <AuthorPortrait photo={null} size="sm" fallback="C" />
-          </span>
-          <div className={styles.who}>
-            <p className={styles.whoName}>
-              CenterWay <span className={styles.pinTag}>· {feedCopy.pinned}</span>
-            </p>
-            <p className={styles.when}>{feedCopy.welcomeBy}</p>
-          </div>
+    <article className={styles.post} aria-labelledby="feed-welcome-title">
+      <div className={styles.byline}>
+        <span className={styles.face} aria-hidden="true">
+          <AuthorPortrait photo={null} size="sm" fallback="C" />
+        </span>
+        <div className={styles.who}>
+          <p className={styles.whoName}>
+            CenterWay <span className={styles.pinTag}>· {feedCopy.pinned}</span>
+          </p>
+          <p className={styles.when}>{feedCopy.welcomeBy}</p>
         </div>
-        <h2 className={styles.welcomeTitle} id="feed-welcome-title">
-          {feedCopy.welcomeTitle}
-        </h2>
-        <p className={styles.welcomeText}>{launch ? feedCopy.welcomeLaunch : feedCopy.welcomeText}</p>
-        <FeedAttachment attachment={FREE} />
-      </article>
-      {launch ? (
-        <div className={styles.willGrid}>
-          {KINDS.map((kind) => (
-            <section className={styles.willCard} key={kind.title}>
-              <Icon name={kind.icon} size={24} />
-              <h2 className={styles.willTitle}>{kind.title}</h2>
-              <p className={styles.willText}>{kind.text}</p>
-            </section>
-          ))}
-        </div>
-      ) : null}
-    </>
+      </div>
+      <h2 className={styles.welcomeTitle} id="feed-welcome-title">
+        {feedCopy.welcomeTitle}
+      </h2>
+      <p className={styles.welcomeText}>{launch ? feedCopy.welcomeLaunch : feedCopy.welcomeText}</p>
+      <ul className={styles.willList}>
+        {KINDS.map((kind) => (
+          <li className={styles.willItem} key={kind.title}>
+            <Icon className={styles.willIcon} name={kind.icon} size={20} />
+            <span>
+              <b className={styles.willTitle}>{kind.title}</b> <span className={styles.willText}>{kind.text}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <FeedAttachment attachment={FREE} />
+    </article>
   );
 }

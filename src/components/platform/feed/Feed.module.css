@@ -1554,34 +1554,34 @@ a.commentFace {
   line-height: var(--ds-type-body-line-height);
 }
 
-/* Launch day only: what the feed will carry, three across and one column on a phone. */
-.willGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
-  gap: var(--cw-space-md);
-}
-
-.willCard {
+/* What the feed carries, inside the pinned post: one line each. */
+.willList {
   display: grid;
   gap: var(--cw-space-xs);
-  align-content: start;
-  padding: var(--cw-card-padding);
-  border-radius: var(--cw-card-radius);
-  background: var(--cw-mat-surface);
-  box-shadow: var(--cw-mat-shadow-soft);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.willItem {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--cw-space-sm);
+  align-items: start;
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+.willIcon {
+  margin-block-start: 0.1em;
+  color: var(--cw-platform-text);
 }
 
 .willTitle {
-  margin: 0;
-  font-size: var(--ds-type-body-size);
   font-weight: 700;
 }
 
 .willText {
-  margin: 0;
   color: var(--cw-platform-muted);
-  font-size: var(--ds-type-body-sm-size);
-  line-height: var(--ds-type-body-sm-line-height);
 }
 
 /* «Мої дописи»: how a post landed, under its action row. */
