@@ -52,6 +52,11 @@ function draftOf(post: FeedPost): ComposerDraft {
     id: post.id,
     body: post.body,
     topic: post.topic,
+    /* Sending again replaces the post whole, so its topics, media and tags
+       ride along or they are lost. */
+    topics: post.topics,
+    media: post.media,
+    taggedAuthorIds: post.tagged.map((entry) => entry.id),
     courseId: post.source?.courseId ?? null,
     lessonId: post.source?.lessonId ?? null,
     blockId: post.source?.blockId ?? null,
@@ -144,6 +149,7 @@ export function BuilderPosts() {
                 key={post.id}
                 author={me.author!}
                 courses={me.courses}
+                taggable={me.taggable}
                 draft={draftOf(post)}
                 onDone={replace}
                 onCancel={() => setEditing(null)}
