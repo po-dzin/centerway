@@ -413,55 +413,65 @@
   color: var(--cw-platform-muted);
 }
 
-/* ─────────────── video, audio, inline fields ─────────────── */
+/* ─────────────── the other tiles, and the tools' menus ─────────────── */
 
-.mediaChip {
-  display: flex;
-  align-items: center;
-  gap: var(--cw-space-xs);
-  min-inline-size: 0;
-  min-block-size: var(--ds-touch-target-min);
-  padding-inline: var(--cw-space-xs) 0;
-  border-radius: var(--cw-radius-md);
+/* The video and the audio stand in the photos' row as tiles of the same size
+   (G 17.10); their «⋯» is the photo's. */
+.thumb[data-kind="audio"] {
   background: var(--cw-mat-surface);
 }
 
-.mediaChipIcon {
-  display: inline-grid;
-  flex: 0 0 auto;
+.tileMark {
+  position: absolute;
+  inset-inline-start: var(--cw-space-2xs);
+  inset-block-end: var(--cw-space-2xs);
+  display: grid;
   place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cw-mat-scrim-ink) 72%, transparent);
+  color: var(--cw-mat-inverse-text);
+  pointer-events: none;
+}
+
+/* No still to show: the mark stands alone in the middle of the tile. */
+.tileMark[data-alone] {
+  inset: 0;
+  margin: auto;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  background: transparent;
+  color: var(--cw-platform-text);
+}
+
+.tileAudio {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--cw-space-2xs);
+  color: var(--cw-platform-text);
+  pointer-events: none;
+}
+
+.tileClock {
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  font-variant-numeric: tabular-nums;
   color: var(--cw-platform-muted);
 }
 
-.mediaChipText {
+/* The programme path, in the block or programme tool's menu. */
+.chooser {
   display: grid;
-  flex: 1 1 auto;
-  gap: var(--cw-space-2xs);
-  min-inline-size: 0;
-  font-size: var(--ds-type-body-sm-size);
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-2xs);
 }
 
-.mediaChipText b {
-  overflow: hidden;
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.player {
-  flex: 1 1 auto;
-  min-inline-size: 0;
-  block-size: 2.25rem;
-}
-
-.durationChip {
-  flex: 0 0 auto;
-  padding: 0 var(--cw-space-xs);
-  border-radius: var(--cw-radius-pill);
-  background: var(--cw-mat-surface-sunk);
-  color: var(--cw-platform-text);
-  font-family: var(--cw-font-data);
-  font-size: var(--ds-type-label-size);
+.chooser > .inlineAction {
+  justify-self: start;
 }
 
 .inlineForm {
@@ -562,12 +572,6 @@
 
 .pickerChange {
   composes: base text hug compact from "../PlatformButtons.module.css";
-}
-
-/* «Прикріпити» closes the choice; it stands at the start like the field's
-   other inline actions. */
-.picker > .inlineAction {
-  justify-self: start;
 }
 
 .select {

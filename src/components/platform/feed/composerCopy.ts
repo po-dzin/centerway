@@ -54,6 +54,7 @@ export const composerCopy = {
   videoAdd: "Додати",
   videoInvalid: "Це не схоже на посилання YouTube.",
   videoRemove: "Прибрати відео",
+  videoActions: "Дії з відео",
   videoChip: "YouTube",
 
   audioRecord: "Записати",
@@ -61,6 +62,9 @@ export const composerCopy = {
   audioPick: "Вибрати файл",
   audioRecording: "Запис",
   audioRemove: "Прибрати аудіо",
+  audioActions: "Дії з аудіо",
+  audioPlay: "Прослухати",
+  audioPause: "Зупинити",
   audioUploading: "Завантажується аудіо",
   audioFailed: "Не вдалося завантажити аудіо.",
   audioTooBig: "Аудіо до 20 МБ.",

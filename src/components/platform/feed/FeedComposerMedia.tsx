@@ -13,7 +13,7 @@
  * more through `uploadFeedMedia`, which does that refresh.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
 import { accessToken } from "@/components/auth/authorizedFetch";
@@ -221,20 +221,36 @@ function Thumb({
   );
 }
 
-export function PhotoStrip({
+/**
+ * Everything a post carries as a file, in one row of equal tiles (G 17.10:
+ * «однозначно уніфіковано додавати різні типи файлів»): photos, then the
+ * video, then the audio. Each tile is pressed for its «⋯» menu; nothing about
+ * a file is spread into the field as if it were part of the text.
+ */
+export function MediaStrip({
   photos,
+  video,
+  audio,
   onSpoiler,
   onTag,
   onRemove,
   onRetry,
+  onRemoveVideo,
+  onRemoveAudio,
+  onRetryAudio,
 }: {
   photos: PhotoItem[];
+  video: VideoItem | null;
+  audio: AudioItem | null;
   onSpoiler: (key: string) => void;
   onTag?: () => void;
   onRemove: (key: string) => void;
   onRetry: (key: string) => void;
+  onRemoveVideo: () => void;
+  onRemoveAudio: () => void;
+  onRetryAudio: () => void;
 }) {
-  if (photos.length === 0) return null;
+  if (photos.length === 0 && !video && !audio) return null;
   return (
     <div className={`${styles.strip} cw-scroll-rail`}>
       {photos.map((item, index) => (
@@ -248,13 +264,166 @@ export function PhotoStrip({
           onRetry={() => onRetry(item.key)}
         />
       ))}
+      {video ? <VideoTile video={video} onRemove={onRemoveVideo} /> : null}
+      {audio ? <AudioTile audio={audio} onRemove={onRemoveAudio} onRetry={onRetryAudio} /> : null}
     </div>
+  );
+}
+
+/** A tile's frame and its «⋯» menu — the photo's, for the other kinds. */
+function Tile({
+  kind,
+  label,
+  status,
+  children,
+  menu: items,
+}: {
+  kind: "video" | "audio";
+  label: string;
+  status?: string;
+  children: ReactNode;
+  menu: { label: string; icon: "trash" | "play" | "close"; onSelect: () => void }[];
+}) {
+  const [menu, setMenu] = useState(false);
+  const more = useRef<HTMLButtonElement>(null);
+  return (
+    <figure
+      className={styles.thumb}
+      data-kind={kind}
+      data-status={status}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && menu) {
+          event.preventDefault();
+          event.stopPropagation();
+          setMenu(false);
+        }
+      }}
+    >
+      {children}
+      <button
+        ref={more}
+        className={styles.thumbMenuAction}
+        type="button"
+        aria-label={label}
+        aria-expanded={menu}
+        aria-haspopup="menu"
+        onClick={() => setMenu((current) => !current)}
+      >
+        <span className={styles.moreBadge} aria-hidden="true">
+          <Icon name="more" size={20} />
+        </span>
+      </button>
+      <ComposerPopover open={menu} onClose={() => setMenu(false)} anchor={more} label={label} width={240} role="menu">
+        {items.map((item) => (
+          <button
+            key={item.label}
+            className={styles.menuItemAction}
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setMenu(false);
+              item.onSelect();
+            }}
+          >
+            {item.label}
+            <Icon name={item.icon} size={20} />
+          </button>
+        ))}
+      </ComposerPopover>
+    </figure>
+  );
+}
+
+/** The linked video as a tile: YouTube's own still, with the video mark on it. */
+function VideoTile({ video, onRemove }: { video: VideoItem; onRemove: () => void }) {
+  // A private or removed video has no still: the mark alone says what it is.
+  const [still, setStill] = useState(true);
+  return (
+    <Tile
+      kind="video"
+      label={composerCopy.videoActions}
+      menu={[{ label: composerCopy.videoRemove, icon: "trash", onSelect: onRemove }]}
+    >
+      {still ? (
+        /* YouTube's still for the id; only the author sees it, before publishing. */
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={`https://i.ytimg.com/vi/${video.youtubeId}/mqdefault.jpg`}
+          alt={composerCopy.videoChip}
+          onError={() => setStill(false)}
+        />
+      ) : null}
+      <span className={styles.tileMark} data-alone={still ? undefined : ""} aria-hidden="true">
+        <Icon name="video" size={20} />
+      </span>
+    </Tile>
+  );
+}
+
+/** The audio as a tile: the microphone and its length; «⋯» plays it or takes it off. */
+function AudioTile({ audio, onRemove, onRetry }: { audio: AudioItem; onRemove: () => void; onRetry: () => void }) {
+  const player = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  function toggle() {
+    const node = player.current;
+    if (!node) return;
+    if (node.paused) void node.play();
+    else node.pause();
+  }
+  return (
+    <Tile
+      kind="audio"
+      label={composerCopy.audioActions}
+      status={audio.status}
+      menu={[
+        ...(audio.status === "done"
+          ? [
+              {
+                label: playing ? composerCopy.audioPause : composerCopy.audioPlay,
+                icon: "play" as const,
+                onSelect: toggle,
+              },
+            ]
+          : []),
+        { label: composerCopy.audioRemove, icon: "trash", onSelect: onRemove },
+      ]}
+    >
+      <span className={styles.tileAudio}>
+        <Icon name="mic" size={24} />
+        <span className={styles.tileClock}>{clockOf(audio.durationSec)}</span>
+      </span>
+      <audio
+        ref={player}
+        src={audio.preview}
+        preload="metadata"
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+      />
+      {audio.status === "uploading" ? (
+        <span
+          className={styles.thumbProgress}
+          role="progressbar"
+          aria-label={composerCopy.audioUploading}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(audio.progress * 100)}
+        >
+          <span style={{ inlineSize: `${Math.max(6, audio.progress * 100)}%` }} />
+        </span>
+      ) : null}
+      {audio.status === "failed" ? (
+        <button className={styles.thumbRetryAction} type="button" onClick={onRetry} title={audio.error}>
+          {composerCopy.retry}
+        </button>
+      ) : null}
+    </Tile>
   );
 }
 
 /* ─────────────────────────── video ─────────────────────────── */
 
-/** The link field, opened from the tools row; a pasted link is checked as it would be on the server. */
+/** The link field, in the menu of the video tool; a pasted link is checked as it would be on the server. */
 export function VideoField({ onAdd, onCancel }: { onAdd: (video: VideoItem) => void; onCancel: () => void }) {
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -302,28 +471,8 @@ export function VideoField({ onAdd, onCancel }: { onAdd: (video: VideoItem) => v
         <button className={styles.inlineAction} type="button" onClick={add}>
           {composerCopy.videoAdd}
         </button>
-        <button className={styles.iconAction} type="button" aria-label={composerCopy.close} onClick={onCancel}>
-          <Icon name="close" size={20} />
-        </button>
       </div>
       {error ? <p className={styles.fieldError}>{error}</p> : null}
-    </div>
-  );
-}
-
-export function VideoChip({ video, onRemove }: { video: VideoItem; onRemove: () => void }) {
-  return (
-    <div className={styles.mediaChip}>
-      <span className={styles.mediaChipIcon} aria-hidden="true">
-        <Icon name="video" size={20} />
-      </span>
-      <span className={styles.mediaChipText}>
-        <b>{composerCopy.videoChip}</b>
-        <span className={styles.muted}>youtu.be/{video.youtubeId}</span>
-      </span>
-      <button className={styles.iconAction} type="button" aria-label={composerCopy.videoRemove} onClick={onRemove}>
-        <Icon name="close" size={20} />
-      </button>
     </div>
   );
 }
@@ -396,12 +545,13 @@ export async function prepareAudio(
  */
 export function AudioField({
   onReady,
-  onCancel,
   onError,
+  onRecording,
 }: {
   onReady: (audio: { file: File; preview: string; durationSec: number }) => void;
-  onCancel: () => void;
   onError: (message: string) => void;
+  /** While it records, the menu around it must not close on a stray press. */
+  onRecording?: (on: boolean) => void;
 }) {
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
@@ -410,6 +560,8 @@ export function AudioField({
   const started = useRef(0);
   const picker = useRef<HTMLInputElement>(null);
   const canRecord = typeof window !== "undefined" && !!navigator.mediaDevices?.getUserMedia && recordType() !== null;
+
+  useEffect(() => onRecording?.(recording), [recording, onRecording]);
 
   useEffect(() => {
     if (!recording) return;
@@ -503,9 +655,6 @@ export function AudioField({
               {composerCopy.audioPick}
             </button>
             <span className={styles.muted}>{composerCopy.audioLimitHint}</span>
-            <button className={styles.iconAction} type="button" aria-label={composerCopy.close} onClick={onCancel}>
-              <Icon name="close" size={20} />
-            </button>
           </>
         )}
       </div>
@@ -521,52 +670,6 @@ export function AudioField({
           event.target.value = "";
         }}
       />
-    </div>
-  );
-}
-
-export function AudioChip({
-  audio,
-  onRemove,
-  onRetry,
-}: {
-  audio: AudioItem;
-  onRemove: () => void;
-  onRetry: () => void;
-}) {
-  return (
-    <div className={styles.mediaChip} data-status={audio.status}>
-      <span className={styles.mediaChipIcon} aria-hidden="true">
-        <Icon name="mic" size={20} />
-      </span>
-      {audio.status === "done" ? (
-        <audio className={styles.player} controls preload="metadata" src={audio.preview} />
-      ) : (
-        <span className={styles.mediaChipText}>
-          <b>{audio.status === "failed" ? (audio.error ?? composerCopy.audioFailed) : composerCopy.audioUploading}</b>
-          {audio.status === "uploading" ? (
-            <span
-              className={styles.barProgress}
-              role="progressbar"
-              aria-label={composerCopy.audioUploading}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(audio.progress * 100)}
-            >
-              <span style={{ inlineSize: `${Math.max(4, audio.progress * 100)}%` }} />
-            </span>
-          ) : null}
-        </span>
-      )}
-      <span className={styles.durationChip}>{clockOf(audio.durationSec)}</span>
-      {audio.status === "failed" ? (
-        <button className={styles.inlineAction} type="button" onClick={onRetry}>
-          {composerCopy.retry}
-        </button>
-      ) : null}
-      <button className={styles.iconAction} type="button" aria-label={composerCopy.audioRemove} onClick={onRemove}>
-        <Icon name="close" size={20} />
-      </button>
     </div>
   );
 }
