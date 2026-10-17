@@ -274,7 +274,10 @@ async function attachmentsFor(db: Db, rows: PostRow[]): Promise<Map<string, Feed
       meta: [course.title, lesson.day_index ? `день ${lesson.day_index}` : lesson.title].filter(Boolean).join(" · "),
       text: full ? text : excerptOf(text),
       full,
-      block: lessonBlock,
+      /* Only a block the author chose to show whole travels whole. An excerpt
+         sends its opening words alone: the page source must not carry a paid
+         lesson's block in full behind a visual clamp. */
+      block: full ? lessonBlock : null,
       courseSlug: course.slug ?? null,
       media: block?.media ?? null,
       durationMin: block?.durationMin ?? null,
