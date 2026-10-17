@@ -71,6 +71,21 @@
   object-fit: cover;
 }
 
+/* On a wide desktop the cover stands LEFT of the name, square, top-aligned with
+   its first line: the steady order-row geometry of a checkout. Below 1100px the
+   card is too narrow to leave the longest word a line beside it, so the cover
+   stays above the name, as on a phone. */
+@media (min-width: 1100px) {
+  .product {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--cw-space-md);
+  }
+
+  .cover {
+    width: 4.5rem;
+  }
+}
+
 .productText {
   display: grid;
   gap: var(--cw-space-2xs);
