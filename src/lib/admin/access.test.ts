@@ -948,6 +948,77 @@ describe("listCourses", () => {
     expect(reset).toMatchObject({ authorId: null, authorEmail: null, learners: 2 });
     expect(way21).toMatchObject({ authorId: "auth-coach", authorEmail: "coach@example.com", learners: 1 });
   });
+
+  it("carries the program's public address and the formats that are on sale, for the grant dialog", async () => {
+    const course = db.rows("lms_courses").find((row) => row.id === "course-way21")!;
+    Object.assign(course, { program_slug: "way21", experience_id: "exp-way21" });
+    db.tables.experience_offers = [
+      {
+        id: "o1",
+        experience_id: "exp-way21",
+        format: "group",
+        label: { uk: "Група потоку" },
+        cohort_starts_on: "2026-11-01",
+        active: true,
+        review_status: "approved",
+        sort_order: 2,
+      },
+      {
+        id: "o2",
+        experience_id: "exp-way21",
+        format: "self",
+        label: null,
+        cohort_starts_on: null,
+        active: true,
+        review_status: "approved",
+        sort_order: 1,
+      },
+      // An author's proposal and a withdrawn offer are not ways to take the program.
+      {
+        id: "o3",
+        experience_id: "exp-way21",
+        format: "individual",
+        label: null,
+        cohort_starts_on: null,
+        active: true,
+        review_status: "proposed",
+        sort_order: 3,
+      },
+      {
+        id: "o4",
+        experience_id: "exp-way21",
+        format: "group",
+        label: null,
+        cohort_starts_on: "2026-12-01",
+        active: false,
+        review_status: "approved",
+        sort_order: 4,
+      },
+      // An offer with no format is a plain price, not a format.
+      {
+        id: "o5",
+        experience_id: "exp-way21",
+        format: null,
+        label: null,
+        cohort_starts_on: null,
+        active: true,
+        review_status: "approved",
+        sort_order: 5,
+      },
+    ];
+
+    const rows = await listCourses();
+    const way21 = rows.find((row) => row.slug === "way21");
+    const reset = rows.find((row) => row.slug === "reset-day");
+
+    expect(way21?.programSlug).toBe("way21");
+    expect(way21?.formats).toEqual([
+      { format: "self", label: null, cohortStartsOn: null },
+      { format: "group", label: "Група потоку", cohortStartsOn: "2026-11-01" },
+    ]);
+    // No program_slug on the row falls back to the course slug; no experience, no formats.
+    expect(reset).toMatchObject({ programSlug: "reset-day", formats: [] });
+  });
 });
 
 describe("course moderation and admin deletion", () => {
