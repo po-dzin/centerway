@@ -85,6 +85,8 @@ export const composerCopy = {
   showFull: "Показувати у стрічці повністю",
   showFullHint: "інакше уривок і стрілка до програми",
   removeAttach: "Прибрати вкладення",
+  attachDone: "Прикріпити",
+  attachChange: "Змінити",
   blockFrom: "Блок з програми",
   programWhole: "Програма",
 

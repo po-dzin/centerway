@@ -13,25 +13,30 @@
    bottom right under the thumb; on a desktop it holds the right edge of the
    feed's 42rem column (spec: `max(gutter, 50vw - 26rem)`), so it stays beside
    the posts rather than drifting to a wide window's corner. */
+/* THE FAB IS A SQUARE CONTROL, ONE SIZE UP (2026-10-17). It used to set its
+   own 3.5rem box and its own 1.6rem glyph, but `.square` sizes the glyph from
+   `--ds-icon-in-control` — the 36–48px control's — so the + came out a third
+   of the button. Rebinding the target here, as `.compact` does for its row,
+   keeps the contract's one ratio: the glyph is 0.53 of whatever the button is.
+
+   AND IT STANDS CLEAR OF ITS OWN GLOW. The primary role lights the air around
+   the plate (0 0 22px) and lifts it (0 16px 30px), so the light reaches about
+   2rem to the sides and 3rem below. At the page gutter (20px on a phone) and
+   1.5rem from the bottom the screen edge cut that light off in a straight
+   line; the offsets are now the glow's own reach. */
 .fab {
   composes: base primary round square from "../PlatformButtons.module.css";
+  --ds-touch-target-min: 3.5rem;
+  --ds-icon-in-control: calc(var(--ds-touch-target-min) * var(--ds-icon-control-ratio));
   position: fixed;
   z-index: var(--ds-z-sticky);
-  inset-inline-end: max(var(--cw-page-gutter), env(safe-area-inset-right, 0px));
-  inset-block-end: max(var(--cw-space-lg), env(safe-area-inset-bottom, 0px));
-  inline-size: 3.5rem;
-  block-size: 3.5rem;
-}
-
-.fab svg {
-  inline-size: 1.6rem;
-  block-size: 1.6rem;
+  inset-inline-end: max(var(--cw-space-xl), var(--cw-page-gutter), env(safe-area-inset-right, 0px));
+  inset-block-end: max(var(--cw-space-2xl), calc(env(safe-area-inset-bottom, 0px) + var(--cw-space-md)));
 }
 
 @media (min-width: 901px) {
   .fab {
-    inset-inline-end: max(var(--cw-page-gutter), calc(50vw - 26rem));
-    inset-block-end: var(--cw-space-xl);
+    inset-inline-end: max(var(--cw-space-xl), var(--cw-page-gutter), calc(50vw - 26rem));
   }
 }
 
@@ -547,9 +552,12 @@
   background: var(--cw-mat-surface);
 }
 
+/* Icon, name, then «Змінити» (once chosen) and ✕ at the end. */
 .pickerHead {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: auto;
   align-items: center;
   gap: var(--cw-space-xs);
   margin-inline-end: calc(var(--cw-space-xs) * -1);
@@ -560,6 +568,16 @@
 .pickerHead b {
   color: var(--cw-platform-text);
   font-weight: 700;
+}
+
+.pickerChange {
+  composes: base text hug compact from "../PlatformButtons.module.css";
+}
+
+/* «Прикріпити» closes the choice; it stands at the start like the field's
+   other inline actions. */
+.picker > .inlineAction {
+  justify-self: start;
 }
 
 .select {

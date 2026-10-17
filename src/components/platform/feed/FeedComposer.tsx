@@ -36,13 +36,15 @@ import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
 import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
+import { blockAttachment, programAttachment } from "@/lib/feed/attachment";
 import { feedPlainText, safeFeedHref } from "@/lib/feed/format";
 import { FEED_PHOTOS_MAX, type FeedMedia, type FeedMediaStored } from "@/lib/feed/media";
 import { FEED_POST_MAX, FEED_TOPICS_MAX, type FeedTopic } from "@/lib/feed/model";
-import type { ComposerCourse, FeedAuthor, FeedPost } from "@/lib/feed/server";
+import type { ComposerCourse, FeedAttachment as FeedAttachmentData, FeedAuthor, FeedPost } from "@/lib/feed/server";
 
 import { composerCopy } from "./composerCopy";
 import { createPost, resubmitPost, type NewPost, type PostFinding } from "./feedApi";
+import { FeedAttachment } from "./FeedAttachment";
 import {
   insertLink,
   toggleInline,
@@ -170,6 +172,10 @@ export function FeedComposer({
   const [lessonId, setLessonId] = useState<string>(draft?.lessonId ?? "");
   const [blockId, setBlockId] = useState<string>(draft?.blockId ?? "");
   const [full, setFull] = useState(draft?.full ?? true);
+  /* The path (programme → lesson → block) is asked only while choosing; once
+     chosen, the field shows the block itself as the feed will draw it. A
+     returned post opens with its attachment already chosen. */
+  const [choosing, setChoosing] = useState(false);
   const [panel, setPanel] = useState<Panel>("none");
   const [menu, setMenu] = useState<Menu>(null);
   const [selected, setSelected] = useState(false);
@@ -184,6 +190,20 @@ export function FeedComposer({
   const lessons = useMemo(() => course?.lessons.filter((lesson) => lesson.blocks.length > 0) ?? [], [course]);
   const lesson = lessons.find((entry) => entry.id === lessonId) ?? lessons[0] ?? null;
   const block = lesson?.blocks.find((entry) => entry.id === blockId) ?? lesson?.blocks[0] ?? null;
+  const attachment = useMemo(() => {
+    if (!course) return null;
+    const owner = { title: course.title, slug: course.slug, programSlug: course.programSlug };
+    if (attach === "program") return programAttachment(owner);
+    if (attach === "block" && lesson && block) {
+      return blockAttachment(
+        owner,
+        { title: lesson.title, dayIndex: lesson.dayIndex, blocks: [block.block] },
+        block.id,
+        full,
+      );
+    }
+    return null;
+  }, [attach, course, lesson, block, full]);
   const taggableOthers = useMemo(() => taggable.filter((entry) => entry.id !== author.id), [taggable, author.id]);
 
   const visible = useMemo(() => feedPlainText(body).length, [body]);
@@ -467,6 +487,17 @@ export function FeedComposer({
 
   /* ── render ── */
 
+  /* A tool press opens the choice; pressing the same tool again takes the
+     attachment off. A programme needs no choosing when the author has one. */
+  function startAttach(kind: Exclude<Attach, "none">) {
+    if (attach === kind) {
+      setAttach("none");
+      return;
+    }
+    setAttach(kind);
+    setChoosing(!(kind === "program" && courses.length === 1));
+  }
+
   const showFmt = selected || linking;
   const counterNear = visible > FEED_POST_MAX - 400;
 
@@ -498,13 +529,13 @@ export function FeedComposer({
             icon="document"
             label={composerCopy.block}
             pressed={attach === "block"}
-            onClick={() => setAttach(attach === "block" ? "none" : "block")}
+            onClick={() => startAttach("block")}
           />
           <ToolButton
             icon="guide"
             label={composerCopy.program}
             pressed={attach === "program"}
-            onClick={() => setAttach(attach === "program" ? "none" : "program")}
+            onClick={() => startAttach("program")}
           />
         </>
       ) : null}
@@ -738,6 +769,10 @@ export function FeedComposer({
                             lesson={lesson}
                             block={block}
                             full={full}
+                            choosing={choosing}
+                            attachment={attachment}
+                            onChoose={() => setChoosing(true)}
+                            onChosen={() => setChoosing(false)}
                             onCourse={(id) => {
                               setCourseId(id);
                               setLessonId("");
@@ -924,6 +959,10 @@ function AttachPicker({
   lesson,
   block,
   full,
+  choosing,
+  attachment,
+  onChoose,
+  onChosen,
   onCourse,
   onLesson,
   onBlock,
@@ -937,70 +976,96 @@ function AttachPicker({
   lesson: ComposerCourse["lessons"][number] | null;
   block: ComposerCourse["lessons"][number]["blocks"][number] | null;
   full: boolean;
+  choosing: boolean;
+  /** The card the feed will draw, built by the server's own function. */
+  attachment: FeedAttachmentData | null;
+  onChoose: () => void;
+  onChosen: () => void;
   onCourse: (id: string) => void;
   onLesson: (id: string) => void;
   onBlock: (id: string) => void;
   onFull: (full: boolean) => void;
   onRemove: () => void;
 }) {
+  const empty = attach === "block" && lessons.length === 0;
+  const canChange = attach === "block" || courses.length > 1;
   return (
     <div className={styles.picker}>
       <div className={styles.pickerHead}>
         <Icon name={attach === "block" ? "document" : "guide"} size={20} />
         <b>{attach === "block" ? composerCopy.blockFrom : composerCopy.programWhole}</b>
+        {!choosing && canChange ? (
+          <button className={styles.pickerChange} type="button" onClick={onChoose}>
+            {composerCopy.attachChange}
+          </button>
+        ) : null}
         <button className={styles.iconAction} type="button" aria-label={composerCopy.removeAttach} onClick={onRemove}>
           <Icon name="close" size={20} />
         </button>
       </div>
-      <select
-        className={styles.select}
-        aria-label={composerCopy.pickCourse}
-        value={course?.id ?? ""}
-        onChange={(event) => onCourse(event.target.value)}
-      >
-        {courses.map((entry) => (
-          <option key={entry.id} value={entry.id}>
-            {entry.title}
-          </option>
-        ))}
-      </select>
-      {attach === "block" ? (
-        lessons.length > 0 ? (
-          <>
-            <select
-              className={styles.select}
-              aria-label={composerCopy.pickLesson}
-              value={lesson?.id ?? ""}
-              onChange={(event) => onLesson(event.target.value)}
-            >
-              {lessons.map((entry) => (
-                <option key={entry.id} value={entry.id}>
-                  {entry.title}
-                </option>
-              ))}
-            </select>
-            <select
-              className={styles.select}
-              aria-label={composerCopy.pickBlock}
-              value={block?.id ?? ""}
-              onChange={(event) => onBlock(event.target.value)}
-            >
-              {(lesson?.blocks ?? []).map((entry) => (
-                <option key={entry.id} value={entry.id}>
-                  {entry.label || entry.kind}
-                </option>
-              ))}
-            </select>
+
+      {choosing ? (
+        <>
+          <select
+            className={styles.select}
+            aria-label={composerCopy.pickCourse}
+            value={course?.id ?? ""}
+            onChange={(event) => onCourse(event.target.value)}
+          >
+            {courses.map((entry) => (
+              <option key={entry.id} value={entry.id}>
+                {entry.title}
+              </option>
+            ))}
+          </select>
+          {attach === "block" && !empty ? (
+            <>
+              <select
+                className={styles.select}
+                aria-label={composerCopy.pickLesson}
+                value={lesson?.id ?? ""}
+                onChange={(event) => onLesson(event.target.value)}
+              >
+                {lessons.map((entry) => (
+                  <option key={entry.id} value={entry.id}>
+                    {entry.title}
+                  </option>
+                ))}
+              </select>
+              <select
+                className={styles.select}
+                aria-label={composerCopy.pickBlock}
+                value={block?.id ?? ""}
+                onChange={(event) => onBlock(event.target.value)}
+              >
+                {(lesson?.blocks ?? []).map((entry) => (
+                  <option key={entry.id} value={entry.id}>
+                    {entry.label || entry.kind}
+                  </option>
+                ))}
+              </select>
+            </>
+          ) : null}
+          {empty ? (
+            <p className={styles.muted}>{composerCopy.noBlocks}</p>
+          ) : (
+            <button className={styles.inlineAction} type="button" onClick={onChosen}>
+              {composerCopy.attachDone}
+            </button>
+          )}
+        </>
+      ) : attachment ? (
+        <>
+          <FeedAttachment attachment={attachment} preview />
+          {attach === "block" ? (
             <label className={styles.check}>
               <input type="checkbox" checked={full} onChange={(event) => onFull(event.target.checked)} />
               <span>
                 {composerCopy.showFull} <span className={styles.muted}>{composerCopy.showFullHint}</span>
               </span>
             </label>
-          </>
-        ) : (
-          <p className={styles.muted}>{composerCopy.noBlocks}</p>
-        )
+          ) : null}
+        </>
       ) : null}
     </div>
   );

@@ -528,10 +528,28 @@ a.face {
 
 /* A block shown whole: the lesson's own drawing, then the card that leads
    to its programme. */
+/* A block shown whole and its arrow, nothing between them. The arrow sits at
+   the block's top edge and is a plain link: no stretched box over a block
+   whose own boxes, buttons and player take presses. */
 .attachWhole {
   display: grid;
-  gap: var(--cw-space-sm);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-xs);
+  align-items: start;
   min-inline-size: 0;
+}
+
+.attachWhole[data-link] {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.attachWhole .attachGo::after {
+  content: none;
+}
+
+.attachWhole .attachGo:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset-tight);
 }
 
 .attachBlock {

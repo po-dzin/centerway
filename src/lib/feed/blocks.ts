@@ -142,8 +142,10 @@ export function feedBlockText(blocks: unknown, blockId: string): FeedBlockText |
   }
 }
 
-/** Every block of a lesson the composer can offer, with a one-line label. */
-export function feedBlockOptions(blocks: unknown): { id: string; label: string; kind: string }[] {
+/** Every block of a lesson the composer can offer, with a one-line label and the block itself. */
+export function feedBlockOptions(
+  blocks: unknown,
+): { id: string; label: string; kind: string; block: FeedLessonBlock }[] {
   if (!Array.isArray(blocks)) return [];
   let flat: Exclude<LessonBlock, { type: "group" }>[];
   try {
@@ -157,6 +159,6 @@ export function feedBlockOptions(blocks: unknown): { id: string; label: string; 
     // Every block type can be attached (G 2026-10-17); one with no words of
     // its own is offered by its kind, which the composer names.
     const label = text.title || text.text.split("\n")[0] || "";
-    return [{ id: block.id, label: label.slice(0, 120), kind: block.type }];
+    return [{ id: block.id, label: label.slice(0, 120), kind: block.type, block }];
   });
 }

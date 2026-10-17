@@ -22,7 +22,8 @@ import { adminClient } from "@/lib/auth/adminClient";
 import type { Json } from "@/lib/db/database.types";
 import type { Author } from "@/lms-core";
 
-import { feedBlockOf, feedBlockOptions, feedBlockText, type FeedLessonBlock } from "./blocks";
+import { blockAttachment, programAttachment } from "./attachment";
+import { feedBlockOptions, feedBlockText, type FeedLessonBlock } from "./blocks";
 import { feedGateText, feedPlainText } from "./format";
 import { checkFeedText, type GateVerdict } from "./gate";
 import { FEED_TAGS_MAX, checkFeedMedia, readFeedMedia, type FeedMedia } from "./media";
@@ -245,44 +246,19 @@ async function attachmentsFor(db: Db, rows: PostRow[]): Promise<Map<string, Feed
   for (const row of rows) {
     const course = row.course_id ? courseById.get(row.course_id) : undefined;
     if (!course) continue;
-    const href = course.program_slug ? `/programs/${course.program_slug}` : null;
+    const owner = { title: course.title, slug: course.slug ?? null, programSlug: course.program_slug || null };
     const lesson = row.lesson_id ? lessonById.get(row.lesson_id) : undefined;
-    if (!lesson) {
-      out.set(row.id, {
-        kind: "program",
-        title: course.title,
-        meta: "Програма",
-        text: "",
-        full: false,
-        block: null,
-        courseSlug: course.slug ?? null,
-        media: null,
-        durationMin: null,
-        href,
-      });
-      continue;
-    }
-    const block = row.block_id ? feedBlockText(lesson.blocks, row.block_id) : null;
-    const lessonBlock = row.block_id ? feedBlockOf(lesson.blocks, row.block_id) : null;
-    // A block the author has since deleted takes its words with it; the post
-    // keeps pointing at the lesson's programme rather than losing its card.
-    const full = row.block_display === "full";
-    const text = block?.text ?? "";
-    out.set(row.id, {
-      kind: "block",
-      title: block?.title || lesson.title,
-      meta: [course.title, lesson.day_index ? `день ${lesson.day_index}` : lesson.title].filter(Boolean).join(" · "),
-      text: full ? text : excerptOf(text),
-      full,
-      /* Only a block the author chose to show whole travels whole. An excerpt
-         sends its opening words alone: the page source must not carry a paid
-         lesson's block in full behind a visual clamp. */
-      block: full ? lessonBlock : null,
-      courseSlug: course.slug ?? null,
-      media: block?.media ?? null,
-      durationMin: block?.durationMin ?? null,
-      href,
-    });
+    out.set(
+      row.id,
+      lesson
+        ? blockAttachment(
+            owner,
+            { title: lesson.title, dayIndex: lesson.day_index, blocks: lesson.blocks },
+            row.block_id,
+            row.block_display === "full",
+          )
+        : programAttachment(owner),
+    );
   }
   return out;
 }
@@ -1186,22 +1162,30 @@ export async function listTaggableAuthors(db: Db, author: FeedAuthor): Promise<F
 export type ComposerCourse = {
   id: string;
   title: string;
-  lessons: { id: string; title: string; blocks: { id: string; label: string; kind: string }[] }[];
+  slug: string | null;
+  programSlug: string | null;
+  lessons: {
+    id: string;
+    title: string;
+    dayIndex: number | null;
+    /** Each block whole: the composer previews it as the card the feed will draw. */
+    blocks: { id: string; label: string; kind: string; block: FeedLessonBlock }[];
+  }[];
 };
 
 /** The author's own programmes, lessons and blocks, for «+ Блок з програми». */
 export async function listComposerCourses(db: Db, author: FeedAuthor & { userId: string }): Promise<ComposerCourse[]> {
   const { data: courses, error } = await db
     .from("lms_courses")
-    .select("id, title, author_id, author_profile_id")
+    .select("id, title, slug, program_slug, author_id, author_profile_id")
     .or(`author_profile_id.eq.${author.id},author_id.eq.${author.userId}`)
     .order("title");
   if (error) throw new Error(`feed_composer_read_failed:${error.message}`);
-  const list = (courses ?? []) as { id: string; title: string }[];
+  const list = (courses ?? []) as { id: string; title: string; slug: string | null; program_slug: string | null }[];
   if (list.length === 0) return [];
   const { data: lessons, error: lessonError } = await db
     .from("lms_lessons")
-    .select("id, course_id, title, order, blocks")
+    .select("id, course_id, title, order, day_index, blocks")
     .in(
       "course_id",
       list.map((course) => course.id),
@@ -1209,10 +1193,27 @@ export async function listComposerCourses(db: Db, author: FeedAuthor & { userId:
     .order("order");
   if (lessonError) throw new Error(`feed_composer_read_failed:${lessonError.message}`);
   const byCourse = new Map<string, ComposerCourse["lessons"]>();
-  for (const lesson of (lessons ?? []) as { id: string; course_id: string; title: string; blocks: unknown }[]) {
+  for (const lesson of (lessons ?? []) as {
+    id: string;
+    course_id: string;
+    title: string;
+    day_index: number | null;
+    blocks: unknown;
+  }[]) {
     const entry = byCourse.get(lesson.course_id) ?? [];
-    entry.push({ id: lesson.id, title: lesson.title, blocks: feedBlockOptions(lesson.blocks) });
+    entry.push({
+      id: lesson.id,
+      title: lesson.title,
+      dayIndex: lesson.day_index,
+      blocks: feedBlockOptions(lesson.blocks),
+    });
     byCourse.set(lesson.course_id, entry);
   }
-  return list.map((course) => ({ id: course.id, title: course.title, lessons: byCourse.get(course.id) ?? [] }));
+  return list.map((course) => ({
+    id: course.id,
+    title: course.title,
+    slug: course.slug,
+    programSlug: course.program_slug,
+    lessons: byCourse.get(course.id) ?? [],
+  }));
 }
