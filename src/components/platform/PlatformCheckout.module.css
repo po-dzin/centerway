@@ -35,8 +35,8 @@
   text-decoration: none;
 }
 
-.back::before {
-  content: "←";
+.backIcon {
+  flex: 0 0 auto;
   margin-inline-end: var(--cw-space-2xs);
 }
 
@@ -77,18 +77,27 @@
   min-width: 0;
 }
 
-/* The card is half a row, beside the cover: the page's title size would not
-   fit «Розвантажувальний» in it (owner, 2026-10-16), so the product's name
-   takes the subtitle size and may break inside a word before it leaves the card. */
+/* One title size in both columns on a phone (the page's own, as it was). On a
+   wide screen the card is half a row beside the cover, and the page's size
+   would not fit «Розвантажувальний» (owner, 2026-10-16/17), so there the name
+   takes the display size, between the page title and the subtitle, and may
+   break inside a word before it leaves the card. */
 .productTitle {
   margin: 0;
   color: var(--cw-platform-text);
   font-family: var(--cw-font-editorial);
-  font-size: var(--ds-type-hero-subtitle-size);
+  font-size: var(--ds-type-title-size);
   font-weight: 700;
-  line-height: var(--ds-type-hero-subtitle-line-height);
+  line-height: var(--ds-type-title-line-height);
   text-wrap: balance;
   overflow-wrap: anywhere;
+}
+
+@media (min-width: 861px) {
+  .productTitle {
+    font-size: var(--ds-type-display-size);
+    line-height: var(--ds-type-display-line-height);
+  }
 }
 
 .productFormat {

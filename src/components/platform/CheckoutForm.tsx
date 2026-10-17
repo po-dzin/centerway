@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type MouseEvent } from "react";
 
 import { LogoMark } from "@/components/brand/LogoMark";
+import { Icon } from "@/components/Icon";
 import { normalizeBuyerName, readPrimaryContact } from "@/lib/platform/buyerContact";
 import pendingStyles from "./CheckoutStartLink.module.css";
 import styles from "./PlatformCheckout.module.css";
@@ -307,6 +308,7 @@ export function CheckoutBackLink({ href }: { href: string }) {
 
   return (
     <a className={styles.back} href={href} onClick={onClick}>
+      <Icon className={styles.backIcon} name="arrow-left" size={16} />
       Назад
     </a>
   );
