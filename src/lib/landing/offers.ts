@@ -157,12 +157,14 @@ function buildDraftNote(): string {
   return "Персональна ціна активується при першому вході на лендинг";
 }
 
-function getIremLandingBaseUrl(): string {
-  return new URL("/", PLATFORM_THANKS_URL).toString();
-}
-
+/*
+ * The link a personal price travels in is the program's shared address,
+ * `/go/irem` (src/app/go/[program]/route.ts), which hands the token to the
+ * storefront page. It used to be the platform's home, `/?offer_token=…`, which
+ * no longer read the token: every link issued that way showed the public price.
+ */
 function buildIremLandingUrl(offerToken: string): string {
-  const url = new URL(getIremLandingBaseUrl());
+  const url = new URL("/go/irem", PLATFORM_THANKS_URL);
   url.searchParams.set("offer_token", offerToken);
   return url.toString();
 }
@@ -379,6 +381,32 @@ export async function resolveIremLandingOffer(input: QueryLike): Promise<Landing
   }
 
   return mapPersonalOfferRow(row, offerToken);
+}
+
+export type PersonalPrice = {
+  offerToken: string;
+  amount: number;
+  currency: string;
+  oldAmount: number | null;
+};
+
+/**
+ * The personal price a `?offer_token` grants on a page selling `code`, or null
+ * when it grants none — another product's token, an unknown one, a cancelled,
+ * spent or expired one. The storefront page and the checkout ask this so they
+ * print the figure `/api/pay/start` will charge (it resolves the same token).
+ * Only IREM issues personal prices today.
+ */
+export async function resolvePersonalPrice(code: string, input: QueryLike): Promise<PersonalPrice | null> {
+  if (code !== IREM_OFFER_CODE || !readQueryValue(input, "offer_token")) return null;
+  try {
+    const offer = await resolveIremLandingOffer(input);
+    if (!offer.offerApplied || !offer.offerToken) return null;
+    return { offerToken: offer.offerToken, amount: offer.amount, currency: offer.currency, oldAmount: offer.oldAmount };
+  } catch {
+    // A token that cannot be read is the public price, not a broken page.
+    return null;
+  }
 }
 
 export async function issueIremPersonalOffer(input: IssuePersonalOfferInput): Promise<IssuedPersonalOffer> {

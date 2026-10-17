@@ -15,7 +15,7 @@ vi.mock("@/lib/platform/offers", () => ({
   loadPayableOffer: async () => ({ amount: 3950, currency: "UAH" }),
 }));
 
-const { resolveIremLandingOffer } = await import("./offers");
+const { IREM_OFFER_CODE, resolveIremLandingOffer, resolvePersonalPrice } = await import("./offers");
 
 const HOUR = 60 * 60 * 1000;
 const token = (status: string, expiresInHours = 24) => ({
@@ -71,5 +71,25 @@ describe("resolveIremLandingOffer", () => {
       offerExpired: false,
       amount: 3950,
     });
+  });
+});
+
+describe("resolvePersonalPrice", () => {
+  it("gives the token's price on the IREM offer", async () => {
+    db.tables.personal_offer_tokens = [token("active")];
+    expect(await resolvePersonalPrice(IREM_OFFER_CODE, { offer_token: "tok" })).toEqual({
+      offerToken: "tok",
+      amount: 2900,
+      currency: "UAH",
+      oldAmount: 3950,
+    });
+  });
+
+  it("gives nothing without a token, for another product, or for a spent token", async () => {
+    db.tables.personal_offer_tokens = [token("active")];
+    expect(await resolvePersonalPrice(IREM_OFFER_CODE, {})).toBeNull();
+    expect(await resolvePersonalPrice("course:way21", { offer_token: "tok" })).toBeNull();
+    db.tables.personal_offer_tokens = [token("consumed")];
+    expect(await resolvePersonalPrice(IREM_OFFER_CODE, { offer_token: "tok" })).toBeNull();
   });
 });
