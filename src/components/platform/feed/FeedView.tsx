@@ -133,7 +133,7 @@ export function FeedView({
   return (
     <div className={mode === "feed" ? styles.posts : styles.embedded}>
       {mode === "feed" && me?.author ? (
-        <FeedComposer author={me.author} courses={me.courses} onDone={published} />
+        <FeedComposer author={me.author} courses={me.courses} taggable={me.taggable} onDone={published} />
       ) : null}
 
       {mode === "feed" ? <FeedFilter filter={filter} authors={authors} onChange={changeFilter} /> : null}

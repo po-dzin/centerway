@@ -10,7 +10,7 @@
  */
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 
 import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
 import { useToast } from "@/components/ToastProvider";
@@ -114,8 +114,18 @@ export function FeedComments({
   const top = (comments ?? []).filter((comment) => !comment.parentId);
   const repliesOf = (id: string) => (comments ?? []).filter((comment) => comment.parentId === id);
 
-  async function send(event: FormEvent) {
+  /* Enter sends and Shift+Enter breaks the line where there is a keyboard to
+     hold Shift on (a fine pointer); on a phone Enter is a new line and the
+     button sends (G 2026-10-17). */
+  function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
+    if (!window.matchMedia("(pointer: fine)").matches) return;
     event.preventDefault();
+    void send();
+  }
+
+  async function send(event?: FormEvent) {
+    event?.preventDefault();
     const body = text.trim();
     if (!body || sending) return;
     setSending(true);
@@ -196,6 +206,8 @@ export function FeedComments({
               maxLength={FEED_COMMENT_MAX}
               value={text}
               placeholder={replyTo ? feedCopy.writeReply : feedCopy.writeComment}
+              enterKeyHint="send"
+              onKeyDown={onKeyDown}
               onChange={(event) => setText(event.target.value)}
             />
             <button className={styles.sendButton} type="submit" disabled={sending || !text.trim()}>

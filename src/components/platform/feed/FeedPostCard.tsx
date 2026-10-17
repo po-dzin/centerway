@@ -1,45 +1,68 @@
 "use client";
 
 /**
- * One post in «Стрічка»: who wrote it and when, the words, the block or
- * programme it carries, the reactions and the comments.
+ * One post in «Стрічка»: who wrote it and when (and with whom — «з …»), its
+ * one to three topics, the photos, video or audio it carries, the words, the
+ * block or programme, the action row and the comments (G 2026-10-17).
+ *
+ * THE WORDS are the markdown subset of `@/lib/feed/format`, drawn token by
+ * token (`FeedBody`) — never as HTML. They fold after six lines in the feed
+ * and four on the home rail; «Читати далі» appears only when lines are really
+ * hidden, and «Згорнути» folds them again.
  *
  * MARKS. Selecting words in a post offers «Позначити» and «Нотатка», the lesson
  * reader's two acts; the mark lands in the reader's own «Мій журнал» signed
- * «Стрічка · <автор>». Offsets are counted in the post's plain text, and a mark
+ * «Стрічка · <автор>». Offsets are counted in the text the reader sees (`feedBodyText`), and a mark
  * whose words the author has since changed is found again by its quote or
  * quietly not drawn — the journal still keeps it.
  */
 
 import Link from "next/link";
-import { useCallback, useRef, useState, type ReactNode } from "react";
+import {
+  Fragment,
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
 
 import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
 import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
-import { plural } from "@/lib/plural";
 import { COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
-import { feedAuthorPath, feedPostPath, type ReactionCount } from "@/lib/feed/model";
-import type { FeedAttachment, FeedPost } from "@/lib/feed/server";
+import { parseFeedBody } from "@/lib/feed/format";
+import { EMPTY_FEED_MEDIA } from "@/lib/feed/media";
+import { FEED_TOPICS_MAX, excerptOf, feedAuthorPath, feedPostPath, type ReactionCount } from "@/lib/feed/model";
+import type { FeedPost } from "@/lib/feed/server";
 
 import { feedCopy, relativeTime } from "./copy";
 import { deleteMark, saveMark, toggleReaction, type FeedMarkView } from "./feedApi";
+import { FeedActions } from "./FeedActions";
+import { FeedAttachment } from "./FeedAttachment";
+import { FeedBody, feedBodyText, type PlacedMark } from "./FeedBody";
 import { FeedComments } from "./FeedComments";
-import { FeedReactions } from "./FeedReactions";
+import { FeedMedia } from "./FeedMedia";
 import styles from "./Feed.module.css";
 
 /* ─────────────── marks in the text ─────────────── */
 
-type Placed = FeedMarkView & { from: number; to: number };
+type Placed = FeedMarkView & PlacedMark;
 
-/** Where each mark sits in the body now; overlapping or lost marks are left out. */
-function placeMarks(body: string, marks: FeedMarkView[]): Placed[] {
+/**
+ * Where each mark sits in the drawn text now; overlapping or lost marks are
+ * left out. A mark is found by its offsets first, then by its quote — which
+ * also finds marks made before 17.10, when offsets counted the raw body.
+ */
+function placeMarks(text: string, marks: FeedMarkView[]): Placed[] {
   const placed: Placed[] = [];
   for (const mark of marks) {
     let from = mark.start ?? -1;
     let to = mark.end ?? -1;
-    if (!(from >= 0 && to > from && body.slice(from, to) === mark.quote)) {
-      from = mark.quote ? body.indexOf(mark.quote) : -1;
+    if (!(from >= 0 && to > from && text.slice(from, to) === mark.quote)) {
+      from = mark.quote ? text.indexOf(mark.quote) : -1;
       to = from >= 0 && mark.quote ? from + mark.quote.length : -1;
     }
     if (from >= 0 && to > from) placed.push({ ...mark, from, to });
@@ -63,37 +86,25 @@ type Bar =
   | { kind: "new"; from: number; to: number; top: number; left: number; writing: boolean }
   | { kind: "existing"; mark: Placed; top: number; left: number };
 
-/* ─────────────── the attachment ─────────────── */
+/* ─────────────── the fold ─────────────── */
 
-function attachmentIcon(attachment: FeedAttachment) {
-  if (attachment.kind === "program") return "guide" as const;
-  if (attachment.media === "video") return "play" as const;
-  if (attachment.media === "image") return "eye" as const;
-  return "document" as const;
-}
-
-function Attachment({ attachment }: { attachment: FeedAttachment }) {
-  const extra = [
-    attachment.media === "video" ? feedCopy.video : attachment.media === "image" ? feedCopy.image : null,
-    attachment.durationMin ? `${attachment.durationMin} ${feedCopy.minutes}` : null,
-  ].filter(Boolean);
-  return (
-    <div className={styles.attach}>
-      <span className={styles.attachIcon} aria-hidden="true">
-        <Icon name={attachmentIcon(attachment)} size={20} />
-      </span>
-      <div className={styles.attachBody}>
-        <p className={styles.attachTitle}>{attachment.title}</p>
-        <p className={styles.attachMeta}>{[attachment.meta, ...extra].join(" · ")}</p>
-        {attachment.text ? <p className={styles.attachText}>{attachment.text}</p> : null}
-        {attachment.href ? (
-          <Link className={`cw-link-rule ${styles.attachGo}`} href={attachment.href}>
-            {feedCopy.openProgram}
-          </Link>
-        ) : null}
-      </div>
-    </div>
-  );
+/**
+ * Whether the clamped body actually hides lines. Measured, not guessed from
+ * the length: six lines of a phone are a third of six lines of a desktop. The
+ * button appears only when there is something under the fold.
+ */
+function useOverflow(ref: RefObject<HTMLElement | null>, clamped: boolean): boolean {
+  const [over, setOver] = useState(false);
+  useLayoutEffect(() => {
+    const node = ref.current;
+    if (!node || !clamped) return;
+    const measure = () => setOver(node.scrollHeight - node.clientHeight > 2);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [ref, clamped]);
+  return over;
 }
 
 /* ─────────────── the card ─────────────── */
@@ -107,6 +118,7 @@ export function FeedPostCard({
   commentsOpen = false,
   headingLevel = 2,
   aside,
+  variant = "feed",
 }: {
   post: FeedPost;
   signedIn: boolean;
@@ -118,16 +130,29 @@ export function FeedPostCard({
   headingLevel?: 2 | 3;
   /** Extra lines under the byline — the workshop's state and reasons. */
   aside?: ReactNode;
+  /**
+   * `rail`: the home page's «Свіже від авторів» — the same card, folded after
+   * four lines with a shorter photo, and the bubble leading to the post's page
+   * instead of opening the thread in place.
+   */
+  variant?: "feed" | "rail";
 }) {
   const toast = useToast();
   const card = useRef<HTMLElement>(null);
-  const bodyRef = useRef<HTMLParagraphElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const [reactions, setReactions] = useState<ReactionCount[]>(post.reactions);
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(commentsOpen);
   const [count, setCount] = useState(post.commentCount);
   const [bar, setBar] = useState<Bar | null>(null);
   const [note, setNote] = useState("");
+  // The post's own page shows it whole; the feed and the rail fold it.
+  const [expanded, setExpanded] = useState(commentsOpen);
+  const clamped = !expanded;
+  const overflowing = useOverflow(bodyRef, clamped);
+
+  const tokens = useMemo(() => parseFeedBody(post.body), [post.body]);
+  const text = useMemo(() => feedBodyText(tokens), [tokens]);
 
   const goSignIn = useCallback(() => {
     window.location.assign(signInHref);
@@ -141,10 +166,14 @@ export function FeedPostCard({
     setBusy(true);
     const result = await toggleReaction(post.id, emoji);
     setBusy(false);
-    if (result.ok) setReactions(result.data.reactions);
+    if (result.ok) {
+      setReactions(result.data.reactions);
+      return;
+    }
+    toast.error(result.code === "reaction_limit" ? feedCopy.reactionLimit : feedCopy.reactionFailed);
   }
 
-  const placed = placeMarks(post.body, marks);
+  const placed = placeMarks(text, marks);
 
   function readSelection() {
     if (!signedIn || !bodyRef.current || !card.current) return;
@@ -168,13 +197,15 @@ export function FeedPostCard({
     });
   }
 
-  function openMark(mark: Placed, target: HTMLElement) {
+  function openMark(mark: PlacedMark, target: HTMLElement) {
     if (!card.current) return;
+    const full = placed.find((entry) => entry.clientId === mark.clientId);
+    if (!full) return;
     const rect = target.getBoundingClientRect();
     const box = card.current.getBoundingClientRect();
     setBar({
       kind: "existing",
-      mark,
+      mark: full,
       top: rect.bottom - box.top + 8,
       left: Math.max(8, Math.min(rect.left - box.left, box.width - 240)),
     });
@@ -182,7 +213,7 @@ export function FeedPostCard({
 
   async function keep(withNote: string | null) {
     if (!bar || bar.kind !== "new") return;
-    const quote = post.body.slice(bar.from, bar.to);
+    const quote = text.slice(bar.from, bar.to);
     const mark: FeedMarkView = {
       clientId: newClientId(),
       postId: post.id,
@@ -193,7 +224,7 @@ export function FeedPostCard({
     };
     setBar(null);
     window.getSelection()?.removeAllRanges();
-    const result = await saveMark({ ...mark, prefix: post.body.slice(Math.max(0, bar.from - 40), bar.from) });
+    const result = await saveMark({ ...mark, prefix: text.slice(Math.max(0, bar.from - 40), bar.from) });
     if (!result.ok) {
       toast.error(feedCopy.markFailed);
       return;
@@ -215,30 +246,12 @@ export function FeedPostCard({
     );
   }
 
-  const segments: ReactNode[] = [];
-  let cursor = 0;
-  for (const mark of placed) {
-    if (mark.from > cursor) segments.push(post.body.slice(cursor, mark.from));
-    segments.push(
-      <mark
-        key={mark.clientId}
-        className={styles.mark}
-        data-note={mark.note ? "" : undefined}
-        title={mark.note ?? undefined}
-        onClick={(event) => openMark(mark, event.currentTarget)}
-      >
-        {post.body.slice(mark.from, mark.to)}
-      </mark>,
-    );
-    cursor = mark.to;
-  }
-  if (cursor < post.body.length) segments.push(post.body.slice(cursor));
-
   const Name = headingLevel === 2 ? "h2" : "h3";
   const when = post.publishedAt ?? post.createdAt;
+  const topics = (post.topics?.length ? post.topics : [post.topic]).slice(0, FEED_TOPICS_MAX);
 
   return (
-    <article className={styles.post} ref={card} aria-labelledby={`post-${post.id}-by`}>
+    <article className={styles.post} data-variant={variant} ref={card} aria-labelledby={`post-${post.id}-by`}>
       <div className={styles.byline}>
         {/* The face is a second way to the same profile as the name, so it
             stays out of the tab order and out of the accessibility tree. */}
@@ -252,6 +265,17 @@ export function FeedPostCard({
         <div className={styles.who}>
           <Name className={styles.whoName} id={`post-${post.id}-by`}>
             <Link href={feedAuthorPath(post.author.slug)}>{post.author.name}</Link>
+            {post.tagged?.length ? (
+              <span className={styles.withTag}>
+                {` ${feedCopy.with} `}
+                {post.tagged.map((author, index) => (
+                  <Fragment key={author.id}>
+                    {index > 0 ? ", " : null}
+                    <Link href={feedAuthorPath(author.slug)}>{author.name}</Link>
+                  </Fragment>
+                ))}
+              </span>
+            ) : null}
           </Name>
           <p className={styles.when}>
             <Link href={feedPostPath(post.id)}>
@@ -259,16 +283,38 @@ export function FeedPostCard({
                 {relativeTime(when)}
               </time>
             </Link>
-            {` · ${COURSE_CATEGORY_LABELS[post.topic]}`}
+            {` · ${topics.map((topic) => COURSE_CATEGORY_LABELS[topic]).join(", ")}`}
           </p>
         </div>
       </div>
 
       {aside}
 
-      <p className={styles.body} ref={bodyRef} onMouseUp={readSelection} onKeyUp={readSelection}>
-        {segments}
-      </p>
+      <FeedMedia media={post.media ?? EMPTY_FEED_MEDIA} postId={post.id} />
+
+      {tokens.length ? (
+        <div className={styles.bodyFold}>
+          <FeedBody
+            ref={bodyRef}
+            className={styles.body}
+            clamped={clamped}
+            tokens={tokens}
+            marks={placed}
+            onMark={openMark}
+            onSelect={readSelection}
+          />
+          {overflowing ? (
+            <button
+              className={styles.moreText}
+              type="button"
+              aria-expanded={expanded}
+              onClick={() => setExpanded((current) => !current)}
+            >
+              {expanded ? feedCopy.readLess : feedCopy.readMore}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       {bar ? (
         <div
@@ -343,27 +389,25 @@ export function FeedPostCard({
         </div>
       ) : null}
 
-      {post.attachment ? <Attachment attachment={post.attachment} /> : null}
+      {post.attachment ? <FeedAttachment attachment={post.attachment} /> : null}
 
       {post.status === "published" ? (
-        <div className={styles.social}>
-          <FeedReactions reactions={reactions} busy={busy} onToggle={(emoji) => void react(emoji)} />
-          <button
-            className={styles.countLink}
-            type="button"
-            aria-expanded={open}
-            onClick={() => setOpen((current) => !current)}
-          >
-            {open
-              ? feedCopy.commentsHide
-              : count > 0
-                ? `${count} ${plural(count, ...feedCopy.comments)}`
-                : feedCopy.commentsNone}
-          </button>
-        </div>
+        <FeedActions
+          postId={post.id}
+          shareText={`${post.author.name}: ${excerptOf(text, 120)}`}
+          reactions={reactions}
+          busy={busy}
+          onReact={(emoji) => void react(emoji)}
+          signedIn={signedIn}
+          onGuest={goSignIn}
+          commentCount={count}
+          commentsOpen={open}
+          onComments={variant === "rail" ? undefined : () => setOpen((current) => !current)}
+          initiallySaved={post.saved ?? false}
+        />
       ) : null}
 
-      {open && post.status === "published" ? (
+      {open && post.status === "published" && variant === "feed" ? (
         <FeedComments postId={post.id} signedIn={signedIn} signInHref={signInHref} onCount={setCount} />
       ) : null}
     </article>

@@ -2,22 +2,20 @@
  * «Свіже від авторів» — the feed's three latest posts on the home page, right
  * above «Автори»: first what the authors are saying now, then who they are.
  *
+ * Since 2026-10-17 (G: «повні картки») these are the feed's own cards — photo,
+ * attachment with its arrow, reactions, «Зберегти», «Поділитися» — folded
+ * after four lines, the thread left to the post's page (`FeedFreshRail`).
+ *
  * Absent when there is nothing to show — before the first post, and when the
  * feed could not be read. The home page never shows an empty shelf for it.
  */
 
-import Link from "next/link";
-
-import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
 import { PlatformBlock, PlatformBlockLink } from "@/components/platform/PlatformBlock";
-import { COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
-import { plural } from "@/lib/plural";
-import { EMPTY_FEED_FILTER, FEED_PATH, feedAuthorPath, feedPostPath } from "@/lib/feed/model";
+import { EMPTY_FEED_FILTER, FEED_PATH } from "@/lib/feed/model";
 import { readFeedFirstPage } from "@/lib/feed/page";
 
-import { feedCopy, relativeTime } from "./copy";
-import { Emoji } from "./FeedReactions";
-import styles from "./Feed.module.css";
+import { feedCopy } from "./copy";
+import { FeedFreshRail } from "./FeedFreshRail";
 
 export async function FeedFresh() {
   const { page } = await readFeedFirstPage(EMPTY_FEED_FILTER, { limit: 3, authorId: null });
@@ -31,58 +29,7 @@ export async function FeedFresh() {
       lead={feedCopy.freshLead}
       headActions={<PlatformBlockLink href={FEED_PATH} label={feedCopy.freshAll} />}
     >
-      <ul className={styles.fresh}>
-        {page.posts.map((post) => {
-          const top = post.reactions[0];
-          const when = post.publishedAt ?? post.createdAt;
-          return (
-            <li key={post.id}>
-              <article className={styles.freshCard}>
-                <div className={styles.byline}>
-                  <Link
-                    className={styles.face}
-                    href={feedAuthorPath(post.author.slug)}
-                    tabIndex={-1}
-                    aria-hidden="true"
-                  >
-                    <AuthorPortrait
-                      photo={post.author.photo}
-                      size="xs"
-                      fallback={post.author.name.trim().charAt(0).toUpperCase()}
-                    />
-                  </Link>
-                  <p className={styles.when}>
-                    <Link className={styles.freshAuthor} href={feedAuthorPath(post.author.slug)}>
-                      {post.author.name}
-                    </Link>{" "}
-                    ·{" "}
-                    <time dateTime={when} suppressHydrationWarning>
-                      {relativeTime(when)}
-                    </time>
-                  </p>
-                </div>
-                <p className={styles.freshText}>
-                  <Link className={styles.freshLink} href={feedPostPath(post.id)}>
-                    {post.body}
-                  </Link>
-                </p>
-                <p className={styles.freshMeta}>
-                  <span>{COURSE_CATEGORY_LABELS[post.topic]}</span>
-                  {top ? (
-                    <span className={styles.freshReaction}>
-                      <Emoji id={top.emoji} />
-                      {top.count}
-                    </span>
-                  ) : null}
-                  {post.commentCount > 0 ? (
-                    <span>{`${post.commentCount} ${plural(post.commentCount, ...feedCopy.comments)}`}</span>
-                  ) : null}
-                </p>
-              </article>
-            </li>
-          );
-        })}
-      </ul>
+      <FeedFreshRail posts={page.posts} />
     </PlatformBlock>
   );
 }

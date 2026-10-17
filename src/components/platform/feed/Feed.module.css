@@ -138,13 +138,243 @@ a.face {
   vertical-align: middle;
 }
 
-/* The words. Pre-line keeps the author's own paragraphs; a long link breaks. */
+/* The words: paragraphs, lists and a quote from the post's markdown subset
+   (FeedBody). A long link breaks rather than widening the card. */
+.bodyFold {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-inline-size: 0;
+}
+
 .body {
-  margin: 0;
+  --clamp: 6;
+  display: grid;
+  gap: var(--cw-space-xs);
   font-size: var(--ds-type-body-size);
   line-height: 1.55;
-  white-space: pre-line;
   overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+.post[data-variant="rail"] .body {
+  --clamp: 4;
+}
+
+.body > * {
+  margin: 0;
+}
+
+.body ul,
+.body ol {
+  padding-inline-start: var(--cw-space-lg);
+}
+
+/* The global reset strips list markers; a post's list keeps them. */
+.body ul {
+  list-style: disc;
+}
+
+.body ol {
+  list-style: decimal;
+}
+
+.body blockquote {
+  padding-inline-start: var(--cw-space-sm);
+  border-inline-start: 2px solid var(--cw-nav-marker);
+  color: var(--cw-platform-muted);
+}
+
+.body strong {
+  font-weight: 700;
+}
+
+.bodyLink {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: var(--cw-link-rule-width);
+  text-underline-offset: var(--cw-link-rule-offset);
+  text-decoration-color: var(--cw-link-rule-color-strong);
+}
+
+/* The fold (G 2026-10-17): six lines in the feed, four on the home rail. A
+   line clamp over the whole body, so a list or a quote folds with the
+   paragraphs rather than in its own box. */
+.body[data-clamped] {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--clamp);
+  line-clamp: var(--clamp);
+  overflow: hidden;
+}
+
+.body[data-clamped] > * + * {
+  margin-block-start: var(--cw-space-xs);
+}
+
+/* Inside the clamp's box an outside marker is not drawn; inside it is. */
+.body[data-clamped] li {
+  list-style-position: inside;
+}
+
+.moreText {
+  composes: base text from "../PlatformButtons.module.css";
+  justify-self: start;
+  color: var(--cw-platform-text);
+}
+
+/* «з Ірина Мельник» beside the author's name: the other author is a link,
+   the preposition is quiet. */
+.withTag {
+  color: var(--cw-platform-muted);
+  font-weight: 500;
+}
+
+.withTag a {
+  color: var(--cw-platform-text);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .withTag a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: var(--cw-link-rule-width);
+    text-underline-offset: var(--cw-link-rule-offset);
+    text-decoration-color: var(--cw-link-rule-color-strong);
+  }
+}
+
+/* ─────────────── photos, video, audio ─────────────── */
+
+.photoOne {
+  display: grid;
+}
+
+.photoRow {
+  display: flex;
+  gap: var(--cw-space-xs);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  padding-block-end: var(--cw-space-2xs);
+}
+
+.photo {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  max-block-size: min(60svh, 28rem);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.photoOne > .photo {
+  inline-size: 100%;
+  aspect-ratio: var(--photo-ratio, 4 / 3);
+}
+
+/* Several photos stand at one height, each at its own width. */
+.photoRow > .photo {
+  flex: 0 0 auto;
+  aspect-ratio: var(--photo-ratio, 4 / 3);
+  block-size: min(60svh, 22rem);
+  max-inline-size: 85%;
+  scroll-snap-align: start;
+}
+
+.post[data-variant="rail"] .photo {
+  max-block-size: 14rem;
+}
+
+.post[data-variant="rail"] .photoOne > .photo {
+  aspect-ratio: 16 / 10;
+}
+
+.post[data-variant="rail"] .photoRow > .photo {
+  block-size: 12rem;
+}
+
+.photoImg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+  object-fit: cover;
+}
+
+/* A spoiler: blurred under a veil until tapped (G 2026-10-17). */
+.spoiler {
+  cursor: pointer;
+  background: var(--cw-mat-scrim-ink);
+}
+
+.spoiler .photoImg {
+  filter: blur(22px) saturate(0.8);
+  transform: scale(1.12);
+}
+
+.spoilerVeil {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-sm);
+  background: color-mix(in srgb, var(--cw-mat-scrim-ink) 30%, transparent);
+  color: var(--cw-mat-inverse-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 640;
+  text-align: center;
+}
+
+.spoiler:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+/* The lesson's own player, at the card's measure. */
+.postVideo {
+  min-inline-size: 0;
+}
+
+.postVideo figure {
+  margin: 0;
+}
+
+.audio {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  margin: 0;
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.audioLabel {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.audioPlayer {
+  inline-size: 100%;
+  block-size: 2.5rem;
+  color-scheme: light;
+}
+
+:global([data-cw-theme="dark"]) .audioPlayer {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-cw-theme="light"])) .audioPlayer {
+    color-scheme: dark;
+  }
 }
 
 /* A reader's own mark, the lesson reader's highlight in the feed. */
@@ -213,23 +443,99 @@ a.face {
 /* ─────────────── the attached block or programme ─────────────── */
 
 .attach {
+  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--cw-space-sm);
-  align-items: start;
-  padding: var(--cw-space-sm) var(--cw-space-md);
+  gap: var(--cw-space-sm) var(--cw-space-md);
+  align-items: center;
+  padding: var(--cw-space-sm);
   border-radius: var(--cw-radius-md);
-  background: var(--cw-mat-surface-sunk);
+  background-color: var(--cw-mat-surface-sunk);
+  background-image: var(--cw-mat-grain-image);
+}
+
+/* The whole card is the link (G 2026-10-17): the arrow's box is stretched
+   over it, so a press anywhere goes to the programme. */
+.attach[data-link] {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.attach[data-link]:focus-within {
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
 }
 
 .attachIcon {
   display: inline-grid;
   place-items: center;
-  inline-size: 2.5rem;
-  block-size: 2.5rem;
+  inline-size: 3.5rem;
+  block-size: 3.5rem;
   border-radius: var(--cw-radius-md);
-  background: var(--cw-mat-surface);
+  background: var(--cw-mat-tone-icon);
   color: var(--cw-platform-text);
+}
+
+@media (max-width: 35rem) {
+  .attach {
+    gap: var(--cw-space-xs) var(--cw-space-sm);
+  }
+
+  .attachIcon {
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    align-self: start;
+  }
+
+  .attach[data-link] {
+    padding-inline-end: var(--cw-space-2xs);
+  }
+}
+
+.attachGo {
+  display: grid;
+  place-items: center;
+  inline-size: var(--ds-touch-target-min);
+  block-size: var(--ds-touch-target-min);
+  border-radius: var(--cw-radius-md);
+  color: var(--cw-platform-text);
+}
+
+.attachGo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.attachGo:focus-visible {
+  outline: none;
+}
+
+/* ↗ — the DS arrow turned up a quarter: «it leads on, to another page». */
+.attachGo svg {
+  transform: rotate(-45deg);
+  transition: transform var(--cw-motion-state) var(--cw-ease-state);
+}
+
+@media (hover: hover) {
+  .attach[data-link]:hover .attachGo {
+    background: var(--cw-mat-surface);
+  }
+
+  .attach[data-link]:hover .attachGo svg {
+    transform: rotate(-45deg) translateX(2px);
+  }
+}
+
+/* A block shown whole: the lesson's own drawing, then the card that leads
+   to its programme. */
+.attachWhole {
+  display: grid;
+  gap: var(--cw-space-sm);
+  min-inline-size: 0;
+}
+
+.attachBlock {
+  min-inline-size: 0;
 }
 
 .attachBody {
@@ -240,7 +546,10 @@ a.face {
 
 .attachTitle {
   margin: 0;
-  font-weight: 700;
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-lead-size);
+  font-weight: 500;
+  line-height: 1.15;
 }
 
 .attachMeta {
@@ -256,30 +565,148 @@ a.face {
   white-space: pre-line;
 }
 
-.attachGo {
-  justify-self: start;
-  margin-block-start: var(--cw-space-2xs);
-  color: var(--cw-platform-text);
-  font-size: var(--ds-type-body-sm-size);
-  font-weight: 600;
+/* «Уривок»: the opening only, folded to four lines. */
+.attachText[data-excerpt] {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
 }
 
-/* ─────────────── reactions and the comment count ─────────────── */
+/* ─────────────── the action row (G 2026-10-17, Threads-like) ─────────────── */
 
-.social {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--cw-space-xs) var(--cw-space-sm);
-}
-
-.reactions {
-  position: relative;
+/* reactions · comments · «Зберегти» · «Поділитися»: icons with their counts,
+   no plates. The row starts a step to the left so the first glyph lines up
+   with the text above it, not its hover ground. */
+.actRow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--cw-space-2xs);
+  margin-inline-start: calc(var(--cw-space-xs) * -1);
+}
+
+.act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cw-space-2xs);
+  min-block-size: var(--ds-touch-target-min);
+  min-inline-size: var(--ds-touch-target-min);
+  padding: 0 var(--cw-space-xs);
+  border: 0;
+  border-radius: var(--cw-radius-pill);
+  background: transparent;
+  color: var(--cw-platform-muted);
+  font: inherit;
+  font-size: var(--ds-type-body-sm-size);
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--cw-motion-state) var(--cw-ease-state),
+    color var(--cw-motion-state) var(--cw-ease-state);
+}
+
+.act > svg {
+  inline-size: 1.3rem;
+  block-size: 1.3rem;
+  flex: 0 0 auto;
+}
+
+.act:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+@media (hover: hover) {
+  .act:hover {
+    background: var(--cw-mat-surface-sunk);
+    color: var(--cw-platform-text);
+  }
+}
+
+.act[aria-pressed="true"],
+.act[aria-expanded="true"] {
+  color: var(--cw-platform-text);
+}
+
+/* The reader's own reaction is in the pile: the button turns gold — the
+   same contour-over-soft-gold the picker's pressed cells carry. */
+.actReact[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--cw-platform-accent) 20%, var(--cw-mat-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-platform-accent) 62%, transparent);
+}
+
+.emoPile {
+  display: inline-flex;
+}
+
+.emoPileItem {
+  inline-size: 1.35rem;
+  block-size: 1.35rem;
+  border-radius: var(--cw-radius-inset);
+  background: var(--cw-mat-surface);
+  box-shadow: 0 0 0 2px var(--cw-mat-surface);
+}
+
+.emoPileItem + .emoPileItem {
+  margin-inline-start: calc(var(--cw-space-xs) * -1);
+}
+
+.actSave[aria-pressed="true"] {
+  color: var(--cw-platform-accent);
+}
+
+/* The share menu: the popover's solid sheet, one row per way. */
+.menu {
+  position: fixed;
+  z-index: calc(var(--ds-z-sticky) + 3);
+  display: grid;
+  min-inline-size: 14rem;
+  padding: var(--cw-space-2xs);
+  border: 1px solid var(--cw-mat-stroke-quiet);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-medium);
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  min-block-size: var(--ds-touch-target-min);
+  padding: 0 var(--cw-space-sm);
+  border: 0;
+  border-radius: var(--cw-radius-md);
+  background: transparent;
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: var(--ds-type-body-sm-size);
+  text-align: start;
+  cursor: pointer;
+}
+
+.menuItem svg {
+  color: var(--cw-platform-muted);
+}
+
+.menuItem:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+@media (hover: hover) {
+  .menuItem:hover {
+    background: var(--cw-mat-surface-sunk);
+  }
+}
+
+@media (max-width: 40rem) {
+  .menu {
+    inset: auto var(--cw-space-xs) var(--cw-space-xs);
+  }
 }
 
 /* A chip that presses. Not a button plate: a word with air around it, which
@@ -362,21 +789,15 @@ a.face {
   color: var(--cw-platform-muted);
 }
 
-.countLink {
-  composes: base text from "../PlatformButtons.module.css";
-}
-
 /* ─────────────── the reaction picker ─────────────── */
 
 .picker {
-  position: absolute;
-  inset-inline-start: 0;
-  inset-block-start: calc(100% + var(--cw-space-2xs));
-  z-index: 5;
+  position: fixed;
+  z-index: calc(var(--ds-z-sticky) + 3);
   display: grid;
   gap: var(--cw-space-sm);
-  inline-size: min(26rem, calc(100vw - 2 * var(--cw-page-gutter)));
-  max-block-size: min(26rem, calc(100vh - 8rem));
+  inline-size: min(30rem, calc(100vw - 2rem));
+  max-block-size: min(30rem, calc(100vh - 6rem));
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: var(--cw-space-md);
@@ -386,6 +807,30 @@ a.face {
   border-radius: var(--cw-radius-lg);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-medium);
+}
+
+.pickerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  margin-block-end: calc(var(--cw-space-xs) * -1);
+}
+
+.pickerTitle {
+  margin: 0;
+  font-weight: 700;
+}
+
+.pickerClose {
+  composes: base chromeBare square from "../PlatformButtons.module.css";
+}
+
+/* «Можна до 3 реакцій» / «Ваші 3 з 3 — …» (G 2026-10-17). */
+.pickerLimit {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
 }
 
 .pickerGroup {
@@ -403,7 +848,7 @@ a.face {
 
 .pickerGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(5.25rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(4.6rem, 1fr));
   gap: var(--cw-space-2xs);
 }
 
@@ -427,13 +872,18 @@ a.face {
   background: color-mix(in srgb, var(--cw-platform-accent) 20%, var(--cw-mat-surface));
 }
 
+.pickerItem:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .pickerItem:focus-visible {
   outline: none;
   box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
 }
 
 @media (hover: hover) {
-  .pickerItem:hover {
+  .pickerItem:hover:not(:disabled) {
     background: var(--cw-mat-surface-sunk);
   }
 }
@@ -599,6 +1049,17 @@ a.commentFace {
   composes: base secondary compact from "../PlatformButtons.module.css";
 }
 
+/* With a keyboard Enter sends (FeedComments); the button is the phone's. */
+@media (pointer: fine) {
+  .writeRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sendButton {
+    display: none;
+  }
+}
+
 .replyingTo {
   display: flex;
   flex-wrap: wrap;
@@ -622,6 +1083,19 @@ a.commentFace {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--cw-space-xs) var(--cw-space-sm);
+}
+
+/* On a phone the control stands on the right, under the thumb (G 2026-10-17),
+   and its popover opens leftwards, back onto the screen. */
+@media (max-width: 40rem) {
+  .filterBar {
+    flex-direction: row-reverse;
+  }
+
+  .filterBar .filterPopover {
+    inset-inline-start: auto;
+    inset-inline-end: 0;
+  }
 }
 
 .filterMenu {
@@ -874,109 +1348,115 @@ a.commentFace {
   gap: var(--cw-space-sm);
 }
 
-/* ─────────────── the home strip: three latest ─────────────── */
+/* ─────────────── the home strip: three latest, as full cards ─────────────── */
 
 .fresh {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
   gap: var(--cw-space-md);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.freshCard {
-  composes: post;
-  align-content: start;
+.fresh > li {
+  display: grid;
+  min-inline-size: 0;
 }
 
-.freshText {
-  margin: 0;
-  font-weight: 600;
-  line-height: 1.45;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.fresh .post {
+  gap: var(--cw-space-sm);
+  padding: var(--ds-card-inset);
 }
 
-.freshLink {
-  color: inherit;
-  text-decoration: none;
-}
-
-.freshLink::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-}
-
-.freshLink:focus-visible {
-  outline: none;
-}
-
-.freshLink:focus-visible::after {
-  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
-}
-
-/* The author's face and name sit above the card-wide link, so they lead to
-   the profile while the rest of the card still opens the post. */
-.freshCard .byline a {
-  position: relative;
-  z-index: 1;
-}
-
-.freshAuthor {
-  color: inherit;
-  text-decoration: none;
-}
-
-@media (hover: hover) {
-  .freshAuthor:hover {
-    text-decoration: underline;
-    text-decoration-thickness: var(--cw-link-rule-width);
-    text-underline-offset: var(--cw-link-rule-offset);
-    text-decoration-color: var(--cw-link-rule-color-strong);
-  }
-}
-
-.freshMeta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--cw-space-2xs) var(--cw-space-sm);
-  margin: 0;
-  color: var(--cw-platform-muted);
-  font-size: var(--ds-type-body-sm-size);
-}
-
-.freshReaction {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--cw-space-2xs);
-  color: var(--cw-platform-text);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
+/* A phone (and a narrow tablet): one rail of 86vw cards that snap, the next
+   one showing at the edge. */
 @media (max-width: 56rem) {
   .fresh {
     display: flex;
     overflow-x: auto;
     overflow-y: hidden;
+    overscroll-behavior-x: contain;
     scroll-snap-type: x mandatory;
-    scrollbar-width: none;
     padding-block-end: var(--cw-space-sm);
   }
 
-  .fresh::-webkit-scrollbar {
-    display: none;
-  }
-
   .fresh > li {
-    flex: 0 0 min(80%, 20rem);
+    flex: 0 0 min(86vw, 22rem);
     scroll-snap-align: start;
+  }
+}
+
+/* ─────────────── the hero at the top of /feed ─────────────── */
+
+.hero {
+  --hero-x: 50%;
+  --hero-y: 35%;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  min-block-size: clamp(15.5rem, 38vw, 19.5rem);
+  border-radius: var(--cw-card-radius);
+  background: var(--cw-mat-scrim-ink);
+  color: var(--cw-mat-inverse-text);
+}
+
+.heroPhoto {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+  object-fit: cover;
+  object-position: var(--hero-x) var(--hero-y);
+}
+
+/* The scrim leans to where the words are: up from the bottom, in from the
+   left. No filter on the photo itself — its tone is baked in. */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to top,
+      color-mix(in srgb, var(--cw-mat-scrim-ink) 86%, transparent) 0%,
+      color-mix(in srgb, var(--cw-mat-scrim-ink) 46%, transparent) 42%,
+      transparent 74%
+    ),
+    linear-gradient(to right, color-mix(in srgb, var(--cw-mat-scrim-ink) 40%, transparent) 0%, transparent 62%);
+}
+
+.heroBody {
+  display: grid;
+  gap: var(--cw-space-xs);
+  max-inline-size: 32rem;
+  padding: var(--cw-space-lg);
+}
+
+.heroTitle {
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: clamp(1.9rem, 6vw, 2.6rem);
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.heroLead {
+  margin: 0;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--cw-mat-inverse-text) 90%, transparent);
+}
+
+@media (max-width: 35rem) {
+  .heroBody {
+    padding: var(--cw-space-md);
   }
 }
 
@@ -1026,7 +1506,9 @@ a.commentFace {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .reactionChip {
+  .reactionChip,
+  .act,
+  .attachGo svg {
     transition: none;
   }
 }
