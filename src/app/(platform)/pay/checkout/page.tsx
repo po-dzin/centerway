@@ -4,8 +4,9 @@ import { notFound } from "next/navigation";
 import { CheckoutScreen } from "@/components/platform/CheckoutScreen";
 import { userFromCookies } from "@/lib/auth/serverSession";
 import { activeGateway } from "@/lib/payments/gateway";
+import { resolvePersonalPrice } from "@/lib/landing/offers";
 import { loadCheckoutSummary } from "@/lib/platform/checkoutSummary";
-import type { SearchParams } from "@/lib/products";
+import { formatPrice, type SearchParams } from "@/lib/products";
 import { pageMetadata } from "@/lib/seo/metadata";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -71,9 +72,23 @@ async function savedDetails(email: string): Promise<Saved> {
 export default async function CheckoutPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
   const product = Array.isArray(params.product) ? params.product[0] : params.product;
-  const summary = await loadCheckoutSummary(product);
+  const publicSummary = await loadCheckoutSummary(product);
   // The same answer /api/pay/start gives an unknown or unpriced code.
-  if (!summary) notFound();
+  if (!publicSummary) notFound();
+
+  /* A personal price (`offer_token`, carried here by the program page) is the
+     figure /api/pay/start will charge, so it is the one this page confirms. */
+  const personal = await resolvePersonalPrice(publicSummary.code, params);
+  const summary = personal
+    ? {
+        ...publicSummary,
+        price: formatPrice(personal.amount, personal.currency),
+        compareAtPrice:
+          personal.oldAmount !== null && personal.oldAmount > personal.amount
+            ? formatPrice(personal.oldAmount, personal.currency)
+            : null,
+      }
+    : publicSummary;
 
   const user = await userFromCookies();
   const accountEmail = user?.email_confirmed_at ? user.email?.trim().toLowerCase() || null : null;

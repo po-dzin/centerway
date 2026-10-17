@@ -150,3 +150,25 @@ export function productOfferCommerce(slug: string, offer: PayableOffer | null): 
     currency: offer.currency,
   };
 }
+
+/**
+ * The same offer at a reader's personal price (`?offer_token`, see
+ * `resolvePersonalPrice`). The figure printed and the link to the checkout
+ * change together: the token rides to `/api/pay/start`, which charges it, so
+ * the page cannot quote a price the gateway will not take. `amount` stays the
+ * public one — structured data describes the offer, not one reader's deal.
+ */
+export function withPersonalPrice(
+  commerce: OfferCommerce,
+  personal: { offerToken: string; amount: number; currency: string; oldAmount: number | null } | null,
+): OfferCommerce {
+  if (!personal || commerce.mode !== "checkout") return commerce;
+  const publicAmount = commerce.amount;
+  const was = personal.oldAmount ?? publicAmount;
+  return {
+    ...commerce,
+    checkoutHref: `${commerce.checkoutHref}&offer_token=${encodeURIComponent(personal.offerToken)}`,
+    price: formatPrice(personal.amount, personal.currency),
+    compareAtPrice: was > personal.amount ? formatPrice(was, personal.currency) : null,
+  };
+}

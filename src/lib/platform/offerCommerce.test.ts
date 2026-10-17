@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { programs } from "./content";
-import { courseOfferCommerce, productOfferCommerce } from "./offerCommerce";
+import { courseOfferCommerce, productOfferCommerce, withPersonalPrice } from "./offerCommerce";
 import type { PayableOffer } from "@/lib/products";
 import type { CourseOffer } from "./offers";
 
@@ -85,5 +85,33 @@ describe("productOfferCommerce", () => {
   it("strikes through a former price only when it is higher", () => {
     expect(productOfferCommerce("herbs", priced(640, 800))).toMatchObject({ compareAtPrice: expect.any(String) });
     expect(productOfferCommerce("herbs", priced(640, 640))).toMatchObject({ compareAtPrice: null });
+  });
+});
+
+describe("withPersonalPrice", () => {
+  const paid = courseOfferCommerce("irem", {
+    code: "course:irem-gymnastics",
+    courseSlug: "irem-gymnastics",
+    amount: 3950,
+    listAmount: null,
+    currency: "UAH",
+    pixelContentName: "IREM",
+  });
+
+  it("prints the personal price and hands the token to the checkout", () => {
+    const personal = withPersonalPrice(paid, { offerToken: "t k", amount: 2900, currency: "UAH", oldAmount: 3950 });
+    expect(personal.mode).toBe("checkout");
+    if (personal.mode !== "checkout") return;
+    expect(personal.price).toMatch(/2.900/);
+    expect(personal.compareAtPrice).toMatch(/3.950/);
+    expect(personal.checkoutHref).toContain("&offer_token=t%20k");
+    // Structured data keeps describing the public offer.
+    expect(personal.amount).toBe(3950);
+  });
+
+  it("changes nothing without a personal price, or on a page that does not check out", () => {
+    expect(withPersonalPrice(paid, null)).toBe(paid);
+    const lead = courseOfferCommerce("herbs", null);
+    expect(withPersonalPrice(lead, { offerToken: "t", amount: 1, currency: "UAH", oldAmount: null })).toBe(lead);
   });
 });
