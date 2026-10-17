@@ -12,7 +12,7 @@ import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
 import { PlatformBlock, PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import { COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
 import { plural } from "@/lib/plural";
-import { EMPTY_FEED_FILTER, FEED_PATH, feedPostPath } from "@/lib/feed/model";
+import { EMPTY_FEED_FILTER, FEED_PATH, feedAuthorPath, feedPostPath } from "@/lib/feed/model";
 import { readFeedFirstPage } from "@/lib/feed/page";
 
 import { feedCopy, relativeTime } from "./copy";
@@ -39,7 +39,12 @@ export async function FeedFresh() {
             <li key={post.id}>
               <article className={styles.freshCard}>
                 <div className={styles.byline}>
-                  <Link className={styles.face} href={`/expert/${post.author.slug}`} tabIndex={-1} aria-hidden="true">
+                  <Link
+                    className={styles.face}
+                    href={feedAuthorPath(post.author.slug)}
+                    tabIndex={-1}
+                    aria-hidden="true"
+                  >
                     <AuthorPortrait
                       photo={post.author.photo}
                       size="xs"
@@ -47,7 +52,7 @@ export async function FeedFresh() {
                     />
                   </Link>
                   <p className={styles.when}>
-                    <Link className={styles.freshAuthor} href={`/expert/${post.author.slug}`}>
+                    <Link className={styles.freshAuthor} href={feedAuthorPath(post.author.slug)}>
                       {post.author.name}
                     </Link>{" "}
                     ·{" "}

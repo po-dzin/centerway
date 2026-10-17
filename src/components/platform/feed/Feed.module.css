@@ -29,6 +29,8 @@
   gap: var(--cw-space-lg);
   max-inline-size: 42rem;
   min-inline-size: 0;
+  /* Centred under the tabs, as the feed's own column is (G 2026-10-17). */
+  margin-inline: auto;
 }
 
 .posts {
@@ -493,16 +495,35 @@ a.face {
   list-style: none;
 }
 
-.initial {
-  display: inline-grid;
-  place-items: center;
-  inline-size: 2rem;
-  block-size: 2rem;
-  border-radius: 50%;
-  background: var(--cw-mat-surface-sunk);
-  color: var(--cw-platform-text);
-  font-size: var(--ds-type-label-size);
+/* A commenter's face: the same portrait as the post's byline, a step smaller
+   (G 2026-10-17 — the initial alone read as a placeholder). */
+.comment .commentFace {
+  flex: 0 0 auto;
+  border-radius: var(--cw-radius-pill);
+}
+
+.comment .commentFace,
+.comment a.commentFace > * {
+  --portrait-size: 2rem;
+}
+
+a.commentFace {
+  display: inline-flex;
+}
+
+.commentName {
+  color: inherit;
   font-weight: 700;
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  a.commentName:hover {
+    text-decoration: underline;
+    text-decoration-thickness: var(--cw-link-rule-width);
+    text-underline-offset: var(--cw-link-rule-offset);
+    text-decoration-color: var(--cw-link-rule-color-strong);
+  }
 }
 
 .commentBody {
@@ -943,6 +964,7 @@ a.face {
   .fresh {
     display: flex;
     overflow-x: auto;
+    overflow-y: hidden;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
     padding-block-end: var(--cw-space-sm);
@@ -964,6 +986,7 @@ a.face {
   display: flex;
   min-inline-size: 0;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
   border-block-end: 1px solid transparent;
   border-image: var(--cw-rule-fade-x);

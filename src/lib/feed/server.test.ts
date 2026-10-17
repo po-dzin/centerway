@@ -224,18 +224,19 @@ describe("reactions", () => {
 });
 
 describe("comments", () => {
-  it("threads one level, names readers publicly, marks the author, lets the author hide", async () => {
+  it("threads one level, names readers publicly, shows the author as themself, lets the author hide", async () => {
     const { post } = await createFeedPost(db, await author(), { body: "Привіт", topic: "focus" });
     const top = await addComment(db, post.id, READER, { body: "Дякую!" });
     expect(top.comment.who.name).toBe("Олена П.");
     const reply = await addComment(db, post.id, AUTHOR_USER, { body: "Радий!", parentId: top.comment.id });
+    expect(reply.comment.who.href).toMatch(/^\/expert\/.+\?tab=posts$/);
     const nested = await addComment(db, post.id, READER, { body: "Ще раз", parentId: reply.comment.id });
     expect(nested.comment.parentId).toBe(top.comment.id);
 
     const asAuthor = await listComments(db, post.id, AUTHOR_USER);
     expect(asAuthor.map((entry) => [entry.who.name, entry.byAuthor, entry.canHide])).toEqual([
       ["Олена П.", false, true],
-      ["Автор", true, false],
+      ["Євгеній", true, false],
       ["Олена П.", false, true],
     ]);
 

@@ -100,7 +100,9 @@
   --platform-header-band-bg: var(--cw-mat-tint-chrome);
   --platform-header-control-bg: var(--cw-mat-tint-chrome);
   --platform-header-popover-bg: var(--cw-mat-surface);
-  --platform-header-sheet-shadow: var(--cw-mat-shadow-chrome);
+  /* Shadow only, no outline, in both themes (G 2026-10-17): the 1px ring of
+     `--cw-mat-shadow-chrome` read as a frame around the bar on the dark page. */
+  --platform-header-sheet-shadow: var(--cw-mat-shadow-bar);
   --platform-header-sheet-filter: var(--cw-mat-filter);
   --platform-header-wordmark-image: var(--cw-brand-asset-wordmark-dark);
   --platform-header-shell-radius: var(--cw-radius-lg);
@@ -135,7 +137,7 @@
   --platform-header-symbol-color: var(--cw-platform-accent);
   --platform-header-hover-bg: var(--cw-mat-tint-hover);
   --platform-header-popover-bg: var(--cw-mat-surface);
-  --platform-header-sheet-shadow: var(--cw-mat-shadow-chrome);
+  --platform-header-sheet-shadow: var(--cw-mat-shadow-bar);
   --platform-header-wordmark-image: var(--cw-brand-asset-wordmark-light);
 }
 

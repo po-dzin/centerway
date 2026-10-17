@@ -28,6 +28,7 @@ import {
   FEED_POST_MAX,
   countReactions,
   excerptOf,
+  feedAuthorPath,
   isFeedEmoji,
   isFeedTopic,
   normalizeFeedText,
@@ -95,7 +96,12 @@ export type FeedComment = {
   parentId: string | null;
   body: string;
   createdAt: string;
-  who: { name: string; initial: string };
+  /**
+   * Who wrote it, drawn in full (G 2026-10-17): the post's author by their
+   * own name, face and profile; anyone else by their public name and the
+   * picture their sign-in brought, or an initial.
+   */
+  who: { name: string; initial: string; photo: Author["photo"] | null; href: string | null };
   /** Written by the post's author — the thread marks it «автор». */
   byAuthor: boolean;
   mine: boolean;
@@ -634,10 +640,14 @@ export async function setReturnReason(db: Db, tgMessageId: number, reason: strin
 
 /* ─────────────────────────── reactions ─────────────────────────── */
 
-async function publishedPostExists(db: Db, id: string): Promise<{ created_by: string } | null> {
+async function publishedPostExists(db: Db, id: string): Promise<{ created_by: string; author_id: string } | null> {
   if (!isUuid(id)) return null;
-  const { data } = await db.from("feed_posts").select("id, created_by, status, hidden_at").eq("id", id).maybeSingle();
-  const row = data as { created_by: string; status: string; hidden_at: string | null } | null;
+  const { data } = await db
+    .from("feed_posts")
+    .select("id, created_by, author_id, status, hidden_at")
+    .eq("id", id)
+    .maybeSingle();
+  const row = data as { created_by: string; author_id: string; status: string; hidden_at: string | null } | null;
   return row && row.status === "published" && !row.hidden_at ? row : null;
 }
 
@@ -684,15 +694,48 @@ type CommentRow = {
   status: string;
 };
 
-async function displayNames(db: Db, userIds: string[]): Promise<Map<string, string>> {
+type Commenter = { name: string; avatar: string | null };
+
+async function commenters(db: Db, userIds: string[]): Promise<Map<string, Commenter>> {
   if (userIds.length === 0) return new Map();
-  const { data } = await db.from("platform_users").select("auth_user_id, full_name").in("auth_user_id", userIds);
+  const { data } = await db
+    .from("platform_users")
+    .select("auth_user_id, full_name, avatar_url")
+    .in("auth_user_id", userIds);
   return new Map(
-    ((data ?? []) as { auth_user_id: string; full_name: string | null }[]).map((row) => [
+    ((data ?? []) as { auth_user_id: string; full_name: string | null; avatar_url: string | null }[]).map((row) => [
       row.auth_user_id,
-      (row.full_name ?? "").trim(),
+      { name: (row.full_name ?? "").trim(), avatar: row.avatar_url?.trim() || null },
     ]),
   );
+}
+
+/** The post's author as a commenter sees them: name, face, profile. */
+async function postAuthorOf(db: Db, authorId: string): Promise<FeedAuthor | null> {
+  const { data } = await db
+    .from("lms_authors")
+    .select("id, slug, name, photo, listed, auth_user_id")
+    .eq("id", authorId)
+    .maybeSingle();
+  return data ? authorOf(data as AuthorRow) : null;
+}
+
+function commentWho(byAuthor: boolean, author: FeedAuthor | null, person: Commenter | undefined): FeedComment["who"] {
+  if (byAuthor && author) {
+    return {
+      name: author.name,
+      initial: author.name.trim().charAt(0).toUpperCase(),
+      photo: author.photo,
+      href: feedAuthorPath(author.slug),
+    };
+  }
+  const name = byAuthor ? "Автор" : publicName(person?.name);
+  return {
+    name,
+    initial: name.charAt(0).toUpperCase(),
+    photo: !byAuthor && person?.avatar ? { src: person.avatar, alt: name } : null,
+    href: null,
+  };
 }
 
 /** First name and the initial of the last, never an email: a comment is public. */
@@ -719,16 +762,18 @@ export async function listComments(db: Db, postId: string, me: string | null): P
     .limit(500);
   if (error) throw new Error(`feed_comments_read_failed:${error.message}`);
   const rows = ((data ?? []) as CommentRow[]).filter((row) => row.status === "published" || row.auth_user_id === me);
-  const names = await displayNames(db, [...new Set(rows.map((row) => row.auth_user_id))]);
+  const [people, author] = await Promise.all([
+    commenters(db, [...new Set(rows.map((row) => row.auth_user_id))]),
+    postAuthorOf(db, post.author_id),
+  ]);
   return rows.map((row) => {
     const byAuthor = row.auth_user_id === post.created_by;
-    const name = byAuthor ? null : publicName(names.get(row.auth_user_id));
     return {
       id: row.id,
       parentId: row.parent_id,
       body: row.body,
       createdAt: row.created_at,
-      who: { name: name ?? "Автор", initial: (name ?? "А").charAt(0).toUpperCase() },
+      who: commentWho(byAuthor, author, people.get(row.auth_user_id)),
       byAuthor,
       mine: row.auth_user_id === me,
       canHide: me !== null && me === post.created_by && !byAuthor,
@@ -781,15 +826,17 @@ export async function addComment(
   if (error) throw new Error(`feed_comment_write_failed:${error.message}`);
   const row = data as CommentRow;
   const byAuthor = userId === post.created_by;
-  const names = byAuthor ? new Map<string, string>() : await displayNames(db, [userId]);
-  const name = byAuthor ? "Автор" : publicName(names.get(userId));
+  const [people, author] = await Promise.all([
+    byAuthor ? Promise.resolve(new Map<string, Commenter>()) : commenters(db, [userId]),
+    byAuthor ? postAuthorOf(db, post.author_id) : Promise.resolve(null),
+  ]);
   return {
     comment: {
       id: row.id,
       parentId: row.parent_id,
       body: row.body,
       createdAt: row.created_at,
-      who: { name, initial: name.charAt(0).toUpperCase() },
+      who: commentWho(byAuthor, author, people.get(userId)),
       byAuthor,
       mine: true,
       canHide: false,

@@ -19,7 +19,7 @@ import { useToast } from "@/components/ToastProvider";
 import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
 import { plural } from "@/lib/plural";
 import { COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
-import { feedPostPath, type ReactionCount } from "@/lib/feed/model";
+import { feedAuthorPath, feedPostPath, type ReactionCount } from "@/lib/feed/model";
 import type { FeedAttachment, FeedPost } from "@/lib/feed/server";
 
 import { feedCopy, relativeTime } from "./copy";
@@ -242,7 +242,7 @@ export function FeedPostCard({
       <div className={styles.byline}>
         {/* The face is a second way to the same profile as the name, so it
             stays out of the tab order and out of the accessibility tree. */}
-        <Link className={styles.face} href={`/expert/${post.author.slug}`} tabIndex={-1} aria-hidden="true">
+        <Link className={styles.face} href={feedAuthorPath(post.author.slug)} tabIndex={-1} aria-hidden="true">
           <AuthorPortrait
             photo={post.author.photo}
             size="sm"
@@ -251,7 +251,7 @@ export function FeedPostCard({
         </Link>
         <div className={styles.who}>
           <Name className={styles.whoName} id={`post-${post.id}-by`}>
-            <Link href={`/expert/${post.author.slug}`}>{post.author.name}</Link>
+            <Link href={feedAuthorPath(post.author.slug)}>{post.author.name}</Link>
           </Name>
           <p className={styles.when}>
             <Link href={feedPostPath(post.id)}>

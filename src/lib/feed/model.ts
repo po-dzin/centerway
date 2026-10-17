@@ -28,6 +28,11 @@ export function feedPostPath(id: string): string {
   return `${FEED_PATH}/${id}`;
 }
 
+/** Where a post's author leads: their profile, opened on «Дописи» (G 2026-10-17). */
+export function feedAuthorPath(slug: string): string {
+  return `/expert/${slug}?tab=posts`;
+}
+
 export const FEED_POST_MAX = 4000;
 export const FEED_COMMENT_MAX = 1000;
 /** How many posts a page of the feed carries; «Показати ще» asks for the next. */

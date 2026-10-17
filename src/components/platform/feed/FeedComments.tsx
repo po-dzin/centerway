@@ -12,6 +12,7 @@
 import Link from "next/link";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 
+import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
 import { useToast } from "@/components/ToastProvider";
 import { FEED_COMMENT_MAX } from "@/lib/feed/model";
 import type { FeedComment } from "@/lib/feed/server";
@@ -35,12 +36,27 @@ function CommentRow({
 }) {
   return (
     <li className={styles.comment}>
-      <span className={styles.initial} aria-hidden="true">
-        {comment.who.initial}
-      </span>
+      {comment.who.href ? (
+        <Link className={styles.commentFace} href={comment.who.href} tabIndex={-1} aria-hidden="true">
+          <AuthorPortrait photo={comment.who.photo} size="xs" fallback={comment.who.initial} />
+        </Link>
+      ) : (
+        <AuthorPortrait
+          className={styles.commentFace}
+          photo={comment.who.photo}
+          size="xs"
+          fallback={comment.who.initial}
+        />
+      )}
       <div className={styles.commentBody}>
         <p className={styles.commentHead}>
-          {comment.who.name}
+          {comment.who.href ? (
+            <Link className={styles.commentName} href={comment.who.href}>
+              {comment.who.name}
+            </Link>
+          ) : (
+            <span className={styles.commentName}>{comment.who.name}</span>
+          )}
           {comment.byAuthor ? <span className={styles.tag}>{feedCopy.byAuthor}</span> : null}
           <time className={styles.when} dateTime={comment.createdAt} suppressHydrationWarning>
             {relativeTime(comment.createdAt)}
