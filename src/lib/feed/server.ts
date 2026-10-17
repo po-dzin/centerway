@@ -34,6 +34,7 @@ import {
   FEED_POST_RAW_MAX,
   FEED_REACTIONS_PER_PERSON,
   countReactions,
+  reactionNameIds,
   excerptOf,
   feedAuthorPath,
   feedSavedClientId,
@@ -113,6 +114,11 @@ export type FeedPost = {
   /** Only the post's own author sees why it waits or came back. */
   heldReason?: string | null;
   returnedReason?: string | null;
+  /**
+   * The newest comment someone else left — the author's own copy in «Мої
+   * дописи», so a reply is one press away. Absent elsewhere.
+   */
+  latestComment?: { name: string; body: string; createdAt: string } | null;
   /** What it carries, by id — the author's own copy, for sending a returned post again. */
   source?: { courseId: string | null; lessonId: string | null; blockId: string | null; blockDisplay: FeedBlockDisplay };
 };
@@ -263,6 +269,17 @@ async function attachmentsFor(db: Db, rows: PostRow[]): Promise<Map<string, Feed
   return out;
 }
 
+/** Public names for the chips' hints, one read for every post on the page. */
+async function reactorNames(
+  db: Db,
+  perPost: { emoji: string; auth_user_id: string }[][],
+  me: string | null,
+): Promise<Map<string, string>> {
+  const ids = [...new Set(perPost.flatMap((rows) => reactionNameIds(rows, me)))];
+  const people = await commenters(db, ids);
+  return new Map([...people].map(([id, person]) => [id, publicName(person.name)]));
+}
+
 async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<FeedPost[]> {
   if (rows.length === 0) return [];
   const ids = rows.map((row) => row.id);
@@ -294,6 +311,7 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
     list.push(row);
     reactionsByPost.set(row.post_id, list);
   }
+  const names = await reactorNames(db, [...reactionsByPost.values()], me);
   const commentsByPost = new Map<string, number>();
   for (const row of (comments ?? []) as { post_id: string }[]) {
     commentsByPost.set(row.post_id, (commentsByPost.get(row.post_id) ?? 0) + 1);
@@ -321,7 +339,7 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
         publishedAt: row.published_at,
         createdAt: row.created_at,
         attachment: attachments.get(row.id) ?? null,
-        reactions: countReactions(reactionsByPost.get(row.id) ?? [], me),
+        reactions: countReactions(reactionsByPost.get(row.id) ?? [], me, names),
         commentCount: commentsByPost.get(row.id) ?? 0,
         mine,
         saved: saved.has(row.id),
@@ -421,7 +439,44 @@ export async function listOwnPosts(db: Db, author: FeedAuthor & { userId: string
     .order("created_at", { ascending: false })
     .limit(100);
   if (error) throw new Error(`feed_read_failed:${error.message}`);
-  return decorate(db, (data ?? []) as PostRow[], author.userId);
+  const posts = await decorate(db, (data ?? []) as PostRow[], author.userId);
+  const latest = await latestComments(
+    db,
+    posts.filter((post) => post.commentCount > 0).map((post) => post.id),
+    author.userId,
+  );
+  return posts.map((post) => ({ ...post, latestComment: latest.get(post.id) ?? null }));
+}
+
+/** The newest published comment under each post that is not the author's own. */
+async function latestComments(
+  db: Db,
+  postIds: string[],
+  authorUserId: string,
+): Promise<Map<string, NonNullable<FeedPost["latestComment"]>>> {
+  const out = new Map<string, NonNullable<FeedPost["latestComment"]>>();
+  if (postIds.length === 0) return out;
+  const { data } = await db
+    .from("feed_comments")
+    .select("post_id, auth_user_id, body, created_at")
+    .in("post_id", postIds)
+    .eq("status", "published")
+    .is("hidden_at", null)
+    .neq("auth_user_id", authorUserId)
+    .order("created_at", { ascending: false })
+    .limit(500);
+  const rows = (data ?? []) as { post_id: string; auth_user_id: string; body: string; created_at: string }[];
+  const firsts = new Map<string, (typeof rows)[number]>();
+  for (const row of rows) if (!firsts.has(row.post_id)) firsts.set(row.post_id, row);
+  const people = await commenters(db, [...new Set([...firsts.values()].map((row) => row.auth_user_id))]);
+  for (const row of firsts.values()) {
+    out.set(row.post_id, {
+      name: publicName(people.get(row.auth_user_id)?.name),
+      body: row.body,
+      createdAt: row.created_at,
+    });
+  }
+  return out;
 }
 
 /* ─────────────────────────── writing a post ─────────────────────────── */
@@ -765,7 +820,8 @@ export async function toggleReaction(db: Db, postId: string, userId: string, emo
   }
   const { data: rows, error } = await db.from("feed_reactions").select("emoji, auth_user_id").eq("post_id", postId);
   if (error) throw new Error(`feed_reactions_read_failed:${error.message}`);
-  return countReactions((rows ?? []) as { emoji: string; auth_user_id: string }[], userId);
+  const list = (rows ?? []) as { emoji: string; auth_user_id: string }[];
+  return countReactions(list, userId, await reactorNames(db, [list], userId));
 }
 
 /* ─────────────────────────── comments ─────────────────────────── */

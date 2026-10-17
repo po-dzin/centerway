@@ -149,23 +149,73 @@ export function feedFilterCount(filter: FeedFilter): number {
 
 /* ─────────────────────────── reactions ─────────────────────────── */
 
-export type ReactionCount = { emoji: CwEmojiId; count: number; mine: boolean };
+export type ReactionCount = {
+  emoji: CwEmojiId;
+  count: number;
+  mine: boolean;
+  /**
+   * Who else pressed it, by public name, at most `FEED_REACTION_NAMES` — the
+   * chip's hint «Вогонь · Олена К., Марко і ще 9». Only the chips under a post
+   * carry names; the rest of the counts go without.
+   */
+  who?: string[];
+};
+
+/** Names a chip's hint shows before «і ще N». */
+export const FEED_REACTION_NAMES = 3;
 
 /**
  * Counts per emoji for one post, most used first; ties keep the set's own
  * order so the row does not reshuffle between two equal counts.
  */
-export function countReactions(rows: { emoji: string; auth_user_id: string }[], me: string | null): ReactionCount[] {
+export function countReactions(
+  rows: { emoji: string; auth_user_id: string }[],
+  me: string | null,
+  names?: Map<string, string>,
+): ReactionCount[] {
   const by = new Map<CwEmojiId, ReactionCount>();
+  const others = new Map<CwEmojiId, string[]>();
   for (const row of rows) {
     if (!isFeedEmoji(row.emoji)) continue;
     const entry = by.get(row.emoji) ?? { emoji: row.emoji, count: 0, mine: false };
     entry.count += 1;
     if (me && row.auth_user_id === me) entry.mine = true;
+    else (others.get(row.emoji) ?? others.set(row.emoji, []).get(row.emoji)!).push(row.auth_user_id);
     by.set(row.emoji, entry);
   }
   const order = CW_EMOJI.map((entry) => entry.id as string);
-  return [...by.values()].sort((a, b) => b.count - a.count || order.indexOf(a.emoji) - order.indexOf(b.emoji));
+  const sorted = [...by.values()].sort((a, b) => b.count - a.count || order.indexOf(a.emoji) - order.indexOf(b.emoji));
+  if (!names) return sorted;
+  return sorted.map((entry, index) => {
+    if (index >= FEED_TOP_REACTIONS) return entry;
+    const who = (others.get(entry.emoji) ?? []).flatMap((id) => {
+      const name = names.get(id);
+      return name ? [name] : [];
+    });
+    return who.length ? { ...entry, who: who.slice(0, FEED_REACTION_NAMES) } : entry;
+  });
+}
+
+/**
+ * Whose names the chips under a post need: for each of its most used
+ * reactions, the first few people other than the reader. One read of
+ * `platform_users` answers a whole page of posts.
+ */
+export function reactionNameIds(rows: { emoji: string; auth_user_id: string }[], me: string | null): string[] {
+  const top = countReactions(rows, me)
+    .slice(0, FEED_TOP_REACTIONS)
+    .map((entry) => entry.emoji as string);
+  const ids = new Set<string>();
+  for (const emoji of top) {
+    let taken = 0;
+    for (const row of rows) {
+      if (taken >= FEED_REACTION_NAMES) break;
+      if (row.emoji !== emoji || row.auth_user_id === me) continue;
+      ids.add(row.auth_user_id);
+      taken += 1;
+    }
+  }
+  return [...ids];
 }
 
 /**

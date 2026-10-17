@@ -59,12 +59,14 @@ export function FeedReactions({
   const mine = new Set(reactions.filter((entry) => entry.mine).map((entry) => entry.emoji as string));
   const full = mine.size >= FEED_REACTIONS_PER_PERSON;
   const pile = counted.slice(0, FEED_TOP_REACTIONS);
-  const tip = [
-    pile.map((entry) => `${emojiName(entry.emoji)} ${entry.count}`).join(" · "),
-    mine.size ? `ваші: ${[...mine].map(emojiName).join(", ")}` : "",
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  /* One line per chip in the pile, with who pressed it (the mockup's «Вогонь ·
+     Олена, Марко і ще 9»); the reader's own count as «ви». A browser hint is
+     a mouse's affordance: on a phone the picker says the same in full. */
+  const beyond = [...mine].filter((emoji) => !pile.some((entry) => entry.emoji === emoji));
+  const tip = pile
+    .map((entry) => feedCopy.reactionWho(emojiName(entry.emoji), entry.count, entry.who ?? [], entry.mine))
+    .concat(beyond.length ? [`ваші також: ${beyond.map(emojiName).join(", ")}`] : [])
+    .join("\n");
 
   return (
     <>

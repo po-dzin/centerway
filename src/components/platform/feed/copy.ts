@@ -7,6 +7,21 @@ export const feedCopy = {
   title: "Стрічка",
   lead: "Дописи авторів CenterWay: практики, думки, події.",
   empty: "Тут поки порожньо. Автори скоро напишуть перші дописи.",
+  /* «Стрічка · початок» (mockup 16.10; G's ok on the words still pending). */
+  pinned: "закріплено",
+  welcomeBy: "Команда платформи",
+  welcomeTitle: "Тут збираються практики й думки авторів",
+  welcomeLaunch:
+    "Поки автори готують перші дописи, почніть із того, що відгукується: коротка практика, яку можна зробити просто зараз.",
+  welcomeText: "Автори діляться тут тим, що працює в їхній практиці. Почати самому можна просто зараз:",
+  welcomeFree: "Безкоштовні практики",
+  welcomeFreeMeta: "Без оплати · можна почати зараз",
+  willPractices: "Практики",
+  willPracticesText: "Короткі вправи до дихання, руху й сну, які можна зробити одразу.",
+  willThoughts: "Думки",
+  willThoughtsText: "Авторські спостереження про тіло, ритм і звички.",
+  willEvents: "Події",
+  willEventsText: "Ефіри, старти програм і зустрічі: де й коли.",
   emptyFiltered: "За цим фільтром дописів немає.",
   more: "Показати ще",
   loading: "Завантажуємо…",
@@ -73,6 +88,19 @@ export const feedCopy = {
   reactionLimitHint: (mine: number) => `Можна до 3 реакцій · ваших ${mine}`,
   reactionLimit: "Ваші 3 з 3 — зніміть одну, щоб обрати іншу",
   reactionFailed: "Не вдалося поставити реакцію.",
+  /** One line of the chip's hint: «Вогонь 11 · Олена К., Марко Д. і ще 8», with «ви» first when the reader pressed it. */
+  reactionWho: (name: string, count: number, who: string[], mine: boolean) => {
+    const people = [...(mine ? ["ви"] : []), ...who];
+    const rest = count - people.length;
+    if (people.length === 0) return `${name} ${count}`;
+    return `${name} ${count} · ${people.join(", ")}${rest > 0 ? ` і ще ${rest}` : ""}`;
+  },
+  /** «Мої дописи»: the kinds beyond the ones named. */
+  reactionKindsMore: (n: number) => `і ще ${n} ${n === 1 ? "вид" : n < 5 ? "види" : "видів"}`,
+  commentsCount: (n: number) =>
+    `${n} ${n % 10 === 1 && n % 100 !== 11 ? "коментар" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? "коментарі" : "коментарів"}`,
+  latestComment: (name: string) => `Новий коментар від ${name}:`,
+  replyInFeed: "Відповісти у стрічці",
   commentsLabel: (count: number) => `Коментарі, ${count}`,
   save: "Зберегти в «Мій журнал»",
   saved: "Збережено в «Мій журнал»",

@@ -118,6 +118,7 @@ export function FeedPostCard({
   commentsOpen = false,
   headingLevel = 2,
   aside,
+  footer,
   variant = "feed",
 }: {
   post: FeedPost;
@@ -130,6 +131,8 @@ export function FeedPostCard({
   headingLevel?: 2 | 3;
   /** Extra lines under the byline — the workshop's state and reasons. */
   aside?: ReactNode;
+  /** Lines under the action row — the workshop's echo of how a post landed. */
+  footer?: ReactNode;
   /**
    * `rail`: the home page's «Свіже від авторів» — the same card, folded after
    * four lines with a shorter photo, and the bubble leading to the post's page
@@ -406,6 +409,8 @@ export function FeedPostCard({
           initiallySaved={post.saved ?? false}
         />
       ) : null}
+
+      {footer}
 
       {open && post.status === "published" && variant === "feed" ? (
         <FeedComments postId={post.id} signedIn={signedIn} signInHref={signInHref} onCount={setCount} />

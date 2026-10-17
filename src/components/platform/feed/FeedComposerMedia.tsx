@@ -100,12 +100,15 @@ function Thumb({
   item,
   index,
   onSpoiler,
+  onTag,
   onRemove,
   onRetry,
 }: {
   item: PhotoItem;
   index: number;
   onSpoiler: () => void;
+  /** «Позначити авторів» (mockup v3): opens the post's «з …» menu. Absent with nobody to name. */
+  onTag?: () => void;
   onRemove: () => void;
   onRetry: () => void;
 }) {
@@ -187,6 +190,20 @@ function Thumb({
           {item.spoiler ? composerCopy.spoilerOff : composerCopy.spoilerOn}
           <Icon name={item.spoiler ? "eye" : "spoiler"} size={20} />
         </button>
+        {onTag ? (
+          <button
+            className={styles.menuItemAction}
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setMenu(false);
+              onTag();
+            }}
+          >
+            {composerCopy.tagLabel}
+            <Icon name="user-add" size={20} />
+          </button>
+        ) : null}
         <button
           className={styles.menuItemAction}
           type="button"
@@ -207,11 +224,13 @@ function Thumb({
 export function PhotoStrip({
   photos,
   onSpoiler,
+  onTag,
   onRemove,
   onRetry,
 }: {
   photos: PhotoItem[];
   onSpoiler: (key: string) => void;
+  onTag?: () => void;
   onRemove: (key: string) => void;
   onRetry: (key: string) => void;
 }) {
@@ -224,6 +243,7 @@ export function PhotoStrip({
           item={item}
           index={index}
           onSpoiler={() => onSpoiler(item.key)}
+          onTag={onTag}
           onRemove={() => onRemove(item.key)}
           onRetry={() => onRetry(item.key)}
         />

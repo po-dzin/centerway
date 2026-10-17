@@ -35,10 +35,14 @@ import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState
 import { PlatformPageHead } from "@/components/platform/PlatformPageHead";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import type { FeedPost } from "@/lib/feed/server";
-import { FEED_PATH } from "@/lib/feed/model";
+import { FEED_PATH, emojiName, excerptOf, feedPostPath } from "@/lib/feed/model";
+import { feedCopy } from "@/components/platform/feed/copy";
 import { BuilderShell } from "./BuilderShell";
 import { BuilderWorkshopRail } from "./BuilderWorkshopRail";
 import styles from "./Builder.module.css";
+
+/** Reactions named by kind before «і ще N види» (mockup: «Відгукнулось 48 · Вогонь 11 · Практика 6 і ще 5 видів»). */
+const ECHO_NAMED = 3;
 
 const STATE_WORDS: Record<FeedPost["status"], string> = {
   published: "у стрічці",
@@ -197,11 +201,47 @@ export function BuilderPosts() {
                     ) : null}
                   </>
                 }
+                footer={post.status === "published" ? <PostEcho post={post} /> : null}
               />
             ),
           )}
         </div>
       ) : null}
     </BuilderShell>
+  );
+}
+
+/**
+ * How a post landed, under its action row (mockup «Мої дописи», 16.10): every
+ * reaction by name with its count, the comments, and the newest one someone
+ * else left with the way back to the thread. Views, clicks to the programme
+ * and payments from a post are not counted anywhere yet, so they are not here.
+ */
+function PostEcho({ post }: { post: FeedPost }) {
+  // The thread lives on the platform host; the workshop is on the personal one.
+  const surfaceHref = useSurfaceHref();
+  const named = post.reactions.slice(0, ECHO_NAMED);
+  const more = post.reactions.length - named.length;
+  if (named.length === 0 && post.commentCount === 0) return null;
+  return (
+    <div className={feedStyles.echo}>
+      {named.length ? (
+        <p className={feedStyles.echoLine}>
+          {named.map((entry) => `${emojiName(entry.emoji)} ${entry.count}`).join(" · ")}
+          {more > 0 ? ` ${feedCopy.reactionKindsMore(more)}` : null}
+        </p>
+      ) : null}
+      {post.commentCount > 0 ? (
+        <p className={feedStyles.echoLine}>{feedCopy.commentsCount(post.commentCount)}</p>
+      ) : null}
+      {post.latestComment ? (
+        <p className={feedStyles.echoComment}>
+          {feedCopy.latestComment(post.latestComment.name)} «{excerptOf(post.latestComment.body, 140)}»{" "}
+          <a className={feedStyles.echoReply} href={surfaceHref(feedPostPath(post.id))}>
+            {feedCopy.replyInFeed}
+          </a>
+        </p>
+      ) : null}
+    </div>
   );
 }

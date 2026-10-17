@@ -714,6 +714,7 @@ export function FeedComposer({
                       <div className={styles.attached} aria-label={composerCopy.attached}>
                         <PhotoStrip
                           photos={photos}
+                          onTag={taggableOthers.length > 0 ? () => setMenu("tags") : undefined}
                           onSpoiler={(key) =>
                             setPhotos((current) =>
                               current.map((photo) =>
