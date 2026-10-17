@@ -45,20 +45,6 @@ function courseCountLabel(count: number) {
 }
 
 /** Public author identity and course showcase. */
-/**
- * A fact chip that only restates the line under the name is dropped (G
- * 2026-10-17): «Засновник CenterWay» under «Засновник проекту CenterWay» read
- * as the same words twice. Every word of the chip already in the role means
- * the role has said it.
- */
-function repeatsRole(fact: string, role: string | null | undefined): boolean {
-  if (!role) return false;
-  const words = (text: string) => text.toLocaleLowerCase("uk").match(/[\p{L}\p{N}]+/gu) ?? [];
-  const said = new Set(words(role));
-  const chip = words(fact);
-  return chip.length > 0 && chip.every((word) => said.has(word));
-}
-
 export function AuthorProfileShowcase({
   author,
   courses,
@@ -72,7 +58,7 @@ export function AuthorProfileShowcase({
 }) {
   /* The header's small facts, in one list because they end up in one row. */
   const meta = [courseCountLabel(courses.length), author.experienceBadge, author.achievementBadge].filter(
-    (fact): fact is string => typeof fact === "string" && fact !== "" && !repeatsRole(fact, author.role),
+    (fact): fact is string => Boolean(fact),
   );
 
   const hasAbout = Boolean(
