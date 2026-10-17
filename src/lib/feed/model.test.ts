@@ -7,6 +7,7 @@ import {
   isFeedEmoji,
   isFeedTopic,
   normalizeFeedText,
+  normalizeFeedTopics,
   parseFeedFilter,
   visibleReactions,
 } from "./model";
@@ -81,5 +82,16 @@ describe("block excerpt", () => {
     expect(cut.endsWith("…")).toBe(true);
     expect(cut.length).toBeLessThanOrEqual(41);
     expect(cut).not.toMatch(/\s…$/);
+  });
+});
+
+describe("topics of a post", () => {
+  it("takes one to three known topics in the author's order, without repeats", () => {
+    expect(normalizeFeedTopics(["relaxation", "breathing", "relaxation"])).toEqual(["relaxation", "breathing"]);
+    expect(normalizeFeedTopics(undefined, "focus")).toEqual(["focus"]);
+    expect(normalizeFeedTopics([])).toBeNull();
+    expect(normalizeFeedTopics(["focus", "energy", "movement", "nutrition"])).toBeNull();
+    expect(normalizeFeedTopics(["focus", "announce"])).toBeNull();
+    expect(normalizeFeedTopics(undefined, undefined)).toBeNull();
   });
 });

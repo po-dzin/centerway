@@ -9,8 +9,10 @@
  */
 
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
-import { feedFilterQuery, type FeedFilter, type ReactionCount } from "@/lib/feed/model";
+import type { FeedMediaStored } from "@/lib/feed/media";
+import { feedFilterQuery, type FeedFilter, type FeedTopic, type ReactionCount } from "@/lib/feed/model";
 import type { ComposerCourse, FeedAuthor, FeedComment, FeedPage, FeedPost } from "@/lib/feed/server";
+import type { UploadedMedia } from "@/lib/feed/upload";
 
 export type FeedResult<T> = { ok: true; data: T } | { ok: false; code: string; status: number };
 
@@ -42,6 +44,8 @@ export type FeedMe = {
   author: FeedAuthor | null;
   posts: FeedPost[];
   courses: ComposerCourse[];
+  /** Every other listed author — the composer's «з …» menu. Empty for a reader. */
+  taggable: FeedAuthor[];
 };
 
 export function fetchFeedMe() {
@@ -49,8 +53,16 @@ export function fetchFeedMe() {
 }
 
 export type NewPost = {
+  /** The markdown subset of `@/lib/feed/format`; ≤ 4000 visible characters. */
   body: string;
-  topic: string;
+  /** One to three, the first is the main one. */
+  topics?: FeedTopic[];
+  /** The old single topic; still accepted when `topics` is absent. */
+  topic?: string | null;
+  /** Paths from `uploadFeedMedia`; `video.youtubeId` may be a pasted link. */
+  media?: FeedMediaStored | null;
+  /** Listed author ids from `FeedMe.taggable`, at most three. */
+  taggedAuthorIds?: string[];
   courseId?: string | null;
   lessonId?: string | null;
   blockId?: string | null;
@@ -74,8 +86,28 @@ export function deletePost(id: string) {
   return call<{ ok: true }>(`/api/feed/${id}`, { method: "DELETE" });
 }
 
+/** A fourth different emoji answers `{ ok: false, code: "reaction_limit", status: 409 }`. */
 export function toggleReaction(postId: string, emoji: string) {
   return call<{ reactions: ReactionCount[] }>(`/api/feed/${postId}/reactions`, json({ emoji }));
+}
+
+/** «Зберегти» → «Мій журнал». */
+export function savePost(postId: string) {
+  return call<{ saved: true }>(`/api/feed/${postId}/save`, { method: "POST" });
+}
+
+export function unsavePost(postId: string) {
+  return call<{ saved: false }>(`/api/feed/${postId}/save`, { method: "DELETE" });
+}
+
+/**
+ * A photo or an audio for a post (`multipart/form-data`). The answer's `path`
+ * goes into `NewPost.media`; `src` is for the composer's thumbnail or player.
+ */
+export function uploadFeedMedia(file: File | Blob, name = "upload") {
+  const form = new FormData();
+  form.append("file", file instanceof File ? file : new File([file], name, { type: file.type }));
+  return call<UploadedMedia>("/api/feed/media", { method: "POST", body: form });
 }
 
 export function fetchComments(postId: string) {

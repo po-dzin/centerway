@@ -181,6 +181,15 @@ class FakeQuery implements PromiseLike<{
     throw new Error(`fake: unsupported not(${operator})`);
   }
 
+  /** Array `&&`: rows whose array column shares at least one value — the feed's topic filter. */
+  overlaps(column: string, values: unknown[]) {
+    const set = new Set(values);
+    this.filters.push(
+      (row) => Array.isArray(row[column]) && (row[column] as unknown[]).some((value) => set.has(value)),
+    );
+    return this;
+  }
+
   /** `contains("payload", { event_name: "Purchase", order_ref })` — the jsonb `@>` the job dedupes use. */
   contains(column: string, value: unknown) {
     this.filters.push((row) => jsonContains(row[column], value));

@@ -4,11 +4,14 @@
  * The post stores only WHERE the block is (course, lesson, block id) and
  * whether to show it whole or as an opening; the words are read from the
  * lesson when the post is shown, so a block the author corrects is corrected in
- * the feed too. Plain text on purpose: the feed is not a second lesson reader,
- * and a video or a table is pointed at, not re-rendered.
+ * the feed too.
+ *
+ * Since 2026-10-17 (G: «всі блоки програм у постах») the card renders the
+ * block itself with the lesson's renderer — `feedBlockOf` — and the plain text
+ * here serves what still needs words: the composer's labels and the excerpt.
  */
 
-import { flattenBlocks, inlineToPlainText, type LessonBlock } from "@/lms-core";
+import { flattenBlocks, inlineToPlainText, tableCellLeaves, type LessonBlock } from "@/lms-core";
 
 export type FeedBlockText = {
   /** What the attachment is called — the block's own title, or null for the lesson's. */
@@ -26,15 +29,25 @@ function joinLines(lines: (string | null | undefined)[]): string {
     .join("\n");
 }
 
-/** The block's words, or null when there is no such block in the lesson. */
-export function feedBlockText(blocks: unknown, blockId: string): FeedBlockText | null {
+export type FeedLessonBlock = Exclude<LessonBlock, { type: "group" }>;
+
+/**
+ * The block itself, as the lesson holds it — what the card hands the lesson
+ * renderer (`BlockRenderer`) since 2026-10-17, so every block type shows in
+ * the feed as it does in the lesson. Null when the lesson has no such block.
+ */
+export function feedBlockOf(blocks: unknown, blockId: string): FeedLessonBlock | null {
   if (!Array.isArray(blocks)) return null;
-  let block: Exclude<LessonBlock, { type: "group" }> | undefined;
   try {
-    block = flattenBlocks(blocks as LessonBlock[]).find((candidate) => candidate.id === blockId);
+    return flattenBlocks(blocks as LessonBlock[]).find((candidate) => candidate.id === blockId) ?? null;
   } catch {
     return null;
   }
+}
+
+/** The block's words, or null when there is no such block in the lesson. */
+export function feedBlockText(blocks: unknown, blockId: string): FeedBlockText | null {
+  const block = feedBlockOf(blocks, blockId);
   if (!block) return null;
 
   const plain = inlineToPlainText;
@@ -104,6 +117,26 @@ export function feedBlockText(blocks: unknown, blockId: string): FeedBlockText |
         media: "image",
         durationMin: null,
       };
+    case "code":
+      return { title: block.language || null, text: block.code, media: null, durationMin: null };
+    case "table":
+      return {
+        title: block.title ? plain(block.title) : null,
+        text: joinLines(
+          [...(block.head ? [block.head] : []), ...block.rows].map((row) =>
+            row.map((cell) => tableCellLeaves(cell).map(plain).join(", ")).join(" · "),
+          ),
+        ),
+        media: null,
+        durationMin: null,
+      };
+    case "cta":
+      return {
+        title: block.label,
+        text: block.text ? plain(block.text) : "",
+        media: null,
+        durationMin: null,
+      };
     default:
       return { title: null, text: "", media: null, durationMin: null };
   }
@@ -121,8 +154,9 @@ export function feedBlockOptions(blocks: unknown): { id: string; label: string; 
   return flat.flatMap((block) => {
     const text = feedBlockText([block], block.id);
     if (!text) return [];
+    // Every block type can be attached (G 2026-10-17); one with no words of
+    // its own is offered by its kind, which the composer names.
     const label = text.title || text.text.split("\n")[0] || "";
-    if (!label && !text.media) return [];
     return [{ id: block.id, label: label.slice(0, 120), kind: block.type }];
   });
 }

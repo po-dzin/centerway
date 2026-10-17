@@ -33,12 +33,19 @@ export function feedAuthorPath(slug: string): string {
   return `/expert/${slug}?tab=posts`;
 }
 
+/** Visible characters of a post — the words a reader sees, markup not counted. */
 export const FEED_POST_MAX = 4000;
+/** The stored body with its markup («**», «[…](…)»); the schema allows the same. */
+export const FEED_POST_RAW_MAX = 8000;
 export const FEED_COMMENT_MAX = 1000;
 /** How many posts a page of the feed carries; «Показати ще» asks for the next. */
 export const FEED_PAGE_SIZE = 20;
 /** Reactions shown under a post before «+». */
 export const FEED_TOP_REACTIONS = 3;
+/** Different emoji one person may leave on one post (G 2026-10-17); the fourth is refused. */
+export const FEED_REACTIONS_PER_PERSON = 3;
+/** Topics one post may carry (G 2026-10-17: one to three). */
+export const FEED_TOPICS_MAX = 3;
 
 export type FeedTopic = CourseCategory;
 export const FEED_TOPICS: readonly FeedTopic[] = COURSE_CATEGORIES;
@@ -48,6 +55,25 @@ export type FeedBlockDisplay = "full" | "excerpt";
 
 export function isFeedTopic(value: unknown): value is FeedTopic {
   return typeof value === "string" && (FEED_TOPICS as readonly string[]).includes(value);
+}
+
+/**
+ * The topics a composer sent, checked: one to three known topics, without
+ * repeats, in the order the author ticked them (the first is the post's main
+ * topic, stored again as `topic`). Null when the choice is not valid.
+ * Accepts the old single `topic` too, so a client from before 17.10 still posts.
+ */
+export function normalizeFeedTopics(topics: unknown, topic?: unknown): FeedTopic[] | null {
+  const raw = Array.isArray(topics) ? topics : topics === undefined || topics === null ? [topic] : [topics];
+  if (!raw.every(isFeedTopic)) return null;
+  const unique = [...new Set(raw as FeedTopic[])];
+  if (unique.length < 1 || unique.length > FEED_TOPICS_MAX) return null;
+  return unique;
+}
+
+/** The journal row a «Зберегти» writes: one per reader and post, so its id is derived. */
+export function feedSavedClientId(postId: string): string {
+  return `saved-${postId}`;
 }
 
 const EMOJI_IDS = new Set<string>(CW_EMOJI.map((entry) => entry.id));
