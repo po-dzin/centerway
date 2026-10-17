@@ -437,6 +437,29 @@ for (const [file, count] of Object.entries(landingOffScaleSpacing)) {
   }
 }
 
+/* 6. A SIDEWAYS STRIP SCROLLS SIDEWAYS ONLY (G 2026-10-17).
+      `overflow-x: auto` alone turns the other axis to `auto` as well, so a
+      tab's underline or a card's focus ring that hangs a few pixels below the
+      strip makes it scrollable up and down: the row shifts under a wheel or a
+      thumb. The admin tab bar had it (fixed in `.cw-tabbar`, 2026-09-12) and
+      the author page's tabs had it again. Every rule that opens the inline
+      axis names the block axis in the same rule, which is where a reader
+      looks for it. */
+for (const file of cssFiles()) {
+  const source = strip(fs.readFileSync(file, "utf8"));
+  for (const [, rawSelector, body] of source.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (!/(^|[;\s])overflow-x:\s*(auto|scroll)/.test(body)) continue;
+    if (/(^|[;\s])overflow(-y)?:/.test(body.replace(/overflow-x:[^;]*;?/g, ""))) continue;
+    failures.push({
+      kind: "sideways scroller without a block axis",
+      file: rel(file),
+      selector: rawSelector.trim().split("\n").pop().trim(),
+      detail:
+        "`overflow-x: auto` also makes the strip scroll vertically. Add `overflow-y: hidden` (or `clip`) in the same rule.",
+    });
+  }
+}
+
 if (report) {
   console.log("\nRadius by box size (rules that declare both):\n");
   for (const row of seen.sort((a, b) => a.size - b.size)) {

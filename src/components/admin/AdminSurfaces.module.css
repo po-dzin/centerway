@@ -80,6 +80,7 @@
   border-style: solid;
   border-radius: var(--cw-radius-lg);
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /* The unit the panel is actually made of: a label and a number, in a grid of
@@ -191,6 +192,7 @@
 
 .scrollX {
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .tdCode {

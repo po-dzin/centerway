@@ -1,4 +1,8 @@
-/** POST /api/feed/:id/reactions — `{ emoji }` presses or releases one reaction; answers the counts. */
+/**
+ * POST /api/feed/:id/reactions — `{ emoji }` presses or releases one reaction;
+ * answers the counts. A fourth different emoji from one person is refused:
+ * 409 `reaction_limit`.
+ */
 
 import type { NextRequest } from "next/server";
 

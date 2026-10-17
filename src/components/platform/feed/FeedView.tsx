@@ -24,6 +24,7 @@ import { fetchFeedMe, fetchFeedPage, fetchFeedPost, fetchMarks, type FeedMarkVie
 import { FeedComposer } from "./FeedComposer";
 import { FeedFilter } from "./FeedFilter";
 import { FeedPostCard } from "./FeedPostCard";
+import { FeedWelcome } from "./FeedWelcome";
 import styles from "./Feed.module.css";
 
 export function FeedView({
@@ -133,12 +134,14 @@ export function FeedView({
   return (
     <div className={mode === "feed" ? styles.posts : styles.embedded}>
       {mode === "feed" && me?.author ? (
-        <FeedComposer author={me.author} courses={me.courses} onDone={published} />
+        <FeedComposer author={me.author} courses={me.courses} taggable={me.taggable} onDone={published} />
       ) : null}
 
       {mode === "feed" ? <FeedFilter filter={filter} authors={authors} onChange={changeFilter} /> : null}
 
-      {page.posts.length === 0 && !loading ? (
+      {mode === "feed" && !filtered && !failed ? <FeedWelcome launch={page.posts.length === 0 && !loading} /> : null}
+
+      {page.posts.length === 0 && !loading && (failed || filtered || mode !== "feed") ? (
         <p className={styles.empty}>
           {failed ? feedCopy.loadFailed : filtered ? feedCopy.emptyFiltered : feedCopy.empty}
         </p>

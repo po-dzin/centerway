@@ -148,7 +148,7 @@ function overviewPage(sprite) {
     )
     .join("\n");
 
-  const darkStrip = ["leaf", "bowl", "water", "breath", "vata", "pitta", "kapha", "check", "arrow-right", "week"]
+  const darkStrip = ["leaf", "bowl", "water", "wind", "vata", "pitta", "kapha", "check", "arrow-right", "week"]
     .map((n) => cell(n))
     .join("");
 
@@ -173,7 +173,7 @@ ${groups}
 
 // ── page: the character ladder — the original sketch, now baked ──────────────
 function characterPage(baked) {
-  const sample = ["leaf", "bowl", "water", "stone", "breath", "day", "check", "arrow-right", "vata", "pitta", "kapha"];
+  const sample = ["leaf", "bowl", "water", "stone", "wind", "day", "check", "arrow-right", "vata", "pitta", "kapha"];
 
   // Each preset needs its own symbol ids, so prefix them per row.
   const rows = PRESETS.map((presetName) => {

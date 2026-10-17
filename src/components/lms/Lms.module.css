@@ -1066,6 +1066,7 @@
 
 .codeBlock {
   overflow-x: auto;
+  overflow-y: hidden;
   margin: 0;
   padding: var(--cw-space-sm);
   border: 1px solid var(--cw-mat-stroke-inner);
@@ -1583,6 +1584,7 @@
    that gives every screen a horizontal scroll and unsettles the fixed topbar. */
 .tableScroll {
   overflow-x: auto;
+  overflow-y: hidden;
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
 }

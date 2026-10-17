@@ -615,6 +615,7 @@
   flex: 1 1 auto;
   padding-bottom: var(--cw-space-xs);
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .chartTrack {

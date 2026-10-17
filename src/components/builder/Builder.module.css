@@ -6916,6 +6916,7 @@
 /* The one element allowed to be wider than a phone, in its own scroller. */
 .overviewTableScroll {
   overflow-x: auto;
+  overflow-y: hidden;
   min-width: 0;
   margin-inline: calc(-1 * var(--cw-space-xs));
 }

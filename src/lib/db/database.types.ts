@@ -1169,13 +1169,16 @@ export type Database = {
           hidden_at: string | null
           id: string
           lesson_id: string | null
+          media: Json
           photo_alt: string | null
           photo_path: string | null
           published_at: string | null
           returned_reason: string | null
           status: string
+          tagged_author_ids: string[]
           tg_message_id: number | null
           topic: string
+          topics: string[]
           updated_at: string
         }
         Insert: {
@@ -1192,13 +1195,16 @@ export type Database = {
           hidden_at?: string | null
           id?: string
           lesson_id?: string | null
+          media?: Json
           photo_alt?: string | null
           photo_path?: string | null
           published_at?: string | null
           returned_reason?: string | null
           status?: string
+          tagged_author_ids?: string[]
           tg_message_id?: number | null
           topic: string
+          topics?: string[]
           updated_at?: string
         }
         Update: {
@@ -1215,13 +1221,16 @@ export type Database = {
           hidden_at?: string | null
           id?: string
           lesson_id?: string | null
+          media?: Json
           photo_alt?: string | null
           photo_path?: string | null
           published_at?: string | null
           returned_reason?: string | null
           status?: string
+          tagged_author_ids?: string[]
           tg_message_id?: number | null
           topic?: string
+          topics?: string[]
           updated_at?: string
         }
         Relationships: [

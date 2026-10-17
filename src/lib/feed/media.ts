@@ -1,0 +1,198 @@
+/**
+ * What a post may carry besides words (2026-10-17). Client-safe and pure.
+ *
+ * G, 17.10: up to ten photos, each optionally a spoiler (blurred until
+ * tapped); one YouTube video by link; one audio — recorded in the composer or
+ * uploaded — of at most twenty megabytes and ten minutes.
+ *
+ * STORED: `{ photos: [{ path, w, h, spoiler }], video: { youtubeId }, audio:
+ * { path, durationSec, mime } }` in `feed_posts.media`. Only the path inside
+ * the `feed-media` bucket is stored; the public address is built when the post
+ * is read (`feedMediaUrl`), so the bucket's host is not frozen into every row.
+ *
+ * A PATH MUST BE THE AUTHOR'S OWN UPLOAD: the upload route writes
+ * `<authorId>/<uuid>/<file>`, and a post may only name files under its own
+ * author's folder in exactly that shape. Anything else — another author's
+ * photo, a path with `..`, a URL from elsewhere — is refused as `media_invalid`.
+ */
+
+import { youtubeIdFrom } from "@/lms-core";
+
+export const FEED_MEDIA_BUCKET = "feed-media";
+export const FEED_PHOTOS_MAX = 10;
+export const FEED_AUDIO_MAX_BYTES = 20 * 1024 * 1024;
+export const FEED_AUDIO_MAX_SECONDS = 10 * 60;
+/** Authors a post may name «з …». */
+export const FEED_TAGS_MAX = 3;
+
+/** What the browser may hand the audio upload, and the type it is stored under. */
+export const FEED_AUDIO_TYPES: Record<string, string> = {
+  "audio/webm": "audio/webm",
+  "audio/ogg": "audio/ogg",
+  "audio/mp4": "audio/mp4",
+  "audio/x-m4a": "audio/mp4",
+  "audio/m4a": "audio/mp4",
+  "audio/mpeg": "audio/mpeg",
+  "audio/mp3": "audio/mpeg",
+};
+
+const AUDIO_EXT: Record<string, string> = {
+  "audio/webm": "webm",
+  "audio/ogg": "ogg",
+  "audio/mp4": "m4a",
+  "audio/mpeg": "mp3",
+};
+
+export function feedAudioExtension(mime: string): string | null {
+  return AUDIO_EXT[mime] ?? null;
+}
+
+export type FeedPhotoStored = { path: string; w: number; h: number; spoiler: boolean };
+export type FeedAudioStored = { path: string; durationSec: number; mime: string };
+export type FeedMediaStored = {
+  photos?: FeedPhotoStored[];
+  video?: { youtubeId: string } | null;
+  audio?: FeedAudioStored | null;
+};
+
+/** What a reader receives: the same, with addresses. */
+export type FeedPhoto = FeedPhotoStored & { src: string };
+export type FeedAudio = FeedAudioStored & { src: string };
+export type FeedMedia = {
+  photos: FeedPhoto[];
+  video: { youtubeId: string } | null;
+  audio: FeedAudio | null;
+};
+
+export const EMPTY_FEED_MEDIA: FeedMedia = { photos: [], video: null, audio: null };
+
+const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+const PHOTO_FILE = /^(1600|640)\.webp$|^original\.gif$/;
+const AUDIO_FILE = /^audio\.(webm|ogg|m4a|mp3)$/;
+
+/** `<authorId>/<uuid>/<file>` under the given author, with a file the route writes. */
+function ownPath(value: unknown, authorId: string, file: RegExp): value is string {
+  if (typeof value !== "string" || value.length > 200) return false;
+  const parts = value.split("/");
+  if (parts.length !== 3) return false;
+  const [owner, asset, name] = parts as [string, string, string];
+  return owner === authorId && new RegExp(`^${UUID}$`, "i").test(asset) && file.test(name);
+}
+
+const dimension = (value: unknown) =>
+  typeof value === "number" && Number.isInteger(value) && value > 0 && value <= 20000 ? value : null;
+
+/**
+ * The media a composer sent, checked and reduced to what is stored. `null` or
+ * absent means none. Throws nothing: an invalid shape answers `{ error }`.
+ */
+export function checkFeedMedia(input: unknown, authorId: string): { media: FeedMediaStored } | { error: string } {
+  if (input === undefined || input === null) return { media: {} };
+  if (typeof input !== "object" || Array.isArray(input)) return { error: "media_invalid" };
+  const raw = input as Record<string, unknown>;
+  const media: FeedMediaStored = {};
+
+  if (raw.photos !== undefined && raw.photos !== null) {
+    if (!Array.isArray(raw.photos)) return { error: "media_invalid" };
+    if (raw.photos.length > FEED_PHOTOS_MAX) return { error: "media_too_many_photos" };
+    const photos: FeedPhotoStored[] = [];
+    const seen = new Set<string>();
+    for (const entry of raw.photos as unknown[]) {
+      if (!entry || typeof entry !== "object") return { error: "media_invalid" };
+      const photo = entry as Record<string, unknown>;
+      const w = dimension(photo.w);
+      const h = dimension(photo.h);
+      if (!ownPath(photo.path, authorId, PHOTO_FILE) || !w || !h) return { error: "media_invalid" };
+      if (seen.has(photo.path)) continue;
+      seen.add(photo.path);
+      photos.push({ path: photo.path, w, h, spoiler: photo.spoiler === true });
+    }
+    if (photos.length) media.photos = photos;
+  }
+
+  if (raw.video !== undefined && raw.video !== null) {
+    const video = raw.video as Record<string, unknown>;
+    const source = typeof video === "string" ? video : typeof video === "object" ? video.youtubeId : null;
+    const youtubeId = typeof source === "string" ? youtubeIdFrom(source) : null;
+    if (!youtubeId) return { error: "media_video_invalid" };
+    media.video = { youtubeId };
+  }
+
+  if (raw.audio !== undefined && raw.audio !== null) {
+    if (typeof raw.audio !== "object") return { error: "media_invalid" };
+    const audio = raw.audio as Record<string, unknown>;
+    const mime = typeof audio.mime === "string" ? FEED_AUDIO_TYPES[audio.mime] : undefined;
+    const duration =
+      typeof audio.durationSec === "number" && Number.isFinite(audio.durationSec)
+        ? Math.round(audio.durationSec)
+        : null;
+    if (!mime || !ownPath(audio.path, authorId, AUDIO_FILE)) return { error: "media_invalid" };
+    if (!(audio.path as string).endsWith(`.${feedAudioExtension(mime)}`)) return { error: "media_invalid" };
+    if (duration === null || duration < 1) return { error: "media_invalid" };
+    if (duration > FEED_AUDIO_MAX_SECONDS) return { error: "media_audio_too_long" };
+    media.audio = { path: audio.path as string, durationSec: duration, mime };
+  }
+
+  return { media };
+}
+
+/** The public address of an object in the feed's bucket. */
+export function feedMediaUrl(path: string, base = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""): string {
+  const encoded = path.split("/").map(encodeURIComponent).join("/");
+  return `${base.replace(/\/+$/, "")}/storage/v1/object/public/${FEED_MEDIA_BUCKET}/${encoded}`;
+}
+
+/**
+ * A stored `media` value as a reader receives it. Lenient on purpose: a row
+ * written by an older shape, or edited by hand, loses the part it got wrong
+ * rather than the whole post.
+ */
+export function readFeedMedia(stored: unknown, base?: string): FeedMedia {
+  if (!stored || typeof stored !== "object" || Array.isArray(stored)) return EMPTY_FEED_MEDIA;
+  const raw = stored as Record<string, unknown>;
+  const photos = Array.isArray(raw.photos)
+    ? (raw.photos as unknown[]).flatMap((entry) => {
+        const photo = entry as Partial<FeedPhotoStored> | null;
+        if (!photo || typeof photo.path !== "string") return [];
+        const w = dimension(photo.w) ?? 1;
+        const h = dimension(photo.h) ?? 1;
+        return [{ path: photo.path, w, h, spoiler: photo.spoiler === true, src: feedMediaUrl(photo.path, base) }];
+      })
+    : [];
+  const video = raw.video as { youtubeId?: unknown } | null | undefined;
+  const audio = raw.audio as Partial<FeedAudioStored> | null | undefined;
+  return {
+    photos: photos.slice(0, FEED_PHOTOS_MAX),
+    video: video && typeof video.youtubeId === "string" ? { youtubeId: video.youtubeId } : null,
+    audio:
+      audio && typeof audio.path === "string" && typeof audio.mime === "string"
+        ? {
+            path: audio.path,
+            mime: audio.mime,
+            durationSec: typeof audio.durationSec === "number" ? audio.durationSec : 0,
+            src: feedMediaUrl(audio.path, base),
+          }
+        : null,
+  };
+}
+
+/**
+ * Whether the first bytes are the audio container the type claims. Cheap, and
+ * enough to keep a page or a script from being stored as «audio» in a public
+ * bucket under our name.
+ */
+export function looksLikeAudio(bytes: Uint8Array, mime: string): boolean {
+  const ascii = (from: number, to: number) => String.fromCharCode(...bytes.slice(from, to));
+  switch (mime) {
+    case "audio/webm":
+      return bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3;
+    case "audio/ogg":
+      return ascii(0, 4) === "OggS";
+    case "audio/mp4":
+      return ascii(4, 8) === "ftyp";
+    case "audio/mpeg":
+      return ascii(0, 3) === "ID3" || (bytes[0] === 0xff && ((bytes[1] ?? 0) & 0xe0) === 0xe0);
+    default:
+      return false;
+  }
+}
