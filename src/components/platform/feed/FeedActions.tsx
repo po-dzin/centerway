@@ -116,6 +116,7 @@ export function FeedActions({
   commentsOpen,
   onComments,
   initiallySaved,
+  initialSaveCount,
 }: {
   postId: string;
   shareText: string;
@@ -129,9 +130,12 @@ export function FeedActions({
   /** Absent on the home rail: there the bubble leads to the post's own page. */
   onComments?: () => void;
   initiallySaved: boolean;
+  /** Everyone's saves; the reader's own press moves it at once. */
+  initialSaveCount: number;
 }) {
   const toast = useToast();
   const [saved, setSaved] = useState(initiallySaved);
+  const [saveCount, setSaveCount] = useState(initialSaveCount);
   const [saving, setSaving] = useState(false);
 
   async function toggleSave() {
@@ -143,10 +147,12 @@ export function FeedActions({
     const next = !saved;
     setSaving(true);
     setSaved(next);
+    setSaveCount((current) => Math.max(0, current + (next ? 1 : -1)));
     const result = next ? await savePost(postId) : await unsavePost(postId);
     setSaving(false);
     if (!result.ok) {
       setSaved(!next);
+      setSaveCount((current) => Math.max(0, current + (next ? -1 : 1)));
       toast.error(feedCopy.saveFailed);
       return;
     }
@@ -189,11 +195,12 @@ export function FeedActions({
         className={`${styles.act} ${styles.actSave}`}
         type="button"
         aria-pressed={saved}
-        aria-label={feedCopy.save}
+        aria-label={feedCopy.saveLabel(saveCount)}
         title={saved ? feedCopy.saved : feedCopy.save}
         onClick={() => void toggleSave()}
       >
         <Icon name={saved ? "bookmark-marked" : "bookmark"} size={20} />
+        {saveCount > 0 ? <span>{saveCount}</span> : null}
       </button>
       <ShareMenu postId={postId} text={shareText} />
     </div>

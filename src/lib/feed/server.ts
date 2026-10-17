@@ -111,6 +111,8 @@ export type FeedPost = {
   mine: boolean;
   /** The reader saved it to «Мій журнал». False for a guest. */
   saved: boolean;
+  /** How many people saved it to their «Мій журнал» — shown to everyone (G 17.10). */
+  saveCount: number;
   /** Only the post's own author sees why it waits or came back. */
   heldReason?: string | null;
   returnedReason?: string | null;
@@ -290,6 +292,7 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
     { data: reactions, error: reactionError },
     { data: comments },
     { data: savedRows },
+    { data: bookmarkRows },
     attachments,
   ] = await Promise.all([
     db.from("lms_authors").select("id, slug, name, photo, listed, auth_user_id").in("id", authorIds),
@@ -298,6 +301,7 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
     me
       ? db.from("feed_marks").select("post_id").eq("auth_user_id", me).eq("kind", "bookmark").in("post_id", ids)
       : Promise.resolve({ data: [] as { post_id: string }[] }),
+    db.from("feed_marks").select("post_id").eq("kind", "bookmark").in("post_id", ids),
     attachmentsFor(db, rows),
   ]);
   if (authorError) throw new Error(`feed_authors_read_failed:${authorError.message}`);
@@ -312,6 +316,10 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
     reactionsByPost.set(row.post_id, list);
   }
   const names = await reactorNames(db, [...reactionsByPost.values()], me);
+  const savesByPost = new Map<string, number>();
+  for (const row of (bookmarkRows ?? []) as { post_id: string }[]) {
+    savesByPost.set(row.post_id, (savesByPost.get(row.post_id) ?? 0) + 1);
+  }
   const commentsByPost = new Map<string, number>();
   for (const row of (comments ?? []) as { post_id: string }[]) {
     commentsByPost.set(row.post_id, (commentsByPost.get(row.post_id) ?? 0) + 1);
@@ -343,6 +351,7 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
         commentCount: commentsByPost.get(row.id) ?? 0,
         mine,
         saved: saved.has(row.id),
+        saveCount: savesByPost.get(row.id) ?? 0,
         ...(mine
           ? {
               heldReason: row.held_reason,

@@ -407,6 +407,7 @@ export function FeedPostCard({
           commentsOpen={open}
           onComments={variant === "rail" ? undefined : () => setOpen((current) => !current)}
           initiallySaved={post.saved ?? false}
+          initialSaveCount={post.saveCount ?? 0}
         />
       ) : null}
 

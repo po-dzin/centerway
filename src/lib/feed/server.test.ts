@@ -453,9 +453,12 @@ describe("wave 2: «Зберегти»", () => {
     expect((await listFeedMarks(db, READER, [post.id])).map((mark) => mark.kind)).toEqual(["highlight"]);
     expect((await getFeedPost(db, post.id, READER))?.saved).toBe(true);
     expect((await getFeedPost(db, post.id, null))?.saved).toBe(false);
+    // Everyone sees how many saved it; a passage mark is not a save, and saving twice counts once.
+    expect((await getFeedPost(db, post.id, null))?.saveCount).toBe(1);
 
     await unsaveFeedPost(db, READER, post.id);
     expect((await getFeedPost(db, post.id, READER))?.saved).toBe(false);
+    expect((await getFeedPost(db, post.id, null))?.saveCount).toBe(0);
     expect(await listFeedMarks(db, READER)).toHaveLength(1);
   });
 

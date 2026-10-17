@@ -104,6 +104,7 @@ export const feedCopy = {
   replyInFeed: "Відповісти у стрічці",
   commentsLabel: (count: number) => `Коментарі, ${count}`,
   save: "Зберегти в «Мій журнал»",
+  saveLabel: (count: number) => (count > 0 ? `Зберегти в «Мій журнал». Зберегли: ${count}` : "Зберегти в «Мій журнал»"),
   saved: "Збережено в «Мій журнал»",
   unsaved: "Прибрано з «Мій журнал»",
   saveFailed: "Не вдалося зберегти.",
