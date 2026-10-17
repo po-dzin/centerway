@@ -23,7 +23,10 @@
      CSS module and currently loses the cascade to this one — a separate defect,
      visible in `--platform-topbar-clearance` resolving to its desktop clamp on
      a phone, and not one to paper over from this side. */
-  --platform-topbar-top: 0.75rem;
+  /* ONE HEIGHT ON EVERY PAGE (G 2026-10-17). It was 0.75rem here and 0.95rem
+     over a hero (`.shellOverlay`), so going from Головна to Стрічка — the one
+     menu page without a hero — moved the bar up 3px and it read as a jump. */
+  --platform-topbar-top: 0.95rem;
   --platform-topbar-block: calc(var(--platform-topbar-top) + 4rem);
   background:
     radial-gradient(

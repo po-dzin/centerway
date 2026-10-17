@@ -39,13 +39,18 @@ export async function FeedFresh() {
             <li key={post.id}>
               <article className={styles.freshCard}>
                 <div className={styles.byline}>
-                  <AuthorPortrait
-                    photo={post.author.photo}
-                    size="xs"
-                    fallback={post.author.name.trim().charAt(0).toUpperCase()}
-                  />
+                  <Link className={styles.face} href={`/expert/${post.author.slug}`} tabIndex={-1} aria-hidden="true">
+                    <AuthorPortrait
+                      photo={post.author.photo}
+                      size="xs"
+                      fallback={post.author.name.trim().charAt(0).toUpperCase()}
+                    />
+                  </Link>
                   <p className={styles.when}>
-                    {post.author.name} ·{" "}
+                    <Link className={styles.freshAuthor} href={`/expert/${post.author.slug}`}>
+                      {post.author.name}
+                    </Link>{" "}
+                    ·{" "}
                     <time dateTime={when} suppressHydrationWarning>
                       {relativeTime(when)}
                     </time>

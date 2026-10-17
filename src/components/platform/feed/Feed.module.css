@@ -81,6 +81,12 @@
   flex: 0 0 auto;
 }
 
+/* The face leads to the author's profile, as the name does (G 2026-10-17). */
+a.face {
+  display: inline-flex;
+  border-radius: var(--cw-radius-pill);
+}
+
 .who {
   display: grid;
   gap: var(--cw-space-2xs);
@@ -891,6 +897,27 @@
 
 .freshLink:focus-visible::after {
   box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+/* The author's face and name sit above the card-wide link, so they lead to
+   the profile while the rest of the card still opens the post. */
+.freshCard .byline a {
+  position: relative;
+  z-index: 1;
+}
+
+.freshAuthor {
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .freshAuthor:hover {
+    text-decoration: underline;
+    text-decoration-thickness: var(--cw-link-rule-width);
+    text-underline-offset: var(--cw-link-rule-offset);
+    text-decoration-color: var(--cw-link-rule-color-strong);
+  }
 }
 
 .freshMeta {

@@ -240,12 +240,15 @@ export function FeedPostCard({
   return (
     <article className={styles.post} ref={card} aria-labelledby={`post-${post.id}-by`}>
       <div className={styles.byline}>
-        <AuthorPortrait
-          className={styles.face}
-          photo={post.author.photo}
-          size="sm"
-          fallback={post.author.name.trim().charAt(0).toUpperCase()}
-        />
+        {/* The face is a second way to the same profile as the name, so it
+            stays out of the tab order and out of the accessibility tree. */}
+        <Link className={styles.face} href={`/expert/${post.author.slug}`} tabIndex={-1} aria-hidden="true">
+          <AuthorPortrait
+            photo={post.author.photo}
+            size="sm"
+            fallback={post.author.name.trim().charAt(0).toUpperCase()}
+          />
+        </Link>
         <div className={styles.who}>
           <Name className={styles.whoName} id={`post-${post.id}-by`}>
             <Link href={`/expert/${post.author.slug}`}>{post.author.name}</Link>
