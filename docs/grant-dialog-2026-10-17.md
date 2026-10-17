@@ -22,7 +22,7 @@ Who → program → term → reason, then the link.
   «без кінця» (`null`, forever).
 - **Reason** is what `lms_enrollments.source` records: payment → `manual` (with
   the order), gift → `bonus`, staff → `service` (migration
-  `20261017120000_enrollment_source_service.sql`).
+  `20261017180000_enrollment_source_service.sql`).
 - **Link.** `/go/<program>` (see `go-program-links-2026-10-17.md`), with a copy
   button. Not shown for a promo, which has a link of its own per person.
 
