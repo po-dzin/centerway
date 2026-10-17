@@ -390,18 +390,28 @@ describe("wave 2: media and tags", () => {
 });
 
 describe("wave 2: block attachments carry the block", () => {
-  it("hands the renderer the block itself and the course slug, and keeps the excerpt flag", async () => {
-    const { post } = await createFeedPost(db, await author(), {
+  it("hands the renderer the whole block only when the author shows it whole", async () => {
+    const shown = await createFeedPost(db, await author(), {
+      body: "Практика",
+      topic: "breathing",
+      courseId: COURSE,
+      lessonId: LESSON,
+      blockId: "b1",
+      blockDisplay: "full",
+    });
+    expect(shown.post.attachment).toMatchObject({
+      full: true,
+      block: { id: "b1", type: "practice_block", durationMin: 3 },
+    });
+    const excerpt = await createFeedPost(db, await author(), {
       body: "Практика",
       topic: "breathing",
       courseId: COURSE,
       lessonId: LESSON,
       blockId: "b1",
     });
-    expect(post.attachment).toMatchObject({
-      full: false,
-      block: { id: "b1", type: "practice_block", durationMin: 3 },
-    });
+    // An excerpt never carries the block itself: a paid lesson stays paid.
+    expect(excerpt.post.attachment).toMatchObject({ full: false, block: null });
   });
 });
 
