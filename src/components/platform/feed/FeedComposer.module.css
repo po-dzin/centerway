@@ -1,0 +1,759 @@
+/*
+ * The composer: the gold «+» and the dialog it opens (G 2026-10-17).
+ *
+ * Buttons compose roles from PlatformButtons.module.css and add only layout;
+ * the menus compose the shelf's popover recipe, as the feed's filter does.
+ * Every scroller here wears the DS bar (`cw-scroll` / `cw-scroll-rail`, set
+ * on the element). No palette of its own.
+ */
+
+/* ─────────────── the «+» ─────────────── */
+
+/* The one way into a new post. On a phone it sits where Threads puts it,
+   bottom right under the thumb; on a desktop it holds the right edge of the
+   feed's 42rem column (spec: `max(gutter, 50vw - 26rem)`), so it stays beside
+   the posts rather than drifting to a wide window's corner. */
+.fab {
+  composes: base primary round square from "../PlatformButtons.module.css";
+  position: fixed;
+  z-index: var(--ds-z-sticky);
+  inset-inline-end: max(var(--cw-page-gutter), env(safe-area-inset-right, 0px));
+  inset-block-end: max(var(--cw-space-lg), env(safe-area-inset-bottom, 0px));
+  inline-size: 3.5rem;
+  block-size: 3.5rem;
+}
+
+.fab svg {
+  inline-size: 1.6rem;
+  block-size: 1.6rem;
+}
+
+@media (min-width: 901px) {
+  .fab {
+    inset-inline-end: max(var(--cw-page-gutter), calc(50vw - 26rem));
+    inset-block-end: var(--cw-space-xl);
+  }
+}
+
+/* ─────────────── the dialog ─────────────── */
+
+.dialog {
+  box-sizing: border-box;
+  inline-size: min(34rem, calc(100vw - 2rem));
+  max-inline-size: none;
+  max-block-size: min(90vh, 52rem);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--cw-radius-xl);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-deep);
+  color: var(--cw-platform-text);
+  overflow: hidden;
+}
+
+.dialog:not([open]) {
+  display: none;
+}
+
+.dialog::backdrop {
+  background: var(--cw-mat-scrim);
+}
+
+.sheet {
+  composes: compact from "../PlatformButtons.module.css";
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  box-sizing: border-box;
+  max-block-size: inherit;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-xs) var(--cw-space-md) var(--cw-space-md);
+}
+
+/* A phone gets the whole screen: the keyboard takes half of it, and a card
+   floating in what is left is a card with no room for the text. */
+@media (max-width: 560px) {
+  .dialog {
+    inline-size: 100vw;
+    block-size: 100dvh;
+    max-block-size: 100dvh;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .sheet {
+    block-size: 100%;
+    padding-block-end: calc(var(--cw-space-md) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+.closeAction {
+  composes: base chromeBare square from "../PlatformButtons.module.css";
+  margin-inline-start: calc(var(--cw-space-xs) * -1);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--ds-type-body-size);
+  font-weight: 700;
+  text-align: center;
+}
+
+.headSpacer {
+  inline-size: var(--ds-touch-target-min);
+}
+
+.scroll {
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--cw-space-sm);
+}
+
+.face {
+  flex: 0 0 auto;
+}
+
+.main {
+  display: grid;
+  gap: var(--cw-space-xs);
+  min-inline-size: 0;
+}
+
+.who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  min-block-size: 2.5rem;
+}
+
+.name {
+  font-weight: 700;
+}
+
+.whoChevron {
+  color: var(--cw-platform-muted);
+}
+
+/* A phone gives the field the whole width: beside a face column the six tools
+   wrapped onto a second row. The face and the name keep the first line. */
+@media (max-width: 560px) {
+  .body {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .main {
+    display: contents;
+  }
+
+  .main > :not(.who) {
+    grid-column: 1 / -1;
+  }
+
+  .who {
+    align-self: center;
+  }
+}
+
+/* ─────────────── topics ─────────────── */
+
+.topicTrigger {
+  composes: base chrome from "../PlatformButtons.module.css";
+  gap: var(--cw-space-2xs);
+  color: var(--cw-platform-text);
+}
+
+.topicTrigger[data-empty] {
+  color: var(--cw-platform-muted);
+}
+
+.topicTrigger[aria-expanded="true"] svg:last-child {
+  transform: rotate(180deg);
+}
+
+.topicIcons {
+  display: inline-flex;
+  gap: var(--cw-space-2xs);
+}
+
+.topicSummary {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─────────────── the field ─────────────── */
+
+/* One field holds what is attached, the words and the tools — the mockup's
+   Threads card: everything that goes into the post is inside one contour. */
+.field {
+  position: relative;
+  display: grid;
+  gap: var(--cw-space-xs);
+  min-inline-size: 0;
+  padding: var(--cw-space-sm) var(--cw-space-sm) var(--cw-space-2xs);
+  border: 1px solid var(--cw-mat-stroke-quiet);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.field:focus-within {
+  border-color: var(--cw-nav-marker);
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+.attached {
+  display: grid;
+  gap: var(--cw-space-xs);
+  min-inline-size: 0;
+}
+
+.text {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: calc(1.55em * 3);
+  max-block-size: 50vh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: var(--ds-type-body-size);
+  line-height: 1.55;
+  resize: none;
+  field-sizing: content;
+}
+
+.text:focus {
+  outline: none;
+}
+
+.text::placeholder {
+  color: var(--cw-platform-muted);
+}
+
+/* The tools and the formatting bar take the same row, so selecting words
+   swaps one for the other without moving the text above. */
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  min-block-size: var(--ds-touch-target-min);
+  margin-inline: calc(var(--cw-space-xs) * -1) 0;
+  padding-block-start: var(--cw-space-2xs);
+  border-block-start: 1px solid var(--cw-mat-stroke-quiet);
+}
+
+.toolAction {
+  composes: base chromeBare square from "../PlatformButtons.module.css";
+  color: var(--cw-platform-muted);
+}
+
+.toolAction[aria-pressed="true"] {
+  color: var(--cw-platform-text);
+}
+
+@media (hover: hover) {
+  .toolAction:hover:not(:disabled) {
+    color: var(--cw-platform-text);
+  }
+}
+
+.fmtSlot {
+  display: inline-flex;
+}
+
+.fmtSlot[data-sep] {
+  margin-inline-start: var(--cw-space-xs);
+  padding-inline-start: var(--cw-space-xs);
+  border-inline-start: 1px solid var(--cw-mat-stroke-quiet);
+}
+
+.hiddenInput {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ─────────────── photos ─────────────── */
+
+.strip {
+  display: flex;
+  gap: var(--cw-space-xs);
+  min-inline-size: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block-end: var(--cw-space-2xs);
+}
+
+.thumb {
+  position: relative;
+  flex: 0 0 auto;
+  inline-size: 6rem;
+  block-size: 6rem;
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+}
+
+.thumb img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  transition: filter var(--cw-motion-state) var(--cw-ease-state);
+}
+
+.thumb[data-spoiler] img {
+  filter: blur(10px) saturate(0.8);
+  transform: scale(1.1);
+}
+
+.thumb[data-status="uploading"] img,
+.thumb[data-status="failed"] img {
+  opacity: 0.55;
+}
+
+.spoilerBadge {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--cw-space-2xs);
+  color: var(--cw-mat-inverse-text);
+  font-size: var(--ds-type-label-size);
+  pointer-events: none;
+}
+
+/* The whole photo is the «⋯» control: a 1.75rem dot over a 6rem picture was
+   either too small for a finger or, at the contract's 48px, a disc covering a
+   third of the photo. The dot stays as the sign; the press is the photo. */
+.thumbMenuAction {
+  composes: base chromeBare from "../PlatformButtons.module.css";
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: var(--ds-button-radius);
+}
+
+.moreBadge {
+  position: absolute;
+  inset-block-start: var(--cw-space-2xs);
+  inset-inline-end: var(--cw-space-2xs);
+  display: grid;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cw-mat-scrim-ink) 72%, transparent);
+  color: var(--cw-mat-inverse-text);
+  pointer-events: none;
+}
+
+.thumbRetryAction {
+  composes: base onMedia compact from "../PlatformButtons.module.css";
+  position: absolute;
+  z-index: 1;
+  inset-block-end: var(--cw-space-2xs);
+  inset-inline: var(--cw-space-2xs);
+}
+
+.thumbProgress,
+.barProgress {
+  display: block;
+  overflow: hidden;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-meter-track);
+}
+
+.thumbProgress {
+  position: absolute;
+  inset-inline: var(--cw-space-xs);
+  inset-block-end: var(--cw-space-xs);
+  block-size: 0.25rem;
+}
+
+.barProgress {
+  inline-size: 100%;
+  block-size: 0.25rem;
+}
+
+.thumbProgress > span,
+.barProgress > span {
+  display: block;
+  block-size: 100%;
+  border-radius: inherit;
+  background: var(--cw-nav-marker);
+  transition: inline-size var(--cw-motion-state) var(--cw-ease-state);
+}
+
+.menuItemAction {
+  composes: base chrome from "../PlatformButtons.module.css";
+  justify-content: space-between;
+  inline-size: 100%;
+}
+
+.menuItemAction svg {
+  color: var(--cw-platform-muted);
+}
+
+/* ─────────────── video, audio, inline fields ─────────────── */
+
+.mediaChip {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-inline-size: 0;
+  min-block-size: var(--ds-touch-target-min);
+  padding-inline: var(--cw-space-xs) 0;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+}
+
+.mediaChipIcon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--cw-platform-muted);
+}
+
+.mediaChipText {
+  display: grid;
+  flex: 1 1 auto;
+  gap: var(--cw-space-2xs);
+  min-inline-size: 0;
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.mediaChipText b {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  block-size: 2.25rem;
+}
+
+.durationChip {
+  flex: 0 0 auto;
+  padding: 0 var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+}
+
+.inlineForm {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-inline-size: 0;
+}
+
+.inlineRow {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-inline-size: 0;
+}
+
+.inlineInput {
+  flex: 1 1 12rem;
+  box-sizing: border-box;
+  min-inline-size: 0;
+  min-block-size: var(--ds-touch-target-min);
+  padding: 0 var(--cw-space-sm);
+  border: 1px solid var(--cw-mat-stroke-quiet);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.inlineInput:focus {
+  outline: none;
+  border-color: var(--cw-nav-marker);
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+.inlineInput[aria-invalid="true"] {
+  border-color: var(--cw-sem-state-failed);
+}
+
+.inlineAction {
+  composes: base secondary hug from "../PlatformButtons.module.css";
+}
+
+.iconAction {
+  composes: base chromeBare square from "../PlatformButtons.module.css";
+  flex: 0 0 auto;
+  color: var(--cw-platform-muted);
+}
+
+.fieldError {
+  margin: 0;
+  color: var(--cw-sem-state-failed);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.recDot {
+  inline-size: 0.6rem;
+  block-size: 0.6rem;
+  border-radius: 50%;
+  background: var(--cw-sem-state-failed);
+}
+
+.recClock {
+  flex: 1 1 auto;
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+/* ─────────────── a programme block ─────────────── */
+
+.picker {
+  display: grid;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-xs) var(--cw-space-sm) var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+}
+
+.pickerHead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  margin-inline-end: calc(var(--cw-space-xs) * -1);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.pickerHead b {
+  color: var(--cw-platform-text);
+  font-weight: 700;
+}
+
+.select {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: var(--ds-touch-target-min);
+  padding: 0 var(--cw-space-sm);
+  border: 1px solid var(--cw-mat-stroke-quiet);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--cw-nav-marker);
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.check input {
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  accent-color: var(--cw-platform-accent);
+}
+
+/* ─────────────── tagged authors ─────────────── */
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-2xs) var(--cw-space-xs);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.tagChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  padding-inline-start: var(--cw-space-2xs);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface);
+  font-weight: 600;
+}
+
+.chipRemoveAction {
+  composes: base chromeBare square round from "../PlatformButtons.module.css";
+  color: var(--cw-platform-muted);
+}
+
+.tagAddAction {
+  composes: base chrome from "../PlatformButtons.module.css";
+  gap: var(--cw-space-2xs);
+  color: var(--cw-platform-muted);
+}
+
+/* ─────────────── menus ─────────────── */
+
+/* Fixed, placed by FeedComposerMenus from its trigger: see the note there. */
+.popover {
+  composes: filterPopover from "../cabinet/ShelfFilter.module.css";
+  position: fixed;
+  inset-block-start: auto;
+  inset-inline-end: auto;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-shadow: var(--cw-mat-shadow-raised);
+}
+
+.popoverNote {
+  margin: 0;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+.options {
+  composes: filterOptions from "../cabinet/ShelfFilter.module.css";
+}
+
+.option {
+  composes: filterOption from "../cabinet/ShelfFilter.module.css";
+  position: relative;
+}
+
+.option[data-disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.checkbox {
+  composes: filterCheckbox from "../cabinet/ShelfFilter.module.css";
+}
+
+.optionText {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-inline-size: 0;
+}
+
+.find {
+  composes: find from "../cabinet/ShelfFilter.module.css";
+  margin-block-end: var(--cw-space-2xs);
+}
+
+.findInput {
+  composes: findInput from "../cabinet/ShelfFilter.module.css";
+}
+
+/* ─────────────── held, findings, foot ─────────────── */
+
+.heldPanel {
+  display: grid;
+  gap: var(--cw-space-sm);
+  padding-block: var(--cw-space-xs);
+}
+
+.heldPanel p {
+  margin: 0;
+  line-height: var(--ds-type-body-line-height);
+}
+
+.findings {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  margin: 0;
+  padding: var(--cw-space-sm) var(--cw-space-md);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+  list-style: none;
+}
+
+.findings strong {
+  font-weight: 700;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  padding-block-start: var(--cw-space-sm);
+  border-block-start: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
+}
+
+.footNote {
+  min-inline-size: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+}
+
+.shortcut {
+  font-family: var(--cw-font-data);
+}
+
+/* A finger has no Ctrl. */
+@media (pointer: coarse) {
+  .shortcut {
+    display: none;
+  }
+}
+
+.counter {
+  font-family: var(--cw-font-data);
+}
+
+.counter[data-over] {
+  color: var(--cw-sem-state-failed);
+}
+
+.publishAction {
+  composes: base primary hug from "../PlatformButtons.module.css";
+}
+
+.secondaryAction {
+  composes: base secondary hug from "../PlatformButtons.module.css";
+}
+
+.muted {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+}
