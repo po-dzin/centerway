@@ -700,7 +700,6 @@ export function FeedComposer({
                 <div className={styles.main}>
                   <div className={styles.who}>
                     <b className={styles.name}>{author.name}</b>
-                    <Icon className={styles.whoChevron} name="chevron-right" size={20} />
                     <TopicMenu
                       topics={topics}
                       onChange={(next) => setTopics(next.slice(0, FEED_TOPICS_MAX))}
