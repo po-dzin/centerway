@@ -252,6 +252,18 @@
   flex: 1 1 var(--ds-button-min-width);
 }
 
+/* THE PRIMARY SITS LAST ON A PHONE (G 2026-10-17). Thumb rests on the right edge
+   and on the bottom line, so the one action that advances money or progress is
+   the last in the row: right when they fit on one line, bottom when they stack.
+   Source order stays primary-first for focus and screen readers; only secondary
+   -first rows (Скасувати / Зберегти) already end on the primary and are
+   unchanged because `order` only moves the primary past its siblings. */
+@media (max-width: 560px) {
+  .row > .primary {
+    order: 1;
+  }
+}
+
 /* ── primary ──────────────────────────────────────── */
 
 /* The gold ramp lives here and only here. It runs accent → accent-pressed and

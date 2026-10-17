@@ -2512,6 +2512,23 @@ Same fix and the same numbers as the lesson player's `.list` (`Lms.module.css`):
 
 The builder's list-view switch was set in **words** because the icon set had no glyph meaning "a grid of cards", and the two candidates it reached for were both wrong the same way: `menu` is three rules that mean "open the navigation", and the dot/orbit layer is block navigation that `Icon.tsx` forbids inside a text row. The answer to a missing glyph is to draw it, not to set a toolbar in prose — the pair is now baked from `scripts/lib/icon-glyphs.mjs` like every other icon. They read only as a pair: three full-width bands against four half-width blocks is the same page arranged two ways, which is exactly what the control switches between. The word survives as `aria-label` and `title`, because a two-state icon switch has no accessible name without one.
 
+### The feed's own glyphs (2026-10-17)
+
+«Стрічка» shipped with every new thing borrowing a glyph that already meant something else: photo wore `view-cards` (the catalogue's layout switch), a linked video wore `play` (a lesson's own player), audio wore `rhythm` (the tagline's «Ритм»), «Поділитися» wore `telegram` (which is also one row of the menu it opens), a spoiler wore `unpublish` and `eye`, «з …» wore the account's `user`, the composer's «Програма» wore `bookmark-marked` (the one solid glyph, closed to anything but a reader's mark), and the comment bubble and the add-reaction face were unbaked inline SVG in `FeedGlyphs.tsx`. Each now has its own symbol in `icon-glyphs.mjs`, baked with the same pencil:
+
+| glyph | means | not |
+| --- | --- | --- |
+| `photo` | a picture in a post | `view-cards` |
+| `video` | a video someone links to (YouTube) | `play`, the lesson's player; `display`, which has a stand |
+| `mic` | record or attach a voice | `rhythm` |
+| `comment` | the thread under a post | — |
+| `smile` | add a reaction; the reactions themselves are the emoji sprite | an emoji |
+| `share` | pass a post on: three nodes, two links | `telegram`, `export` |
+| `spoiler` | a photo held back until tapped: the eye shut | `unpublish`; `eye` is its «показувати одразу» half |
+| `user-add` | name another author on a post | `user`, the reader's own account |
+
+The composer's «Програма» takes the existing `guide`, which already is the programme everywhere else. `FeedGlyphs.tsx` is gone.
+
 ### Buttons: the fit axis (2026-08-23)
 
 The six roles answer what a button *is*. They never answered how wide it should be, so every caller answered that itself — `width: fit-content`, `width: 100%`, `flex: 1 1 100%`, `flex: 0 1 auto` + `min-width`, and nothing at all, across five stylesheets and fourteen rules. Three bugs came out of that in one session: offer-card CTAs sized to their own labels so three cards in a row showed three different stubs; cabinet card actions stacked at the contract minimum and left a third of the card empty beside each; the builder's icon-only options kept the inline padding meant for a label and rendered as wide empty plates. None is a role question — all three are "what does this control do with the space it is given", which is now one axis with four documented answers.

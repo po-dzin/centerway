@@ -1,20 +1,28 @@
 "use client";
 
 /**
- * The reactions under a post: the three most used, the reader's own, and «+»
- * for the whole hand-drawn set (G, 16.10: the colour set, names as they are).
+ * Reactions under a post (G 2026-10-17, Threads-like): one button that carries
+ * a pile of the post's three most used emoji and the total, gold when the
+ * reader's own reaction is among them, and opens the whole hand-drawn set.
  *
- * A guest's press goes to the sign-in door with this page as the way back;
- * nothing is counted until there is someone to count.
+ * THREE PER PERSON. A reader may leave up to three different emoji on one
+ * post. In the set their own are pressed; at three the others are disabled
+ * and the line says why — «Ваші 3 з 3 — зніміть одну, щоб обрати іншу». The
+ * server holds the same rule (`reaction_limit`), so a second tab cannot get
+ * round it; the card answers that refusal with the same line.
+ *
+ * A guest's press goes to the sign-in door; nothing is counted until there is
+ * someone to count.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 
 import { Icon } from "@/components/Icon";
 import { CW_EMOJI, CW_EMOJI_SPRITE_URL } from "@/lib/brand/emojiSet";
-import { emojiName, visibleReactions, type ReactionCount } from "@/lib/feed/model";
+import { FEED_REACTIONS_PER_PERSON, FEED_TOP_REACTIONS, emojiName, type ReactionCount } from "@/lib/feed/model";
 
 import { feedCopy } from "./copy";
+import { useFloating } from "./useFloating";
 import styles from "./Feed.module.css";
 
 export function Emoji({ id, className }: { id: string; className?: string }) {
@@ -31,89 +39,100 @@ export function FeedReactions({
   reactions,
   busy,
   onToggle,
+  onGuest,
 }: {
   reactions: ReactionCount[];
   busy: boolean;
-  /** The card decides what a press means: a toggle, or the door for a guest. */
   onToggle: (emoji: string) => void;
+  /** Set for a guest: the button leads to sign-in instead of opening the set. */
+  onGuest?: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const root = useRef<HTMLDivElement>(null);
+  const button = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const close = useCallback(() => setOpen(false), []);
+  useFloating(open, button, panel, close);
 
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (!root.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
-
+  const counted = reactions.filter((entry) => entry.count > 0);
+  const total = counted.reduce((sum, entry) => sum + entry.count, 0);
   const mine = new Set(reactions.filter((entry) => entry.mine).map((entry) => entry.emoji as string));
+  const full = mine.size >= FEED_REACTIONS_PER_PERSON;
+  const pile = counted.slice(0, FEED_TOP_REACTIONS);
+  /* One line per chip in the pile, with who pressed it (the mockup's «Вогонь ·
+     Олена, Марко і ще 9»); the reader's own count as «ви». A browser hint is
+     a mouse's affordance: on a phone the picker says the same in full. */
+  const beyond = [...mine].filter((emoji) => !pile.some((entry) => entry.emoji === emoji));
+  const tip = pile
+    .map((entry) => feedCopy.reactionWho(emojiName(entry.emoji), entry.count, entry.who ?? [], entry.mine))
+    .concat(beyond.length ? [`ваші також: ${beyond.map(emojiName).join(", ")}`] : [])
+    .join("\n");
 
   return (
-    <div className={styles.reactions} role="group" aria-label={feedCopy.reactionsLabel} ref={root}>
-      {visibleReactions(reactions).map((entry) => (
-        <button
-          key={entry.emoji}
-          className={styles.reactionChip}
-          type="button"
-          aria-pressed={entry.mine}
-          aria-label={`${emojiName(entry.emoji)}, ${entry.count}`}
-          data-tip={emojiName(entry.emoji)}
-          disabled={busy}
-          onClick={() => onToggle(entry.emoji)}
-        >
-          <Emoji id={entry.emoji} />
-          <span>{entry.count}</span>
-        </button>
-      ))}
+    <>
       <button
-        className={styles.addChip}
+        ref={button}
+        className={`${styles.act} ${styles.actReact}`}
         type="button"
-        aria-label={feedCopy.addReaction}
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        data-tip={feedCopy.addReaction}
-        onClick={() => setOpen((current) => !current)}
+        aria-pressed={mine.size > 0}
+        aria-expanded={onGuest ? undefined : open}
+        aria-haspopup={onGuest ? undefined : "dialog"}
+        aria-label={feedCopy.reactionsTotal(total, mine.size)}
+        title={tip || feedCopy.addReaction}
+        onClick={() => (onGuest ? onGuest() : setOpen((current) => !current))}
       >
-        <Icon name="plus" size={20} />
+        {total > 0 ? (
+          <>
+            <span className={styles.emoPile} aria-hidden="true">
+              {pile.map((entry) => (
+                <Emoji key={entry.emoji} id={entry.emoji} className={styles.emoPileItem} />
+              ))}
+            </span>
+            <span>{total}</span>
+          </>
+        ) : (
+          <Icon name="smile" size={20} />
+        )}
       </button>
 
       {open ? (
-        <div className={styles.picker} role="dialog" aria-label={feedCopy.pickerTitle}>
+        <div ref={panel} className={`${styles.picker} cw-scroll`} role="dialog" aria-labelledby={titleId}>
+          <div className={styles.pickerHead}>
+            <p className={styles.pickerTitle} id={titleId}>
+              {feedCopy.pickerTitle}
+            </p>
+            <button className={styles.pickerClose} type="button" aria-label={feedCopy.close} onClick={close}>
+              <Icon name="close" size={20} />
+            </button>
+          </div>
+          <p className={styles.pickerLimit} aria-live="polite">
+            {full ? feedCopy.reactionLimit : feedCopy.reactionLimitHint(mine.size)}
+          </p>
           {GROUPS.map((group) => (
             <div className={styles.pickerGroup} key={group}>
               <p className={styles.pickerLabel}>{group}</p>
               <div className={styles.pickerGrid}>
-                {CW_EMOJI.filter((entry) => entry.group === group).map((entry) => (
-                  <button
-                    key={entry.id}
-                    className={styles.pickerItem}
-                    type="button"
-                    aria-pressed={mine.has(entry.id)}
-                    disabled={busy}
-                    onClick={() => {
-                      setOpen(false);
-                      onToggle(entry.id);
-                    }}
-                  >
-                    <Emoji id={entry.id} className={styles.pickerEmoji} />
-                    <span className={styles.pickerName}>{entry.name}</span>
-                  </button>
-                ))}
+                {CW_EMOJI.filter((entry) => entry.group === group).map((entry) => {
+                  const pressed = mine.has(entry.id);
+                  return (
+                    <button
+                      key={entry.id}
+                      className={styles.pickerItem}
+                      type="button"
+                      aria-pressed={pressed}
+                      disabled={busy || (full && !pressed)}
+                      onClick={() => onToggle(entry.id)}
+                    >
+                      <Emoji id={entry.id} className={styles.pickerEmoji} />
+                      <span className={styles.pickerName}>{entry.name}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ))}
         </div>
       ) : null}
-    </div>
+    </>
   );
 }

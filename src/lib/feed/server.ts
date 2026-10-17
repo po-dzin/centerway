@@ -1,8 +1,10 @@
 /**
  * «Стрічка» — the database half (2026-10-16). Server-only.
  *
- * Schema: supabase/migrations/20261016150000_author_feed.sql. Every function
- * takes the client as its first argument, so the tests hand in the fake.
+ * Schema: supabase/migrations/20261016150000_author_feed.sql, and the second
+ * wave 20261017120000_feed_wave2.sql (topics, media, tagged authors,
+ * «Зберегти», three reactions per person). Every function takes the client as
+ * its first argument, so the tests hand in the fake.
  *
  * WHO MAY DO WHAT is decided here, in TypeScript, not by the policies
  * (AGENTS.md → Database Rule): reading the published feed needs nothing;
@@ -20,17 +22,26 @@ import { adminClient } from "@/lib/auth/adminClient";
 import type { Json } from "@/lib/db/database.types";
 import type { Author } from "@/lms-core";
 
-import { feedBlockOptions, feedBlockText } from "./blocks";
+import { blockAttachment, programAttachment } from "./attachment";
+import { feedBlockOptions, feedBlockText, type FeedLessonBlock } from "./blocks";
+import { feedGateText, feedPlainText } from "./format";
 import { checkFeedText, type GateVerdict } from "./gate";
+import { FEED_TAGS_MAX, checkFeedMedia, readFeedMedia, type FeedMedia } from "./media";
 import {
   FEED_COMMENT_MAX,
   FEED_PAGE_SIZE,
   FEED_POST_MAX,
+  FEED_POST_RAW_MAX,
+  FEED_REACTIONS_PER_PERSON,
   countReactions,
+  reactionNameIds,
   excerptOf,
+  feedAuthorPath,
+  feedSavedClientId,
   isFeedEmoji,
   isFeedTopic,
   normalizeFeedText,
+  normalizeFeedTopics,
   type FeedBlockDisplay,
   type FeedFilter,
   type FeedPostStatus,
@@ -63,7 +74,15 @@ export type FeedAttachment = {
   meta: string;
   /** The block's words, whole or opening; empty for a video or the programme. */
   text: string;
+  /** Shown whole; false is «уривок», which the card clamps. */
   full: boolean;
+  /**
+   * The lesson block itself, for the lesson renderer (`BlockRenderer`) — any
+   * of the block types. Null for a programme, or a block since deleted.
+   */
+  block: FeedLessonBlock | null;
+  /** The course's slug, for the renderer's links between lessons. */
+  courseSlug: string | null;
   media: "video" | "image" | null;
   durationMin: number | null;
   /** The programme page, where the reader can go on. */
@@ -73,8 +92,15 @@ export type FeedAttachment = {
 export type FeedPost = {
   id: string;
   author: FeedAuthor;
+  /** The stored markdown subset; draw it with `parseFeedBody` (./format). */
   body: string;
+  /** The first of `topics` — kept for the code that reads one topic. */
   topic: FeedTopic;
+  /** One to three, in the author's order. */
+  topics: FeedTopic[];
+  media: FeedMedia;
+  /** «з Ірина Мельник» — listed authors only. */
+  tagged: FeedAuthor[];
   status: FeedPostStatus;
   publishedAt: string | null;
   createdAt: string;
@@ -83,9 +109,18 @@ export type FeedPost = {
   commentCount: number;
   /** The reader wrote this post. */
   mine: boolean;
+  /** The reader saved it to «Мій журнал». False for a guest. */
+  saved: boolean;
+  /** How many people saved it to their «Мій журнал» — shown to everyone (G 17.10). */
+  saveCount: number;
   /** Only the post's own author sees why it waits or came back. */
   heldReason?: string | null;
   returnedReason?: string | null;
+  /**
+   * The newest comment someone else left — the author's own copy in «Мої
+   * дописи», so a reply is one press away. Absent elsewhere.
+   */
+  latestComment?: { name: string; body: string; createdAt: string } | null;
   /** What it carries, by id — the author's own copy, for sending a returned post again. */
   source?: { courseId: string | null; lessonId: string | null; blockId: string | null; blockDisplay: FeedBlockDisplay };
 };
@@ -95,7 +130,12 @@ export type FeedComment = {
   parentId: string | null;
   body: string;
   createdAt: string;
-  who: { name: string; initial: string };
+  /**
+   * Who wrote it, drawn in full (G 2026-10-17): the post's author by their
+   * own name, face and profile; anyone else by their public name and the
+   * picture their sign-in brought, or an initial.
+   */
+  who: { name: string; initial: string; photo: Author["photo"] | null; href: string | null };
   /** Written by the post's author — the thread marks it «автор». */
   byAuthor: boolean;
   mine: boolean;
@@ -109,6 +149,9 @@ type PostRow = {
   created_by: string;
   body: string;
   topic: string;
+  topics: string[] | null;
+  media: unknown;
+  tagged_author_ids: string[] | null;
   course_id: string | null;
   lesson_id: string | null;
   block_id: string | null;
@@ -122,7 +165,7 @@ type PostRow = {
 };
 
 const POST_COLUMNS =
-  "id, author_id, created_by, body, topic, course_id, lesson_id, block_id, block_display, status, held_reason, returned_reason, published_at, created_at, tg_message_id";
+  "id, author_id, created_by, body, topic, topics, media, tagged_author_ids, course_id, lesson_id, block_id, block_display, status, held_reason, returned_reason, published_at, created_at, tg_message_id";
 
 type AuthorRow = {
   id: string;
@@ -190,13 +233,16 @@ async function attachmentsFor(db: Db, rows: PostRow[]): Promise<Map<string, Feed
   const lessonIds = [...new Set(rows.map((row) => row.lesson_id).filter((id): id is string => Boolean(id)))];
 
   const [{ data: courses }, { data: lessons }] = await Promise.all([
-    db.from("lms_courses").select("id, title, program_slug").in("id", courseIds),
+    db.from("lms_courses").select("id, title, slug, program_slug").in("id", courseIds),
     lessonIds.length
       ? db.from("lms_lessons").select("id, title, day_index, blocks").in("id", lessonIds)
       : Promise.resolve({ data: [] as unknown[] }),
   ]);
   const courseById = new Map(
-    ((courses ?? []) as { id: string; title: string; program_slug: string }[]).map((row) => [row.id, row]),
+    ((courses ?? []) as { id: string; title: string; slug: string | null; program_slug: string }[]).map((row) => [
+      row.id,
+      row,
+    ]),
   );
   const lessonById = new Map(
     ((lessons ?? []) as { id: string; title: string; day_index: number | null; blocks: unknown }[]).map((row) => [
@@ -208,65 +254,71 @@ async function attachmentsFor(db: Db, rows: PostRow[]): Promise<Map<string, Feed
   for (const row of rows) {
     const course = row.course_id ? courseById.get(row.course_id) : undefined;
     if (!course) continue;
-    const href = course.program_slug ? `/programs/${course.program_slug}` : null;
+    const owner = { title: course.title, slug: course.slug ?? null, programSlug: course.program_slug || null };
     const lesson = row.lesson_id ? lessonById.get(row.lesson_id) : undefined;
-    if (!lesson) {
-      out.set(row.id, {
-        kind: "program",
-        title: course.title,
-        meta: "Програма",
-        text: "",
-        full: false,
-        media: null,
-        durationMin: null,
-        href,
-      });
-      continue;
-    }
-    const block = row.block_id ? feedBlockText(lesson.blocks, row.block_id) : null;
-    // A block the author has since deleted takes its words with it; the post
-    // keeps pointing at the lesson's programme rather than losing its card.
-    const full = row.block_display === "full";
-    const text = block?.text ?? "";
-    out.set(row.id, {
-      kind: "block",
-      title: block?.title || lesson.title,
-      meta: [course.title, lesson.day_index ? `день ${lesson.day_index}` : lesson.title].filter(Boolean).join(" · "),
-      text: full ? text : excerptOf(text),
-      full,
-      media: block?.media ?? null,
-      durationMin: block?.durationMin ?? null,
-      href,
-    });
+    out.set(
+      row.id,
+      lesson
+        ? blockAttachment(
+            owner,
+            { title: lesson.title, dayIndex: lesson.day_index, blocks: lesson.blocks },
+            row.block_id,
+            row.block_display === "full",
+          )
+        : programAttachment(owner),
+    );
   }
   return out;
+}
+
+/** Public names for the chips' hints, one read for every post on the page. */
+async function reactorNames(
+  db: Db,
+  perPost: { emoji: string; auth_user_id: string }[][],
+  me: string | null,
+): Promise<Map<string, string>> {
+  const ids = [...new Set(perPost.flatMap((rows) => reactionNameIds(rows, me)))];
+  const people = await commenters(db, ids);
+  return new Map([...people].map(([id, person]) => [id, publicName(person.name)]));
 }
 
 async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<FeedPost[]> {
   if (rows.length === 0) return [];
   const ids = rows.map((row) => row.id);
-  const authorIds = [...new Set(rows.map((row) => row.author_id))];
+  const authorIds = [...new Set(rows.flatMap((row) => [row.author_id, ...(row.tagged_author_ids ?? [])]))];
 
   const [
     { data: authors, error: authorError },
     { data: reactions, error: reactionError },
     { data: comments },
+    { data: savedRows },
+    { data: bookmarkRows },
     attachments,
   ] = await Promise.all([
     db.from("lms_authors").select("id, slug, name, photo, listed, auth_user_id").in("id", authorIds),
     db.from("feed_reactions").select("post_id, emoji, auth_user_id").in("post_id", ids),
     db.from("feed_comments").select("post_id").in("post_id", ids).eq("status", "published").is("hidden_at", null),
+    me
+      ? db.from("feed_marks").select("post_id").eq("auth_user_id", me).eq("kind", "bookmark").in("post_id", ids)
+      : Promise.resolve({ data: [] as { post_id: string }[] }),
+    db.from("feed_marks").select("post_id").eq("kind", "bookmark").in("post_id", ids),
     attachmentsFor(db, rows),
   ]);
   if (authorError) throw new Error(`feed_authors_read_failed:${authorError.message}`);
   if (reactionError) throw new Error(`feed_reactions_read_failed:${reactionError.message}`);
 
   const authorById = new Map(((authors ?? []) as AuthorRow[]).map((row) => [row.id, row]));
+  const saved = new Set(((savedRows ?? []) as { post_id: string }[]).map((row) => row.post_id));
   const reactionsByPost = new Map<string, { emoji: string; auth_user_id: string }[]>();
   for (const row of (reactions ?? []) as { post_id: string; emoji: string; auth_user_id: string }[]) {
     const list = reactionsByPost.get(row.post_id) ?? [];
     list.push(row);
     reactionsByPost.set(row.post_id, list);
+  }
+  const names = await reactorNames(db, [...reactionsByPost.values()], me);
+  const savesByPost = new Map<string, number>();
+  for (const row of (bookmarkRows ?? []) as { post_id: string }[]) {
+    savesByPost.set(row.post_id, (savesByPost.get(row.post_id) ?? 0) + 1);
   }
   const commentsByPost = new Map<string, number>();
   for (const row of (comments ?? []) as { post_id: string }[]) {
@@ -277,19 +329,29 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
     const author = authorById.get(row.author_id);
     if (!author) return [];
     const mine = me !== null && row.created_by === me;
+    const topics = storedTopics(row);
+    const tagged = (row.tagged_author_ids ?? []).flatMap((id) => {
+      const tag = authorById.get(id);
+      return tag && tag.listed === true && id !== row.author_id ? [authorOf(tag)] : [];
+    });
     return [
       {
         id: row.id,
         author: authorOf(author),
         body: row.body,
-        topic: (isFeedTopic(row.topic) ? row.topic : "focus") as FeedTopic,
+        topic: topics[0] as FeedTopic,
+        topics,
+        media: readFeedMedia(row.media),
+        tagged,
         status: row.status as FeedPostStatus,
         publishedAt: row.published_at,
         createdAt: row.created_at,
         attachment: attachments.get(row.id) ?? null,
-        reactions: countReactions(reactionsByPost.get(row.id) ?? [], me),
+        reactions: countReactions(reactionsByPost.get(row.id) ?? [], me, names),
         commentCount: commentsByPost.get(row.id) ?? 0,
         mine,
+        saved: saved.has(row.id),
+        saveCount: savesByPost.get(row.id) ?? 0,
         ...(mine
           ? {
               heldReason: row.held_reason,
@@ -305,6 +367,13 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
       },
     ];
   });
+}
+
+/** A row's topics, read leniently: the list, else the single old column, else «focus». */
+function storedTopics(row: PostRow): FeedTopic[] {
+  const list = (row.topics ?? []).filter(isFeedTopic);
+  if (list.length) return [...new Set(list)];
+  return [isFeedTopic(row.topic) ? row.topic : "focus"];
 }
 
 /** Author slugs → ids. An unknown slug narrows to nothing rather than to everything. */
@@ -334,7 +403,8 @@ export async function listFeed(
     .order("published_at", { ascending: false })
     .limit(limit + 1);
 
-  if (options.filter.topics.length) query = query.in("topic", options.filter.topics);
+  // Any of the post's topics matches (G 2026-10-17: a post has one to three).
+  if (options.filter.topics.length) query = query.overlaps("topics", options.filter.topics);
   if (options.authorId) query = query.eq("author_id", options.authorId);
   if (options.filter.authors.length) {
     const ids = await authorIdsForSlugs(db, options.filter.authors);
@@ -378,14 +448,55 @@ export async function listOwnPosts(db: Db, author: FeedAuthor & { userId: string
     .order("created_at", { ascending: false })
     .limit(100);
   if (error) throw new Error(`feed_read_failed:${error.message}`);
-  return decorate(db, (data ?? []) as PostRow[], author.userId);
+  const posts = await decorate(db, (data ?? []) as PostRow[], author.userId);
+  const latest = await latestComments(
+    db,
+    posts.filter((post) => post.commentCount > 0).map((post) => post.id),
+    author.userId,
+  );
+  return posts.map((post) => ({ ...post, latestComment: latest.get(post.id) ?? null }));
+}
+
+/** The newest published comment under each post that is not the author's own. */
+async function latestComments(
+  db: Db,
+  postIds: string[],
+  authorUserId: string,
+): Promise<Map<string, NonNullable<FeedPost["latestComment"]>>> {
+  const out = new Map<string, NonNullable<FeedPost["latestComment"]>>();
+  if (postIds.length === 0) return out;
+  const { data } = await db
+    .from("feed_comments")
+    .select("post_id, auth_user_id, body, created_at")
+    .in("post_id", postIds)
+    .eq("status", "published")
+    .is("hidden_at", null)
+    .neq("auth_user_id", authorUserId)
+    .order("created_at", { ascending: false })
+    .limit(500);
+  const rows = (data ?? []) as { post_id: string; auth_user_id: string; body: string; created_at: string }[];
+  const firsts = new Map<string, (typeof rows)[number]>();
+  for (const row of rows) if (!firsts.has(row.post_id)) firsts.set(row.post_id, row);
+  const people = await commenters(db, [...new Set([...firsts.values()].map((row) => row.auth_user_id))]);
+  for (const row of firsts.values()) {
+    out.set(row.post_id, {
+      name: publicName(people.get(row.auth_user_id)?.name),
+      body: row.body,
+      createdAt: row.created_at,
+    });
+  }
+  return out;
 }
 
 /* ─────────────────────────── writing a post ─────────────────────────── */
 
 export type FeedPostInput = {
   body?: unknown;
+  /** The old single topic; `topics` wins when both are sent. */
   topic?: unknown;
+  topics?: unknown;
+  media?: unknown;
+  taggedAuthorIds?: unknown;
   courseId?: unknown;
   lessonId?: unknown;
   blockId?: unknown;
@@ -451,6 +562,51 @@ async function checkedAttachment(
 export type CreatedPost = { post: FeedPost; verdict: GateVerdict };
 
 /**
+ * Listed author profiles a post may name «з …»: real, listed, not the writer,
+ * at most three. An unknown or unlisted id is refused rather than dropped, so
+ * the composer learns its list went stale.
+ */
+async function checkedTags(db: Db, author: FeedAuthor, input: unknown): Promise<string[]> {
+  if (input === undefined || input === null) return [];
+  if (!Array.isArray(input) || !input.every(isUuid)) throw new FeedError("tags_invalid");
+  const ids = [...new Set(input as string[])].filter((id) => id !== author.id);
+  if (ids.length > FEED_TAGS_MAX) throw new FeedError("tags_too_many");
+  if (ids.length === 0) return [];
+  const { data, error } = await db.from("lms_authors").select("id, listed").in("id", ids).eq("listed", true);
+  if (error) throw new Error(`feed_authors_read_failed:${error.message}`);
+  if (((data ?? []) as { id: string }[]).length !== ids.length) throw new FeedError("tags_invalid");
+  return ids;
+}
+
+/** Everything a post's writing checks, in one place for create and resubmit. */
+async function checkedPost(db: Db, author: FeedAuthor & { userId: string }, input: FeedPostInput) {
+  const body = normalizeFeedText(input.body, FEED_POST_RAW_MAX);
+  if (!body) throw new FeedError("body_invalid");
+  const plain = feedPlainText(body).trim();
+  if (!plain) throw new FeedError("body_invalid");
+  if (plain.length > FEED_POST_MAX) throw new FeedError("body_too_long");
+  const topics = normalizeFeedTopics(input.topics, input.topic);
+  if (!topics) throw new FeedError("topic_invalid");
+  const media = checkFeedMedia(input.media, author.id);
+  if ("error" in media) throw new FeedError(media.error);
+  const tagged = await checkedTags(db, author, input.taggedAuthorIds);
+  const attachment = await checkedAttachment(db, author, input);
+  // The gate reads the words and every link's address, never the markup.
+  const verdict = checkFeedText(feedGateText(body));
+  return {
+    verdict,
+    fields: {
+      body,
+      topic: topics[0] as FeedTopic,
+      topics,
+      media: media.media as unknown as Json,
+      tagged_author_ids: tagged,
+      ...attachment,
+    },
+  };
+}
+
+/**
  * Writes a post and runs the check. Passed — published at once. Stopped — it
  * waits as `held`, and the caller sends the card to the team's group.
  */
@@ -460,21 +616,14 @@ export async function createFeedPost(
   input: FeedPostInput,
   now: Date = new Date(),
 ): Promise<CreatedPost> {
-  const body = normalizeFeedText(input.body, FEED_POST_MAX);
-  if (!body) throw new FeedError("body_invalid");
-  if (!isFeedTopic(input.topic)) throw new FeedError("topic_invalid");
-  const attachment = await checkedAttachment(db, author, input);
-
-  const verdict = checkFeedText(body);
+  const { verdict, fields } = await checkedPost(db, author, input);
   const at = now.toISOString();
   const { data, error } = await db
     .from("feed_posts")
     .insert({
       author_id: author.id,
       created_by: author.userId,
-      body,
-      topic: input.topic,
-      ...attachment,
+      ...fields,
       status: verdict.pass ? "published" : "held",
       gate: verdict as unknown as Json,
       held_reason: verdict.pass ? null : verdict.findings.map((finding) => finding.label).join("; "),
@@ -507,20 +656,14 @@ export async function resubmitFeedPost(
   if (!row || row.author_id !== author.id) throw new FeedError("not_found", 404);
   if (row.status !== "returned") throw new FeedError("not_returned", 409);
 
-  const body = normalizeFeedText(input.body, FEED_POST_MAX);
-  if (!body) throw new FeedError("body_invalid");
-  if (!isFeedTopic(input.topic)) throw new FeedError("topic_invalid");
-  /* Checked exactly as on creation: the composer sends the attachment again,
-     changed or removed, and it must land as validated or not at all. */
-  const attachment = await checkedAttachment(db, author, input);
-  const verdict = checkFeedText(body);
+  /* Checked exactly as on creation: the composer sends the attachment, media
+     and tags again, changed or removed, and they land as validated or not at all. */
+  const { verdict, fields } = await checkedPost(db, author, input);
   const at = now.toISOString();
   const { data, error } = await db
     .from("feed_posts")
     .update({
-      body,
-      topic: input.topic,
-      ...attachment,
+      ...fields,
       status: verdict.pass ? "published" : "held",
       gate: verdict as unknown as Json,
       held_reason: verdict.pass ? null : verdict.findings.map((finding) => finding.label).join("; "),
@@ -634,10 +777,14 @@ export async function setReturnReason(db: Db, tgMessageId: number, reason: strin
 
 /* ─────────────────────────── reactions ─────────────────────────── */
 
-async function publishedPostExists(db: Db, id: string): Promise<{ created_by: string } | null> {
+async function publishedPostExists(db: Db, id: string): Promise<{ created_by: string; author_id: string } | null> {
   if (!isUuid(id)) return null;
-  const { data } = await db.from("feed_posts").select("id, created_by, status, hidden_at").eq("id", id).maybeSingle();
-  const row = data as { created_by: string; status: string; hidden_at: string | null } | null;
+  const { data } = await db
+    .from("feed_posts")
+    .select("id, created_by, author_id, status, hidden_at")
+    .eq("id", id)
+    .maybeSingle();
+  const row = data as { created_by: string; author_id: string; status: string; hidden_at: string | null } | null;
   return row && row.status === "published" && !row.hidden_at ? row : null;
 }
 
@@ -662,14 +809,28 @@ export async function toggleReaction(db: Db, postId: string, userId: string, emo
       .eq("emoji", emoji);
     if (error) throw new Error(`feed_reaction_write_failed:${error.message}`);
   } else {
+    /* Three different emoji per person per post (G 2026-10-17). Asked here so
+       the answer is a code the picker can say; the schema's trigger is the
+       floor under it, and its refusal reads the same. */
+    const { data: own, error: ownError } = await db
+      .from("feed_reactions")
+      .select("emoji")
+      .eq("post_id", postId)
+      .eq("auth_user_id", userId);
+    if (ownError) throw new Error(`feed_reactions_read_failed:${ownError.message}`);
+    if (((own ?? []) as { emoji: string }[]).length >= FEED_REACTIONS_PER_PERSON) {
+      throw new FeedError("reaction_limit", 409);
+    }
     const { error } = await db.from("feed_reactions").insert({ post_id: postId, auth_user_id: userId, emoji });
+    if (error && /feed_reaction_limit/i.test(error.message)) throw new FeedError("reaction_limit", 409);
     // A double press racing itself lands on the primary key; that is the state asked for.
     if (error && !/duplicate|23505/i.test(error.message))
       throw new Error(`feed_reaction_write_failed:${error.message}`);
   }
   const { data: rows, error } = await db.from("feed_reactions").select("emoji, auth_user_id").eq("post_id", postId);
   if (error) throw new Error(`feed_reactions_read_failed:${error.message}`);
-  return countReactions((rows ?? []) as { emoji: string; auth_user_id: string }[], userId);
+  const list = (rows ?? []) as { emoji: string; auth_user_id: string }[];
+  return countReactions(list, userId, await reactorNames(db, [list], userId));
 }
 
 /* ─────────────────────────── comments ─────────────────────────── */
@@ -684,15 +845,48 @@ type CommentRow = {
   status: string;
 };
 
-async function displayNames(db: Db, userIds: string[]): Promise<Map<string, string>> {
+type Commenter = { name: string; avatar: string | null };
+
+async function commenters(db: Db, userIds: string[]): Promise<Map<string, Commenter>> {
   if (userIds.length === 0) return new Map();
-  const { data } = await db.from("platform_users").select("auth_user_id, full_name").in("auth_user_id", userIds);
+  const { data } = await db
+    .from("platform_users")
+    .select("auth_user_id, full_name, avatar_url")
+    .in("auth_user_id", userIds);
   return new Map(
-    ((data ?? []) as { auth_user_id: string; full_name: string | null }[]).map((row) => [
+    ((data ?? []) as { auth_user_id: string; full_name: string | null; avatar_url: string | null }[]).map((row) => [
       row.auth_user_id,
-      (row.full_name ?? "").trim(),
+      { name: (row.full_name ?? "").trim(), avatar: row.avatar_url?.trim() || null },
     ]),
   );
+}
+
+/** The post's author as a commenter sees them: name, face, profile. */
+async function postAuthorOf(db: Db, authorId: string): Promise<FeedAuthor | null> {
+  const { data } = await db
+    .from("lms_authors")
+    .select("id, slug, name, photo, listed, auth_user_id")
+    .eq("id", authorId)
+    .maybeSingle();
+  return data ? authorOf(data as AuthorRow) : null;
+}
+
+function commentWho(byAuthor: boolean, author: FeedAuthor | null, person: Commenter | undefined): FeedComment["who"] {
+  if (byAuthor && author) {
+    return {
+      name: author.name,
+      initial: author.name.trim().charAt(0).toUpperCase(),
+      photo: author.photo,
+      href: feedAuthorPath(author.slug),
+    };
+  }
+  const name = byAuthor ? "Автор" : publicName(person?.name);
+  return {
+    name,
+    initial: name.charAt(0).toUpperCase(),
+    photo: !byAuthor && person?.avatar ? { src: person.avatar, alt: name } : null,
+    href: null,
+  };
 }
 
 /** First name and the initial of the last, never an email: a comment is public. */
@@ -719,16 +913,18 @@ export async function listComments(db: Db, postId: string, me: string | null): P
     .limit(500);
   if (error) throw new Error(`feed_comments_read_failed:${error.message}`);
   const rows = ((data ?? []) as CommentRow[]).filter((row) => row.status === "published" || row.auth_user_id === me);
-  const names = await displayNames(db, [...new Set(rows.map((row) => row.auth_user_id))]);
+  const [people, author] = await Promise.all([
+    commenters(db, [...new Set(rows.map((row) => row.auth_user_id))]),
+    postAuthorOf(db, post.author_id),
+  ]);
   return rows.map((row) => {
     const byAuthor = row.auth_user_id === post.created_by;
-    const name = byAuthor ? null : publicName(names.get(row.auth_user_id));
     return {
       id: row.id,
       parentId: row.parent_id,
       body: row.body,
       createdAt: row.created_at,
-      who: { name: name ?? "Автор", initial: (name ?? "А").charAt(0).toUpperCase() },
+      who: commentWho(byAuthor, author, people.get(row.auth_user_id)),
       byAuthor,
       mine: row.auth_user_id === me,
       canHide: me !== null && me === post.created_by && !byAuthor,
@@ -781,15 +977,17 @@ export async function addComment(
   if (error) throw new Error(`feed_comment_write_failed:${error.message}`);
   const row = data as CommentRow;
   const byAuthor = userId === post.created_by;
-  const names = byAuthor ? new Map<string, string>() : await displayNames(db, [userId]);
-  const name = byAuthor ? "Автор" : publicName(names.get(userId));
+  const [people, author] = await Promise.all([
+    byAuthor ? Promise.resolve(new Map<string, Commenter>()) : commenters(db, [userId]),
+    byAuthor ? postAuthorOf(db, post.author_id) : Promise.resolve(null),
+  ]);
   return {
     comment: {
       id: row.id,
       parentId: row.parent_id,
       body: row.body,
       createdAt: row.created_at,
-      who: { name, initial: name.charAt(0).toUpperCase() },
+      who: commentWho(byAuthor, author, people.get(userId)),
       byAuthor,
       mine: true,
       canHide: false,
@@ -831,6 +1029,8 @@ export async function removeComment(db: Db, commentId: string, userId: string, n
 
 export type FeedMark = {
   clientId: string;
+  /** `highlight` — a passage, with its note; `bookmark` — the whole post, «Зберегти». */
+  kind: "highlight" | "bookmark";
   postId: string;
   quote: string | null;
   prefix: string | null;
@@ -843,6 +1043,7 @@ export type FeedMark = {
 
 type MarkRow = {
   client_id: string;
+  kind: string;
   post_id: string;
   quote: string | null;
   prefix: string | null;
@@ -853,11 +1054,12 @@ type MarkRow = {
   updated_at: string;
 };
 
-const MARK_COLUMNS = "client_id, post_id, quote, prefix, start_offset, end_offset, note, created_at, updated_at";
+const MARK_COLUMNS = "client_id, kind, post_id, quote, prefix, start_offset, end_offset, note, created_at, updated_at";
 
 function markOf(row: MarkRow): FeedMark {
   return {
     clientId: row.client_id,
+    kind: row.kind === "bookmark" ? "bookmark" : "highlight",
     postId: row.post_id,
     quote: row.quote,
     prefix: row.prefix,
@@ -883,7 +1085,11 @@ export async function saveFeedMark(
   },
   now: Date = new Date(),
 ): Promise<FeedMark> {
-  if (typeof input.clientId !== "string" || !/^[A-Za-z0-9_-]{6,64}$/.test(input.clientId)) {
+  if (
+    typeof input.clientId !== "string" ||
+    !/^[A-Za-z0-9_-]{6,64}$/.test(input.clientId) ||
+    input.clientId.startsWith("saved-")
+  ) {
     throw new FeedError("client_id_invalid");
   }
   if (typeof input.postId !== "string" || !(await publishedPostExists(db, input.postId))) {
@@ -917,12 +1123,58 @@ export async function saveFeedMark(
   return markOf(data as MarkRow);
 }
 
+/* ─────────────────────────── «Зберегти» ─────────────────────────── */
+
+/** How much of the post the journal row quotes, so two saved posts of one author differ. */
+const SAVED_QUOTE_CHARS = 200;
+
+/**
+ * «Зберегти»: the post goes to the reader's «Мій журнал» as a bookmark — a
+ * `feed_marks` row of kind `bookmark`, which the journal already reads and
+ * draws as «Стрічка · <автор>». Saving what is saved is success.
+ */
+export async function saveFeedPost(db: Db, userId: string, postId: string, now: Date = new Date()): Promise<void> {
+  if (!(await publishedPostExists(db, postId))) throw new FeedError("not_found", 404);
+  const { data: post } = await db.from("feed_posts").select("body").eq("id", postId).maybeSingle();
+  const body = (post as { body: string } | null)?.body ?? "";
+  const at = now.toISOString();
+  const { error } = await db.from("feed_marks").upsert(
+    {
+      auth_user_id: userId,
+      post_id: postId,
+      client_id: feedSavedClientId(postId),
+      kind: "bookmark",
+      quote: excerptOf(feedPlainText(body), SAVED_QUOTE_CHARS) || null,
+      updated_at: at,
+    },
+    { onConflict: "auth_user_id,client_id" },
+  );
+  if (error && !/duplicate|23505/i.test(error.message)) throw new Error(`feed_save_failed:${error.message}`);
+}
+
+/** Takes the post back out of the journal. Removing what is not there is success. */
+export async function unsaveFeedPost(db: Db, userId: string, postId: string): Promise<void> {
+  if (!isUuid(postId)) return;
+  const { error } = await db
+    .from("feed_marks")
+    .delete()
+    .eq("auth_user_id", userId)
+    .eq("post_id", postId)
+    .eq("kind", "bookmark");
+  if (error) throw new Error(`feed_unsave_failed:${error.message}`);
+}
+
 export async function deleteFeedMark(db: Db, userId: string, clientId: string): Promise<void> {
   const { error } = await db.from("feed_marks").delete().eq("auth_user_id", userId).eq("client_id", clientId);
   if (error) throw new Error(`feed_mark_delete_failed:${error.message}`);
 }
 
-/** The reader's marks, newest first, each with its post's author name for the journal. */
+/**
+ * The reader's marks, newest first, each with its post's author name for the
+ * journal. With `postIds` — the passages to paint on those posts — only
+ * highlights: a saved post is shown by its bookmark button, not painted.
+ * Without — the journal — highlights and bookmarks both.
+ */
 export async function listFeedMarks(
   db: Db,
   userId: string,
@@ -934,7 +1186,7 @@ export async function listFeedMarks(
   if (postIds) {
     const ids = postIds.filter(isUuid);
     if (ids.length === 0) return [];
-    query = query.in("post_id", ids);
+    query = query.in("post_id", ids).eq("kind", "highlight");
   }
   const { data, error } = await query.limit(1000);
   if (error) throw new Error(`feed_marks_read_failed:${error.message}`);
@@ -956,27 +1208,49 @@ export async function listFeedMarks(
   return marks.map((mark) => ({ ...mark, authorName: authorByPost.get(mark.postId) ?? null }));
 }
 
+/* ─────────────────────────── composer: authors to name ─────────────────────────── */
+
+/** Every listed author but the writer, by name — the composer's «з …» menu. */
+export async function listTaggableAuthors(db: Db, author: FeedAuthor): Promise<FeedAuthor[]> {
+  const { data, error } = await db
+    .from("lms_authors")
+    .select("id, slug, name, photo, listed, auth_user_id")
+    .eq("listed", true)
+    .order("name")
+    .limit(500);
+  if (error) throw new Error(`feed_authors_read_failed:${error.message}`);
+  return ((data ?? []) as AuthorRow[]).filter((row) => row.id !== author.id).map(authorOf);
+}
+
 /* ─────────────────────────── composer: the author's blocks ─────────────────────────── */
 
 export type ComposerCourse = {
   id: string;
   title: string;
-  lessons: { id: string; title: string; blocks: { id: string; label: string; kind: string }[] }[];
+  slug: string | null;
+  programSlug: string | null;
+  lessons: {
+    id: string;
+    title: string;
+    dayIndex: number | null;
+    /** Each block whole: the composer previews it as the card the feed will draw. */
+    blocks: { id: string; label: string; kind: string; block: FeedLessonBlock }[];
+  }[];
 };
 
 /** The author's own programmes, lessons and blocks, for «+ Блок з програми». */
 export async function listComposerCourses(db: Db, author: FeedAuthor & { userId: string }): Promise<ComposerCourse[]> {
   const { data: courses, error } = await db
     .from("lms_courses")
-    .select("id, title, author_id, author_profile_id")
+    .select("id, title, slug, program_slug, author_id, author_profile_id")
     .or(`author_profile_id.eq.${author.id},author_id.eq.${author.userId}`)
     .order("title");
   if (error) throw new Error(`feed_composer_read_failed:${error.message}`);
-  const list = (courses ?? []) as { id: string; title: string }[];
+  const list = (courses ?? []) as { id: string; title: string; slug: string | null; program_slug: string | null }[];
   if (list.length === 0) return [];
   const { data: lessons, error: lessonError } = await db
     .from("lms_lessons")
-    .select("id, course_id, title, order, blocks")
+    .select("id, course_id, title, order, day_index, blocks")
     .in(
       "course_id",
       list.map((course) => course.id),
@@ -984,10 +1258,27 @@ export async function listComposerCourses(db: Db, author: FeedAuthor & { userId:
     .order("order");
   if (lessonError) throw new Error(`feed_composer_read_failed:${lessonError.message}`);
   const byCourse = new Map<string, ComposerCourse["lessons"]>();
-  for (const lesson of (lessons ?? []) as { id: string; course_id: string; title: string; blocks: unknown }[]) {
+  for (const lesson of (lessons ?? []) as {
+    id: string;
+    course_id: string;
+    title: string;
+    day_index: number | null;
+    blocks: unknown;
+  }[]) {
     const entry = byCourse.get(lesson.course_id) ?? [];
-    entry.push({ id: lesson.id, title: lesson.title, blocks: feedBlockOptions(lesson.blocks) });
+    entry.push({
+      id: lesson.id,
+      title: lesson.title,
+      dayIndex: lesson.day_index,
+      blocks: feedBlockOptions(lesson.blocks),
+    });
     byCourse.set(lesson.course_id, entry);
   }
-  return list.map((course) => ({ id: course.id, title: course.title, lessons: byCourse.get(course.id) ?? [] }));
+  return list.map((course) => ({
+    id: course.id,
+    title: course.title,
+    slug: course.slug,
+    programSlug: course.program_slug,
+    lessons: byCourse.get(course.id) ?? [],
+  }));
 }

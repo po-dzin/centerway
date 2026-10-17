@@ -183,6 +183,7 @@
   min-width: 0;
   height: 1.75rem;
   overflow-x: auto;
+  overflow-y: hidden;
   overscroll-behavior-x: contain;
 }
 

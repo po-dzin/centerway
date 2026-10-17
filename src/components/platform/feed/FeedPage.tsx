@@ -8,6 +8,8 @@
  * - user_question: «Що нового від авторів, про що мені це, і куди піти далі?»
  * - token_source: global DS — card, chip, shelf filter popover, button roles;
  *   no palette, radius, shadow or type scale of its own (Feed.module.css).
+ *   The top is a photo hero (17.10, `FeedHero`): the page's h1 over a baked
+ *   photo and a directional scrim of `--cw-mat-scrim-ink`.
  * - content_source: `feed_posts` and their reactions and comments through
  *   lib/feed/server; attached blocks read live from `lms_lessons`.
  * - route_boundary: `/feed` on the public host, open without sign-in;
@@ -21,13 +23,14 @@ import type { FeedFilter } from "@/lib/feed/model";
 import type { FeedAuthor, FeedPage as Page, FeedPost } from "@/lib/feed/server";
 
 import { feedCopy } from "./copy";
+import { FeedHero } from "./FeedHero";
 import { FeedSingle, FeedView } from "./FeedView";
 import styles from "./Feed.module.css";
 
 export function FeedPage({ page, authors, filter }: { page: Page; authors: FeedAuthor[]; filter: FeedFilter }) {
   return (
     <main className={styles.page}>
-      <PlatformPageHead title={feedCopy.title} lead={feedCopy.lead} />
+      <FeedHero />
       <FeedView initial={page} authors={authors} filter={filter} />
     </main>
   );

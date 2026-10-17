@@ -216,10 +216,6 @@ export const ICONS = {
     group: "Elements",
     d: ["M4 13.5c1-4.5 4.5-7 8.5-7s7.5 3 7.5 6.5-3 6-8 6-9-1-8-5.5z", "M8 8.5c2 2.5 5.5 4 10.5 4.5"],
   },
-  breath: {
-    group: "Elements",
-    d: ["M12 3.8a8.2 8.2 0 1 0 0 16.4 8.2 8.2 0 0 0 0-16.4z", "M12 3.8v4M12 16.2v4M3.8 12h4M16.2 12h4"],
-  },
   sleep: {
     group: "Elements",
     d: ["M19.6 14.4A8.4 8.4 0 0 1 9.6 4.4a8.4 8.4 0 1 0 10 10z"],
@@ -358,6 +354,33 @@ export const ICONS = {
     group: "Content",
     d: ["M9.2 6.2 17.8 12l-8.6 5.8z"],
   },
+  /* The feed's media (2026-10-17). A post carries photos, one video by link and
+     one audio, and each had been borrowing a glyph that already meant something
+     else: `view-cards` is the catalogue's layout switch, `play` is a lesson's
+     own video, `rhythm` is the tagline's «Ритм». Each now has its own. */
+  // A frame with a ridge and the sun as a node: a picture, not a layout.
+  photo: {
+    group: "Content",
+    d: ["M4 5.6h16v12.8H4z", "M4 16.4l4.6-4.8 3.6 3.6 2.6-2.6 5.2 4.8"],
+    dots: [{ cx: 15.4, cy: 9.2, r: 1.45, accent: true }],
+  },
+  /* A screen with the play mark inside: a video someone links to. Bare `play`
+     stays the lesson's own player; the frame is what says "from elsewhere". No
+     stand, so it does not read as `display`. */
+  video: {
+    group: "Content",
+    d: ["M3.6 6h16.8v12H3.6z", "M10.2 9.3 14.8 12l-4.6 2.7z"],
+  },
+  // Record or attach a voice: the capsule, its cradle, the stem and the foot.
+  mic: {
+    group: "Content",
+    d: [
+      "M12 3.6a2.9 2.9 0 0 0-2.9 2.9v5a2.9 2.9 0 0 0 5.8 0v-5A2.9 2.9 0 0 0 12 3.6z",
+      "M6.4 11.2a5.6 5.6 0 0 0 11.2 0",
+      "M12 16.8v3.4",
+      "M9 20.2h6",
+    ],
+  },
   guide: {
     group: "Content",
     d: ["M6.6 3.8h10.8v16.4H6.6z", "M9.4 8.6h5.2", "M9.4 12h5.2", "M9.4 15.4h3.4"],
@@ -417,6 +440,59 @@ export const ICONS = {
   user: {
     group: "Meta",
     d: ["M12 4.2a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2z", "M4.8 20c.9-3.8 3.6-5.8 7.2-5.8s6.3 2 7.2 5.8"],
+  },
+  /* Name another author on a post («з …»). `user` is the reader's own account;
+     the figure steps aside for the plus, so the two never stand for each other. */
+  "user-add": {
+    group: "Meta",
+    d: [
+      "M10 4.6a3.3 3.3 0 1 0 0 6.6 3.3 3.3 0 0 0 0-6.6z",
+      "M3.6 19.6c.8-3.5 3.2-5.3 6.4-5.3s5.6 1.8 6.4 5.3",
+      "M18.4 7.6v5.2",
+      "M15.8 10.2h5.2",
+    ],
+  },
+  /* The feed's action row (2026-10-17): talk, react, pass on. These lived as
+     unbaked inline SVG in FeedGlyphs.tsx until now. */
+  // A speech bubble with its tail low on the left.
+  comment: {
+    group: "Meta",
+    d: ["M20 11.5c0 4-3.6 7-8 7-1.2 0-2.3-.2-3.3-.6L4 19l1.3-3.6C4.5 14.2 4 12.9 4 11.5c0-4 3.6-7 8-7s8 3 8 7z"],
+  },
+  /* Add a reaction to a post that has none. The face is the control; the
+     reactions themselves are the emoji set, which is a separate sprite. */
+  smile: {
+    group: "Meta",
+    d: ["M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17z", "M8.5 14c.9 1.3 2.1 2 3.5 2s2.6-.7 3.5-2"],
+    dots: [
+      { cx: 9.1, cy: 9.6, r: 1.1 },
+      { cx: 14.9, cy: 9.6, r: 1.1 },
+    ],
+  },
+  /* Pass a post on. Not `telegram` — that is one destination inside the menu
+     this opens — and not `export`, which is the system sheet. Three nodes and
+     the two links between them: one post, two more people. */
+  share: {
+    group: "Meta",
+    d: [
+      "M17.4 3.6a2.3 2.3 0 1 0 0 4.6 2.3 2.3 0 0 0 0-4.6z",
+      "M6.6 9.7a2.3 2.3 0 1 0 0 4.6 2.3 2.3 0 0 0 0-4.6z",
+      "M17.4 15.8a2.3 2.3 0 1 0 0 4.6 2.3 2.3 0 0 0 0-4.6z",
+      "M8.6 10.9 15.4 7",
+      "M8.6 13.1 15.4 17",
+    ],
+  },
+  /* A photo held back until the reader taps it. The eye shut, lashes down:
+     not `unpublish` (taken out of public view) and not `eye` (shown at once),
+     which is the other half of the same toggle. */
+  spoiler: {
+    group: "Meta",
+    d: [
+      "M3.6 10.4c2.7 3.6 5.5 5.4 8.4 5.4s5.7-1.8 8.4-5.4",
+      "M12 15.8v2.8",
+      "M7.2 14.4 5.8 16.8",
+      "M16.8 14.4l1.4 2.4",
+    ],
   },
   lock: {
     group: "Meta",

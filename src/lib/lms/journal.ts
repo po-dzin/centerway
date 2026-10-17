@@ -111,7 +111,8 @@ async function readFeedEntries(db: ReturnType<typeof adminClient>, authUserId: s
     const marks = await listFeedMarks(db, authUserId);
     return marks.map((mark) => ({
       clientId: mark.clientId,
-      kind: "highlight" as const,
+      // «Зберегти» on a post (2026-10-17) is a bookmark; a passage is a highlight.
+      kind: mark.kind,
       quote: mark.quote,
       note: mark.note,
       createdAt: mark.createdAt,

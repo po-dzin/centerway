@@ -85,6 +85,9 @@
 .filterMenu {
   position: relative;
   flex: 0 0 auto;
+  /* On a phone the field takes its own line and this command wraps under it:
+     the right edge is where the thumb rests, so it goes there (G 2026-10-17). */
+  margin-inline-start: auto;
 }
 
 .filterToggle {
