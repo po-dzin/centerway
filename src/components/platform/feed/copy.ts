@@ -109,6 +109,7 @@ export const feedCopy = {
   unsaved: "Прибрано з «Мій журнал»",
   saveFailed: "Не вдалося зберегти.",
   share: "Поділитися",
+  shareLabel: (count: number) => (count > 0 ? `Поділитися. Поділилися: ${count}` : "Поділитися"),
   shareCopy: "Скопіювати посилання",
   shareTelegram: "Надіслати в Telegram",
   shareMore: "Інші застосунки…",

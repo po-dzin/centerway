@@ -20,14 +20,33 @@ import { useToast } from "@/components/ToastProvider";
 import { feedPostPath, type ReactionCount } from "@/lib/feed/model";
 
 import { feedCopy } from "./copy";
-import { savePost, unsavePost } from "./feedApi";
+import { recordShare, savePost, unsavePost, type ShareChannel } from "./feedApi";
 import { FeedReactions } from "./FeedReactions";
 import { useFloating } from "./useFloating";
 import styles from "./Feed.module.css";
 
 const NO_SUBSCRIBE = () => () => {};
 
-function ShareMenu({ postId, text }: { postId: string; text: string }) {
+/**
+ * «Поділитися». The number beside the arrow is how many people shared the
+ * post — one per account however often they do (G 17.10). A signed-in
+ * reader's first share moves it at once; a guest shares without counting.
+ */
+function ShareMenu({
+  postId,
+  text,
+  count: initialCount,
+  shared: initiallyShared,
+  signedIn,
+}: {
+  postId: string;
+  text: string;
+  count: number;
+  shared: boolean;
+  signedIn: boolean;
+}) {
+  const [count, setCount] = useState(initialCount);
+  const [shared, setShared] = useState(initiallyShared);
   const toast = useToast();
   const [open, setOpen] = useState(false);
   // The system sheet exists only in some browsers; known after hydration.
@@ -41,12 +60,27 @@ function ShareMenu({ postId, text }: { postId: string; text: string }) {
   const close = useCallback(() => setOpen(false), []);
   useFloating(open, button, panel, close, "end");
 
-  const url = () => new URL(feedPostPath(postId), window.location.origin).toString();
+  const url = (channel: ShareChannel) => {
+    countShare(channel);
+    return new URL(feedPostPath(postId), window.location.origin).toString();
+  };
+
+  /* Counted before the browser hands the link on: the press is the share. */
+  function countShare(channel: ShareChannel) {
+    if (!signedIn || shared) return;
+    setShared(true);
+    setCount((current) => current + 1);
+    void recordShare(postId, channel).then((result) => {
+      if (result.ok) return;
+      setShared(false);
+      setCount((current) => Math.max(0, current - 1));
+    });
+  }
 
   async function copy() {
     close();
     try {
-      await navigator.clipboard.writeText(url());
+      await navigator.clipboard.writeText(url("link"));
       toast.success(feedCopy.shareCopied);
     } catch {
       toast.error(feedCopy.shareFailed);
@@ -55,14 +89,14 @@ function ShareMenu({ postId, text }: { postId: string; text: string }) {
 
   function telegram() {
     close();
-    const href = `https://t.me/share/url?url=${encodeURIComponent(url())}&text=${encodeURIComponent(text)}`;
+    const href = `https://t.me/share/url?url=${encodeURIComponent(url("telegram"))}&text=${encodeURIComponent(text)}`;
     window.open(href, "_blank", "noopener");
   }
 
   async function system() {
     close();
     try {
-      await navigator.share({ url: url(), text });
+      await navigator.share({ url: url("system"), text });
     } catch {
       /* The reader closed the sheet: nothing to say. */
     }
@@ -74,13 +108,14 @@ function ShareMenu({ postId, text }: { postId: string; text: string }) {
         ref={button}
         className={styles.act}
         type="button"
-        aria-label={feedCopy.share}
+        aria-label={feedCopy.shareLabel(count)}
         title={feedCopy.share}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
         <Icon name="share" size={20} />
+        {count > 0 ? <span>{count}</span> : null}
       </button>
       {open ? (
         <div ref={panel} className={styles.menu} role="menu" aria-label={feedCopy.share}>
@@ -117,6 +152,8 @@ export function FeedActions({
   onComments,
   initiallySaved,
   initialSaveCount,
+  shareCount,
+  initiallyShared,
 }: {
   postId: string;
   shareText: string;
@@ -132,6 +169,9 @@ export function FeedActions({
   initiallySaved: boolean;
   /** Everyone's saves; the reader's own press moves it at once. */
   initialSaveCount: number;
+  /** People who shared the post, one per account. */
+  shareCount: number;
+  initiallyShared: boolean;
 }) {
   const toast = useToast();
   const [saved, setSaved] = useState(initiallySaved);
@@ -202,7 +242,7 @@ export function FeedActions({
         <Icon name={saved ? "bookmark-marked" : "bookmark"} size={20} />
         {saveCount > 0 ? <span>{saveCount}</span> : null}
       </button>
-      <ShareMenu postId={postId} text={shareText} />
+      <ShareMenu postId={postId} text={shareText} count={shareCount} shared={initiallyShared} signedIn={signedIn} />
     </div>
   );
 }

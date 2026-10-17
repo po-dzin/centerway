@@ -17,6 +17,7 @@ import {
   removeComment,
   resubmitFeedPost,
   saveFeedMark,
+  recordShare,
   saveFeedPost,
   setReturnReason,
   toggleReaction,
@@ -476,5 +477,19 @@ describe("publicName", () => {
     expect(publicName("Олена Петренко")).toBe("Олена П.");
     expect(publicName("Марко")).toBe("Марко");
     expect(publicName("")).toBe("Учасник");
+  });
+});
+
+describe("«Поділитися»: one per account", () => {
+  it("counts a person once however often they share, and refuses an unknown channel", async () => {
+    const { post } = await createFeedPost(db, await author(), { body: "Три хвилини дихання", topic: "breathing" });
+    expect(await recordShare(db, post.id, READER, "link")).toBe(true);
+    expect(await recordShare(db, post.id, READER, "telegram")).toBe(false);
+    expect(await recordShare(db, post.id, "00000000-0000-4000-8000-0000000000aa", "system")).toBe(true);
+    await expect(recordShare(db, post.id, READER, "email")).rejects.toMatchObject({ code: "share_invalid" });
+
+    expect((await getFeedPost(db, post.id, null))?.shareCount).toBe(2);
+    expect((await getFeedPost(db, post.id, READER))?.shared).toBe(true);
+    expect((await getFeedPost(db, post.id, null))?.shared).toBe(false);
   });
 });

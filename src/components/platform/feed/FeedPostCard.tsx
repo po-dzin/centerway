@@ -408,6 +408,8 @@ export function FeedPostCard({
           onComments={variant === "rail" ? undefined : () => setOpen((current) => !current)}
           initiallySaved={post.saved ?? false}
           initialSaveCount={post.saveCount ?? 0}
+          shareCount={post.shareCount ?? 0}
+          initiallyShared={post.shared ?? false}
         />
       ) : null}
 

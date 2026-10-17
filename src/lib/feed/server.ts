@@ -113,6 +113,10 @@ export type FeedPost = {
   saved: boolean;
   /** How many people saved it to their «Мій журнал» — shown to everyone (G 17.10). */
   saveCount: number;
+  /** People who shared it — one per account however often they did (G 17.10). */
+  shareCount: number;
+  /** The reader has shared it already; their next share does not move the count. */
+  shared: boolean;
   /** Only the post's own author sees why it waits or came back. */
   heldReason?: string | null;
   returnedReason?: string | null;
@@ -293,6 +297,7 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
     { data: comments },
     { data: savedRows },
     { data: bookmarkRows },
+    { data: shareRows },
     attachments,
   ] = await Promise.all([
     db.from("lms_authors").select("id, slug, name, photo, listed, auth_user_id").in("id", authorIds),
@@ -302,6 +307,7 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
       ? db.from("feed_marks").select("post_id").eq("auth_user_id", me).eq("kind", "bookmark").in("post_id", ids)
       : Promise.resolve({ data: [] as { post_id: string }[] }),
     db.from("feed_marks").select("post_id").eq("kind", "bookmark").in("post_id", ids),
+    db.from("feed_shares").select("post_id, auth_user_id").in("post_id", ids),
     attachmentsFor(db, rows),
   ]);
   if (authorError) throw new Error(`feed_authors_read_failed:${authorError.message}`);
@@ -319,6 +325,12 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
   const savesByPost = new Map<string, number>();
   for (const row of (bookmarkRows ?? []) as { post_id: string }[]) {
     savesByPost.set(row.post_id, (savesByPost.get(row.post_id) ?? 0) + 1);
+  }
+  const sharesByPost = new Map<string, number>();
+  const sharedByMe = new Set<string>();
+  for (const row of (shareRows ?? []) as { post_id: string; auth_user_id: string }[]) {
+    sharesByPost.set(row.post_id, (sharesByPost.get(row.post_id) ?? 0) + 1);
+    if (me && row.auth_user_id === me) sharedByMe.add(row.post_id);
   }
   const commentsByPost = new Map<string, number>();
   for (const row of (comments ?? []) as { post_id: string }[]) {
@@ -352,6 +364,8 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
         mine,
         saved: saved.has(row.id),
         saveCount: savesByPost.get(row.id) ?? 0,
+        shareCount: sharesByPost.get(row.id) ?? 0,
+        shared: sharedByMe.has(row.id),
         ...(mine
           ? {
               heldReason: row.held_reason,
@@ -1281,4 +1295,33 @@ export async function listComposerCourses(db: Db, author: FeedAuthor & { userId:
     programSlug: course.program_slug,
     lessons: byCourse.get(course.id) ?? [],
   }));
+}
+
+/* ─────────────────────────── shares (G 17.10) ─────────────────────────── */
+
+/**
+ * «Поділитися» counts one per account (supabase/migrations/20261017180000_feed_shares.sql):
+ * the first share of a post by a person writes a row, every later one is the
+ * same row. A guest may share; without an account it cannot be told apart,
+ * so it does not count.
+ */
+export const FEED_SHARE_CHANNELS = ["link", "telegram", "system"] as const;
+export type FeedShareChannel = (typeof FEED_SHARE_CHANNELS)[number];
+
+/** Answers whether this was the person's first share of the post. */
+export async function recordShare(db: Db, postId: string, userId: string, channel: unknown): Promise<boolean> {
+  const known = FEED_SHARE_CHANNELS.find((entry) => entry === channel);
+  if (!known) throw new FeedError("share_invalid", 422);
+  if (!(await publishedPostExists(db, postId))) throw new FeedError("not_found", 404);
+  const { data: seen } = await db
+    .from("feed_shares")
+    .select("post_id")
+    .eq("post_id", postId)
+    .eq("auth_user_id", userId)
+    .maybeSingle();
+  if (seen) return false;
+  const { error } = await db.from("feed_shares").insert({ post_id: postId, auth_user_id: userId, channel: known });
+  if (error && /duplicate|unique/i.test(error.message)) return false;
+  if (error) throw new Error(`feed_share_write_failed:${error.message}`);
+  return true;
 }

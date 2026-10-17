@@ -100,6 +100,13 @@ export function unsavePost(postId: string) {
   return call<{ saved: false }>(`/api/feed/${postId}/save`, { method: "DELETE" });
 }
 
+export type ShareChannel = "link" | "telegram" | "system";
+
+/** A signed-in reader shared the post; `first` is false when they had before. */
+export function recordShare(postId: string, channel: ShareChannel) {
+  return call<{ first: boolean }>(`/api/feed/${postId}/share`, json({ channel }));
+}
+
 /**
  * A photo or an audio for a post (`multipart/form-data`). The answer's `path`
  * goes into `NewPost.media`; `src` is for the composer's thumbnail or player.
