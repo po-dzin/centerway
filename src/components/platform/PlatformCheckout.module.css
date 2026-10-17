@@ -59,7 +59,9 @@
 .product {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  align-items: start;
+  /* The cover is centred on the name's block, so its top and bottom edges sit
+     the same distance from the first and last line of text. */
+  align-items: center;
   gap: var(--cw-space-md);
 }
 
@@ -170,9 +172,9 @@
   margin: 0;
   color: var(--cw-platform-text);
   font-family: var(--cw-font-editorial);
-  font-size: var(--ds-type-title-size);
+  font-size: var(--ds-type-card-title-size);
   font-weight: 700;
-  line-height: var(--ds-type-title-line-height);
+  line-height: var(--ds-type-card-title-line-height);
   text-wrap: balance;
 }
 
