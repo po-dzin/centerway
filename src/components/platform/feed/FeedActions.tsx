@@ -21,7 +21,6 @@ import { feedPostPath, type ReactionCount } from "@/lib/feed/model";
 
 import { feedCopy } from "./copy";
 import { savePost, unsavePost } from "./feedApi";
-import { CommentGlyph } from "./FeedGlyphs";
 import { FeedReactions } from "./FeedReactions";
 import { useFloating } from "./useFloating";
 import styles from "./Feed.module.css";
@@ -81,7 +80,7 @@ function ShareMenu({ postId, text }: { postId: string; text: string }) {
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
-        <Icon name="telegram" size={20} />
+        <Icon name="share" size={20} />
       </button>
       {open ? (
         <div ref={panel} className={styles.menu} role="menu" aria-label={feedCopy.share}>
@@ -157,7 +156,7 @@ export function FeedActions({
 
   const comments = (
     <>
-      <CommentGlyph />
+      <Icon name="comment" size={20} />
       {commentCount > 0 ? <span>{commentCount}</span> : null}
     </>
   );

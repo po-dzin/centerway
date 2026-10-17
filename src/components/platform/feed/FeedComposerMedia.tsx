@@ -132,7 +132,7 @@ function Thumb({
       <img src={item.preview} alt={composerCopy.photoAlt(n)} />
       {item.spoiler ? (
         <span className={styles.spoilerBadge}>
-          <Icon name="eye" size={20} />
+          <Icon name="spoiler" size={20} />
           {composerCopy.spoilerBadge}
         </span>
       ) : null}
@@ -185,7 +185,7 @@ function Thumb({
           }}
         >
           {item.spoiler ? composerCopy.spoilerOff : composerCopy.spoilerOn}
-          <Icon name="eye" size={20} />
+          <Icon name={item.spoiler ? "eye" : "spoiler"} size={20} />
         </button>
         <button
           className={styles.menuItemAction}
@@ -295,7 +295,7 @@ export function VideoChip({ video, onRemove }: { video: VideoItem; onRemove: () 
   return (
     <div className={styles.mediaChip}>
       <span className={styles.mediaChipIcon} aria-hidden="true">
-        <Icon name="play" size={20} />
+        <Icon name="video" size={20} />
       </span>
       <span className={styles.mediaChipText}>
         <b>{composerCopy.videoChip}</b>
@@ -517,7 +517,7 @@ export function AudioChip({
   return (
     <div className={styles.mediaChip} data-status={audio.status}>
       <span className={styles.mediaChipIcon} aria-hidden="true">
-        <Icon name="rhythm" size={20} />
+        <Icon name="mic" size={20} />
       </span>
       {audio.status === "done" ? (
         <audio className={styles.player} controls preload="metadata" src={audio.preview} />

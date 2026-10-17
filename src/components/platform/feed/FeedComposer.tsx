@@ -473,20 +473,20 @@ export function FeedComposer({
   const tools = (
     <div className={styles.tools} role="group" aria-label={composerCopy.toolsLabel}>
       <ToolButton
-        icon="view-cards"
+        icon="photo"
         label={composerCopy.photo}
         disabled={photos.length >= FEED_PHOTOS_MAX}
         onClick={() => photoPicker.current?.click()}
       />
       <ToolButton
-        icon="play"
+        icon="video"
         label={composerCopy.video}
         pressed={panel === "video"}
         disabled={Boolean(video)}
         onClick={() => setPanel(panel === "video" ? "none" : "video")}
       />
       <ToolButton
-        icon="rhythm"
+        icon="mic"
         label={composerCopy.audio}
         pressed={panel === "audio"}
         disabled={Boolean(audio)}
@@ -501,7 +501,7 @@ export function FeedComposer({
             onClick={() => setAttach(attach === "block" ? "none" : "block")}
           />
           <ToolButton
-            icon="bookmark-marked"
+            icon="guide"
             label={composerCopy.program}
             pressed={attach === "program"}
             onClick={() => setAttach(attach === "program" ? "none" : "program")}
@@ -511,7 +511,7 @@ export function FeedComposer({
       {taggableOthers.length > 0 ? (
         <ToolButton
           ref={tagTool}
-          icon="user"
+          icon="user-add"
           label={composerCopy.tagLabel}
           pressed={menu === "tags"}
           onClick={() => setMenu(menu === "tags" ? null : "tags")}
@@ -865,12 +865,12 @@ export function FeedComposer({
 /* ─────────────────────────── parts ─────────────────────────── */
 
 type ToolIcon =
-  | "view-cards"
-  | "play"
-  | "rhythm"
+  | "photo"
+  | "video"
+  | "mic"
   | "document"
-  | "bookmark-marked"
-  | "user"
+  | "guide"
+  | "user-add"
   | "bold"
   | "italic"
   | "link"
@@ -946,7 +946,7 @@ function AttachPicker({
   return (
     <div className={styles.picker}>
       <div className={styles.pickerHead}>
-        <Icon name={attach === "block" ? "document" : "bookmark-marked"} size={20} />
+        <Icon name={attach === "block" ? "document" : "guide"} size={20} />
         <b>{attach === "block" ? composerCopy.blockFrom : composerCopy.programWhole}</b>
         <button className={styles.iconAction} type="button" aria-label={composerCopy.removeAttach} onClick={onRemove}>
           <Icon name="close" size={20} />

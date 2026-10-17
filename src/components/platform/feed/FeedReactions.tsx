@@ -22,7 +22,6 @@ import { CW_EMOJI, CW_EMOJI_SPRITE_URL } from "@/lib/brand/emojiSet";
 import { FEED_REACTIONS_PER_PERSON, FEED_TOP_REACTIONS, emojiName, type ReactionCount } from "@/lib/feed/model";
 
 import { feedCopy } from "./copy";
-import { SmileGlyph } from "./FeedGlyphs";
 import { useFloating } from "./useFloating";
 import styles from "./Feed.module.css";
 
@@ -90,7 +89,7 @@ export function FeedReactions({
             <span>{total}</span>
           </>
         ) : (
-          <SmileGlyph />
+          <Icon name="smile" size={20} />
         )}
       </button>
 

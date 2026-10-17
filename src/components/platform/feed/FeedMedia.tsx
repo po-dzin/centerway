@@ -70,7 +70,7 @@ function Photo({ photo, alt, single }: { photo: FeedPhoto; alt: string; single: 
     >
       {image}
       <span className={styles.spoilerVeil} aria-hidden="true">
-        <Icon name="unpublish" size={24} />
+        <Icon name="spoiler" size={24} />
         <span>{feedCopy.spoiler}</span>
       </span>
     </button>

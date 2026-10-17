@@ -28,7 +28,7 @@ import styles from "./Feed.module.css";
 function attachmentIcon(attachment: Attachment) {
   if (attachment.kind === "program") return "guide" as const;
   if (attachment.media === "video") return "play" as const;
-  if (attachment.media === "image") return "eye" as const;
+  if (attachment.media === "image") return "photo" as const;
   return "document" as const;
 }
 
