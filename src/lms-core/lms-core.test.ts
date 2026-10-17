@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { courseForSave } from "./drafts";
 import { isSafeHref, validateInlineText } from "./inline";
 
 import { validateLessonBlock, collectRequiredChecklistItemIds, youtubeIdFrom } from "./blocks";
@@ -226,6 +227,15 @@ describe("course validation", () => {
       mobileCropY: 38,
     };
     expect(() => validateCourse(course)).not.toThrow();
+  });
+
+  it("saves a hidden draft whose cover has no description yet, and leaves the publish gate to readiness", () => {
+    const course = dailyCourse();
+    course.cover = { src: "/course.webp", alt: "" };
+    expect(() => validateCourse(course)).not.toThrow();
+    course.cover = { src: "/course.webp" } as never;
+    expect(() => validateCourse(course)).toThrow(/lms_course_cover_missing_alt/);
+    expect(() => validateCourse(courseForSave(course))).not.toThrow();
   });
 
   it("rejects a cover focal point outside the image", () => {

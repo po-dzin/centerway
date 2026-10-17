@@ -355,7 +355,12 @@ export function pruneEmptyEntries(course: Course): Course {
  * `classifyDurableDraft`, which is where that bug lived.
  */
 export function courseForSave(course: Course): Course {
-  return pruneEmptyEntries(pruneEmptyProse(course));
+  const pruned = pruneEmptyEntries(pruneEmptyProse(course));
+  // A cover uploaded before its description is written carries no `alt` key at
+  // all; the stored shape is a string, empty until the author fills it.
+  return pruned.cover && typeof pruned.cover.alt !== "string"
+    ? { ...pruned, cover: { ...pruned.cover, alt: "" } }
+    : pruned;
 }
 
 export function moveItem<T>(items: T[], from: number, to: number): T[] {

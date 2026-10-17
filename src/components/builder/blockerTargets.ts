@@ -1,4 +1,5 @@
 import { flattenLessons, type Course, type ReadinessBlocker } from "@/lms-core";
+import { BLOCK_TYPE_LABELS } from "./blockFields";
 import { COURSE_WORKSPACE_HASH } from "./courseWorkspace";
 
 /**
@@ -65,4 +66,34 @@ export function blockerTarget(course: Course, blocker: ReadinessBlocker): Blocke
   }
 
   return null;
+}
+
+/**
+ * The same address, in the author's own words: module, lesson, block — by their
+ * titles, with the block named by its place in the lesson and what it is. The
+ * raw slug path stays available to the caller for search, but nobody should
+ * have to read `way21.week-1.day-2.blocks[3]` to find the fourth card of a
+ * lesson. An address that resolves to nothing falls back to the course.
+ */
+export function blockerTrail(course: Course, blocker: ReadinessBlocker): string[] {
+  const match = BLOCK_SUFFIX.exec(blocker.path);
+  const lessonPath = match ? blocker.path.slice(0, -match[0].length) : blocker.path;
+  for (const { module, lesson } of flattenLessons(course)) {
+    if (lessonPath !== `${course.slug}.${module.slug}.${lesson.slug}`) continue;
+    const trail = [`Модуль «${module.title}»`, `Урок «${lesson.title}»`];
+    const block = match ? lesson.blocks[Number(match[1])] : undefined;
+    if (match && block) trail.push(`Блок ${Number(match[1]) + 1} · ${BLOCK_TYPE_LABELS[block.type]}`);
+    return trail;
+  }
+  return [`Курс «${course.title}»`];
+}
+
+/** The marker itself, cut to a line — not the whole table it was found in. */
+export function placeholderSnippet(detail: string | undefined): string | null {
+  const start = detail?.indexOf("[ЗАПОВНИ") ?? -1;
+  if (!detail || start < 0) return null;
+  const rest = detail.slice(start);
+  const end = rest.indexOf("]");
+  const marker = end >= 0 ? rest.slice(0, end + 1) : rest;
+  return marker.length > 90 ? `${marker.slice(0, 90).trimEnd()}…` : marker;
 }
