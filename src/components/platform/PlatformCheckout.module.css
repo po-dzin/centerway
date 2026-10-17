@@ -58,8 +58,8 @@
 
 .product {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
   gap: var(--cw-space-md);
 }
 
@@ -77,27 +77,20 @@
   min-width: 0;
 }
 
-/* One title size in both columns on a phone (the page's own, as it was). On a
-   wide screen the card is half a row beside the cover, and the page's size
-   would not fit «Розвантажувальний» (owner, 2026-10-16/17), so there the name
-   takes the display size, between the page title and the subtitle, and may
-   break inside a word before it leaves the card. */
+/* THE CARD'S OWN STEP (owner, 2026-10-17). The page's title size is too big
+   for a card that is half a row, the display size too small on a desktop, and
+   a phone cannot take either beside a cover without cutting «Розвантажувальний»
+   mid-word. So the card has its own token, and the cover stands above the name
+   rather than beside it: the whole card width is the name's. */
 .productTitle {
   margin: 0;
   color: var(--cw-platform-text);
   font-family: var(--cw-font-editorial);
-  font-size: var(--ds-type-title-size);
+  font-size: var(--ds-type-card-title-size);
   font-weight: 700;
-  line-height: var(--ds-type-title-line-height);
+  line-height: var(--ds-type-card-title-line-height);
   text-wrap: balance;
-  overflow-wrap: anywhere;
-}
-
-@media (min-width: 861px) {
-  .productTitle {
-    font-size: var(--ds-type-display-size);
-    line-height: var(--ds-type-display-line-height);
-  }
+  overflow-wrap: break-word;
 }
 
 .productFormat {
