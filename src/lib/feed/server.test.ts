@@ -12,12 +12,15 @@ import {
   listComments,
   listFeed,
   listFeedMarks,
+  listTaggableAuthors,
   publicName,
   removeComment,
   resubmitFeedPost,
   saveFeedMark,
+  saveFeedPost,
   setReturnReason,
   toggleReaction,
+  unsaveFeedPost,
   type Db,
 } from "./server";
 
@@ -27,6 +30,9 @@ const READER = "00000000-0000-4000-8000-0000000000b1";
 const COURSE = "00000000-0000-4000-8000-0000000000c1";
 const FOREIGN_COURSE = "00000000-0000-4000-8000-0000000000c2";
 const LESSON = "00000000-0000-4000-8000-0000000000d1";
+const TAG_AUTHOR = "00000000-0000-4000-8000-0000000000e1";
+const TAG_HIDDEN = "00000000-0000-4000-8000-0000000000e2";
+const ASSET = "00000000-0000-4000-8000-0000000000f1";
 
 let fake: FakeSupabase;
 let db: Db;
@@ -51,6 +57,8 @@ beforeEach(() => {
         auth_user_id: OTHER_AUTHOR_USER,
       },
       { id: "author-hidden", slug: "hidden", name: "Прихований", photo: null, listed: false, auth_user_id: "u-hidden" },
+      { id: TAG_AUTHOR, slug: "iryna", name: "Ірина Мельник", photo: null, listed: true, auth_user_id: null },
+      { id: TAG_HIDDEN, slug: "unlisted", name: "Неопублікований", photo: null, listed: false, auth_user_id: null },
     ],
     lms_courses: [
       { id: COURSE, title: "Шлях 21", program_slug: "way21", author_id: AUTHOR_USER, author_profile_id: "author-evg" },
@@ -224,18 +232,19 @@ describe("reactions", () => {
 });
 
 describe("comments", () => {
-  it("threads one level, names readers publicly, marks the author, lets the author hide", async () => {
+  it("threads one level, names readers publicly, shows the author as themself, lets the author hide", async () => {
     const { post } = await createFeedPost(db, await author(), { body: "Привіт", topic: "focus" });
     const top = await addComment(db, post.id, READER, { body: "Дякую!" });
     expect(top.comment.who.name).toBe("Олена П.");
     const reply = await addComment(db, post.id, AUTHOR_USER, { body: "Радий!", parentId: top.comment.id });
+    expect(reply.comment.who.href).toMatch(/^\/expert\/.+\?tab=posts$/);
     const nested = await addComment(db, post.id, READER, { body: "Ще раз", parentId: reply.comment.id });
     expect(nested.comment.parentId).toBe(top.comment.id);
 
     const asAuthor = await listComments(db, post.id, AUTHOR_USER);
     expect(asAuthor.map((entry) => [entry.who.name, entry.byAuthor, entry.canHide])).toEqual([
       ["Олена П.", false, true],
-      ["Автор", true, false],
+      ["Євгеній", true, false],
       ["Олена П.", false, true],
     ]);
 
@@ -263,6 +272,202 @@ describe("marks for the journal", () => {
     const marks = await listFeedMarks(db, READER);
     expect(marks).toHaveLength(1);
     expect(marks[0]).toMatchObject({ note: "Спробую", authorName: "Євгеній" });
+  });
+});
+
+describe("wave 2: topics", () => {
+  it("carries one to three topics, keeps the first as `topic`, and the filter matches any", async () => {
+    const { post } = await createFeedPost(db, await author(), {
+      body: "Дихання і сон",
+      topics: ["breathing", "relaxation", "breathing"],
+    });
+    expect(post.topics).toEqual(["breathing", "relaxation"]);
+    expect(post.topic).toBe("breathing");
+    expect(fake.rows("feed_posts")[0]).toMatchObject({ topic: "breathing", topics: ["breathing", "relaxation"] });
+    const by = async (topics: string[]) =>
+      (await listFeed(db, { filter: { topics: topics as never, authors: [] }, me: null })).posts.length;
+    expect(await by(["relaxation"])).toBe(1);
+    expect(await by(["focus", "breathing"])).toBe(1);
+    expect(await by(["focus"])).toBe(0);
+  });
+
+  it("refuses none, four, or an unknown one; the old single `topic` still posts", async () => {
+    const me = await author();
+    await expect(createFeedPost(db, me, { body: "Т", topics: [] })).rejects.toMatchObject({ code: "topic_invalid" });
+    await expect(
+      createFeedPost(db, me, { body: "Т", topics: ["focus", "energy", "movement", "nutrition"] }),
+    ).rejects.toMatchObject({ code: "topic_invalid" });
+    await expect(createFeedPost(db, me, { body: "Т", topics: ["focus", "announce"] })).rejects.toMatchObject({
+      code: "topic_invalid",
+    });
+    expect((await createFeedPost(db, me, { body: "Т", topic: "focus" })).post.topics).toEqual(["focus"]);
+  });
+
+  it("reads a row from before the migration by its single topic", async () => {
+    const { post } = await createFeedPost(db, await author(), { body: "Старий", topic: "energy" });
+    await db.from("feed_posts").update({ topics: [] }).eq("id", post.id);
+    expect((await getFeedPost(db, post.id, null))?.topics).toEqual(["energy"]);
+  });
+});
+
+describe("wave 2: body with formatting", () => {
+  it("counts the visible words, not the markup, and the gate sees a link hidden behind words", async () => {
+    const me = await author();
+    const words = "слово ".repeat(665).trim();
+    const marked = `**${words}**`;
+    expect((await createFeedPost(db, me, { body: marked, topic: "focus" })).post.status).toBe("published");
+    await expect(createFeedPost(db, me, { body: "слово ".repeat(700), topic: "focus" })).rejects.toMatchObject({
+      code: "body_too_long",
+    });
+    const hidden = await createFeedPost(db, me, { body: "Дивіться [тут](https://elsewhere.com/x)", topic: "focus" });
+    expect(hidden.post.status).toBe("held");
+    expect(hidden.verdict.findings.map((finding) => finding.rule)).toContain("links");
+  });
+});
+
+describe("wave 2: media and tags", () => {
+  const photo = (file = "1600.webp") => ({ path: `author-evg/${ASSET}/${file}`, w: 1600, h: 1000 });
+
+  it("stores the author's own photos, a YouTube id from a link, and an audio; answers addresses", async () => {
+    const { post } = await createFeedPost(db, await author(), {
+      body: "Ранок",
+      topic: "focus",
+      media: {
+        photos: [{ ...photo(), spoiler: true }, photo("640.webp")],
+        video: { youtubeId: "https://youtu.be/dQw4w9WgXcQ" },
+        audio: { path: `author-evg/${ASSET}/audio.webm`, durationSec: 61.4, mime: "audio/webm" },
+      },
+    });
+    expect(post.media.photos.map((entry) => [entry.spoiler, entry.src.endsWith(`/feed-media/${entry.path}`)])).toEqual([
+      [true, true],
+      [false, true],
+    ]);
+    expect(post.media.video).toEqual({ youtubeId: "dQw4w9WgXcQ" });
+    expect(post.media.audio).toMatchObject({ durationSec: 61, mime: "audio/webm" });
+    expect(fake.rows("feed_posts")[0]?.media).not.toHaveProperty(["photos", 0, "src"]);
+  });
+
+  it("refuses another author's path, eleven photos, a bad link and a long audio", async () => {
+    const me = await author();
+    const post = (media: unknown) => createFeedPost(db, me, { body: "Т", topic: "focus", media });
+    await expect(post({ photos: [{ ...photo(), path: `author-2/${ASSET}/1600.webp` }] })).rejects.toMatchObject({
+      code: "media_invalid",
+    });
+    await expect(post({ photos: [{ ...photo(), path: `author-evg/../x/1600.webp` }] })).rejects.toMatchObject({
+      code: "media_invalid",
+    });
+    await expect(
+      post({ photos: Array.from({ length: 11 }, (_, i) => photo(i % 2 ? "640.webp" : "1600.webp")) }),
+    ).rejects.toMatchObject({ code: "media_too_many_photos" });
+    await expect(post({ video: { youtubeId: "not a video" } })).rejects.toMatchObject({ code: "media_video_invalid" });
+    await expect(
+      post({ audio: { path: `author-evg/${ASSET}/audio.webm`, durationSec: 601, mime: "audio/webm" } }),
+    ).rejects.toMatchObject({ code: "media_audio_too_long" });
+    await expect(
+      post({ audio: { path: `author-evg/${ASSET}/audio.mp3`, durationSec: 10, mime: "audio/webm" } }),
+    ).rejects.toMatchObject({ code: "media_invalid" });
+  });
+
+  it("names listed authors only, never the writer, at most three", async () => {
+    const me = await author();
+    const { post } = await createFeedPost(db, me, { body: "Разом", topic: "focus", taggedAuthorIds: [TAG_AUTHOR] });
+    expect(post.tagged.map((entry) => entry.name)).toEqual(["Ірина Мельник"]);
+    await expect(
+      createFeedPost(db, me, { body: "Т", topic: "focus", taggedAuthorIds: [TAG_HIDDEN] }),
+    ).rejects.toMatchObject({ code: "tags_invalid" });
+    await expect(
+      createFeedPost(db, me, { body: "Т", topic: "focus", taggedAuthorIds: ["author-2"] }),
+    ).rejects.toMatchObject({ code: "tags_invalid" });
+    // An author unlisted after the post was written drops out of its «з …».
+    await db.from("lms_authors").update({ listed: false }).eq("id", TAG_AUTHOR);
+    expect((await getFeedPost(db, post.id, null))?.tagged).toEqual([]);
+  });
+
+  it("offers every other listed author for tagging", async () => {
+    const names = (await listTaggableAuthors(db, await author())).map((entry) => entry.slug).sort();
+    expect(names).toEqual(["avtor-2", "iryna"]);
+  });
+});
+
+describe("wave 2: block attachments carry the block", () => {
+  it("hands the renderer the whole block only when the author shows it whole", async () => {
+    const shown = await createFeedPost(db, await author(), {
+      body: "Практика",
+      topic: "breathing",
+      courseId: COURSE,
+      lessonId: LESSON,
+      blockId: "b1",
+      blockDisplay: "full",
+    });
+    expect(shown.post.attachment).toMatchObject({
+      full: true,
+      block: { id: "b1", type: "practice_block", durationMin: 3 },
+    });
+    const excerpt = await createFeedPost(db, await author(), {
+      body: "Практика",
+      topic: "breathing",
+      courseId: COURSE,
+      lessonId: LESSON,
+      blockId: "b1",
+    });
+    // An excerpt never carries the block itself: a paid lesson stays paid.
+    expect(excerpt.post.attachment).toMatchObject({ full: false, block: null });
+  });
+});
+
+describe("wave 2: three reactions per person", () => {
+  it("refuses a fourth different emoji, and frees a place when one is taken back", async () => {
+    const { post } = await createFeedPost(db, await author(), { body: "Привіт", topic: "focus" });
+    for (const emoji of ["fire", "heart", "calm"]) await toggleReaction(db, post.id, READER, emoji);
+    await expect(toggleReaction(db, post.id, READER, "joy")).rejects.toMatchObject({
+      code: "reaction_limit",
+      status: 409,
+    });
+    // Someone else is not limited by the reader's three.
+    await toggleReaction(db, post.id, AUTHOR_USER, "joy");
+    await toggleReaction(db, post.id, READER, "fire");
+    const after = await toggleReaction(db, post.id, READER, "joy");
+    expect(
+      after
+        .filter((entry) => entry.mine)
+        .map((entry) => entry.emoji)
+        .sort(),
+    ).toEqual(["calm", "heart", "joy"]);
+  });
+});
+
+describe("wave 2: «Зберегти»", () => {
+  it("saves once into the journal's marks as a bookmark, shows as saved, and comes back out", async () => {
+    const { post } = await createFeedPost(db, await author(), { body: "**Три** хвилини дихання", topic: "breathing" });
+    await saveFeedPost(db, READER, post.id);
+    await saveFeedPost(db, READER, post.id);
+    await saveFeedMark(db, READER, { clientId: "mark-000001", postId: post.id, quote: "дихання" });
+
+    const journal = await listFeedMarks(db, READER);
+    expect(journal.map((mark) => mark.kind).sort()).toEqual(["bookmark", "highlight"]);
+    expect(journal.find((mark) => mark.kind === "bookmark")).toMatchObject({
+      quote: "Три хвилини дихання",
+      authorName: "Євгеній",
+    });
+    // The post's own paint asks only for passages.
+    expect((await listFeedMarks(db, READER, [post.id])).map((mark) => mark.kind)).toEqual(["highlight"]);
+    expect((await getFeedPost(db, post.id, READER))?.saved).toBe(true);
+    expect((await getFeedPost(db, post.id, null))?.saved).toBe(false);
+    // Everyone sees how many saved it; a passage mark is not a save, and saving twice counts once.
+    expect((await getFeedPost(db, post.id, null))?.saveCount).toBe(1);
+
+    await unsaveFeedPost(db, READER, post.id);
+    expect((await getFeedPost(db, post.id, READER))?.saved).toBe(false);
+    expect((await getFeedPost(db, post.id, null))?.saveCount).toBe(0);
+    expect(await listFeedMarks(db, READER)).toHaveLength(1);
+  });
+
+  it("refuses a post that is not published, and a highlight posing as a bookmark", async () => {
+    const { post } = await createFeedPost(db, await author(), { body: "Гарантую результат.", topic: "focus" });
+    await expect(saveFeedPost(db, READER, post.id)).rejects.toMatchObject({ code: "not_found" });
+    await expect(
+      saveFeedMark(db, READER, { clientId: `saved-${post.id}`, postId: post.id, quote: "x" }),
+    ).rejects.toMatchObject({ code: "client_id_invalid" });
   });
 });
 

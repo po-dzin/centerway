@@ -2,7 +2,7 @@
  * /api/feed/:id — one post.
  *
  * GET    published for everyone; the author also sees their own held or returned post.
- * PATCH  the author sends a returned post again, edited: `{ body, topic }`.
+ * PATCH  the author sends a returned post again, edited: the same fields as POST /api/feed.
  * DELETE the author removes their own post.
  */
 

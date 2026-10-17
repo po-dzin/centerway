@@ -17,6 +17,8 @@ import { FeedError, feedAuthorForUser, type Db } from "./server";
 export const FEED_READER_WRITE: RateLimitRule = { name: "feed_reader_write", limit: 60, windowSeconds: 60 };
 /** Posts: an author writes a few a day; thirty an hour is not writing. */
 export const FEED_POST_WRITE: RateLimitRule = { name: "feed_post_write", limit: 30, windowSeconds: 3600 };
+/** Media for posts: ten photos and an audio a post, a few posts, retries. */
+export const FEED_MEDIA_UPLOAD: RateLimitRule = { name: "feed_media_upload", limit: 120, windowSeconds: 3600 };
 
 export function feedDb(): Db {
   return adminClient();
@@ -41,9 +43,9 @@ export async function writer(req: NextRequest, rule: RateLimitRule): Promise<Gua
   return { ok: true, value: user };
 }
 
-/** A signed-in listed author within the post limit. */
-export async function authorWriter(req: NextRequest, db: Db) {
-  const user = await writer(req, FEED_POST_WRITE);
+/** A signed-in listed author within the post limit (or the limit given). */
+export async function authorWriter(req: NextRequest, db: Db, rule: RateLimitRule = FEED_POST_WRITE) {
+  const user = await writer(req, rule);
   if (!user.ok) return user;
   const author = await feedAuthorForUser(db, user.value.id);
   if (!author) return { ok: false as const, response: fail(403, "not_an_author") };

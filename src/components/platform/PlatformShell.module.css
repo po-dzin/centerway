@@ -23,7 +23,10 @@
      CSS module and currently loses the cascade to this one — a separate defect,
      visible in `--platform-topbar-clearance` resolving to its desktop clamp on
      a phone, and not one to paper over from this side. */
-  --platform-topbar-top: 0.75rem;
+  /* ONE HEIGHT ON EVERY PAGE (G 2026-10-17). It was 0.75rem here and 0.95rem
+     over a hero (`.shellOverlay`), so going from Головна to Стрічка — the one
+     menu page without a hero — moved the bar up 3px and it read as a jump. */
+  --platform-topbar-top: 0.95rem;
   --platform-topbar-block: calc(var(--platform-topbar-top) + 4rem);
   background:
     radial-gradient(
@@ -97,7 +100,9 @@
   --platform-header-band-bg: var(--cw-mat-tint-chrome);
   --platform-header-control-bg: var(--cw-mat-tint-chrome);
   --platform-header-popover-bg: var(--cw-mat-surface);
-  --platform-header-sheet-shadow: var(--cw-mat-shadow-chrome);
+  /* Shadow only, no outline, in both themes (G 2026-10-17): the 1px ring of
+     `--cw-mat-shadow-chrome` read as a frame around the bar on the dark page. */
+  --platform-header-sheet-shadow: var(--cw-mat-shadow-bar);
   --platform-header-sheet-filter: var(--cw-mat-filter);
   --platform-header-wordmark-image: var(--cw-brand-asset-wordmark-dark);
   --platform-header-shell-radius: var(--cw-radius-lg);
@@ -132,7 +137,7 @@
   --platform-header-symbol-color: var(--cw-platform-accent);
   --platform-header-hover-bg: var(--cw-mat-tint-hover);
   --platform-header-popover-bg: var(--cw-mat-surface);
-  --platform-header-sheet-shadow: var(--cw-mat-shadow-chrome);
+  --platform-header-sheet-shadow: var(--cw-mat-shadow-bar);
   --platform-header-wordmark-image: var(--cw-brand-asset-wordmark-light);
 }
 

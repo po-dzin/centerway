@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   countReactions,
+  reactionNameIds,
   excerptOf,
   feedFilterQuery,
   isFeedEmoji,
   isFeedTopic,
   normalizeFeedText,
+  normalizeFeedTopics,
   parseFeedFilter,
   visibleReactions,
 } from "./model";
@@ -81,5 +83,48 @@ describe("block excerpt", () => {
     expect(cut.endsWith("…")).toBe(true);
     expect(cut.length).toBeLessThanOrEqual(41);
     expect(cut).not.toMatch(/\s…$/);
+  });
+});
+
+describe("topics of a post", () => {
+  it("takes one to three known topics in the author's order, without repeats", () => {
+    expect(normalizeFeedTopics(["relaxation", "breathing", "relaxation"])).toEqual(["relaxation", "breathing"]);
+    expect(normalizeFeedTopics(undefined, "focus")).toEqual(["focus"]);
+    expect(normalizeFeedTopics([])).toBeNull();
+    expect(normalizeFeedTopics(["focus", "energy", "movement", "nutrition"])).toBeNull();
+    expect(normalizeFeedTopics(["focus", "announce"])).toBeNull();
+    expect(normalizeFeedTopics(undefined, undefined)).toBeNull();
+  });
+});
+
+describe("reaction names for the chip hint", () => {
+  const rows = [
+    { emoji: "heart", auth_user_id: "me" },
+    { emoji: "heart", auth_user_id: "u1" },
+    { emoji: "heart", auth_user_id: "u2" },
+    { emoji: "heart", auth_user_id: "u3" },
+    { emoji: "heart", auth_user_id: "u4" },
+    { emoji: "thanks", auth_user_id: "u5" },
+    { emoji: "calm", auth_user_id: "u6" },
+    { emoji: "joy", auth_user_id: "u7" },
+  ];
+
+  // Ties keep the set's order: joy, then calm, then thanks — so thanks is fourth.
+  it("asks for at most three others per top reaction, never the reader", () => {
+    const ids = reactionNameIds(rows, "me");
+    expect(ids).toEqual(["u1", "u2", "u3", "u7", "u6"]);
+  });
+
+  it("puts names on the top chips only", () => {
+    const names = new Map([
+      ["u1", "Олена К."],
+      ["u2", "Марко Д."],
+      ["u3", "Іра"],
+      ["u7", "Тарас"],
+    ]);
+    const counts = countReactions(rows, "me", names);
+    expect(counts[0]).toMatchObject({ emoji: "heart", count: 5, mine: true, who: ["Олена К.", "Марко Д.", "Іра"] });
+    expect(counts.find((entry) => entry.emoji === "joy")?.who).toEqual(["Тарас"]);
+    expect(counts.find((entry) => entry.emoji === "thanks")?.who).toBeUndefined();
   });
 });
