@@ -850,6 +850,7 @@
 /* ─────────────── the home strip: three latest ─────────────── */
 
 .fresh {
+  composes: cw-scroll-none from global;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--cw-space-md);
@@ -917,12 +918,7 @@
     display: flex;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
-    scrollbar-width: none;
     padding-block-end: var(--cw-space-sm);
-  }
-
-  .fresh::-webkit-scrollbar {
-    display: none;
   }
 
   .fresh > li {
@@ -937,13 +933,9 @@
   display: flex;
   min-inline-size: 0;
   overflow-x: auto;
-  scrollbar-width: none;
+  composes: cw-scroll-none from global;
   border-block-end: 1px solid transparent;
   border-image: var(--cw-rule-fade-x);
-}
-
-.tabs::-webkit-scrollbar {
-  display: none;
 }
 
 .tab {
