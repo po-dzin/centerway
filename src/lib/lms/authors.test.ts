@@ -125,11 +125,14 @@ describe("upsertAuthorProfile", () => {
     expect(result).toEqual({ ok: false, error: "invalid_profile" });
   });
 
-  it("requires a complete contact surface when consultations are enabled", async () => {
+  /* The external link stopped being required on 2026-10-16: the request is
+     left in the platform's own form on the author's page, so a title and a
+     summary are what a reader needs. Without those two it is still refused. */
+  it("requires a title and a summary, not an external link, when consultations are enabled", async () => {
     const { module } = await withDatabase({
       lms_courses: [{ id: "c1", author_id: "user-1", slug: "way21" }],
     });
-    const result = await module.upsertAuthorProfile("user-1", {
+    const withoutLink = await module.upsertAuthorProfile("user-1", {
       name: "Іван",
       consultation: {
         enabled: true,
@@ -137,7 +140,12 @@ describe("upsertAuthorProfile", () => {
         summary: "Розберемо запит і визначимо наступний крок.",
       },
     });
-    expect(result).toEqual({ ok: false, error: "invalid_profile" });
+    expect(withoutLink.ok).toBe(true);
+    const withoutSummary = await module.upsertAuthorProfile("user-1", {
+      name: "Іван",
+      consultation: { enabled: true, title: "Особиста консультація" },
+    });
+    expect(withoutSummary).toEqual({ ok: false, error: "invalid_profile" });
   });
 
   it("stores ordered author-owned profile blocks", async () => {

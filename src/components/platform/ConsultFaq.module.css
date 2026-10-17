@@ -1,0 +1,67 @@
+/* The consultation questions: one surface, a row per question. Follows the
+   lesson FAQ (Lms.module.css .faqItem) — faded rule between rows, answer in
+   the muted ink under its question — with the sprite chevron at the row's end. */
+.panel {
+  display: grid;
+  max-width: 52rem;
+  padding: var(--cw-space-2xs) var(--cw-space-lg);
+  border-radius: var(--cw-card-radius);
+  background: var(--cw-platform-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.item {
+  border-bottom: 1px solid var(--cw-platform-border);
+  border-image: var(--cw-rule-fade-x);
+}
+
+.item:last-child {
+  border-bottom: 0;
+}
+
+.question {
+  min-height: var(--ds-touch-target-min);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-md);
+  padding-block: var(--cw-space-md);
+  color: var(--cw-platform-text);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.question::-webkit-details-marker {
+  display: none;
+}
+
+.question:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset-inset);
+  border-radius: var(--cw-radius-sm);
+}
+
+.marker {
+  flex: none;
+  color: var(--cw-platform-muted);
+  transition: transform var(--cw-motion-state) var(--cw-ease-state);
+}
+
+.item[open] .marker {
+  transform: rotate(180deg);
+}
+
+.answer {
+  max-width: 44rem;
+  margin: 0;
+  padding-bottom: var(--cw-space-md);
+  color: var(--cw-platform-muted);
+  line-height: 1.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marker {
+    transition: none;
+  }
+}

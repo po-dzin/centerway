@@ -45,29 +45,32 @@ function hasRecentLead(createdAt: string | null | undefined, nowMs: number): boo
 
 async function findRecentDuplicateLead(sb: SupabaseLike, lead: LeadRecord): Promise<boolean> {
   const nowMs = Date.now();
+  // A request is to one author: the same contact asking two authors within the
+  // window is two leads, not a repeat.
+  const authorSlug = asString(lead.payload.author_slug);
   const matches: Array<{ created_at?: string | null }> = [];
 
   if (lead.email) {
-    const { data, error } = await sb
+    let query = sb
       .from("leads")
       .select("created_at")
       .eq("product_code", lead.product_code)
       .eq("source", lead.source)
-      .eq("email", lead.email)
-      .order("created_at", { ascending: false })
-      .limit(1);
+      .eq("email", lead.email);
+    if (authorSlug) query = query.eq("payload->>author_slug", authorSlug);
+    const { data, error } = await query.order("created_at", { ascending: false }).limit(1);
     if (!error && data?.[0]) matches.push(data[0]);
   }
 
   if (lead.phone) {
-    const { data, error } = await sb
+    let query = sb
       .from("leads")
       .select("created_at")
       .eq("product_code", lead.product_code)
       .eq("source", lead.source)
-      .eq("phone", lead.phone)
-      .order("created_at", { ascending: false })
-      .limit(1);
+      .eq("phone", lead.phone);
+    if (authorSlug) query = query.eq("payload->>author_slug", authorSlug);
+    const { data, error } = await query.order("created_at", { ascending: false }).limit(1);
     if (!error && data?.[0]) matches.push(data[0]);
   }
 

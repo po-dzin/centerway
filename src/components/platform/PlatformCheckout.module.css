@@ -35,8 +35,8 @@
   text-decoration: none;
 }
 
-.back::before {
-  content: "←";
+.backIcon {
+  flex: 0 0 auto;
   margin-inline-end: var(--cw-space-2xs);
 }
 
@@ -58,7 +58,9 @@
 
 .product {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  /* The cover is centred on the name's block, so its top and bottom edges sit
+     the same distance from the first and last line of text. */
   align-items: center;
   gap: var(--cw-space-md);
 }
@@ -71,20 +73,46 @@
   object-fit: cover;
 }
 
+/* On a wide desktop the cover stands LEFT of the name, square, top-aligned with
+   its first line: the steady order-row geometry of a checkout. Below 1100px the
+   card is too narrow to leave the longest word a line beside it, so the cover
+   stays above the name, as on a phone. */
+@media (min-width: 1100px) {
+  .product {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--cw-space-md);
+  }
+
+  /* A square exactly two lines of the name tall: cap top to baseline. 0.628 is
+     Cormorant's cap height in em, the second term the step's line height. */
+  .cover {
+    width: calc(var(--ds-type-card-title-size) * (0.628 + var(--ds-type-card-title-line-height)));
+  }
+}
+
 .productText {
   display: grid;
   gap: var(--cw-space-2xs);
   min-width: 0;
 }
 
+/* THE CARD'S OWN STEP (owner, 2026-10-17). The page's title size is too big
+   for a card that is half a row, the display size too small on a desktop, and
+   a phone cannot take either beside a cover without cutting «Розвантажувальний»
+   mid-word. So the card has its own token, and the cover stands above the name
+   rather than beside it: the whole card width is the name's. */
 .productTitle {
   margin: 0;
   color: var(--cw-platform-text);
   font-family: var(--cw-font-editorial);
-  font-size: var(--ds-type-title-size);
+  font-size: var(--ds-type-card-title-size);
   font-weight: 700;
-  line-height: var(--ds-type-title-line-height);
+  line-height: var(--ds-type-card-title-line-height);
   text-wrap: balance;
+  overflow-wrap: break-word;
+  /* The box runs from the cap top of the first line to the baseline of the
+     last, so a cover beside it can match the text edge to edge. */
+  text-box: trim-both cap alphabetic;
 }
 
 .productFormat {
@@ -149,9 +177,9 @@
   margin: 0;
   color: var(--cw-platform-text);
   font-family: var(--cw-font-editorial);
-  font-size: var(--ds-type-title-size);
+  font-size: var(--ds-type-card-title-size);
   font-weight: 700;
-  line-height: var(--ds-type-title-line-height);
+  line-height: var(--ds-type-card-title-line-height);
   text-wrap: balance;
 }
 
@@ -182,8 +210,8 @@
   border-color: var(--cw-danger);
 }
 
-/* Signed in: the address the order goes to, said once, with the way to change
-   it beside it. */
+/* Signed in: the address the order goes to, said once. The account is the
+   address; a gift goes to another buyer's own account (owner, 2026-10-16). */
 .account {
   display: flex;
   flex-wrap: wrap;
@@ -203,11 +231,6 @@
 
 .accountLine b {
   color: var(--cw-platform-text);
-}
-
-.quietAction {
-  composes: text from "./PlatformButtons.module.css";
-  composes: hug from "./PlatformButtons.module.css";
 }
 
 /* The page's one primary action, the same role and width as the offer page's

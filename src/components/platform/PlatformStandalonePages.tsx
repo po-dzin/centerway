@@ -9,13 +9,13 @@ import {
 import { ConsultBoundary, ConsultFaq } from "@/components/platform/ConsultPageSections";
 import { ConsultantDirectory } from "@/components/platform/ConsultantDirectory";
 import type { Author } from "@/lms-core";
-import { consultationExpectations, consultationSteps } from "@/components/platform/consultPageContract";
+import { consultationHubSteps } from "@/components/platform/consultPageContract";
 import { HubFree, HubMini, HubPrograms } from "@/components/platform/blocks/offer/hub";
 import { HubHero, HubIntro } from "@/components/platform/blocks/orientation/hub";
 import { HubGuides } from "@/components/platform/blocks/trust/guides";
 import { FeedFresh } from "@/components/platform/feed/FeedFresh";
 import { HubProof, HubSupport } from "@/components/platform/blocks/trust/hub";
-import { bodySignals, consultationCopy, platformPageArtwork } from "@/lib/platform/content";
+import { bodySignals, consultationCopy, platformGuides, platformPageArtwork } from "@/lib/platform/content";
 
 export function PlatformHomePage() {
   return (
@@ -60,51 +60,50 @@ export function PlatformHomePage() {
  * form: after the reader knows what is on offer, before they are asked to commit.
  */
 export function PlatformConsultPage({ authors = [] }: { authors?: Author[] }) {
+  /* A HUB, NOT A FORM (2026-10-16, mockup «Консультації і автори»).
+     A request is always to one author, so it is left on that author's page,
+     where the form knows whose it is. This page helps a reader choose: who
+     takes consultations and about what, when a conversation is the right step,
+     how it goes, and where its limits are. */
   return (
     <PlatformOfferSurfaceTemplate
       templateKind="consult"
       hero={{
         title: consultationCopy.title,
         description: consultationCopy.text,
-        badge: "Консультація · онлайн",
+        badge: "Консультації · онлайн",
         artwork: platformPageArtwork.consult,
         imageAlt: "Аюрведична консультація CenterWay",
-        primaryAction: { href: "#consult-request", label: "Залишити запит" },
-        secondaryAction: { href: "#consult-details", label: "Подивитися формат" },
+        /* With no listed author (a failed read, or nobody has consultations on)
+           the directory is not rendered, so the button goes to the founder's
+           profile instead of an anchor that is not there. */
+        primaryAction:
+          authors.length > 0
+            ? { href: "#consultants", label: "Обрати автора" }
+            : { href: platformGuides[0]?.href ?? "/experts", label: "Обрати автора" },
+        secondaryAction: { href: "#consult-details", label: "Як це відбувається" },
       }}
       detailSectionId="consult-details"
       detailSemanticFamily="method-progress"
       detailLeft={{
         label: "Коли це доречно",
-        title: "Запит починається зі стану, а не з випадкової покупки",
+        title: "Коли варто прийти на розмову",
         body: <PlatformOfferResultList items={bodySignals} />,
       }}
       detailRight={{
         label: "Як це відбувається",
-        title: "Три кроки від запиту до особистого плану",
-        body: <PlatformOfferCopyStack items={[...consultationSteps]} />,
-      }}
-      supportSectionId="consult-request"
-      supportLeft={{
-        label: "Формат",
-        title: "До 90 хвилин онлайн і зрозумілий наступний крок",
-        lead: "На консультації ми збираємо стан, ритм, харчування, поточний рівень перевантаження і визначаємо, що зараз доречно: окрема практика, короткий вхід, детокс, програма або природна підтримка.",
-        body: <PlatformOfferResultList items={[...consultationExpectations]} />,
+        title: "Три кроки до особистого плану",
+        body: <PlatformOfferCopyStack items={[...consultationHubSteps]} />,
       }}
       beforeSupport={
         <>
+          {/* Under «Як це відбувається» (G, 16.10): the reader learns how a
+              consultation goes, then chooses the person. */}
           <ConsultantDirectory authors={authors} />
           <ConsultBoundary />
           <ConsultFaq />
         </>
       }
-      form={{
-        label: "Запит",
-        title: "Заповніть форму",
-        productCode: "consult",
-        source: "platform_consult_form",
-        ctaPlace: "consult_request",
-      }}
     />
   );
 }

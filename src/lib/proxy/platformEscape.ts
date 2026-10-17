@@ -43,6 +43,30 @@ export function isPlatformEscapePath(pathname: string): boolean {
   return PLATFORM_ESCAPE_PREFIXES.some((prefix) => clean === prefix || clean.startsWith(`${prefix}/`));
 }
 
+/* The origin that OWNS the path, not the platform's by default: `/profile`
+   and `/learn` live on `my` now, and sending them to `www` would spend a
+   second hop on a 308 that already exists there. */
+function ownerOrigin(req: NextRequest): string {
+  return isPersonalPath(req.nextUrl.pathname) ? PERSONAL_ORIGIN : PLATFORM_ORIGIN;
+}
+
+/**
+ * True when the request is already on the origin that owns its path.
+ *
+ * A request on `www` can still be read as a funnel's: a same-host Referer from
+ * a product page (`/programs/reset-day`) names that product's brand, so the
+ * proxy treats the request as that funnel's and asks it to escape. Sent to the
+ * platform origin it is already on, that redirect points at its own address and
+ * never ends — a buyer pressing «Купити» on a program page got
+ * ERR_TOO_MANY_REDIRECTS on /pay/checkout (2026-10-16). Already home, there is
+ * nowhere to escape to.
+ */
+export function isOnOwnerOrigin(req: NextRequest): boolean {
+  const raw = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
+  const [host = ""] = raw.split(":");
+  return host.trim().toLowerCase() === new URL(ownerOrigin(req)).host;
+}
+
 /**
  * 307, not 308. These are platform routes reached from the wrong host, not
  * addresses that moved — and one of them (`/tests` on the dosha host) is
@@ -50,10 +74,7 @@ export function isPlatformEscapePath(pathname: string): boolean {
  * browser that ever followed it, and taking it back later would be impossible.
  */
 export function redirectToPlatformOrigin(req: NextRequest): NextResponse {
-  /* The origin that OWNS the path, not the platform's by default: `/profile`
-     and `/learn` live on `my` now, and sending them to `www` would spend a
-     second hop on a 308 that already exists there. */
-  const owner = isPersonalPath(req.nextUrl.pathname) ? PERSONAL_ORIGIN : PLATFORM_ORIGIN;
+  const owner = ownerOrigin(req);
   const target = new URL(`${req.nextUrl.pathname}${req.nextUrl.search}`, owner);
   return NextResponse.redirect(target, 307);
 }

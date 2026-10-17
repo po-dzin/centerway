@@ -53,8 +53,13 @@ type PlatformOfferSurfaceTemplateProps = {
   detailRight: PanelSlot;
   /** Full-width sections between the detail split and the support block. */
   beforeSupport?: ReactNode;
-  supportSectionId: string;
-  supportLeft: PanelSlot;
+  /**
+   * The closing block. Optional since 2026-10-16: `/consult` no longer closes
+   * on a request — a request is to one author and is left on their page — so a
+   * page may end on its boundary instead.
+   */
+  supportSectionId?: string;
+  supportLeft?: PanelSlot;
   /**
    * Replaces both support panels outright.
    *
@@ -194,29 +199,31 @@ export function PlatformOfferSurfaceTemplate({
 
         {beforeSupport}
 
-        <section
-          className={`${styles.container} ${styles.section}`}
-          data-cw-semantic-role="support"
-          data-cw-semantic-family="support-boundary"
-          data-cw-token-source="global-app-ds"
-          id={supportSectionId}
-        >
-          <div className={styles.split}>
-            {supportSlot ?? (
-              <>
-                <article className={styles.panel}>{renderPanel(supportLeft)}</article>
-                {supportRight ??
-                  (form ? (
-                    <article className={styles.formPanel}>
-                      <p className={styles.label}>{form.label}</p>
-                      <h2 className={styles.title}>{form.title}</h2>
-                      <LeadForm productCode={form.productCode} source={form.source} ctaPlace={form.ctaPlace} />
-                    </article>
-                  ) : null)}
-              </>
-            )}
-          </div>
-        </section>
+        {supportSlot || supportLeft ? (
+          <section
+            className={`${styles.container} ${styles.section}`}
+            data-cw-semantic-role="support"
+            data-cw-semantic-family="support-boundary"
+            data-cw-token-source="global-app-ds"
+            id={supportSectionId}
+          >
+            <div className={styles.split}>
+              {supportSlot ?? (
+                <>
+                  {supportLeft ? <article className={styles.panel}>{renderPanel(supportLeft)}</article> : null}
+                  {supportRight ??
+                    (form ? (
+                      <article className={styles.formPanel}>
+                        <p className={styles.label}>{form.label}</p>
+                        <h2 className={styles.title}>{form.title}</h2>
+                        <LeadForm productCode={form.productCode} source={form.source} ctaPlace={form.ctaPlace} />
+                      </article>
+                    ) : null)}
+                </>
+              )}
+            </div>
+          </section>
+        ) : null}
 
         {boundary ? (
           <section

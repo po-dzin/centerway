@@ -10,6 +10,7 @@ import { upsertCustomerByContact } from "@/lib/platform/customerIdentity";
 import { applyDoshaTagsToCustomer, loadTestAttempt } from "@/lib/dosha/doshaTestRepo";
 import { isDoshaResultType, type DoshaResultType } from "@/lib/dosha/doshaTest";
 import { sendTelegramMessage } from "@/lib/telegram/tg";
+import { getAuthor } from "@/lib/lms/authors";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,7 @@ async function notifyLeadToGroup(lead: LeadRecord): Promise<void> {
   const text = [
     "📝 Нова заявка (лендинг)",
     line("Програма", lead.product_code),
+    line("Автор", payload.author_name),
     line("Ім'я", lead.name),
     line("Тел", lead.phone),
     line("Email", lead.email),
@@ -36,6 +38,7 @@ async function notifyLeadToGroup(lead: LeadRecord): Promise<void> {
     line("Доша", payload.dosha_result_type),
     line("Сторінка", payload.page_url),
     line("UTM", [payload.utm_source, payload.utm_campaign].filter(Boolean).join(" / ")),
+    line("Посилання автора для домовленості", payload.author_contact_url),
     payload.message ? `\n${String(payload.message).slice(0, 800)}` : null,
   ]
     .filter(Boolean)
@@ -74,6 +77,7 @@ type LeadRequestBody = {
   event_id?: unknown;
   attempt_id?: unknown;
   dosha?: unknown;
+  author?: unknown;
 };
 
 function cors(res: NextResponse) {
@@ -156,6 +160,24 @@ export async function POST(req: NextRequest) {
   /* A request left by an agent is a real request — someone asked it to — and
      gets the same personal answer. It is marked, and its Lead stays out of
      Meta (lib/tracking/agentTraffic). */
+  /* WHOSE CONSULTATION (2026-10-16). A request left on an author's page names
+     that author by slug. The slug is reader-supplied, so it is trusted only
+     when it resolves to a listed author who takes consultations — anything
+     else files the request without a name rather than under the wrong one. */
+  const authorSlug = asString(body.author);
+  if (authorSlug) {
+    try {
+      const author = await getAuthor(authorSlug);
+      if (author?.listed === true && author.consultation?.enabled) {
+        lead.payload.author_slug = author.slug;
+        lead.payload.author_name = author.name;
+        if (author.consultation.contactUrl) lead.payload.author_contact_url = author.consultation.contactUrl;
+      }
+    } catch {
+      // a lead is never lost over an author lookup
+    }
+  }
+
   const viaAgent = isAgentRequest(req.headers, req.cookies.get(AGENT_COOKIE)?.value);
   if (viaAgent) lead.payload.via_agent = true;
 
