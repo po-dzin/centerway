@@ -38,7 +38,7 @@ export function FeedStage() {
           srcSet={`${WIDE_1200} 1200w, ${WIDE} 1600w`}
           sizes="100vw"
           width={1600}
-          height={900}
+          height={851}
           alt={feedCopy.heroAlt}
           fetchPriority="high"
           decoding="async"

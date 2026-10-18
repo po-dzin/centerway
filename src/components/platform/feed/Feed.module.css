@@ -1414,8 +1414,8 @@ a.commentFace {
    desktop, 50% on a phone); the title starts under them (`--wall-band`), and
    the feed's pinned post is taped to the plaster below the title. */
 .wall {
-  --stage-h: clamp(32rem, min(100svh, 56.25vw), 62rem);
-  --wall-band: calc(var(--stage-h) * 0.6);
+  --stage-h: clamp(28rem, min(100svh, 53.2vw), 62rem);
+  --wall-band: calc(var(--stage-h) * 0.57);
   position: relative;
   isolation: isolate;
   overflow-x: clip;
@@ -1477,8 +1477,16 @@ a.commentFace {
 
 @media (max-width: 35rem) {
   .wall {
-    --stage-h: clamp(34rem, 100svh, 54rem);
-    --wall-band: calc(var(--stage-h) * 0.53);
+    --stage-h: clamp(30rem, 100svh, 54rem);
+    --wall-band: calc(var(--stage-h) * 0.5);
+  }
+}
+
+/* A short screen keeps the title and the pinned post whole: the lead, which
+   the post below already answers, gives way first. */
+@media (max-height: 46rem) {
+  .heroLead {
+    display: none;
   }
 }
 
@@ -1567,48 +1575,9 @@ a.commentFace {
   font-weight: 600;
 }
 
-.welcomeTitle {
-  margin: 0;
-  font-family: var(--cw-font-editorial);
-  font-size: var(--ds-type-lead-size);
-  font-weight: 500;
-  line-height: 1.25;
-  text-wrap: balance;
-}
-
 .welcomeText {
   margin: 0;
   line-height: var(--ds-type-body-line-height);
-}
-
-/* What the feed carries, inside the pinned post: one line each. */
-.willList {
-  display: grid;
-  gap: var(--cw-space-xs);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.willItem {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--cw-space-sm);
-  align-items: start;
-  line-height: var(--ds-type-body-sm-line-height);
-}
-
-.willIcon {
-  margin-block-start: 0.1em;
-  color: var(--cw-platform-text);
-}
-
-.willTitle {
-  font-weight: 700;
-}
-
-.willText {
-  color: var(--cw-platform-muted);
 }
 
 /* «Мої дописи»: how a post landed, under its action row. */
