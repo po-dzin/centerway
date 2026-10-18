@@ -428,7 +428,12 @@ export function FeedPostCard({
               <Icon name="more" size={20} />
             </button>
             {menuOpen ? (
-              <div ref={menuPanel} className={styles.menu} role="menu" aria-label={feedCopy.postMenu}>
+              <div
+                ref={menuPanel}
+                className={`${styles.menu} ${styles.postMenu}`}
+                role="menu"
+                aria-label={feedCopy.postMenu}
+              >
                 {removing ? (
                   <>
                     <p className={styles.menuAsk}>{feedCopy.deleteAsk}</p>

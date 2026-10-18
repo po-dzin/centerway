@@ -835,6 +835,13 @@ a.face {
   .menu {
     inset: auto var(--cw-space-xs) var(--cw-space-xs);
   }
+
+  /* A post's own menu opens under its dots across the width of the post. */
+  .postMenu {
+    position: absolute;
+    inset: calc(var(--cw-space-xs) + var(--ds-touch-target-min) + var(--cw-space-xs)) var(--cw-space-xs) auto;
+    min-inline-size: 0;
+  }
 }
 
 /* A chip that presses. Not a button plate: a word with air around it, which
@@ -1516,9 +1523,37 @@ a.commentFace {
   padding-block-start: var(--wall-head);
 }
 
+/* THE HEAD IS THE HOME HERO'S, ADAPTED TO A LIGHT GROUND: the same night-glass
+   badge, the same big uppercase title sized by its longest word — in ink, with
+   a glow of the page's own ground so it holds on the shaded part of the plate. */
+.heroBody {
+  display: grid;
+  gap: var(--cw-space-xs);
+  justify-items: start;
+}
+
+.heroBadge {
+  composes: heroBadge from "../PlatformBlocksOrientation.module.css";
+}
+
+.heroTitle {
+  --hero-title-size: var(--ds-type-hero-size);
+  --hero-title-room: min(100vw - 2 * var(--cw-page-gutter), 42rem);
+  min-width: min-content;
+  margin: 0;
+  color: var(--cw-platform-text);
+  text-shadow: 0 0 1.5rem color-mix(in srgb, var(--cw-platform-bg) 72%, transparent);
+  font-family: var(--cw-font-ui);
+  font-size: min(var(--hero-title-size), calc(var(--hero-title-room) / (var(--hero-title-word, 8) * 0.7)));
+  font-weight: 900;
+  line-height: var(--ds-type-hero-line-height);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
 /* A tablet and a phone: the tall plate is 780×540, and the head stands on the
    plaster under its row of pieces. */
-@media (max-width: 64rem) {
+@media (max-width: 56rem) {
   .wall {
     --stage-h: min(69.23vw, 30rem);
     --wall-head: min(48vw, 20.8rem);

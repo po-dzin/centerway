@@ -19,7 +19,7 @@
  * over it take the theme's text colour either way.
  */
 
-import { PlatformPageHead } from "@/components/platform/PlatformPageHead";
+import { heroTitleFit } from "@/components/platform/heroTitleFit";
 
 import { feedCopy } from "./copy";
 import styles from "./Feed.module.css";
@@ -34,7 +34,7 @@ export function FeedStage() {
   return (
     <div className={styles.stage}>
       <picture>
-        <source media="(max-width: 64rem)" srcSet={`${TALL_560} 560w, ${TALL} 780w`} sizes="100vw" />
+        <source media="(max-width: 56rem)" srcSet={`${TALL_560} 560w, ${TALL} 780w`} sizes="100vw" />
         <img
           className={styles.stagePhoto}
           src={WIDE}
@@ -51,7 +51,22 @@ export function FeedStage() {
   );
 }
 
-/** The page's head, in the platform's one shape (label over title), on the bare plaster between the pieces. What the page is about is the pinned post's to say. */
+/**
+ * The page's head, in the shape every platform hero has (the home page's): a
+ * night-glass badge over a big uppercase title. Here the title stands on light
+ * plaster, so it is ink, not cream; the badge is the same graphite plate and
+ * stays readable wherever the photograph's light falls. What the page is about
+ * is the pinned post's to say.
+ */
 export function FeedHeading() {
-  return <PlatformPageHead label={feedCopy.heroLabel} title={feedCopy.title} />;
+  return (
+    <header className={styles.heroBody}>
+      <p className={styles.heroBadge} data-cw-header-tone="dark">
+        <span>{feedCopy.heroBadge}</span>
+      </p>
+      <h1 className={styles.heroTitle} style={heroTitleFit(feedCopy.title)}>
+        {feedCopy.title}
+      </h1>
+    </header>
+  );
 }
