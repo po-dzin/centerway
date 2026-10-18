@@ -10,10 +10,15 @@ export const feedCopy = {
   /* «Стрічка · початок» (mockup 16.10; G's ok on the words still pending). */
   pinned: "закріплено",
   pinnedLabel: "Закріплений допис CenterWay",
-  welcomeText: "Не знаєте, з чого почати?",
-  welcomeLaunch: "Перші дописи вже скоро. А поки є з чого почати.",
+  welcomeLaunch: "Перші дописи вже скоро.",
   welcomeFree: "Безкоштовні практики",
   welcomeFreeMeta: "Можна почати зараз",
+  willPractices: "Практики",
+  willPracticesText: "вправи для тіла й дихання",
+  willThoughts: "Думки",
+  willThoughtsText: "спостереження авторів",
+  willEvents: "Події",
+  willEventsText: "ефіри, старти, зустрічі",
   emptyFiltered: "За цим фільтром дописів немає.",
   more: "Показати ще",
   loading: "Завантажуємо…",
@@ -63,7 +68,6 @@ export const feedCopy = {
 
   heroAlt:
     "Стіна студії з аркушами на малярному скотчі: сторінка з текстом, список із відмітками, два чорно-білі фото й смужка з намальованою звуковою хвилею",
-  heroLead: "Практики, думки й події авторів CenterWay",
 
   with: "з",
   readMore: "Читати далі",

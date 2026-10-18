@@ -48,12 +48,11 @@ export function FeedStage() {
   );
 }
 
-/** The page's title, on the plaster under the pieces. */
+/** The page's title, on the plaster under the pieces. What the page is about is the pinned post's to say. */
 export function FeedHeading() {
   return (
     <header className={styles.heroBody}>
       <h1 className={styles.heroTitle}>{feedCopy.title}</h1>
-      <p className={styles.heroLead}>{feedCopy.heroLead}</p>
     </header>
   );
 }
