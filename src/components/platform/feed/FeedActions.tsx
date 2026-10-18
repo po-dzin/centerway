@@ -71,8 +71,11 @@ function ShareMenu({
     setShared(true);
     setCount((current) => current + 1);
     void recordShare(postId, channel).then((result) => {
-      if (result.ok) return;
-      setShared(false);
+      /* Only a first share moves the count. «first: false» means this account
+         had shared already (a stale page, another tab): the person stays marked
+         as having shared, and the increment made above is taken back. */
+      if (result.ok && result.data.first) return;
+      if (!result.ok) setShared(false);
       setCount((current) => Math.max(0, current - 1));
     });
   }
