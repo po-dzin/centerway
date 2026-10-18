@@ -4,6 +4,7 @@
  */
 
 export const feedCopy = {
+  heroLabel: "CenterWay",
   title: "Стрічка",
   lead: "Дописи авторів CenterWay: практики, думки, події.",
   empty: "Тут поки порожньо. Автори скоро напишуть перші дописи.",

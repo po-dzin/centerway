@@ -1469,14 +1469,16 @@ a.commentFace {
 
 /* ─────────────── the wall at the top of /feed ─────────────── */
 
-/* THE WALL IS THE GROUND OF THE FIRST SCREEN (G 2026-10-18). The photograph
-   runs behind the whole first screen, edge to edge, and fades into the page
-   below it. The pieces on it take the top of the plate (about the top 58% on a
-   desktop, 50% on a phone); the title starts under them (`--wall-band`), and
-   the feed's pinned post is taped to the plaster below the title. */
+/* THE WALL IS A BAND BEHIND THE TOP OF THE PAGE (G 2026-10-18). The plate is
+   composed for the screen: pieces at the left and right and bare plaster in the
+   middle on a desktop, so the head and the first post stand high between them;
+   a row of pieces under the header and bare plaster below on a tablet and a
+   phone. The page's head follows the platform's one shape, and the posts follow
+   it with no gap the wall has to cover. */
 .wall {
-  --stage-h: clamp(28rem, min(100svh, 53.2vw), 62rem);
-  --wall-band: calc(var(--stage-h) * 0.44);
+  /* The wide plate is 1600×540. */
+  --stage-h: min(33.75vw, 40rem);
+  --wall-head: 6rem;
   position: relative;
   isolation: isolate;
   overflow-x: clip;
@@ -1489,21 +1491,19 @@ a.commentFace {
   z-index: -1;
   block-size: var(--stage-h);
   pointer-events: none;
-  /* The photograph melts into the page: whole for the first screen, gone at
-     the bottom edge, so the second screen starts on the page's own ground. */
-  mask-image: linear-gradient(to bottom, #000 0%, #000 58%, transparent 100%);
+  /* The photograph melts into the page at its bottom edge. */
+  mask-image: linear-gradient(to bottom, #000 0%, #000 62%, transparent 100%);
 }
 
 .stagePhoto {
   display: block;
   inline-size: 100%;
   block-size: 100%;
-  max-inline-size: none;
   object-fit: cover;
   object-position: 50% 0;
 }
 
-/* The scene is light; on the dark theme the page's ground dims it. */
+/* On the dark theme the light plate is dimmed by the page's own ground. */
 :global([data-cw-theme="dark"]) .stage::after {
   content: "";
   position: absolute;
@@ -1513,28 +1513,15 @@ a.commentFace {
 
 .pageOnWall {
   gap: var(--cw-space-md);
-  padding-block-start: var(--wall-band);
+  padding-block-start: var(--wall-head);
 }
 
-.heroBody {
-  display: grid;
-  gap: var(--cw-space-xs);
-  max-inline-size: 32rem;
-  color: var(--cw-platform-text);
-}
-
-.heroTitle {
-  margin: 0;
-  font-family: var(--cw-font-editorial);
-  font-size: clamp(1.9rem, 6vw, 2.6rem);
-  font-weight: 500;
-  line-height: 1.1;
-}
-
-@media (max-width: 35rem) {
+/* A tablet and a phone: the tall plate is 780×540, and the head stands on the
+   plaster under its row of pieces. */
+@media (max-width: 64rem) {
   .wall {
-    --stage-h: clamp(30rem, 100svh, 54rem);
-    --wall-band: calc(var(--stage-h) * 0.46);
+    --stage-h: min(69.23vw, 30rem);
+    --wall-head: min(48vw, 20.8rem);
   }
 }
 
