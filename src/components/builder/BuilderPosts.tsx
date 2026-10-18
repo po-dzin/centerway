@@ -253,7 +253,7 @@ function PostEcho({ post }: { post: FeedPost }) {
             aria-label={feedCopy.replyInFeed}
             title={feedCopy.replyInFeed}
           >
-            <Icon name="comment" size={20} />
+            <Icon name="reply" size={20} />
           </a>
         </p>
       ) : null}

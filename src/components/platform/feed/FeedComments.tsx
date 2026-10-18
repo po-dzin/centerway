@@ -74,7 +74,7 @@ function CommentRow({
               title={feedCopy.reply}
               onClick={() => onReply(comment)}
             >
-              <Icon name="comment" size={20} />
+              <Icon name="reply" size={20} />
             </button>
           ) : null}
           {comment.mine || comment.canHide ? (

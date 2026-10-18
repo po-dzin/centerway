@@ -482,6 +482,19 @@ export const ICONS = {
       "M8.6 13.1 15.4 17",
     ],
   },
+  /* Answer to one comment: the speech bubble with a turn-back arrow inside it.
+     Not `comment` (the whole thread's bubble, empty) and not `undo` (a
+     counter-clockwise arrow with no words in it). */
+  reply: {
+    group: "Meta",
+    d: ["M4.6 5.2h14.8v10.4h-8.1l-4.4 3.6v-3.6H4.6z", "M10.2 8.6 7.8 11l2.4 2.4", "M7.8 11h5.4a2.2 2.2 0 0 1 2.2 2.2"],
+  },
+  /* Put another block in place of the chosen one: two arrows passing. Not
+     `edit` (change the words) and not `undo`. */
+  swap: {
+    group: "Meta",
+    d: ["M4.4 8.6h13.4", "M14.2 5l3.6 3.6-3.6 3.6", "M19.6 15.4H6.2", "M9.8 11.8l-3.6 3.6 3.6 3.6"],
+  },
   /* A post held up on the wall: a pushpin — round head, shoulder, needle.
      «Закріпити» in a card's menu; the same glyph says «Відкріпити». */
   pin: {
