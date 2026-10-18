@@ -67,13 +67,26 @@ function CommentRow({
         {comment.held ? <p className={styles.commentHeld}>{feedCopy.commentHeld}</p> : null}
         <div className={styles.commentActions}>
           {signedIn && !comment.parentId ? (
-            <button className={styles.commentAction} type="button" onClick={() => onReply(comment)}>
-              {feedCopy.reply}
+            <button
+              className={styles.act}
+              type="button"
+              aria-label={feedCopy.reply}
+              title={feedCopy.reply}
+              onClick={() => onReply(comment)}
+            >
+              <Icon name="comment" size={20} />
             </button>
           ) : null}
           {comment.mine || comment.canHide ? (
-            <button className={styles.commentAction} type="button" onClick={() => onRemove(comment)}>
-              {comment.mine ? feedCopy.remove : feedCopy.hide}
+            <button
+              className={styles.act}
+              data-tone="danger"
+              type="button"
+              aria-label={comment.mine ? feedCopy.remove : feedCopy.hide}
+              title={comment.mine ? feedCopy.remove : feedCopy.hide}
+              onClick={() => onRemove(comment)}
+            >
+              <Icon name={comment.mine ? "trash" : "unpublish"} size={20} />
             </button>
           ) : null}
         </div>
@@ -204,8 +217,14 @@ export function FeedComments({
           {replyTo ? (
             <p className={styles.replyingTo}>
               {feedCopy.replyingTo} {replyTo.who.name}
-              <button className={styles.commentAction} type="button" onClick={() => setReplyTo(null)}>
-                {feedCopy.cancel}
+              <button
+                className={styles.act}
+                type="button"
+                aria-label={feedCopy.cancel}
+                title={feedCopy.cancel}
+                onClick={() => setReplyTo(null)}
+              >
+                <Icon name="close" size={20} />
               </button>
             </p>
           ) : null}

@@ -706,6 +706,10 @@ a.face {
   margin-inline-start: calc(var(--cw-space-xs) * -1);
 }
 
+.act[data-tone="danger"] {
+  color: var(--cw-danger);
+}
+
 .act {
   display: inline-flex;
   align-items: center;
@@ -1139,10 +1143,6 @@ a.commentFace {
   gap: var(--cw-space-sm);
 }
 
-.commentAction {
-  composes: base text from "../PlatformButtons.module.css";
-}
-
 .writeRow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1465,42 +1465,13 @@ a.commentFace {
 
 /* ─────────────── the home strip: three latest, as full cards ─────────────── */
 
-.fresh {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: start;
-  gap: var(--cw-space-md);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.fresh > li {
-  display: grid;
-  min-inline-size: 0;
-}
-
-.fresh .post {
+/* The card on the home rail sits a little further from its edges than the
+   feed's inset did: the face and the words were flush with the card's rim. */
+.post[data-variant="rail"] {
+  /* Cards of one row share a height; their content starts at the top of each. */
+  align-content: start;
   gap: var(--cw-space-sm);
-  padding: var(--ds-card-inset);
-}
-
-/* A phone (and a narrow tablet): one rail of 86vw cards that snap, the next
-   one showing at the edge. */
-@media (max-width: 56rem) {
-  .fresh {
-    display: flex;
-    overflow-x: auto;
-    overflow-y: hidden;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory;
-    padding-block-end: var(--cw-space-sm);
-  }
-
-  .fresh > li {
-    flex: 0 0 min(86vw, 22rem);
-    scroll-snap-align: start;
-  }
+  padding: var(--cw-space-md);
 }
 
 /* ─────────────── the wall at the top of /feed ─────────────── */
@@ -1678,15 +1649,6 @@ a.commentFace {
 
 .echoComment {
   color: var(--cw-platform-text);
-}
-
-.echoReply {
-  color: var(--cw-platform-text);
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-thickness: var(--cw-link-rule-width);
-  text-underline-offset: var(--cw-link-rule-offset);
-  text-decoration-color: var(--cw-link-rule-color);
 }
 
 /* The way in is smaller here: the post stays whole on a short screen. */
