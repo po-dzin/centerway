@@ -11,7 +11,7 @@
  */
 
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { useSignInHref } from "@/components/auth/useSignInReturn";
 import { useSession } from "@/components/auth/SessionProvider";
@@ -27,11 +27,14 @@ import { FeedPostCard } from "./FeedPostCard";
 import styles from "./Feed.module.css";
 
 export function FeedView({
+  head,
   initial,
   authors,
   filter: initialFilter,
   mode = "feed",
 }: {
+  /** The page's head: it shares a row with the filter, so the control stands in the same place whatever is chosen. */
+  head?: ReactNode;
   initial: FeedPage;
   authors: FeedAuthor[];
   filter: Filter;
@@ -196,6 +199,13 @@ export function FeedView({
 
   return (
     <div className={mode === "feed" ? styles.posts : styles.embedded}>
+      {mode === "feed" ? (
+        <div className={styles.headRow}>
+          {head}
+          <FeedFilter filter={filter} authors={authors} onChange={changeFilter} />
+        </div>
+      ) : null}
+
       {mode === "feed" && (me?.author || me?.platform) ? (
         <FeedComposer
           author={me.author}
@@ -207,8 +217,6 @@ export function FeedView({
       ) : null}
 
       {lead ? card(lead) : null}
-
-      {mode === "feed" ? <FeedFilter filter={filter} authors={authors} onChange={changeFilter} /> : null}
 
       {rest.length === 0 && !loading && (failed || filtered || mode !== "feed") ? (
         <p className={styles.empty}>

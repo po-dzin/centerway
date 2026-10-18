@@ -22,24 +22,24 @@
 import { feedCopy } from "./copy";
 import styles from "./Feed.module.css";
 
-const WIDE = "/cw/platform/pages/feed-hero-wall-v3.webp";
-const WIDE_1200 = "/cw/platform/pages/feed-hero-wall-v3-1200.webp";
-const TALL = "/cw/platform/pages/feed-hero-wall-v3-portrait.webp";
-const TALL_560 = "/cw/platform/pages/feed-hero-wall-v3-portrait-560.webp";
+const WIDE = "/cw/platform/pages/feed-hero-wall-v4.webp";
+const WIDE_1200 = "/cw/platform/pages/feed-hero-wall-v4-1200.webp";
+const TALL = "/cw/platform/pages/feed-hero-wall-v4-portrait.webp";
+const TALL_640 = "/cw/platform/pages/feed-hero-wall-v4-portrait-640.webp";
 
 /** The wall itself: behind everything, the width of the page. */
 export function FeedStage() {
   return (
     <div className={styles.stage}>
       <picture>
-        <source media="(max-width: 56rem)" srcSet={`${TALL_560} 560w, ${TALL} 780w`} sizes="100vw" />
+        <source media="(max-width: 56rem)" srcSet={`${TALL_640} 640w, ${TALL} 1264w`} sizes="100vw" />
         <img
           className={styles.stagePhoto}
           src={WIDE}
-          srcSet={`${WIDE_1200} 1200w, ${WIDE} 1600w`}
+          srcSet={`${WIDE_1200} 1200w, ${WIDE} 1584w`}
           sizes="100vw"
-          width={1600}
-          height={540}
+          width={1584}
+          height={672}
           alt={feedCopy.heroAlt}
           fetchPriority="high"
           decoding="async"

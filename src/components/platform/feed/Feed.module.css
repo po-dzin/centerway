@@ -1199,20 +1199,26 @@ a.commentFace {
 
 /* ─────────────── the filter (the shelf's popover) ─────────────── */
 
-/* The control stands still at the right end of its row, under the thumb
-   (G 2026-10-17); what is chosen is written to its left, so choosing never
-   moves the button (G 2026-10-18). Its popover opens leftwards, back onto the
-   screen. */
+/* THE FILTER STANDS IN THE HEAD'S ROW (G 2026-10-18): the head at the left, the
+   control at the right end under the title's line, and what is chosen written
+   under both. Choosing never moves the button, and the pinned post follows the
+   head at once instead of waiting below a bar. Its popover opens leftwards,
+   back onto the screen. */
+.headRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--cw-space-xs) var(--cw-space-md);
+}
+
 .filterBar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--cw-space-xs) var(--cw-space-sm);
+  display: contents;
 }
 
 .filterMenu {
   composes: filterMenu from "../cabinet/ShelfFilter.module.css";
-  flex: 0 0 auto;
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .filterToggle {
@@ -1273,12 +1279,12 @@ a.commentFace {
 
 .summary {
   display: flex;
-  flex: 1 1 0;
-  order: -1;
+  grid-column: 1 / -1;
+  grid-row: 2;
   min-inline-size: 0;
   flex-wrap: wrap;
   align-items: baseline;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: var(--cw-space-2xs) var(--cw-space-sm);
   margin: 0;
   color: var(--cw-platform-muted);
@@ -1483,8 +1489,9 @@ a.commentFace {
    phone. The page's head follows the platform's one shape, and the posts follow
    it with no gap the wall has to cover. */
 .wall {
-  /* The wide plate is 1600×540. */
-  --stage-h: min(33.75vw, 40rem);
+  /* The wide plate is 1584×672, shown 112% wide and pulled left so the
+     pieces stand clear of the column. */
+  --stage-h: min(47.5vw, 52rem);
   --wall-head: 6rem;
   position: relative;
   isolation: isolate;
@@ -1499,15 +1506,17 @@ a.commentFace {
   block-size: var(--stage-h);
   pointer-events: none;
   /* The photograph melts into the page at its bottom edge. */
-  mask-image: linear-gradient(to bottom, #000 0%, #000 62%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
 }
 
 .stagePhoto {
   display: block;
-  inline-size: 100%;
+  inline-size: 112%;
+  max-inline-size: none;
+  margin-inline-start: -10%;
   block-size: 100%;
   object-fit: cover;
-  object-position: 50% 0;
+  object-position: 0 0;
 }
 
 /* On the dark theme the light plate is dimmed by the page's own ground. */
@@ -1552,8 +1561,15 @@ a.commentFace {
    plaster under its row of pieces. */
 @media (max-width: 56rem) {
   .wall {
-    --stage-h: min(69.23vw, 30rem);
-    --wall-head: min(48vw, 20.8rem);
+    /* The tall plate is 1264×848. */
+    --stage-h: min(67.1vw, 36rem);
+    --wall-head: min(60vw, 25rem);
+  }
+
+  .stagePhoto {
+    inline-size: 100%;
+    margin-inline-start: 0;
+    object-position: 50% 0;
   }
 }
 
