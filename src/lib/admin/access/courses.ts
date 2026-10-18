@@ -50,7 +50,9 @@ export async function listCourses(): Promise<CourseRow[]> {
     experienceIds.length > 0
       ? db
           .from("experience_offers")
-          .select("experience_id, format, label, cohort_starts_on, sort_order")
+          .select(
+            "id, code, experience_id, format, label, cohort_starts_on, access_days, access_lifetime, amount, currency, mode, sort_order",
+          )
           .in("experience_id", experienceIds)
           .eq("active", true)
           .eq("review_status", "approved")
@@ -60,13 +62,46 @@ export async function listCourses(): Promise<CourseRow[]> {
   ]);
 
   const formatsByExperience = new Map<string, CourseFormatRow[]>();
+  const offerIds = (offers ?? []).map((offer) => offer.id as string);
+  const includedByOffer = new Map<string, string[]>();
+  if (offerIds.length > 0) {
+    const { data: items } = await db
+      .from("experience_offer_items")
+      .select("offer_id, experience_id")
+      .in("offer_id", offerIds);
+    const includedExperienceIds = [...new Set((items ?? []).map((item) => item.experience_id as string))];
+    const { data: includedCourses } = includedExperienceIds.length
+      ? await db
+          .from("lms_courses")
+          .select("slug, experience_id")
+          .in("experience_id", includedExperienceIds)
+          .eq("status", "published")
+      : { data: [] as never[] };
+    const slugByExperience = new Map(
+      (includedCourses ?? []).map((row) => [row.experience_id as string, row.slug as string]),
+    );
+    for (const item of items ?? []) {
+      const slug = slugByExperience.get(item.experience_id as string);
+      if (!slug) continue;
+      const list = includedByOffer.get(item.offer_id as string) ?? [];
+      list.push(slug);
+      includedByOffer.set(item.offer_id as string, list);
+    }
+  }
   for (const offer of offers ?? []) {
     if (!isOfferFormat(offer.format)) continue;
     const list = formatsByExperience.get(offer.experience_id) ?? [];
     list.push({
+      code: offer.code as string,
       format: offer.format,
       label: formatLabel(offer.label),
       cohortStartsOn: offer.cohort_starts_on ?? null,
+      accessDays: (offer.access_days as number | null) ?? null,
+      accessLifetime: (offer.access_lifetime as boolean | null) ?? false,
+      includedCourseSlugs: includedByOffer.get(offer.id as string) ?? [],
+      amount: (offer.amount as number | null) ?? null,
+      currency: (offer.currency as string | null) ?? "UAH",
+      payable: offer.mode === "checkout" && Number(offer.amount) > 0,
     });
     formatsByExperience.set(offer.experience_id, list);
   }

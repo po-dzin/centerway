@@ -37,9 +37,8 @@ works on every host.
 
 ## Not done
 
-- Personal prices exist for IREM only (`personal_offer_tokens`, fixed
-  2900/4100/48h in `offers.ts`). The admin «Видати доступ» redesign plans
-  promo links for every program; a token for another product is ignored today
-  and the storefront shows its public price.
-- The admin modal itself (mockup: claude.ai artifact «Видача доступу») is not
-  built; this change is the address it will print.
+- The admin modal uses `/go/<program>` for both direct course links and
+  personalized format promos on any course with a payable format. The
+  manually entered percentage is snapshotted per issuance. Previously issued
+  IREM fixed-price links remain valid; new IREM promos use the same percentage
+  flow as every other course.

@@ -629,3 +629,32 @@ describe("courses", () => {
     expect(access.setCourseAuthor).not.toHaveBeenCalled();
   });
 });
+
+describe("exact format through a single issuance", () => {
+  it("preserves the format identity and explicit perpetual override", async () => {
+    access.provisionAccess.mockResolvedValue({
+      accountCreated: false,
+      payment: null,
+      account: { email: "one@example.com" },
+      grant: {
+        created: true,
+        enrollmentId: "new",
+        expiresAt: null,
+        course: { slug: "way21", title: "Шлях 21", status: "published" },
+      },
+    });
+    const res = await learners.POST(
+      send("http://x/api/admin/access/learners", "POST", {
+        email: "one@example.com",
+        course: "way21",
+        offerCode: "way21-group",
+        expiresAt: null,
+        source: "service",
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(access.provisionAccess).toHaveBeenCalledWith(
+      expect.objectContaining({ offerCode: "way21-group", expiresAt: null, source: "service" }),
+    );
+  });
+});

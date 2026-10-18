@@ -30,6 +30,7 @@ type BulkBody = {
   emails?: unknown;
   people?: unknown;
   course?: unknown;
+  offerCode?: unknown;
   source?: unknown;
   cohortStartsOn?: unknown;
   ref?: unknown;
@@ -83,6 +84,7 @@ export const POST = withRoute("admin.access.learners.bulk", async (req) => {
 
   const course = typeof body.course === "string" ? body.course.trim() : "";
   if (!course) return badRequestResponse("course_required");
+  const offerCode = typeof body.offerCode === "string" && body.offerCode.trim() ? body.offerCode.trim() : undefined;
 
   const parsed = body.people !== undefined ? parsePeople(body.people) : null;
   const { emails, invalid, duplicates } = parsed
@@ -139,6 +141,7 @@ export const POST = withRoute("admin.access.learners.bulk", async (req) => {
         email,
         fullName: nameOf.get(email) || undefined,
         courseSlug: course,
+        offerCode,
         // As in the single grant: ABSENT leaves the term to the offer (which,
         // with no payment, is no deadline at all); an explicit null is forever.
         expiresAt: body.expiresAt === undefined ? undefined : deadline.value,

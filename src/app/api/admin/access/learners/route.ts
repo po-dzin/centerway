@@ -94,6 +94,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 type ProvisionBody = {
   email?: string;
   course?: string;
+  offerCode?: string;
   fullName?: string;
   /** `YYYY-MM-DD` from the panel's date input, or an ISO instant. Empty clears. */
   expiresAt?: string | null;
@@ -166,6 +167,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       email: body.email,
       fullName: body.fullName ?? null,
       courseSlug: body.course,
+      offerCode: typeof body.offerCode === "string" ? body.offerCode : undefined,
       // ABSENT, not "blank", is what means "leave the term to the offer".
       // The grant form sends nothing when the operator has not overridden
       // it (`grantDeadlineValue`), so `provisionAccess` fills the term in

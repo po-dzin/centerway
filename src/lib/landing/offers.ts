@@ -59,7 +59,7 @@ export type IssuePersonalOfferBatchInput = {
 };
 
 export type IssuedPersonalOffer = {
-  product: "irem";
+  product: string;
   offerId: string;
   offerToken: string;
   recipientKey: string;
@@ -388,6 +388,8 @@ export type PersonalPrice = {
   amount: number;
   currency: string;
   oldAmount: number | null;
+  /** Generic format promo deadline; IREM's resolver keeps its richer legacy shape. */
+  expiresAt?: string | null;
 };
 
 /**
@@ -395,18 +397,138 @@ export type PersonalPrice = {
  * when it grants none — another product's token, an unknown one, a cancelled,
  * spent or expired one. The storefront page and the checkout ask this so they
  * print the figure `/api/pay/start` will charge (it resolves the same token).
- * Only IREM issues personal prices today.
+ * IREM uses its fixed early-entry price; other formats use admin-issued price
+ * snapshots stored against their exact payable product code.
  */
 export async function resolvePersonalPrice(code: string, input: QueryLike): Promise<PersonalPrice | null> {
-  if (code !== IREM_OFFER_CODE || !readQueryValue(input, "offer_token")) return null;
+  const offerToken = readQueryValue(input, "offer_token");
+  if (!offerToken) return null;
   try {
-    const offer = await resolveIremLandingOffer(input);
-    if (!offer.offerApplied || !offer.offerToken) return null;
-    return { offerToken: offer.offerToken, amount: offer.amount, currency: offer.currency, oldAmount: offer.oldAmount };
+    if (code === IREM_OFFER_CODE) {
+      const offer = await resolveIremLandingOffer(input);
+      if (offer.offerApplied && offer.offerToken) {
+        return {
+          offerToken: offer.offerToken,
+          amount: offer.amount,
+          currency: offer.currency,
+          oldAmount: offer.oldAmount,
+        };
+      }
+      // Admin-issued percentage promos use the exact format code, including
+      // IREM's base code. Let the generic token lookup handle those after the
+      // legacy fixed-price token lookup has had first refusal.
+    }
+
+    const db = adminClient();
+    const select =
+      "token, product_code, offer_id, status, recipient_key, channel, campaign, amount, old_amount, currency, issued_at, expires_at, metadata";
+    const { data, error } = await db
+      .from("personal_offer_tokens")
+      .select(select)
+      .eq("token", offerToken)
+      .eq("product_code", code)
+      .maybeSingle();
+    if (error || !data) return null;
+    let row = data as PersonalOfferTokenRow;
+    if (row.status === "draft") {
+      const issuedAt = new Date().toISOString();
+      const expiresAt = new Date(Date.now() + IREM_PERSONAL_OFFER_HOURS * 60 * 60 * 1000).toISOString();
+      const activated = await db
+        .from("personal_offer_tokens")
+        .update({ status: "active", issued_at: issuedAt, expires_at: expiresAt })
+        .eq("token", offerToken)
+        .eq("product_code", code)
+        .eq("status", "draft")
+        .select(select)
+        .maybeSingle();
+      if (!activated.error && activated.data) {
+        row = activated.data as PersonalOfferTokenRow;
+      } else {
+        const { data: refetched } = await db
+          .from("personal_offer_tokens")
+          .select(select)
+          .eq("token", offerToken)
+          .eq("product_code", code)
+          .maybeSingle();
+        if (!refetched) return null;
+        row = refetched as PersonalOfferTokenRow;
+      }
+    }
+    const expiresAtMs = Date.parse(row.expires_at ?? "");
+    const amount = asPositiveInteger(row.amount);
+    if (row.status !== "active" || !amount || !Number.isFinite(expiresAtMs) || Date.now() > expiresAtMs) return null;
+    return {
+      offerToken,
+      amount,
+      currency: first(row.currency) ?? "UAH",
+      oldAmount: asPositiveInteger(row.old_amount),
+      expiresAt: row.expires_at,
+    };
   } catch {
     // A token that cannot be read is the public price, not a broken page.
     return null;
   }
+}
+
+export async function issueDiscountPersonalOffer(input: {
+  productCode: string;
+  programSlug: string;
+  recipientKey: string;
+  discountPercent: number;
+  amount: number;
+  currency: string;
+  channel?: string | null;
+  campaign?: string | null;
+  note?: string | null;
+  batchId?: string | null;
+}): Promise<IssuedPersonalOffer> {
+  const recipientKey = input.recipientKey.trim();
+  if (!recipientKey) throw new Error("recipient_key_required");
+  if (!Number.isInteger(input.discountPercent) || input.discountPercent < 1 || input.discountPercent > 99) {
+    throw new Error("discount_percent_invalid");
+  }
+  const token = crypto.randomBytes(18).toString("hex");
+  const amount = Math.floor((input.amount * (100 - input.discountPercent)) / 100);
+  if (!Number.isInteger(input.amount) || input.amount <= 0 || amount <= 0) throw new Error("discount_amount_invalid");
+  const batchId = first(input.batchId ?? null);
+  const db = adminClient();
+  const { error } = await db.from("personal_offer_tokens").insert({
+    token,
+    product_code: input.productCode,
+    offer_id: input.productCode,
+    status: "draft",
+    recipient_key: recipientKey,
+    channel: first(input.channel ?? null),
+    campaign: first(input.campaign ?? null),
+    amount,
+    old_amount: input.amount,
+    currency: input.currency,
+    metadata: {
+      program_slug: input.programSlug,
+      discount_percent: input.discountPercent,
+      ...(first(input.note ?? null) ? { note: first(input.note ?? null) } : {}),
+      ...(batchId ? { batch_id: batchId } : {}),
+    },
+  });
+  if (error) throw new Error(error.message || "offer_token_insert_failed");
+  const landing = new URL(`/go/${encodeURIComponent(input.programSlug)}`, PLATFORM_THANKS_URL);
+  landing.searchParams.set("offer_token", token);
+  landing.searchParams.set("offer_code", input.productCode);
+  return {
+    product: input.productCode,
+    offerId: input.productCode,
+    offerToken: token,
+    recipientKey,
+    amount,
+    oldAmount: input.amount,
+    currency: input.currency,
+    status: "draft",
+    issuedAt: null,
+    expiresAt: null,
+    discountPercent: input.discountPercent,
+    landingUrl: landing.toString(),
+    batchId,
+  };
 }
 
 export async function issueIremPersonalOffer(input: IssuePersonalOfferInput): Promise<IssuedPersonalOffer> {

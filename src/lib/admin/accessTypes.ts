@@ -22,14 +22,6 @@ export type LearnerStatus = "not_started" | "in_progress" | "stalled" | "complet
 export const GRANT_SOURCES = ["manual", "bonus", "promotion", "service"] as const;
 export type GrantSource = (typeof GRANT_SOURCES)[number];
 
-/**
- * Programs that can issue a personal promo link. `personal_offer_tokens` holds
- * IREM's early-bird price and nothing else (`issueIremPersonalOffer`), so the
- * dialog offers «Промо» for this course alone; a program joins by getting a
- * token shape of its own, not by being added here.
- */
-export const PROMO_COURSE_SLUGS = ["irem-gymnastics"] as const;
-
 export function isGrantSource(value: unknown): value is GrantSource {
   return typeof value === "string" && (GRANT_SOURCES as readonly string[]).includes(value);
 }
@@ -90,10 +82,19 @@ export type CourseRow = {
 
 /** An active, approved format of a program, as the grant dialog needs it. */
 export type CourseFormatRow = {
+  /** The saleable `experience_offers.code` that defines this format. */
+  code: string;
   format: "self" | "group" | "individual";
   label: string | null;
   /** `YYYY-MM-DD`, day 1 of the cohort. Group formats only. */
   cohortStartsOn: string | null;
+  /** Access term and included courses come from this approved offer. */
+  accessDays: number | null;
+  accessLifetime: boolean;
+  includedCourseSlugs: string[];
+  amount: number | null;
+  currency: string;
+  payable: boolean;
 };
 
 export type AuthorProfileRow = {

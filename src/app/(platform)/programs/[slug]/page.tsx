@@ -165,6 +165,14 @@ export default async function CourseOfferPage({
   /* A personal price arrives as `?offer_token` through `/go/<program>`; the
      page prints it and hands the token on to the checkout that charges it. */
   const publicCommerce = courseOfferCommerce(course.programSlug, offer);
+  const personalFormatCode = typeof query.offer_code === "string" ? query.offer_code : null;
+  const resolvedFormatPrice =
+    personalFormatCode && formats.some((format) => format.code === personalFormatCode)
+      ? await resolvePersonalPrice(personalFormatCode, query)
+      : null;
+  const personalFormatPrice = resolvedFormatPrice
+    ? { ...resolvedFormatPrice, productCode: personalFormatCode ?? "" }
+    : null;
   const commerce =
     publicCommerce.mode === "checkout"
       ? withPersonalPrice(publicCommerce, await resolvePersonalPrice(publicCommerce.productCode, query))
@@ -180,6 +188,7 @@ export default async function CourseOfferPage({
       commerce={commerce}
       author={author}
       formats={formats}
+      personalFormatPrice={personalFormatPrice}
       purchase={
         returned ? (
           <OfferPurchaseReturn purchase={{ ...returned, product: returnedCode }} telegramHref={telegramHref} />

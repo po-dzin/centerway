@@ -30,7 +30,17 @@ function parts(left: number) {
 
 const pad = (value: number) => String(value).padStart(2, "0");
 
-export function EarlyPriceTimer({ endsAt, renderedAt, line }: { endsAt: string; renderedAt: number; line: string }) {
+export function EarlyPriceTimer({
+  endsAt,
+  renderedAt,
+  line,
+  label = "Рання ціна діє ще",
+}: {
+  endsAt: string;
+  renderedAt: number;
+  line: string;
+  label?: string;
+}) {
   const end = Date.parse(endsAt);
   const [now, setNow] = useState(renderedAt);
 
@@ -58,7 +68,7 @@ export function EarlyPriceTimer({ endsAt, renderedAt, line }: { endsAt: string; 
   return (
     <div className={css.early}>
       <div className={css.earlyHead}>
-        <p className={css.earlyLabel}>Рання ціна діє ще</p>
+        <p className={css.earlyLabel}>{label}</p>
         <p
           className={css.earlyClock}
           aria-label={`${days} ${plural(days, "день", "дні", "днів")} ${hours} год ${minutes} хв`}
