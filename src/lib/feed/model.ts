@@ -29,6 +29,17 @@ export function feedPostPath(id: string): string {
 }
 
 /** Where a post's author leads: their profile, opened on «Дописи» (G 2026-10-17). */
+/**
+ * The platform as an author (G 2026-10-18): an admin may write «від імені
+ * CenterWay», with the platform's face and name. Its row in `lms_authors` has
+ * this slug and no profile page, so a byline for it is not a link.
+ */
+export const FEED_PLATFORM_SLUG = "centerway";
+
+export function isPlatformAuthor(author: { slug: string }): boolean {
+  return author.slug === FEED_PLATFORM_SLUG;
+}
+
 export function feedAuthorPath(slug: string): string {
   return `/expert/${slug}?tab=posts`;
 }
@@ -40,6 +51,8 @@ export const FEED_POST_RAW_MAX = 8000;
 export const FEED_COMMENT_MAX = 1000;
 /** How many posts a page of the feed carries; «Показати ще» asks for the next. */
 export const FEED_PAGE_SIZE = 20;
+/** An author may change a published post of their own for a day; then the words stay as the readers answered them (G 2026-10-18). */
+export const FEED_EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 /** Reactions shown under a post before «+». */
 export const FEED_TOP_REACTIONS = 3;
 /** Different emoji one person may leave on one post (G 2026-10-17); the fourth is refused. */
@@ -241,4 +254,27 @@ export function excerptOf(text: string, max = FEED_EXCERPT_CHARS): string {
   const cut = clean.slice(0, max);
   const space = cut.lastIndexOf(" ");
   return `${(space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,.;:—–-]+$/, "")}…`;
+}
+
+/**
+ * The picture a shared link to a post shows (Telegram, messengers, search): what
+ * the post itself carries, in this order — its first photo that is not a
+ * spoiler (a hidden photo must stay hidden in a preview too), then the
+ * video's own frame, otherwise nothing, and the page falls back to the brand
+ * cover. An author's face is not used: a portrait crops badly into a wide card.
+ */
+export function feedShareImage(post: {
+  media: { photos: { src: string; w: number; h: number; spoiler: boolean }[]; video: { youtubeId: string } | null };
+}): { url: string; width?: number; height?: number; alt: string } | null {
+  const photo = post.media.photos.find((entry) => !entry.spoiler);
+  if (photo) return { url: photo.src, width: photo.w, height: photo.h, alt: "Фото з допису" };
+  if (post.media.video) {
+    return {
+      url: `https://i.ytimg.com/vi/${post.media.video.youtubeId}/hqdefault.jpg`,
+      width: 480,
+      height: 360,
+      alt: "Відео з допису",
+    };
+  }
+  return null;
 }

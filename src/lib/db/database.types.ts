@@ -1173,6 +1173,8 @@ export type Database = {
           photo_alt: string | null
           photo_path: string | null
           published_at: string | null
+          pinned_at: string | null
+          edited_at: string | null
           returned_reason: string | null
           status: string
           tagged_author_ids: string[]
@@ -1199,6 +1201,8 @@ export type Database = {
           photo_alt?: string | null
           photo_path?: string | null
           published_at?: string | null
+          pinned_at?: string | null
+          edited_at?: string | null
           returned_reason?: string | null
           status?: string
           tagged_author_ids?: string[]
@@ -1225,6 +1229,8 @@ export type Database = {
           photo_alt?: string | null
           photo_path?: string | null
           published_at?: string | null
+          pinned_at?: string | null
+          edited_at?: string | null
           returned_reason?: string | null
           status?: string
           tagged_author_ids?: string[]
@@ -1279,6 +1285,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "feed_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "feed_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_shares: {
+        Row: {
+          auth_user_id: string
+          channel: string
+          created_at: string
+          post_id: string
+        }
+        Insert: {
+          auth_user_id: string
+          channel: string
+          created_at?: string
+          post_id: string
+        }
+        Update: {
+          auth_user_id?: string
+          channel?: string
+          created_at?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_shares_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "feed_posts"

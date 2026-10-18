@@ -42,6 +42,8 @@ export function fetchFeedPost(id: string) {
 
 export type FeedMe = {
   author: FeedAuthor | null;
+  /** An admin's second voice, the platform's own byline; null for everyone else. */
+  platform: FeedAuthor | null;
   posts: FeedPost[];
   courses: ComposerCourse[];
   /** Every other listed author — the composer's «з …» menu. Empty for a reader. */
@@ -67,6 +69,10 @@ export type NewPost = {
   lessonId?: string | null;
   blockId?: string | null;
   blockDisplay?: "full" | "excerpt";
+  /** An admin writing as CenterWay; the post is published at once. */
+  asPlatform?: boolean;
+  /** With `asPlatform`: make it the pinned post of the feed. */
+  pinned?: boolean;
 };
 
 export type PostFinding = { rule: string; label: string; detail: string };
@@ -79,6 +85,19 @@ export function resubmitPost(id: string, input: NewPost) {
   return call<{ post: FeedPost; findings: PostFinding[] }>(`/api/feed/${id}`, {
     method: "PATCH",
     body: JSON.stringify(input),
+  });
+}
+
+/** Where an attachment's arrow leads this reader: inside the course, or to the programme's page. */
+export function fetchAttachmentHref(postId: string) {
+  return call<{ href: string; inside: boolean }>(`/api/feed/${postId}/go`);
+}
+
+/** An admin pins or unpins a post of the platform's. */
+export function pinPost(id: string, pinned: boolean) {
+  return call<{ post: FeedPost }>(`/api/feed/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ asPlatform: true, pinOnly: true, pinned }),
   });
 }
 
@@ -100,14 +119,32 @@ export function unsavePost(postId: string) {
   return call<{ saved: false }>(`/api/feed/${postId}/save`, { method: "DELETE" });
 }
 
+export type ShareChannel = "link" | "telegram" | "system";
+
+/** A signed-in reader shared the post; `first` is false when they had before. */
+export function recordShare(postId: string, channel: ShareChannel) {
+  return call<{ first: boolean }>(`/api/feed/${postId}/share`, json({ channel }));
+}
+
 /**
  * A photo or an audio for a post (`multipart/form-data`). The answer's `path`
  * goes into `NewPost.media`; `src` is for the composer's thumbnail or player.
  */
-export function uploadFeedMedia(file: File | Blob, name = "upload") {
+export function uploadFeedMedia(file: File | Blob, name = "upload", asPlatform = false) {
   const form = new FormData();
   form.append("file", file instanceof File ? file : new File([file], name, { type: file.type }));
-  return call<UploadedMedia>("/api/feed/media", { method: "POST", body: form });
+  return call<UploadedMedia>(asPlatform ? "/api/feed/media?as=platform" : "/api/feed/media", {
+    method: "POST",
+    body: form,
+  });
+}
+
+/** An address in the bucket to send a clip to; the file does not pass through the server. */
+export function signClip(mime: string, bytes: number, asPlatform = false) {
+  return call<{ path: string; uploadUrl: string; src: string }>(
+    asPlatform ? "/api/feed/media/clip?as=platform" : "/api/feed/media/clip",
+    json({ mime, bytes }),
+  );
 }
 
 export function fetchComments(postId: string) {

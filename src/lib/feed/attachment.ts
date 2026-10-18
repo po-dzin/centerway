@@ -12,7 +12,7 @@ import { excerptOf } from "./model";
 import type { FeedAttachment } from "./server";
 
 export type AttachmentCourse = { title: string; slug: string | null; programSlug: string | null };
-export type AttachmentLesson = { title: string; dayIndex: number | null; blocks: unknown };
+export type AttachmentLesson = { title: string; slug?: string | null; dayIndex: number | null; blocks: unknown };
 
 function programHref(course: AttachmentCourse): string | null {
   return course.programSlug ? `/programs/${course.programSlug}` : null;
@@ -27,6 +27,8 @@ export function programAttachment(course: AttachmentCourse): FeedAttachment {
     full: false,
     block: null,
     courseSlug: course.slug,
+    lessonSlug: null,
+    blockId: null,
     media: null,
     durationMin: null,
     href: programHref(course),
@@ -55,8 +57,24 @@ export function blockAttachment(
        lesson's block in full behind a visual clamp. */
     block: full ? lessonBlock : null,
     courseSlug: course.slug,
+    lessonSlug: lesson.slug ?? null,
+    blockId: lessonBlock ? blockId : null,
     media: block?.media ?? null,
     durationMin: block?.durationMin ?? null,
     href: programHref(course),
   };
+}
+
+/**
+ * Where an attachment's arrow leads. A reader who has the course goes inside:
+ * the lesson and the block itself, or the course's page for a programme. A
+ * reader who does not goes where it is bought, the programme's page.
+ */
+export function attachmentPath(attachment: FeedAttachment, inside: boolean): string | null {
+  const course = attachment.courseSlug;
+  if (!inside || !course) return attachment.href;
+  const base = `/learn/${encodeURIComponent(course)}`;
+  if (attachment.kind !== "block" || !attachment.lessonSlug) return base;
+  const block = attachment.blockId ? `#block-${attachment.blockId}` : "";
+  return `${base}/${encodeURIComponent(attachment.lessonSlug)}${block}`;
 }

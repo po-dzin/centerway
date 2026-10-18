@@ -75,6 +75,7 @@ export function FeedReactions({
         className={`${styles.act} ${styles.actReact}`}
         type="button"
         aria-pressed={mine.size > 0}
+        aria-busy={busy || undefined}
         aria-expanded={onGuest ? undefined : open}
         aria-haspopup={onGuest ? undefined : "dialog"}
         aria-label={feedCopy.reactionsTotal(total, mine.size)}
@@ -120,8 +121,12 @@ export function FeedReactions({
                       className={styles.pickerItem}
                       type="button"
                       aria-pressed={pressed}
-                      disabled={busy || (full && !pressed)}
-                      onClick={() => onToggle(entry.id)}
+                      disabled={full && !pressed}
+                      onClick={() => {
+                        // The choice is made: the set closes at once, the count follows.
+                        onToggle(entry.id);
+                        close();
+                      }}
                     >
                       <Emoji id={entry.id} className={styles.pickerEmoji} />
                       <span className={styles.pickerName}>{entry.name}</span>

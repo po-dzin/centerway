@@ -23,6 +23,33 @@
   padding-block: var(--cw-space-xl) var(--cw-space-3xl);
 }
 
+/* The way back to the feed from a post's own page — desktop only; a phone has the header's arrow. */
+.backLink {
+  display: none;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  justify-self: start;
+  min-block-size: var(--ds-touch-target-min);
+  color: var(--cw-platform-muted);
+}
+
+.backText {
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 650;
+}
+
+@media (min-width: 56.3125rem) {
+  .backLink {
+    display: inline-flex;
+  }
+}
+
+@media (hover: hover) {
+  .backLink:hover {
+    color: var(--cw-platform-text);
+  }
+}
+
 /* The author's page lays the same posts in its own column. */
 .embedded {
   display: grid;
@@ -77,6 +104,51 @@
   align-items: center;
   gap: var(--cw-space-sm);
   min-inline-size: 0;
+}
+
+/* The author's own controls sit at the byline's far end. */
+.byTools {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-inline-start: auto;
+  align-self: flex-start;
+  /* The dots sit in the card's corner: the touch box overhangs the padding. */
+  margin-block: calc(var(--cw-space-xs) * -1) 0;
+  margin-inline-end: calc(var(--cw-space-xs) * -1);
+}
+
+.byMenu {
+  display: grid;
+  place-items: center;
+  inline-size: var(--ds-touch-target-min);
+  block-size: var(--ds-touch-target-min);
+  border-radius: var(--cw-radius-md);
+  color: var(--cw-platform-muted);
+}
+
+@media (hover: hover) {
+  .byMenu:hover,
+  .byMenu[aria-expanded="true"] {
+    background: var(--cw-mat-hover-bg);
+    color: var(--cw-platform-text);
+  }
+}
+
+.menuAsk {
+  padding: var(--cw-space-xs) var(--cw-space-sm) 0;
+  font-size: var(--ds-type-body-sm-size);
+  color: var(--cw-platform-muted);
+}
+
+.menuRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.menuItem:disabled {
+  opacity: 0.5;
 }
 
 .face {
@@ -263,6 +335,7 @@ a.face {
 .photo {
   position: relative;
   display: block;
+  cursor: zoom-in;
   overflow: hidden;
   max-block-size: min(60svh, 28rem);
   margin: 0;
@@ -338,6 +411,16 @@ a.face {
 }
 
 /* The lesson's own player, at the card's measure. */
+/* The author's own clip: at its proportions, never taller than a phone screen's worth. */
+.postClip {
+  /* The frame keeps its own proportions: a tall clip is narrower, not letterboxed. */
+  inline-size: min(100%, calc(min(70svh, 32rem) * var(--clip-k, 1.78)));
+  aspect-ratio: var(--clip-ratio, 16 / 9);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-scrim-ink);
+  object-fit: contain;
+}
+
 .postVideo {
   min-inline-size: 0;
 }
@@ -431,7 +514,9 @@ a.face {
   color: var(--cw-platform-text);
   font: inherit;
   font-size: var(--ds-type-body-sm-size);
-  resize: vertical;
+  /* It grows with the words (FeedComments), so it has no bar and no corner to drag. */
+  resize: none;
+  overflow: hidden;
 }
 
 .noteField:focus {
@@ -490,13 +575,27 @@ a.face {
   }
 }
 
+/* One arrow for every attachment — a programme, an excerpt, a block shown
+   whole: the same plate as the card's icon tile, so it reads as a press
+   wherever it stands (G 2026-10-18), and the same select on hover and focus. */
 .attachGo {
   display: grid;
   place-items: center;
   inline-size: var(--ds-touch-target-min);
   block-size: var(--ds-touch-target-min);
   border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-tone-icon);
+  box-shadow: inset 0 0 0 1px var(--cw-mat-stroke-quiet);
   color: var(--cw-platform-text);
+  transition:
+    background var(--cw-motion-state) var(--cw-ease-state),
+    box-shadow var(--cw-motion-state) var(--cw-ease-state);
+}
+
+.attachGo:focus-visible,
+.attach[data-link]:focus-within .attachGo {
+  background: var(--cw-mat-surface);
+  box-shadow: inset 0 0 0 1px var(--cw-mat-stroke-control);
 }
 
 .attachGo::after {
@@ -517,8 +616,10 @@ a.face {
 }
 
 @media (hover: hover) {
-  .attach[data-link]:hover .attachGo {
+  .attach[data-link]:hover .attachGo,
+  .attachGo:hover {
     background: var(--cw-mat-surface);
+    box-shadow: inset 0 0 0 1px var(--cw-mat-stroke-control);
   }
 
   .attach[data-link]:hover .attachGo svg {
@@ -605,6 +706,10 @@ a.face {
   margin-inline-start: calc(var(--cw-space-xs) * -1);
 }
 
+.act[data-tone="danger"] {
+  color: var(--cw-danger);
+}
+
 .act {
   display: inline-flex;
   align-items: center;
@@ -661,16 +766,15 @@ a.face {
   display: inline-flex;
 }
 
+/* No plate behind a stacked emoji: the glyph is drawn on its own, so the chip's
+   fill (gold when the reader's own is in the pile) shows through it. */
 .emoPileItem {
   inline-size: 1.35rem;
   block-size: 1.35rem;
-  border-radius: var(--cw-radius-inset);
-  background: var(--cw-mat-surface);
-  box-shadow: 0 0 0 2px var(--cw-mat-surface);
 }
 
 .emoPileItem + .emoPileItem {
-  margin-inline-start: calc(var(--cw-space-xs) * -1);
+  margin-inline-start: calc(var(--cw-space-2xs) * -1);
 }
 
 .actSave[aria-pressed="true"] {
@@ -708,6 +812,12 @@ a.face {
 
 .menuItem svg {
   color: var(--cw-platform-muted);
+}
+
+/* A removal reads as one before it is pressed: the word and the glyph in the danger colour. */
+.menuItem[data-tone="danger"],
+.menuItem[data-tone="danger"] svg {
+  color: var(--cw-danger);
 }
 
 .menuItem:focus-visible {
@@ -1032,10 +1142,6 @@ a.commentFace {
   gap: var(--cw-space-sm);
 }
 
-.commentAction {
-  composes: base text from "../PlatformButtons.module.css";
-}
-
 .writeRow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1063,19 +1169,9 @@ a.commentFace {
   box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
 }
 
+/* Sending is an icon, in the same plate as the platform's other primary icon controls. */
 .sendButton {
-  composes: base secondary compact from "../PlatformButtons.module.css";
-}
-
-/* With a keyboard Enter sends (FeedComments); the button is the phone's. */
-@media (pointer: fine) {
-  .writeRow {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .sendButton {
-    display: none;
-  }
+  composes: base primary square from "../PlatformButtons.module.css";
 }
 
 .replyingTo {
@@ -1368,94 +1464,69 @@ a.commentFace {
 
 /* ─────────────── the home strip: three latest, as full cards ─────────────── */
 
-.fresh {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: start;
-  gap: var(--cw-space-md);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.fresh > li {
-  display: grid;
-  min-inline-size: 0;
-}
-
-.fresh .post {
+/* The card on the home rail sits a little further from its edges than the
+   feed's inset did: the face and the words were flush with the card's rim. */
+.post[data-variant="rail"] {
+  /* Cards of one row share a height; their content starts at the top of each. */
+  align-content: start;
   gap: var(--cw-space-sm);
-  padding: var(--ds-card-inset);
+  padding: var(--cw-space-md);
 }
 
-/* A phone (and a narrow tablet): one rail of 86vw cards that snap, the next
-   one showing at the edge. */
-@media (max-width: 56rem) {
-  .fresh {
-    display: flex;
-    overflow-x: auto;
-    overflow-y: hidden;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory;
-    padding-block-end: var(--cw-space-sm);
-  }
+/* ─────────────── the wall at the top of /feed ─────────────── */
 
-  .fresh > li {
-    flex: 0 0 min(86vw, 22rem);
-    scroll-snap-align: start;
-  }
-}
-
-/* ─────────────── the hero at the top of /feed ─────────────── */
-
-.hero {
-  --hero-x: 50%;
-  --hero-y: 35%;
+/* THE WALL IS THE GROUND OF THE FIRST SCREEN (G 2026-10-18). The photograph
+   runs behind the whole first screen, edge to edge, and fades into the page
+   below it. The pieces on it take the top of the plate (about the top 58% on a
+   desktop, 50% on a phone); the title starts under them (`--wall-band`), and
+   the feed's pinned post is taped to the plaster below the title. */
+.wall {
+  --stage-h: clamp(28rem, min(100svh, 53.2vw), 62rem);
+  --wall-band: calc(var(--stage-h) * 0.55);
   position: relative;
   isolation: isolate;
-  overflow: hidden;
-  display: flex;
-  align-items: flex-end;
-  min-block-size: clamp(15.5rem, 38vw, 19.5rem);
-  border-radius: var(--cw-card-radius);
-  background: var(--cw-mat-scrim-ink);
-  color: var(--cw-mat-inverse-text);
+  overflow-x: clip;
 }
 
-.heroPhoto {
+.stage {
   position: absolute;
-  inset: 0;
-  z-index: -2;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: -1;
+  block-size: var(--stage-h);
+  pointer-events: none;
+  /* The photograph melts into the page: whole for the first screen, gone at
+     the bottom edge, so the second screen starts on the page's own ground. */
+  mask-image: linear-gradient(to bottom, #000 0%, #000 58%, transparent 100%);
+}
+
+.stagePhoto {
+  display: block;
   inline-size: 100%;
   block-size: 100%;
   max-inline-size: none;
   object-fit: cover;
-  object-position: var(--hero-x) var(--hero-y);
+  object-position: 50% 0;
 }
 
-/* The scrim leans to where the words are: up from the bottom, in from the
-   left. No filter on the photo itself — its tone is baked in. */
-.hero::before {
+/* The scene is light; on the dark theme the page's ground dims it. */
+:global([data-cw-theme="dark"]) .stage::after {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    linear-gradient(
-      to top,
-      color-mix(in srgb, var(--cw-mat-scrim-ink) 86%, transparent) 0%,
-      color-mix(in srgb, var(--cw-mat-scrim-ink) 46%, transparent) 42%,
-      transparent 74%
-    ),
-    linear-gradient(to right, color-mix(in srgb, var(--cw-mat-scrim-ink) 40%, transparent) 0%, transparent 62%);
+  background: color-mix(in srgb, var(--cw-platform-bg) 62%, transparent);
+}
+
+.pageOnWall {
+  gap: var(--cw-space-md);
+  padding-block-start: var(--wall-band);
 }
 
 .heroBody {
   display: grid;
   gap: var(--cw-space-xs);
   max-inline-size: 32rem;
-  padding: var(--cw-space-lg);
+  color: var(--cw-platform-text);
 }
 
 .heroTitle {
@@ -1466,16 +1537,34 @@ a.commentFace {
   line-height: 1.1;
 }
 
-.heroLead {
-  margin: 0;
-  line-height: 1.55;
-  color: color-mix(in srgb, var(--cw-mat-inverse-text) 90%, transparent);
+@media (max-width: 35rem) {
+  .wall {
+    --stage-h: clamp(30rem, 100svh, 54rem);
+    --wall-band: calc(var(--stage-h) * 0.47);
+  }
 }
 
-@media (max-width: 35rem) {
-  .heroBody {
-    padding: var(--cw-space-md);
-  }
+/* The pinned post is taped to the wall: a strip of masking tape across its
+   top edge, as on the pieces above it. Only the unfiltered feed's first card
+   carries it. */
+.pinned {
+  position: relative;
+}
+
+.pinned::before {
+  content: "";
+  position: absolute;
+  inset-block-start: calc(var(--cw-space-xs) * -1);
+  inset-inline-start: 50%;
+  inline-size: var(--cw-space-3xl);
+  block-size: var(--cw-space-lg);
+  margin-inline-start: calc(var(--cw-space-3xl) / -2);
+  transform: rotate(-1.5deg);
+  background: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 70%, var(--cw-sem-warmth) 30%);
+  opacity: 0.86;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 22%, transparent);
+  clip-path: polygon(0 8%, 4% 0, 9% 10%, 14% 0, 100% 0, 96% 50%, 100% 100%, 12% 100%, 7% 88%, 3% 100%, 0 90%, 3% 50%);
+  pointer-events: none;
 }
 
 /* ─────────────── tabs on the author's page ─────────────── */
@@ -1531,57 +1620,13 @@ a.commentFace {
   }
 }
 
-/* ─────────────── «Стрічка · початок»: the pinned welcome ─────────────── */
+/* ─────────────── the pinned post: platform voice ─────────────── */
 
 .pinTag {
   margin-inline-start: var(--cw-space-2xs);
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-label-size);
   font-weight: 600;
-}
-
-.welcomeTitle {
-  margin: 0;
-  font-family: var(--cw-font-editorial);
-  font-size: var(--ds-type-lead-size);
-  font-weight: 500;
-  line-height: 1.25;
-  text-wrap: balance;
-}
-
-.welcomeText {
-  margin: 0;
-  line-height: var(--ds-type-body-line-height);
-}
-
-/* What the feed carries, inside the pinned post: one line each. */
-.willList {
-  display: grid;
-  gap: var(--cw-space-xs);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.willItem {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--cw-space-sm);
-  align-items: start;
-  line-height: var(--ds-type-body-sm-line-height);
-}
-
-.willIcon {
-  margin-block-start: 0.1em;
-  color: var(--cw-platform-text);
-}
-
-.willTitle {
-  font-weight: 700;
-}
-
-.willText {
-  color: var(--cw-platform-muted);
 }
 
 /* «Мої дописи»: how a post landed, under its action row. */
@@ -1605,11 +1650,78 @@ a.commentFace {
   color: var(--cw-platform-text);
 }
 
-.echoReply {
-  color: var(--cw-platform-text);
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-thickness: var(--cw-link-rule-width);
-  text-underline-offset: var(--cw-link-rule-offset);
-  text-decoration-color: var(--cw-link-rule-color);
+/* The way in is smaller here: the post stays whole on a short screen. */
+.pinned .attachIcon {
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+}
+
+/* ─────────────── the photo viewer ─────────────── */
+
+.viewer {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+  max-inline-size: none;
+  block-size: 100%;
+  max-block-size: none;
+  margin: 0;
+  padding: var(--cw-space-3xl) var(--cw-space-md);
+  border: 0;
+  background: var(--cw-mat-scrim-ink);
+  color: var(--cw-platform-accent-contrast);
+}
+
+.viewer::backdrop {
+  background: transparent;
+}
+
+.viewerImg {
+  display: block;
+  max-inline-size: 100%;
+  max-block-size: 100%;
+  inline-size: auto;
+  block-size: auto;
+  object-fit: contain;
+  border-radius: var(--cw-radius-sm);
+}
+
+.viewerClose,
+.viewerStep {
+  composes: base onMedia square from "../PlatformButtons.module.css";
+  position: absolute;
+}
+
+.viewerClose {
+  inset-block-start: max(var(--cw-space-md), env(safe-area-inset-top, 0px));
+  inset-inline-end: max(var(--cw-space-md), env(safe-area-inset-right, 0px));
+}
+
+.viewerStep {
+  inset-block-start: 50%;
+  translate: 0 -50%;
+}
+
+.viewerStep:disabled {
+  opacity: 0.35;
+}
+
+.viewerPrev {
+  inset-inline-start: max(var(--cw-space-md), env(safe-area-inset-left, 0px));
+}
+
+.viewerNext {
+  inset-inline-end: max(var(--cw-space-md), env(safe-area-inset-right, 0px));
+}
+
+.viewerCount {
+  position: absolute;
+  inset-block-end: max(var(--cw-space-lg), env(safe-area-inset-bottom, 0px));
+  inset-inline: 0;
+  margin: 0;
+  text-align: center;
+  font-size: var(--ds-type-body-sm-size);
+  font-variant-numeric: tabular-nums;
 }

@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * The home page's rail of full post cards. Three abreast on a wide screen; on
- * a phone a sideways rail of 86vw cards that snap, so the next card always
- * shows at the edge and says «there is more».
+ * The home page's rail of full post cards, in the platform's own carousel
+ * (`PlatformOfferCarousel`): three abreast on a wide screen, one on a phone,
+ * with its dots under it and room for the cards' shadows.
  *
  * The server sends the guest's view. Once the session is known the three
  * posts are read again with the reader's token, so their own reactions and
@@ -14,12 +14,12 @@ import { useEffect, useState } from "react";
 
 import { useSignInHref } from "@/components/auth/useSignInReturn";
 import { useSession } from "@/components/auth/SessionProvider";
+import { PlatformOfferCarousel } from "@/components/platform/PlatformOfferCarousel";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import type { FeedPost } from "@/lib/feed/server";
 
 import { fetchFeedPost } from "./feedApi";
 import { FeedPostCard } from "./FeedPostCard";
-import styles from "./Feed.module.css";
 
 export function FeedFreshRail({ posts: initial }: { posts: FeedPost[] }) {
   const { session, status } = useSession();
@@ -49,18 +49,17 @@ export function FeedFreshRail({ posts: initial }: { posts: FeedPost[] }) {
   }, [status, token, ids]);
 
   return (
-    <ul className={`${styles.fresh} cw-scroll-rail`}>
+    <PlatformOfferCarousel label="Свіже від авторів">
       {posts.map((post) => (
-        <li key={`${post.id}:${round}`}>
-          <FeedPostCard
-            post={post}
-            signedIn={Boolean(session?.user)}
-            signInHref={signInHref}
-            headingLevel={3}
-            variant="rail"
-          />
-        </li>
+        <FeedPostCard
+          key={`${post.id}:${round}`}
+          post={post}
+          signedIn={Boolean(session?.user)}
+          signInHref={signInHref}
+          headingLevel={3}
+          variant="rail"
+        />
       ))}
-    </ul>
+    </PlatformOfferCarousel>
   );
 }

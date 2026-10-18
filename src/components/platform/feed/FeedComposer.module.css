@@ -121,6 +121,9 @@
   overscroll-behavior: contain;
 }
 
+/* The face and the name on the first line; the field under them across the
+   whole width (G 17.10: «на всю ширину, під автором») — on every screen, as
+   the phone already had it. */
 .body {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -128,50 +131,29 @@
   gap: var(--cw-space-sm);
 }
 
-.face {
-  flex: 0 0 auto;
+.main {
+  display: contents;
 }
 
-.main {
-  display: grid;
-  gap: var(--cw-space-xs);
-  min-inline-size: 0;
+.main > :not(.who) {
+  grid-column: 1 / -1;
+}
+
+.face {
+  flex: 0 0 auto;
 }
 
 .who {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  align-self: center;
   gap: var(--cw-space-2xs);
   min-block-size: 2.5rem;
 }
 
 .name {
   font-weight: 700;
-}
-
-.whoChevron {
-  color: var(--cw-platform-muted);
-}
-
-/* A phone gives the field the whole width: beside a face column the six tools
-   wrapped onto a second row. The face and the name keep the first line. */
-@media (max-width: 560px) {
-  .body {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .main {
-    display: contents;
-  }
-
-  .main > :not(.who) {
-    grid-column: 1 / -1;
-  }
-
-  .who {
-    align-self: center;
-  }
 }
 
 /* ─────────────── topics ─────────────── */
@@ -217,9 +199,17 @@
   background: var(--cw-mat-surface-sunk);
 }
 
+/* ONE CONTOUR WHEN WRITING (G 17.10: «купа контурів при селекті поля»). The
+   field's border darkens and that is all: no ring around it, and no outline
+   on the textarea inside — the shell's `:focus-visible` outline reached it
+   past `.text:focus` and drew a third line. The caret is in the field; the
+   border says which one. */
 .field:focus-within {
   border-color: var(--cw-nav-marker);
-  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+.field .text:is(:focus, :focus-visible) {
+  outline: none;
 }
 
 .attached {
@@ -423,55 +413,65 @@
   color: var(--cw-platform-muted);
 }
 
-/* ─────────────── video, audio, inline fields ─────────────── */
+/* ─────────────── the other tiles, and the tools' menus ─────────────── */
 
-.mediaChip {
-  display: flex;
-  align-items: center;
-  gap: var(--cw-space-xs);
-  min-inline-size: 0;
-  min-block-size: var(--ds-touch-target-min);
-  padding-inline: var(--cw-space-xs) 0;
-  border-radius: var(--cw-radius-md);
+/* The video and the audio stand in the photos' row as tiles of the same size
+   (G 17.10); their «⋯» is the photo's. */
+.thumb[data-kind="audio"] {
   background: var(--cw-mat-surface);
 }
 
-.mediaChipIcon {
-  display: inline-grid;
-  flex: 0 0 auto;
+.tileMark {
+  position: absolute;
+  inset-inline-start: var(--cw-space-2xs);
+  inset-block-end: var(--cw-space-2xs);
+  display: grid;
   place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cw-mat-scrim-ink) 72%, transparent);
+  color: var(--cw-mat-inverse-text);
+  pointer-events: none;
+}
+
+/* No still to show: the mark stands alone in the middle of the tile. */
+.tileMark[data-alone] {
+  inset: 0;
+  margin: auto;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  background: transparent;
+  color: var(--cw-platform-text);
+}
+
+.tileAudio {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--cw-space-2xs);
+  color: var(--cw-platform-text);
+  pointer-events: none;
+}
+
+.tileClock {
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  font-variant-numeric: tabular-nums;
   color: var(--cw-platform-muted);
 }
 
-.mediaChipText {
+/* The programme path, in the block or programme tool's menu. */
+.chooser {
   display: grid;
-  flex: 1 1 auto;
-  gap: var(--cw-space-2xs);
-  min-inline-size: 0;
-  font-size: var(--ds-type-body-sm-size);
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-2xs);
 }
 
-.mediaChipText b {
-  overflow: hidden;
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.player {
-  flex: 1 1 auto;
-  min-inline-size: 0;
-  block-size: 2.25rem;
-}
-
-.durationChip {
-  flex: 0 0 auto;
-  padding: 0 var(--cw-space-xs);
-  border-radius: var(--cw-radius-pill);
-  background: var(--cw-mat-surface-sunk);
-  color: var(--cw-platform-text);
-  font-family: var(--cw-font-data);
-  font-size: var(--ds-type-label-size);
+.chooser > .inlineAction {
+  justify-self: start;
 }
 
 .inlineForm {
@@ -572,12 +572,6 @@
 
 .pickerChange {
   composes: base text hug compact from "../PlatformButtons.module.css";
-}
-
-/* «Прикріпити» closes the choice; it stands at the start like the field's
-   other inline actions. */
-.picker > .inlineAction {
-  justify-self: start;
 }
 
 .select {
@@ -774,4 +768,37 @@
 .muted {
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-body-sm-size);
+}
+
+/* An admin's choice of voice: the platform's own byline, and the pin. */
+.voice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs) var(--cw-space-md);
+}
+
+.voiceOption {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-block-size: var(--ds-touch-target-min);
+  cursor: pointer;
+}
+
+.voiceText {
+  font-size: var(--ds-type-body-sm-size);
+  color: var(--cw-platform-muted);
+}
+
+.voiceOption input {
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  accent-color: var(--cw-platform-accent);
+}
+
+.fieldHint {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: var(--ds-type-label-line-height);
 }

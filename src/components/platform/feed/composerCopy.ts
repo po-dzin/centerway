@@ -5,6 +5,9 @@
  */
 
 export const composerCopy = {
+  voiceLabel: "Від чийого імені",
+  asPlatform: "Від імені CenterWay",
+  pin: "Закріпити",
   open: "Новий допис",
   title: "Новий допис",
   titleAgain: "Надіслати ще раз",
@@ -54,13 +57,26 @@ export const composerCopy = {
   videoAdd: "Додати",
   videoInvalid: "Це не схоже на посилання YouTube.",
   videoRemove: "Прибрати відео",
+  videoActions: "Дії з відео",
   videoChip: "YouTube",
+  videoFile: "Завантажити своє відео",
+  videoFileHint: "До 30 с, Full HD (1920×1080), до 60 МБ. MP4, MOV або WebM.",
+  clipUploading: "Завантажується відео",
+  clipFailed: "Не вдалося завантажити відео.",
+  clipLong: "Відео довше за 30 секунд. Обріжте його в редакторі телефона.",
+  clipLarge: "Відео більше за Full HD (1920×1080). Стисніть або обріжте його.",
+  clipBig: "Файл більший за 60 МБ. Обріжте або стисніть відео.",
+  clipType: "Потрібне відео MP4, MOV або WebM.",
+  clipUnreadable: "Не вдалося прочитати це відео. Спробуйте MP4.",
 
   audioRecord: "Записати",
   audioStop: "Зупинити",
   audioPick: "Вибрати файл",
   audioRecording: "Запис",
   audioRemove: "Прибрати аудіо",
+  audioActions: "Дії з аудіо",
+  audioPlay: "Прослухати",
+  audioPause: "Зупинити",
   audioUploading: "Завантажується аудіо",
   audioFailed: "Не вдалося завантажити аудіо.",
   audioTooBig: "Аудіо до 20 МБ.",
@@ -105,6 +121,10 @@ export const composerCopy = {
   tooLong: (max: number) => `Допис до ${max} знаків.`,
 
   errors: {
+    media_clip_too_long: "Відео довше за 30 секунд.",
+    media_clip_too_large: "Відео більше за Full HD (1920×1080).",
+    edit_window_closed: "Допис можна змінювати лише першу добу після публікації.",
+    edit_blocked: "Ці слова не пройшли перевірку. Допис лишився як був.",
     media_invalid: "Не вдалося прикріпити файли. Спробуйте прибрати й додати їх знову.",
     media_too_many_photos: "До 10 фото в одному дописі.",
     media_video_invalid: "Посилання на відео не підходить.",

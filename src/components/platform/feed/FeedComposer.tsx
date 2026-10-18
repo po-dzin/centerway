@@ -7,9 +7,13 @@
  * column — and it opens this dialog.
  *
  * THE DIALOG, top to bottom: ✕ and the title; the author's face and name, and
- * under the name the topics (one to three, catalogue icons); one field that
- * holds, in this order, what is attached (photos, video, audio, a programme
- * block, the «з …» authors), the text, and the tools that add to it; then
+ * beside the name the topics (one to three, catalogue icons); one field across
+ * the whole width that holds, in this order, the files as one row of equal
+ * tiles (photos, video, audio — each with the same «⋯»), the programme block
+ * as the card the feed will draw, the «з …» authors, the text, and the tools
+ * that add to it. A tool that needs an answer — the video's link, the
+ * recorder, the programme path — asks in its own menu under the button, never
+ * inside the field (G 17.10: «однозначно уніфіковано»); then
  * «Опублікувати» on the right. Ctrl/Cmd + Enter publishes; Escape or ✕ closes,
  * asking first when something would be lost.
  *
@@ -54,18 +58,19 @@ import {
   type TextEdit,
 } from "./FeedComposerFormat";
 import {
-  AudioChip,
   AudioField,
-  PhotoStrip,
-  VideoChip,
+  MediaStrip,
   VideoField,
+  checkClipFile,
   mediaError,
+  uploadClip,
   uploadWithProgress,
   type AudioItem,
+  type ClipItem,
   type PhotoItem,
   type VideoItem,
 } from "./FeedComposerMedia";
-import { TagRow, TopicMenu, initialOf } from "./FeedComposerMenus";
+import { ComposerPopover, TagRow, TopicMenu, initialOf } from "./FeedComposerMenus";
 import styles from "./FeedComposer.module.css";
 
 type Attach = "none" | "block" | "program";
@@ -86,6 +91,9 @@ export type ComposerDraft = {
   lessonId: string | null;
   blockId: string | null;
   full: boolean;
+  /** A post the platform wrote, changed by an admin (G 2026-10-18). */
+  asPlatform?: boolean;
+  pinned?: boolean;
 };
 
 let keySeq = 0;
@@ -117,6 +125,21 @@ function audioOf(media: FeedMedia | undefined): AudioItem | null {
   };
 }
 
+function clipOf(media: FeedMedia | undefined): ClipItem | null {
+  const clip = media?.clip;
+  if (!clip) return null;
+  return {
+    status: "done",
+    progress: 1,
+    preview: clip.src,
+    durationSec: clip.durationSec,
+    w: clip.w,
+    h: clip.h,
+    path: clip.path,
+    mime: clip.mime,
+  };
+}
+
 function revoke(url: string | undefined) {
   if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
 }
@@ -136,13 +159,17 @@ const FMT: {
 
 export function FeedComposer({
   author,
-  courses,
+  platform = null,
+  courses: ownCourses,
   taggable = [],
   draft,
   onDone,
   onCancel,
 }: {
-  author: FeedAuthor;
+  /** The writer's own byline; null for an admin who is not an author and writes only as the platform. */
+  author: FeedAuthor | null;
+  /** An admin's second voice: «від імені CenterWay», with the platform's face and name. */
+  platform?: FeedAuthor | null;
   courses: ComposerCourse[];
   /** Other listed authors the post may name «з …» (`FeedMe.taggable`). */
   taggable?: FeedAuthor[];
@@ -156,9 +183,23 @@ export function FeedComposer({
   const field = useRef<HTMLTextAreaElement>(null);
   const photoPicker = useRef<HTMLInputElement>(null);
   const tagTool = useRef<HTMLButtonElement>(null);
+  /* Each tool that asks something opens its own menu under itself — the link,
+     the recorder, the programme path — so nothing of a file is typed into the
+     field as if it were part of the text (G 17.10). */
+  const videoTool = useRef<HTMLButtonElement>(null);
+  const audioTool = useRef<HTMLButtonElement>(null);
+  const blockTool = useRef<HTMLButtonElement>(null);
+  const programTool = useRef<HTMLButtonElement>(null);
+  const [recordingAudio, setRecordingAudio] = useState(false);
   const fmtBar = useRef<HTMLDivElement>(null);
   const savedRange = useRef<[number, number]>([0, 0]);
   const titleId = useId();
+  const [asPlatform, setAsPlatform] = useState(draft?.asPlatform ?? (!author && Boolean(platform)));
+  const [pinned, setPinned] = useState(draft?.pinned ?? false);
+  const speaker = (asPlatform ? platform : author) ?? platform ?? (author as FeedAuthor);
+  const platformVoice = asPlatform && Boolean(platform);
+  // The platform has no programmes of its own to attach.
+  const courses = platformVoice ? [] : ownCourses;
 
   const [open, setOpen] = useState(Boolean(draft));
   const [body, setBody] = useState(draft?.body ?? "");
@@ -166,6 +207,7 @@ export function FeedComposer({
   const [tagged, setTagged] = useState<string[]>(draft?.taggedAuthorIds ?? []);
   const [photos, setPhotos] = useState<PhotoItem[]>(() => photosOf(draft?.media));
   const [video, setVideo] = useState<VideoItem | null>(draft?.media?.video ?? null);
+  const [clip, setClip] = useState<ClipItem | null>(() => clipOf(draft?.media));
   const [audio, setAudio] = useState<AudioItem | null>(() => audioOf(draft?.media));
   const [attach, setAttach] = useState<Attach>(draft?.blockId ? "block" : draft?.courseId ? "program" : "none");
   const [courseId, setCourseId] = useState<string>(draft?.courseId ?? courses[0]?.id ?? "");
@@ -176,6 +218,10 @@ export function FeedComposer({
      chosen, the field shows the block itself as the feed will draw it. A
      returned post opens with its attachment already chosen. */
   const [choosing, setChoosing] = useState(false);
+  /* Chosen once with «Прикріпити» (or opened from a returned post): only then
+     does the block stand in the field. A choice dismissed before that leaves
+     nothing behind. */
+  const [attachConfirmed, setAttachConfirmed] = useState(Boolean(draft?.blockId || draft?.courseId));
   const [panel, setPanel] = useState<Panel>("none");
   const [menu, setMenu] = useState<Menu>(null);
   const [selected, setSelected] = useState(false);
@@ -204,14 +250,18 @@ export function FeedComposer({
     }
     return null;
   }, [attach, course, lesson, block, full]);
-  const taggableOthers = useMemo(() => taggable.filter((entry) => entry.id !== author.id), [taggable, author.id]);
+  const taggableOthers = useMemo(() => taggable.filter((entry) => entry.id !== speaker.id), [taggable, speaker.id]);
 
   const visible = useMemo(() => feedPlainText(body).length, [body]);
-  const uploading = photos.some((photo) => photo.status === "uploading") || audio?.status === "uploading";
+  const uploading =
+    photos.some((photo) => photo.status === "uploading") ||
+    clip?.status === "uploading" ||
+    audio?.status === "uploading";
   const dirty =
     Boolean(body.trim()) ||
     photos.length > 0 ||
     Boolean(video) ||
+    Boolean(clip) ||
     Boolean(audio) ||
     tagged.length > 0 ||
     (!draft && attach !== "none");
@@ -238,11 +288,17 @@ export function FeedComposer({
       return [];
     });
     setVideo(null);
+    setClip((current) => {
+      revoke(current?.preview);
+      return null;
+    });
     setAudio((current) => {
       revoke(current?.preview);
       return null;
     });
     setAttach("none");
+    setAttachConfirmed(false);
+    setChoosing(false);
     setPanel("none");
     setMenu(null);
     setFindings([]);
@@ -268,6 +324,7 @@ export function FeedComposer({
       // Unmounting with local previews still alive lets them go.
       photos.forEach((photo) => revoke(photo.preview));
       revoke(audio?.preview);
+      revoke(clip?.preview);
     },
     // Only on unmount: the lists are read through the closure of the last render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -338,8 +395,11 @@ export function FeedComposer({
   /* ── media ── */
 
   async function sendPhoto(key: string, file: File) {
-    const result = await uploadWithProgress(file, (progress) =>
-      setPhotos((current) => current.map((photo) => (photo.key === key ? { ...photo, progress } : photo))),
+    const result = await uploadWithProgress(
+      file,
+      (progress) =>
+        setPhotos((current) => current.map((photo) => (photo.key === key ? { ...photo, progress } : photo))),
+      platformVoice,
     );
     setPhotos((current) =>
       current.map((photo) => {
@@ -381,9 +441,50 @@ export function FeedComposer({
     void sendPhoto(key, item.file);
   }
 
+  async function sendClip(file: File, mime: string) {
+    const result = await uploadClip(
+      file,
+      mime,
+      (progress) => setClip((current) => (current && current.file === file ? { ...current, progress } : current)),
+      platformVoice,
+    );
+    setClip((current) => {
+      if (!current || current.file !== file) return current;
+      if (!result.ok) {
+        const error = mediaError(result.code, composerCopy.clipFailed);
+        toast.error(error);
+        return { ...current, status: "failed", error };
+      }
+      return { ...current, status: "done", progress: 1, path: result.data.path, mime };
+    });
+  }
+
+  async function addClip(file: File) {
+    const checked = await checkClipFile(file);
+    if (!checked.ok) {
+      toast.error(checked.error);
+      return;
+    }
+    revoke(clip?.preview);
+    setVideo(null);
+    setClip({
+      status: "uploading",
+      progress: 0,
+      preview: checked.preview,
+      durationSec: checked.durationSec,
+      w: checked.w,
+      h: checked.h,
+      file,
+      mime: checked.mime,
+    });
+    void sendClip(file, checked.mime);
+  }
+
   async function sendAudio(file: File) {
-    const result = await uploadWithProgress(file, (progress) =>
-      setAudio((current) => (current && current.file === file ? { ...current, progress } : current)),
+    const result = await uploadWithProgress(
+      file,
+      (progress) => setAudio((current) => (current && current.file === file ? { ...current, progress } : current)),
+      platformVoice,
     );
     setAudio((current) => {
       if (!current || current.file !== file) return current;
@@ -416,12 +517,19 @@ export function FeedComposer({
       }));
     }
     if (video) media.video = video;
+    if (clip?.status === "done" && clip.path && clip.mime) {
+      media.clip = { path: clip.path, durationSec: clip.durationSec, w: clip.w, h: clip.h, mime: clip.mime };
+    }
     if (audio?.status === "done" && audio.path && audio.mime) {
       media.audio = { path: audio.path, durationSec: audio.durationSec, mime: audio.mime };
     }
     const next: NewPost = { body, topics, media, taggedAuthorIds: tagged };
-    if (attach !== "none" && course) next.courseId = course.id;
-    if (attach === "block" && lesson && block) {
+    if (platformVoice) {
+      next.asPlatform = true;
+      next.pinned = pinned;
+    }
+    if (attach !== "none" && attachConfirmed && course) next.courseId = course.id;
+    if (attach === "block" && attachConfirmed && lesson && block) {
       next.lessonId = lesson.id;
       next.blockId = block.id;
       next.blockDisplay = full ? "full" : "excerpt";
@@ -452,6 +560,10 @@ export function FeedComposer({
     }
     if (photos.some((photo) => photo.status === "failed")) {
       toast.error(composerCopy.photoFailed);
+      return;
+    }
+    if (clip?.status === "failed") {
+      toast.error(clip.error ?? composerCopy.clipFailed);
       return;
     }
     if (audio?.status === "failed") {
@@ -494,8 +606,15 @@ export function FeedComposer({
       setAttach("none");
       return;
     }
+    const direct = kind === "program" && courses.length === 1;
     setAttach(kind);
-    setChoosing(!(kind === "program" && courses.length === 1));
+    setChoosing(!direct);
+    setAttachConfirmed(direct);
+  }
+
+  function closeChooser() {
+    setChoosing(false);
+    if (!attachConfirmed) setAttach("none");
   }
 
   const showFmt = selected || linking;
@@ -510,13 +629,15 @@ export function FeedComposer({
         onClick={() => photoPicker.current?.click()}
       />
       <ToolButton
+        ref={videoTool}
         icon="video"
         label={composerCopy.video}
         pressed={panel === "video"}
-        disabled={Boolean(video)}
+        disabled={Boolean(video) || Boolean(clip)}
         onClick={() => setPanel(panel === "video" ? "none" : "video")}
       />
       <ToolButton
+        ref={audioTool}
         icon="mic"
         label={composerCopy.audio}
         pressed={panel === "audio"}
@@ -526,12 +647,14 @@ export function FeedComposer({
       {courses.length > 0 ? (
         <>
           <ToolButton
+            ref={blockTool}
             icon="document"
             label={composerCopy.block}
             pressed={attach === "block"}
             onClick={() => startAttach("block")}
           />
           <ToolButton
+            ref={programTool}
             icon="guide"
             label={composerCopy.program}
             pressed={attach === "program"}
@@ -647,7 +770,8 @@ export function FeedComposer({
           event.preventDefault();
           if (menu) setMenu(null);
           else if (linking) setLinking(false);
-          else if (panel !== "none") setPanel("none");
+          else if (choosing) closeChooser();
+          else if (panel !== "none" && !recordingAudio) setPanel("none");
           else requestClose();
         }}
         onClick={(event) => {
@@ -693,14 +817,13 @@ export function FeedComposer({
               <div className={styles.body}>
                 <AuthorPortrait
                   className={styles.face}
-                  photo={author.photo}
+                  photo={speaker.photo}
                   size="xs"
-                  fallback={initialOf(author.name)}
+                  fallback={initialOf(speaker.name)}
                 />
                 <div className={styles.main}>
                   <div className={styles.who}>
-                    <b className={styles.name}>{author.name}</b>
-                    <Icon className={styles.whoChevron} name="chevron-right" size={20} />
+                    <b className={styles.name}>{speaker.name}</b>
                     <TopicMenu
                       topics={topics}
                       onChange={(next) => setTopics(next.slice(0, FEED_TOPICS_MAX))}
@@ -709,11 +832,47 @@ export function FeedComposer({
                     />
                   </div>
 
+                  {platform ? (
+                    <div className={styles.voice} role="group" aria-label={composerCopy.voiceLabel}>
+                      {author && !draft ? (
+                        <label className={styles.voiceOption}>
+                          <input
+                            type="checkbox"
+                            checked={asPlatform}
+                            onChange={(event) => {
+                              setAsPlatform(event.target.checked);
+                              if (!event.target.checked) setPinned(false);
+                            }}
+                          />
+                          <span className={styles.voiceText}>{composerCopy.asPlatform}</span>
+                        </label>
+                      ) : null}
+                      {platformVoice ? (
+                        <label className={styles.voiceOption}>
+                          <input
+                            type="checkbox"
+                            checked={pinned}
+                            onChange={(event) => setPinned(event.target.checked)}
+                          />
+                          <span className={styles.voiceText}>{composerCopy.pin}</span>
+                        </label>
+                      ) : null}
+                    </div>
+                  ) : null}
+
                   <div className={styles.field} data-dragging={undefined}>
-                    {photos.length || video || audio || attach !== "none" || tagged.length || panel !== "none" ? (
+                    {photos.length ||
+                    video ||
+                    clip ||
+                    audio ||
+                    (attach !== "none" && attachConfirmed) ||
+                    tagged.length ? (
                       <div className={styles.attached} aria-label={composerCopy.attached}>
-                        <PhotoStrip
+                        <MediaStrip
                           photos={photos}
+                          video={video}
+                          clip={clip}
+                          audio={audio}
                           onTag={taggableOthers.length > 0 ? () => setMenu("tags") : undefined}
                           onSpoiler={(key) =>
                             setPhotos((current) =>
@@ -729,63 +888,38 @@ export function FeedComposer({
                             })
                           }
                           onRetry={retryPhoto}
+                          onRemoveVideo={() => setVideo(null)}
+                          onRemoveClip={() => {
+                            revoke(clip?.preview);
+                            setClip(null);
+                          }}
+                          onRetryClip={() => {
+                            if (!clip?.file || !clip.mime) return;
+                            setClip({ ...clip, status: "uploading", progress: 0, error: undefined });
+                            void sendClip(clip.file, clip.mime);
+                          }}
+                          onRemoveAudio={() => {
+                            revoke(audio?.preview);
+                            setAudio(null);
+                          }}
+                          onRetryAudio={() => {
+                            if (!audio?.file) return;
+                            setAudio({ ...audio, status: "uploading", progress: 0, error: undefined });
+                            void sendAudio(audio.file);
+                          }}
                         />
-                        {video ? <VideoChip video={video} onRemove={() => setVideo(null)} /> : null}
-                        {audio ? (
-                          <AudioChip
-                            audio={audio}
-                            onRemove={() => {
-                              revoke(audio.preview);
-                              setAudio(null);
-                            }}
-                            onRetry={() => {
-                              if (!audio.file) return;
-                              setAudio({ ...audio, status: "uploading", progress: 0, error: undefined });
-                              void sendAudio(audio.file);
-                            }}
-                          />
-                        ) : null}
-                        {panel === "video" ? (
-                          <VideoField
-                            onAdd={(next) => {
-                              setVideo(next);
-                              setPanel("none");
-                            }}
-                            onCancel={() => setPanel("none")}
-                          />
-                        ) : null}
-                        {panel === "audio" ? (
-                          <AudioField
-                            onReady={addAudio}
-                            onCancel={() => setPanel("none")}
-                            onError={(message) => toast.error(message)}
-                          />
-                        ) : null}
-                        {attach !== "none" && courses.length > 0 ? (
-                          <AttachPicker
+                        {attach !== "none" && attachConfirmed && attachment ? (
+                          <AttachPreview
                             attach={attach}
-                            courses={courses}
-                            course={course}
-                            lessons={lessons}
-                            lesson={lesson}
-                            block={block}
-                            full={full}
-                            choosing={choosing}
                             attachment={attachment}
-                            onChoose={() => setChoosing(true)}
-                            onChosen={() => setChoosing(false)}
-                            onCourse={(id) => {
-                              setCourseId(id);
-                              setLessonId("");
-                              setBlockId("");
-                            }}
-                            onLesson={(id) => {
-                              setLessonId(id);
-                              setBlockId("");
-                            }}
-                            onBlock={setBlockId}
+                            full={full}
+                            canChange={attach === "block" || courses.length > 1}
+                            onChange={() => setChoosing(true)}
                             onFull={setFull}
-                            onRemove={() => setAttach("none")}
+                            onRemove={() => {
+                              setAttach("none");
+                              setAttachConfirmed(false);
+                            }}
                           />
                         ) : null}
                         <TagRow
@@ -832,6 +966,72 @@ export function FeedComposer({
                     />
 
                     {showFmt ? fmt : tools}
+                    <ComposerPopover
+                      open={panel === "video"}
+                      onClose={() => setPanel("none")}
+                      anchor={videoTool}
+                      label={composerCopy.video}
+                      width={360}
+                    >
+                      <VideoField
+                        onAdd={(next) => {
+                          setVideo(next);
+                          setPanel("none");
+                        }}
+                        onFile={(file) => {
+                          setPanel("none");
+                          void addClip(file);
+                        }}
+                        onCancel={() => setPanel("none")}
+                      />
+                    </ComposerPopover>
+                    <ComposerPopover
+                      open={panel === "audio"}
+                      onClose={() => {
+                        if (!recordingAudio) setPanel("none");
+                      }}
+                      anchor={audioTool}
+                      label={composerCopy.audio}
+                      width={360}
+                    >
+                      <AudioField
+                        onReady={addAudio}
+                        onError={(message) => toast.error(message)}
+                        onRecording={setRecordingAudio}
+                      />
+                    </ComposerPopover>
+                    <ComposerPopover
+                      open={choosing && attach !== "none"}
+                      onClose={closeChooser}
+                      anchor={attach === "program" ? programTool : blockTool}
+                      label={attach === "program" ? composerCopy.programWhole : composerCopy.blockFrom}
+                      width={360}
+                    >
+                      {attach !== "none" ? (
+                        <AttachChooser
+                          attach={attach}
+                          courses={courses}
+                          course={course}
+                          lessons={lessons}
+                          lesson={lesson}
+                          block={block}
+                          onCourse={(id) => {
+                            setCourseId(id);
+                            setLessonId("");
+                            setBlockId("");
+                          }}
+                          onLesson={(id) => {
+                            setLessonId(id);
+                            setBlockId("");
+                          }}
+                          onBlock={setBlockId}
+                          onChosen={() => {
+                            setAttachConfirmed(true);
+                            setChoosing(false);
+                          }}
+                        />
+                      ) : null}
+                    </ComposerPopover>
 
                     <input
                       ref={photoPicker}
@@ -952,23 +1152,18 @@ function ToolButton({
 }
 
 /** A block of the author's programme, or the programme itself — the old composer's picker, inside the field. */
-function AttachPicker({
+/** The programme path, asked in the tool's own menu: programme, then lesson and block. */
+function AttachChooser({
   attach,
   courses,
   course,
   lessons,
   lesson,
   block,
-  full,
-  choosing,
-  attachment,
-  onChoose,
-  onChosen,
   onCourse,
   onLesson,
   onBlock,
-  onFull,
-  onRemove,
+  onChosen,
 }: {
   attach: Exclude<Attach, "none">;
   courses: ComposerCourse[];
@@ -976,27 +1171,91 @@ function AttachPicker({
   lessons: ComposerCourse["lessons"];
   lesson: ComposerCourse["lessons"][number] | null;
   block: ComposerCourse["lessons"][number]["blocks"][number] | null;
-  full: boolean;
-  choosing: boolean;
-  /** The card the feed will draw, built by the server's own function. */
-  attachment: FeedAttachmentData | null;
-  onChoose: () => void;
-  onChosen: () => void;
   onCourse: (id: string) => void;
   onLesson: (id: string) => void;
   onBlock: (id: string) => void;
+  onChosen: () => void;
+}) {
+  const empty = attach === "block" && lessons.length === 0;
+  return (
+    <div className={styles.chooser}>
+      <select
+        className={styles.select}
+        aria-label={composerCopy.pickCourse}
+        value={course?.id ?? ""}
+        onChange={(event) => onCourse(event.target.value)}
+      >
+        {courses.map((entry) => (
+          <option key={entry.id} value={entry.id}>
+            {entry.title}
+          </option>
+        ))}
+      </select>
+      {attach === "block" && !empty ? (
+        <>
+          <select
+            className={styles.select}
+            aria-label={composerCopy.pickLesson}
+            value={lesson?.id ?? ""}
+            onChange={(event) => onLesson(event.target.value)}
+          >
+            {lessons.map((entry) => (
+              <option key={entry.id} value={entry.id}>
+                {entry.title}
+              </option>
+            ))}
+          </select>
+          <select
+            className={styles.select}
+            aria-label={composerCopy.pickBlock}
+            value={block?.id ?? ""}
+            onChange={(event) => onBlock(event.target.value)}
+          >
+            {(lesson?.blocks ?? []).map((entry) => (
+              <option key={entry.id} value={entry.id}>
+                {entry.label || entry.kind}
+              </option>
+            ))}
+          </select>
+        </>
+      ) : null}
+      {empty ? (
+        <p className={styles.muted}>{composerCopy.noBlocks}</p>
+      ) : (
+        <button className={styles.inlineAction} type="button" onClick={onChosen}>
+          {composerCopy.attachDone}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** What was chosen, in the field: the card the feed will draw, «Змінити» and ✕. */
+function AttachPreview({
+  attach,
+  attachment,
+  full,
+  canChange,
+  onChange,
+  onFull,
+  onRemove,
+}: {
+  attach: Exclude<Attach, "none">;
+  /** The card the feed will draw, built by the server's own function. */
+  attachment: FeedAttachmentData;
+  full: boolean;
+  canChange: boolean;
+  onChange: () => void;
   onFull: (full: boolean) => void;
   onRemove: () => void;
 }) {
-  const empty = attach === "block" && lessons.length === 0;
-  const canChange = attach === "block" || courses.length > 1;
   return (
     <div className={styles.picker}>
       <div className={styles.pickerHead}>
         <Icon name={attach === "block" ? "document" : "guide"} size={20} />
         <b>{attach === "block" ? composerCopy.blockFrom : composerCopy.programWhole}</b>
-        {!choosing && canChange ? (
-          <button className={styles.pickerChange} type="button" onClick={onChoose}>
+        {canChange ? (
+          <button className={styles.pickerChange} type="button" onClick={onChange}>
             {composerCopy.attachChange}
           </button>
         ) : null}
@@ -1004,69 +1263,14 @@ function AttachPicker({
           <Icon name="close" size={20} />
         </button>
       </div>
-
-      {choosing ? (
-        <>
-          <select
-            className={styles.select}
-            aria-label={composerCopy.pickCourse}
-            value={course?.id ?? ""}
-            onChange={(event) => onCourse(event.target.value)}
-          >
-            {courses.map((entry) => (
-              <option key={entry.id} value={entry.id}>
-                {entry.title}
-              </option>
-            ))}
-          </select>
-          {attach === "block" && !empty ? (
-            <>
-              <select
-                className={styles.select}
-                aria-label={composerCopy.pickLesson}
-                value={lesson?.id ?? ""}
-                onChange={(event) => onLesson(event.target.value)}
-              >
-                {lessons.map((entry) => (
-                  <option key={entry.id} value={entry.id}>
-                    {entry.title}
-                  </option>
-                ))}
-              </select>
-              <select
-                className={styles.select}
-                aria-label={composerCopy.pickBlock}
-                value={block?.id ?? ""}
-                onChange={(event) => onBlock(event.target.value)}
-              >
-                {(lesson?.blocks ?? []).map((entry) => (
-                  <option key={entry.id} value={entry.id}>
-                    {entry.label || entry.kind}
-                  </option>
-                ))}
-              </select>
-            </>
-          ) : null}
-          {empty ? (
-            <p className={styles.muted}>{composerCopy.noBlocks}</p>
-          ) : (
-            <button className={styles.inlineAction} type="button" onClick={onChosen}>
-              {composerCopy.attachDone}
-            </button>
-          )}
-        </>
-      ) : attachment ? (
-        <>
-          <FeedAttachment attachment={attachment} preview />
-          {attach === "block" ? (
-            <label className={styles.check}>
-              <input type="checkbox" checked={full} onChange={(event) => onFull(event.target.checked)} />
-              <span>
-                {composerCopy.showFull} <span className={styles.muted}>{composerCopy.showFullHint}</span>
-              </span>
-            </label>
-          ) : null}
-        </>
+      <FeedAttachment attachment={attachment} preview />
+      {attach === "block" ? (
+        <label className={styles.check}>
+          <input type="checkbox" checked={full} onChange={(event) => onFull(event.target.checked)} />
+          <span>
+            {composerCopy.showFull} <span className={styles.muted}>{composerCopy.showFullHint}</span>
+          </span>
+        </label>
       ) : null}
     </div>
   );

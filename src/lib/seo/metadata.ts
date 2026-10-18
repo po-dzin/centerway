@@ -29,6 +29,8 @@ export type PageMetadataInput = {
   image?: string;
   /** Alt text for a page-specific `image`. Ignored when the brand cover is used. */
   imageAlt?: string;
+  /** Pixel size of a page-specific `image`, when known; a card needs it to lay the picture out before loading it. */
+  imageSize?: { width: number; height: number };
   /** Private surfaces: out of the index and out of the sitemap. */
   noindex?: boolean;
   /**
@@ -52,7 +54,11 @@ export function pageMetadata(input: PageMetadataInput): Metadata {
   // specifically, not of an arbitrary caller-supplied image — a course cover
   // has its own aspect ratio and its own alt text (or none at all).
   const image = input.image
-    ? { url: input.image, ...(input.imageAlt ? { alt: input.imageAlt } : {}) }
+    ? {
+        url: input.image,
+        ...(input.imageSize ?? {}),
+        ...(input.imageAlt ? { alt: input.imageAlt } : {}),
+      }
     : { url: BRAND_COVER, width: 1200, height: 630, alt: BRAND.name };
 
   return {

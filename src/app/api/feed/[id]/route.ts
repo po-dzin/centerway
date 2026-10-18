@@ -3,14 +3,32 @@
  *
  * GET    published for everyone; the author also sees their own held or returned post.
  * PATCH  the author sends a returned post again, edited: the same fields as POST /api/feed.
- * DELETE the author removes their own post.
+ *        An admin changes a post of the platform's with `asPlatform: true` (and `pinned`);
+ *        `pinOnly: true` with `pinned` moves the pin alone.
+ * DELETE the author removes their own post; an admin also removes the platform's.
  */
 
 import { after, type NextRequest } from "next/server";
 
 import { fail, ok, withRoute } from "@/lib/api/route";
-import { authorWriter, feedDb, jsonBody, refusal, viewerOf } from "@/lib/feed/http";
-import { deleteFeedPost, getFeedPost, resubmitFeedPost } from "@/lib/feed/server";
+import {
+  authorWriter,
+  feedDb,
+  jsonBody,
+  postingAuthor,
+  refusal,
+  viewerOf,
+  writer,
+  FEED_POST_WRITE,
+} from "@/lib/feed/http";
+import {
+  deleteFeedPost,
+  editPlatformPost,
+  feedAuthorForUser,
+  getFeedPost,
+  resubmitFeedPost,
+  setPlatformPin,
+} from "@/lib/feed/server";
 import { sendHeldPostCard } from "@/lib/feed/telegram";
 
 export const runtime = "nodejs";
@@ -28,10 +46,24 @@ export const GET = withRoute<Params>("feed.get", async (req, { params }) => {
 export const PATCH = withRoute<Params>("feed.resubmit", async (req: NextRequest, { params }) => {
   const { id } = await params;
   const db = feedDb();
+  const body = await jsonBody(req);
+  if (body.asPlatform === true) {
+    const platform = await postingAuthor(req, db, true);
+    if (!platform.ok) return platform.response;
+    try {
+      // `pinOnly`: the menu's «Закріпити» changes the tape and nothing else.
+      if (body.pinOnly === true)
+        return ok({ post: await setPlatformPin(db, platform.value, id, body.pinned === true) });
+      const edited = await editPlatformPost(db, platform.value, id, body);
+      return ok({ post: edited.post, findings: [] });
+    } catch (error) {
+      return refusal(error);
+    }
+  }
   const author = await authorWriter(req, db);
   if (!author.ok) return author.response;
   try {
-    const created = await resubmitFeedPost(db, author.value, id, await jsonBody(req));
+    const created = await resubmitFeedPost(db, author.value, id, body);
     if (created.post.status === "held") after(() => sendHeldPostCard(db, created.post.id));
     return ok({ post: created.post, findings: created.verdict.findings });
   } catch (error) {
@@ -42,8 +74,9 @@ export const PATCH = withRoute<Params>("feed.resubmit", async (req: NextRequest,
 export const DELETE = withRoute<Params>("feed.delete", async (req: NextRequest, { params }) => {
   const { id } = await params;
   const db = feedDb();
-  const author = await authorWriter(req, db);
-  if (!author.ok) return author.response;
-  await deleteFeedPost(db, author.value, id);
+  const user = await writer(req, FEED_POST_WRITE);
+  if (!user.ok) return user.response;
+  /* Their own post as a listed author, and — for an admin — the platform's. */
+  await deleteFeedPost(db, await feedAuthorForUser(db, user.value.id), id, { userId: user.value.id });
   return ok({ ok: true });
 });

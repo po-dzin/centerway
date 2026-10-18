@@ -92,3 +92,42 @@ describe("looksLikeAudio", () => {
     expect(looksLikeAudio(new TextEncoder().encode("<html><script>"), "audio/webm")).toBe(false);
   });
 });
+
+describe("a clip of the author's own", () => {
+  const AUTHOR_ID = "a1";
+  const folder = `${AUTHOR_ID}/00000000-0000-4000-8000-000000000001`;
+  const clip = (extra: Record<string, unknown> = {}) => ({
+    path: `${folder}/clip.mp4`,
+    durationSec: 24.2,
+    w: 1920,
+    h: 1080,
+    mime: "video/mp4",
+    ...extra,
+  });
+
+  it("is kept when it is within thirty seconds and Full HD, in either orientation", () => {
+    expect(checkFeedMedia({ clip: clip() }, AUTHOR_ID)).toEqual({
+      media: { clip: { path: `${folder}/clip.mp4`, durationSec: 25, w: 1920, h: 1080, mime: "video/mp4" } },
+    });
+    expect(checkFeedMedia({ clip: clip({ w: 1080, h: 1920 }) }, AUTHOR_ID)).toHaveProperty("media.clip");
+  });
+
+  it("is refused when it is longer, larger, of another type, or another author's", () => {
+    expect(checkFeedMedia({ clip: clip({ durationSec: 31 }) }, AUTHOR_ID)).toEqual({ error: "media_clip_too_long" });
+    expect(checkFeedMedia({ clip: clip({ w: 3840, h: 2160 }) }, AUTHOR_ID)).toEqual({ error: "media_clip_too_large" });
+    expect(checkFeedMedia({ clip: clip({ mime: "video/x-flv" }) }, AUTHOR_ID)).toEqual({ error: "media_invalid" });
+    expect(checkFeedMedia({ clip: clip() }, "someone-else")).toEqual({ error: "media_invalid" });
+  });
+
+  it("does not stand beside a YouTube link", () => {
+    expect(checkFeedMedia({ video: { youtubeId: "dQw4w9WgXcQ" }, clip: clip() }, AUTHOR_ID)).toEqual({
+      error: "media_invalid",
+    });
+  });
+
+  it("comes back to a reader with its address", () => {
+    const media = readFeedMedia({ clip: clip() }, "https://x.test");
+    expect(media.clip).toMatchObject({ w: 1920, mime: "video/mp4" });
+    expect(media.clip?.src).toContain("/clip.mp4");
+  });
+});

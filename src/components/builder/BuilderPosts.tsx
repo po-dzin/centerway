@@ -24,6 +24,7 @@
 
 import { useEffect, useState } from "react";
 
+import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
 import { FeedComposer, type ComposerDraft } from "@/components/platform/feed/FeedComposer";
 import { FeedPostCard } from "@/components/platform/feed/FeedPostCard";
@@ -174,15 +175,24 @@ export function BuilderPosts() {
                       <div className={feedStyles.postTools}>
                         {post.status === "returned" ? (
                           <button
-                            className={feedStyles.commentAction}
+                            className={feedStyles.act}
                             type="button"
+                            aria-label="Виправити й надіслати"
+                            title="Виправити й надіслати"
                             onClick={() => setEditing(post.id)}
                           >
-                            Виправити й надіслати
+                            <Icon name="edit" size={20} />
                           </button>
                         ) : null}
-                        <button className={feedStyles.commentAction} type="button" onClick={() => void remove(post)}>
-                          Видалити
+                        <button
+                          className={feedStyles.act}
+                          data-tone="danger"
+                          type="button"
+                          aria-label="Видалити"
+                          title="Видалити"
+                          onClick={() => void remove(post)}
+                        >
+                          <Icon name="trash" size={20} />
                         </button>
                       </div>
                     </div>
@@ -237,8 +247,13 @@ function PostEcho({ post }: { post: FeedPost }) {
       {post.latestComment ? (
         <p className={feedStyles.echoComment}>
           {feedCopy.latestComment(post.latestComment.name)} «{excerptOf(post.latestComment.body, 140)}»{" "}
-          <a className={feedStyles.echoReply} href={surfaceHref(feedPostPath(post.id))}>
-            {feedCopy.replyInFeed}
+          <a
+            className={feedStyles.act}
+            href={surfaceHref(feedPostPath(post.id))}
+            aria-label={feedCopy.replyInFeed}
+            title={feedCopy.replyInFeed}
+          >
+            <Icon name="reply" size={20} />
           </a>
         </p>
       ) : null}

@@ -22,6 +22,23 @@ export const FEED_MEDIA_BUCKET = "feed-media";
 export const FEED_PHOTOS_MAX = 10;
 export const FEED_AUDIO_MAX_BYTES = 20 * 1024 * 1024;
 export const FEED_AUDIO_MAX_SECONDS = 10 * 60;
+/**
+ * A short clip of the author's own (G 2026-10-18): up to 30 seconds, Full HD,
+ * 60 MB. No transcoder stands behind the feed, so the file is played as it was
+ * recorded — which is why the ceiling is a short, light clip and the types are
+ * the ones every browser plays (MP4/H.264, WebM, and an iPhone's MOV).
+ */
+export const FEED_CLIP_MAX_SECONDS = 30;
+export const FEED_CLIP_MAX_BYTES = 60 * 1024 * 1024;
+/** Full HD in either orientation: the long side up to 1920, the short up to 1080. */
+export const FEED_CLIP_MAX_LONG = 1920;
+export const FEED_CLIP_MAX_SHORT = 1080;
+export const FEED_CLIP_TYPES: Record<string, string> = {
+  "video/mp4": "mp4",
+  "video/webm": "webm",
+  "video/quicktime": "mov",
+};
+
 /** Authors a post may name «з …». */
 export const FEED_TAGS_MAX = 3;
 
@@ -49,18 +66,23 @@ export function feedAudioExtension(mime: string): string | null {
 
 export type FeedPhotoStored = { path: string; w: number; h: number; spoiler: boolean };
 export type FeedAudioStored = { path: string; durationSec: number; mime: string };
+export type FeedClipStored = { path: string; durationSec: number; w: number; h: number; mime: string };
 export type FeedMediaStored = {
   photos?: FeedPhotoStored[];
   video?: { youtubeId: string } | null;
+  /** The author's own short clip, instead of a YouTube link. */
+  clip?: FeedClipStored | null;
   audio?: FeedAudioStored | null;
 };
 
 /** What a reader receives: the same, with addresses. */
 export type FeedPhoto = FeedPhotoStored & { src: string };
 export type FeedAudio = FeedAudioStored & { src: string };
+export type FeedClip = FeedClipStored & { src: string };
 export type FeedMedia = {
   photos: FeedPhoto[];
   video: { youtubeId: string } | null;
+  clip?: FeedClip | null;
   audio: FeedAudio | null;
 };
 
@@ -69,6 +91,7 @@ export const EMPTY_FEED_MEDIA: FeedMedia = { photos: [], video: null, audio: nul
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const PHOTO_FILE = /^(1600|640)\.webp$|^original\.gif$/;
 const AUDIO_FILE = /^audio\.(webm|ogg|m4a|mp3)$/;
+const CLIP_FILE = /^clip\.(mp4|webm|mov)$/;
 
 /** `<authorId>/<uuid>/<file>` under the given author, with a file the route writes. */
 function ownPath(value: unknown, authorId: string, file: RegExp): value is string {
@@ -118,6 +141,25 @@ export function checkFeedMedia(input: unknown, authorId: string): { media: FeedM
     media.video = { youtubeId };
   }
 
+  if (raw.clip !== undefined && raw.clip !== null) {
+    if (typeof raw.clip !== "object" || Array.isArray(raw.clip) || media.video) return { error: "media_invalid" };
+    const clip = raw.clip as Record<string, unknown>;
+    const ext = typeof clip.mime === "string" ? FEED_CLIP_TYPES[clip.mime] : undefined;
+    const w = dimension(clip.w);
+    const h = dimension(clip.h);
+    const duration =
+      typeof clip.durationSec === "number" && Number.isFinite(clip.durationSec) ? Math.ceil(clip.durationSec) : null;
+    if (!ext || !ownPath(clip.path, authorId, CLIP_FILE) || !(clip.path as string).endsWith(`.${ext}`) || !w || !h) {
+      return { error: "media_invalid" };
+    }
+    if (duration === null || duration < 1) return { error: "media_invalid" };
+    if (duration > FEED_CLIP_MAX_SECONDS) return { error: "media_clip_too_long" };
+    if (Math.max(w, h) > FEED_CLIP_MAX_LONG || Math.min(w, h) > FEED_CLIP_MAX_SHORT) {
+      return { error: "media_clip_too_large" };
+    }
+    media.clip = { path: clip.path as string, durationSec: duration, w, h, mime: clip.mime as string };
+  }
+
   if (raw.audio !== undefined && raw.audio !== null) {
     if (typeof raw.audio !== "object") return { error: "media_invalid" };
     const audio = raw.audio as Record<string, unknown>;
@@ -160,10 +202,22 @@ export function readFeedMedia(stored: unknown, base?: string): FeedMedia {
       })
     : [];
   const video = raw.video as { youtubeId?: unknown } | null | undefined;
+  const clip = raw.clip as Partial<FeedClipStored> | null | undefined;
   const audio = raw.audio as Partial<FeedAudioStored> | null | undefined;
   return {
     photos: photos.slice(0, FEED_PHOTOS_MAX),
     video: video && typeof video.youtubeId === "string" ? { youtubeId: video.youtubeId } : null,
+    clip:
+      clip && typeof clip.path === "string" && typeof clip.mime === "string"
+        ? {
+            path: clip.path,
+            mime: clip.mime,
+            durationSec: typeof clip.durationSec === "number" ? clip.durationSec : 0,
+            w: dimension(clip.w) ?? 16,
+            h: dimension(clip.h) ?? 9,
+            src: feedMediaUrl(clip.path, base),
+          }
+        : null,
     audio:
       audio && typeof audio.path === "string" && typeof audio.mime === "string"
         ? {

@@ -6,6 +6,11 @@ import {
   FeedError,
   addComment,
   createFeedPost,
+  deleteFeedPost,
+  editPlatformPost,
+  setPlatformPin,
+  feedPlatformAuthor,
+  isFeedAdmin,
   decideHeldPost,
   feedAuthorForUser,
   getFeedPost,
@@ -17,6 +22,7 @@ import {
   removeComment,
   resubmitFeedPost,
   saveFeedMark,
+  recordShare,
   saveFeedPost,
   setReturnReason,
   toggleReaction,
@@ -33,6 +39,7 @@ const LESSON = "00000000-0000-4000-8000-0000000000d1";
 const TAG_AUTHOR = "00000000-0000-4000-8000-0000000000e1";
 const TAG_HIDDEN = "00000000-0000-4000-8000-0000000000e2";
 const ASSET = "00000000-0000-4000-8000-0000000000f1";
+const ADMIN = "00000000-0000-4000-8000-0000000000aa";
 
 let fake: FakeSupabase;
 let db: Db;
@@ -59,7 +66,16 @@ beforeEach(() => {
       { id: "author-hidden", slug: "hidden", name: "Прихований", photo: null, listed: false, auth_user_id: "u-hidden" },
       { id: TAG_AUTHOR, slug: "iryna", name: "Ірина Мельник", photo: null, listed: true, auth_user_id: null },
       { id: TAG_HIDDEN, slug: "unlisted", name: "Неопублікований", photo: null, listed: false, auth_user_id: null },
+      {
+        id: "author-platform",
+        slug: "centerway",
+        name: "CenterWay",
+        photo: { src: "/cw/brand/cw-icon-192.png", alt: "CenterWay" },
+        listed: false,
+        auth_user_id: null,
+      },
     ],
+    user_roles: [{ user_id: ADMIN, role: "admin" }],
     lms_courses: [
       { id: COURSE, title: "Шлях 21", program_slug: "way21", author_id: AUTHOR_USER, author_profile_id: "author-evg" },
       {
@@ -476,5 +492,116 @@ describe("publicName", () => {
     expect(publicName("Олена Петренко")).toBe("Олена П.");
     expect(publicName("Марко")).toBe("Марко");
     expect(publicName("")).toBe("Учасник");
+  });
+});
+
+describe("«Поділитися»: one per account", () => {
+  it("counts a person once however often they share, and refuses an unknown channel", async () => {
+    const { post } = await createFeedPost(db, await author(), { body: "Три хвилини дихання", topic: "breathing" });
+    expect(await recordShare(db, post.id, READER, "link")).toBe(true);
+    expect(await recordShare(db, post.id, READER, "telegram")).toBe(false);
+    expect(await recordShare(db, post.id, "00000000-0000-4000-8000-0000000000aa", "system")).toBe(true);
+    await expect(recordShare(db, post.id, READER, "email")).rejects.toMatchObject({ code: "share_invalid" });
+
+    expect((await getFeedPost(db, post.id, null))?.shareCount).toBe(2);
+    expect((await getFeedPost(db, post.id, READER))?.shared).toBe(true);
+    expect((await getFeedPost(db, post.id, null))?.shared).toBe(false);
+  });
+});
+
+describe("the platform as an author", () => {
+  async function platform() {
+    const found = await feedPlatformAuthor(db, ADMIN);
+    if (!found) throw new Error("no platform author");
+    return found;
+  }
+
+  it("is written by an admin, published at once, with the platform's name", async () => {
+    expect(await isFeedAdmin(db, ADMIN)).toBe(true);
+    expect(await isFeedAdmin(db, READER)).toBe(false);
+    const { post } = await createFeedPost(
+      db,
+      await platform(),
+      { body: "Гарантую результат.", topic: "focus" },
+      new Date(),
+      { platform: true },
+    );
+    expect(post.status).toBe("published");
+    expect(post.author).toMatchObject({ slug: "centerway", name: "CenterWay" });
+  });
+
+  it("is pinned once: a new pinned post takes the tape and leads the first page", async () => {
+    const first = await createFeedPost(db, await platform(), { body: "Перший", topic: "focus" }, new Date(), {
+      platform: true,
+      pinned: true,
+    });
+    await createFeedPost(db, await author(), { body: "Автор", topic: "focus" });
+    const second = await createFeedPost(db, await platform(), { body: "Другий", topic: "focus" }, new Date(), {
+      platform: true,
+      pinned: true,
+    });
+    const page = await listFeed(db, { filter: { topics: [], authors: [] }, me: ADMIN });
+    expect(page.posts[0]).toMatchObject({ id: second.post.id, pinned: true });
+    expect(page.posts.find((entry) => entry.id === first.post.id)?.pinned).toBe(false);
+    expect(page.posts.filter((entry) => entry.id === second.post.id)).toHaveLength(1);
+  });
+
+  it("is pinned and unpinned from the menu without touching its words", async () => {
+    const { post } = await createFeedPost(db, await platform(), { body: "Вступ", topic: "focus" }, new Date(), {
+      platform: true,
+    });
+    expect(post.pinned).toBe(false);
+    const pinned = await setPlatformPin(db, await platform(), post.id, true);
+    expect(pinned).toMatchObject({ pinned: true, body: "Вступ", edited: false });
+    expect((await setPlatformPin(db, await platform(), post.id, false)).pinned).toBe(false);
+    await expect(setPlatformPin(db, await author(), post.id, true)).rejects.toMatchObject({ code: "not_found" });
+  });
+
+  it("is changed and removed by an admin, and by no one else", async () => {
+    const { post } = await createFeedPost(db, await platform(), { body: "Вступ", topic: "focus" }, new Date(), {
+      platform: true,
+      pinned: true,
+    });
+    const asAdmin = await listFeed(db, { filter: { topics: [], authors: [] }, me: ADMIN });
+    expect(asAdmin.posts[0]?.canManage).toBe(true);
+    const asReader = await listFeed(db, { filter: { topics: [], authors: [] }, me: READER });
+    expect(asReader.posts[0]?.canManage).toBe(false);
+
+    const edited = await editPlatformPost(db, await platform(), post.id, {
+      body: "Новий вступ",
+      topic: "focus",
+      pinned: false,
+    });
+    expect(edited.post).toMatchObject({ body: "Новий вступ", pinned: false, status: "published" });
+
+    await deleteFeedPost(db, null, post.id, { userId: READER });
+    expect((await getFeedPost(db, post.id, READER))?.id).toBe(post.id);
+    await deleteFeedPost(db, null, post.id, { userId: ADMIN });
+    expect(await getFeedPost(db, post.id, READER)).toBeNull();
+  });
+});
+
+describe("changing a published post", () => {
+  it("is open to its author for a day, shows as changed, and keeps the post out", async () => {
+    const t0 = new Date("2026-10-18T10:00:00Z");
+    const { post } = await createFeedPost(db, await author(), { body: "Привіт", topic: "focus" }, t0);
+    const soon = new Date(t0.getTime() + 2 * 3600_000);
+    const edited = await resubmitFeedPost(db, await author(), post.id, { body: "Привіт, світе", topic: "focus" }, soon);
+    expect(edited.post).toMatchObject({ body: "Привіт, світе", status: "published", edited: true });
+    expect(edited.post.publishedAt).toBe(post.publishedAt);
+  });
+
+  it("closes after a day, and refuses words the check stops without pulling the post back", async () => {
+    const t0 = new Date("2026-10-18T10:00:00Z");
+    const { post } = await createFeedPost(db, await author(), { body: "Привіт", topic: "focus" }, t0);
+    const late = new Date(t0.getTime() + 25 * 3600_000);
+    await expect(
+      resubmitFeedPost(db, await author(), post.id, { body: "Інше", topic: "focus" }, late),
+    ).rejects.toMatchObject({ code: "edit_window_closed" });
+    const soon = new Date(t0.getTime() + 3600_000);
+    await expect(
+      resubmitFeedPost(db, await author(), post.id, { body: "Гарантую результат.", topic: "focus" }, soon),
+    ).rejects.toMatchObject({ code: "edit_blocked" });
+    expect((await getFeedPost(db, post.id, AUTHOR_USER))?.body).toBe("Привіт");
   });
 });

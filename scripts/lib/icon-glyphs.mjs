@@ -482,6 +482,36 @@ export const ICONS = {
       "M8.6 13.1 15.4 17",
     ],
   },
+  /* Answer to one comment: the speech bubble with a turn-back arrow inside it.
+     Not `comment` (the whole thread's bubble, empty) and not `undo` (a
+     counter-clockwise arrow with no words in it). */
+  reply: {
+    group: "Meta",
+    d: ["M4.6 5.2h14.8v10.4h-8.1l-4.4 3.6v-3.6H4.6z", "M10.2 8.6 7.8 11l2.4 2.4", "M7.8 11h5.4a2.2 2.2 0 0 1 2.2 2.2"],
+  },
+  /* Put another block in place of the chosen one: two arrows passing. Not
+     `edit` (change the words) and not `undo`. */
+  swap: {
+    group: "Meta",
+    d: ["M4.4 8.6h13.4", "M14.2 5l3.6 3.6-3.6 3.6", "M19.6 15.4H6.2", "M9.8 11.8l-3.6 3.6 3.6 3.6"],
+  },
+  /* A post held up on the wall: a pushpin — round head, shoulder, needle.
+     «Закріпити» in a card's menu; the same glyph says «Відкріпити». */
+  pin: {
+    group: "Meta",
+    d: ["M9.2 3.8h5.6", "M10.2 3.8l-.6 6.2-2.4 3.2h9.6L14.4 10l-.6-6.2", "M12 13.2v7"],
+  },
+  /* A card's own menu: three dots in a row. Only dots — the one glyph with no
+     path — so it reads as "more here", not as a wave or an ellipsis in text. */
+  more: {
+    group: "Meta",
+    d: [],
+    dots: [
+      { cx: 5.6, cy: 12, r: 1.5 },
+      { cx: 12, cy: 12, r: 1.5 },
+      { cx: 18.4, cy: 12, r: 1.5 },
+    ],
+  },
   /* A photo held back until the reader taps it. The eye shut, lashes down:
      not `unpublish` (taken out of public view) and not `eye` (shown at once),
      which is the other half of the same toggle. */

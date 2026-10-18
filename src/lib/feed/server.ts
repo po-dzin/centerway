@@ -19,6 +19,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import { isAdminRole } from "@/lib/platform/adminRole";
 import type { Json } from "@/lib/db/database.types";
 import type { Author } from "@/lms-core";
 
@@ -39,6 +40,9 @@ import {
   feedAuthorPath,
   feedSavedClientId,
   isFeedEmoji,
+  isPlatformAuthor,
+  FEED_PLATFORM_SLUG,
+  FEED_EDIT_WINDOW_MS,
   isFeedTopic,
   normalizeFeedText,
   normalizeFeedTopics,
@@ -83,6 +87,9 @@ export type FeedAttachment = {
   block: FeedLessonBlock | null;
   /** The course's slug, for the renderer's links between lessons. */
   courseSlug: string | null;
+  /** The lesson's own address and the block's id: where the arrow leads a reader who has the course. */
+  lessonSlug: string | null;
+  blockId: string | null;
   media: "video" | "image" | null;
   durationMin: number | null;
   /** The programme page, where the reader can go on. */
@@ -109,10 +116,22 @@ export type FeedPost = {
   commentCount: number;
   /** The reader wrote this post. */
   mine: boolean;
+  /** The platform's pinned post: first in the feed, on the wall's tape. */
+  pinned: boolean;
+  /** Changed after it was published; the card says «змінено». */
+  edited: boolean;
+  /** The reader may change the words now: an admin on the platform's post; an author on their own, for a day. */
+  canEdit: boolean;
+  /** The reader may change and remove it: they wrote it, or they are an admin and it is the platform's. */
+  canManage: boolean;
   /** The reader saved it to «Мій журнал». False for a guest. */
   saved: boolean;
   /** How many people saved it to their «Мій журнал» — shown to everyone (G 17.10). */
   saveCount: number;
+  /** People who shared it — one per account however often they did (G 17.10). */
+  shareCount: number;
+  /** The reader has shared it already; their next share does not move the count. */
+  shared: boolean;
   /** Only the post's own author sees why it waits or came back. */
   heldReason?: string | null;
   returnedReason?: string | null;
@@ -160,12 +179,14 @@ type PostRow = {
   held_reason: string | null;
   returned_reason: string | null;
   published_at: string | null;
+  pinned_at: string | null;
+  edited_at: string | null;
   created_at: string;
   tg_message_id: number | null;
 };
 
 const POST_COLUMNS =
-  "id, author_id, created_by, body, topic, topics, media, tagged_author_ids, course_id, lesson_id, block_id, block_display, status, held_reason, returned_reason, published_at, created_at, tg_message_id";
+  "id, author_id, created_by, body, topic, topics, media, tagged_author_ids, course_id, lesson_id, block_id, block_display, status, held_reason, returned_reason, published_at, pinned_at, edited_at, created_at, tg_message_id";
 
 type AuthorRow = {
   id: string;
@@ -184,6 +205,25 @@ function authorOf(row: AuthorRow): FeedAuthor {
     name: row.name,
     photo: photo && typeof photo.src === "string" ? { ...photo, alt: photo.alt || row.name } : null,
   };
+}
+
+/** Whether the account holds an admin role — the only ones who write as the platform. */
+export async function isFeedAdmin(db: Db, userId: string | null): Promise<boolean> {
+  if (!userId) return false;
+  const { data } = await db.from("user_roles").select("role").eq("user_id", userId).maybeSingle();
+  return isAdminRole((data as { role?: string } | null)?.role);
+}
+
+/** The platform's own author row, which an admin's «від імені CenterWay» post is written as. */
+export async function feedPlatformAuthor(db: Db, userId: string): Promise<(FeedAuthor & { userId: string }) | null> {
+  const { data, error } = await db
+    .from("lms_authors")
+    .select("id, slug, name, photo, listed, auth_user_id")
+    .eq("slug", FEED_PLATFORM_SLUG)
+    .maybeSingle();
+  if (error) throw new Error(`feed_author_read_failed:${error.message}`);
+  const row = data as AuthorRow | null;
+  return row ? { ...authorOf(row), userId } : null;
 }
 
 /* ─────────────────────────── authors ─────────────────────────── */
@@ -235,7 +275,7 @@ async function attachmentsFor(db: Db, rows: PostRow[]): Promise<Map<string, Feed
   const [{ data: courses }, { data: lessons }] = await Promise.all([
     db.from("lms_courses").select("id, title, slug, program_slug").in("id", courseIds),
     lessonIds.length
-      ? db.from("lms_lessons").select("id, title, day_index, blocks").in("id", lessonIds)
+      ? db.from("lms_lessons").select("id, title, slug, day_index, blocks").in("id", lessonIds)
       : Promise.resolve({ data: [] as unknown[] }),
   ]);
   const courseById = new Map(
@@ -245,10 +285,9 @@ async function attachmentsFor(db: Db, rows: PostRow[]): Promise<Map<string, Feed
     ]),
   );
   const lessonById = new Map(
-    ((lessons ?? []) as { id: string; title: string; day_index: number | null; blocks: unknown }[]).map((row) => [
-      row.id,
-      row,
-    ]),
+    ((lessons ?? []) as { id: string; title: string; slug: string; day_index: number | null; blocks: unknown }[]).map(
+      (row) => [row.id, row],
+    ),
   );
 
   for (const row of rows) {
@@ -261,7 +300,7 @@ async function attachmentsFor(db: Db, rows: PostRow[]): Promise<Map<string, Feed
       lesson
         ? blockAttachment(
             owner,
-            { title: lesson.title, dayIndex: lesson.day_index, blocks: lesson.blocks },
+            { title: lesson.title, slug: lesson.slug, dayIndex: lesson.day_index, blocks: lesson.blocks },
             row.block_id,
             row.block_display === "full",
           )
@@ -284,6 +323,7 @@ async function reactorNames(
 
 async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<FeedPost[]> {
   if (rows.length === 0) return [];
+  const viewerAdmin = await isFeedAdmin(db, me);
   const ids = rows.map((row) => row.id);
   const authorIds = [...new Set(rows.flatMap((row) => [row.author_id, ...(row.tagged_author_ids ?? [])]))];
 
@@ -293,6 +333,7 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
     { data: comments },
     { data: savedRows },
     { data: bookmarkRows },
+    { data: shareRows },
     attachments,
   ] = await Promise.all([
     db.from("lms_authors").select("id, slug, name, photo, listed, auth_user_id").in("id", authorIds),
@@ -302,6 +343,7 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
       ? db.from("feed_marks").select("post_id").eq("auth_user_id", me).eq("kind", "bookmark").in("post_id", ids)
       : Promise.resolve({ data: [] as { post_id: string }[] }),
     db.from("feed_marks").select("post_id").eq("kind", "bookmark").in("post_id", ids),
+    db.from("feed_shares").select("post_id, auth_user_id").in("post_id", ids),
     attachmentsFor(db, rows),
   ]);
   if (authorError) throw new Error(`feed_authors_read_failed:${authorError.message}`);
@@ -319,6 +361,12 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
   const savesByPost = new Map<string, number>();
   for (const row of (bookmarkRows ?? []) as { post_id: string }[]) {
     savesByPost.set(row.post_id, (savesByPost.get(row.post_id) ?? 0) + 1);
+  }
+  const sharesByPost = new Map<string, number>();
+  const sharedByMe = new Set<string>();
+  for (const row of (shareRows ?? []) as { post_id: string; auth_user_id: string }[]) {
+    sharesByPost.set(row.post_id, (sharesByPost.get(row.post_id) ?? 0) + 1);
+    if (me && row.auth_user_id === me) sharedByMe.add(row.post_id);
   }
   const commentsByPost = new Map<string, number>();
   for (const row of (comments ?? []) as { post_id: string }[]) {
@@ -350,8 +398,17 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
         reactions: countReactions(reactionsByPost.get(row.id) ?? [], me, names),
         commentCount: commentsByPost.get(row.id) ?? 0,
         mine,
+        pinned: Boolean(row.pinned_at),
+        edited: Boolean(row.edited_at),
+        canEdit:
+          viewerAdmin && isPlatformAuthor(authorOf(author))
+            ? true
+            : mine && row.status === "published" && withinEditWindow(row.published_at),
+        canManage: mine || (viewerAdmin && isPlatformAuthor(authorOf(author))),
         saved: saved.has(row.id),
         saveCount: savesByPost.get(row.id) ?? 0,
+        shareCount: sharesByPost.get(row.id) ?? 0,
+        shared: sharedByMe.has(row.id),
         ...(mine
           ? {
               heldReason: row.held_reason,
@@ -417,7 +474,27 @@ export async function listFeed(
   if (error) throw new Error(`feed_read_failed:${error.message}`);
   const rows = (data ?? []) as PostRow[];
   const page = rows.slice(0, limit);
-  const posts = await decorate(db, page, options.me);
+  /* The pinned post leads the first page of the whole feed, once: a filtered
+     feed or a later page asked for something else. */
+  const unfiltered =
+    !options.before && !options.authorId && !options.filter.topics.length && !options.filter.authors.length;
+  if (unfiltered) {
+    const { data: pinned } = await db
+      .from("feed_posts")
+      .select(POST_COLUMNS)
+      .eq("status", "published")
+      .is("hidden_at", null)
+      .not("pinned_at", "is", null)
+      .order("pinned_at", { ascending: false })
+      .limit(1);
+    const lead = ((pinned ?? []) as PostRow[])[0];
+    if (lead) page.unshift(lead);
+  }
+  const posts = await decorate(
+    db,
+    page.filter((row, index) => page.findIndex((other) => other.id === row.id) === index),
+    options.me,
+  );
   return { posts, next: rows.length > limit ? (page[page.length - 1]?.published_at ?? null) : null };
 }
 
@@ -503,6 +580,11 @@ export type FeedPostInput = {
   blockDisplay?: unknown;
 };
 
+function withinEditWindow(publishedAt: string | null, now: Date = new Date()): boolean {
+  if (!publishedAt) return false;
+  return now.getTime() - Date.parse(publishedAt) <= FEED_EDIT_WINDOW_MS;
+}
+
 function isUuid(value: unknown): value is string {
   return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
@@ -515,6 +597,7 @@ async function checkedAttachment(
   db: Db,
   author: FeedAuthor & { userId: string },
   input: FeedPostInput,
+  anyCourse = false,
 ): Promise<{
   course_id: string | null;
   lesson_id: string | null;
@@ -534,7 +617,8 @@ async function checkedAttachment(
     .maybeSingle();
   const owned =
     course &&
-    ((course as { author_profile_id: string | null }).author_profile_id === author.id ||
+    (anyCourse ||
+      (course as { author_profile_id: string | null }).author_profile_id === author.id ||
       (course as { author_id: string | null }).author_id === author.userId);
   if (!owned) throw new FeedError("attachment_not_yours", 403);
 
@@ -579,7 +663,7 @@ async function checkedTags(db: Db, author: FeedAuthor, input: unknown): Promise<
 }
 
 /** Everything a post's writing checks, in one place for create and resubmit. */
-async function checkedPost(db: Db, author: FeedAuthor & { userId: string }, input: FeedPostInput) {
+async function checkedPost(db: Db, author: FeedAuthor & { userId: string }, input: FeedPostInput, platform = false) {
   const body = normalizeFeedText(input.body, FEED_POST_RAW_MAX);
   if (!body) throw new FeedError("body_invalid");
   const plain = feedPlainText(body).trim();
@@ -590,7 +674,7 @@ async function checkedPost(db: Db, author: FeedAuthor & { userId: string }, inpu
   const media = checkFeedMedia(input.media, author.id);
   if ("error" in media) throw new FeedError(media.error);
   const tagged = await checkedTags(db, author, input.taggedAuthorIds);
-  const attachment = await checkedAttachment(db, author, input);
+  const attachment = await checkedAttachment(db, author, input, platform);
   // The gate reads the words and every link's address, never the markup.
   const verdict = checkFeedText(feedGateText(body));
   return {
@@ -615,8 +699,14 @@ export async function createFeedPost(
   author: FeedAuthor & { userId: string },
   input: FeedPostInput,
   now: Date = new Date(),
+  options: { platform?: boolean; pinned?: boolean } = {},
 ): Promise<CreatedPost> {
-  const { verdict, fields } = await checkedPost(db, author, input);
+  const platform = options.platform === true;
+  const checked = await checkedPost(db, author, input, platform);
+  const { fields } = checked;
+  /* An admin writing as the platform is the team: nothing waits for the team's
+     own decision, so the post is published at once (G 2026-10-18). */
+  const verdict = platform ? { ...checked.verdict, pass: true } : checked.verdict;
   const at = now.toISOString();
   const { data, error } = await db
     .from("feed_posts")
@@ -628,12 +718,14 @@ export async function createFeedPost(
       gate: verdict as unknown as Json,
       held_reason: verdict.pass ? null : verdict.findings.map((finding) => finding.label).join("; "),
       published_at: verdict.pass ? at : null,
+      pinned_at: platform && options.pinned ? at : null,
       created_at: at,
       updated_at: at,
     })
     .select(POST_COLUMNS)
     .single();
   if (error) throw new Error(`feed_post_write_failed:${error.message}`);
+  if (platform && options.pinned) await unpinOthers(db, (data as PostRow).id);
   const [post] = await decorate(db, [data as PostRow], author.userId);
   if (!post) throw new Error("feed_post_write_failed:decorate");
   return { post, verdict };
@@ -654,6 +746,7 @@ export async function resubmitFeedPost(
   const { data: existing } = await db.from("feed_posts").select("id, author_id, status").eq("id", id).maybeSingle();
   const row = existing as { author_id: string; status: string } | null;
   if (!row || row.author_id !== author.id) throw new FeedError("not_found", 404);
+  if (row.status === "published") return editOwnPost(db, author, id, input, now);
   if (row.status !== "returned") throw new FeedError("not_returned", 409);
 
   /* Checked exactly as on creation: the composer sends the attachment, media
@@ -682,11 +775,137 @@ export async function resubmitFeedPost(
   return { post, verdict };
 }
 
-/** The author removes their own post. Removing what is gone is success. */
-export async function deleteFeedPost(db: Db, author: FeedAuthor & { userId: string }, id: string): Promise<void> {
+/**
+ * The author changes a post that is already out, within a day of publishing.
+ * It is checked as on creation; if the new words are stopped, nothing changes
+ * and the post stays as it was — a published post is not pulled back by an
+ * edit. A reader sees «змінено».
+ */
+async function editOwnPost(
+  db: Db,
+  author: FeedAuthor & { userId: string },
+  id: string,
+  input: FeedPostInput,
+  now: Date,
+): Promise<CreatedPost> {
+  const { data: current } = await db.from("feed_posts").select("published_at").eq("id", id).maybeSingle();
+  if (!withinEditWindow((current as { published_at: string | null } | null)?.published_at ?? null, now)) {
+    throw new FeedError("edit_window_closed", 409);
+  }
+  const { verdict, fields } = await checkedPost(db, author, input);
+  if (!verdict.pass) throw new FeedError("edit_blocked", 422);
+  const at = now.toISOString();
+  const { data, error } = await db
+    .from("feed_posts")
+    .update({ ...fields, gate: verdict as unknown as Json, edited_at: at, updated_at: at })
+    .eq("id", id)
+    .select(POST_COLUMNS)
+    .single();
+  if (error) throw new Error(`feed_post_write_failed:${error.message}`);
+  const [post] = await decorate(db, [data as PostRow], author.userId);
+  if (!post) throw new Error("feed_post_write_failed:decorate");
+  return { post, verdict };
+}
+
+/** One pinned post on the whole feed: pinning a new one lets the old one go. */
+async function unpinOthers(db: Db, keepId: string): Promise<void> {
+  const { error } = await db
+    .from("feed_posts")
+    .update({ pinned_at: null })
+    .not("pinned_at", "is", null)
+    .neq("id", keepId);
+  if (error) throw new Error(`feed_post_pin_failed:${error.message}`);
+}
+
+/**
+ * An admin changes a post the platform wrote — the pinned introduction
+ * included — and may pin or unpin it. It stays published: the team's own
+ * words are not held for the team's own check.
+ */
+export async function editPlatformPost(
+  db: Db,
+  author: FeedAuthor & { userId: string },
+  id: string,
+  input: FeedPostInput & { pinned?: boolean },
+  now: Date = new Date(),
+): Promise<CreatedPost> {
+  if (!isUuid(id)) throw new FeedError("not_found", 404);
+  if (!isPlatformAuthor(author)) throw new FeedError("not_found", 404);
+  const { data: existing } = await db.from("feed_posts").select("id, author_id").eq("id", id).maybeSingle();
+  if (!existing || (existing as { author_id: string }).author_id !== author.id) throw new FeedError("not_found", 404);
+
+  const checked = await checkedPost(db, author, input, true);
+  const at = now.toISOString();
+  const { data, error } = await db
+    .from("feed_posts")
+    .update({
+      ...checked.fields,
+      status: "published",
+      held_reason: null,
+      returned_reason: null,
+      edited_at: at,
+      updated_at: at,
+      ...(typeof input.pinned === "boolean" ? { pinned_at: input.pinned ? at : null } : {}),
+    })
+    .eq("id", id)
+    .select(POST_COLUMNS)
+    .single();
+  if (error) throw new Error(`feed_post_write_failed:${error.message}`);
+  if (input.pinned === true) await unpinOthers(db, id);
+  const [post] = await decorate(db, [data as PostRow], author.userId);
+  if (!post) throw new Error("feed_post_write_failed:decorate");
+  return { post, verdict: { ...checked.verdict, pass: true } };
+}
+
+/** An admin pins or unpins a post of the platform's, without touching its words. */
+export async function setPlatformPin(
+  db: Db,
+  author: FeedAuthor & { userId: string },
+  id: string,
+  pinned: boolean,
+  now: Date = new Date(),
+): Promise<FeedPost> {
+  if (!isUuid(id) || !isPlatformAuthor(author)) throw new FeedError("not_found", 404);
+  const { data: existing } = await db.from("feed_posts").select("id, author_id").eq("id", id).maybeSingle();
+  if (!existing || (existing as { author_id: string }).author_id !== author.id) throw new FeedError("not_found", 404);
+  const { data, error } = await db
+    .from("feed_posts")
+    .update({ pinned_at: pinned ? now.toISOString() : null })
+    .eq("id", id)
+    .select(POST_COLUMNS)
+    .single();
+  if (error) throw new Error(`feed_post_pin_failed:${error.message}`);
+  if (pinned) await unpinOthers(db, id);
+  const [post] = await decorate(db, [data as PostRow], author.userId);
+  if (!post) throw new Error("feed_post_pin_failed:decorate");
+  return post;
+}
+
+/**
+ * The author removes their own post; an admin also removes the platform's,
+ * the pinned one included. Removing what is gone is success.
+ */
+export async function deleteFeedPost(
+  db: Db,
+  author: (FeedAuthor & { userId: string }) | null,
+  id: string,
+  admin: { userId: string } | null = null,
+): Promise<void> {
   if (!isUuid(id)) return;
-  const { error } = await db.from("feed_posts").delete().eq("id", id).eq("author_id", author.id);
-  if (error) throw new Error(`feed_post_delete_failed:${error.message}`);
+  if (author) {
+    const { error } = await db.from("feed_posts").delete().eq("id", id).eq("author_id", author.id);
+    if (error) throw new Error(`feed_post_delete_failed:${error.message}`);
+  }
+  if (admin && (await isFeedAdmin(db, admin.userId))) {
+    const { data: platform } = await db.from("lms_authors").select("id").eq("slug", FEED_PLATFORM_SLUG).maybeSingle();
+    if (!platform) return;
+    const { error } = await db
+      .from("feed_posts")
+      .delete()
+      .eq("id", id)
+      .eq("author_id", (platform as { id: string }).id);
+    if (error) throw new Error(`feed_post_delete_failed:${error.message}`);
+  }
 }
 
 /* ─────────────────────────── the team's decision ─────────────────────────── */
@@ -1281,4 +1500,33 @@ export async function listComposerCourses(db: Db, author: FeedAuthor & { userId:
     programSlug: course.program_slug,
     lessons: byCourse.get(course.id) ?? [],
   }));
+}
+
+/* ─────────────────────────── shares (G 17.10) ─────────────────────────── */
+
+/**
+ * «Поділитися» counts one per account (supabase/migrations/20261017180000_feed_shares.sql):
+ * the first share of a post by a person writes a row, every later one is the
+ * same row. A guest may share; without an account it cannot be told apart,
+ * so it does not count.
+ */
+export const FEED_SHARE_CHANNELS = ["link", "telegram", "system"] as const;
+export type FeedShareChannel = (typeof FEED_SHARE_CHANNELS)[number];
+
+/** Answers whether this was the person's first share of the post. */
+export async function recordShare(db: Db, postId: string, userId: string, channel: unknown): Promise<boolean> {
+  const known = FEED_SHARE_CHANNELS.find((entry) => entry === channel);
+  if (!known) throw new FeedError("share_invalid", 422);
+  if (!(await publishedPostExists(db, postId))) throw new FeedError("not_found", 404);
+  const { data: seen } = await db
+    .from("feed_shares")
+    .select("post_id")
+    .eq("post_id", postId)
+    .eq("auth_user_id", userId)
+    .maybeSingle();
+  if (seen) return false;
+  const { error } = await db.from("feed_shares").insert({ post_id: postId, auth_user_id: userId, channel: known });
+  if (error && /duplicate|unique/i.test(error.message)) return false;
+  if (error) throw new Error(`feed_share_write_failed:${error.message}`);
+  return true;
 }

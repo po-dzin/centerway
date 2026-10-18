@@ -18,6 +18,7 @@
  */
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Fragment,
   useCallback,
@@ -25,6 +26,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type MouseEvent,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -33,13 +35,21 @@ import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
 import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
 import { COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
-import { parseFeedBody } from "@/lib/feed/format";
+import { feedPlainText, parseFeedBody } from "@/lib/feed/format";
 import { EMPTY_FEED_MEDIA } from "@/lib/feed/media";
-import { FEED_TOPICS_MAX, excerptOf, feedAuthorPath, feedPostPath, type ReactionCount } from "@/lib/feed/model";
+import {
+  FEED_TOPICS_MAX,
+  excerptOf,
+  feedAuthorPath,
+  feedPostPath,
+  isPlatformAuthor,
+  type ReactionCount,
+} from "@/lib/feed/model";
 import type { FeedPost } from "@/lib/feed/server";
 
 import { feedCopy, relativeTime } from "./copy";
-import { deleteMark, saveMark, toggleReaction, type FeedMarkView } from "./feedApi";
+import { useFloating } from "./useFloating";
+import { deleteMark, deletePost, pinPost, saveMark, toggleReaction, type FeedMarkView } from "./feedApi";
 import { FeedActions } from "./FeedActions";
 import { FeedAttachment } from "./FeedAttachment";
 import { FeedBody, feedBodyText, type PlacedMark } from "./FeedBody";
@@ -107,6 +117,19 @@ function useOverflow(ref: RefObject<HTMLElement | null>, clamped: boolean): bool
   return over;
 }
 
+/** The reader's press applied to the counts in hand, before the server has answered. */
+function toggledLocally(list: ReactionCount[], emoji: string): ReactionCount[] {
+  const found = list.find((entry) => entry.emoji === emoji);
+  if (found?.mine) {
+    return list.flatMap((entry) =>
+      entry.emoji !== emoji ? [entry] : entry.count > 1 ? [{ ...entry, count: entry.count - 1, mine: false }] : [],
+    );
+  }
+  if (found)
+    return list.map((entry) => (entry.emoji === emoji ? { ...entry, count: entry.count + 1, mine: true } : entry));
+  return [...list, { emoji, count: 1, mine: true } as ReactionCount];
+}
+
 /* ─────────────── the card ─────────────── */
 
 export function FeedPostCard({
@@ -119,6 +142,9 @@ export function FeedPostCard({
   headingLevel = 2,
   aside,
   footer,
+  onDeleted,
+  onEdit,
+  onChanged,
   variant = "feed",
 }: {
   post: FeedPost;
@@ -133,6 +159,17 @@ export function FeedPostCard({
   aside?: ReactNode;
   /** Lines under the action row — the workshop's echo of how a post landed. */
   footer?: ReactNode;
+  /**
+   * The author's own post can be taken down from where it is read (G 2026-10-18).
+   * The page that holds the card decides what follows: the feed drops the card,
+   * the post's own page goes back to the feed. Without it there is no control —
+   * the workshop has its own.
+   */
+  onDeleted?: (id: string) => void;
+  /** An admin changes a post of the platform's where it stands; the page swaps the card for the composer. */
+  onEdit?: (post: FeedPost) => void;
+  /** The card's post came back changed (pinned or unpinned); the page puts it in its list. */
+  onChanged?: (post: FeedPost) => void;
   /**
    * `rail`: the home page's «Свіже від авторів» — the same card, folded after
    * four lines with a shorter photo, and the bubble leading to the post's page
@@ -149,6 +186,37 @@ export function FeedPostCard({
   const [count, setCount] = useState(post.commentCount);
   const [bar, setBar] = useState<Bar | null>(null);
   const [note, setNote] = useState("");
+  const platform = isPlatformAuthor(post.author);
+  const router = useRouter();
+
+  /* A press on the words or on an empty place of the card opens the post's own
+     page, where its thread is (G 2026-10-18, as in Threads). Never while the
+     reader is selecting words (that gesture ends in a press too), and never on
+     what has a press of its own: links, buttons, media, the attached block,
+     a highlight, the thread. On the post's own page there is nowhere to go. */
+  function openThread(event: MouseEvent<HTMLElement>) {
+    if (commentsOpen) return;
+    if (event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (window.getSelection()?.toString()) return;
+    const target = event.target as HTMLElement;
+    if (
+      target.closest(
+        "a, button, input, textarea, label, mark, video, audio, iframe, dialog, [role=dialog], [data-no-open]",
+      )
+    )
+      return;
+    router.push(feedPostPath(post.id));
+  }
+  const [removing, setRemoving] = useState<"ask" | "busy" | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const menuPanel = useRef<HTMLDivElement>(null);
+  const closeMenu = useCallback(() => {
+    setMenuOpen(false);
+    setRemoving(null);
+  }, []);
+  useFloating(menuOpen, menuButton, menuPanel, closeMenu, "end");
   // The post's own page shows it whole; the feed and the rail fold it.
   const [expanded, setExpanded] = useState(commentsOpen);
   const clamped = !expanded;
@@ -166,6 +234,10 @@ export function FeedPostCard({
       goSignIn();
       return;
     }
+    /* Optimistic: the chip answers the press at once, the server's count then
+       replaces it; a refusal puts back what was there. */
+    const before = reactions;
+    setReactions(toggledLocally(before, emoji));
     setBusy(true);
     const result = await toggleReaction(post.id, emoji);
     setBusy(false);
@@ -173,7 +245,30 @@ export function FeedPostCard({
       setReactions(result.data.reactions);
       return;
     }
+    setReactions(before);
     toast.error(result.code === "reaction_limit" ? feedCopy.reactionLimit : feedCopy.reactionFailed);
+  }
+
+  async function togglePin() {
+    closeMenu();
+    const result = await pinPost(post.id, !post.pinned);
+    if (!result.ok) {
+      toast.error(feedCopy.pinFailed);
+      return;
+    }
+    onChanged?.(result.data.post);
+  }
+
+  async function removePost() {
+    setRemoving("busy");
+    const result = await deletePost(post.id);
+    if (!result.ok) {
+      setRemoving(null);
+      toast.error(feedCopy.deleteFailed);
+      return;
+    }
+    toast.success(feedCopy.deleted);
+    onDeleted?.(post.id);
   }
 
   const placed = placeMarks(text, marks);
@@ -254,20 +349,37 @@ export function FeedPostCard({
   const topics = (post.topics?.length ? post.topics : [post.topic]).slice(0, FEED_TOPICS_MAX);
 
   return (
-    <article className={styles.post} data-variant={variant} ref={card} aria-labelledby={`post-${post.id}-by`}>
+    <article
+      className={post.pinned ? `${styles.post} ${styles.pinned}` : styles.post}
+      data-variant={variant}
+      ref={card}
+      aria-labelledby={`post-${post.id}-by`}
+      onClick={openThread}
+    >
       <div className={styles.byline}>
         {/* The face is a second way to the same profile as the name, so it
             stays out of the tab order and out of the accessibility tree. */}
-        <Link className={styles.face} href={feedAuthorPath(post.author.slug)} tabIndex={-1} aria-hidden="true">
-          <AuthorPortrait
-            photo={post.author.photo}
-            size="sm"
-            fallback={post.author.name.trim().charAt(0).toUpperCase()}
-          />
-        </Link>
+        {platform ? (
+          <span className={styles.face} aria-hidden="true">
+            <AuthorPortrait
+              photo={post.author.photo}
+              size="sm"
+              fallback={post.author.name.trim().charAt(0).toUpperCase()}
+            />
+          </span>
+        ) : (
+          <Link className={styles.face} href={feedAuthorPath(post.author.slug)} tabIndex={-1} aria-hidden="true">
+            <AuthorPortrait
+              photo={post.author.photo}
+              size="sm"
+              fallback={post.author.name.trim().charAt(0).toUpperCase()}
+            />
+          </Link>
+        )}
         <div className={styles.who}>
           <Name className={styles.whoName} id={`post-${post.id}-by`}>
-            <Link href={feedAuthorPath(post.author.slug)}>{post.author.name}</Link>
+            {platform ? post.author.name : <Link href={feedAuthorPath(post.author.slug)}>{post.author.name}</Link>}
+            {post.pinned ? <span className={styles.pinTag}>· {feedCopy.pinned}</span> : null}
             {post.tagged?.length ? (
               <span className={styles.withTag}>
                 {` ${feedCopy.with} `}
@@ -287,8 +399,93 @@ export function FeedPostCard({
               </time>
             </Link>
             {` · ${topics.map((topic) => COURSE_CATEGORY_LABELS[topic]).join(", ")}`}
+            {post.edited ? ` · ${feedCopy.edited}` : null}
           </p>
         </div>
+        {onDeleted && post.canManage ? (
+          <div className={styles.byTools}>
+            <button
+              ref={menuButton}
+              className={styles.byMenu}
+              type="button"
+              aria-label={feedCopy.postMenu}
+              title={feedCopy.postMenu}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              onClick={() => (menuOpen ? closeMenu() : setMenuOpen(true))}
+            >
+              <Icon name="more" size={20} />
+            </button>
+            {menuOpen ? (
+              <div ref={menuPanel} className={styles.menu} role="menu" aria-label={feedCopy.postMenu}>
+                {removing ? (
+                  <>
+                    <p className={styles.menuAsk}>{feedCopy.deleteAsk}</p>
+                    <div className={styles.menuRow}>
+                      <button
+                        className={styles.menuItem}
+                        data-tone="danger"
+                        type="button"
+                        role="menuitem"
+                        disabled={removing === "busy"}
+                        onClick={() => void removePost()}
+                      >
+                        {feedCopy.deleteYes}
+                      </button>
+                      <button
+                        className={styles.menuItem}
+                        type="button"
+                        role="menuitem"
+                        disabled={removing === "busy"}
+                        onClick={() => setRemoving(null)}
+                      >
+                        {feedCopy.deleteNo}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {onEdit && post.canEdit ? (
+                      <button
+                        className={styles.menuItem}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          closeMenu();
+                          onEdit(post);
+                        }}
+                      >
+                        <Icon name="edit" size={20} />
+                        {feedCopy.edit}
+                      </button>
+                    ) : null}
+                    {onChanged && platform ? (
+                      <button
+                        className={styles.menuItem}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => void togglePin()}
+                      >
+                        <Icon name="pin" size={20} />
+                        {post.pinned ? feedCopy.unpin : feedCopy.pin}
+                      </button>
+                    ) : null}
+                    <button
+                      className={styles.menuItem}
+                      data-tone="danger"
+                      type="button"
+                      role="menuitem"
+                      onClick={() => setRemoving("ask")}
+                    >
+                      <Icon name="trash" size={20} />
+                      {feedCopy.remove}
+                    </button>
+                  </>
+                )}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       {aside}
@@ -392,12 +589,12 @@ export function FeedPostCard({
         </div>
       ) : null}
 
-      {post.attachment ? <FeedAttachment attachment={post.attachment} /> : null}
+      {post.attachment ? <FeedAttachment attachment={post.attachment} postId={post.id} /> : null}
 
       {post.status === "published" ? (
         <FeedActions
           postId={post.id}
-          shareText={`${post.author.name}: ${excerptOf(text, 120)}`}
+          shareText={`${post.author.name}: ${excerptOf(feedPlainText(post.body), 120)}`}
           reactions={reactions}
           busy={busy}
           onReact={(emoji) => void react(emoji)}
@@ -405,9 +602,13 @@ export function FeedPostCard({
           onGuest={goSignIn}
           commentCount={count}
           commentsOpen={open}
-          onComments={variant === "rail" ? undefined : () => setOpen((current) => !current)}
+          /* The thread lives on the post's own page (G 2026-10-18, as in Threads): from
+             the feed and the rail the bubble leads there; only on that page does it fold. */
+          onComments={commentsOpen && variant === "feed" ? () => setOpen((current) => !current) : undefined}
           initiallySaved={post.saved ?? false}
           initialSaveCount={post.saveCount ?? 0}
+          shareCount={post.shareCount ?? 0}
+          initiallyShared={post.shared ?? false}
         />
       ) : null}
 

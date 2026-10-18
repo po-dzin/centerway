@@ -21,13 +21,17 @@
  */
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, type MouseEvent } from "react";
 
+import { useSession } from "@/components/auth/SessionProvider";
 import { Icon } from "@/components/Icon";
+import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { BlockRenderer, type ChecklistState } from "@/components/lms/LessonBlocks";
 import type { FeedAttachment as Attachment } from "@/lib/feed/server";
 
 import { feedCopy } from "./copy";
+import { fetchAttachmentHref } from "./feedApi";
 import styles from "./Feed.module.css";
 
 function attachmentIcon(attachment: Attachment) {
@@ -39,13 +43,35 @@ function attachmentIcon(attachment: Attachment) {
 
 export function FeedAttachment({
   attachment,
+  postId,
   preview = false,
 }: {
   attachment: Attachment;
+  /** The post it belongs to: the arrow asks it where this reader goes. Absent in the composer. */
+  postId?: string;
   /** The composer's copy: drawn as the feed will draw it, but the arrow leads nowhere yet. */
   preview?: boolean;
 }) {
   const [checklist, setChecklist] = useState<ChecklistState>({});
+  const router = useRouter();
+  const surfaceHref = useSurfaceHref();
+  const { session } = useSession();
+
+  /* The link already holds the programme's page — the way for a guest and for
+     a reader without the course. A signed-in reader is asked where they go:
+     inside the course when they have it. A new tab or a modified click keeps
+     the plain link. */
+  async function follow(event: MouseEvent<HTMLAnchorElement>) {
+    if (!postId || !session?.user) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+    event.preventDefault();
+    const result = await fetchAttachmentHref(postId);
+    const path = result.ok ? result.data.href : attachment.href;
+    if (!path) return;
+    const target = surfaceHref(path);
+    if (target.startsWith("/")) router.push(target);
+    else window.location.assign(target);
+  }
   const extra = [
     attachment.media === "video" ? feedCopy.video : attachment.media === "image" ? feedCopy.image : null,
     attachment.durationMin ? `${attachment.durationMin} ${feedCopy.minutes}` : null,
@@ -62,6 +88,7 @@ export function FeedAttachment({
       href={attachment.href}
       aria-label={`${goLabel}: ${attachment.title}`}
       title={goLabel}
+      onClick={(event) => void follow(event)}
     >
       <Icon name="arrow-right" size={20} />
     </Link>
@@ -69,7 +96,7 @@ export function FeedAttachment({
 
   if (block) {
     return (
-      <div className={styles.attachWhole} data-link={go ? "" : undefined}>
+      <div className={styles.attachWhole} data-link={go ? "" : undefined} data-no-open="">
         <div className={styles.attachBlock}>
           <BlockRenderer
             block={block}
@@ -84,7 +111,7 @@ export function FeedAttachment({
   }
 
   return (
-    <div className={styles.attach} data-link={go ? "" : undefined}>
+    <div className={styles.attach} data-link={go ? "" : undefined} data-no-open="">
       <span className={styles.attachIcon} aria-hidden="true">
         <Icon name={attachmentIcon(attachment)} size={20} />
       </span>

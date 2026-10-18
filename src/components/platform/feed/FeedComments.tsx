@@ -10,8 +10,9 @@
  */
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 
+import { Icon } from "@/components/Icon";
 import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
 import { useToast } from "@/components/ToastProvider";
 import { FEED_COMMENT_MAX } from "@/lib/feed/model";
@@ -66,13 +67,26 @@ function CommentRow({
         {comment.held ? <p className={styles.commentHeld}>{feedCopy.commentHeld}</p> : null}
         <div className={styles.commentActions}>
           {signedIn && !comment.parentId ? (
-            <button className={styles.commentAction} type="button" onClick={() => onReply(comment)}>
-              {feedCopy.reply}
+            <button
+              className={styles.act}
+              type="button"
+              aria-label={feedCopy.reply}
+              title={feedCopy.reply}
+              onClick={() => onReply(comment)}
+            >
+              <Icon name="reply" size={20} />
             </button>
           ) : null}
           {comment.mine || comment.canHide ? (
-            <button className={styles.commentAction} type="button" onClick={() => onRemove(comment)}>
-              {comment.mine ? feedCopy.remove : feedCopy.hide}
+            <button
+              className={styles.act}
+              data-tone="danger"
+              type="button"
+              aria-label={comment.mine ? feedCopy.remove : feedCopy.hide}
+              title={comment.mine ? feedCopy.remove : feedCopy.hide}
+              onClick={() => onRemove(comment)}
+            >
+              <Icon name={comment.mine ? "trash" : "unpublish"} size={20} />
             </button>
           ) : null}
         </div>
@@ -99,6 +113,16 @@ export function FeedComments({
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<FeedComment | null>(null);
   const [sending, setSending] = useState(false);
+  const field = useRef<HTMLTextAreaElement>(null);
+
+  /* The field grows with its words instead of scrolling inside itself, and
+     folds back to one line when it is emptied by sending. */
+  useEffect(() => {
+    const node = field.current;
+    if (!node) return;
+    node.style.blockSize = "auto";
+    node.style.blockSize = `${node.scrollHeight}px`;
+  }, [text]);
 
   useEffect(() => {
     let cancelled = false;
@@ -193,13 +217,20 @@ export function FeedComments({
           {replyTo ? (
             <p className={styles.replyingTo}>
               {feedCopy.replyingTo} {replyTo.who.name}
-              <button className={styles.commentAction} type="button" onClick={() => setReplyTo(null)}>
-                {feedCopy.cancel}
+              <button
+                className={styles.act}
+                type="button"
+                aria-label={feedCopy.cancel}
+                title={feedCopy.cancel}
+                onClick={() => setReplyTo(null)}
+              >
+                <Icon name="close" size={20} />
               </button>
             </p>
           ) : null}
           <div className={styles.writeRow}>
             <textarea
+              ref={field}
               aria-label={replyTo ? feedCopy.writeReply : feedCopy.writeComment}
               className={styles.writeField}
               rows={1}
@@ -210,8 +241,14 @@ export function FeedComments({
               onKeyDown={onKeyDown}
               onChange={(event) => setText(event.target.value)}
             />
-            <button className={styles.sendButton} type="submit" disabled={sending || !text.trim()}>
-              {feedCopy.send}
+            <button
+              className={styles.sendButton}
+              type="submit"
+              disabled={sending || !text.trim()}
+              aria-label={feedCopy.send}
+              title={feedCopy.send}
+            >
+              <Icon name="arrow-up" size={20} />
             </button>
           </div>
         </form>

@@ -5,6 +5,7 @@ import {
   reactionNameIds,
   excerptOf,
   feedFilterQuery,
+  feedShareImage,
   isFeedEmoji,
   isFeedTopic,
   normalizeFeedText,
@@ -126,5 +127,26 @@ describe("reaction names for the chip hint", () => {
     expect(counts[0]).toMatchObject({ emoji: "heart", count: 5, mine: true, who: ["Олена К.", "Марко Д.", "Іра"] });
     expect(counts.find((entry) => entry.emoji === "joy")?.who).toEqual(["Тарас"]);
     expect(counts.find((entry) => entry.emoji === "thanks")?.who).toBeUndefined();
+  });
+});
+
+describe("feedShareImage", () => {
+  const photo = (src: string, spoiler = false) => ({ src, w: 1600, h: 900, spoiler });
+
+  it("takes the first photo that is not a spoiler", () => {
+    expect(
+      feedShareImage({ media: { photos: [photo("a", true), photo("b"), photo("c")], video: null } }),
+    ).toMatchObject({
+      url: "b",
+      width: 1600,
+      height: 900,
+    });
+  });
+
+  it("falls to the video's frame, then to nothing", () => {
+    expect(feedShareImage({ media: { photos: [photo("a", true)], video: { youtubeId: "abc123" } } })?.url).toBe(
+      "https://i.ytimg.com/vi/abc123/hqdefault.jpg",
+    );
+    expect(feedShareImage({ media: { photos: [photo("a", true)], video: null } })).toBeNull();
   });
 });
