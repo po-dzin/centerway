@@ -410,6 +410,16 @@ a.face {
 }
 
 /* The lesson's own player, at the card's measure. */
+/* The author's own clip: at its proportions, never taller than a phone screen's worth. */
+.postClip {
+  /* The frame keeps its own proportions: a tall clip is narrower, not letterboxed. */
+  inline-size: min(100%, calc(min(70svh, 32rem) * var(--clip-k, 1.78)));
+  aspect-ratio: var(--clip-ratio, 16 / 9);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-scrim-ink);
+  object-fit: contain;
+}
+
 .postVideo {
   min-inline-size: 0;
 }
@@ -562,13 +572,27 @@ a.face {
   }
 }
 
+/* One arrow for every attachment — a programme, an excerpt, a block shown
+   whole: the same plate as the card's icon tile, so it reads as a press
+   wherever it stands (G 2026-10-18), and the same select on hover and focus. */
 .attachGo {
   display: grid;
   place-items: center;
   inline-size: var(--ds-touch-target-min);
   block-size: var(--ds-touch-target-min);
   border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-tone-icon);
+  box-shadow: inset 0 0 0 1px var(--cw-mat-stroke-quiet);
   color: var(--cw-platform-text);
+  transition:
+    background var(--cw-motion-state) var(--cw-ease-state),
+    box-shadow var(--cw-motion-state) var(--cw-ease-state);
+}
+
+.attachGo:focus-visible,
+.attach[data-link]:focus-within .attachGo {
+  background: var(--cw-mat-surface);
+  box-shadow: inset 0 0 0 1px var(--cw-mat-stroke-control);
 }
 
 .attachGo::after {
@@ -589,8 +613,10 @@ a.face {
 }
 
 @media (hover: hover) {
-  .attach[data-link]:hover .attachGo {
+  .attach[data-link]:hover .attachGo,
+  .attachGo:hover {
     background: var(--cw-mat-surface);
+    box-shadow: inset 0 0 0 1px var(--cw-mat-stroke-control);
   }
 
   .attach[data-link]:hover .attachGo svg {

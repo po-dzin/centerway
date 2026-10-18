@@ -18,12 +18,21 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Icon } from "@/components/Icon";
 import { accessToken } from "@/components/auth/authorizedFetch";
 import { youtubeIdFrom } from "@/lms-core";
-import { FEED_AUDIO_MAX_BYTES, FEED_AUDIO_MAX_SECONDS, FEED_AUDIO_TYPES } from "@/lib/feed/media";
+import {
+  FEED_AUDIO_MAX_BYTES,
+  FEED_AUDIO_MAX_SECONDS,
+  FEED_AUDIO_TYPES,
+  FEED_CLIP_MAX_BYTES,
+  FEED_CLIP_MAX_LONG,
+  FEED_CLIP_MAX_SECONDS,
+  FEED_CLIP_MAX_SHORT,
+  FEED_CLIP_TYPES,
+} from "@/lib/feed/media";
 import type { UploadedMedia } from "@/lib/feed/upload";
 
 import { clockOf, composerCopy } from "./composerCopy";
 import { ComposerPopover } from "./FeedComposerMenus";
-import { uploadFeedMedia, type FeedResult } from "./feedApi";
+import { signClip, uploadFeedMedia, type FeedResult } from "./feedApi";
 import styles from "./FeedComposer.module.css";
 
 /* ─────────────────────────── state ─────────────────────────── */
@@ -40,6 +49,20 @@ export type PhotoItem = {
   w?: number;
   h?: number;
   spoiler: boolean;
+  error?: string;
+};
+
+export type ClipItem = {
+  status: "uploading" | "done" | "failed";
+  progress: number;
+  /** The local file while it uploads, the stored one after. */
+  preview: string;
+  durationSec: number;
+  w: number;
+  h: number;
+  file?: File;
+  path?: string;
+  mime?: string;
   error?: string;
 };
 
@@ -231,27 +254,33 @@ function Thumb({
 export function MediaStrip({
   photos,
   video,
+  clip,
   audio,
   onSpoiler,
   onTag,
   onRemove,
   onRetry,
   onRemoveVideo,
+  onRemoveClip,
+  onRetryClip,
   onRemoveAudio,
   onRetryAudio,
 }: {
   photos: PhotoItem[];
   video: VideoItem | null;
+  clip: ClipItem | null;
   audio: AudioItem | null;
   onSpoiler: (key: string) => void;
   onTag?: () => void;
   onRemove: (key: string) => void;
   onRetry: (key: string) => void;
   onRemoveVideo: () => void;
+  onRemoveClip: () => void;
+  onRetryClip: () => void;
   onRemoveAudio: () => void;
   onRetryAudio: () => void;
 }) {
-  if (photos.length === 0 && !video && !audio) return null;
+  if (photos.length === 0 && !video && !clip && !audio) return null;
   return (
     <div className={`${styles.strip} cw-scroll-rail`}>
       {photos.map((item, index) => (
@@ -266,6 +295,7 @@ export function MediaStrip({
         />
       ))}
       {video ? <VideoTile video={video} onRemove={onRemoveVideo} /> : null}
+      {clip ? <ClipTile clip={clip} onRemove={onRemoveClip} onRetry={onRetryClip} /> : null}
       {audio ? <AudioTile audio={audio} onRemove={onRemoveAudio} onRetry={onRetryAudio} /> : null}
     </div>
   );
@@ -361,6 +391,42 @@ function VideoTile({ video, onRemove }: { video: VideoItem; onRemove: () => void
   );
 }
 
+/** The author's own clip as a tile: its first frame, its length; «⋯» takes it off. */
+function ClipTile({ clip, onRemove, onRetry }: { clip: ClipItem; onRemove: () => void; onRetry: () => void }) {
+  return (
+    <Tile
+      kind="video"
+      label={composerCopy.videoActions}
+      status={clip.status}
+      menu={[{ label: composerCopy.videoRemove, icon: "trash", onSelect: onRemove }]}
+    >
+      {/* The still is the file's own first frame; the author sees it before publishing. */}
+      <video src={`${clip.preview}#t=0.1`} muted playsInline preload="metadata" aria-hidden="true" tabIndex={-1} />
+      <span className={styles.tileMark} aria-hidden="true">
+        <Icon name="video" size={20} />
+      </span>
+      <span className={styles.tileClock}>{clockOf(clip.durationSec)}</span>
+      {clip.status === "uploading" ? (
+        <span
+          className={styles.thumbProgress}
+          role="progressbar"
+          aria-label={composerCopy.clipUploading}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(clip.progress * 100)}
+        >
+          <span style={{ inlineSize: `${Math.max(6, clip.progress * 100)}%` }} />
+        </span>
+      ) : null}
+      {clip.status === "failed" ? (
+        <button className={styles.thumbRetryAction} type="button" onClick={onRetry} title={clip.error}>
+          {composerCopy.retry}
+        </button>
+      ) : null}
+    </Tile>
+  );
+}
+
 /** The audio as a tile: the microphone and its length; «⋯» plays it or takes it off. */
 function AudioTile({ audio, onRemove, onRetry }: { audio: AudioItem; onRemove: () => void; onRetry: () => void }) {
   const player = useRef<HTMLAudioElement>(null);
@@ -425,7 +491,17 @@ function AudioTile({ audio, onRemove, onRetry }: { audio: AudioItem; onRemove: (
 /* ─────────────────────────── video ─────────────────────────── */
 
 /** The link field, in the menu of the video tool; a pasted link is checked as it would be on the server. */
-export function VideoField({ onAdd, onCancel }: { onAdd: (video: VideoItem) => void; onCancel: () => void }) {
+export function VideoField({
+  onAdd,
+  onFile,
+  onCancel,
+}: {
+  onAdd: (video: VideoItem) => void;
+  /** The author's own file instead of a link. */
+  onFile: (file: File) => void;
+  onCancel: () => void;
+}) {
+  const picker = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -474,8 +550,112 @@ export function VideoField({ onAdd, onCancel }: { onAdd: (video: VideoItem) => v
         </button>
       </div>
       {error ? <p className={styles.fieldError}>{error}</p> : null}
+      <button className={styles.inlineAction} type="button" onClick={() => picker.current?.click()}>
+        {composerCopy.videoFile}
+      </button>
+      <p className={styles.fieldHint}>{composerCopy.videoFileHint}</p>
+      <input
+        ref={picker}
+        className={styles.hiddenInput}
+        type="file"
+        accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
+        tabIndex={-1}
+        aria-hidden="true"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (file) onFile(file);
+        }}
+      />
     </div>
   );
+}
+
+/* ─────────────────────────── clip ─────────────────────────── */
+
+/** A clip file's type as the server reads it, or null when the feed does not take it. */
+function clipTypeOf(file: File): string | null {
+  const bare = file.type.split(";")[0]?.trim().toLowerCase() ?? "";
+  if (FEED_CLIP_TYPES[bare]) return bare;
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  if (ext === "mp4" || ext === "m4v") return "video/mp4";
+  if (ext === "mov") return "video/quicktime";
+  if (ext === "webm") return "video/webm";
+  return null;
+}
+
+export type ClipCheck =
+  { ok: true; mime: string; durationSec: number; w: number; h: number; preview: string } | { ok: false; error: string };
+
+/**
+ * Whether a file is a clip the feed takes — type, size, length, frame — read
+ * by the browser before a byte is sent. The server cannot read a video, so
+ * this is where «до 30 с, Full HD» is actually looked at; the bucket's own
+ * limits are what hold the line behind it.
+ */
+export function checkClipFile(file: File): Promise<ClipCheck> {
+  const mime = clipTypeOf(file);
+  if (!mime) return Promise.resolve({ ok: false, error: composerCopy.clipType });
+  if (file.size > FEED_CLIP_MAX_BYTES) return Promise.resolve({ ok: false, error: composerCopy.clipBig });
+  const preview = URL.createObjectURL(file);
+  return new Promise((resolve) => {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.muted = true;
+    const fail = (error: string) => {
+      URL.revokeObjectURL(preview);
+      video.removeAttribute("src");
+      resolve({ ok: false, error });
+    };
+    video.onerror = () => fail(composerCopy.clipUnreadable);
+    video.onloadedmetadata = () => {
+      const { duration, videoWidth: w, videoHeight: h } = video;
+      if (!Number.isFinite(duration) || duration <= 0 || !w || !h) return fail(composerCopy.clipUnreadable);
+      if (duration > FEED_CLIP_MAX_SECONDS + 0.5) return fail(composerCopy.clipLong);
+      if (Math.max(w, h) > FEED_CLIP_MAX_LONG || Math.min(w, h) > FEED_CLIP_MAX_SHORT) {
+        return fail(composerCopy.clipLarge);
+      }
+      video.removeAttribute("src");
+      resolve({ ok: true, mime, durationSec: Math.min(duration, FEED_CLIP_MAX_SECONDS), w, h, preview });
+    };
+    video.src = preview;
+  });
+}
+
+/**
+ * Sends a checked clip: asks for the one-time address, then puts the file
+ * there with progress. Answers the path the post names.
+ */
+export async function uploadClip(
+  file: File,
+  mime: string,
+  onProgress: (fraction: number) => void,
+  asPlatform = false,
+): Promise<FeedResult<{ path: string }>> {
+  const signed = await signClip(mime, file.size, asPlatform);
+  if (!signed.ok) return signed;
+  const { path, uploadUrl } = signed.data;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const sent = await new Promise<boolean>((resolve) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", uploadUrl);
+    xhr.setRequestHeader("x-upsert", "false");
+    if (anon) xhr.setRequestHeader("apikey", anon);
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && event.total > 0) onProgress(Math.min(0.98, event.loaded / event.total));
+    };
+    xhr.onload = () => resolve(xhr.status >= 200 && xhr.status < 300);
+    xhr.onerror = () => resolve(false);
+    xhr.ontimeout = () => resolve(false);
+    // The storage API's signed upload takes the file as a form, as its own client sends it.
+    const form = new FormData();
+    form.append("cacheControl", "31536000");
+    form.append("", new File([file], "clip", { type: mime }));
+    xhr.send(form);
+  });
+  if (!sent) return { ok: false, status: 502, code: "clip_upload_failed" };
+  onProgress(1);
+  return { ok: true, data: { path } };
 }
 
 /* ─────────────────────────── audio ─────────────────────────── */

@@ -61,9 +61,12 @@ import {
   AudioField,
   MediaStrip,
   VideoField,
+  checkClipFile,
   mediaError,
+  uploadClip,
   uploadWithProgress,
   type AudioItem,
+  type ClipItem,
   type PhotoItem,
   type VideoItem,
 } from "./FeedComposerMedia";
@@ -119,6 +122,21 @@ function audioOf(media: FeedMedia | undefined): AudioItem | null {
     durationSec: audio.durationSec,
     path: audio.path,
     mime: audio.mime,
+  };
+}
+
+function clipOf(media: FeedMedia | undefined): ClipItem | null {
+  const clip = media?.clip;
+  if (!clip) return null;
+  return {
+    status: "done",
+    progress: 1,
+    preview: clip.src,
+    durationSec: clip.durationSec,
+    w: clip.w,
+    h: clip.h,
+    path: clip.path,
+    mime: clip.mime,
   };
 }
 
@@ -189,6 +207,7 @@ export function FeedComposer({
   const [tagged, setTagged] = useState<string[]>(draft?.taggedAuthorIds ?? []);
   const [photos, setPhotos] = useState<PhotoItem[]>(() => photosOf(draft?.media));
   const [video, setVideo] = useState<VideoItem | null>(draft?.media?.video ?? null);
+  const [clip, setClip] = useState<ClipItem | null>(() => clipOf(draft?.media));
   const [audio, setAudio] = useState<AudioItem | null>(() => audioOf(draft?.media));
   const [attach, setAttach] = useState<Attach>(draft?.blockId ? "block" : draft?.courseId ? "program" : "none");
   const [courseId, setCourseId] = useState<string>(draft?.courseId ?? courses[0]?.id ?? "");
@@ -234,11 +253,15 @@ export function FeedComposer({
   const taggableOthers = useMemo(() => taggable.filter((entry) => entry.id !== speaker.id), [taggable, speaker.id]);
 
   const visible = useMemo(() => feedPlainText(body).length, [body]);
-  const uploading = photos.some((photo) => photo.status === "uploading") || audio?.status === "uploading";
+  const uploading =
+    photos.some((photo) => photo.status === "uploading") ||
+    clip?.status === "uploading" ||
+    audio?.status === "uploading";
   const dirty =
     Boolean(body.trim()) ||
     photos.length > 0 ||
     Boolean(video) ||
+    Boolean(clip) ||
     Boolean(audio) ||
     tagged.length > 0 ||
     (!draft && attach !== "none");
@@ -265,6 +288,10 @@ export function FeedComposer({
       return [];
     });
     setVideo(null);
+    setClip((current) => {
+      revoke(current?.preview);
+      return null;
+    });
     setAudio((current) => {
       revoke(current?.preview);
       return null;
@@ -297,6 +324,7 @@ export function FeedComposer({
       // Unmounting with local previews still alive lets them go.
       photos.forEach((photo) => revoke(photo.preview));
       revoke(audio?.preview);
+      revoke(clip?.preview);
     },
     // Only on unmount: the lists are read through the closure of the last render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -413,6 +441,45 @@ export function FeedComposer({
     void sendPhoto(key, item.file);
   }
 
+  async function sendClip(file: File, mime: string) {
+    const result = await uploadClip(
+      file,
+      mime,
+      (progress) => setClip((current) => (current && current.file === file ? { ...current, progress } : current)),
+      platformVoice,
+    );
+    setClip((current) => {
+      if (!current || current.file !== file) return current;
+      if (!result.ok) {
+        const error = mediaError(result.code, composerCopy.clipFailed);
+        toast.error(error);
+        return { ...current, status: "failed", error };
+      }
+      return { ...current, status: "done", progress: 1, path: result.data.path, mime };
+    });
+  }
+
+  async function addClip(file: File) {
+    const checked = await checkClipFile(file);
+    if (!checked.ok) {
+      toast.error(checked.error);
+      return;
+    }
+    revoke(clip?.preview);
+    setVideo(null);
+    setClip({
+      status: "uploading",
+      progress: 0,
+      preview: checked.preview,
+      durationSec: checked.durationSec,
+      w: checked.w,
+      h: checked.h,
+      file,
+      mime: checked.mime,
+    });
+    void sendClip(file, checked.mime);
+  }
+
   async function sendAudio(file: File) {
     const result = await uploadWithProgress(
       file,
@@ -450,6 +517,9 @@ export function FeedComposer({
       }));
     }
     if (video) media.video = video;
+    if (clip?.status === "done" && clip.path && clip.mime) {
+      media.clip = { path: clip.path, durationSec: clip.durationSec, w: clip.w, h: clip.h, mime: clip.mime };
+    }
     if (audio?.status === "done" && audio.path && audio.mime) {
       media.audio = { path: audio.path, durationSec: audio.durationSec, mime: audio.mime };
     }
@@ -490,6 +560,10 @@ export function FeedComposer({
     }
     if (photos.some((photo) => photo.status === "failed")) {
       toast.error(composerCopy.photoFailed);
+      return;
+    }
+    if (clip?.status === "failed") {
+      toast.error(clip.error ?? composerCopy.clipFailed);
       return;
     }
     if (audio?.status === "failed") {
@@ -559,7 +633,7 @@ export function FeedComposer({
         icon="video"
         label={composerCopy.video}
         pressed={panel === "video"}
-        disabled={Boolean(video)}
+        disabled={Boolean(video) || Boolean(clip)}
         onClick={() => setPanel(panel === "video" ? "none" : "video")}
       />
       <ToolButton
@@ -787,11 +861,17 @@ export function FeedComposer({
                   ) : null}
 
                   <div className={styles.field} data-dragging={undefined}>
-                    {photos.length || video || audio || (attach !== "none" && attachConfirmed) || tagged.length ? (
+                    {photos.length ||
+                    video ||
+                    clip ||
+                    audio ||
+                    (attach !== "none" && attachConfirmed) ||
+                    tagged.length ? (
                       <div className={styles.attached} aria-label={composerCopy.attached}>
                         <MediaStrip
                           photos={photos}
                           video={video}
+                          clip={clip}
                           audio={audio}
                           onTag={taggableOthers.length > 0 ? () => setMenu("tags") : undefined}
                           onSpoiler={(key) =>
@@ -809,6 +889,15 @@ export function FeedComposer({
                           }
                           onRetry={retryPhoto}
                           onRemoveVideo={() => setVideo(null)}
+                          onRemoveClip={() => {
+                            revoke(clip?.preview);
+                            setClip(null);
+                          }}
+                          onRetryClip={() => {
+                            if (!clip?.file || !clip.mime) return;
+                            setClip({ ...clip, status: "uploading", progress: 0, error: undefined });
+                            void sendClip(clip.file, clip.mime);
+                          }}
                           onRemoveAudio={() => {
                             revoke(audio?.preview);
                             setAudio(null);
@@ -888,6 +977,10 @@ export function FeedComposer({
                         onAdd={(next) => {
                           setVideo(next);
                           setPanel("none");
+                        }}
+                        onFile={(file) => {
+                          setPanel("none");
+                          void addClip(file);
                         }}
                         onCancel={() => setPanel("none")}
                       />

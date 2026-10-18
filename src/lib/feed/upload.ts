@@ -24,6 +24,8 @@ import { MAX_INPUT_BYTES, isPrepareFailure, prepareMedia } from "@/lib/lms/media
 import {
   FEED_AUDIO_MAX_BYTES,
   FEED_AUDIO_TYPES,
+  FEED_CLIP_MAX_BYTES,
+  FEED_CLIP_TYPES,
   FEED_MEDIA_BUCKET,
   feedAudioExtension,
   feedMediaUrl,
@@ -92,4 +94,24 @@ export async function storeFeedMedia(db: Db, author: FeedAuthor, file: File): Pr
   }
   const path = `${folder}/${primary.name}`;
   return { kind: "photo", path, src: feedMediaUrl(path), w: prepared.width, h: prepared.height };
+}
+
+export type SignedClip = { path: string; uploadUrl: string; src: string };
+
+/**
+ * A clip is too big for a function's request body, so it does not pass through
+ * one: the author is handed a one-time address in the bucket and sends the file
+ * there. What the server holds on to is the checks that need no bytes — the
+ * type and the size claimed, which the bucket's own limits then enforce — and
+ * the folder, which is the author's.
+ */
+export async function signFeedClip(db: Db, author: FeedAuthor, mime: unknown, bytes: unknown): Promise<SignedClip> {
+  const ext = typeof mime === "string" ? FEED_CLIP_TYPES[mime] : undefined;
+  if (!ext) throw new FeedError("media_unsupported_type", 415);
+  if (typeof bytes !== "number" || !Number.isFinite(bytes) || bytes <= 0) throw new FeedError("media_invalid");
+  if (bytes > FEED_CLIP_MAX_BYTES) throw new FeedError("media_too_large", 413);
+  const path = `${author.id}/${randomUUID()}/clip.${ext}`;
+  const { data, error } = await db.storage.from(FEED_MEDIA_BUCKET).createSignedUploadUrl(path);
+  if (error || !data) throw new Error(`feed_media_upload_failed:${error?.message ?? "no_url"}`);
+  return { path, uploadUrl: data.signedUrl, src: feedMediaUrl(path) };
 }

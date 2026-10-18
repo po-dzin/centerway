@@ -88,6 +88,11 @@ export function resubmitPost(id: string, input: NewPost) {
   });
 }
 
+/** Where an attachment's arrow leads this reader: inside the course, or to the programme's page. */
+export function fetchAttachmentHref(postId: string) {
+  return call<{ href: string; inside: boolean }>(`/api/feed/${postId}/go`);
+}
+
 /** An admin pins or unpins a post of the platform's. */
 export function pinPost(id: string, pinned: boolean) {
   return call<{ post: FeedPost }>(`/api/feed/${id}`, {
@@ -132,6 +137,14 @@ export function uploadFeedMedia(file: File | Blob, name = "upload", asPlatform =
     method: "POST",
     body: form,
   });
+}
+
+/** An address in the bucket to send a clip to; the file does not pass through the server. */
+export function signClip(mime: string, bytes: number, asPlatform = false) {
+  return call<{ path: string; uploadUrl: string; src: string }>(
+    asPlatform ? "/api/feed/media/clip?as=platform" : "/api/feed/media/clip",
+    json({ mime, bytes }),
+  );
 }
 
 export function fetchComments(postId: string) {

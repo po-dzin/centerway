@@ -87,6 +87,9 @@ export type FeedAttachment = {
   block: FeedLessonBlock | null;
   /** The course's slug, for the renderer's links between lessons. */
   courseSlug: string | null;
+  /** The lesson's own address and the block's id: where the arrow leads a reader who has the course. */
+  lessonSlug: string | null;
+  blockId: string | null;
   media: "video" | "image" | null;
   durationMin: number | null;
   /** The programme page, where the reader can go on. */
@@ -272,7 +275,7 @@ async function attachmentsFor(db: Db, rows: PostRow[]): Promise<Map<string, Feed
   const [{ data: courses }, { data: lessons }] = await Promise.all([
     db.from("lms_courses").select("id, title, slug, program_slug").in("id", courseIds),
     lessonIds.length
-      ? db.from("lms_lessons").select("id, title, day_index, blocks").in("id", lessonIds)
+      ? db.from("lms_lessons").select("id, title, slug, day_index, blocks").in("id", lessonIds)
       : Promise.resolve({ data: [] as unknown[] }),
   ]);
   const courseById = new Map(
@@ -282,10 +285,9 @@ async function attachmentsFor(db: Db, rows: PostRow[]): Promise<Map<string, Feed
     ]),
   );
   const lessonById = new Map(
-    ((lessons ?? []) as { id: string; title: string; day_index: number | null; blocks: unknown }[]).map((row) => [
-      row.id,
-      row,
-    ]),
+    ((lessons ?? []) as { id: string; title: string; slug: string; day_index: number | null; blocks: unknown }[]).map(
+      (row) => [row.id, row],
+    ),
   );
 
   for (const row of rows) {
@@ -298,7 +300,7 @@ async function attachmentsFor(db: Db, rows: PostRow[]): Promise<Map<string, Feed
       lesson
         ? blockAttachment(
             owner,
-            { title: lesson.title, dayIndex: lesson.day_index, blocks: lesson.blocks },
+            { title: lesson.title, slug: lesson.slug, dayIndex: lesson.day_index, blocks: lesson.blocks },
             row.block_id,
             row.block_display === "full",
           )

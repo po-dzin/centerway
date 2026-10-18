@@ -164,7 +164,7 @@ export function FeedActions({
   onGuest: () => void;
   commentCount: number;
   commentsOpen: boolean;
-  /** Absent on the home rail: there the bubble leads to the post's own page. */
+  /** Absent in the feed and on the home rail: there the bubble leads to the post's own page, where the thread is. */
   onComments?: () => void;
   initiallySaved: boolean;
   /** Everyone's saves; the reader's own press moves it at once. */

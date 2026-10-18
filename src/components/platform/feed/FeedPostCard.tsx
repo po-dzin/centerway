@@ -547,7 +547,7 @@ export function FeedPostCard({
         </div>
       ) : null}
 
-      {post.attachment ? <FeedAttachment attachment={post.attachment} /> : null}
+      {post.attachment ? <FeedAttachment attachment={post.attachment} postId={post.id} /> : null}
 
       {post.status === "published" ? (
         <FeedActions
@@ -560,7 +560,9 @@ export function FeedPostCard({
           onGuest={goSignIn}
           commentCount={count}
           commentsOpen={open}
-          onComments={variant === "rail" ? undefined : () => setOpen((current) => !current)}
+          /* The thread lives on the post's own page (G 2026-10-18, as in Threads): from
+             the feed and the rail the bubble leads there; only on that page does it fold. */
+          onComments={commentsOpen && variant === "feed" ? () => setOpen((current) => !current) : undefined}
           initiallySaved={post.saved ?? false}
           initialSaveCount={post.saveCount ?? 0}
           shareCount={post.shareCount ?? 0}

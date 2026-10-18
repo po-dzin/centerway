@@ -11,6 +11,8 @@
  * open card stays about one phone screen. A spoiler is blurred under a veil
  * until the reader taps it; the tap only reveals, it opens nothing.
  *
+ * A CLIP is the author's own file, up to 30 seconds, in the browser's player.
+ *
  * VIDEO is the lesson renderer's own player (`BlockRenderer`, privacy-enhanced
  * youtube-nocookie embed), so a post plays exactly as a lesson does.
  *
@@ -78,8 +80,8 @@ function Photo({ photo, alt, single }: { photo: FeedPhoto; alt: string; single: 
 }
 
 export function FeedMedia({ media, postId }: { media: Media; postId: string }) {
-  const { photos, video, audio } = media;
-  if (!photos.length && !video && !audio) return null;
+  const { photos, video, clip, audio } = media;
+  if (!photos.length && !video && !clip && !audio) return null;
   const single = photos.length === 1;
   return (
     <>
@@ -114,6 +116,20 @@ export function FeedMedia({ media, postId }: { media: Media; postId: string }) {
             onToggleChecklistItem={NOOP}
           />
         </div>
+      ) : null}
+
+      {clip ? (
+        /* The author's own short clip, played by the browser's player at its own proportions. */
+        <video
+          className={styles.postClip}
+          style={{ "--clip-ratio": `${clip.w} / ${clip.h}`, "--clip-k": clip.w / clip.h } as CSSProperties}
+          controls
+          playsInline
+          preload="metadata"
+          aria-label={feedCopy.postVideo}
+        >
+          <source src={clip.src} type={clip.mime} />
+        </video>
       ) : null}
 
       {audio ? (
