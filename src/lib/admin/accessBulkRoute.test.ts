@@ -242,3 +242,56 @@ describe("granting", () => {
     );
   });
 });
+
+describe("people: one name per address", () => {
+  it("passes each name to its own grant, and treats an address with no name as before", async () => {
+    const res = await post({
+      people: [
+        { email: "Anna@Example.com", name: " Анна " },
+        { email: "taras@example.com", name: "" },
+        { email: "anna@example.com", name: "Duplicate" },
+      ],
+      course: "way21",
+      source: "service",
+      createAccount: true,
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    const calls = access.provisionAccess.mock.calls.map(([input]) => input);
+    expect(calls).toEqual([
+      expect.objectContaining({ email: "anna@example.com", fullName: "Анна", source: "service", createAccount: true }),
+      expect.objectContaining({ email: "taras@example.com", fullName: undefined, source: "service" }),
+    ]);
+    expect(body).toMatchObject({ source: "service", duplicates: 1 });
+    expect(body.summary).toMatchObject({ total: 2, created: 2 });
+  });
+
+  it("names the bad addresses of the table and grants nobody", async () => {
+    const res = await post({
+      people: [{ email: "ok@b.co" }, { email: "oops", name: "Олена" }, { email: "" }, { email: "", name: "Іван" }],
+      course: "way21",
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "emails_invalid", invalid: ["oops", "Іван"] });
+    expect(access.provisionAccess).not.toHaveBeenCalled();
+  });
+
+  it("still refuses money and roles on a list, whatever shape the people came in", async () => {
+    const res = await post({
+      people: [{ email: "a@b.co" }, { email: "c@d.co" }],
+      course: "way21",
+      payment: { amount: 100, currency: "UAH" },
+    });
+    expect((await res.json()).error).toBe("bulk_payment_not_allowed");
+  });
+});
+
+describe("the term from the offer", () => {
+  it("passes the request for it to every grant, and nothing when it was not made", async () => {
+    await post({ emails: "a@b.co", course: "way21", termFromOffer: true });
+    await post({ emails: "c@d.co", course: "way21", termFromOffer: "yes" });
+    const [asked, other] = access.provisionAccess.mock.calls.map(([input]) => input);
+    expect(asked).toMatchObject({ termFromOffer: true });
+    expect(other.termFromOffer).toBeUndefined();
+  });
+});

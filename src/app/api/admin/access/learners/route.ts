@@ -105,6 +105,8 @@ type ProvisionBody = {
   cohortStartsOn?: string | null;
   /** Who brought this person: the ambassador's tag, as in `?ref=`. */
   ref?: string | null;
+  /** Take the term from the course's offer for a grant with no payment too. See `provisionAccess`. */
+  termFromOffer?: boolean;
   /**
    * An elevated role to give the account, admin-only and optional.
    *
@@ -177,6 +179,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       payment,
       cohortStartsOn,
       ref: ref ?? undefined,
+      termFromOffer: body.termFromOffer === true ? true : undefined,
       actorId: session.user.id,
     });
     // AFTER provisioning, never before: the account may not have existed

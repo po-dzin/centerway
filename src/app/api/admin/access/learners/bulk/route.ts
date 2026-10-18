@@ -7,6 +7,7 @@ import {
   isGrantSource,
   normalizeDeadline,
   parseEmailList,
+  parsePeople,
   provisionAccess,
   type BulkGrantResult,
   type GrantSource,
@@ -27,12 +28,14 @@ const CONCURRENCY = 4;
 
 type BulkBody = {
   emails?: unknown;
+  people?: unknown;
   course?: unknown;
   source?: unknown;
   cohortStartsOn?: unknown;
   ref?: unknown;
   expiresAt?: unknown;
   createAccount?: unknown;
+  termFromOffer?: unknown;
   payment?: unknown;
   role?: unknown;
   fullName?: unknown;
@@ -40,7 +43,12 @@ type BulkBody = {
 
 /**
  * POST /api/admin/access/learners/bulk
- *   { emails, course, source?, cohortStartsOn?, ref?, expiresAt?, createAccount? }
+ *   { emails | people, course, source?, cohortStartsOn?, ref?, expiresAt?, createAccount? }
+ *
+ * `people` is `[{ email, name? }]` — the dialog's table, one name per address —
+ * and `emails` the bare list it grew out of; either is accepted, `people` wins.
+ * A name only matters for an account created on the way: it is what the new
+ * account is called.
  *
  * The single grant, repeated over a pasted list — for giving a flow's friends
  * and team their seats in one act instead of twenty dialogs with the same
@@ -76,7 +84,11 @@ export const POST = withRoute("admin.access.learners.bulk", async (req) => {
   const course = typeof body.course === "string" ? body.course.trim() : "";
   if (!course) return badRequestResponse("course_required");
 
-  const { emails, invalid, duplicates } = parseEmailList(body.emails);
+  const parsed = body.people !== undefined ? parsePeople(body.people) : null;
+  const { emails, invalid, duplicates } = parsed
+    ? { emails: parsed.people.map((person) => person.email), invalid: parsed.invalid, duplicates: parsed.duplicates }
+    : parseEmailList(body.emails);
+  const nameOf = new Map((parsed?.people ?? []).map((person) => [person.email, person.name]));
   if (invalid.length > 0) {
     return NextResponse.json({ error: "emails_invalid", invalid }, { status: 400 });
   }
@@ -125,6 +137,7 @@ export const POST = withRoute("admin.access.learners.bulk", async (req) => {
     try {
       const result = await provisionAccess({
         email,
+        fullName: nameOf.get(email) || undefined,
         courseSlug: course,
         // As in the single grant: ABSENT leaves the term to the offer (which,
         // with no payment, is no deadline at all); an explicit null is forever.
@@ -134,6 +147,7 @@ export const POST = withRoute("admin.access.learners.bulk", async (req) => {
         payment: null,
         cohortStartsOn,
         ref: ref ?? undefined,
+        termFromOffer: body.termFromOffer === true ? true : undefined,
         actorId,
       });
       return {

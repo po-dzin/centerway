@@ -108,6 +108,100 @@
   font-size: var(--ds-type-label-size);
 }
 
+/* ── The unified grant dialog ──────────────────────────────────────────── */
+
+.stack {
+  display: grid;
+  gap: var(--cw-space-sm);
+}
+
+.cap {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+  font-weight: 700;
+}
+
+/* One line per person: address, name, remove. The header is the column names
+   for the desktop layout and goes away when the line stacks. */
+.peopleHead,
+.personRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--ds-touch-target-min);
+  gap: var(--cw-space-xs);
+  align-items: center;
+}
+
+.peopleHead {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+}
+
+.peopleList {
+  display: grid;
+  gap: var(--cw-space-xs);
+  max-height: 18rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.personRemove {
+  composes: cw-btn from global;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.personRemove:disabled {
+  visibility: hidden;
+}
+
+.addRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+@media (max-width: 639px) {
+  .peopleHead {
+    display: none;
+  }
+
+  .personRow {
+    grid-template-columns: minmax(0, 1fr) var(--ds-touch-target-min);
+  }
+
+  .personRow > :nth-child(2) {
+    grid-column: 1;
+  }
+
+  .personRemove {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+  }
+}
+
+/* An address and the action that copies it. */
+.linkRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--cw-space-xs);
+  align-items: center;
+}
+
+.linkText {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.linkAddress {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+}
+
 /* ── The summary ───────────────────────────────────────────────────────── */
 
 .summary {

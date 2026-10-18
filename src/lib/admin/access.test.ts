@@ -768,6 +768,39 @@ describe("provisionAccess", () => {
     expect(sendPurchaseEmail).not.toHaveBeenCalled();
   });
 
+  it("gives a gift the offer's term only when asked, and a typed date still wins", async () => {
+    db.tables.experience_offers = [
+      { id: "o-reset", code: "course:reset-day", experience_id: "exp-reset", access_days: 30, access_lifetime: false },
+    ];
+    const DAY = 24 * 60 * 60 * 1000;
+    const expiry = async (email: string, extra: Record<string, unknown>) => {
+      const result = await provisionAccess({
+        email,
+        courseSlug: "reset-day",
+        createAccount: true,
+        actorId: ADMIN,
+        ...extra,
+      });
+      return (db.rows("lms_enrollments").find((row) => row.id === result.grant.enrollmentId) as Row).expires_at as
+        string | null;
+    };
+
+    // No money and nothing said: no deadline, as it has always been.
+    expect(await expiry("gift-a@example.com", {})).toBeNull();
+
+    // «Як в оффері курсу» is said, so the offer's thirty days count from the grant.
+    const asked = await expiry("gift-b@example.com", { termFromOffer: true });
+    const days = (Date.parse(asked ?? "") - Date.now()) / DAY;
+    expect(days).toBeGreaterThan(28);
+    expect(days).toBeLessThan(31);
+
+    // A typed date is the stronger answer, forever included.
+    expect(await expiry("gift-c@example.com", { termFromOffer: true, expiresAt: null })).toBeNull();
+    expect(await expiry("gift-d@example.com", { termFromOffer: true, expiresAt: "2027-01-01T23:59:59.999Z" })).toBe(
+      "2027-01-01T23:59:59.999Z",
+    );
+  });
+
   it("applies a deadline typed for someone who is already enrolled", async () => {
     const result = await provisionAccess({
       email: "learner@example.com",
@@ -947,6 +980,77 @@ describe("listCourses", () => {
 
     expect(reset).toMatchObject({ authorId: null, authorEmail: null, learners: 2 });
     expect(way21).toMatchObject({ authorId: "auth-coach", authorEmail: "coach@example.com", learners: 1 });
+  });
+
+  it("carries the program's public address and the formats that are on sale, for the grant dialog", async () => {
+    const course = db.rows("lms_courses").find((row) => row.id === "course-way21")!;
+    Object.assign(course, { program_slug: "way21", experience_id: "exp-way21" });
+    db.tables.experience_offers = [
+      {
+        id: "o1",
+        experience_id: "exp-way21",
+        format: "group",
+        label: { uk: "Група потоку" },
+        cohort_starts_on: "2026-11-01",
+        active: true,
+        review_status: "approved",
+        sort_order: 2,
+      },
+      {
+        id: "o2",
+        experience_id: "exp-way21",
+        format: "self",
+        label: null,
+        cohort_starts_on: null,
+        active: true,
+        review_status: "approved",
+        sort_order: 1,
+      },
+      // An author's proposal and a withdrawn offer are not ways to take the program.
+      {
+        id: "o3",
+        experience_id: "exp-way21",
+        format: "individual",
+        label: null,
+        cohort_starts_on: null,
+        active: true,
+        review_status: "proposed",
+        sort_order: 3,
+      },
+      {
+        id: "o4",
+        experience_id: "exp-way21",
+        format: "group",
+        label: null,
+        cohort_starts_on: "2026-12-01",
+        active: false,
+        review_status: "approved",
+        sort_order: 4,
+      },
+      // An offer with no format is a plain price, not a format.
+      {
+        id: "o5",
+        experience_id: "exp-way21",
+        format: null,
+        label: null,
+        cohort_starts_on: null,
+        active: true,
+        review_status: "approved",
+        sort_order: 5,
+      },
+    ];
+
+    const rows = await listCourses();
+    const way21 = rows.find((row) => row.slug === "way21");
+    const reset = rows.find((row) => row.slug === "reset-day");
+
+    expect(way21?.programSlug).toBe("way21");
+    expect(way21?.formats).toEqual([
+      { format: "self", label: null, cohortStartsOn: null },
+      { format: "group", label: "Група потоку", cohortStartsOn: "2026-11-01" },
+    ]);
+    // No program_slug on the row falls back to the course slug; no experience, no formats.
+    expect(reset).toMatchObject({ programSlug: "reset-day", formats: [] });
   });
 });
 
