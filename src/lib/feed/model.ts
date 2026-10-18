@@ -51,6 +51,8 @@ export const FEED_POST_RAW_MAX = 8000;
 export const FEED_COMMENT_MAX = 1000;
 /** How many posts a page of the feed carries; «Показати ще» asks for the next. */
 export const FEED_PAGE_SIZE = 20;
+/** An author may change a published post of their own for a day; then the words stay as the readers answered them (G 2026-10-18). */
+export const FEED_EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 /** Reactions shown under a post before «+». */
 export const FEED_TOP_REACTIONS = 3;
 /** Different emoji one person may leave on one post (G 2026-10-17); the fourth is refused. */

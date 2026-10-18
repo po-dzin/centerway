@@ -1174,6 +1174,7 @@ export type Database = {
           photo_path: string | null
           published_at: string | null
           pinned_at: string | null
+          edited_at: string | null
           returned_reason: string | null
           status: string
           tagged_author_ids: string[]
@@ -1201,6 +1202,7 @@ export type Database = {
           photo_path?: string | null
           published_at?: string | null
           pinned_at?: string | null
+          edited_at?: string | null
           returned_reason?: string | null
           status?: string
           tagged_author_ids?: string[]
@@ -1228,6 +1230,7 @@ export type Database = {
           photo_path?: string | null
           published_at?: string | null
           pinned_at?: string | null
+          edited_at?: string | null
           returned_reason?: string | null
           status?: string
           tagged_author_ids?: string[]

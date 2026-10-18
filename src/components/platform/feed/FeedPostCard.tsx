@@ -344,6 +344,7 @@ export function FeedPostCard({
               </time>
             </Link>
             {` · ${topics.map((topic) => COURSE_CATEGORY_LABELS[topic]).join(", ")}`}
+            {post.edited ? ` · ${feedCopy.edited}` : null}
           </p>
         </div>
         {onDeleted && post.canManage ? (
@@ -388,7 +389,7 @@ export function FeedPostCard({
                   </>
                 ) : (
                   <>
-                    {onEdit && platform ? (
+                    {onEdit && post.canEdit ? (
                       <button
                         className={styles.menuItem}
                         type="button"

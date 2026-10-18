@@ -568,3 +568,28 @@ describe("the platform as an author", () => {
     expect(await getFeedPost(db, post.id, READER)).toBeNull();
   });
 });
+
+describe("changing a published post", () => {
+  it("is open to its author for a day, shows as changed, and keeps the post out", async () => {
+    const t0 = new Date("2026-10-18T10:00:00Z");
+    const { post } = await createFeedPost(db, await author(), { body: "Привіт", topic: "focus" }, t0);
+    const soon = new Date(t0.getTime() + 2 * 3600_000);
+    const edited = await resubmitFeedPost(db, await author(), post.id, { body: "Привіт, світе", topic: "focus" }, soon);
+    expect(edited.post).toMatchObject({ body: "Привіт, світе", status: "published", edited: true });
+    expect(edited.post.publishedAt).toBe(post.publishedAt);
+  });
+
+  it("closes after a day, and refuses words the check stops without pulling the post back", async () => {
+    const t0 = new Date("2026-10-18T10:00:00Z");
+    const { post } = await createFeedPost(db, await author(), { body: "Привіт", topic: "focus" }, t0);
+    const late = new Date(t0.getTime() + 25 * 3600_000);
+    await expect(
+      resubmitFeedPost(db, await author(), post.id, { body: "Інше", topic: "focus" }, late),
+    ).rejects.toMatchObject({ code: "edit_window_closed" });
+    const soon = new Date(t0.getTime() + 3600_000);
+    await expect(
+      resubmitFeedPost(db, await author(), post.id, { body: "Гарантую результат.", topic: "focus" }, soon),
+    ).rejects.toMatchObject({ code: "edit_blocked" });
+    expect((await getFeedPost(db, post.id, AUTHOR_USER))?.body).toBe("Привіт");
+  });
+});

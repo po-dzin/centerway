@@ -16,7 +16,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSignInHref } from "@/components/auth/useSignInReturn";
 import { useSession } from "@/components/auth/SessionProvider";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
-import { feedFilterCount, feedFilterQuery, type FeedFilter as Filter } from "@/lib/feed/model";
+import { feedFilterCount, feedFilterQuery, isPlatformAuthor, type FeedFilter as Filter } from "@/lib/feed/model";
 import type { FeedAuthor, FeedPage, FeedPost } from "@/lib/feed/server";
 
 import { feedCopy } from "./copy";
@@ -158,7 +158,7 @@ export function FeedView({
   const rest = lead ? page.posts.slice(1) : page.posts;
 
   function card(post: FeedPost) {
-    if (editing === post.id && me?.platform) {
+    if (editing === post.id && (me?.platform || me?.author)) {
       return (
         <FeedComposer
           key={post.id}
@@ -182,7 +182,7 @@ export function FeedView({
         onMarks={(id, list) => setMarks((current) => ({ ...current, [id]: list }))}
         headingLevel={mode === "feed" ? 2 : 3}
         onDeleted={removed}
-        onEdit={me?.platform ? (target) => setEditing(target.id) : undefined}
+        onEdit={me ? (target) => setEditing(target.id) : undefined}
       />
     );
   }
@@ -224,7 +224,7 @@ export function FeedView({
   );
 }
 
-/** A post of the platform's, back in the composer: its pin and voice ride along. */
+/** A post back in the composer: its voice and pin ride along. */
 function draftOf(post: FeedPost): ComposerDraft {
   return {
     id: post.id,
@@ -237,7 +237,7 @@ function draftOf(post: FeedPost): ComposerDraft {
     lessonId: post.source?.lessonId ?? null,
     blockId: post.source?.blockId ?? null,
     full: post.source?.blockDisplay !== "excerpt",
-    asPlatform: true,
+    asPlatform: isPlatformAuthor(post.author),
     pinned: post.pinned,
   };
 }

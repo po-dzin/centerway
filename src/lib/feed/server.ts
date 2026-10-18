@@ -42,6 +42,7 @@ import {
   isFeedEmoji,
   isPlatformAuthor,
   FEED_PLATFORM_SLUG,
+  FEED_EDIT_WINDOW_MS,
   isFeedTopic,
   normalizeFeedText,
   normalizeFeedTopics,
@@ -114,6 +115,10 @@ export type FeedPost = {
   mine: boolean;
   /** The platform's pinned post: first in the feed, on the wall's tape. */
   pinned: boolean;
+  /** Changed after it was published; the card says «змінено». */
+  edited: boolean;
+  /** The reader may change the words now: an admin on the platform's post; an author on their own, for a day. */
+  canEdit: boolean;
   /** The reader may change and remove it: they wrote it, or they are an admin and it is the platform's. */
   canManage: boolean;
   /** The reader saved it to «Мій журнал». False for a guest. */
@@ -172,12 +177,13 @@ type PostRow = {
   returned_reason: string | null;
   published_at: string | null;
   pinned_at: string | null;
+  edited_at: string | null;
   created_at: string;
   tg_message_id: number | null;
 };
 
 const POST_COLUMNS =
-  "id, author_id, created_by, body, topic, topics, media, tagged_author_ids, course_id, lesson_id, block_id, block_display, status, held_reason, returned_reason, published_at, pinned_at, created_at, tg_message_id";
+  "id, author_id, created_by, body, topic, topics, media, tagged_author_ids, course_id, lesson_id, block_id, block_display, status, held_reason, returned_reason, published_at, pinned_at, edited_at, created_at, tg_message_id";
 
 type AuthorRow = {
   id: string;
@@ -391,6 +397,11 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
         commentCount: commentsByPost.get(row.id) ?? 0,
         mine,
         pinned: row.pinned_at !== null,
+        edited: row.edited_at !== null,
+        canEdit:
+          viewerAdmin && isPlatformAuthor(authorOf(author))
+            ? true
+            : mine && row.status === "published" && withinEditWindow(row.published_at),
         canManage: mine || (viewerAdmin && isPlatformAuthor(authorOf(author))),
         saved: saved.has(row.id),
         saveCount: savesByPost.get(row.id) ?? 0,
@@ -567,6 +578,11 @@ export type FeedPostInput = {
   blockDisplay?: unknown;
 };
 
+function withinEditWindow(publishedAt: string | null, now: Date = new Date()): boolean {
+  if (!publishedAt) return false;
+  return now.getTime() - Date.parse(publishedAt) <= FEED_EDIT_WINDOW_MS;
+}
+
 function isUuid(value: unknown): value is string {
   return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
@@ -728,6 +744,7 @@ export async function resubmitFeedPost(
   const { data: existing } = await db.from("feed_posts").select("id, author_id, status").eq("id", id).maybeSingle();
   const row = existing as { author_id: string; status: string } | null;
   if (!row || row.author_id !== author.id) throw new FeedError("not_found", 404);
+  if (row.status === "published") return editOwnPost(db, author, id, input, now);
   if (row.status !== "returned") throw new FeedError("not_returned", 409);
 
   /* Checked exactly as on creation: the composer sends the attachment, media
@@ -747,6 +764,38 @@ export async function resubmitFeedPost(
       decided_by: null,
       updated_at: at,
     })
+    .eq("id", id)
+    .select(POST_COLUMNS)
+    .single();
+  if (error) throw new Error(`feed_post_write_failed:${error.message}`);
+  const [post] = await decorate(db, [data as PostRow], author.userId);
+  if (!post) throw new Error("feed_post_write_failed:decorate");
+  return { post, verdict };
+}
+
+/**
+ * The author changes a post that is already out, within a day of publishing.
+ * It is checked as on creation; if the new words are stopped, nothing changes
+ * and the post stays as it was — a published post is not pulled back by an
+ * edit. A reader sees «змінено».
+ */
+async function editOwnPost(
+  db: Db,
+  author: FeedAuthor & { userId: string },
+  id: string,
+  input: FeedPostInput,
+  now: Date,
+): Promise<CreatedPost> {
+  const { data: current } = await db.from("feed_posts").select("published_at").eq("id", id).maybeSingle();
+  if (!withinEditWindow((current as { published_at: string | null } | null)?.published_at ?? null, now)) {
+    throw new FeedError("edit_window_closed", 409);
+  }
+  const { verdict, fields } = await checkedPost(db, author, input);
+  if (!verdict.pass) throw new FeedError("edit_blocked", 422);
+  const at = now.toISOString();
+  const { data, error } = await db
+    .from("feed_posts")
+    .update({ ...fields, gate: verdict as unknown as Json, edited_at: at, updated_at: at })
     .eq("id", id)
     .select(POST_COLUMNS)
     .single();
@@ -792,6 +841,7 @@ export async function editPlatformPost(
       status: "published",
       held_reason: null,
       returned_reason: null,
+      edited_at: at,
       updated_at: at,
       ...(typeof input.pinned === "boolean" ? { pinned_at: input.pinned ? at : null } : {}),
     })

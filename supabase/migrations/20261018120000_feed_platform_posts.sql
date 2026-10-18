@@ -14,6 +14,11 @@
 --    будь-який допис платформи. `created_by` — нульовий uuid: його написала
 --    не людина.
 --
+-- 4. `feed_posts.edited_at` — коли допис востаннє змінили після публікації.
+--    Автор править свій опублікований допис упродовж доби (вікно в
+--    `FEED_EDIT_WINDOW_MS`), допис платформи адмін править без строку; читач
+--    бачить «змінено», щоб реакції під текстом не трималися на іншому тексті.
+--
 -- Аддитивно й повторюваний: ні рядок автора, ні вступний допис не дублюються.
 --
 -- Відкат:
@@ -21,10 +26,12 @@
 --   delete from public.lms_authors where slug = 'centerway';
 --   drop index if exists public.idx_feed_posts_pinned;
 --   alter table public.feed_posts drop column if exists pinned_at;
+--   alter table public.feed_posts drop column if exists edited_at;
 
 begin;
 
 alter table public.feed_posts add column if not exists pinned_at timestamptz null;
+alter table public.feed_posts add column if not exists edited_at timestamptz null;
 
 create index if not exists idx_feed_posts_pinned
   on public.feed_posts (pinned_at desc)

@@ -38,6 +38,7 @@ export const feedCopy = {
   hide: "Приховати",
   remove: "Видалити",
   edit: "Редагувати",
+  edited: "змінено",
   postMenu: "Дії з дописом",
   deleteAsk: "Видалити допис?",
   deleteYes: "Так",

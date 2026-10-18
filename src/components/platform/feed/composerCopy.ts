@@ -112,6 +112,8 @@ export const composerCopy = {
   tooLong: (max: number) => `Допис до ${max} знаків.`,
 
   errors: {
+    edit_window_closed: "Допис можна змінювати лише першу добу після публікації.",
+    edit_blocked: "Ці слова не пройшли перевірку. Допис лишився як був.",
     media_invalid: "Не вдалося прикріпити файли. Спробуйте прибрати й додати їх знову.",
     media_too_many_photos: "До 10 фото в одному дописі.",
     media_video_invalid: "Посилання на відео не підходить.",
