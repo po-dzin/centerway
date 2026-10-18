@@ -1549,11 +1549,11 @@ a.commentFace {
    plaster under its row of pieces. */
 @media (max-width: 56rem) {
   .wall {
-    /* The tall plate is 1068×700, the group centred in it: the sheet, the
-       checklist, the prints, and the strip under the prints. The head follows
-       the group. */
-    --stage-h: 65.5vw;
-    --wall-head: 63.5vw;
+    /* The tall plate is 930×520 and was composed for the column: the sheet
+       whole, with bare plaster each side of the group, the strip under the
+       prints. The head follows the group. */
+    --stage-h: 55.9vw;
+    --wall-head: 54vw;
   }
 
   .stagePhoto {
