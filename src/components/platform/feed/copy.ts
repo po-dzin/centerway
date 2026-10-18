@@ -47,6 +47,8 @@ export const feedCopy = {
   unpin: "Відкріпити",
   pinFailed: "Не вдалося змінити закріплення.",
   edited: "змінено",
+  hidden: "Допис приховано.",
+  hideFailed: "Не вдалося приховати допис.",
   postMenu: "Дії з дописом",
   deleteAsk: "Видалити допис?",
   deleteYes: "Так",

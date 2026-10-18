@@ -7,8 +7,9 @@ import {
   addComment,
   createFeedPost,
   deleteFeedPost,
-  editPlatformPost,
-  setPlatformPin,
+  editPostAsAdmin,
+  hideFeedPost,
+  setPostPin,
   feedPlatformAuthor,
   isFeedAdmin,
   decideHeldPost,
@@ -546,15 +547,43 @@ describe("the platform as an author", () => {
     expect(page.posts.filter((entry) => entry.id === second.post.id)).toHaveLength(1);
   });
 
-  it("is pinned and unpinned from the menu without touching its words", async () => {
+  it("is pinned and unpinned by any admin, on any published post, without touching its words", async () => {
+    const mine = await createFeedPost(db, await author(), { body: "Допис автора", topic: "focus" });
+    const pinned = await setPostPin(db, ADMIN, mine.post.id, true);
+    expect(pinned).toMatchObject({ pinned: true, body: "Допис автора", edited: false });
+    expect((await setPostPin(db, ADMIN, mine.post.id, false)).pinned).toBe(false);
+    await expect(setPostPin(db, AUTHOR_USER, mine.post.id, true)).rejects.toMatchObject({ code: "forbidden" });
+  });
+
+  it("is hidden or removed by an admin, whoever wrote it", async () => {
+    const one = await createFeedPost(db, await author(), { body: "Перший", topic: "focus" });
+    const two = await createFeedPost(db, await author(), { body: "Другий", topic: "focus" });
+    await expect(hideFeedPost(db, READER, one.post.id)).rejects.toMatchObject({ code: "forbidden" });
+    await hideFeedPost(db, ADMIN, one.post.id);
+    expect(await getFeedPost(db, one.post.id, null)).toBeNull();
+    await deleteFeedPost(db, null, two.post.id, { userId: ADMIN });
+    expect(await getFeedPost(db, two.post.id, null)).toBeNull();
+  });
+
+  it("changes whose name it carries when an admin edits it", async () => {
+    fake.tables["lms_authors"]?.push({
+      id: "author-admin",
+      slug: "admin-author",
+      name: "Адмін",
+      photo: null,
+      listed: true,
+      auth_user_id: ADMIN,
+    });
     const { post } = await createFeedPost(db, await platform(), { body: "Вступ", topic: "focus" }, new Date(), {
       platform: true,
     });
-    expect(post.pinned).toBe(false);
-    const pinned = await setPlatformPin(db, await platform(), post.id, true);
-    expect(pinned).toMatchObject({ pinned: true, body: "Вступ", edited: false });
-    expect((await setPlatformPin(db, await platform(), post.id, false)).pinned).toBe(false);
-    await expect(setPlatformPin(db, await author(), post.id, true)).rejects.toMatchObject({ code: "not_found" });
+    const asOwn = await editPostAsAdmin(db, ADMIN, post.id, { body: "Вступ", topic: "focus" }, false);
+    expect(asOwn.post.author.slug).toBe("admin-author");
+    const back = await editPostAsAdmin(db, ADMIN, post.id, { body: "Вступ", topic: "focus" }, true);
+    expect(back.post.author.slug).toBe("centerway");
+    await expect(editPostAsAdmin(db, READER, post.id, { body: "Вступ", topic: "focus" }, true)).rejects.toMatchObject({
+      code: "forbidden",
+    });
   });
 
   it("is changed and removed by an admin, and by no one else", async () => {
@@ -567,11 +596,17 @@ describe("the platform as an author", () => {
     const asReader = await listFeed(db, { filter: { topics: [], authors: [] }, me: READER });
     expect(asReader.posts[0]?.canManage).toBe(false);
 
-    const edited = await editPlatformPost(db, await platform(), post.id, {
-      body: "Новий вступ",
-      topic: "focus",
-      pinned: false,
-    });
+    const edited = await editPostAsAdmin(
+      db,
+      ADMIN,
+      post.id,
+      {
+        body: "Новий вступ",
+        topic: "focus",
+        pinned: false,
+      },
+      true,
+    );
     expect(edited.post).toMatchObject({ body: "Новий вступ", pinned: false, status: "published" });
 
     await deleteFeedPost(db, null, post.id, { userId: READER });

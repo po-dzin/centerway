@@ -164,7 +164,7 @@ export function FeedView({
   const rest = lead ? page.posts.slice(1) : page.posts;
 
   function card(post: FeedPost) {
-    if (editing === post.id && (me?.platform || me?.author)) {
+    if (editing === post.id && (me?.platform || me?.author) && post.canEdit) {
       return (
         <FeedComposer
           key={post.id}
@@ -189,7 +189,7 @@ export function FeedView({
         headingLevel={mode === "feed" ? 2 : 3}
         onDeleted={removed}
         onEdit={me ? (target) => setEditing(target.id) : undefined}
-        onChanged={me?.platform ? edited : undefined}
+        onChanged={me ? edited : undefined}
       />
     );
   }
@@ -246,6 +246,7 @@ function draftOf(post: FeedPost): ComposerDraft {
     full: post.source?.blockDisplay !== "excerpt",
     asPlatform: isPlatformAuthor(post.author),
     pinned: post.pinned,
+    editing: true,
   };
 }
 

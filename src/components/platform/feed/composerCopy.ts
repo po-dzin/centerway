@@ -13,6 +13,11 @@ export const composerCopy = {
   open: "Новий допис",
   title: "Новий допис",
   titleAgain: "Надіслати ще раз",
+  titleEdit: "Редагувати допис",
+  save: "Зберегти",
+  saved: "Збережено.",
+  keepWriting: "Продовжити",
+  discardAction: "Закрити без збереження",
   close: "Закрити",
   discard: "Закрити допис? Написане не збережеться.",
 

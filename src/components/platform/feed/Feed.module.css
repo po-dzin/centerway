@@ -1192,28 +1192,20 @@ a.commentFace {
 
 /* ─────────────── the filter (the shelf's popover) ─────────────── */
 
+/* The control stands still at the right end of its row, under the thumb
+   (G 2026-10-17); what is chosen is written to its left, so choosing never
+   moves the button (G 2026-10-18). Its popover opens leftwards, back onto the
+   screen. */
 .filterBar {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--cw-space-xs) var(--cw-space-sm);
-}
-
-/* On a phone the control stands on the right, under the thumb (G 2026-10-17),
-   and its popover opens leftwards, back onto the screen. */
-@media (max-width: 40rem) {
-  .filterBar {
-    flex-direction: row-reverse;
-  }
-
-  .filterBar .filterPopover {
-    inset-inline-start: auto;
-    inset-inline-end: 0;
-  }
 }
 
 .filterMenu {
   composes: filterMenu from "../cabinet/ShelfFilter.module.css";
+  flex: 0 0 auto;
 }
 
 .filterToggle {
@@ -1227,11 +1219,9 @@ a.commentFace {
 
 .filterPopover {
   composes: filterPopover from "../cabinet/ShelfFilter.module.css";
-  /* The shelf's control sits at the end of its row and opens leftwards; the
-     feed's sits at the start of the column, so it opens rightwards and stays
-     on a phone's screen. */
-  inset-inline-start: 0;
-  inset-inline-end: auto;
+  /* The control sits at the end of its row and opens leftwards, onto the screen. */
+  inset-inline-start: auto;
+  inset-inline-end: 0;
   inline-size: min(19rem, calc(100vw - 2 * var(--cw-page-gutter)));
   max-block-size: min(30rem, calc(100vh - 8rem));
   overflow-y: auto;
@@ -1276,8 +1266,12 @@ a.commentFace {
 
 .summary {
   display: flex;
+  flex: 1 1 0;
+  order: -1;
+  min-inline-size: 0;
   flex-wrap: wrap;
   align-items: baseline;
+  justify-content: flex-end;
   gap: var(--cw-space-2xs) var(--cw-space-sm);
   margin: 0;
   color: var(--cw-platform-muted);
@@ -1482,7 +1476,7 @@ a.commentFace {
    the feed's pinned post is taped to the plaster below the title. */
 .wall {
   --stage-h: clamp(28rem, min(100svh, 53.2vw), 62rem);
-  --wall-band: calc(var(--stage-h) * 0.55);
+  --wall-band: calc(var(--stage-h) * 0.44);
   position: relative;
   isolation: isolate;
   overflow-x: clip;
@@ -1540,7 +1534,7 @@ a.commentFace {
 @media (max-width: 35rem) {
   .wall {
     --stage-h: clamp(30rem, 100svh, 54rem);
-    --wall-band: calc(var(--stage-h) * 0.47);
+    --wall-band: calc(var(--stage-h) * 0.46);
   }
 }
 

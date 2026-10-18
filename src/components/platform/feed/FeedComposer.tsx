@@ -94,6 +94,8 @@ export type ComposerDraft = {
   /** A post the platform wrote, changed by an admin (G 2026-10-18). */
   asPlatform?: boolean;
   pinned?: boolean;
+  /** A change to a published post, not a returned one being sent again: its own title and «Зберегти». */
+  editing?: boolean;
 };
 
 let keySeq = 0;
@@ -257,14 +259,31 @@ export function FeedComposer({
     photos.some((photo) => photo.status === "uploading") ||
     clip?.status === "uploading" ||
     audio?.status === "uploading";
-  const dirty =
-    Boolean(body.trim()) ||
-    photos.length > 0 ||
-    Boolean(video) ||
-    Boolean(clip) ||
-    Boolean(audio) ||
-    tagged.length > 0 ||
-    (!draft && attach !== "none");
+  /* WHAT COUNTS AS A CHANGE. A new post is changed once anything is in it. An
+     opened post is changed only when it differs from how it was opened: closing
+     it untouched asks nothing. */
+  const signature = JSON.stringify({
+    body,
+    topics,
+    tagged,
+    photos: photos.map((photo) => [photo.path ?? photo.key, photo.spoiler]),
+    video: video?.youtubeId ?? null,
+    clip: clip?.path ?? clip?.preview ?? null,
+    audio: audio?.path ?? audio?.preview ?? null,
+    attach: attach === "none" ? null : [attach, course?.id ?? null, lesson?.id ?? null, block?.id ?? null, full],
+    asPlatform,
+    pinned,
+  });
+  const [openedSignature] = useState(signature);
+  const dirty = draft
+    ? signature !== openedSignature
+    : Boolean(body.trim()) ||
+      photos.length > 0 ||
+      Boolean(video) ||
+      Boolean(clip) ||
+      Boolean(audio) ||
+      tagged.length > 0 ||
+      attach !== "none";
 
   /* ── open and close ── */
 
@@ -312,12 +331,24 @@ export function FeedComposer({
     if (draft) onCancel?.();
   }, [draft, onCancel]);
 
-  const requestClose = useCallback(() => {
-    if (sending) return;
-    if (!held && dirty && !window.confirm(composerCopy.discard)) return;
+  const [confirming, setConfirming] = useState(false);
+
+  const discard = useCallback(() => {
+    setConfirming(false);
     if (!draft) reset();
     finish();
-  }, [sending, held, dirty, draft, reset, finish]);
+  }, [draft, reset, finish]);
+
+  /* Closing what has been changed asks first, in our own sheet — the browser's
+     box is not ours to style and says «www…centerway says». */
+  const requestClose = useCallback(() => {
+    if (sending) return;
+    if (!held && dirty) {
+      setConfirming(true);
+      return;
+    }
+    discard();
+  }, [sending, held, dirty, discard]);
 
   useEffect(
     () => () => {
@@ -541,9 +572,11 @@ export function FeedComposer({
       media.audio = { path: audio.path, durationSec: audio.durationSec, mime: audio.mime };
     }
     const next: NewPost = { body, topics, media, taggedAuthorIds: tagged };
-    if (platformVoice) {
-      next.asPlatform = true;
-      next.pinned = pinned;
+    /* An admin always says whose name it carries; only then does the server
+       take the admin's path (the platform's name or their own, and the pin). */
+    if (platform) {
+      next.asPlatform = platformVoice;
+      if (platformVoice || draft) next.pinned = pinned;
     }
     if (attach !== "none" && attachConfirmed && course) next.courseId = course.id;
     if (attach === "block" && attachConfirmed && lesson && block) {
@@ -595,7 +628,7 @@ export function FeedComposer({
       return;
     }
     if (result.data.post.status === "published") {
-      toast.success(composerCopy.published);
+      toast.success(draft?.editing ? composerCopy.saved : composerCopy.published);
       reset();
       setOpen(false);
     } else {
@@ -785,7 +818,8 @@ export function FeedComposer({
         aria-labelledby={titleId}
         onCancel={(event) => {
           event.preventDefault();
-          if (menu) setMenu(null);
+          if (confirming) setConfirming(false);
+          else if (menu) setMenu(null);
           else if (linking) setLinking(false);
           else if (choosing) closeChooser();
           else if (panel !== "none" && !recordingAudio) setPanel("none");
@@ -811,7 +845,13 @@ export function FeedComposer({
               </InteractionInkIcon>
             </button>
             <h2 id={titleId} className={styles.title}>
-              {held ? composerCopy.heldTitle : draft ? composerCopy.titleAgain : composerCopy.title}
+              {held
+                ? composerCopy.heldTitle
+                : draft
+                  ? draft.editing
+                    ? composerCopy.titleEdit
+                    : composerCopy.titleAgain
+                  : composerCopy.title}
             </h2>
             <span className={styles.headSpacer} aria-hidden="true" />
           </header>
@@ -851,7 +891,7 @@ export function FeedComposer({
 
                   {platform ? (
                     <div className={styles.voice} role="group" aria-label={composerCopy.voiceLabel}>
-                      {author && !draft ? (
+                      {author ? (
                         <label className={styles.voiceOption}>
                           <input
                             type="checkbox"
@@ -1101,12 +1141,29 @@ export function FeedComposer({
                   disabled={sending}
                   aria-busy={sending || undefined}
                 >
-                  {sending ? composerCopy.publishing : composerCopy.publish}
+                  {sending ? composerCopy.publishing : draft?.editing ? composerCopy.save : composerCopy.publish}
                 </button>
               </>
             )}
           </footer>
         </form>
+        {confirming ? (
+          <div className={styles.confirm} role="alertdialog" aria-labelledby={`${titleId}-confirm`}>
+            <div className={styles.confirmCard}>
+              <p className={styles.confirmTitle} id={`${titleId}-confirm`}>
+                {composerCopy.discard}
+              </p>
+              <div className={styles.confirmActions}>
+                <button className={styles.confirmKeep} type="button" autoFocus onClick={() => setConfirming(false)}>
+                  {composerCopy.keepWriting}
+                </button>
+                <button className={styles.confirmDiscard} type="button" onClick={discard}>
+                  {composerCopy.discardAction}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </dialog>
     </>
   );
