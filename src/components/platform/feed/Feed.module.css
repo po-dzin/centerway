@@ -1406,56 +1406,59 @@ a.commentFace {
   }
 }
 
-/* ─────────────── the hero at the top of /feed ─────────────── */
+/* ─────────────── the wall at the top of /feed ─────────────── */
 
-.hero {
-  --hero-x: 50%;
-  --hero-y: 35%;
+/* THE WALL IS THE GROUND OF THE FIRST SCREEN (G 2026-10-18). The photograph
+   runs behind the whole first screen, edge to edge, and fades into the page
+   below it. The pieces on it take the top of the plate (about the top 58% on a
+   desktop, 50% on a phone); the title starts under them (`--wall-band`), and
+   the feed's pinned post is taped to the plaster below the title. */
+.wall {
+  --stage-h: clamp(32rem, min(100svh, 56.25vw), 62rem);
+  --wall-band: calc(var(--stage-h) * 0.6);
   position: relative;
   isolation: isolate;
-  overflow: hidden;
-  display: flex;
-  align-items: flex-end;
-  min-block-size: clamp(15.5rem, 38vw, 19.5rem);
-  border-radius: var(--cw-card-radius);
-  background: var(--cw-mat-scrim-ink);
-  color: var(--cw-mat-inverse-text);
+  overflow-x: clip;
 }
 
-.heroPhoto {
+.stage {
   position: absolute;
-  inset: 0;
-  z-index: -2;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: -1;
+  block-size: var(--stage-h);
+  pointer-events: none;
+  /* The photograph melts into the page: whole for the first screen, gone at
+     the bottom edge, so the second screen starts on the page's own ground. */
+  mask-image: linear-gradient(to bottom, #000 0%, #000 58%, transparent 100%);
+}
+
+.stagePhoto {
+  display: block;
   inline-size: 100%;
   block-size: 100%;
   max-inline-size: none;
   object-fit: cover;
-  object-position: var(--hero-x) var(--hero-y);
+  object-position: 50% 0;
 }
 
-/* The scrim leans to where the words are: up from the bottom, in from the
-   left. No filter on the photo itself — its tone is baked in. */
-.hero::before {
+/* The scene is light; on the dark theme the page's ground dims it. */
+:global([data-cw-theme="dark"]) .stage::after {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    linear-gradient(
-      to top,
-      color-mix(in srgb, var(--cw-mat-scrim-ink) 86%, transparent) 0%,
-      color-mix(in srgb, var(--cw-mat-scrim-ink) 46%, transparent) 42%,
-      transparent 74%
-    ),
-    linear-gradient(to right, color-mix(in srgb, var(--cw-mat-scrim-ink) 40%, transparent) 0%, transparent 62%);
+  background: color-mix(in srgb, var(--cw-platform-bg) 62%, transparent);
+}
+
+.pageOnWall {
+  padding-block-start: var(--wall-band);
 }
 
 .heroBody {
   display: grid;
   gap: var(--cw-space-xs);
   max-inline-size: 32rem;
-  padding: var(--cw-space-lg);
+  color: var(--cw-platform-text);
 }
 
 .heroTitle {
@@ -1469,13 +1472,37 @@ a.commentFace {
 .heroLead {
   margin: 0;
   line-height: 1.55;
-  color: color-mix(in srgb, var(--cw-mat-inverse-text) 90%, transparent);
+  color: var(--cw-platform-muted);
 }
 
 @media (max-width: 35rem) {
-  .heroBody {
-    padding: var(--cw-space-md);
+  .wall {
+    --stage-h: clamp(34rem, 100svh, 54rem);
+    --wall-band: calc(var(--stage-h) * 0.53);
   }
+}
+
+/* The pinned post is taped to the wall: a strip of masking tape across its
+   top edge, as on the pieces above it. Only the unfiltered feed's first card
+   carries it. */
+.pinned {
+  position: relative;
+}
+
+.pinned::before {
+  content: "";
+  position: absolute;
+  inset-block-start: calc(var(--cw-space-xs) * -1);
+  inset-inline-start: 50%;
+  inline-size: var(--cw-space-3xl);
+  block-size: var(--cw-space-lg);
+  margin-inline-start: calc(var(--cw-space-3xl) / -2);
+  transform: rotate(-1.5deg);
+  background: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 70%, var(--cw-sem-warmth) 30%);
+  opacity: 0.86;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 22%, transparent);
+  clip-path: polygon(0 8%, 4% 0, 9% 10%, 14% 0, 100% 0, 96% 50%, 100% 100%, 12% 100%, 7% 88%, 3% 100%, 0 90%, 3% 50%);
+  pointer-events: none;
 }
 
 /* ─────────────── tabs on the author's page ─────────────── */

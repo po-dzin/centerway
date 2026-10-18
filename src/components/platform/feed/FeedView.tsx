@@ -137,9 +137,9 @@ export function FeedView({
         <FeedComposer author={me.author} courses={me.courses} taggable={me.taggable} onDone={published} />
       ) : null}
 
-      {mode === "feed" ? <FeedFilter filter={filter} authors={authors} onChange={changeFilter} /> : null}
-
       {mode === "feed" && !filtered && !failed ? <FeedWelcome launch={page.posts.length === 0 && !loading} /> : null}
+
+      {mode === "feed" ? <FeedFilter filter={filter} authors={authors} onChange={changeFilter} /> : null}
 
       {page.posts.length === 0 && !loading && (failed || filtered || mode !== "feed") ? (
         <p className={styles.empty}>

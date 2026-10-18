@@ -34,7 +34,7 @@ const KINDS = [
 
 export function FeedWelcome({ launch }: { launch: boolean }) {
   return (
-    <article className={styles.post} aria-labelledby="feed-welcome-title">
+    <article className={`${styles.post} ${styles.pinned}`} aria-labelledby="feed-welcome-title">
       <div className={styles.byline}>
         <span className={styles.face} aria-hidden="true">
           <AuthorPortrait photo={null} size="sm" fallback="C" />

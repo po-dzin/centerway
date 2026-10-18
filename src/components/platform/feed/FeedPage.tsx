@@ -23,15 +23,18 @@ import type { FeedFilter } from "@/lib/feed/model";
 import type { FeedAuthor, FeedPage as Page, FeedPost } from "@/lib/feed/server";
 
 import { feedCopy } from "./copy";
-import { FeedHero } from "./FeedHero";
+import { FeedHeading, FeedStage } from "./FeedHero";
 import { FeedSingle, FeedView } from "./FeedView";
 import styles from "./Feed.module.css";
 
 export function FeedPage({ page, authors, filter }: { page: Page; authors: FeedAuthor[]; filter: FeedFilter }) {
   return (
-    <main className={styles.page}>
-      <FeedHero />
-      <FeedView initial={page} authors={authors} filter={filter} />
+    <main className={styles.wall} data-cw-hero="bleed">
+      <FeedStage />
+      <div className={`${styles.page} ${styles.pageOnWall}`}>
+        <FeedHeading />
+        <FeedView initial={page} authors={authors} filter={filter} />
+      </div>
     </main>
   );
 }

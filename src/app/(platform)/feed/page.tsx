@@ -28,7 +28,7 @@ export default async function FeedRoute({ searchParams }: { searchParams: Search
   const filter = parseFeedFilter(await searchParams);
   const { page, authors } = await readFeedFirstPage(filter);
   return (
-    <PlatformShell>
+    <PlatformShell headerMode="overlay">
       <FeedPage page={page} authors={authors} filter={filter} />
     </PlatformShell>
   );
