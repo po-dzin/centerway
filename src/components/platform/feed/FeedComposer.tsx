@@ -441,6 +441,23 @@ export function FeedComposer({
     void sendPhoto(key, item.file);
   }
 
+  /* An upload is stored under the folder of whoever sent it, and a post may only
+     name its own writer's files. Changing the voice therefore drops what was
+     already sent — photos, the clip, the audio — and says so, rather than
+     letting the post fail at publishing with «media_invalid». */
+  function changeVoice(toPlatform: boolean) {
+    setAsPlatform(toPlatform);
+    if (!toPlatform) setPinned(false);
+    if (photos.length === 0 && !clip && !audio) return;
+    photos.forEach((photo) => revoke(photo.preview));
+    revoke(clip?.preview);
+    revoke(audio?.preview);
+    setPhotos([]);
+    setClip(null);
+    setAudio(null);
+    toast.info(composerCopy.voiceFilesDropped);
+  }
+
   async function sendClip(file: File, mime: string) {
     const result = await uploadClip(
       file,
@@ -839,10 +856,7 @@ export function FeedComposer({
                           <input
                             type="checkbox"
                             checked={asPlatform}
-                            onChange={(event) => {
-                              setAsPlatform(event.target.checked);
-                              if (!event.target.checked) setPinned(false);
-                            }}
+                            onChange={(event) => changeVoice(event.target.checked)}
                           />
                           <span className={styles.voiceText}>{composerCopy.asPlatform}</span>
                         </label>

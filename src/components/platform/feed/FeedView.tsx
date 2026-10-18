@@ -142,8 +142,13 @@ export function FeedView({
         .map((entry) => (entry.id === post.id ? post : entry))
         // Pinning one lets the previous go: only the changed post keeps the tape.
         .map((entry) => (post.pinned && entry.id !== post.id ? { ...entry, pinned: false } : entry));
-      // The pinned post leads the list.
-      return { ...current, posts: post.pinned ? [post, ...next.filter((entry) => entry.id !== post.id)] : next };
+      /* The pinned post leads; everyone else stands in the order of their
+         publishing, so a post let go of its pin goes back to its own place. */
+      const pinned = next.filter((entry) => entry.pinned);
+      const rest = next
+        .filter((entry) => !entry.pinned)
+        .sort((a, b) => Date.parse(b.publishedAt ?? b.createdAt) - Date.parse(a.publishedAt ?? a.createdAt));
+      return { ...current, posts: [...pinned, ...rest] };
     });
     setRound((current) => current + 1);
   }

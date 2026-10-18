@@ -7,6 +7,8 @@
 export const composerCopy = {
   voiceLabel: "Від чийого імені",
   asPlatform: "Від імені CenterWay",
+  voiceFilesDropped:
+    "Фото й файли прибрано: вони прив’язані до того, від чийого імені їх завантажили. Додайте їх знову.",
   pin: "Закріпити",
   open: "Новий допис",
   title: "Новий допис",
