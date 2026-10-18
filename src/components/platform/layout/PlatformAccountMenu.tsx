@@ -265,6 +265,7 @@ export function PlatformAccountMenu({
      language and the panel ships two; what the two shells share is the
      destination, not the string. */
   const platformHref = surfaceHref("/");
+  const feedHref = surfaceHref("/feed");
   const allApps = appsFor({ signedIn, role: identity.role, authorsCourses: identity.authorsCourses });
   const apps = exclude?.length ? allApps.filter((app) => !exclude.includes(app.key)) : allApps;
   const here = currentAppKey(host, pathname);
@@ -409,6 +410,22 @@ export function PlatformAccountMenu({
           }}
         >
           <InkMenuLabel>На головну</InkMenuLabel>
+        </a>
+      ) : null}
+      {/* THE FEED RIGHT UNDER IT (G, 18.10). «Стрічка» is the surface between
+          the public site and a person's own rooms — what the authors say now —
+          so whoever is inside the library or the workshop has it one press away,
+          without going through the front door first. */}
+      {showHomeRow ? (
+        <a
+          href={feedHref}
+          {...INK_ROW}
+          onClick={() => {
+            close();
+            onNavigate?.();
+          }}
+        >
+          <InkMenuLabel>Стрічка</InkMenuLabel>
         </a>
       ) : null}
       {apps.map((app) => {
