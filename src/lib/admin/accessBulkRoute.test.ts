@@ -295,3 +295,26 @@ describe("the term from the offer", () => {
     expect(other.termFromOffer).toBeUndefined();
   });
 });
+
+describe("exact format through bulk issuance", () => {
+  it("passes the selected format to every recipient while keeping the inherited deadline absent", async () => {
+    const res = await post({
+      people: [
+        { email: "one@example.com", name: "One" },
+        { email: "two@example.com", name: "Two" },
+      ],
+      course: "way21",
+      offerCode: "way21-group",
+      source: "service",
+    });
+    expect(res.status).toBe(200);
+    expect(access.provisionAccess).toHaveBeenCalledTimes(2);
+    for (const [input] of access.provisionAccess.mock.calls)
+      expect(input).toMatchObject({
+        offerCode: "way21-group",
+        courseSlug: "way21",
+        source: "service",
+        expiresAt: undefined,
+      });
+  });
+});

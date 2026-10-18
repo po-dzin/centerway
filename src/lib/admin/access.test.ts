@@ -988,6 +988,12 @@ describe("listCourses", () => {
     db.tables.experience_offers = [
       {
         id: "o1",
+        code: "way21-group",
+        access_days: 60,
+        access_lifetime: false,
+        mode: "checkout",
+        amount: 4100,
+        currency: "UAH",
         experience_id: "exp-way21",
         format: "group",
         label: { uk: "Група потоку" },
@@ -998,6 +1004,7 @@ describe("listCourses", () => {
       },
       {
         id: "o2",
+        code: "course:way21",
         experience_id: "exp-way21",
         format: "self",
         label: null,
@@ -1046,8 +1053,30 @@ describe("listCourses", () => {
 
     expect(way21?.programSlug).toBe("way21");
     expect(way21?.formats).toEqual([
-      { format: "self", label: null, cohortStartsOn: null },
-      { format: "group", label: "Група потоку", cohortStartsOn: "2026-11-01" },
+      {
+        code: "course:way21",
+        format: "self",
+        label: null,
+        cohortStartsOn: null,
+        accessDays: null,
+        accessLifetime: false,
+        includedCourseSlugs: [],
+        amount: null,
+        currency: "UAH",
+        payable: false,
+      },
+      {
+        code: "way21-group",
+        format: "group",
+        label: "Група потоку",
+        cohortStartsOn: "2026-11-01",
+        accessDays: 60,
+        accessLifetime: false,
+        includedCourseSlugs: [],
+        amount: 4100,
+        currency: "UAH",
+        payable: true,
+      },
     ]);
     // No program_slug on the row falls back to the course slug; no experience, no formats.
     expect(reset).toMatchObject({ programSlug: "reset-day", formats: [] });
@@ -1403,5 +1432,109 @@ describe("setCourseAuthorProfile", () => {
 describe("AccessError", () => {
   it("defaults to 400 so a bad input never reads as a server fault", () => {
     expect(new AccessError("nope").status).toBe(400);
+  });
+});
+
+describe("provisioning an exact format", () => {
+  function format(over: Row = {}) {
+    Object.assign(
+      db.rows("lms_courses").find((r) => r.slug === "reset-day")!,
+      { experience_id: "exp-reset" },
+    );
+    Object.assign(
+      db.rows("lms_courses").find((r) => r.slug === "way21")!,
+      { experience_id: "exp-way21", status: "published" },
+    );
+    db.tables.experience_offers = [
+      {
+        id: "offer-group",
+        code: "reset-group",
+        experience_id: "exp-reset",
+        format: "group",
+        active: true,
+        review_status: "approved",
+        cohort_starts_on: "2026-11-01",
+        access_days: 30,
+        access_lifetime: false,
+        ...over,
+      },
+    ];
+    db.tables.experience_offer_items = [{ offer_id: "offer-group", experience_id: "exp-way21" }];
+  }
+  it("carries the selected code, cohort, term and included course into a manual sale", async () => {
+    format();
+    const result = await provisionAccess({
+      email: "format-buyer@example.com",
+      createAccount: true,
+      courseSlug: "reset-day",
+      offerCode: "reset-group",
+      payment: { amount: 1500, currency: "UAH" },
+      actorId: ADMIN,
+    });
+    expect(db.rows("orders")[0]).toMatchObject({ product_code: "reset-group", amount: 1500 });
+    const rows = db.rows("lms_enrollments").filter((r) => r.auth_user_id === result.account.authUserId);
+    expect(rows).toHaveLength(2);
+    for (const row of rows)
+      expect(row).toMatchObject({
+        source: "manual",
+        order_ref: result.payment?.orderRef,
+        expires_at: "2026-12-01T00:00:00.000Z",
+      });
+    expect(rows.find((r) => r.course_id === "course-reset")).toMatchObject({ cohort_starts_on: "2026-11-01" });
+  });
+  it("applies a gift's self-paced term from issuance and grants included courses without a charge", async () => {
+    format({ format: "self", cohort_starts_on: null });
+    const result = await provisionAccess({
+      email: "format-buyer@example.com",
+      createAccount: true,
+      courseSlug: "reset-day",
+      offerCode: "reset-group",
+      source: "service",
+      actorId: ADMIN,
+    });
+    expect(db.rows("orders")).toHaveLength(0);
+    for (const row of db.rows("lms_enrollments").filter((r) => r.auth_user_id === result.account.authUserId))
+      expect(row).toMatchObject({ source: "service", expires_at: "2026-09-21T12:00:00.000Z" });
+  });
+  it.each([{ active: false }, { review_status: "proposed" }, { experience_id: "other" }])(
+    "refuses unavailable or unrelated formats before creating accounts or orders: %j",
+    async (over) => {
+      format(over);
+      await expect(
+        provisionAccess({
+          email: "new@example.com",
+          courseSlug: "reset-day",
+          offerCode: "reset-group",
+          createAccount: true,
+          payment: { amount: 100, currency: "UAH" },
+          actorId: ADMIN,
+        }),
+      ).rejects.toThrow("format_not_available");
+      expect(db.rows("orders")).toHaveLength(0);
+      expect(db.rows("platform_users").some((r) => r.email === "new@example.com")).toBe(false);
+    },
+  );
+  it("honours an explicit perpetual override for both main and included courses", async () => {
+    format();
+    const result = await provisionAccess({
+      email: "fresh@example.com",
+      courseSlug: "reset-day",
+      offerCode: "reset-group",
+      expiresAt: null,
+      actorId: ADMIN,
+    });
+    for (const row of db.rows("lms_enrollments").filter((r) => r.auth_user_id === result.account.authUserId))
+      expect(row.expires_at).toBeNull();
+  });
+});
+
+describe("explicit perpetual access on an existing seat", () => {
+  it("clears an existing deadline when the operator explicitly requests forever", async () => {
+    Object.assign(
+      db.rows("lms_enrollments").find((r) => r.id === "enr-1")!,
+      { expires_at: "2026-09-01T00:00:00.000Z" },
+    );
+    await provisionAccess({ email: "learner@example.com", courseSlug: "reset-day", expiresAt: null, actorId: ADMIN });
+    expect(db.rows("lms_enrollments").find((r) => r.id === "enr-1")?.expires_at).toBeNull();
   });
 });

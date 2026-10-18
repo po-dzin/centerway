@@ -1,7 +1,7 @@
 // src/app/api/pay/start/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { IREM_OFFER_CODE, resolveIremLandingOffer } from "@/lib/landing/offers";
+import { IREM_OFFER_CODE, resolveIremLandingOffer, resolvePersonalPrice } from "@/lib/landing/offers";
 import { enforceRateLimit, tooManyRequests } from "@/lib/api/rateLimit";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import { createPaymentInvoice, resolveLocaleFromRequest } from "@/lib/payments/paymentStart";
@@ -80,7 +80,26 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(checkout, 302);
   }
   const product = offer.code;
-  const resolvedOffer = product === IREM_OFFER_CODE ? await resolveIremLandingOffer(url.searchParams) : null;
+  const [personalPrice, legacyIremOffer] = await Promise.all([
+    resolvePersonalPrice(product, url.searchParams),
+    product === IREM_OFFER_CODE ? resolveIremLandingOffer(url.searchParams) : Promise.resolve(null),
+  ]);
+  const resolvedOffer =
+    legacyIremOffer?.offerApplied || legacyIremOffer?.offerExpired
+      ? legacyIremOffer
+      : personalPrice
+        ? {
+            ...personalPrice,
+            offerId: product,
+            offerApplied: true,
+            offerExpired: false,
+            issuedAt: null,
+            expiresAt: personalPrice.expiresAt ?? null,
+            recipientKey: null,
+            campaign: null,
+            channel: null,
+          }
+        : legacyIremOffer;
   const format = url.searchParams.get("format"); // json | null
   const locale = resolveLocaleFromRequest(req.headers, url.searchParams);
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");

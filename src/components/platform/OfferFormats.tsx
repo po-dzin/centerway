@@ -63,8 +63,8 @@ function earlyLine(format: ProgramFormat): string | null {
   )}`;
 }
 
-function formatCheckoutHref(code: string, programSlug: string): string {
-  return `${CHECKOUT_PAGE_PATH}?product=${encodeURIComponent(code)}&cta_place=${encodeURIComponent(
+function formatCheckoutHref(code: string, programSlug: string, offerToken?: string): string {
+  return `${CHECKOUT_PAGE_PATH}?product=${encodeURIComponent(code)}${offerToken ? `&offer_token=${encodeURIComponent(offerToken)}` : ""}&cta_place=${encodeURIComponent(
     `${programSlug}_format_${code}`,
   )}&source=platform_offer`;
 }
@@ -73,11 +73,19 @@ export function OfferFormats({
   programSlug,
   programTitle,
   formats,
+  personalFormatPrice = null,
   seam = null,
 }: {
   programSlug: string;
   programTitle: string;
   formats: ProgramFormat[];
+  personalFormatPrice?: {
+    productCode: string;
+    offerToken: string;
+    amount: number;
+    oldAmount: number | null;
+    expiresAt?: string | null;
+  } | null;
   /** The route's step for this block (OfferSeam), drawn just above the panel. */
   seam?: ReactNode;
 }) {
@@ -105,6 +113,8 @@ export function OfferFormats({
               format.listAmount !== null && format.amount !== null && format.listAmount > format.amount
                 ? formatPrice(format.listAmount, format.currency)
                 : null;
+            const personal = personalFormatPrice?.productCode === format.code ? personalFormatPrice : null;
+            const shownPrice = personal ? formatPrice(personal.amount, format.currency) : (price ?? "Ціна за запитом");
             return (
               <li
                 key={format.code}
@@ -118,12 +128,23 @@ export function OfferFormats({
                 </div>
 
                 <div className={styles.priceRow}>
-                  {compareAt ? <s className={styles.priceOld}>{compareAt}</s> : null}
-                  <p className={styles.priceValue}>{price ?? "Ціна за запитом"}</p>
+                  {personal?.oldAmount ? (
+                    <s className={styles.priceOld}>{formatPrice(personal.oldAmount, format.currency)}</s>
+                  ) : compareAt ? (
+                    <s className={styles.priceOld}>{compareAt}</s>
+                  ) : null}
+                  <p className={styles.priceValue}>{shownPrice}</p>
                   {start ? <p className={styles.priceNote}>{start}</p> : null}
                 </div>
 
-                {early && format.early ? (
+                {personal?.expiresAt ? (
+                  <EarlyPriceTimer
+                    endsAt={personal.expiresAt}
+                    renderedAt={now.getTime()}
+                    label="Персональна ціна діє ще"
+                    line={`Для вас ${shownPrice}${personal.oldAmount ? ` замість ${formatPrice(personal.oldAmount, format.currency)}` : ""}.`}
+                  />
+                ) : early && format.early ? (
                   <EarlyPriceTimer endsAt={format.early.endsAt} renderedAt={now.getTime()} line={early} />
                 ) : null}
 
@@ -180,8 +201,8 @@ export function OfferFormats({
                   {format.mode === "checkout" && price ? (
                     <CheckoutStartLink
                       className={action}
-                      href={formatCheckoutHref(format.code, programSlug)}
-                      label={primary ? `Оплатити ${price}` : "Обрати"}
+                      href={formatCheckoutHref(format.code, programSlug, personal?.offerToken)}
+                      label={primary ? `Оплатити ${shownPrice}` : "Обрати"}
                     />
                   ) : format.mode === "lead" ? (
                     <a className={action} href={`#format-request-${format.code}`}>

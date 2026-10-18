@@ -518,13 +518,13 @@ function PeopleTab({
       {/* THE FACETS, in the order a question is usually asked: who, then
                 what they hold, then which course. Each resets the page — page 3
                 of "everybody" is not page 3 of "admins". */}
-      <div className={controls.fields}>
+      <div className={access.learnerFilters}>
         <AdminSearchInput
           value={q}
           onChange={setQ}
           placeholder={t("access_search_learners")}
           onClear={q ? () => setQ("") : undefined}
-          className={controls.grow}
+          className={access.learnerSearch}
         />
         <select
           value={roleFilter}

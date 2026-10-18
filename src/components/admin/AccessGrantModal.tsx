@@ -20,8 +20,9 @@
  * the answer to «why does this person have this?» survives a year:
  * payment → `manual` (with the order), gift → `bonus`, staff → `service`.
  * The fourth, promo, grants nothing: it makes a personal link to the program at
- * a discount, for each person, and exists today for IREM only
- * (`personal_offer_tokens`). It is offered to admins only — the issuing route
+ * a discount, for each person, on any active payable format. The percentage
+ * is entered for this issuance and applied to the selected format's live price.
+ * It is offered to admins only — the issuing route
  * refuses `support` — and the tab is shown dimmed, with its reason, wherever it
  * is not available, rather than hidden, so nobody wonders where it went.
  *
@@ -50,7 +51,6 @@ import {
   BULK_GRANT_LIMIT,
   GRANTABLE_ROLES,
   PAYMENT_CURRENCIES,
-  PROMO_COURSE_SLUGS,
   grantDeadlineValue,
   parsePeople,
   parsePeopleText,
@@ -154,6 +154,7 @@ export function AccessGrantModal({
   const [note, setNote] = useState("");
   const [channel, setChannel] = useState("");
   const [campaign, setCampaign] = useState("");
+  const [discountPercent, setDiscountPercent] = useState("");
   const [createAccount, setCreateAccount] = useState(false);
   const [ref, setRef] = useState("");
   const [role, setRole] = useState<string>("user");
@@ -162,12 +163,8 @@ export function AccessGrantModal({
 
   const selected = courses.find((row) => row.slug === course);
   const formats = useMemo(() => selected?.formats ?? [], [selected]);
-  const format = formats.find((row) => row.format === formatChoice) ?? formats[0] ?? null;
-  const promoCourse = (PROMO_COURSE_SLUGS as readonly string[]).includes(course);
-  const promoAvailable = canGrantRoles && promoCourse;
-  // A promo picked for IREM does not follow the operator to a program that
-  // has none: it falls back to a gift, shown as one, rather than staying
-  // "promo" underneath and being sent as a plain grant.
+  const format = formats.find((row) => row.code === formatChoice) ?? formats[0] ?? null;
+  const promoAvailable = canGrantRoles && Boolean(format?.payable);
   const basis: Basis = basisChoice === "promo" && !promoAvailable ? "gift" : basisChoice;
   const promo = basis === "promo";
   // A group's days are the group's: its start is the stream's date and the
@@ -180,7 +177,10 @@ export function AccessGrantModal({
   const tooMany = count > BULK_GRANT_LIMIT;
   const amountValue = Number(amount);
   const paymentOk = basis !== "payment" || (single && Number.isFinite(amountValue) && amountValue > 0);
-  const ready = count > 0 && parsed.invalid.length === 0 && !tooMany && Boolean(course) && paymentOk;
+  const discountValue = Number(discountPercent);
+  const promoOk =
+    basis !== "promo" || (promo && Number.isInteger(discountValue) && discountValue > 0 && discountValue < 100);
+  const ready = count > 0 && parsed.invalid.length === 0 && !tooMany && Boolean(course) && paymentOk && promoOk;
 
   const paymentTooMany = basis === "payment" && count > 1;
   const link = `${PLATFORM_ORIGIN}/go/${selected?.programSlug ?? course}`;
@@ -241,7 +241,10 @@ export function AccessGrantModal({
         const payload = await authFetch<PromoResponse>("/api/admin/landing-offers", {
           method: "POST",
           body: JSON.stringify({
-            product: "irem",
+            product: format?.code,
+            courseSlug: course,
+            programSlug: selected?.programSlug,
+            discountPercent: discountValue,
             entries: parsed.people.map((person) => ({
               recipient_key: `email:${person.email}`,
               channel: channel.trim() || undefined,
@@ -277,7 +280,8 @@ export function AccessGrantModal({
 
       const common = {
         course,
-        source: SOURCE_OF[basis],
+        offerCode: format?.code,
+        source: SOURCE_OF[basis as Exclude<Basis, "promo">],
         createAccount,
         ref: ref.trim() || undefined,
         ...termFields(),
@@ -377,11 +381,9 @@ export function AccessGrantModal({
       description={t("access_grant_hint")}
       size="lg"
       onClose={onClose}
+      closeLabel={t("common_close")}
       footer={
         <>
-          <button type="button" onClick={onClose} className={controls.action}>
-            {t("common_close")}
-          </button>
           {result ? (
             <button type="button" onClick={again} className={`${controls.actionPrimary} cw-surface-2`}>
               {t("access_bulk_again")}
@@ -391,7 +393,7 @@ export function AccessGrantModal({
               type="button"
               onClick={submit}
               disabled={busy || !ready}
-              className={`${controls.actionPrimary} cw-surface-2`}
+              className={`${controls.action} cw-btn-primary`}
             >
               {submitLabel}
               {count > 1 ? ` (${count})` : ""}
@@ -520,8 +522,14 @@ export function AccessGrantModal({
               <select
                 value={course}
                 onChange={(e) => {
-                  setCourseChoice(e.target.value);
+                  const nextCourse = e.target.value;
+                  setCourseChoice(nextCourse);
                   setFormatChoice("");
+                  if (basis === "promo") {
+                    const next = courses.find((row) => row.slug === nextCourse);
+                    const nextCanPromo = canGrantRoles && Boolean(next?.formats.some((row) => row.payable));
+                    if (!nextCanPromo) setBasisChoice("gift");
+                  }
                 }}
                 className={controls.select}
               >
@@ -539,12 +547,23 @@ export function AccessGrantModal({
                 <span className={controls.hint}>{t("access_grant_format")}</span>
                 <AdminTabs
                   items={formats.map((row) => ({
-                    key: row.format,
-                    label: row.label || t(FORMAT_LABEL_KEY[row.format]),
+                    key: row.code,
+                    label: [row.label || t(FORMAT_LABEL_KEY[row.format]), row.cohortStartsOn]
+                      .filter(Boolean)
+                      .join(" · "),
                   }))}
-                  activeKey={format?.format ?? ""}
-                  onChange={setFormatChoice}
+                  activeKey={format?.code ?? ""}
+                  onChange={(nextCode) => {
+                    setFormatChoice(nextCode);
+                    const nextFormat = formats.find((row) => row.code === nextCode);
+                    if (basis === "promo" && !nextFormat?.payable) setBasisChoice("gift");
+                  }}
                 />
+                {format?.includedCourseSlugs.length ? (
+                  <p className={controls.hint}>
+                    {t("access_grant_format_includes")}: {format.includedCourseSlugs.join(", ")}
+                  </p>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -679,6 +698,19 @@ export function AccessGrantModal({
             {promo ? (
               <>
                 <div className={access.grantMore}>
+                  <label className={`${controls.field} ${access.spanFull} ${access.spanCourse}`}>
+                    <span className={controls.fieldCaption}>{t("access_promo_discount")}</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="99"
+                      step="1"
+                      inputMode="numeric"
+                      value={discountPercent}
+                      onChange={(e) => setDiscountPercent(e.target.value)}
+                      className={controls.input}
+                    />
+                  </label>
                   <label className={`${controls.field} ${access.spanFull} ${access.spanCourse}`}>
                     <span className={controls.fieldCaption}>{t("access_grant_promo_channel")}</span>
                     <input

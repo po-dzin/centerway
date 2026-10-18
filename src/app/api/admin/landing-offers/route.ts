@@ -9,10 +9,14 @@ import {
   serverErrorResponse,
   unauthorizedResponse,
 } from "@/lib/api/adminRoute";
-import { issueIremPersonalOffer, issueIremPersonalOffersBatch } from "@/lib/landing/offers";
+import { issueDiscountPersonalOffer, issueIremPersonalOffer, issueIremPersonalOffersBatch } from "@/lib/landing/offers";
+import { loadPayableOffer } from "@/lib/platform/offers";
 
 type Body = {
   product?: unknown;
+  courseSlug?: unknown;
+  programSlug?: unknown;
+  discountPercent?: unknown;
   recipient_key?: unknown;
   recipient_keys?: unknown;
   entries?: unknown;
@@ -93,9 +97,6 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json().catch(() => null)) as Body | null;
   const product = asString(body?.product) ?? "irem";
-  if (product !== "irem") {
-    return badRequestResponse("unsupported_product");
-  }
   const entries = normalizeEntries(body);
   if (entries.length === 0) {
     return badRequestResponse("recipient_key required");
@@ -107,6 +108,75 @@ export async function POST(req: NextRequest) {
   try {
     const db = adminClient();
     const batchId = crypto.randomUUID();
+    if (product !== "irem") {
+      const courseSlug = asString(body?.courseSlug);
+      const programSlug = asString(body?.programSlug);
+      const discountPercent = Number(body?.discountPercent);
+      if (!courseSlug || !programSlug) return badRequestResponse("program_required");
+      if (!Number.isInteger(discountPercent) || discountPercent < 1 || discountPercent > 99) {
+        return badRequestResponse("discount_percent_invalid");
+      }
+      const [{ data: course }, { data: format }, payable] = await Promise.all([
+        db.from("lms_courses").select("slug, experience_id, program_slug").eq("slug", courseSlug).maybeSingle(),
+        db
+          .from("experience_offers")
+          .select("code, experience_id, format, active, review_status")
+          .eq("code", product)
+          .eq("active", true)
+          .eq("review_status", "approved")
+          .maybeSingle(),
+        loadPayableOffer(product),
+      ]);
+      if (
+        !course ||
+        (course.program_slug || course.slug) !== programSlug ||
+        !format ||
+        format.experience_id !== course.experience_id ||
+        !format.format ||
+        !payable
+      ) {
+        return badRequestResponse("promo_offer_unavailable");
+      }
+      const offers: Awaited<ReturnType<typeof issueDiscountPersonalOffer>>[] = [];
+      for (const entry of entries) {
+        offers.push(
+          await issueDiscountPersonalOffer({
+            productCode: product,
+            programSlug,
+            recipientKey: entry.recipientKey,
+            discountPercent,
+            amount: payable.amount,
+            currency: payable.currency,
+            channel: entry.channel,
+            campaign: entry.campaign,
+            note: entry.note,
+            batchId,
+          }),
+        );
+      }
+      await db.from("audit_log").insert(
+        offers.map((offer) => ({
+          actor_id: session.user.id,
+          action: "landing_offer.create_draft_batch",
+          entity_type: "personal_offer_token",
+          entity_id: offer.offerToken,
+          metadata: {
+            product: offer.product,
+            offer_id: offer.offerId,
+            recipient_key: offer.recipientKey,
+            status: offer.status,
+            discount_percent: offer.discountPercent,
+            batch_id: batchId,
+          },
+        })),
+      );
+      return NextResponse.json({
+        ok: true,
+        batchId,
+        offers,
+        summary: { totalRequested: entries.length, totalIssued: offers.length, totalDeduped: 0 },
+      });
+    }
     const [soleEntry] = entries;
     if (entries.length === 1 && soleEntry) {
       const issued = await issueIremPersonalOffer({

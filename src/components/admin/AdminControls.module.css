@@ -50,12 +50,15 @@
   composes: cw-overlay from global;
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: var(--ds-z-modal);
   display: flex;
   align-items: flex-start;
   justify-content: center;
   padding: var(--cw-space-md);
-  overflow-y: auto;
+  padding-block-start: calc(var(--admin-modal-header-bottom, 0px) + var(--cw-space-md));
+  padding-block-end: max(var(--cw-space-md), env(safe-area-inset-bottom));
+  block-size: 100dvh;
+  overflow: hidden;
 }
 
 @media (min-width: 640px) {
@@ -68,6 +71,11 @@
   composes: cw-surface-solid cw-border cw-shadow from global;
   width: 100%;
   max-width: 32rem;
+  display: flex;
+  flex-direction: column;
+  min-block-size: 0;
+  max-block-size: 100%;
+  overflow: hidden;
   margin-block: auto;
   border-width: 1px;
   border-style: solid;
@@ -77,11 +85,11 @@
 }
 
 .dialogWide {
-  composes: dialog;
   max-width: 42rem;
 }
 
 .dialogHead {
+  flex: 0 0 auto;
   padding: var(--cw-space-lg) var(--cw-space-lg) var(--cw-space-sm);
 }
 
@@ -92,12 +100,38 @@
   font-weight: 600;
 }
 
+.dialogTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
+.dialogClose {
+  composes: cw-icon-btn from global;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  min-width: var(--ds-touch-target-min);
+  min-height: var(--ds-touch-target-min);
+  padding: 0;
+}
+
+.dialogCloseGlyph {
+  width: var(--ds-icon-in-control);
+  height: var(--ds-icon-in-control);
+}
+
 .dialogNote {
   composes: cw-page-subtitle from global;
   margin-top: var(--cw-space-2xs);
 }
 
 .dialogBody {
+  composes: cw-scroll from global;
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: var(--cw-space-sm);
@@ -107,6 +141,7 @@
 /* Reversed on a phone so the confirming action sits under the thumb and the
    way out sits above it, then read left-to-right once there is a row. */
 .dialogFoot {
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column-reverse;
   gap: var(--cw-space-xs);
