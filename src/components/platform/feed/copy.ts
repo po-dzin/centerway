@@ -38,6 +38,7 @@ export const feedCopy = {
   hide: "Приховати",
   remove: "Видалити",
   edit: "Редагувати",
+  backToFeed: "До стрічки",
   pin: "Закріпити",
   unpin: "Відкріпити",
   pinFailed: "Не вдалося змінити закріплення.",

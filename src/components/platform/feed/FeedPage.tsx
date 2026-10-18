@@ -18,8 +18,11 @@
  *   reaction and topic chips `fill`; text actions `ink`.
  */
 
+import Link from "next/link";
+
+import { Icon } from "@/components/Icon";
 import { PlatformPageHead } from "@/components/platform/PlatformPageHead";
-import type { FeedFilter } from "@/lib/feed/model";
+import { FEED_PATH, type FeedFilter } from "@/lib/feed/model";
 import type { FeedAuthor, FeedPage as Page, FeedPost } from "@/lib/feed/server";
 
 import { feedCopy } from "./copy";
@@ -42,6 +45,11 @@ export function FeedPage({ page, authors, filter }: { page: Page; authors: FeedA
 export function FeedPostPage({ post }: { post: FeedPost }) {
   return (
     <main className={styles.page}>
+      {/* The header's back arrow lives on a phone only; a desktop reader gets the way back here. */}
+      <Link className={styles.backLink} href={FEED_PATH}>
+        <Icon name="arrow-left" size={20} />
+        <span className={styles.backText}>{feedCopy.backToFeed}</span>
+      </Link>
       <PlatformPageHead label={feedCopy.title} title={`Допис: ${post.author.name}`} />
       <FeedSingle initial={post} />
     </main>

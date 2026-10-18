@@ -255,3 +255,26 @@ export function excerptOf(text: string, max = FEED_EXCERPT_CHARS): string {
   const space = cut.lastIndexOf(" ");
   return `${(space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,.;:—–-]+$/, "")}…`;
 }
+
+/**
+ * The picture a shared link to a post shows (Telegram, messengers, search): what
+ * the post itself carries, in this order — its first photo that is not a
+ * spoiler (a hidden photo must stay hidden in a preview too), then the
+ * video's own frame, otherwise nothing, and the page falls back to the brand
+ * cover. An author's face is not used: a portrait crops badly into a wide card.
+ */
+export function feedShareImage(post: {
+  media: { photos: { src: string; w: number; h: number; spoiler: boolean }[]; video: { youtubeId: string } | null };
+}): { url: string; width?: number; height?: number; alt: string } | null {
+  const photo = post.media.photos.find((entry) => !entry.spoiler);
+  if (photo) return { url: photo.src, width: photo.w, height: photo.h, alt: "Фото з допису" };
+  if (post.media.video) {
+    return {
+      url: `https://i.ytimg.com/vi/${post.media.video.youtubeId}/hqdefault.jpg`,
+      width: 480,
+      height: 360,
+      alt: "Відео з допису",
+    };
+  }
+  return null;
+}

@@ -33,7 +33,7 @@ import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
 import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
 import { COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
-import { parseFeedBody } from "@/lib/feed/format";
+import { feedPlainText, parseFeedBody } from "@/lib/feed/format";
 import { EMPTY_FEED_MEDIA } from "@/lib/feed/media";
 import {
   FEED_TOPICS_MAX,
@@ -552,7 +552,7 @@ export function FeedPostCard({
       {post.status === "published" ? (
         <FeedActions
           postId={post.id}
-          shareText={`${post.author.name}: ${excerptOf(text, 120)}`}
+          shareText={`${post.author.name}: ${excerptOf(feedPlainText(post.body), 120)}`}
           reactions={reactions}
           busy={busy}
           onReact={(emoji) => void react(emoji)}
