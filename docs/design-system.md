@@ -2526,6 +2526,7 @@ The builder's list-view switch was set in **words** because the icon set had no 
 | `share` | pass a post on: three nodes, two links | `telegram`, `export` |
 | `spoiler` | a photo held back until tapped: the eye shut | `unpublish`; `eye` is its «показувати одразу» half |
 | `more` | a card's own menu: three dots, no path | `ellipsis` in text; a wave |
+| `expand` | four corners reaching outward: «Переглянути» on a photo tile in the composer | `eye` (what a spoiler hides), `lens` (search) |
 | `pin` | a pushpin: «Закріпити» / «Відкріпити» in a platform post's menu | `bookmark` (the reader's mark), `location` |
 | `reply` | answer one comment: a bubble with a turn-back arrow in it | `comment` (the whole thread), `undo` |
 | `swap` | put another block in place of the chosen one: two arrows passing | `edit`, `undo` |

@@ -495,6 +495,13 @@ export const ICONS = {
     group: "Meta",
     d: ["M4.4 8.6h13.4", "M14.2 5l3.6 3.6-3.6 3.6", "M19.6 15.4H6.2", "M9.8 11.8l-3.6 3.6 3.6 3.6"],
   },
+  /* A picture opened to the whole screen: four corners reaching outward.
+     «Переглянути» on a photo tile in the composer. Not `eye` (show what a
+     spoiler hides) and not `lens` (search). */
+  expand: {
+    group: "Meta",
+    d: ["M4.6 9.4V4.6h4.8", "M14.6 4.6h4.8v4.8", "M19.4 14.6v4.8h-4.8", "M9.4 19.4H4.6v-4.8"],
+  },
   /* A post held up on the wall: a pushpin — round head, shoulder, needle.
      «Закріпити» in a card's menu; the same glyph says «Відкріпити». */
   pin: {

@@ -32,6 +32,8 @@ import type { UploadedMedia } from "@/lib/feed/upload";
 
 import { clockOf, composerCopy } from "./composerCopy";
 import { ComposerPopover } from "./FeedComposerMenus";
+import { FeedPhotoViewer } from "./FeedPhotoViewer";
+import { shrinkPhoto } from "./shrinkPhoto";
 import { signClip, uploadFeedMedia, type FeedResult } from "./feedApi";
 import styles from "./FeedComposer.module.css";
 
@@ -82,11 +84,12 @@ export type VideoItem = { youtubeId: string };
 /* ─────────────────────────── upload ─────────────────────────── */
 
 export async function uploadWithProgress(
-  file: File,
+  original: File,
   onProgress: (fraction: number) => void,
   asPlatform = false,
 ): Promise<FeedResult<UploadedMedia>> {
   const token = await accessToken().catch(() => null);
+  const file = await shrinkPhoto(original);
   const first = await new Promise<FeedResult<UploadedMedia>>((resolve) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", asPlatform ? "/api/feed/media?as=platform" : "/api/feed/media");
@@ -123,6 +126,7 @@ export function mediaError(code: string, fallback: string): string {
 function Thumb({
   item,
   index,
+  onView,
   onSpoiler,
   onTag,
   onRemove,
@@ -130,6 +134,7 @@ function Thumb({
 }: {
   item: PhotoItem;
   index: number;
+  onView: () => void;
   onSpoiler: () => void;
   /** «Позначити авторів» (mockup v3): opens the post's «з …» menu. Absent with nobody to name. */
   onTag?: () => void;
@@ -201,6 +206,18 @@ function Thumb({
         width={240}
         role="menu"
       >
+        <button
+          className={styles.menuItemAction}
+          type="button"
+          role="menuitem"
+          onClick={() => {
+            setMenu(false);
+            onView();
+          }}
+        >
+          {composerCopy.viewPhoto}
+          <Icon name="expand" size={20} />
+        </button>
         <button
           className={styles.menuItemAction}
           type="button"
@@ -280,14 +297,29 @@ export function MediaStrip({
   onRemoveAudio: () => void;
   onRetryAudio: () => void;
 }) {
+  const [viewing, setViewing] = useState<number | null>(null);
   if (photos.length === 0 && !video && !clip && !audio) return null;
   return (
     <div className={`${styles.strip} cw-scroll-rail`}>
+      {viewing !== null && photos[viewing] ? (
+        <FeedPhotoViewer
+          photos={photos.map((photo) => ({
+            src: photo.preview,
+            path: photo.path ?? "",
+            w: photo.w ?? 0,
+            h: photo.h ?? 0,
+            spoiler: false,
+          }))}
+          start={viewing}
+          onClose={() => setViewing(null)}
+        />
+      ) : null}
       {photos.map((item, index) => (
         <Thumb
           key={item.key}
           item={item}
           index={index}
+          onView={() => setViewing(index)}
           onSpoiler={() => onSpoiler(item.key)}
           onTag={onTag}
           onRemove={() => onRemove(item.key)}

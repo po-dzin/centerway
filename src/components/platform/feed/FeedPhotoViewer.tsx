@@ -77,7 +77,13 @@ export function FeedPhotoViewer({
         <Icon name="close" size={20} />
       </button>
       {/* eslint-disable-next-line @next/next/no-img-element -- the feed bucket's own rendition */}
-      <img className={styles.viewerImg} src={photo.src} width={photo.w} height={photo.h} alt={feedCopy.photo} />
+      <img
+        className={styles.viewerImg}
+        src={photo.src}
+        width={photo.w || undefined}
+        height={photo.h || undefined}
+        alt={feedCopy.photo}
+      />
       {photos.length > 1 ? (
         <>
           <button

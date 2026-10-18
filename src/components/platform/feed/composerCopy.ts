@@ -59,6 +59,7 @@ export const composerCopy = {
   photoUploading: "Завантажується",
   photoFailed: "Не вдалося завантажити фото.",
   retry: "Ще раз",
+  viewPhoto: "Переглянути",
 
   videoPlaceholder: "Посилання на YouTube",
   videoAdd: "Додати",
@@ -137,6 +138,7 @@ export const composerCopy = {
     media_video_invalid: "Посилання на відео не підходить.",
     media_audio_too_long: "Аудіо до 10 хвилин.",
     media_too_large: "Файл завеликий.",
+    "413": "Файл завеликий.",
     media_unsupported_type: "Такий файл не підходить.",
     media_not_an_image: "Це не схоже на фото.",
     media_not_audio: "Це не схоже на аудіо.",
