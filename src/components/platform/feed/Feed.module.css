@@ -766,16 +766,15 @@ a.face {
   display: inline-flex;
 }
 
+/* No plate behind a stacked emoji: the glyph is drawn on its own, so the chip's
+   fill (gold when the reader's own is in the pile) shows through it. */
 .emoPileItem {
   inline-size: 1.35rem;
   block-size: 1.35rem;
-  border-radius: var(--cw-radius-inset);
-  background: var(--cw-mat-surface);
-  box-shadow: 0 0 0 2px var(--cw-mat-surface);
 }
 
 .emoPileItem + .emoPileItem {
-  margin-inline-start: calc(var(--cw-space-xs) * -1);
+  margin-inline-start: calc(var(--cw-space-2xs) * -1);
 }
 
 .actSave[aria-pressed="true"] {
