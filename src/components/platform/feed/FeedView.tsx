@@ -10,7 +10,7 @@
  * pressed and their marks are drawn; a guest keeps what the server sent.
  */
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useSignInHref } from "@/components/auth/useSignInReturn";
@@ -157,6 +157,9 @@ export function FeedView({
             marks={marks[post.id] ?? []}
             onMarks={(id, list) => setMarks((current) => ({ ...current, [id]: list }))}
             headingLevel={mode === "feed" ? 2 : 3}
+            onDeleted={(id) =>
+              setPage((current) => ({ ...current, posts: current.posts.filter((entry) => entry.id !== id) }))
+            }
           />
         ))}
       </div>
@@ -174,6 +177,7 @@ export function FeedView({
 
 /** One post on its own address, with its thread open. */
 export function FeedSingle({ initial }: { initial: FeedPost }) {
+  const router = useRouter();
   const { session, status } = useSession();
   const surfaceHref = useSurfaceHref();
   const signInHref = useSignInHref(surfaceHref("/profile"));
@@ -203,6 +207,7 @@ export function FeedSingle({ initial }: { initial: FeedPost }) {
       marks={marks}
       onMarks={(_, list) => setMarks(list)}
       commentsOpen
+      onDeleted={() => router.push(surfaceHref("/feed"))}
     />
   );
 }

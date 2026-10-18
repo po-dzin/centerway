@@ -39,7 +39,7 @@ import { FEED_TOPICS_MAX, excerptOf, feedAuthorPath, feedPostPath, type Reaction
 import type { FeedPost } from "@/lib/feed/server";
 
 import { feedCopy, relativeTime } from "./copy";
-import { deleteMark, saveMark, toggleReaction, type FeedMarkView } from "./feedApi";
+import { deleteMark, deletePost, saveMark, toggleReaction, type FeedMarkView } from "./feedApi";
 import { FeedActions } from "./FeedActions";
 import { FeedAttachment } from "./FeedAttachment";
 import { FeedBody, feedBodyText, type PlacedMark } from "./FeedBody";
@@ -119,6 +119,7 @@ export function FeedPostCard({
   headingLevel = 2,
   aside,
   footer,
+  onDeleted,
   variant = "feed",
 }: {
   post: FeedPost;
@@ -133,6 +134,13 @@ export function FeedPostCard({
   aside?: ReactNode;
   /** Lines under the action row — the workshop's echo of how a post landed. */
   footer?: ReactNode;
+  /**
+   * The author's own post can be taken down from where it is read (G 2026-10-18).
+   * The page that holds the card decides what follows: the feed drops the card,
+   * the post's own page goes back to the feed. Without it there is no control —
+   * the workshop has its own.
+   */
+  onDeleted?: (id: string) => void;
   /**
    * `rail`: the home page's «Свіже від авторів» — the same card, folded after
    * four lines with a shorter photo, and the bubble leading to the post's page
@@ -149,6 +157,7 @@ export function FeedPostCard({
   const [count, setCount] = useState(post.commentCount);
   const [bar, setBar] = useState<Bar | null>(null);
   const [note, setNote] = useState("");
+  const [removing, setRemoving] = useState<"ask" | "busy" | null>(null);
   // The post's own page shows it whole; the feed and the rail fold it.
   const [expanded, setExpanded] = useState(commentsOpen);
   const clamped = !expanded;
@@ -174,6 +183,18 @@ export function FeedPostCard({
       return;
     }
     toast.error(result.code === "reaction_limit" ? feedCopy.reactionLimit : feedCopy.reactionFailed);
+  }
+
+  async function removePost() {
+    setRemoving("busy");
+    const result = await deletePost(post.id);
+    if (!result.ok) {
+      setRemoving(null);
+      toast.error(feedCopy.deleteFailed);
+      return;
+    }
+    toast.success(feedCopy.deleted);
+    onDeleted?.(post.id);
   }
 
   const placed = placeMarks(text, marks);
@@ -289,6 +310,35 @@ export function FeedPostCard({
             {` · ${topics.map((topic) => COURSE_CATEGORY_LABELS[topic]).join(", ")}`}
           </p>
         </div>
+        {onDeleted && post.mine ? (
+          <div className={styles.byTools}>
+            {removing ? (
+              <>
+                <span className={styles.byAsk}>{feedCopy.deleteAsk}</span>
+                <button
+                  className={styles.byTool}
+                  type="button"
+                  disabled={removing === "busy"}
+                  onClick={() => void removePost()}
+                >
+                  {feedCopy.deleteYes}
+                </button>
+                <button
+                  className={styles.byTool}
+                  type="button"
+                  disabled={removing === "busy"}
+                  onClick={() => setRemoving(null)}
+                >
+                  {feedCopy.deleteNo}
+                </button>
+              </>
+            ) : (
+              <button className={styles.byTool} type="button" onClick={() => setRemoving("ask")}>
+                {feedCopy.remove}
+              </button>
+            )}
+          </div>
+        ) : null}
       </div>
 
       {aside}
