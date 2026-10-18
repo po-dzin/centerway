@@ -117,6 +117,19 @@ function useOverflow(ref: RefObject<HTMLElement | null>, clamped: boolean): bool
   return over;
 }
 
+/** The reader's press applied to the counts in hand, before the server has answered. */
+function toggledLocally(list: ReactionCount[], emoji: string): ReactionCount[] {
+  const found = list.find((entry) => entry.emoji === emoji);
+  if (found?.mine) {
+    return list.flatMap((entry) =>
+      entry.emoji !== emoji ? [entry] : entry.count > 1 ? [{ ...entry, count: entry.count - 1, mine: false }] : [],
+    );
+  }
+  if (found)
+    return list.map((entry) => (entry.emoji === emoji ? { ...entry, count: entry.count + 1, mine: true } : entry));
+  return [...list, { emoji, count: 1, mine: true } as ReactionCount];
+}
+
 /* ─────────────── the card ─────────────── */
 
 export function FeedPostCard({
@@ -221,6 +234,10 @@ export function FeedPostCard({
       goSignIn();
       return;
     }
+    /* Optimistic: the chip answers the press at once, the server's count then
+       replaces it; a refusal puts back what was there. */
+    const before = reactions;
+    setReactions(toggledLocally(before, emoji));
     setBusy(true);
     const result = await toggleReaction(post.id, emoji);
     setBusy(false);
@@ -228,6 +245,7 @@ export function FeedPostCard({
       setReactions(result.data.reactions);
       return;
     }
+    setReactions(before);
     toast.error(result.code === "reaction_limit" ? feedCopy.reactionLimit : feedCopy.reactionFailed);
   }
 
