@@ -59,6 +59,7 @@ export const composerCopy = {
   photoUploading: "Завантажується",
   photoFailed: "Не вдалося завантажити фото.",
   retry: "Ще раз",
+  viewPhoto: "Переглянути",
 
   videoPlaceholder: "Посилання на YouTube",
   videoAdd: "Додати",
