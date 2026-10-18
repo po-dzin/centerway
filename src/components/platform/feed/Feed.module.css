@@ -1545,14 +1545,15 @@ a.commentFace {
   line-height: var(--ds-type-lead-line-height);
 }
 
-/* A tablet and a phone: the tall plate is 780×540, and the head stands on the
+/* A tablet and a phone: the tall plate, and the head stands on the
    plaster under its row of pieces. */
 @media (max-width: 56rem) {
   .wall {
-    /* The tall plate is 1264×760: the strip stands under the two prints, so the
-       whole group is about 56% of the width tall and the head follows it. */
-    --stage-h: min(60.1vw, 32rem);
-    --wall-head: min(56vw, 23rem);
+    /* The tall plate is 1068×700, the group centred in it: the sheet, the
+       checklist, the prints, and the strip under the prints. The head follows
+       the group. */
+    --stage-h: 65.5vw;
+    --wall-head: 63.5vw;
   }
 
   .stagePhoto {

@@ -23,6 +23,7 @@ import { feedCopy } from "./copy";
 import styles from "./Feed.module.css";
 
 const PLATE = "/cw/platform/pages/feed-hero-wall-v5";
+const PLATE_TALL = "/cw/platform/pages/feed-hero-wall-v6";
 
 /** One plate: the wide wall, and a tall one for a tablet and a phone. */
 function Plate({ dark }: { dark: boolean }) {
@@ -31,7 +32,7 @@ function Plate({ dark }: { dark: boolean }) {
     <picture className={dark ? styles.plateDark : styles.plateLight}>
       <source
         media="(max-width: 56rem)"
-        srcSet={`${PLATE}-portrait${sfx}-640.webp 640w, ${PLATE}-portrait${sfx}.webp 1264w`}
+        srcSet={`${PLATE_TALL}-portrait${sfx}-640.webp 640w, ${PLATE_TALL}-portrait${sfx}.webp 1068w`}
         sizes="100vw"
       />
       <img
