@@ -19,8 +19,6 @@
  * over it take the theme's text colour either way.
  */
 
-import { heroTitleFit } from "@/components/platform/heroTitleFit";
-
 import { feedCopy } from "./copy";
 import styles from "./Feed.module.css";
 
@@ -52,21 +50,17 @@ export function FeedStage() {
 }
 
 /**
- * The page's head, in the shape every platform hero has (the home page's): a
- * night-glass badge over a big uppercase title. Here the title stands on light
- * plaster, so it is ink, not cream; the badge is the same graphite plate and
- * stays readable wherever the photograph's light falls. What the page is about
- * is the pinned post's to say.
+ * The page's head: the platform's editorial title at its title size, and one
+ * line under it that says what the page is. It stands on the bare plaster
+ * between the pieces, in ink with a glow of the page's own ground so it holds
+ * on the shaded part of the plate. What the page holds is the pinned post's to
+ * say.
  */
 export function FeedHeading() {
   return (
     <header className={styles.heroBody}>
-      <p className={styles.heroBadge} data-cw-header-tone="dark">
-        <span>{feedCopy.heroBadge}</span>
-      </p>
-      <h1 className={styles.heroTitle} style={heroTitleFit(feedCopy.title)}>
-        {feedCopy.title}
-      </h1>
+      <h1 className={styles.heroTitle}>{feedCopy.title}</h1>
+      <p className={styles.heroLead}>{feedCopy.heroLead}</p>
     </header>
   );
 }

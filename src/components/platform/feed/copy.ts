@@ -4,7 +4,7 @@
  */
 
 export const feedCopy = {
-  heroBadge: "Спільнота CenterWay",
+  heroLead: "Живий потік буття",
   title: "Стрічка",
   lead: "Дописи авторів CenterWay: практики, думки, події.",
   empty: "Тут поки порожньо. Автори скоро напишуть перші дописи.",
