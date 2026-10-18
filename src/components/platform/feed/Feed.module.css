@@ -1472,7 +1472,8 @@ a.commentFace {
    it with no gap the wall has to cover. */
 .wall {
   /* The wide plate is 1584×672, shown 112% wide and pulled left so the
-     pieces stand clear of the column. */
+     group stands level with the column: the sheet runs a little off the left
+     edge, the prints keep a margin on the right. */
   --stage-h: min(47.5vw, 52rem);
   --wall-head: 6rem;
   position: relative;
@@ -1495,18 +1496,23 @@ a.commentFace {
   display: block;
   inline-size: 112%;
   max-inline-size: none;
-  margin-inline-start: -10%;
+  margin-inline-start: -7.5%;
   block-size: 100%;
   object-fit: cover;
   object-position: 0 0;
 }
 
-/* On the dark theme the light plate is dimmed by the page's own ground. */
-:global([data-cw-theme="dark"]) .stage::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: color-mix(in srgb, var(--cw-platform-bg) 62%, transparent);
+/* Each theme has its own plate, graded for it; the other is not drawn. */
+.plateDark {
+  display: none;
+}
+
+:global([data-cw-theme="dark"]) .plateLight {
+  display: none;
+}
+
+:global([data-cw-theme="dark"]) .plateDark {
+  display: block;
 }
 
 .pageOnWall {

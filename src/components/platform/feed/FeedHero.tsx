@@ -14,37 +14,48 @@
  * letters anywhere in the photograph: the text on the paper is drawn as lines,
  * so the page's own words are the only words.
  *
- * The photo's tone is baked into the file; no CSS filter. The scene is light,
- * so on the dark theme a layer of the page's own ground dims it, and the words
- * over it take the theme's text colour either way.
+ * The photo's tone is baked into the file; no CSS filter. The wall is shot
+ * twice, in daylight and by lamplight, and the page shows the one of its
+ * theme; the words over it take the theme's text colour either way.
  */
 
 import { feedCopy } from "./copy";
 import styles from "./Feed.module.css";
 
-const WIDE = "/cw/platform/pages/feed-hero-wall-v4.webp";
-const WIDE_1200 = "/cw/platform/pages/feed-hero-wall-v4-1200.webp";
-const TALL = "/cw/platform/pages/feed-hero-wall-v4-portrait.webp";
-const TALL_640 = "/cw/platform/pages/feed-hero-wall-v4-portrait-640.webp";
+const PLATE = "/cw/platform/pages/feed-hero-wall-v5";
+
+/** One plate: the wide wall, and a tall one for a tablet and a phone. */
+function Plate({ dark }: { dark: boolean }) {
+  const sfx = dark ? "-dark" : "";
+  return (
+    <picture className={dark ? styles.plateDark : styles.plateLight}>
+      <source
+        media="(max-width: 56rem)"
+        srcSet={`${PLATE}-portrait${sfx}-640.webp 640w, ${PLATE}-portrait${sfx}.webp 1264w`}
+        sizes="100vw"
+      />
+      <img
+        className={styles.stagePhoto}
+        src={`${PLATE}${sfx}.webp`}
+        srcSet={`${PLATE}${sfx}-1200.webp 1200w, ${PLATE}${sfx}.webp 1584w`}
+        sizes="100vw"
+        width={1584}
+        height={672}
+        alt={dark ? "" : feedCopy.heroAlt}
+        fetchPriority={dark ? "low" : "high"}
+        loading={dark ? "lazy" : undefined}
+        decoding="async"
+      />
+    </picture>
+  );
+}
 
 /** The wall itself: behind everything, the width of the page. */
 export function FeedStage() {
   return (
     <div className={styles.stage}>
-      <picture>
-        <source media="(max-width: 56rem)" srcSet={`${TALL_640} 640w, ${TALL} 1264w`} sizes="100vw" />
-        <img
-          className={styles.stagePhoto}
-          src={WIDE}
-          srcSet={`${WIDE_1200} 1200w, ${WIDE} 1584w`}
-          sizes="100vw"
-          width={1584}
-          height={672}
-          alt={feedCopy.heroAlt}
-          fetchPriority="high"
-          decoding="async"
-        />
-      </picture>
+      <Plate dark={false} />
+      <Plate dark />
     </div>
   );
 }
