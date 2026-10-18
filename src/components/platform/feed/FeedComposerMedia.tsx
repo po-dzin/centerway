@@ -32,6 +32,7 @@ import type { UploadedMedia } from "@/lib/feed/upload";
 
 import { clockOf, composerCopy } from "./composerCopy";
 import { ComposerPopover } from "./FeedComposerMenus";
+import { shrinkPhoto } from "./shrinkPhoto";
 import { signClip, uploadFeedMedia, type FeedResult } from "./feedApi";
 import styles from "./FeedComposer.module.css";
 
@@ -82,11 +83,12 @@ export type VideoItem = { youtubeId: string };
 /* ─────────────────────────── upload ─────────────────────────── */
 
 export async function uploadWithProgress(
-  file: File,
+  original: File,
   onProgress: (fraction: number) => void,
   asPlatform = false,
 ): Promise<FeedResult<UploadedMedia>> {
   const token = await accessToken().catch(() => null);
+  const file = await shrinkPhoto(original);
   const first = await new Promise<FeedResult<UploadedMedia>>((resolve) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", asPlatform ? "/api/feed/media?as=platform" : "/api/feed/media");
