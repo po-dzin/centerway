@@ -137,13 +137,14 @@ export function FeedView({
 
   function edited(post: FeedPost) {
     setEditing(null);
-    setPage((current) => ({
-      ...current,
-      posts: current.posts
+    setPage((current) => {
+      const next = current.posts
         .map((entry) => (entry.id === post.id ? post : entry))
-        // Pinning one lets the previous go: only the edited post keeps the tape.
-        .map((entry) => (post.pinned && entry.id !== post.id ? { ...entry, pinned: false } : entry)),
-    }));
+        // Pinning one lets the previous go: only the changed post keeps the tape.
+        .map((entry) => (post.pinned && entry.id !== post.id ? { ...entry, pinned: false } : entry));
+      // The pinned post leads the list.
+      return { ...current, posts: post.pinned ? [post, ...next.filter((entry) => entry.id !== post.id)] : next };
+    });
     setRound((current) => current + 1);
   }
 
@@ -183,6 +184,7 @@ export function FeedView({
         headingLevel={mode === "feed" ? 2 : 3}
         onDeleted={removed}
         onEdit={me ? (target) => setEditing(target.id) : undefined}
+        onChanged={me?.platform ? edited : undefined}
       />
     );
   }

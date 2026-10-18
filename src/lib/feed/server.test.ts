@@ -8,6 +8,7 @@ import {
   createFeedPost,
   deleteFeedPost,
   editPlatformPost,
+  setPlatformPin,
   feedPlatformAuthor,
   isFeedAdmin,
   decideHeldPost,
@@ -543,6 +544,17 @@ describe("the platform as an author", () => {
     expect(page.posts[0]).toMatchObject({ id: second.post.id, pinned: true });
     expect(page.posts.find((entry) => entry.id === first.post.id)?.pinned).toBe(false);
     expect(page.posts.filter((entry) => entry.id === second.post.id)).toHaveLength(1);
+  });
+
+  it("is pinned and unpinned from the menu without touching its words", async () => {
+    const { post } = await createFeedPost(db, await platform(), { body: "Вступ", topic: "focus" }, new Date(), {
+      platform: true,
+    });
+    expect(post.pinned).toBe(false);
+    const pinned = await setPlatformPin(db, await platform(), post.id, true);
+    expect(pinned).toMatchObject({ pinned: true, body: "Вступ", edited: false });
+    expect((await setPlatformPin(db, await platform(), post.id, false)).pinned).toBe(false);
+    await expect(setPlatformPin(db, await author(), post.id, true)).rejects.toMatchObject({ code: "not_found" });
   });
 
   it("is changed and removed by an admin, and by no one else", async () => {

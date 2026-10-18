@@ -2525,6 +2525,8 @@ The builder's list-view switch was set in **words** because the icon set had no 
 | `smile` | add a reaction; the reactions themselves are the emoji sprite | an emoji |
 | `share` | pass a post on: three nodes, two links | `telegram`, `export` |
 | `spoiler` | a photo held back until tapped: the eye shut | `unpublish`; `eye` is its «показувати одразу» half |
+| `more` | a card's own menu: three dots, no path | `ellipsis` in text; a wave |
+| `pin` | a pushpin: «Закріпити» / «Відкріпити» in a platform post's menu | `bookmark` (the reader's mark), `location` |
 | `user-add` | name another author on a post | `user`, the reader's own account |
 
 The composer's «Програма» takes the existing `guide`, which already is the programme everywhere else. `FeedGlyphs.tsx` is gone.

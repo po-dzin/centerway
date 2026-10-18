@@ -47,7 +47,7 @@ import type { FeedPost } from "@/lib/feed/server";
 
 import { feedCopy, relativeTime } from "./copy";
 import { useFloating } from "./useFloating";
-import { deleteMark, deletePost, saveMark, toggleReaction, type FeedMarkView } from "./feedApi";
+import { deleteMark, deletePost, pinPost, saveMark, toggleReaction, type FeedMarkView } from "./feedApi";
 import { FeedActions } from "./FeedActions";
 import { FeedAttachment } from "./FeedAttachment";
 import { FeedBody, feedBodyText, type PlacedMark } from "./FeedBody";
@@ -129,6 +129,7 @@ export function FeedPostCard({
   footer,
   onDeleted,
   onEdit,
+  onChanged,
   variant = "feed",
 }: {
   post: FeedPost;
@@ -152,6 +153,8 @@ export function FeedPostCard({
   onDeleted?: (id: string) => void;
   /** An admin changes a post of the platform's where it stands; the page swaps the card for the composer. */
   onEdit?: (post: FeedPost) => void;
+  /** The card's post came back changed (pinned or unpinned); the page puts it in its list. */
+  onChanged?: (post: FeedPost) => void;
   /**
    * `rail`: the home page's «Свіже від авторів» — the same card, folded after
    * four lines with a shorter photo, and the bubble leading to the post's page
@@ -203,6 +206,16 @@ export function FeedPostCard({
       return;
     }
     toast.error(result.code === "reaction_limit" ? feedCopy.reactionLimit : feedCopy.reactionFailed);
+  }
+
+  async function togglePin() {
+    closeMenu();
+    const result = await pinPost(post.id, !post.pinned);
+    if (!result.ok) {
+      toast.error(feedCopy.pinFailed);
+      return;
+    }
+    onChanged?.(result.data.post);
   }
 
   async function removePost() {
@@ -369,6 +382,7 @@ export function FeedPostCard({
                     <div className={styles.menuRow}>
                       <button
                         className={styles.menuItem}
+                        data-tone="danger"
                         type="button"
                         role="menuitem"
                         disabled={removing === "busy"}
@@ -399,15 +413,29 @@ export function FeedPostCard({
                           onEdit(post);
                         }}
                       >
+                        <Icon name="edit" size={20} />
                         {feedCopy.edit}
+                      </button>
+                    ) : null}
+                    {onChanged && platform ? (
+                      <button
+                        className={styles.menuItem}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => void togglePin()}
+                      >
+                        <Icon name="pin" size={20} />
+                        {post.pinned ? feedCopy.unpin : feedCopy.pin}
                       </button>
                     ) : null}
                     <button
                       className={styles.menuItem}
+                      data-tone="danger"
                       type="button"
                       role="menuitem"
                       onClick={() => setRemoving("ask")}
                     >
+                      <Icon name="trash" size={20} />
                       {feedCopy.remove}
                     </button>
                   </>

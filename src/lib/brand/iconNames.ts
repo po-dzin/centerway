@@ -2,7 +2,7 @@
 // Geometry source: scripts/lib/icon-glyphs.mjs
 
 // Cache key for the sprite URL — see spriteVersion() in scripts/icons-bake.mjs.
-export const CW_SPRITE_VERSION = "3157cdc3";
+export const CW_SPRITE_VERSION = "982e800d";
 
 export const CW_ICON_NAMES = [
   "arrow-right",
@@ -59,6 +59,7 @@ export const CW_ICON_NAMES = [
   "comment",
   "smile",
   "share",
+  "pin",
   "more",
   "spoiler",
   "lock",

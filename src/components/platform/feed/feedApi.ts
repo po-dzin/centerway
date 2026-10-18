@@ -88,6 +88,14 @@ export function resubmitPost(id: string, input: NewPost) {
   });
 }
 
+/** An admin pins or unpins a post of the platform's. */
+export function pinPost(id: string, pinned: boolean) {
+  return call<{ post: FeedPost }>(`/api/feed/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ asPlatform: true, pinOnly: true, pinned }),
+  });
+}
+
 export function deletePost(id: string) {
   return call<{ ok: true }>(`/api/feed/${id}`, { method: "DELETE" });
 }

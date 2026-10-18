@@ -396,8 +396,8 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
         reactions: countReactions(reactionsByPost.get(row.id) ?? [], me, names),
         commentCount: commentsByPost.get(row.id) ?? 0,
         mine,
-        pinned: row.pinned_at !== null,
-        edited: row.edited_at !== null,
+        pinned: Boolean(row.pinned_at),
+        edited: Boolean(row.edited_at),
         canEdit:
           viewerAdmin && isPlatformAuthor(authorOf(author))
             ? true
@@ -853,6 +853,30 @@ export async function editPlatformPost(
   const [post] = await decorate(db, [data as PostRow], author.userId);
   if (!post) throw new Error("feed_post_write_failed:decorate");
   return { post, verdict: { ...checked.verdict, pass: true } };
+}
+
+/** An admin pins or unpins a post of the platform's, without touching its words. */
+export async function setPlatformPin(
+  db: Db,
+  author: FeedAuthor & { userId: string },
+  id: string,
+  pinned: boolean,
+  now: Date = new Date(),
+): Promise<FeedPost> {
+  if (!isUuid(id) || !isPlatformAuthor(author)) throw new FeedError("not_found", 404);
+  const { data: existing } = await db.from("feed_posts").select("id, author_id").eq("id", id).maybeSingle();
+  if (!existing || (existing as { author_id: string }).author_id !== author.id) throw new FeedError("not_found", 404);
+  const { data, error } = await db
+    .from("feed_posts")
+    .update({ pinned_at: pinned ? now.toISOString() : null })
+    .eq("id", id)
+    .select(POST_COLUMNS)
+    .single();
+  if (error) throw new Error(`feed_post_pin_failed:${error.message}`);
+  if (pinned) await unpinOthers(db, id);
+  const [post] = await decorate(db, [data as PostRow], author.userId);
+  if (!post) throw new Error("feed_post_pin_failed:decorate");
+  return post;
 }
 
 /**

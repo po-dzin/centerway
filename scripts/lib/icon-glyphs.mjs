@@ -482,6 +482,12 @@ export const ICONS = {
       "M8.6 13.1 15.4 17",
     ],
   },
+  /* A post held up on the wall: a pushpin — round head, shoulder, needle.
+     «Закріпити» in a card's menu; the same glyph says «Відкріпити». */
+  pin: {
+    group: "Meta",
+    d: ["M9.2 3.8h5.6", "M10.2 3.8l-.6 6.2-2.4 3.2h9.6L14.4 10l-.6-6.2", "M12 13.2v7"],
+  },
   /* A card's own menu: three dots in a row. Only dots — the one glyph with no
      path — so it reads as "more here", not as a wave or an ellipsis in text. */
   more: {

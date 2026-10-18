@@ -3,7 +3,8 @@
  *
  * GET    published for everyone; the author also sees their own held or returned post.
  * PATCH  the author sends a returned post again, edited: the same fields as POST /api/feed.
- *        An admin changes a post of the platform's with `asPlatform: true` (and `pinned`).
+ *        An admin changes a post of the platform's with `asPlatform: true` (and `pinned`);
+ *        `pinOnly: true` with `pinned` moves the pin alone.
  * DELETE the author removes their own post; an admin also removes the platform's.
  */
 
@@ -20,7 +21,14 @@ import {
   writer,
   FEED_POST_WRITE,
 } from "@/lib/feed/http";
-import { deleteFeedPost, editPlatformPost, feedAuthorForUser, getFeedPost, resubmitFeedPost } from "@/lib/feed/server";
+import {
+  deleteFeedPost,
+  editPlatformPost,
+  feedAuthorForUser,
+  getFeedPost,
+  resubmitFeedPost,
+  setPlatformPin,
+} from "@/lib/feed/server";
 import { sendHeldPostCard } from "@/lib/feed/telegram";
 
 export const runtime = "nodejs";
@@ -43,6 +51,9 @@ export const PATCH = withRoute<Params>("feed.resubmit", async (req: NextRequest,
     const platform = await postingAuthor(req, db, true);
     if (!platform.ok) return platform.response;
     try {
+      // `pinOnly`: the menu's «Закріпити» changes the tape and nothing else.
+      if (body.pinOnly === true)
+        return ok({ post: await setPlatformPin(db, platform.value, id, body.pinned === true) });
       const edited = await editPlatformPost(db, platform.value, id, body);
       return ok({ post: edited.post, findings: [] });
     } catch (error) {

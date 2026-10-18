@@ -755,6 +755,12 @@ a.face {
   color: var(--cw-platform-muted);
 }
 
+/* A removal reads as one before it is pressed: the word and the glyph in the danger colour. */
+.menuItem[data-tone="danger"],
+.menuItem[data-tone="danger"] svg {
+  color: var(--cw-danger);
+}
+
 .menuItem:focus-visible {
   outline: none;
   box-shadow: inset 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
