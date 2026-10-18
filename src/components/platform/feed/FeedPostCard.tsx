@@ -49,7 +49,7 @@ import type { FeedPost } from "@/lib/feed/server";
 
 import { feedCopy, relativeTime } from "./copy";
 import { useFloating } from "./useFloating";
-import { deleteMark, deletePost, pinPost, saveMark, toggleReaction, type FeedMarkView } from "./feedApi";
+import { deleteMark, deletePost, hidePost, pinPost, saveMark, toggleReaction, type FeedMarkView } from "./feedApi";
 import { FeedActions } from "./FeedActions";
 import { FeedAttachment } from "./FeedAttachment";
 import { FeedBody, feedBodyText, type PlacedMark } from "./FeedBody";
@@ -259,6 +259,17 @@ export function FeedPostCard({
     onChanged?.(result.data.post);
   }
 
+  async function hideThePost() {
+    closeMenu();
+    const result = await hidePost(post.id);
+    if (!result.ok) {
+      toast.error(feedCopy.hideFailed);
+      return;
+    }
+    toast.success(feedCopy.hidden);
+    onDeleted?.(post.id);
+  }
+
   async function removePost() {
     setRemoving("busy");
     const result = await deletePost(post.id);
@@ -417,7 +428,12 @@ export function FeedPostCard({
               <Icon name="more" size={20} />
             </button>
             {menuOpen ? (
-              <div ref={menuPanel} className={styles.menu} role="menu" aria-label={feedCopy.postMenu}>
+              <div
+                ref={menuPanel}
+                className={`${styles.menu} ${styles.postMenu}`}
+                role="menu"
+                aria-label={feedCopy.postMenu}
+              >
                 {removing ? (
                   <>
                     <p className={styles.menuAsk}>{feedCopy.deleteAsk}</p>
@@ -459,7 +475,7 @@ export function FeedPostCard({
                         {feedCopy.edit}
                       </button>
                     ) : null}
-                    {onChanged && platform ? (
+                    {onChanged && post.canModerate && post.status === "published" ? (
                       <button
                         className={styles.menuItem}
                         type="button"
@@ -468,6 +484,17 @@ export function FeedPostCard({
                       >
                         <Icon name="pin" size={20} />
                         {post.pinned ? feedCopy.unpin : feedCopy.pin}
+                      </button>
+                    ) : null}
+                    {post.canModerate && !post.mine ? (
+                      <button
+                        className={styles.menuItem}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => void hideThePost()}
+                      >
+                        <Icon name="unpublish" size={20} />
+                        {feedCopy.hide}
                       </button>
                     ) : null}
                     <button

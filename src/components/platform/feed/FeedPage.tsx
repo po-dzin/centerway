@@ -34,8 +34,7 @@ export function FeedPage({ page, authors, filter }: { page: Page; authors: FeedA
     <main className={styles.wall} data-cw-hero="bleed">
       <FeedStage />
       <div className={`${styles.page} ${styles.pageOnWall}`}>
-        <FeedHeading />
-        <FeedView initial={page} authors={authors} filter={filter} />
+        <FeedView head={<FeedHeading />} initial={page} authors={authors} filter={filter} />
       </div>
     </main>
   );

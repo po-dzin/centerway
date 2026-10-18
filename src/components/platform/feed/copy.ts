@@ -4,6 +4,7 @@
  */
 
 export const feedCopy = {
+  heroLead: "Живий потік буття",
   title: "Стрічка",
   lead: "Дописи авторів CenterWay: практики, думки, події.",
   empty: "Тут поки порожньо. Автори скоро напишуть перші дописи.",
@@ -47,6 +48,8 @@ export const feedCopy = {
   unpin: "Відкріпити",
   pinFailed: "Не вдалося змінити закріплення.",
   edited: "змінено",
+  hidden: "Допис приховано.",
+  hideFailed: "Не вдалося приховати допис.",
   postMenu: "Дії з дописом",
   deleteAsk: "Видалити допис?",
   deleteYes: "Так",

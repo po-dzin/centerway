@@ -802,3 +802,47 @@
   font-size: var(--ds-type-label-size);
   line-height: var(--ds-type-label-line-height);
 }
+
+/* The question «close without saving?», in the composer's own sheet. */
+.confirm {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  padding: var(--cw-space-md);
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--cw-mat-scrim-ink) 48%, transparent);
+}
+
+.confirmCard {
+  display: grid;
+  gap: var(--cw-space-md);
+  inline-size: min(100%, 22rem);
+  padding: var(--cw-space-lg);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-deep);
+}
+
+.confirmTitle {
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-lead-size);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.confirmActions {
+  display: grid;
+  gap: var(--cw-space-xs);
+}
+
+.confirmKeep {
+  composes: base primary fill from "../PlatformButtons.module.css";
+}
+
+.confirmDiscard {
+  composes: base secondary fill from "../PlatformButtons.module.css";
+  color: var(--cw-danger);
+}

@@ -101,6 +101,11 @@ export function pinPost(id: string, pinned: boolean) {
   });
 }
 
+/** An admin takes a post out of the feed without deleting it. */
+export function hidePost(id: string) {
+  return call<{ ok: true }>(`/api/feed/${id}/hide`, { method: "POST" });
+}
+
 export function deletePost(id: string) {
   return call<{ ok: true }>(`/api/feed/${id}`, { method: "DELETE" });
 }

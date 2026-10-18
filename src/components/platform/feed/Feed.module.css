@@ -835,6 +835,13 @@ a.face {
   .menu {
     inset: auto var(--cw-space-xs) var(--cw-space-xs);
   }
+
+  /* A post's own menu opens under its dots across the width of the post. */
+  .postMenu {
+    position: absolute;
+    inset: calc(var(--cw-space-xs) + var(--ds-touch-target-min) + var(--cw-space-xs)) var(--cw-space-xs) auto;
+    min-inline-size: 0;
+  }
 }
 
 /* A chip that presses. Not a button plate: a word with air around it, which
@@ -1192,28 +1199,26 @@ a.commentFace {
 
 /* ─────────────── the filter (the shelf's popover) ─────────────── */
 
-.filterBar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--cw-space-xs) var(--cw-space-sm);
+/* THE FILTER STANDS IN THE HEAD'S ROW (G 2026-10-18): the head at the left, the
+   control at the right end under the title's line. What is chosen is the
+   button's own count and the checked boxes in its popover, so choosing adds no
+   line anywhere and moves nothing: not the button, not the pinned post, not the
+   posts. Its popover opens leftwards, back onto the screen. */
+.headRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--cw-space-xs) var(--cw-space-md);
 }
 
-/* On a phone the control stands on the right, under the thumb (G 2026-10-17),
-   and its popover opens leftwards, back onto the screen. */
-@media (max-width: 40rem) {
-  .filterBar {
-    flex-direction: row-reverse;
-  }
-
-  .filterBar .filterPopover {
-    inset-inline-start: auto;
-    inset-inline-end: 0;
-  }
+.filterBar {
+  display: contents;
 }
 
 .filterMenu {
   composes: filterMenu from "../cabinet/ShelfFilter.module.css";
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .filterToggle {
@@ -1227,11 +1232,9 @@ a.commentFace {
 
 .filterPopover {
   composes: filterPopover from "../cabinet/ShelfFilter.module.css";
-  /* The shelf's control sits at the end of its row and opens leftwards; the
-     feed's sits at the start of the column, so it opens rightwards and stays
-     on a phone's screen. */
-  inset-inline-start: 0;
-  inset-inline-end: auto;
+  /* The control sits at the end of its row and opens leftwards, onto the screen. */
+  inset-inline-start: auto;
+  inset-inline-end: 0;
   inline-size: min(19rem, calc(100vw - 2 * var(--cw-page-gutter)));
   max-block-size: min(30rem, calc(100vh - 8rem));
   overflow-y: auto;
@@ -1272,20 +1275,6 @@ a.commentFace {
   align-items: center;
   gap: var(--cw-space-xs);
   min-inline-size: 0;
-}
-
-.summary {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--cw-space-2xs) var(--cw-space-sm);
-  margin: 0;
-  color: var(--cw-platform-muted);
-  font-size: var(--ds-type-body-sm-size);
-}
-
-.summaryReset {
-  composes: base text from "../PlatformButtons.module.css";
 }
 
 /* ─────────────── the composer (authors only) ─────────────── */
@@ -1475,14 +1464,18 @@ a.commentFace {
 
 /* ─────────────── the wall at the top of /feed ─────────────── */
 
-/* THE WALL IS THE GROUND OF THE FIRST SCREEN (G 2026-10-18). The photograph
-   runs behind the whole first screen, edge to edge, and fades into the page
-   below it. The pieces on it take the top of the plate (about the top 58% on a
-   desktop, 50% on a phone); the title starts under them (`--wall-band`), and
-   the feed's pinned post is taped to the plaster below the title. */
+/* THE WALL IS A BAND BEHIND THE TOP OF THE PAGE (G 2026-10-18). The plate is
+   composed for the screen: pieces at the left and right and bare plaster in the
+   middle on a desktop, so the head and the first post stand high between them;
+   a row of pieces under the header and bare plaster below on a tablet and a
+   phone. The page's head follows the platform's one shape, and the posts follow
+   it with no gap the wall has to cover. */
 .wall {
-  --stage-h: clamp(28rem, min(100svh, 53.2vw), 62rem);
-  --wall-band: calc(var(--stage-h) * 0.55);
+  /* The wide plate is 1584×672, shown 112% wide and pulled left so the
+     group stands level with the column: the sheet runs a little off the left
+     edge, the prints keep a margin on the right. */
+  --stage-h: min(47.5vw, 52rem);
+  --wall-head: 6rem;
   position: relative;
   isolation: isolate;
   overflow-x: clip;
@@ -1495,52 +1488,78 @@ a.commentFace {
   z-index: -1;
   block-size: var(--stage-h);
   pointer-events: none;
-  /* The photograph melts into the page: whole for the first screen, gone at
-     the bottom edge, so the second screen starts on the page's own ground. */
-  mask-image: linear-gradient(to bottom, #000 0%, #000 58%, transparent 100%);
+  /* The photograph melts into the page at its bottom edge. */
+  mask-image: linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
 }
 
 .stagePhoto {
   display: block;
-  inline-size: 100%;
-  block-size: 100%;
+  inline-size: 112%;
   max-inline-size: none;
+  margin-inline-start: -7.5%;
+  block-size: 100%;
   object-fit: cover;
-  object-position: 50% 0;
+  object-position: 0 0;
 }
 
-/* The scene is light; on the dark theme the page's ground dims it. */
-:global([data-cw-theme="dark"]) .stage::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: color-mix(in srgb, var(--cw-platform-bg) 62%, transparent);
+/* Each theme has its own plate, graded for it; the other is not drawn. */
+.plateDark {
+  display: none;
+}
+
+:global([data-cw-theme="dark"]) .plateLight {
+  display: none;
+}
+
+:global([data-cw-theme="dark"]) .plateDark {
+  display: block;
 }
 
 .pageOnWall {
   gap: var(--cw-space-md);
-  padding-block-start: var(--wall-band);
+  padding-block-start: var(--wall-head);
 }
 
+/* THE HEAD: the platform's editorial title, and a line under it. In ink, with
+   a glow of the page's own ground so it holds on the shaded part of the plate. */
 .heroBody {
   display: grid;
-  gap: var(--cw-space-xs);
-  max-inline-size: 32rem;
+  gap: var(--cw-space-2xs);
+  justify-items: start;
   color: var(--cw-platform-text);
+  text-shadow: 0 0 1.25rem color-mix(in srgb, var(--cw-platform-bg) 72%, transparent);
 }
 
 .heroTitle {
   margin: 0;
   font-family: var(--cw-font-editorial);
-  font-size: clamp(1.9rem, 6vw, 2.6rem);
+  font-size: var(--ds-type-title-size);
   font-weight: 500;
-  line-height: 1.1;
+  line-height: var(--ds-type-title-line-height);
 }
 
-@media (max-width: 35rem) {
+.heroLead {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-lead-size);
+  line-height: var(--ds-type-lead-line-height);
+}
+
+/* A tablet and a phone: the tall plate, and the head stands on the
+   plaster under its row of pieces. */
+@media (max-width: 56rem) {
   .wall {
-    --stage-h: clamp(30rem, 100svh, 54rem);
-    --wall-band: calc(var(--stage-h) * 0.47);
+    /* The tall plate is 930×520 and was composed for the column: the sheet
+       whole, with bare plaster each side of the group, the strip under the
+       prints. The head follows the group. */
+    --stage-h: 55.9vw;
+    --wall-head: 54vw;
+  }
+
+  .stagePhoto {
+    inline-size: 100%;
+    margin-inline-start: 0;
+    object-position: 50% 0;
   }
 }
 

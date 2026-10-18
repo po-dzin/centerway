@@ -122,8 +122,10 @@ export type FeedPost = {
   edited: boolean;
   /** The reader may change the words now: an admin on the platform's post; an author on their own, for a day. */
   canEdit: boolean;
-  /** The reader may change and remove it: they wrote it, or they are an admin and it is the platform's. */
+  /** The reader may remove it: they wrote it, or they are an admin. */
   canManage: boolean;
+  /** The reader is an admin: they may pin, hide and remove any post. */
+  canModerate: boolean;
   /** The reader saved it to «Мій журнал». False for a guest. */
   saved: boolean;
   /** How many people saved it to their «Мій журнал» — shown to everyone (G 17.10). */
@@ -158,7 +160,7 @@ export type FeedComment = {
   /** Written by the post's author — the thread marks it «автор». */
   byAuthor: boolean;
   mine: boolean;
-  /** The reader may hide it: they are the post's author. */
+  /** The reader may hide it: they are the post's author, or an admin. */
   canHide: boolean;
 };
 
@@ -401,10 +403,11 @@ async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<Fee
         pinned: Boolean(row.pinned_at),
         edited: Boolean(row.edited_at),
         canEdit:
-          viewerAdmin && isPlatformAuthor(authorOf(author))
+          viewerAdmin && (mine || isPlatformAuthor(authorOf(author)))
             ? true
             : mine && row.status === "published" && withinEditWindow(row.published_at),
-        canManage: mine || (viewerAdmin && isPlatformAuthor(authorOf(author))),
+        canManage: mine || viewerAdmin,
+        canModerate: viewerAdmin,
         saved: saved.has(row.id),
         saveCount: savesByPost.get(row.id) ?? 0,
         shareCount: sharesByPost.get(row.id) ?? 0,
@@ -818,28 +821,43 @@ async function unpinOthers(db: Db, keepId: string): Promise<void> {
 }
 
 /**
- * An admin changes a post the platform wrote — the pinned introduction
- * included — and may pin or unpin it. It stays published: the team's own
- * words are not held for the team's own check.
+ * An admin changes a post and chooses whose name it carries (G 2026-10-18):
+ * the platform's, or their own author profile's. Allowed on a post the
+ * platform wrote and on one the admin wrote themselves, whichever voice it
+ * now has. It stays published: the team's words are not held for the team's
+ * own check. `pinned` pins or unpins it.
+ *
+ * Files are stored under the folder of whoever uploaded them and a post may
+ * only name its writer's own, so a change of voice sends its media again.
  */
-export async function editPlatformPost(
+export async function editPostAsAdmin(
   db: Db,
-  author: FeedAuthor & { userId: string },
+  userId: string,
   id: string,
   input: FeedPostInput & { pinned?: boolean },
+  asPlatform: boolean,
   now: Date = new Date(),
 ): Promise<CreatedPost> {
   if (!isUuid(id)) throw new FeedError("not_found", 404);
-  if (!isPlatformAuthor(author)) throw new FeedError("not_found", 404);
-  const { data: existing } = await db.from("feed_posts").select("id, author_id").eq("id", id).maybeSingle();
-  if (!existing || (existing as { author_id: string }).author_id !== author.id) throw new FeedError("not_found", 404);
+  if (!(await isFeedAdmin(db, userId))) throw new FeedError("forbidden", 403);
+  const { data: existing } = await db.from("feed_posts").select("id, author_id, created_by").eq("id", id).maybeSingle();
+  const row = existing as { author_id: string; created_by: string } | null;
+  if (!row) throw new FeedError("not_found", 404);
 
-  const checked = await checkedPost(db, author, input, true);
+  const platform = await feedPlatformAuthor(db, userId);
+  const own = await feedAuthorForUser(db, userId);
+  const platformPost = platform !== null && row.author_id === platform.id;
+  if (!platformPost && row.created_by !== userId) throw new FeedError("not_found", 404);
+  const target = asPlatform ? platform : own;
+  if (!target) throw new FeedError(asPlatform ? "platform_author_missing" : "not_an_author", 403);
+
+  const checked = await checkedPost(db, target, input, asPlatform);
   const at = now.toISOString();
   const { data, error } = await db
     .from("feed_posts")
     .update({
       ...checked.fields,
+      author_id: target.id,
       status: "published",
       held_reason: null,
       returned_reason: null,
@@ -852,22 +870,23 @@ export async function editPlatformPost(
     .single();
   if (error) throw new Error(`feed_post_write_failed:${error.message}`);
   if (input.pinned === true) await unpinOthers(db, id);
-  const [post] = await decorate(db, [data as PostRow], author.userId);
+  const [post] = await decorate(db, [data as PostRow], userId);
   if (!post) throw new Error("feed_post_write_failed:decorate");
   return { post, verdict: { ...checked.verdict, pass: true } };
 }
 
-/** An admin pins or unpins a post of the platform's, without touching its words. */
-export async function setPlatformPin(
+/** An admin pins or unpins any published post, without touching its words. */
+export async function setPostPin(
   db: Db,
-  author: FeedAuthor & { userId: string },
+  userId: string,
   id: string,
   pinned: boolean,
   now: Date = new Date(),
 ): Promise<FeedPost> {
-  if (!isUuid(id) || !isPlatformAuthor(author)) throw new FeedError("not_found", 404);
-  const { data: existing } = await db.from("feed_posts").select("id, author_id").eq("id", id).maybeSingle();
-  if (!existing || (existing as { author_id: string }).author_id !== author.id) throw new FeedError("not_found", 404);
+  if (!isUuid(id)) throw new FeedError("not_found", 404);
+  if (!(await isFeedAdmin(db, userId))) throw new FeedError("forbidden", 403);
+  const { data: existing } = await db.from("feed_posts").select("id, status").eq("id", id).maybeSingle();
+  if (!existing || (existing as { status: string }).status !== "published") throw new FeedError("not_found", 404);
   const { data, error } = await db
     .from("feed_posts")
     .update({ pinned_at: pinned ? now.toISOString() : null })
@@ -876,14 +895,26 @@ export async function setPlatformPin(
     .single();
   if (error) throw new Error(`feed_post_pin_failed:${error.message}`);
   if (pinned) await unpinOthers(db, id);
-  const [post] = await decorate(db, [data as PostRow], author.userId);
+  const [post] = await decorate(db, [data as PostRow], userId);
   if (!post) throw new Error("feed_post_pin_failed:decorate");
   return post;
 }
 
+/** An admin takes a post out of the feed without deleting it (`hidden_at`). */
+export async function hideFeedPost(db: Db, userId: string, id: string, now: Date = new Date()): Promise<void> {
+  if (!isUuid(id)) throw new FeedError("not_found", 404);
+  if (!(await isFeedAdmin(db, userId))) throw new FeedError("forbidden", 403);
+  const { error } = await db
+    .from("feed_posts")
+    .update({ hidden_at: now.toISOString(), pinned_at: null })
+    .eq("id", id)
+    .is("hidden_at", null);
+  if (error) throw new Error(`feed_post_hide_failed:${error.message}`);
+}
+
 /**
- * The author removes their own post; an admin also removes the platform's,
- * the pinned one included. Removing what is gone is success.
+ * The author removes their own post; an admin removes any. Removing what is
+ * gone is success.
  */
 export async function deleteFeedPost(
   db: Db,
@@ -892,18 +923,13 @@ export async function deleteFeedPost(
   admin: { userId: string } | null = null,
 ): Promise<void> {
   if (!isUuid(id)) return;
+  if (admin && (await isFeedAdmin(db, admin.userId))) {
+    const { error } = await db.from("feed_posts").delete().eq("id", id);
+    if (error) throw new Error(`feed_post_delete_failed:${error.message}`);
+    return;
+  }
   if (author) {
     const { error } = await db.from("feed_posts").delete().eq("id", id).eq("author_id", author.id);
-    if (error) throw new Error(`feed_post_delete_failed:${error.message}`);
-  }
-  if (admin && (await isFeedAdmin(db, admin.userId))) {
-    const { data: platform } = await db.from("lms_authors").select("id").eq("slug", FEED_PLATFORM_SLUG).maybeSingle();
-    if (!platform) return;
-    const { error } = await db
-      .from("feed_posts")
-      .delete()
-      .eq("id", id)
-      .eq("author_id", (platform as { id: string }).id);
     if (error) throw new Error(`feed_post_delete_failed:${error.message}`);
   }
 }
@@ -1136,6 +1162,7 @@ export async function listComments(db: Db, postId: string, me: string | null): P
     commenters(db, [...new Set(rows.map((row) => row.auth_user_id))]),
     postAuthorOf(db, post.author_id),
   ]);
+  const viewerAdmin = await isFeedAdmin(db, me);
   return rows.map((row) => {
     const byAuthor = row.auth_user_id === post.created_by;
     return {
@@ -1146,7 +1173,7 @@ export async function listComments(db: Db, postId: string, me: string | null): P
       who: commentWho(byAuthor, author, people.get(row.auth_user_id)),
       byAuthor,
       mine: row.auth_user_id === me,
-      canHide: me !== null && me === post.created_by && !byAuthor,
+      canHide: me !== null && ((me === post.created_by && !byAuthor) || (viewerAdmin && row.auth_user_id !== me)),
     };
   });
 }
@@ -1232,7 +1259,7 @@ export async function removeComment(db: Db, commentId: string, userId: string, n
   }
   const { data: postRow } = await db.from("feed_posts").select("created_by").eq("id", row.post_id).maybeSingle();
   const post = postRow as { created_by: string } | null;
-  if (post?.created_by !== userId) throw new FeedError("forbidden", 403);
+  if (post?.created_by !== userId && !(await isFeedAdmin(db, userId))) throw new FeedError("forbidden", 403);
   /* The thread goes with it: a reply whose parent is hidden has nowhere to
      be drawn, and would still be counted on the card. Deleting cascades the
      same way through `parent_id`. */

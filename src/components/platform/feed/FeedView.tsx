@@ -11,7 +11,7 @@
  */
 
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { useSignInHref } from "@/components/auth/useSignInReturn";
 import { useSession } from "@/components/auth/SessionProvider";
@@ -27,11 +27,14 @@ import { FeedPostCard } from "./FeedPostCard";
 import styles from "./Feed.module.css";
 
 export function FeedView({
+  head,
   initial,
   authors,
   filter: initialFilter,
   mode = "feed",
 }: {
+  /** The page's head: it shares a row with the filter, so the control stands in the same place whatever is chosen. */
+  head?: ReactNode;
   initial: FeedPage;
   authors: FeedAuthor[];
   filter: Filter;
@@ -64,7 +67,17 @@ export function FeedView({
     setLoading(false);
     setFailed(!result.ok);
     if (result.ok) {
-      setPage(result.data);
+      /* THE PINNED POST STAYS WHERE IT IS WHATEVER IS CHOSEN (G 2026-10-18). The
+         server leaves it out of a filtered read; the one in hand is kept, so
+         choosing a topic changes the posts below it and nothing above them. */
+      setPage((current) => {
+        const kept = feedFilterCount(next) > 0 ? current.posts.find((entry) => entry.pinned) : undefined;
+        const incoming = result.data.posts;
+        return {
+          ...result.data,
+          posts: kept && !incoming.some((entry) => entry.pinned) ? [kept, ...incoming] : incoming,
+        };
+      });
       setRound((current) => current + 1);
     }
   }, []);
@@ -160,11 +173,11 @@ export function FeedView({
   const filtered = feedFilterCount(filter) > 0;
   /* The pinned post stands under the title on the wall, above the filter; the
      rest of the feed follows it. */
-  const lead = mode === "feed" && !filtered && page.posts[0]?.pinned ? page.posts[0] : null;
+  const lead = mode === "feed" && page.posts[0]?.pinned ? page.posts[0] : null;
   const rest = lead ? page.posts.slice(1) : page.posts;
 
   function card(post: FeedPost) {
-    if (editing === post.id && (me?.platform || me?.author)) {
+    if (editing === post.id && (me?.platform || me?.author) && post.canEdit) {
       return (
         <FeedComposer
           key={post.id}
@@ -189,13 +202,20 @@ export function FeedView({
         headingLevel={mode === "feed" ? 2 : 3}
         onDeleted={removed}
         onEdit={me ? (target) => setEditing(target.id) : undefined}
-        onChanged={me?.platform ? edited : undefined}
+        onChanged={me ? edited : undefined}
       />
     );
   }
 
   return (
     <div className={mode === "feed" ? styles.posts : styles.embedded}>
+      {mode === "feed" ? (
+        <div className={styles.headRow}>
+          {head}
+          <FeedFilter filter={filter} authors={authors} onChange={changeFilter} />
+        </div>
+      ) : null}
+
       {mode === "feed" && (me?.author || me?.platform) ? (
         <FeedComposer
           author={me.author}
@@ -207,8 +227,6 @@ export function FeedView({
       ) : null}
 
       {lead ? card(lead) : null}
-
-      {mode === "feed" ? <FeedFilter filter={filter} authors={authors} onChange={changeFilter} /> : null}
 
       {rest.length === 0 && !loading && (failed || filtered || mode !== "feed") ? (
         <p className={styles.empty}>
@@ -246,6 +264,7 @@ function draftOf(post: FeedPost): ComposerDraft {
     full: post.source?.blockDisplay !== "excerpt",
     asPlatform: isPlatformAuthor(post.author),
     pinned: post.pinned,
+    editing: true,
   };
 }
 
