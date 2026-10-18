@@ -29,6 +29,17 @@ export function feedPostPath(id: string): string {
 }
 
 /** Where a post's author leads: their profile, opened on «Дописи» (G 2026-10-17). */
+/**
+ * The platform as an author (G 2026-10-18): an admin may write «від імені
+ * CenterWay», with the platform's face and name. Its row in `lms_authors` has
+ * this slug and no profile page, so a byline for it is not a link.
+ */
+export const FEED_PLATFORM_SLUG = "centerway";
+
+export function isPlatformAuthor(author: { slug: string }): boolean {
+  return author.slug === FEED_PLATFORM_SLUG;
+}
+
 export function feedAuthorPath(slug: string): string {
   return `/expert/${slug}?tab=posts`;
 }

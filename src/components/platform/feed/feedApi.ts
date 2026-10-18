@@ -42,6 +42,8 @@ export function fetchFeedPost(id: string) {
 
 export type FeedMe = {
   author: FeedAuthor | null;
+  /** An admin's second voice, the platform's own byline; null for everyone else. */
+  platform: FeedAuthor | null;
   posts: FeedPost[];
   courses: ComposerCourse[];
   /** Every other listed author — the composer's «з …» menu. Empty for a reader. */
@@ -67,6 +69,10 @@ export type NewPost = {
   lessonId?: string | null;
   blockId?: string | null;
   blockDisplay?: "full" | "excerpt";
+  /** An admin writing as CenterWay; the post is published at once. */
+  asPlatform?: boolean;
+  /** With `asPlatform`: make it the pinned post of the feed. */
+  pinned?: boolean;
 };
 
 export type PostFinding = { rule: string; label: string; detail: string };
@@ -111,10 +117,13 @@ export function recordShare(postId: string, channel: ShareChannel) {
  * A photo or an audio for a post (`multipart/form-data`). The answer's `path`
  * goes into `NewPost.media`; `src` is for the composer's thumbnail or player.
  */
-export function uploadFeedMedia(file: File | Blob, name = "upload") {
+export function uploadFeedMedia(file: File | Blob, name = "upload", asPlatform = false) {
   const form = new FormData();
   form.append("file", file instanceof File ? file : new File([file], name, { type: file.type }));
-  return call<UploadedMedia>("/api/feed/media", { method: "POST", body: form });
+  return call<UploadedMedia>(asPlatform ? "/api/feed/media?as=platform" : "/api/feed/media", {
+    method: "POST",
+    body: form,
+  });
 }
 
 export function fetchComments(postId: string) {

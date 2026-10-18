@@ -482,6 +482,17 @@ export const ICONS = {
       "M8.6 13.1 15.4 17",
     ],
   },
+  /* A card's own menu: three dots in a row. Only dots — the one glyph with no
+     path — so it reads as "more here", not as a wave or an ellipsis in text. */
+  more: {
+    group: "Meta",
+    d: [],
+    dots: [
+      { cx: 5.6, cy: 12, r: 1.5 },
+      { cx: 12, cy: 12, r: 1.5 },
+      { cx: 18.4, cy: 12, r: 1.5 },
+    ],
+  },
   /* A photo held back until the reader taps it. The eye shut, lashes down:
      not `unpublish` (taken out of public view) and not `eye` (shown at once),
      which is the other half of the same toggle. */

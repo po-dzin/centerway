@@ -21,10 +21,9 @@ import type { FeedAuthor, FeedPage, FeedPost } from "@/lib/feed/server";
 
 import { feedCopy } from "./copy";
 import { fetchFeedMe, fetchFeedPage, fetchFeedPost, fetchMarks, type FeedMarkView, type FeedMe } from "./feedApi";
-import { FeedComposer } from "./FeedComposer";
+import { FeedComposer, type ComposerDraft } from "./FeedComposer";
 import { FeedFilter } from "./FeedFilter";
 import { FeedPostCard } from "./FeedPostCard";
-import { FeedWelcome } from "./FeedWelcome";
 import styles from "./Feed.module.css";
 
 export function FeedView({
@@ -51,6 +50,7 @@ export function FeedView({
   const [failed, setFailed] = useState(false);
   const [me, setMe] = useState<FeedMe | null>(null);
   const [marks, setMarks] = useState<Record<string, FeedMarkView[]>>({});
+  const [editing, setEditing] = useState<string | null>(null);
   const asked = useRef(0);
   /* Each fresh read re-seeds the cards: a card keeps its reactions in its own
      state, and the signed-in read is what marks the reader's own as pressed. */
@@ -126,42 +126,91 @@ export function FeedView({
 
   function published(post: FeedPost) {
     if (post.status !== "published") return;
-    setPage((current) => ({ ...current, posts: [post, ...current.posts.filter((entry) => entry.id !== post.id)] }));
+    setPage((current) => {
+      const others = current.posts.filter((entry) => entry.id !== post.id);
+      // A new pinned post takes the tape; any other post stands behind the pinned one.
+      if (post.pinned) return { ...current, posts: [post, ...others.map((entry) => ({ ...entry, pinned: false }))] };
+      const lead = others[0]?.pinned ? [others[0]] : [];
+      return { ...current, posts: [...lead, post, ...others.slice(lead.length)] };
+    });
+  }
+
+  function edited(post: FeedPost) {
+    setEditing(null);
+    setPage((current) => ({
+      ...current,
+      posts: current.posts
+        .map((entry) => (entry.id === post.id ? post : entry))
+        // Pinning one lets the previous go: only the edited post keeps the tape.
+        .map((entry) => (post.pinned && entry.id !== post.id ? { ...entry, pinned: false } : entry)),
+    }));
+    setRound((current) => current + 1);
+  }
+
+  function removed(id: string) {
+    setPage((current) => ({ ...current, posts: current.posts.filter((entry) => entry.id !== id) }));
   }
 
   const filtered = feedFilterCount(filter) > 0;
+  /* The pinned post stands under the title on the wall, above the filter; the
+     rest of the feed follows it. */
+  const lead = mode === "feed" && !filtered && page.posts[0]?.pinned ? page.posts[0] : null;
+  const rest = lead ? page.posts.slice(1) : page.posts;
+
+  function card(post: FeedPost) {
+    if (editing === post.id && me?.platform) {
+      return (
+        <FeedComposer
+          key={post.id}
+          author={me.author}
+          platform={me.platform}
+          courses={me.courses}
+          taggable={me.taggable}
+          draft={draftOf(post)}
+          onDone={edited}
+          onCancel={() => setEditing(null)}
+        />
+      );
+    }
+    return (
+      <FeedPostCard
+        key={`${post.id}:${round}`}
+        post={post}
+        signedIn={signedIn}
+        signInHref={signInHref}
+        marks={marks[post.id] ?? []}
+        onMarks={(id, list) => setMarks((current) => ({ ...current, [id]: list }))}
+        headingLevel={mode === "feed" ? 2 : 3}
+        onDeleted={removed}
+        onEdit={me?.platform ? (target) => setEditing(target.id) : undefined}
+      />
+    );
+  }
 
   return (
     <div className={mode === "feed" ? styles.posts : styles.embedded}>
-      {mode === "feed" && me?.author ? (
-        <FeedComposer author={me.author} courses={me.courses} taggable={me.taggable} onDone={published} />
+      {mode === "feed" && (me?.author || me?.platform) ? (
+        <FeedComposer
+          author={me.author}
+          platform={me.platform}
+          courses={me.courses}
+          taggable={me.taggable}
+          onDone={published}
+        />
       ) : null}
 
-      {mode === "feed" && !filtered && !failed ? <FeedWelcome launch={page.posts.length === 0 && !loading} /> : null}
+      {lead ? card(lead) : null}
 
       {mode === "feed" ? <FeedFilter filter={filter} authors={authors} onChange={changeFilter} /> : null}
 
-      {page.posts.length === 0 && !loading && (failed || filtered || mode !== "feed") ? (
+      {rest.length === 0 && !loading && (failed || filtered || mode !== "feed") ? (
         <p className={styles.empty}>
           {failed ? feedCopy.loadFailed : filtered ? feedCopy.emptyFiltered : feedCopy.empty}
         </p>
       ) : null}
 
       <div className={styles.posts} aria-busy={loading || undefined}>
-        {page.posts.map((post) => (
-          <FeedPostCard
-            key={`${post.id}:${round}`}
-            post={post}
-            signedIn={signedIn}
-            signInHref={signInHref}
-            marks={marks[post.id] ?? []}
-            onMarks={(id, list) => setMarks((current) => ({ ...current, [id]: list }))}
-            headingLevel={mode === "feed" ? 2 : 3}
-            onDeleted={(id) =>
-              setPage((current) => ({ ...current, posts: current.posts.filter((entry) => entry.id !== id) }))
-            }
-          />
-        ))}
+        {rest.map((post) => card(post))}
       </div>
 
       {page.next ? (
@@ -173,6 +222,24 @@ export function FeedView({
       ) : null}
     </div>
   );
+}
+
+/** A post of the platform's, back in the composer: its pin and voice ride along. */
+function draftOf(post: FeedPost): ComposerDraft {
+  return {
+    id: post.id,
+    body: post.body,
+    topic: post.topic,
+    topics: post.topics,
+    media: post.media,
+    taggedAuthorIds: post.tagged.map((entry) => entry.id),
+    courseId: post.source?.courseId ?? null,
+    lessonId: post.source?.lessonId ?? null,
+    blockId: post.source?.blockId ?? null,
+    full: post.source?.blockDisplay !== "excerpt",
+    asPlatform: true,
+    pinned: post.pinned,
+  };
 }
 
 /** One post on its own address, with its thread open. */

@@ -11,7 +11,14 @@ import type { NextRequest } from "next/server";
 
 import { fail, ok, withRoute } from "@/lib/api/route";
 import { feedDb, viewerOf } from "@/lib/feed/http";
-import { feedAuthorForUser, listComposerCourses, listOwnPosts, listTaggableAuthors } from "@/lib/feed/server";
+import {
+  feedAuthorForUser,
+  feedPlatformAuthor,
+  isFeedAdmin,
+  listComposerCourses,
+  listOwnPosts,
+  listTaggableAuthors,
+} from "@/lib/feed/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +28,12 @@ export const GET = withRoute("feed.me", async (req: NextRequest) => {
   if (!viewer) return fail(401, "unauthorized");
   const db = feedDb();
   const author = await feedAuthorForUser(db, viewer.id);
-  if (!author) return ok({ author: null, posts: [], courses: [], taggable: [] });
+  /* An admin may also write as the platform: its byline rides along. */
+  const platform = (await isFeedAdmin(db, viewer.id)) ? await feedPlatformAuthor(db, viewer.id) : null;
+  const platformOut = platform
+    ? { id: platform.id, slug: platform.slug, name: platform.name, photo: platform.photo }
+    : null;
+  if (!author) return ok({ author: null, platform: platformOut, posts: [], courses: [], taggable: [] });
   const [posts, courses, taggable] = await Promise.all([
     listOwnPosts(db, author),
     listComposerCourses(db, author),
@@ -29,6 +41,7 @@ export const GET = withRoute("feed.me", async (req: NextRequest) => {
   ]);
   return ok({
     author: { id: author.id, slug: author.slug, name: author.name, photo: author.photo },
+    platform: platformOut,
     posts,
     courses,
     taggable,

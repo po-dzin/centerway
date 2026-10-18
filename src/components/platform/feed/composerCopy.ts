@@ -5,6 +5,9 @@
  */
 
 export const composerCopy = {
+  voiceLabel: "Від чийого імені",
+  asPlatform: "Від імені CenterWay",
+  pin: "Закріпити",
   open: "Новий допис",
   title: "Новий допис",
   titleAgain: "Надіслати ще раз",

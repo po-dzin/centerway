@@ -5,13 +5,14 @@
  * in) is prepared as a course cover is and answers
  * `{ kind: "photo", path, src, w, h }`; an audio (webm, ogg, m4a/mp4, mp3;
  * ≤ 20 MB) is stored as it is and answers `{ kind: "audio", path, src, mime,
- * bytes }`. The post then names the `path` in its `media`.
+ * bytes }`. The post then names the `path` in its `media`. `?as=platform`: an
+ * admin uploading for a post written as CenterWay.
  */
 
 import type { NextRequest } from "next/server";
 
 import { fail, ok, withRoute } from "@/lib/api/route";
-import { FEED_MEDIA_UPLOAD, authorWriter, feedDb, refusal } from "@/lib/feed/http";
+import { FEED_MEDIA_UPLOAD, feedDb, postingAuthor, refusal } from "@/lib/feed/http";
 import { storeFeedMedia } from "@/lib/feed/upload";
 
 export const runtime = "nodejs";
@@ -20,7 +21,7 @@ export const maxDuration = 60;
 
 export const POST = withRoute("feed.media", async (req: NextRequest) => {
   const db = feedDb();
-  const author = await authorWriter(req, db, FEED_MEDIA_UPLOAD);
+  const author = await postingAuthor(req, db, req.nextUrl.searchParams.get("as") === "platform", FEED_MEDIA_UPLOAD);
   if (!author.ok) return author.response;
   let form: FormData;
   try {

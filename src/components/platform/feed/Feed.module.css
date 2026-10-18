@@ -85,34 +85,43 @@
   flex: 0 0 auto;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
-  gap: var(--cw-space-xs);
   margin-inline-start: auto;
+  align-self: flex-start;
+  /* The dots sit in the card's corner: the touch box overhangs the padding. */
+  margin-block: calc(var(--cw-space-xs) * -1) 0;
+  margin-inline-end: calc(var(--cw-space-xs) * -1);
 }
 
-.byAsk {
-  font-size: var(--ds-type-body-sm-size);
+.byMenu {
+  display: grid;
+  place-items: center;
+  inline-size: var(--ds-touch-target-min);
+  block-size: var(--ds-touch-target-min);
+  border-radius: var(--cw-radius-md);
   color: var(--cw-platform-muted);
-}
-
-.byTool {
-  min-block-size: var(--ds-touch-target-min);
-  padding-inline: var(--cw-space-xs);
-  border-radius: var(--cw-radius-sm);
-  font-size: var(--ds-type-body-sm-size);
-  font-weight: 650;
-  color: var(--cw-platform-muted);
-}
-
-.byTool:disabled {
-  opacity: 0.5;
 }
 
 @media (hover: hover) {
-  .byTool:hover:not(:disabled) {
+  .byMenu:hover,
+  .byMenu[aria-expanded="true"] {
     background: var(--cw-mat-hover-bg);
     color: var(--cw-platform-text);
   }
+}
+
+.menuAsk {
+  padding: var(--cw-space-xs) var(--cw-space-sm) 0;
+  font-size: var(--ds-type-body-sm-size);
+  color: var(--cw-platform-muted);
+}
+
+.menuRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.menuItem:disabled {
+  opacity: 0.5;
 }
 
 .face {
@@ -1589,18 +1598,13 @@ a.commentFace {
   }
 }
 
-/* ─────────────── «Стрічка · початок»: the pinned welcome ─────────────── */
+/* ─────────────── the pinned post: platform voice ─────────────── */
 
 .pinTag {
   margin-inline-start: var(--cw-space-2xs);
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-label-size);
   font-weight: 600;
-}
-
-.welcomeText {
-  margin: 0;
-  line-height: var(--ds-type-body-line-height);
 }
 
 /* «Мої дописи»: how a post landed, under its action row. */
@@ -1631,35 +1635,6 @@ a.commentFace {
   text-decoration-thickness: var(--cw-link-rule-width);
   text-underline-offset: var(--cw-link-rule-offset);
   text-decoration-color: var(--cw-link-rule-color);
-}
-
-/* What the page is about, inside the pinned post: one short line each. */
-.willList {
-  display: grid;
-  gap: var(--cw-space-2xs);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.willItem {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--cw-space-sm);
-  align-items: center;
-  line-height: var(--ds-type-body-sm-line-height);
-}
-
-.willIcon {
-  color: var(--cw-platform-text);
-}
-
-.willTitle {
-  font-weight: 700;
-}
-
-.willText {
-  color: var(--cw-platform-muted);
 }
 
 /* The way in is smaller here: the post stays whole on a short screen. */

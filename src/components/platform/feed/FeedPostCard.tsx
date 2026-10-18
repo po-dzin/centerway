@@ -35,10 +35,18 @@ import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
 import { COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
 import { parseFeedBody } from "@/lib/feed/format";
 import { EMPTY_FEED_MEDIA } from "@/lib/feed/media";
-import { FEED_TOPICS_MAX, excerptOf, feedAuthorPath, feedPostPath, type ReactionCount } from "@/lib/feed/model";
+import {
+  FEED_TOPICS_MAX,
+  excerptOf,
+  feedAuthorPath,
+  feedPostPath,
+  isPlatformAuthor,
+  type ReactionCount,
+} from "@/lib/feed/model";
 import type { FeedPost } from "@/lib/feed/server";
 
 import { feedCopy, relativeTime } from "./copy";
+import { useFloating } from "./useFloating";
 import { deleteMark, deletePost, saveMark, toggleReaction, type FeedMarkView } from "./feedApi";
 import { FeedActions } from "./FeedActions";
 import { FeedAttachment } from "./FeedAttachment";
@@ -120,6 +128,7 @@ export function FeedPostCard({
   aside,
   footer,
   onDeleted,
+  onEdit,
   variant = "feed",
 }: {
   post: FeedPost;
@@ -141,6 +150,8 @@ export function FeedPostCard({
    * the workshop has its own.
    */
   onDeleted?: (id: string) => void;
+  /** An admin changes a post of the platform's where it stands; the page swaps the card for the composer. */
+  onEdit?: (post: FeedPost) => void;
   /**
    * `rail`: the home page's «Свіже від авторів» — the same card, folded after
    * four lines with a shorter photo, and the bubble leading to the post's page
@@ -157,7 +168,16 @@ export function FeedPostCard({
   const [count, setCount] = useState(post.commentCount);
   const [bar, setBar] = useState<Bar | null>(null);
   const [note, setNote] = useState("");
+  const platform = isPlatformAuthor(post.author);
   const [removing, setRemoving] = useState<"ask" | "busy" | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const menuPanel = useRef<HTMLDivElement>(null);
+  const closeMenu = useCallback(() => {
+    setMenuOpen(false);
+    setRemoving(null);
+  }, []);
+  useFloating(menuOpen, menuButton, menuPanel, closeMenu, "end");
   // The post's own page shows it whole; the feed and the rail fold it.
   const [expanded, setExpanded] = useState(commentsOpen);
   const clamped = !expanded;
@@ -275,20 +295,36 @@ export function FeedPostCard({
   const topics = (post.topics?.length ? post.topics : [post.topic]).slice(0, FEED_TOPICS_MAX);
 
   return (
-    <article className={styles.post} data-variant={variant} ref={card} aria-labelledby={`post-${post.id}-by`}>
+    <article
+      className={post.pinned ? `${styles.post} ${styles.pinned}` : styles.post}
+      data-variant={variant}
+      ref={card}
+      aria-labelledby={`post-${post.id}-by`}
+    >
       <div className={styles.byline}>
         {/* The face is a second way to the same profile as the name, so it
             stays out of the tab order and out of the accessibility tree. */}
-        <Link className={styles.face} href={feedAuthorPath(post.author.slug)} tabIndex={-1} aria-hidden="true">
-          <AuthorPortrait
-            photo={post.author.photo}
-            size="sm"
-            fallback={post.author.name.trim().charAt(0).toUpperCase()}
-          />
-        </Link>
+        {platform ? (
+          <span className={styles.face} aria-hidden="true">
+            <AuthorPortrait
+              photo={post.author.photo}
+              size="sm"
+              fallback={post.author.name.trim().charAt(0).toUpperCase()}
+            />
+          </span>
+        ) : (
+          <Link className={styles.face} href={feedAuthorPath(post.author.slug)} tabIndex={-1} aria-hidden="true">
+            <AuthorPortrait
+              photo={post.author.photo}
+              size="sm"
+              fallback={post.author.name.trim().charAt(0).toUpperCase()}
+            />
+          </Link>
+        )}
         <div className={styles.who}>
           <Name className={styles.whoName} id={`post-${post.id}-by`}>
-            <Link href={feedAuthorPath(post.author.slug)}>{post.author.name}</Link>
+            {platform ? post.author.name : <Link href={feedAuthorPath(post.author.slug)}>{post.author.name}</Link>}
+            {post.pinned ? <span className={styles.pinTag}>· {feedCopy.pinned}</span> : null}
             {post.tagged?.length ? (
               <span className={styles.withTag}>
                 {` ${feedCopy.with} `}
@@ -310,33 +346,73 @@ export function FeedPostCard({
             {` · ${topics.map((topic) => COURSE_CATEGORY_LABELS[topic]).join(", ")}`}
           </p>
         </div>
-        {onDeleted && post.mine ? (
+        {onDeleted && post.canManage ? (
           <div className={styles.byTools}>
-            {removing ? (
-              <>
-                <span className={styles.byAsk}>{feedCopy.deleteAsk}</span>
-                <button
-                  className={styles.byTool}
-                  type="button"
-                  disabled={removing === "busy"}
-                  onClick={() => void removePost()}
-                >
-                  {feedCopy.deleteYes}
-                </button>
-                <button
-                  className={styles.byTool}
-                  type="button"
-                  disabled={removing === "busy"}
-                  onClick={() => setRemoving(null)}
-                >
-                  {feedCopy.deleteNo}
-                </button>
-              </>
-            ) : (
-              <button className={styles.byTool} type="button" onClick={() => setRemoving("ask")}>
-                {feedCopy.remove}
-              </button>
-            )}
+            <button
+              ref={menuButton}
+              className={styles.byMenu}
+              type="button"
+              aria-label={feedCopy.postMenu}
+              title={feedCopy.postMenu}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              onClick={() => (menuOpen ? closeMenu() : setMenuOpen(true))}
+            >
+              <Icon name="more" size={20} />
+            </button>
+            {menuOpen ? (
+              <div ref={menuPanel} className={styles.menu} role="menu" aria-label={feedCopy.postMenu}>
+                {removing ? (
+                  <>
+                    <p className={styles.menuAsk}>{feedCopy.deleteAsk}</p>
+                    <div className={styles.menuRow}>
+                      <button
+                        className={styles.menuItem}
+                        type="button"
+                        role="menuitem"
+                        disabled={removing === "busy"}
+                        onClick={() => void removePost()}
+                      >
+                        {feedCopy.deleteYes}
+                      </button>
+                      <button
+                        className={styles.menuItem}
+                        type="button"
+                        role="menuitem"
+                        disabled={removing === "busy"}
+                        onClick={() => setRemoving(null)}
+                      >
+                        {feedCopy.deleteNo}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {onEdit && platform ? (
+                      <button
+                        className={styles.menuItem}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          closeMenu();
+                          onEdit(post);
+                        }}
+                      >
+                        {feedCopy.edit}
+                      </button>
+                    ) : null}
+                    <button
+                      className={styles.menuItem}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => setRemoving("ask")}
+                    >
+                      {feedCopy.remove}
+                    </button>
+                  </>
+                )}
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>

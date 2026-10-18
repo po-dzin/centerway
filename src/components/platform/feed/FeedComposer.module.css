@@ -769,3 +769,29 @@
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-body-sm-size);
 }
+
+/* An admin's choice of voice: the platform's own byline, and the pin. */
+.voice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs) var(--cw-space-md);
+}
+
+.voiceOption {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-block-size: var(--ds-touch-target-min);
+  cursor: pointer;
+}
+
+.voiceText {
+  font-size: var(--ds-type-body-sm-size);
+  color: var(--cw-platform-muted);
+}
+
+.voiceOption input {
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  accent-color: var(--cw-platform-accent);
+}

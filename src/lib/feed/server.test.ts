@@ -6,6 +6,10 @@ import {
   FeedError,
   addComment,
   createFeedPost,
+  deleteFeedPost,
+  editPlatformPost,
+  feedPlatformAuthor,
+  isFeedAdmin,
   decideHeldPost,
   feedAuthorForUser,
   getFeedPost,
@@ -34,6 +38,7 @@ const LESSON = "00000000-0000-4000-8000-0000000000d1";
 const TAG_AUTHOR = "00000000-0000-4000-8000-0000000000e1";
 const TAG_HIDDEN = "00000000-0000-4000-8000-0000000000e2";
 const ASSET = "00000000-0000-4000-8000-0000000000f1";
+const ADMIN = "00000000-0000-4000-8000-0000000000aa";
 
 let fake: FakeSupabase;
 let db: Db;
@@ -60,7 +65,16 @@ beforeEach(() => {
       { id: "author-hidden", slug: "hidden", name: "Прихований", photo: null, listed: false, auth_user_id: "u-hidden" },
       { id: TAG_AUTHOR, slug: "iryna", name: "Ірина Мельник", photo: null, listed: true, auth_user_id: null },
       { id: TAG_HIDDEN, slug: "unlisted", name: "Неопублікований", photo: null, listed: false, auth_user_id: null },
+      {
+        id: "author-platform",
+        slug: "centerway",
+        name: "CenterWay",
+        photo: { src: "/cw/brand/cw-icon-192.png", alt: "CenterWay" },
+        listed: false,
+        auth_user_id: null,
+      },
     ],
+    user_roles: [{ user_id: ADMIN, role: "admin" }],
     lms_courses: [
       { id: COURSE, title: "Шлях 21", program_slug: "way21", author_id: AUTHOR_USER, author_profile_id: "author-evg" },
       {
@@ -491,5 +505,66 @@ describe("«Поділитися»: one per account", () => {
     expect((await getFeedPost(db, post.id, null))?.shareCount).toBe(2);
     expect((await getFeedPost(db, post.id, READER))?.shared).toBe(true);
     expect((await getFeedPost(db, post.id, null))?.shared).toBe(false);
+  });
+});
+
+describe("the platform as an author", () => {
+  async function platform() {
+    const found = await feedPlatformAuthor(db, ADMIN);
+    if (!found) throw new Error("no platform author");
+    return found;
+  }
+
+  it("is written by an admin, published at once, with the platform's name", async () => {
+    expect(await isFeedAdmin(db, ADMIN)).toBe(true);
+    expect(await isFeedAdmin(db, READER)).toBe(false);
+    const { post } = await createFeedPost(
+      db,
+      await platform(),
+      { body: "Гарантую результат.", topic: "focus" },
+      new Date(),
+      { platform: true },
+    );
+    expect(post.status).toBe("published");
+    expect(post.author).toMatchObject({ slug: "centerway", name: "CenterWay" });
+  });
+
+  it("is pinned once: a new pinned post takes the tape and leads the first page", async () => {
+    const first = await createFeedPost(db, await platform(), { body: "Перший", topic: "focus" }, new Date(), {
+      platform: true,
+      pinned: true,
+    });
+    await createFeedPost(db, await author(), { body: "Автор", topic: "focus" });
+    const second = await createFeedPost(db, await platform(), { body: "Другий", topic: "focus" }, new Date(), {
+      platform: true,
+      pinned: true,
+    });
+    const page = await listFeed(db, { filter: { topics: [], authors: [] }, me: ADMIN });
+    expect(page.posts[0]).toMatchObject({ id: second.post.id, pinned: true });
+    expect(page.posts.find((entry) => entry.id === first.post.id)?.pinned).toBe(false);
+    expect(page.posts.filter((entry) => entry.id === second.post.id)).toHaveLength(1);
+  });
+
+  it("is changed and removed by an admin, and by no one else", async () => {
+    const { post } = await createFeedPost(db, await platform(), { body: "Вступ", topic: "focus" }, new Date(), {
+      platform: true,
+      pinned: true,
+    });
+    const asAdmin = await listFeed(db, { filter: { topics: [], authors: [] }, me: ADMIN });
+    expect(asAdmin.posts[0]?.canManage).toBe(true);
+    const asReader = await listFeed(db, { filter: { topics: [], authors: [] }, me: READER });
+    expect(asReader.posts[0]?.canManage).toBe(false);
+
+    const edited = await editPlatformPost(db, await platform(), post.id, {
+      body: "Новий вступ",
+      topic: "focus",
+      pinned: false,
+    });
+    expect(edited.post).toMatchObject({ body: "Новий вступ", pinned: false, status: "published" });
+
+    await deleteFeedPost(db, null, post.id, { userId: READER });
+    expect((await getFeedPost(db, post.id, READER))?.id).toBe(post.id);
+    await deleteFeedPost(db, null, post.id, { userId: ADMIN });
+    expect(await getFeedPost(db, post.id, READER)).toBeNull();
   });
 });

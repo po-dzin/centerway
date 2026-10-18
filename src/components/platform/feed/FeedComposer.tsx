@@ -88,6 +88,9 @@ export type ComposerDraft = {
   lessonId: string | null;
   blockId: string | null;
   full: boolean;
+  /** A post the platform wrote, changed by an admin (G 2026-10-18). */
+  asPlatform?: boolean;
+  pinned?: boolean;
 };
 
 let keySeq = 0;
@@ -138,13 +141,17 @@ const FMT: {
 
 export function FeedComposer({
   author,
-  courses,
+  platform = null,
+  courses: ownCourses,
   taggable = [],
   draft,
   onDone,
   onCancel,
 }: {
-  author: FeedAuthor;
+  /** The writer's own byline; null for an admin who is not an author and writes only as the platform. */
+  author: FeedAuthor | null;
+  /** An admin's second voice: «від імені CenterWay», with the platform's face and name. */
+  platform?: FeedAuthor | null;
   courses: ComposerCourse[];
   /** Other listed authors the post may name «з …» (`FeedMe.taggable`). */
   taggable?: FeedAuthor[];
@@ -169,6 +176,12 @@ export function FeedComposer({
   const fmtBar = useRef<HTMLDivElement>(null);
   const savedRange = useRef<[number, number]>([0, 0]);
   const titleId = useId();
+  const [asPlatform, setAsPlatform] = useState(draft?.asPlatform ?? (!author && Boolean(platform)));
+  const [pinned, setPinned] = useState(draft?.pinned ?? false);
+  const speaker = (asPlatform ? platform : author) ?? platform ?? (author as FeedAuthor);
+  const platformVoice = asPlatform && Boolean(platform);
+  // The platform has no programmes of its own to attach.
+  const courses = platformVoice ? [] : ownCourses;
 
   const [open, setOpen] = useState(Boolean(draft));
   const [body, setBody] = useState(draft?.body ?? "");
@@ -218,7 +231,7 @@ export function FeedComposer({
     }
     return null;
   }, [attach, course, lesson, block, full]);
-  const taggableOthers = useMemo(() => taggable.filter((entry) => entry.id !== author.id), [taggable, author.id]);
+  const taggableOthers = useMemo(() => taggable.filter((entry) => entry.id !== speaker.id), [taggable, speaker.id]);
 
   const visible = useMemo(() => feedPlainText(body).length, [body]);
   const uploading = photos.some((photo) => photo.status === "uploading") || audio?.status === "uploading";
@@ -354,8 +367,11 @@ export function FeedComposer({
   /* ── media ── */
 
   async function sendPhoto(key: string, file: File) {
-    const result = await uploadWithProgress(file, (progress) =>
-      setPhotos((current) => current.map((photo) => (photo.key === key ? { ...photo, progress } : photo))),
+    const result = await uploadWithProgress(
+      file,
+      (progress) =>
+        setPhotos((current) => current.map((photo) => (photo.key === key ? { ...photo, progress } : photo))),
+      platformVoice,
     );
     setPhotos((current) =>
       current.map((photo) => {
@@ -398,8 +414,10 @@ export function FeedComposer({
   }
 
   async function sendAudio(file: File) {
-    const result = await uploadWithProgress(file, (progress) =>
-      setAudio((current) => (current && current.file === file ? { ...current, progress } : current)),
+    const result = await uploadWithProgress(
+      file,
+      (progress) => setAudio((current) => (current && current.file === file ? { ...current, progress } : current)),
+      platformVoice,
     );
     setAudio((current) => {
       if (!current || current.file !== file) return current;
@@ -436,6 +454,10 @@ export function FeedComposer({
       media.audio = { path: audio.path, durationSec: audio.durationSec, mime: audio.mime };
     }
     const next: NewPost = { body, topics, media, taggedAuthorIds: tagged };
+    if (platformVoice) {
+      next.asPlatform = true;
+      next.pinned = pinned;
+    }
     if (attach !== "none" && attachConfirmed && course) next.courseId = course.id;
     if (attach === "block" && attachConfirmed && lesson && block) {
       next.lessonId = lesson.id;
@@ -721,13 +743,13 @@ export function FeedComposer({
               <div className={styles.body}>
                 <AuthorPortrait
                   className={styles.face}
-                  photo={author.photo}
+                  photo={speaker.photo}
                   size="xs"
-                  fallback={initialOf(author.name)}
+                  fallback={initialOf(speaker.name)}
                 />
                 <div className={styles.main}>
                   <div className={styles.who}>
-                    <b className={styles.name}>{author.name}</b>
+                    <b className={styles.name}>{speaker.name}</b>
                     <TopicMenu
                       topics={topics}
                       onChange={(next) => setTopics(next.slice(0, FEED_TOPICS_MAX))}
@@ -735,6 +757,34 @@ export function FeedComposer({
                       onOpenChange={(next) => setMenu(next ? "topics" : null)}
                     />
                   </div>
+
+                  {platform ? (
+                    <div className={styles.voice} role="group" aria-label={composerCopy.voiceLabel}>
+                      {author && !draft ? (
+                        <label className={styles.voiceOption}>
+                          <input
+                            type="checkbox"
+                            checked={asPlatform}
+                            onChange={(event) => {
+                              setAsPlatform(event.target.checked);
+                              if (!event.target.checked) setPinned(false);
+                            }}
+                          />
+                          <span className={styles.voiceText}>{composerCopy.asPlatform}</span>
+                        </label>
+                      ) : null}
+                      {platformVoice ? (
+                        <label className={styles.voiceOption}>
+                          <input
+                            type="checkbox"
+                            checked={pinned}
+                            onChange={(event) => setPinned(event.target.checked)}
+                          />
+                          <span className={styles.voiceText}>{composerCopy.pin}</span>
+                        </label>
+                      ) : null}
+                    </div>
+                  ) : null}
 
                   <div className={styles.field} data-dragging={undefined}>
                     {photos.length || video || audio || (attach !== "none" && attachConfirmed) || tagged.length ? (

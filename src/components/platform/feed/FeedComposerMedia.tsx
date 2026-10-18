@@ -61,11 +61,12 @@ export type VideoItem = { youtubeId: string };
 export async function uploadWithProgress(
   file: File,
   onProgress: (fraction: number) => void,
+  asPlatform = false,
 ): Promise<FeedResult<UploadedMedia>> {
   const token = await accessToken().catch(() => null);
   const first = await new Promise<FeedResult<UploadedMedia>>((resolve) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/feed/media");
+    xhr.open("POST", asPlatform ? "/api/feed/media?as=platform" : "/api/feed/media");
     if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable && event.total > 0) onProgress(Math.min(0.98, event.loaded / event.total));
@@ -85,7 +86,7 @@ export async function uploadWithProgress(
     form.append("file", file);
     xhr.send(form);
   });
-  if (!first.ok && first.status === 401 && token) return uploadFeedMedia(file);
+  if (!first.ok && first.status === 401 && token) return uploadFeedMedia(file, "upload", asPlatform);
   if (first.ok) onProgress(1);
   return first;
 }
