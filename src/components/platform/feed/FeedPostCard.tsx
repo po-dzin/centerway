@@ -18,6 +18,7 @@
  */
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Fragment,
   useCallback,
@@ -25,6 +26,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type MouseEvent,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -172,6 +174,27 @@ export function FeedPostCard({
   const [bar, setBar] = useState<Bar | null>(null);
   const [note, setNote] = useState("");
   const platform = isPlatformAuthor(post.author);
+  const router = useRouter();
+
+  /* A press on the words or on an empty place of the card opens the post's own
+     page, where its thread is (G 2026-10-18, as in Threads). Never while the
+     reader is selecting words (that gesture ends in a press too), and never on
+     what has a press of its own: links, buttons, media, the attached block,
+     a highlight, the thread. On the post's own page there is nowhere to go. */
+  function openThread(event: MouseEvent<HTMLElement>) {
+    if (commentsOpen) return;
+    if (event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (window.getSelection()?.toString()) return;
+    const target = event.target as HTMLElement;
+    if (
+      target.closest(
+        "a, button, input, textarea, label, mark, video, audio, iframe, dialog, [role=dialog], [data-no-open]",
+      )
+    )
+      return;
+    router.push(feedPostPath(post.id));
+  }
   const [removing, setRemoving] = useState<"ask" | "busy" | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -313,6 +336,7 @@ export function FeedPostCard({
       data-variant={variant}
       ref={card}
       aria-labelledby={`post-${post.id}-by`}
+      onClick={openThread}
     >
       <div className={styles.byline}>
         {/* The face is a second way to the same profile as the name, so it

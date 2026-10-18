@@ -335,6 +335,7 @@ a.face {
 .photo {
   position: relative;
   display: block;
+  cursor: zoom-in;
   overflow: hidden;
   max-block-size: min(60svh, 28rem);
   margin: 0;
@@ -513,7 +514,9 @@ a.face {
   color: var(--cw-platform-text);
   font: inherit;
   font-size: var(--ds-type-body-sm-size);
-  resize: vertical;
+  /* It grows with the words (FeedComments), so it has no bar and no corner to drag. */
+  resize: none;
+  overflow: hidden;
 }
 
 .noteField:focus {
@@ -1167,19 +1170,9 @@ a.commentFace {
   box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
 }
 
+/* Sending is an icon, in the same plate as the platform's other primary icon controls. */
 .sendButton {
-  composes: base secondary compact from "../PlatformButtons.module.css";
-}
-
-/* With a keyboard Enter sends (FeedComments); the button is the phone's. */
-@media (pointer: fine) {
-  .writeRow {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .sendButton {
-    display: none;
-  }
+  composes: base primary square from "../PlatformButtons.module.css";
 }
 
 .replyingTo {
@@ -1700,4 +1693,74 @@ a.commentFace {
 .pinned .attachIcon {
   inline-size: 2.5rem;
   block-size: 2.5rem;
+}
+
+/* ─────────────── the photo viewer ─────────────── */
+
+.viewer {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+  max-inline-size: none;
+  block-size: 100%;
+  max-block-size: none;
+  margin: 0;
+  padding: var(--cw-space-3xl) var(--cw-space-md);
+  border: 0;
+  background: var(--cw-mat-scrim-ink);
+  color: var(--cw-platform-accent-contrast);
+}
+
+.viewer::backdrop {
+  background: transparent;
+}
+
+.viewerImg {
+  display: block;
+  max-inline-size: 100%;
+  max-block-size: 100%;
+  inline-size: auto;
+  block-size: auto;
+  object-fit: contain;
+  border-radius: var(--cw-radius-sm);
+}
+
+.viewerClose,
+.viewerStep {
+  composes: base onMedia square from "../PlatformButtons.module.css";
+  position: absolute;
+}
+
+.viewerClose {
+  inset-block-start: max(var(--cw-space-md), env(safe-area-inset-top, 0px));
+  inset-inline-end: max(var(--cw-space-md), env(safe-area-inset-right, 0px));
+}
+
+.viewerStep {
+  inset-block-start: 50%;
+  translate: 0 -50%;
+}
+
+.viewerStep:disabled {
+  opacity: 0.35;
+}
+
+.viewerPrev {
+  inset-inline-start: max(var(--cw-space-md), env(safe-area-inset-left, 0px));
+}
+
+.viewerNext {
+  inset-inline-end: max(var(--cw-space-md), env(safe-area-inset-right, 0px));
+}
+
+.viewerCount {
+  position: absolute;
+  inset-block-end: max(var(--cw-space-lg), env(safe-area-inset-bottom, 0px));
+  inset-inline: 0;
+  margin: 0;
+  text-align: center;
+  font-size: var(--ds-type-body-sm-size);
+  font-variant-numeric: tabular-nums;
 }

@@ -28,6 +28,7 @@ import { BlockRenderer } from "@/components/lms/LessonBlocks";
 import type { FeedMedia as Media, FeedPhoto } from "@/lib/feed/media";
 
 import { feedCopy } from "./copy";
+import { FeedPhotoViewer } from "./FeedPhotoViewer";
 import styles from "./Feed.module.css";
 
 const NOOP = () => {};
@@ -38,8 +39,21 @@ function photoSources(photo: FeedPhoto): { src: string; srcSet?: string } {
   return { src: photo.src, srcSet: `${small} 640w, ${photo.src} 1600w` };
 }
 
-function Photo({ photo, alt, single }: { photo: FeedPhoto; alt: string; single: boolean }) {
-  const [revealed, setRevealed] = useState(false);
+function Photo({
+  photo,
+  alt,
+  single,
+  revealed,
+  onReveal,
+  onOpen,
+}: {
+  photo: FeedPhoto;
+  alt: string;
+  single: boolean;
+  revealed: boolean;
+  onReveal: () => void;
+  onOpen: () => void;
+}) {
   const { src, srcSet } = photoSources(photo);
   const image = (
     // eslint-disable-next-line @next/next/no-img-element -- the feed bucket's own 640/1600 renditions
@@ -56,10 +70,17 @@ function Photo({ photo, alt, single }: { photo: FeedPhoto; alt: string; single: 
     />
   );
   if (!photo.spoiler || revealed) {
+    /* A press opens the viewer: the photo full screen, with its neighbours. */
     return (
-      <div className={styles.photo} style={{ "--photo-ratio": `${photo.w} / ${photo.h}` } as CSSProperties}>
+      <button
+        className={styles.photo}
+        type="button"
+        style={{ "--photo-ratio": `${photo.w} / ${photo.h}` } as CSSProperties}
+        aria-label={feedCopy.viewerLabel}
+        onClick={onOpen}
+      >
         {image}
-      </div>
+      </button>
     );
   }
   return (
@@ -68,7 +89,7 @@ function Photo({ photo, alt, single }: { photo: FeedPhoto; alt: string; single: 
       type="button"
       style={{ "--photo-ratio": `${photo.w} / ${photo.h}` } as CSSProperties}
       aria-label={feedCopy.spoilerLabel}
-      onClick={() => setRevealed(true)}
+      onClick={onReveal}
     >
       {image}
       <span className={styles.spoilerVeil} aria-hidden="true">
@@ -81,15 +102,20 @@ function Photo({ photo, alt, single }: { photo: FeedPhoto; alt: string; single: 
 
 export function FeedMedia({ media, postId }: { media: Media; postId: string }) {
   const { photos, video, clip, audio } = media;
+  // A spoiler stays out of the viewer until its reader has lifted the veil.
+  const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set());
+  const [opened, setOpened] = useState<number | null>(null);
   if (!photos.length && !video && !clip && !audio) return null;
   const single = photos.length === 1;
+  const viewable = photos.filter((photo) => !photo.spoiler || revealed.has(photo.path));
   return (
     <>
       {photos.length ? (
         <div
-          className={single ? styles.photoOne : `${styles.photoRow} cw-scroll-rail`}
+          className={single ? styles.photoOne : `${styles.photoRow} cw-scroll-none`}
           role={single ? undefined : "group"}
           aria-label={single ? undefined : feedCopy.photos}
+          data-no-open=""
         >
           {photos.map((photo, index) => (
             <Photo
@@ -97,13 +123,19 @@ export function FeedMedia({ media, postId }: { media: Media; postId: string }) {
               photo={photo}
               single={single}
               alt={single ? feedCopy.photo : feedCopy.photoOf(index + 1, photos.length)}
+              revealed={revealed.has(photo.path)}
+              onReveal={() => setRevealed((current) => new Set(current).add(photo.path))}
+              onOpen={() => setOpened(viewable.findIndex((entry) => entry.path === photo.path))}
             />
           ))}
         </div>
       ) : null}
+      {opened !== null && opened >= 0 ? (
+        <FeedPhotoViewer photos={viewable} start={opened} onClose={() => setOpened(null)} />
+      ) : null}
 
       {video ? (
-        <div className={styles.postVideo}>
+        <div className={styles.postVideo} data-no-open="">
           <BlockRenderer
             block={{
               id: `${postId}-video`,
@@ -121,6 +153,7 @@ export function FeedMedia({ media, postId }: { media: Media; postId: string }) {
       {clip ? (
         /* The author's own short clip, played by the browser's player at its own proportions. */
         <video
+          data-no-open=""
           className={styles.postClip}
           style={{ "--clip-ratio": `${clip.w} / ${clip.h}`, "--clip-k": clip.w / clip.h } as CSSProperties}
           controls
@@ -133,7 +166,7 @@ export function FeedMedia({ media, postId }: { media: Media; postId: string }) {
       ) : null}
 
       {audio ? (
-        <figure className={styles.audio}>
+        <figure className={styles.audio} data-no-open="">
           <figcaption className={styles.audioLabel}>
             {audio.durationSec > 0
               ? `${feedCopy.audio} · ${Math.floor(audio.durationSec / 60)}:${String(Math.round(audio.durationSec % 60)).padStart(2, "0")}`

@@ -10,8 +10,9 @@
  */
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 
+import { Icon } from "@/components/Icon";
 import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
 import { useToast } from "@/components/ToastProvider";
 import { FEED_COMMENT_MAX } from "@/lib/feed/model";
@@ -99,6 +100,16 @@ export function FeedComments({
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<FeedComment | null>(null);
   const [sending, setSending] = useState(false);
+  const field = useRef<HTMLTextAreaElement>(null);
+
+  /* The field grows with its words instead of scrolling inside itself, and
+     folds back to one line when it is emptied by sending. */
+  useEffect(() => {
+    const node = field.current;
+    if (!node) return;
+    node.style.blockSize = "auto";
+    node.style.blockSize = `${node.scrollHeight}px`;
+  }, [text]);
 
   useEffect(() => {
     let cancelled = false;
@@ -200,6 +211,7 @@ export function FeedComments({
           ) : null}
           <div className={styles.writeRow}>
             <textarea
+              ref={field}
               aria-label={replyTo ? feedCopy.writeReply : feedCopy.writeComment}
               className={styles.writeField}
               rows={1}
@@ -210,8 +222,14 @@ export function FeedComments({
               onKeyDown={onKeyDown}
               onChange={(event) => setText(event.target.value)}
             />
-            <button className={styles.sendButton} type="submit" disabled={sending || !text.trim()}>
-              {feedCopy.send}
+            <button
+              className={styles.sendButton}
+              type="submit"
+              disabled={sending || !text.trim()}
+              aria-label={feedCopy.send}
+              title={feedCopy.send}
+            >
+              <Icon name="arrow-up" size={20} />
             </button>
           </div>
         </form>

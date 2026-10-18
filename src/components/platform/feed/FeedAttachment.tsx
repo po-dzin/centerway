@@ -96,7 +96,7 @@ export function FeedAttachment({
 
   if (block) {
     return (
-      <div className={styles.attachWhole} data-link={go ? "" : undefined}>
+      <div className={styles.attachWhole} data-link={go ? "" : undefined} data-no-open="">
         <div className={styles.attachBlock}>
           <BlockRenderer
             block={block}
@@ -111,7 +111,7 @@ export function FeedAttachment({
   }
 
   return (
-    <div className={styles.attach} data-link={go ? "" : undefined}>
+    <div className={styles.attach} data-link={go ? "" : undefined} data-no-open="">
       <span className={styles.attachIcon} aria-hidden="true">
         <Icon name={attachmentIcon(attachment)} size={20} />
       </span>
