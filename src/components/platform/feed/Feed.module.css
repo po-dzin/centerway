@@ -1543,9 +1543,10 @@ a.commentFace {
    plaster under its row of pieces. */
 @media (max-width: 56rem) {
   .wall {
-    /* The tall plate is 1264×848. */
-    --stage-h: min(67.1vw, 36rem);
-    --wall-head: min(60vw, 25rem);
+    /* The tall plate is 1264×760: the strip stands under the two prints, so the
+       whole group is about 56% of the width tall and the head follows it. */
+    --stage-h: min(60.1vw, 32rem);
+    --wall-head: min(56vw, 23rem);
   }
 
   .stagePhoto {
