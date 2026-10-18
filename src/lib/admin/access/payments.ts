@@ -185,6 +185,16 @@ export type ProvisionAccessInput = {
   cohortStartsOn?: string | null;
   /** Who brought this person (`?ref`). */
   ref?: string | null;
+  /**
+   * Take the term from the course's offer even though no money came in.
+   *
+   * With a payment the offer's term always applies (below). WITHOUT one, an
+   * absent `expiresAt` has always meant no deadline: a gift is forever unless
+   * somebody says otherwise. The grant dialog's «Як в оффері курсу» says
+   * otherwise, out loud, so it sends this — counted from the day of the grant.
+   * Ignored when `expiresAt` is given: a typed date is the stronger answer.
+   */
+  termFromOffer?: boolean;
   actorId: string;
 };
 
@@ -239,7 +249,9 @@ export async function provisionAccess(input: ProvisionAccessInput) {
       ? input.expiresAt
       : payment
         ? await offerExpiryFor(db, input.courseSlug, payment.paidAt)
-        : null;
+        : input.termFromOffer
+          ? await offerExpiryFor(db, input.courseSlug, new Date().toISOString())
+          : null;
 
   const grant = await grantCourse({
     email: input.email,

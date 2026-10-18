@@ -135,7 +135,11 @@ export function AccessGrantModal({
   const [rows, setRows] = useState<Row[]>(() => [blankRow()]);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const [course, setCourse] = useState(initialCourse || courses[0]?.slug || "");
+  // The choice, not the value: the list may arrive after the dialog is open
+  // (the page loads it on its own), and a value frozen at the first render
+  // would stay empty and keep «Видати» dead while the select shows a program.
+  const [courseChoice, setCourseChoice] = useState(initialCourse);
+  const course = courseChoice || courses[0]?.slug || "";
   const [formatChoice, setFormatChoice] = useState("");
   const [term, setTerm] = useState<Term>("offer");
   const [from, setFrom] = useState("");
@@ -144,7 +148,7 @@ export function AccessGrantModal({
   // ticked by default in "period": a period with no end typed is, almost
   // always, an open one, and saying so beats a field that looks forgotten.
   const [openEnd, setOpenEnd] = useState(true);
-  const [basis, setBasis] = useState<Basis>("gift");
+  const [basisChoice, setBasisChoice] = useState<Basis>("gift");
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState<string>(PAYMENT_CURRENCIES[0]);
   const [note, setNote] = useState("");
@@ -161,7 +165,11 @@ export function AccessGrantModal({
   const format = formats.find((row) => row.format === formatChoice) ?? formats[0] ?? null;
   const promoCourse = (PROMO_COURSE_SLUGS as readonly string[]).includes(course);
   const promoAvailable = canGrantRoles && promoCourse;
-  const promo = basis === "promo" && promoAvailable;
+  // A promo picked for IREM does not follow the operator to a program that
+  // has none: it falls back to a gift, shown as one, rather than staying
+  // "promo" underneath and being sent as a plain grant.
+  const basis: Basis = basisChoice === "promo" && !promoAvailable ? "gift" : basisChoice;
+  const promo = basis === "promo";
   // A group's days are the group's: its start is the stream's date and the
   // operator does not get to move it from here.
   const group = !promo && format?.format === "group";
@@ -217,9 +225,12 @@ export function AccessGrantModal({
   };
 
   const termFields = () => {
-    if (group) return { cohortStartsOn: format?.cohortStartsOn ?? undefined, expiresAt: undefined };
-    if (term === "offer") return { cohortStartsOn: undefined, expiresAt: undefined };
-    return { cohortStartsOn: from || undefined, expiresAt: grantDeadlineValue(openEnd, to) };
+    // «Як в оффері» is said out loud, so it is asked for: without money a grant
+    // would otherwise have no deadline at all (`provisionAccess.termFromOffer`).
+    if (group)
+      return { cohortStartsOn: format?.cohortStartsOn ?? undefined, expiresAt: undefined, termFromOffer: true };
+    if (term === "offer") return { cohortStartsOn: undefined, expiresAt: undefined, termFromOffer: true };
+    return { cohortStartsOn: from || undefined, expiresAt: grantDeadlineValue(openEnd, to), termFromOffer: undefined };
   };
 
   const submit = async () => {
@@ -266,7 +277,7 @@ export function AccessGrantModal({
 
       const common = {
         course,
-        source: SOURCE_OF[basis as Exclude<Basis, "promo">],
+        source: SOURCE_OF[basis],
         createAccount,
         ref: ref.trim() || undefined,
         ...termFields(),
@@ -509,7 +520,7 @@ export function AccessGrantModal({
               <select
                 value={course}
                 onChange={(e) => {
-                  setCourse(e.target.value);
+                  setCourseChoice(e.target.value);
                   setFormatChoice("");
                 }}
                 className={controls.select}
@@ -619,7 +630,7 @@ export function AccessGrantModal({
                 { key: "service", label: t("access_basis_service") },
               ]}
               activeKey={basis}
-              onChange={(key) => setBasis(key as Basis)}
+              onChange={(key) => setBasisChoice(key as Basis)}
             />
             {!promoAvailable ? <p className={controls.hint}>{t("access_basis_promo_unavailable")}</p> : null}
             {basis === "payment" ? (

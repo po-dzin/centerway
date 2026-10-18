@@ -17,7 +17,10 @@ Who → program → term → reason, then the link.
   on sale (`experience_offers`, active and approved). A **group** takes its
   start from the stream's date and cannot be moved from here; its end follows
   the group's offer.
-- **Term.** «Як в оффері курсу» sends nothing, so the offer fills the term in.
+- **Term.** «Як в оффері курсу» sends `termFromOffer: true`: the offer's term
+  counts from the day of the grant (`provisionAccess`; with a payment it always
+  did, without one an absent term has always meant no deadline, so the dialog
+  has to ask).
   «Період» sends the start (`cohortStartsOn`) and an end (`expiresAt`), or
   «без кінця» (`null`, forever).
 - **Reason** is what `lms_enrollments.source` records: payment → `manual` (with
@@ -44,6 +47,16 @@ early-bird price and nothing else; elsewhere the tab is shown dimmed with the
 reason. The price and the 48-hour timer are the offer's, not typed in the form,
 and the period is not offered for a promo — what the buyer gets afterwards is
 the program's own offer.
+
+## What a format does and does not do
+
+The format choice carries the stream's date (`cohortStartsOn`) and nothing
+else. A grant opens **the program** (`course:<slug>`) and takes **its** offer's
+term; it does not carry the format offer's identity, so a group's bonus
+programs (`experience_offer_items`) and a format's own duration are not applied,
+and the order of a hand-recorded payment is the program's. Doing that is a
+change to `provisionAccess` and to what a manual sale records, and is left for
+its own decision.
 
 ## Not done
 

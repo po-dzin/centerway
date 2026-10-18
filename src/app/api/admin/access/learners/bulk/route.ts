@@ -35,6 +35,7 @@ type BulkBody = {
   ref?: unknown;
   expiresAt?: unknown;
   createAccount?: unknown;
+  termFromOffer?: unknown;
   payment?: unknown;
   role?: unknown;
   fullName?: unknown;
@@ -146,6 +147,7 @@ export const POST = withRoute("admin.access.learners.bulk", async (req) => {
         payment: null,
         cohortStartsOn,
         ref: ref ?? undefined,
+        termFromOffer: body.termFromOffer === true ? true : undefined,
         actorId,
       });
       return {

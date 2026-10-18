@@ -285,3 +285,13 @@ describe("people: one name per address", () => {
     expect((await res.json()).error).toBe("bulk_payment_not_allowed");
   });
 });
+
+describe("the term from the offer", () => {
+  it("passes the request for it to every grant, and nothing when it was not made", async () => {
+    await post({ emails: "a@b.co", course: "way21", termFromOffer: true });
+    await post({ emails: "c@d.co", course: "way21", termFromOffer: "yes" });
+    const [asked, other] = access.provisionAccess.mock.calls.map(([input]) => input);
+    expect(asked).toMatchObject({ termFromOffer: true });
+    expect(other.termFromOffer).toBeUndefined();
+  });
+});

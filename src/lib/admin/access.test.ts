@@ -768,6 +768,39 @@ describe("provisionAccess", () => {
     expect(sendPurchaseEmail).not.toHaveBeenCalled();
   });
 
+  it("gives a gift the offer's term only when asked, and a typed date still wins", async () => {
+    db.tables.experience_offers = [
+      { id: "o-reset", code: "course:reset-day", experience_id: "exp-reset", access_days: 30, access_lifetime: false },
+    ];
+    const DAY = 24 * 60 * 60 * 1000;
+    const expiry = async (email: string, extra: Record<string, unknown>) => {
+      const result = await provisionAccess({
+        email,
+        courseSlug: "reset-day",
+        createAccount: true,
+        actorId: ADMIN,
+        ...extra,
+      });
+      return (db.rows("lms_enrollments").find((row) => row.id === result.grant.enrollmentId) as Row).expires_at as
+        string | null;
+    };
+
+    // No money and nothing said: no deadline, as it has always been.
+    expect(await expiry("gift-a@example.com", {})).toBeNull();
+
+    // «Як в оффері курсу» is said, so the offer's thirty days count from the grant.
+    const asked = await expiry("gift-b@example.com", { termFromOffer: true });
+    const days = (Date.parse(asked ?? "") - Date.now()) / DAY;
+    expect(days).toBeGreaterThan(28);
+    expect(days).toBeLessThan(31);
+
+    // A typed date is the stronger answer, forever included.
+    expect(await expiry("gift-c@example.com", { termFromOffer: true, expiresAt: null })).toBeNull();
+    expect(await expiry("gift-d@example.com", { termFromOffer: true, expiresAt: "2027-01-01T23:59:59.999Z" })).toBe(
+      "2027-01-01T23:59:59.999Z",
+    );
+  });
+
   it("applies a deadline typed for someone who is already enrolled", async () => {
     const result = await provisionAccess({
       email: "learner@example.com",

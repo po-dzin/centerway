@@ -74,8 +74,8 @@ export const access = {
   access_format_group: { uk: "Група", en: "Group" },
   access_format_individual: { uk: "Індивідуально", en: "Individual" },
   access_grant_group_hint: {
-    uk: "Старт береться з дати потоку цього формату і змінити його тут не можна. Кінець задає пропозиція групи. Чат потоку надсилає бот після оплати; видача вручну його не надсилає.",
-    en: "The start is the stream date of this format and cannot be changed here. The end follows the group's offer. The stream chat is sent by the bot after a payment; a manual grant does not send it.",
+    uk: "Старт береться з дати потоку цього формату і змінити його тут не можна. Видається сама програма, строк — за її оффером: бонусні програми групи й чат потоку ця форма не відкриває (чат надсилає бот після оплати).",
+    en: "The start is this format's stream date and cannot be changed here. The program itself is granted, with its offer's term: the group's bonus programs and the stream chat are not opened by this form (the bot sends the chat after a payment).",
   },
   access_grant_term: { uk: "Строк", en: "Term" },
   access_grant_term_offer: { uk: "Як в оффері курсу", en: "As in the course offer" },
