@@ -1200,10 +1200,10 @@ a.commentFace {
 /* ─────────────── the filter (the shelf's popover) ─────────────── */
 
 /* THE FILTER STANDS IN THE HEAD'S ROW (G 2026-10-18): the head at the left, the
-   control at the right end under the title's line, and what is chosen written
-   under both. Choosing never moves the button, and the pinned post follows the
-   head at once instead of waiting below a bar. Its popover opens leftwards,
-   back onto the screen. */
+   control at the right end under the title's line. What is chosen is the
+   button's own count and the checked boxes in its popover, so choosing adds no
+   line anywhere and moves nothing: not the button, not the pinned post, not the
+   posts. Its popover opens leftwards, back onto the screen. */
 .headRow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1275,24 +1275,6 @@ a.commentFace {
   align-items: center;
   gap: var(--cw-space-xs);
   min-inline-size: 0;
-}
-
-.summary {
-  display: flex;
-  grid-column: 1 / -1;
-  grid-row: 2;
-  min-inline-size: 0;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: flex-start;
-  gap: var(--cw-space-2xs) var(--cw-space-sm);
-  margin: 0;
-  color: var(--cw-platform-muted);
-  font-size: var(--ds-type-body-sm-size);
-}
-
-.summaryReset {
-  composes: base text from "../PlatformButtons.module.css";
 }
 
 /* ─────────────── the composer (authors only) ─────────────── */

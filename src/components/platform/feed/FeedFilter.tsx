@@ -68,6 +68,7 @@ export function FeedFilter({
           className={styles.filterToggle}
           type="button"
           aria-label={count > 0 ? `${feedCopy.filter}: ${count}` : feedCopy.filter}
+          title={chosen.length ? chosen.join(", ") : undefined}
           aria-expanded={open}
           aria-haspopup="dialog"
           onClick={() => setOpen((current) => !current)}
@@ -148,15 +149,6 @@ export function FeedFilter({
           </div>
         ) : null}
       </div>
-
-      {count > 0 ? (
-        <p className={styles.summary} aria-live="polite">
-          <span>{chosen.join(", ")}</span>
-          <button className={styles.summaryReset} type="button" onClick={() => onChange({ topics: [], authors: [] })}>
-            {feedCopy.filterReset}
-          </button>
-        </p>
-      ) : null}
     </div>
   );
 }

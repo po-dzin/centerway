@@ -67,7 +67,17 @@ export function FeedView({
     setLoading(false);
     setFailed(!result.ok);
     if (result.ok) {
-      setPage(result.data);
+      /* THE PINNED POST STAYS WHERE IT IS WHATEVER IS CHOSEN (G 2026-10-18). The
+         server leaves it out of a filtered read; the one in hand is kept, so
+         choosing a topic changes the posts below it and nothing above them. */
+      setPage((current) => {
+        const kept = feedFilterCount(next) > 0 ? current.posts.find((entry) => entry.pinned) : undefined;
+        const incoming = result.data.posts;
+        return {
+          ...result.data,
+          posts: kept && !incoming.some((entry) => entry.pinned) ? [kept, ...incoming] : incoming,
+        };
+      });
       setRound((current) => current + 1);
     }
   }, []);
@@ -163,7 +173,7 @@ export function FeedView({
   const filtered = feedFilterCount(filter) > 0;
   /* The pinned post stands under the title on the wall, above the filter; the
      rest of the feed follows it. */
-  const lead = mode === "feed" && !filtered && page.posts[0]?.pinned ? page.posts[0] : null;
+  const lead = mode === "feed" && page.posts[0]?.pinned ? page.posts[0] : null;
   const rest = lead ? page.posts.slice(1) : page.posts;
 
   function card(post: FeedPost) {
