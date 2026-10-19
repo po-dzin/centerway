@@ -89,7 +89,7 @@ class FakeQuery implements PromiseLike<{
    * written — landed as one nonsense row of numeric keys, and a test of that
    * path silently asserted against unwritten data.
    */
-  upsert(values: Row | Row[], options?: { onConflict?: string }) {
+  upsert(values: Row | Row[], options?: { onConflict?: string; ignoreDuplicates?: boolean }) {
     this.mode = "insert";
     this.payload = Array.isArray(values) ? values : [values];
     this.db.conflictKey = options?.onConflict ?? null;

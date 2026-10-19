@@ -10,7 +10,6 @@ import { notFound } from "next/navigation";
 
 import { FeedPostPage } from "@/components/platform/feed/FeedPage";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
-import { describe } from "@/lib/brand/identity";
 import { feedPlainText } from "@/lib/feed/format";
 import { FEED_PATH, excerptOf, feedPostPath, feedShareImage } from "@/lib/feed/model";
 import { readFeedPost } from "@/lib/feed/page";
@@ -29,7 +28,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const image = feedShareImage(post);
   return pageMetadata({
     title: `${post.author.name} у Стрічці`,
-    description: describe(excerptOf(feedPlainText(post.body), 150)),
+    description: excerptOf(feedPlainText(post.body), 150),
     path: feedPostPath(post.id),
     ...(image
       ? {

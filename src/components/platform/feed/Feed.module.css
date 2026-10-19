@@ -1153,20 +1153,30 @@ a.commentFace {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--cw-space-xs);
-  align-items: end;
+  align-items: center;
+  min-inline-size: 0;
 }
 
 .writeField {
   inline-size: 100%;
   min-block-size: var(--ds-touch-target-min);
-  padding: var(--cw-space-xs) var(--cw-space-sm);
+  box-sizing: border-box;
+  min-inline-size: 0;
+  padding: calc((var(--ds-touch-target-min) - 1.5em - 2px) / 2) var(--cw-space-sm);
   border: 1px solid var(--cw-mat-stroke-quiet);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
   color: var(--cw-platform-text);
   font: inherit;
-  font-size: var(--ds-type-body-sm-size);
-  resize: vertical;
+  font-size: max(16px, var(--ds-type-body-size));
+  line-height: 1.5;
+  overflow: hidden;
+  resize: none;
+}
+
+.writeField::placeholder {
+  color: var(--cw-platform-muted);
+  opacity: 1;
 }
 
 .writeField:focus {
@@ -1579,10 +1589,36 @@ a.commentFace {
   block-size: var(--cw-space-lg);
   margin-inline-start: calc(var(--cw-space-3xl) / -2);
   transform: rotate(-1.5deg);
-  background: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 70%, var(--cw-sem-warmth) 30%);
-  opacity: 0.86;
+  background-color: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 78%, var(--cw-sem-warmth) 22%);
+  background-image: var(--cw-mat-grain-image);
+  opacity: 0.9;
   box-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 22%, transparent);
-  clip-path: polygon(0 8%, 4% 0, 9% 10%, 14% 0, 100% 0, 96% 50%, 100% 100%, 12% 100%, 7% 88%, 3% 100%, 0 90%, 3% 50%);
+  clip-path: polygon(
+    1% 4%,
+    4% 7%,
+    7% 0,
+    32% 2%,
+    58% 0,
+    98% 3%,
+    96% 17%,
+    100% 26%,
+    97% 39%,
+    99% 48%,
+    96% 61%,
+    99% 77%,
+    97% 89%,
+    99% 98%,
+    72% 100%,
+    42% 97%,
+    8% 100%,
+    5% 94%,
+    1% 98%,
+    3% 81%,
+    0 67%,
+    3% 53%,
+    1% 36%,
+    4% 22%
+  );
   pointer-events: none;
 }
 
@@ -1675,8 +1711,7 @@ a.commentFace {
   block-size: 2.5rem;
 }
 
-/* ─────────────── the photo viewer ─────────────── */
-
+/* Photo canvas has no boundary; floating commands use the shared night glass. */
 .viewer {
   position: fixed;
   inset: 0;
@@ -1685,62 +1720,63 @@ a.commentFace {
   inline-size: 100%;
   max-inline-size: none;
   block-size: 100%;
+  block-size: 100dvh;
   max-block-size: none;
   margin: 0;
-  padding: var(--cw-space-3xl) var(--cw-space-md);
+  padding: 0;
   border: 0;
+  outline: none;
+  overflow: hidden;
   background: var(--cw-mat-scrim-ink);
   color: var(--cw-platform-accent-contrast);
 }
-
 .viewer::backdrop {
   background: transparent;
 }
-
 .viewerImg {
   display: block;
-  max-inline-size: 100%;
-  max-block-size: 100%;
-  inline-size: auto;
-  block-size: auto;
+  inline-size: 100%;
+  block-size: 100%;
+  min-block-size: 0;
   object-fit: contain;
-  border-radius: var(--cw-radius-sm);
 }
-
 .viewerClose,
 .viewerStep {
   composes: base onMedia square from "../PlatformButtons.module.css";
-  position: absolute;
+  border: 0;
+  border-radius: var(--cw-radius-pill);
 }
-
 .viewerClose {
+  position: absolute;
   inset-block-start: max(var(--cw-space-md), env(safe-area-inset-top, 0px));
   inset-inline-end: max(var(--cw-space-md), env(safe-area-inset-right, 0px));
 }
-
-.viewerStep {
-  inset-block-start: 50%;
-  translate: 0 -50%;
+.viewerTools {
+  position: absolute;
+  inset-block-end: max(var(--cw-space-md), env(safe-area-inset-bottom, 0px));
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
 }
-
 .viewerStep:disabled {
   opacity: 0.35;
 }
-
 .viewerPrev {
-  inset-inline-start: max(var(--cw-space-md), env(safe-area-inset-left, 0px));
+  order: 0;
 }
-
 .viewerNext {
-  inset-inline-end: max(var(--cw-space-md), env(safe-area-inset-right, 0px));
+  order: 2;
 }
-
 .viewerCount {
-  position: absolute;
-  inset-block-end: max(var(--cw-space-lg), env(safe-area-inset-bottom, 0px));
-  inset-inline: 0;
+  composes: onMedia from "../PlatformButtons.module.css";
+  order: 1;
   margin: 0;
-  text-align: center;
+  padding-inline: var(--cw-space-md);
+  border: 0;
+  border-radius: var(--cw-radius-pill);
   font-size: var(--ds-type-body-sm-size);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }

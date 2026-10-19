@@ -19,7 +19,7 @@ import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react"
 import { Icon } from "@/components/Icon";
 import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
-import { COURSE_CATEGORY_ICONS, COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
+import { FEED_TOPIC_ICONS, FEED_TOPIC_LABELS } from "@/lib/feed/vocabulary";
 import { FEED_TOPICS, FEED_TOPICS_MAX, type FeedTopic } from "@/lib/feed/model";
 import { FEED_TAGS_MAX } from "@/lib/feed/media";
 import type { FeedAuthor } from "@/lib/feed/server";
@@ -147,7 +147,7 @@ export function TopicMenu({
 }) {
   const trigger = useRef<HTMLButtonElement>(null);
   const full = topics.length >= FEED_TOPICS_MAX;
-  const summary = topics.length ? topics.map((topic) => COURSE_CATEGORY_LABELS[topic]).join(", ") : composerCopy.topics;
+  const summary = topics.length ? topics.map((topic) => FEED_TOPIC_LABELS[topic]).join(", ") : composerCopy.topics;
 
   return (
     <>
@@ -163,7 +163,7 @@ export function TopicMenu({
         {topics.length ? (
           <span className={styles.topicIcons} aria-hidden="true">
             {topics.map((topic) => (
-              <Icon key={topic} name={COURSE_CATEGORY_ICONS[topic]} size={20} />
+              <Icon key={topic} name={FEED_TOPIC_ICONS[topic]} size={20} />
             ))}
           </span>
         ) : null}
@@ -191,9 +191,9 @@ export function TopicMenu({
                 />
                 <Check />
                 <span className={styles.optionText}>
-                  <Icon name={COURSE_CATEGORY_ICONS[topic]} size={20} />
+                  <Icon name={FEED_TOPIC_ICONS[topic]} size={20} />
                   <InteractionInkLabel variant="menu" active={checked}>
-                    {COURSE_CATEGORY_LABELS[topic]}
+                    {FEED_TOPIC_LABELS[topic]}
                   </InteractionInkLabel>
                 </span>
               </label>

@@ -13,7 +13,7 @@
  */
 
 import Link from "next/link";
-import { useCallback, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
@@ -22,6 +22,7 @@ import { feedPostPath, type ReactionCount } from "@/lib/feed/model";
 import { feedCopy } from "./copy";
 import { recordShare, savePost, unsavePost, type ShareChannel } from "./feedApi";
 import { FeedReactions } from "./FeedReactions";
+import { storyCard } from "./storyCard";
 import { useFloating } from "./useFloating";
 import styles from "./Feed.module.css";
 
@@ -35,12 +36,16 @@ const NO_SUBSCRIBE = () => () => {};
 function ShareMenu({
   postId,
   text,
+  author,
+  image,
   count: initialCount,
   shared: initiallyShared,
   signedIn,
 }: {
   postId: string;
   text: string;
+  author: string;
+  image: string | null;
   count: number;
   shared: boolean;
   signedIn: boolean;
@@ -60,10 +65,46 @@ function ShareMenu({
   const close = useCallback(() => setOpen(false), []);
   useFloating(open, button, panel, close, "end");
 
-  const url = (channel: ShareChannel) => {
-    countShare(channel);
-    return new URL(feedPostPath(postId), window.location.origin).toString();
-  };
+  const url = () => new URL(feedPostPath(postId), window.location.origin).toString();
+  const [story, setStory] = useState<File | null>(null);
+  const [storyError, setStoryError] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    void storyCard({ author, text, image, url: new URL(feedPostPath(postId), window.location.origin).toString() })
+      .then((file) => {
+        if (!cancelled) {
+          setStory(file);
+          setStoryError(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setStoryError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, author, text, image, postId]);
+
+  async function shareStory() {
+    if (!story) return;
+    close();
+    try {
+      if (navigator.canShare?.({ files: [story] })) {
+        await navigator.share({ files: [story] });
+        countShare("system");
+      } else {
+        const href = URL.createObjectURL(story);
+        const link = document.createElement("a");
+        link.href = href;
+        link.download = story.name;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(href), 60000);
+      }
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError")) toast.error(feedCopy.storyFailed);
+    }
+  }
 
   /* Counted before the browser hands the link on: the press is the share. */
   function countShare(channel: ShareChannel) {
@@ -83,7 +124,8 @@ function ShareMenu({
   async function copy() {
     close();
     try {
-      await navigator.clipboard.writeText(url("link"));
+      await navigator.clipboard.writeText(url());
+      countShare("link");
       toast.success(feedCopy.shareCopied);
     } catch {
       toast.error(feedCopy.shareFailed);
@@ -92,16 +134,18 @@ function ShareMenu({
 
   function telegram() {
     close();
-    const href = `https://t.me/share/url?url=${encodeURIComponent(url("telegram"))}&text=${encodeURIComponent(text)}`;
+    const href = `https://t.me/share/url?url=${encodeURIComponent(url())}`;
     window.open(href, "_blank", "noopener");
+    countShare("telegram");
   }
 
   async function system() {
     close();
     try {
-      await navigator.share({ url: url("system"), text });
-    } catch {
-      /* The reader closed the sheet: nothing to say. */
+      await navigator.share({ url: url() });
+      countShare("system");
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError")) toast.error(feedCopy.shareFailed);
     }
   }
 
@@ -130,6 +174,22 @@ function ShareMenu({
             <Icon name="telegram" size={20} />
             {feedCopy.shareTelegram}
           </button>
+          <button
+            className={styles.menuItem}
+            type="button"
+            role="menuitem"
+            disabled={!story}
+            onClick={() => void shareStory()}
+          >
+            <Icon name="photo" size={20} />
+            {storyError
+              ? feedCopy.storyFailed
+              : !story
+                ? feedCopy.storyPreparing
+                : canShare
+                  ? feedCopy.shareStory
+                  : feedCopy.storyDownload}
+          </button>
           {canShare ? (
             <button className={styles.menuItem} type="button" role="menuitem" onClick={() => void system()}>
               <Icon name="export" size={20} />
@@ -145,6 +205,8 @@ function ShareMenu({
 export function FeedActions({
   postId,
   shareText,
+  shareAuthor,
+  shareImage,
   reactions,
   busy,
   onReact,
@@ -160,6 +222,8 @@ export function FeedActions({
 }: {
   postId: string;
   shareText: string;
+  shareAuthor: string;
+  shareImage: string | null;
   reactions: ReactionCount[];
   busy: boolean;
   onReact: (emoji: string) => void;
@@ -167,7 +231,7 @@ export function FeedActions({
   onGuest: () => void;
   commentCount: number;
   commentsOpen: boolean;
-  /** Absent in the feed and on the home rail: there the bubble leads to the post's own page, where the thread is. */
+  /** Absent on the home rail, where the bubble links to the complete thread. */
   onComments?: () => void;
   initiallySaved: boolean;
   /** Everyone's saves; the reader's own press moves it at once. */
@@ -245,7 +309,15 @@ export function FeedActions({
         <Icon name={saved ? "bookmark-marked" : "bookmark"} size={20} />
         {saveCount > 0 ? <span>{saveCount}</span> : null}
       </button>
-      <ShareMenu postId={postId} text={shareText} count={shareCount} shared={initiallyShared} signedIn={signedIn} />
+      <ShareMenu
+        postId={postId}
+        text={shareText}
+        author={shareAuthor}
+        image={shareImage}
+        count={shareCount}
+        shared={initiallyShared}
+        signedIn={signedIn}
+      />
     </div>
   );
 }

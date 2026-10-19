@@ -150,3 +150,8 @@ describe("feedShareImage", () => {
     expect(feedShareImage({ media: { photos: [photo("a", true)], video: null } })).toBeNull();
   });
 });
+
+it("accepts all three new feed topics in posts and shared filters", () => {
+  expect(normalizeFeedTopics(["art", "meaning", "technology"])).toEqual(["art", "meaning", "technology"]);
+  expect(feedFilterQuery(parseFeedFilter({ topic: "technology,meaning,art" }))).toBe("topic=art,meaning,technology");
+});
