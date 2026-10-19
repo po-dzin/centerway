@@ -184,3 +184,7 @@ export function saveMark(mark: FeedMarkView & { prefix?: string | null }) {
 export function deleteMark(clientId: string) {
   return call<{ ok: true }>(`/api/feed/marks/${encodeURIComponent(clientId)}`, { method: "DELETE" });
 }
+
+export function toggleCommentReaction(commentId: string, emoji: string) {
+  return call<{ reactions: ReactionCount[] }>(`/api/feed/comments/${commentId}/reactions`, json({ emoji }));
+}

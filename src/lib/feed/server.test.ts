@@ -27,6 +27,7 @@ import {
   saveFeedPost,
   setReturnReason,
   toggleReaction,
+  toggleCommentReaction,
   unsaveFeedPost,
   type Db,
 } from "./server";
@@ -638,5 +639,45 @@ describe("changing a published post", () => {
       resubmitFeedPost(db, await author(), post.id, { body: "Гарантую результат.", topic: "focus" }, soon),
     ).rejects.toMatchObject({ code: "edit_blocked" });
     expect((await getFeedPost(db, post.id, AUTHOR_USER))?.body).toBe("Привіт");
+  });
+});
+
+describe("comment reactions", () => {
+  async function comment() {
+    const { post } = await createFeedPost(db, await author(), {
+      body: "Ранкова практика",
+      topics: ["art", "meaning", "technology"],
+    });
+    const added = await addComment(db, post.id, READER, { body: "Дякую за практику" });
+    return { post, comment: added.comment };
+  }
+  it("adds, lists and removes emoji on a comment", async () => {
+    const entry = await comment();
+    const result = await toggleCommentReaction(db, entry.comment.id, READER, "heart");
+    expect(result).toMatchObject([{ emoji: "heart", count: 1, mine: true }]);
+    expect((await listComments(db, entry.post.id, null))[0]?.reactions).toMatchObject([
+      { emoji: "heart", count: 1, mine: false },
+    ]);
+    expect(await toggleCommentReaction(db, entry.comment.id, READER, "heart")).toEqual([]);
+  });
+  it("limits each reader to three and still permits removal", async () => {
+    const { comment: c } = await comment();
+    for (const emoji of ["heart", "fire", "sun"]) await toggleCommentReaction(db, c.id, READER, emoji);
+    await expect(toggleCommentReaction(db, c.id, READER, "moon-light")).rejects.toMatchObject({
+      code: "reaction_limit",
+    });
+    expect(await toggleCommentReaction(db, c.id, READER, "heart")).toHaveLength(2);
+  });
+  it("refuses hidden comments, held comments and hidden posts", async () => {
+    const { post, comment: c } = await comment();
+    const row = fake.tables.feed_comments!.find((row) => row.id === c.id)!;
+    row.status = "held";
+    await expect(toggleCommentReaction(db, c.id, READER, "heart")).rejects.toMatchObject({ code: "not_found" });
+    row.status = "published";
+    row.hidden_at = new Date().toISOString();
+    await expect(toggleCommentReaction(db, c.id, READER, "heart")).rejects.toMatchObject({ code: "not_found" });
+    row.hidden_at = null;
+    fake.tables.feed_posts!.find((row) => row.id === post.id)!.hidden_at = new Date().toISOString();
+    await expect(toggleCommentReaction(db, c.id, READER, "heart")).rejects.toMatchObject({ code: "not_found" });
   });
 });

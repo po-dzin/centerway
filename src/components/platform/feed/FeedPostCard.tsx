@@ -34,14 +34,14 @@ import {
 import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
 import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
-import { COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
+import { FEED_TOPIC_LABELS } from "@/lib/feed/vocabulary";
 import { feedPlainText, parseFeedBody } from "@/lib/feed/format";
 import { EMPTY_FEED_MEDIA } from "@/lib/feed/media";
 import {
   FEED_TOPICS_MAX,
-  excerptOf,
   feedAuthorPath,
   feedPostPath,
+  feedShareImage,
   isPlatformAuthor,
   type ReactionCount,
 } from "@/lib/feed/model";
@@ -409,7 +409,7 @@ export function FeedPostCard({
                 {relativeTime(when)}
               </time>
             </Link>
-            {` · ${topics.map((topic) => COURSE_CATEGORY_LABELS[topic]).join(", ")}`}
+            {` · ${topics.map((topic) => FEED_TOPIC_LABELS[topic]).join(", ")}`}
             {post.edited ? ` · ${feedCopy.edited}` : null}
           </p>
         </div>
@@ -621,7 +621,9 @@ export function FeedPostCard({
       {post.status === "published" ? (
         <FeedActions
           postId={post.id}
-          shareText={`${post.author.name}: ${excerptOf(feedPlainText(post.body), 120)}`}
+          shareText={feedPlainText(post.body)}
+          shareAuthor={post.author.name}
+          shareImage={feedShareImage(post)?.url ?? null}
           reactions={reactions}
           busy={busy}
           onReact={(emoji) => void react(emoji)}
@@ -629,9 +631,8 @@ export function FeedPostCard({
           onGuest={goSignIn}
           commentCount={count}
           commentsOpen={open}
-          /* The thread lives on the post's own page (G 2026-10-18, as in Threads): from
-             the feed and the rail the bubble leads there; only on that page does it fold. */
-          onComments={commentsOpen && variant === "feed" ? () => setOpen((current) => !current) : undefined}
+          /* Feed comments open in place; the home rail keeps its compact link. */
+          onComments={variant === "feed" ? () => setOpen((current) => !current) : undefined}
           initiallySaved={post.saved ?? false}
           initialSaveCount={post.saveCount ?? 0}
           shareCount={post.shareCount ?? 0}
@@ -642,7 +643,13 @@ export function FeedPostCard({
       {footer}
 
       {open && post.status === "published" && variant === "feed" ? (
-        <FeedComments postId={post.id} signedIn={signedIn} signInHref={signInHref} onCount={setCount} />
+        <FeedComments
+          expanded={commentsOpen}
+          postId={post.id}
+          signedIn={signedIn}
+          signInHref={signInHref}
+          onCount={setCount}
+        />
       ) : null}
     </article>
   );

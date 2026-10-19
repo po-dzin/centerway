@@ -10,7 +10,7 @@
  * - one feed of every author, open without sign-in; reacting, commenting and
  *   marking need an account;
  * - only authors write, from the feed page; the author picks the topic, one of
- *   the catalogue's eight categories; there is no «Анонси» topic;
+ *   the catalogue categories plus art, meaning and technology; no «Анонси»;
  * - the filter is the catalogue's popover: topics add up within their group,
  *   authors add up within theirs, the two groups narrow each other; the choice
  *   lives in the address (`/feed?topic=breathing,relaxation&author=evgeniy`);
@@ -60,8 +60,8 @@ export const FEED_REACTIONS_PER_PERSON = 3;
 /** Topics one post may carry (G 2026-10-17: one to three). */
 export const FEED_TOPICS_MAX = 3;
 
-export type FeedTopic = CourseCategory;
-export const FEED_TOPICS: readonly FeedTopic[] = COURSE_CATEGORIES;
+export type FeedTopic = CourseCategory | "art" | "meaning" | "technology";
+export const FEED_TOPICS: readonly FeedTopic[] = [...COURSE_CATEGORIES, "art", "meaning", "technology"];
 
 export type FeedPostStatus = "checking" | "published" | "held" | "returned";
 export type FeedBlockDisplay = "full" | "excerpt";

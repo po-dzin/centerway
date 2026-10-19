@@ -28,6 +28,11 @@ export const feedCopy = {
   close: "Закрити",
 
   comments: ["коментар", "коментарі", "коментарів"] as [string, string, string],
+  allComments: "Усі коментарі й відповіді",
+  shareStory: "Картка для сторис · Instagram / Telegram",
+  storyPreparing: "Готуємо картку…",
+  storyFailed: "Не вдалося підготувати картку. Спробуйте ще раз.",
+  storyDownload: "Зберегти картку для сторис",
   commentsNone: "Коментувати",
   commentsHide: "Сховати коментарі",
   writeComment: "Написати коментар…",

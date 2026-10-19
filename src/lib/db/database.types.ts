@@ -1047,6 +1047,35 @@ export type Database = {
           },
         ]
       }
+      feed_comment_reactions: {
+        Row: {
+          auth_user_id: string
+          comment_id: string
+          created_at: string
+          emoji: string
+        }
+        Insert: {
+          auth_user_id: string
+          comment_id: string
+          created_at?: string
+          emoji: string
+        }
+        Update: {
+          auth_user_id?: string
+          comment_id?: string
+          created_at?: string
+          emoji?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_comment_reactions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "feed_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feed_comments: {
         Row: {
           auth_user_id: string

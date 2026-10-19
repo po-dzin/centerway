@@ -15,11 +15,12 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type R
 import { Icon } from "@/components/Icon";
 import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
 import { useToast } from "@/components/ToastProvider";
-import { FEED_COMMENT_MAX } from "@/lib/feed/model";
+import { FEED_COMMENT_MAX, feedPostPath } from "@/lib/feed/model";
 import type { FeedComment } from "@/lib/feed/server";
 
 import { feedCopy, relativeTime } from "./copy";
-import { addComment, fetchComments, removeComment } from "./feedApi";
+import { addComment, fetchComments, removeComment, toggleCommentReaction } from "./feedApi";
+import { FeedReactions } from "./FeedReactions";
 import styles from "./Feed.module.css";
 
 function CommentRow({
@@ -27,12 +28,18 @@ function CommentRow({
   signedIn,
   onReply,
   onRemove,
+  onReact,
+  busy,
+  signInHref,
   children,
 }: {
   comment: FeedComment & { held?: boolean };
   signedIn: boolean;
   onReply: (comment: FeedComment) => void;
   onRemove: (comment: FeedComment) => void;
+  onReact: (id: string, emoji: string) => void;
+  busy: boolean;
+  signInHref: string;
   children?: ReactNode;
 }) {
   return (
@@ -66,6 +73,20 @@ function CommentRow({
         <p className={styles.commentText}>{comment.body}</p>
         {comment.held ? <p className={styles.commentHeld}>{feedCopy.commentHeld}</p> : null}
         <div className={styles.commentActions}>
+          {!comment.held ? (
+            <FeedReactions
+              reactions={comment.reactions ?? []}
+              busy={busy}
+              onToggle={(emoji) => onReact(comment.id, emoji)}
+              onGuest={
+                signedIn
+                  ? undefined
+                  : () => {
+                      window.location.href = signInHref;
+                    }
+              }
+            />
+          ) : null}
           {signedIn && !comment.parentId ? (
             <button
               className={styles.act}
@@ -97,11 +118,13 @@ function CommentRow({
 }
 
 export function FeedComments({
+  expanded = true,
   postId,
   signedIn,
   signInHref,
   onCount,
 }: {
+  expanded?: boolean;
   postId: string;
   signedIn: boolean;
   signInHref: string;
@@ -113,6 +136,7 @@ export function FeedComments({
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<FeedComment | null>(null);
   const [sending, setSending] = useState(false);
+  const [reacting, setReacting] = useState<string | null>(null);
   const field = useRef<HTMLTextAreaElement>(null);
 
   /* The field grows with its words instead of scrolling inside itself, and
@@ -134,6 +158,26 @@ export function FeedComments({
       cancelled = true;
     };
   }, [postId, signedIn]);
+
+  async function react(id: string, emoji: string) {
+    if (reacting) return;
+    setReacting(id);
+    const result = await toggleCommentReaction(id, emoji);
+    setReacting(null);
+    if (!result.ok) {
+      toast.error(result.code === "reaction_limit" ? feedCopy.reactionLimit : feedCopy.reactionFailed);
+      return;
+    }
+    setComments(
+      (current) =>
+        current?.map((comment) => (comment.id === id ? { ...comment, reactions: result.data.reactions } : comment)) ??
+        null,
+    );
+  }
+
+  useEffect(() => {
+    if (comments !== null) onCount(comments.filter((comment) => !comment.held).length);
+  }, [comments, onCount]);
 
   const top = (comments ?? []).filter((comment) => !comment.parentId);
   const repliesOf = (id: string) => (comments ?? []).filter((comment) => comment.parentId === id);
@@ -162,7 +206,6 @@ export function FeedComments({
     const added = { ...result.data.comment, held: result.data.held };
     setComments((current) => {
       const next = [...(current ?? []), added];
-      if (!result.data.held) onCount(next.filter((comment) => !comment.held).length);
       return next;
     });
     if (result.data.held) toast.info(feedCopy.commentHeldToast);
@@ -179,20 +222,31 @@ export function FeedComments({
     setComments((current) => {
       // A removed comment takes its replies out of sight with it.
       const next = (current ?? []).filter((entry) => entry.id !== comment.id && entry.parentId !== comment.id);
-      onCount(next.filter((entry) => !entry.held).length);
       return next;
     });
   }
 
   return (
-    <section className={styles.comments} aria-label="Коментарі">
+    <section data-no-open className={styles.comments} aria-label="Коментарі">
       {comments === null ? <p className={styles.guestLine}>{feedCopy.loading}</p> : null}
       {top.length > 0 ? (
         <ul className={styles.commentList}>
-          {top.map((comment) => {
-            const replies = repliesOf(comment.id);
+          {(expanded ? top : top.slice(-2)).map((comment) => {
+            const replies = expanded ? repliesOf(comment.id) : [];
             return (
-              <CommentRow key={comment.id} comment={comment} signedIn={signedIn} onReply={setReplyTo} onRemove={remove}>
+              <CommentRow
+                key={comment.id}
+                comment={comment}
+                signedIn={signedIn}
+                onReply={(comment) => {
+                  setReplyTo(comment);
+                  field.current?.focus({ preventScroll: true });
+                }}
+                onRemove={remove}
+                onReact={(id, emoji) => void react(id, emoji)}
+                busy={reacting !== null}
+                signInHref={signInHref}
+              >
                 {replies.length > 0 ? (
                   <ul className={styles.replies}>
                     {replies.map((reply) => (
@@ -200,8 +254,14 @@ export function FeedComments({
                         key={reply.id}
                         comment={reply}
                         signedIn={signedIn}
-                        onReply={setReplyTo}
+                        onReply={(comment) => {
+                          setReplyTo(comment);
+                          field.current?.focus({ preventScroll: true });
+                        }}
                         onRemove={remove}
+                        onReact={(id, emoji) => void react(id, emoji)}
+                        busy={reacting !== null}
+                        signInHref={signInHref}
                       />
                     ))}
                   </ul>
@@ -212,6 +272,11 @@ export function FeedComments({
         </ul>
       ) : null}
 
+      {!expanded && (comments?.length ?? 0) > 0 ? (
+        <Link className="cw-link-rule" href={feedPostPath(postId)}>
+          {feedCopy.allComments}
+        </Link>
+      ) : null}
       {signedIn ? (
         <form onSubmit={send}>
           {replyTo ? (

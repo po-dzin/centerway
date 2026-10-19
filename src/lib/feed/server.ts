@@ -147,6 +147,8 @@ export type FeedPost = {
 };
 
 export type FeedComment = {
+  held?: boolean;
+  reactions?: ReactionCount[];
   id: string;
   parentId: string | null;
   body: string;
@@ -1078,6 +1080,75 @@ export async function toggleReaction(db: Db, postId: string, userId: string, emo
   return countReactions(list, userId, await reactorNames(db, [list], userId));
 }
 
+/** Reactions only on a visible, published comment under a published post. */
+export async function toggleCommentReaction(
+  db: Db,
+  commentId: string,
+  userId: string,
+  emoji: unknown,
+): Promise<ReactionCount[]> {
+  if (!isFeedEmoji(emoji)) throw new FeedError("emoji_invalid");
+  if (!isUuid(commentId)) throw new FeedError("not_found", 404);
+  const { data, error: readError } = await db
+    .from("feed_comments")
+    .select("id, post_id, parent_id, status, hidden_at")
+    .eq("id", commentId)
+    .maybeSingle();
+  if (readError) throw new Error(`feed_comment_read_failed:${readError.message}`);
+  const comment = data as {
+    post_id: string;
+    parent_id: string | null;
+    status: string;
+    hidden_at: string | null;
+  } | null;
+  if (
+    !comment ||
+    comment.status !== "published" ||
+    comment.hidden_at ||
+    !(await publishedPostExists(db, comment.post_id))
+  )
+    throw new FeedError("not_found", 404);
+  if (comment.parent_id) {
+    const { data: parent } = await db
+      .from("feed_comments")
+      .select("id")
+      .eq("id", comment.parent_id)
+      .eq("status", "published")
+      .is("hidden_at", null)
+      .maybeSingle();
+    if (!parent) throw new FeedError("not_found", 404);
+  }
+  const { data: own, error: ownError } = await db
+    .from("feed_comment_reactions")
+    .select("emoji")
+    .eq("comment_id", commentId)
+    .eq("auth_user_id", userId);
+  if (ownError) throw new Error(`feed_reactions_read_failed:${ownError.message}`);
+  const existing = ((own ?? []) as { emoji: string }[]).some((row) => row.emoji === emoji);
+  if (!existing && (own ?? []).length >= FEED_REACTIONS_PER_PERSON) throw new FeedError("reaction_limit", 409);
+  const { error } = existing
+    ? await db
+        .from("feed_comment_reactions")
+        .delete()
+        .eq("comment_id", commentId)
+        .eq("auth_user_id", userId)
+        .eq("emoji", emoji)
+    : await db
+        .from("feed_comment_reactions")
+        .upsert(
+          { comment_id: commentId, auth_user_id: userId, emoji },
+          { onConflict: "comment_id,auth_user_id,emoji", ignoreDuplicates: true },
+        );
+  if (error && /feed_reaction_limit/.test(error.message)) throw new FeedError("reaction_limit", 409);
+  if (error) throw new Error(`feed_reaction_write_failed:${error.message}`);
+  const { data: rows, error: countsError } = await db
+    .from("feed_comment_reactions")
+    .select("emoji, auth_user_id")
+    .eq("comment_id", commentId);
+  if (countsError) throw new Error(`feed_reactions_read_failed:${countsError.message}`);
+  return countReactions((rows ?? []) as { emoji: string; auth_user_id: string }[], userId);
+}
+
 /* ─────────────────────────── comments ─────────────────────────── */
 
 type CommentRow = {
@@ -1163,19 +1234,35 @@ export async function listComments(db: Db, postId: string, me: string | null): P
     postAuthorOf(db, post.author_id),
   ]);
   const viewerAdmin = await isFeedAdmin(db, me);
-  return rows.map((row) => {
-    const byAuthor = row.auth_user_id === post.created_by;
-    return {
-      id: row.id,
-      parentId: row.parent_id,
-      body: row.body,
-      createdAt: row.created_at,
-      who: commentWho(byAuthor, author, people.get(row.auth_user_id)),
-      byAuthor,
-      mine: row.auth_user_id === me,
-      canHide: me !== null && ((me === post.created_by && !byAuthor) || (viewerAdmin && row.auth_user_id !== me)),
-    };
-  });
+  const visibleIds = new Set(rows.filter((row) => row.status === "published").map((row) => row.id));
+  const { data: reactions, error: reactionError } = visibleIds.size
+    ? await db
+        .from("feed_comment_reactions")
+        .select("comment_id, emoji, auth_user_id")
+        .in("comment_id", [...visibleIds])
+    : { data: [], error: null };
+  if (reactionError) throw new Error(`feed_reactions_read_failed:${reactionError.message}`);
+  const counts = (reactions ?? []) as { comment_id: string; emoji: string; auth_user_id: string }[];
+  return rows
+    .filter((row) => !row.parent_id || visibleIds.has(row.parent_id))
+    .map((row) => {
+      const byAuthor = row.auth_user_id === post.created_by;
+      return {
+        id: row.id,
+        parentId: row.parent_id,
+        body: row.body,
+        createdAt: row.created_at,
+        held: row.status !== "published",
+        reactions: countReactions(
+          counts.filter((entry) => entry.comment_id === row.id),
+          me,
+        ),
+        who: commentWho(byAuthor, author, people.get(row.auth_user_id)),
+        byAuthor,
+        mine: row.auth_user_id === me,
+        canHide: me !== null && ((me === post.created_by && !byAuthor) || (viewerAdmin && row.auth_user_id !== me)),
+      };
+    });
 }
 
 export type CreatedComment = { comment: FeedComment; verdict: GateVerdict; held: boolean };

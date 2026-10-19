@@ -2,7 +2,7 @@
 
 /**
  * A post's photos, full screen (G 2026-10-18): the picture at its own
- * proportions on a dark ground, arrows on both sides, «2 / 5» under it.
+ * proportions on a dark ground, with arrows and counter on bottom glass islands.
  *
  * A native `<dialog>` opened modal, so focus stays inside, Escape closes it and
  * the page behind does not scroll. Left and right arrows on the keyboard, and
@@ -10,7 +10,7 @@
  * handed in: a spoiler still under its veil is not here.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/Icon";
 import type { FeedPhoto } from "@/lib/feed/media";
@@ -37,7 +37,18 @@ export function FeedPhotoViewer({
 
   useEffect(() => {
     const element = dialog.current;
-    if (element && !element.open) element.showModal();
+    if (element && !element.open) {
+      element.showModal();
+      element.focus({ preventScroll: true });
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = overflow;
+    };
   }, []);
 
   const go = (step: number) => setIndex((current) => Math.min(last, Math.max(0, current + step)));
@@ -48,6 +59,7 @@ export function FeedPhotoViewer({
       ref={dialog}
       className={styles.viewer}
       aria-label={feedCopy.viewerLabel}
+      tabIndex={-1}
       onClose={onClose}
       onClick={(event) => {
         if (event.target === event.currentTarget) event.currentTarget.close();
@@ -84,31 +96,33 @@ export function FeedPhotoViewer({
         height={photo.h || undefined}
         alt={feedCopy.photo}
       />
-      {photos.length > 1 ? (
-        <>
-          <button
-            className={`${styles.viewerStep} ${styles.viewerPrev}`}
-            type="button"
-            aria-label={feedCopy.viewerPrev}
-            disabled={index === 0}
-            onClick={() => go(-1)}
-          >
-            <Icon name="arrow-left" size={20} />
-          </button>
-          <button
-            className={`${styles.viewerStep} ${styles.viewerNext}`}
-            type="button"
-            aria-label={feedCopy.viewerNext}
-            disabled={index === last}
-            onClick={() => go(1)}
-          >
-            <Icon name="arrow-right" size={20} />
-          </button>
-          <p className={styles.viewerCount} aria-live="polite">
-            {index + 1} / {photos.length}
-          </p>
-        </>
-      ) : null}
+      <div className={styles.viewerTools}>
+        {photos.length > 1 ? (
+          <>
+            <button
+              className={`${styles.viewerStep} ${styles.viewerPrev}`}
+              type="button"
+              aria-label={feedCopy.viewerPrev}
+              disabled={index === 0}
+              onClick={() => go(-1)}
+            >
+              <Icon name="arrow-left" size={20} />
+            </button>
+            <button
+              className={`${styles.viewerStep} ${styles.viewerNext}`}
+              type="button"
+              aria-label={feedCopy.viewerNext}
+              disabled={index === last}
+              onClick={() => go(1)}
+            >
+              <Icon name="arrow-right" size={20} />
+            </button>
+          </>
+        ) : null}
+        <p className={styles.viewerCount} aria-live="polite">
+          {index + 1} / {photos.length}
+        </p>
+      </div>
     </dialog>
   );
 }
