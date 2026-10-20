@@ -10,7 +10,7 @@
  */
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
 import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
@@ -138,6 +138,7 @@ export function FeedComments({
   const [sending, setSending] = useState(false);
   const [reacting, setReacting] = useState<string | null>(null);
   const field = useRef<HTMLTextAreaElement>(null);
+  const commentsRequest = useRef(0);
 
   /* The field grows with its words instead of scrolling inside itself, and
      folds back to one line when it is emptied by sending. */
@@ -148,16 +149,29 @@ export function FeedComments({
     node.style.blockSize = `${node.scrollHeight}px`;
   }, [text]);
 
+  const loadComments = useCallback(async () => {
+    const request = ++commentsRequest.current;
+    const result = await fetchComments(postId);
+    if (request !== commentsRequest.current) return;
+    setComments((current) => (result.ok ? result.data.comments : (current ?? [])));
+  }, [postId]);
+
   useEffect(() => {
-    let cancelled = false;
+    const request = ++commentsRequest.current;
     void fetchComments(postId).then((result) => {
-      if (cancelled) return;
-      setComments(result.ok ? result.data.comments : []);
+      if (request !== commentsRequest.current) return;
+      setComments((current) => (result.ok ? result.data.comments : (current ?? [])));
     });
     return () => {
-      cancelled = true;
+      commentsRequest.current += 1;
     };
   }, [postId, signedIn]);
+
+  /* A read started before a successful write can return an older snapshot
+     afterwards. Invalidate it, then reconcile with the committed server state. */
+  function refreshAfterMutation() {
+    void loadComments();
+  }
 
   async function react(id: string, emoji: string) {
     if (reacting) return;
@@ -173,6 +187,7 @@ export function FeedComments({
         current?.map((comment) => (comment.id === id ? { ...comment, reactions: result.data.reactions } : comment)) ??
         null,
     );
+    refreshAfterMutation();
   }
 
   useEffect(() => {
@@ -208,6 +223,7 @@ export function FeedComments({
       const next = [...(current ?? []), added];
       return next;
     });
+    refreshAfterMutation();
     if (result.data.held) toast.info(feedCopy.commentHeldToast);
     setText("");
     setReplyTo(null);
@@ -224,6 +240,7 @@ export function FeedComments({
       const next = (current ?? []).filter((entry) => entry.id !== comment.id && entry.parentId !== comment.id);
       return next;
     });
+    refreshAfterMutation();
   }
 
   return (
