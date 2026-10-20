@@ -344,17 +344,36 @@ export function parsePeople(input: unknown): { people: GrantPerson[]; invalid: s
 export function parsePeopleText(text: string): GrantPerson[] {
   const rows: GrantPerson[] = [];
   for (const line of text.split(/\r?\n/)) {
-    let cells = line
-      .split(/[\t;,]/)
-      .map((cell) => cell.trim())
-      .filter(Boolean);
+    const cells: string[] = [];
+    let cell = "";
+    let quoted = false;
+    for (let index = 0; index < line.length; index += 1) {
+      const character = line.charAt(index);
+      if (character === '"') {
+        if (quoted && line.charAt(index + 1) === '"') {
+          cell += '"';
+          index += 1;
+        } else {
+          quoted = !quoted;
+        }
+      } else if (!quoted && /[\t;,]/.test(character)) {
+        cells.push(cell.trim());
+        cell = "";
+      } else {
+        cell += character;
+      }
+    }
+    cells.push(cell.trim());
+    while (cells.length > 0 && !cells.at(-1)) cells.pop();
     if (cells.length === 0) continue;
     const [first = ""] = cells;
     if (cells.length === 1 && /\s/.test(first)) {
       const [email = "", ...rest] = first.split(/\s+/);
-      cells = [email, rest.join(" ")];
+      cells[0] = email;
+      cells[1] = rest.join(" ");
     }
-    const [email = "", name = ""] = cells;
+    const [email = "", ...nameParts] = cells;
+    const name = nameParts.join(", ");
     if (/^(email|e-mail|пошта|адреса)$/i.test(email)) continue;
     rows.push({ email, name });
   }

@@ -65,8 +65,8 @@ export const access = {
   access_grant_from_file: { uk: "З файлу", en: "From a file" },
   access_grant_remove_person: { uk: "Прибрати", en: "Remove" },
   access_grant_people_hint: {
-    uk: "Вставте стовпчик або таблицю (email, ім'я) з Excel чи Google Таблиць просто в перше поле: рядки розкладуться самі. Або завантажте файл csv.",
-    en: "Paste a column or a table (email, name) from Excel or Google Sheets straight into the first field and the lines lay themselves out. Or load a csv file.",
+    uk: "Вставте стовпчик або таблицю з Excel чи Google Таблиць у поле email. Файл CSV, TSV або TXT: один рядок на людину — email і необов’язкове ім’я через кому, крапку з комою або табуляцію (наприклад, anna@example.com, Анна). Заголовок Email / Ім’я можна.",
+    en: "Paste a column or table from Excel or Google Sheets into an email field. CSV, TSV or TXT: one person per row — email and optional name separated by a comma, semicolon or tab (for example, anna@example.com, Anna). An Email / Name header row is allowed.",
   },
   access_grant_program: { uk: "Програма", en: "Program" },
   access_grant_format: { uk: "Формат цієї програми", en: "Format of this program" },

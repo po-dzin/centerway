@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { readStashedTarget, returnQuery, safeReturnTarget } from "./signInReturn";
+import { readStashedTarget, returnQuery, returnTargetFromHere, safeReturnTarget } from "./signInReturn";
 import { PERSONAL_ORIGIN, PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 
 /**
@@ -56,6 +56,54 @@ describe("returnQuery", () => {
 
   it("is empty when there is nothing to carry", () => {
     expect(returnQuery(null)).toBe("");
+  });
+});
+
+describe("returnTargetFromHere", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("keeps the exact deep link, query and fragment for a sign-in wall", () => {
+    vi.stubGlobal("window", {
+      location: {
+        origin: PERSONAL_ORIGIN,
+        pathname: "/learn/way21/breathing",
+        search: "?from=shared",
+        hash: "#practice-2",
+      },
+    });
+
+    expect(returnTargetFromHere()).toBe(`${PERSONAL_ORIGIN}/learn/way21/breathing?from=shared#practice-2`);
+  });
+
+  it("keeps the personal promo offer and format when returning from sign-in", () => {
+    // A tokenized `/go/way21` resolves to this storefront address before the
+    // sign-in action. Both parameters must survive the auth round trip.
+    vi.stubGlobal("window", {
+      location: {
+        origin: PLATFORM_ORIGIN,
+        pathname: "/programs/way21",
+        search: "?offer_token=personal-token&offer_code=course%3Away21",
+        hash: "",
+      },
+    });
+
+    expect(returnTargetFromHere()).toBe(
+      `${PLATFORM_ORIGIN}/programs/way21?offer_token=personal-token&offer_code=course%3Away21`,
+    );
+  });
+
+  it("keeps an already-carried destination when sign-in is one step away", () => {
+    const destination = `${PLATFORM_ORIGIN}/learn/way21/breathing?from=shared#practice-2`;
+    vi.stubGlobal("window", {
+      location: {
+        origin: PERSONAL_ORIGIN,
+        pathname: "/profile",
+        search: `?next=${encodeURIComponent(destination)}`,
+        hash: "",
+      },
+    });
+
+    expect(returnTargetFromHere()).toBe(destination);
   });
 });
 
