@@ -160,7 +160,7 @@ export function FeedComments({
     const request = ++commentsRequest.current;
     void fetchComments(postId).then((result) => {
       if (request !== commentsRequest.current) return;
-      setComments((current) => (result.ok ? result.data.comments : (current ?? [])));
+      setComments((current) => (result.ok ? result.data.comments : signedIn ? (current ?? []) : []));
     });
     return () => {
       commentsRequest.current += 1;
