@@ -91,3 +91,7 @@ shared canon rule is changed.
   overflow or page errors. With a test Web Share handler, the story command
   handed over `centerway-story.png` (`image/png`, nonempty). OS destination
   selection and actual Instagram/Telegram story editors still require a phone.
+- A comment read that began before a successful send/reaction/removal can no
+  longer overwrite that mutation when its older response arrives; the component
+  invalidates the read and reconciles from the server. Failed refreshes retain
+  the comments already visible.
