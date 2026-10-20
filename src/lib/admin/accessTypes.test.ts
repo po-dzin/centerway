@@ -252,6 +252,22 @@ describe("parsePeopleText", () => {
     ]);
   });
 
+  it("reads quoted CSV exports, including commas and escaped quotes in names", () => {
+    expect(
+      parsePeopleText('\uFEFF"Email","Ім\'я"\r\n"anna@x.co","Анна, Марія"\r\n"taras@x.co","Тарас ""Тихий"""'),
+    ).toEqual([
+      { email: "anna@x.co", name: "Анна, Марія" },
+      { email: "taras@x.co", name: 'Тарас "Тихий"' },
+    ]);
+  });
+
+  it("preserves ordinary quotes in unquoted TSV and TXT names", () => {
+    expect(parsePeopleText('anna@x.co\tAnna "Ace"\ntaras@x.co Taras "Tykhyi"')).toEqual([
+      { email: "anna@x.co", name: 'Anna "Ace"' },
+      { email: "taras@x.co", name: 'Taras "Tykhyi"' },
+    ]);
+  });
+
   it("takes the first word of a bare line as the address and the rest as the name", () => {
     expect(parsePeopleText("anna@x.co Анна Коваль\nivan@x.co")).toEqual([
       { email: "anna@x.co", name: "Анна Коваль" },

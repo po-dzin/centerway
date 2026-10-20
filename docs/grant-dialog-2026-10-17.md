@@ -10,9 +10,12 @@ the access tab. Mockup: the claude.ai artifact «Видача доступу».
 Who → program → term → reason, then the link.
 
 - **Who** is a table: address, name, remove. A column or a table pasted from
-  Excel / Google Sheets into any address field, or a csv through «З файлу»,
-  lays itself out as lines (`parsePeopleText`); an address already on a line is
-  not added again but gives it its name. Up to `BULK_GRANT_LIMIT` (200).
+  Excel / Google Sheets into any address field, or a CSV, TSV or TXT file
+  through «З файлу», lays itself out as lines (`parsePeopleText`). Each row is
+  `email` plus optional `name`, separated by a comma, semicolon or tab; an
+  `Email` / `Ім'я` header is allowed. Quoted CSV fields and escaped quotes in
+  names are supported. An address already on a line is not added again but
+  gives it its name. Up to `BULK_GRANT_LIMIT` (200).
   Five complete rows fit before this table scrolls; the sixth adds its own
   scroll, with the two-field mobile row counted as one person. The shared
   `AdminModal` stays below the visible header with a DS medium gap and keeps
@@ -56,6 +59,11 @@ fixed-price links remain valid. The 48-hour timer starts on first link open.
 The link names the program and format, so the storefront and checkout use the
 same offer code. The term is the selected format's and cannot be overridden
 here.
+
+Each issued result shows its full personal URL next to «Копіювати», so the
+operator can verify or select it without relying on clipboard access. The URL
+contains both `offer_token` and `offer_code` and opens the storefront at the
+personal price.
 
 ## Grant and promo regression coverage (2026-10-18)
 

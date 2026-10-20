@@ -839,14 +839,19 @@ function GrantResult({
                   {result.links ? (
                     <td className={surfaces.td}>
                       {row.link ? (
-                        <button
-                          type="button"
-                          onClick={() => onCopy(row.link ?? "")}
-                          className={`${controls.action} cw-surface-2`}
-                        >
-                          <Icon name="copy" size={16} />
-                          {t("access_grant_copy")}
-                        </button>
+                        <div className={access.linkRow}>
+                          <span className={access.linkText}>
+                            <span className={access.linkAddress}>{row.link}</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => onCopy(row.link ?? "")}
+                            className={`${controls.action} cw-surface-2`}
+                          >
+                            <Icon name="copy" size={16} />
+                            {t("access_grant_copy")}
+                          </button>
+                        </div>
                       ) : null}
                     </td>
                   ) : null}
