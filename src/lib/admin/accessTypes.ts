@@ -353,8 +353,14 @@ export function parsePeopleText(text: string): GrantPerson[] {
         if (quoted && line.charAt(index + 1) === '"') {
           cell += '"';
           index += 1;
+        } else if (quoted) {
+          quoted = false;
+        } else if (cell.trim() === "") {
+          cell = "";
+          quoted = true;
         } else {
-          quoted = !quoted;
+          // A quote in an unquoted TXT/TSV field is data, not CSV syntax.
+          cell += character;
         }
       } else if (!quoted && /[\t;,]/.test(character)) {
         cells.push(cell.trim());
