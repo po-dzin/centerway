@@ -133,6 +133,7 @@ export function FeedComments({
 }) {
   const toast = useToast();
   const [comments, setComments] = useState<(FeedComment & { held?: boolean })[] | null>(null);
+  const [failed, setFailed] = useState(false);
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<FeedComment | null>(null);
   const [sending, setSending] = useState(false);
@@ -153,14 +154,25 @@ export function FeedComments({
     const request = ++commentsRequest.current;
     const result = await fetchComments(postId);
     if (request !== commentsRequest.current) return;
-    setComments((current) => (result.ok ? result.data.comments : (current ?? [])));
+    setFailed(!result.ok);
+    if (result.ok) setComments(result.data.comments);
   }, [postId]);
 
   useEffect(() => {
     const request = ++commentsRequest.current;
     void fetchComments(postId).then((result) => {
       if (request !== commentsRequest.current) return;
-      setComments((current) => (result.ok ? result.data.comments : signedIn ? (current ?? []) : []));
+      /* A failed read is not an empty thread (2026-10-21): turning it into
+         `[]` told the card «0 коментарів» under a post that had them. It
+         keeps what is shown, or says it could not load; a reader who signed
+         out loses their own held comments, which only they could see. */
+      if (result.ok) {
+        setFailed(false);
+        setComments(result.data.comments);
+      } else {
+        setFailed(true);
+        if (!signedIn) setComments((current) => current?.filter((comment) => !comment.held) ?? null);
+      }
     });
     return () => {
       commentsRequest.current += 1;
@@ -245,7 +257,18 @@ export function FeedComments({
 
   return (
     <section data-no-open className={styles.comments} aria-label="Коментарі">
-      {comments === null ? <p className={styles.guestLine}>{feedCopy.loading}</p> : null}
+      {comments === null ? (
+        failed ? (
+          <p className={styles.guestLine}>
+            {feedCopy.commentsLoadFailed}{" "}
+            <button className={styles.commentAction} type="button" onClick={() => void loadComments()}>
+              {feedCopy.retry}
+            </button>
+          </p>
+        ) : (
+          <p className={styles.guestLine}>{feedCopy.loading}</p>
+        )
+      ) : null}
       {top.length > 0 ? (
         <ul className={styles.commentList}>
           {(expanded ? top : top.slice(-2)).map((comment) => {
