@@ -1241,8 +1241,16 @@ export async function listComments(db: Db, postId: string, me: string | null): P
         .select("comment_id, emoji, auth_user_id")
         .in("comment_id", [...visibleIds])
     : { data: [], error: null };
-  if (reactionError) throw new Error(`feed_reactions_read_failed:${reactionError.message}`);
-  const counts = (reactions ?? []) as { comment_id: string; emoji: string; auth_user_id: string }[];
+  /* THE THREAD OUTLIVES ITS REACTIONS (2026-10-21). A failed reactions read
+     used to throw the whole thread away, and the card then drew «0» under a
+     post that had comments. The words are what the reader came for; the
+     emoji under them are a garnish the next read can bring back. */
+  if (reactionError) console.error("feed_comment_reactions_read_failed:", reactionError.message);
+  const counts = (reactionError ? [] : (reactions ?? [])) as {
+    comment_id: string;
+    emoji: string;
+    auth_user_id: string;
+  }[];
   return rows
     .filter((row) => !row.parent_id || visibleIds.has(row.parent_id))
     .map((row) => {
@@ -1619,7 +1627,7 @@ export async function listComposerCourses(db: Db, author: FeedAuthor & { userId:
 /* ─────────────────────────── shares (G 17.10) ─────────────────────────── */
 
 /**
- * «Поділитися» counts one per account (supabase/migrations/20261017180000_feed_shares.sql):
+ * «Поділитися» counts one per account (supabase/migrations/20261017180001_feed_shares.sql):
  * the first share of a post by a person writes a row, every later one is the
  * same row. A guest may share; without an account it cannot be told apart,
  * so it does not count.

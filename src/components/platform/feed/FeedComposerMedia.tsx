@@ -17,6 +17,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
 import { accessToken } from "@/components/auth/authorizedFetch";
+import { PhotoViewer } from "@/components/platform/PhotoViewer";
 import { youtubeIdFrom } from "@/lms-core";
 import {
   FEED_AUDIO_MAX_BYTES,
@@ -32,7 +33,6 @@ import type { UploadedMedia } from "@/lib/feed/upload";
 
 import { clockOf, composerCopy } from "./composerCopy";
 import { ComposerPopover } from "./FeedComposerMenus";
-import { FeedPhotoViewer } from "./FeedPhotoViewer";
 import { shrinkPhoto } from "./shrinkPhoto";
 import { signClip, uploadFeedMedia, type FeedResult } from "./feedApi";
 import styles from "./FeedComposer.module.css";
@@ -302,13 +302,12 @@ export function MediaStrip({
   return (
     <div className={`${styles.strip} cw-scroll-rail`}>
       {viewing !== null && photos[viewing] ? (
-        <FeedPhotoViewer
-          photos={photos.map((photo) => ({
+        <PhotoViewer
+          photos={photos.map((photo, index) => ({
             src: photo.preview,
-            path: photo.path ?? "",
-            w: photo.w ?? 0,
-            h: photo.h ?? 0,
-            spoiler: false,
+            alt: `Фото ${index + 1}`,
+            w: photo.w,
+            h: photo.h,
           }))}
           start={viewing}
           onClose={() => setViewing(null)}

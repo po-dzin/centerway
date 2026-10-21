@@ -18,6 +18,7 @@ import { useToast } from "@/components/ToastProvider";
 import { FEED_COMMENT_MAX, feedPostPath } from "@/lib/feed/model";
 import type { FeedComment } from "@/lib/feed/server";
 
+import { commentsAfterRead } from "./commentsRead";
 import { feedCopy, relativeTime } from "./copy";
 import { addComment, fetchComments, removeComment, toggleCommentReaction } from "./feedApi";
 import { FeedReactions } from "./FeedReactions";
@@ -133,6 +134,7 @@ export function FeedComments({
 }) {
   const toast = useToast();
   const [comments, setComments] = useState<(FeedComment & { held?: boolean })[] | null>(null);
+  const [failed, setFailed] = useState(false);
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<FeedComment | null>(null);
   const [sending, setSending] = useState(false);
@@ -153,14 +155,20 @@ export function FeedComments({
     const request = ++commentsRequest.current;
     const result = await fetchComments(postId);
     if (request !== commentsRequest.current) return;
-    setComments((current) => (result.ok ? result.data.comments : (current ?? [])));
+    setFailed(!result.ok);
+    setComments((current) =>
+      commentsAfterRead(current, result.ok ? { ok: true, comments: result.data.comments } : { ok: false }, true),
+    );
   }, [postId]);
 
   useEffect(() => {
     const request = ++commentsRequest.current;
     void fetchComments(postId).then((result) => {
       if (request !== commentsRequest.current) return;
-      setComments((current) => (result.ok ? result.data.comments : signedIn ? (current ?? []) : []));
+      setFailed(!result.ok);
+      setComments((current) =>
+        commentsAfterRead(current, result.ok ? { ok: true, comments: result.data.comments } : { ok: false }, signedIn),
+      );
     });
     return () => {
       commentsRequest.current += 1;
@@ -245,7 +253,18 @@ export function FeedComments({
 
   return (
     <section data-no-open className={styles.comments} aria-label="Коментарі">
-      {comments === null ? <p className={styles.guestLine}>{feedCopy.loading}</p> : null}
+      {comments === null ? (
+        failed ? (
+          <p className={styles.guestLine}>
+            {feedCopy.commentsLoadFailed}{" "}
+            <button className={styles.commentAction} type="button" onClick={() => void loadComments()}>
+              {feedCopy.retry}
+            </button>
+          </p>
+        ) : (
+          <p className={styles.guestLine}>{feedCopy.loading}</p>
+        )
+      ) : null}
       {top.length > 0 ? (
         <ul className={styles.commentList}>
           {(expanded ? top : top.slice(-2)).map((comment) => {

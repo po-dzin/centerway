@@ -45,9 +45,6 @@ export const feedCopy = {
   remove: "Видалити",
   edit: "Редагувати",
   viewerLabel: "Фото з допису",
-  viewerClose: "Закрити",
-  viewerPrev: "Попереднє фото",
-  viewerNext: "Наступне фото",
   backToFeed: "До стрічки",
   pin: "Закріпити",
   unpin: "Відкріпити",
@@ -65,6 +62,8 @@ export const feedCopy = {
   commentHeld: "Чекає перевірки команди: поки бачите тільки ви.",
   commentHeldToast: "Коментар чекає перевірки команди.",
   commentFailed: "Не вдалося надіслати коментар.",
+  commentsLoadFailed: "Не вдалося завантажити коментарі.",
+  retry: "Ще раз",
 
   signInTo: "Увійдіть, щоб реагувати, коментувати й позначати.",
   signIn: "Увійти",

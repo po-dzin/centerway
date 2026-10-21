@@ -50,7 +50,7 @@ export const platformNav: NavItem[] = [
  * The bar on the personal host.
  *
  * `my` is an application rather than a public route map: it keeps only the
- * learner shelf and authoring workspace. Public navigation belongs to `www`
+ * learner shelf and authoring workspace, plus «Стрічка». Public navigation belongs to `www`
  * and is deliberately not repeated over a person's own courses or lessons.
  */
 export const builderNavItem: NavItem = { label: "Майстерня", href: "/build", match: "prefix" };
@@ -58,6 +58,11 @@ export const builderNavItem: NavItem = { label: "Майстерня", href: "/bu
 export const personalNav: NavItem[] = [
   { label: "Бібліотека", href: LEARNING_SHELF_HREF, match: "exact" },
   builderNavItem,
+  /* THE ONE PUBLIC ROOM IN THIS BAR (G, 18.10). «Стрічка» lives on `www`, so on
+     `my` the surface resolver turns this into an absolute link there; it is
+     here because what the authors say now is the place a learner or an author
+     goes between their own rooms, not a stop on the public route map. */
+  { label: "Стрічка", href: "/feed", match: "prefix" },
 ];
 
 /** The account switcher's learning destination; not a public route-map item. */
