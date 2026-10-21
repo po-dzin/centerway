@@ -1627,7 +1627,7 @@ export async function listComposerCourses(db: Db, author: FeedAuthor & { userId:
 /* ─────────────────────────── shares (G 17.10) ─────────────────────────── */
 
 /**
- * «Поділитися» counts one per account (supabase/migrations/20261017180000_feed_shares.sql):
+ * «Поділитися» counts one per account (supabase/migrations/20261017180001_feed_shares.sql):
  * the first share of a post by a person writes a row, every later one is the
  * same row. A guest may share; without an account it cannot be told apart,
  * so it does not count.
