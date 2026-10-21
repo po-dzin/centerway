@@ -126,6 +126,19 @@ const nextConfig: NextConfig = {
    * are fetched by the browser through `[brand]/[...path]`, which is the one
    * function that keeps them.
    */
+  /**
+   * The feed's share card reads its fonts and the brand mark from disk at
+   * request time; tracing does not follow a path built at runtime.
+   */
+  outputFileTracingIncludes: {
+    "/api/feed/[id]/card": [
+      "./src/lib/feed/og-fonts/*.ttf",
+      "./public/cw/brand/cw-mark.svg",
+      "./public/cw/brand/cw-wordmark-light.svg",
+      "./public/cw/brand/cw-wordmark-dark.svg",
+    ],
+  },
+
   outputFileTracingExcludes: {
     "/**/*": ["src/landing-static/legacy/**"],
     ...Object.fromEntries(

@@ -65,7 +65,13 @@ export function feedAudioExtension(mime: string): string | null {
 }
 
 export type FeedPhotoStored = { path: string; w: number; h: number; spoiler: boolean };
-export type FeedAudioStored = { path: string; durationSec: number; mime: string };
+/**
+ * `peaks`: the recording's loudness in `FEED_AUDIO_PEAKS` steps, 0–100, measured
+ * in the composer from the file itself — the waveform the player draws
+ * (G 2026-10-21). Absent on audio posted before it; the player then draws a
+ * quiet line, never an invented shape.
+ */
+export type FeedAudioStored = { path: string; durationSec: number; mime: string; peaks?: number[] };
 export type FeedClipStored = { path: string; durationSec: number; w: number; h: number; mime: string };
 export type FeedMediaStored = {
   photos?: FeedPhotoStored[];
@@ -90,6 +96,16 @@ export const EMPTY_FEED_MEDIA: FeedMedia = { photos: [], video: null, audio: nul
 
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const PHOTO_FILE = /^(1600|640)\.webp$|^original\.gif$/;
+/** How many loudness steps an audio's waveform has. */
+export const FEED_AUDIO_PEAKS = 48;
+
+/** `peaks` as stored: exactly `FEED_AUDIO_PEAKS` whole numbers 0–100, or nothing. */
+export function normalizeFeedPeaks(value: unknown): number[] | undefined {
+  if (!Array.isArray(value) || value.length !== FEED_AUDIO_PEAKS) return undefined;
+  if (!value.every((peak) => typeof peak === "number" && Number.isFinite(peak))) return undefined;
+  return value.map((peak: number) => Math.min(100, Math.max(0, Math.round(peak))));
+}
+
 const AUDIO_FILE = /^audio\.(webm|ogg|m4a|mp3)$/;
 const CLIP_FILE = /^clip\.(mp4|webm|mov)$/;
 
@@ -172,7 +188,8 @@ export function checkFeedMedia(input: unknown, authorId: string): { media: FeedM
     if (!(audio.path as string).endsWith(`.${feedAudioExtension(mime)}`)) return { error: "media_invalid" };
     if (duration === null || duration < 1) return { error: "media_invalid" };
     if (duration > FEED_AUDIO_MAX_SECONDS) return { error: "media_audio_too_long" };
-    media.audio = { path: audio.path as string, durationSec: duration, mime };
+    const peaks = normalizeFeedPeaks(audio.peaks);
+    media.audio = { path: audio.path as string, durationSec: duration, mime, ...(peaks ? { peaks } : {}) };
   }
 
   return { media };
@@ -224,6 +241,7 @@ export function readFeedMedia(stored: unknown, base?: string): FeedMedia {
             path: audio.path,
             mime: audio.mime,
             durationSec: typeof audio.durationSec === "number" ? audio.durationSec : 0,
+            ...(normalizeFeedPeaks(audio.peaks) ? { peaks: normalizeFeedPeaks(audio.peaks) } : {}),
             src: feedMediaUrl(audio.path, base),
           }
         : null,

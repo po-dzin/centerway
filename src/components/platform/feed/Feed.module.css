@@ -429,35 +429,117 @@ a.face {
   margin: 0;
 }
 
+/* A post's audio (G 2026-10-21): the platform's own player — FeedAudio.tsx. */
 .audio {
   display: grid;
-  gap: var(--cw-space-2xs);
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--cw-space-sm);
+  align-items: center;
   margin: 0;
-  padding: var(--cw-space-xs) var(--cw-space-sm);
+  padding: var(--cw-space-sm);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
 }
 
-.audioLabel {
+.audioPlay {
+  display: grid;
+  place-items: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  border: 0;
+  border-radius: var(--cw-radius-md);
+  color: var(--cw-btn-primary-text);
+  background: var(--cw-btn-primary-bg);
+  cursor: pointer;
+  transition: background-color var(--cw-motion-state) var(--cw-ease-state);
+}
+
+@media (hover: hover) {
+  .audioPlay:hover {
+    background: var(--cw-btn-primary-bg-hover);
+  }
+
+  .audioSpeed:hover {
+    color: var(--cw-platform-text);
+    background: var(--cw-mat-hover-bg);
+  }
+}
+
+.audioBody {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-inline-size: 0;
+}
+
+.audioHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+}
+
+.audioTitle {
+  overflow: hidden;
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.audioSpeed {
+  flex: none;
+  padding: 0 var(--cw-space-xs);
+  border: 1px solid var(--cw-platform-border);
+  border-radius: var(--cw-radius-pill);
   color: var(--cw-platform-muted);
+  background: transparent;
+  font-family: var(--cw-font-data);
   font-size: var(--ds-type-label-size);
   font-variant-numeric: tabular-nums;
+  cursor: pointer;
 }
 
-.audioPlayer {
+.audioWave {
+  block-size: 1.75rem;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.audioWave svg {
+  display: block;
   inline-size: 100%;
-  block-size: 2.5rem;
-  color-scheme: light;
+  block-size: 100%;
+  overflow: visible;
 }
 
-:global([data-cw-theme="dark"]) .audioPlayer {
-  color-scheme: dark;
+.audioWave path {
+  fill: color-mix(in srgb, var(--cw-platform-text) 26%, transparent);
 }
 
-@media (prefers-color-scheme: dark) {
-  :global(:root:not([data-cw-theme="light"])) .audioPlayer {
-    color-scheme: dark;
-  }
+.audioWave path.audioOn {
+  fill: var(--cw-platform-accent);
+}
+
+.audioLine path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--cw-platform-text) 30%, transparent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.audioLine path.audioOn {
+  fill: none;
+  stroke: var(--cw-platform-accent);
+  stroke-width: 2.4;
+}
+
+.audioTime {
+  display: flex;
+  justify-content: space-between;
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  font-variant-numeric: tabular-nums;
 }
 
 /* A reader's own mark, the lesson reader's highlight in the feed. */

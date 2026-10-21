@@ -21,14 +21,16 @@
  * with keyboard and screen-reader support.
  */
 
-import { useState, type CSSProperties } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 
 import { Icon } from "@/components/Icon";
 import { BlockRenderer } from "@/components/lms/LessonBlocks";
 import { PhotoViewer } from "@/components/platform/PhotoViewer";
-import type { FeedMedia as Media, FeedPhoto } from "@/lib/feed/media";
+import type { FeedClip, FeedMedia as Media, FeedPhoto } from "@/lib/feed/media";
 
 import { feedCopy } from "./copy";
+import { FeedAudio } from "./FeedAudio";
+import { claimFeedPlayback, useFeedMediaSession, type FeedMediaAbout } from "./mediaSession";
 import styles from "./Feed.module.css";
 
 const NOOP = () => {};
@@ -100,7 +102,34 @@ function Photo({
   );
 }
 
-export function FeedMedia({ media, postId }: { media: Media; postId: string }) {
+/** The author's own short clip, played by the browser's player at its own proportions; it tells the phone what is playing, like the audio. */
+function Clip({ clip, about }: { clip: FeedClip; about: FeedMediaAbout }) {
+  const player = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+  useFeedMediaSession(player, about, playing);
+  return (
+    <video
+      ref={player}
+      data-no-open=""
+      className={styles.postClip}
+      style={{ "--clip-ratio": `${clip.w} / ${clip.h}`, "--clip-k": clip.w / clip.h } as CSSProperties}
+      controls
+      playsInline
+      preload="metadata"
+      aria-label={feedCopy.postVideo}
+      onPlay={(event) => {
+        claimFeedPlayback(event.currentTarget);
+        setPlaying(true);
+      }}
+      onPause={() => setPlaying(false)}
+      onEnded={() => setPlaying(false)}
+    >
+      <source src={clip.src} type={clip.mime} />
+    </video>
+  );
+}
+
+export function FeedMedia({ media, postId, about }: { media: Media; postId: string; about: FeedMediaAbout }) {
   const { photos, video, clip, audio } = media;
   // A spoiler stays out of the viewer until its reader has lifted the veil.
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set());
@@ -160,33 +189,9 @@ export function FeedMedia({ media, postId }: { media: Media; postId: string }) {
         </div>
       ) : null}
 
-      {clip ? (
-        /* The author's own short clip, played by the browser's player at its own proportions. */
-        <video
-          data-no-open=""
-          className={styles.postClip}
-          style={{ "--clip-ratio": `${clip.w} / ${clip.h}`, "--clip-k": clip.w / clip.h } as CSSProperties}
-          controls
-          playsInline
-          preload="metadata"
-          aria-label={feedCopy.postVideo}
-        >
-          <source src={clip.src} type={clip.mime} />
-        </video>
-      ) : null}
+      {clip ? <Clip clip={clip} about={about} /> : null}
 
-      {audio ? (
-        <figure className={styles.audio} data-no-open="">
-          <figcaption className={styles.audioLabel}>
-            {audio.durationSec > 0
-              ? `${feedCopy.audio} · ${Math.floor(audio.durationSec / 60)}:${String(Math.round(audio.durationSec % 60)).padStart(2, "0")}`
-              : feedCopy.audio}
-          </figcaption>
-          <audio className={styles.audioPlayer} controls preload="metadata">
-            <source src={audio.src} type={audio.mime} />
-          </audio>
-        </figure>
-      ) : null}
+      {audio ? <FeedAudio audio={audio} about={about} /> : null}
     </>
   );
 }

@@ -31,6 +31,12 @@ export type PageMetadataInput = {
   imageAlt?: string;
   /** Pixel size of a page-specific `image`, when known; a card needs it to lay the picture out before loading it. */
   imageSize?: { width: number; height: number };
+  /**
+   * What a shared link's card says, where it differs from the page: a feed
+   * post's opening as its headline, under «CenterWay · Стрічка» (G 2026-10-21).
+   * The `<title>` keeps `title` and the brand suffix.
+   */
+  share?: { title?: string; siteName?: string };
   /** Private surfaces: out of the index and out of the sitemap. */
   noindex?: boolean;
   /**
@@ -49,7 +55,8 @@ export type PageMetadataInput = {
  * called this function. The defaults belong on this side of the merge.
  */
 export function pageMetadata(input: PageMetadataInput): Metadata {
-  const { title, description, path, noindex, absoluteTitle } = input;
+  const { title, description, path, noindex, absoluteTitle, share } = input;
+  const cardTitle = share?.title ?? title;
   // The 1200×630 dimensions and the brand alt are true of `cw-og-cover.png`
   // specifically, not of an arbitrary caller-supplied image — a course cover
   // has its own aspect ratio and its own alt text (or none at all).
@@ -66,17 +73,17 @@ export function pageMetadata(input: PageMetadataInput): Metadata {
     description,
     ...(path ? { alternates: { canonical: path } } : {}),
     openGraph: {
-      title,
+      title: cardTitle,
       description,
       type: "website",
-      siteName: BRAND.name,
+      siteName: share?.siteName ?? BRAND.name,
       locale: BRAND_LOCALE,
       ...(path ? { url: path } : {}),
       images: [image],
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: cardTitle,
       description,
       images: [image.url],
     },

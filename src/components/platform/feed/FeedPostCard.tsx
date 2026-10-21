@@ -41,6 +41,7 @@ import {
   FEED_TOPICS_MAX,
   feedAuthorPath,
   feedPostPath,
+  feedHeadline,
   feedShareImage,
   isPlatformAuthor,
   type ReactionCount,
@@ -188,6 +189,13 @@ export function FeedPostCard({
   const [note, setNote] = useState("");
   const platform = isPlatformAuthor(post.author);
   const router = useRouter();
+  /* What the lock screen shows while this post's audio or clip plays. */
+  const playing = {
+    title: feedHeadline(feedPlainText(post.body)).title,
+    author: post.author.name,
+    platform,
+    artwork: feedShareImage(post)?.url ?? post.author.photo?.src ?? null,
+  };
 
   /* A press on the words or on an empty place of the card opens the post's own
      page, where its thread is (G 2026-10-18, as in Threads). Never while the
@@ -517,7 +525,7 @@ export function FeedPostCard({
 
       {aside}
 
-      <FeedMedia media={post.media ?? EMPTY_FEED_MEDIA} postId={post.id} />
+      <FeedMedia media={post.media ?? EMPTY_FEED_MEDIA} postId={post.id} about={playing} />
 
       {tokens.length ? (
         <div className={styles.bodyFold}>
@@ -622,7 +630,8 @@ export function FeedPostCard({
         <FeedActions
           postId={post.id}
           shareText={feedPlainText(post.body)}
-          shareAuthor={post.author.name}
+          shareAuthor={{ name: post.author.name, photo: post.author.photo?.src ?? null, platform }}
+          shareWhen={when}
           shareImage={feedShareImage(post)?.url ?? null}
           reactions={reactions}
           busy={busy}

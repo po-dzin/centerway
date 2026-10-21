@@ -33,6 +33,7 @@ export const feedCopy = {
   storyPreparing: "Готуємо картку…",
   storyFailed: "Не вдалося підготувати картку. Спробуйте ще раз.",
   storyDownload: "Зберегти картку для сторис",
+  storyLinkCopied: "Посилання скопійоване: додайте в сторіс стікер «Посилання»",
   commentsNone: "Коментувати",
   commentsHide: "Сховати коментарі",
   writeComment: "Написати коментар…",
@@ -92,6 +93,11 @@ export const feedCopy = {
   spoilerLabel: "Показати фото, приховане як спойлер",
   postVideo: "Відео допису",
   audio: "Аудіо",
+  audioBy: (author: string, length: string) => `Голос: ${author} · ${length}`,
+  audioPlay: "Слухати",
+  audioPause: "Пауза",
+  audioSeek: "Перемотати аудіо",
+  audioSpeed: (speed: number) => `Швидкість ${String(speed).replace(".", ",")}×. Змінити`,
 
   reactionsTotal: (total: number, mine: number) =>
     total > 0 ? `Реакції, ${total}${mine > 0 ? `, ваших ${mine} з 3` : ""}. Додати реакцію` : "Додати реакцію",

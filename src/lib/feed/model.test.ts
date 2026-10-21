@@ -5,6 +5,8 @@ import {
   reactionNameIds,
   excerptOf,
   feedFilterQuery,
+  feedHeadline,
+  feedShareDescription,
   feedShareImage,
   isFeedEmoji,
   isFeedTopic,
@@ -154,4 +156,39 @@ describe("feedShareImage", () => {
 it("accepts all three new feed topics in posts and shared filters", () => {
   expect(normalizeFeedTopics(["art", "meaning", "technology"])).toEqual(["art", "meaning", "technology"]);
   expect(feedFilterQuery(parseFeedFilter({ topic: "technology,meaning,art" }))).toBe("topic=art,meaning,technology");
+});
+
+describe("shared link headline", () => {
+  it("takes a short first line as it is, emoji and capitals included", () => {
+    expect(feedHeadline("🔥 ЇСТИ СОЛОДКЕ: ЦЕ РЕАЛЬНО? 🍬\nЗ’їли десерт і відчули провину?")).toEqual({
+      title: "🔥 ЇСТИ СОЛОДКЕ: ЦЕ РЕАЛЬНО? 🍬",
+      rest: "З’їли десерт і відчули провину?",
+    });
+  });
+
+  it("takes the first sentence of a long line, keeping the emoji right after its stop", () => {
+    const text = `🔥 ЇСТИ СОЛОДКЕ ТА НЕ ГЛАДШАТИ: ЦЕ РЕАЛЬНО? 🍬 З’їли десерт і одразу відчули провину? ${"Далі. ".repeat(10)}`;
+    const { title, rest } = feedHeadline(text);
+    expect(title).toBe("🔥 ЇСТИ СОЛОДКЕ ТА НЕ ГЛАДШАТИ: ЦЕ РЕАЛЬНО? 🍬");
+    expect(rest.startsWith("З’їли десерт")).toBe(true);
+  });
+
+  it("cuts a long opening with no early stop at a word", () => {
+    const text = "слово ".repeat(40).trim();
+    const { title, rest } = feedHeadline(text);
+    expect(title.endsWith("слово…")).toBe(true);
+    expect(title.length).toBeLessThanOrEqual(91);
+    expect(rest.length).toBeGreaterThan(0);
+  });
+
+  it("names the author before the words, but not the platform", () => {
+    expect(feedShareDescription({ author: { name: "Євгеній", slug: "evgeniy" } }, "Далі текст")).toBe(
+      "Євгеній: Далі текст",
+    );
+    expect(feedShareDescription({ author: { name: "CenterWay", slug: "centerway" } }, "Далі текст")).toBe("Далі текст");
+    expect(feedShareDescription({ author: { name: "Євгеній", slug: "evgeniy" } }, "")).toBe("Євгеній");
+    expect(feedShareDescription({ author: { name: "CenterWay", slug: "centerway" } }, "Один\n\nДва  три")).toBe(
+      "Один\nДва три",
+    );
+  });
 });

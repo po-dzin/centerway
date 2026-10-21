@@ -11,7 +11,15 @@ import { notFound } from "next/navigation";
 import { FeedPostPage } from "@/components/platform/feed/FeedPage";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import { feedPlainText } from "@/lib/feed/format";
-import { FEED_PATH, excerptOf, feedPostPath, feedShareImage } from "@/lib/feed/model";
+import {
+  FEED_CARD_SIZE,
+  FEED_PATH,
+  FEED_SHARE_SITE,
+  feedCardPath,
+  feedHeadline,
+  feedPostPath,
+  feedShareDescription,
+} from "@/lib/feed/model";
 import { readFeedPost } from "@/lib/feed/page";
 import { pageMetadata } from "@/lib/seo/metadata";
 
@@ -23,20 +31,19 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { id } = await params;
   const post = await readFeedPost(id);
   if (!post) return {};
-  /* The words as a reader sees them, not the stored markup; the picture is
-     the post's own first visible one (`feedShareImage`), else the brand cover. */
-  const image = feedShareImage(post);
+  /* A shared link reads as the post (G 2026-10-21): its opening, as the author
+     wrote it, is the card's headline under «CenterWay · Стрічка»; the words go
+     on from there after the author's name; the picture is the post's own card
+     (`/api/feed/:id/card`) — its photo, or its opening words — with the mark. */
+  const { title, rest } = feedHeadline(feedPlainText(post.body));
   return pageMetadata({
     title: `${post.author.name} у Стрічці`,
-    description: excerptOf(feedPlainText(post.body), 150),
+    description: feedShareDescription(post, rest),
     path: feedPostPath(post.id),
-    ...(image
-      ? {
-          image: image.url,
-          imageAlt: image.alt,
-          ...(image.width && image.height ? { imageSize: { width: image.width, height: image.height } } : {}),
-        }
-      : {}),
+    share: { title, siteName: FEED_SHARE_SITE },
+    image: feedCardPath(post.id),
+    imageAlt: title,
+    imageSize: FEED_CARD_SIZE,
   });
 }
 

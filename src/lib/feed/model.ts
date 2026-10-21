@@ -256,6 +256,71 @@ export function excerptOf(text: string, max = FEED_EXCERPT_CHARS): string {
   return `${(space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,.;:—–-]+$/, "")}…`;
 }
 
+/* ─────────────────────────── shared link ─────────────────────────── */
+
+/** The site line of a shared post's card — once, the brand and the place. */
+export const FEED_SHARE_SITE = "CenterWay · Стрічка";
+
+/** A post's share card, 1200×630: what Telegram and messengers show under the link. */
+export const FEED_CARD_SIZE = { width: 1200, height: 630 };
+
+export function feedCardPath(id: string): string {
+  return `/api/feed/${id}/card`;
+}
+
+/** The longest opening a shared post uses as its headline. */
+export const FEED_HEADLINE_MAX = 90;
+
+/** An emoji, or a joiner or selector that is part of one. */
+const EMOJI_TAIL = /^[\s\p{Extended_Pictographic}\u200d\ufe0f]*/u;
+
+/**
+ * A post has no title field; a shared link needs one (G 2026-10-21). Its
+ * opening is taken as the author wrote it — emoji and capitals stay:
+ * the first line when it is short, otherwise the first sentence (with the
+ * emoji right after its stop), otherwise the opening cut at a word. `rest` is
+ * what follows, so a preview never says the headline twice.
+ */
+export function feedHeadline(plain: string): { title: string; rest: string } {
+  const text = plain.trim();
+  const newline = text.indexOf("\n");
+  const line = (newline < 0 ? text : text.slice(0, newline)).trim();
+  if (line && line.length <= FEED_HEADLINE_MAX) {
+    return { title: line, rest: newline < 0 ? "" : text.slice(newline + 1).trim() };
+  }
+  const stop = /[.!?…]+/g;
+  let match: RegExpExecArray | null;
+  while ((match = stop.exec(line)) !== null) {
+    let end = match.index + match[0].length;
+    end += (EMOJI_TAIL.exec(line.slice(end))?.[0] ?? "").trimEnd().length;
+    if (end > FEED_HEADLINE_MAX) break;
+    const title = line.slice(0, end).trim();
+    if (title) return { title, rest: text.slice(end).trim() };
+  }
+  const cut = text.slice(0, FEED_HEADLINE_MAX);
+  const space = cut.lastIndexOf(" ");
+  const at = space > FEED_HEADLINE_MAX * 0.6 ? space : FEED_HEADLINE_MAX;
+  return { title: `${text.slice(0, at).replace(/[\s,.;:—–-]+$/, "")}…`, rest: text.slice(at).trim() };
+}
+
+/**
+ * The words under a shared link's headline: the post goes on where the
+ * headline ended, after its author's name — except on the platform's own
+ * post, whose name the preview already carries as the site.
+ */
+export function feedShareDescription(post: { author: { name: string; slug: string } }, rest: string): string {
+  // The author's line breaks stay (G 2026-10-21); whether a preview keeps them is the app's choice.
+  const lines = rest
+    .split(/\n+/)
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  const words = lines.length
+    ? excerptOf(lines.join(" ¶ "), 150).replaceAll(" ¶ ", "\n").replaceAll("¶", "").trim()
+    : "";
+  if (isPlatformAuthor(post.author)) return words;
+  return words ? `${post.author.name}: ${words}` : post.author.name;
+}
+
 /**
  * The picture a shared link to a post shows (Telegram, messengers, search): what
  * the post itself carries, in this order — its first photo that is not a

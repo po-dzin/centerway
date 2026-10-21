@@ -354,6 +354,11 @@ export const ICONS = {
     group: "Content",
     d: ["M9.2 6.2 17.8 12l-8.6 5.8z"],
   },
+  // Two strokes where `play` has its triangle: the feed's audio, playing (2026-10-21).
+  pause: {
+    group: "Content",
+    d: ["M9 6.4v11.2", "M15 6.4v11.2"],
+  },
   /* The feed's media (2026-10-17). A post carries photos, one video by link and
      one audio, and each had been borrowing a glyph that already meant something
      else: `view-cards` is the catalogue's layout switch, `play` is a lesson's
