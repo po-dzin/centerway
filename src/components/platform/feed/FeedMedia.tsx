@@ -25,10 +25,10 @@ import { useState, type CSSProperties } from "react";
 
 import { Icon } from "@/components/Icon";
 import { BlockRenderer } from "@/components/lms/LessonBlocks";
+import { PhotoViewer } from "@/components/platform/PhotoViewer";
 import type { FeedMedia as Media, FeedPhoto } from "@/lib/feed/media";
 
 import { feedCopy } from "./copy";
-import { FeedPhotoViewer } from "./FeedPhotoViewer";
 import styles from "./Feed.module.css";
 
 const NOOP = () => {};
@@ -131,7 +131,17 @@ export function FeedMedia({ media, postId }: { media: Media; postId: string }) {
         </div>
       ) : null}
       {opened !== null && opened >= 0 ? (
-        <FeedPhotoViewer photos={viewable} start={opened} onClose={() => setOpened(null)} />
+        <PhotoViewer
+          photos={viewable.map((photo, index) => ({
+            src: photo.src,
+            w: photo.w,
+            h: photo.h,
+            alt: viewable.length === 1 ? feedCopy.photo : feedCopy.photoOf(index + 1, viewable.length),
+          }))}
+          start={opened}
+          label={feedCopy.viewerLabel}
+          onClose={() => setOpened(null)}
+        />
       ) : null}
 
       {video ? (

@@ -7,7 +7,7 @@ import { botCopy } from "@/lib/telegram/tgSupportBotCopy";
 describe("the learning entry", () => {
   it("keeps the public home explicit and the personal bar application-only", () => {
     expect(platformNav[0]).toMatchObject({ label: "Головна", href: "/", match: "exact" });
-    expect(personalNav.map((item) => item.label)).toEqual(["Бібліотека", "Майстерня"]);
+    expect(personalNav.map((item) => item.label)).toEqual(["Бібліотека", "Майстерня", "Стрічка"]);
     expect(personalNav.map((item) => item.href)).not.toContain("/");
   });
 

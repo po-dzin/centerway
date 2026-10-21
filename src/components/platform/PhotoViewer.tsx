@@ -1,8 +1,14 @@
 "use client";
 
 /**
- * A post's photos, full screen (G 2026-10-18): the picture at its own
- * proportions on a dark ground, with arrows and counter on bottom glass islands.
+ * ONE FULL-SCREEN PHOTO VIEWER for the whole platform (G 2026-10-18, made
+ * shared 2026-10-21). It began as the feed's; G asked for the same viewer in
+ * the builder, the library, products, course screenshots and generated images,
+ * so it lives here and takes plain pictures — whoever opens it says what they
+ * are and what the dialog is called.
+ *
+ * The picture at its own proportions on a dark ground, with arrows and the
+ * counter on bottom glass islands.
  *
  * A native `<dialog>` opened modal, so focus stays inside, Escape closes it and
  * the page behind does not scroll. Left and right arrows on the keyboard, and
@@ -13,21 +19,32 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/Icon";
-import type { FeedPhoto } from "@/lib/feed/media";
 
-import { feedCopy } from "./copy";
-import styles from "./Feed.module.css";
+import styles from "./PhotoViewer.module.css";
+
+/** One picture to show: the full rendition, its words, and its size when known. */
+export type ViewerPhoto = { src: string; alt: string; w?: number; h?: number };
+
+const copy = {
+  label: "Фото",
+  close: "Закрити",
+  prev: "Попереднє фото",
+  next: "Наступне фото",
+};
 
 const SWIPE = 48;
 
-export function FeedPhotoViewer({
+export function PhotoViewer({
   photos,
   start,
   onClose,
+  label = copy.label,
 }: {
-  photos: FeedPhoto[];
+  photos: ViewerPhoto[];
   start: number;
   onClose: () => void;
+  /** What the dialog is called for a screen reader, e.g. «Фото з допису». */
+  label?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [index, setIndex] = useState(start);
@@ -58,7 +75,7 @@ export function FeedPhotoViewer({
     <dialog
       ref={dialog}
       className={styles.viewer}
-      aria-label={feedCopy.viewerLabel}
+      aria-label={label}
       tabIndex={-1}
       onClose={onClose}
       onClick={(event) => {
@@ -67,6 +84,8 @@ export function FeedPhotoViewer({
       onKeyDown={(event) => {
         if (event.key === "ArrowLeft") go(-1);
         if (event.key === "ArrowRight") go(1);
+        if (event.key === "Home") setIndex(0);
+        if (event.key === "End") setIndex(last);
       }}
       onTouchStart={(event) => {
         touch.current = event.touches[0]?.clientX ?? null;
@@ -80,38 +99,33 @@ export function FeedPhotoViewer({
         if (from - to > SWIPE) go(1);
       }}
     >
-      <button
-        className={styles.viewerClose}
-        type="button"
-        aria-label={feedCopy.viewerClose}
-        onClick={() => dialog.current?.close()}
-      >
+      <button className={styles.close} type="button" aria-label={copy.close} onClick={() => dialog.current?.close()}>
         <Icon name="close" size={20} />
       </button>
-      {/* eslint-disable-next-line @next/next/no-img-element -- the feed bucket's own rendition */}
+      {/* eslint-disable-next-line @next/next/no-img-element -- each caller's own stored rendition */}
       <img
-        className={styles.viewerImg}
+        className={styles.img}
         src={photo.src}
         width={photo.w || undefined}
         height={photo.h || undefined}
-        alt={feedCopy.photo}
+        alt={photo.alt}
       />
-      <div className={styles.viewerTools}>
+      <div className={styles.tools}>
         {photos.length > 1 ? (
           <>
             <button
-              className={`${styles.viewerStep} ${styles.viewerPrev}`}
+              className={`${styles.step} ${styles.prev}`}
               type="button"
-              aria-label={feedCopy.viewerPrev}
+              aria-label={copy.prev}
               disabled={index === 0}
               onClick={() => go(-1)}
             >
               <Icon name="arrow-left" size={20} />
             </button>
             <button
-              className={`${styles.viewerStep} ${styles.viewerNext}`}
+              className={`${styles.step} ${styles.next}`}
               type="button"
-              aria-label={feedCopy.viewerNext}
+              aria-label={copy.next}
               disabled={index === last}
               onClick={() => go(1)}
             >
@@ -119,7 +133,7 @@ export function FeedPhotoViewer({
             </button>
           </>
         ) : null}
-        <p className={styles.viewerCount} aria-live="polite">
+        <p className={styles.count} aria-live="polite">
           {index + 1} / {photos.length}
         </p>
       </div>

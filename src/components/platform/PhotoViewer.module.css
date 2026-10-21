@@ -1,0 +1,72 @@
+/* The platform's full-screen photo viewer (PhotoViewer.tsx). Moved from the
+   feed's module on 2026-10-21 when the viewer became shared. */
+
+/* Photo canvas has no boundary; floating commands use the shared night glass. */
+.viewer {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+  max-inline-size: none;
+  block-size: 100%;
+  block-size: 100dvh;
+  max-block-size: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  overflow: hidden;
+  background: var(--cw-mat-scrim-ink);
+  color: var(--cw-platform-accent-contrast);
+}
+.viewer::backdrop {
+  background: transparent;
+}
+.img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  min-block-size: 0;
+  object-fit: contain;
+}
+.close,
+.step {
+  composes: base onMedia square from "./PlatformButtons.module.css";
+  border: 0;
+  border-radius: var(--cw-radius-pill);
+}
+.close {
+  position: absolute;
+  inset-block-start: max(var(--cw-space-md), env(safe-area-inset-top, 0px));
+  inset-inline-end: max(var(--cw-space-md), env(safe-area-inset-right, 0px));
+}
+.tools {
+  position: absolute;
+  inset-block-end: max(var(--cw-space-md), env(safe-area-inset-bottom, 0px));
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+}
+.step:disabled {
+  opacity: 0.35;
+}
+.prev {
+  order: 0;
+}
+.next {
+  order: 2;
+}
+.count {
+  composes: onMedia from "./PlatformButtons.module.css";
+  order: 1;
+  margin: 0;
+  padding-inline: var(--cw-space-md);
+  border: 0;
+  border-radius: var(--cw-radius-pill);
+  font-size: var(--ds-type-body-sm-size);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
