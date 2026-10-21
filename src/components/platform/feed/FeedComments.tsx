@@ -18,6 +18,7 @@ import { useToast } from "@/components/ToastProvider";
 import { FEED_COMMENT_MAX, feedPostPath } from "@/lib/feed/model";
 import type { FeedComment } from "@/lib/feed/server";
 
+import { commentsAfterRead } from "./commentsRead";
 import { feedCopy, relativeTime } from "./copy";
 import { addComment, fetchComments, removeComment, toggleCommentReaction } from "./feedApi";
 import { FeedReactions } from "./FeedReactions";
@@ -155,24 +156,19 @@ export function FeedComments({
     const result = await fetchComments(postId);
     if (request !== commentsRequest.current) return;
     setFailed(!result.ok);
-    if (result.ok) setComments(result.data.comments);
+    setComments((current) =>
+      commentsAfterRead(current, result.ok ? { ok: true, comments: result.data.comments } : { ok: false }, true),
+    );
   }, [postId]);
 
   useEffect(() => {
     const request = ++commentsRequest.current;
     void fetchComments(postId).then((result) => {
       if (request !== commentsRequest.current) return;
-      /* A failed read is not an empty thread (2026-10-21): turning it into
-         `[]` told the card «0 коментарів» under a post that had them. It
-         keeps what is shown, or says it could not load; a reader who signed
-         out loses their own held comments, which only they could see. */
-      if (result.ok) {
-        setFailed(false);
-        setComments(result.data.comments);
-      } else {
-        setFailed(true);
-        if (!signedIn) setComments((current) => current?.filter((comment) => !comment.held) ?? null);
-      }
+      setFailed(!result.ok);
+      setComments((current) =>
+        commentsAfterRead(current, result.ok ? { ok: true, comments: result.data.comments } : { ok: false }, signedIn),
+      );
     });
     return () => {
       commentsRequest.current += 1;

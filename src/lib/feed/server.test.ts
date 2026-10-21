@@ -250,6 +250,14 @@ describe("reactions", () => {
 });
 
 describe("comments", () => {
+  it("still returns the thread when comment reactions cannot be read (prod without the table)", async () => {
+    const { post } = await createFeedPost(db, await author(), { body: "Привіт", topic: "focus" });
+    await addComment(db, post.id, READER, { body: "Дякую!" });
+    fake.failures["feed_comment_reactions:select"] = 'relation "public.feed_comment_reactions" does not exist';
+    const thread = await listComments(db, post.id, null);
+    expect(thread.map((entry) => [entry.body, entry.reactions])).toEqual([["Дякую!", []]]);
+  });
+
   it("threads one level, names readers publicly, shows the author as themself, lets the author hide", async () => {
     const { post } = await createFeedPost(db, await author(), { body: "Привіт", topic: "focus" });
     const top = await addComment(db, post.id, READER, { body: "Дякую!" });
