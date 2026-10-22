@@ -187,8 +187,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       cohortStartsOn,
       ref: ref ?? undefined,
       termFromOffer: body.termFromOffer === true ? true : undefined,
-      accessStartsAt: typeof body.accessStartsAt === "string" && body.accessStartsAt.trim() ? body.accessStartsAt.trim() : undefined,
-      referrerEmail: typeof body.referrerEmail === "string" && body.referrerEmail.trim() ? body.referrerEmail.trim() : undefined,
+      accessStartsAt:
+        typeof body.accessStartsAt === "string" && body.accessStartsAt.trim() ? body.accessStartsAt.trim() : undefined,
+      referrerEmail:
+        typeof body.referrerEmail === "string" && body.referrerEmail.trim() ? body.referrerEmail.trim() : undefined,
       actorId: session.user.id,
     });
     // AFTER provisioning, never before: the account may not have existed

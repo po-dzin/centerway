@@ -643,14 +643,21 @@ export function AccessGrantModal({
                   <div className={access.grantMore}>
                     <label className={`${controls.field} ${access.spanFull} ${access.spanCourse}`}>
                       <span className={controls.fieldCaption}>{t("access_grant_from")}</span>
-                      <input type="text" readOnly value={fullDate(format?.cohortStartsOn ?? null)} className={controls.input} />
+                      <input
+                        type="text"
+                        readOnly
+                        value={fullDate(format?.cohortStartsOn ?? null)}
+                        className={controls.input}
+                      />
                     </label>
                     <label className={`${controls.field} ${access.spanFull} ${access.spanCourse}`}>
                       <span className={controls.fieldCaption}>{t("access_grant_deadline")}</span>
                       <input type="text" readOnly value={fullDate(groupEnd)} className={controls.input} />
                     </label>
                   </div>
-                  <p className={controls.hint}>{groupEnd ? t("access_grant_group_hint") : t("access_grant_group_no_term")}</p>
+                  <p className={controls.hint}>
+                    {groupEnd ? t("access_grant_group_hint") : t("access_grant_group_no_term")}
+                  </p>
                 </>
               ) : (
                 <>

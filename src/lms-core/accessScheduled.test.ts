@@ -13,9 +13,7 @@ describe("a seat with a start date", () => {
   });
 
   it("lets a ban or a revoke speak first", () => {
-    expect(accessStateOf({ blockedAt: "2026-11-01T00:00:00Z", startsAt: "2026-12-01T00:00:00Z" }, now)).toBe(
-      "blocked",
-    );
+    expect(accessStateOf({ blockedAt: "2026-11-01T00:00:00Z", startsAt: "2026-12-01T00:00:00Z" }, now)).toBe("blocked");
     expect(accessStateOf({ status: "revoked", startsAt: "2026-12-01T00:00:00Z" }, now)).toBe("revoked");
   });
 });
