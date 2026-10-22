@@ -5,14 +5,14 @@ import { plural } from "@/lib/plural";
 
 import { Icon } from "@/components/Icon";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
-import { blockerTarget } from "./blockerTargets";
+import { blockerTarget, blockerTrail, placeholderSnippet } from "./blockerTargets";
 import styles from "./Builder.module.css";
 
 /* Every code `courseReadiness` can emit. An unlisted code falls through to its
    raw form rather than to a generic phrase — an author reading `lms_ready_x`
    can search for it; an author reading "щось не так" cannot. */
 const BLOCKER_LABELS: Record<string, string> = {
-  lms_ready_placeholder: "Незаповнений маркер",
+  lms_ready_placeholder: "Залишився маркер, який треба замінити текстом",
   lms_ready_invalid_href: "Посилання не веде нікуди",
   lms_ready_invalid_video_id: "Невалідний ID відео",
   lms_ready_invalid_image_src: "Зображення без файлу",
@@ -94,10 +94,18 @@ export function BuilderBlockers({
           const target = blockerTarget(course, blocker);
           return (
             <li key={`${blocker.path}-${index}`} className={styles.blockerItem}>
-              <span className={styles.blockerPath}>{blocker.path}</span>
+              <span className={styles.blockerTrail} title={blocker.path}>
+                {blockerTrail(course, blocker).join(" → ")}
+              </span>
               <span className={styles.blockerDetail}>
                 {BLOCKER_LABELS[blocker.code] ?? blocker.code}
-                {blocker.detail ? ` — ${blocker.detail}` : ""}
+                {blocker.code === "lms_ready_placeholder"
+                  ? placeholderSnippet(blocker.detail)
+                    ? `: ${placeholderSnippet(blocker.detail)}`
+                    : ""
+                  : blocker.detail
+                    ? ` — ${blocker.detail}`
+                    : ""}
               </span>
               {/* Absent rather than disabled when the address resolves to
                   nothing: a blocker on a lesson that has since been deleted is

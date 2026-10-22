@@ -522,7 +522,7 @@ a.face {
 .noteField:focus {
   outline: none;
   border-color: var(--cw-nav-marker);
-  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+  box-shadow: var(--ds-focus-field-glow);
 }
 
 /* ─────────────── the attached block or programme ─────────────── */
@@ -1183,7 +1183,7 @@ a.commentFace {
   outline: none;
   border-color: var(--cw-nav-marker);
   background: var(--cw-mat-surface);
-  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+  box-shadow: var(--ds-focus-field-glow);
 }
 
 /* Sending is an icon, in the same plate as the platform's other primary icon controls. */
@@ -1311,7 +1311,7 @@ a.commentFace {
   outline: none;
   border-color: var(--cw-nav-marker);
   background: var(--cw-mat-surface);
-  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+  box-shadow: var(--ds-focus-field-glow);
 }
 
 .composerRow {
@@ -1361,7 +1361,7 @@ a.commentFace {
 .select:focus {
   outline: none;
   border-color: var(--cw-nav-marker);
-  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+  box-shadow: var(--ds-focus-field-glow);
 }
 
 .check {

@@ -647,6 +647,14 @@ the ring's *colour and width* (`.programTileOverlay`, `.outlineModuleHead`,
 `.completeMark`) are deliberately left for the admin/globals wave rather than
 half-converted.
 
+**A text field has one focus line (2026-10-22).** The shared `.cw-input` drew a
+graphite border plus the 3px gold ring, while the feed, catalogue and shelf
+fields drew a gold border plus the same ring: two lines in two colours for one
+state. Every text field now takes the colour from `--cw-nav-marker` (ink by day,
+brass by night, the same pair as the selection contour) on its 1px border, and
+the only extra is `--ds-focus-field-glow`: `none` in the light theme, a 9px
+brass glow at 26% in the dark one. Buttons, tabs and rows keep the ring.
+
 Also settled in the same pass, each a case of one class described twice at top
 level with the later winning silently: `.courseStatusStrip` declared a full card
 recipe (border, large radius, tinted fill, `overflow: hidden`) that **never
