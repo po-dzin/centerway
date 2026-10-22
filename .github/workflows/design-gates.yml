@@ -47,6 +47,12 @@ jobs:
       - name: Install
         run: npm ci
 
+      # The migration guard compares new files against the base branch's top
+      # version; a pull request checkout does not carry the base ref by itself.
+      - name: Fetch base branch for the migration guard
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags --depth=1 origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+
       # Every check that reads the repository and decides — design system,
       # canon, generated screens, the ESLint architecture rules, and the four
       # admin gates that used to run again in admin-smoke. The list and the

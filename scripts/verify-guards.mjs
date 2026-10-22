@@ -149,6 +149,12 @@ const gates = [
     // docs/README.md is generated from the files' own headings; a note added
     // without regenerating it is the drift this catches.
   },
+  {
+    script: "guard:migrations",
+    title: "Migration versions: unique, and new ones on top",
+    // A shared or out-of-order version stamp stops `db push` on the Mac, after
+    // review is over. Both happened (17.10, 22.10); the filenames alone show it.
+  },
   { script: "guard:admin:governance", title: "Admin governance" },
   { script: "guard:admin:i18n-tone", title: "Admin i18n and tone" },
   { script: "guard:admin:a11y-contract", title: "Admin a11y contract" },

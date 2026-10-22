@@ -56,6 +56,7 @@
     "guard:motion": "node scripts/guard-motion.mjs",
     "guard:pointer": "node scripts/guard-pointer.mjs",
     "guard:scrollbars": "node scripts/guard-scrollbars.mjs",
+    "guard:migrations": "node scripts/guard-migrations.mjs",
     "guard:bands": "node scripts/guard-bands.mjs",
     "ds:export": "node scripts/ds-export.mjs",
     "ds:sync:check": "node scripts/ds-export.mjs --check",
