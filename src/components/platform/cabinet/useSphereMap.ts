@@ -75,26 +75,39 @@ export function useSphereMap(userId: string | null, saveErrorMessage: string): S
     };
   }, [userId, read]);
 
+  /* ONE SAVE AT A TIME. Each PUT replaces the whole map, so two in flight could
+     land out of order and the older one would win on the server while the
+     screen shows the newer. A flush that finds a save running leaves its map
+     pending; the running save sends whatever is pending when it lands. */
+  const saving = useRef(false);
+
   const flush = useCallback(async () => {
     timer.current = null;
-    const next = pending.current;
-    pending.current = null;
-    if (!next) return;
+    if (saving.current) return;
+    saving.current = true;
     try {
-      const res = await authorizedFetch(ENDPOINT, {
-        method: "PUT",
-        body: JSON.stringify({ spheres: next.map.spheres, focus: next.map.focus }),
-        keepalive: true,
-      });
-      if (!res.ok) throw new Error(String(res.status));
-      const body = (await res.json()) as { map: SphereMap };
-      setLoaded((current) =>
-        current && current.userId === next.userId
-          ? { ...current, map: { ...current.map, history: body.map.history, updatedAt: body.map.updatedAt } }
-          : current,
-      );
-    } catch {
-      toast?.error(messageRef.current);
+      for (let next = pending.current; next; next = pending.current) {
+        pending.current = null;
+        const sent = next;
+        try {
+          const res = await authorizedFetch(ENDPOINT, {
+            method: "PUT",
+            body: JSON.stringify({ spheres: sent.map.spheres, focus: sent.map.focus }),
+            keepalive: true,
+          });
+          if (!res.ok) throw new Error(String(res.status));
+          const body = (await res.json()) as { map: SphereMap };
+          setLoaded((current) =>
+            current && current.userId === sent.userId
+              ? { ...current, map: { ...current.map, history: body.map.history, updatedAt: body.map.updatedAt } }
+              : current,
+          );
+        } catch {
+          toast?.error(messageRef.current);
+        }
+      }
+    } finally {
+      saving.current = false;
     }
   }, [toast]);
 
