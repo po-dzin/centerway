@@ -83,6 +83,13 @@ export const customers = {
   leads_stage_won: { uk: "Виграно", en: "Won" },
   leads_stage_lost: { uk: "Втрачено", en: "Lost" },
   leads_stage_change: { uk: "Змінити стадію", en: "Change stage" },
+  leads_delete: { uk: "Видалити заявку", en: "Delete request" },
+  leads_delete_title: { uk: "Видалити заявку?", en: "Delete this request?" },
+  leads_delete_note: {
+    uk: "Заявку буде видалено назавжди. У журналі лишиться запис, що саме видалено.",
+    en: "The request is removed for good. The audit log keeps a record of what was removed.",
+  },
+  leads_deleted: { uk: "Заявку видалено", en: "Request deleted" },
   leads_dosha: { uk: "Доша", en: "Dosha" },
   leads_dosha_claimed: { uk: "Доша (зі сторінки)", en: "Dosha (from page)" },
   leads_closed_at: { uk: "Закрито", en: "Closed" },

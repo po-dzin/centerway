@@ -80,6 +80,12 @@
   },
   {
     "kind": "mutate",
+    "method": "DELETE",
+    "path": "/api/admin/leads?id=00000000-0000-0000-0000-000000000000",
+    "routePath": "/api/admin/leads"
+  },
+  {
+    "kind": "mutate",
     "method": "POST",
     "path": "/api/admin/system/pulse"
   },

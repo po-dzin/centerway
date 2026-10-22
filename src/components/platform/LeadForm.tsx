@@ -130,7 +130,15 @@ export function LeadForm({
         }).catch(() => null),
       ]);
 
-      if (!leadRes.ok) throw new Error("lead_failed");
+      if (!leadRes.ok) {
+        const refusal = (await leadRes.json().catch(() => null)) as { error?: string } | null;
+        if (refusal?.error === "invalid_phone") {
+          setState("error");
+          setMessage("Перевірте номер телефону: наприклад, 067 123 45 67 або +380 67 123 45 67.");
+          return;
+        }
+        throw new Error("lead_failed");
+      }
       form.reset();
       setState("success");
       setMessage("Заявка прийнята, очікуйте.");

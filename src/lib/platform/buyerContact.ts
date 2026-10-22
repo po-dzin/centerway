@@ -42,6 +42,12 @@ export function normalizeContactPhone(raw: string | null | undefined): string | 
   let digits = compact.replace(/^\+/, "");
   if (!compact.startsWith("+") && /^0\d{9}$/.test(digits)) digits = `38${digits}`;
   if (digits.startsWith("00")) digits = digits.slice(2);
+  /* A country code never starts with 0, so `0671012312 3` (one digit too many
+     for the local shape) is a typo, not an international number. And a
+     Ukrainian number is `+380` + an operator or city code that starts 3–9 +
+     eight digits: `+380000000000` is not one. */
+  if (digits.startsWith("0")) return null;
+  if (digits.startsWith("38") && !/^380[3-9]\d{8}$/.test(digits)) return null;
   return digits.length >= 10 && digits.length <= 15 ? `+${digits}` : null;
 }
 
