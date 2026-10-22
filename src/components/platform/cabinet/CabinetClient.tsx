@@ -28,11 +28,12 @@ import { usePlatformIdentity } from "@/components/platform/layout/usePlatformIde
 import { platformRoleLabel } from "@/lib/platform/identity";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
-import { JOURNAL_HREF, LEARNING_SHELF_HREF } from "@/lib/platform/content";
+import { JOURNAL_HREF, LEARNING_SHELF_HREF, SPHERE_MAP_HREF } from "@/lib/platform/content";
 import { PwaInstallCard } from "./PwaInstallCard";
 import { cabinetGate } from "./CabinetGate";
 import { CabinetFold } from "./CabinetFold";
 import { CabinetHero } from "./CabinetHero";
+import { SphereMapCard } from "./SphereMapCard";
 import dynamic from "next/dynamic";
 
 /* Loaded when an author opens the cabinet, not shipped to every learner who
@@ -150,6 +151,7 @@ export function CabinetClient() {
   const productsHref = href("/products");
   const shelfHref = href(LEARNING_SHELF_HREF);
   const journalHref = href(JOURNAL_HREF);
+  const sphereMapHref = href(SPHERE_MAP_HREF);
 
   const ownedCourses = useMemo(() => heldCourses(shelf ?? []), [shelf]);
 
@@ -333,6 +335,16 @@ export function CabinetClient() {
       </CabinetHero>
 
       <div className={styles.shell}>
+        {/* THE SPHERE MAP, AS ONE CARD AND ONE CROSSING (2026-10-22). Below the
+            hero for the journal's reason: the first screen answers «what do I
+            open now», and the map answers a slower question — «where is my
+            attention going». The thumbnail and the focus line are the glance;
+            reading and changing it is `/profile/map`. Shown to every signed-in
+            person, not only learners: the map is about a life, not a course. */}
+        <section className={styles.section}>
+          <SphereMapCard userId={session?.user?.id ?? null} lang={lang} href={sphereMapHref} />
+        </section>
+
         {/* THE JOURNAL, AS ONE CROSSING AND NOTHING MORE.
             Below the hero on purpose. The first screen answers «what do I open
             now», and it took two passes to get it down to one course and one
