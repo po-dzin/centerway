@@ -27,6 +27,7 @@ import { plural } from "@/lib/plural";
 import { formatPrice } from "@/lib/products";
 import { platformTests } from "@/lib/platform/tests";
 import { botCopy, SUPPORT_BOT_URL } from "@/lib/telegram/tgSupportBotCopy";
+import { approachDoc } from "./approach";
 import type { KnowledgeDoc } from "./types";
 
 /**
@@ -312,6 +313,23 @@ export function policyDocs(): KnowledgeDoc[] {
  * same function serves the live catalogue on a server and a fixture in a test,
  * and the test is what proves a course's lesson text never enters the index.
  */
+/** The approach — the one text that says how the practices fit together. */
+export function aboutDocs(): KnowledgeDoc[] {
+  return [
+    {
+      id: "about:approach",
+      kind: "about" as const,
+      title: approachDoc.title,
+      href: "/",
+      text: paragraphs([...approachDoc.paragraphs]),
+      locale: "uk" as const,
+      audience: "public" as const,
+      source: "src/lib/agent/knowledge/approach.ts",
+      updatedAt: null,
+    },
+  ];
+}
+
 export function buildCorpus(input: { courses: Course[]; offers?: CorpusOffer[] }): KnowledgeDoc[] {
   return [
     ...supportDocs(),
@@ -320,5 +338,6 @@ export function buildCorpus(input: { courses: Course[]; offers?: CorpusOffer[] }
     ...courseDocs(input.courses),
     ...testDocs(),
     ...policyDocs(),
+    ...aboutDocs(),
   ];
 }
