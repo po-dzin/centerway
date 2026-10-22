@@ -14,7 +14,7 @@
  * next login. `cw_name` / `cw_avatar` / `cw_avatar_crop` are keys Google never
  * sends, so they survive it, and Google's own stay as the fallback for everyone
  * who has no profile. The database trigger that mirrors the account into
- * `platform_users` reads them in the same order (migration 20261022120000).
+ * `platform_users` reads them in the same order (migration 20261022140000).
  */
 
 import type { CSSProperties } from "react";
