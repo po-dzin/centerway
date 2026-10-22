@@ -744,6 +744,7 @@ export type Database = {
           phone: string | null
           tags: string[]
           tg_id: string | null
+          tg_username: string | null
           updated_at: string
         }
         Insert: {
@@ -759,6 +760,7 @@ export type Database = {
           phone?: string | null
           tags?: string[]
           tg_id?: string | null
+          tg_username?: string | null
           updated_at?: string
         }
         Update: {
@@ -774,6 +776,7 @@ export type Database = {
           phone?: string | null
           tags?: string[]
           tg_id?: string | null
+          tg_username?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -2043,6 +2046,7 @@ export type Database = {
       }
       lms_enrollments: {
         Row: {
+          access_starts_at: string | null
           auth_user_id: string
           blocked_at: string | null
           blocked_reason: string | null
@@ -2062,6 +2066,7 @@ export type Database = {
           utm: Json | null
         }
         Insert: {
+          access_starts_at?: string | null
           auth_user_id: string
           blocked_at?: string | null
           blocked_reason?: string | null
@@ -2081,6 +2086,7 @@ export type Database = {
           utm?: Json | null
         }
         Update: {
+          access_starts_at?: string | null
           auth_user_id?: string
           blocked_at?: string | null
           blocked_reason?: string | null
@@ -2788,6 +2794,7 @@ export type Database = {
           notification_channels: string[]
           onboarding_state: string
           provider: string | null
+          ref_tag: string | null
           timezone: string
           updated_at: string
         }
@@ -2804,6 +2811,7 @@ export type Database = {
           notification_channels?: string[]
           onboarding_state?: string
           provider?: string | null
+          ref_tag?: string | null
           timezone?: string
           updated_at?: string
         }
@@ -2820,6 +2828,7 @@ export type Database = {
           notification_channels?: string[]
           onboarding_state?: string
           provider?: string | null
+          ref_tag?: string | null
           timezone?: string
           updated_at?: string
         }

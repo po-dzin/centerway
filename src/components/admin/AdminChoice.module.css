@@ -1,0 +1,41 @@
+/*
+ * The system checkbox, in the admin (2026-10-22).
+ *
+ * Composed from the shelf filter's row so there is one recipe: the box, its
+ * control stroke, the brass fill when chosen and the focus ring all come from
+ * there. What is added here is only what a form needs and a filter popover
+ * does not: a row that sits inline in a form, and a long label that wraps
+ * under its own first line.
+ */
+
+.choice {
+  composes: filterOption from "../platform/cabinet/ShelfFilter.module.css";
+  display: inline-grid;
+  justify-self: start;
+  padding-inline: var(--cw-space-2xs);
+  color: var(--cw-text);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.choice[data-long] {
+  align-items: start;
+  color: var(--cw-muted);
+  font-size: var(--ds-type-label-size);
+}
+
+.choice[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.box {
+  composes: filterCheckbox from "../platform/cabinet/ShelfFilter.module.css";
+}
+
+.choice[data-long] .box {
+  margin-top: var(--cw-space-2xs);
+}
+
+.longLabel {
+  line-height: 1.45;
+}

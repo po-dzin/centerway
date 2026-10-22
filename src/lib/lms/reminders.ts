@@ -66,6 +66,7 @@ type EnrollmentRow = {
   started_at: string;
   cohort_starts_on?: string | null;
   expires_at?: string | null;
+  access_starts_at?: string | null;
   status?: string | null;
   blocked_at?: string | null;
   source?: string | null;
@@ -433,7 +434,7 @@ export async function runDailyReminders(
     db
       .from("lms_enrollments")
       .select(
-        "id, course_id, auth_user_id, started_at, cohort_starts_on, expires_at, status, blocked_at, source, order_ref",
+        "id, course_id, auth_user_id, started_at, cohort_starts_on, expires_at, access_starts_at, status, blocked_at, source, order_ref",
       )
       .in("course_id", [...courses.keys()])
       .order("id", { ascending: true })
@@ -481,7 +482,12 @@ export async function runDailyReminders(
     // rather than infer from the row's existence.
     if (
       accessStateOf(
-        { status: enrollment.status, blockedAt: enrollment.blocked_at, expiresAt: enrollment.expires_at },
+        {
+          status: enrollment.status,
+          blockedAt: enrollment.blocked_at,
+          expiresAt: enrollment.expires_at,
+          startsAt: enrollment.access_starts_at,
+        },
         now,
       ) !== "active"
     ) {
