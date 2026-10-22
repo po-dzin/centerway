@@ -79,7 +79,7 @@
   border-color: var(--cw-nav-marker);
   background: var(--cw-mat-surface);
   color: var(--cw-platform-text);
-  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+  box-shadow: var(--ds-focus-field-glow);
 }
 
 .filterMenu {
