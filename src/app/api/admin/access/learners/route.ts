@@ -94,6 +94,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 type ProvisionBody = {
   email?: string;
   course?: string;
+  offerCode?: string;
   fullName?: string;
   /** `YYYY-MM-DD` from the panel's date input, or an ISO instant. Empty clears. */
   expiresAt?: string | null;
@@ -105,6 +106,8 @@ type ProvisionBody = {
   cohortStartsOn?: string | null;
   /** Who brought this person: the ambassador's tag, as in `?ref=`. */
   ref?: string | null;
+  /** Take the term from the course's offer for a grant with no payment too. See `provisionAccess`. */
+  termFromOffer?: boolean;
   /**
    * An elevated role to give the account, admin-only and optional.
    *
@@ -164,6 +167,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       email: body.email,
       fullName: body.fullName ?? null,
       courseSlug: body.course,
+      offerCode: typeof body.offerCode === "string" ? body.offerCode : undefined,
       // ABSENT, not "blank", is what means "leave the term to the offer".
       // The grant form sends nothing when the operator has not overridden
       // it (`grantDeadlineValue`), so `provisionAccess` fills the term in
@@ -177,6 +181,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       payment,
       cohortStartsOn,
       ref: ref ?? undefined,
+      termFromOffer: body.termFromOffer === true ? true : undefined,
       actorId: session.user.id,
     });
     // AFTER provisioning, never before: the account may not have existed

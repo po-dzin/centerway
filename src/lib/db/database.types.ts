@@ -1047,6 +1047,35 @@ export type Database = {
           },
         ]
       }
+      feed_comment_reactions: {
+        Row: {
+          auth_user_id: string
+          comment_id: string
+          created_at: string
+          emoji: string
+        }
+        Insert: {
+          auth_user_id: string
+          comment_id: string
+          created_at?: string
+          emoji: string
+        }
+        Update: {
+          auth_user_id?: string
+          comment_id?: string
+          created_at?: string
+          emoji?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_comment_reactions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "feed_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feed_comments: {
         Row: {
           auth_user_id: string
@@ -1169,13 +1198,18 @@ export type Database = {
           hidden_at: string | null
           id: string
           lesson_id: string | null
+          media: Json
           photo_alt: string | null
           photo_path: string | null
           published_at: string | null
+          pinned_at: string | null
+          edited_at: string | null
           returned_reason: string | null
           status: string
+          tagged_author_ids: string[]
           tg_message_id: number | null
           topic: string
+          topics: string[]
           updated_at: string
         }
         Insert: {
@@ -1192,13 +1226,18 @@ export type Database = {
           hidden_at?: string | null
           id?: string
           lesson_id?: string | null
+          media?: Json
           photo_alt?: string | null
           photo_path?: string | null
           published_at?: string | null
+          pinned_at?: string | null
+          edited_at?: string | null
           returned_reason?: string | null
           status?: string
+          tagged_author_ids?: string[]
           tg_message_id?: number | null
           topic: string
+          topics?: string[]
           updated_at?: string
         }
         Update: {
@@ -1215,13 +1254,18 @@ export type Database = {
           hidden_at?: string | null
           id?: string
           lesson_id?: string | null
+          media?: Json
           photo_alt?: string | null
           photo_path?: string | null
           published_at?: string | null
+          pinned_at?: string | null
+          edited_at?: string | null
           returned_reason?: string | null
           status?: string
+          tagged_author_ids?: string[]
           tg_message_id?: number | null
           topic?: string
+          topics?: string[]
           updated_at?: string
         }
         Relationships: [
@@ -1270,6 +1314,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "feed_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "feed_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_shares: {
+        Row: {
+          auth_user_id: string
+          channel: string
+          created_at: string
+          post_id: string
+        }
+        Insert: {
+          auth_user_id: string
+          channel: string
+          created_at?: string
+          post_id: string
+        }
+        Update: {
+          auth_user_id?: string
+          channel?: string
+          created_at?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_shares_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "feed_posts"

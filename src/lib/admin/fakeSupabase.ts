@@ -89,7 +89,7 @@ class FakeQuery implements PromiseLike<{
    * written — landed as one nonsense row of numeric keys, and a test of that
    * path silently asserted against unwritten data.
    */
-  upsert(values: Row | Row[], options?: { onConflict?: string }) {
+  upsert(values: Row | Row[], options?: { onConflict?: string; ignoreDuplicates?: boolean }) {
     this.mode = "insert";
     this.payload = Array.isArray(values) ? values : [values];
     this.db.conflictKey = options?.onConflict ?? null;
@@ -179,6 +179,15 @@ class FakeQuery implements PromiseLike<{
       return this;
     }
     throw new Error(`fake: unsupported not(${operator})`);
+  }
+
+  /** Array `&&`: rows whose array column shares at least one value — the feed's topic filter. */
+  overlaps(column: string, values: unknown[]) {
+    const set = new Set(values);
+    this.filters.push(
+      (row) => Array.isArray(row[column]) && (row[column] as unknown[]).some((value) => set.has(value)),
+    );
+    return this;
   }
 
   /** `contains("payload", { event_name: "Purchase", order_ref })` — the jsonb `@>` the job dedupes use. */

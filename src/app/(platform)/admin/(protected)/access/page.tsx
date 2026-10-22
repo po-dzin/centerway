@@ -21,8 +21,7 @@ import { useI18n } from "@/components/I18nProvider";
 import surfaces from "@/components/admin/AdminSurfaces.module.css";
 import { useToast } from "@/components/ToastProvider";
 import { AdminDateField } from "@/components/admin/AdminDateField";
-import { AdminModal } from "@/components/admin/AdminModal";
-import { AccessBulkGrant } from "@/components/admin/AccessBulkGrant";
+import { AccessGrantModal } from "@/components/admin/AccessGrantModal";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
@@ -32,13 +31,7 @@ import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/admin/adminLocale";
 import type { CourseRow, LearnerAccountRow, LearnerRow, LearnerStatus, PersonRow } from "@/lib/admin/accessTypes";
-import {
-  deadlineInputValue,
-  ELEVATED_ROLES,
-  grantDeadlineValue,
-  GRANTABLE_ROLES,
-  PAYMENT_CURRENCIES,
-} from "@/lib/admin/accessTypes";
+import { deadlineInputValue, ELEVATED_ROLES, GRANTABLE_ROLES } from "@/lib/admin/accessTypes";
 import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
 import { Icon } from "@/components/Icon";
 import pageStyles from "@/components/admin/AdminPage.module.css";
@@ -270,54 +263,13 @@ function PeopleTab({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [grantEmail, setGrantEmail] = useState("");
-  const [grantCourse, setGrantCourse] = useState("");
-  const [granting, setGranting] = useState(false);
-
-  // The hand-made sale: a person who may not exist yet, money that arrived off
-  // the payment provider, and a date the access ends on. All optional except
-  // the email and the course — a gift and a paid enrollment take the same form.
-  const [grantName, setGrantName] = useState("");
-  const [grantCreateAccount, setGrantCreateAccount] = useState(false);
-  const [grantExpiresAt, setGrantExpiresAt] = useState("");
-  /* Perpetual is the DEFAULT, and stated rather than implied. An empty date
-       has always meant "never expires" — the API reads `null` that way and
-       `isEnrollmentExpired` agrees — but a blank date field says that to nobody,
-       and the one form that sells a course by hand should not make its most
-       common outcome the one you have to know a rule to get. Ticked, the date
-       goes dim rather than away: hiding it moves the row underneath, and an
-       operator who typed a date before ticking should get it back on untick. */
-  // Unticked by default: the safe answer for a course with a paid offer is
-  // to sell it on that offer's own term, not to override it with forever
-  // every time someone opens this form. A course with no offer to inherit
-  // (a gift, a review grant) still ends up perpetual — the same as ticking
-  // this by hand — because `provisionAccess` reads no term as no deadline.
-  const [grantForever, setGrantForever] = useState(false);
-  const [grantAmount, setGrantAmount] = useState("");
-  const [grantCurrency, setGrantCurrency] = useState<string>(PAYMENT_CURRENCIES[0]);
-  const [grantNote, setGrantNote] = useState("");
-  /* A cohort's shared day 1 and who brought the person. Both optional: most
-     seats are self-paced and came on their own. The cohort date is KEPT between
-     grants — enrolling a flow is the same date typed twenty times otherwise. */
-  const [grantCohort, setGrantCohort] = useState("");
-  const [grantRef, setGrantRef] = useState("");
-  /* The role, set on the same form that can create the account.
-       `user` is "no elevation" and is what an account gets anyway, so the field
-       is only sent when it is something else — see `grant`. Assigning a role
-       used to require the account to exist first (`setRole` resolves by email
-       and 404s otherwise), which put the one form that CREATES accounts and the
-       one form that assigns roles on opposite sides of that requirement. */
-  const [grantRole, setGrantRole] = useState<string>("user");
-
   // Deadline edits, keyed by enrollment so two open rows never share a draft.
   const [deadlineDraft, setDeadlineDraft] = useState<Record<string, string>>({});
   /** Which account is being given another course, so only its own row goes busy. */
   const [grantingTo, setGrantingTo] = useState<string | null>(null);
   const dateLabels = useDateLabels();
-  /** The grant form's dialog. Closed on arrival: reading the list is the common visit. */
+  /** The grant dialog. Closed on arrival: reading the list is the common visit. */
   const [grantOpen, setGrantOpen] = useState(false);
-  /** The gift-to-a-list dialog — a separate act from the sale above, see `AccessBulkGrant`. */
-  const [bulkOpen, setBulkOpen] = useState(false);
   const [savingDeadline, setSavingDeadline] = useState<string | null>(null);
 
   // Which people have their course list open. Keyed by account id rather than
@@ -339,11 +291,6 @@ function PeopleTab({
     }, 350);
     return () => clearTimeout(timer);
   }, [q]);
-
-  useEffect(() => {
-    const [firstCourse] = courses;
-    if (!grantCourse && firstCourse) setGrantCourse(firstCourse.slug);
-  }, [courses, grantCourse]);
 
   const load = useCallback(async () => {
     requestSeq.current += 1;
@@ -384,63 +331,6 @@ function PeopleTab({
   useEffect(() => {
     void load();
   }, [load]);
-
-  const grant = async () => {
-    if (!grantEmail.trim() || !grantCourse) return;
-    setGranting(true);
-    try {
-      const payload = (await authFetch("/api/admin/access/learners", {
-        method: "POST",
-        body: JSON.stringify({
-          email: grantEmail.trim(),
-          course: grantCourse,
-          fullName: grantName.trim() || null,
-          createAccount: grantCreateAccount,
-          expiresAt: grantDeadlineValue(grantForever, grantExpiresAt),
-          // Absent, not blank: a blank cohort would pull an existing seat out of its flow.
-          cohortStartsOn: grantCohort || undefined,
-          ref: grantRef.trim() || undefined,
-          // Omitted rather than sent as "user": the API treats absence
-          // as "leave the role alone", which is what an operator who
-          // never touched the field meant.
-          role: canGrantRoles && grantRole !== "user" ? grantRole : undefined,
-          payment: grantAmount.trim()
-            ? { amount: Number(grantAmount), currency: grantCurrency, note: grantNote.trim() || null }
-            : null,
-        }),
-      })) as { created: boolean; accountCreated: boolean; orderRef: string | null; role: string | null };
-
-      // Three things may have happened; the toast names the one the
-      // operator is least sure about — money is the part they cannot
-      // check by looking at the list underneath.
-      toast[payload.created ? "success" : "info"](
-        payload.orderRef
-          ? t("access_granted_with_payment")
-          : payload.created
-            ? t("access_granted")
-            : t("access_already_enrolled"),
-      );
-      if (payload.accountCreated) toast.info(t("access_account_created"));
-      if (payload.role) toast.info(`${t("access_role_set")}: ${payload.role}`);
-
-      setGrantEmail("");
-      setGrantName("");
-      setGrantAmount("");
-      setGrantNote("");
-      setGrantRef("");
-      setGrantCreateAccount(false);
-      setGrantRole("user");
-      // Only on success: a failed grant keeps the dialog and everything
-      // typed into it, which is the whole point of failing inside one.
-      setGrantOpen(false);
-      onCoursesChanged();
-      await load();
-    } catch (e) {
-      toast.error(errorText(getErrorMessage(e)));
-    } finally {
-      setGranting(false);
-    }
-  };
 
   /**
    * A second course for somebody already listed.
@@ -552,9 +442,11 @@ function PeopleTab({
         ? t("access_source_bonus")
         : source === "promotion"
           ? t("access_source_promotion")
-          : source === "token"
-            ? t("access_source_token")
-            : t("access_source_order");
+          : source === "service"
+            ? t("access_source_service")
+            : source === "token"
+              ? t("access_source_token")
+              : t("access_source_order");
 
   /* The state of the DOOR, which is not the state of the learner: the dot
        beside the row still reports progress. Both matter and neither answers
@@ -581,199 +473,22 @@ function PeopleTab({
           <PlusGlyph />
           {t("access_grant_open")}
         </button>
-        <button type="button" onClick={() => setBulkOpen(true)} className={`${controls.action} cw-surface-2`}>
-          <PlusGlyph />
-          {t("access_bulk_open")}
-        </button>
       </div>
 
-      {bulkOpen ? (
-        <AccessBulkGrant
+      {grantOpen ? (
+        <AccessGrantModal
           courses={courses}
-          initialCourse={grantCourse}
+          initialCourse={courseSlug}
+          canGrantRoles={canGrantRoles}
           locale={locale}
           dateLabels={dateLabels}
           errorText={errorText}
-          onClose={() => setBulkOpen(false)}
+          onClose={() => setGrantOpen(false)}
           onGranted={() => {
             onCoursesChanged();
             void load();
           }}
         />
-      ) : null}
-
-      {grantOpen ? (
-        <AdminModal
-          title={t("access_grant_title")}
-          description={t("access_grant_hint")}
-          size="lg"
-          onClose={() => setGrantOpen(false)}
-          footer={
-            <>
-              <button type="button" onClick={() => setGrantOpen(false)} className={controls.action}>
-                {t("common_close")}
-              </button>
-              <button
-                type="button"
-                onClick={grant}
-                disabled={granting || !grantEmail.trim() || !grantCourse}
-                className={`${controls.actionPrimary} cw-surface-2`}
-              >
-                {t("access_grant_submit")}
-              </button>
-            </>
-          }
-        >
-          {/* Who and what, on one line at desktop width. A twelve-column
-                    track rather than a row of flex-1 fields: an email needs
-                    room, a date does not, and stretching them equally is what
-                    made the panel read as a wall. */}
-          <div className={access.grantWho}>
-            <input
-              type="email"
-              value={grantEmail}
-              onChange={(e) => setGrantEmail(e.target.value)}
-              placeholder={t("access_grant_email")}
-              className={`${controls.input} ${access.spanEmail}`}
-            />
-            <input
-              type="text"
-              value={grantName}
-              onChange={(e) => setGrantName(e.target.value)}
-              placeholder={t("access_grant_name")}
-              className={`${controls.input} ${access.spanName}`}
-            />
-            <select
-              value={grantCourse}
-              onChange={(e) => setGrantCourse(e.target.value)}
-              aria-label={t("access_grant_course")}
-              className={`${controls.select} ${access.spanCourse}`}
-            >
-              {courses.map((course) => (
-                <option key={course.id} value={course.slug}>
-                  {course.title}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <p className={controls.hint}>{t("access_grant_payment_hint")}</p>
-          <p className={controls.hint}>{t("access_grant_deadline_hint")}</p>
-
-          {/* Deadline and money — the two optional halves, on one line.
-                    A bare date input says nothing about which date it is, so
-                    this row keeps its captions; the fields above do not need
-                    them, their placeholders say it. */}
-          <div className={access.grantMore}>
-            {/* Two labels, not one wrapping both: a <label> binds to its
-                        first labelable descendant, so nesting the checkbox under
-                        the date's label would make "Безстроково" focus the date
-                        field instead of ticking the box, and read the two out as
-                        one name. */}
-            <div className={`${controls.field} ${access.spanFull} ${access.spanDeadline}`}>
-              <div className={controls.field}>
-                <span className={controls.fieldCaption}>{t("access_grant_deadline")}</span>
-                <AdminDateField
-                  value={grantExpiresAt}
-                  onChange={setGrantExpiresAt}
-                  disabled={grantForever}
-                  locale={locale}
-                  labels={dateLabels}
-                />
-              </div>
-              <label className={access.check}>
-                <input
-                  type="checkbox"
-                  checked={grantForever}
-                  onChange={(e) => setGrantForever(e.target.checked)}
-                  className={access.checkBox}
-                />
-                {t("access_grant_forever")}
-              </label>
-            </div>
-            <label className={`${controls.field} ${access.spanAmount}`}>
-              <span className={controls.fieldCaption}>{t("access_grant_amount")}</span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                inputMode="decimal"
-                value={grantAmount}
-                onChange={(e) => setGrantAmount(e.target.value)}
-                className={controls.input}
-              />
-            </label>
-            <label className={`${controls.field} ${access.spanCurrency}`}>
-              <span className={controls.fieldCaption}>{t("access_grant_currency")}</span>
-              <select
-                value={grantCurrency}
-                onChange={(e) => setGrantCurrency(e.target.value)}
-                className={controls.select}
-              >
-                {PAYMENT_CURRENCIES.map((currency) => (
-                  <option key={currency} value={currency}>
-                    {currency}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={`${controls.field} ${access.spanFull} ${access.spanNote}`}>
-              <span className={controls.fieldCaption}>{t("access_grant_note")}</span>
-              <input
-                type="text"
-                value={grantNote}
-                onChange={(e) => setGrantNote(e.target.value)}
-                className={controls.input}
-              />
-            </label>
-            <div className={`${controls.field} ${access.spanFull} ${access.spanDeadline}`}>
-              <span className={controls.fieldCaption}>{t("access_grant_cohort")}</span>
-              <AdminDateField value={grantCohort} onChange={setGrantCohort} locale={locale} labels={dateLabels} />
-            </div>
-            <label className={`${controls.field} ${access.spanFull} ${access.spanCourse}`}>
-              <span className={controls.fieldCaption}>{t("access_grant_ref")}</span>
-              <input
-                type="text"
-                value={grantRef}
-                onChange={(e) => setGrantRef(e.target.value)}
-                placeholder="olena"
-                autoCapitalize="none"
-                spellCheck={false}
-                className={controls.input}
-              />
-            </label>
-          </div>
-
-          <div className={access.grantFoot}>
-            <label className={access.checkLong}>
-              <input
-                type="checkbox"
-                checked={grantCreateAccount}
-                onChange={(e) => setGrantCreateAccount(e.target.checked)}
-                className={access.checkBoxTop}
-              />
-              <span>{t("access_grant_create_account")}</span>
-            </label>
-
-            {/* Beside "create the account", because that is when it
-                        matters: a brand-new support or admin account had to be made here,
-                        then found again on another tab to be given their role.
-                        Admin-only — the roles API refuses `support`, and a
-                        control that 403s is worse than no control. */}
-            {canGrantRoles ? (
-              <label className={access.roleInline}>
-                <span>{t("access_grant_role")}</span>
-                <select value={grantRole} onChange={(e) => setGrantRole(e.target.value)} className={controls.select}>
-                  {GRANTABLE_ROLES.map((value) => (
-                    <option key={value} value={value}>
-                      {value === "user" ? t("access_grant_role_none") : value}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-          </div>
-        </AdminModal>
       ) : null}
 
       {/* Summary */}
@@ -803,13 +518,13 @@ function PeopleTab({
       {/* THE FACETS, in the order a question is usually asked: who, then
                 what they hold, then which course. Each resets the page — page 3
                 of "everybody" is not page 3 of "admins". */}
-      <div className={controls.fields}>
+      <div className={access.learnerFilters}>
         <AdminSearchInput
           value={q}
           onChange={setQ}
           placeholder={t("access_search_learners")}
           onClear={q ? () => setQ("") : undefined}
-          className={controls.grow}
+          className={access.learnerSearch}
         />
         <select
           value={roleFilter}

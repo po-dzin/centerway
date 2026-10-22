@@ -24,6 +24,7 @@
 
 import { useEffect, useState } from "react";
 
+import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
 import { FeedComposer, type ComposerDraft } from "@/components/platform/feed/FeedComposer";
 import { FeedPostCard } from "@/components/platform/feed/FeedPostCard";
@@ -35,10 +36,14 @@ import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState
 import { PlatformPageHead } from "@/components/platform/PlatformPageHead";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import type { FeedPost } from "@/lib/feed/server";
-import { FEED_PATH } from "@/lib/feed/model";
+import { FEED_PATH, emojiName, excerptOf, feedPostPath } from "@/lib/feed/model";
+import { feedCopy } from "@/components/platform/feed/copy";
 import { BuilderShell } from "./BuilderShell";
 import { BuilderWorkshopRail } from "./BuilderWorkshopRail";
 import styles from "./Builder.module.css";
+
+/** Reactions named by kind before «і ще N види» (mockup: «Відгукнулось 48 · Вогонь 11 · Практика 6 і ще 5 видів»). */
+const ECHO_NAMED = 3;
 
 const STATE_WORDS: Record<FeedPost["status"], string> = {
   published: "у стрічці",
@@ -52,6 +57,11 @@ function draftOf(post: FeedPost): ComposerDraft {
     id: post.id,
     body: post.body,
     topic: post.topic,
+    /* Sending again replaces the post whole, so its topics, media and tags
+       ride along or they are lost. */
+    topics: post.topics,
+    media: post.media,
+    taggedAuthorIds: post.tagged.map((entry) => entry.id),
     courseId: post.source?.courseId ?? null,
     lessonId: post.source?.lessonId ?? null,
     blockId: post.source?.blockId ?? null,
@@ -144,6 +154,7 @@ export function BuilderPosts() {
                 key={post.id}
                 author={me.author!}
                 courses={me.courses}
+                taggable={me.taggable}
                 draft={draftOf(post)}
                 onDone={replace}
                 onCancel={() => setEditing(null)}
@@ -164,15 +175,24 @@ export function BuilderPosts() {
                       <div className={feedStyles.postTools}>
                         {post.status === "returned" ? (
                           <button
-                            className={feedStyles.commentAction}
+                            className={feedStyles.act}
                             type="button"
+                            aria-label="Виправити й надіслати"
+                            title="Виправити й надіслати"
                             onClick={() => setEditing(post.id)}
                           >
-                            Виправити й надіслати
+                            <Icon name="edit" size={20} />
                           </button>
                         ) : null}
-                        <button className={feedStyles.commentAction} type="button" onClick={() => void remove(post)}>
-                          Видалити
+                        <button
+                          className={feedStyles.act}
+                          data-tone="danger"
+                          type="button"
+                          aria-label="Видалити"
+                          title="Видалити"
+                          onClick={() => void remove(post)}
+                        >
+                          <Icon name="trash" size={20} />
                         </button>
                       </div>
                     </div>
@@ -191,11 +211,52 @@ export function BuilderPosts() {
                     ) : null}
                   </>
                 }
+                footer={post.status === "published" ? <PostEcho post={post} /> : null}
               />
             ),
           )}
         </div>
       ) : null}
     </BuilderShell>
+  );
+}
+
+/**
+ * How a post landed, under its action row (mockup «Мої дописи», 16.10): every
+ * reaction by name with its count, the comments, and the newest one someone
+ * else left with the way back to the thread. Views, clicks to the programme
+ * and payments from a post are not counted anywhere yet, so they are not here.
+ */
+function PostEcho({ post }: { post: FeedPost }) {
+  // The thread lives on the platform host; the workshop is on the personal one.
+  const surfaceHref = useSurfaceHref();
+  const named = post.reactions.slice(0, ECHO_NAMED);
+  const more = post.reactions.length - named.length;
+  if (named.length === 0 && post.commentCount === 0) return null;
+  return (
+    <div className={feedStyles.echo}>
+      {named.length ? (
+        <p className={feedStyles.echoLine}>
+          {named.map((entry) => `${emojiName(entry.emoji)} ${entry.count}`).join(" · ")}
+          {more > 0 ? ` ${feedCopy.reactionKindsMore(more)}` : null}
+        </p>
+      ) : null}
+      {post.commentCount > 0 ? (
+        <p className={feedStyles.echoLine}>{feedCopy.commentsCount(post.commentCount)}</p>
+      ) : null}
+      {post.latestComment ? (
+        <p className={feedStyles.echoComment}>
+          {feedCopy.latestComment(post.latestComment.name)} «{excerptOf(post.latestComment.body, 140)}»{" "}
+          <a
+            className={feedStyles.act}
+            href={surfaceHref(feedPostPath(post.id))}
+            aria-label={feedCopy.replyInFeed}
+            title={feedCopy.replyInFeed}
+          >
+            <Icon name="reply" size={20} />
+          </a>
+        </p>
+      ) : null}
+    </div>
   );
 }

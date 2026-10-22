@@ -74,7 +74,7 @@ export async function grantCourse(input: {
     // ("this person can open the course") is already true. A deadline
     // typed alongside the grant is still applied: the operator asked for
     // access *until this date*, and half of that request is not yet true.
-    if (expiresAt !== null && expiresAt !== existing.expires_at) {
+    if (input.expiresAt !== undefined && expiresAt !== existing.expires_at) {
       await setEnrollmentDeadline({
         enrollmentId: existing.id as string,
         expiresAt,

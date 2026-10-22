@@ -4,9 +4,12 @@
  */
 
 export const feedCopy = {
+  heroLead: "Живий потік буття",
   title: "Стрічка",
   lead: "Дописи авторів CenterWay: практики, думки, події.",
   empty: "Тут поки порожньо. Автори скоро напишуть перші дописи.",
+  /* «Стрічка · початок» (mockup 16.10; G's ok on the words still pending). */
+  pinned: "закріплено",
   emptyFiltered: "За цим фільтром дописів немає.",
   more: "Показати ще",
   loading: "Завантажуємо…",
@@ -25,6 +28,11 @@ export const feedCopy = {
   close: "Закрити",
 
   comments: ["коментар", "коментарі", "коментарів"] as [string, string, string],
+  allComments: "Усі коментарі й відповіді",
+  shareStory: "Картка для сторис · Instagram / Telegram",
+  storyPreparing: "Готуємо картку…",
+  storyFailed: "Не вдалося підготувати картку. Спробуйте ще раз.",
+  storyDownload: "Зберегти картку для сторис",
   commentsNone: "Коментувати",
   commentsHide: "Сховати коментарі",
   writeComment: "Написати коментар…",
@@ -35,10 +43,27 @@ export const feedCopy = {
   cancel: "Скасувати",
   hide: "Приховати",
   remove: "Видалити",
+  edit: "Редагувати",
+  viewerLabel: "Фото з допису",
+  backToFeed: "До стрічки",
+  pin: "Закріпити",
+  unpin: "Відкріпити",
+  pinFailed: "Не вдалося змінити закріплення.",
+  edited: "змінено",
+  hidden: "Допис приховано.",
+  hideFailed: "Не вдалося приховати допис.",
+  postMenu: "Дії з дописом",
+  deleteAsk: "Видалити допис?",
+  deleteYes: "Так",
+  deleteNo: "Ні",
+  deleted: "Допис видалено.",
+  deleteFailed: "Не вдалося видалити допис.",
   byAuthor: "автор",
   commentHeld: "Чекає перевірки команди: поки бачите тільки ви.",
   commentHeldToast: "Коментар чекає перевірки команди.",
   commentFailed: "Не вдалося надіслати коментар.",
+  commentsLoadFailed: "Не вдалося завантажити коментарі.",
+  retry: "Ще раз",
 
   signInTo: "Увійдіть, щоб реагувати, коментувати й позначати.",
   signIn: "Увійти",
@@ -52,6 +77,53 @@ export const feedCopy = {
   notePlaceholder: "Ваша думка про це…",
 
   openProgram: "Відкрити програму",
+  openLesson: "Відкрити в програмі",
+
+  heroAlt:
+    "Стіна студії з аркушами на малярному скотчі: сторінка з текстом, список із відмітками, два чорно-білі фото й смужка з намальованою звуковою хвилею",
+
+  with: "з",
+  readMore: "Читати далі",
+  readLess: "Згорнути",
+  photo: "Фото до допису",
+  photoOf: (index: number, total: number) => `Фото ${index} з ${total}`,
+  photos: "Фото допису",
+  spoiler: "Спойлер · натисніть, щоб побачити",
+  spoilerLabel: "Показати фото, приховане як спойлер",
+  postVideo: "Відео допису",
+  audio: "Аудіо",
+
+  reactionsTotal: (total: number, mine: number) =>
+    total > 0 ? `Реакції, ${total}${mine > 0 ? `, ваших ${mine} з 3` : ""}. Додати реакцію` : "Додати реакцію",
+  reactionLimitHint: (mine: number) => `Можна до 3 реакцій · ваших ${mine}`,
+  reactionLimit: "Ваші 3 з 3 — зніміть одну, щоб обрати іншу",
+  reactionFailed: "Не вдалося поставити реакцію.",
+  /** One line of the chip's hint: «Вогонь 11 · Олена К., Марко Д. і ще 8», with «ви» first when the reader pressed it. */
+  reactionWho: (name: string, count: number, who: string[], mine: boolean) => {
+    const people = [...(mine ? ["ви"] : []), ...who];
+    const rest = count - people.length;
+    if (people.length === 0) return `${name} ${count}`;
+    return `${name} ${count} · ${people.join(", ")}${rest > 0 ? ` і ще ${rest}` : ""}`;
+  },
+  /** «Мої дописи»: the kinds beyond the ones named. */
+  reactionKindsMore: (n: number) => `і ще ${n} ${n === 1 ? "вид" : n < 5 ? "види" : "видів"}`,
+  commentsCount: (n: number) =>
+    `${n} ${n % 10 === 1 && n % 100 !== 11 ? "коментар" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? "коментарі" : "коментарів"}`,
+  latestComment: (name: string) => `Новий коментар від ${name}:`,
+  replyInFeed: "Відповісти у стрічці",
+  commentsLabel: (count: number) => `Коментарі, ${count}`,
+  save: "Зберегти в «Мій журнал»",
+  saveLabel: (count: number) => (count > 0 ? `Зберегти в «Мій журнал». Зберегли: ${count}` : "Зберегти в «Мій журнал»"),
+  saved: "Збережено в «Мій журнал»",
+  unsaved: "Прибрано з «Мій журнал»",
+  saveFailed: "Не вдалося зберегти.",
+  share: "Поділитися",
+  shareLabel: (count: number) => (count > 0 ? `Поділитися. Поділилися: ${count}` : "Поділитися"),
+  shareCopy: "Скопіювати посилання",
+  shareTelegram: "Надіслати в Telegram",
+  shareMore: "Інші застосунки…",
+  shareCopied: "Посилання скопійовано",
+  shareFailed: "Не вдалося скопіювати посилання.",
   video: "відео",
   image: "зображення",
   minutes: "хв",

@@ -10,28 +10,31 @@
  * pressed and their marks are drawn; a guest keeps what the server sent.
  */
 
-import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { useSignInHref } from "@/components/auth/useSignInReturn";
 import { useSession } from "@/components/auth/SessionProvider";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
-import { feedFilterCount, feedFilterQuery, type FeedFilter as Filter } from "@/lib/feed/model";
+import { feedFilterCount, feedFilterQuery, isPlatformAuthor, type FeedFilter as Filter } from "@/lib/feed/model";
 import type { FeedAuthor, FeedPage, FeedPost } from "@/lib/feed/server";
 
 import { feedCopy } from "./copy";
 import { fetchFeedMe, fetchFeedPage, fetchFeedPost, fetchMarks, type FeedMarkView, type FeedMe } from "./feedApi";
-import { FeedComposer } from "./FeedComposer";
+import { FeedComposer, type ComposerDraft } from "./FeedComposer";
 import { FeedFilter } from "./FeedFilter";
 import { FeedPostCard } from "./FeedPostCard";
 import styles from "./Feed.module.css";
 
 export function FeedView({
+  head,
   initial,
   authors,
   filter: initialFilter,
   mode = "feed",
 }: {
+  /** The page's head: it shares a row with the filter, so the control stands in the same place whatever is chosen. */
+  head?: ReactNode;
   initial: FeedPage;
   authors: FeedAuthor[];
   filter: Filter;
@@ -50,6 +53,7 @@ export function FeedView({
   const [failed, setFailed] = useState(false);
   const [me, setMe] = useState<FeedMe | null>(null);
   const [marks, setMarks] = useState<Record<string, FeedMarkView[]>>({});
+  const [editing, setEditing] = useState<string | null>(null);
   const asked = useRef(0);
   /* Each fresh read re-seeds the cards: a card keeps its reactions in its own
      state, and the signed-in read is what marks the reader's own as pressed. */
@@ -63,7 +67,17 @@ export function FeedView({
     setLoading(false);
     setFailed(!result.ok);
     if (result.ok) {
-      setPage(result.data);
+      /* THE PINNED POST STAYS WHERE IT IS WHATEVER IS CHOSEN (G 2026-10-18). The
+         server leaves it out of a filtered read; the one in hand is kept, so
+         choosing a topic changes the posts below it and nothing above them. */
+      setPage((current) => {
+        const kept = feedFilterCount(next) > 0 ? current.posts.find((entry) => entry.pinned) : undefined;
+        const incoming = result.data.posts;
+        return {
+          ...result.data,
+          posts: kept && !incoming.some((entry) => entry.pinned) ? [kept, ...incoming] : incoming,
+        };
+      });
       setRound((current) => current + 1);
     }
   }, []);
@@ -125,37 +139,103 @@ export function FeedView({
 
   function published(post: FeedPost) {
     if (post.status !== "published") return;
-    setPage((current) => ({ ...current, posts: [post, ...current.posts.filter((entry) => entry.id !== post.id)] }));
+    setPage((current) => {
+      const others = current.posts.filter((entry) => entry.id !== post.id);
+      // A new pinned post takes the tape; any other post stands behind the pinned one.
+      if (post.pinned) return { ...current, posts: [post, ...others.map((entry) => ({ ...entry, pinned: false }))] };
+      const lead = others[0]?.pinned ? [others[0]] : [];
+      return { ...current, posts: [...lead, post, ...others.slice(lead.length)] };
+    });
+  }
+
+  function edited(post: FeedPost) {
+    setEditing(null);
+    setPage((current) => {
+      const next = current.posts
+        .map((entry) => (entry.id === post.id ? post : entry))
+        // Pinning one lets the previous go: only the changed post keeps the tape.
+        .map((entry) => (post.pinned && entry.id !== post.id ? { ...entry, pinned: false } : entry));
+      /* The pinned post leads; everyone else stands in the order of their
+         publishing, so a post let go of its pin goes back to its own place. */
+      const pinned = next.filter((entry) => entry.pinned);
+      const rest = next
+        .filter((entry) => !entry.pinned)
+        .sort((a, b) => Date.parse(b.publishedAt ?? b.createdAt) - Date.parse(a.publishedAt ?? a.createdAt));
+      return { ...current, posts: [...pinned, ...rest] };
+    });
+    setRound((current) => current + 1);
+  }
+
+  function removed(id: string) {
+    setPage((current) => ({ ...current, posts: current.posts.filter((entry) => entry.id !== id) }));
   }
 
   const filtered = feedFilterCount(filter) > 0;
+  /* The pinned post stands under the title on the wall, above the filter; the
+     rest of the feed follows it. */
+  const lead = mode === "feed" && page.posts[0]?.pinned ? page.posts[0] : null;
+  const rest = lead ? page.posts.slice(1) : page.posts;
+
+  function card(post: FeedPost) {
+    if (editing === post.id && (me?.platform || me?.author) && post.canEdit) {
+      return (
+        <FeedComposer
+          key={post.id}
+          author={me.author}
+          platform={me.platform}
+          courses={me.courses}
+          taggable={me.taggable}
+          draft={draftOf(post)}
+          onDone={edited}
+          onCancel={() => setEditing(null)}
+        />
+      );
+    }
+    return (
+      <FeedPostCard
+        key={`${post.id}:${round}`}
+        post={post}
+        signedIn={signedIn}
+        signInHref={signInHref}
+        marks={marks[post.id] ?? []}
+        onMarks={(id, list) => setMarks((current) => ({ ...current, [id]: list }))}
+        headingLevel={mode === "feed" ? 2 : 3}
+        onDeleted={removed}
+        onEdit={me ? (target) => setEditing(target.id) : undefined}
+        onChanged={me ? edited : undefined}
+      />
+    );
+  }
 
   return (
     <div className={mode === "feed" ? styles.posts : styles.embedded}>
-      {mode === "feed" && me?.author ? (
-        <FeedComposer author={me.author} courses={me.courses} onDone={published} />
+      {mode === "feed" ? (
+        <div className={styles.headRow}>
+          {head}
+          <FeedFilter filter={filter} authors={authors} onChange={changeFilter} />
+        </div>
       ) : null}
 
-      {mode === "feed" ? <FeedFilter filter={filter} authors={authors} onChange={changeFilter} /> : null}
+      {mode === "feed" && (me?.author || me?.platform) ? (
+        <FeedComposer
+          author={me.author}
+          platform={me.platform}
+          courses={me.courses}
+          taggable={me.taggable}
+          onDone={published}
+        />
+      ) : null}
 
-      {page.posts.length === 0 && !loading ? (
+      {lead ? card(lead) : null}
+
+      {rest.length === 0 && !loading && (failed || filtered || mode !== "feed") ? (
         <p className={styles.empty}>
           {failed ? feedCopy.loadFailed : filtered ? feedCopy.emptyFiltered : feedCopy.empty}
         </p>
       ) : null}
 
       <div className={styles.posts} aria-busy={loading || undefined}>
-        {page.posts.map((post) => (
-          <FeedPostCard
-            key={`${post.id}:${round}`}
-            post={post}
-            signedIn={signedIn}
-            signInHref={signInHref}
-            marks={marks[post.id] ?? []}
-            onMarks={(id, list) => setMarks((current) => ({ ...current, [id]: list }))}
-            headingLevel={mode === "feed" ? 2 : 3}
-          />
-        ))}
+        {rest.map((post) => card(post))}
       </div>
 
       {page.next ? (
@@ -169,8 +249,28 @@ export function FeedView({
   );
 }
 
+/** A post back in the composer: its voice and pin ride along. */
+function draftOf(post: FeedPost): ComposerDraft {
+  return {
+    id: post.id,
+    body: post.body,
+    topic: post.topic,
+    topics: post.topics,
+    media: post.media,
+    taggedAuthorIds: post.tagged.map((entry) => entry.id),
+    courseId: post.source?.courseId ?? null,
+    lessonId: post.source?.lessonId ?? null,
+    blockId: post.source?.blockId ?? null,
+    full: post.source?.blockDisplay !== "excerpt",
+    asPlatform: isPlatformAuthor(post.author),
+    pinned: post.pinned,
+    editing: true,
+  };
+}
+
 /** One post on its own address, with its thread open. */
 export function FeedSingle({ initial }: { initial: FeedPost }) {
+  const router = useRouter();
   const { session, status } = useSession();
   const surfaceHref = useSurfaceHref();
   const signInHref = useSignInHref(surfaceHref("/profile"));
@@ -200,6 +300,7 @@ export function FeedSingle({ initial }: { initial: FeedPost }) {
       marks={marks}
       onMarks={(_, list) => setMarks(list)}
       commentsOpen
+      onDeleted={() => router.push(surfaceHref("/feed"))}
     />
   );
 }

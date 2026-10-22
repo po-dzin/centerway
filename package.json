@@ -146,6 +146,11 @@
     "sharp": "^0.35.5",
     "zod": "^4.6.2"
   },
+  "overrides": {
+    "mammoth": {
+      "argparse": "2.0.1"
+    }
+  },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
     "@types/node": "^24",

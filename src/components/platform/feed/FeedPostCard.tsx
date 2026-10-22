@@ -1,45 +1,78 @@
 "use client";
 
 /**
- * One post in «Стрічка»: who wrote it and when, the words, the block or
- * programme it carries, the reactions and the comments.
+ * One post in «Стрічка»: who wrote it and when (and with whom — «з …»), its
+ * one to three topics, the photos, video or audio it carries, the words, the
+ * block or programme, the action row and the comments (G 2026-10-17).
+ *
+ * THE WORDS are the markdown subset of `@/lib/feed/format`, drawn token by
+ * token (`FeedBody`) — never as HTML. They fold after six lines in the feed
+ * and four on the home rail; «Читати далі» appears only when lines are really
+ * hidden, and «Згорнути» folds them again.
  *
  * MARKS. Selecting words in a post offers «Позначити» and «Нотатка», the lesson
  * reader's two acts; the mark lands in the reader's own «Мій журнал» signed
- * «Стрічка · <автор>». Offsets are counted in the post's plain text, and a mark
+ * «Стрічка · <автор>». Offsets are counted in the text the reader sees (`feedBodyText`), and a mark
  * whose words the author has since changed is found again by its quote or
  * quietly not drawn — the journal still keeps it.
  */
 
 import Link from "next/link";
-import { useCallback, useRef, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Fragment,
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+  type RefObject,
+} from "react";
 
 import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
 import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
-import { plural } from "@/lib/plural";
-import { COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
-import { feedPostPath, type ReactionCount } from "@/lib/feed/model";
-import type { FeedAttachment, FeedPost } from "@/lib/feed/server";
+import { FEED_TOPIC_LABELS } from "@/lib/feed/vocabulary";
+import { feedPlainText, parseFeedBody } from "@/lib/feed/format";
+import { EMPTY_FEED_MEDIA } from "@/lib/feed/media";
+import {
+  FEED_TOPICS_MAX,
+  feedAuthorPath,
+  feedPostPath,
+  feedShareImage,
+  isPlatformAuthor,
+  type ReactionCount,
+} from "@/lib/feed/model";
+import type { FeedPost } from "@/lib/feed/server";
 
 import { feedCopy, relativeTime } from "./copy";
-import { deleteMark, saveMark, toggleReaction, type FeedMarkView } from "./feedApi";
+import { useFloating } from "./useFloating";
+import { deleteMark, deletePost, hidePost, pinPost, saveMark, toggleReaction, type FeedMarkView } from "./feedApi";
+import { FeedActions } from "./FeedActions";
+import { FeedAttachment } from "./FeedAttachment";
+import { FeedBody, feedBodyText, type PlacedMark } from "./FeedBody";
 import { FeedComments } from "./FeedComments";
-import { FeedReactions } from "./FeedReactions";
+import { FeedMedia } from "./FeedMedia";
 import styles from "./Feed.module.css";
 
 /* ─────────────── marks in the text ─────────────── */
 
-type Placed = FeedMarkView & { from: number; to: number };
+type Placed = FeedMarkView & PlacedMark;
 
-/** Where each mark sits in the body now; overlapping or lost marks are left out. */
-function placeMarks(body: string, marks: FeedMarkView[]): Placed[] {
+/**
+ * Where each mark sits in the drawn text now; overlapping or lost marks are
+ * left out. A mark is found by its offsets first, then by its quote — which
+ * also finds marks made before 17.10, when offsets counted the raw body.
+ */
+function placeMarks(text: string, marks: FeedMarkView[]): Placed[] {
   const placed: Placed[] = [];
   for (const mark of marks) {
     let from = mark.start ?? -1;
     let to = mark.end ?? -1;
-    if (!(from >= 0 && to > from && body.slice(from, to) === mark.quote)) {
-      from = mark.quote ? body.indexOf(mark.quote) : -1;
+    if (!(from >= 0 && to > from && text.slice(from, to) === mark.quote)) {
+      from = mark.quote ? text.indexOf(mark.quote) : -1;
       to = from >= 0 && mark.quote ? from + mark.quote.length : -1;
     }
     if (from >= 0 && to > from) placed.push({ ...mark, from, to });
@@ -63,37 +96,38 @@ type Bar =
   | { kind: "new"; from: number; to: number; top: number; left: number; writing: boolean }
   | { kind: "existing"; mark: Placed; top: number; left: number };
 
-/* ─────────────── the attachment ─────────────── */
+/* ─────────────── the fold ─────────────── */
 
-function attachmentIcon(attachment: FeedAttachment) {
-  if (attachment.kind === "program") return "guide" as const;
-  if (attachment.media === "video") return "play" as const;
-  if (attachment.media === "image") return "eye" as const;
-  return "document" as const;
+/**
+ * Whether the clamped body actually hides lines. Measured, not guessed from
+ * the length: six lines of a phone are a third of six lines of a desktop. The
+ * button appears only when there is something under the fold.
+ */
+function useOverflow(ref: RefObject<HTMLElement | null>, clamped: boolean): boolean {
+  const [over, setOver] = useState(false);
+  useLayoutEffect(() => {
+    const node = ref.current;
+    if (!node || !clamped) return;
+    const measure = () => setOver(node.scrollHeight - node.clientHeight > 2);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [ref, clamped]);
+  return over;
 }
 
-function Attachment({ attachment }: { attachment: FeedAttachment }) {
-  const extra = [
-    attachment.media === "video" ? feedCopy.video : attachment.media === "image" ? feedCopy.image : null,
-    attachment.durationMin ? `${attachment.durationMin} ${feedCopy.minutes}` : null,
-  ].filter(Boolean);
-  return (
-    <div className={styles.attach}>
-      <span className={styles.attachIcon} aria-hidden="true">
-        <Icon name={attachmentIcon(attachment)} size={20} />
-      </span>
-      <div className={styles.attachBody}>
-        <p className={styles.attachTitle}>{attachment.title}</p>
-        <p className={styles.attachMeta}>{[attachment.meta, ...extra].join(" · ")}</p>
-        {attachment.text ? <p className={styles.attachText}>{attachment.text}</p> : null}
-        {attachment.href ? (
-          <Link className={`cw-link-rule ${styles.attachGo}`} href={attachment.href}>
-            {feedCopy.openProgram}
-          </Link>
-        ) : null}
-      </div>
-    </div>
-  );
+/** The reader's press applied to the counts in hand, before the server has answered. */
+function toggledLocally(list: ReactionCount[], emoji: string): ReactionCount[] {
+  const found = list.find((entry) => entry.emoji === emoji);
+  if (found?.mine) {
+    return list.flatMap((entry) =>
+      entry.emoji !== emoji ? [entry] : entry.count > 1 ? [{ ...entry, count: entry.count - 1, mine: false }] : [],
+    );
+  }
+  if (found)
+    return list.map((entry) => (entry.emoji === emoji ? { ...entry, count: entry.count + 1, mine: true } : entry));
+  return [...list, { emoji, count: 1, mine: true } as ReactionCount];
 }
 
 /* ─────────────── the card ─────────────── */
@@ -107,6 +141,11 @@ export function FeedPostCard({
   commentsOpen = false,
   headingLevel = 2,
   aside,
+  footer,
+  onDeleted,
+  onEdit,
+  onChanged,
+  variant = "feed",
 }: {
   post: FeedPost;
   signedIn: boolean;
@@ -118,16 +157,73 @@ export function FeedPostCard({
   headingLevel?: 2 | 3;
   /** Extra lines under the byline — the workshop's state and reasons. */
   aside?: ReactNode;
+  /** Lines under the action row — the workshop's echo of how a post landed. */
+  footer?: ReactNode;
+  /**
+   * The author's own post can be taken down from where it is read (G 2026-10-18).
+   * The page that holds the card decides what follows: the feed drops the card,
+   * the post's own page goes back to the feed. Without it there is no control —
+   * the workshop has its own.
+   */
+  onDeleted?: (id: string) => void;
+  /** An admin changes a post of the platform's where it stands; the page swaps the card for the composer. */
+  onEdit?: (post: FeedPost) => void;
+  /** The card's post came back changed (pinned or unpinned); the page puts it in its list. */
+  onChanged?: (post: FeedPost) => void;
+  /**
+   * `rail`: the home page's «Свіже від авторів» — the same card, folded after
+   * four lines with a shorter photo, and the bubble leading to the post's page
+   * instead of opening the thread in place.
+   */
+  variant?: "feed" | "rail";
 }) {
   const toast = useToast();
   const card = useRef<HTMLElement>(null);
-  const bodyRef = useRef<HTMLParagraphElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const [reactions, setReactions] = useState<ReactionCount[]>(post.reactions);
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(commentsOpen);
   const [count, setCount] = useState(post.commentCount);
   const [bar, setBar] = useState<Bar | null>(null);
   const [note, setNote] = useState("");
+  const platform = isPlatformAuthor(post.author);
+  const router = useRouter();
+
+  /* A press on the words or on an empty place of the card opens the post's own
+     page, where its thread is (G 2026-10-18, as in Threads). Never while the
+     reader is selecting words (that gesture ends in a press too), and never on
+     what has a press of its own: links, buttons, media, the attached block,
+     a highlight, the thread. On the post's own page there is nowhere to go. */
+  function openThread(event: MouseEvent<HTMLElement>) {
+    if (commentsOpen) return;
+    if (event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (window.getSelection()?.toString()) return;
+    const target = event.target as HTMLElement;
+    if (
+      target.closest(
+        "a, button, input, textarea, label, mark, video, audio, iframe, dialog, [role=dialog], [data-no-open]",
+      )
+    )
+      return;
+    router.push(feedPostPath(post.id));
+  }
+  const [removing, setRemoving] = useState<"ask" | "busy" | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const menuPanel = useRef<HTMLDivElement>(null);
+  const closeMenu = useCallback(() => {
+    setMenuOpen(false);
+    setRemoving(null);
+  }, []);
+  useFloating(menuOpen, menuButton, menuPanel, closeMenu, "end");
+  // The post's own page shows it whole; the feed and the rail fold it.
+  const [expanded, setExpanded] = useState(commentsOpen);
+  const clamped = !expanded;
+  const overflowing = useOverflow(bodyRef, clamped);
+
+  const tokens = useMemo(() => parseFeedBody(post.body), [post.body]);
+  const text = useMemo(() => feedBodyText(tokens), [tokens]);
 
   const goSignIn = useCallback(() => {
     window.location.assign(signInHref);
@@ -138,13 +234,55 @@ export function FeedPostCard({
       goSignIn();
       return;
     }
+    /* Optimistic: the chip answers the press at once, the server's count then
+       replaces it; a refusal puts back what was there. */
+    const before = reactions;
+    setReactions(toggledLocally(before, emoji));
     setBusy(true);
     const result = await toggleReaction(post.id, emoji);
     setBusy(false);
-    if (result.ok) setReactions(result.data.reactions);
+    if (result.ok) {
+      setReactions(result.data.reactions);
+      return;
+    }
+    setReactions(before);
+    toast.error(result.code === "reaction_limit" ? feedCopy.reactionLimit : feedCopy.reactionFailed);
   }
 
-  const placed = placeMarks(post.body, marks);
+  async function togglePin() {
+    closeMenu();
+    const result = await pinPost(post.id, !post.pinned);
+    if (!result.ok) {
+      toast.error(feedCopy.pinFailed);
+      return;
+    }
+    onChanged?.(result.data.post);
+  }
+
+  async function hideThePost() {
+    closeMenu();
+    const result = await hidePost(post.id);
+    if (!result.ok) {
+      toast.error(feedCopy.hideFailed);
+      return;
+    }
+    toast.success(feedCopy.hidden);
+    onDeleted?.(post.id);
+  }
+
+  async function removePost() {
+    setRemoving("busy");
+    const result = await deletePost(post.id);
+    if (!result.ok) {
+      setRemoving(null);
+      toast.error(feedCopy.deleteFailed);
+      return;
+    }
+    toast.success(feedCopy.deleted);
+    onDeleted?.(post.id);
+  }
+
+  const placed = placeMarks(text, marks);
 
   function readSelection() {
     if (!signedIn || !bodyRef.current || !card.current) return;
@@ -168,13 +306,15 @@ export function FeedPostCard({
     });
   }
 
-  function openMark(mark: Placed, target: HTMLElement) {
+  function openMark(mark: PlacedMark, target: HTMLElement) {
     if (!card.current) return;
+    const full = placed.find((entry) => entry.clientId === mark.clientId);
+    if (!full) return;
     const rect = target.getBoundingClientRect();
     const box = card.current.getBoundingClientRect();
     setBar({
       kind: "existing",
-      mark,
+      mark: full,
       top: rect.bottom - box.top + 8,
       left: Math.max(8, Math.min(rect.left - box.left, box.width - 240)),
     });
@@ -182,7 +322,7 @@ export function FeedPostCard({
 
   async function keep(withNote: string | null) {
     if (!bar || bar.kind !== "new") return;
-    const quote = post.body.slice(bar.from, bar.to);
+    const quote = text.slice(bar.from, bar.to);
     const mark: FeedMarkView = {
       clientId: newClientId(),
       postId: post.id,
@@ -193,7 +333,7 @@ export function FeedPostCard({
     };
     setBar(null);
     window.getSelection()?.removeAllRanges();
-    const result = await saveMark({ ...mark, prefix: post.body.slice(Math.max(0, bar.from - 40), bar.from) });
+    const result = await saveMark({ ...mark, prefix: text.slice(Math.max(0, bar.from - 40), bar.from) });
     if (!result.ok) {
       toast.error(feedCopy.markFailed);
       return;
@@ -215,40 +355,53 @@ export function FeedPostCard({
     );
   }
 
-  const segments: ReactNode[] = [];
-  let cursor = 0;
-  for (const mark of placed) {
-    if (mark.from > cursor) segments.push(post.body.slice(cursor, mark.from));
-    segments.push(
-      <mark
-        key={mark.clientId}
-        className={styles.mark}
-        data-note={mark.note ? "" : undefined}
-        title={mark.note ?? undefined}
-        onClick={(event) => openMark(mark, event.currentTarget)}
-      >
-        {post.body.slice(mark.from, mark.to)}
-      </mark>,
-    );
-    cursor = mark.to;
-  }
-  if (cursor < post.body.length) segments.push(post.body.slice(cursor));
-
   const Name = headingLevel === 2 ? "h2" : "h3";
   const when = post.publishedAt ?? post.createdAt;
+  const topics = (post.topics?.length ? post.topics : [post.topic]).slice(0, FEED_TOPICS_MAX);
 
   return (
-    <article className={styles.post} ref={card} aria-labelledby={`post-${post.id}-by`}>
+    <article
+      className={post.pinned ? `${styles.post} ${styles.pinned}` : styles.post}
+      data-variant={variant}
+      ref={card}
+      aria-labelledby={`post-${post.id}-by`}
+      onClick={openThread}
+    >
       <div className={styles.byline}>
-        <AuthorPortrait
-          className={styles.face}
-          photo={post.author.photo}
-          size="sm"
-          fallback={post.author.name.trim().charAt(0).toUpperCase()}
-        />
+        {/* The face is a second way to the same profile as the name, so it
+            stays out of the tab order and out of the accessibility tree. */}
+        {platform ? (
+          <span className={styles.face} aria-hidden="true">
+            <AuthorPortrait
+              photo={post.author.photo}
+              size="sm"
+              fallback={post.author.name.trim().charAt(0).toUpperCase()}
+            />
+          </span>
+        ) : (
+          <Link className={styles.face} href={feedAuthorPath(post.author.slug)} tabIndex={-1} aria-hidden="true">
+            <AuthorPortrait
+              photo={post.author.photo}
+              size="sm"
+              fallback={post.author.name.trim().charAt(0).toUpperCase()}
+            />
+          </Link>
+        )}
         <div className={styles.who}>
           <Name className={styles.whoName} id={`post-${post.id}-by`}>
-            <Link href={`/expert/${post.author.slug}`}>{post.author.name}</Link>
+            {platform ? post.author.name : <Link href={feedAuthorPath(post.author.slug)}>{post.author.name}</Link>}
+            {post.pinned ? <span className={styles.pinTag}>· {feedCopy.pinned}</span> : null}
+            {post.tagged?.length ? (
+              <span className={styles.withTag}>
+                {` ${feedCopy.with} `}
+                {post.tagged.map((author, index) => (
+                  <Fragment key={author.id}>
+                    {index > 0 ? ", " : null}
+                    <Link href={feedAuthorPath(author.slug)}>{author.name}</Link>
+                  </Fragment>
+                ))}
+              </span>
+            ) : null}
           </Name>
           <p className={styles.when}>
             <Link href={feedPostPath(post.id)}>
@@ -256,16 +409,139 @@ export function FeedPostCard({
                 {relativeTime(when)}
               </time>
             </Link>
-            {` · ${COURSE_CATEGORY_LABELS[post.topic]}`}
+            {` · ${topics.map((topic) => FEED_TOPIC_LABELS[topic]).join(", ")}`}
+            {post.edited ? ` · ${feedCopy.edited}` : null}
           </p>
         </div>
+        {onDeleted && post.canManage ? (
+          <div className={styles.byTools}>
+            <button
+              ref={menuButton}
+              className={styles.byMenu}
+              type="button"
+              aria-label={feedCopy.postMenu}
+              title={feedCopy.postMenu}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              onClick={() => (menuOpen ? closeMenu() : setMenuOpen(true))}
+            >
+              <Icon name="more" size={20} />
+            </button>
+            {menuOpen ? (
+              <div
+                ref={menuPanel}
+                className={`${styles.menu} ${styles.postMenu}`}
+                role="menu"
+                aria-label={feedCopy.postMenu}
+              >
+                {removing ? (
+                  <>
+                    <p className={styles.menuAsk}>{feedCopy.deleteAsk}</p>
+                    <div className={styles.menuRow}>
+                      <button
+                        className={styles.menuItem}
+                        data-tone="danger"
+                        type="button"
+                        role="menuitem"
+                        disabled={removing === "busy"}
+                        onClick={() => void removePost()}
+                      >
+                        {feedCopy.deleteYes}
+                      </button>
+                      <button
+                        className={styles.menuItem}
+                        type="button"
+                        role="menuitem"
+                        disabled={removing === "busy"}
+                        onClick={() => setRemoving(null)}
+                      >
+                        {feedCopy.deleteNo}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {onEdit && post.canEdit ? (
+                      <button
+                        className={styles.menuItem}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          closeMenu();
+                          onEdit(post);
+                        }}
+                      >
+                        <Icon name="edit" size={20} />
+                        {feedCopy.edit}
+                      </button>
+                    ) : null}
+                    {onChanged && post.canModerate && post.status === "published" ? (
+                      <button
+                        className={styles.menuItem}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => void togglePin()}
+                      >
+                        <Icon name="pin" size={20} />
+                        {post.pinned ? feedCopy.unpin : feedCopy.pin}
+                      </button>
+                    ) : null}
+                    {post.canModerate && !post.mine ? (
+                      <button
+                        className={styles.menuItem}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => void hideThePost()}
+                      >
+                        <Icon name="unpublish" size={20} />
+                        {feedCopy.hide}
+                      </button>
+                    ) : null}
+                    <button
+                      className={styles.menuItem}
+                      data-tone="danger"
+                      type="button"
+                      role="menuitem"
+                      onClick={() => setRemoving("ask")}
+                    >
+                      <Icon name="trash" size={20} />
+                      {feedCopy.remove}
+                    </button>
+                  </>
+                )}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       {aside}
 
-      <p className={styles.body} ref={bodyRef} onMouseUp={readSelection} onKeyUp={readSelection}>
-        {segments}
-      </p>
+      <FeedMedia media={post.media ?? EMPTY_FEED_MEDIA} postId={post.id} />
+
+      {tokens.length ? (
+        <div className={styles.bodyFold}>
+          <FeedBody
+            ref={bodyRef}
+            className={styles.body}
+            clamped={clamped}
+            tokens={tokens}
+            marks={placed}
+            onMark={openMark}
+            onSelect={readSelection}
+          />
+          {overflowing ? (
+            <button
+              className={styles.moreText}
+              type="button"
+              aria-expanded={expanded}
+              onClick={() => setExpanded((current) => !current)}
+            >
+              {expanded ? feedCopy.readLess : feedCopy.readMore}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       {bar ? (
         <div
@@ -340,28 +616,40 @@ export function FeedPostCard({
         </div>
       ) : null}
 
-      {post.attachment ? <Attachment attachment={post.attachment} /> : null}
+      {post.attachment ? <FeedAttachment attachment={post.attachment} postId={post.id} /> : null}
 
       {post.status === "published" ? (
-        <div className={styles.social}>
-          <FeedReactions reactions={reactions} busy={busy} onToggle={(emoji) => void react(emoji)} />
-          <button
-            className={styles.countLink}
-            type="button"
-            aria-expanded={open}
-            onClick={() => setOpen((current) => !current)}
-          >
-            {open
-              ? feedCopy.commentsHide
-              : count > 0
-                ? `${count} ${plural(count, ...feedCopy.comments)}`
-                : feedCopy.commentsNone}
-          </button>
-        </div>
+        <FeedActions
+          postId={post.id}
+          shareText={feedPlainText(post.body)}
+          shareAuthor={post.author.name}
+          shareImage={feedShareImage(post)?.url ?? null}
+          reactions={reactions}
+          busy={busy}
+          onReact={(emoji) => void react(emoji)}
+          signedIn={signedIn}
+          onGuest={goSignIn}
+          commentCount={count}
+          commentsOpen={open}
+          /* Feed comments open in place; the home rail keeps its compact link. */
+          onComments={variant === "feed" ? () => setOpen((current) => !current) : undefined}
+          initiallySaved={post.saved ?? false}
+          initialSaveCount={post.saveCount ?? 0}
+          shareCount={post.shareCount ?? 0}
+          initiallyShared={post.shared ?? false}
+        />
       ) : null}
 
-      {open && post.status === "published" ? (
-        <FeedComments postId={post.id} signedIn={signedIn} signInHref={signInHref} onCount={setCount} />
+      {footer}
+
+      {open && post.status === "published" && variant === "feed" ? (
+        <FeedComments
+          expanded={commentsOpen}
+          postId={post.id}
+          signedIn={signedIn}
+          signInHref={signInHref}
+          onCount={setCount}
+        />
       ) : null}
     </article>
   );

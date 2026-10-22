@@ -95,7 +95,7 @@ export async function recordManualPayment(input: {
 }
 
 /**
- * When a seat sold by hand should close, according to the offer.
+ * When a seat sold by hand should close, according to the course's base offer.
  *
  * Anchored at the payment, exactly as `planAccess` anchors a checkout purchase,
  * so the same course sold at the till and sold in admin ends on the same day.
@@ -119,6 +119,65 @@ async function offerExpiryFor(db: Db, courseSlug: string, paidAt: string): Promi
   const from = new Date(paidAt);
   if (!Number.isFinite(from.getTime())) return null;
   return accessWindowEnd(from, rule);
+}
+
+type GrantFormat = {
+  code: string;
+  cohortStartsOn: string | null;
+  accessDays: number | null;
+  accessLifetime: boolean;
+  includedCourseSlugs: string[];
+};
+
+/** Resolve a format from the approved, on-sale offer attached to this course. */
+async function grantFormatFor(db: Db, courseSlug: string, code: string): Promise<GrantFormat> {
+  const { data: course, error: courseError } = await db
+    .from("lms_courses")
+    .select("experience_id")
+    .eq("slug", courseSlug)
+    .maybeSingle();
+  if (courseError) throw new AccessError(courseError.message, 500);
+  if (!course?.experience_id) throw new AccessError("format_not_available", 409);
+
+  const { data: offer, error } = await db
+    .from("experience_offers")
+    .select("id, code, experience_id, format, active, review_status, cohort_starts_on, access_days, access_lifetime")
+    .eq("code", code)
+    .eq("experience_id", course.experience_id)
+    .eq("active", true)
+    .eq("review_status", "approved")
+    .maybeSingle();
+  if (error) throw new AccessError(error.message, 500);
+  if (!offer || typeof offer.format !== "string") throw new AccessError("format_not_available", 409);
+
+  const { data: items, error: itemsError } = await db
+    .from("experience_offer_items")
+    .select("experience_id")
+    .eq("offer_id", offer.id);
+  if (itemsError) throw new AccessError(itemsError.message, 500);
+  const experienceIds = [...new Set((items ?? []).map((item) => item.experience_id as string))];
+  const { data: included, error: includedError } = experienceIds.length
+    ? await db.from("lms_courses").select("slug").in("experience_id", experienceIds).eq("status", "published")
+    : { data: [] as { slug: string }[], error: null };
+  if (includedError) throw new AccessError(includedError.message, 500);
+
+  return {
+    code,
+    cohortStartsOn: (offer.cohort_starts_on as string | null) ?? null,
+    accessDays: (offer.access_days as number | null) ?? null,
+    accessLifetime: (offer.access_lifetime as boolean | null) ?? false,
+    includedCourseSlugs: [...new Set((included ?? []).map((row) => row.slug as string))].filter(
+      (slug) => slug !== courseSlug,
+    ),
+  };
+}
+
+function termEndForOffer(offer: { accessDays: number | null; accessLifetime: boolean }, from: string): string | null {
+  if (offer.accessLifetime || offer.accessDays === null) return null;
+  const start = new Date(from);
+  if (!Number.isFinite(start.getTime())) return null;
+  const rule = accessRuleOf({ accessDays: offer.accessDays, accessLifetime: false });
+  return rule ? accessWindowEnd(start, rule) : null;
 }
 
 /**
@@ -173,6 +232,8 @@ export type ProvisionAccessInput = {
   email: string;
   fullName?: string | null;
   courseSlug: string;
+  /** Exact saleable format selected by the operator. Validated against the course server-side. */
+  offerCode?: string;
   /** ISO instant or `null`; the route normalizes what the operator typed. */
   expiresAt?: string | null;
   /** Create the platform account when this email has never signed in. */
@@ -185,6 +246,16 @@ export type ProvisionAccessInput = {
   cohortStartsOn?: string | null;
   /** Who brought this person (`?ref`). */
   ref?: string | null;
+  /**
+   * Take the term from the course's offer even though no money came in.
+   *
+   * With a payment the offer's term always applies (below). WITHOUT one, an
+   * absent `expiresAt` has always meant no deadline: a gift is forever unless
+   * somebody says otherwise. The grant dialog's «Як в оффері курсу» says
+   * otherwise, out loud, so it sends this — counted from the day of the grant.
+   * Ignored when `expiresAt` is given: a typed date is the stronger answer.
+   */
+  termFromOffer?: boolean;
   actorId: string;
 };
 
@@ -211,16 +282,21 @@ export type ProvisionAccessInput = {
  */
 export async function provisionAccess(input: ProvisionAccessInput) {
   const db = adminClient();
+  const selectedFormat = input.offerCode ? await grantFormatFor(db, input.courseSlug, input.offerCode) : null;
   const account = input.createAccount
     ? await createAccount({ email: input.email, fullName: input.fullName, actorId: input.actorId })
     : { created: false, account: await resolveAccountByEmail(db, input.email) };
 
-  await assertGrantable(db, input.courseSlug, account.account.authUserId);
+  await Promise.all(
+    [input.courseSlug, ...(selectedFormat?.includedCourseSlugs ?? [])].map((courseSlug) =>
+      assertGrantable(db, courseSlug, account.account.authUserId),
+    ),
+  );
 
   const payment = input.payment
     ? await recordManualPayment({
         email: input.email,
-        productCode: courseOfferCode(input.courseSlug),
+        productCode: selectedFormat?.code ?? courseOfferCode(input.courseSlug),
         amount: input.payment.amount,
         currency: input.payment.currency,
         note: input.payment.note,
@@ -234,11 +310,19 @@ export async function provisionAccess(input: ProvisionAccessInput) {
        30-day course by hand granted it forever unless somebody remembered to
        type a date. The offer is where the term is agreed, so a sale made in
        admin is sold on the same terms as one made at the checkout. */
-  const expiresAt =
-    input.expiresAt !== undefined
+  const expiresAt = selectedFormat
+    ? input.expiresAt !== undefined
       ? input.expiresAt
-      : payment
-        ? await offerExpiryFor(db, input.courseSlug, payment.paidAt)
+      : termEndForOffer(
+          selectedFormat,
+          selectedFormat.cohortStartsOn
+            ? `${selectedFormat.cohortStartsOn}T00:00:00.000Z`
+            : (payment?.paidAt ?? new Date().toISOString()),
+        )
+    : input.expiresAt !== undefined
+      ? input.expiresAt
+      : payment || input.termFromOffer
+        ? await offerExpiryFor(db, input.courseSlug, payment?.paidAt ?? new Date().toISOString())
         : null;
 
   const grant = await grantCourse({
@@ -250,9 +334,25 @@ export async function provisionAccess(input: ProvisionAccessInput) {
     source: input.source ?? (payment ? "manual" : undefined),
     actorId: input.actorId,
     orderRef: payment?.orderRef ?? null,
-    cohortStartsOn: input.cohortStartsOn,
+    cohortStartsOn: selectedFormat?.cohortStartsOn ?? input.cohortStartsOn,
     ref: input.ref,
   });
+
+  const includedGrants = selectedFormat
+    ? await Promise.all(
+        selectedFormat.includedCourseSlugs.map((courseSlug) =>
+          grantCourse({
+            email: input.email,
+            courseSlug,
+            expiresAt,
+            source: input.source ?? (payment ? "manual" : undefined),
+            actorId: input.actorId,
+            orderRef: payment?.orderRef ?? null,
+            ref: input.ref,
+          }),
+        ),
+      )
+    : [];
 
   /* ONLY FOR A SALE. A grant with no payment is a gift or a promo seat, and
        posting "Оплату отримано" with an order number to somebody who paid
@@ -268,7 +368,7 @@ export async function provisionAccess(input: ProvisionAccessInput) {
       })
     : null;
 
-  return { accountCreated: account.created, account: grant.account, payment, grant, receipt };
+  return { accountCreated: account.created, account: grant.account, payment, grant, includedGrants, receipt };
 }
 
 /**

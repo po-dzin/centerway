@@ -9,8 +9,10 @@
  */
 
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
-import { feedFilterQuery, type FeedFilter, type ReactionCount } from "@/lib/feed/model";
+import type { FeedMediaStored } from "@/lib/feed/media";
+import { feedFilterQuery, type FeedFilter, type FeedTopic, type ReactionCount } from "@/lib/feed/model";
 import type { ComposerCourse, FeedAuthor, FeedComment, FeedPage, FeedPost } from "@/lib/feed/server";
+import type { UploadedMedia } from "@/lib/feed/upload";
 
 export type FeedResult<T> = { ok: true; data: T } | { ok: false; code: string; status: number };
 
@@ -40,8 +42,12 @@ export function fetchFeedPost(id: string) {
 
 export type FeedMe = {
   author: FeedAuthor | null;
+  /** An admin's second voice, the platform's own byline; null for everyone else. */
+  platform: FeedAuthor | null;
   posts: FeedPost[];
   courses: ComposerCourse[];
+  /** Every other listed author — the composer's «з …» menu. Empty for a reader. */
+  taggable: FeedAuthor[];
 };
 
 export function fetchFeedMe() {
@@ -49,12 +55,24 @@ export function fetchFeedMe() {
 }
 
 export type NewPost = {
+  /** The markdown subset of `@/lib/feed/format`; ≤ 4000 visible characters. */
   body: string;
-  topic: string;
+  /** One to three, the first is the main one. */
+  topics?: FeedTopic[];
+  /** The old single topic; still accepted when `topics` is absent. */
+  topic?: string | null;
+  /** Paths from `uploadFeedMedia`; `video.youtubeId` may be a pasted link. */
+  media?: FeedMediaStored | null;
+  /** Listed author ids from `FeedMe.taggable`, at most three. */
+  taggedAuthorIds?: string[];
   courseId?: string | null;
   lessonId?: string | null;
   blockId?: string | null;
   blockDisplay?: "full" | "excerpt";
+  /** An admin writing as CenterWay; the post is published at once. */
+  asPlatform?: boolean;
+  /** With `asPlatform`: make it the pinned post of the feed. */
+  pinned?: boolean;
 };
 
 export type PostFinding = { rule: string; label: string; detail: string };
@@ -70,12 +88,68 @@ export function resubmitPost(id: string, input: NewPost) {
   });
 }
 
+/** Where an attachment's arrow leads this reader: inside the course, or to the programme's page. */
+export function fetchAttachmentHref(postId: string) {
+  return call<{ href: string; inside: boolean }>(`/api/feed/${postId}/go`);
+}
+
+/** An admin pins or unpins a post of the platform's. */
+export function pinPost(id: string, pinned: boolean) {
+  return call<{ post: FeedPost }>(`/api/feed/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ asPlatform: true, pinOnly: true, pinned }),
+  });
+}
+
+/** An admin takes a post out of the feed without deleting it. */
+export function hidePost(id: string) {
+  return call<{ ok: true }>(`/api/feed/${id}/hide`, { method: "POST" });
+}
+
 export function deletePost(id: string) {
   return call<{ ok: true }>(`/api/feed/${id}`, { method: "DELETE" });
 }
 
+/** A fourth different emoji answers `{ ok: false, code: "reaction_limit", status: 409 }`. */
 export function toggleReaction(postId: string, emoji: string) {
   return call<{ reactions: ReactionCount[] }>(`/api/feed/${postId}/reactions`, json({ emoji }));
+}
+
+/** «Зберегти» → «Мій журнал». */
+export function savePost(postId: string) {
+  return call<{ saved: true }>(`/api/feed/${postId}/save`, { method: "POST" });
+}
+
+export function unsavePost(postId: string) {
+  return call<{ saved: false }>(`/api/feed/${postId}/save`, { method: "DELETE" });
+}
+
+export type ShareChannel = "link" | "telegram" | "system";
+
+/** A signed-in reader shared the post; `first` is false when they had before. */
+export function recordShare(postId: string, channel: ShareChannel) {
+  return call<{ first: boolean }>(`/api/feed/${postId}/share`, json({ channel }));
+}
+
+/**
+ * A photo or an audio for a post (`multipart/form-data`). The answer's `path`
+ * goes into `NewPost.media`; `src` is for the composer's thumbnail or player.
+ */
+export function uploadFeedMedia(file: File | Blob, name = "upload", asPlatform = false) {
+  const form = new FormData();
+  form.append("file", file instanceof File ? file : new File([file], name, { type: file.type }));
+  return call<UploadedMedia>(asPlatform ? "/api/feed/media?as=platform" : "/api/feed/media", {
+    method: "POST",
+    body: form,
+  });
+}
+
+/** An address in the bucket to send a clip to; the file does not pass through the server. */
+export function signClip(mime: string, bytes: number, asPlatform = false) {
+  return call<{ path: string; uploadUrl: string; src: string }>(
+    asPlatform ? "/api/feed/media/clip?as=platform" : "/api/feed/media/clip",
+    json({ mime, bytes }),
+  );
 }
 
 export function fetchComments(postId: string) {
@@ -109,4 +183,8 @@ export function saveMark(mark: FeedMarkView & { prefix?: string | null }) {
 
 export function deleteMark(clientId: string) {
   return call<{ ok: true }>(`/api/feed/marks/${encodeURIComponent(clientId)}`, { method: "DELETE" });
+}
+
+export function toggleCommentReaction(commentId: string, emoji: string) {
+  return call<{ reactions: ReactionCount[] }>(`/api/feed/comments/${commentId}/reactions`, json({ emoji }));
 }

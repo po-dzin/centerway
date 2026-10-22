@@ -40,7 +40,8 @@ import { returnPageTelegramUrl } from "@/lib/payments/purchaseTelegram";
 import { getCourseAuthor, withAuthorNames } from "@/lib/lms/authors";
 import { toOfferSurface } from "@/lib/platform/courseOffer";
 import { listLiveCourses } from "@/lib/lms/liveCatalog";
-import { courseOfferCommerce } from "@/lib/platform/offerCommerce";
+import { courseOfferCommerce, withPersonalPrice } from "@/lib/platform/offerCommerce";
+import { resolvePersonalPrice } from "@/lib/landing/offers";
 import { isPublicCourse, listStorefrontCourses, loadCourseOffer, loadPayableOffer } from "@/lib/platform/offers";
 import { courseOfferCode, inlineToPlainText, type Course } from "@/lms-core";
 import { describe } from "@/lib/brand/identity";
@@ -161,6 +162,22 @@ export default async function CourseOfferPage({
   // The one-tap Telegram link, while it is still the buyer's own return (see purchaseTelegram.ts).
   const telegramHref = returned ? await returnPageTelegramUrl(returned.orderRef) : null;
 
+  /* A personal price arrives as `?offer_token` through `/go/<program>`; the
+     page prints it and hands the token on to the checkout that charges it. */
+  const publicCommerce = courseOfferCommerce(course.programSlug, offer);
+  const personalFormatCode = typeof query.offer_code === "string" ? query.offer_code : null;
+  const resolvedFormatPrice =
+    personalFormatCode && formats.some((format) => format.code === personalFormatCode)
+      ? await resolvePersonalPrice(personalFormatCode, query)
+      : null;
+  const personalFormatPrice = resolvedFormatPrice
+    ? { ...resolvedFormatPrice, productCode: personalFormatCode ?? "" }
+    : null;
+  const commerce =
+    publicCommerce.mode === "checkout"
+      ? withPersonalPrice(publicCommerce, await resolvePersonalPrice(publicCommerce.productCode, query))
+      : publicCommerce;
+
   // Passed in rather than looked up: this page has already read the course, and
   // the snapshot lookup inside would find nothing for a course that exists only
   // in the database — which is every course this route serves.
@@ -168,9 +185,10 @@ export default async function CourseOfferPage({
     <ProgramDetailPage
       program={toOfferSurface(course)}
       course={course}
-      commerce={courseOfferCommerce(course.programSlug, offer)}
+      commerce={commerce}
       author={author}
       formats={formats}
+      personalFormatPrice={personalFormatPrice}
       purchase={
         returned ? (
           <OfferPurchaseReturn purchase={{ ...returned, product: returnedCode }} telegramHref={telegramHref} />

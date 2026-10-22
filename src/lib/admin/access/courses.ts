@@ -12,9 +12,20 @@ import { loadBuilderCourse } from "@/lib/lms/builder";
 import { applyAccessTermToOffer } from "@/lib/lms/offerTerm";
 import { JOURNAL_MIGRATION_REQUIRED, journalCourseState, writeCourseRelease } from "@/lib/lms/release";
 import { courseReadiness, validateCourse, type Course } from "@/lms-core";
-import type { AuthorProfileRow, CourseRow } from "@/lib/admin/accessTypes";
+import type { AuthorProfileRow, CourseFormatRow, CourseRow } from "@/lib/admin/accessTypes";
+import { isOfferFormat } from "@/lib/experiences/formats";
 import { resolveAccountByEmail } from "./accounts";
 import { AccessError, accountsByIds, writeAudit } from "./shared";
+
+/** The author's name for a format, in Ukrainian when it has one. `label` is a locale object (`{ uk, en }`) or nothing. */
+function formatLabel(raw: unknown): string | null {
+  if (typeof raw === "string") return raw.trim() || null;
+  if (raw && typeof raw === "object") {
+    const uk = (raw as { uk?: unknown }).uk;
+    if (typeof uk === "string" && uk.trim()) return uk.trim();
+  }
+  return null;
+}
 
 export async function listCourses(): Promise<CourseRow[]> {
   const db = adminClient();
@@ -25,10 +36,75 @@ export async function listCourses(): Promise<CourseRow[]> {
   const authorIds = [
     ...new Set((courses ?? []).map((row) => row.author_id as string | null).filter((id): id is string => Boolean(id))),
   ];
-  const [authors, { data: enrollments }] = await Promise.all([
+  const experienceIds = [
+    ...new Set(
+      (courses ?? []).map((row) => row.experience_id as string | null).filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const [authors, { data: enrollments }, { data: offers }] = await Promise.all([
     accountsByIds(db, authorIds),
     db.from("lms_enrollments").select("course_id"),
+    // The formats a grant can name. Only what is on sale: an author's proposal
+    // (draft / proposed / declined) is not a way to take the program yet, the
+    // same gate the storefront applies (`loadProgramFormats`).
+    experienceIds.length > 0
+      ? db
+          .from("experience_offers")
+          .select(
+            "id, code, experience_id, format, label, cohort_starts_on, access_days, access_lifetime, amount, currency, mode, sort_order",
+          )
+          .in("experience_id", experienceIds)
+          .eq("active", true)
+          .eq("review_status", "approved")
+          .not("format", "is", null)
+          .order("sort_order", { ascending: true })
+      : Promise.resolve({ data: [] as never[] }),
   ]);
+
+  const formatsByExperience = new Map<string, CourseFormatRow[]>();
+  const offerIds = (offers ?? []).map((offer) => offer.id as string);
+  const includedByOffer = new Map<string, string[]>();
+  if (offerIds.length > 0) {
+    const { data: items } = await db
+      .from("experience_offer_items")
+      .select("offer_id, experience_id")
+      .in("offer_id", offerIds);
+    const includedExperienceIds = [...new Set((items ?? []).map((item) => item.experience_id as string))];
+    const { data: includedCourses } = includedExperienceIds.length
+      ? await db
+          .from("lms_courses")
+          .select("slug, experience_id")
+          .in("experience_id", includedExperienceIds)
+          .eq("status", "published")
+      : { data: [] as never[] };
+    const slugByExperience = new Map(
+      (includedCourses ?? []).map((row) => [row.experience_id as string, row.slug as string]),
+    );
+    for (const item of items ?? []) {
+      const slug = slugByExperience.get(item.experience_id as string);
+      if (!slug) continue;
+      const list = includedByOffer.get(item.offer_id as string) ?? [];
+      list.push(slug);
+      includedByOffer.set(item.offer_id as string, list);
+    }
+  }
+  for (const offer of offers ?? []) {
+    if (!isOfferFormat(offer.format)) continue;
+    const list = formatsByExperience.get(offer.experience_id) ?? [];
+    list.push({
+      code: offer.code as string,
+      format: offer.format,
+      label: formatLabel(offer.label),
+      cohortStartsOn: offer.cohort_starts_on ?? null,
+      accessDays: (offer.access_days as number | null) ?? null,
+      accessLifetime: (offer.access_lifetime as boolean | null) ?? false,
+      includedCourseSlugs: includedByOffer.get(offer.id as string) ?? [],
+      amount: (offer.amount as number | null) ?? null,
+      currency: (offer.currency as string | null) ?? "UAH",
+      payable: offer.mode === "checkout" && Number(offer.amount) > 0,
+    });
+    formatsByExperience.set(offer.experience_id, list);
+  }
 
   const learners = new Map<string, number>();
   for (const row of enrollments ?? []) {
@@ -59,6 +135,8 @@ export async function listCourses(): Promise<CourseRow[]> {
       authorEmail: author?.email ?? null,
       authorName: author?.fullName ?? null,
       authorProfileId: (row.author_profile_id as string | null) ?? null,
+      programSlug: (row.program_slug as string | null) || (row.slug as string),
+      formats: formatsByExperience.get(row.experience_id as string) ?? [],
       learners: learners.get(row.id as string) ?? 0,
       updatedAt: row.updated_at as string,
     } satisfies CourseRow;

@@ -14,12 +14,12 @@ export type LearnerStatus = "not_started" | "in_progress" | "stalled" | "complet
 /**
  * Sources a hand-made grant may declare.
  *
- * `manual` is the plain admin grant and stays the default; `bonus` and
- * `promotion` exist so that "why does this person have this?" is answerable
+ * `manual` is the plain admin grant and stays the default; `bonus`,
+ * `promotion` and `service` exist so that "why does this person have this?" is answerable
  * from the row a year later, without a note in a Telegram thread. `order` and
  * `token` are never chosen here — a purchase writes those itself.
  */
-export const GRANT_SOURCES = ["manual", "bonus", "promotion"] as const;
+export const GRANT_SOURCES = ["manual", "bonus", "promotion", "service"] as const;
 export type GrantSource = (typeof GRANT_SOURCES)[number];
 
 export function isGrantSource(value: unknown): value is GrantSource {
@@ -72,8 +72,29 @@ export type CourseRow = {
   authorEmail: string | null;
   authorName: string | null;
   authorProfileId: string | null;
+  /** The program's public address (`reboot`, `irem`), which is what `/go/<program>` takes. */
+  programSlug: string;
+  /** The ways to take it that are on sale. One entry is no choice; the dialog then asks nothing. */
+  formats: CourseFormatRow[];
   learners: number;
   updatedAt: string;
+};
+
+/** An active, approved format of a program, as the grant dialog needs it. */
+export type CourseFormatRow = {
+  /** The saleable `experience_offers.code` that defines this format. */
+  code: string;
+  format: "self" | "group" | "individual";
+  label: string | null;
+  /** `YYYY-MM-DD`, day 1 of the cohort. Group formats only. */
+  cohortStartsOn: string | null;
+  /** Access term and included courses come from this approved offer. */
+  accessDays: number | null;
+  accessLifetime: boolean;
+  includedCourseSlugs: string[];
+  amount: number | null;
+  currency: string;
+  payable: boolean;
 };
 
 export type AuthorProfileRow = {
@@ -264,6 +285,105 @@ export function parseEmailList(input: unknown): { emails: string[]; invalid: str
   }
 
   return { emails, invalid, duplicates };
+}
+
+/** One line of the grant dialog: an address and, optionally, how to greet the person. */
+export type GrantPerson = { email: string; name: string };
+
+/**
+ * The dialog's table (or a request body) as people: addresses trimmed and
+ * lower-cased like `parseEmailList`, a repeated address dropped (the first
+ * spelling keeps its place and its name), a bad one reported by its text.
+ *
+ * Entries may be strings (a bare address) or `{ email, name }`, so a client
+ * that only knows addresses keeps working. Shared by the dialog and the route
+ * for the same reason `parseEmailList` is: the count before the button is the
+ * count the server acts on.
+ */
+export function parsePeople(input: unknown): { people: GrantPerson[]; invalid: string[]; duplicates: number } {
+  const people: GrantPerson[] = [];
+  const invalid: string[] = [];
+  const seen = new Set<string>();
+  let duplicates = 0;
+  if (!Array.isArray(input)) return { people, invalid, duplicates };
+
+  for (const item of input) {
+    const rawEmail =
+      typeof item === "string" ? item : item && typeof item === "object" ? (item as { email?: unknown }).email : "";
+    const rawName = item && typeof item === "object" ? (item as { name?: unknown }).name : "";
+    const email = (typeof rawEmail === "string" ? rawEmail : "")
+      .trim()
+      .replace(/^mailto:/i, "")
+      .replace(/^<|>$/g, "")
+      .toLowerCase();
+    const name = typeof rawName === "string" ? rawName.trim() : "";
+    // A row left empty in the table is not an error, it is a row not used.
+    if (!email && !name) continue;
+    if (!BULK_EMAIL_RE.test(email)) {
+      invalid.push(email || name);
+      continue;
+    }
+    if (seen.has(email)) {
+      duplicates += 1;
+      continue;
+    }
+    seen.add(email);
+    people.push({ email, name });
+  }
+
+  return { people, invalid, duplicates };
+}
+
+/**
+ * A pasted column or table as table rows: `email`, then a name, split on a tab,
+ * semicolon or comma (what Excel and Google Sheets copy out), or on the first
+ * space for a line that is only "anna@x.com Anna". A header line is skipped;
+ * blank lines are dropped. Bad addresses are KEPT, because the table shows them
+ * to the operator before anything is sent — `parsePeople` is what rules on them.
+ */
+export function parsePeopleText(text: string): GrantPerson[] {
+  const rows: GrantPerson[] = [];
+  for (const line of text.split(/\r?\n/)) {
+    const cells: string[] = [];
+    let cell = "";
+    let quoted = false;
+    for (let index = 0; index < line.length; index += 1) {
+      const character = line.charAt(index);
+      if (character === '"') {
+        if (quoted && line.charAt(index + 1) === '"') {
+          cell += '"';
+          index += 1;
+        } else if (quoted) {
+          quoted = false;
+        } else if (cell.trim() === "") {
+          cell = "";
+          quoted = true;
+        } else {
+          // A quote in an unquoted TXT/TSV field is data, not CSV syntax.
+          cell += character;
+        }
+      } else if (!quoted && /[\t;,]/.test(character)) {
+        cells.push(cell.trim());
+        cell = "";
+      } else {
+        cell += character;
+      }
+    }
+    cells.push(cell.trim());
+    while (cells.length > 0 && !cells.at(-1)) cells.pop();
+    if (cells.length === 0) continue;
+    const [first = ""] = cells;
+    if (cells.length === 1 && /\s/.test(first)) {
+      const [email = "", ...rest] = first.split(/\s+/);
+      cells[0] = email;
+      cells[1] = rest.join(" ");
+    }
+    const [email = "", ...nameParts] = cells;
+    const name = nameParts.join(", ");
+    if (/^(email|e-mail|пошта|адреса)$/i.test(email)) continue;
+    rows.push({ email, name });
+  }
+  return rows;
 }
 
 /** One address's answer in a bulk grant. `error` is a code the panel translates. */

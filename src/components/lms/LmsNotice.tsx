@@ -9,6 +9,7 @@
 
 import Link from "next/link";
 
+import { useSignInHref } from "@/components/auth/useSignInReturn";
 import type { LmsFailure } from "./lmsClient";
 import styles from "./Lms.module.css";
 
@@ -85,13 +86,15 @@ const COPY: Record<LmsFailure, { title: string; text: string; href?: string; cta
 
 export function LmsNotice({ failure, onRetry }: { failure: LmsFailure; onRetry?: () => void }) {
   const copy = COPY[failure];
+  const signInHref = useSignInHref("/profile");
+  const href = failure === "unauthenticated" || failure === "unauthorized" ? signInHref : copy.href;
 
   return (
     <section className={styles.notice}>
       <h1 className={styles.noticeTitle}>{copy.title}</h1>
       <p className={styles.noticeText}>{copy.text}</p>
-      {copy.href && copy.cta ? (
-        <Link className={styles.ctaLink} href={copy.href}>
+      {href && copy.cta ? (
+        <Link className={styles.ctaLink} href={href}>
           {copy.cta}
         </Link>
       ) : null}

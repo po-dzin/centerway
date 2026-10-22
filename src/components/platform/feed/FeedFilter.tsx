@@ -2,7 +2,7 @@
 
 /**
  * The feed's filter: the catalogue's popover (G, 16.10 «делай как фильтр в
- * поповер»). One «Фільтри» button with its count; inside, the eight topics and
+ * поповер»). One «Фільтри» button with its count; inside, the topics and
  * the authors with their faces. Within a group the ticks add up, between the
  * groups they narrow. «Усі» clears both. The choice lives in the address, so a
  * filtered feed can be shared as a link (`/feed?topic=breathing&author=evgeniy`).
@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { AuthorPortrait } from "@/components/platform/AuthorPortrait";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
-import { COURSE_CATEGORY_ICONS, COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
+import { FEED_TOPIC_ICONS, FEED_TOPIC_LABELS } from "@/lib/feed/vocabulary";
 import { FEED_TOPICS, feedFilterCount, type FeedFilter as Filter, type FeedTopic } from "@/lib/feed/model";
 import type { FeedAuthor } from "@/lib/feed/server";
 
@@ -57,7 +57,7 @@ export function FeedFilter({
 
   const count = feedFilterCount(filter);
   const chosen = [
-    ...filter.topics.map((topic) => COURSE_CATEGORY_LABELS[topic]),
+    ...filter.topics.map((topic) => FEED_TOPIC_LABELS[topic]),
     ...filter.authors.map((slug) => authors.find((author) => author.slug === slug)?.name ?? slug),
   ];
 
@@ -68,6 +68,7 @@ export function FeedFilter({
           className={styles.filterToggle}
           type="button"
           aria-label={count > 0 ? `${feedCopy.filter}: ${count}` : feedCopy.filter}
+          title={chosen.length ? chosen.join(", ") : undefined}
           aria-expanded={open}
           aria-haspopup="dialog"
           onClick={() => setOpen((current) => !current)}
@@ -107,9 +108,9 @@ export function FeedFilter({
                     <Icon name="check" size={14} />
                   </span>
                   <span className={styles.optionText}>
-                    <Icon name={COURSE_CATEGORY_ICONS[topic]} size={20} />
+                    <Icon name={FEED_TOPIC_ICONS[topic]} size={20} />
                     <InteractionInkLabel variant="menu" active={filter.topics.includes(topic)}>
-                      {COURSE_CATEGORY_LABELS[topic]}
+                      {FEED_TOPIC_LABELS[topic]}
                     </InteractionInkLabel>
                   </span>
                 </label>
@@ -148,15 +149,6 @@ export function FeedFilter({
           </div>
         ) : null}
       </div>
-
-      {count > 0 ? (
-        <p className={styles.summary} aria-live="polite">
-          <span>{chosen.join(", ")}</span>
-          <button className={styles.summaryReset} type="button" onClick={() => onChange({ topics: [], authors: [] })}>
-            {feedCopy.filterReset}
-          </button>
-        </p>
-      ) : null}
     </div>
   );
 }

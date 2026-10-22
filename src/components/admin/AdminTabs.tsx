@@ -7,6 +7,8 @@ import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 interface TabItem {
   key: string;
   label: string;
+  /** Shown, not selectable: a choice that exists but is not available here, whose reason sits beside the strip. */
+  disabled?: boolean;
 }
 
 interface AdminTabsProps {
@@ -51,6 +53,7 @@ export function AdminTabs({ items, activeKey, onChange, className = "" }: AdminT
           key={tab.key}
           type="button"
           onClick={() => onChange(tab.key)}
+          disabled={tab.disabled}
           className={`cw-tab ${activeKey === tab.key ? "cw-tab-active" : ""}`}
           aria-pressed={activeKey === tab.key}
         >

@@ -60,6 +60,7 @@ export function ProgramDetailPage({
   purchase,
   nextStep,
   formats = [],
+  personalFormatPrice = null,
 }: {
   program: OfferSurface;
   /**
@@ -69,6 +70,13 @@ export function ProgramDetailPage({
    * side. With one or none, everything below is the single offer it always was.
    */
   formats?: ProgramFormat[];
+  personalFormatPrice?: {
+    productCode: string;
+    offerToken: string;
+    amount: number;
+    oldAmount: number | null;
+    expiresAt?: string | null;
+  } | null;
   /**
    * The course this offer delivers, when the caller already has it.
    *
@@ -406,6 +414,7 @@ export function ProgramDetailPage({
                   programSlug={program.slug}
                   programTitle={program.title}
                   formats={formats}
+                  personalFormatPrice={personalFormatPrice}
                   seam={<OfferSeam steps={route} current={route.length - 1} />}
                 />
               ) : (

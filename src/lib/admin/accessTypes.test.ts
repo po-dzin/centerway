@@ -7,6 +7,8 @@ import {
   learnerStatusOf,
   normalizeDeadline,
   parseEmailList,
+  parsePeople,
+  parsePeopleText,
   STALLED_AFTER_DAYS,
 } from "./accessTypes";
 import type { LearnerRow, LearnerStatus } from "./accessTypes";
@@ -206,5 +208,74 @@ describe("parseEmailList", () => {
   it("reads nothing out of nothing", () => {
     expect(parseEmailList(undefined)).toEqual({ emails: [], invalid: [], duplicates: 0 });
     expect(parseEmailList(42)).toEqual({ emails: [], invalid: [], duplicates: 0 });
+  });
+});
+
+describe("parsePeople", () => {
+  it("reads strings and { email, name } alike, lower-cased, the first spelling keeping its name", () => {
+    const out = parsePeople([
+      "Anna@x.co",
+      { email: " <taras@x.co> ", name: " Тарас " },
+      { email: "ANNA@x.co", name: "Другий" },
+    ]);
+    expect(out.people).toEqual([
+      { email: "anna@x.co", name: "" },
+      { email: "taras@x.co", name: "Тарас" },
+    ]);
+    expect(out.duplicates).toBe(1);
+    expect(out.invalid).toEqual([]);
+  });
+
+  it("lets an untouched line be, reports a bad one by what was typed, and a name without an address as itself", () => {
+    const out = parsePeople([
+      { email: "", name: "" },
+      { email: "oops", name: "A" },
+      { email: "", name: "Іван" },
+      { email: "ok@x.co" },
+    ]);
+    expect(out.people.map((row) => row.email)).toEqual(["ok@x.co"]);
+    expect(out.invalid).toEqual(["oops", "Іван"]);
+  });
+
+  it("is empty for anything that is not a list", () => {
+    expect(parsePeople("a@b.co")).toEqual({ people: [], invalid: [], duplicates: 0 });
+    expect(parsePeople(undefined).people).toEqual([]);
+  });
+});
+
+describe("parsePeopleText", () => {
+  it("splits a spreadsheet's tabs, semicolons and commas, and skips the header", () => {
+    expect(parsePeopleText("Email\tІм'я\nanna@x.co\tАнна\ntaras@x.co;Тарас\n\nolena@x.co, Олена Коваль")).toEqual([
+      { email: "anna@x.co", name: "Анна" },
+      { email: "taras@x.co", name: "Тарас" },
+      { email: "olena@x.co", name: "Олена Коваль" },
+    ]);
+  });
+
+  it("reads quoted CSV exports, including commas and escaped quotes in names", () => {
+    expect(
+      parsePeopleText('\uFEFF"Email","Ім\'я"\r\n"anna@x.co","Анна, Марія"\r\n"taras@x.co","Тарас ""Тихий"""'),
+    ).toEqual([
+      { email: "anna@x.co", name: "Анна, Марія" },
+      { email: "taras@x.co", name: 'Тарас "Тихий"' },
+    ]);
+  });
+
+  it("preserves ordinary quotes in unquoted TSV and TXT names", () => {
+    expect(parsePeopleText('anna@x.co\tAnna "Ace"\ntaras@x.co Taras "Tykhyi"')).toEqual([
+      { email: "anna@x.co", name: 'Anna "Ace"' },
+      { email: "taras@x.co", name: 'Taras "Tykhyi"' },
+    ]);
+  });
+
+  it("takes the first word of a bare line as the address and the rest as the name", () => {
+    expect(parsePeopleText("anna@x.co Анна Коваль\nivan@x.co")).toEqual([
+      { email: "anna@x.co", name: "Анна Коваль" },
+      { email: "ivan@x.co", name: "" },
+    ]);
+  });
+
+  it("keeps a bad address in its row, for the table to show", () => {
+    expect(parsePeopleText("not-an-address")).toEqual([{ email: "not-an-address", name: "" }]);
   });
 });

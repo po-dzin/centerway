@@ -19,8 +19,10 @@
  * overlay independent of wherever it was called from.
  */
 
-import { useCallback, useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import controls from "@/components/admin/AdminControls.module.css";
 
 export function AdminModal({
@@ -29,6 +31,7 @@ export function AdminModal({
   onClose,
   children,
   footer,
+  closeLabel,
   size = "md",
 }: {
   title: string;
@@ -36,9 +39,12 @@ export function AdminModal({
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
+  /** An accessible top-right close command, when the footer holds only the main action. */
+  closeLabel?: string;
   size?: "md" | "lg";
 }) {
   const dialog = useRef<HTMLDivElement>(null);
+  const overlay = useRef<HTMLDivElement>(null);
 
   // `useSyncExternalStore` rather than a mount flag in an effect: the server
   // snapshot is `false` and the client's is `true`, which is precisely the
@@ -49,6 +55,38 @@ export function AdminModal({
     () => true,
     () => false,
   );
+
+  // The portal does not inherit the shell's header geometry. Read the visible
+  // bar itself so desktop, mobile and resized headers leave the same DS gap.
+  useLayoutEffect(() => {
+    if (!mounted) return;
+    const headers = [...document.querySelectorAll<HTMLElement>('[data-cw-header-mode], [data-cw-chrome="organs"]')];
+    const measure = () => {
+      const bottom = headers.reduce((edge, header) => {
+        const rect = header.getBoundingClientRect();
+        if (
+          !rect.width ||
+          !rect.height ||
+          header.dataset.cwHeaderHidden === "true" ||
+          header.dataset.hidden === "true"
+        ) {
+          return edge;
+        }
+        return Math.max(edge, Math.min(window.innerHeight, rect.bottom));
+      }, 0);
+      overlay.current?.style.setProperty("--admin-modal-header-bottom", `${bottom}px`);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    headers.forEach((header) => observer.observe(header));
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure);
+    };
+  }, [mounted]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -102,6 +140,7 @@ export function AdminModal({
 
   return createPortal(
     <div
+      ref={overlay}
       className={controls.overlay}
       onMouseDown={(event) => {
         // `mousedown` on the scrim ITSELF: a click that starts on a field
@@ -117,10 +156,25 @@ export function AdminModal({
         aria-label={title}
         tabIndex={-1}
         onKeyDown={trap}
-        className={size === "lg" ? controls.dialogWide : controls.dialog}
+        className={size === "lg" ? `${controls.dialog} ${controls.dialogWide}` : controls.dialog}
       >
         <div className={controls.dialogHead}>
-          <h3 className={controls.dialogTitle}>{title}</h3>
+          <div className={controls.dialogTitleRow}>
+            <h3 className={controls.dialogTitle}>{title}</h3>
+            {closeLabel ? (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label={closeLabel}
+                title={closeLabel}
+                className={controls.dialogClose}
+              >
+                <InteractionInkIcon>
+                  <Icon name="close" className={controls.dialogCloseGlyph} />
+                </InteractionInkIcon>
+              </button>
+            ) : null}
+          </div>
           {description ? <p className={controls.dialogNote}>{description}</p> : null}
         </div>
 

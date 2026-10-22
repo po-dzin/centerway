@@ -23,12 +23,41 @@
   padding-block: var(--cw-space-xl) var(--cw-space-3xl);
 }
 
+/* The way back to the feed from a post's own page — desktop only; a phone has the header's arrow. */
+.backLink {
+  display: none;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  justify-self: start;
+  min-block-size: var(--ds-touch-target-min);
+  color: var(--cw-platform-muted);
+}
+
+.backText {
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 650;
+}
+
+@media (min-width: 56.3125rem) {
+  .backLink {
+    display: inline-flex;
+  }
+}
+
+@media (hover: hover) {
+  .backLink:hover {
+    color: var(--cw-platform-text);
+  }
+}
+
 /* The author's page lays the same posts in its own column. */
 .embedded {
   display: grid;
   gap: var(--cw-space-lg);
   max-inline-size: 42rem;
   min-inline-size: 0;
+  /* Centred under the tabs, as the feed's own column is (G 2026-10-17). */
+  margin-inline: auto;
 }
 
 .posts {
@@ -77,8 +106,59 @@
   min-inline-size: 0;
 }
 
+/* The author's own controls sit at the byline's far end. */
+.byTools {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-inline-start: auto;
+  align-self: flex-start;
+  /* The dots sit in the card's corner: the touch box overhangs the padding. */
+  margin-block: calc(var(--cw-space-xs) * -1) 0;
+  margin-inline-end: calc(var(--cw-space-xs) * -1);
+}
+
+.byMenu {
+  display: grid;
+  place-items: center;
+  inline-size: var(--ds-touch-target-min);
+  block-size: var(--ds-touch-target-min);
+  border-radius: var(--cw-radius-md);
+  color: var(--cw-platform-muted);
+}
+
+@media (hover: hover) {
+  .byMenu:hover,
+  .byMenu[aria-expanded="true"] {
+    background: var(--cw-mat-hover-bg);
+    color: var(--cw-platform-text);
+  }
+}
+
+.menuAsk {
+  padding: var(--cw-space-xs) var(--cw-space-sm) 0;
+  font-size: var(--ds-type-body-sm-size);
+  color: var(--cw-platform-muted);
+}
+
+.menuRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.menuItem:disabled {
+  opacity: 0.5;
+}
+
 .face {
   flex: 0 0 auto;
+}
+
+/* The face leads to the author's profile, as the name does (G 2026-10-17). */
+a.face {
+  display: inline-flex;
+  border-radius: var(--cw-radius-pill);
 }
 
 .who {
@@ -130,13 +210,254 @@
   vertical-align: middle;
 }
 
-/* The words. Pre-line keeps the author's own paragraphs; a long link breaks. */
+/* The words: paragraphs, lists and a quote from the post's markdown subset
+   (FeedBody). A long link breaks rather than widening the card. */
+.bodyFold {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-inline-size: 0;
+}
+
 .body {
-  margin: 0;
+  --clamp: 6;
+  display: grid;
+  gap: var(--cw-space-xs);
   font-size: var(--ds-type-body-size);
   line-height: 1.55;
-  white-space: pre-line;
   overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+.post[data-variant="rail"] .body {
+  --clamp: 4;
+}
+
+.body > * {
+  margin: 0;
+}
+
+.body ul,
+.body ol {
+  padding-inline-start: var(--cw-space-lg);
+}
+
+/* The global reset strips list markers; a post's list keeps them. */
+.body ul {
+  list-style: disc;
+}
+
+.body ol {
+  list-style: decimal;
+}
+
+.body blockquote {
+  padding-inline-start: var(--cw-space-sm);
+  border-inline-start: 2px solid var(--cw-nav-marker);
+  color: var(--cw-platform-muted);
+}
+
+.body strong {
+  font-weight: 700;
+}
+
+.bodyLink {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: var(--cw-link-rule-width);
+  text-underline-offset: var(--cw-link-rule-offset);
+  text-decoration-color: var(--cw-link-rule-color-strong);
+}
+
+/* The fold (G 2026-10-17): six lines in the feed, four on the home rail. A
+   line clamp over the whole body, so a list or a quote folds with the
+   paragraphs rather than in its own box. */
+.body[data-clamped] {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--clamp);
+  line-clamp: var(--clamp);
+  overflow: hidden;
+}
+
+.body[data-clamped] > * + * {
+  margin-block-start: var(--cw-space-xs);
+}
+
+/* Inside the clamp's box an outside marker is not drawn; inside it is. */
+.body[data-clamped] li {
+  list-style-position: inside;
+}
+
+.moreText {
+  composes: base text from "../PlatformButtons.module.css";
+  justify-self: start;
+  color: var(--cw-platform-text);
+}
+
+/* «з Ірина Мельник» beside the author's name: the other author is a link,
+   the preposition is quiet. */
+.withTag {
+  color: var(--cw-platform-muted);
+  font-weight: 500;
+}
+
+.withTag a {
+  color: var(--cw-platform-text);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .withTag a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: var(--cw-link-rule-width);
+    text-underline-offset: var(--cw-link-rule-offset);
+    text-decoration-color: var(--cw-link-rule-color-strong);
+  }
+}
+
+/* ─────────────── photos, video, audio ─────────────── */
+
+.photoOne {
+  display: grid;
+}
+
+.photoRow {
+  display: flex;
+  gap: var(--cw-space-xs);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  padding-block-end: var(--cw-space-2xs);
+}
+
+.photo {
+  position: relative;
+  display: block;
+  cursor: zoom-in;
+  overflow: hidden;
+  max-block-size: min(60svh, 28rem);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.photoOne > .photo {
+  inline-size: 100%;
+  aspect-ratio: var(--photo-ratio, 4 / 3);
+}
+
+/* Several photos stand at one height, each at its own width. */
+.photoRow > .photo {
+  flex: 0 0 auto;
+  aspect-ratio: var(--photo-ratio, 4 / 3);
+  block-size: min(60svh, 22rem);
+  max-inline-size: 85%;
+  scroll-snap-align: start;
+}
+
+.post[data-variant="rail"] .photo {
+  max-block-size: 14rem;
+}
+
+.post[data-variant="rail"] .photoOne > .photo {
+  aspect-ratio: 16 / 10;
+}
+
+.post[data-variant="rail"] .photoRow > .photo {
+  block-size: 12rem;
+}
+
+.photoImg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+  object-fit: cover;
+}
+
+/* A spoiler: blurred under a veil until tapped (G 2026-10-17). */
+.spoiler {
+  cursor: pointer;
+  background: var(--cw-mat-scrim-ink);
+}
+
+.spoiler .photoImg {
+  filter: blur(22px) saturate(0.8);
+  transform: scale(1.12);
+}
+
+.spoilerVeil {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-sm);
+  background: color-mix(in srgb, var(--cw-mat-scrim-ink) 30%, transparent);
+  color: var(--cw-mat-inverse-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 640;
+  text-align: center;
+}
+
+.spoiler:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+/* The lesson's own player, at the card's measure. */
+/* The author's own clip: at its proportions, never taller than a phone screen's worth. */
+.postClip {
+  /* The frame keeps its own proportions: a tall clip is narrower, not letterboxed. */
+  inline-size: min(100%, calc(min(70svh, 32rem) * var(--clip-k, 1.78)));
+  aspect-ratio: var(--clip-ratio, 16 / 9);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-scrim-ink);
+  object-fit: contain;
+}
+
+.postVideo {
+  min-inline-size: 0;
+}
+
+.postVideo figure {
+  margin: 0;
+}
+
+.audio {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  margin: 0;
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.audioLabel {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.audioPlayer {
+  inline-size: 100%;
+  block-size: 2.5rem;
+  color-scheme: light;
+}
+
+:global([data-cw-theme="dark"]) .audioPlayer {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-cw-theme="light"])) .audioPlayer {
+    color-scheme: dark;
+  }
 }
 
 /* A reader's own mark, the lesson reader's highlight in the feed. */
@@ -193,7 +514,9 @@
   color: var(--cw-platform-text);
   font: inherit;
   font-size: var(--ds-type-body-sm-size);
-  resize: vertical;
+  /* It grows with the words (FeedComments), so it has no bar and no corner to drag. */
+  resize: none;
+  overflow: hidden;
 }
 
 .noteField:focus {
@@ -205,23 +528,133 @@
 /* ─────────────── the attached block or programme ─────────────── */
 
 .attach {
+  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--cw-space-sm);
-  align-items: start;
-  padding: var(--cw-space-sm) var(--cw-space-md);
+  gap: var(--cw-space-sm) var(--cw-space-md);
+  align-items: center;
+  padding: var(--cw-space-sm);
   border-radius: var(--cw-radius-md);
-  background: var(--cw-mat-surface-sunk);
+  background-color: var(--cw-mat-surface-sunk);
+  background-image: var(--cw-mat-grain-image);
+}
+
+/* The whole card is the link (G 2026-10-17): the arrow's box is stretched
+   over it, so a press anywhere goes to the programme. */
+.attach[data-link] {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.attach[data-link]:focus-within {
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
 }
 
 .attachIcon {
   display: inline-grid;
   place-items: center;
-  inline-size: 2.5rem;
-  block-size: 2.5rem;
+  inline-size: 3.5rem;
+  block-size: 3.5rem;
   border-radius: var(--cw-radius-md);
-  background: var(--cw-mat-surface);
+  background: var(--cw-mat-tone-icon);
   color: var(--cw-platform-text);
+}
+
+@media (max-width: 35rem) {
+  .attach {
+    gap: var(--cw-space-xs) var(--cw-space-sm);
+  }
+
+  .attachIcon {
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    align-self: start;
+  }
+
+  .attach[data-link] {
+    padding-inline-end: var(--cw-space-2xs);
+  }
+}
+
+/* One arrow for every attachment — a programme, an excerpt, a block shown
+   whole: the same plate as the card's icon tile, so it reads as a press
+   wherever it stands (G 2026-10-18), and the same select on hover and focus. */
+.attachGo {
+  display: grid;
+  place-items: center;
+  inline-size: var(--ds-touch-target-min);
+  block-size: var(--ds-touch-target-min);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-tone-icon);
+  box-shadow: inset 0 0 0 1px var(--cw-mat-stroke-quiet);
+  color: var(--cw-platform-text);
+  transition:
+    background var(--cw-motion-state) var(--cw-ease-state),
+    box-shadow var(--cw-motion-state) var(--cw-ease-state);
+}
+
+.attachGo:focus-visible,
+.attach[data-link]:focus-within .attachGo {
+  background: var(--cw-mat-surface);
+  box-shadow: inset 0 0 0 1px var(--cw-mat-stroke-control);
+}
+
+.attachGo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.attachGo:focus-visible {
+  outline: none;
+}
+
+/* ↗ — the DS arrow turned up a quarter: «it leads on, to another page». */
+.attachGo svg {
+  transform: rotate(-45deg);
+  transition: transform var(--cw-motion-state) var(--cw-ease-state);
+}
+
+@media (hover: hover) {
+  .attach[data-link]:hover .attachGo,
+  .attachGo:hover {
+    background: var(--cw-mat-surface);
+    box-shadow: inset 0 0 0 1px var(--cw-mat-stroke-control);
+  }
+
+  .attach[data-link]:hover .attachGo svg {
+    transform: rotate(-45deg) translateX(2px);
+  }
+}
+
+/* A block shown whole: the lesson's own drawing, then the card that leads
+   to its programme. */
+/* A block shown whole and its arrow, nothing between them. The arrow sits at
+   the block's top edge and is a plain link: no stretched box over a block
+   whose own boxes, buttons and player take presses. */
+.attachWhole {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-xs);
+  align-items: start;
+  min-inline-size: 0;
+}
+
+.attachWhole[data-link] {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.attachWhole .attachGo::after {
+  content: none;
+}
+
+.attachWhole .attachGo:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset-tight);
+}
+
+.attachBlock {
+  min-inline-size: 0;
 }
 
 .attachBody {
@@ -232,7 +665,10 @@
 
 .attachTitle {
   margin: 0;
-  font-weight: 700;
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-lead-size);
+  font-weight: 500;
+  line-height: 1.15;
 }
 
 .attachMeta {
@@ -248,30 +684,164 @@
   white-space: pre-line;
 }
 
-.attachGo {
-  justify-self: start;
-  margin-block-start: var(--cw-space-2xs);
-  color: var(--cw-platform-text);
-  font-size: var(--ds-type-body-sm-size);
-  font-weight: 600;
+/* «Уривок»: the opening only, folded to four lines. */
+.attachText[data-excerpt] {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
 }
 
-/* ─────────────── reactions and the comment count ─────────────── */
+/* ─────────────── the action row (G 2026-10-17, Threads-like) ─────────────── */
 
-.social {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--cw-space-xs) var(--cw-space-sm);
-}
-
-.reactions {
-  position: relative;
+/* reactions · comments · «Зберегти» · «Поділитися»: icons with their counts,
+   no plates. The row starts a step to the left so the first glyph lines up
+   with the text above it, not its hover ground. */
+.actRow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--cw-space-2xs);
+  margin-inline-start: calc(var(--cw-space-xs) * -1);
+}
+
+.act[data-tone="danger"] {
+  color: var(--cw-danger);
+}
+
+.act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cw-space-2xs);
+  min-block-size: var(--ds-touch-target-min);
+  min-inline-size: var(--ds-touch-target-min);
+  padding: 0 var(--cw-space-xs);
+  border: 0;
+  border-radius: var(--cw-radius-pill);
+  background: transparent;
+  color: var(--cw-platform-muted);
+  font: inherit;
+  font-size: var(--ds-type-body-sm-size);
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--cw-motion-state) var(--cw-ease-state),
+    color var(--cw-motion-state) var(--cw-ease-state);
+}
+
+.act > svg {
+  inline-size: 1.3rem;
+  block-size: 1.3rem;
+  flex: 0 0 auto;
+}
+
+.act:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+@media (hover: hover) {
+  .act:hover {
+    background: var(--cw-mat-surface-sunk);
+    color: var(--cw-platform-text);
+  }
+}
+
+.act[aria-pressed="true"],
+.act[aria-expanded="true"] {
+  color: var(--cw-platform-text);
+}
+
+/* The reader's own reaction is in the pile: the button turns gold — the
+   same contour-over-soft-gold the picker's pressed cells carry. */
+.actReact[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--cw-platform-accent) 20%, var(--cw-mat-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-platform-accent) 62%, transparent);
+}
+
+.emoPile {
+  display: inline-flex;
+}
+
+/* No plate behind a stacked emoji: the glyph is drawn on its own, so the chip's
+   fill (gold when the reader's own is in the pile) shows through it. */
+.emoPileItem {
+  inline-size: 1.35rem;
+  block-size: 1.35rem;
+}
+
+.emoPileItem + .emoPileItem {
+  margin-inline-start: calc(var(--cw-space-2xs) * -1);
+}
+
+.actSave[aria-pressed="true"] {
+  color: var(--cw-platform-accent);
+}
+
+/* The share menu: the popover's solid sheet, one row per way. */
+.menu {
+  position: fixed;
+  z-index: calc(var(--ds-z-sticky) + 3);
+  display: grid;
+  min-inline-size: 14rem;
+  padding: var(--cw-space-2xs);
+  border: 1px solid var(--cw-mat-stroke-quiet);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-medium);
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  min-block-size: var(--ds-touch-target-min);
+  padding: 0 var(--cw-space-sm);
+  border: 0;
+  border-radius: var(--cw-radius-md);
+  background: transparent;
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: var(--ds-type-body-sm-size);
+  text-align: start;
+  cursor: pointer;
+}
+
+.menuItem svg {
+  color: var(--cw-platform-muted);
+}
+
+/* A removal reads as one before it is pressed: the word and the glyph in the danger colour. */
+.menuItem[data-tone="danger"],
+.menuItem[data-tone="danger"] svg {
+  color: var(--cw-danger);
+}
+
+.menuItem:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+@media (hover: hover) {
+  .menuItem:hover {
+    background: var(--cw-mat-surface-sunk);
+  }
+}
+
+@media (max-width: 40rem) {
+  .menu {
+    inset: auto var(--cw-space-xs) var(--cw-space-xs);
+  }
+
+  /* A post's own menu opens under its dots across the width of the post. */
+  .postMenu {
+    position: absolute;
+    inset: calc(var(--cw-space-xs) + var(--ds-touch-target-min) + var(--cw-space-xs)) var(--cw-space-xs) auto;
+    min-inline-size: 0;
+  }
 }
 
 /* A chip that presses. Not a button plate: a word with air around it, which
@@ -354,21 +924,15 @@
   color: var(--cw-platform-muted);
 }
 
-.countLink {
-  composes: base text from "../PlatformButtons.module.css";
-}
-
 /* ─────────────── the reaction picker ─────────────── */
 
 .picker {
-  position: absolute;
-  inset-inline-start: 0;
-  inset-block-start: calc(100% + var(--cw-space-2xs));
-  z-index: 5;
+  position: fixed;
+  z-index: calc(var(--ds-z-sticky) + 3);
   display: grid;
   gap: var(--cw-space-sm);
-  inline-size: min(26rem, calc(100vw - 2 * var(--cw-page-gutter)));
-  max-block-size: min(26rem, calc(100vh - 8rem));
+  inline-size: min(30rem, calc(100vw - 2rem));
+  max-block-size: min(30rem, calc(100vh - 6rem));
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: var(--cw-space-md);
@@ -378,6 +942,30 @@
   border-radius: var(--cw-radius-lg);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-medium);
+}
+
+.pickerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  margin-block-end: calc(var(--cw-space-xs) * -1);
+}
+
+.pickerTitle {
+  margin: 0;
+  font-weight: 700;
+}
+
+.pickerClose {
+  composes: base chromeBare square from "../PlatformButtons.module.css";
+}
+
+/* «Можна до 3 реакцій» / «Ваші 3 з 3 — …» (G 2026-10-17). */
+.pickerLimit {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
 }
 
 .pickerGroup {
@@ -395,7 +983,7 @@
 
 .pickerGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(5.25rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(4.6rem, 1fr));
   gap: var(--cw-space-2xs);
 }
 
@@ -419,13 +1007,18 @@
   background: color-mix(in srgb, var(--cw-platform-accent) 20%, var(--cw-mat-surface));
 }
 
+.pickerItem:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .pickerItem:focus-visible {
   outline: none;
   box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
 }
 
 @media (hover: hover) {
-  .pickerItem:hover {
+  .pickerItem:hover:not(:disabled) {
     background: var(--cw-mat-surface-sunk);
   }
 }
@@ -487,16 +1080,35 @@
   list-style: none;
 }
 
-.initial {
-  display: inline-grid;
-  place-items: center;
-  inline-size: 2rem;
-  block-size: 2rem;
-  border-radius: 50%;
-  background: var(--cw-mat-surface-sunk);
-  color: var(--cw-platform-text);
-  font-size: var(--ds-type-label-size);
+/* A commenter's face: the same portrait as the post's byline, a step smaller
+   (G 2026-10-17 — the initial alone read as a placeholder). */
+.comment .commentFace {
+  flex: 0 0 auto;
+  border-radius: var(--cw-radius-pill);
+}
+
+.comment .commentFace,
+.comment a.commentFace > * {
+  --portrait-size: 2rem;
+}
+
+a.commentFace {
+  display: inline-flex;
+}
+
+.commentName {
+  color: inherit;
   font-weight: 700;
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  a.commentName:hover {
+    text-decoration: underline;
+    text-decoration-thickness: var(--cw-link-rule-width);
+    text-underline-offset: var(--cw-link-rule-offset);
+    text-decoration-color: var(--cw-link-rule-color-strong);
+  }
 }
 
 .commentBody {
@@ -537,28 +1149,34 @@
   gap: var(--cw-space-sm);
 }
 
-.commentAction {
-  composes: base text from "../PlatformButtons.module.css";
-}
-
 .writeRow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--cw-space-xs);
-  align-items: end;
+  align-items: center;
+  min-inline-size: 0;
 }
 
 .writeField {
   inline-size: 100%;
   min-block-size: var(--ds-touch-target-min);
-  padding: var(--cw-space-xs) var(--cw-space-sm);
+  box-sizing: border-box;
+  min-inline-size: 0;
+  padding: calc((var(--ds-touch-target-min) - 1.5em - 2px) / 2) var(--cw-space-sm);
   border: 1px solid var(--cw-mat-stroke-quiet);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
   color: var(--cw-platform-text);
   font: inherit;
-  font-size: var(--ds-type-body-sm-size);
-  resize: vertical;
+  font-size: max(16px, var(--ds-type-body-size));
+  line-height: 1.5;
+  overflow: hidden;
+  resize: none;
+}
+
+.writeField::placeholder {
+  color: var(--cw-platform-muted);
+  opacity: 1;
 }
 
 .writeField:focus {
@@ -568,8 +1186,9 @@
   box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
 }
 
+/* Sending is an icon, in the same plate as the platform's other primary icon controls. */
 .sendButton {
-  composes: base secondary compact from "../PlatformButtons.module.css";
+  composes: base primary square from "../PlatformButtons.module.css";
 }
 
 .replyingTo {
@@ -590,15 +1209,26 @@
 
 /* ─────────────── the filter (the shelf's popover) ─────────────── */
 
+/* THE FILTER STANDS IN THE HEAD'S ROW (G 2026-10-18): the head at the left, the
+   control at the right end under the title's line. What is chosen is the
+   button's own count and the checked boxes in its popover, so choosing adds no
+   line anywhere and moves nothing: not the button, not the pinned post, not the
+   posts. Its popover opens leftwards, back onto the screen. */
+.headRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--cw-space-xs) var(--cw-space-md);
+}
+
 .filterBar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--cw-space-xs) var(--cw-space-sm);
+  display: contents;
 }
 
 .filterMenu {
   composes: filterMenu from "../cabinet/ShelfFilter.module.css";
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .filterToggle {
@@ -612,11 +1242,9 @@
 
 .filterPopover {
   composes: filterPopover from "../cabinet/ShelfFilter.module.css";
-  /* The shelf's control sits at the end of its row and opens leftwards; the
-     feed's sits at the start of the column, so it opens rightwards and stays
-     on a phone's screen. */
-  inset-inline-start: 0;
-  inset-inline-end: auto;
+  /* The control sits at the end of its row and opens leftwards, onto the screen. */
+  inset-inline-start: auto;
+  inset-inline-end: 0;
   inline-size: min(19rem, calc(100vw - 2 * var(--cw-page-gutter)));
   max-block-size: min(30rem, calc(100vh - 8rem));
   overflow-y: auto;
@@ -657,20 +1285,6 @@
   align-items: center;
   gap: var(--cw-space-xs);
   min-inline-size: 0;
-}
-
-.summary {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--cw-space-2xs) var(--cw-space-sm);
-  margin: 0;
-  color: var(--cw-platform-muted);
-  font-size: var(--ds-type-body-sm-size);
-}
-
-.summaryReset {
-  composes: base text from "../PlatformButtons.module.css";
 }
 
 /* ─────────────── the composer (authors only) ─────────────── */
@@ -847,84 +1461,165 @@
   gap: var(--cw-space-sm);
 }
 
-/* ─────────────── the home strip: three latest ─────────────── */
+/* ─────────────── the home strip: three latest, as full cards ─────────────── */
 
-.fresh {
-  composes: cw-scroll-none from global;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--cw-space-md);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.freshCard {
-  composes: post;
+/* The card on the home rail sits a little further from its edges than the
+   feed's inset did: the face and the words were flush with the card's rim. */
+.post[data-variant="rail"] {
+  /* Cards of one row share a height; their content starts at the top of each. */
   align-content: start;
+  gap: var(--cw-space-sm);
+  padding: var(--cw-space-md);
 }
 
-.freshText {
-  margin: 0;
-  font-weight: 600;
-  line-height: 1.45;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+/* ─────────────── the wall at the top of /feed ─────────────── */
+
+/* THE WALL IS A BAND BEHIND THE TOP OF THE PAGE (G 2026-10-18). The plate is
+   composed for the screen: pieces at the left and right and bare plaster in the
+   middle on a desktop, so the head and the first post stand high between them;
+   a row of pieces under the header and bare plaster below on a tablet and a
+   phone. The page's head follows the platform's one shape, and the posts follow
+   it with no gap the wall has to cover. */
+.wall {
+  /* The wide plate is 1584×672, shown 112% wide and pulled left so the
+     group stands level with the column: the sheet runs a little off the left
+     edge, the prints keep a margin on the right. */
+  --stage-h: min(47.5vw, 52rem);
+  --wall-head: 6rem;
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
 }
 
-.freshLink {
-  color: inherit;
-  text-decoration: none;
-}
-
-.freshLink::after {
-  content: "";
+.stage {
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: -1;
+  block-size: var(--stage-h);
+  pointer-events: none;
+  /* The photograph melts into the page at its bottom edge. */
+  mask-image: linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
 }
 
-.freshLink:focus-visible {
-  outline: none;
+.stagePhoto {
+  display: block;
+  inline-size: 112%;
+  max-inline-size: none;
+  margin-inline-start: -7.5%;
+  block-size: 100%;
+  object-fit: cover;
+  object-position: 0 0;
 }
 
-.freshLink:focus-visible::after {
-  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+/* Each theme has its own plate, graded for it; the other is not drawn. */
+.plateDark {
+  display: none;
 }
 
-.freshMeta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--cw-space-2xs) var(--cw-space-sm);
+:global([data-cw-theme="dark"]) .plateLight {
+  display: none;
+}
+
+:global([data-cw-theme="dark"]) .plateDark {
+  display: block;
+}
+
+.pageOnWall {
+  gap: var(--cw-space-md);
+  padding-block-start: var(--wall-head);
+}
+
+/* THE HEAD: the platform's editorial title, and a line under it. In ink, with
+   a glow of the page's own ground so it holds on the shaded part of the plate. */
+.heroBody {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  justify-items: start;
+  color: var(--cw-platform-text);
+  text-shadow: 0 0 1.25rem color-mix(in srgb, var(--cw-platform-bg) 72%, transparent);
+}
+
+.heroTitle {
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-title-size);
+  font-weight: 500;
+  line-height: var(--ds-type-title-line-height);
+}
+
+.heroLead {
   margin: 0;
   color: var(--cw-platform-muted);
-  font-size: var(--ds-type-body-sm-size);
+  font-size: var(--ds-type-lead-size);
+  line-height: var(--ds-type-lead-line-height);
 }
 
-.freshReaction {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--cw-space-2xs);
-  color: var(--cw-platform-text);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
+/* A tablet and a phone: the tall plate, and the head stands on the
+   plaster under its row of pieces. */
 @media (max-width: 56rem) {
-  .fresh {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    padding-block-end: var(--cw-space-sm);
+  .wall {
+    /* The tall plate is 930×520 and was composed for the column: the sheet
+       whole, with bare plaster each side of the group, the strip under the
+       prints. The head follows the group. */
+    --stage-h: 55.9vw;
+    --wall-head: 54vw;
   }
 
-  .fresh > li {
-    flex: 0 0 min(80%, 20rem);
-    scroll-snap-align: start;
+  .stagePhoto {
+    inline-size: 100%;
+    margin-inline-start: 0;
+    object-position: 50% 0;
   }
+}
+
+/* The pinned post is taped to the wall: a strip of masking tape across its
+   top edge, as on the pieces above it. Only the unfiltered feed's first card
+   carries it. */
+.pinned {
+  position: relative;
+}
+
+.pinned::before {
+  content: "";
+  position: absolute;
+  inset-block-start: calc(var(--cw-space-xs) * -1);
+  inset-inline-start: 50%;
+  inline-size: var(--cw-space-3xl);
+  block-size: var(--cw-space-lg);
+  margin-inline-start: calc(var(--cw-space-3xl) / -2);
+  transform: rotate(-1.5deg);
+  background-color: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 78%, var(--cw-sem-warmth) 22%);
+  background-image: var(--cw-mat-grain-image);
+  opacity: 0.9;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 22%, transparent);
+  clip-path: polygon(
+    1% 4%,
+    4% 7%,
+    7% 0,
+    32% 2%,
+    58% 0,
+    98% 3%,
+    96% 17%,
+    100% 26%,
+    97% 39%,
+    99% 48%,
+    96% 61%,
+    99% 77%,
+    97% 89%,
+    99% 98%,
+    72% 100%,
+    42% 97%,
+    8% 100%,
+    5% 94%,
+    1% 98%,
+    3% 81%,
+    0 67%,
+    3% 53%,
+    1% 36%,
+    4% 22%
+  );
+  pointer-events: none;
 }
 
 /* ─────────────── tabs on the author's page ─────────────── */
@@ -933,6 +1628,7 @@
   display: flex;
   min-inline-size: 0;
   overflow-x: auto;
+  overflow-y: hidden;
   composes: cw-scroll-none from global;
   border-block-end: 1px solid transparent;
   border-image: var(--cw-rule-fade-x);
@@ -968,7 +1664,45 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .reactionChip {
+  .reactionChip,
+  .act,
+  .attachGo svg {
     transition: none;
   }
+}
+
+/* ─────────────── the pinned post: platform voice ─────────────── */
+
+.pinTag {
+  margin-inline-start: var(--cw-space-2xs);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+}
+
+/* «Мої дописи»: how a post landed, under its action row. */
+.echo {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  padding-block-start: var(--cw-space-xs);
+  border-block-start: 1px solid;
+  border-image: var(--cw-rule-fade-x);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+.echoLine,
+.echoComment {
+  margin: 0;
+}
+
+.echoComment {
+  color: var(--cw-platform-text);
+}
+
+/* The way in is smaller here: the post stays whole on a short screen. */
+.pinned .attachIcon {
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
 }

@@ -37,6 +37,7 @@ const gateway = {
 } as unknown as PaymentGateway;
 
 vi.mock("@/lib/auth/serverSession", () => ({ userFromCookies: async () => hoisted.user }));
+vi.mock("@/lib/auth/adminClient", () => ({ adminClient: () => hoisted.db }));
 vi.mock("@/lib/supabaseAdmin", () => ({ supabaseAdmin: () => hoisted.db }));
 vi.mock("next/cache", () => ({ unstable_cache: (fn: () => unknown) => fn }));
 vi.mock("@/lib/lms/liveCatalog", () => ({
@@ -296,5 +297,40 @@ describe("GET /api/pay/start — formats of a program", () => {
     }
     expect(createInvoice).not.toHaveBeenCalled();
     expect(db.tables.orders).toHaveLength(0);
+  });
+});
+
+describe("GET /api/pay/start — percentage promo snapshot", () => {
+  function promo(over: Row = {}) {
+    db.tables.personal_offer_tokens = [
+      {
+        token: "personal",
+        product_code: "way21-group",
+        offer_id: "way21-group",
+        status: "active",
+        amount: 3075,
+        old_amount: 4100,
+        currency: "UAH",
+        expires_at: new Date(Date.now() + 86400000).toISOString(),
+        ...over,
+      },
+    ];
+  }
+  it("charges the same personalized format price and records the token on the order payload", async () => {
+    promo();
+    const response = await get("product=way21-group&offer_token=personal&format=json");
+    expect(response.status).toBe(200);
+    expect(createInvoice.mock.calls[0]?.[0]).toMatchObject({ amount: 3075, currency: "UAH" });
+    expect(db.rows("orders")[0]).toMatchObject({ product_code: "way21-group", amount: 3075 });
+  });
+  it.each([
+    { status: "consumed" },
+    { status: "cancelled" },
+    { expires_at: "2000-01-01T00:00:00Z" },
+    { product_code: "other-course" },
+  ])("charges the public price for an unusable token: %j", async (over) => {
+    promo(over);
+    expect((await get("product=way21-group&offer_token=personal&format=json")).status).toBe(200);
+    expect(createInvoice.mock.calls[0]?.[0]).toMatchObject({ amount: 4100 });
   });
 });
