@@ -258,6 +258,19 @@ describe("comments", () => {
     expect(thread.map((entry) => [entry.body, entry.reactions])).toEqual([["Дякую!", []]]);
   });
 
+  it("shows an author who comments elsewhere by their author profile, not their account", async () => {
+    fake.tables.platform_users = [
+      ...(fake.tables.platform_users ?? []),
+      { auth_user_id: OTHER_AUTHOR_USER, full_name: "Акаунт Інший", avatar_url: "/account.jpg" },
+    ];
+    const { post } = await createFeedPost(db, await author(), { body: "Привіт", topic: "focus" });
+    const created = await addComment(db, post.id, OTHER_AUTHOR_USER, { body: "Чудово" });
+    expect(created.comment.who).toMatchObject({ name: "Автор Два", href: "/expert/avtor-2?tab=posts", photo: null });
+    const [listed] = await listComments(db, post.id, null);
+    expect(listed?.who).toMatchObject({ name: "Автор Два", href: "/expert/avtor-2?tab=posts" });
+    expect(listed?.byAuthor).toBe(false);
+  });
+
   it("threads one level, names readers publicly, shows the author as themself, lets the author hide", async () => {
     const { post } = await createFeedPost(db, await author(), { body: "Привіт", topic: "focus" });
     const top = await addComment(db, post.id, READER, { body: "Дякую!" });
