@@ -11,14 +11,16 @@
  * different sphere — that would silently move everybody's scores onto it.
  */
 
+/** `short` is the radar's axis label — the full name does not fit around a
+    circle on a phone. */
 export const SPHERE_AXES = [
-  { id: "body", name: "Тіло і здоров'я", nameEn: "Body and health" },
-  { id: "state", name: "Стан і психіка", nameEn: "State of mind" },
-  { id: "people", name: "Близькі і зв'язки", nameEn: "People and ties" },
-  { id: "work", name: "Справа і дохід", nameEn: "Work and income" },
-  { id: "environment", name: "Середовище і побут", nameEn: "Home and surroundings" },
-  { id: "growth", name: "Зростання і сенс", nameEn: "Growth and meaning" },
-  { id: "rest", name: "Відпочинок і радість", nameEn: "Rest and joy" },
+  { id: "body", name: "Тіло і здоров'я", short: "Тіло", nameEn: "Body and health", shortEn: "Body" },
+  { id: "state", name: "Стан і психіка", short: "Стан", nameEn: "State of mind", shortEn: "Mind" },
+  { id: "people", name: "Близькі і зв'язки", short: "Близькі", nameEn: "People and ties", shortEn: "People" },
+  { id: "work", name: "Справа і дохід", short: "Справа", nameEn: "Work and income", shortEn: "Work" },
+  { id: "environment", name: "Середовище і побут", short: "Побут", nameEn: "Home and surroundings", shortEn: "Home" },
+  { id: "growth", name: "Зростання і сенс", short: "Сенс", nameEn: "Growth and meaning", shortEn: "Growth" },
+  { id: "rest", name: "Відпочинок і радість", short: "Радість", nameEn: "Rest and joy", shortEn: "Rest" },
 ] as const;
 
 export type SphereAxisId = (typeof SPHERE_AXES)[number]["id"];
@@ -143,12 +145,14 @@ export function validateSphereMapInput(body: unknown): SphereMapValidation {
  * here rather than refused — this is the read path, and a person's map with one
  * bad cell is still their map.
  */
-export function readStoredSphereMap(row: {
-  spheres?: unknown;
-  focus?: unknown;
-  history?: unknown;
-  updated_at?: unknown;
-} | null): SphereMap {
+export function readStoredSphereMap(
+  row: {
+    spheres?: unknown;
+    focus?: unknown;
+    history?: unknown;
+    updated_at?: unknown;
+  } | null,
+): SphereMap {
   if (!row) return EMPTY_SPHERE_MAP;
   const spheres: SphereMap["spheres"] = {};
   if (isPlainObject(row.spheres)) {
@@ -162,7 +166,10 @@ export function readStoredSphereMap(row: {
     }
   }
   const focus = Array.isArray(row.focus)
-    ? row.focus.filter(isSphereAxisId).filter((id, index, list) => list.indexOf(id) === index).slice(0, SPHERE_FOCUS_MAX)
+    ? row.focus
+        .filter(isSphereAxisId)
+        .filter((id, index, list) => list.indexOf(id) === index)
+        .slice(0, SPHERE_FOCUS_MAX)
     : [];
   const history: SphereSnapshot[] = Array.isArray(row.history)
     ? row.history.flatMap((raw): SphereSnapshot[] => {

@@ -14,13 +14,7 @@
 import type { Database } from "@/lib/db/database.types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import {
-  nextSphereHistory,
-  nowScores,
-  readStoredSphereMap,
-  type SphereMap,
-  type SphereMapInput,
-} from "./sphereMap";
+import { nextSphereHistory, nowScores, readStoredSphereMap, type SphereMap, type SphereMapInput } from "./sphereMap";
 
 export type SphereMapDb = SupabaseClient<Database>;
 
