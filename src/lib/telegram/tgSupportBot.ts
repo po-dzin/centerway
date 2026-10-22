@@ -39,6 +39,9 @@ import { classifyDosha, type DoshaResultType } from "@/lib/dosha/doshaTest";
 import { buildDoshaResultHtml, RESULT_COPY } from "@/lib/dosha/doshaResultCopy";
 import { DOSHA_PRIMARY_EXIT, doshaExitHref } from "@/lib/dosha/doshaRouting";
 import { captureQuestion } from "@/lib/agent/questions/store";
+import { parseKbAsk } from "@/lib/agent/kb/answer";
+import { answerKbQuestion, isTeamChat, kbBotEnabled, sendKbReply } from "@/lib/agent/kb/server";
+import { loadKnowledgeIndex } from "@/lib/agent/knowledge/server";
 import { handleFeedCallback, handleFeedReply, isFeedCallback } from "@/lib/feed/telegram";
 import type { Db as FeedDb } from "@/lib/feed/server";
 import { platformUrl } from "@/lib/surfaces/catalog";
@@ -96,6 +99,8 @@ type TelegramMessage = {
   from?: TelegramUser;
   /** Set when the message answers another — the feed's «why returned» reply. */
   reply_to_message?: { message_id: number };
+  /** The forum topic, in a group with topics — an answer goes back into it. */
+  message_thread_id?: number;
 };
 
 type TelegramCallbackQuery = {
@@ -890,6 +895,17 @@ function supportBotUsername(): string {
   return SUPPORT_BOT_URL.split("/").pop() ?? "";
 }
 
+async function handleKbAsk(
+  chatId: number,
+  message: TelegramMessage,
+  user: TelegramUser,
+  question: string,
+): Promise<void> {
+  await sendTelegramChatAction(chatId);
+  const { html } = await answerKbQuestion({ question, telegramUserId: user.id, index: await loadKnowledgeIndex() });
+  await sendKbReply({ chatId, replyTo: message.message_id, threadId: message.message_thread_id, html });
+}
+
 async function handleTextMessage(db: Supabase, message: TelegramMessage): Promise<void> {
   const user = message.from;
   const text = message.text?.trim();
@@ -907,7 +923,16 @@ async function handleTextMessage(db: Supabase, message: TelegramMessage): Promis
       await reactToTelegramMessage(chatId, message.message_id, "✍");
       return;
     }
-    if (isConnectCommand(text)) await sendMessage(chatId, await connectStreamChat(db, message.chat, user.id));
+    if (isConnectCommand(text)) {
+      await sendMessage(chatId, await connectStreamChat(db, message.chat, user.id));
+      return;
+    }
+    // …and, in the work group only, for /ask or a mention: the knowledge-base
+    // bot (src/lib/agent/kb/server.ts). Everywhere else it stays silent.
+    if (kbBotEnabled() && isTeamChat(chatId)) {
+      const question = parseKbAsk(text, supportBotUsername());
+      if (question !== null) await handleKbAsk(chatId, message, user, question);
+    }
     return;
   }
 

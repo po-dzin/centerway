@@ -136,6 +136,7 @@
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
     "@vercel/analytics": "^2.0.1",
+    "ai": "^7.0.148",
     "docx": "^9.7.1",
     "mammoth": "^1.12.3",
     "next": "16.3.8",
