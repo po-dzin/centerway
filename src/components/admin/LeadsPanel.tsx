@@ -15,8 +15,6 @@ import { useToast } from "@/components/ToastProvider";
 import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
 import { AdminRow } from "@/components/admin/AdminRow";
-import { StateBadge } from "@/components/platform/StateBadge";
-import type { StateTone } from "@/lib/platform/stateTone";
 
 /* The four stages, in the order a lead travels them. Kept as data rather than
    as markup so the tab strip, the row control and the "is this closed" test all
@@ -31,16 +29,6 @@ const STAGE_LABEL_KEY: Record<Stage, string> = {
   in_progress: "leads_stage_in_progress",
   won: "leads_stage_won",
   lost: "leads_stage_lost",
-};
-
-/* Ink, not colour-coding: a won lead reads as settled and a lost one as spent,
-   which the platform says with weight and muting rather than with a green and a
-   red badge. */
-const STAGE_TONE: Record<Stage, StateTone> = {
-  new: "running",
-  in_progress: "running",
-  won: "success",
-  lost: "neutral",
 };
 
 type Lead = {
@@ -223,10 +211,12 @@ export function LeadsPanel() {
               }
               controls={
                 <>
-                  <StateBadge tone={STAGE_TONE[lead.stage]}>{t(STAGE_LABEL_KEY[lead.stage] as never)}</StateBadge>
+                  {/* One control says the stage: a badge beside the select that
+                      changes it repeated the same word twice (owner, 2026-10-22),
+                      as the catalogue's visibility once did. */}
                   <select
                     aria-label={t("leads_stage_change")}
-                    className={lists.select}
+                    className={`${controls.select} ${controls.selectNarrow}`}
                     value={lead.stage}
                     disabled={savingId === lead.id}
                     onChange={(event) => void moveStage(lead, event.target.value as Stage)}
