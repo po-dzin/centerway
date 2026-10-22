@@ -2965,6 +2965,33 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_sphere_maps: {
+        Row: {
+          auth_user_id: string
+          created_at: string
+          focus: string[]
+          history: Json
+          spheres: Json
+          updated_at: string
+        }
+        Insert: {
+          auth_user_id: string
+          created_at?: string
+          focus?: string[]
+          history?: Json
+          spheres?: Json
+          updated_at?: string
+        }
+        Update: {
+          auth_user_id?: string
+          created_at?: string
+          focus?: string[]
+          history?: Json
+          spheres?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rate_limits: {
         Row: {
           count: number
