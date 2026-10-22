@@ -187,7 +187,7 @@ describe("shared surface boundaries", () => {
     const catalogue = read("src/components/platform/PlatformCatalogFilter.module.css");
     expect(block(catalogue, ".bandField")).toContain("--cw-mat-stroke-quiet");
     expect(block(catalogue, ".bandField")).not.toContain("--cw-mat-stroke-control");
-    expect(block(catalogue, ".bandField:focus-within")).toContain("--ds-focus-ring-color");
+    expect(block(catalogue, ".bandField:focus-within")).toContain("--ds-focus-field-glow");
   });
 
   /* THE AUTHOR AIMS AT THE FRAME THAT SHIPS.
