@@ -37,6 +37,11 @@ export async function grantCourse(input: {
   cohortStartsOn?: string | null;
   /** Who brought this person, when somebody did (`?ref`). Never overwrites an earlier answer. */
   ref?: string | null;
+  /**
+   * When the door opens: ISO instant. Absent leaves an existing seat's start
+   * alone (a new one opens now); `null` opens it now.
+   */
+  accessStartsAt?: string | null;
 }) {
   const db = adminClient();
   const account = await resolveAccountByEmail(db, input.email);
@@ -55,7 +60,7 @@ export async function grantCourse(input: {
 
   const { data: existing } = await db
     .from("lms_enrollments")
-    .select("id, source, started_at, cohort_starts_on, ref, expires_at, status, blocked_at")
+    .select("id, source, started_at, cohort_starts_on, ref, expires_at, access_starts_at, status, blocked_at")
     .eq("course_id", course.id)
     .eq("auth_user_id", account.authUserId)
     .maybeSingle();
@@ -88,6 +93,9 @@ export async function grantCourse(input: {
       patch.cohort_starts_on = input.cohortStartsOn;
     }
     if (input.ref && !existing.ref) patch.ref = input.ref;
+    if (input.accessStartsAt !== undefined && input.accessStartsAt !== (existing.access_starts_at ?? null)) {
+      patch.access_starts_at = input.accessStartsAt;
+    }
     if (Object.keys(patch).length > 0) {
       const { error: patchError } = await db
         .from("lms_enrollments")
@@ -105,6 +113,7 @@ export async function grantCourse(input: {
           cohort_after:
             patch.cohort_starts_on === undefined ? (existing.cohort_starts_on ?? null) : patch.cohort_starts_on,
           ...(patch.ref ? { ref: patch.ref } : {}),
+          ...(patch.access_starts_at !== undefined ? { access_starts_at: patch.access_starts_at } : {}),
         },
       });
     }
@@ -128,6 +137,7 @@ export async function grantCourse(input: {
       cohort_starts_on: input.cohortStartsOn ?? null,
       ref: input.ref ?? null,
       expires_at: expiresAt,
+      access_starts_at: input.accessStartsAt ?? null,
     })
     .select("id")
     .single();
@@ -147,6 +157,7 @@ export async function grantCourse(input: {
       source,
       expires_at: expiresAt,
       cohort_starts_on: input.cohortStartsOn ?? null,
+      access_starts_at: input.accessStartsAt ?? null,
       ...(input.ref ? { ref: input.ref } : {}),
     },
   });

@@ -49,6 +49,7 @@
     --cw-interactive-active-border: var(--cw-mat-active-stroke);
     --cw-interactive-active-shadow: var(--cw-mat-active-shadow);
     --cw-focus-ring: color-mix(in srgb, var(--cw-platform-accent) 34%, transparent);
+    --ds-focus-field-glow: none;
     --ds-radius-button-soft: 1rem;
     --cw-radius-btn: var(--cw-radius-md);
     --cw-brand-hover-border: color-mix(in srgb, var(--cw-platform-accent) 72%, var(--cw-platform-border) 28%);
@@ -550,6 +551,7 @@
   /* The dark palette. One theme for the whole product — see above. */
   [data-cw-theme="dark"] {
     /* CW_PLATFORM_DARK_START */
+    --ds-focus-field-glow: 0 0 9px color-mix(in srgb, var(--cw-platform-accent) 26%, transparent);
     --cw-platform-bg: #191918;
     --cw-platform-surface: #232322;
     --cw-platform-surface-muted: #2e2e2c;
@@ -1280,8 +1282,8 @@
   .cw-input:focus,
   .cw-input:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
-    border-color: var(--cw-interactive-active-border);
+    box-shadow: var(--ds-focus-field-glow);
+    border-color: var(--cw-nav-marker);
   }
 
   /* A SELECT'S MARK IS A CHEVRON DRAWN IN INK, NOT A FILLED TRIANGLE
@@ -1350,6 +1352,18 @@
     .cw-admin-theme select {
       display: inline-flex;
       align-items: center;
+    }
+
+    /* ONE LINE, WHATEVER THE TITLE (2026-10-22). Laid out like a button, the
+       field also wrapped like one: a long program title broke onto two lines
+       and stretched the field past its neighbours. A select shows one value;
+       a long one is cut at the CONTENT edge (cut at the padding edge it ran on
+       under the chevron), and the open list still shows it whole. */
+    .cw-select,
+    .cw-admin-theme select {
+      white-space: nowrap;
+      overflow: clip;
+      overflow-clip-margin: content-box;
     }
 
     .cw-select::picker(select),

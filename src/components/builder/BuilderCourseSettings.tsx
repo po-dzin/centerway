@@ -429,19 +429,17 @@ export function BuilderCourseSettings({
         }
       >
         <BuilderCoverEditor course={course} onChange={onChange} />
-        {/* ALT IS REQUIRED WHENEVER THE IMAGE IS. `validateCourse` refuses a
-            cover with no alt outright — not at publish, at SAVE — so this star
-            is not the showcase gate and does not follow visibility like the
-            others. A picture on a page a stranger reaches with nothing for a
-            screen reader to say is an accessibility failure, and this repo
-            gates on those. */}
+        {/* ALT IS REQUIRED ONCE THE COURSE POINTS AT STRANGERS, like the other
+            cover stars: `courseReadiness` blocks the publish, while a hidden
+            draft saves without it. It used to refuse the save outright, and
+            with it every lesson edit, which writes the whole course. */}
         <FieldInput
           field={{
             path: ["cover", "alt"],
             label: "Опис зображення",
             kind: "text",
             multiline: true,
-            required: course.cover?.src ? true : undefined,
+            required: course.cover?.src ? showcase : undefined,
             hint: "Що на фото — одним реченням, для тих, хто його не бачить. Без «зображення» на початку.",
           }}
           value={course.cover?.alt}

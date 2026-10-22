@@ -24,6 +24,8 @@ interface Customer {
   tags: string[];
   notes: string | null;
   tg_id: string | null;
+  /** Without the @. Written by the bot since 2026-10-22; older people only when the support bot saw them. */
+  tg_username?: string | null;
   google_id: string | null;
   auth_user_id: string | null;
   created_at: string;
@@ -118,12 +120,29 @@ const orderStatusColor: Record<string, string> = {
   refunded: "cw-status-failed-text",
 };
 
-function ContactRow({ label, value, badge }: { label: string; value: string; badge?: boolean }) {
+function ContactRow({
+  label,
+  value,
+  badge,
+  href,
+}: {
+  label: string;
+  value: string;
+  badge?: boolean;
+  /** Opens the contact where it lives — a Telegram chat rather than a number to copy. */
+  href?: string;
+}) {
   return (
     <div className={profileStyles.contact}>
       <span className={profileStyles.contactKindTag}>{label}</span>
       <p className={profileStyles.contactValue} title={value}>
-        {value}
+        {href ? (
+          <a href={href} target="_blank" rel="noreferrer">
+            {value}
+          </a>
+        ) : (
+          value
+        )}
       </p>
       {badge && <Icon className={`cw-status-success-text ${profileStyles.contactMark}`} name="check" size={16} />}
     </div>
@@ -253,7 +272,23 @@ export default function CustomerProfilePage() {
                 {customer.phone && (
                   <ContactRow label={t("customers_contact_phone")} value={customer.phone} badge={true} />
                 )}
-                {customer.tg_id && <ContactRow label={t("customers_contact_telegram")} value={customer.tg_id} />}
+                {/* A person, not a number: @username opens their chat; with only the id,
+                    tg://user opens it in the Telegram app (the web has no address for an id). */}
+                {customer.tg_id ? (
+                  customer.tg_username ? (
+                    <ContactRow
+                      label={t("customers_contact_telegram")}
+                      value={`@${customer.tg_username}`}
+                      href={`https://t.me/${customer.tg_username}`}
+                    />
+                  ) : (
+                    <ContactRow
+                      label={t("customers_contact_telegram")}
+                      value={`${t("customers_contact_telegram_id")} ${customer.tg_id}`}
+                      href={`tg://user?id=${customer.tg_id}`}
+                    />
+                  )
+                ) : null}
                 {customer.google_id && <ContactRow label={t("customers_contact_google")} value={customer.google_id} />}
                 {customer.auth_user_id && (
                   <ContactRow label={t("customers_contact_auth_user")} value={customer.auth_user_id} />

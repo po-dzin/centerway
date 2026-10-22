@@ -247,7 +247,7 @@ export function courseReadiness(course: Course): CourseReadiness {
     // catches the other order — a cover added through an import that skipped it
     // — because a public image with no description is an accessibility failure
     // on a page strangers reach, not a draft-time nicety.
-    else if (!course.cover.alt.trim()) add("lms_ready_missing_cover_alt", course.slug);
+    else if (!course.cover.alt?.trim()) add("lms_ready_missing_cover_alt", course.slug);
     if (!course.tagline?.trim()) add("lms_ready_missing_tagline", course.slug);
     /* DURATION IS NOT ASKED FOR (2026-09-08). It was a blocker on the reading
        that a card with no length is a card that cannot be compared — but the
