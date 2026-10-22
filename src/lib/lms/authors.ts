@@ -16,6 +16,7 @@
 
 import { unstable_cache, revalidateTag } from "next/cache";
 
+import { accountMetaFromAuthor } from "@/lib/auth/accountIdentity";
 import { adminClient } from "@/lib/auth/adminClient";
 import { validateAuthor, slugify, uniqueSlug, type Author } from "@/lms-core";
 import { listStorefrontCourses, type StorefrontCard } from "@/lib/platform/offers";
@@ -432,11 +433,48 @@ export async function upsertAuthorProfile(
 
   if (error || !data) return { ok: false, error: "db_error" };
 
+  const author = authorFromRow(data as Row);
+  await syncAccountFromAuthor(userId, author);
+
   revalidateTag(authorTag(slug), PURGE);
   revalidateTag(AUTHOR_LIST_TAG, PURGE);
   if (existing?.slug && existing.slug !== slug) revalidateTag(authorTag(existing.slug as string), PURGE);
 
-  return { ok: true, author: authorFromRow(data as Row) };
+  return { ok: true, author };
+}
+
+/**
+ * One name and one face (G 2026-10-22): the account takes the profile's, so
+ * comments, the account menu and the emails say what the author's page says.
+ *
+ * Pass the account's current metadata to write only when it differs — the
+ * cabinet's read does, which is how authors whose profile predates this catch
+ * up without saving. Returns whether anything was written. A failure never
+ * fails the caller: the profile is stored, and the next read or save tries
+ * again.
+ */
+export async function syncAccountFromAuthor(
+  userId: string,
+  author: Pick<Author, "name" | "photo">,
+  current?: Record<string, unknown> | null,
+): Promise<boolean> {
+  const next = accountMetaFromAuthor(author);
+  if (current && Object.entries(next).every(([key, value]) => sameMeta(current[key], value))) return false;
+  const { error } = await adminClient().auth.admin.updateUserById(userId, { user_metadata: next });
+  if (error) {
+    console.error("author_account_sync_failed", { userId, error: error.message });
+    return false;
+  }
+  return true;
+}
+
+/** Equal as stored: Postgres `jsonb` reorders an object's keys, so they are compared sorted. */
+function sameMeta(left: unknown, right: unknown): boolean {
+  const flat = (value: unknown) =>
+    value && typeof value === "object"
+      ? JSON.stringify(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)))
+      : JSON.stringify(value ?? null);
+  return flat(left) === flat(right);
 }
 
 /** One line per author profile, enough to name and pick one. */

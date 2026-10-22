@@ -12,7 +12,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { clampCropScale } from "@/lib/media/imageCrop";
-import { getAuthorProfileForUser, upsertAuthorProfile, type AuthorProfileInput } from "@/lib/lms/authors";
+import {
+  getAuthorProfileForUser,
+  syncAccountFromAuthor,
+  upsertAuthorProfile,
+  type AuthorProfileInput,
+} from "@/lib/lms/authors";
 import { AUTHOR_SOCIAL_LINKS_MAX, normalizeSocialLink } from "@/lms-core";
 
 export const runtime = "nodejs";
@@ -22,7 +27,13 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const result = await getAuthorProfileForUser(user.id);
-  return NextResponse.json(result);
+  /* A profile saved before the account took its name and photo
+     (accountIdentity.ts) catches up here, the first time its author opens the
+     cabinet; `accountChanged` tells the cabinet to fetch a fresh token. */
+  const accountChanged = result.author
+    ? await syncAccountFromAuthor(user.id, result.author, user.user_metadata ?? {})
+    : false;
+  return NextResponse.json({ ...result, accountChanged });
 }
 
 function readStringArray(value: unknown): string[] | undefined {

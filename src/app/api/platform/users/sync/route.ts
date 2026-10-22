@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { accountAvatar, accountName } from "@/lib/auth/accountIdentity";
 import { adminClient } from "@/lib/auth/adminClient";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { linkPurchasesToAccount } from "@/lib/platform/linkPurchases";
@@ -12,18 +13,8 @@ export async function POST(req: NextRequest) {
   }
 
   const email = typeof user.email === "string" ? user.email.toLowerCase() : null;
-  const fullName =
-    typeof user.user_metadata?.full_name === "string"
-      ? user.user_metadata.full_name
-      : typeof user.user_metadata?.name === "string"
-        ? user.user_metadata.name
-        : null;
-  const avatarUrl =
-    typeof user.user_metadata?.avatar_url === "string"
-      ? user.user_metadata.avatar_url
-      : typeof user.user_metadata?.picture === "string"
-        ? user.user_metadata.picture
-        : null;
+  const fullName = accountName(user.user_metadata);
+  const avatarUrl = accountAvatar(user.user_metadata);
   const provider = Array.isArray(user.app_metadata?.providers)
     ? (user.app_metadata.providers[0] ?? null)
     : typeof user.app_metadata?.provider === "string"

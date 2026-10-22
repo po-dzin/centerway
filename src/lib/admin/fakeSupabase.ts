@@ -359,7 +359,8 @@ export class FakeSupabase {
   constructor(public tables: Tables = {}) {}
 
   /**
-   * Only the one admin call the access module makes.
+   * The two admin calls the app makes: the access module's account creation
+   * and the author profile's write of its name and photo onto the account.
    *
    * `auth.users` is not a table this fake can hold — it is Supabase's, behind
    * an API — so account creation is modelled as its observable effect: an id
@@ -379,6 +380,21 @@ export class FakeSupabase {
         };
         this.authUsers.push(user);
         return { data: { user: { id: user.id } }, error: null };
+      },
+      /* Merges like Supabase's: a key set to null is removed. A user the fake
+         never minted is created on first touch, so a test can read what was
+         written without seeding auth. */
+      updateUserById: async (id: string, input: { user_metadata?: Row }) => {
+        let user = this.authUsers.find((entry) => entry.id === id);
+        if (!user) {
+          user = { id, email: "", emailConfirmed: false, metadata: {} };
+          this.authUsers.push(user);
+        }
+        for (const [key, value] of Object.entries(input.user_metadata ?? {})) {
+          if (value === null) delete user.metadata[key];
+          else user.metadata[key] = value;
+        }
+        return { data: { user: { id } }, error: null };
       },
     },
   };

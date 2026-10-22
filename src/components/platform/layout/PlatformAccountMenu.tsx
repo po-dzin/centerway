@@ -7,6 +7,12 @@ import type { Session } from "@supabase/supabase-js";
 
 import { HandGraphic, Icon } from "@/components/Icon";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
+import {
+  accountAvatar,
+  accountAvatarCrop,
+  accountAvatarStyle,
+  accountName as readAccountName,
+} from "@/lib/auth/accountIdentity";
 import { supabaseClient } from "@/lib/supabaseClient";
 import styles from "@/components/platform/PlatformShellStyles";
 import {
@@ -146,14 +152,13 @@ function InstallEntry({ onSelect, cabinetHref }: { onSelect: () => void; cabinet
   return null;
 }
 
-/** The account's own name, when the provider gave one. */
+/** The account's own name: an author's profile name, else the provider's. */
 function displayNameOf(session: Session | null) {
-  const name = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name;
-  return typeof name === "string" && name.trim().length > 0 ? name.trim() : null;
+  return readAccountName(session?.user?.user_metadata);
 }
 
 function getUserInitial(session: Session | null) {
-  const name = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email;
+  const name = displayNameOf(session) ?? session?.user?.email;
   return typeof name === "string" && name.length > 0 ? name.charAt(0).toUpperCase() : "?";
 }
 
@@ -364,7 +369,8 @@ export function PlatformAccountMenu({
     );
   }
 
-  const avatarUrl = session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || null;
+  const avatarUrl = accountAvatar(session?.user?.user_metadata);
+  const avatarStyle = accountAvatarStyle(accountAvatarCrop(session?.user?.user_metadata));
   const accountName = displayNameOf(session);
   const accountEmail = session?.user?.email ?? null;
 
@@ -508,7 +514,7 @@ export function PlatformAccountMenu({
         <span className={styles.profileAvatar} aria-hidden="true">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarUrl} alt="" referrerPolicy="no-referrer" />
+            <img src={avatarUrl} alt="" referrerPolicy="no-referrer" style={avatarStyle} />
           ) : (
             getUserInitial(session)
           )}

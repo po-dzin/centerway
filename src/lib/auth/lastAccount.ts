@@ -24,19 +24,20 @@
 
 import type { Session } from "@supabase/supabase-js";
 
+import type { ImageCrop } from "@/lib/media/imageCrop";
+
+import { accountAvatar, accountAvatarCrop, accountName } from "./accountIdentity";
+
 const KEY = "cw.auth.last-account";
 
 export type LastAccount = {
   email: string;
-  /** The provider's own display name, when it gave one. */
+  /** The account's name: an author's profile name, else the provider's. */
   name: string | null;
   avatar: string | null;
+  /** How a chosen (profile) photo sits in the circle. */
+  avatarCrop?: ImageCrop;
 };
-
-function readMeta(session: Session, key: string): string | null {
-  const value = session.user?.user_metadata?.[key];
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
-}
 
 /** Writes the account a fresh session belongs to. Silent when storage is off. */
 export function rememberAccount(session: Session | null): void {
@@ -46,8 +47,11 @@ export function rememberAccount(session: Session | null): void {
 
   const account: LastAccount = {
     email,
-    name: readMeta(session as Session, "full_name") ?? readMeta(session as Session, "name"),
-    avatar: readMeta(session as Session, "avatar_url") ?? readMeta(session as Session, "picture"),
+    name: accountName(session?.user?.user_metadata),
+    avatar: accountAvatar(session?.user?.user_metadata),
+    ...(accountAvatarCrop(session?.user?.user_metadata)
+      ? { avatarCrop: accountAvatarCrop(session?.user?.user_metadata) }
+      : {}),
   };
 
   try {
@@ -70,6 +74,7 @@ export function readLastAccount(): LastAccount | null {
       email: parsed.email,
       name: typeof parsed.name === "string" && parsed.name.length > 0 ? parsed.name : null,
       avatar: typeof parsed.avatar === "string" && parsed.avatar.length > 0 ? parsed.avatar : null,
+      ...(parsed.avatarCrop && typeof parsed.avatarCrop === "object" ? { avatarCrop: parsed.avatarCrop } : {}),
     };
   } catch {
     return null;

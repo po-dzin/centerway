@@ -89,6 +89,33 @@ describe("upsertAuthorProfile", () => {
     expect(db.tables.lms_authors![0]!.bio).toBe("Оновлена біографія.");
   });
 
+  it("puts the profile's name and photo on the account, and takes the photo back off when it is removed", async () => {
+    const { db, module } = await withDatabase({
+      lms_courses: [{ id: "c1", author_id: "user-1", slug: "way21" }],
+    });
+    await module.upsertAuthorProfile("user-1", {
+      name: "Центр П.",
+      photo: { src: "https://example.com/face.webp", alt: "Центр П.", avatarCropX: 40, avatarCropY: 30 },
+    });
+    expect(db.authUsers.find((user) => user.id === "user-1")?.metadata).toEqual({
+      cw_name: "Центр П.",
+      cw_avatar: "https://example.com/face.webp",
+      cw_avatar_crop: { x: 40, y: 30 },
+    });
+
+    await module.upsertAuthorProfile("user-1", { name: "Центр П." });
+    expect(db.authUsers.find((user) => user.id === "user-1")?.metadata).toEqual({ cw_name: "Центр П." });
+  });
+
+  it("writes the account only when it differs from the profile", async () => {
+    const { db, module } = await withDatabase();
+    const author = { name: "Центр П.", photo: { src: "https://cw/face.webp", alt: "Центр П.", avatarCropX: 40 } };
+    const synced = { cw_name: "Центр П.", cw_avatar: "https://cw/face.webp", cw_avatar_crop: { x: 40 } };
+    expect(await module.syncAccountFromAuthor("user-1", author, { full_name: "Gleb P." })).toBe(true);
+    expect(await module.syncAccountFromAuthor("user-1", author, { full_name: "Gleb P.", ...synced })).toBe(false);
+    expect(db.authUsers).toHaveLength(1);
+  });
+
   it("rejects a photo without alt text", async () => {
     const { module } = await withDatabase({
       lms_courses: [{ id: "c1", author_id: "user-1", slug: "way21" }],
