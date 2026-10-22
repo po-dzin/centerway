@@ -77,9 +77,7 @@ export function composeDirectMessage(text: string, rule: AutoreplyRule, siteOrig
 }
 
 export async function handleComment(event: CommentEvent, deps: HandleDeps): Promise<HandleResult> {
-  const { store, sender, siteOrigin } = deps;
-  const now = deps.now ?? Date.now;
-  const random = deps.random ?? Math.random;
+  const { store } = deps;
 
   const rules = await store.listEnabledRules();
   const rule = rules.find(
@@ -91,6 +89,29 @@ export async function handleComment(event: CommentEvent, deps: HandleDeps): Prom
 
   const eventId = await store.claimComment(rule.id, event);
   if (!eventId) return { outcome: "already_handled" };
+
+  // A claim must never stay `pending`: it would count as this person's earlier
+  // claim on the rule for good, and Meta's redelivery would find the comment
+  // "already handled". So a throw past the claim closes it as failed (the
+  // journal says why) before the webhook answers 5xx.
+  try {
+    return await answerClaimed(event, rule, eventId, deps);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await store.finish(eventId, "failed", message.slice(0, 300)).catch(() => undefined);
+    throw error;
+  }
+}
+
+async function answerClaimed(
+  event: CommentEvent,
+  rule: AutoreplyRule,
+  eventId: string,
+  deps: HandleDeps,
+): Promise<HandleResult> {
+  const { store, sender, siteOrigin } = deps;
+  const now = deps.now ?? Date.now;
+  const random = deps.random ?? Math.random;
 
   const stop = async (status: EventStatus, error?: string): Promise<HandleResult> => {
     await store.finish(eventId, status, error);

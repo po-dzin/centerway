@@ -130,6 +130,16 @@ describe("handleComment", () => {
     expect((await handleComment(comment(), deps)).outcome).toBe("sent");
   });
 
+  it("closes its claim as failed when a check throws, so the person is not blocked for good", async () => {
+    const { deps, sender, finished } = setup();
+    deps.store.hasEarlierClaim = async () => {
+      throw new Error("db_down");
+    };
+    await expect(handleComment(comment(), deps)).rejects.toThrow("db_down");
+    expect(sender.sendPrivateReply).not.toHaveBeenCalled();
+    expect(finished).toEqual([{ id: "e1", status: "failed", error: "db_down" }]);
+  });
+
   it("records not_configured while there is no access token", async () => {
     const { deps, finished } = setup({ sender: null });
     expect((await handleComment(comment(), deps)).outcome).toBe("failed");
