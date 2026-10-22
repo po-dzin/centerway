@@ -259,12 +259,6 @@
   white-space: nowrap;
 }
 
-.contactHint {
-  margin-inline-start: var(--cw-space-xs);
-  color: var(--cw-muted);
-  font-weight: 400;
-}
-
 .contactMark {
   flex: 0 0 auto;
 }

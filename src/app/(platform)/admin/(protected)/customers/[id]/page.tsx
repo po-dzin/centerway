@@ -76,7 +76,6 @@ interface CustomerEvent {
 
 interface ProfileData {
   customer: Customer;
-  telegram?: { id: string; username: string | null; name: string | null } | null;
   enrollments: CustomerEnrollment[];
   orders: CustomerOrder[];
   events: CustomerEvent[];
@@ -119,31 +118,12 @@ const orderStatusColor: Record<string, string> = {
   refunded: "cw-status-failed-text",
 };
 
-function ContactRow({
-  label,
-  value,
-  badge,
-  href,
-  hint,
-}: {
-  label: string;
-  value: string;
-  badge?: boolean;
-  href?: string;
-  hint?: string;
-}) {
+function ContactRow({ label, value, badge }: { label: string; value: string; badge?: boolean }) {
   return (
     <div className={profileStyles.contact}>
       <span className={profileStyles.contactKindTag}>{label}</span>
-      <p className={profileStyles.contactValue} title={hint ? `${value} · ${hint}` : value}>
-        {href ? (
-          <a href={href} target="_blank" rel="noreferrer">
-            {value}
-          </a>
-        ) : (
-          value
-        )}
-        {hint ? <span className={profileStyles.contactHint}>{hint}</span> : null}
+      <p className={profileStyles.contactValue} title={value}>
+        {value}
       </p>
       {badge && <Icon className={`cw-status-success-text ${profileStyles.contactMark}`} name="check" size={16} />}
     </div>
@@ -273,22 +253,7 @@ export default function CustomerProfilePage() {
                 {customer.phone && (
                   <ContactRow label={t("customers_contact_phone")} value={customer.phone} badge={true} />
                 )}
-                {customer.tg_id &&
-                  (profile.telegram?.username ? (
-                    <ContactRow
-                      label={t("customers_contact_telegram")}
-                      value={`@${profile.telegram.username}`}
-                      href={`https://t.me/${profile.telegram.username}`}
-                      hint={profile.telegram.name ?? undefined}
-                    />
-                  ) : (
-                    <ContactRow
-                      label={t("customers_contact_telegram")}
-                      value={profile.telegram?.name ?? t("customers_contact_telegram_open")}
-                      href={`tg://user?id=${customer.tg_id}`}
-                      hint={t("customers_contact_telegram_no_username")}
-                    />
-                  ))}
+                {customer.tg_id && <ContactRow label={t("customers_contact_telegram")} value={customer.tg_id} />}
                 {customer.google_id && <ContactRow label={t("customers_contact_google")} value={customer.google_id} />}
                 {customer.auth_user_id && (
                   <ContactRow label={t("customers_contact_auth_user")} value={customer.auth_user_id} />

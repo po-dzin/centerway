@@ -3,7 +3,6 @@ import { adminClient } from "@/lib/auth/adminClient";
 import type { TablesUpdate } from "@/lib/db/database.types";
 import { requireAdminSession, serverErrorResponse, unauthorizedResponse } from "@/lib/api/adminRoute";
 import { loadProductIdentity } from "@/lib/analytics/productIdentity";
-import { resolveTelegramContact } from "@/lib/telegram/telegramContact";
 
 type OrderRow = {
   id: string;
@@ -149,8 +148,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
      rather than an error. */
   const authUserId = typeof customer.auth_user_id === "string" ? customer.auth_user_id : null;
   const enrollments: EnrollmentSummary[] = authUserId ? await loadEnrollments(db, authUserId) : [];
-  /* The id alone finds nobody: the card shows the @username the bot knows. */
-  const telegram = await resolveTelegramContact(db, customer.tg_id);
 
   /* Order labels come from the shared product vocabulary, so a course shows
      its own title here exactly as it does in the dashboard breakdown. */
@@ -187,7 +184,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   return NextResponse.json({
     customer,
-    telegram,
     enrollments,
     orders: orderRows.map((o) => ({ ...o, product_title: orderProductLabel(o.product_code) })),
     events: eventRows,
