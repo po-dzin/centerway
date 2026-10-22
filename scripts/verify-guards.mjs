@@ -112,6 +112,12 @@ const gates = [
     // :hover rule sits inside @media (hover: hover), because touch browsers
     // latch hover onto the last thing tapped. See docs "Hover is a pointer state".
   },
+  {
+    script: "guard:scrollbars",
+    title: "One scrollbar, the design system's",
+    // The DS bar is the floor in globals.css; nothing else may paint one, and
+    // nothing may opt back out to the system's. See docs "One scrollbar".
+  },
   { script: "generator:validate", title: "Generated screens" },
   {
     script: "generator:determinism",

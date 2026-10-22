@@ -22,6 +22,12 @@ export default function AdminSystemPage() {
           <p className={page.cardText}>{t("system_card_audit_desc")}</p>
         </Link>
 
+        <Link href="/admin/jobs" className={`${surfaces.plate} ${page.cardLink}`}>
+          <p className={page.cardLabel}>{t("system_card_jobs_label")}</p>
+          <p className={page.cardTitle}>{t("system_card_jobs_title")}</p>
+          <p className={page.cardText}>{t("system_card_jobs_desc")}</p>
+        </Link>
+
         <div className={`${surfaces.plate} ${page.cardStatic}`}>
           <p className={page.cardLabel}>{t("system_card_integrations_label")}</p>
           <p className={page.cardTitle}>{t("system_card_integrations_title")}</p>

@@ -273,17 +273,28 @@ export function accessWindowEnd(from: Date, rule: AccessRule): string | null {
  * revoked-then-expired seat must not read as merely lapsed to whoever is
  * looking at the row.
  */
-export type AccessState = "active" | "expired" | "revoked" | "blocked";
+/**
+ * `scheduled` (2026-10-22): the seat exists but its window has not opened yet —
+ * an admin gave access «з 1 листопада». It shuts the door exactly like a
+ * closed one, and says why.
+ */
+export type AccessState = "active" | "scheduled" | "expired" | "revoked" | "blocked";
 
 export type AccessRecord = {
   status?: string | null;
   blockedAt?: string | null;
   expiresAt?: string | null;
+  /** `lms_enrollments.access_starts_at`: before it, the door is shut. Absent or null — open from the grant. */
+  startsAt?: string | null;
 };
 
 export function accessStateOf(record: AccessRecord, now: Date): AccessState {
   if (record.blockedAt) return "blocked";
   if (record.status === "revoked") return "revoked";
+  if (record.startsAt) {
+    const opens = Date.parse(record.startsAt);
+    if (Number.isFinite(opens) && opens > now.getTime()) return "scheduled";
+  }
   return isEnrollmentExpired(record.expiresAt ?? null, now) ? "expired" : "active";
 }
 

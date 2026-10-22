@@ -17,11 +17,12 @@
  * drift into disagreeing about what a move means.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Icon } from "@/components/Icon";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
-import { isLinkedModule, type Course, type CourseModule } from "@/lms-core";
+import { courseReadiness, isLinkedModule, type Course, type CourseModule } from "@/lms-core";
+import { blockerFlags } from "./blockerFlags";
 import { BuilderGrip } from "./BuilderGrip";
 import { BuilderMenu } from "./BuilderMenu";
 import { InkLabel } from "./BuilderInkLabel";
@@ -77,6 +78,9 @@ export function BuilderContents({
   editing?: ContentsEditing;
 }) {
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+  // The holes the publish gate still reports, so the outline can say which
+  // lessons to look in without the author opening the release panel first.
+  const flags = useMemo(() => blockerFlags(course, courseReadiness(course).blockers), [course]);
 
   const toggleModule = (moduleId: string) => {
     setCollapsed((current) => {
@@ -168,6 +172,11 @@ export function BuilderContents({
                   />
                   <InkLabel>{moduleLabel}</InkLabel>
                 </button>
+                {flags.modules.get(entry.id) ? (
+                  <span className={styles.flagDot} title="Місць, що заважають публікації">
+                    {flags.modules.get(entry.id)}
+                  </span>
+                ) : null}
                 {editing ? (
                   <BuilderMenu
                     label={`Дії з модулем «${entry.title}»`}
@@ -216,7 +225,7 @@ export function BuilderContents({
                     const lessonRow: DragRef = { list: "outline-lesson", group: moduleIndex, index: lessonIndex };
                     return (
                       <div
-                        className={`${styles.contentsRow} ${styles.dragRow}`}
+                        className={`${styles.contentsRow} ${styles.dragRow}${flags.lessons.has(item.id) ? ` ${styles.flagged}` : ""}`}
                         key={item.id}
                         {...(editing ? lessonDrag.rowProps(lessonRow) : {})}
                       >
@@ -251,6 +260,11 @@ export function BuilderContents({
                             {String(lessonIndex + 1).padStart(2, "0")}
                           </span>
                           <InkLabel className={styles.lessonName}>{item.title}</InkLabel>
+                          {flags.lessons.get(item.id) ? (
+                            <span className={styles.flagDot} title="Місць, що заважають публікації">
+                              {flags.lessons.get(item.id)}
+                            </span>
+                          ) : null}
                         </a>
                         {editing ? (
                           <BuilderMenu

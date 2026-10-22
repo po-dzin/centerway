@@ -49,6 +49,7 @@
     --cw-interactive-active-border: var(--cw-mat-active-stroke);
     --cw-interactive-active-shadow: var(--cw-mat-active-shadow);
     --cw-focus-ring: color-mix(in srgb, var(--cw-platform-accent) 34%, transparent);
+    --ds-focus-field-glow: none;
     --ds-radius-button-soft: 1rem;
     --cw-radius-btn: var(--cw-radius-md);
     --cw-brand-hover-border: color-mix(in srgb, var(--cw-platform-accent) 72%, var(--cw-platform-border) 28%);
@@ -550,6 +551,7 @@
   /* The dark palette. One theme for the whole product — see above. */
   [data-cw-theme="dark"] {
     /* CW_PLATFORM_DARK_START */
+    --ds-focus-field-glow: 0 0 9px color-mix(in srgb, var(--cw-platform-accent) 26%, transparent);
     --cw-platform-bg: #191918;
     --cw-platform-surface: #232322;
     --cw-platform-surface-muted: #2e2e2c;
@@ -1280,8 +1282,8 @@
   .cw-input:focus,
   .cw-input:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
-    border-color: var(--cw-interactive-active-border);
+    box-shadow: var(--ds-focus-field-glow);
+    border-color: var(--cw-nav-marker);
   }
 
   /* A SELECT'S MARK IS A CHEVRON DRAWN IN INK, NOT A FILLED TRIANGLE
@@ -1350,6 +1352,18 @@
     .cw-admin-theme select {
       display: inline-flex;
       align-items: center;
+    }
+
+    /* ONE LINE, WHATEVER THE TITLE (2026-10-22). Laid out like a button, the
+       field also wrapped like one: a long program title broke onto two lines
+       and stretched the field past its neighbours. A select shows one value;
+       a long one is cut at the CONTENT edge (cut at the padding edge it ran on
+       under the chevron), and the open list still shows it whole. */
+    .cw-select,
+    .cw-admin-theme select {
+      white-space: nowrap;
+      overflow: clip;
+      overflow-clip-margin: content-box;
     }
 
     .cw-select::picker(select),
@@ -2437,6 +2451,62 @@
      They are extra selectors on the one rule, so there is nothing left that can
      drift. CSS modules reach these with `composes: cw-scroll-none from global`,
      which is why they are classes and not attributes. */
+  /* EVERY SCROLLER WEARS IT BY DEFAULT (2026-10-17).
+     The three classes below were opt-in, and that is the whole bug: a scroll
+     container nobody remembered to mark — a textarea past its last row, a modal
+     body, a table in a panel, the page itself — got the SYSTEM's bar, arrows
+     and all (the admin «Подарувати курс» textarea, 2026-10-17). A rule that has
+     to be remembered is a rule that is forgotten, so the recipe is now the
+     floor and the classes are only the three ways to leave it.
+
+     `:where(*)` has no specificity, so `cw-scroll-rail`, `cw-scroll-none`,
+     `cw-tabbar` and any module that must hide a bar all win without a fight.
+     The `::-webkit-` half is for engines that do not read `scrollbar-width`
+     yet; its selector (0,0,1) sits under every class-level pseudo below for the
+     same reason. No `scrollbar-gutter` here: reserving a strip in every
+     textarea would be a layout change, and the pane classes still own it.
+
+     `scripts/guard-scrollbars.mjs` keeps this the only place that may write a
+     bar's colour, width or buttons. */
+  :where(*) {
+    scrollbar-width: thin;
+    scrollbar-color: var(--cw-mat-scroll-thumb) var(--cw-mat-scroll-track);
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--cw-mat-scroll-track);
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--cw-mat-scroll-thumb);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    border-radius: var(--cw-radius-pill);
+  }
+
+  *::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* The 4px rails have nothing to inset: a 2px border on a 4px bar would erase
+     it, so they take the floor's colour and give back its border. */
+  .cw-scroll-rail::-webkit-scrollbar-thumb,
+  .cw-tabbar::-webkit-scrollbar-thumb {
+    border: 0;
+    background-clip: border-box;
+  }
+
   .cw-scroll,
   .custom-scrollbar,
   .cw-scroll-rail {

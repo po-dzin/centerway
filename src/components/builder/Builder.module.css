@@ -4300,6 +4300,12 @@
   overflow-wrap: anywhere;
 }
 
+.blockerTrail {
+  font-size: var(--ds-type-label-size);
+  color: var(--cw-platform-muted);
+  overflow-wrap: anywhere;
+}
+
 .blockerDetail {
   font-size: var(--ds-type-body-sm-size);
   line-height: 1.45;
@@ -5143,34 +5149,39 @@
   padding-block-end: max(var(--cw-space-lg), env(safe-area-inset-bottom));
 }
 
+.decisionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
+/* One row: the way back on the left, the way on on the right. They wrap onto
+   two lines only where the width cannot hold both. */
 .decisionActions {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--cw-space-xs);
   margin-block-start: var(--cw-space-2xs);
 }
 
+.decisionActions > * {
+  flex: 1 1 auto;
+}
+
 @media (min-width: 561px) {
   .decision {
-    max-width: 27rem;
+    max-width: 36rem;
   }
 
   .decisionBody {
     padding-block-end: var(--cw-space-lg);
   }
 
-  /* Answers side by side once they fit, first one first: it is the one the
-     author is most likely to want, and on both dialogues it is the safe one.
-     In equal columns, never below the contract's button width: a flex row sized
-     each answer to its label, so "Залишити серверну" and "Відновити локальну"
-     were two shapes for one question. Three answers stack instead — at 27rem
-     the third would wrap into half a row on its own. */
-  .decisionActions {
-    grid-template-columns: repeat(auto-fit, minmax(var(--ds-button-min-width), 1fr));
-    align-items: center;
-  }
-
-  .decisionActions:has(> :nth-child(3)) {
-    grid-template-columns: minmax(0, 1fr);
+  .decisionActions > * {
+    flex: 0 1 auto;
   }
 }
 
@@ -7157,4 +7168,49 @@
   .courseCardBody > .courseMeta {
     height: auto;
   }
+}
+
+/* ── A place the publish gate is still waiting on ───────────────────────────
+   The design system already has a mark for «this one»: the draughtsman's
+   dashed contour of the selected object (`--cw-contour-*`, ink by day and brass
+   by night). A hole in the course takes that mark rather than a colour of its
+   own, so the builder says «look here» in the sentence the whole product
+   already uses. Selection in this editor is the left rule on the block, which
+   leaves the contour free. */
+.flagged,
+.blockCard[data-flagged],
+.flaggedField {
+  outline: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-selected);
+  outline-offset: var(--cw-contour-offset);
+}
+
+.flaggedField {
+  border-radius: var(--cw-radius-md);
+}
+
+/* A third column for the count, only on the rows that carry one. */
+.contentsLink:has(> .flagDot) {
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+}
+
+/* The outline is a scroll container's own edge: pulled in so the rail does not
+   clip it. */
+.contentsRow.flagged {
+  outline-offset: -2px;
+  border-radius: var(--cw-radius-md);
+}
+
+.flagDot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 1.5rem;
+  block-size: 1.5rem;
+  padding-inline: var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-status-pending-soft);
+  color: var(--cw-status-pending);
+  font-size: var(--ds-type-label-size);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }

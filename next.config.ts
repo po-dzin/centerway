@@ -137,6 +137,44 @@ const nextConfig: NextConfig = {
   },
 
   /**
+   * THE ADDRESSES THE OLD SITE-BUILDER LEFT BEHIND (owner, 2026-10-22).
+   *
+   * Search Console still lists four of them as «Not found (404)» — pages that
+   * existed before the platform and that Google keeps re-checking. Each one is
+   * sent to the page that now answers the same question, permanently (308), so
+   * a link someone saved or a crawler remembered lands somewhere useful and the
+   * ranking moves with it.
+   *
+   * ONLY THE PLATFORM HOST. The apex 308s to `www` in `proxy.ts`, and `my.`
+   * never had these paths; matching `www` alone keeps the rule from touching a
+   * personal-host address that happens to share a name.
+   *
+   * `idealne-tilo` is an alias of the `natural-body` experience in the registry
+   * (`/programs/ideal-body` already 308s there), so the target is written as
+   * the final address rather than costing a crawler a second hop.
+   *
+   * LEFT AS 404 ON PURPOSE: `/about-me` (no page it maps to) and the builder's
+   * `/_api/…` service tail, which nobody links to and Google drops by itself.
+   *
+   * THE CYRILLIC PATH is written percent-encoded: that is how it reaches the
+   * server, and the pattern is matched against the encoded form.
+   */
+  async redirects() {
+    const platformHost = [{ type: "host" as const, value: "www.centerway.net.ua" }];
+    return [
+      { source: "/idealne-tilo-ayorveda", destination: "/programs/natural-body", permanent: true, has: platformHost },
+      { source: "/vidnovlyucha-gimnastuka", destination: "/programs/irem", permanent: true, has: platformHost },
+      {
+        source:
+          "/%D0%BF%D0%BE%D0%BB%D1%96%D1%82%D0%B8%D0%BA%D0%B0-%D0%BA%D0%BE%D0%BD%D1%84%D1%96%D0%B4%D0%B5%D0%BD%D1%86%D1%96%D0%B9%D0%BD%D0%BE%D1%81%D1%82%D1%96",
+        destination: "/legal/privacy",
+        permanent: true,
+        has: platformHost,
+      },
+    ];
+  },
+
+  /**
    * CACHING FOR `public/`, WHICH NEXT DOES NOT DO FOR YOU.
    *
    * Everything under `public/` ships with `Cache-Control: public, max-age=0,

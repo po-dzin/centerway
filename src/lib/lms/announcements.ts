@@ -145,10 +145,11 @@ export async function readAnnouncementAudience(
     status: string;
     blocked_at: string | null;
     expires_at: string | null;
+    access_starts_at: string | null;
   }>((from, to) =>
     db
       .from("lms_enrollments")
-      .select("auth_user_id, status, blocked_at, expires_at")
+      .select("auth_user_id, status, blocked_at, expires_at, access_starts_at")
       .eq("course_id", course.id)
       .order("auth_user_id", { ascending: true })
       .range(from, to),
@@ -158,7 +159,10 @@ export async function readAnnouncementAudience(
   const open = new Set<string>();
   for (const row of enrollments) {
     enrolled.add(row.auth_user_id);
-    const state = accessStateOf({ status: row.status, blockedAt: row.blocked_at, expiresAt: row.expires_at }, now);
+    const state = accessStateOf(
+      { status: row.status, blockedAt: row.blocked_at, expiresAt: row.expires_at, startsAt: row.access_starts_at },
+      now,
+    );
     if (state === "active") open.add(row.auth_user_id);
   }
 

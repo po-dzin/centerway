@@ -596,6 +596,101 @@ export type Database = {
           },
         ]
       }
+      autoreply_events: {
+        Row: {
+          comment_id: string
+          created_at: string
+          error: string | null
+          id: string
+          ig_user_id: string | null
+          ig_username: string | null
+          rule_id: string
+          status: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          ig_user_id?: string | null
+          ig_username?: string | null
+          rule_id: string
+          status?: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          ig_user_id?: string | null
+          ig_username?: string | null
+          rule_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "autoreply_events_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "autoreply_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      autoreply_rules: {
+        Row: {
+          button_label: string | null
+          button_url: string | null
+          channel: string
+          created_at: string
+          created_by: string | null
+          dm_texts: string[]
+          enabled: boolean
+          id: string
+          keywords: string[]
+          max_per_hour: number
+          media_id: string | null
+          name: string
+          public_replies: string[]
+          updated_at: string
+          utm_campaign: string | null
+        }
+        Insert: {
+          button_label?: string | null
+          button_url?: string | null
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          dm_texts?: string[]
+          enabled?: boolean
+          id?: string
+          keywords?: string[]
+          max_per_hour?: number
+          media_id?: string | null
+          name?: string
+          public_replies?: string[]
+          updated_at?: string
+          utm_campaign?: string | null
+        }
+        Update: {
+          button_label?: string | null
+          button_url?: string | null
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          dm_texts?: string[]
+          enabled?: boolean
+          id?: string
+          keywords?: string[]
+          max_per_hour?: number
+          media_id?: string | null
+          name?: string
+          public_replies?: string[]
+          updated_at?: string
+          utm_campaign?: string | null
+        }
+        Relationships: []
+      }
       broadcast_recipients: {
         Row: {
           address: string
@@ -744,6 +839,7 @@ export type Database = {
           phone: string | null
           tags: string[]
           tg_id: string | null
+          tg_username: string | null
           updated_at: string
         }
         Insert: {
@@ -759,6 +855,7 @@ export type Database = {
           phone?: string | null
           tags?: string[]
           tg_id?: string | null
+          tg_username?: string | null
           updated_at?: string
         }
         Update: {
@@ -774,6 +871,7 @@ export type Database = {
           phone?: string | null
           tags?: string[]
           tg_id?: string | null
+          tg_username?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -2043,6 +2141,7 @@ export type Database = {
       }
       lms_enrollments: {
         Row: {
+          access_starts_at: string | null
           auth_user_id: string
           blocked_at: string | null
           blocked_reason: string | null
@@ -2062,6 +2161,7 @@ export type Database = {
           utm: Json | null
         }
         Insert: {
+          access_starts_at?: string | null
           auth_user_id: string
           blocked_at?: string | null
           blocked_reason?: string | null
@@ -2081,6 +2181,7 @@ export type Database = {
           utm?: Json | null
         }
         Update: {
+          access_starts_at?: string | null
           auth_user_id?: string
           blocked_at?: string | null
           blocked_reason?: string | null
@@ -2788,6 +2889,7 @@ export type Database = {
           notification_channels: string[]
           onboarding_state: string
           provider: string | null
+          ref_tag: string | null
           timezone: string
           updated_at: string
         }
@@ -2804,6 +2906,7 @@ export type Database = {
           notification_channels?: string[]
           onboarding_state?: string
           provider?: string | null
+          ref_tag?: string | null
           timezone?: string
           updated_at?: string
         }
@@ -2820,6 +2923,7 @@ export type Database = {
           notification_channels?: string[]
           onboarding_state?: string
           provider?: string | null
+          ref_tag?: string | null
           timezone?: string
           updated_at?: string
         }

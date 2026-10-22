@@ -74,14 +74,17 @@ async function hasManualGrant(authUserId: string, courseId: string, now = new Da
   const db = adminClient();
   const { data } = await db
     .from("lms_enrollments")
-    .select("source, expires_at, status, blocked_at")
+    .select("source, expires_at, access_starts_at, status, blocked_at")
     .eq("auth_user_id", authUserId)
     .eq("course_id", courseId)
     .maybeSingle();
 
   if (data?.source !== "manual") return false;
   return (
-    accessStateOf({ status: data.status, blockedAt: data.blocked_at, expiresAt: data.expires_at }, now) === "active"
+    accessStateOf(
+      { status: data.status, blockedAt: data.blocked_at, expiresAt: data.expires_at, startsAt: data.access_starts_at },
+      now,
+    ) === "active"
   );
 }
 
@@ -309,7 +312,7 @@ function courseCohortDate(course: Course): string | null {
 
 /** The columns every enrollment read selects, so all of them fold the same way. */
 const ENROLLMENT_COLUMNS =
-  "id, course_id, started_at, cohort_starts_on, source, order_ref, expires_at, status, revoked_at, blocked_at";
+  "id, course_id, started_at, cohort_starts_on, source, order_ref, expires_at, access_starts_at, status, revoked_at, blocked_at";
 
 type EnrollmentRow = {
   id: string;
@@ -322,6 +325,7 @@ type EnrollmentRow = {
   status?: string | null;
   revoked_at?: string | null;
   blocked_at?: string | null;
+  access_starts_at?: string | null;
 };
 
 function toEnrollmentRecord(row: EnrollmentRow): EnrollmentRecord {
@@ -339,7 +343,7 @@ function toEnrollmentRecord(row: EnrollmentRow): EnrollmentRecord {
 }
 
 /** Why a door stayed shut. Every value is a 403 to the learner and a different sentence to support. */
-export type AccessDenial = "not_entitled" | "expired" | "revoked" | "blocked";
+export type AccessDenial = "not_entitled" | "scheduled" | "expired" | "revoked" | "blocked";
 
 function denialFor(state: AccessState): AccessDenial {
   return state === "active" ? "not_entitled" : state;
@@ -483,7 +487,12 @@ export async function ensureEnrollment(
       };
 
       const state = accessStateOf(
-        { status: updated.status, blockedAt: updated.blocked_at, expiresAt: updated.expires_at },
+        {
+          status: updated.status,
+          blockedAt: updated.blocked_at,
+          expiresAt: updated.expires_at,
+          startsAt: updated.access_starts_at,
+        },
         now,
       );
       // A renewal can still land in the past: a 30-day term bought three months
@@ -492,7 +501,10 @@ export async function ensureEnrollment(
       return { enrollment: toEnrollmentRecord(updated) };
     }
 
-    const state = accessStateOf({ status: row.status, blockedAt: row.blocked_at, expiresAt: row.expires_at }, now);
+    const state = accessStateOf(
+      { status: row.status, blockedAt: row.blocked_at, expiresAt: row.expires_at, startsAt: row.access_starts_at },
+      now,
+    );
     if (state !== "active") return { enrollment: null, reason: denialFor(state) };
     return { enrollment: toEnrollmentRecord(row) };
   }
@@ -557,7 +569,12 @@ export async function ensureEnrollment(
 
     const raced = retry.data as EnrollmentRow;
     const state = accessStateOf(
-      { status: raced.status, blockedAt: raced.blocked_at, expiresAt: raced.expires_at },
+      {
+        status: raced.status,
+        blockedAt: raced.blocked_at,
+        expiresAt: raced.expires_at,
+        startsAt: raced.access_starts_at,
+      },
       now,
     );
     if (state !== "active") return { enrollment: null, reason: denialFor(state) };
@@ -862,6 +879,7 @@ export async function listLearnerCourses(identity: LearnerIdentity, now = new Da
               status: refunded ? "revoked" : (row.status ?? "active"),
               blockedAt: row.blocked_at ?? null,
               expiresAt: row.expires_at ?? null,
+              startsAt: row.access_starts_at ?? null,
             }
           : free
             ? { status: "active", blockedAt: null, expiresAt: null }

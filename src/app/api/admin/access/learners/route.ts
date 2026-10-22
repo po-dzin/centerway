@@ -4,6 +4,7 @@ import { parseCalendarDate } from "@/lms-core";
 import {
   AccessError,
   blockCourse,
+  deleteEmptyAccount,
   isGrantableRole,
   isGrantSource,
   isPaymentCurrency,
@@ -108,6 +109,10 @@ type ProvisionBody = {
   ref?: string | null;
   /** Take the term from the course's offer for a grant with no payment too. See `provisionAccess`. */
   termFromOffer?: boolean;
+  /** Solo: when the door opens, `YYYY-MM-DD`. */
+  accessStartsAt?: string | null;
+  /** «Хто привів» as an account, found by email in the dialog. Wins over `ref`. */
+  referrerEmail?: string | null;
   /**
    * An elevated role to give the account, admin-only and optional.
    *
@@ -182,6 +187,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       cohortStartsOn,
       ref: ref ?? undefined,
       termFromOffer: body.termFromOffer === true ? true : undefined,
+      accessStartsAt:
+        typeof body.accessStartsAt === "string" && body.accessStartsAt.trim() ? body.accessStartsAt.trim() : undefined,
+      referrerEmail:
+        typeof body.referrerEmail === "string" && body.referrerEmail.trim() ? body.referrerEmail.trim() : undefined,
       actorId: session.user.id,
     });
     // AFTER provisioning, never before: the account may not have existed
@@ -269,12 +278,26 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
-// DELETE /api/admin/access/learners?enrollmentId=...
+// DELETE /api/admin/access/learners?enrollmentId=...  — revoke one seat
+// DELETE /api/admin/access/learners?authUserId=...     — remove an account with no history (admin only)
 export async function DELETE(req: NextRequest) {
   const session = await requireAdminSession(req);
   if (!session) return unauthorizedResponse();
 
-  const enrollmentId = new URL(req.url).searchParams.get("enrollmentId");
+  const params = new URL(req.url).searchParams;
+  const authUserId = params.get("authUserId");
+  if (authUserId) {
+    // Removing a person is an admin act, as roles are; `deleteEmptyAccount`
+    // refuses anyone with a history whoever asks.
+    if (session.role !== "admin") return forbiddenResponse();
+    try {
+      return NextResponse.json(await deleteEmptyAccount({ authUserId, actorId: session.user.id }));
+    } catch (error) {
+      return failed(error);
+    }
+  }
+
+  const enrollmentId = params.get("enrollmentId");
   if (!enrollmentId) return badRequestResponse("enrollment_id_required");
 
   try {

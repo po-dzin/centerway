@@ -3,10 +3,11 @@
 /**
  * Розсилки: the platform's own mailing list, replacing SendPulse.
  *
- * Two tabs. «Кампанії» is the letters — a list, and one letter open at a time
+ * Three tabs. «Кампанії» is the letters — a list, and one letter open at a time
  * in the editor. «Список» is the people — consent and the way out: who
  * unsubscribed, which addresses bounced, who complained, and the import of the
- * old SendPulse base.
+ * old SendPulse base. «Автовідповіді» is the Instagram
+ * comment → DM rules.
  *
  * The data contract is src/lib/broadcasts (and the migration it names); the
  * runbook is docs/broadcasts-2026-09-15.md.
@@ -31,6 +32,7 @@ import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
 
 import { BroadcastEditor } from "./BroadcastEditor";
+import { AutoreplyPanel } from "./AutoreplyPanel";
 import { SubscriptionsPanel } from "./SubscriptionsPanel";
 
 const STATUS_BADGE: Record<string, string> = {
@@ -56,11 +58,12 @@ export default function BroadcastsPage() {
         items={[
           { key: "campaigns", label: t("bc_tab_campaigns") },
           { key: "list", label: t("bc_tab_list") },
+          { key: "autoreply", label: t("bc_tab_autoreply") },
         ]}
         activeKey={tab}
         onChange={setTab}
       />
-      {tab === "campaigns" ? <Campaigns /> : <SubscriptionsPanel />}
+      {tab === "campaigns" ? <Campaigns /> : tab === "list" ? <SubscriptionsPanel /> : <AutoreplyPanel />}
     </div>
   );
 }

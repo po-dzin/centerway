@@ -31,6 +31,7 @@ const FAILURE_STATUS: Record<string, number> = {
   not_published: 404,
   not_entitled: 403,
   expired: 403,
+  scheduled: 403,
   revoked: 403,
   blocked: 403,
 };

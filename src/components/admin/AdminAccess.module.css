@@ -151,14 +151,8 @@
   overscroll-behavior: contain;
 }
 
-.personRemove {
-  composes: cw-btn from global;
-  display: inline-grid;
-  place-items: center;
-  padding: 0;
-  cursor: pointer;
-}
-
+/* The remove mark is the admin's icon command (`lists.rowIcon`, ink ring);
+   on the only line it holds its place but is not offered. */
 .personRemove:disabled {
   visibility: hidden;
 }
@@ -211,6 +205,60 @@
 .linkAddress {
   composes: cw-muted from global;
   font-size: var(--ds-type-label-size);
+}
+
+/* The term block is a fieldset so a promo can dim it whole without changing
+   what is in it — the block keeps its height and nothing below moves. */
+.termSet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.termSet:disabled {
+  opacity: 0.5;
+}
+
+/* «Хто привів»: accounts that match what is typed, as a short list under the field. */
+.refHits {
+  display: grid;
+  margin: 0;
+  padding: var(--cw-space-2xs);
+  border: 1px solid var(--cw-border);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  list-style: none;
+}
+
+.refHit {
+  display: grid;
+  width: 100%;
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border: 0;
+  border-radius: var(--cw-radius-sm);
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.refHit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+@media (hover: hover) {
+  .refHit:hover {
+    background: var(--cw-mat-surface-sunk);
+  }
+}
+
+.roleField {
+  max-width: 16rem;
 }
 
 /* ── The summary ───────────────────────────────────────────────────────── */
