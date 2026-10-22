@@ -152,7 +152,6 @@ export const access = {
   access_promo_discount: { uk: "Знижка, %", en: "Discount, %" },
   access_grant_promo_channel: { uk: "Канал", en: "Channel" },
   access_grant_promo_campaign: { uk: "Кампанія", en: "Campaign" },
-  access_grant_more: { uk: "Додатково", en: "More" },
   access_grant_links: { uk: "Посилання", en: "Link" },
   access_grant_link_course: { uk: "Курс", en: "Course" },
   access_grant_link_hint: {
