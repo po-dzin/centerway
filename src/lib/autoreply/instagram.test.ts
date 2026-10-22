@@ -48,7 +48,9 @@ describe("parseCommentEvents", () => {
   it("ignores other objects, other fields and malformed bodies", () => {
     expect(parseCommentEvents({ object: "page", entry: [] })).toEqual([]);
     expect(parseCommentEvents(null)).toEqual([]);
-    expect(parseCommentEvents({ object: "instagram", entry: [{ changes: [{ field: "mentions", value: {} }] }] })).toEqual([]);
+    expect(
+      parseCommentEvents({ object: "instagram", entry: [{ changes: [{ field: "mentions", value: {} }] }] }),
+    ).toEqual([]);
     expect(parseCommentEvents(comment({ text: 5 }))).toEqual([]);
   });
 });

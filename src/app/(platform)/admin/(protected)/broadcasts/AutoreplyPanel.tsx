@@ -174,7 +174,12 @@ export function AutoreplyPanel() {
       {connected ? null : <p className={controls.hint}>{t("ar_not_connected")}</p>}
       {canEdit ? (
         <div className={controls.actions}>
-          <button type="button" disabled={busy} onClick={() => void create()} className={`${controls.action} cw-surface-2`}>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void create()}
+            className={`${controls.action} cw-surface-2`}
+          >
             <Icon name="plus" size={16} />
             {t("ar_new")}
           </button>
@@ -297,7 +302,10 @@ function RuleEditor({
   const save = async () => {
     setBusy(true);
     try {
-      await authorizedJson(`/api/admin/autoreply/${rule.id}`, { method: "PATCH", body: JSON.stringify(toPayload(draft)) });
+      await authorizedJson(`/api/admin/autoreply/${rule.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(toPayload(draft)),
+      });
       toast.success(t("ar_saved"));
     } catch (e) {
       toast.error(errorText(getErrorMessage(e), t));
@@ -329,7 +337,12 @@ function RuleEditor({
       <div className={controls.formStack}>
         <label className={controls.field}>
           <span className={controls.fieldCaption}>{t("ar_f_name")}</span>
-          <input className={controls.input} value={draft.name} disabled={!canEdit} onChange={(e) => set({ name: e.target.value })} />
+          <input
+            className={controls.input}
+            value={draft.name}
+            disabled={!canEdit}
+            onChange={(e) => set({ name: e.target.value })}
+          />
         </label>
         <label className={controls.field}>
           <span className={controls.fieldCaption}>{t("ar_f_keywords")}</span>
@@ -343,11 +356,26 @@ function RuleEditor({
         </label>
         <label className={controls.field}>
           <span className={controls.fieldCaption}>{t("ar_f_media")}</span>
-          <input className={controls.input} value={draft.mediaId} disabled={!canEdit} onChange={(e) => set({ mediaId: e.target.value })} />
+          <input
+            className={controls.input}
+            value={draft.mediaId}
+            disabled={!canEdit}
+            onChange={(e) => set({ mediaId: e.target.value })}
+          />
         </label>
         <p className={controls.hint}>{t("ar_f_variants_hint")}</p>
-        <Variants label={t("ar_f_public")} values={draft.publicReplies} disabled={!canEdit} onChange={(v) => set({ publicReplies: v })} />
-        <Variants label={t("ar_f_dm")} values={draft.dmTexts} disabled={!canEdit} onChange={(v) => set({ dmTexts: v })} />
+        <Variants
+          label={t("ar_f_public")}
+          values={draft.publicReplies}
+          disabled={!canEdit}
+          onChange={(v) => set({ publicReplies: v })}
+        />
+        <Variants
+          label={t("ar_f_dm")}
+          values={draft.dmTexts}
+          disabled={!canEdit}
+          onChange={(v) => set({ dmTexts: v })}
+        />
         <div className={controls.fieldsTwo}>
           <label className={controls.field}>
             <span className={controls.fieldCaption}>{t("ar_f_button_label")}</span>
@@ -398,7 +426,12 @@ function RuleEditor({
           <button type="button" disabled={busy} onClick={onToggle} className={`${controls.action} cw-surface-2`}>
             {rule.enabled ? t("ar_turn_off") : t("ar_turn_on")}
           </button>
-          <button type="button" disabled={busy} onClick={() => void save()} className={`${controls.action} cw-surface-2`}>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void save()}
+            className={`${controls.action} cw-surface-2`}
+          >
             {t("ar_save")}
           </button>
         </div>

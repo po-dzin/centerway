@@ -177,7 +177,10 @@ export const broadcasts = {
   ar_off: { uk: "Вимкнено", en: "Off" },
   ar_turn_on: { uk: "Увімкнути", en: "Turn on" },
   ar_turn_off: { uk: "Вимкнути", en: "Turn off" },
-  ar_stats: { uk: "за 7 днів: коментарів {c}, надіслано {s}, помилок {f}", en: "7 days: comments {c}, sent {s}, failed {f}" },
+  ar_stats: {
+    uk: "за 7 днів: коментарів {c}, надіслано {s}, помилок {f}",
+    en: "7 days: comments {c}, sent {s}, failed {f}",
+  },
   ar_untitled: { uk: "Без назви", en: "Untitled" },
   ar_f_name: { uk: "Назва правила", en: "Rule name" },
   ar_f_keywords: { uk: "Ключові слова", en: "Keywords" },

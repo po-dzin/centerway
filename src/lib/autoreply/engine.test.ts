@@ -31,17 +31,31 @@ const comment = (over: Partial<CommentEvent> = {}): CommentEvent => ({
   ...over,
 });
 
-function setup(opts: { rules?: AutoreplyRule[]; claimed?: boolean; sentTo?: boolean; sentLastHour?: number; sender?: InstagramSender | null } = {}) {
+function setup(
+  opts: {
+    rules?: AutoreplyRule[];
+    claimed?: boolean;
+    earlierClaim?: boolean;
+    claimsLastHour?: number;
+    sender?: InstagramSender | null;
+  } = {},
+) {
   const finished: { id: string; status: string; error?: string }[] = [];
   const store: AutoreplyStore = {
     listEnabledRules: async () => opts.rules ?? [rule()],
     claimComment: async () => (opts.claimed === false ? null : "e1"),
-    hasSentTo: async () => opts.sentTo ?? false,
-    countSentSince: async () => opts.sentLastHour ?? 0,
+    hasEarlierClaim: async () => opts.earlierClaim ?? false,
+    countClaimsSince: async () => opts.claimsLastHour ?? 1,
     finish: async (id, status, error) => void finished.push({ id, status, error }),
   };
   const sender: InstagramSender = { sendPrivateReply: vi.fn(async () => {}), replyPublicly: vi.fn(async () => {}) };
-  const deps = { store, sender: opts.sender === undefined ? sender : opts.sender, siteOrigin: ORIGIN, now: () => NOW, random: () => 0 };
+  const deps = {
+    store,
+    sender: opts.sender === undefined ? sender : opts.sender,
+    siteOrigin: ORIGIN,
+    now: () => NOW,
+    random: () => 0,
+  };
   return { deps, sender, finished };
 }
 
@@ -86,13 +100,18 @@ describe("handleComment", () => {
   });
 
   it("sends one message per person", async () => {
-    const { deps, sender } = setup({ sentTo: true });
+    const { deps, sender } = setup({ earlierClaim: true });
     expect((await handleComment(comment(), deps)).outcome).toBe("skipped_duplicate");
     expect(sender.sendPrivateReply).not.toHaveBeenCalled();
   });
 
+  it("sends when its own claim is the last one under the cap", async () => {
+    const { deps } = setup({ claimsLastHour: 200 });
+    expect((await handleComment(comment(), deps)).outcome).toBe("sent");
+  });
+
   it("stops at the hourly cap", async () => {
-    const { deps, sender } = setup({ sentLastHour: 200 });
+    const { deps, sender } = setup({ claimsLastHour: 201 });
     expect((await handleComment(comment(), deps)).outcome).toBe("skipped_rate");
     expect(sender.sendPrivateReply).not.toHaveBeenCalled();
   });

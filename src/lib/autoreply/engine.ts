@@ -3,9 +3,14 @@
  *
  * The order of the guards is the point of this file. A comment is CLAIMED
  * first (the unique comment id makes Meta's repeated deliveries harmless),
- * then it is refused if it is too old to answer, if this person already got
- * this rule's message, or if the hour's cap is spent. Only then does a message
- * leave. Whatever happens is written to the event row, so the admin journal
+ * then it is refused if it is too old to answer, if this person already has an
+ * earlier claim on this rule, or if the hour's cap is spent. Only then does a
+ * message leave.
+ *
+ * The person and cap checks run AFTER the claim and count the claims in flight
+ * (pending or sent), so concurrent webhooks see each other: the person's
+ * earliest claim wins by (created_at, id), and the cap can undershoot at the
+ * boundary but never be overshot. Whatever happens is written to the event row, so the admin journal
  * can say why a comment was not answered.
  */
 
@@ -34,15 +39,15 @@ export interface AutoreplyStore {
   listEnabledRules(): Promise<AutoreplyRule[]>;
   /** Records the comment as being handled; null when this comment was already handled. */
   claimComment(ruleId: string, event: CommentEvent): Promise<string | null>;
-  hasSentTo(ruleId: string, igUserId: string): Promise<boolean>;
-  countSentSince(ruleId: string, sinceIso: string): Promise<number>;
+  /** True when this person has an earlier claim (pending or sent) on the rule than this event. */
+  hasEarlierClaim(ruleId: string, igUserId: string, eventId: string): Promise<boolean>;
+  /** Claims (pending or sent) of the rule since the time, counting the caller's own. */
+  countClaimsSince(ruleId: string, sinceIso: string): Promise<number>;
   finish(eventId: string, status: EventStatus, error?: string): Promise<void>;
 }
 
 export type HandleResult =
-  | { outcome: "no_rule" }
-  | { outcome: "already_handled" }
-  | { outcome: EventStatus; ruleId: string };
+  { outcome: "no_rule" } | { outcome: "already_handled" } | { outcome: EventStatus; ruleId: string };
 
 export type HandleDeps = {
   store: AutoreplyStore;
@@ -93,9 +98,9 @@ export async function handleComment(event: CommentEvent, deps: HandleDeps): Prom
   };
 
   if (event.time !== null && now() / 1000 - event.time > REPLY_WINDOW_SECONDS) return stop("skipped_old");
-  if (event.fromId && (await store.hasSentTo(rule.id, event.fromId))) return stop("skipped_duplicate");
+  if (event.fromId && (await store.hasEarlierClaim(rule.id, event.fromId, eventId))) return stop("skipped_duplicate");
   const sinceIso = new Date(now() - 60 * 60 * 1000).toISOString();
-  if ((await store.countSentSince(rule.id, sinceIso)) >= rule.maxPerHour) return stop("skipped_rate");
+  if ((await store.countClaimsSince(rule.id, sinceIso)) > rule.maxPerHour) return stop("skipped_rate");
   if (!sender) return stop("failed", "instagram_not_configured");
 
   const text = pickVariant(rule.dmTexts, random);
@@ -114,7 +119,10 @@ export async function handleComment(event: CommentEvent, deps: HandleDeps): Prom
     try {
       await sender.replyPublicly(event.commentId, publicText);
     } catch (error) {
-      log.warn("autoreply.public_reply_failed", { ruleId: rule.id, message: error instanceof Error ? error.message : String(error) });
+      log.warn("autoreply.public_reply_failed", {
+        ruleId: rule.id,
+        message: error instanceof Error ? error.message : String(error),
+      });
     }
   }
   return stop("sent");

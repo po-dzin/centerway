@@ -10,7 +10,13 @@ const { signBody } = await import("@/lib/autoreply/instagram");
 
 const payload = JSON.stringify({
   object: "instagram",
-  entry: [{ id: "ACC", time: 1, changes: [{ field: "comments", value: { id: "c1", text: "доша", from: { id: "U1" }, media: { id: "M1" } } }] }],
+  entry: [
+    {
+      id: "ACC",
+      time: 1,
+      changes: [{ field: "comments", value: { id: "c1", text: "доша", from: { id: "U1" }, media: { id: "M1" } } }],
+    },
+  ],
 });
 
 function post(body: string, signature: string | null) {
@@ -30,7 +36,9 @@ beforeEach(() => {
 
 describe("GET (handshake)", () => {
   const url = (token: string, mode = "subscribe") =>
-    new NextRequest(`https://www.centerway.net.ua/api/instagram/webhook?hub.mode=${mode}&hub.verify_token=${token}&hub.challenge=12345`);
+    new NextRequest(
+      `https://www.centerway.net.ua/api/instagram/webhook?hub.mode=${mode}&hub.verify_token=${token}&hub.challenge=12345`,
+    );
 
   it("echoes the challenge for our verify token", async () => {
     const res = await GET(url("verify-me"));

@@ -25,7 +25,10 @@ export async function GET(req: NextRequest) {
   if (params.get("hub.mode") !== "subscribe" || !secretsEqual(params.get("hub.verify_token"), expected)) {
     return NextResponse.json({ error: "verify_failed" }, { status: 403 });
   }
-  return new NextResponse(params.get("hub.challenge") ?? "", { status: 200, headers: { "content-type": "text/plain" } });
+  return new NextResponse(params.get("hub.challenge") ?? "", {
+    status: 200,
+    headers: { "content-type": "text/plain" },
+  });
 }
 
 /**

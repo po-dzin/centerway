@@ -132,6 +132,7 @@ export function instagramSenderFromEnv(): InstagramSender | null {
   return {
     sendPrivateReply: (commentId, text) =>
       graphPost("/me/messages", { recipient: { comment_id: commentId }, message: { text } }, token),
-    replyPublicly: (commentId, text) => graphPost(`/${encodeURIComponent(commentId)}/replies`, { message: text }, token),
+    replyPublicly: (commentId, text) =>
+      graphPost(`/${encodeURIComponent(commentId)}/replies`, { message: text }, token),
   };
 }

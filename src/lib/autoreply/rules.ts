@@ -112,7 +112,10 @@ export async function listRules(db: Db = serviceClient()): Promise<RuleSummary[]
     else if (row.status.startsWith("skipped")) entry.skipped += 1;
     stats.set(row.rule_id, entry);
   }
-  return rules.map((rule) => ({ ...rule, stats: stats.get(rule.id) ?? { comments: 0, sent: 0, failed: 0, skipped: 0 } }));
+  return rules.map((rule) => ({
+    ...rule,
+    stats: stats.get(rule.id) ?? { comments: 0, sent: 0, failed: 0, skipped: 0 },
+  }));
 }
 
 export async function createRule(actorId: string, input: RuleInput, db: Db = serviceClient()): Promise<RuleRow> {

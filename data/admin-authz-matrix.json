@@ -338,5 +338,39 @@
       "address": "smoke@example.com",
       "action": "unsubscribe"
     }
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/autoreply"
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/autoreply",
+    "body": {
+      "name": "smoke"
+    }
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/autoreply/00000000-0000-4000-8000-000000000000",
+    "routePath": "/api/admin/autoreply/:id"
+  },
+  {
+    "kind": "mutate",
+    "method": "PATCH",
+    "path": "/api/admin/autoreply/00000000-0000-4000-8000-000000000000",
+    "routePath": "/api/admin/autoreply/:id",
+    "body": {
+      "name": "smoke"
+    }
+  },
+  {
+    "kind": "mutate",
+    "method": "DELETE",
+    "path": "/api/admin/autoreply/00000000-0000-4000-8000-000000000000",
+    "routePath": "/api/admin/autoreply/:id"
   }
 ]

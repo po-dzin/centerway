@@ -77,24 +77,30 @@ export function dbStore(db: Db = serviceClient()): AutoreplyStore {
       return (data as { id: string }).id;
     },
 
-    async hasSentTo(ruleId: string, igUserId: string) {
+    async hasEarlierClaim(ruleId: string, igUserId: string, eventId: string) {
       const { data, error } = await db
         .from("autoreply_events")
-        .select("id")
+        .select("id, created_at")
         .eq("rule_id", ruleId)
         .eq("ig_user_id", igUserId)
-        .eq("status", "sent")
-        .limit(1);
+        .in("status", ["pending", "sent"]);
       if (error) throw new Error(error.message);
-      return (data ?? []).length > 0;
+      const rows = (data ?? []) as { id: string; created_at: string }[];
+      const mine = rows.find((row) => row.id === eventId);
+      if (!mine) return false;
+      return rows.some(
+        (row) =>
+          row.id !== eventId &&
+          (row.created_at < mine.created_at || (row.created_at === mine.created_at && row.id < mine.id)),
+      );
     },
 
-    async countSentSince(ruleId: string, sinceIso: string) {
+    async countClaimsSince(ruleId: string, sinceIso: string) {
       const { count, error } = await db
         .from("autoreply_events")
         .select("id", { count: "exact", head: true })
         .eq("rule_id", ruleId)
-        .eq("status", "sent")
+        .in("status", ["pending", "sent"])
         .gte("created_at", sinceIso);
       if (error) throw new Error(error.message);
       return count ?? 0;
@@ -105,8 +111,8 @@ export function dbStore(db: Db = serviceClient()): AutoreplyStore {
         .from("autoreply_events")
         .update({ status, error: error ?? null })
         .eq("id", eventId);
-      // Two comments from one person can both pass `hasSentTo` before either
-      // is written; the partial unique index lets only one become `sent`.
+      // Backstop for the claim ordering: the partial unique index lets only one
+      // `sent` per person per rule exist.
       if (dbError && dbError.code === UNIQUE_VIOLATION) {
         await db.from("autoreply_events").update({ status: "skipped_duplicate" }).eq("id", eventId);
         return;
