@@ -23,6 +23,23 @@
   gap: var(--cw-space-sm);
 }
 
+/* BASE FIRST, THEN THE WIDE OVERRIDE. The base `.headControls { width: 100% }`
+   used to sit BELOW the media block that set `width: auto`, so at the same
+   specificity it won on every screen: the controls took all the room left in
+   the row, the date picker stayed pinned beside the title, and the title was
+   boxed to 24rem and broke into two lines in a plate with half its width empty.
+   The title now takes what it needs and the controls go to the far edge. */
+.headControls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+  width: 100%;
+}
+
+.headText {
+  min-width: 0;
+}
+
 @media (min-width: 1280px) {
   .head {
     flex-direction: row;
@@ -31,19 +48,13 @@
   }
 
   .headText {
-    max-width: 24rem;
+    flex: 1 1 auto;
   }
 
   .headControls {
+    flex: 0 1 auto;
     width: auto;
   }
-}
-
-.headControls {
-  display: flex;
-  flex-direction: column;
-  gap: var(--cw-space-xs);
-  width: 100%;
 }
 
 .source {

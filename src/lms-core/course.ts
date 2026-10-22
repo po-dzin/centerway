@@ -426,7 +426,13 @@ export function validateCourse(
     assert(isNonEmptyString(input.cover.src), `lms_course_cover_missing_src:${path}`);
     // Alt is mandatory wherever an image is, same as `image` blocks: a11y is a
     // release gate in this repo, not a nicety.
-    assert(isNonEmptyString(input.cover.alt), `lms_course_cover_missing_alt:${path}`);
+    // The KEY must be there, the sentence need not be yet. A hidden draft is
+    // allowed to be unfinished (see the cover blockers in `courseReadiness`),
+    // and an empty description used to refuse EVERY save of the course — the
+    // lesson editor writes the whole course too — over a field that lives on
+    // another tab. The description is still required before the course points at
+    // strangers: `lms_ready_missing_cover_alt` blocks that, not this.
+    assert(typeof input.cover.alt === "string", `lms_course_cover_missing_alt:${path}`);
     if (input.cover.mobileSrc !== undefined) {
       assert(isNonEmptyString(input.cover.mobileSrc), `lms_course_invalid_cover_mobile_src:${path}`);
     }

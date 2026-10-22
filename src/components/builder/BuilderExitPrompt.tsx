@@ -10,8 +10,9 @@
  * few words wide. Nobody reads a status line they did not expect to need.
  *
  * So the way OUT of the course asks. Three answers, and each is a real one:
- * save and leave, leave anyway, or stay. There is no fourth state where the
- * author is held on a page without knowing why.
+ * leave anyway and save and leave stand side by side, the primary on the right,
+ * and staying is the close control in the corner. There is no fourth state
+ * where the author is held on a page without knowing why.
  *
  * «ВИЙТИ БЕЗ ЗБЕРЕЖЕННЯ» ALSO DROPS THE LOCAL COPY, and the copy says so. The
  * durable draft exists to survive a session that ended by accident; a session
@@ -46,14 +47,11 @@ export function BuilderExitPrompt({
       onDismiss={onStay}
       actions={
         <>
-          <button className={styles.commitAction} type="button" onClick={onSave} disabled={saving}>
-            {saving ? "Зберігаємо…" : "Зберегти й вийти"}
-          </button>
           <button className={styles.dangerAction} type="button" onClick={onLeave} disabled={saving}>
             Вийти без збереження
           </button>
-          <button className={styles.quietAction} type="button" onClick={onStay} disabled={saving}>
-            Залишитись
+          <button className={styles.commitAction} type="button" onClick={onSave} disabled={saving}>
+            {saving ? "Зберігаємо…" : "Зберегти й вийти"}
           </button>
         </>
       }

@@ -64,7 +64,13 @@ export function useBuilderExit({
       setPendingHref(href);
       void save().then((saved) => {
         if (saved) router.push(href);
-        else setPendingHref(null);
+        else {
+          // A refused save used to leave the author on the page with nothing
+          // but a few words in the save bar: the lesson or blocker they pressed
+          // simply did not open. Ask the same question the way out asks.
+          setPendingHref(null);
+          setPrompt({ href, saving: false, refused: true });
+        }
       });
     },
     [dirty, pendingHref, prompt, router, save],
