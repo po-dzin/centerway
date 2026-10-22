@@ -428,8 +428,8 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         message: result.data.staged
           ? "Збережено як наступну версію — учні бачать поточну."
           : result.data.blockers.length === 0
-            ? "Збережено. Блокерів немає."
-            : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`,
+            ? "Збережено. Курс готовий до публікації."
+            : `Збережено. До публікації лишилось ${result.data.blockers.length} ${plural(result.data.blockers.length, "місце", "місця", "місць")}.`,
       };
     },
     [slug],

@@ -43,7 +43,7 @@ export function BuilderExitPrompt({
   return (
     <BuilderDecision
       open={open}
-      title={failure ? "Зміни не збережено" : "Є незбережені зміни"}
+      title={failure ? "Зміни не збережено" : "Зміни ще не збережено"}
       onDismiss={onStay}
       actions={
         <>
