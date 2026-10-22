@@ -77,7 +77,10 @@ export async function answerKbQuestion(input: {
     const outcome = result.reason === "budget" ? "budget" : "failed";
     return { outcome, html: kbCopy[outcome] };
   }
-  if (citedSources(result.text).size === 0) {
+  // A mark outside the sources it was given ([5] of four, a year in brackets)
+  // backs nothing, so it counts as no citation at all.
+  const grounded = [...citedSources(result.text)].some((n) => n >= 1 && n <= hits.length);
+  if (!grounded) {
     await captureQuestion({ text: question, source: "assistant" });
     return { outcome: "unanswered", html: formatKbAnswerHtml(result.text, hits) };
   }

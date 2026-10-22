@@ -109,6 +109,17 @@ describe("kb bot — the order of the contract", () => {
     expect(calls.captured).toEqual(["Як оплатити частинами в подарунок?"]);
   });
 
+  it("treats a citation outside the given sources as no citation", async () => {
+    const result = await answerKbQuestion({
+      question: "Як оплатити частинами?",
+      telegramUserId: 7,
+      index,
+      call: async () => ({ text: "Так, можна [5].", inputTokens: 10, outputTokens: 5 }),
+    });
+    expect(result.outcome).toBe("unanswered");
+    expect(calls.captured).toEqual(["Як оплатити частинами?"]);
+  });
+
   it("says the limit is reached instead of calling the model", async () => {
     calls.budgetAllowed = false;
     const model = vi.fn(fakeModel);
