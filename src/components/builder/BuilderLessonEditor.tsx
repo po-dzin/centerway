@@ -1,5 +1,6 @@
 "use client";
 
+import { plural } from "@/lib/plural";
 import { BUILDER_COURSES_PATH } from "@/lib/surfaces/catalog";
 import { useToast } from "@/components/ToastProvider";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
@@ -7,6 +8,7 @@ import { Icon } from "@/components/Icon";
 import {
   courseThemeAttributes,
   courseReadiness,
+  readinessPlaces,
   buildInternalReferenceTargets,
   moveItem,
   newLesson,
@@ -304,8 +306,8 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
         generation: result.data.draftGeneration,
         message:
           result.data.blockers.length === 0
-            ? "Збережено. Блокерів немає."
-            : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`,
+            ? "Збережено. Курс готовий до публікації."
+            : `Збережено. До публікації лишилось ${readinessPlaces(result.data.blockers)} ${plural(readinessPlaces(result.data.blockers), "місце", "місця", "місць")}.`,
       };
     },
     [slug],
@@ -738,7 +740,8 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
             type="button"
             onClick={() => navigate(`/build/${slug}#course-release`)}
           >
-            <span aria-hidden="true">•</span> {readiness.blockers.length} блокери
+            <span aria-hidden="true">•</span> {readinessPlaces(readiness.blockers)}{" "}
+            {plural(readinessPlaces(readiness.blockers), "місце", "місця", "місць")} до публікації
           </button>
         </>
       }

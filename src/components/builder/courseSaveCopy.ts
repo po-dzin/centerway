@@ -33,13 +33,13 @@
  * makes it show up as a complaint instead of as noise nobody reports.
  */
 const MESSAGES: Record<string, string> = {
-  lms_course_cover_missing_alt: "Не збережено: в обкладинки немає опису.",
+  lms_course_cover_missing_alt: "Не збережено: додайте опис до обкладинки.",
   lms_course_cover_missing_src: "Не збережено: обкладинка втратила файл.",
   lms_course_invalid_cover: "Не збережено: обкладинку не вдалося прочитати.",
   lms_course_invalid_cover_crop: "Не збережено: кадрування обкладинки поза межами.",
   lms_course_invalid_cover_mobile_src: "Не збережено: вертикальне фото втратило файл.",
   lms_course_missing_title: "Не збережено: у курсу немає назви.",
-  lms_course_missing_slug: "Не збережено: у курсу немає адреси.",
+  lms_course_missing_slug: "Не збережено: додайте назву курсу, з неї складеться адреса.",
   lms_course_empty_modules: "Не збережено: потрібен хоча б один урок.",
   lms_course_missing_start_date: "Не збережено: розклад по днях без дати старту.",
   lms_course_invalid_schedule_mode: "Не збережено: некоректний режим розкладу.",

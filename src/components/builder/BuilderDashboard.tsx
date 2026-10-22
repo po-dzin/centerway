@@ -151,7 +151,7 @@ export function BuilderDashboard() {
         <PlatformLoadingState
           label="Майстерня"
           title="Збираємо стан ваших курсів…"
-          detail="Учні, перевірка, блокери та останні зміни."
+          detail="Учні, перевірка, що лишилось до публікації, та останні зміни."
         />
       </BuilderShell>
     );
@@ -201,7 +201,8 @@ export function BuilderDashboard() {
         <section className={styles.panel}>
           <h2 className={styles.panelTitle}>Тут поки порожньо</h2>
           <p className={styles.panelText}>
-            Коли у вас з&apos;явиться курс, на цьому екрані будуть його учні, перевірка, блокери й останні зміни.
+            Коли у вас з&apos;явиться курс, на цьому екрані будуть його учні, перевірка, що лишилось до публікації, та
+            останні зміни.
           </p>
         </section>
       ) : (

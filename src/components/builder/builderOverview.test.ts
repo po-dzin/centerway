@@ -65,10 +65,10 @@ describe("blockerLine", () => {
   });
 
   it("counts blockers in Ukrainian plurals", () => {
-    expect(blockerLine(1)).toBe("1 блокер публікації.");
-    expect(blockerLine(3)).toBe("3 блокери публікації.");
-    expect(blockerLine(7)).toBe("7 блокерів публікації.");
-    expect(blockerLine(12)).toBe("12 блокерів публікації.");
+    expect(blockerLine(1)).toBe("1 місце до публікації.");
+    expect(blockerLine(3)).toBe("3 місця до публікації.");
+    expect(blockerLine(7)).toBe("7 місць до публікації.");
+    expect(blockerLine(12)).toBe("12 місць до публікації.");
   });
 });
 

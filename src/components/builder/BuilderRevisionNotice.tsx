@@ -1,5 +1,6 @@
 "use client";
 
+import { plural } from "@/lib/plural";
 import { Icon } from "@/components/Icon";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 
@@ -95,10 +96,12 @@ export function BuilderRevisionNotice({
             className={styles.revisionNoticeBlockerLink}
             type="button"
             onClick={onOpenRelease}
-            aria-label={`Лишилось блокерів: ${blockerCount}. Показати, яких саме`}
+            aria-label={`До публікації лишилось ${blockerCount} ${plural(blockerCount, "місце", "місця", "місць")}. Показати, які саме`}
             data-cw-ink-control
           >
-            <InkLabel>Лишилось блокерів: {blockerCount}</InkLabel>
+            <InkLabel>
+              До публікації лишилось {blockerCount} {plural(blockerCount, "місце", "місця", "місць")}
+            </InkLabel>
             <InteractionInkIcon>
               <Icon name="arrow-right" size={16} aria-hidden="true" />
             </InteractionInkIcon>
