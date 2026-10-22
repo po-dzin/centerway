@@ -1,6 +1,6 @@
 "use client";
 
-import type { Course, ReadinessBlocker } from "@/lms-core";
+import { readinessPlaces, type Course, type ReadinessBlocker } from "@/lms-core";
 import { plural } from "@/lib/plural";
 
 import { Icon } from "@/components/Icon";
@@ -77,6 +77,8 @@ export function BuilderBlockers({
       never `exit.route`: see `useBuilderExit`. */
   onNavigate: (href: string) => void;
 }) {
+  // Places the list does not show, counted once each however many rules they break.
+  const more = readinessPlaces(blockers) - readinessPlaces(blockers.slice(0, LISTED));
   if (blockers.length === 0) {
     return (
       <section className={styles.panel}>
@@ -132,10 +134,9 @@ export function BuilderBlockers({
           );
         })}
       </ul>
-      {blockers.length > LISTED ? (
+      {more > 0 ? (
         <p className={styles.panelText}>
-          І ще {blockers.length - LISTED} {plural(blockers.length - LISTED, "місце", "місця", "місць")}. Вони позначені
-          в уроках, до яких належать.
+          І ще {more} {plural(more, "місце", "місця", "місць")}. Вони позначені в уроках, до яких належать.
         </p>
       ) : null}
     </section>

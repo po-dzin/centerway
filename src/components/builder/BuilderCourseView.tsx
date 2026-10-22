@@ -13,6 +13,7 @@ import {
   isLinkedModule,
   nextDayIndex,
   PLACEHOLDER_MARKER,
+  readinessPlaces,
   renumber,
   uniqueSlug,
   type Course,
@@ -429,7 +430,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           ? "Збережено як наступну версію — учні бачать поточну."
           : result.data.blockers.length === 0
             ? "Збережено. Курс готовий до публікації."
-            : `Збережено. До публікації лишилось ${result.data.blockers.length} ${plural(result.data.blockers.length, "місце", "місця", "місць")}.`,
+            : `Збережено. До публікації лишилось ${readinessPlaces(result.data.blockers)} ${plural(readinessPlaces(result.data.blockers), "місце", "місця", "місць")}.`,
       };
     },
     [slug],
@@ -709,7 +710,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       aside={
         <BuilderCourseRail
           published={published}
-          blockerCount={readiness.blockers.length}
+          blockerCount={readinessPlaces(readiness.blockers)}
           activeMode={workspaceMode}
           onMode={selectWorkspaceMode}
         />
@@ -831,7 +832,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           ready={readiness.ready}
           dirty={dirty}
           busy={working}
-          blockerCount={readiness.blockers.length}
+          blockerCount={readinessPlaces(readiness.blockers)}
           onSubmit={() => void submitReview()}
           onOpenRelease={() => selectWorkspaceMode("release")}
           canPublishDirectly={state.data.canPublishDirectly}

@@ -41,6 +41,7 @@ import { loadCourseRevision } from "./revisions";
 import {
   DEFAULT_DRAFT_TITLE,
   courseReadiness,
+  readinessPlaces,
   newCourseFromTemplate,
   preparePortableCourse,
   slugify,
@@ -278,7 +279,7 @@ export async function listBuilderCourses(filter: { authorId?: string }): Promise
       let loaded: Awaited<ReturnType<typeof loadBuilderCourse>> = null;
       try {
         loaded = await loadBuilderCourse(slug);
-        blockerCount = loaded ? courseReadiness(loaded.course).blockers.length : 0;
+        blockerCount = loaded ? readinessPlaces(courseReadiness(loaded.course).blockers) : 0;
       } catch {
         // A course whose rows do not currently form a valid structure must not
         // take the whole list down with it — it is exactly the course its author

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { Course, ReadinessBlocker } from "@/lms-core";
+import { readinessPlaces, type Course, type ReadinessBlocker } from "@/lms-core";
 import { blockerFlags } from "./blockerFlags";
 
 const course = {
@@ -38,6 +38,15 @@ describe("blockerFlags", () => {
     expect(flags.modules.get("m1")).toBe(2);
   });
 
+  it("counts places, not rules: two blockers on one block are one place", () => {
+    const flags = blockerFlags(course, [
+      blocker("way21.week-1.day-1.blocks[1]"),
+      blocker("way21.week-1.day-1.blocks[1]", "lms_ready_invalid_video_id"),
+    ]);
+    expect(flags.lessons.get("l1")).toBe(1);
+    expect(flags.modules.get("m1")).toBe(1);
+  });
+
   it("keeps course-level codes for the fields that answer them", () => {
     const flags = blockerFlags(course, [blocker("way21", "lms_ready_missing_tagline")]);
     expect(flags.courseCodes.has("lms_ready_missing_tagline")).toBe(true);
@@ -47,5 +56,13 @@ describe("blockerFlags", () => {
   it("ignores a blocker whose lesson is gone", () => {
     const flags = blockerFlags(course, [blocker("way21.week-1.day-9")]);
     expect(flags.lessons.size + flags.modules.size + flags.blocks.size).toBe(0);
+  });
+});
+
+describe("readinessPlaces", () => {
+  it("counts distinct paths", () => {
+    expect(
+      readinessPlaces([{ path: "a.b.c.blocks[0]" }, { path: "a.b.c.blocks[0]" }, { path: "a.b.c.blocks[1]" }]),
+    ).toBe(2);
   });
 });

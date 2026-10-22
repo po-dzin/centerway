@@ -8,6 +8,7 @@ import { Icon } from "@/components/Icon";
 import {
   courseThemeAttributes,
   courseReadiness,
+  readinessPlaces,
   buildInternalReferenceTargets,
   moveItem,
   newLesson,
@@ -306,7 +307,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
         message:
           result.data.blockers.length === 0
             ? "Збережено. Курс готовий до публікації."
-            : `Збережено. До публікації лишилось ${result.data.blockers.length} ${plural(result.data.blockers.length, "місце", "місця", "місць")}.`,
+            : `Збережено. До публікації лишилось ${readinessPlaces(result.data.blockers)} ${plural(readinessPlaces(result.data.blockers), "місце", "місця", "місць")}.`,
       };
     },
     [slug],
@@ -739,8 +740,8 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
             type="button"
             onClick={() => navigate(`/build/${slug}#course-release`)}
           >
-            <span aria-hidden="true">•</span> {readiness.blockers.length}{" "}
-            {plural(readiness.blockers.length, "місце", "місця", "місць")} до публікації
+            <span aria-hidden="true">•</span> {readinessPlaces(readiness.blockers)}{" "}
+            {plural(readinessPlaces(readiness.blockers), "місце", "місця", "місць")} до публікації
           </button>
         </>
       }
