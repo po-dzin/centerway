@@ -670,7 +670,7 @@ async function saveDoshaContact(
 
   if (existing?.id) {
     const merged = Array.from(new Set([...(Array.isArray(existing.tags) ? existing.tags : []), ...tags]));
-    await db.from("customers").update({ tg_id: tgId, tags: merged }).eq("id", existing.id);
+    await db.from("customers").update({ tg_id: tgId, tg_username: user.username ?? null, tags: merged }).eq("id", existing.id);
     return;
   }
 
@@ -678,6 +678,7 @@ async function saveDoshaContact(
     auth_user_id: params.attemptUserId,
     display_name: [user.first_name, user.last_name].filter(Boolean).join(" ") || user.username || null,
     tg_id: tgId,
+    tg_username: user.username ?? null,
     tags,
   });
 }
@@ -718,7 +719,7 @@ async function tryLinkAccount(db: Supabase, chatId: number, user: TelegramUser, 
   await db.from("customers").update({ tg_id: null }).eq("tg_id", tgId).neq("auth_user_id", verdict.authUserId);
 
   if (existing?.id) {
-    await db.from("customers").update({ tg_id: tgId }).eq("id", existing.id);
+    await db.from("customers").update({ tg_id: tgId, tg_username: user.username ?? null }).eq("id", existing.id);
   } else {
     // A registered learner who asks to be notified becomes a contact even
     // without a purchase — otherwise there is no row to hold the address.
@@ -727,6 +728,7 @@ async function tryLinkAccount(db: Supabase, chatId: number, user: TelegramUser, 
       email: profile?.email ?? null,
       display_name: profile?.full_name ?? null,
       tg_id: tgId,
+      tg_username: user.username ?? null,
     });
   }
 
@@ -786,7 +788,7 @@ async function tryLinkOrder(db: Supabase, chatId: number, user: TelegramUser, pa
   // row stops holding this chat. Rows of the same account keep it.
   const others = db.from("customers").update({ tg_id: null }).eq("tg_id", tgId).neq("id", customer.id);
   await (customer.auth_user_id ? others.or(`auth_user_id.is.null,auth_user_id.neq.${customer.auth_user_id}`) : others);
-  await db.from("customers").update({ tg_id: tgId }).eq("id", customer.id);
+  await db.from("customers").update({ tg_id: tgId, tg_username: user.username ?? null }).eq("id", customer.id);
 
   const buyer = (order.meta as { buyer?: { name?: unknown } } | null)?.buyer;
   const name = customer.display_name ?? (typeof buyer?.name === "string" ? buyer.name : null);

@@ -24,6 +24,7 @@ export const customers = {
   customers_contact_email: { uk: "Email", en: "Email" },
   customers_contact_phone: { uk: "Телефон", en: "Phone" },
   customers_contact_telegram: { uk: "Telegram", en: "Telegram" },
+  customers_contact_telegram_id: { uk: "ID", en: "ID" },
   customers_contact_google: { uk: "Google", en: "Google" },
   customers_contact_auth_user: { uk: "Auth User", en: "Auth User" },
   analytics_learning_title: { uk: "Навчання", en: "Learning" },

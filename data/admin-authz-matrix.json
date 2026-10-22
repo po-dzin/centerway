@@ -172,6 +172,12 @@
   },
   {
     "kind": "mutate",
+    "method": "DELETE",
+    "path": "/api/admin/access/learners?authUserId=00000000-0000-0000-0000-000000000000",
+    "routePath": "/api/admin/access/learners"
+  },
+  {
+    "kind": "mutate",
     "method": "POST",
     "path": "/api/admin/access/roles",
     "body": {

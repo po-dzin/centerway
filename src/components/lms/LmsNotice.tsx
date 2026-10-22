@@ -49,6 +49,13 @@ const COPY: Record<LmsFailure, { title: string; text: string; href?: string; cta
     href: "/profile",
     cta: "Мої покупки",
   },
+  /* Given with a start date: the seat exists, the door opens on that day. */
+  scheduled: {
+    title: "Доступ відкриється пізніше",
+    text: "Доступ до цього курсу вже видано, і він відкриється з дати початку. Дату видно в кабінеті.",
+    href: "/profile",
+    cta: "Мій кабінет",
+  },
   expired: {
     title: "Термін доступу минув",
     text: "Доступ до цього курсу завершився. Напишіть нам — розберемось.",

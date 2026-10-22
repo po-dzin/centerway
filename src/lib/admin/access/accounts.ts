@@ -6,6 +6,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import { domainAcceptsMail } from "@/lib/admin/emailDomain";
 import { emailIlike } from "@/lib/strings";
 import { accessStateOf, daysRemaining } from "@/lms-core";
 import { foldProgress, type ProgressEvent, type ProgressEventType } from "@/lms-core/progress";
@@ -132,7 +133,7 @@ async function foldEnrollmentsByAccount(
   let query = db
     .from("lms_enrollments")
     .select(
-      "id, course_id, auth_user_id, source, order_ref, started_at, cohort_starts_on, ref, expires_at, status, revoked_at, blocked_at, blocked_reason",
+      "id, course_id, auth_user_id, source, order_ref, started_at, cohort_starts_on, ref, expires_at, access_starts_at, status, revoked_at, blocked_at, blocked_reason",
     )
     .in("auth_user_id", authUserIds)
     .order("started_at", { ascending: false })
@@ -190,6 +191,7 @@ async function foldEnrollmentsByAccount(
           status: row.status as string | null,
           blockedAt: (row.blocked_at as string | null) ?? null,
           expiresAt: (row.expires_at as string | null) ?? null,
+          startsAt: (row.access_starts_at as string | null) ?? null,
         },
         now,
       ),
@@ -451,6 +453,9 @@ export async function createAccount(input: { email: string; fullName?: string | 
     };
   }
 
+  // A domain no mail reaches makes an account nobody can ever sign in to.
+  if (!(await domainAcceptsMail(email))) throw new AccessError("email_domain_invalid");
+
   const fullName = input.fullName?.trim() || null;
   const created = await db.auth.admin.createUser({
     email,
@@ -574,4 +579,92 @@ function courseSlugFromProductCode(productCode: string | null): string | null {
   if (!productCode) return null;
   const match = /^course:(.+)$/.exec(productCode.trim());
   return match?.[1] ?? null;
+}
+
+/**
+ * Removes an account that never became a person (2026-10-22).
+ *
+ * The grant dialog creates accounts for addresses nobody has signed in with,
+ * and a mistyped address leaves one behind for good: it holds a seat, sits in
+ * the people list, and its letters bounce. Such an account is deleted whole —
+ * the auth user, and with it (by cascade) its profile, roles and seats, plus
+ * any customer card that has no orders.
+ *
+ * ONLY WITHOUT A REAL HISTORY, checked here and not only in the panel: never
+ * signed in, no order of any status, no progress, no role above `user`. An
+ * account with any of these is a person, and stays — its seats can be closed,
+ * its access revoked, but its history is kept.
+ */
+export async function deleteEmptyAccount(input: { authUserId: string; actorId: string }) {
+  const db = adminClient();
+  if (input.authUserId === input.actorId) throw new AccessError("cannot_delete_self", 409);
+
+  const { data: profile, error } = await db
+    .from("platform_users")
+    .select("auth_user_id, email")
+    .eq("auth_user_id", input.authUserId)
+    .maybeSingle();
+  if (error) throw new AccessError(error.message, 500);
+  if (!profile) throw new AccessError("account_not_found", 404);
+
+  /* Signed in means GoTrue says so. `platform_users.last_sign_in_at` is not
+     that: the profile sync stamps it when the row is created, so an account
+     made for a mistyped address reads «last sign-in: the day it was made»
+     while nobody has ever opened it (checked on production, 2026-10-22). */
+  const reasons: string[] = [];
+  const auth = await db.auth.admin.getUserById(input.authUserId);
+  if (auth.data?.user?.last_sign_in_at) reasons.push("signed_in");
+
+  const { data: roles } = await db.from("user_roles").select("role").eq("user_id", input.authUserId);
+  if ((roles ?? []).some((row) => row.role && row.role !== "user")) reasons.push("has_role");
+
+  // Progress hangs on the seat, not on the person: any event on any of their seats.
+  const { data: seats } = await db.from("lms_enrollments").select("id").eq("auth_user_id", input.authUserId);
+  const seatIds = (seats ?? []).map((row) => row.id as string);
+  if (seatIds.length > 0) {
+    const { count: progress } = await db
+      .from("lms_progress_events")
+      .select("id", { count: "exact", head: true })
+      .in("enrollment_id", seatIds);
+    if ((progress ?? 0) > 0) reasons.push("has_progress");
+  }
+
+  /* Orders are looked for by the account AND by the address — a purchase made
+     before the account existed is history too. Only the customer card tied to
+     this account is removed; one found by address alone may be a lead from the
+     bot or a test, and is left as it is. */
+  const email = (profile.email as string | null) ?? "";
+  const { data: linked } = await db.from("customers").select("id").eq("auth_user_id", input.authUserId).limit(50);
+  const { data: byEmail } = email
+    ? await db.from("customers").select("id").ilike("email", emailIlike(email)).limit(50)
+    : { data: [] as { id: string }[] };
+  const linkedIds = (linked ?? []).map((row) => row.id as string);
+  const anyIds = [...new Set([...linkedIds, ...(byEmail ?? []).map((row) => row.id as string)])];
+  if (anyIds.length > 0) {
+    const { count: orders } = await db
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .in("customer_id", anyIds);
+    if ((orders ?? 0) > 0) reasons.push("has_orders");
+  }
+
+  if (reasons.length > 0) throw new AccessError(`account_has_history:${[...new Set(reasons)].join(",")}`, 409);
+
+  // Audited BEFORE the delete: afterwards there is nothing left to point at.
+  await writeAudit(db, {
+    actorId: input.actorId,
+    action: "access.account.delete_empty",
+    entityType: "platform_user",
+    entityId: input.authUserId,
+    metadata: { email, customer_ids: linkedIds },
+  });
+
+  if (linkedIds.length > 0) {
+    const { error: customerError } = await db.from("customers").delete().in("id", linkedIds);
+    if (customerError) throw new AccessError(customerError.message, 500);
+  }
+  const removed = await db.auth.admin.deleteUser(input.authUserId);
+  if (removed.error) throw new AccessError(removed.error.message, 500);
+
+  return { deleted: true, email };
 }

@@ -37,13 +37,15 @@
  * dialog, because «which ones did not happen» is the question afterwards.
  */
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { useI18n } from "@/components/I18nProvider";
 import { useToast } from "@/components/ToastProvider";
 import { AdminDateField } from "@/components/admin/AdminDateField";
 import { AdminModal } from "@/components/admin/AdminModal";
+import { AdminChoice } from "@/components/admin/AdminChoice";
 import { AdminTabs } from "@/components/admin/AdminTabs";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import { StateBadge } from "@/components/platform/StateBadge";
 import { authorizedJson as authFetch } from "@/components/auth/authorizedFetch";
 import { getErrorMessage } from "@/lib/errors";
@@ -58,10 +60,12 @@ import {
   type CourseFormatRow,
   type CourseRow,
   type GrantSource,
+  type PersonRow,
 } from "@/lib/admin/accessTypes";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 import access from "@/components/admin/AdminAccess.module.css";
 import controls from "@/components/admin/AdminControls.module.css";
+import lists from "@/components/admin/AdminLists.module.css";
 import surfaces from "@/components/admin/AdminSurfaces.module.css";
 
 type Basis = "payment" | "gift" | "promo" | "service";
@@ -99,6 +103,20 @@ const FORMAT_LABEL_KEY = {
   group: "access_format_group",
   individual: "access_format_individual",
 } as const satisfies Record<CourseFormatRow["format"], string>;
+
+/** `2026-11-01` → `01.11.2026`, the way the date fields write a day. */
+function fullDate(date: string | null): string {
+  if (!date) return "—";
+  const [year, month, day] = date.slice(0, 10).split("-");
+  return day && month && year ? `${day}.${month}.${year}` : date;
+}
+
+/** Day 1 plus the offer's days, `YYYY-MM-DD`; null when the offer sets no days. */
+function periodEnd(start: string | null, days: number | null, lifetime: boolean): string | null {
+  if (!start || lifetime || !days || days <= 0) return null;
+  const from = Date.parse(`${start}T00:00:00Z`);
+  return Number.isFinite(from) ? new Date(from + days * 86_400_000).toISOString().slice(0, 10) : null;
+}
 
 const OUTCOME = {
   created: { key: "access_bulk_outcome_created", tone: "success" },
@@ -157,19 +175,31 @@ export function AccessGrantModal({
   const [discountPercent, setDiscountPercent] = useState("");
   const [createAccount, setCreateAccount] = useState(false);
   const [ref, setRef] = useState("");
+  /* «Хто привів» as a person: found by email among accounts. The pick sends
+     `referrerEmail`, and the server writes that person's own tag. */
+  const [referrer, setReferrer] = useState<{ email: string; name: string | null } | null>(null);
+  const [refHits, setRefHits] = useState<PersonRow[]>([]);
   const [role, setRole] = useState<string>("user");
+  const [makeAuthor, setMakeAuthor] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
 
   const selected = courses.find((row) => row.slug === course);
-  const formats = useMemo(() => selected?.formats ?? [], [selected]);
+  // Solo or group: individual support is a person on top of one of these, not a way to hold the course.
+  const formats = useMemo(() => (selected?.formats ?? []).filter((row) => row.format !== "individual"), [selected]);
   const format = formats.find((row) => row.code === formatChoice) ?? formats[0] ?? null;
   const promoAvailable = canGrantRoles && Boolean(format?.payable);
   const basis: Basis = basisChoice === "promo" && !promoAvailable ? "gift" : basisChoice;
   const promo = basis === "promo";
   // A group's days are the group's: its start is the stream's date and the
   // operator does not get to move it from here.
-  const group = !promo && format?.format === "group";
+  // Not tied to the reason: a promo link is to the same group, on the same period,
+  // and switching to it must not move the term block (it used to jump).
+  const group = format?.format === "group";
+  const groupEnd = group
+    ? periodEnd(format?.cohortStartsOn ?? null, format?.accessDays ?? null, Boolean(format?.accessLifetime))
+    : null;
 
   const parsed = useMemo(() => parsePeople(rows), [rows]);
   const count = parsed.people.length;
@@ -224,13 +254,39 @@ export function AccessGrantModal({
     }
   };
 
+  /* Account lookup for «Хто привів»: the people list the page itself reads, by
+     email or name, a few rows at a time. Typed text that is a tag rather than a
+     person still goes as `ref` — ambassadors without an account keep working. */
+  useEffect(() => {
+    const q = ref.trim();
+    if (referrer || q.length < 2) {
+      setRefHits([]);
+      return;
+    }
+    let live = true;
+    const timer = setTimeout(() => {
+      authFetch<{ items?: PersonRow[] }>(`/api/admin/access/learners?q=${encodeURIComponent(q)}&limit=6`)
+        .then((payload) => {
+          if (live) setRefHits((payload.items ?? []).filter((row) => row.email));
+        })
+        .catch(() => {
+          if (live) setRefHits([]);
+        });
+    }, 250);
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [ref, referrer]);
+
   const termFields = () => {
     // «Як в оффері» is said out loud, so it is asked for: without money a grant
     // would otherwise have no deadline at all (`provisionAccess.termFromOffer`).
     if (group)
       return { cohortStartsOn: format?.cohortStartsOn ?? undefined, expiresAt: undefined, termFromOffer: true };
     if (term === "offer") return { cohortStartsOn: undefined, expiresAt: undefined, termFromOffer: true };
-    return { cohortStartsOn: from || undefined, expiresAt: grantDeadlineValue(openEnd, to), termFromOffer: undefined };
+    // «З» opens the door on that day; it is not the program's day 1 (that is a group's cohort).
+    return { accessStartsAt: from || undefined, expiresAt: grantDeadlineValue(openEnd, to), termFromOffer: undefined };
   };
 
   const submit = async () => {
@@ -283,7 +339,8 @@ export function AccessGrantModal({
         offerCode: format?.code,
         source: SOURCE_OF[basis as Exclude<Basis, "promo">],
         createAccount,
-        ref: ref.trim() || undefined,
+        ref: referrer ? undefined : ref.trim() || undefined,
+        referrerEmail: referrer?.email,
         ...termFields(),
       };
 
@@ -331,6 +388,18 @@ export function AccessGrantModal({
               : t("access_already_enrolled"),
         );
         if (payload.role) toast.info(`${t("access_role_set")}: ${payload.role}`);
+        // Authorship is the course's owner (Builder), set by the same route the Builder tab uses.
+        if (makeAuthor && canGrantRoles && selected) {
+          try {
+            await authFetch("/api/admin/access/courses", {
+              method: "PATCH",
+              body: JSON.stringify({ courseId: selected.id, email: person.email }),
+            });
+            toast.info(t("access_grant_author_set"));
+          } catch (e) {
+            toast.error(errorText(getErrorMessage(e)));
+          }
+        }
         if (payload.created || payload.accountCreated || payload.orderRef) onGranted();
         return;
       }
@@ -449,9 +518,11 @@ export function AccessGrantModal({
                     disabled={rows.length < 2}
                     aria-label={t("access_grant_remove_person")}
                     title={t("access_grant_remove_person")}
-                    className={access.personRemove}
+                    className={`${lists.rowIcon} ${access.personRemove}`}
                   >
-                    <Icon name="close" size={16} />
+                    <InteractionInkIcon>
+                      <Icon name="close" size={18} />
+                    </InteractionInkIcon>
                   </button>
                 </div>
               ))}
@@ -504,15 +575,9 @@ export function AccessGrantModal({
               </p>
             ) : null}
             {!promo ? (
-              <label className={access.checkLong}>
-                <input
-                  type="checkbox"
-                  checked={createAccount}
-                  onChange={(e) => setCreateAccount(e.target.checked)}
-                  className={access.checkBoxTop}
-                />
-                <span>{t("access_bulk_create_account")}</span>
-              </label>
+              <AdminChoice checked={createAccount} onChange={setCreateAccount} long>
+                {t("access_bulk_create_account")}
+              </AdminChoice>
             ) : null}
           </div>
 
@@ -548,9 +613,8 @@ export function AccessGrantModal({
                 <AdminTabs
                   items={formats.map((row) => ({
                     key: row.code,
-                    label: [row.label || t(FORMAT_LABEL_KEY[row.format]), row.cohortStartsOn]
-                      .filter(Boolean)
-                      .join(" · "),
+                    // The kind only: a group's dates are the term's, shown right below.
+                    label: t(FORMAT_LABEL_KEY[row.format]),
                   }))}
                   activeKey={format?.code ?? ""}
                   onChange={(nextCode) => {
@@ -570,73 +634,63 @@ export function AccessGrantModal({
 
           <div className={access.stack}>
             <span className={access.cap}>{t("access_grant_term")}</span>
-            {group ? (
-              <>
-                <label className={controls.field}>
-                  <span className={controls.fieldCaption}>{t("access_grant_from")}</span>
-                  <AdminDateField
-                    value={format?.cohortStartsOn ?? ""}
-                    onChange={() => {}}
-                    disabled
-                    locale={locale}
-                    labels={dateLabels}
-                  />
-                </label>
-                <p className={controls.hint}>{t("access_grant_group_hint")}</p>
-              </>
-            ) : (
-              <>
-                {/* A promo link carries a price and a 48-hour timer, not a term: what
-                    the buyer gets afterwards is the program's own offer, so the
-                    period is not offered there (and not hidden — the choice is
-                    shown dimmed with its reason). */}
-                <AdminTabs
-                  items={[
-                    { key: "offer", label: t("access_grant_term_offer") },
-                    { key: "period", label: t("access_grant_term_period"), disabled: promo },
-                  ]}
-                  activeKey={promo ? "offer" : term}
-                  onChange={(key) => setTerm(key as Term)}
-                />
-                {promo || term === "offer" ? (
-                  <p className={controls.hint}>
-                    {promo ? t("access_promo_term_hint") : t("access_grant_term_offer_hint")}
-                  </p>
-                ) : (
-                  <>
-                    <div className={access.grantMore}>
-                      <div className={`${controls.field} ${access.spanFull} ${access.spanCourse}`}>
-                        <span className={controls.fieldCaption}>{t("access_grant_from")}</span>
-                        <AdminDateField value={from} onChange={setFrom} locale={locale} labels={dateLabels} />
-                      </div>
-                      <div className={`${controls.field} ${access.spanFull} ${access.spanCourse}`}>
-                        <span className={controls.fieldCaption}>{t("access_grant_deadline")}</span>
-                        <AdminDateField
-                          value={openEnd ? "" : to}
-                          onChange={setTo}
-                          disabled={openEnd}
-                          locale={locale}
-                          labels={dateLabels}
-                        />
-                      </div>
-                    </div>
-                    {/* A label of its own, not wrapped around the date: a <label>
-                        binds to its first labelable descendant, so nesting the tick
-                        under the date's label would focus the date instead of
-                        ticking the box. */}
-                    <label className={access.check}>
-                      <input
-                        type="checkbox"
-                        checked={openEnd}
-                        onChange={(e) => setOpenEnd(e.target.checked)}
-                        className={access.checkBox}
-                      />
-                      {t("access_grant_open_end")}
+            {/* One block whatever the reason: a promo link is to the same format on
+                the same period, so the block is dimmed for it rather than swapped
+                for a hint — swapping it made everything below jump. */}
+            <fieldset className={access.termSet} disabled={promo}>
+              {group ? (
+                <>
+                  <div className={access.grantMore}>
+                    <label className={`${controls.field} ${access.spanFull} ${access.spanCourse}`}>
+                      <span className={controls.fieldCaption}>{t("access_grant_from")}</span>
+                      <input type="text" readOnly value={fullDate(format?.cohortStartsOn ?? null)} className={controls.input} />
                     </label>
-                  </>
-                )}
-              </>
-            )}
+                    <label className={`${controls.field} ${access.spanFull} ${access.spanCourse}`}>
+                      <span className={controls.fieldCaption}>{t("access_grant_deadline")}</span>
+                      <input type="text" readOnly value={fullDate(groupEnd)} className={controls.input} />
+                    </label>
+                  </div>
+                  <p className={controls.hint}>{groupEnd ? t("access_grant_group_hint") : t("access_grant_group_no_term")}</p>
+                </>
+              ) : (
+                <>
+                  <AdminTabs
+                    items={[
+                      { key: "offer", label: t("access_grant_term_offer") },
+                      { key: "period", label: t("access_grant_term_period") },
+                    ]}
+                    activeKey={term}
+                    onChange={(key) => setTerm(key as Term)}
+                  />
+                  {term === "offer" ? (
+                    <p className={controls.hint}>{t("access_grant_term_offer_hint")}</p>
+                  ) : (
+                    <>
+                      <div className={access.grantMore}>
+                        <div className={`${controls.field} ${access.spanFull} ${access.spanCourse}`}>
+                          <span className={controls.fieldCaption}>{t("access_grant_from")}</span>
+                          <AdminDateField value={from} onChange={setFrom} locale={locale} labels={dateLabels} />
+                        </div>
+                        <div className={`${controls.field} ${access.spanFull} ${access.spanCourse}`}>
+                          <span className={controls.fieldCaption}>{t("access_grant_deadline")}</span>
+                          <AdminDateField
+                            value={openEnd ? "" : to}
+                            onChange={setTo}
+                            disabled={openEnd}
+                            locale={locale}
+                            labels={dateLabels}
+                          />
+                        </div>
+                      </div>
+                      <AdminChoice checked={openEnd} onChange={setOpenEnd}>
+                        {t("access_grant_open_end")}
+                      </AdminChoice>
+                    </>
+                  )}
+                </>
+              )}
+            </fieldset>
+            {promo ? <p className={controls.hint}>{t("access_promo_term_hint")}</p> : null}
           </div>
 
           <div className={access.stack}>
@@ -741,32 +795,109 @@ export function AccessGrantModal({
             ) : null}
           </div>
 
+          {/* Rare, so folded: who brought the person, a role, authorship. */}
           {!promo ? (
-            <div className={access.grantMore}>
-              <label className={`${controls.field} ${access.spanFull} ${access.spanCourse}`}>
-                <span className={controls.fieldCaption}>{t("access_grant_ref")}</span>
-                <input
-                  type="text"
-                  value={ref}
-                  onChange={(e) => setRef(e.target.value)}
-                  placeholder="olena"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                  className={controls.input}
-                />
-              </label>
-              {/* One person, one role: an admin act that must not ride along on a paste. */}
-              {canGrantRoles && single ? (
-                <label className={`${controls.field} ${access.spanFull} ${access.spanCourse}`}>
-                  <span className={controls.fieldCaption}>{t("access_grant_role")}</span>
-                  <select value={role} onChange={(e) => setRole(e.target.value)} className={controls.select}>
-                    {GRANTABLE_ROLES.map((value) => (
-                      <option key={value} value={value}>
-                        {value === "user" ? t("access_grant_role_none") : value}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+            <div className={access.stack}>
+              <button
+                type="button"
+                className={controls.disclosureHead}
+                aria-expanded={showMore}
+                onClick={() => setShowMore((open) => !open)}
+              >
+                <span className={access.cap}>{t("access_grant_more")}</span>
+                <span className={controls.disclosureMark} aria-hidden="true">
+                  <Icon
+                    className={showMore ? controls.disclosureChevronOpen : controls.disclosureChevron}
+                    name="chevron-down"
+                    size={16}
+                  />
+                </span>
+              </button>
+              {showMore ? (
+                <div className={access.stack}>
+                  <div className={controls.field}>
+                    <span className={controls.fieldCaption}>{t("access_grant_ref")}</span>
+                    {referrer ? (
+                      <div className={access.linkRow}>
+                        <span className={access.linkText}>
+                          <b>{referrer.name || referrer.email}</b>
+                          {referrer.name ? <span className={access.linkAddress}>{referrer.email}</span> : null}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReferrer(null);
+                            setRef("");
+                          }}
+                          aria-label={t("access_grant_ref_clear")}
+                          title={t("access_grant_ref_clear")}
+                          className={lists.rowIcon}
+                        >
+                          <InteractionInkIcon>
+                            <Icon name="close" size={18} />
+                          </InteractionInkIcon>
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <input
+                          type="search"
+                          value={ref}
+                          onChange={(e) => setRef(e.target.value)}
+                          placeholder={t("access_grant_ref_placeholder")}
+                          autoCapitalize="none"
+                          spellCheck={false}
+                          className={controls.input}
+                        />
+                        {refHits.length > 0 ? (
+                          <ul className={access.refHits}>
+                            {refHits.map((hit) => (
+                              <li key={hit.authUserId}>
+                                <button
+                                  type="button"
+                                  className={access.refHit}
+                                  onClick={() => {
+                                    setReferrer({ email: hit.email ?? "", name: hit.fullName ?? null });
+                                    setRefHits([]);
+                                  }}
+                                >
+                                  <span>{hit.fullName || hit.email}</span>
+                                  {hit.fullName ? <span className={access.linkAddress}>{hit.email}</span> : null}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </>
+                    )}
+                    <p className={controls.hint}>{t("access_grant_ref_hint")}</p>
+                  </div>
+                  {/* One person, one role: an admin act that must not ride along on a paste. */}
+                  {canGrantRoles && single ? (
+                    <label className={`${controls.field} ${access.roleField}`}>
+                      <span className={controls.fieldCaption}>{t("access_grant_role")}</span>
+                      <select value={role} onChange={(e) => setRole(e.target.value)} className={controls.select}>
+                        {GRANTABLE_ROLES.map((value) => (
+                          <option key={value} value={value}>
+                            {value}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+                  {canGrantRoles && single && selected ? (
+                    <>
+                      <AdminChoice checked={makeAuthor} onChange={setMakeAuthor}>
+                        {t("access_grant_make_author")}
+                      </AdminChoice>
+                      {makeAuthor && selected.authorEmail ? (
+                        <p className={controls.hint} role="alert">
+                          {t("access_grant_author_replaces")}: {selected.authorName || selected.authorEmail}
+                        </p>
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
               ) : null}
             </div>
           ) : null}

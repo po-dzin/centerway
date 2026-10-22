@@ -31,6 +31,7 @@ export type LmsFailure =
   | "course_not_found"
   | "not_published"
   | "not_entitled"
+  | "scheduled"
   | "expired"
   | "revoked"
   | "blocked"
@@ -108,7 +109,7 @@ export type LearnerShelfCourseDto = {
   scheduleMode: "open" | "sequential" | "daily";
   summary: string | null;
   access: "enrolled" | "available" | "locked";
-  lockReason: "not_entitled" | "expired" | "revoked" | "blocked" | null;
+  lockReason: "not_entitled" | "scheduled" | "expired" | "revoked" | "blocked" | null;
   startedAt: string | null;
   /** When this window closes; `null` means it does not. */
   expiresAt: string | null;
@@ -206,6 +207,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<LmsResult<T
     "course_not_found",
     "not_published",
     "not_entitled",
+    "scheduled",
     "expired",
     "revoked",
     "blocked",

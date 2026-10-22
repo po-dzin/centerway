@@ -1352,6 +1352,18 @@
       align-items: center;
     }
 
+    /* ONE LINE, WHATEVER THE TITLE (2026-10-22). Laid out like a button, the
+       field also wrapped like one: a long program title broke onto two lines
+       and stretched the field past its neighbours. A select shows one value;
+       a long one is cut at the CONTENT edge (cut at the padding edge it ran on
+       under the chevron), and the open list still shows it whole. */
+    .cw-select,
+    .cw-admin-theme select {
+      white-space: nowrap;
+      overflow: clip;
+      overflow-clip-margin: content-box;
+    }
+
     .cw-select::picker(select),
     .cw-admin-theme select::picker(select) {
       position-try-order: normal;

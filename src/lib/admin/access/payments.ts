@@ -14,6 +14,7 @@ import type { GrantSource } from "@/lib/admin/accessTypes";
 import type { PaymentCurrency } from "@/lib/admin/accessTypes";
 import { createAccount, resolveAccountByEmail } from "./accounts";
 import { assertGrantable, grantCourse } from "./enrollments";
+import { referrerTag } from "./referrers";
 import { AccessError, type Db, writeAudit } from "./shared";
 
 /**
@@ -123,6 +124,7 @@ async function offerExpiryFor(db: Db, courseSlug: string, paidAt: string): Promi
 
 type GrantFormat = {
   code: string;
+  format: string;
   cohortStartsOn: string | null;
   accessDays: number | null;
   accessLifetime: boolean;
@@ -163,6 +165,7 @@ async function grantFormatFor(db: Db, courseSlug: string, code: string): Promise
 
   return {
     code,
+    format: offer.format,
     cohortStartsOn: (offer.cohort_starts_on as string | null) ?? null,
     accessDays: (offer.access_days as number | null) ?? null,
     accessLifetime: (offer.access_lifetime as boolean | null) ?? false,
@@ -170,6 +173,27 @@ async function grantFormatFor(db: Db, courseSlug: string, code: string): Promise
       (slug) => slug !== courseSlug,
     ),
   };
+}
+
+/**
+ * A group is always granted for a period, so its offer must say how long.
+ * Refused before anything is written: a group offer with no days (or «for
+ * good») would otherwise hand out a seat with no end, which a group never is.
+ */
+function assertGroupTerm(format: GrantFormat | null) {
+  if (format?.format !== "group") return;
+  if (format.accessLifetime || !format.accessDays || format.accessDays <= 0) {
+    throw new AccessError("group_term_missing", 409);
+  }
+}
+
+/** `YYYY-MM-DD` (the date field) or an ISO instant → ISO; empty → absent; nonsense → refused. */
+function normalizeAccessStart(value: string | null | undefined): string | undefined {
+  if (value === undefined || value === null || value.trim() === "") return undefined;
+  const typed = value.trim();
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(typed) ? `${typed}T00:00:00.000Z` : typed;
+  if (!Number.isFinite(Date.parse(iso))) throw new AccessError("access_start_invalid");
+  return new Date(iso).toISOString();
 }
 
 function termEndForOffer(offer: { accessDays: number | null; accessLifetime: boolean }, from: string): string | null {
@@ -256,6 +280,18 @@ export type ProvisionAccessInput = {
    * Ignored when `expiresAt` is given: a typed date is the stronger answer.
    */
   termFromOffer?: boolean;
+  /**
+   * When the door opens (2026-10-22): ISO instant or `YYYY-MM-DD`, solo only.
+   * The offer's term, when it applies, is counted from here. A group's period
+   * is the group's and takes no start from the operator.
+   */
+  accessStartsAt?: string | null;
+  /**
+   * Who brought this person, as an account rather than a typed tag: the
+   * referrer's own `ref_tag`, given to them once if they have none yet.
+   * Wins over `ref` when both are sent.
+   */
+  referrerEmail?: string | null;
   actorId: string;
 };
 
@@ -283,6 +319,10 @@ export type ProvisionAccessInput = {
 export async function provisionAccess(input: ProvisionAccessInput) {
   const db = adminClient();
   const selectedFormat = input.offerCode ? await grantFormatFor(db, input.courseSlug, input.offerCode) : null;
+  assertGroupTerm(selectedFormat);
+  const accessStartsAt = normalizeAccessStart(input.accessStartsAt);
+  // Resolved before money is written: an unknown referrer refuses the grant whole.
+  const ref = input.referrerEmail ? await referrerTag(db, input.referrerEmail, input.actorId) : input.ref;
   const account = input.createAccount
     ? await createAccount({ email: input.email, fullName: input.fullName, actorId: input.actorId })
     : { created: false, account: await resolveAccountByEmail(db, input.email) };
@@ -310,20 +350,29 @@ export async function provisionAccess(input: ProvisionAccessInput) {
        30-day course by hand granted it forever unless somebody remembered to
        type a date. The offer is where the term is agreed, so a sale made in
        admin is sold on the same terms as one made at the checkout. */
-  const expiresAt = selectedFormat
-    ? input.expiresAt !== undefined
-      ? input.expiresAt
-      : termEndForOffer(
-          selectedFormat,
-          selectedFormat.cohortStartsOn
-            ? `${selectedFormat.cohortStartsOn}T00:00:00.000Z`
-            : (payment?.paidAt ?? new Date().toISOString()),
-        )
-    : input.expiresAt !== undefined
-      ? input.expiresAt
-      : payment || input.termFromOffer
-        ? await offerExpiryFor(db, input.courseSlug, payment?.paidAt ?? new Date().toISOString())
-        : null;
+  /* A GROUP'S PERIOD IS THE GROUP'S (2026-10-22). It runs from the group's day
+     1 for its offer's term, whatever the operator sends: a group seat is never
+     for good and never on a date of its own (checked before anything was
+     written, in `assertGroupTerm`). A solo seat takes a typed date, or the
+     offer's term from its start — the payment, the start the operator gave,
+     or now — and otherwise has no end. */
+  const group = selectedFormat?.format === "group";
+  const now = new Date().toISOString();
+  const soloFrom = accessStartsAt ?? payment?.paidAt ?? now;
+  const expiresAt = group
+    ? termEndForOffer(
+        selectedFormat,
+        selectedFormat.cohortStartsOn ? `${selectedFormat.cohortStartsOn}T00:00:00.000Z` : (payment?.paidAt ?? now),
+      )
+    : selectedFormat
+      ? input.expiresAt !== undefined
+        ? input.expiresAt
+        : termEndForOffer(selectedFormat, soloFrom)
+      : input.expiresAt !== undefined
+        ? input.expiresAt
+        : payment || input.termFromOffer
+          ? await offerExpiryFor(db, input.courseSlug, soloFrom)
+          : null;
 
   const grant = await grantCourse({
     email: input.email,
@@ -335,7 +384,8 @@ export async function provisionAccess(input: ProvisionAccessInput) {
     actorId: input.actorId,
     orderRef: payment?.orderRef ?? null,
     cohortStartsOn: selectedFormat?.cohortStartsOn ?? input.cohortStartsOn,
-    ref: input.ref,
+    ref,
+    accessStartsAt: group ? undefined : accessStartsAt === null ? undefined : accessStartsAt,
   });
 
   const includedGrants = selectedFormat
@@ -348,7 +398,7 @@ export async function provisionAccess(input: ProvisionAccessInput) {
             source: input.source ?? (payment ? "manual" : undefined),
             actorId: input.actorId,
             orderRef: payment?.orderRef ?? null,
-            ref: input.ref,
+            ref,
           }),
         ),
       )
