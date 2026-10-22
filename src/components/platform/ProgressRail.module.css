@@ -32,7 +32,8 @@
 
 .walkerGlyph {
   display: block;
-  width: 1.28rem;
+  /* Square: the poses are as wide as they are tall (a downward dog, a lotus). */
+  width: 1.4rem;
   height: 1.4rem;
 }
 
