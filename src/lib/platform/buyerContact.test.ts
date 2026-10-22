@@ -26,6 +26,15 @@ describe("«Телефон або Telegram»", () => {
     expect(readPrimaryContact("+380 (67) 123-45-67")).toEqual({ channel: "phone", value: "+380671234567" });
   });
 
+  it("refuses a number that cannot be dialled", () => {
+    // one digit too many for the local shape: no country code starts with 0
+    expect(readPrimaryContact("06710123123")).toBeNull();
+    // +380 and then an operator code that starts 3-9
+    expect(readPrimaryContact("+380000000000")).toBeNull();
+    expect(readPrimaryContact("+38067123456")).toBeNull();
+    expect(readPrimaryContact("+14155550100")).toEqual({ channel: "phone", value: "+14155550100" });
+  });
+
   it("refuses what is neither", () => {
     expect(readPrimaryContact("ann")).toBeNull();
     expect(readPrimaryContact("anna k")).toBeNull();

@@ -31,7 +31,6 @@ const NAV_GLYPH = {
   analytics: "chart",
   orders: "price",
   customers: "user",
-  jobs: "clock",
   broadcasts: "mail",
   access: "lock",
   catalog: "document",
@@ -107,12 +106,19 @@ export function AdminShell({ children }: { children: ReactNode }) {
     { key: "nav_orders" as const, href: "/admin/orders", icon: NAV_GLYPH.orders, active: true },
     { key: "nav_customers" as const, href: "/admin/customers", icon: NAV_GLYPH.customers, active: true },
     { key: "nav_broadcasts" as const, href: "/admin/broadcasts", icon: NAV_GLYPH.broadcasts, active: true },
-    { key: "nav_operations" as const, href: "/admin/jobs", icon: NAV_GLYPH.jobs, active: true },
     { key: "nav_access" as const, href: "/admin/access", icon: NAV_GLYPH.access, active: true },
     { key: "nav_catalog" as const, href: "/admin/catalog", icon: NAV_GLYPH.catalog, active: true },
     { key: "nav_system" as const, href: "/admin/system", icon: NAV_GLYPH.system, active: true },
   ];
-  const isSelectedNav = (href: string) => (href === "/admin" ? pathname === "/admin" : pathname?.startsWith(href));
+  /* «Операції» (background jobs) live under «Система» — it is where an operator
+     goes when something runs, not a section of its own (owner, 2026-10-22). The
+     page keeps its address, so old links work and the rail still shows where you are. */
+  const isSelectedNav = (href: string) =>
+    href === "/admin"
+      ? pathname === "/admin"
+      : href === "/admin/system"
+        ? Boolean(pathname?.startsWith("/admin/system") || pathname?.startsWith("/admin/jobs"))
+        : pathname?.startsWith(href);
 
   return (
     <div className={styles.frame}>
