@@ -36,6 +36,7 @@ export function BlockEditor({
   drag,
   fresh,
   selected,
+  flagged,
   referenceOptions,
   referenceTargets,
   courseSlug,
@@ -53,6 +54,8 @@ export function BlockEditor({
   /** Just added by the author — the caret belongs in its first node. */
   fresh?: boolean;
   selected?: boolean;
+  /** The publish gate still reports a hole in this block. */
+  flagged?: boolean;
   referenceOptions: InternalReferenceOption[];
   referenceTargets: ReturnType<typeof buildInternalReferenceTargets>;
   courseSlug: string;
@@ -148,6 +151,7 @@ export function BlockEditor({
       id={`block-${block.id}`}
       className={`${styles.blockCard} ${styles.dragRow}`}
       data-selected={selected || undefined}
+      data-flagged={flagged || undefined}
       /* SELECTION FOLLOWS THE CARET, not only the pointer. A prose block has no
          read-only preview to click — its fields ARE its surface — so a click
          handler on the preview selected every block except the one an author
