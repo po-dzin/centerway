@@ -1,0 +1,460 @@
+/* Карта сфер — the page at /profile/map and its card on the profile.
+ *
+ * Every colour is a token. The three radar shapes take three roles and nothing
+ * else: the present is the embodied hue (a wash and a line), the goal is the
+ * muted ink dashed, the start is the border colour at a hairline. No colour is
+ * picked here; a theme that redefines the tokens redraws the map.
+ *
+ * Buttons compose the one contract (PlatformButtons.module.css). The whole page
+ * is a nested surface, so it composes `compact` once at its root and every
+ * button inside resolves the compact size from there.
+ */
+
+/* ── Layout ───────────────────────────────────────── */
+
+.map {
+  composes: compact from "../PlatformButtons.module.css";
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-xl);
+  margin-top: var(--cw-space-lg);
+}
+
+/* Side by side once the list has room for its name, its numbers and its bar:
+   the picture on the left stays in view while the rows on the right change. */
+@media (min-width: 900px) {
+  .map {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: start;
+  }
+
+  .picture {
+    position: sticky;
+    top: var(--cw-space-3xl);
+  }
+}
+
+.picture {
+  display: grid;
+  gap: var(--cw-space-md);
+  justify-items: center;
+}
+
+.controls {
+  display: grid;
+  gap: var(--cw-space-md);
+  min-width: 0;
+}
+
+/* ── Radar ────────────────────────────────────────── */
+
+.radar {
+  width: min(100%, 22rem);
+  height: auto;
+  overflow: visible;
+}
+
+.radarCompact {
+  width: 6.5rem;
+  height: auto;
+  flex: none;
+}
+
+.radarRing {
+  fill: none;
+  stroke: var(--cw-rule-ink);
+  stroke-width: 0.75;
+}
+
+.radarSpoke {
+  stroke: var(--cw-rule-ink);
+  stroke-width: 0.75;
+}
+
+.radarStart {
+  fill: none;
+  stroke: var(--cw-platform-border);
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+}
+
+.radarGoal {
+  fill: none;
+  stroke: var(--cw-platform-muted);
+  stroke-width: 1.25;
+  stroke-dasharray: 4 3;
+  stroke-linejoin: round;
+}
+
+.radarNow {
+  fill: color-mix(in srgb, var(--cw-sem-embodied) 22%, transparent);
+  stroke: var(--cw-sem-embodied);
+  stroke-width: 1.75;
+  stroke-linejoin: round;
+}
+
+.radarLabel {
+  fill: var(--cw-platform-muted);
+  font-family: var(--cw-font-ui);
+  font-size: var(--ds-type-label-size);
+}
+
+/* ── Legend ───────────────────────────────────────── */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--cw-space-2xs) var(--cw-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+.legendSwatch {
+  width: 1rem;
+  height: 0;
+  border-top: 2px solid var(--cw-sem-embodied);
+}
+
+.legendItem[data-shape="goal"] .legendSwatch {
+  border-top-style: dashed;
+  border-top-color: var(--cw-platform-muted);
+}
+
+.legendItem[data-shape="start"] .legendSwatch {
+  border-top-width: 1px;
+  border-top-color: var(--cw-platform-border);
+}
+
+/* ── A / B switch ─────────────────────────────────── */
+
+.modeSwitches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+}
+
+.modeOption {
+  composes: base secondary hug from "../PlatformButtons.module.css";
+}
+
+.modeOptionOn {
+  composes: base primary hug from "../PlatformButtons.module.css";
+}
+
+/* ── Sphere rows ──────────────────────────────────── */
+
+.spheres {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--cw-rule-ink);
+}
+
+.sphere {
+  border-bottom: 1px solid var(--cw-rule-ink);
+}
+
+/* A disclosure row: the whole row is the target, at the touch floor. Its
+   inline padding is zero because the row's edges are the list's edges. */
+.sphereToggle {
+  display: grid;
+  gap: var(--cw-space-xs);
+  width: 100%;
+  min-height: var(--ds-touch-target-min);
+  padding-block: var(--cw-space-sm);
+  border: 0;
+  background: none;
+  color: var(--cw-platform-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.sphereToggle:focus-visible {
+  outline: 2px solid var(--cw-nav-marker);
+  outline-offset: var(--ds-focus-ring-offset-inset);
+}
+
+@media (hover: hover) {
+  .sphereToggle:hover .sphereName {
+    color: var(--cw-nav-marker);
+  }
+}
+
+.sphereHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--cw-space-2xs) var(--cw-space-xs);
+}
+
+.sphereName {
+  font-size: var(--ds-type-body-size);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.sphereScores {
+  margin-inline-start: auto;
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-sm-size);
+  white-space: nowrap;
+}
+
+.chip {
+  composes: chip from "../Chip.module.css";
+}
+
+.chipQuiet {
+  composes: chip from "../Chip.module.css";
+  color: var(--cw-platform-muted);
+}
+
+/* The meter recipe (docs/design-system.md → «Meters are one recipe»): the
+   track and the guide fill. B is a tick on the same track, in ink. */
+.meter {
+  position: relative;
+  display: block;
+  height: 0.25rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-meter-track);
+}
+
+.meterFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-platform-meter);
+}
+
+.meterTick {
+  position: absolute;
+  top: -0.25rem;
+  width: 2px;
+  height: 0.75rem;
+  background: var(--cw-platform-text);
+  transform: translateX(-50%);
+}
+
+.sphereBody {
+  display: grid;
+  gap: var(--cw-space-sm);
+  padding-bottom: var(--cw-space-md);
+}
+
+/* ── The 0–10 scale ───────────────────────────────── */
+
+/* Eleven cells in one track, at every width: the scale is one object, and a
+   scale that wraps onto two lines reads as two. The track owns the corner and
+   clips the cells, which are square `bar` cells of the secondary role. */
+.scale {
+  display: grid;
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+  border-radius: var(--cw-radius-md);
+  overflow: hidden;
+}
+
+.scaleOption {
+  composes: base secondary bar from "../PlatformButtons.module.css";
+  font-family: var(--cw-font-data);
+}
+
+.scaleOption + .scaleOption {
+  border-inline-start-width: 0;
+}
+
+/* Cells up to the value carry the shape's own wash, so the scale reads as a
+   level and not as eleven separate answers. */
+.scaleOption[data-lit="now"] {
+  background-color: color-mix(in srgb, var(--cw-sem-embodied) 22%, var(--cw-mat-surface-sunk));
+}
+
+.scaleOption[data-lit="goal"] {
+  background-color: color-mix(in srgb, var(--cw-platform-muted) 16%, var(--cw-mat-surface-sunk));
+}
+
+/* The chosen cell: the object is the chosen one, so it takes the selection
+   contour, drawn inside the cell because the track clips its outside. */
+.scaleOption[aria-pressed="true"] {
+  outline: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-selected);
+  outline-offset: calc(var(--cw-contour-width) * -4);
+  color: var(--cw-platform-text);
+}
+
+.scaleOption[aria-pressed="true"][data-lit="now"] {
+  background-color: color-mix(in srgb, var(--cw-sem-embodied) 44%, var(--cw-mat-surface-sunk));
+}
+
+.scaleOption[aria-pressed="true"][data-lit="goal"] {
+  background-color: color-mix(in srgb, var(--cw-platform-muted) 30%, var(--cw-mat-surface-sunk));
+}
+
+.hint {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+}
+
+.note {
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.noteLabel {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sphereActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+.focusAction {
+  composes: base secondary hug from "../PlatformButtons.module.css";
+}
+
+/* ── Focus ────────────────────────────────────────── */
+
+.focusCard {
+  display: grid;
+  gap: var(--cw-space-xs);
+  width: 100%;
+  padding: var(--cw-space-lg);
+  border-radius: var(--cw-radius-xl);
+}
+
+.focusTitle {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.focusList {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  margin: 0;
+  padding-inline-start: var(--cw-space-lg);
+}
+
+.focusItem {
+  font-size: var(--ds-type-body-size);
+  line-height: 1.4;
+}
+
+.focusGap {
+  margin-inline-start: var(--cw-space-xs);
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.focusNote {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+}
+
+.footer {
+  margin: var(--cw-space-xl) 0 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+/* ── Empty and failed ─────────────────────────────── */
+
+.state {
+  composes: compact from "../PlatformButtons.module.css";
+  display: grid;
+  justify-items: start;
+  gap: var(--cw-space-xs);
+  max-width: 34rem;
+  margin-top: var(--cw-space-lg);
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--ds-type-body-size);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.stateNote {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+}
+
+.stateAction {
+  display: flex;
+}
+
+.retryAction {
+  composes: base primary hug from "../PlatformButtons.module.css";
+}
+
+/* ── The card on the profile ──────────────────────── */
+
+.card {
+  composes: compact from "../PlatformButtons.module.css";
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-lg);
+  padding: var(--cw-space-lg);
+  border-radius: var(--cw-radius-xl);
+}
+
+.cardText {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+.cardLabel {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cardTitle {
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-card-title-size);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.cardNote {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+}
+
+.cardOnward {
+  margin-top: var(--cw-space-xs);
+}

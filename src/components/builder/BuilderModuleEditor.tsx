@@ -174,7 +174,7 @@ export function BuilderCourseRail({
         </span>
         <span className={styles.courseRailStatusLine}>
           <HandGraphic className={styles.courseRailStatusDotBoundary} name="dot" size={12} />
-          {blockerCount} {plural(blockerCount, "блокер", "блокери", "блокерів")}
+          {blockerCount} {plural(blockerCount, "місце", "місця", "місць")} до публікації
         </span>
       </div>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Course, ReadinessBlocker } from "@/lms-core";
+import { readinessPlaces, type Course, type ReadinessBlocker } from "@/lms-core";
 import { plural } from "@/lib/plural";
 
 import { Icon } from "@/components/Icon";
@@ -12,11 +12,11 @@ import styles from "./Builder.module.css";
    raw form rather than to a generic phrase — an author reading `lms_ready_x`
    can search for it; an author reading "щось не так" cannot. */
 const BLOCKER_LABELS: Record<string, string> = {
-  lms_ready_placeholder: "Залишився маркер, який треба замінити текстом",
-  lms_ready_invalid_href: "Посилання не веде нікуди",
-  lms_ready_invalid_video_id: "Невалідний ID відео",
-  lms_ready_invalid_image_src: "Зображення без файлу",
-  lms_ready_missing_boundary: "У тілесному протоколі немає блоку меж",
+  lms_ready_placeholder: "Тут лишилась позначка: замініть її своїм текстом",
+  lms_ready_invalid_href: "Посилання не відкривається: перевірте адресу",
+  lms_ready_invalid_video_id: "Відео не знайдено: перевірте посилання на YouTube",
+  lms_ready_invalid_image_src: "До зображення не додано файл",
+  lms_ready_missing_boundary: "У практиці немає блоку про межі методу",
   // The six the showcase gate adds. They fire only once the course is pointed
   // at strangers — see `courseReadiness` — so an author who reads one is
   // already looking at a catalogue entry, not at a private draft.
@@ -25,11 +25,11 @@ const BLOCKER_LABELS: Record<string, string> = {
   // think about addresses, and «змініть slug» would read as bureaucracy. What
   // they can act on is that the address is about to become permanent and still
   // says «новий курс».
-  lms_ready_default_slug: "Адреса курсу лишилась типовою — її видно в каталозі й потім не змінити",
+  lms_ready_default_slug: "Адреса курсу ще типова: її видно в каталозі, пізніше змінити не вийде",
   lms_ready_missing_cover: "Немає обкладинки — картка в каталозі буде порожньою",
-  lms_ready_missing_cover_alt: "Обкладинка без опису для читача з екранним диктором",
+  lms_ready_missing_cover_alt: "Додайте опис обкладинки: він потрібен людям з екранним диктором",
   lms_ready_missing_tagline: "Немає рядка під назвою — картці нічого сказати",
-  lms_ready_missing_category: "Не вказано розділ — курс ніде буде знайти",
+  lms_ready_missing_category: "Не вказано розділ: людям буде важко знайти курс",
   lms_ready_few_categories: "Вкажіть щонайменше дві теми — картка показує їх рядом, з однією рядок порожній",
   // And the four the storefront gate adds — the vocabulary is the tab's own, so
   // an author reads the name of the field they have to go and fill.
@@ -77,18 +77,20 @@ export function BuilderBlockers({
       never `exit.route`: see `useBuilderExit`. */
   onNavigate: (href: string) => void;
 }) {
+  // Places the list does not show, counted once each however many rules they break.
+  const more = readinessPlaces(blockers) - readinessPlaces(blockers.slice(0, LISTED));
   if (blockers.length === 0) {
     return (
       <section className={styles.panel}>
         <h2 className={styles.panelTitle}>Готовність</h2>
-        <p className={styles.panelText}>Блокерів немає — курс можна публікувати.</p>
+        <p className={styles.panelText}>Усе готово: курс можна публікувати.</p>
       </section>
     );
   }
 
   return (
     <section className={styles.panel}>
-      <h2 className={styles.panelTitle}>Що заважає публікації</h2>
+      <h2 className={styles.panelTitle}>Що лишилось перед публікацією</h2>
       <ul className={styles.blockerList}>
         {blockers.slice(0, LISTED).map((blocker, index) => {
           const target = blockerTarget(course, blocker);
@@ -132,10 +134,9 @@ export function BuilderBlockers({
           );
         })}
       </ul>
-      {blockers.length > LISTED ? (
+      {more > 0 ? (
         <p className={styles.panelText}>
-          …і ще {blockers.length - LISTED} {plural(blockers.length - LISTED, "дірка", "дірки", "дірок")}. Кожна
-          позначена в редакторі того уроку, якому належить.
+          І ще {more} {plural(more, "місце", "місця", "місць")}. Вони позначені в уроках, до яких належать.
         </p>
       ) : null}
     </section>

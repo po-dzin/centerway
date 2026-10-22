@@ -47,7 +47,7 @@ export function waitingFor(submittedAt: string | null, now: number = Date.now())
  */
 export function blockerLine(blockerCount: number): string {
   if (blockerCount < 0) return "Структура курсу не проходить перевірку — відкрийте курс, щоб побачити помилку.";
-  return `${blockerCount} ${plural(blockerCount, "блокер", "блокери", "блокерів")} публікації.`;
+  return `${blockerCount} ${plural(blockerCount, "місце", "місця", "місць")} до публікації.`;
 }
 
 /**

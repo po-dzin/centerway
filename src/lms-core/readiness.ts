@@ -131,6 +131,18 @@ function blockText(block: LessonBlock): string {
  * A structurally invalid course throws from `validateCourse` long before this
  * runs, so everything here is about content completeness, not shape.
  */
+/**
+ * How many distinct places the blockers point at.
+ *
+ * One block can break two rules at once (a video whose id is still a
+ * placeholder is both a placeholder and an invalid id), so the number of
+ * blockers is not the number of places an author has to open. Anything that
+ * says «місць» counts paths, not violations.
+ */
+export function readinessPlaces(blockers: ReadonlyArray<{ path: string }>): number {
+  return new Set(blockers.map((blocker) => blocker.path)).size;
+}
+
 export function courseReadiness(course: Course): CourseReadiness {
   const blockers: ReadinessBlocker[] = [];
   const add = (code: string, path: string, detail?: string) => blockers.push({ code, path, detail });

@@ -28,6 +28,17 @@ export const LEARNING_SHELF_HREF = "/learn";
  */
 export const JOURNAL_HREF = "/journal";
 
+/** The profile — the cabinet's own address on the personal host. */
+export const PROFILE_HREF = "/profile";
+
+/**
+ * The person's карта сфер. Under the profile's own prefix, so the personal host
+ * already claims it (`PROFILE_PATH_PREFIX` in `src/lib/surfaces/catalog.ts`);
+ * not in `personalNav` for the journal's reason — it is a room in the profile,
+ * not an application.
+ */
+export const SPHERE_MAP_HREF = "/profile/map";
+
 export type NavItem = { label: string; href: string; match: "exact" | "prefix" };
 
 /** The public platform bar. `Головна` is intentionally explicit here. */

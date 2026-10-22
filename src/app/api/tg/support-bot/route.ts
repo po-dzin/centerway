@@ -3,6 +3,8 @@ import { secretsEqual } from "@/lib/auth/secretsEqual";
 import { handleTgSupportBotUpdate, type TelegramUpdate } from "@/lib/telegram/tgSupportBot";
 
 export const runtime = "nodejs";
+// The knowledge-base bot answers inside the webhook; a model call takes seconds.
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET;

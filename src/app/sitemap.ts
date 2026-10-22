@@ -22,7 +22,11 @@ import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
  * static tree rather than a broken sitemap.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
+  /* NO `lastModified`. It used to be `new Date()` on every entry, so every
+     fetch told a crawler that every page had just changed. Google trusts
+     `lastmod` only while it keeps proving accurate and ignores a site whose
+     dates never are; none of these routes has a real edit date to give yet,
+     and an absent date is honest where a constant "now" is not. */
 
   // The legal pages stay indexable — a buyer looks for the offer before paying
   // — but they are not what the brand should be found by, and a search for the
@@ -32,7 +36,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const legalPage = route.startsWith("/legal/");
     return {
       url: `${PLATFORM_ORIGIN}${route}`,
-      lastModified: now,
       changeFrequency: (route === "/" ? "weekly" : legalPage ? "yearly" : "monthly") as "weekly" | "monthly" | "yearly",
       priority: route === "/" ? 1 : legalPage ? 0.2 : 0.7,
     };
@@ -51,7 +54,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .filter((url) => !known.has(url))
     .map((url) => ({
       url,
-      lastModified: now,
       changeFrequency: "weekly" as const,
       priority: 0.7,
     }));
@@ -63,7 +65,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const authorRoutes = authors.length
     ? [`${PLATFORM_ORIGIN}/experts`, ...authors.map((author) => `${PLATFORM_ORIGIN}${authorHref(author)}`)]
         .filter((url) => !known.has(url))
-        .map((url) => ({ url, lastModified: now, changeFrequency: "monthly" as const, priority: 0.6 }))
+        .map((url) => ({ url, changeFrequency: "monthly" as const, priority: 0.6 }))
     : [];
 
   return [...staticRoutes, ...courseRoutes, ...authorRoutes];

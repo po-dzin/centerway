@@ -26,6 +26,9 @@ const BLOCK_SUFFIX = /\.blocks\[(\d+)]$/;
 
 export function blockerFlags(course: Course, blockers: ReadinessBlocker[]): BlockerFlags {
   const flags: BlockerFlags = { lessons: new Map(), modules: new Map(), blocks: new Set(), courseCodes: new Set() };
+  // Counts are PLACES, not violations: one block can break two rules at once.
+  const lessonPaths = new Map<string, Set<string>>();
+  const modulePaths = new Map<string, Set<string>>();
   const places = flattenLessons(course);
   for (const blocker of blockers) {
     const match = BLOCK_SUFFIX.exec(blocker.path);
@@ -36,10 +39,12 @@ export function blockerFlags(course: Course, blockers: ReadinessBlocker[]): Bloc
     }
     const place = places.find(({ module, lesson }) => lessonPath === `${course.slug}.${module.slug}.${lesson.slug}`);
     if (!place) continue;
-    flags.lessons.set(place.lesson.id, (flags.lessons.get(place.lesson.id) ?? 0) + 1);
-    flags.modules.set(place.module.id, (flags.modules.get(place.module.id) ?? 0) + 1);
+    lessonPaths.set(place.lesson.id, (lessonPaths.get(place.lesson.id) ?? new Set()).add(blocker.path));
+    modulePaths.set(place.module.id, (modulePaths.get(place.module.id) ?? new Set()).add(blocker.path));
     const block = match ? place.lesson.blocks[Number(match[1])] : undefined;
     if (block) flags.blocks.add(block.id);
   }
+  for (const [id, paths] of lessonPaths) flags.lessons.set(id, paths.size);
+  for (const [id, paths] of modulePaths) flags.modules.set(id, paths.size);
   return flags;
 }

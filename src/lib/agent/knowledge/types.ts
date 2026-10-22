@@ -31,7 +31,9 @@ export type KnowledgeKind =
   /** What support already answers, from the bot's own copy. */
   | "support"
   /** Policy and boundary statements: refunds, access, data, health limits. */
-  | "policy";
+  | "policy"
+  /** What CenterWay is and how its practices fit together (`approach.ts`). */
+  | "about";
 
 /**
  * Who may be shown this document.

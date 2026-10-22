@@ -360,7 +360,7 @@ export function unpublishFailureCopy(result: { failure: BuilderFailure; detail?:
 function blockerLine(count: number): string {
   if (count < 0) return "Структура не читається — відкрийте курс, щоб побачити помилку";
   if (count === 0) return "Готовий до публікації";
-  return `${count} ${plural(count, "блокер", "блокери", "блокерів")} до публікації`;
+  return `${count} ${plural(count, "місце", "місця", "місць")} до публікації`;
 }
 
 function initialsOf(title: string): string {
