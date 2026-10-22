@@ -25,6 +25,9 @@
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
 
+import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
+
 import styles from "./Builder.module.css";
 
 export function BuilderDecision({
@@ -68,9 +71,27 @@ export function BuilderDecision({
       }}
     >
       <div className={`${styles.sheetBody} ${styles.decisionBody}`}>
-        <h2 className={styles.panelTitle} id={titleId}>
-          {title}
-        </h2>
+        <div className={styles.decisionHead}>
+          <h2 className={styles.panelTitle} id={titleId}>
+            {title}
+          </h2>
+          {/* The way to stay put is a close control in the corner, the same one
+              the sheet has, whenever the question can be dismissed at all. A
+              forced choice has none: there the buttons are the only way on. */}
+          {onDismiss ? (
+            <button
+              className={styles.menuTrigger}
+              type="button"
+              aria-label="Закрити"
+              data-cw-ink-control
+              onClick={onDismiss}
+            >
+              <InteractionInkIcon>
+                <Icon name="close" size={18} />
+              </InteractionInkIcon>
+            </button>
+          ) : null}
+        </div>
         {children}
         <div className={styles.decisionActions}>{actions}</div>
       </div>

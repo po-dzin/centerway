@@ -88,17 +88,6 @@
   -webkit-line-clamp: 2;
 }
 
-/* A native select, kept native — it is the operator's fastest way through four
-   stages with a keyboard — and dressed only as far as the field it sits in. */
-.select {
-  composes: cw-surface-2 cw-border cw-text from global;
-  padding: var(--cw-space-2xs) var(--cw-space-xs);
-  border-width: 1px;
-  border-style: solid;
-  border-radius: var(--cw-radius-md);
-  font-size: var(--ds-type-label-size);
-}
-
 /* ── One admin row (2026-09-14) ───────────────────────
    See `AdminRow`. The body sits in the first grid row; the controls and the footer take IMPLICIT
    rows below it (full width), so a row that has neither ends at its body — a
@@ -470,6 +459,7 @@
   font-family: var(--cw-font-editorial);
   font-size: var(--ds-type-body-sm-size);
   font-weight: 500;
+  text-decoration: none;
 }
 
 .itemThumb img {

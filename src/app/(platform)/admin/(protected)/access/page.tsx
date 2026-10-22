@@ -94,6 +94,11 @@ export default function AccessPage() {
   const errorText = useCallback(
     (message: string) => {
       const known: Record<string, string> = {
+        group_term_missing: t("access_error_group_term_missing"),
+        email_domain_invalid: t("access_error_email_domain_invalid"),
+        cannot_delete_self: t("access_error_cannot_delete_self"),
+        access_start_invalid: t("access_error_access_start_invalid"),
+        referrer_tag_conflict: t("access_error_referrer_tag_conflict"),
         account_not_found: t("access_error_account_not_found"),
         course_not_found: t("access_error_course_not_found"),
         course_not_published: t("access_error_course_not_published"),
@@ -110,6 +115,7 @@ export default function AccessPage() {
         emails_required: t("access_error_emails_required"),
         Forbidden: t("access_error_forbidden"),
       };
+      if (message.startsWith("account_has_history")) return t("access_error_account_has_history");
       return known[message] ?? message;
     },
     [t],
@@ -360,6 +366,27 @@ function PeopleTab({
 
   const writeRole = useRoleWrite(errorText, load);
 
+  /* An account made for an address nobody owns — a typo in the grant dialog —
+     is removed whole. Offered only for one that never signed in and bought
+     nothing; the server checks again (progress, orders by address, roles) and
+     refuses anyone with a history. */
+  const deleteAccount = async (account: PersonRow) => {
+    if (!window.confirm(`${t("access_delete_account_confirm")} ${account.email ?? ""}`)) return;
+    setGrantingTo(account.authUserId);
+    try {
+      await authFetch(`/api/admin/access/learners?authUserId=${encodeURIComponent(account.authUserId)}`, {
+        method: "DELETE",
+      });
+      toast.success(t("access_account_deleted"));
+      onCoursesChanged();
+      await load();
+    } catch (e) {
+      toast.error(errorText(getErrorMessage(e)));
+    } finally {
+      setGrantingTo(null);
+    }
+  };
+
   const setPersonRole = async (account: PersonRow, nextRole: string) => {
     setGrantingTo(account.authUserId);
     await writeRole({ email: account.email, current: account.role, next: nextRole });
@@ -453,6 +480,7 @@ function PeopleTab({
        the other's question. */
   const ACCESS_STATE_KEY = {
     active: "access_state_active",
+    scheduled: "access_state_scheduled",
     expired: "access_state_expired",
     revoked: "access_state_revoked",
     blocked: "access_state_blocked",
@@ -854,7 +882,7 @@ function PeopleTab({
                         >
                           {GRANTABLE_ROLES.map((role) => (
                             <option key={role} value={role}>
-                              {role === "user" ? t("access_grant_role_none") : role}
+                              {role}
                             </option>
                           ))}
                         </select>
@@ -866,6 +894,28 @@ function PeopleTab({
                             })}
                           </span>
                         ) : null}
+                      </div>
+                    ) : null}
+                    {/* Offered on what the row knows — nothing bought, nothing studied,
+                        no role. Whether they ever signed in only GoTrue knows (the
+                        profile's own «last sign-in» is stamped at creation), so
+                        the server asks it and refuses a real person. */}
+                    {canGrantRoles &&
+                    account.authUserId !== selfId &&
+                    account.purchases === 0 &&
+                    account.lessonsCompleted === 0 &&
+                    (!account.role || account.role === "user") ? (
+                      <div className={access.seatLineSpaced}>
+                        <button
+                          type="button"
+                          onClick={() => void deleteAccount(account)}
+                          disabled={grantingTo === account.authUserId}
+                          className={controls.action}
+                        >
+                          <Icon name="trash" size={16} />
+                          {t("access_delete_account")}
+                        </button>
+                        <span className={controls.hint}>{t("access_delete_account_hint")}</span>
                       </div>
                     ) : null}
                   </div>

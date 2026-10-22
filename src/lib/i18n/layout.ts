@@ -7,6 +7,5 @@ export const layout = {
   nav_customers: { uk: "Клієнти", en: "Customers" },
   nav_orders: { uk: "Замовлення", en: "Orders" },
   nav_analytics: { uk: "Аналітика", en: "Analytics" },
-  nav_operations: { uk: "Операції", en: "Operations" },
   nav_system: { uk: "Система", en: "System" },
 } as const;

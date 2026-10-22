@@ -11,6 +11,7 @@ import { applyDoshaTagsToCustomer, loadTestAttempt } from "@/lib/dosha/doshaTest
 import { isDoshaResultType, type DoshaResultType } from "@/lib/dosha/doshaTest";
 import { sendTelegramMessage } from "@/lib/telegram/tg";
 import { getAuthor } from "@/lib/lms/authors";
+import { normalizeContactPhone } from "@/lib/platform/buyerContact";
 
 export const runtime = "nodejs";
 
@@ -105,7 +106,15 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json().catch(() => ({}))) as LeadRequestBody;
   const name = asString(body.name);
-  const phone = asString(body.phone);
+  const phoneRaw = asString(body.phone);
+  /* One phone rule for every door: the checkout's. An unchecked string let
+     `06710123123` (one digit too many) and `+380000000000` into the requests
+     list. A phone that fails it is refused, so the visitor can fix the typo
+     instead of leaving a number nobody can call. */
+  const phone = phoneRaw ? normalizeContactPhone(phoneRaw) : null;
+  if (phoneRaw && !phone) {
+    return cors(NextResponse.json({ ok: false, error: "invalid_phone" }, { status: 400 }));
+  }
   const email = asString(body.email)?.toLowerCase() ?? null;
   const requested = asString(body.product) ?? asString(body.product_code) ?? undefined;
   /* ONE CHANNEL. The request is filed under the code of the offer it is about,

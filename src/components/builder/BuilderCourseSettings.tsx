@@ -9,7 +9,7 @@
  * the dedicated Page tab is always an editable form, not another disclosure.
  */
 
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
@@ -23,6 +23,7 @@ import {
   COURSE_PRETITLE_MAX,
   COURSE_TYPE_SCALES,
   DEFAULT_COURSE_THEME,
+  courseReadiness,
   type Course,
   type CourseCategory,
   type CourseHeadingFont,
@@ -34,6 +35,7 @@ import {
 } from "@/lms-core";
 import { BuilderCoverEditor } from "./BuilderCoverEditor";
 import { ACCESS_TERM_NOTES, presetNoteFor } from "@/lib/lms/accessTerm";
+import { blockerFlags } from "./blockerFlags";
 import { ChoiceRow, ChoiceSet, FieldInput, RequiredMark } from "./BuilderFields";
 import { PALETTE_LABELS } from "./coursePalettes";
 import styles from "./Builder.module.css";
@@ -236,6 +238,13 @@ type SettingsSectionId = "cover" | "titles" | "badge" | "rhythm" | "appearance";
  * bad page is clicked and abandoned. One long form made the second half of the
  * work look optional because it was below the fold of the first.
  */
+/* Always a wrapper, only sometimes marked: a wrapper that appeared and
+   disappeared with the gap would remount the field the moment the last
+   character fixed it, and take the caret with it. */
+function Gap({ on, children }: { on: boolean; children: ReactNode }) {
+  return <div className={on ? styles.flaggedField : undefined}>{children}</div>;
+}
+
 export type SettingsScope = "cover" | "page";
 
 /**
@@ -294,6 +303,11 @@ export function BuilderCourseSettings({
   onChange: (path: (string | number)[], value: unknown) => void;
 }) {
   const [editing, setEditing] = useState<SettingsSectionId | null>(null);
+  // Which of the course's own fields the publish gate is still waiting on —
+  // marked with the design system's «selected» contour, the same one the outline
+  // and the blocks carry, so the arrow in the release panel ends on a field.
+  const gaps = useMemo(() => blockerFlags(course, courseReadiness(course).blockers).courseCodes, [course]);
+  const gap = (...codes: string[]) => codes.some((code) => gaps.has(code));
   const theme = { ...DEFAULT_COURSE_THEME, ...(course.theme ?? {}) };
   const gate = course.schedule.gate ?? "soft";
   const visibility = course.visibility ?? "hidden";
@@ -328,24 +342,28 @@ export function BuilderCourseSettings({
             Видимість: <strong>{VISIBILITY_LABELS[visibility]}</strong>. {VISIBILITY_HINTS[visibility]} Автор готує
             матеріал і сторінку; видимість змінює адміністратор.
           </p>
-          <StringListField
-            path="results"
-            label="Що людина отримає"
-            itemLabel="Результат"
-            hint="Короткі твердження, не абзаци. Порожні рядки не зберігаються."
-            items={course.results ?? []}
-            required={showcase}
-            onChange={onChange}
-          />
-          <StringListField
-            path="audience"
-            label="Для кого"
-            itemLabel="Аудиторія"
-            hint="Друга половина обіцянки: «що зміниться» вже сказано вище, тут — з ким."
-            items={course.audience ?? []}
-            required={showcase}
-            onChange={onChange}
-          />
+          <Gap on={gap("lms_ready_missing_results")}>
+            <StringListField
+              path="results"
+              label="Що людина отримає"
+              itemLabel="Результат"
+              hint="Короткі твердження, не абзаци. Порожні рядки не зберігаються."
+              items={course.results ?? []}
+              required={showcase}
+              onChange={onChange}
+            />
+          </Gap>
+          <Gap on={gap("lms_ready_missing_audience")}>
+            <StringListField
+              path="audience"
+              label="Для кого"
+              itemLabel="Аудиторія"
+              hint="Друга половина обіцянки: «що зміниться» вже сказано вище, тут — з ким."
+              items={course.audience ?? []}
+              required={showcase}
+              onChange={onChange}
+            />
+          </Gap>
           {/* RENAMED, NOT MOVED. The key is still `format` and the data is
             untouched; the LABEL changed because «Формат» now names the closed
             list on the cover tab (курс / міні-курс / чек-лист). Two controls
@@ -359,30 +377,34 @@ export function BuilderCourseSettings({
             at two names for it and could not tell which block on the storefront
             they were writing. Both say «Що входить» now; the key is still
             `format` and no data moved. */}
-          <StringListField
-            path="format"
-            label="Що входить"
-            itemLabel="Складова"
-            hint="Носій, не структура: відео, аудіо, чек-листи, рецепти. Рід курсу — на вкладці «Обкладинка»."
-            items={course.format ?? []}
-            required={showcase}
-            onChange={onChange}
-          />
+          <Gap on={gap("lms_ready_missing_format")}>
+            <StringListField
+              path="format"
+              label="Що входить"
+              itemLabel="Складова"
+              hint="Носій, не структура: відео, аудіо, чек-листи, рецепти. Рід курсу — на вкладці «Обкладинка»."
+              items={course.format ?? []}
+              required={showcase}
+              onChange={onChange}
+            />
+          </Gap>
           {/* Prose, not policy. What actually cuts access off is the expiry on the
             grant itself, set when the seat is sold; this is the promise printed
             beside the price. They are free to differ on purpose — «Назавжди»
             is still compatible with revoking a refunded seat. Closed list, not
             free text (2026-09-13): the storefront prints exactly what is
             chosen here, so the choice is the words a buyer reads. */}
-          <ChoiceRow<string>
-            label="Термін доступу"
-            required={showcase}
-            clearable
-            hint="Скільки покупець має доступ до курсу. Друкується поряд з ціною і сам закриває доступ після терміну; для опублікованого курсу — після затвердження змін."
-            options={accessTermOptions(course.accessNote)}
-            value={presetNoteFor(course.accessNote) ?? (course.accessNote?.trim() || undefined)}
-            onChange={(next) => onChange(["accessNote"], next)}
-          />
+          <Gap on={gap("lms_ready_missing_access_note")}>
+            <ChoiceRow<string>
+              label="Термін доступу"
+              required={showcase}
+              clearable
+              hint="Скільки покупець має доступ до курсу. Друкується поряд з ціною і сам закриває доступ після терміну; для опублікованого курсу — після затвердження змін."
+              options={accessTermOptions(course.accessNote)}
+              value={presetNoteFor(course.accessNote) ?? (course.accessNote?.trim() || undefined)}
+              onChange={(next) => onChange(["accessNote"], next)}
+            />
+          </Gap>
           {/* `authorNote` moved to its own tab (2026-08-28) — see
             `BuilderCourseAuthor.tsx`. It sits beside the byline it modifies
             rather than beside the rest of the storefront copy, now that the
@@ -428,25 +450,27 @@ export function BuilderCourseSettings({
           )
         }
       >
-        <BuilderCoverEditor course={course} onChange={onChange} />
-        {/* ALT IS REQUIRED WHENEVER THE IMAGE IS. `validateCourse` refuses a
-            cover with no alt outright — not at publish, at SAVE — so this star
-            is not the showcase gate and does not follow visibility like the
-            others. A picture on a page a stranger reaches with nothing for a
-            screen reader to say is an accessibility failure, and this repo
-            gates on those. */}
-        <FieldInput
-          field={{
-            path: ["cover", "alt"],
-            label: "Опис зображення",
-            kind: "text",
-            multiline: true,
-            required: course.cover?.src ? true : undefined,
-            hint: "Що на фото — одним реченням, для тих, хто його не бачить. Без «зображення» на початку.",
-          }}
-          value={course.cover?.alt}
-          onChange={onChange}
-        />
+        <Gap on={gap("lms_ready_missing_cover")}>
+          <BuilderCoverEditor course={course} onChange={onChange} />
+        </Gap>
+        {/* ALT IS REQUIRED ONCE THE COURSE POINTS AT STRANGERS, like the other
+            cover stars: `courseReadiness` blocks the publish, while a hidden
+            draft saves without it. It used to refuse the save outright, and
+            with it every lesson edit, which writes the whole course. */}
+        <Gap on={gap("lms_ready_missing_cover_alt")}>
+          <FieldInput
+            field={{
+              path: ["cover", "alt"],
+              label: "Опис зображення",
+              kind: "text",
+              multiline: true,
+              required: course.cover?.src ? showcase : undefined,
+              hint: "Що на фото — одним реченням, для тих, хто його не бачить. Без «зображення» на початку.",
+            }}
+            value={course.cover?.alt}
+            onChange={onChange}
+          />
+        </Gap>
       </SettingsSection>
 
       <SettingsSection
@@ -476,17 +500,19 @@ export function BuilderCourseSettings({
           value={course.pretitle}
           onChange={onChange}
         />
-        <FieldInput
-          field={{
-            path: ["tagline"],
-            label: "Рядок під назвою",
-            kind: "text",
-            required: showcase,
-            hint: "Навіщо цей курс людині — одне речення. Це те, що читають на картці замість опису.",
-          }}
-          value={course.tagline}
-          onChange={onChange}
-        />
+        <Gap on={gap("lms_ready_missing_tagline")}>
+          <FieldInput
+            field={{
+              path: ["tagline"],
+              label: "Рядок під назвою",
+              kind: "text",
+              required: showcase,
+              hint: "Навіщо цей курс людині — одне речення. Це те, що читають на картці замість опису.",
+            }}
+            value={course.tagline}
+            onChange={onChange}
+          />
+        </Gap>
       </SettingsSection>
 
       <SettingsSection
@@ -526,14 +552,16 @@ export function BuilderCourseSettings({
           value={course.kind}
           onChange={(next) => onChange(["kind"], next)}
         />
-        <ChoiceSet
-          label="Розділ"
-          required={showcase}
-          hint="Про що курс. Можна кілька. Закритий список — за ним каталог фільтрує полицю."
-          options={COURSE_CATEGORIES.map((value) => ({ value, label: CATEGORY_LABELS[value] }))}
-          values={categories}
-          onChange={(next) => onChange(["categories"], next)}
-        />
+        <Gap on={gap("lms_ready_missing_category", "lms_ready_few_categories")}>
+          <ChoiceSet
+            label="Розділ"
+            required={showcase}
+            hint="Про що курс. Можна кілька. Закритий список — за ним каталог фільтрує полицю."
+            options={COURSE_CATEGORIES.map((value) => ({ value, label: CATEGORY_LABELS[value] }))}
+            values={categories}
+            onChange={(next) => onChange(["categories"], next)}
+          />
+        </Gap>
         {/* A NUMBER, NOT «3 дні». The badge writes the word, in the locale it is
             being read in; the author writes the number once. This is the field
             that used to be prose, and the prose could not be compared, filtered

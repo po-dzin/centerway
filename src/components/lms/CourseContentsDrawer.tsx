@@ -224,19 +224,21 @@ export function CourseContentsDrawer({
   return (
     <div className={styles.drawerBackdrop} onClick={onBackdropClick} role="presentation">
       <div className={styles.drawer} ref={panelRef} role="dialog" aria-modal="true" aria-label="Зміст курсу">
-        <div className={styles.drawerHandle} aria-hidden="true" />
+        <div className={styles.drawerTop}>
+          <div className={styles.drawerHandle} aria-hidden="true" />
 
-        <div className={styles.drawerHead}>
-          <h2 className={styles.drawerTitle}>Зміст курсу</h2>
-          <button
-            ref={closeRef}
-            className={styles.iconButtonBare}
-            type="button"
-            onClick={onClose}
-            aria-label="Закрити зміст"
-          >
-            <Icon name="close" size={18} />
-          </button>
+          <div className={styles.drawerHead}>
+            <h2 className={styles.drawerTitle}>Зміст курсу</h2>
+            <button
+              ref={closeRef}
+              className={styles.iconButtonBare}
+              type="button"
+              onClick={onClose}
+              aria-label="Закрити зміст"
+            >
+              <Icon name="close" size={18} />
+            </button>
+          </div>
         </div>
 
         <p className={styles.pagerLabel}>

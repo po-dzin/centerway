@@ -1514,17 +1514,55 @@ describe("provisioning an exact format", () => {
       expect(db.rows("platform_users").some((r) => r.email === "new@example.com")).toBe(false);
     },
   );
-  it("honours an explicit perpetual override for both main and included courses", async () => {
+  /* 2026-10-22: a group's period is the group's. Neither «for good» nor a typed
+     date moves it, and a group offer with no days is refused before any write. */
+  it("keeps a group on its own period whatever term is sent", async () => {
     format();
+    for (const expiresAt of [null, "2027-06-01"]) {
+      const email = `group-${expiresAt ?? "forever"}@example.com`;
+      const result = await provisionAccess({
+        email,
+        createAccount: true,
+        courseSlug: "reset-day",
+        offerCode: "reset-group",
+        expiresAt,
+        actorId: ADMIN,
+      });
+      const rows = db.rows("lms_enrollments").filter((r) => r.auth_user_id === result.account.authUserId);
+      expect(rows.length).toBeGreaterThan(0);
+      for (const row of rows) expect(row.expires_at).toBe("2026-12-01T00:00:00.000Z");
+    }
+  });
+
+  it("refuses a group whose offer sets no period, before anything is written", async () => {
+    format({ access_days: null, access_lifetime: true });
+    const before = db.rows("lms_enrollments").length;
+    await expect(
+      provisionAccess({
+        email: "learner@example.com",
+        courseSlug: "reset-day",
+        offerCode: "reset-group",
+        actorId: ADMIN,
+      }),
+    ).rejects.toThrow("group_term_missing");
+    expect(db.rows("lms_enrollments").length).toBe(before);
+  });
+
+  it("opens a solo seat from the given start and counts the offer's term from it", async () => {
+    format({ code: "course:reset-day", format: "self", cohort_starts_on: null });
     const result = await provisionAccess({
-      email: "fresh@example.com",
+      email: "later@example.com",
+      createAccount: true,
       courseSlug: "reset-day",
-      offerCode: "reset-group",
-      expiresAt: null,
+      offerCode: "course:reset-day",
+      accessStartsAt: "2026-12-01",
+      termFromOffer: true,
       actorId: ADMIN,
     });
-    for (const row of db.rows("lms_enrollments").filter((r) => r.auth_user_id === result.account.authUserId))
-      expect(row.expires_at).toBeNull();
+    const row = db.rows("lms_enrollments").find((r) => r.auth_user_id === result.account.authUserId);
+    expect(row?.access_starts_at).toBe("2026-12-01T00:00:00.000Z");
+    expect(row?.expires_at).toBe("2026-12-31T00:00:00.000Z");
+    expect(row?.cohort_starts_on ?? null).toBeNull();
   });
 });
 

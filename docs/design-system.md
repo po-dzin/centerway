@@ -647,6 +647,14 @@ the ring's *colour and width* (`.programTileOverlay`, `.outlineModuleHead`,
 `.completeMark`) are deliberately left for the admin/globals wave rather than
 half-converted.
 
+**A text field has one focus line (2026-10-22).** The shared `.cw-input` drew a
+graphite border plus the 3px gold ring, while the feed, catalogue and shelf
+fields drew a gold border plus the same ring: two lines in two colours for one
+state. Every text field now takes the colour from `--cw-nav-marker` (ink by day,
+brass by night, the same pair as the selection contour) on its 1px border, and
+the only extra is `--ds-focus-field-glow`: `none` in the light theme, a 9px
+brass glow at 26% in the dark one. Buttons, tabs and rows keep the ring.
+
 Also settled in the same pass, each a case of one class described twice at top
 level with the later winning silently: `.courseStatusStrip` declared a full card
 recipe (border, large radius, tinted fill, `overflow: hidden`) that **never
@@ -2150,6 +2158,8 @@ One exception, and it is the rule restated rather than broken: a bar **wearing**
 ### One scrollbar (2026-09-07)
 
 Three answers, in `globals.css`, and every scroller in the product takes one: `cw-scroll` (a viewport with its own bar), `cw-scroll-rail` (4px, for a strip where a 10px bar is the tallest thing in the row), `cw-scroll-none` (no bar — for a **snap rail**, which reports its position with its cut edge and its dots). The thumb is ink — a wash of the page's own text via `--cw-mat-scroll-*` — and the track is nothing.
+
+**It is the floor, not a class to remember (2026-10-17).** The three classes were opt-in, and every scroller nobody marked — a textarea, a modal body, the page — drew the system's bar with its arrows (the admin «Подарувати курс» textarea). The recipe is now the default for every element: `:where(*)` carries `scrollbar-width: thin` and the ink colours, `*::-webkit-scrollbar*` carries the same for engines that ignore the standard properties, and the arrow buttons are gone. `:where` has no specificity, so `cw-scroll-rail`, `cw-scroll-none` and `cw-tabbar` still win. `npm run guard:scrollbars` (in `verify:guards` and `verify:ds`) keeps it so: only `globals.css` may write `scrollbar-width`, `scrollbar-color` or a `::-webkit-scrollbar` selector, and nothing may say `auto`; a module that needs no bar composes `cw-scroll-none from global`. What it cannot reach: a native `<select>` list on an engine without `appearance: base-select`, which the OS draws.
 
 What that replaced: the tab strip's own 4px copy, the builder writing the same 22% ink out by hand for nine scrollers, seven modules each spelling the two lines that hide a rail, and three admin tables asking for a `no-scrollbar` class **that was never defined** — the bar they meant to hide had been on screen the whole time. `custom-scrollbar` and `cw-tabbar` survive as aliases on the one rule, not as second recipes. CSS modules reach it with `composes: cw-scroll-none from global`, which is why these are classes and not attributes.
 

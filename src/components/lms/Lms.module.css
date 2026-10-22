@@ -608,18 +608,25 @@
 
 /* Sticky, because the panel now opens scrolled to the current lesson: a title
    and a close button that had already scrolled past would leave the reader in
-   the middle of a list with no visible way out. */
-.drawerHead {
+   the middle of a list with no visible way out.
+   The grab bar and the title stick TOGETHER, to the sheet's top edge rather
+   than below its padding (2026-10-22): the title alone, stuck at 0, left the
+   padding strip open and the list's module names scrolled up over it. */
+.drawerTop {
   position: sticky;
-  top: 0;
+  top: calc(var(--cw-space-md) * -1);
   z-index: 1;
-  padding-block: var(--cw-space-2xs);
+  margin-block: calc(var(--cw-space-md) * -1) var(--cw-space-sm);
+  padding-block-start: var(--cw-space-md);
   background: var(--cw-mat-surface);
+}
+
+.drawerHead {
+  padding-block: var(--cw-space-2xs);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--cw-space-sm);
-  margin-bottom: var(--cw-space-sm);
 }
 
 .drawerTitle {

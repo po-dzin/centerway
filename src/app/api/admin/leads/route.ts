@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
 import {
   badRequestResponse,
+  forbiddenResponse,
   parseLimitOffset,
   requireAdminSession,
   serverErrorResponse,
@@ -10,6 +11,7 @@ import {
 import { loadProductIdentity } from "@/lib/analytics/productIdentity";
 import { LEAD_STAGES, isLeadStage } from "@/lib/platform/leadStage";
 import { orIlikeFilter } from "@/lib/api/searchFilter";
+import { writeAudit } from "@/lib/admin/access/shared";
 
 /**
  * The lead queue.
@@ -81,6 +83,7 @@ export async function GET(req: NextRequest) {
   );
 
   return NextResponse.json({
+    canDelete: session.role === "admin",
     data: rows.map((row) => {
       /* `payload` is `Json`, which is a string or an array just as
                legitimately as it is an object — a lead written by a door we do
@@ -128,4 +131,48 @@ export async function PATCH(req: NextRequest) {
 
   if (error) return serverErrorResponse(error.message);
   return NextResponse.json({ data });
+}
+
+// DELETE /api/admin/leads?id=...
+/* A request is removed for good, and only by an admin: a support operator moves
+   a lead along the stages, never takes it off the list. Test requests (a
+   smoke run, a typo'd number) had no way out before; the row's own facts go to
+   the audit log, so what was removed is still answerable. */
+export async function DELETE(req: NextRequest) {
+  const session = await requireAdminSession(req);
+  if (!session) return unauthorizedResponse();
+  if (session.role !== "admin") return forbiddenResponse();
+
+  const id = new URL(req.url).searchParams.get("id")?.trim() ?? "";
+  if (!id) return badRequestResponse("id_required");
+
+  const db = adminClient();
+  const { data: lead, error: readError } = await db
+    .from("leads")
+    .select("id, order_ref, product_code, name, email, phone, stage, created_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (readError) return serverErrorResponse(readError.message);
+  if (!lead) return NextResponse.json({ error: "not_found" }, { status: 404 });
+
+  const { error } = await db.from("leads").delete().eq("id", id);
+  if (error) return serverErrorResponse(error.message);
+
+  await writeAudit(db, {
+    actorId: session.user.id,
+    action: "lead.delete",
+    entityType: "lead",
+    entityId: id,
+    metadata: {
+      order_ref: lead.order_ref,
+      product_code: lead.product_code,
+      stage: lead.stage,
+      name: lead.name,
+      email: lead.email,
+      phone: lead.phone,
+      created_at: lead.created_at,
+    },
+  });
+
+  return NextResponse.json({ ok: true });
 }

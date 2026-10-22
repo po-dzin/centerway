@@ -359,15 +359,11 @@
     grid-row: 1;
   }
 
-  /* Nothing to resume, so nothing to keep narrow: the state card takes the
-     room the glances would have. */
-  /* Nothing to resume: what stands in the first column is a state — loading,
-     failed, or "no courses yet" — and a state is a sentence, not a card of
-     fixed width. It gets the room the glances would have had; the dosha keeps
-     its own column at the card's width. */
-  .shelfRow[data-shelf="single"] {
-    grid-template-columns: minmax(0, 21rem) minmax(0, 15rem);
-  }
+  /* Nothing to resume: the state card (empty, loading, failed) and the dosha
+     stand as the SAME TWO CARDS as with a course — one track width each. The
+     state card used to take a wider column (21rem) "because a state is a
+     sentence", which made the empty cabinet two cards of two widths; G asked
+     for them equal again (2026-10-16), so the sentence wraps instead. */
 }
 
 @media (prefers-reduced-motion: reduce) {

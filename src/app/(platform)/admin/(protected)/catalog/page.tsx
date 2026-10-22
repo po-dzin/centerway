@@ -110,15 +110,26 @@ function initialsOf(title: string): string {
    in a list of forty is read; a cover is recognised, which is what an operator
    narrowing the list with a search or a filter is doing. */
 function CourseThumb({ row }: { row: CatalogRow }) {
+  const { t } = useI18n();
+  const href = useSurfaceHref();
+  /* The cover is a door too: the same course the row's «Відкрити курс» opens,
+     so the biggest target in the row does what the operator expects of it. */
   return (
-    <span className={lists.itemThumb} aria-hidden="true">
+    <a
+      className={lists.itemThumb}
+      href={href(`/learn/${row.slug}`)}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={`${t("catalog_open_course")}: ${row.title}`}
+      data-cw-ink-control
+    >
       {row.cover ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={row.cover.src} alt="" loading="lazy" decoding="async" style={coverPortraitStyle(row.cover)} />
       ) : (
         initialsOf(row.title)
       )}
-    </span>
+    </a>
   );
 }
 

@@ -29,10 +29,18 @@ Who → program → term → reason, then the link.
   included programs. A **group** takes its start from the stream's date and
   cannot be moved from here; its end follows the group's offer. Included
   programs receive the same source and access window.
-- **Term.** «Як в оффері курсу» sends `termFromOffer: true`, so the selected format's offer
-  fills the term in, counted from the grant date (or cohort start for a group).
-  «Період» sends the start (`cohortStartsOn`) and an end (`expiresAt`), or
-  «без кінця» (`null`, forever).
+- **Term.** A **group** has no choice: its period is day 1 of the stream to day 1
+  plus the group offer's days, shown as read-only «Доступ з / Доступ до». The
+  server keeps it whatever is sent — never for good, never a typed date — and
+  refuses a group whose offer sets no days (`group_term_missing`) before
+  writing anything (2026-10-22). **Solo**: «Як в оффері курсу» sends
+  `termFromOffer: true`, the offer's term counted from the start (or the grant
+  date); «Період» sends the start as `accessStartsAt` — the day the door opens,
+  `lms_enrollments.access_starts_at` — and an end (`expiresAt`), or «без кінця»
+  (`null`, forever). Until 2026-10-22 «З» was written to `cohort_starts_on`,
+  which moves day 1 of the program and never closed the door.
+  The term block is a fieldset that a promo dims rather than replaces, so
+  choosing «Промо» no longer makes the form below jump.
 - **Reason** is what `lms_enrollments.source` records: payment → `manual` (with
   the order), gift → `bonus`, staff → `service` (migration
   `20261017180000_enrollment_source_service.sql`).
@@ -107,15 +115,31 @@ as one mobile row. The header-to-dialog and bottom clearances are each the
 16px DS medium spacing. The dialog body scrolls independently of the people
 list; its title and footer stay visible. ESLint and all four admin guards pass.
 
-## What a format does and does not do
+## What a format does
 
-The format choice carries the stream's date (`cohortStartsOn`) and nothing
-else. A grant opens **the program** (`course:<slug>`) and takes **its** offer's
-term; it does not carry the format offer's identity, so a group's bonus
-programs (`experience_offer_items`) and a format's own duration are not applied,
-and the order of a hand-recorded payment is the program's. Doing that is a
-change to `provisionAccess` and to what a manual sale records, and is left for
-its own decision.
+Since #348 the format is the exact offer: its code is the manual order's
+product code, its term is the seat's, a group brings its cohort date and opens
+every published program in its set (`experience_offer_items`) on the same term
+and source. Formats offered are «Самостійно» and «Група»; individual support is
+a person on top of one of them and is not offered here. Tabs name the kind
+only; a group's dates are the term's.
+
+## Додатково (2026-10-22)
+
+Folded under the DS chevron:
+
+- **Хто привів** searches accounts by email or name (the access list's own
+  lookup). Picking one sends `referrerEmail`; the server writes that person's
+  `platform_users.ref_tag`, giving them one once if they have none (made from
+  the address, unique; `referrers.ts`). A typed tag with no account still goes
+  as `ref`.
+- **Роль**, one person, admin only, `user` by default and named as it is.
+- **Зробити автором програми**, one person, admin only: after the grant, the
+  same authorship write the Builder tab makes (`PATCH /api/admin/access/courses`).
+  The current author, if any, is named as the one being replaced.
+
+Checkboxes are `AdminChoice` (the shelf filter's system checkbox, hybrid); the
+row and referrer remove marks are the admin icon command with the ink ring.
 
 ## Not done
 
@@ -123,7 +147,5 @@ its own decision.
   remain unavailable.
 - A group's Telegram chat is not sent by a manual grant; the bot sends it after
   a payment.
-- The mockup's «автор програми» tick is not built; authorship stays on the
-  Builder tab.
 - «Створити акаунт» stays unticked by default, as before: creating an account
   is an outward act, and the old forms did not default it either.

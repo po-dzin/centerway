@@ -14,9 +14,8 @@ import { getErrorMessage } from "@/lib/errors";
 import { useToast } from "@/components/ToastProvider";
 import controls from "@/components/admin/AdminControls.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
-import { AdminRow } from "@/components/admin/AdminRow";
-import { StateBadge } from "@/components/platform/StateBadge";
-import type { StateTone } from "@/lib/platform/stateTone";
+import { AdminRow, AdminRowIconAction } from "@/components/admin/AdminRow";
+import { AdminModal } from "@/components/admin/AdminModal";
 
 /* The four stages, in the order a lead travels them. Kept as data rather than
    as markup so the tab strip, the row control and the "is this closed" test all
@@ -31,16 +30,6 @@ const STAGE_LABEL_KEY: Record<Stage, string> = {
   in_progress: "leads_stage_in_progress",
   won: "leads_stage_won",
   lost: "leads_stage_lost",
-};
-
-/* Ink, not colour-coding: a won lead reads as settled and a lost one as spent,
-   which the platform says with weight and muting rather than with a green and a
-   red badge. */
-const STAGE_TONE: Record<Stage, StateTone> = {
-  new: "running",
-  in_progress: "running",
-  won: "success",
-  lost: "neutral",
 };
 
 type Lead = {
@@ -75,6 +64,9 @@ export function LeadsPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [canDelete, setCanDelete] = useState(false);
+  const [removing, setRemoving] = useState<Lead | null>(null);
+  const [removeBusy, setRemoveBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -94,6 +86,7 @@ export function LeadsPanel() {
       setRows(payload.data ?? []);
       setCount(payload.count ?? 0);
       setCounts(payload.counts ?? {});
+      setCanDelete(Boolean(payload.canDelete));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -133,6 +126,29 @@ export function LeadsPanel() {
       showToast(getErrorMessage(err), "error");
     } finally {
       setSavingId(null);
+    }
+  };
+
+  const removeLead = async () => {
+    if (!removing) return;
+    setRemoveBusy(true);
+    try {
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession();
+      if (!session?.access_token) throw new Error("no_session");
+      const res = await fetch(`/api/admin/leads?id=${encodeURIComponent(removing.id)}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!res.ok) throw new Error(`request_failed_${res.status}`);
+      setRemoving(null);
+      showToast(t("leads_deleted"), "success");
+      await load();
+    } catch (err) {
+      showToast(getErrorMessage(err), "error");
+    } finally {
+      setRemoveBusy(false);
     }
   };
 
@@ -223,10 +239,12 @@ export function LeadsPanel() {
               }
               controls={
                 <>
-                  <StateBadge tone={STAGE_TONE[lead.stage]}>{t(STAGE_LABEL_KEY[lead.stage] as never)}</StateBadge>
+                  {/* One control says the stage: a badge beside the select that
+                      changes it repeated the same word twice (owner, 2026-10-22),
+                      as the catalogue's visibility once did. */}
                   <select
                     aria-label={t("leads_stage_change")}
-                    className={lists.select}
+                    className={`${controls.select} ${controls.selectNarrow}`}
                     value={lead.stage}
                     disabled={savingId === lead.id}
                     onChange={(event) => void moveStage(lead, event.target.value as Stage)}
@@ -239,11 +257,46 @@ export function LeadsPanel() {
                   </select>
                 </>
               }
+              actions={
+                canDelete ? (
+                  <AdminRowIconAction
+                    icon="trash"
+                    danger
+                    opensDialog
+                    label={t("leads_delete")}
+                    onClick={() => setRemoving(lead)}
+                  />
+                ) : null
+              }
               note={lead.message}
             />
           ))}
         </div>
       )}
+
+      {removing ? (
+        <AdminModal
+          title={t("leads_delete_title")}
+          description={t("leads_delete_note")}
+          size="md"
+          onClose={() => setRemoving(null)}
+          closeLabel={t("common_close")}
+          footer={
+            <button
+              type="button"
+              onClick={() => void removeLead()}
+              disabled={removeBusy}
+              className={`${controls.action} cw-btn-primary`}
+            >
+              {t("leads_delete")}
+            </button>
+          }
+        >
+          <p className={controls.hint}>
+            {[removing.name, removing.phone, removing.email].filter(Boolean).join(" · ") || removing.order_ref}
+          </p>
+        </AdminModal>
+      ) : null}
 
       {!loading && !error && count > 0 && (
         <AdminPagination

@@ -26,6 +26,7 @@ import {
 import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShell";
 import { BuilderVersionHistory } from "./BuilderVersionHistory";
 import { BuilderContents } from "./BuilderContents";
+import { blockerFlags } from "./blockerFlags";
 import type { MenuItem } from "./BuilderMenu";
 import { BuilderInlineEditor, type SlashCommand } from "./BuilderInlineEditor";
 import { BuilderEditableTitle } from "./BuilderEditableTitle";
@@ -545,6 +546,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const selectedBlockIndex = lesson.blocks.findIndex((block) => block.id === selectedBlockId);
   const selectedBlock = selectedBlockIndex >= 0 ? (lesson.blocks[selectedBlockIndex] ?? null) : null;
   const readiness = courseReadiness(course);
+  const flags = blockerFlags(course, readiness.blockers);
   const referenceTargets = buildInternalReferenceTargets(course);
   const referenceOptions = internalReferenceOptions(referenceTargets, lesson.id, holder.id);
 
@@ -845,6 +847,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
               drag={blockDrag}
               fresh={block.id === freshBlockId}
               selected={block.id === selectedBlockId}
+              flagged={flags.blocks.has(block.id)}
               referenceOptions={referenceOptions}
               referenceTargets={referenceTargets}
               courseSlug={course.slug}

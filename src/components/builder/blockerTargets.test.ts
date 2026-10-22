@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Course, ReadinessBlocker } from "@/lms-core";
-import { blockerTarget } from "./blockerTargets";
+import { blockerTarget, blockerTrail, placeholderSnippet } from "./blockerTargets";
 
 /**
  * The resolver between a blocker's address and a place the author can be sent.
@@ -12,12 +12,21 @@ import { blockerTarget } from "./blockerTargets";
  */
 const course = {
   slug: "way21",
+  title: "Шлях",
   modules: [
     {
       slug: "week-1",
+      title: "Тиждень 1",
       lessons: [
-        { slug: "day-1", title: "День 1", blocks: [{ id: "b1" }, { id: "b2" }] },
-        { slug: "day-2", title: "День 2", blocks: [{ id: "b3" }] },
+        {
+          slug: "day-1",
+          title: "День 1",
+          blocks: [
+            { id: "b1", type: "rich_text" },
+            { id: "b2", type: "table" },
+          ],
+        },
+        { slug: "day-2", title: "День 2", blocks: [{ id: "b3", type: "video" }] },
       ],
     },
   ],
@@ -45,5 +54,29 @@ describe("blockerTarget", () => {
 
   it("resolves nothing for a lesson that is no longer in the course", () => {
     expect(blockerTarget(course, blocker("way21.week-1.day-9"))).toBeNull();
+  });
+});
+
+describe("blockerTrail", () => {
+  it("names module, lesson and block by their titles", () => {
+    expect(blockerTrail(course, blocker("way21.week-1.day-1.blocks[1]"))).toEqual([
+      "Модуль «Тиждень 1»",
+      "Урок «День 1»",
+      "Блок 2 · Таблиця",
+    ]);
+  });
+
+  it("falls back to the course for a course-level address", () => {
+    expect(blockerTrail(course, blocker("way21"))).toEqual(["Курс «Шлях»"]);
+  });
+});
+
+describe("placeholderSnippet", () => {
+  it("cuts the marker out of the text it was found in", () => {
+    expect(placeholderSnippet("Схема Категорія [ЗАПОВНИ: доза магнію] Мета")).toBe("[ЗАПОВНИ: доза магнію]");
+  });
+
+  it("returns null when there is no marker", () => {
+    expect(placeholderSnippet("Звичайний текст")).toBeNull();
   });
 });

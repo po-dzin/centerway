@@ -117,6 +117,21 @@ beforeEach(() => {
   attempts.clear();
 });
 
+describe("a phone that cannot be dialled", () => {
+  it("is refused with a reason, and nothing is filed", async () => {
+    const res = await route.POST(post({ name: "GG", phone: "06710123123" }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: "invalid_phone" });
+    expect(leads.length).toBe(0);
+  });
+
+  it("a local number is filed in the international shape", async () => {
+    const res = await route.POST(post({ name: "GG", phone: "067 123 45 67" }));
+    expect(res.status).toBe(200);
+    expect(leads[0]?.phone).toBe("+380671234567");
+  });
+});
+
 describe("a stranger submitting somebody else's address", () => {
   beforeEach(() => {
     customers.set("victim", {
