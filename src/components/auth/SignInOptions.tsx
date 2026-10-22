@@ -37,6 +37,7 @@ import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { SIGNIN_PATH_PREFIX } from "@/lib/surfaces/catalog";
 import { returnQuery, returnTargetFromHere } from "@/lib/auth/signInReturn";
 import { accountAvatarStyle } from "@/lib/auth/accountIdentity";
+import { mediaSources } from "@/lib/lms/media";
 import { forgetLastAccount, readLastAccount, type GoogleSignInIntent } from "@/lib/auth/lastAccount";
 
 const copy = {
@@ -176,7 +177,14 @@ export function SignInOptions({
           <span className={styles.signInFace} aria-hidden="true">
             {last.avatar ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={last.avatar} alt="" referrerPolicy="no-referrer" style={accountAvatarStyle(last.avatarCrop)} />
+              <img
+                src={last.avatar}
+                srcSet={mediaSources(last.avatar).srcSet}
+                sizes="48px"
+                alt=""
+                referrerPolicy="no-referrer"
+                style={accountAvatarStyle(last.avatarCrop)}
+              />
             ) : (
               last.email.charAt(0).toUpperCase()
             )}

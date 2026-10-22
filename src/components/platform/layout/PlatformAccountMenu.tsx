@@ -13,6 +13,7 @@ import {
   accountAvatarStyle,
   accountName as readAccountName,
 } from "@/lib/auth/accountIdentity";
+import { mediaSources } from "@/lib/lms/media";
 import { supabaseClient } from "@/lib/supabaseClient";
 import styles from "@/components/platform/PlatformShellStyles";
 import {
@@ -514,7 +515,14 @@ export function PlatformAccountMenu({
         <span className={styles.profileAvatar} aria-hidden="true">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarUrl} alt="" referrerPolicy="no-referrer" style={avatarStyle} />
+            <img
+              src={avatarUrl}
+              srcSet={mediaSources(avatarUrl).srcSet}
+              sizes="40px"
+              alt=""
+              referrerPolicy="no-referrer"
+              style={avatarStyle}
+            />
           ) : (
             getUserInitial(session)
           )}
