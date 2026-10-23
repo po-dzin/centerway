@@ -92,9 +92,10 @@ const plan = planSweep({
   now: Date.now(),
 });
 
-const seen = plan.referenced.length + plan.young.length + plan.collectable.length;
+const seen = plan.referenced.length + plan.outside.length + plan.young.length + plan.collectable.length;
 console.log(`bucket       ${seen} assets, ${mb(plan.totalBytes)}`);
 console.log(`referenced   ${plan.referenced.length} (live content + version history)`);
+console.log(`outside      ${plan.outside.length} (authors/ and accounts/ — people's own pictures, never swept)`);
 console.log(`unreferenced ${plan.young.length + plan.collectable.length}`);
 console.log(`  · ${plan.young.length} inside the ${GRACE_DAYS}-day grace period, left alone`);
 console.log(`  · ${plan.collectable.length} collectable, ${mb(plan.collectableBytes)}`);

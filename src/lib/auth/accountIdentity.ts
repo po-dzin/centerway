@@ -72,3 +72,14 @@ export function accountMetaFromAuthor(author: Pick<Author, "name" | "photo">): R
     cw_avatar_crop: cleanCrop && Object.keys(cleanCrop).length ? cleanCrop : null,
   };
 }
+
+/**
+ * The metadata a face uploaded from the profile hero puts on an account that
+ * has no author profile (2026-10-23). The crop is cleared: it described the
+ * previous picture, and a fresh one is shown centred until its owner aims it.
+ * An author's upload does not come here — it goes into the profile, and
+ * `accountMetaFromAuthor` writes the account from that.
+ */
+export function accountMetaFromUpload(src: string): Record<string, unknown> {
+  return { cw_avatar: src, cw_avatar_crop: null };
+}
