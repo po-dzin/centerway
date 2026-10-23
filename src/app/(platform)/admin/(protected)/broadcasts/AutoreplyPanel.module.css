@@ -17,9 +17,9 @@
   min-width: 0;
   margin: 0;
   font-family: var(--cw-font-editorial);
-  font-size: 1.5rem;
+  font-size: var(--ds-type-hero-subtitle-size);
   font-weight: 600;
-  line-height: 1.15;
+  line-height: var(--ds-type-hero-subtitle-line-height);
 }
 
 .headActions {
@@ -65,9 +65,9 @@
   composes: cw-text from global;
   margin: 0;
   font-family: var(--cw-font-editorial);
-  font-size: 1.35rem;
+  font-size: var(--ds-type-hero-subtitle-size);
   font-weight: 600;
-  line-height: 1.15;
+  line-height: var(--ds-type-hero-subtitle-line-height);
 }
 
 .label {
@@ -309,10 +309,10 @@
 
 .tileValue {
   composes: cw-text from global;
-  font-size: 1.75rem;
+  font-size: var(--ds-type-display-size);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  line-height: 1.2;
+  line-height: var(--ds-type-display-line-height);
 }
 
 .tileLabel {
@@ -331,8 +331,9 @@
   composes: cw-text from global;
   margin: 0;
   font-family: var(--cw-font-editorial);
-  font-size: 1.5rem;
+  font-size: var(--ds-type-hero-subtitle-size);
   font-weight: 600;
+  line-height: var(--ds-type-hero-subtitle-line-height);
 }
 
 .rules {
