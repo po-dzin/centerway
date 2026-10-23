@@ -40,6 +40,19 @@ export function accountAvatar(meta: Meta): string | null {
   return text(meta, "cw_avatar") ?? text(meta, "avatar_url") ?? text(meta, "picture");
 }
 
+/**
+ * THE PROVIDER'S PHOTO AT A SIZE FIT FOR A SCREEN (G 2026-10-23: «превью
+ * пиксельное»). Google hands out its account photo as `…=s96-c`, a 96px
+ * square, which is right for a 40px circle and a smear in the full-screen
+ * viewer. The size is a suffix Google reads, so the viewer asks for a larger
+ * one; every other address (our own storage, another provider) is returned
+ * untouched.
+ */
+export function accountAvatarLarge(src: string): string {
+  if (!/^https:\/\/[a-z0-9-]+\.googleusercontent\.com\//i.test(src)) return src;
+  return src.replace(/=s\d+(-c)?$/, "=s1024-c");
+}
+
 /** How the chosen photo sits in a circle. A provider's photo is a centred square already. */
 export function accountAvatarCrop(meta: Meta): ImageCrop | undefined {
   if (!text(meta, "cw_avatar")) return undefined;

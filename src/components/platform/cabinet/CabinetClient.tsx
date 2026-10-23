@@ -34,6 +34,7 @@ import { cabinetGate } from "./CabinetGate";
 import { CabinetFold } from "./CabinetFold";
 import { CabinetHero } from "./CabinetHero";
 import { getFaceCopy } from "./faceCopy";
+import { accountAvatarLarge } from "@/lib/auth/accountIdentity";
 import { useAccountFace } from "./useAccountFace";
 import { useToast } from "@/components/ToastProvider";
 import { SphereMapCard } from "./SphereMapCard";
@@ -123,7 +124,7 @@ export function CabinetClient() {
   const { shelf, failed: shelfFailed, reload: reloadShelf } = useLearnerShelf(session);
   const reach = useTelegramReach(session);
   const authorProfile = useAuthorProfile(session);
-  const face = useAccountFace(session, lang);
+  const face = useAccountFace(session, lang, profile?.profile.account.avatarUrl ?? null);
   const toast = useToast();
 
   const purchases = useMemo(() => profile?.profile.purchases ?? [], [profile]);
@@ -209,7 +210,9 @@ export function CabinetClient() {
            account follows it (see the avatar route); the fold's draft takes
            the saved row so a later save cannot put the old portrait back. */
         face={{
-          photo: account.avatarUrl ? { src: account.avatarUrl, alt: account.fullName ?? copy.fallbackName } : null,
+          photo: account.avatarUrl
+            ? { src: accountAvatarLarge(account.avatarUrl), alt: account.fullName ?? copy.fallbackName }
+            : null,
           settingsHref: authorProfile.eligible ? "#author" : null,
           uploading: face.uploading,
           copy: faceCopy,

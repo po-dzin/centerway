@@ -9,9 +9,10 @@
  * author, the account otherwise); this hook only reports what came back.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 
+import { accountAvatar } from "@/lib/auth/accountIdentity";
 import { shrinkForUpload } from "@/lib/media/shrinkForUpload";
 import { supabaseClient } from "@/lib/supabaseClient";
 import type { Author } from "@/lms-core";
@@ -20,8 +21,25 @@ import { ACCOUNT_AVATAR_ROUTE, faceUploadError } from "./faceUpload";
 
 export type FaceUploadResult = { ok: true; src: string; author: Author | null } | { ok: false; error: string };
 
-export function useAccountFace(session: Session | null, lang: ProfileLang) {
+export function useAccountFace(session: Session | null, lang: ProfileLang, serverAvatar: string | null) {
   const [uploading, setUploading] = useState(false);
+
+  /* ONE FACE IN THE HERO AND IN THE TOPBAR (G 2026-10-23: «в топбаре одно фото,
+     а в профиле другое»). The hero shows what the server says the account's
+     photo is; the topbar reads the signed-in token, which carries the photo
+     it was minted with until it is refreshed. When the two disagree the token
+     is the stale one — the photo changed on another tab, in the author fold,
+     or in a refresh that failed — so the session is refreshed, once for each
+     photo the server names, which cannot loop when the two keep disagreeing
+     for another reason. */
+  const healed = useRef<string | null>(null);
+  const tokenAvatar = accountAvatar(session?.user?.user_metadata);
+  const signedIn = Boolean(session?.access_token);
+  useEffect(() => {
+    if (!signedIn || !serverAvatar || tokenAvatar === serverAvatar || healed.current === serverAvatar) return;
+    healed.current = serverAvatar;
+    void supabaseClient.auth.refreshSession().catch(() => undefined);
+  }, [signedIn, serverAvatar, tokenAvatar]);
 
   const upload = useCallback(
     async (file: File): Promise<FaceUploadResult> => {

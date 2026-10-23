@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   accountAvatar,
+  accountAvatarLarge,
   accountAvatarCrop,
   accountMetaFromAuthor,
   accountMetaFromUpload,
@@ -40,5 +41,17 @@ describe("account identity", () => {
     const merged = Object.fromEntries(Object.entries({ ...meta, ...patch }).filter(([, value]) => value !== null));
     expect(accountAvatar(merged)).toBe("https://cw/new.webp");
     expect(accountAvatarCrop(merged)).toBeUndefined();
+  });
+
+  it("asks Google for a screen-sized photo and leaves every other address alone", () => {
+    expect(accountAvatarLarge("https://lh3.googleusercontent.com/a/ACg8abc=s96-c")).toBe(
+      "https://lh3.googleusercontent.com/a/ACg8abc=s1024-c",
+    );
+    expect(accountAvatarLarge("https://lh3.googleusercontent.com/a/ACg8abc")).toBe(
+      "https://lh3.googleusercontent.com/a/ACg8abc",
+    );
+    expect(accountAvatarLarge("https://x.supabase.co/storage/v1/object/public/course-media/a/1600.webp=s96-c")).toBe(
+      "https://x.supabase.co/storage/v1/object/public/course-media/a/1600.webp=s96-c",
+    );
   });
 });
