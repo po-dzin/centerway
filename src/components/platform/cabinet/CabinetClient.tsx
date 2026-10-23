@@ -47,6 +47,7 @@ import { useAccountFace } from "./useAccountFace";
 import { useToast } from "@/components/ToastProvider";
 import { SphereMapCard } from "./SphereMapCard";
 import { publishOwnFace } from "@/components/platform/ownFace";
+import { authorAvatarCropStyle } from "@/lib/lms/authorPhoto";
 import { accountAvatar, accountAvatarCrop, accountAvatarStyle, providerAvatarAtSize } from "@/lib/auth/accountIdentity";
 import { ProfileTabs, useProfileTab, type ProfileTab } from "./ProfileTabs";
 import { ProfileMapTab } from "./ProfileMapTab";
@@ -285,13 +286,16 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
               /* THE SAME AIM AS THE BAR (G 23.10: «почему ава съехала»). The
                  account menu has always placed the chosen photo by its saved
                  crop; the hero drew it centred, so a portrait came out as
-                 trees with a face in the corner. The crop belongs to the
-                 session's photo — a fresher face shows centred until the
-                 token catches up, exactly as in the bar. */
+                 trees with a face in the corner. The author's own «Аватарка»
+                 crop wins when the face is that photo; otherwise the
+                 session's, and a fresher face shows centred until the token
+                 catches up, exactly as in the bar. */
               style={
-                account.avatarUrl === accountAvatar(session?.user?.user_metadata)
-                  ? accountAvatarStyle(accountAvatarCrop(session?.user?.user_metadata))
-                  : undefined
+                authorProfile.author?.photo?.src === account.avatarUrl
+                  ? authorAvatarCropStyle(authorProfile.author.photo)
+                  : account.avatarUrl === accountAvatar(session?.user?.user_metadata)
+                    ? accountAvatarStyle(accountAvatarCrop(session?.user?.user_metadata))
+                    : undefined
               }
             />
           ) : (

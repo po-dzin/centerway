@@ -1,79 +1,125 @@
 /* The platform's full-screen photo viewer (PhotoViewer.tsx). Moved from the
-   feed's module on 2026-10-21 when the viewer became shared. */
+   feed's module on 2026-10-21 when the viewer became shared.
 
-/* Photo canvas has no boundary; floating commands use the shared night glass. */
+   ONE FRAME (G 2026-10-23). The page stays behind, veiled and blurred; the
+   picture stands in a night-glass frame — the material of the sheets and
+   menus over photographs (ProfileFace's sheet, the bar's islands) — with its
+   name and the close on the head and its controls on the foot. The picture
+   keeps its own proportions and takes the system's corner. */
+
 .viewer {
+  --viewer-gutter: max(var(--cw-space-md), env(safe-area-inset-top, 0px));
+
   position: fixed;
   inset: 0;
   display: grid;
   place-items: center;
+  box-sizing: border-box;
   inline-size: 100%;
   max-inline-size: none;
   block-size: 100%;
   block-size: 100dvh;
   max-block-size: none;
   margin: 0;
-  padding: 0;
+  padding: var(--viewer-gutter);
   border: 0;
   outline: none;
   overflow: hidden;
-  background: var(--cw-mat-scrim-ink);
+  background: color-mix(in srgb, var(--cw-mat-scrim-ink) 72%, transparent);
+  backdrop-filter: var(--cw-mat-filter);
   color: var(--cw-platform-accent-contrast);
 }
+
 .viewer::backdrop {
   background: transparent;
 }
+
+@media (prefers-reduced-transparency: reduce) {
+  .viewer {
+    backdrop-filter: none;
+    background: var(--cw-mat-scrim-ink);
+  }
+}
+
+.frame {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--cw-space-sm);
+  box-sizing: border-box;
+  max-inline-size: min(100%, 72rem);
+  max-block-size: 100%;
+  padding: var(--cw-space-sm);
+  border-radius: var(--cw-radius-xl);
+  background-color: color-mix(in srgb, var(--cw-mat-surface-night) var(--cw-mat-tint-chrome-floor), transparent);
+  background-image: var(--cw-mat-grain-image);
+  box-shadow: var(--cw-mat-shadow-deep);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  padding-inline-start: var(--cw-space-xs);
+}
+
+.title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--cw-mat-inverse-text-muted);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.stage {
+  display: grid;
+  place-items: center;
+  min-block-size: 0;
+}
+
+/* The frame's chrome (head, foot, padding, gaps) is taken off the screen's
+   height, so a tall portrait is never cut and never scrolls. */
 .img {
   display: block;
-  inline-size: 100%;
-  block-size: 100%;
-  min-block-size: 0;
+  max-inline-size: 100%;
+  max-block-size: calc(100dvh - 2 * var(--viewer-gutter) - 8rem);
+  inline-size: auto;
+  block-size: auto;
+  border-radius: var(--cw-radius-lg);
   object-fit: contain;
 }
+
 .close,
 .step {
   composes: base onMedia square from "./PlatformButtons.module.css";
-  border: 0;
-  border-radius: var(--cw-radius-pill);
 }
-.close {
-  position: absolute;
-  inset-block-start: max(var(--cw-space-md), env(safe-area-inset-top, 0px));
-  inset-inline-end: max(var(--cw-space-md), env(safe-area-inset-right, 0px));
-}
+
 .tools {
-  position: absolute;
-  inset-block-end: max(var(--cw-space-md), env(safe-area-inset-bottom, 0px));
-  inset-inline-start: 50%;
-  translate: -50% 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: var(--cw-space-sm);
 }
+
 .step:disabled {
   opacity: 0.35;
 }
-.prev {
-  order: 0;
-}
-.next {
-  order: 2;
-}
+
 .count {
-  composes: onMedia from "./PlatformButtons.module.css";
-  order: 1;
   margin: 0;
-  padding-inline: var(--cw-space-md);
-  border: 0;
-  border-radius: var(--cw-radius-pill);
+  padding-inline: var(--cw-space-sm);
   font-size: var(--ds-type-body-sm-size);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
-/* A caller's own controls (`actions`), after the counter on the same row. */
+/* A caller's own controls (`actions`), after the arrows on the same foot. */
 .actions {
-  order: 3;
   display: flex;
   gap: var(--cw-space-sm);
 }
