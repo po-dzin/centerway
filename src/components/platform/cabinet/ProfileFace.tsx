@@ -14,16 +14,14 @@
  *   · «Кадрувати, ім'я, обкладинка» is the way to the fuller editor, offered
  *     only where one exists (the author fold, for now).
  *
- * selection_family: contour for the face button and the sheet's buttons (the
- * focus ring and the role's own surface), ink for the settings link
- * (`InteractionInkLabel variant="link"`). Boundary: the sheet is a quiet
+ * selection_family: contour for the face button and the sheet's three rows
+ * (the focus ring and the role's own surface). Boundary: the sheet is a quiet
  * overlay — the raised material shadow, no outline.
  */
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
-import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { PhotoViewer } from "@/components/platform/PhotoViewer";
 import type { FaceCopy } from "./faceCopy";
 import styles from "./ProfileFace.module.css";
@@ -159,8 +157,11 @@ export function ProfileFace({
             {uploading ? copy.uploading : copy.upload}
           </button>
           {settingsHref ? (
-            <a className={styles.sheetLink} href={settingsHref} data-cw-ink-control="" onClick={() => setOpen(false)}>
-              <InteractionInkLabel variant="link">{copy.settings}</InteractionInkLabel>
+            /* A third row of the same sheet, not a gold link under two
+               buttons (G 23.10): three ways to act on one face are one list. */
+            <a className={styles.sheetAction} href={settingsHref} onClick={() => setOpen(false)}>
+              <Icon name="settings" size={18} />
+              {copy.settings}
             </a>
           ) : null}
         </div>

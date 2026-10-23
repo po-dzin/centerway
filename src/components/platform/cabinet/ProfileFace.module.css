@@ -123,13 +123,6 @@
   justify-content: flex-start;
 }
 
-.sheetLink {
-  align-self: flex-start;
-  padding-block: var(--cw-space-2xs);
-  color: var(--cw-platform-accent-contrast);
-  text-decoration: none;
-}
-
 .viewerUpload {
   composes: base onMedia from "../PlatformButtons.module.css";
 }
