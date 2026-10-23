@@ -4,7 +4,8 @@ import { serviceClient } from "@/lib/db/server";
 
 import { addCustomerTags } from "@/lib/platform/customerTags";
 
-import { campaignOf, type AutoreplyRule, type AutoreplyStore, type EventStatus } from "./engine";
+import { type AutoreplyRule, type AutoreplyStore, type EventStatus } from "./engine";
+import { campaignSlug } from "./link";
 import type { CommentEvent } from "./instagram";
 
 type Db = ReturnType<typeof serviceClient>;
@@ -159,7 +160,12 @@ async function cardByInstagram(db: Db, rule: AutoreplyRule, event: CommentEvent)
     .insert({
       ig_user_id: igUserId,
       ig_username: event.fromUsername,
-      first_touch: { channel: "instagram", medium: "autodm", campaign: campaignOf(rule), at: new Date().toISOString() },
+      first_touch: {
+        channel: "instagram",
+        medium: "autodm",
+        campaign: campaignSlug(rule.utmCampaign || rule.name),
+        at: new Date().toISOString(),
+      },
     })
     .select("id")
     .single();
