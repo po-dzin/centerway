@@ -23,7 +23,7 @@
  * reads them.
  */
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import { HandGraphic } from "@/components/Icon";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
@@ -71,6 +71,47 @@ import cabinetStyles from "./Cabinet.module.css";
  */
 const ROOM_PLATE = "/cw/platform/cabinet/room-v3.webp";
 const ROOM_PLATE_PORTRAIT = "/cw/platform/cabinet/room-portrait-v3.webp";
+
+/**
+ * THE ROOM IS ENTERED SLOWLY (G 23.10, the canvas's «parallax» hero). As the
+ * page scrolls the photograph drifts at a third of the scroll and settles from
+ * a slight zoom, so the wall falls behind the paper rather than sliding off
+ * with it. Written straight to the image's transform in one animation frame
+ * per scroll — no state, no re-render — and nothing at all under reduced
+ * motion. No `will-change`: on this page it would make the plate a containing
+ * block and break the glass above it (see the topbar's own trap).
+ */
+const DRIFT = 0.32;
+const ZOOM_FROM = 1.1;
+const ZOOM_TO = 1.02;
+const SETTLE_PX = 900;
+
+function useRoomDrift(enabled: boolean) {
+  const ref = useRef<HTMLImageElement>(null);
+  useEffect(() => {
+    const img = ref.current;
+    if (!enabled || !img) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let frame = 0;
+    const draw = () => {
+      frame = 0;
+      const y = Math.min(Math.max(window.scrollY, 0), SETTLE_PX);
+      const zoom = ZOOM_FROM - (y / SETTLE_PX) * (ZOOM_FROM - ZOOM_TO);
+      img.style.transform = `translate3d(0, ${(y * DRIFT).toFixed(1)}px, 0) scale(${zoom.toFixed(4)})`;
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(draw);
+    };
+    draw();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+      img.style.transform = "";
+    };
+  }, [enabled]);
+  return ref;
+}
 
 export type CabinetHeroStat = {
   /** The field name: "Доша", "Бібліотека", "Продукти". */
@@ -128,6 +169,7 @@ export function CabinetHero({
   children?: ReactNode;
 }) {
   const identityLayout = Boolean(chips);
+  const plateRef = useRoomDrift(identityLayout);
   return (
     <header className={styles.hero} data-cw-material="matte" data-layout={identityLayout ? "identity" : undefined}>
       {/* THE WHOLE BLOCK IS ONE SCREEN. The shelf used to start below the
@@ -146,10 +188,15 @@ export function CabinetHero({
       <div className={styles.plateWrap} data-cw-topbar-tone="dark">
         {/* Decorative in the strict sense: it is the ground of the screen, and
             everything it means is written in the text standing on it. */}
-        <picture>
-          <source media="(orientation: portrait) and (max-width: 900px)" srcSet={ROOM_PLATE_PORTRAIT} />
-          <img className={styles.plate} src={ROOM_PLATE} alt="" decoding="async" />
-        </picture>
+        {/* The clip is the picture's own, not the plate's: the plate lets the
+            photo sheet under the face out downward, the drifting picture must
+            not follow it. */}
+        <div className={styles.plateClip}>
+          <picture>
+            <source media="(orientation: portrait) and (max-width: 900px)" srcSet={ROOM_PLATE_PORTRAIT} />
+            <img ref={plateRef} className={styles.plate} src={ROOM_PLATE} alt="" decoding="async" />
+          </picture>
+        </div>
         <div className={styles.wash} aria-hidden="true" />
         {/* The one drawn mark, on the line where the photograph becomes paper.
           The library's own vocabulary (see the depth prototype): brass line,

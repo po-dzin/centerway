@@ -147,6 +147,14 @@
    This is not the "white veil" the bake replaced. A veil is a colour drawn ON
    TOP of the picture — visible as its own layer, following the layout. A mask
    removes the picture instead, so there is nothing over it to see. */
+.plateClip {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 .plate {
   position: absolute;
   inset: 0;
@@ -157,6 +165,8 @@
   /* Held on the BOTTOM edge, always: the frame is composed from the floor up,
      and a crop that trims it would put the shelf on a slice of wall. */
   object-position: center bottom;
+  /* The drift's zoom (CabinetHero → useRoomDrift) grows from the floor too. */
+  transform-origin: center bottom;
   /* Six stops, the same easing curve the bake used: the endpoints do the work
      and the middle of the band does very little, so the eye finds a gradient
      rather than a lit line travelling across the picture. */
