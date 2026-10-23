@@ -76,6 +76,10 @@ export type AudioItem = {
   file?: File;
   path?: string;
   mime?: string;
+  /** The recording's loudness, measured before upload; the player's waveform. */
+  peaks?: number[];
+  /** The waveform is still being measured; publishing waits for it. */
+  measuring?: boolean;
   error?: string;
 };
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { accountAvatar, accountName } from "@/lib/auth/accountIdentity";
 import { adminClient } from "@/lib/auth/adminClient";
 import { emailIlike, sameEmail } from "@/lib/strings";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
@@ -162,17 +163,8 @@ export async function GET(req: NextRequest) {
     profile: {
       account: {
         email: user.email ?? platformUser?.email ?? customer?.email ?? null,
-        fullName:
-          (typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null) ??
-          (typeof user.user_metadata?.name === "string" ? user.user_metadata.name : null) ??
-          platformUser?.full_name ??
-          customer?.display_name ??
-          null,
-        avatarUrl:
-          (typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null) ??
-          (typeof user.user_metadata?.picture === "string" ? user.user_metadata.picture : null) ??
-          platformUser?.avatar_url ??
-          null,
+        fullName: accountName(user.user_metadata) ?? platformUser?.full_name ?? customer?.display_name ?? null,
+        avatarUrl: accountAvatar(user.user_metadata) ?? platformUser?.avatar_url ?? null,
       },
       contacts: customer
         ? {

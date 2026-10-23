@@ -70,6 +70,7 @@ import {
   type PhotoItem,
   type VideoItem,
 } from "./FeedComposerMedia";
+import { audioPeaks } from "./audioPeaks";
 import { ComposerPopover, TagRow, TopicMenu, initialOf } from "./FeedComposerMenus";
 import styles from "./FeedComposer.module.css";
 
@@ -124,6 +125,7 @@ function audioOf(media: FeedMedia | undefined): AudioItem | null {
     durationSec: audio.durationSec,
     path: audio.path,
     mime: audio.mime,
+    peaks: audio.peaks,
   };
 }
 
@@ -258,7 +260,8 @@ export function FeedComposer({
   const uploading =
     photos.some((photo) => photo.status === "uploading") ||
     clip?.status === "uploading" ||
-    audio?.status === "uploading";
+    audio?.status === "uploading" ||
+    Boolean(audio?.measuring);
   /* WHAT COUNTS AS A CHANGE. A new post is changed once anything is in it. An
      opened post is changed only when it differs from how it was opened: closing
      it untouched asks nothing. */
@@ -547,8 +550,18 @@ export function FeedComposer({
   function addAudio(ready: { file: File; preview: string; durationSec: number }) {
     revoke(audio?.preview);
     setPanel("none");
-    setAudio({ status: "uploading", progress: 0, ...ready });
+    setAudio({ status: "uploading", progress: 0, measuring: true, ...ready });
     void sendAudio(ready.file);
+    /* A post published before the measure lands would keep a flat line for
+       good, so publishing waits for it; a recording that cannot be decoded
+       simply goes without a waveform. */
+    void audioPeaks(ready.file).then((peaks) => {
+      setAudio((current) =>
+        current && current.file === ready.file
+          ? { ...current, measuring: false, ...(peaks ? { peaks } : {}) }
+          : current,
+      );
+    });
   }
 
   /* ── publish ── */
@@ -569,7 +582,12 @@ export function FeedComposer({
       media.clip = { path: clip.path, durationSec: clip.durationSec, w: clip.w, h: clip.h, mime: clip.mime };
     }
     if (audio?.status === "done" && audio.path && audio.mime) {
-      media.audio = { path: audio.path, durationSec: audio.durationSec, mime: audio.mime };
+      media.audio = {
+        path: audio.path,
+        durationSec: audio.durationSec,
+        mime: audio.mime,
+        ...(audio.peaks ? { peaks: audio.peaks } : {}),
+      };
     }
     const next: NewPost = { body, topics, media, taggedAuthorIds: tagged };
     /* An admin always says whose name it carries; only then does the server

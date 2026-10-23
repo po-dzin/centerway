@@ -22,7 +22,7 @@ import { feedPostPath, type ReactionCount } from "@/lib/feed/model";
 import { feedCopy } from "./copy";
 import { recordShare, savePost, unsavePost, type ShareChannel } from "./feedApi";
 import { FeedReactions } from "./FeedReactions";
-import { storyCard } from "./storyCard";
+import { storyCard, type StoryInput } from "./storyCard";
 import { useFloating } from "./useFloating";
 import styles from "./Feed.module.css";
 
@@ -37,6 +37,7 @@ function ShareMenu({
   postId,
   text,
   author,
+  when,
   image,
   count: initialCount,
   shared: initiallyShared,
@@ -44,7 +45,8 @@ function ShareMenu({
 }: {
   postId: string;
   text: string;
-  author: string;
+  author: StoryInput["author"];
+  when: string;
   image: string | null;
   count: number;
   shared: boolean;
@@ -66,12 +68,13 @@ function ShareMenu({
   useFloating(open, button, panel, close, "end");
 
   const url = () => new URL(feedPostPath(postId), window.location.origin).toString();
+  const { name, photo, platform } = author;
   const [story, setStory] = useState<File | null>(null);
   const [storyError, setStoryError] = useState(false);
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    void storyCard({ author, text, image, url: new URL(feedPostPath(postId), window.location.origin).toString() })
+    void storyCard({ author: { name, photo, platform }, when, text, image })
       .then((file) => {
         if (!cancelled) {
           setStory(file);
@@ -84,11 +87,19 @@ function ShareMenu({
     return () => {
       cancelled = true;
     };
-  }, [open, author, text, image, postId]);
+  }, [open, name, photo, platform, when, text, image]);
 
   async function shareStory() {
     if (!story) return;
     close();
+    /* The picture cannot carry a tappable link; Instagram's link sticker can.
+       The address goes to the clipboard first, ready for that sticker. */
+    try {
+      await navigator.clipboard.writeText(url());
+      toast.success(feedCopy.storyLinkCopied);
+    } catch {
+      /* The card still goes out; the person can copy the link from the menu. */
+    }
     try {
       if (navigator.canShare?.({ files: [story] })) {
         await navigator.share({ files: [story] });
@@ -206,6 +217,7 @@ export function FeedActions({
   postId,
   shareText,
   shareAuthor,
+  shareWhen,
   shareImage,
   reactions,
   busy,
@@ -222,7 +234,8 @@ export function FeedActions({
 }: {
   postId: string;
   shareText: string;
-  shareAuthor: string;
+  shareAuthor: StoryInput["author"];
+  shareWhen: string;
   shareImage: string | null;
   reactions: ReactionCount[];
   busy: boolean;
@@ -313,6 +326,7 @@ export function FeedActions({
         postId={postId}
         text={shareText}
         author={shareAuthor}
+        when={shareWhen}
         image={shareImage}
         count={shareCount}
         shared={initiallyShared}

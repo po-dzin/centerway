@@ -342,8 +342,9 @@ export function useAuthorProfile(session: Session | null) {
     void (async () => {
       const res = await readWithToken("/api/platform/users/me/author", current);
       if (cancelled || !res?.ok) return;
-      const body = (await res.json()) as { eligible: boolean; author: Author | null };
+      const body = (await res.json()) as { eligible: boolean; author: Author | null; accountChanged?: boolean };
       setState({ userId: current.user?.id ?? null, eligible: body.eligible, author: body.author });
+      if (body.accountChanged) void supabaseClient.auth.refreshSession().catch(() => undefined);
     })();
 
     return () => {
@@ -367,6 +368,10 @@ export function useAuthorProfile(session: Session | null) {
         }
         const body = (await res.json()) as { author: Author };
         setState((prev) => ({ ...prev, userId: current.user?.id ?? null, eligible: true, author: body.author }));
+        /* The save also put the profile's name and photo on the account
+           (accountIdentity.ts); a fresh token carries them, so the account
+           menu changes now rather than at the next sign-in. */
+        void supabaseClient.auth.refreshSession().catch(() => undefined);
         return true;
       } catch {
         setSaveError("save_failed");

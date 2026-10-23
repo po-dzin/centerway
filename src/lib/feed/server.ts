@@ -322,7 +322,7 @@ async function reactorNames(
 ): Promise<Map<string, string>> {
   const ids = [...new Set(perPost.flatMap((rows) => reactionNameIds(rows, me)))];
   const people = await commenters(db, ids);
-  return new Map([...people].map(([id, person]) => [id, publicName(person.name)]));
+  return new Map([...people].map(([id, person]) => [id, personName(person)]));
 }
 
 async function decorate(db: Db, rows: PostRow[], me: string | null): Promise<FeedPost[]> {
@@ -562,7 +562,7 @@ async function latestComments(
   const people = await commenters(db, [...new Set([...firsts.values()].map((row) => row.auth_user_id))]);
   for (const row of firsts.values()) {
     out.set(row.post_id, {
-      name: publicName(people.get(row.auth_user_id)?.name),
+      name: personName(people.get(row.auth_user_id)),
       body: row.body,
       createdAt: row.created_at,
     });
@@ -1161,20 +1161,54 @@ type CommentRow = {
   status: string;
 };
 
-type Commenter = { name: string; avatar: string | null };
+/**
+ * A person in a thread. ONE NAME, ONE FACE (G 2026-10-22): an account that is
+ * also an author is shown as the author profile — the name and photo the
+ * author edits in the cabinet, linked to their page — wherever they write,
+ * not only under their own post. The account's own name and photo (sign-in
+ * data) are for everyone else. The platform's row is not a person's
+ * profile, so an admin's own words stay theirs; an unlisted author has no
+ * public page, so they are shown by their account, never linked.
+ */
+type Commenter = { name: string; avatar: string | null; author: FeedAuthor | null };
 
 async function commenters(db: Db, userIds: string[]): Promise<Map<string, Commenter>> {
   if (userIds.length === 0) return new Map();
-  const { data } = await db
-    .from("platform_users")
-    .select("auth_user_id, full_name, avatar_url")
-    .in("auth_user_id", userIds);
-  return new Map(
-    ((data ?? []) as { auth_user_id: string; full_name: string | null; avatar_url: string | null }[]).map((row) => [
-      row.auth_user_id,
-      { name: (row.full_name ?? "").trim(), avatar: row.avatar_url?.trim() || null },
-    ]),
+  const [{ data: accounts }, { data: authors }] = await Promise.all([
+    db.from("platform_users").select("auth_user_id, full_name, avatar_url").in("auth_user_id", userIds),
+    db
+      .from("lms_authors")
+      .select("id, slug, name, photo, listed, auth_user_id")
+      .in("auth_user_id", userIds)
+      .eq("listed", true)
+      .neq("slug", FEED_PLATFORM_SLUG),
+  ]);
+  const profiles = new Map(
+    ((authors ?? []) as AuthorRow[]).flatMap((row) =>
+      row.auth_user_id ? [[row.auth_user_id, authorOf(row)] as const] : [],
+    ),
   );
+  const people = new Map<string, Commenter>();
+  for (const row of (accounts ?? []) as {
+    auth_user_id: string;
+    full_name: string | null;
+    avatar_url: string | null;
+  }[]) {
+    people.set(row.auth_user_id, {
+      name: (row.full_name ?? "").trim(),
+      avatar: row.avatar_url?.trim() || null,
+      author: profiles.get(row.auth_user_id) ?? null,
+    });
+  }
+  for (const [userId, author] of profiles) {
+    if (!people.has(userId)) people.set(userId, { name: author.name, avatar: null, author });
+  }
+  return people;
+}
+
+/** How a person is named in public: an author by their profile, anyone else by first name and initial. */
+function personName(person: Commenter | undefined): string {
+  return person?.author?.name ?? publicName(person?.name);
 }
 
 /** The post's author as a commenter sees them: name, face, profile. */
@@ -1188,6 +1222,15 @@ async function postAuthorOf(db: Db, authorId: string): Promise<FeedAuthor | null
 }
 
 function commentWho(byAuthor: boolean, author: FeedAuthor | null, person: Commenter | undefined): FeedComment["who"] {
+  const profile = byAuthor && author ? author : (person?.author ?? null);
+  if (profile) {
+    return {
+      name: profile.name,
+      initial: profile.name.trim().charAt(0).toUpperCase(),
+      photo: profile.photo,
+      href: feedAuthorPath(profile.slug),
+    };
+  }
   if (byAuthor && author) {
     return {
       name: author.name,
@@ -1218,29 +1261,35 @@ export function publicName(full: string | null | undefined): string {
  * held comment is shown to them (marked by the client); nobody else sees it.
  */
 export async function listComments(db: Db, postId: string, me: string | null): Promise<FeedComment[]> {
-  const post = await publishedPostExists(db, postId);
+  /* TWO ROUND TRIPS, NOT FIVE (G 2026-10-22: two comments took ~2 s). The
+     post, its comments and the reader's role are read together; then the
+     people, the post's author and the reactions, together. Each step used
+     to wait for the one before it. */
+  const [post, { data, error }, viewerAdmin] = await Promise.all([
+    publishedPostExists(db, postId),
+    db
+      .from("feed_comments")
+      .select("id, post_id, parent_id, auth_user_id, body, created_at, status")
+      .eq("post_id", postId)
+      .is("hidden_at", null)
+      .order("created_at", { ascending: true })
+      .limit(500),
+    isFeedAdmin(db, me),
+  ]);
   if (!post) throw new FeedError("not_found", 404);
-  const { data, error } = await db
-    .from("feed_comments")
-    .select("id, post_id, parent_id, auth_user_id, body, created_at, status")
-    .eq("post_id", postId)
-    .is("hidden_at", null)
-    .order("created_at", { ascending: true })
-    .limit(500);
   if (error) throw new Error(`feed_comments_read_failed:${error.message}`);
   const rows = ((data ?? []) as CommentRow[]).filter((row) => row.status === "published" || row.auth_user_id === me);
-  const [people, author] = await Promise.all([
+  const visibleIds = new Set(rows.filter((row) => row.status === "published").map((row) => row.id));
+  const [people, author, { data: reactions, error: reactionError }] = await Promise.all([
     commenters(db, [...new Set(rows.map((row) => row.auth_user_id))]),
     postAuthorOf(db, post.author_id),
+    visibleIds.size
+      ? db
+          .from("feed_comment_reactions")
+          .select("comment_id, emoji, auth_user_id")
+          .in("comment_id", [...visibleIds])
+      : Promise.resolve({ data: [], error: null }),
   ]);
-  const viewerAdmin = await isFeedAdmin(db, me);
-  const visibleIds = new Set(rows.filter((row) => row.status === "published").map((row) => row.id));
-  const { data: reactions, error: reactionError } = visibleIds.size
-    ? await db
-        .from("feed_comment_reactions")
-        .select("comment_id, emoji, auth_user_id")
-        .in("comment_id", [...visibleIds])
-    : { data: [], error: null };
   /* THE THREAD OUTLIVES ITS REACTIONS (2026-10-21). A failed reactions read
      used to throw the whole thread away, and the card then drew «0» under a
      post that had comments. The words are what the reader came for; the

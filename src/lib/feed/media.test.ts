@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { checkFeedMedia, feedMediaUrl, looksLikeAudio, readFeedMedia } from "./media";
+import {
+  FEED_AUDIO_PEAKS,
+  checkFeedMedia,
+  feedMediaUrl,
+  looksLikeAudio,
+  normalizeFeedPeaks,
+  readFeedMedia,
+} from "./media";
 
 const AUTHOR = "00000000-0000-4000-8000-0000000000a1";
 const ASSET = "00000000-0000-4000-8000-0000000000f1";
@@ -129,5 +136,31 @@ describe("a clip of the author's own", () => {
     const media = readFeedMedia({ clip: clip() }, "https://x.test");
     expect(media.clip).toMatchObject({ w: 1920, mime: "video/mp4" });
     expect(media.clip?.src).toContain("/clip.mp4");
+  });
+});
+
+describe("audio peaks", () => {
+  const path = `${AUTHOR}/${ASSET}/audio.m4a`;
+  const peaks = Array.from({ length: FEED_AUDIO_PEAKS }, (_, index) => index * 2);
+
+  it("keeps a whole set of whole numbers 0–100 and nothing else", () => {
+    expect(normalizeFeedPeaks(peaks)).toEqual(peaks);
+    expect(normalizeFeedPeaks(peaks.map((peak) => peak + 0.4))).toEqual(peaks);
+    expect(normalizeFeedPeaks([...peaks.slice(1), 400])?.at(-1)).toBe(100);
+    expect(normalizeFeedPeaks(peaks.slice(1))).toBeUndefined();
+    expect(normalizeFeedPeaks([...peaks.slice(1), "x"])).toBeUndefined();
+    expect(normalizeFeedPeaks(null)).toBeUndefined();
+  });
+
+  it("stores and reads them with the audio; a bad set is dropped, the audio kept", () => {
+    expect(checkFeedMedia({ audio: { path, mime: "audio/mp4", durationSec: 60, peaks } }, AUTHOR)).toEqual({
+      media: { audio: { path, mime: "audio/mp4", durationSec: 60, peaks } },
+    });
+    expect(checkFeedMedia({ audio: { path, mime: "audio/mp4", durationSec: 60, peaks: [1, 2] } }, AUTHOR)).toEqual({
+      media: { audio: { path, mime: "audio/mp4", durationSec: 60 } },
+    });
+    expect(
+      readFeedMedia({ audio: { path, mime: "audio/mp4", durationSec: 60, peaks } }, "https://x.test")?.audio?.peaks,
+    ).toEqual(peaks);
   });
 });

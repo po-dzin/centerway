@@ -2,7 +2,7 @@
 // Geometry source: scripts/lib/icon-glyphs.mjs
 
 // Cache key for the sprite URL — see spriteVersion() in scripts/icons-bake.mjs.
-export const CW_SPRITE_VERSION = "b43d0d3a";
+export const CW_SPRITE_VERSION = "8c56a62f";
 
 export const CW_ICON_NAMES = [
   "arrow-right",
@@ -15,6 +15,14 @@ export const CW_ICON_NAMES = [
   "chevron-down",
   "body",
   "walker",
+  "pose-pranam",
+  "pose-hasta",
+  "pose-fold",
+  "pose-lunge",
+  "pose-dog",
+  "pose-ashtanga",
+  "pose-cobra",
+  "pose-lotus",
   "rhythm",
   "support",
   "day",
@@ -42,6 +50,7 @@ export const CW_ICON_NAMES = [
   "incense",
   "crosshair",
   "play",
+  "pause",
   "photo",
   "video",
   "mic",

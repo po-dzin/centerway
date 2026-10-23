@@ -1,4 +1,5 @@
 import { Icon } from "@/components/Icon";
+import type { CwIconName } from "@/components/iconNames";
 import { jitter } from "./handArc";
 import styles from "./ProgressRail.module.css";
 
@@ -20,15 +21,44 @@ import styles from "./ProgressRail.module.css";
  * at the left edge, after the last at the right, otherwise on the seam between
  * the two dashes — so "which one is live" is a place on the rail rather than
  * an inference from where the gold stops.
+ *
+ * HE PRACTISES ON THE WAY (G 2026-10-22). The figure no longer walks: a whole
+ * course is one surya namaskar, the pose taken from the share done, and a
+ * finished course sits down in lotus. Twelve steps of the salutation, so any
+ * length of course reads as one circle rather than a pose per lesson that
+ * loops on long ones.
  */
 
 /** Beyond this the dashes stop being countable and start being texture. */
 const MAX_DASHES = 32;
 
-/** The walking reader uses the shared baked icon material. Gold continues
+/** Surya namaskar in order. Steps 8–12 return through 5–1, so seven drawings. */
+const SALUTATION = [
+  "pose-pranam",
+  "pose-hasta",
+  "pose-fold",
+  "pose-lunge",
+  "pose-dog",
+  "pose-ashtanga",
+  "pose-cobra",
+  "pose-dog",
+  "pose-lunge",
+  "pose-fold",
+  "pose-hasta",
+  "pose-pranam",
+] as const;
+
+/** The pose for a share of the course done: one salutation per course, lotus at the end. */
+export function poseFor(done: number, total: number): CwIconName {
+  if (total > 0 && done >= total) return "pose-lotus";
+  const ratio = total > 0 ? Math.max(0, done) / total : 0;
+  return SALUTATION[Math.min(SALUTATION.length - 1, Math.floor(ratio * SALUTATION.length))] ?? "pose-pranam";
+}
+
+/** The practising reader uses the shared baked icon material. Gold continues
  * to mean completed progress; the reader inherits the surrounding ink. */
-function Walker() {
-  return <Icon name="walker" className={styles.walkerGlyph} />;
+function Walker({ done, total }: { done: number; total: number }) {
+  return <Icon name={poseFor(done, total)} className={styles.walkerGlyph} />;
 }
 
 type ProgressRailProps = {
@@ -72,7 +102,7 @@ export function ProgressRail({ value, total, label, className, tone = "page" }: 
     return (
       <div className={wrap} {...a11y}>
         <span className={styles.walker} style={{ "--cw-walk": ratio } as React.CSSProperties}>
-          <Walker />
+          <Walker done={done} total={total} />
         </span>
         <span className={styles.long}>
           <span className={styles.longFill} style={{ width: `${Math.round(ratio * 100)}%` }} />
@@ -87,7 +117,7 @@ export function ProgressRail({ value, total, label, className, tone = "page" }: 
           first dash, the right edge after the last, and the gap between dash
           `done` and `done + 1` everywhere in between. */}
       <span className={styles.walker} style={{ "--cw-walk": done / total } as React.CSSProperties}>
-        <Walker />
+        <Walker done={done} total={total} />
       </span>
       <div className={styles.rail}>
         {Array.from({ length: total }, (_, i) => (

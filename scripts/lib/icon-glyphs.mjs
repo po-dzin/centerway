@@ -113,6 +113,97 @@ export const ICONS = {
       "M12 13.3 8.4 18.4 7.2 21.6",
     ],
   },
+  /* THE SALUTATION ON THE RAIL (G 2026-10-22). A course is one surya
+     namaskar: the progress rail picks the pose from the share done (twelve
+     steps, seven drawings — 8–12 mirror 5–1), and a finished course sits in
+     lotus. Same ground line as the walker (y 21.6); the head is a ring with
+     the accent dot at its centre, as in G's sketches. */
+  // Пранамасана — start and the closing of the circle.
+  "pose-pranam": {
+    group: "Tagline",
+    d: [
+      "M12 2.1a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2z",
+      "M11.1 21.6V8.4",
+      "M12.9 21.6V8.4",
+      "M11.1 8.6c-2.6.1-3.9 1.2-3.6 2.3.3 1 2 1.2 3.6.3",
+      "M12.9 8.6c2.6.1 3.9 1.2 3.6 2.3-.3 1-2 1.2-3.6.3",
+    ],
+    dots: [{ cx: 12, cy: 4.2, r: 0.55, accent: true }],
+  },
+  // Хаста уттанасана — arms overhead, the whole body one arc.
+  "pose-hasta": {
+    group: "Tagline",
+    d: [
+      "M10.6 3.9a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2z",
+      "M14.8 21.6C16 15.6 15.6 10.6 12.4 7.4",
+      "M12.4 7.4C10.6 5.6 8.6 4.3 5.8 3.4",
+    ],
+    dots: [{ cx: 10.6, cy: 6, r: 0.55, accent: true }],
+  },
+  // Падахастасана — the fold, head at the shins.
+  "pose-fold": {
+    group: "Tagline",
+    d: [
+      "M14.6 14.3a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2z",
+      "M10.2 21.6 9.8 9.4",
+      "M9.8 9.4c1.8-1.4 3.5-.4 3.5 2.2 0 2-.9 2.9-1.6 4.4l-.2 5.6",
+    ],
+    dots: [{ cx: 14.6, cy: 16.4, r: 0.55, accent: true }],
+  },
+  // Ашва санчаланасана — the lunge.
+  "pose-lunge": {
+    group: "Tagline",
+    d: [
+      "M15.2 4.1a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2z",
+      "M2.6 21.2c3.8-.2 6.8-2 9.8-5",
+      "M12.4 16.2 14.6 8.4",
+      "M12.4 16.2h3.5l-.5 5.4",
+      "M14.3 9.6c.8 3.7 1.6 7.6 2.3 11.9",
+    ],
+    dots: [{ cx: 15.2, cy: 6.2, r: 0.55, accent: true }],
+  },
+  // Адхо мукха шванасана — downward dog.
+  "pose-dog": {
+    group: "Tagline",
+    d: ["M16.6 14.7a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2z", "M3.4 21.6 10.6 8.4", "M10.6 8.4 20.2 21.6"],
+    dots: [{ cx: 16.6, cy: 16.8, r: 0.55, accent: true }],
+  },
+  // Аштанга намаскара — eight points on the ground.
+  "pose-ashtanga": {
+    group: "Tagline",
+    d: [
+      "M20.2 16.3a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2z",
+      "M2.6 20.8c3.6.3 6.6-.4 9.4-1.6 2.1-.9 3.9-1.2 5.8-.8",
+      "M15.2 18.4c-.9 1.4-.3 2.9 1.4 3.2",
+    ],
+    dots: [{ cx: 20.2, cy: 18.4, r: 0.55, accent: true }],
+  },
+  // Бхуджангасана — upward dog.
+  "pose-cobra": {
+    group: "Tagline",
+    d: [
+      "M17.4 7.3a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2z",
+      "M2.6 21.2c5.4.3 9.7-.1 12.7-1.9 1.6-1 2.2-3.4 2.1-7.8",
+      "M17.2 13.2c-.2 3 .3 5.7 1.3 8.2",
+    ],
+    dots: [{ cx: 17.4, cy: 9.4, r: 0.55, accent: true }],
+  },
+  // Падмасана — the finished course sits down (G's own sketch).
+  "pose-lotus": {
+    group: "Tagline",
+    d: [
+      "M12 2.3a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2z",
+      "M12 6.5v10.6",
+      "M12 8.9c-2.4 0-3.5 4.6-6.2 6.4",
+      "M12 8.9c2.4 0 3.5 4.6 6.2 6.4",
+      "M5.8 15.3c-.9-.6-2.6-.5-2.8.2-.1.6 1.3 1 2.8-.2z",
+      "M18.2 15.3c.9-.6 2.6-.5 2.8.2.1.6-1.3 1-2.8-.2z",
+      "M15.8 21.2 8.6 17.8c-2-.9-4.2-.4-4.4 1-.2 1.4 1.8 2 4.4 1.9",
+      "M8.2 21.2 15.4 17.8c2-.9 4.2-.4 4.4 1 .2 1.4-1.8 2-4.4 1.9",
+      "M7.4 21.4c3-.4 6.2-.4 9.2 0",
+    ],
+    dots: [{ cx: 12, cy: 4.4, r: 0.55, accent: true }],
+  },
   rhythm: {
     group: "Tagline",
     d: ["M3.2 12h3.4l2.2-5.2 2.6 10.4L13.8 12h7"],
@@ -353,6 +444,11 @@ export const ICONS = {
   play: {
     group: "Content",
     d: ["M9.2 6.2 17.8 12l-8.6 5.8z"],
+  },
+  // Two strokes where `play` has its triangle: the feed's audio, playing (2026-10-21).
+  pause: {
+    group: "Content",
+    d: ["M9 6.4v11.2", "M15 6.4v11.2"],
   },
   /* The feed's media (2026-10-17). A post carries photos, one video by link and
      one audio, and each had been borrowing a glyph that already meant something

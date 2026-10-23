@@ -8,6 +8,7 @@
 
 import type { Session } from "@supabase/supabase-js";
 
+import { accountName } from "@/lib/auth/accountIdentity";
 import type { ProfileLang, ProfileResponse } from "@/components/platform/profile/types";
 
 export function fmtDate(value: string | null | undefined, locale: string) {
@@ -49,12 +50,7 @@ export function formatTelegram(contacts: ProfileResponse["profile"]["contacts"],
 }
 
 export function getUserInitial(session: Session | null, fullName: string | null | undefined) {
-  const source =
-    fullName ||
-    session?.user?.user_metadata?.full_name ||
-    session?.user?.user_metadata?.name ||
-    session?.user?.email ||
-    "";
+  const source = fullName || accountName(session?.user?.user_metadata) || session?.user?.email || "";
   return source.trim().charAt(0).toUpperCase() || "?";
 }
 
