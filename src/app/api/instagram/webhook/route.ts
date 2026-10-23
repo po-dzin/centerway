@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
 
   const events = parseCommentEvents(payload);
   const taps = parsePostbackEvents(payload);
+  log.info("instagram.webhook_received", { comments: events.length, taps: taps.length });
   if (events.length === 0 && taps.length === 0) return NextResponse.json({ ok: true, handled: 0 });
 
   const store = dbStore();
@@ -83,5 +84,6 @@ export async function POST(req: NextRequest) {
     log.error("instagram.webhook_failed", { message: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "handle_failed" }, { status: 500 });
   }
+  log.info("instagram.webhook_handled", { results });
   return NextResponse.json({ ok: true, handled: events.length + taps.length, results });
 }
