@@ -186,7 +186,7 @@ export function AutoreplyPanel() {
             type="button"
             disabled={busy}
             onClick={() => void create()}
-            className={`${controls.action} cw-surface-2`}
+            className={`${controls.action} cw-btn-primary`}
           >
             <Icon name="plus" size={16} />
             {t("ar_new")}
@@ -463,7 +463,7 @@ function RuleEditor({
                 type="button"
                 disabled={busy}
                 onClick={() => void save()}
-                className={`${controls.action} cw-surface-2`}
+                className={`${controls.action} cw-btn-primary`}
               >
                 {t("ar_save")}
               </button>

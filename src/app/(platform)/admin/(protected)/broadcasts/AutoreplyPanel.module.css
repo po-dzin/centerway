@@ -16,8 +16,10 @@
   flex: 1 1 12rem;
   min-width: 0;
   margin: 0;
-  font-size: var(--ds-type-body-size);
+  font-family: var(--cw-font-editorial);
+  font-size: 1.5rem;
   font-weight: 600;
+  line-height: 1.15;
 }
 
 .headActions {
@@ -62,8 +64,10 @@
 .sectionTitle {
   composes: cw-text from global;
   margin: 0;
-  font-size: var(--ds-type-body-size);
-  font-weight: 700;
+  font-family: var(--cw-font-editorial);
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.15;
 }
 
 .label {
@@ -89,14 +93,13 @@
 }
 
 .chip {
-  composes: cw-surface-2 cw-border from global;
+  background-color: var(--cw-accent);
+  color: var(--cw-accent-contrast);
   display: inline-flex;
   align-items: center;
   gap: var(--cw-space-2xs);
   padding-block: 0;
-  padding-inline: var(--cw-space-xs) 0;
-  border-width: 1px;
-  border-style: solid;
+  padding-inline: var(--cw-space-sm) 0;
   border-radius: var(--cw-radius-pill);
   font-size: var(--ds-type-body-sm-size);
   font-weight: 600;
@@ -104,6 +107,7 @@
 
 .chipRemove {
   composes: cw-icon-btn from global;
+  color: inherit;
   display: inline-grid;
   place-items: center;
   min-width: var(--ds-touch-target-min);
@@ -157,7 +161,8 @@
   transition: transform var(--cw-motion-state) var(--cw-ease-state);
 }
 
-.switch:checked {
+.switch.switch:checked {
+  border-color: transparent;
   background-color: var(--cw-accent);
 }
 
