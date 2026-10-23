@@ -394,3 +394,64 @@
     height: 13rem;
   }
 }
+
+/* ── The identity layout (G 23.10) ─────────────────────────────
+   The canvas's hero: the room is the ground of the identity alone — name,
+   chips, the person's own commands — standing at the bottom of the
+   photograph. The cards moved down onto the paper, so the plate no longer
+   has to hold a whole screen: it is as tall as a room seen through a door. */
+.hero[data-layout="identity"] .plateWrap {
+  min-height: clamp(24rem, 64svh, 40rem);
+  align-content: end;
+  padding-block-end: var(--cw-space-xl);
+}
+
+.hero[data-layout="identity"] .room {
+  align-self: end;
+}
+
+.hero[data-layout="identity"] .identityMain {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.hero[data-layout="identity"] .identityName {
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  line-height: 1.05;
+}
+
+.hero[data-layout="identity"] .avatar {
+  width: clamp(4.5rem, 10vw, 7rem);
+  height: clamp(4.5rem, 10vw, 7rem);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+  margin: var(--cw-space-2xs) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  composes: chip onMedia from "../Chip.module.css";
+}
+
+.identityActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--cw-space-xs);
+}
+
+@media (max-width: 560px) {
+  .hero[data-layout="identity"] .identityMain {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .hero[data-layout="identity"] .identityActions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}

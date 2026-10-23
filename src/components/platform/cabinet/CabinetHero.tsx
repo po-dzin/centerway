@@ -95,14 +95,16 @@ export function CabinetHero({
   avatar,
   face,
   notice,
-  stats,
+  stats = [],
+  chips,
+  actions,
   children,
 }: {
-  label: string;
+  label?: string;
   name: string;
   /** A meaningful platform role, shown as part of the profile identity. */
   role?: string | null;
-  email: string;
+  email?: string;
   /** The account picture, or the initial standing in for one. */
   avatar: ReactNode;
   /**
@@ -112,12 +114,22 @@ export function CabinetHero({
   face?: Omit<Parameters<typeof ProfileFace>[0], "avatar" | "frameClassName" | "name">;
   /** A fact worth a glance, not a sentence — see the reach dot below. */
   notice?: CabinetHeroNotice;
-  stats: CabinetHeroStat[];
+  stats?: CabinetHeroStat[];
+  /**
+   * THE IDENTITY LAYOUT (G 23.10, profile v1 after the canvas): short facts as
+   * chips on the photograph under the name — role, the course in progress,
+   * the dosha — in place of the stats row; the room ends where the identity
+   * does, and the cards stand on the paper below it, not on the photo.
+   */
+  chips?: string[];
+  /** The person's own commands beside the name: their author page, settings. */
+  actions?: ReactNode;
   /** The shelf: the course to resume, the rest of them, or a single state card. */
-  children: ReactNode;
+  children?: ReactNode;
 }) {
+  const identityLayout = Boolean(chips);
   return (
-    <header className={styles.hero} data-cw-material="matte">
+    <header className={styles.hero} data-cw-material="matte" data-layout={identityLayout ? "identity" : undefined}>
       {/* THE WHOLE BLOCK IS ONE SCREEN. The shelf used to start below the
           plate, so the one thing a returning learner comes here to do —
           continue — was under the fold on every laptop. It stands on the
@@ -189,31 +201,50 @@ export function CabinetHero({
               ) : null}
             </span>
             <div className={styles.identityText}>
-              <p className={styles.sectionLabel}>{label}</p>
+              {label && !identityLayout ? <p className={styles.sectionLabel}>{label}</p> : null}
               <h1 className={styles.identityName}>{name}</h1>
-              {role ? <p className={styles.identityRole}>{role}</p> : null}
-              <p className={styles.identityEmail}>{email}</p>
+              {identityLayout ? (
+                chips && chips.length > 0 ? (
+                  <ul className={styles.chips}>
+                    {chips.map((chip) => (
+                      <li key={chip} className={styles.chip}>
+                        {chip}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null
+              ) : (
+                <>
+                  {role ? <p className={styles.identityRole}>{role}</p> : null}
+                  {email ? <p className={styles.identityEmail}>{email}</p> : null}
+                </>
+              )}
             </div>
+            {identityLayout && actions ? <div className={styles.identityActions}>{actions}</div> : null}
           </div>
 
-          <dl className={styles.stats} data-cw-rule="inverse">
-            {stats.map((stat) => (
-              <div className={styles.stat} key={stat.label}>
-                <dt className={styles.sectionLabel}>{stat.label}</dt>
-                <dd>{stat.value}</dd>
-              </div>
-            ))}
-          </dl>
+          {identityLayout ? null : (
+            <dl className={styles.stats} data-cw-rule="inverse">
+              {stats.map((stat) => (
+                <div className={styles.stat} key={stat.label}>
+                  <dt className={styles.sectionLabel}>{stat.label}</dt>
+                  <dd>{stat.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
         </div>
 
-        <div className={styles.shelf}>
-          {/* NO HEADING AND NO LINK OVER THE ROW. «Бібліотека» named what the
+        {children ? (
+          <div className={styles.shelf}>
+            {/* NO HEADING AND NO LINK OVER THE ROW. «Бібліотека» named what the
             cards already are; «Усі мої курси» then stood above the whole
             composition as a fourth object, pointing at nothing next to it. The
             way onward is the last row of the column of courses now — where the
             list actually runs out. */}
-          {children}
-        </div>
+            {children}
+          </div>
+        ) : null}
       </div>
     </header>
   );

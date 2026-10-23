@@ -222,9 +222,12 @@ export function CompactCourseCard({
   course,
   copy,
   primary,
+  ground = "media",
 }: {
   course: LearnerShelfCourseDto;
   copy: CabinetCopy;
+  /** On the room's photograph (glass) or on the page's paper (matte, G 23.10). */
+  ground?: "media" | "paper";
   /**
    * Whether this card carries the row's one gold button.
    *
@@ -247,7 +250,7 @@ export function CompactCourseCard({
   const resumable = course.access === "enrolled" && total > 0 && !course.standing?.isFinished;
 
   return (
-    <article className={`${styles.shelfCard} ${styles.shelfCourseCard}`} {...glassMedia}>
+    <article className={`${styles.shelfCard} ${styles.shelfCourseCard}`} {...(ground === "paper" ? matte : glassMedia)}>
       <MotionLink className={styles.cardOverlay} href={href(action.href)} aria-hidden="true" tabIndex={-1} />
       <CourseCover course={course} />
       <h3 className={styles.shelfCardTitle}>{course.title}</h3>

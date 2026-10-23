@@ -18,6 +18,8 @@
  */
 
 import Link from "next/link";
+
+import { Icon } from "@/components/Icon";
 import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
@@ -41,6 +43,7 @@ import { publishOwnFace } from "@/components/platform/ownFace";
 import { providerAvatarAtSize } from "@/lib/auth/accountIdentity";
 import { ProfileTabs, useProfileTab, type ProfileTab } from "./ProfileTabs";
 import { ProfileMapTab } from "./ProfileMapTab";
+import { ProfileChronicle } from "./ProfileChronicle";
 import dynamic from "next/dynamic";
 
 /* Loaded when an author opens the cabinet, not shipped to every learner who
@@ -49,7 +52,7 @@ import dynamic from "next/dynamic";
    cabinet is client-fetched, so the fold never appears in the first HTML. */
 const AuthorProfileFold = dynamic(() => import("./AuthorProfileFold").then((m) => m.AuthorProfileFold), { ssr: false });
 import { DoshaWheel } from "./DoshaWheel";
-import { CompactCourseCard, ShelfErrorCard, glassMedia, matte } from "./CourseCard";
+import { CompactCourseCard, ShelfErrorCard, matte } from "./CourseCard";
 import {
   dateLocaleFor,
   fmtDate,
@@ -204,6 +207,21 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
 
   const { account, contacts, dosha, balance } = profile.profile;
 
+  /* The hero's chips (G 23.10): role, the course in progress and its day, the dosha. */
+  const roleLabel = platformRoleLabel(identity.role);
+  const courseDay = resumeCourse?.standing?.currentDay ?? null;
+  const heroChips = [
+    roleLabel,
+    resumeCourse
+      ? courseDay !== null && resumeCourse.standing
+        ? cab.courseDayChip(resumeCourse.title, courseDay, resumeCourse.standing.totalLessons)
+        : resumeCourse.title
+      : null,
+    dosha ? `${copy.dosha} · ${formatDoshaResult(dosha.resultType, lang)}` : null,
+  ].filter((chip): chip is string => Boolean(chip));
+  const authorSlug = authorProfile.author?.slug ?? null;
+  const authorPageHref = authorSlug && authorProfile.author?.listed ? href(`/expert/${authorSlug}`) : null;
+
   return (
     <main className={surfaceStyles.profileMain} data-cw-platform-template="cabinet" data-cw-hero="bleed">
       {/* THE PHOTOGRAPH IS THE SCREEN'S GROUND, so the hero stands OUTSIDE the
@@ -262,41 +280,55 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
             getUserInitial(session, account.fullName)
           )
         }
-        /* THREE FACTS, ONE ROW. The count came back beside the dosha — a
-             room with one dash under «Продукти» and nothing else is a room
-             missing a fact, not a room kept clean. What did NOT come back is
-             the word «Бібліотека»: that names the ROUTE, and every course it
-             used to stand for is printed by name a few centimetres below. */
-        stats={[
-          { label: copy.dosha, value: formatDoshaResult(dosha?.resultType, lang) },
-          {
-            label: cab.coursesLabel,
-            /* An ellipsis while the shelf is still being read: "—" would
-                 claim an empty library to somebody who owns nine courses. */
-            value: shelfLoading
-              ? "…"
-              : ownedCourses.length > 0
-                ? cab.coursesCount(ownedCourses.length)
-                : copy.emptyValue,
-          },
-          {
-            label: copy.products,
-            /* "—" is an answer: it means none. */
-            value: productPurchases.length > 0 ? cab.productsCount(productPurchases.length) : copy.emptyValue,
-          },
-        ]}
-      >
-        {/* THE WHOLE FIRST SCREEN IS THE ANSWER, in one row of three: the
+        /* THE CANVAS'S HERO (G 23.10): who this is, in chips on the photograph
+           — the role, the course in progress and its day, the dosha — and the
+           person's own commands beside the name. The counts row is gone: the
+           library says how many courses, the purchases fold how many products. */
+        chips={heroChips}
+        actions={
+          authorPageHref || authorProfile.eligible ? (
+            <>
+              {authorPageHref ? (
+                <Link className={styles.heroAction} href={authorPageHref}>
+                  {cab.authorPage}
+                </Link>
+              ) : null}
+              <a className={styles.heroActionSquare} href="#account" aria-label={cab.settingsLabel}>
+                <Icon name="settings" size={20} />
+              </a>
+            </>
+          ) : (
+            <a className={styles.heroActionSquare} href="#account" aria-label={cab.settingsLabel}>
+              <Icon name="settings" size={20} />
+            </a>
+          )
+        }
+      />
+
+      <ProfileTabs
+        current={tab}
+        links={{ map: sphereMapHref, journal: journalHref, library: shelfHref }}
+        overviewHref={href(PROFILE_HREF)}
+        onSelect={setTab}
+        lang={lang}
+      />
+
+      {/* THE OVERVIEW ON PAPER (G 23.10, after the canvas): the course to
+          resume, the map and the dosha as three cards under the tabs, not on
+          the photograph; the timeline under them. */}
+      {tab === "overview" ? (
+        <div className={styles.overview}>
+          {/* THE WHOLE FIRST SCREEN IS THE ANSWER, in one row of three: the
               course to resume, the rest of the shelf as glances, and the dosha
               result — the three things this person holds. The dosha used to be
               a card in a section below the photograph, which put a scroll
               between somebody and the test they took. */}
-        {tab === "overview" ? (
+
           <div className={styles.shelfRow} data-shelf={ownedCourses.length > 1 ? "courses" : "single"} data-cols="3">
             {resumeCourse ? (
               /* The one answer: cover, where you stopped, and the only control
                  in the row. */
-              <CompactCourseCard course={resumeCourse} copy={cab} primary />
+              <CompactCourseCard course={resumeCourse} copy={cab} primary ground="paper" />
             ) : shelfFailed ? (
               /* Not "no courses yet" — the shelf just could not be read. Those
                  look identical without this branch, and a learner who paid for
@@ -311,7 +343,7 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
                 detail={cab.learningLoadingLead}
               />
             ) : (
-              <article className={styles.shelfCard} {...glassMedia}>
+              <article className={styles.shelfCard} {...matte}>
                 <h3 className={styles.shelfCardTitle}>{cab.learningEmptyTitle}</h3>
                 <p className={styles.shelfCardNote}>{cab.learningEmptyLead}</p>
                 <div className={styles.shelfCardAction}>
@@ -355,7 +387,7 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
                 what else exists is the showcase's business — this tile holds
                 the answer that belongs to this person, at the size of a glance
                 rather than of a card: the shape, the type, one way back in. */}
-            <article className={styles.shelfAside} {...glassMedia}>
+            <article className={styles.shelfAside} {...matte}>
               {/* The word «Доша» and the result are BOTH printed in the fact
                   row at the top of this same screen — naming the tile again
                   here said nothing the reader had not just read. The wheel
@@ -394,16 +426,16 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
               </div>
             </article>
           </div>
-        ) : null}
-      </CabinetHero>
-
-      <ProfileTabs
-        current={tab}
-        links={{ map: sphereMapHref, journal: journalHref, library: shelfHref }}
-        overviewHref={href(PROFILE_HREF)}
-        onSelect={setTab}
-        lang={lang}
-      />
+          <ProfileChronicle
+            lang={lang}
+            courses={ownedCourses}
+            purchases={purchases}
+            dosha={dosha}
+            balance={balance}
+            dateLocale={dateLocale}
+          />
+        </div>
+      ) : null}
 
       {tab === "map" ? (
         <div className={styles.shell}>
@@ -472,7 +504,7 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
             />
           ) : null}
 
-          <CabinetFold label={cab.accountLabel} title={cab.accountTitle} lead={cab.accountLead}>
+          <CabinetFold id="account" label={cab.accountLabel} title={cab.accountTitle} lead={cab.accountLead}>
             <div className={styles.cardGrid}>
               {/* THE THIRD CARD IN THIS GRID, not a row beneath it (2026-09-10).
                 See PwaInstallCard.tsx: it used to demote itself to a bare

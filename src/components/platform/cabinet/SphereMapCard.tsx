@@ -14,7 +14,7 @@ import { PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import { SPHERE_AXIS_IDS } from "@/lib/profile/sphereMap";
 import type { ProfileLang } from "@/components/platform/profile/types";
 
-import { glassMedia, matte } from "./CourseCard";
+import { matte } from "./CourseCard";
 import { SphereRadar } from "./SphereRadar";
 import { getSphereMapCopy, sphereName } from "./sphereMapCopy";
 import { useSphereMap } from "./useSphereMap";
@@ -31,9 +31,9 @@ export function SphereMapCard({
   lang: ProfileLang;
   href: string;
   /**
-   * The first screen's tile (G 23.10: «Продовжити | Карта | Доша»): stands on
-   * the room's photograph beside the course and the dosha, so it takes their
-   * glass and their column, the radar on top and the words under it.
+   * The overview's tile (G 23.10: «Продовжити | Карта | Доша»): the same
+   * column as the course and the dosha beside it, the radar on top and the
+   * words under it.
    */
   tile?: boolean;
   /** Open the profile's «Карта» tab in place instead of following the link. */
@@ -44,11 +44,7 @@ export function SphereMapCard({
   const rated = map ? SPHERE_AXIS_IDS.some((id) => map.spheres[id]?.now != null) : false;
 
   return (
-    <article
-      className={tile ? styles.tile : styles.card}
-      data-cw-tile={tile ? "map" : undefined}
-      {...(tile ? glassMedia : matte)}
-    >
+    <article className={tile ? styles.tile : styles.card} data-cw-tile={tile ? "map" : undefined} {...matte}>
       {map && rated ? <SphereRadar map={map} title={copy.radarTitle} compact /> : null}
       <div className={styles.cardText}>
         {tile ? null : <p className={styles.cardLabel}>{copy.cardLabel}</p>}

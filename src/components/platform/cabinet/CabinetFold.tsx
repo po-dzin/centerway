@@ -13,27 +13,40 @@
  * and none of them are free when a `<div>` and `aria-expanded` do it.
  */
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
 import styles from "./Cabinet.module.css";
 
 export function CabinetFold({
+  id,
   label,
   title,
   lead,
   children,
 }: {
+  /** An address for the fold; arriving on `#id` opens it (the hero's settings link). */
+  id?: string;
   label: string;
   title: string;
   lead?: string;
   children: ReactNode;
 }) {
+  const ref = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (!id) return;
+    const openOnArrival = () => {
+      if (window.location.hash === `#${id}` && ref.current) ref.current.open = true;
+    };
+    openOnArrival();
+    window.addEventListener("hashchange", openOnArrival);
+    return () => window.removeEventListener("hashchange", openOnArrival);
+  }, [id]);
   return (
     /* Personal data and receipts are reference material at every viewport.
        Keep the reader's deliberate opening intact; a controlled disclosure
        would shut again whenever any unrelated cabinet data refreshed. */
-    <details className={styles.fold}>
+    <details className={styles.fold} id={id} ref={ref}>
       <summary className={styles.foldHead}>
         <span className={styles.foldText}>
           <span className={styles.sectionLabel}>{label}</span>
