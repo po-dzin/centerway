@@ -374,7 +374,6 @@ export function CabinetClient() {
       />
 
       <div className={styles.shell}>
-
         {/* The journal, the map and the library are tabs under the room now
             (ProfileTabs, G 23.10); the journal's own crossing that stood here
             would have been the same door twice. */}

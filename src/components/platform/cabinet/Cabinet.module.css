@@ -2266,18 +2266,15 @@
    person's. A row of ink tabs with the fading rule under it; on a phone it
    scrolls sideways rather than wrapping into two rows of tabs. */
 .tabs {
+  composes: cw-scroll-none from global;
   width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
   margin: var(--cw-space-lg) auto 0;
   display: flex;
   gap: var(--cw-space-lg);
   overflow-x: auto;
-  scrollbar-width: none;
+  overflow-y: hidden;
   border-block-end: 1px solid;
   border-image: var(--cw-rule-fade-x);
-}
-
-.tabs::-webkit-scrollbar {
-  display: none;
 }
 
 .tab {
