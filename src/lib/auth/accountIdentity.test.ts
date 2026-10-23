@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { accountAvatar, accountAvatarCrop, accountMetaFromAuthor, accountName } from "./accountIdentity";
+import {
+  accountAvatar,
+  accountAvatarCrop,
+  accountMetaFromAuthor,
+  accountMetaFromUpload,
+  accountName,
+} from "./accountIdentity";
 
 describe("account identity", () => {
   const google = { full_name: "Gleb P.", name: "Gleb", avatar_url: "https://lh3/g.jpg" };
@@ -24,5 +30,15 @@ describe("account identity", () => {
       cw_avatar: null,
       cw_avatar_crop: null,
     });
+  });
+
+  it("puts an uploaded face first and drops the crop that framed the old one", () => {
+    const meta = { ...google, cw_avatar: "https://cw/old.webp", cw_avatar_crop: { x: 40 } };
+    const patch = accountMetaFromUpload("https://cw/new.webp");
+    expect(patch).toEqual({ cw_avatar: "https://cw/new.webp", cw_avatar_crop: null });
+    /* As Supabase merges it: a null key is removed. */
+    const merged = Object.fromEntries(Object.entries({ ...meta, ...patch }).filter(([, value]) => value !== null));
+    expect(accountAvatar(merged)).toBe("https://cw/new.webp");
+    expect(accountAvatarCrop(merged)).toBeUndefined();
   });
 });

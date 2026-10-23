@@ -468,6 +468,45 @@ export async function syncAccountFromAuthor(
   return true;
 }
 
+/**
+ * A new face from the profile hero, for someone who has an author profile
+ * (2026-10-23). Returns the saved author, or null when this account has no
+ * profile — then the caller writes the account alone.
+ *
+ * WHY THE PROFILE AND NOT ONLY THE ACCOUNT. The author profile is the source
+ * of an author's account face: the cabinet's read of `/users/me/author` writes
+ * the profile's photo back onto the account whenever the two differ
+ * (`syncAccountFromAuthor` above). A hero upload that set `cw_avatar` alone
+ * would be undone by the next cabinet open, and the author page would keep the
+ * old portrait while the comments showed the new one — the two-faces state
+ * migration 20261022160000 exists to end. So the picture goes into the
+ * profile, and the account follows from it in the same call.
+ *
+ * Same aim as the fold's own «Інше фото»: the crop fields are kept, because
+ * swapping one portrait for another says nothing about where the circle should
+ * look. Only `src` changes; `alt` falls back to the name.
+ */
+export async function setAuthorPhoto(userId: string, src: string): Promise<Author | null> {
+  const existing = await findAuthorByUser(userId);
+  if (!existing) return null;
+  const db = adminClient();
+  const previous = (existing.photo as Author["photo"] | null) ?? null;
+  const photo = { ...(previous ?? {}), src, alt: previous?.alt || (existing.name as string) };
+  const { data, error } = await db
+    .from("lms_authors")
+    .update({ photo })
+    .eq("auth_user_id", userId)
+    .select("*")
+    .single();
+  if (error || !data) return null;
+
+  const author = authorFromRow(data as Row);
+  await syncAccountFromAuthor(userId, author);
+  revalidateTag(authorTag(author.slug), PURGE);
+  revalidateTag(AUTHOR_LIST_TAG, PURGE);
+  return author;
+}
+
 /** Equal as stored: Postgres `jsonb` reorders an object's keys, so they are compared sorted. */
 function sameMeta(left: unknown, right: unknown): boolean {
   const flat = (value: unknown) =>
