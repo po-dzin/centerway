@@ -25,11 +25,14 @@ import type { TranslationKey } from "@/lib/i18n";
 import { MAX_VARIANTS } from "@/lib/autoreply/match";
 import type { EventRow, RuleSummary } from "@/lib/autoreply/rules";
 import controls from "@/components/admin/AdminControls.module.css";
+import surfaces from "@/components/admin/AdminSurfaces.module.css";
+import styles from "./AutoreplyPanel.module.css";
 import lists from "@/components/admin/AdminLists.module.css";
 
 type Draft = {
   name: string;
-  keywords: string;
+  keywords: string[];
+  publicOn: boolean;
   mediaId: string;
   publicReplies: string[];
   dmTexts: string[];
@@ -49,7 +52,8 @@ const EVENT_BADGE: Record<string, string> = {
 function toDraft(rule: RuleSummary): Draft {
   return {
     name: rule.name,
-    keywords: rule.keywords.join(", "),
+    keywords: rule.keywords,
+    publicOn: rule.public_replies.length > 0 || rule.keywords.length === 0,
     mediaId: rule.media_id ?? "",
     publicReplies: rule.public_replies,
     dmTexts: rule.dm_texts,
@@ -64,9 +68,9 @@ function toDraft(rule: RuleSummary): Draft {
 function toPayload(draft: Draft) {
   return {
     name: draft.name,
-    keywords: draft.keywords.split(/[,\n]/),
+    keywords: draft.keywords,
     mediaId: draft.mediaId,
-    publicReplies: draft.publicReplies,
+    publicReplies: draft.publicOn ? draft.publicReplies : [],
     dmTexts: draft.dmTexts,
     buttonLabel: draft.buttonLabel,
     buttonUrl: draft.buttonUrl,
@@ -239,40 +243,122 @@ function Variants({
 }) {
   const { t } = useI18n();
   return (
-    <div className={controls.field}>
-      <span className={controls.fieldLabel}>{label}</span>
+    <div className={styles.group}>
       {values.map((value, index) => (
-        <div key={index} className={controls.field}>
-          <span className={controls.fieldCaption}>
-            {t("ar_variant")} {index + 1}
-          </span>
-          <div className={controls.inlineActionsTop}>
-            <textarea
-              className={controls.textareaShort}
-              value={value}
-              disabled={disabled}
-              onChange={(e) => onChange(values.map((v, i) => (i === index ? e.target.value : v)))}
-            />
+        <div key={index} className={styles.variant}>
+          <span className={styles.variantNumber}>{index + 1}</span>
+          <textarea
+            className={`${controls.textareaShort} ${styles.variantField}`}
+            aria-label={`${label} ${index + 1}`}
+            value={value}
+            disabled={disabled}
+            onChange={(e) => onChange(values.map((v, i) => (i === index ? e.target.value : v)))}
+          />
+          {disabled ? null : (
+            <button
+              type="button"
+              aria-label={t("ar_variant_remove")}
+              title={t("ar_variant_remove")}
+              onClick={() => onChange(values.filter((_, i) => i !== index))}
+              className={controls.dialogClose}
+            >
+              <Icon name="trash" size={20} />
+            </button>
+          )}
+        </div>
+      ))}
+      {!disabled && values.length < MAX_VARIANTS ? (
+        <div className={controls.actions}>
+          <button type="button" onClick={() => onChange([...values, ""])} className={`${controls.action} cw-surface-2`}>
+            <Icon name="plus" size={16} />
+            {t("ar_variant_add")} ({values.length} {t("ar_of")} {MAX_VARIANTS})
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function Switch({
+  label,
+  checked,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  disabled: boolean;
+  onChange: (next: boolean) => void;
+}) {
+  return (
+    <label className={styles.toggle}>
+      <span className={styles.toggleText}>{label}</span>
+      <input
+        type="checkbox"
+        role="switch"
+        className={styles.switch}
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+    </label>
+  );
+}
+
+function Keywords({
+  values,
+  disabled,
+  onChange,
+}: {
+  values: string[];
+  disabled: boolean;
+  onChange: (next: string[]) => void;
+}) {
+  const { t } = useI18n();
+  const [input, setInput] = useState("");
+  const commit = () => {
+    const words = input
+      .split(/[,\n]/)
+      .map((word) => word.trim())
+      .filter((word) => word !== "" && !values.includes(word));
+    if (words.length > 0) onChange([...values, ...words]);
+    setInput("");
+  };
+  return (
+    <div className={styles.group}>
+      <div className={styles.chips}>
+        {values.map((word) => (
+          <span key={word} className={styles.chip}>
+            {word}
             {disabled ? null : (
               <button
                 type="button"
                 aria-label={t("ar_variant_remove")}
-                title={t("ar_variant_remove")}
-                onClick={() => onChange(values.filter((_, i) => i !== index))}
-                className={controls.dialogClose}
+                onClick={() => onChange(values.filter((w) => w !== word))}
+                className={styles.chipRemove}
               >
-                <Icon name="trash" size={20} />
+                <Icon name="close" size={16} />
               </button>
             )}
-          </div>
-        </div>
-      ))}
-      {!disabled && values.length < MAX_VARIANTS ? (
-        <button type="button" onClick={() => onChange([...values, ""])} className={`${controls.action} cw-surface-2`}>
-          <Icon name="plus" size={16} />
-          {t("ar_variant_add")}
-        </button>
-      ) : null}
+          </span>
+        ))}
+        {disabled ? null : (
+          <input
+            className={`${controls.input} ${styles.chipInput}`}
+            value={input}
+            placeholder={t("ar_f_keywords_add")}
+            onChange={(e) => setInput(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === ",") {
+                e.preventDefault();
+                commit();
+              }
+            }}
+          />
+        )}
+      </div>
+      <p className={styles.note}>{t("ar_f_keywords_hint")}</p>
     </div>
   );
 }
@@ -334,135 +420,259 @@ function RuleEditor({
     }
   };
 
+  const twoStep = draft.followUpText.trim() !== "";
+  const firstDm = draft.dmTexts.find((text) => text.trim() !== "") ?? "";
+  const publicNote = draft.publicOn ? draft.publicReplies.find((text) => text.trim() !== "") : undefined;
+  const stats = rule.stats;
+  const barMax = Math.max(1, stats.comments);
+  const bars: [string, number][] = [
+    [t("ar_funnel_comments"), stats.comments],
+    [t("ar_funnel_sent"), stats.sent],
+    [t("ar_funnel_skipped"), stats.skipped],
+    [t("ar_funnel_failed"), stats.failed],
+  ];
+
   return (
-    <>
-      <div className={controls.actions}>
+    <div className={controls.formStack}>
+      <div className={styles.head}>
         <button type="button" onClick={onBack} className={`${controls.action} cw-btn-muted`}>
           <Icon name="arrow-left" size={16} />
           {t("ar_back")}
         </button>
-      </div>
-      <div className={controls.formStack}>
-        <label className={controls.field}>
-          <span className={controls.fieldCaption}>{t("ar_f_name")}</span>
-          <input
-            className={controls.input}
-            value={draft.name}
-            disabled={!canEdit}
-            onChange={(e) => set({ name: e.target.value })}
-          />
-        </label>
-        <label className={controls.field}>
-          <span className={controls.fieldCaption}>{t("ar_f_keywords")}</span>
-          <input
-            className={controls.input}
-            value={draft.keywords}
-            disabled={!canEdit}
-            onChange={(e) => set({ keywords: e.target.value })}
-          />
-          <span className={controls.hint}>{t("ar_f_keywords_hint")}</span>
-        </label>
-        <label className={controls.field}>
-          <span className={controls.fieldCaption}>{t("ar_f_media")}</span>
-          <input
-            className={controls.input}
-            value={draft.mediaId}
-            disabled={!canEdit}
-            onChange={(e) => set({ mediaId: e.target.value })}
-          />
-        </label>
-        <p className={controls.hint}>{t("ar_f_variants_hint")}</p>
-        <Variants
-          label={t("ar_f_public")}
-          values={draft.publicReplies}
-          disabled={!canEdit}
-          onChange={(v) => set({ publicReplies: v })}
-        />
-        <Variants
-          label={t("ar_f_dm")}
-          values={draft.dmTexts}
-          disabled={!canEdit}
-          onChange={(v) => set({ dmTexts: v })}
-        />
-        <p className={controls.hint}>{t("ar_f_two_step_hint")}</p>
-        <label className={controls.field}>
-          <span className={controls.fieldCaption}>{t("ar_f_open_label")}</span>
-          <input
-            className={controls.input}
-            value={draft.openButtonLabel}
-            maxLength={20}
-            disabled={!canEdit}
-            onChange={(e) => set({ openButtonLabel: e.target.value })}
-          />
-        </label>
-        <label className={controls.field}>
-          <span className={controls.fieldCaption}>{t("ar_f_follow_up")}</span>
-          <textarea
-            className={controls.textareaShort}
-            value={draft.followUpText}
-            disabled={!canEdit}
-            onChange={(e) => set({ followUpText: e.target.value })}
-          />
-        </label>
-        <div className={controls.fieldsTwo}>
-          <label className={controls.field}>
-            <span className={controls.fieldCaption}>{t("ar_f_button_label")}</span>
-            <input
-              className={controls.input}
-              value={draft.buttonLabel}
-              disabled={!canEdit}
-              onChange={(e) => set({ buttonLabel: e.target.value })}
-            />
-          </label>
-          <label className={controls.field}>
-            <span className={controls.fieldCaption}>{t("ar_f_button_url")}</span>
-            <input
-              className={controls.input}
-              value={draft.buttonUrl}
-              disabled={!canEdit}
-              onChange={(e) => set({ buttonUrl: e.target.value })}
-            />
-            <span className={controls.hint}>{t("ar_f_button_url_hint")}</span>
-          </label>
+        <h3 className={styles.headTitle}>{draft.name || t("ar_untitled")}</h3>
+        <div className={styles.headActions}>
+          <span className={rule.enabled ? "cw-status-success-badge" : "cw-status-pending-badge"}>
+            {rule.enabled ? t("ar_on") : t("ar_off")}
+          </span>
+          {canEdit ? (
+            <>
+              <button
+                type="button"
+                disabled={busy}
+                aria-label={t("ar_delete")}
+                title={t("ar_delete")}
+                onClick={() => setConfirmDelete(true)}
+                className={controls.dialogClose}
+              >
+                <Icon name="trash" size={20} />
+              </button>
+              <button type="button" disabled={busy} onClick={onToggle} className={`${controls.action} cw-btn-muted`}>
+                {rule.enabled ? t("ar_turn_off") : t("ar_turn_on")}
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void save()}
+                className={`${controls.action} cw-surface-2`}
+              >
+                {t("ar_save")}
+              </button>
+            </>
+          ) : null}
         </div>
-        <label className={controls.field}>
-          <span className={controls.fieldCaption}>{t("ar_f_cap")}</span>
-          <input
-            className={controls.input}
-            inputMode="numeric"
-            value={draft.maxPerHour}
-            disabled={!canEdit}
-            onChange={(e) => set({ maxPerHour: e.target.value.replace(/\D/g, "") })}
-          />
-        </label>
       </div>
-      {canEdit ? (
-        <div className={controls.actionsSplit}>
-          <button
-            type="button"
-            disabled={busy}
-            aria-label={t("ar_delete")}
-            title={t("ar_delete")}
-            onClick={() => setConfirmDelete(true)}
-            className={controls.dialogClose}
-          >
-            <Icon name="trash" size={20} />
-          </button>
-          <div className={controls.actions}>
-            <button type="button" disabled={busy} onClick={onToggle} className={`${controls.action} cw-btn-muted`}>
-              {rule.enabled ? t("ar_turn_off") : t("ar_turn_on")}
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void save()}
-              className={`${controls.action} cw-surface-2`}
-            >
-              {t("ar_save")}
-            </button>
-          </div>
+
+      <div className={styles.editor}>
+        <div className={styles.column}>
+          <section className={`${surfaces.plate} ${styles.section}`}>
+            <h4 className={styles.sectionTitle}>{t("ar_s_when")}</h4>
+            <label className={styles.group}>
+              <span className={styles.label}>{t("ar_f_name")}</span>
+              <input
+                className={controls.input}
+                value={draft.name}
+                disabled={!canEdit}
+                onChange={(e) => set({ name: e.target.value })}
+              />
+            </label>
+            <label className={styles.group}>
+              <span className={styles.label}>{t("ar_f_media")}</span>
+              <input
+                className={controls.input}
+                value={draft.mediaId}
+                disabled={!canEdit}
+                onChange={(e) => set({ mediaId: e.target.value })}
+              />
+            </label>
+            <div className={styles.group}>
+              <span className={styles.label}>{t("ar_f_keywords")}</span>
+              <Keywords values={draft.keywords} disabled={!canEdit} onChange={(next) => set({ keywords: next })} />
+            </div>
+          </section>
+
+          <section className={`${surfaces.plate} ${styles.section}`}>
+            <h4 className={styles.sectionTitle}>{t("ar_s_public")}</h4>
+            <Switch
+              label={t("ar_public_on")}
+              checked={draft.publicOn}
+              disabled={!canEdit}
+              onChange={(next) =>
+                set({
+                  publicOn: next,
+                  publicReplies: next && draft.publicReplies.length === 0 ? [""] : draft.publicReplies,
+                })
+              }
+            />
+            {draft.publicOn ? (
+              <Variants
+                label={t("ar_variant")}
+                values={draft.publicReplies}
+                disabled={!canEdit}
+                onChange={(v) => set({ publicReplies: v })}
+              />
+            ) : null}
+            <p className={styles.note}>{t("ar_f_variants_hint")}</p>
+          </section>
+
+          <section className={`${surfaces.plate} ${styles.section}`}>
+            <h4 className={styles.sectionTitle}>{t("ar_s_dm")}</h4>
+            <div className={styles.group}>
+              <span className={styles.label}>{t("ar_f_dm")}</span>
+              <Variants
+                label={t("ar_variant")}
+                values={draft.dmTexts}
+                disabled={!canEdit}
+                onChange={(v) => set({ dmTexts: v })}
+              />
+            </div>
+            <div className={styles.group}>
+              <span className={styles.label}>{t("ar_f_open_label")}</span>
+              <input
+                className={controls.input}
+                value={draft.openButtonLabel}
+                maxLength={20}
+                disabled={!canEdit}
+                onChange={(e) => set({ openButtonLabel: e.target.value })}
+              />
+            </div>
+            <div className={styles.group}>
+              <span className={styles.label}>{t("ar_f_follow_up")}</span>
+              <textarea
+                className={controls.textareaShort}
+                value={draft.followUpText}
+                disabled={!canEdit}
+                onChange={(e) => set({ followUpText: e.target.value })}
+              />
+              <p className={styles.note}>{t("ar_f_two_step_hint")}</p>
+            </div>
+            <div className={styles.group}>
+              <span className={styles.label}>{t("ar_s_button")}</span>
+              <div className={controls.fieldsTwo}>
+                <input
+                  className={controls.input}
+                  aria-label={t("ar_f_button_label")}
+                  placeholder={t("ar_f_button_label")}
+                  value={draft.buttonLabel}
+                  disabled={!canEdit}
+                  onChange={(e) => set({ buttonLabel: e.target.value })}
+                />
+                <input
+                  className={controls.input}
+                  aria-label={t("ar_f_button_url")}
+                  placeholder={t("ar_f_button_url")}
+                  value={draft.buttonUrl}
+                  disabled={!canEdit}
+                  onChange={(e) => set({ buttonUrl: e.target.value })}
+                />
+              </div>
+              <p className={styles.note}>{t("ar_f_button_url_hint")}</p>
+            </div>
+          </section>
+
+          <section className={`${surfaces.plate} ${styles.section}`}>
+            <h4 className={styles.sectionTitle}>{t("ar_s_safety")}</h4>
+            <label className={styles.group}>
+              <span className={styles.label}>{t("ar_f_cap")}</span>
+              <input
+                className={controls.input}
+                inputMode="numeric"
+                value={draft.maxPerHour}
+                disabled={!canEdit}
+                onChange={(e) => set({ maxPerHour: e.target.value.replace(/\D/g, "") })}
+              />
+            </label>
+            <p className={styles.note}>{t("ar_safety_note")}</p>
+          </section>
         </div>
-      ) : null}
+
+        <div className={styles.side}>
+          <section className={`${surfaces.plate} ${styles.section}`}>
+            <h4 className={styles.sectionTitle}>{t("ar_s_preview")}</h4>
+            <div className={styles.phone}>
+              <div className={styles.bubbleMe}>{draft.keywords[0] ?? "…"}</div>
+              <div className={styles.bubble}>
+                <span>{firstDm || "…"}</span>
+                {twoStep || draft.buttonUrl ? (
+                  <span className={styles.bubbleButton}>
+                    {twoStep
+                      ? draft.openButtonLabel || t("ar_open_default")
+                      : draft.buttonLabel || t("ar_link_default")}
+                  </span>
+                ) : null}
+              </div>
+              {twoStep ? (
+                <div className={styles.bubble}>
+                  <span>{draft.followUpText}</span>
+                  <span className={styles.bubbleButton}>{draft.buttonLabel || t("ar_link_default")}</span>
+                </div>
+              ) : null}
+            </div>
+            {publicNote ? (
+              <p className={styles.note}>
+                {t("ar_preview_public")} «{publicNote}»
+              </p>
+            ) : null}
+          </section>
+
+          <section className={`${surfaces.plate} ${styles.section}`}>
+            <h4 className={styles.sectionTitle}>{t("ar_s_funnel")}</h4>
+            <div className={styles.bars}>
+              {bars.map(([label, value]) => (
+                <div key={label} className={styles.bar}>
+                  <span>{label}</span>
+                  <span className={styles.barTrack}>
+                    <span
+                      className={styles.barFill}
+                      style={{ display: "block", width: `${(value / barMax) * 100}%` }}
+                    />
+                  </span>
+                  <span className={styles.barValue}>{value}</span>
+                </div>
+              ))}
+            </div>
+            <p className={styles.note}>{t("ar_funnel_note")}</p>
+          </section>
+
+          <section className={`${surfaces.plate} ${styles.section}`}>
+            <h4 className={styles.sectionTitle}>{t("ar_journal")}</h4>
+            {events === null ? (
+              <AdminLoadingState variant="spinner" text={t("bc_loading")} />
+            ) : events.length === 0 ? (
+              <p className={styles.note}>{t("ar_journal_empty")}</p>
+            ) : (
+              <div className={lists.list}>
+                {events.map((event) => (
+                  <div key={event.id} className={lists.item}>
+                    <div className={lists.itemBody}>
+                      <div className={lists.itemTitleRow}>
+                        <p className={lists.itemTypeCode}>{event.ig_username ? `@${event.ig_username}` : "—"}</p>
+                        <span className={EVENT_BADGE[event.status] ?? "cw-status-pending-badge"}>
+                          {t(`ar_ev_${event.status}` as TranslationKey)}
+                        </span>
+                      </div>
+                      <div className={lists.itemMeta}>
+                        {event.error ? <span>{event.error}</span> : null}
+                        <span className={lists.itemIdFaint}>{new Date(event.created_at).toLocaleString(locale)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+
       {confirmDelete ? (
         <AdminModal
           title={t("ar_delete_title")}
@@ -489,34 +699,9 @@ function RuleEditor({
             </div>
           }
         >
-          <p className={controls.hint}>{rule.name || t("ar_untitled")}</p>
+          <p className={controls.hint}>{draft.name || t("ar_untitled")}</p>
         </AdminModal>
       ) : null}
-      <span className={controls.fieldLabel}>{t("ar_journal")}</span>
-      {events === null ? (
-        <AdminLoadingState variant="spinner" text={t("bc_loading")} />
-      ) : events.length === 0 ? (
-        <p className={controls.hint}>{t("ar_journal_empty")}</p>
-      ) : (
-        <div className={lists.list}>
-          {events.map((event) => (
-            <div key={event.id} className={lists.item}>
-              <div className={lists.itemBody}>
-                <div className={lists.itemTitleRow}>
-                  <p className={lists.itemTypeCode}>{event.ig_username ? `@${event.ig_username}` : "—"}</p>
-                  <span className={EVENT_BADGE[event.status] ?? "cw-status-pending-badge"}>
-                    {t(`ar_ev_${event.status}` as TranslationKey)}
-                  </span>
-                </div>
-                <div className={lists.itemMeta}>
-                  {event.error ? <span>{event.error}</span> : null}
-                  <span className={lists.itemIdFaint}>{new Date(event.created_at).toLocaleString(locale)}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </>
+    </div>
   );
 }
