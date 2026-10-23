@@ -186,11 +186,28 @@ export function useProfileData(session: Session | null) {
 
   const profile = state.userId === userId ? state.profile : null;
   const clear = useCallback(() => setState({ userId: null, profile: null }), []);
+  /* A new face from the hero (2026-10-23) is the account's picture now; the
+     server already holds it, so the screen takes it without a second read. */
+  const setAvatar = useCallback(
+    (avatarUrl: string) =>
+      setState((prev) =>
+        prev.profile
+          ? {
+              ...prev,
+              profile: {
+                ...prev.profile,
+                profile: { ...prev.profile.profile, account: { ...prev.profile.profile.account, avatarUrl } },
+              },
+            }
+          : prev,
+      ),
+    [],
+  );
 
   /* Derived, not a third piece of state: "signed in, no profile yet, nothing
      failed" IS the loading condition, and a boolean kept beside it could only
      ever disagree with it. */
-  return { profile, loading: Boolean(session) && !profile && !error, error, clear };
+  return { profile, loading: Boolean(session) && !profile && !error, error, clear, setAvatar };
 }
 
 /**
@@ -383,8 +400,17 @@ export function useAuthorProfile(session: Session | null) {
     [sessionRef],
   );
 
+  /* The hero's upload saved the profile's photo on the server
+     (`setAuthorPhoto`); the fold's draft follows the row it returns, so a
+     later save from the fold does not put the old portrait back. */
+  const adopt = useCallback(
+    (author: Author) => setState((prev) => ({ ...prev, userId: userId, eligible: true, author })),
+    [userId],
+  );
+
   const matches = state.userId === userId;
   return {
+    adopt,
     eligible: matches ? state.eligible : false,
     author: matches ? state.author : null,
     loading: Boolean(session) && !matches,

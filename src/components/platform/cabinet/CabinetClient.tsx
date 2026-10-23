@@ -33,6 +33,9 @@ import { PwaInstallCard } from "./PwaInstallCard";
 import { cabinetGate } from "./CabinetGate";
 import { CabinetFold } from "./CabinetFold";
 import { CabinetHero } from "./CabinetHero";
+import { getFaceCopy } from "./faceCopy";
+import { useAccountFace } from "./useAccountFace";
+import { useToast } from "@/components/ToastProvider";
 import { SphereMapCard } from "./SphereMapCard";
 import dynamic from "next/dynamic";
 
@@ -116,10 +119,12 @@ export function CabinetClient() {
   const lang = useProfileLang();
   const { session, loading: sessionLoading, signInWithGoogle, signOut } = useCabinetSession();
   const identity = usePlatformIdentity(session);
-  const { profile, loading: profileLoading, error, clear: clearProfile } = useProfileData(session);
+  const { profile, loading: profileLoading, error, clear: clearProfile, setAvatar } = useProfileData(session);
   const { shelf, failed: shelfFailed, reload: reloadShelf } = useLearnerShelf(session);
   const reach = useTelegramReach(session);
   const authorProfile = useAuthorProfile(session);
+  const face = useAccountFace(session, lang);
+  const toast = useToast();
 
   const purchases = useMemo(() => profile?.profile.purchases ?? [], [profile]);
 
@@ -143,6 +148,7 @@ export function CabinetClient() {
   );
 
   const cab = useMemo(() => getCabinetCopy(lang), [lang]);
+  const faceCopy = useMemo(() => getFaceCopy(lang), [lang]);
   const dateLocale = dateLocaleFor(lang);
 
   const href = useSurfaceHref();
@@ -198,6 +204,27 @@ export function CabinetClient() {
         name={account.fullName ?? copy.fallbackName}
         role={platformRoleLabel(identity.role)}
         email={account.email ?? copy.fallbackEmail}
+        /* THE FACE IS THE OWNER'S CONTROL (2026-10-23): view it, replace it,
+           or go and aim it. An author's upload lands in their profile and the
+           account follows it (see the avatar route); the fold's draft takes
+           the saved row so a later save cannot put the old portrait back. */
+        face={{
+          photo: account.avatarUrl ? { src: account.avatarUrl, alt: account.fullName ?? copy.fallbackName } : null,
+          settingsHref: authorProfile.eligible ? "#author" : null,
+          uploading: face.uploading,
+          copy: faceCopy,
+          onUpload: async (file) => {
+            const result = await face.upload(file);
+            if (!result.ok) {
+              toast.error(result.error);
+              return false;
+            }
+            setAvatar(result.src);
+            if (result.author) authorProfile.adopt(result.author);
+            toast.success(result.author ? faceCopy.doneAuthor : faceCopy.doneLearner);
+            return true;
+          },
+        }}
         notice={
           reach && !reach.linked && reach.linkUrl
             ? { label: cab.notificationsMissing, action: cab.connectTelegram, href: reach.linkUrl }

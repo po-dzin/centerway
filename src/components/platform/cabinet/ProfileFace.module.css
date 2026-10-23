@@ -1,0 +1,109 @@
+/* The profile face (ProfileFace.tsx): the avatar as a button, its pen mark and
+   the small sheet it opens. Layout only — every control composes a role from
+   PlatformButtons.module.css, and every colour, radius and shadow is a token. */
+
+.wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+/* The circle keeps the hero's own geometry (passed in); this is only the
+   pressable wrapper around it, so it draws nothing of its own at rest. */
+.face {
+  position: relative;
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  border-radius: var(--cw-radius-pill);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.face:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+/* The mark that says «this face can be changed», on the circle's corner.
+   The START corner, not the end one the canvas draws: the end corner already
+   carries the cabinet's reach dot (Cabinet.module.css → .avatarNotice), and two
+   marks on one corner read as one smudge. */
+.penMark {
+  position: absolute;
+  z-index: 2;
+  inset-inline-start: calc(var(--cw-space-2xs) * -1);
+  inset-block-end: calc(var(--cw-space-2xs) * -1);
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface);
+  color: var(--cw-platform-text);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+/* Opened beside the face, upward: the face stands at the bottom of the room,
+   and the sheet should cover the photograph rather than the shelf below it. */
+.sheet {
+  position: absolute;
+  z-index: var(--ds-z-sticky);
+  inset-inline-start: 0;
+  inset-block-end: calc(100% + var(--cw-space-sm));
+  inline-size: min(17.5rem, calc(100vw - 2 * var(--cw-page-gutter)));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-sm) var(--cw-space-md) var(--cw-space-md);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  color: var(--cw-platform-text);
+  box-shadow: var(--cw-mat-shadow-raised);
+}
+
+.sheetHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
+.sheetLabel {
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cw-platform-muted);
+}
+
+.sheetClose {
+  composes: base chrome square from "../PlatformButtons.module.css";
+}
+
+.sheetAction {
+  composes: base secondary from "../PlatformButtons.module.css";
+  justify-content: flex-start;
+}
+
+.sheetLink {
+  align-self: flex-start;
+  padding-block: var(--cw-space-2xs);
+  color: var(--cw-platform-text);
+  text-decoration: none;
+}
+
+.viewerUpload {
+  composes: base onMedia from "../PlatformButtons.module.css";
+}
+
+/* The field is opened by the buttons above, never shown. */
+.file {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
