@@ -7214,3 +7214,108 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+
+/* ── The walk through what is left before publishing ───────────────────── */
+
+.placeStepper {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: var(--ds-z-sticky);
+  display: grid;
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface-sunk);
+  outline: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-selected);
+  outline-offset: var(--cw-contour-offset);
+}
+
+.placeStepperRow {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-width: 0;
+}
+
+.placeStepperText {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--ds-type-body-sm-size);
+  color: var(--cw-platform-muted);
+}
+
+.placeStepperCount {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  min-height: var(--ds-touch-target-min);
+  padding-inline: var(--cw-space-sm);
+  border: 1px solid var(--builder-rule);
+  border-radius: var(--cw-radius-md);
+  background: transparent;
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.placeStepperArrow {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: square from "../platform/PlatformButtons.module.css";
+  color: var(--cw-platform-muted);
+}
+
+.placeStepperArrow:focus-visible {
+  color: var(--cw-platform-text);
+}
+
+.placeStepperList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.placeStepperItem {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  inline-size: 100%;
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border: 0;
+  border-radius: var(--cw-radius-md);
+  background: transparent;
+  color: var(--cw-platform-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.placeStepperItem small {
+  color: var(--cw-platform-muted);
+}
+
+.placeStepperItem[aria-current="true"] {
+  background: var(--cw-mat-surface-sunk);
+  box-shadow: inset 3px 0 0 var(--cw-nav-marker);
+}
+
+.placeStepperNote {
+  margin: 0;
+  min-height: 0;
+  font-size: var(--ds-type-label-size);
+  color: var(--cw-platform-muted);
+}
+
+.placeStepperNote:empty {
+  display: none;
+}
+
+/* The block the walk stands on: the flagged contour in full ink, so the frame
+   that moves is the one thing that changes. */
+.blockCard[data-flagged][data-selected] {
+  outline-color: var(--cw-nav-marker);
+  outline-width: 2px;
+}
