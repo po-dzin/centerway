@@ -42,9 +42,28 @@ export function normalizeCustomerPhone(phone: string | null | undefined): string
   return value ? value : null;
 }
 
+/**
+ * The phone in ONE shape (+380…), the key two rows of the same person meet on.
+ *
+ * The stored `phone` keeps whatever the gateway or the person typed, so
+ * «067 123 45 67» and «+380671234567» used to be two people. The database keeps
+ * the same value in `customers.phone_e164`, computed by `cw_normalize_phone`
+ * (migration 20261023190000_person_card.sql): the two rules must stay identical,
+ * or a lookup here misses the row the database normalised.
+ */
+export function normalizePhoneE164(phone: string | null | undefined): string | null {
+  const d = (phone ?? "").replace(/\D/g, "");
+  if (!d) return null;
+  if (d.length === 10 && d.startsWith("0")) return `+38${d}`;
+  if (d.length === 9) return `+380${d}`;
+  if (d.length === 11 && d.startsWith("80")) return `+3${d}`;
+  if (d.length >= 10 && d.length <= 15) return `+${d}`;
+  return null;
+}
+
 async function findCustomerIdBy(
   sb: SupabaseLike,
-  column: "email" | "phone",
+  column: "email" | "phone" | "phone_e164",
   value: string,
 ): Promise<{ id: string; created_at: string | null } | null> {
   const { data, error } = await sb
@@ -104,7 +123,7 @@ export async function upsertCustomerByContact(
     if (hit) candidates.push(hit);
   }
   if (phone) {
-    const hit = await findCustomerIdBy(sb, "phone", phone);
+    const hit = await findByPhone(sb, phone);
     if (hit) candidates.push(hit);
   }
 
@@ -147,8 +166,16 @@ export async function upsertCustomerByContact(
     if (hit) return { id: hit.id, created: !raced };
   }
   if (phone) {
-    const hit = await findCustomerIdBy(sb, "phone", phone);
+    const hit = await findByPhone(sb, phone);
     if (hit) return { id: hit.id, created: !raced };
   }
   return { id: null, created: false };
+}
+
+/* By the normalised phone when the number has a recognisable shape, so the
+   same person typed two ways is one row (G 23.10: склейка по телефону); by the
+   raw string otherwise, which is what matching did before. */
+function findByPhone(sb: SupabaseLike, phone: string) {
+  const e164 = normalizePhoneE164(phone);
+  return e164 ? findCustomerIdBy(sb, "phone_e164", e164) : findCustomerIdBy(sb, "phone", phone);
 }

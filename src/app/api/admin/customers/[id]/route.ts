@@ -182,8 +182,26 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     })),
   ].sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime());
 
+  /* THE PERSON CARD (G 23.10): which channels they agreed to, and where every
+     tag came from. Consent lives per channel in `messaging_subscriptions`; the
+     history in `customer_tags`. */
+  const [{ data: subscriptions }, { data: tagHistory }] = await Promise.all([
+    db
+      .from("messaging_subscriptions")
+      .select("channel, address, status, source, status_changed_at")
+      .eq("customer_id", id)
+      .order("channel", { ascending: true }),
+    db
+      .from("customer_tags")
+      .select("tag, source, created_at")
+      .eq("customer_id", id)
+      .order("created_at", { ascending: true }),
+  ]);
+
   return NextResponse.json({
     customer,
+    subscriptions: subscriptions ?? [],
+    tag_history: tagHistory ?? [],
     enrollments,
     orders: orderRows.map((o) => ({ ...o, product_title: orderProductLabel(o.product_code) })),
     events: eventRows,

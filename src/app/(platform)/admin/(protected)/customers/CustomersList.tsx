@@ -54,6 +54,8 @@ export function CustomersList({ initial }: { initial: CustomersPage }) {
      seven. */
   const [view, setView] = useState<"people" | "leads">("people");
   const [q, setQ] = useState("");
+  const [tag, setTag] = useState("");
+  const [tagOptions, setTagOptions] = useState<{ tag: string; count: number }[]>([]);
   const [debouncedQ, setDebouncedQ] = useState("");
   const [data, setData] = useState<Identity[]>(initial.data);
   const [count, setCount] = useState(initial.count);
@@ -74,8 +76,17 @@ export function CustomersList({ initial }: { initial: CustomersPage }) {
     return () => clearTimeout(t);
   }, [q]);
 
+  /* The tag filter's options: every tag a door has written, most common first.
+     A failure leaves the filter empty, not the list. */
+  useEffect(() => {
+    authorizedFetch("/api/admin/customers?tags=1")
+      .then((res) => (res.ok ? res.json() : { tags: [] }))
+      .then((json: { tags?: { tag: string; count: number }[] }) => setTagOptions(json.tags ?? []))
+      .catch(() => setTagOptions([]));
+  }, []);
+
   const fetchCustomers = useCallback(
-    async (query: string, pageIndex: number) => {
+    async (query: string, pageIndex: number, tagFilter: string) => {
       requestSeq.current += 1;
       const reqId = requestSeq.current;
       abortRef.current?.abort();
@@ -88,6 +99,7 @@ export function CustomersList({ initial }: { initial: CustomersPage }) {
       try {
         const params = new URLSearchParams();
         if (query) params.set("q", query);
+        if (tagFilter) params.set("tag", tagFilter);
         params.set("limit", String(LIMIT));
         params.set("offset", String(pageIndex * LIMIT));
 
@@ -117,8 +129,8 @@ export function CustomersList({ initial }: { initial: CustomersPage }) {
       firstRun.current = false;
       return;
     }
-    fetchCustomers(debouncedQ, page);
-  }, [debouncedQ, page, fetchCustomers]);
+    fetchCustomers(debouncedQ, page, tag);
+  }, [debouncedQ, page, tag, fetchCustomers]);
 
   useEffect(() => {
     return () => abortRef.current?.abort();
@@ -171,6 +183,29 @@ export function CustomersList({ initial }: { initial: CustomersPage }) {
             onClear={q ? () => setQ("") : undefined}
           />
 
+          {tagOptions.length > 0 && (
+            <div className={lists.toolbar}>
+              <label className={lists.toolbarField}>
+                <span className={controls.fieldCaption}>{t("customers_filter_tag")}</span>
+                <select
+                  className={controls.select}
+                  value={tag}
+                  onChange={(e) => {
+                    setTag(e.target.value);
+                    setPage(0);
+                  }}
+                >
+                  <option value="">{t("customers_filter_tag_all")}</option>
+                  {tagOptions.map((option) => (
+                    <option key={option.tag} value={option.tag}>
+                      {option.tag} · {option.count}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          )}
+
           {/* Results header */}
           {!loading && (
             <p className={pageStyles.resultsNote}>
@@ -190,7 +225,7 @@ export function CustomersList({ initial }: { initial: CustomersPage }) {
               action={
                 <button
                   type="button"
-                  onClick={() => fetchCustomers(debouncedQ, page)}
+                  onClick={() => fetchCustomers(debouncedQ, page, tag)}
                   className={`${controls.action} cw-surface-2`}
                 >
                   {t("analytics_retry")}
@@ -234,6 +269,19 @@ export function CustomersList({ initial }: { initial: CustomersPage }) {
                       </p>
                     )}
                   </div>
+
+                  {/* Where this person can be reached: a mark per channel the card holds. */}
+                  <span className={lists.channels} aria-label={t("customers_channels")}>
+                    {identity.has_email && <Icon name="mail" size={16} label={t("customers_contact_email")} />}
+                    {identity.has_telegram && (
+                      <Icon name="telegram" size={16} label={t("customers_contact_telegram")} />
+                    )}
+                    {identity.has_instagram && (
+                      <span className={lists.channelText} title={t("customers_contact_instagram")}>
+                        IG
+                      </span>
+                    )}
+                  </span>
 
                   {identity.tags?.length > 0 && (
                     <div className={lists.chips}>

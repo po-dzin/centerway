@@ -2,7 +2,9 @@
 
 import { serviceClient } from "@/lib/db/server";
 
-import type { AutoreplyRule, AutoreplyStore, EventStatus } from "./engine";
+import { addCustomerTags } from "@/lib/platform/customerTags";
+
+import { campaignOf, type AutoreplyRule, type AutoreplyStore, type EventStatus } from "./engine";
 import type { CommentEvent } from "./instagram";
 
 type Db = ReturnType<typeof serviceClient>;
@@ -123,5 +125,48 @@ export function dbStore(db: Db = serviceClient()): AutoreplyStore {
       }
       if (dbError) throw new Error(dbError.message);
     },
+
+    async rememberPerson(rule: AutoreplyRule, event: CommentEvent) {
+      if (!event.fromId) return;
+      const id = await cardByInstagram(db, rule, event);
+      if (id) await addCustomerTags(db, [id], ["instagram-autodm"], "autoreply");
+    },
   };
+}
+
+/**
+ * The card of the person behind an Instagram id, made on their first reply.
+ * The rule that brought them is their first touch; a card that already exists
+ * only gets a fresher nick.
+ */
+async function cardByInstagram(db: Db, rule: AutoreplyRule, event: CommentEvent): Promise<string | null> {
+  const igUserId = event.fromId as string;
+  const find = async () => {
+    const { data, error } = await db.from("customers").select("id").eq("ig_user_id", igUserId).limit(1);
+    if (error) throw new Error(error.message);
+    return data?.[0]?.id ?? null;
+  };
+  const existing = await find();
+  if (existing) {
+    if (event.fromUsername) {
+      const { error } = await db.from("customers").update({ ig_username: event.fromUsername }).eq("id", existing);
+      if (error) throw new Error(error.message);
+    }
+    return existing;
+  }
+  const { data, error } = await db
+    .from("customers")
+    .insert({
+      ig_user_id: igUserId,
+      ig_username: event.fromUsername,
+      first_touch: { channel: "instagram", medium: "autodm", campaign: campaignOf(rule), at: new Date().toISOString() },
+    })
+    .select("id")
+    .single();
+  if (error) {
+    // Two comments from one person at once: the other request made the card.
+    if (error.code === UNIQUE_VIOLATION) return find();
+    throw new Error(error.message);
+  }
+  return (data as { id: string }).id;
 }

@@ -32,6 +32,7 @@ import { asJson } from "@/lib/db/types";
 import { sendEmail, sendEmailBatch, PURCHASE_FROM } from "@/lib/email/resend";
 import { platformUrl } from "@/lib/surfaces/catalog";
 import { audienceFromRow, parseAudience, type Audience } from "./audience";
+import { linkImportedPeople, type ImportSource } from "./importPeople";
 import { isSafeUrl, renderBroadcast, type BroadcastContent } from "./render";
 import { createUnsubscribeToken, type UnsubscribeClaim } from "./unsubscribeToken";
 
@@ -736,9 +737,9 @@ export function parseImport(raw: string): { rows: { address: string; name: strin
  */
 export async function importSubscriptions(
   raw: string,
-  source: "csv_import" | "sendpulse_import" | "manual",
+  source: ImportSource,
   db: Db = serviceClient(),
-): Promise<{ added: number; existing: number; invalid: string[] }> {
+): Promise<{ added: number; existing: number; invalid: string[]; people: { linked: number; created: number } }> {
   const { rows, invalid } = parseImport(raw);
   if (rows.length > 20000) throw new BroadcastError("import_too_large");
   let added = 0;
@@ -754,7 +755,10 @@ export async function importSubscriptions(
     if (error) throw new BroadcastError(error.message, 500);
     added += data?.length ?? 0;
   }
-  return { added, existing: rows.length - added, invalid: invalid.slice(0, 50) };
+  // Every imported address ends on a person card (with the base's tag), so the
+  // admin's «Люди» and the audiences see one person, not a loose line.
+  const people = await linkImportedPeople(db, rows, source);
+  return { added, existing: rows.length - added, invalid: invalid.slice(0, 50), people };
 }
 
 export type SuppressionStatus = "unsubscribed" | "bounced" | "complained";

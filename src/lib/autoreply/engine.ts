@@ -53,6 +53,12 @@ export interface AutoreplyStore {
   /** Claims (pending or sent) of the rule since the time, counting the caller's own. */
   countClaimsSince(ruleId: string, sinceIso: string): Promise<number>;
   finish(eventId: string, status: EventStatus, error?: string): Promise<void>;
+  /**
+   * Puts the person who got the reply on their card: Instagram id and nick, the
+   * rule as their first touch, the `instagram-autodm` tag. Optional so a store
+   * without the person card (tests, an older database) still replies.
+   */
+  rememberPerson?(rule: AutoreplyRule, event: CommentEvent): Promise<void>;
 }
 
 export type HandleResult =
@@ -72,6 +78,11 @@ export const DEFAULT_OPEN_LABEL = "Отримати лінк";
 export const DEFAULT_LINK_LABEL = "Відкрити";
 const POSTBACK_PREFIX = "ar:";
 
+/** The rule's campaign as a slug: the UTM campaign when set, the rule's name otherwise. */
+export function campaignOf(rule: Pick<AutoreplyRule, "name" | "utmCampaign">): string {
+  return (rule.utmCampaign || rule.name).toLowerCase().replace(SLUG, "-").replace(/^-|-$/g, "");
+}
+
 /**
  * The button link, absolute. A link that already carries its own utm_ tags is
  * sent as written; otherwise the Instagram tags are added.
@@ -79,7 +90,7 @@ const POSTBACK_PREFIX = "ar:";
 export function buildLink(url: string, rule: Pick<AutoreplyRule, "name" | "utmCampaign">, siteOrigin: string): string {
   const link = new URL(url, siteOrigin);
   if ([...link.searchParams.keys()].some((key) => key.startsWith("utm_"))) return link.toString();
-  const campaign = (rule.utmCampaign || rule.name).toLowerCase().replace(SLUG, "-").replace(/^-|-$/g, "");
+  const campaign = campaignOf(rule);
   link.searchParams.set("utm_source", "instagram");
   link.searchParams.set("utm_medium", "autodm");
   if (campaign) link.searchParams.set("utm_campaign", campaign);
@@ -149,6 +160,17 @@ export async function handleComment(event: CommentEvent, deps: HandleDeps): Prom
       await sender.replyPublicly(event.commentId, publicText);
     } catch (error) {
       log.warn("autoreply.public_reply_failed", {
+        ruleId: rule.id,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  // Also a courtesy to us, not to the person: the reply is out either way.
+  if (event.fromId && store.rememberPerson) {
+    try {
+      await store.rememberPerson(rule, event);
+    } catch (error) {
+      log.warn("autoreply.remember_person_failed", {
         ruleId: rule.id,
         message: error instanceof Error ? error.message : String(error),
       });

@@ -28,8 +28,27 @@ interface Customer {
   tg_username?: string | null;
   google_id: string | null;
   auth_user_id: string | null;
+  /** From the Instagram auto-reply (person card, 2026-10-23). */
+  ig_user_id?: string | null;
+  ig_username?: string | null;
+  /** Where the person came from first: written once, never moved. */
+  first_touch?: { channel?: string; medium?: string; campaign?: string; ref?: string; at?: string } | null;
   created_at: string;
   updated_at: string;
+}
+
+interface Subscription {
+  channel: string;
+  address: string;
+  status: string;
+  source: string;
+  status_changed_at: string;
+}
+
+interface TagHistoryItem {
+  tag: string;
+  source: string;
+  created_at: string;
 }
 
 interface TimelineItem {
@@ -78,6 +97,8 @@ interface CustomerEvent {
 
 interface ProfileData {
   customer: Customer;
+  subscriptions?: Subscription[];
+  tag_history?: TagHistoryItem[];
   enrollments: CustomerEnrollment[];
   orders: CustomerOrder[];
   events: CustomerEvent[];
@@ -213,7 +234,33 @@ export default function CustomerProfilePage() {
   };
 
   // Check if we have any contacts to show
-  const hasContacts = customer.email || customer.phone || customer.tg_id || customer.google_id || customer.auth_user_id;
+  const hasContacts =
+    customer.email ||
+    customer.phone ||
+    customer.tg_id ||
+    customer.ig_user_id ||
+    customer.google_id ||
+    customer.auth_user_id;
+  const subscriptions = profile.subscriptions ?? [];
+  const tagHistory = profile.tag_history ?? [];
+  const firstTouch = customer.first_touch
+    ? [
+        customer.first_touch.channel,
+        customer.first_touch.medium,
+        customer.first_touch.campaign,
+        customer.first_touch.ref,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "";
+  const consentLabel: Record<string, string> = {
+    subscribed: t("customers_consent_subscribed"),
+    unsubscribed: t("customers_consent_unsubscribed"),
+    bounced: t("customers_consent_bounced"),
+    complained: t("customers_consent_complained"),
+  };
+  const shortDate = (iso: string) =>
+    new Date(iso).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" });
 
   return (
     <div className={pageStyles.page}>
@@ -289,6 +336,15 @@ export default function CustomerProfilePage() {
                     />
                   )
                 ) : null}
+                {customer.ig_username ? (
+                  <ContactRow
+                    label={t("customers_contact_instagram")}
+                    value={`@${customer.ig_username}`}
+                    href={`https://www.instagram.com/${customer.ig_username}/`}
+                  />
+                ) : customer.ig_user_id ? (
+                  <ContactRow label={t("customers_contact_instagram")} value={customer.ig_user_id} />
+                ) : null}
                 {customer.google_id && <ContactRow label={t("customers_contact_google")} value={customer.google_id} />}
                 {customer.auth_user_id && (
                   <ContactRow label={t("customers_contact_auth_user")} value={customer.auth_user_id} />
@@ -296,6 +352,49 @@ export default function CustomerProfilePage() {
               </div>
             )}
           </div>
+
+          {/* WHERE THEY CAME FROM AND WHAT THEY AGREED TO (person card, G 23.10).
+              Consent is per channel: an address that unsubscribed stays so,
+              whatever else the card carries. */}
+          <div className={profileStyles.group}>
+            <h3 className={profileStyles.groupTitle}>{t("customers_profile_origin")}</h3>
+            {firstTouch && <ContactRow label={t("customers_profile_first_touch")} value={firstTouch} />}
+            {subscriptions.length === 0 ? (
+              <p className={profileStyles.note}>{t("customers_profile_consent_none")}</p>
+            ) : (
+              subscriptions.map((sub) => (
+                <div key={`${sub.channel}:${sub.address}`} className={profileStyles.contact}>
+                  <span className={profileStyles.contactKindTag}>
+                    {sub.channel === "email" ? t("customers_contact_email") : t("customers_contact_telegram")}
+                  </span>
+                  <p
+                    className={profileStyles.contactValue}
+                    title={`${sub.source} · ${shortDate(sub.status_changed_at)}`}
+                  >
+                    <span
+                      className={sub.status === "subscribed" ? "cw-status-success-badge" : "cw-status-neutral-badge"}
+                    >
+                      {consentLabel[sub.status] ?? sub.status}
+                    </span>
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+
+          {tagHistory.length > 0 && (
+            <div className={profileStyles.group}>
+              <h3 className={profileStyles.groupTitle}>{t("customers_profile_tag_history")}</h3>
+              {tagHistory.map((item) => (
+                <div key={item.tag} className={profileStyles.contact}>
+                  <span className={profileStyles.contactKindTag}>{shortDate(item.created_at)}</span>
+                  <p className={profileStyles.contactValue}>
+                    {item.tag} <span className="cw-muted">· {item.source}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* WHAT THEY CAN OPEN. Above the orders on purpose: an order is
               what happened, access is what is true now, and the operator
