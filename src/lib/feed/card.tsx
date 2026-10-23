@@ -234,6 +234,9 @@ export async function feedCardResponse(post: FeedPost, origin: string): Promise<
   return new ImageResponse(body, {
     ...FEED_CARD_SIZE,
     fonts: loaded,
-    headers: { "Cache-Control": "public, max-age=600, s-maxage=3600, stale-while-revalidate=86400" },
+    /* No shared cache: a post its author deletes or an admin hides must stop
+       showing at once, and nothing purges this URL. Link scrapers keep their
+       own copy anyway; the render is cheap enough to redo per request. */
+    headers: { "Cache-Control": "private, max-age=300" },
   });
 }
