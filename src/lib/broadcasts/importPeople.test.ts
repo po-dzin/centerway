@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { linkImportedPeople } from "./importPeople";
 
+type NewCard = { email: string; display_name: string | null; first_touch: unknown };
+
 /**
  * A two-table fake that imitates the database's link trigger: a subscription
  * whose `customer_id` is (re)set to null picks up the card with its address.
@@ -44,8 +46,13 @@ function fakeDb(opts: {
         return { upsert: async (rows: Record<string, unknown>[]) => (tagRows.push(...rows), { error: null }) };
       }
       return {
-        insert: (rows: { email: string; display_name: string | null; first_touch: unknown }[]) => ({
+        insert: (input: NewCard | NewCard[]) => ({
           select: async () => {
+            const rows = Array.isArray(input) ? input : [input];
+            // The unique email index: a batch with one taken address fails whole.
+            if (rows.some((row) => cards.some((c) => c.email === row.email))) {
+              return { data: null, error: { code: "23505", message: "duplicate key" } };
+            }
             const made = rows.map((row) => ({ id: `new${++seq}`, tags: [] as string[], ...row }));
             cards.push(...made);
             return { data: made.map((m) => ({ id: m.id })), error: null };
@@ -103,5 +110,28 @@ describe("linkImportedPeople", () => {
     expect(db.cards[0]?.display_name).toBeNull();
     // A plain file leaves no tag behind.
     expect(db.tagRows).toEqual([]);
+  });
+
+  it("relinks an address whose card already exists instead of making a second one", async () => {
+    // The card was made after the subscription, so the link trigger never saw it.
+    const db = fakeDb({
+      cards: [{ id: "later", email: "late@example.com", tags: [] }],
+      subs: [
+        { address: "late@example.com", customer_id: null },
+        { address: "fresh@example.com", customer_id: null },
+      ],
+    });
+    const result = await linkImportedPeople(
+      db as never,
+      [
+        { address: "late@example.com", name: null },
+        { address: "fresh@example.com", name: null },
+      ],
+      "smartsender_import",
+      NOW,
+    );
+    expect(result).toEqual({ linked: 2, created: 1 });
+    expect(db.cards.filter((c) => c.email === "late@example.com")).toHaveLength(1);
+    expect(db.subs.every((sub) => sub.customer_id)).toBe(true);
   });
 });

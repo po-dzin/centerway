@@ -80,10 +80,20 @@ export async function listCustomers(input: {
  * Read from the history table, so a tag shows up the moment any door writes it.
  */
 export async function listCustomerTagOptions(): Promise<{ tag: string; count: number }[]> {
-  const { data, error } = await serviceClient().from("customer_tags").select("tag").limit(20000);
-  if (error) throw new Error(error.message);
+  // Page by page: the API returns at most 1,000 rows a request, whatever the limit asks.
+  const PAGE = 1000;
   const counts = new Map<string, number>();
-  for (const row of data ?? []) counts.set(row.tag, (counts.get(row.tag) ?? 0) + 1);
+  for (let from = 0; from < 20000; from += PAGE) {
+    const { data, error } = await serviceClient()
+      .from("customer_tags")
+      .select("tag")
+      .order("customer_id")
+      .order("tag")
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error(error.message);
+    for (const row of data ?? []) counts.set(row.tag, (counts.get(row.tag) ?? 0) + 1);
+    if ((data ?? []).length < PAGE) break;
+  }
   return [...counts.entries()]
     .map(([tag, count]) => ({ tag, count }))
     .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));

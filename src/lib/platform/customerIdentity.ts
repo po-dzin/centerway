@@ -142,7 +142,11 @@ export async function upsertCustomerByContact(
     if (phone) patch.phone = phone;
     if (Object.keys(patch).length > 0) {
       const { error } = await sb.from("customers").update(patch).eq("id", foundId);
-      if (error) throw error;
+      /* A unique-index refusal means another row already holds this email or
+         this spelling of the phone: one person split across two rows from
+         before phone matching. The person is found; merging the rows is a
+         support case, and a payment callback must not fail over it. */
+      if (error && (error as { code?: string }).code !== "23505") throw error;
     }
     return { id: foundId, created: false };
   }
@@ -175,7 +179,12 @@ export async function upsertCustomerByContact(
 /* By the normalised phone when the number has a recognisable shape, so the
    same person typed two ways is one row (G 23.10: склейка по телефону); by the
    raw string otherwise, which is what matching did before. */
-function findByPhone(sb: SupabaseLike, phone: string) {
+async function findByPhone(sb: SupabaseLike, phone: string) {
+  /* The exact spelling first: when the base still holds the same number twice
+     (rows from before phone_e164), the row that carries THIS spelling is the
+     one a later contact write can land on without colliding with the other. */
+  const exact = await findCustomerIdBy(sb, "phone", phone);
+  if (exact) return exact;
   const e164 = normalizePhoneE164(phone);
-  return e164 ? findCustomerIdBy(sb, "phone_e164", e164) : findCustomerIdBy(sb, "phone", phone);
+  return e164 ? findCustomerIdBy(sb, "phone_e164", e164) : null;
 }

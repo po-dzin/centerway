@@ -50,6 +50,19 @@ async function linkedCards(sb: SupabaseLike, addresses: string[]): Promise<Map<s
   return out;
 }
 
+/** Setting the column to what it already is fires the link trigger again. */
+async function relink(sb: SupabaseLike, addresses: string[]) {
+  for (let i = 0; i < addresses.length; i += CHUNK) {
+    const { error } = await sb
+      .from("messaging_subscriptions")
+      .update({ customer_id: null })
+      .eq("channel", "email")
+      .is("customer_id", null)
+      .in("address", addresses.slice(i, i + CHUNK));
+    if (error) throw new Error(error.message);
+  }
+}
+
 export async function linkImportedPeople(
   sb: SupabaseLike,
   rows: { address: string; name: string | null }[],
@@ -61,36 +74,41 @@ export async function linkImportedPeople(
   const addresses = rows.map((row) => row.address);
   const names = new Map(rows.map((row) => [row.address, row.name]));
 
+  /* Relink before creating anything. An address can sit without a card
+     although its card exists: the card was made after the subscription
+     (the link trigger fires on the subscription's side only), or a
+     previous run made the card and failed before linking. Inserting a
+     second card for it would hit the unique email index on every retry. */
+  await relink(sb, addresses);
   let cards = await linkedCards(sb, addresses);
   const orphans = addresses.filter((address) => cards.has(address) && !cards.get(address));
 
   let created = 0;
   for (let i = 0; i < orphans.length; i += CHUNK) {
     const chunk = orphans.slice(i, i + CHUNK);
-    const { data, error } = await sb
-      .from("customers")
-      .insert(
-        chunk.map((email) => ({
-          email,
-          display_name: names.get(email) ?? null,
-          first_touch: { channel: trace.channel, medium: "import", at: now().toISOString() },
-        })),
-      )
-      .select("id");
-    if (error) throw new Error(error.message);
-    created += data?.length ?? 0;
-    // Setting the column to what it already is fires the link trigger again,
-    // now that the card exists.
-    const { error: relinkError } = await sb
-      .from("messaging_subscriptions")
-      .update({ customer_id: null })
-      .eq("channel", "email")
-      .is("customer_id", null)
-      .in("address", chunk);
-    if (relinkError) throw new Error(relinkError.message);
+    const card = (email: string) => ({
+      email,
+      display_name: names.get(email) ?? null,
+      first_touch: { channel: trace.channel, medium: "import", at: now().toISOString() },
+    });
+    const { data, error } = await sb.from("customers").insert(chunk.map(card)).select("id");
+    if (!error) {
+      created += data?.length ?? 0;
+    } else if ((error as { code?: string }).code === "23505") {
+      /* One card in the chunk was made in between by another door: that card
+         is the one we wanted. The rest go one by one so they are not lost. */
+      for (const email of chunk) {
+        const one = await sb.from("customers").insert(card(email)).select("id");
+        if (one.error && (one.error as { code?: string }).code !== "23505") throw new Error(one.error.message);
+        created += one.data?.length ?? 0;
+      }
+    } else {
+      throw new Error(error.message);
+    }
+    await relink(sb, chunk);
   }
 
-  if (created > 0) cards = await linkedCards(sb, addresses);
+  if (orphans.length > 0) cards = await linkedCards(sb, addresses);
   const ids = [...cards.values()].filter((id): id is string => Boolean(id));
   if (trace.tag) await addCustomerTags(sb, ids, [trace.tag], trace.tagSource);
   return { linked: ids.length, created };

@@ -157,6 +157,18 @@ describe("upsertCustomerByContact", () => {
     expect(db.inserts).toBe(0);
   });
 
+  it("lands on the row that carries this exact spelling when the number lives twice", async () => {
+    // Rows split before phone matching: writing this email and phone onto the
+    // older row would collide with the newer one's unique email and phone.
+    const db = fakeDb([
+      { id: "old", email: null, phone: "067 123 45 67", created_at: "2025-01-01T00:00:00Z" },
+      { id: "new", email: "ann@example.com", phone: "+380671234567", created_at: "2026-01-01T00:00:00Z" },
+    ]);
+    const result = await upsertCustomerByContact(db as never, { email: "ann@example.com", phone: "+380671234567" });
+    expect(result).toEqual({ id: "new", created: false });
+    expect(db.rows[0]!.email).toBeNull();
+  });
+
   it("returns nothing to key on when both contacts are empty", async () => {
     const db = fakeDb([]);
     expect(await upsertCustomerByContact(db as never, { email: "  ", phone: null })).toEqual({
