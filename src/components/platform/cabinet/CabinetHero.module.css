@@ -400,17 +400,37 @@
    chips, the person's own commands — standing at the bottom of the
    photograph. The cards moved down onto the paper, so the plate no longer
    has to hold a whole screen: it is as tall as a room seen through a door. */
+/* THE IDENTITY STANDS ON THE PAPER END OF THE PLATE (G 23.10, screenshot).
+   The mask has dissolved the photograph by the time the name is reached, so
+   cream ink there was cream on cream: the second word of the name vanished.
+   The room's ink is the page's own here, and it flips with the theme.
+
+   The hero lets its contents out downward: the photo sheet under the face
+   (ProfileFace) was cut off at the plate's edge. The plate still clips its
+   own picture sideways, and the hero stacks over the tabs so an open sheet
+   lies on top of them, not under. */
+.hero[data-layout="identity"] {
+  z-index: 2;
+  overflow: visible;
+}
+
 .hero[data-layout="identity"] .plateWrap {
   min-height: clamp(24rem, 64svh, 40rem);
   align-content: end;
   padding-block-end: var(--cw-space-xl);
+  overflow-x: clip;
 }
 
 .hero[data-layout="identity"] .room {
   align-self: end;
+  color: var(--cw-platform-text);
 }
 
+/* The whole column, not the 34rem the stacked layout keeps: three parts in a
+   row (face, name and chips, commands) squeezed into 34rem broke the name onto
+   two lines and stood the chips one per line. */
 .hero[data-layout="identity"] .identityMain {
+  width: 100%;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: end;
 }
@@ -434,8 +454,9 @@
   list-style: none;
 }
 
+/* On paper, like the name above them. */
 .chip {
-  composes: chip onMedia from "../Chip.module.css";
+  composes: chip from "../Chip.module.css";
 }
 
 .identityActions {

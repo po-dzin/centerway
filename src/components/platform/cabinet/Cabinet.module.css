@@ -2301,13 +2301,15 @@
   gap: var(--cw-space-2xl);
 }
 
-/* The hero's own commands, on the photograph: the author page and settings. */
+/* The hero's own commands: the author page and settings. They stand where the
+   photograph has already turned into paper (G 23.10 screenshot: the glass
+   control read as a pale grey slab there), so they are paper controls. */
 .heroAction {
-  composes: base onMedia from "../PlatformButtons.module.css";
+  composes: base secondary from "../PlatformButtons.module.css";
 }
 
 .heroActionSquare {
-  composes: base onMedia square from "../PlatformButtons.module.css";
+  composes: base secondary square from "../PlatformButtons.module.css";
 }
 
 .chronicle {
