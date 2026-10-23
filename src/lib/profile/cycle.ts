@@ -154,9 +154,34 @@ export type Rhythm = {
 
 export const EMPTY_RHYTHM: Rhythm = { current: "avg", days: {} };
 
-/** A day type as it starts: the default budgets and empty slots. */
+/** The example each day type starts from, as the programme's prototype assembled it. */
+const EXAMPLE_DAYS: Record<DayTypeId, string[][]> = {
+  full: [
+    ["morning-questions", "breath-5x5", "yoga-live", "warm-breakfast"],
+    ["work-block", "work-block", "work-block"],
+    ["light-dinner", "evening-review", "screen-free-evening"],
+    ["close-people"],
+  ],
+  avg: [
+    ["light-air", "morning-questions", "breath-5x5", "yoga-record", "warm-breakfast"],
+    ["work-block", "work-block"],
+    ["light-dinner", "walk", "evening-review", "meditation"],
+  ],
+  min: [
+    ["morning-questions", "meditation", "yoga-record", "warm-breakfast"],
+    ["work-block", "step-to-b"],
+    ["hobby", "walk", "close-people"],
+    ["light-dinner", "evening-review", "breath-5x5"],
+  ],
+  off: [],
+};
+
+/** A day type as it starts: the default budgets and the example's blocks. */
 export function freshDay(type: DayTypeId): RhythmDay {
-  return { budgets: DAY_TYPE_SLOTS[type].map((slot) => slot.minutes), slots: DAY_TYPE_SLOTS[type].map(() => []) };
+  return {
+    budgets: DAY_TYPE_SLOTS[type].map((slot) => slot.minutes),
+    slots: DAY_TYPE_SLOTS[type].map((_, index) => (EXAMPLE_DAYS[type][index] ?? []).map((block) => ({ block }))),
+  };
 }
 
 /** The day as stored, or a fresh one when the stored shape no longer fits the type. */
@@ -258,7 +283,11 @@ export function validateCycle(raw: unknown): Result<Cycle> {
         if (text) step[key] = text;
       }
       if (value.minutes !== undefined && value.minutes !== null) {
-        if (!Number.isInteger(value.minutes) || (value.minutes as number) < 1 || (value.minutes as number) > CYCLE_MINUTES_MAX)
+        if (
+          !Number.isInteger(value.minutes) ||
+          (value.minutes as number) < 1 ||
+          (value.minutes as number) > CYCLE_MINUTES_MAX
+        )
           return { ok: false, error: "invalid_minutes" };
         step.minutes = value.minutes as number;
       }
@@ -270,7 +299,8 @@ export function validateCycle(raw: unknown): Result<Cycle> {
   if (raw.week !== undefined) {
     if (!isPlainObject(raw.week)) return { ok: false, error: "invalid_week" };
     for (const [id, value] of Object.entries(raw.week)) {
-      if (!isSphereAxisId(id) || !Array.isArray(value) || value.length !== WEEK_DAYS) return { ok: false, error: "invalid_week" };
+      if (!isSphereAxisId(id) || !Array.isArray(value) || value.length !== WEEK_DAYS)
+        return { ok: false, error: "invalid_week" };
       if (!value.every((mark) => typeof mark === "boolean")) return { ok: false, error: "invalid_week" };
       week[id] = value as boolean[];
     }
@@ -297,7 +327,8 @@ const BUDGET_MAX = 24 * 60;
 
 export function validateRhythm(raw: unknown): Result<Rhythm> {
   if (!isPlainObject(raw)) return { ok: false, error: "invalid_rhythm" };
-  for (const key of Object.keys(raw)) if (key !== "current" && key !== "days") return { ok: false, error: "unknown_field" };
+  for (const key of Object.keys(raw))
+    if (key !== "current" && key !== "days") return { ok: false, error: "unknown_field" };
   const current = raw.current ?? "avg";
   if (typeof current !== "string" || !(DAY_TYPES as readonly string[]).includes(current))
     return { ok: false, error: "invalid_day_type" };
@@ -305,7 +336,8 @@ export function validateRhythm(raw: unknown): Result<Rhythm> {
   if (raw.days !== undefined) {
     if (!isPlainObject(raw.days)) return { ok: false, error: "invalid_days" };
     for (const [type, value] of Object.entries(raw.days)) {
-      if (!(DAY_TYPES as readonly string[]).includes(type) || !isPlainObject(value)) return { ok: false, error: "invalid_days" };
+      if (!(DAY_TYPES as readonly string[]).includes(type) || !isPlainObject(value))
+        return { ok: false, error: "invalid_days" };
       const count = DAY_TYPE_SLOTS[type as DayTypeId].length;
       const { budgets, slots } = value;
       if (!Array.isArray(budgets) || budgets.length !== count) return { ok: false, error: "invalid_budgets" };
@@ -317,7 +349,12 @@ export function validateRhythm(raw: unknown): Result<Rhythm> {
         if (!Array.isArray(slot) || slot.length > DAY_ITEMS_MAX) return { ok: false, error: "invalid_slots" };
         const items: RhythmItem[] = [];
         for (const item of slot) {
-          if (isPlainObject(item) && typeof item.block === "string" && BLOCK_IDS.has(item.block) && Object.keys(item).length === 1) {
+          if (
+            isPlainObject(item) &&
+            typeof item.block === "string" &&
+            BLOCK_IDS.has(item.block) &&
+            Object.keys(item).length === 1
+          ) {
             items.push({ block: item.block });
           } else if (isPlainObject(item) && isSphereAxisId(item.focus) && Object.keys(item).length === 1) {
             items.push({ focus: item.focus });

@@ -9,6 +9,7 @@ import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { FakeSupabase } from "@/lib/admin/fakeSupabase";
+import { EMPTY_CYCLE, EMPTY_RHYTHM } from "@/lib/profile/cycle";
 
 const OWNER = "00000000-0000-4000-8000-0000000000a1";
 const OTHER = "00000000-0000-4000-8000-0000000000b1";
@@ -62,7 +63,9 @@ describe("GET /api/platform/users/me/sphere-map", () => {
   it("gives an empty map to a person who has none, not somebody else's", async () => {
     const res = await get();
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ map: { spheres: {}, focus: [], history: [], updatedAt: null } });
+    expect(await res.json()).toEqual({
+      map: { spheres: {}, focus: [], history: [], updatedAt: null, cycle: EMPTY_CYCLE, rhythm: EMPTY_RHYTHM },
+    });
   });
 });
 

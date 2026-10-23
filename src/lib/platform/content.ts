@@ -40,6 +40,8 @@ export const PROFILE_HREF = "/profile";
 export const SPHERE_MAP_HREF = "/profile/map";
 /** The profile opened on its «Курси» tab: every course the person holds (G 23.10). */
 export const PROFILE_COURSES_HREF = "/profile/courses";
+/** The profile opened on «Мій ритм»: the day constructor fed by the map's bridge (G 23.10). */
+export const PROFILE_RHYTHM_HREF = "/profile/rhythm";
 
 export type NavItem = { label: string; href: string; match: "exact" | "prefix" };
 
