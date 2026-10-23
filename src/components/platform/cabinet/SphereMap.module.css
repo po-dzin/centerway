@@ -458,3 +458,29 @@
 .cardOnward {
   margin-top: var(--cw-space-xs);
 }
+
+/* The first screen's tile: the same column and glass as the course and the
+   dosha beside it. The radar is the shape, read at a glance; the words under
+   it say what is in focus and lead to the map. */
+.tile {
+  composes: compact from "../PlatformButtons.module.css";
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-md);
+  border-radius: var(--cw-radius-lg);
+}
+
+.tile .radarCompact {
+  width: clamp(5rem, 16vw, 6.5rem);
+  align-self: center;
+}
+
+.tile .cardText {
+  flex: 1;
+  align-content: start;
+}
+
+.tile .cardOnward {
+  margin-top: auto;
+}

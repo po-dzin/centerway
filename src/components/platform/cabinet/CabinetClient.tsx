@@ -37,6 +37,7 @@ import { getFaceCopy } from "./faceCopy";
 import { useAccountFace } from "./useAccountFace";
 import { useToast } from "@/components/ToastProvider";
 import { SphereMapCard } from "./SphereMapCard";
+import { ProfileTabs } from "./ProfileTabs";
 import dynamic from "next/dynamic";
 
 /* Loaded when an author opens the cabinet, not shipped to every learner who
@@ -268,7 +269,7 @@ export function CabinetClient() {
               result — the three things this person holds. The dosha used to be
               a card in a section below the photograph, which put a scroll
               between somebody and the test they took. */}
-        <div className={styles.shelfRow} data-shelf={ownedCourses.length > 1 ? "courses" : "single"}>
+        <div className={styles.shelfRow} data-shelf={ownedCourses.length > 1 ? "courses" : "single"} data-cols="3">
           {resumeCourse ? (
             /* The one answer: cover, where you stopped, and the only control
                  in the row. */
@@ -316,6 +317,11 @@ export function CabinetClient() {
             </span>
           ) : null}
 
+          {/* THE MAP BESIDE THE COURSE (G 23.10). «Продовжити | Карта | Доша»:
+                the course is what to open, the map is where attention is going,
+                the dosha is who you are. It used to be a band below the room;
+                as a third tile it is the same glance as the other two. */}
+          <SphereMapCard userId={session?.user?.id ?? null} lang={lang} href={sphereMapHref} tile />
           {/* The dosha RESULT, not the tests catalogue. What the test is and
                 what else exists is the showcase's business — this tile holds
                 the answer that belongs to this person, at the size of a glance
@@ -361,33 +367,17 @@ export function CabinetClient() {
         </div>
       </CabinetHero>
 
-      <div className={styles.shell}>
-        {/* THE SPHERE MAP, AS ONE CARD AND ONE CROSSING (2026-10-22). Below the
-            hero for the journal's reason: the first screen answers «what do I
-            open now», and the map answers a slower question — «where is my
-            attention going». The thumbnail and the focus line are the glance;
-            reading and changing it is `/profile/map`. Shown to every signed-in
-            person, not only learners: the map is about a life, not a course. */}
-        <section className={styles.section}>
-          <SphereMapCard userId={session?.user?.id ?? null} lang={lang} href={sphereMapHref} />
-        </section>
+      <ProfileTabs
+        current="overview"
+        links={{ map: sphereMapHref, journal: journalHref, library: shelfHref }}
+        lang={lang}
+      />
 
-        {/* THE JOURNAL, AS ONE CROSSING AND NOTHING MORE.
-            Below the hero on purpose. The first screen answers «what do I open
-            now», and it took two passes to get it down to one course and one
-            way onward — a second destination up there would undo that. Here it
-            answers the question a reader arrives with second: not «what do I
-            read» but «what did I write». No count beside it: the number would
-            cost this page a read of the whole journal to say something the
-            journal itself says on arrival. */}
-        {ownedCourses.length > 0 ? (
-          <section className={styles.section}>
-            <p className={styles.shelfCardNote}>{cab.journalEntryLead}</p>
-            <span className={styles.glanceMore}>
-              <PlatformBlockLink href={journalHref} label={cab.journalEntry} />
-            </span>
-          </section>
-        ) : null}
+      <div className={styles.shell}>
+
+        {/* The journal, the map and the library are tabs under the room now
+            (ProfileTabs, G 23.10); the journal's own crossing that stood here
+            would have been the same door twice. */}
 
         {/* A receipt is reference, not the answer the dashboard exists to give.
             It remains folded until the reader asks for it at every viewport. */}

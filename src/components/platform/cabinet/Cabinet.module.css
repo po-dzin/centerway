@@ -359,6 +359,22 @@
     grid-row: 1;
   }
 
+  /* THREE TILES (G 23.10): «Продовжити | Карта | Доша». Same 15rem track
+     for each — the map is the third object in the group, not a wider one —
+     and the library link stays the small second row under the course. */
+  .shelfRow[data-cols="3"] {
+    grid-template-columns: repeat(3, minmax(0, 15rem));
+  }
+
+  .shelfRow[data-cols="3"]:not([data-shelf="single"]) .shelfAside {
+    grid-column: 3;
+  }
+
+  .shelfRow[data-cols="3"]:not([data-shelf="single"]) > [data-cw-tile="map"] {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
   /* Nothing to resume: the state card (empty, loading, failed) and the dosha
      stand as the SAME TWO CARDS as with a course — one track width each. The
      state card used to take a wider column (21rem) "because a state is a
@@ -2243,4 +2259,38 @@
   .courseCardProgress:empty {
     display: none;
   }
+}
+
+/* ── Profile sections (ProfileTabs) ─────────────────────────────
+   Under the room, on the page's own column: the four places that are the
+   person's. A row of ink tabs with the fading rule under it; on a phone it
+   scrolls sideways rather than wrapping into two rows of tabs. */
+.tabs {
+  width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
+  margin: var(--cw-space-lg) auto 0;
+  display: flex;
+  gap: var(--cw-space-lg);
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-block-end: 1px solid;
+  border-image: var(--cw-rule-fade-x);
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ds-touch-target-min);
+  color: var(--cw-platform-text);
+  text-decoration: none;
+  font-size: var(--ds-type-body-size);
+}
+
+.tab:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset-tight);
 }
