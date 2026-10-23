@@ -22,7 +22,7 @@ export type BlockerFlags = {
   courseCodes: Set<string>;
 };
 
-const BLOCK_SUFFIX = /\.blocks\[(\d+)]$/;
+const BLOCK_SUFFIX = /\.blocks\[(\d+)](?:\.children\[\d+])*$/;
 
 export function blockerFlags(course: Course, blockers: ReadinessBlocker[]): BlockerFlags {
   const flags: BlockerFlags = { lessons: new Map(), modules: new Map(), blocks: new Set(), courseCodes: new Set() };

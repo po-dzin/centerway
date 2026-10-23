@@ -10,6 +10,7 @@ import {
   courseReadiness,
   readinessPlaces,
   buildInternalReferenceTargets,
+  flattenLessons,
   moveItem,
   newLesson,
   newModule,
@@ -29,6 +30,8 @@ import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShel
 import { BuilderVersionHistory } from "./BuilderVersionHistory";
 import { BuilderContents } from "./BuilderContents";
 import { blockerFlags } from "./blockerFlags";
+import { blockerPlaces, placeOrder, type BlockerPlace } from "./blockerPlaces";
+import { BuilderPlaceStepper } from "./BuilderPlaceStepper";
 import type { MenuItem } from "./BuilderMenu";
 import { BuilderInlineEditor, type SlashCommand } from "./BuilderInlineEditor";
 import { BuilderEditableTitle } from "./BuilderEditableTitle";
@@ -136,6 +139,8 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   /** The block just created, so the caret can land in it instead of being aimed. */
   const [freshBlockId, setFreshBlockId] = useState<string | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  /** The lesson-level place the walk stands on: it has no block to select. */
+  const [walkAt, setWalkAt] = useState<string | null>(null);
   const [insertPosition, setInsertPosition] = useState(0);
   const [toolMode, setToolMode] = useState<BuilderToolMode>("blocks");
   /* OPEN ON A DESK, CLOSED ON A PHONE (2026-08-28).
@@ -452,7 +457,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     const target = document.getElementById(`block-${id}`);
     if (!target) return;
     setSelectedBlockId(id);
-    target.scrollIntoView({ block: "center", behavior: "auto" });
+    target.scrollIntoView({ block: "nearest", behavior: "auto" });
   }, [state.status, activeSlug]);
 
   /**
@@ -464,6 +469,10 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
    */
   useEffect(() => {
     docRef.current?.closest("main")?.scrollTo({ top: 0 });
+    // …unless the author arrived at a block: the reset must not undo bringing it
+    // into view, so it is asked for again from the top.
+    const id = window.location.hash.startsWith("#block-") ? window.location.hash.slice(7) : null;
+    if (id) document.getElementById(`block-${id}`)?.scrollIntoView({ block: "nearest", behavior: "auto" });
   }, [activeSlug]);
 
   useEffect(() => {
@@ -549,6 +558,24 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const selectedBlock = selectedBlockIndex >= 0 ? (lesson.blocks[selectedBlockIndex] ?? null) : null;
   const readiness = courseReadiness(course);
   const flags = blockerFlags(course, readiness.blockers);
+  const places = blockerPlaces(course, readiness.blockers);
+  const lessonAt = flattenLessons(course).findIndex((entry) => entry.lesson.id === lesson.id);
+  // Where the author stands in the walk: on the selected block, on the lesson
+  // place the walk last stopped at (a title or summary has no block), else at
+  // the top of the lesson, so → from a clean lesson goes to its first place.
+  const walkPlace = places.find((place) => place.key === walkAt && place.lessonId === lesson.id);
+  const walkCurrent =
+    selectedBlockIndex >= 0
+      ? (places.find((place) => place.blockId !== null && place.blockId === selectedBlockId)?.key ?? null)
+      : (walkPlace?.key ?? null);
+  const walkFrom =
+    lessonAt < 0
+      ? null
+      : selectedBlockIndex >= 0
+        ? placeOrder(lessonAt, selectedBlockIndex)
+        : walkPlace
+          ? walkPlace.order
+          : placeOrder(lessonAt, null) - 1;
   const referenceTargets = buildInternalReferenceTargets(course);
   const referenceOptions = internalReferenceOptions(referenceTargets, lesson.id, holder.id);
 
@@ -618,6 +645,23 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
    */
   const selectBlock = (blockId: string) => {
     setSelectedBlockId(blockId);
+  };
+
+  /**
+   * One step of the walk. A place in this lesson moves the selection and
+   * nothing else: no scroll beyond what keeps the block on screen, because the
+   * frame is what moves. A place elsewhere goes through `go`, which opens the
+   * lesson and lets the arrival effect select the block; a course-level place
+   * is a tab, reached the guarded way.
+   */
+  const jumpToPlace = (place: BlockerPlace) => {
+    if (place.lessonId === null) return navigate(place.href);
+    setWalkAt(place.blockId ? null : place.key);
+    if (place.lessonSlug !== activeSlug) return go(place.href);
+    if (!place.blockId) return setSelectedBlockId(null);
+    setSelectedBlockId(place.blockId);
+    window.history.replaceState(null, "", place.href);
+    document.getElementById(`block-${place.blockId}`)?.scrollIntoView({ block: "nearest", behavior: "auto" });
   };
 
   const openBlockProperties = (blockId: string) => {
@@ -800,6 +844,14 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
           />
         </div>
       </div>
+
+      <BuilderPlaceStepper
+        places={places}
+        from={walkFrom}
+        currentKey={walkCurrent}
+        lessonId={lesson.id}
+        onJump={jumpToPlace}
+      />
 
       <div
         ref={blockList}

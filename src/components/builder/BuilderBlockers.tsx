@@ -11,7 +11,7 @@ import styles from "./Builder.module.css";
 /* Every code `courseReadiness` can emit. An unlisted code falls through to its
    raw form rather than to a generic phrase — an author reading `lms_ready_x`
    can search for it; an author reading "щось не так" cannot. */
-const BLOCKER_LABELS: Record<string, string> = {
+export const BLOCKER_LABELS: Record<string, string> = {
   lms_ready_placeholder: "Тут лишилась позначка: замініть її своїм текстом",
   lms_ready_invalid_href: "Посилання не відкривається: перевірте адресу",
   lms_ready_invalid_video_id: "Відео не знайдено: перевірте посилання на YouTube",
