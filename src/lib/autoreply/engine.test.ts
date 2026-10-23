@@ -1,6 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { buildLink, composeDirectMessage, handleComment, type AutoreplyRule, type AutoreplyStore } from "./engine";
+import {
+  buildLink,
+  composeDirectMessage,
+  handleComment,
+  handlePostback,
+  type AutoreplyRule,
+  type AutoreplyStore,
+} from "./engine";
 import type { CommentEvent, InstagramSender } from "./instagram";
 
 const ORIGIN = "https://www.centerway.net.ua";
@@ -16,6 +23,8 @@ const rule = (over: Partial<AutoreplyRule> = {}): AutoreplyRule => ({
   buttonLabel: "Пройти тест",
   buttonUrl: "/tests/dosha",
   utmCampaign: "dosha-post",
+  openButtonLabel: null,
+  followUpText: null,
   enabled: true,
   maxPerHour: 200,
   ...over,
@@ -48,7 +57,12 @@ function setup(
     countClaimsSince: async () => opts.claimsLastHour ?? 1,
     finish: async (id, status, error) => void finished.push({ id, status, error }),
   };
-  const sender: InstagramSender = { sendPrivateReply: vi.fn(async () => {}), replyPublicly: vi.fn(async () => {}) };
+  const sender: InstagramSender = {
+    sendPrivateReply: vi.fn(async () => {}),
+    sendDirect: vi.fn(async () => {}),
+    replyPublicly: vi.fn(async () => {}),
+    shortcodeOf: vi.fn(async () => "CODE1"),
+  };
   const deps = {
     store,
     sender: opts.sender === undefined ? sender : opts.sender,
@@ -146,5 +160,62 @@ describe("links", () => {
 
   it("sends the bare text when the rule has no link", () => {
     expect(composeDirectMessage("Привіт", rule({ buttonUrl: null }), ORIGIN)).toBe("Привіт");
+  });
+});
+
+describe("a rule given a post link", () => {
+  it("answers the post whose short code matches and no other", async () => {
+    const a = setup({ rules: [rule({ mediaId: "CODE1" })] });
+    expect((await handleComment(comment({ mediaId: "M7" }), a.deps)).outcome).toBe("sent");
+    const b = setup({ rules: [rule({ mediaId: "OTHER" })] });
+    expect((await handleComment(comment({ mediaId: "M7" }), b.deps)).outcome).toBe("no_rule");
+  });
+
+  it("treats a failed lookup as another post", async () => {
+    const { deps, sender } = setup({ rules: [rule({ mediaId: "CODE1" })] });
+    vi.mocked(sender.shortcodeOf).mockRejectedValueOnce(new Error("nope"));
+    expect((await handleComment(comment({ mediaId: "M7" }), deps)).outcome).toBe("no_rule");
+  });
+});
+
+describe("two-step message", () => {
+  const twoStep = rule({
+    followUpText: "Ось посилання 👇",
+    openButtonLabel: "Отримати лінк",
+    buttonLabel: "Short-reboot",
+  });
+
+  it("greets with a button first, without the link", async () => {
+    const { deps, sender } = setup({ rules: [twoStep] });
+    expect((await handleComment(comment(), deps)).outcome).toBe("sent");
+    expect(sender.sendPrivateReply).toHaveBeenCalledWith("c1", "Дякуємо! Ось тест.", {
+      kind: "postback",
+      title: "Отримати лінк",
+      payload: "ar:r1",
+    });
+  });
+
+  it("sends the link after the tap", async () => {
+    const { deps, sender } = setup({ rules: [twoStep] });
+    const result = await handlePostback({ senderId: "U1", payload: "ar:r1" }, deps);
+    expect(result.outcome).toBe("sent");
+    expect(sender.sendDirect).toHaveBeenCalledWith("U1", "Ось посилання 👇", {
+      kind: "link",
+      title: "Short-reboot",
+      url: `${ORIGIN}/tests/dosha?utm_source=instagram&utm_medium=autodm&utm_campaign=dosha-post`,
+    });
+  });
+
+  it("ignores taps that are not ours or belong to a rule that is off", async () => {
+    const { deps, sender } = setup({ rules: [twoStep] });
+    expect((await handlePostback({ senderId: "U1", payload: "other" }, deps)).outcome).toBe("ignored");
+    expect((await handlePostback({ senderId: "U1", payload: "ar:gone" }, deps)).outcome).toBe("ignored");
+    expect(sender.sendDirect).not.toHaveBeenCalled();
+  });
+
+  it("keeps a link's own utm tags", () => {
+    expect(buildLink("/tests/dosha?utm_source=ig&utm_campaign=x", { name: "n", utmCampaign: null }, ORIGIN)).toBe(
+      `${ORIGIN}/tests/dosha?utm_source=ig&utm_campaign=x`,
+    );
   });
 });

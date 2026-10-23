@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useI18n } from "@/components/I18nProvider";
 import { useToast } from "@/components/ToastProvider";
+import { AdminModal } from "@/components/admin/AdminModal";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
@@ -34,7 +35,8 @@ type Draft = {
   dmTexts: string[];
   buttonLabel: string;
   buttonUrl: string;
-  utmCampaign: string;
+  openButtonLabel: string;
+  followUpText: string;
   maxPerHour: string;
 };
 
@@ -53,7 +55,8 @@ function toDraft(rule: RuleSummary): Draft {
     dmTexts: rule.dm_texts,
     buttonLabel: rule.button_label ?? "",
     buttonUrl: rule.button_url ?? "",
-    utmCampaign: rule.utm_campaign ?? "",
+    openButtonLabel: rule.open_button_label ?? "",
+    followUpText: rule.follow_up_text ?? "",
     maxPerHour: String(rule.max_per_hour),
   };
 }
@@ -67,7 +70,8 @@ function toPayload(draft: Draft) {
     dmTexts: draft.dmTexts,
     buttonLabel: draft.buttonLabel,
     buttonUrl: draft.buttonUrl,
-    utmCampaign: draft.utmCampaign,
+    openButtonLabel: draft.openButtonLabel,
+    followUpText: draft.followUpText,
     maxPerHour: draft.maxPerHour,
   };
 }
@@ -242,22 +246,25 @@ function Variants({
           <span className={controls.fieldCaption}>
             {t("ar_variant")} {index + 1}
           </span>
-          <textarea
-            className={controls.textareaShort}
-            value={value}
-            disabled={disabled}
-            onChange={(e) => onChange(values.map((v, i) => (i === index ? e.target.value : v)))}
-          />
-          {disabled ? null : (
-            <button
-              type="button"
-              aria-label={t("ar_variant_remove")}
-              onClick={() => onChange(values.filter((_, i) => i !== index))}
-              className={`${controls.action} cw-btn-muted`}
-            >
-              <Icon name="close" size={16} />
-            </button>
-          )}
+          <div className={controls.inlineActionsTop}>
+            <textarea
+              className={controls.textareaShort}
+              value={value}
+              disabled={disabled}
+              onChange={(e) => onChange(values.map((v, i) => (i === index ? e.target.value : v)))}
+            />
+            {disabled ? null : (
+              <button
+                type="button"
+                aria-label={t("ar_variant_remove")}
+                title={t("ar_variant_remove")}
+                onClick={() => onChange(values.filter((_, i) => i !== index))}
+                className={controls.dialogClose}
+              >
+                <Icon name="trash" size={20} />
+              </button>
+            )}
+          </div>
         </div>
       ))}
       {!disabled && values.length < MAX_VARIANTS ? (
@@ -287,6 +294,7 @@ function RuleEditor({
   const [draft, setDraft] = useState<Draft>(() => toDraft(rule));
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const set = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }));
 
   useEffect(() => {
@@ -376,6 +384,26 @@ function RuleEditor({
           disabled={!canEdit}
           onChange={(v) => set({ dmTexts: v })}
         />
+        <p className={controls.hint}>{t("ar_f_two_step_hint")}</p>
+        <label className={controls.field}>
+          <span className={controls.fieldCaption}>{t("ar_f_open_label")}</span>
+          <input
+            className={controls.input}
+            value={draft.openButtonLabel}
+            maxLength={20}
+            disabled={!canEdit}
+            onChange={(e) => set({ openButtonLabel: e.target.value })}
+          />
+        </label>
+        <label className={controls.field}>
+          <span className={controls.fieldCaption}>{t("ar_f_follow_up")}</span>
+          <textarea
+            className={controls.textareaShort}
+            value={draft.followUpText}
+            disabled={!canEdit}
+            onChange={(e) => set({ followUpText: e.target.value })}
+          />
+        </label>
         <div className={controls.fieldsTwo}>
           <label className={controls.field}>
             <span className={controls.fieldCaption}>{t("ar_f_button_label")}</span>
@@ -394,47 +422,75 @@ function RuleEditor({
               disabled={!canEdit}
               onChange={(e) => set({ buttonUrl: e.target.value })}
             />
+            <span className={controls.hint}>{t("ar_f_button_url_hint")}</span>
           </label>
         </div>
-        <div className={controls.fieldsTwo}>
-          <label className={controls.field}>
-            <span className={controls.fieldCaption}>{t("ar_f_utm")}</span>
-            <input
-              className={controls.input}
-              value={draft.utmCampaign}
-              disabled={!canEdit}
-              onChange={(e) => set({ utmCampaign: e.target.value })}
-            />
-          </label>
-          <label className={controls.field}>
-            <span className={controls.fieldCaption}>{t("ar_f_cap")}</span>
-            <input
-              className={controls.input}
-              inputMode="numeric"
-              value={draft.maxPerHour}
-              disabled={!canEdit}
-              onChange={(e) => set({ maxPerHour: e.target.value.replace(/\D/g, "") })}
-            />
-          </label>
-        </div>
+        <label className={controls.field}>
+          <span className={controls.fieldCaption}>{t("ar_f_cap")}</span>
+          <input
+            className={controls.input}
+            inputMode="numeric"
+            value={draft.maxPerHour}
+            disabled={!canEdit}
+            onChange={(e) => set({ maxPerHour: e.target.value.replace(/\D/g, "") })}
+          />
+        </label>
       </div>
       {canEdit ? (
-        <div className={controls.actions}>
-          <button type="button" disabled={busy} onClick={remove} className={`${controls.action} cw-btn-muted`}>
-            {t("ar_delete")}
-          </button>
-          <button type="button" disabled={busy} onClick={onToggle} className={`${controls.action} cw-surface-2`}>
-            {rule.enabled ? t("ar_turn_off") : t("ar_turn_on")}
-          </button>
+        <div className={controls.actionsSplit}>
           <button
             type="button"
             disabled={busy}
-            onClick={() => void save()}
-            className={`${controls.action} cw-surface-2`}
+            aria-label={t("ar_delete")}
+            title={t("ar_delete")}
+            onClick={() => setConfirmDelete(true)}
+            className={controls.dialogClose}
           >
-            {t("ar_save")}
+            <Icon name="trash" size={20} />
           </button>
+          <div className={controls.actions}>
+            <button type="button" disabled={busy} onClick={onToggle} className={`${controls.action} cw-btn-muted`}>
+              {rule.enabled ? t("ar_turn_off") : t("ar_turn_on")}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void save()}
+              className={`${controls.action} cw-surface-2`}
+            >
+              {t("ar_save")}
+            </button>
+          </div>
         </div>
+      ) : null}
+      {confirmDelete ? (
+        <AdminModal
+          title={t("ar_delete_title")}
+          description={t("ar_delete_body")}
+          closeLabel={t("common_close")}
+          onClose={() => setConfirmDelete(false)}
+          footer={
+            <div className={controls.actions}>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                className={`${controls.action} cw-btn-muted`}
+              >
+                {t("bc_cancel_dialog")}
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void remove()}
+                className={`${controls.action} cw-surface-2`}
+              >
+                {t("ar_delete")}
+              </button>
+            </div>
+          }
+        >
+          <p className={controls.hint}>{rule.name || t("ar_untitled")}</p>
+        </AdminModal>
       ) : null}
       <span className={controls.fieldLabel}>{t("ar_journal")}</span>
       {events === null ? (

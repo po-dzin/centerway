@@ -654,6 +654,8 @@ export type Database = {
           public_replies: string[]
           updated_at: string
           utm_campaign: string | null
+          open_button_label: string | null
+          follow_up_text: string | null
         }
         Insert: {
           button_label?: string | null
@@ -671,6 +673,8 @@ export type Database = {
           public_replies?: string[]
           updated_at?: string
           utm_campaign?: string | null
+          open_button_label?: string | null
+          follow_up_text?: string | null
         }
         Update: {
           button_label?: string | null
@@ -688,6 +692,8 @@ export type Database = {
           public_replies?: string[]
           updated_at?: string
           utm_campaign?: string | null
+          open_button_label?: string | null
+          follow_up_text?: string | null
         }
         Relationships: []
       }

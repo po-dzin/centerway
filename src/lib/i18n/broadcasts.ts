@@ -188,7 +188,10 @@ export const broadcasts = {
     uk: "Через кому. Регістр не важливий; слово має бути в коментарі цілим.",
     en: "Comma-separated. Case does not matter; the word must appear whole in the comment.",
   },
-  ar_f_media: { uk: "Id поста (порожньо — усі пости)", en: "Post id (empty — all posts)" },
+  ar_f_media: {
+    uk: "Пост: посилання або id (порожньо — усі пости)",
+    en: "Post: link or id (empty — all posts)",
+  },
   ar_f_public: { uk: "Відповіді під коментарем", en: "Replies under the comment" },
   ar_f_dm: { uk: "Тексти в особисті", en: "Direct message texts" },
   ar_f_variants_hint: {
@@ -200,7 +203,22 @@ export const broadcasts = {
   ar_variant_remove: { uk: "Прибрати варіант", en: "Remove the variant" },
   ar_f_button_label: { uk: "Кнопка: текст", en: "Button: label" },
   ar_f_button_url: { uk: "Кнопка: посилання", en: "Button: link" },
-  ar_f_utm: { uk: "UTM-кампанія", en: "UTM campaign" },
+  ar_f_two_step_hint: {
+    uk: "Якщо заповнити друге повідомлення, спершу людина отримає привітання з кнопкою, а після натискання — друге повідомлення з посиланням.",
+    en: "With a second message, the person first gets the greeting with a button, and after tapping it the second message with the link.",
+  },
+  ar_f_open_label: { uk: "Привітання: кнопка (до 20 символів)", en: "Greeting: button (up to 20 characters)" },
+  ar_f_follow_up: { uk: "Друге повідомлення (після натискання)", en: "Second message (after the tap)" },
+  ar_f_button_url_hint: {
+    uk: "Можна вставити посилання з власними UTM-мітками; без них додамо instagram / autodm.",
+    en: "A link with its own UTM tags is sent as is; without them we add instagram / autodm.",
+  },
+  ar_delete_title: { uk: "Видалити правило?", en: "Delete the rule?" },
+  ar_delete_body: {
+    uk: "Правило та його журнал зникнуть без повернення.",
+    en: "The rule and its journal are removed for good.",
+  },
+  ar_err_rule_needs_link: { uk: "Для другого повідомлення потрібне посилання", en: "The second message needs a link" },
   ar_f_cap: { uk: "Ліміт на годину", en: "Per-hour cap" },
   ar_save: { uk: "Зберегти", en: "Save" },
   ar_saved: { uk: "Правило збережено", en: "Rule saved" },

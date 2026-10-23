@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { secretsEqual } from "@/lib/auth/secretsEqual";
-import { handleComment } from "@/lib/autoreply/engine";
-import { instagramSenderFromEnv, parseCommentEvents, verifySignature } from "@/lib/autoreply/instagram";
+import { handleComment, handlePostback } from "@/lib/autoreply/engine";
+import {
+  instagramSenderFromEnv,
+  parseCommentEvents,
+  parsePostbackEvents,
+  verifySignature,
+} from "@/lib/autoreply/instagram";
 import { dbStore } from "@/lib/autoreply/store";
 import { log } from "@/lib/logger";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
@@ -59,12 +64,17 @@ export async function POST(req: NextRequest) {
   }
 
   const events = parseCommentEvents(payload);
-  if (events.length === 0) return NextResponse.json({ ok: true, handled: 0 });
+  const taps = parsePostbackEvents(payload);
+  if (events.length === 0 && taps.length === 0) return NextResponse.json({ ok: true, handled: 0 });
 
   const store = dbStore();
   const sender = instagramSenderFromEnv();
   const results: string[] = [];
   try {
+    for (const tap of taps) {
+      const result = await handlePostback(tap, { store, sender, siteOrigin: PLATFORM_ORIGIN });
+      results.push(`postback_${result.outcome}`);
+    }
     for (const event of events) {
       const result = await handleComment(event, { store, sender, siteOrigin: PLATFORM_ORIGIN });
       results.push(result.outcome);
@@ -73,5 +83,5 @@ export async function POST(req: NextRequest) {
     log.error("instagram.webhook_failed", { message: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "handle_failed" }, { status: 500 });
   }
-  return NextResponse.json({ ok: true, handled: events.length, results });
+  return NextResponse.json({ ok: true, handled: events.length + taps.length, results });
 }

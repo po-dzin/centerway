@@ -17,7 +17,13 @@
 import { log } from "@/lib/logger";
 
 import { pickVariant, matchesKeyword } from "./match";
-import { REPLY_WINDOW_SECONDS, type CommentEvent, type InstagramSender } from "./instagram";
+import {
+  REPLY_WINDOW_SECONDS,
+  type CommentEvent,
+  type InstagramSender,
+  type MessageButton,
+  type PostbackEvent,
+} from "./instagram";
 
 export type AutoreplyRule = {
   id: string;
@@ -29,6 +35,9 @@ export type AutoreplyRule = {
   buttonLabel: string | null;
   buttonUrl: string | null;
   utmCampaign: string | null;
+  /** Two-step message: the greeting carries a button with this label (default below), the tap brings `followUpText` with the link. */
+  openButtonLabel: string | null;
+  followUpText: string | null;
   enabled: boolean;
   maxPerHour: number;
 };
@@ -59,9 +68,17 @@ export type HandleDeps = {
 
 const SLUG = /[^a-z0-9]+/g;
 
-/** The button link with the Instagram tags every auto-reply carries, absolute. */
+export const DEFAULT_OPEN_LABEL = "Отримати лінк";
+export const DEFAULT_LINK_LABEL = "Відкрити";
+const POSTBACK_PREFIX = "ar:";
+
+/**
+ * The button link, absolute. A link that already carries its own utm_ tags is
+ * sent as written; otherwise the Instagram tags are added.
+ */
 export function buildLink(url: string, rule: Pick<AutoreplyRule, "name" | "utmCampaign">, siteOrigin: string): string {
   const link = new URL(url, siteOrigin);
+  if ([...link.searchParams.keys()].some((key) => key.startsWith("utm_"))) return link.toString();
   const campaign = (rule.utmCampaign || rule.name).toLowerCase().replace(SLUG, "-").replace(/^-|-$/g, "");
   link.searchParams.set("utm_source", "instagram");
   link.searchParams.set("utm_medium", "autodm");
@@ -82,11 +99,14 @@ export async function handleComment(event: CommentEvent, deps: HandleDeps): Prom
   const random = deps.random ?? Math.random;
 
   const rules = await store.listEnabledRules();
-  const rule = rules.find(
-    (candidate) =>
-      (candidate.mediaId === null || candidate.mediaId === event.mediaId) &&
-      matchesKeyword(event.text, candidate.keywords),
-  );
+  let rule: AutoreplyRule | undefined;
+  for (const candidate of rules) {
+    if (!matchesKeyword(event.text, candidate.keywords)) continue;
+    if (await watchesPost(candidate, event, sender)) {
+      rule = candidate;
+      break;
+    }
+  }
   if (!rule) return { outcome: "no_rule" };
 
   const eventId = await store.claimComment(rule.id, event);
@@ -107,7 +127,16 @@ export async function handleComment(event: CommentEvent, deps: HandleDeps): Prom
   if (!text) return stop("failed", "no_dm_text");
 
   try {
-    await sender.sendPrivateReply(event.commentId, composeDirectMessage(text, rule, siteOrigin));
+    if (rule.followUpText && rule.buttonUrl) {
+      const button: MessageButton = {
+        kind: "postback",
+        title: rule.openButtonLabel || DEFAULT_OPEN_LABEL,
+        payload: `${POSTBACK_PREFIX}${rule.id}`,
+      };
+      await sender.sendPrivateReply(event.commentId, text, button);
+    } else {
+      await sender.sendPrivateReply(event.commentId, composeDirectMessage(text, rule, siteOrigin));
+    }
   } catch (error) {
     return stop("failed", error instanceof Error ? error.message.slice(0, 300) : "send_failed");
   }
@@ -126,4 +155,49 @@ export async function handleComment(event: CommentEvent, deps: HandleDeps): Prom
     }
   }
   return stop("sent");
+}
+
+/**
+ * True when the rule watches the post this comment is under. A rule given a
+ * post link stores the link's short code, which is compared with the post's own
+ * (one Graph call per comment; a failed call means "not this post").
+ */
+async function watchesPost(rule: AutoreplyRule, event: CommentEvent, sender: InstagramSender | null): Promise<boolean> {
+  if (rule.mediaId === null || rule.mediaId === event.mediaId) return true;
+  if (!sender || !event.mediaId || /^\d+$/.test(rule.mediaId)) return false;
+  try {
+    return (await sender.shortcodeOf(event.mediaId)) === rule.mediaId;
+  } catch (error) {
+    log.warn("autoreply.shortcode_failed", { message: error instanceof Error ? error.message : String(error) });
+    return false;
+  }
+}
+
+/**
+ * The second step: the person tapped the greeting's button, so the link goes to
+ * them (inside Instagram's 24-hour window for a person who just wrote to us).
+ */
+export async function handlePostback(
+  event: PostbackEvent,
+  deps: Pick<HandleDeps, "store" | "sender" | "siteOrigin">,
+): Promise<{ outcome: "ignored" | "sent" | "failed" }> {
+  if (!event.payload.startsWith(POSTBACK_PREFIX)) return { outcome: "ignored" };
+  const ruleId = event.payload.slice(POSTBACK_PREFIX.length);
+  const rules = await deps.store.listEnabledRules();
+  const rule = rules.find((candidate) => candidate.id === ruleId);
+  if (!rule || !rule.followUpText || !rule.buttonUrl || !deps.sender) return { outcome: "ignored" };
+  try {
+    await deps.sender.sendDirect(event.senderId, rule.followUpText, {
+      kind: "link",
+      title: rule.buttonLabel || DEFAULT_LINK_LABEL,
+      url: buildLink(rule.buttonUrl, rule, deps.siteOrigin),
+    });
+  } catch (error) {
+    log.warn("autoreply.follow_up_failed", {
+      ruleId: rule.id,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return { outcome: "failed" };
+  }
+  return { outcome: "sent" };
 }
