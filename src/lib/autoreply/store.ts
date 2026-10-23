@@ -18,6 +18,8 @@ export type RuleRow = {
   button_label: string | null;
   button_url: string | null;
   utm_campaign: string | null;
+  open_button_label: string | null;
+  follow_up_text: string | null;
   enabled: boolean;
   max_per_hour: number;
   created_at: string;
@@ -25,7 +27,7 @@ export type RuleRow = {
 };
 
 export const RULE_COLUMNS =
-  "id, name, channel, media_id, keywords, public_replies, dm_texts, button_label, button_url, utm_campaign, enabled, max_per_hour, created_at, updated_at";
+  "id, name, channel, media_id, keywords, public_replies, dm_texts, button_label, button_url, utm_campaign, open_button_label, follow_up_text, enabled, max_per_hour, created_at, updated_at";
 
 export function toRule(row: RuleRow): AutoreplyRule {
   return {
@@ -38,6 +40,8 @@ export function toRule(row: RuleRow): AutoreplyRule {
     buttonLabel: row.button_label,
     buttonUrl: row.button_url,
     utmCampaign: row.utm_campaign,
+    openButtonLabel: row.open_button_label,
+    followUpText: row.follow_up_text,
     enabled: row.enabled,
     maxPerHour: row.max_per_hour,
   };

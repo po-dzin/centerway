@@ -623,3 +623,24 @@
   composes: action;
   font-size: var(--ds-type-label-size);
 }
+
+/* A field with its remove icon beside it, the icon level with the field's top. */
+.inlineActionsTop {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cw-space-xs);
+}
+
+.inlineActionsTop > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* A destructive icon on the left, the primary actions on the right. */
+.actionsSplit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+}

@@ -29,6 +29,8 @@ export type RuleInput = {
   buttonLabel?: unknown;
   buttonUrl?: unknown;
   utmCampaign?: unknown;
+  openButtonLabel?: unknown;
+  followUpText?: unknown;
   enabled?: unknown;
   maxPerHour?: unknown;
 };
@@ -40,6 +42,19 @@ function text(value: unknown, max: number): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim().slice(0, max);
   return trimmed === "" ? null : trimmed;
+}
+
+/**
+ * The post a rule watches: a numeric media id as is, or the short code from a
+ * post link (instagram.com/p/<code>/, /reel/, /tv/), which the webhook compares
+ * with the post's own code.
+ */
+export function mediaRef(value: unknown): string | null {
+  const raw = text(value, 300);
+  if (!raw) return null;
+  const fromLink = /instagram\.com\/(?:[\w.]+\/)?(?:p|reel|reels|tv)\/([\w-]+)/i.exec(raw);
+  if (fromLink) return fromLink[1] ?? null;
+  return raw.slice(0, 64);
 }
 
 /** A link the message may carry: a path on this site or an https address. */
@@ -58,13 +73,15 @@ function link(value: unknown): string | null {
 export function rulePatch(input: RuleInput): Record<string, unknown> {
   const patch: Record<string, unknown> = {};
   if ("name" in input) patch.name = text(input.name, 120) ?? "";
-  if ("mediaId" in input) patch.media_id = text(input.mediaId, 64);
+  if ("mediaId" in input) patch.media_id = mediaRef(input.mediaId);
   if ("keywords" in input) patch.keywords = normalizeKeywords(input.keywords).slice(0, 20);
   if ("publicReplies" in input) patch.public_replies = cleanVariants(input.publicReplies, PUBLIC_MAX);
   if ("dmTexts" in input) patch.dm_texts = cleanVariants(input.dmTexts, DM_MAX);
   if ("buttonLabel" in input) patch.button_label = text(input.buttonLabel, 40);
   if ("buttonUrl" in input) patch.button_url = link(input.buttonUrl);
   if ("utmCampaign" in input) patch.utm_campaign = text(input.utmCampaign, 60);
+  if ("openButtonLabel" in input) patch.open_button_label = text(input.openButtonLabel, 20);
+  if ("followUpText" in input) patch.follow_up_text = text(input.followUpText, DM_MAX);
   if ("enabled" in input) patch.enabled = input.enabled === true;
   if ("maxPerHour" in input) {
     const n = Number(input.maxPerHour);
@@ -74,9 +91,10 @@ export function rulePatch(input: RuleInput): Record<string, unknown> {
 }
 
 /** A rule may be turned on only when it can actually answer something. */
-export function assertCanEnable(row: Pick<RuleRow, "keywords" | "dm_texts">): void {
+export function assertCanEnable(row: Pick<RuleRow, "keywords" | "dm_texts" | "follow_up_text" | "button_url">): void {
   if (row.keywords.length === 0) throw new AutoreplyError("rule_needs_keywords", 422);
   if (row.dm_texts.length === 0) throw new AutoreplyError("rule_needs_message", 422);
+  if (row.follow_up_text && !row.button_url) throw new AutoreplyError("rule_needs_link", 422);
 }
 
 export type RuleStats = { comments: number; sent: number; failed: number; skipped: number };
