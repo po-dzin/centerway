@@ -40,6 +40,19 @@ export function accountAvatar(meta: Meta): string | null {
   return text(meta, "cw_avatar") ?? text(meta, "avatar_url") ?? text(meta, "picture");
 }
 
+/**
+ * A provider's photo at a usable size. Google hands out its avatar at 96px
+ * (`…=s96-c`), which the full-screen viewer stretched into a mosaic (G 23.10);
+ * the same address serves any size up to the original when the suffix asks.
+ * Our own uploads are untouched — they carry their renditions.
+ */
+export function providerAvatarAtSize(url: string | null, px: number): string | null {
+  if (!url) return url;
+  if (!/googleusercontent\.com\//.test(url)) return url;
+  if (/=s\d+(-c)?$/.test(url)) return url.replace(/=s\d+(-c)?$/, `=s${px}-c`);
+  return url.includes("=") ? url : `${url}=s${px}-c`;
+}
+
 /** How the chosen photo sits in a circle. A provider's photo is a centred square already. */
 export function accountAvatarCrop(meta: Meta): ImageCrop | undefined {
   if (!text(meta, "cw_avatar")) return undefined;

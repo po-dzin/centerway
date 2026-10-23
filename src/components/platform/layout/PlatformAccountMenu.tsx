@@ -28,6 +28,7 @@ import { useSignInHref } from "@/components/auth/useSignInReturn";
 import { markInstallSurface } from "../pwa/installStore";
 import { usePwaInstall } from "../pwa/usePwaInstall";
 import { usePlatformIdentity } from "./usePlatformIdentity";
+import { useOwnFace } from "@/components/platform/ownFace";
 import { isAuthConfigured, usePlatformSession } from "./usePlatformSession";
 import { useOwnsPersonalSurfaces, useSurfaceHost, useSurfaceHref } from "./SurfaceHost";
 import { PlatformThemeControl } from "@/components/platform/layout/PlatformThemeControl";
@@ -228,6 +229,9 @@ export function PlatformAccountMenu({
 }) {
   const session = usePlatformSession();
   const identity = usePlatformIdentity(session);
+  /* One face (G 23.10): the profile and the identity read know the account's
+     face fresh; the session token may still carry the previous one. */
+  const avatarUrl = useOwnFace(identity.face ?? accountAvatar(session?.user?.user_metadata));
   const pathname = usePathname();
   /* THE SHEET IS SHARED (2026-09-06) — see `useChromeSheet`. The measuring,
      the portal, the tone and the three forms used to live in this file, which
@@ -370,8 +374,11 @@ export function PlatformAccountMenu({
     );
   }
 
-  const avatarUrl = accountAvatar(session?.user?.user_metadata);
-  const avatarStyle = accountAvatarStyle(accountAvatarCrop(session?.user?.user_metadata));
+  const sessionAvatar = accountAvatar(session?.user?.user_metadata);
+  /* The crop belongs to the session's photo; a fresher face from the profile
+     or the identity read shows centred until the token catches up. */
+  const avatarStyle =
+    avatarUrl === sessionAvatar ? accountAvatarStyle(accountAvatarCrop(session?.user?.user_metadata)) : undefined;
   const accountName = displayNameOf(session);
   const accountEmail = session?.user?.email ?? null;
 

@@ -6,6 +6,7 @@ import {
   accountMetaFromAuthor,
   accountMetaFromUpload,
   accountName,
+  providerAvatarAtSize,
 } from "./accountIdentity";
 
 describe("account identity", () => {
@@ -40,5 +41,17 @@ describe("account identity", () => {
     const merged = Object.fromEntries(Object.entries({ ...meta, ...patch }).filter(([, value]) => value !== null));
     expect(accountAvatar(merged)).toBe("https://cw/new.webp");
     expect(accountAvatarCrop(merged)).toBeUndefined();
+  });
+});
+
+describe("provider avatar size", () => {
+  it("asks Google for a larger picture and leaves our own uploads alone", () => {
+    expect(providerAvatarAtSize("https://lh3.googleusercontent.com/a/abc=s96-c", 1024)).toBe(
+      "https://lh3.googleusercontent.com/a/abc=s1024-c",
+    );
+    expect(providerAvatarAtSize("https://x.supabase.co/storage/v1/object/public/course-media/a/1600.webp", 1024)).toBe(
+      "https://x.supabase.co/storage/v1/object/public/course-media/a/1600.webp",
+    );
+    expect(providerAvatarAtSize(null, 256)).toBeNull();
   });
 });
