@@ -34,6 +34,7 @@ import {
   JOURNAL_HREF,
   LEARNING_SHELF_HREF,
   PROFILE_COURSES_HREF,
+  PROFILE_RHYTHM_HREF,
   PROFILE_HREF,
   SPHERE_MAP_HREF,
 } from "@/lib/platform/content";
@@ -313,7 +314,12 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
 
       <ProfileTabs
         current={tab}
-        links={{ map: sphereMapHref, courses: href(PROFILE_COURSES_HREF), journal: journalHref }}
+        links={{
+          map: sphereMapHref,
+          rhythm: href(PROFILE_RHYTHM_HREF),
+          courses: href(PROFILE_COURSES_HREF),
+          journal: journalHref,
+        }}
         overviewHref={href(PROFILE_HREF)}
         onSelect={setTab}
         lang={lang}
@@ -463,9 +469,9 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
         </div>
       ) : null}
 
-      {tab === "map" ? (
+      {tab === "map" || tab === "rhythm" ? (
         <div className={styles.shell}>
-          <ProfileMapTab userId={session?.user?.id ?? null} lang={lang} />
+          <ProfileMapTab userId={session?.user?.id ?? null} lang={lang} view={tab} onView={setTab} />
         </div>
       ) : tab === "overview" ? (
         <div className={styles.shell}>

@@ -14,28 +14,39 @@
 import type { Database } from "@/lib/db/database.types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { nextSphereHistory, nowScores, readStoredSphereMap, type SphereMap, type SphereMapInput } from "./sphereMap";
+import { readStoredCycle, readStoredRhythm, type Cycle, type ProfileMapDoc, type Rhythm } from "./cycle";
+import { nextSphereHistory, nowScores, readStoredSphereMap, type SphereMapInput } from "./sphereMap";
+
+export type { ProfileMapDoc };
+
+function readDoc(row: Record<string, unknown> | null): ProfileMapDoc {
+  return {
+    ...readStoredSphereMap(row),
+    cycle: readStoredCycle(row?.cycle),
+    rhythm: readStoredRhythm(row?.rhythm),
+  };
+}
 
 export type SphereMapDb = SupabaseClient<Database>;
 
-const COLUMNS = "spheres, focus, history, updated_at";
+const COLUMNS = "spheres, focus, history, cycle, rhythm, updated_at";
 
-export async function getSphereMap(db: SphereMapDb, authUserId: string): Promise<SphereMap> {
+export async function getSphereMap(db: SphereMapDb, authUserId: string): Promise<ProfileMapDoc> {
   const { data, error } = await db
     .from("profile_sphere_maps")
     .select(COLUMNS)
     .eq("auth_user_id", authUserId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return readStoredSphereMap(data);
+  return readDoc(data as Record<string, unknown> | null);
 }
 
 export async function saveSphereMap(
   db: SphereMapDb,
   authUserId: string,
-  input: SphereMapInput,
+  input: SphereMapInput & { cycle?: Cycle; rhythm?: Rhythm },
   at: Date = new Date(),
-): Promise<SphereMap> {
+): Promise<ProfileMapDoc> {
   const current = await getSphereMap(db, authUserId);
   const history = nextSphereHistory(current.history, nowScores(input.spheres), at, input.phase);
 
@@ -47,11 +58,13 @@ export async function saveSphereMap(
         spheres: input.spheres,
         focus: input.focus,
         history,
+        ...(input.cycle ? { cycle: input.cycle } : {}),
+        ...(input.rhythm ? { rhythm: input.rhythm } : {}),
       },
       { onConflict: "auth_user_id" },
     )
     .select(COLUMNS)
     .single();
   if (error) throw new Error(error.message);
-  return readStoredSphereMap(data);
+  return readDoc(data as Record<string, unknown> | null);
 }

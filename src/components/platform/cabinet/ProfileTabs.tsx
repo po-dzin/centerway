@@ -3,10 +3,10 @@
 /**
  * The profile's own sections, under the room (G 23.10, profile v1).
  *
- * «Огляд · Карта · Курси · Журнал». The first three are the profile itself
+ * «Огляд · Карта · Ритм · Курси · Журнал». The first four are the profile itself
  * (G 23.10: the map lives inside the profile as a tab, not on a sheet of its
  * own): they switch in place under the same room, and the address follows —
- * `/profile`, `/profile/map`, `/profile/courses` — so a link, a reload or
+ * `/profile`, `/profile/map`, `/profile/rhythm`, `/profile/courses` — so a link, a reload or
  * «back» lands on the same tab. The journal is its own place and stays a link.
  * The current one carries the ink stroke (`InteractionInkLabel variant="tab"`,
  * selection family `ink`) and `aria-current`.
@@ -17,18 +17,18 @@ import { useCallback, useEffect, useState, type MouseEvent } from "react";
 
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import type { ProfileLang } from "@/components/platform/profile/types";
-import { PROFILE_COURSES_HREF, PROFILE_HREF, SPHERE_MAP_HREF } from "@/lib/platform/content";
+import { PROFILE_COURSES_HREF, PROFILE_HREF, PROFILE_RHYTHM_HREF, SPHERE_MAP_HREF } from "@/lib/platform/content";
 
 import styles from "./Cabinet.module.css";
 
 /** The sections that render inside the profile itself. */
-export type ProfileTab = "overview" | "map" | "courses";
+export type ProfileTab = "overview" | "map" | "rhythm" | "courses";
 
 type Key = ProfileTab | "journal";
 
 const LABELS: Record<ProfileLang, Record<Key, string>> = {
-  uk: { overview: "Огляд", map: "Карта", courses: "Курси", journal: "Журнал" },
-  en: { overview: "Overview", map: "Map", courses: "Courses", journal: "Journal" },
+  uk: { overview: "Огляд", map: "Карта", rhythm: "Ритм", courses: "Курси", journal: "Журнал" },
+  en: { overview: "Overview", map: "Map", rhythm: "Rhythm", courses: "Courses", journal: "Journal" },
 };
 
 const ARIA: Record<ProfileLang, string> = { uk: "Розділи профілю", en: "Profile sections" };
@@ -36,12 +36,14 @@ const ARIA: Record<ProfileLang, string> = { uk: "Розділи профілю",
 const TAB_PATHS: Record<ProfileTab, string> = {
   overview: PROFILE_HREF,
   map: SPHERE_MAP_HREF,
+  rhythm: PROFILE_RHYTHM_HREF,
   courses: PROFILE_COURSES_HREF,
 };
 
 function tabFromPath(pathname: string): ProfileTab {
   const path = pathname.replace(/\/+$/, "");
   if (path.endsWith(SPHERE_MAP_HREF)) return "map";
+  if (path.endsWith(PROFILE_RHYTHM_HREF)) return "rhythm";
   if (path.endsWith(PROFILE_COURSES_HREF)) return "courses";
   return "overview";
 }
@@ -77,7 +79,7 @@ export function ProfileTabs({
   onSelect,
 }: {
   current: ProfileTab;
-  links: { map: string; courses: string; journal: string };
+  links: { map: string; rhythm: string; courses: string; journal: string };
   lang: ProfileLang;
   overviewHref?: string;
   /** Switch an in-profile tab in place; the journal stays a link. */
@@ -87,6 +89,7 @@ export function ProfileTabs({
   const items: { key: Key; href: string }[] = [
     { key: "overview", href: overviewHref },
     { key: "map", href: links.map },
+    { key: "rhythm", href: links.rhythm },
     { key: "courses", href: links.courses },
     { key: "journal", href: links.journal },
   ];

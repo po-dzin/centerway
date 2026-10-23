@@ -1,0 +1,654 @@
+/* The cycle around the sphere map, and «Мій ритм» (G 23.10).
+ *
+ * Ported from the autumn programme's prototype onto the system: every colour,
+ * space, radius and type size is a token. A sphere's own hue (`--c`, set on the
+ * row from a `--cw-sem-*` token) marks it everywhere — the dot, the slider, the
+ * radar point, the card's edge — and nothing else is coloured.
+ *
+ * Buttons compose the one contract (PlatformButtons.module.css); the whole
+ * tool is a nested surface, so it composes `compact` once at its root.
+ * Selected plates (a phase, a focus sphere, a day type, a slot, a marked day)
+ * take the selection contour, never a fill of their own.
+ */
+
+.cycle,
+.rhythm {
+  composes: compact from "../PlatformButtons.module.css";
+  display: grid;
+  gap: var(--cw-space-lg);
+  margin-top: var(--cw-space-lg);
+  min-width: 0;
+}
+
+/* ── Phase tabs / day types ───────────────────────── */
+
+/* One row; on a phone it scrolls sideways instead of wrapping onto a second
+   line, so the five phases still read as one sequence. */
+.tabs {
+  composes: cw-scroll-none from global;
+  display: flex;
+  gap: var(--cw-space-xs);
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: var(--cw-space-2xs);
+}
+
+.phaseOption {
+  composes: base secondary hug from "../PlatformButtons.module.css";
+  flex: none;
+  gap: var(--cw-space-xs);
+}
+
+.phaseOption small {
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+}
+
+.phaseOption[aria-selected="true"],
+.pickOption[aria-pressed="true"],
+.dayOption[aria-pressed="true"] {
+  outline: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-selected);
+  outline-offset: var(--cw-contour-offset);
+}
+
+/* ── Map: rows beside the radar ───────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-xl);
+}
+
+@media (min-width: 900px) {
+  .grid {
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    align-items: start;
+  }
+
+  .radar {
+    position: sticky;
+    top: var(--cw-space-3xl);
+  }
+}
+
+.rows {
+  display: grid;
+  min-width: 0;
+}
+
+.anchors {
+  margin: 0 0 var(--cw-space-xs);
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  line-height: 1.5;
+}
+
+.row {
+  display: grid;
+  gap: var(--cw-space-xs);
+  padding-block: var(--cw-space-sm);
+  border-top: 1px solid var(--cw-rule-ink);
+}
+
+.row:last-of-type {
+  border-bottom: 1px solid var(--cw-rule-ink);
+}
+
+.row[data-moving] {
+  background: var(--cw-mat-surface-sunk);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-width: 0;
+}
+
+/* The grip: a drag handle and, from the keyboard, arrows up and down. */
+.gripControl {
+  composes: base secondary square from "../PlatformButtons.module.css";
+  flex: none;
+  border-color: transparent;
+  background: none;
+  color: var(--cw-platform-muted);
+  cursor: grab;
+  touch-action: none;
+}
+
+.row[data-moving] .gripControl {
+  cursor: grabbing;
+}
+
+.dot {
+  flex: none;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--c);
+}
+
+/* The name is the field: it reads as a heading until it is focused. */
+.name {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border: 1px solid transparent;
+  border-radius: var(--cw-radius-md);
+  background: none;
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: var(--ds-type-body-size);
+  font-weight: 600;
+}
+
+.name:focus-visible {
+  border-color: var(--cw-platform-border);
+  outline: 2px solid var(--cw-nav-marker);
+  outline-offset: var(--ds-focus-ring-offset-inset);
+}
+
+.value,
+.gap,
+.gapBig,
+.mono {
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-sm-size);
+  white-space: nowrap;
+}
+
+.value,
+.gap {
+  color: var(--cw-platform-muted);
+}
+
+.gapBig {
+  color: var(--cw-platform-text);
+  font-weight: 600;
+}
+
+.mono {
+  color: var(--cw-platform-muted);
+}
+
+.hideControl {
+  composes: base secondary square from "../PlatformButtons.module.css";
+  flex: none;
+  border-color: transparent;
+  background: none;
+  color: var(--cw-platform-muted);
+}
+
+.slider {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2ch;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  min-height: var(--ds-touch-target-min);
+}
+
+.slider input {
+  width: 100%;
+  accent-color: var(--c);
+}
+
+.slider b {
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-size);
+  text-align: end;
+}
+
+.text,
+.field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border: 1px solid var(--cw-platform-border);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.text:focus-visible,
+.field input:focus-visible {
+  outline: 2px solid var(--cw-nav-marker);
+  outline-offset: var(--ds-focus-ring-offset-inset);
+}
+
+.ghostAction {
+  composes: base secondary hug from "../PlatformButtons.module.css";
+  justify-self: start;
+  margin-top: var(--cw-space-sm);
+}
+
+/* ── Radar ────────────────────────────────────────── */
+
+.radar {
+  display: grid;
+  gap: var(--cw-space-sm);
+  justify-items: center;
+  min-width: 0;
+}
+
+.radar svg {
+  width: min(100%, 30rem);
+  height: auto;
+  overflow: visible;
+  touch-action: none;
+  user-select: none;
+}
+
+.radar svg[data-live] {
+  cursor: crosshair;
+}
+
+.ring,
+.spoke {
+  fill: none;
+  stroke: var(--cw-rule-ink);
+  stroke-width: 0.75;
+}
+
+.label {
+  fill: var(--cw-platform-muted);
+  font-family: var(--cw-font-ui);
+  font-size: var(--ds-type-label-size);
+}
+
+.labelValue {
+  fill: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-weight: 600;
+}
+
+.shapeNow {
+  fill: color-mix(in srgb, var(--cw-sem-embodied) 22%, transparent);
+  stroke: var(--cw-sem-embodied);
+  stroke-width: 1.75;
+  stroke-linejoin: round;
+}
+
+.shapeGoal {
+  fill: none;
+  stroke: var(--cw-platform-muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  stroke-linejoin: round;
+}
+
+.shapeAfter {
+  fill: color-mix(in srgb, var(--cw-sem-trust) 16%, transparent);
+  stroke: var(--cw-sem-trust);
+  stroke-width: 1.75;
+  stroke-linejoin: round;
+}
+
+.handle {
+  cursor: grab;
+  outline: none;
+}
+
+.handleRing {
+  fill: var(--cw-platform-bg);
+  stroke: var(--cw-sem-embodied);
+  stroke-width: 1.5;
+}
+
+.handleRing[data-field="goal"] {
+  stroke: var(--cw-platform-muted);
+  stroke-dasharray: 3 2;
+}
+
+.handleRing[data-field="after"] {
+  stroke: var(--cw-sem-trust);
+}
+
+.handle:focus-visible .handleRing {
+  stroke: var(--cw-nav-marker);
+  stroke-width: 2.5;
+}
+
+.key {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--cw-space-2xs) var(--cw-space-md);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+}
+
+.key span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+.key i {
+  width: 1rem;
+  border-top: 2px solid var(--cw-sem-embodied);
+}
+
+.key [data-k="goal"] i {
+  border-top-style: dashed;
+  border-top-color: var(--cw-platform-muted);
+}
+
+.key [data-k="after"] i {
+  border-top-color: var(--cw-sem-trust);
+}
+
+.hint,
+.muted,
+.out {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+}
+
+.hint {
+  max-width: 34rem;
+  text-align: center;
+}
+
+/* ── Phase tasks and the work under them ──────────── */
+
+.tasks {
+  display: grid;
+  gap: var(--cw-space-md);
+  padding-top: var(--cw-space-lg);
+  border-top: 1px solid var(--cw-rule-ink);
+}
+
+.tasksTitle,
+.blocksTitle {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.taskList {
+  display: grid;
+  gap: var(--cw-space-xs);
+  margin: 0;
+  padding-inline-start: var(--cw-space-lg);
+  font-size: var(--ds-type-body-size);
+  line-height: 1.5;
+}
+
+.pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+}
+
+.pickOption {
+  composes: base secondary hug from "../PlatformButtons.module.css";
+  gap: var(--cw-space-xs);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--cw-space-md);
+}
+
+/* A card belongs to a sphere: its hue is the left edge, nothing more. */
+.card {
+  display: grid;
+  align-content: start;
+  gap: var(--cw-space-sm);
+  min-width: 0;
+  padding: var(--cw-space-md);
+  border: 1px solid var(--cw-platform-border);
+  border-inline-start: 3px solid var(--c);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: var(--ds-type-body-size);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.field {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+}
+
+.dayStep {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5rem;
+  gap: var(--cw-space-xs);
+  margin: 0;
+  padding: var(--cw-space-sm);
+  border: 1px dashed var(--cw-platform-border);
+  border-radius: var(--cw-radius-md);
+}
+
+.dayStep legend {
+  padding-inline: var(--cw-space-2xs);
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+}
+
+.dayStep .field[data-wide] {
+  grid-column: 1 / -1;
+}
+
+.goAction {
+  composes: base primary hug from "../PlatformButtons.module.css";
+  justify-self: start;
+}
+
+/* Seven days in one row at every width. */
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--cw-space-2xs);
+}
+
+.dayOption {
+  composes: base secondary bar from "../PlatformButtons.module.css";
+  font-family: var(--cw-font-data);
+}
+
+.dayOption[aria-pressed="true"] {
+  background-color: color-mix(in srgb, var(--c) 28%, var(--cw-mat-surface-sunk));
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+/* ── «Мій ритм» ───────────────────────────────────── */
+
+.lead {
+  max-width: 60ch;
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-size);
+  line-height: 1.6;
+}
+
+.ladder {
+  display: grid;
+  gap: var(--cw-space-sm);
+}
+
+.ladderHead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--cw-space-xs);
+}
+
+.focusStep {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.focusStep b {
+  color: var(--cw-platform-text);
+}
+
+.focusOn {
+  outline: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-selected);
+  outline-offset: var(--cw-contour-offset);
+}
+
+.slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: var(--cw-space-sm);
+}
+
+/* A slot is a plate you pick (where the next block goes) and a list of what
+   is in it. Picking takes the contour; the plate itself stays paper. */
+.slot {
+  display: grid;
+  align-content: start;
+  gap: var(--cw-space-xs);
+  min-width: 0;
+  padding: var(--cw-space-sm);
+  border: 1px solid var(--cw-platform-border);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  cursor: pointer;
+}
+
+.slot[data-active] {
+  outline: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-selected);
+  outline-offset: var(--cw-contour-offset);
+}
+
+.slot:focus-visible {
+  outline: 2px solid var(--cw-nav-marker);
+  outline-offset: var(--ds-focus-ring-offset-inset);
+}
+
+.slotHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--cw-space-xs);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.budget {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+}
+
+.budget input {
+  width: 4.5em;
+  padding: var(--cw-space-2xs);
+  border: 1px solid var(--cw-platform-border);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+}
+
+/* The meter recipe: the track and the guide fill; over budget, the failed state. */
+.meter {
+  display: block;
+  height: 0.25rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-meter-track);
+  overflow: hidden;
+}
+
+.meter i {
+  display: block;
+  height: 100%;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-platform-meter);
+}
+
+.meter[data-over] i {
+  background: var(--cw-sem-state-failed);
+}
+
+.items {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A placed block: pressing it takes it out of the slot. Its lever's hue is
+   its left edge. */
+.blockAction {
+  composes: base secondary row from "../PlatformButtons.module.css";
+  justify-content: space-between;
+  border-inline-start: 3px solid var(--c);
+}
+
+.blockAction span:last-child,
+.libOption small {
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  white-space: nowrap;
+}
+
+.lib {
+  display: grid;
+  gap: var(--cw-space-sm);
+}
+
+.libGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+.libGroup > span {
+  min-width: 8em;
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.libOption {
+  composes: base secondary hug from "../PlatformButtons.module.css";
+  gap: var(--cw-space-xs);
+  border-color: color-mix(in srgb, var(--c) 55%, var(--cw-platform-border));
+}
+
+.rule {
+  margin: 0;
+  padding: var(--cw-space-sm) var(--cw-space-md);
+  border-inline-start: 2px solid var(--cw-platform-accent);
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.6;
+}
