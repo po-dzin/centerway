@@ -30,7 +30,13 @@ import { usePlatformIdentity } from "@/components/platform/layout/usePlatformIde
 import { platformRoleLabel } from "@/lib/platform/identity";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
-import { JOURNAL_HREF, LEARNING_SHELF_HREF, PROFILE_HREF, SPHERE_MAP_HREF } from "@/lib/platform/content";
+import {
+  JOURNAL_HREF,
+  LEARNING_SHELF_HREF,
+  PROFILE_COURSES_HREF,
+  PROFILE_HREF,
+  SPHERE_MAP_HREF,
+} from "@/lib/platform/content";
 import { PwaInstallCard } from "./PwaInstallCard";
 import { cabinetGate } from "./CabinetGate";
 import { CabinetFold } from "./CabinetFold";
@@ -52,7 +58,7 @@ import dynamic from "next/dynamic";
    cabinet is client-fetched, so the fold never appears in the first HTML. */
 const AuthorProfileFold = dynamic(() => import("./AuthorProfileFold").then((m) => m.AuthorProfileFold), { ssr: false });
 import { DoshaWheel } from "./DoshaWheel";
-import { CompactCourseCard, ShelfErrorCard, matte } from "./CourseCard";
+import { CompactCourseCard, CourseRouteCard, ShelfErrorCard, matte } from "./CourseCard";
 import {
   dateLocaleFor,
   fmtDate,
@@ -307,7 +313,7 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
 
       <ProfileTabs
         current={tab}
-        links={{ map: sphereMapHref, journal: journalHref, library: shelfHref }}
+        links={{ map: sphereMapHref, courses: href(PROFILE_COURSES_HREF), journal: journalHref }}
         overviewHref={href(PROFILE_HREF)}
         onSelect={setTab}
         lang={lang}
@@ -328,7 +334,7 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
             {resumeCourse ? (
               /* The one answer: cover, where you stopped, and the only control
                  in the row. */
-              <CompactCourseCard course={resumeCourse} copy={cab} primary ground="paper" />
+              <CourseRouteCard course={resumeCourse} copy={cab} />
             ) : shelfFailed ? (
               /* Not "no courses yet" — the shelf just could not be read. Those
                  look identical without this branch, and a learner who paid for
@@ -437,11 +443,31 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
         </div>
       ) : null}
 
+      {tab === "courses" ? (
+        /* «Курси» (G 23.10): every course the person holds, as the shelf's
+           cards, without leaving the profile; the whole library (materials,
+           products) is one link away. */
+        <div className={styles.overview}>
+          {ownedCourses.length > 0 ? (
+            <div className={styles.coursesGrid}>
+              {ownedCourses.map((course) => (
+                <CompactCourseCard key={course.slug} course={course} copy={cab} ground="paper" />
+              ))}
+            </div>
+          ) : (
+            <p className={styles.shelfCardNote}>{cab.learningEmptyLead}</p>
+          )}
+          <span className={styles.glanceMore}>
+            <PlatformBlockLink href={shelfHref} label={cab.allCourses} />
+          </span>
+        </div>
+      ) : null}
+
       {tab === "map" ? (
         <div className={styles.shell}>
           <ProfileMapTab userId={session?.user?.id ?? null} lang={lang} />
         </div>
-      ) : (
+      ) : tab === "overview" ? (
         <div className={styles.shell}>
           {/* The journal, the map and the library are tabs under the room now
             (ProfileTabs, G 23.10); the journal's own crossing that stood here
@@ -576,7 +602,7 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
             </div>
           </CabinetFold>
         </div>
-      )}
+      ) : null}
     </main>
   );
 }

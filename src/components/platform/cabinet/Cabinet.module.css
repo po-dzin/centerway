@@ -2361,3 +2361,82 @@
     grid-row: 2;
   }
 }
+
+/* ── The course as a route of dots (CourseRouteCard, G 23.10) ──── */
+.routeCard {
+  gap: var(--cw-space-xs);
+}
+
+.route {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  overflow: visible;
+}
+
+.routeLine {
+  fill: none;
+  stroke: color-mix(in srgb, var(--cw-platform-text) 18%, transparent);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.routeWalked {
+  fill: none;
+  stroke: var(--cw-platform-accent);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+.routeDone {
+  fill: var(--cw-platform-accent);
+}
+
+.routeAhead {
+  fill: var(--cw-platform-bg);
+  stroke: color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+  stroke-width: 1.2;
+}
+
+.routeNow {
+  fill: var(--cw-platform-accent);
+}
+
+/* «You are here»: one slow breath on arrival, then still. */
+.routeRing {
+  fill: none;
+  stroke: var(--cw-platform-accent);
+  stroke-width: 1.4;
+  opacity: 0.7;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cw-route-breath var(--cw-motion-breath) var(--cw-ease-state) var(--cw-motion-tone) 1 both;
+}
+
+@keyframes cw-route-breath {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  40% {
+    transform: scale(1.35);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .routeRing {
+    animation: none;
+  }
+}
+
+/* «Курси» tab: the shelf's cards, as many columns as fit. */
+.coursesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: var(--cw-space-md);
+}
