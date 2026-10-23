@@ -1167,7 +1167,8 @@ type CommentRow = {
  * author edits in the cabinet, linked to their page — wherever they write,
  * not only under their own post. The account's own name and photo (sign-in
  * data) are for everyone else. The platform's row is not a person's
- * profile, so an admin's own words stay theirs.
+ * profile, so an admin's own words stay theirs; an unlisted author has no
+ * public page, so they are shown by their account, never linked.
  */
 type Commenter = { name: string; avatar: string | null; author: FeedAuthor | null };
 
@@ -1179,6 +1180,7 @@ async function commenters(db: Db, userIds: string[]): Promise<Map<string, Commen
       .from("lms_authors")
       .select("id, slug, name, photo, listed, auth_user_id")
       .in("auth_user_id", userIds)
+      .eq("listed", true)
       .neq("slug", FEED_PLATFORM_SLUG),
   ]);
   const profiles = new Map(
