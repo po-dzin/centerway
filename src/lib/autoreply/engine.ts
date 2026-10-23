@@ -55,7 +55,7 @@ export interface AutoreplyStore {
   finish(eventId: string, status: EventStatus, error?: string): Promise<void>;
   /**
    * Puts the person who got the reply on their card: Instagram id and nick, the
-   * rule as their first touch, the `instagram-autodm` tag. Optional so a store
+   * rule as their first touch, the `ig-autodm` tag. Optional so a store
    * without the person card (tests, an older database) still replies.
    */
   rememberPerson?(rule: AutoreplyRule, event: CommentEvent): Promise<void>;

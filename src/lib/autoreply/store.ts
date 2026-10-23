@@ -129,7 +129,7 @@ export function dbStore(db: Db = serviceClient()): AutoreplyStore {
     async rememberPerson(rule: AutoreplyRule, event: CommentEvent) {
       if (!event.fromId) return;
       const id = await cardByInstagram(db, rule, event);
-      if (id) await addCustomerTags(db, [id], ["instagram-autodm"], "autoreply");
+      if (id) await addCustomerTags(db, [id], ["ig-autodm"], "autoreply");
     },
   };
 }
