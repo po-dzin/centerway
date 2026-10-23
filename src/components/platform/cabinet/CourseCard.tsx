@@ -222,9 +222,12 @@ export function CompactCourseCard({
   course,
   copy,
   primary,
+  ground = "media",
 }: {
   course: LearnerShelfCourseDto;
   copy: CabinetCopy;
+  /** On the room's photograph (glass) or on the page's paper (matte, G 23.10). */
+  ground?: "media" | "paper";
   /**
    * Whether this card carries the row's one gold button.
    *
@@ -247,7 +250,7 @@ export function CompactCourseCard({
   const resumable = course.access === "enrolled" && total > 0 && !course.standing?.isFinished;
 
   return (
-    <article className={`${styles.shelfCard} ${styles.shelfCourseCard}`} {...glassMedia}>
+    <article className={`${styles.shelfCard} ${styles.shelfCourseCard}`} {...(ground === "paper" ? matte : glassMedia)}>
       <MotionLink className={styles.cardOverlay} href={href(action.href)} aria-hidden="true" tabIndex={-1} />
       <CourseCover course={course} />
       <h3 className={styles.shelfCardTitle}>{course.title}</h3>
@@ -350,6 +353,94 @@ export function ShelfEmptyCard({ copy, programsHref }: { copy: CabinetCopy; prog
       <div className={styles.actions}>
         <MotionLink className={styles.actionPrimary} href={programsHref}>
           {copy.browsePrograms}
+        </MotionLink>
+      </div>
+    </article>
+  );
+}
+
+/** Where the dots of a course's route stand: rows of up to `perRow`, turning back at each end. */
+export function routePoints(total: number, perRow = 10) {
+  const width = 300;
+  const pad = 16;
+  const rowGap = 34;
+  const rows = Math.max(1, Math.ceil(total / perRow));
+  const step = perRow > 1 ? (width - pad * 2) / (perRow - 1) : 0;
+  const points = Array.from({ length: total }, (_, index) => {
+    const row = Math.floor(index / perRow);
+    const col = index % perRow;
+    const x = pad + (row % 2 === 0 ? col : perRow - 1 - col) * step;
+    /* A slight wave inside the row, so the route reads as walked, not printed. */
+    const y = pad + row * rowGap + Math.sin((col / Math.max(1, perRow - 1)) * Math.PI) * 6;
+    return { x, y };
+  });
+  return { points, width, height: pad * 2 + (rows - 1) * rowGap + 6 };
+}
+
+/**
+ * The course in progress as a ROUTE OF DOTS (G 23.10: «карточка, которая
+ * показывает текущий этап картой точек, подобно SymbolField»). One dot per
+ * lesson on a line that turns back at the end of each row: the done ones in
+ * accent, the current one in accent with a ring that breathes once on arrival
+ * (the gold dot means «you are here»), the rest open. It replaces the dashed
+ * rail on the overview's course card; the library keeps the rail.
+ */
+export function CourseRouteCard({ course, copy }: { course: LearnerShelfCourseDto; copy: CabinetCopy }) {
+  const href = useSurfaceHref();
+  const action = courseAction(course, copy);
+  const done = course.standing?.completedLessons ?? 0;
+  const total = course.standing?.totalLessons ?? 0;
+  const finished = Boolean(course.standing?.isFinished);
+  const current = finished || total === 0 ? -1 : Math.min(done, total - 1);
+  const { points, width, height } = routePoints(total);
+  const line = points
+    .map((point, index) => `${index ? "L" : "M"}${point.x.toFixed(1)} ${point.y.toFixed(1)}`)
+    .join(" ");
+  const walked = points
+    .slice(0, Math.max(0, (finished ? total : done) + (finished ? 0 : 1)))
+    .map((point, index) => `${index ? "L" : "M"}${point.x.toFixed(1)} ${point.y.toFixed(1)}`)
+    .join(" ");
+
+  return (
+    <article className={`${styles.shelfCard} ${styles.routeCard}`} {...matte}>
+      <MotionLink className={styles.cardOverlay} href={href(action.href)} aria-hidden="true" tabIndex={-1} />
+      <h3 className={styles.shelfCardTitle}>{course.title}</h3>
+      <p className={styles.shelfCardNote}>
+        {course.currentLessonTitle && !finished
+          ? course.currentLessonTitle
+          : finished
+            ? copy.courseFinished
+            : copy.courseNotStarted}
+      </p>
+      {total > 0 ? (
+        <svg
+          className={styles.route}
+          viewBox={`0 0 ${width} ${height}`}
+          role="img"
+          aria-label={`${course.title}: ${copy.stepsOf(done, total)}`}
+        >
+          <path className={styles.routeLine} d={line} />
+          {walked ? <path className={styles.routeWalked} d={walked} /> : null}
+          {points.map((point, index) => (
+            <circle
+              key={index}
+              className={
+                index === current ? styles.routeNow : index < done || finished ? styles.routeDone : styles.routeAhead
+              }
+              cx={point.x}
+              cy={point.y}
+              r={index === current ? 5 : 3.6}
+            />
+          ))}
+          {current >= 0 && points[current] ? (
+            <circle className={styles.routeRing} cx={points[current].x} cy={points[current].y} r={9} />
+          ) : null}
+        </svg>
+      ) : null}
+      {total > 0 ? <p className={styles.shelfCardMeta}>{copy.stepsOf(done, total)}</p> : null}
+      <div className={styles.shelfCardAction}>
+        <MotionLink className={action.primary ? styles.actionPrimary : styles.actionGhost} href={href(action.href)}>
+          {action.label}
         </MotionLink>
       </div>
     </article>

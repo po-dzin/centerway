@@ -2,7 +2,7 @@
 
 /**
  * The sphere map itself — radar, legend, focus, the A/B switch and the seven
- * rows — without the session, the read or the saves. `SphereMapClient` owns
+ * rows — without the session, the read or the saves. `ProfileMapTab` owns
  * those and hands this the map and three callbacks, so what is drawn here is a
  * function of its props and nothing else.
  */

@@ -25,6 +25,19 @@ export type CabinetCopy = {
 
   learningTitle: string;
   learningLabel: string;
+  /** The hero's course chip: «Осінній цикл · день 16 з 30». */
+  courseDayChip: (title: string, day: number, total: number) => string;
+  /** The hero's link to the person's public author page. */
+  authorPage: string;
+  /** The hero's settings control (opens the account fold). */
+  settingsLabel: string;
+  /** The overview's timeline. */
+  chronicleTitle: string;
+  chronicleLesson: (lesson: string, course: string) => string;
+  chronicleStarted: (course: string) => string;
+  chronicleDosha: (result: string) => string;
+  chronicleBalance: (result: string) => string;
+  chroniclePurchase: (title: string) => string;
   /** The common collection noun in the library and workshop result band. */
   materialsLabel: string;
   materialsCount: (count: number) => string;
@@ -193,6 +206,15 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
 
       learningTitle: "My materials",
       learningLabel: "Library",
+      courseDayChip: (title, day, total) => `${title} · day ${day} of ${total}`,
+      authorPage: "My author page",
+      settingsLabel: "Settings",
+      chronicleTitle: "Timeline",
+      chronicleLesson: (lesson, course) => `Lesson «${lesson}» · ${course}`,
+      chronicleStarted: (course) => `Started «${course}»`,
+      chronicleDosha: (result) => `Dosha test: ${result}`,
+      chronicleBalance: (result) => `Balance test: ${result}`,
+      chroniclePurchase: (title) => `Purchase: ${title}`,
       materialsLabel: "Materials",
       materialsCount: (count) => `${count} ${count === 1 ? "material" : "materials"}`,
       coursesLabel: "Courses",
@@ -309,6 +331,15 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
 
     learningTitle: "Мої матеріали",
     learningLabel: "Бібліотека",
+    courseDayChip: (title, day, total) => `${title} · день ${day} з ${total}`,
+    authorPage: "Моя сторінка автора",
+    settingsLabel: "Налаштування",
+    chronicleTitle: "Хроніка",
+    chronicleLesson: (lesson, course) => `Урок «${lesson}» · ${course}`,
+    chronicleStarted: (course) => `Почали «${course}»`,
+    chronicleDosha: (result) => `Тест доші: ${result}`,
+    chronicleBalance: (result) => `Тест балансу: ${result}`,
+    chroniclePurchase: (title) => `Покупка: ${title}`,
     materialsLabel: "Матеріали",
     materialsCount: (count) => `${count} ${ukPlural(count, "матеріал", "матеріали", "матеріалів")}`,
     coursesLabel: "Курси",

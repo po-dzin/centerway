@@ -1,15 +1,15 @@
 {
   "formatVersion": 1,
   "generator": "scripts/ds-export.mjs",
-  "sourceCommit": "429aaf0",
-  "tokensSource": "85f5b694588cb909",
+  "sourceCommit": "e64d86bf",
+  "tokensSource": "5e2d7f9b5235102b",
   "files": {
     "styles.css": "683617531c30ce2f",
     "tokens/colors.css": "d3b0dae5b8bc93f0",
     "tokens/delivery.css": "cc698ba7277747d7",
     "tokens/geometry.css": "4e64df3d903960c3",
     "tokens/material.css": "1a5fc2b1b1a58049",
-    "tokens/motion.css": "b38469025437b4f9",
+    "tokens/motion.css": "4545e22d1a793720",
     "tokens/primitives.css": "a28f9bb51ef6e6e7"
   }
 }

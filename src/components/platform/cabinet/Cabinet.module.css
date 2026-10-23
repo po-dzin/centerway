@@ -2291,3 +2291,152 @@
   outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
   outline-offset: var(--ds-focus-ring-offset-tight);
 }
+
+/* ── The overview on paper (G 23.10, after the canvas) ──────────
+   Under the tabs: the three cards (course, map, dosha) and the timeline. */
+.overview {
+  width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
+  margin: var(--cw-space-lg) auto 0;
+  display: grid;
+  gap: var(--cw-space-2xl);
+}
+
+/* The hero's own commands, on the photograph: the author page and settings. */
+.heroAction {
+  composes: base onMedia from "../PlatformButtons.module.css";
+}
+
+.heroActionSquare {
+  composes: base onMedia square from "../PlatformButtons.module.css";
+}
+
+.chronicle {
+  display: grid;
+  gap: var(--cw-space-sm);
+}
+
+.chronicleList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chronicleRow {
+  display: grid;
+  grid-template-columns: 6.5rem 1.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--cw-space-sm);
+  min-height: 3.25rem;
+}
+
+.chronicleRow + .chronicleRow {
+  border-block-start: 1px solid;
+  border-image: var(--cw-rule-fade-x);
+}
+
+.chronicleWhen {
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.chronicleIcon {
+  color: var(--cw-platform-muted);
+}
+
+.chronicleText {
+  min-width: 0;
+  font-size: var(--ds-type-body-sm-size);
+}
+
+@media (max-width: 560px) {
+  .chronicleRow {
+    grid-template-columns: 1.5rem minmax(0, 1fr);
+    padding-block: var(--cw-space-xs);
+  }
+
+  .chronicleWhen {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+
+/* ── The course as a route of dots (CourseRouteCard, G 23.10) ──── */
+.routeCard {
+  gap: var(--cw-space-xs);
+}
+
+.route {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  overflow: visible;
+}
+
+.routeLine {
+  fill: none;
+  stroke: color-mix(in srgb, var(--cw-platform-text) 18%, transparent);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.routeWalked {
+  fill: none;
+  stroke: var(--cw-platform-accent);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+.routeDone {
+  fill: var(--cw-platform-accent);
+}
+
+.routeAhead {
+  fill: var(--cw-platform-bg);
+  stroke: color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+  stroke-width: 1.2;
+}
+
+.routeNow {
+  fill: var(--cw-platform-accent);
+}
+
+/* «You are here»: one slow breath on arrival, then still. */
+.routeRing {
+  fill: none;
+  stroke: var(--cw-platform-accent);
+  stroke-width: 1.4;
+  opacity: 0.7;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cw-route-breath var(--cw-motion-breath) var(--cw-ease-state) var(--cw-motion-tone) 1 both;
+}
+
+@keyframes cw-route-breath {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  40% {
+    transform: scale(1.35);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .routeRing {
+    animation: none;
+  }
+}
+
+/* «Курси» tab: the shelf's cards, as many columns as fit. */
+.coursesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: var(--cw-space-md);
+}

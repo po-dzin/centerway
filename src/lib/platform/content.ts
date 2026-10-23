@@ -38,6 +38,8 @@ export const PROFILE_HREF = "/profile";
  * not an application.
  */
 export const SPHERE_MAP_HREF = "/profile/map";
+/** The profile opened on its «Курси» tab: every course the person holds (G 23.10). */
+export const PROFILE_COURSES_HREF = "/profile/courses";
 
 export type NavItem = { label: string; href: string; match: "exact" | "prefix" };
 

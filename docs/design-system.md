@@ -2811,6 +2811,7 @@ survey found 29 explicit `transition: none` against one `transition: padding`.
 | `--cw-motion-surface` | 180ms | a surface that moves or resizes — panel, sheet, menu, filter row |
 | `--cw-motion-enter` | 400ms | something arriving that was not on screen at all |
 | `--cw-motion-tone` | 320ms | the topbar changing its mind about its own tone over a photograph |
+| `--cw-motion-breath` | 2400ms | the gold «you are here» mark taking one slow breath on arrival, then still (G 23.10); never looped |
 | `--cw-ease-state` | `cubic-bezier(0.22, 0.61, 0.24, 1)` | the platform's decelerate |
 | `--cw-ease-surface` | `cubic-bezier(0.16, 1, 0.3, 1)` | the harder settle a moving surface takes |
 | `--cw-ease-network` | `cubic-bezier(0.2, 0.8, 0.2, 1)` | the landings' own decelerate |

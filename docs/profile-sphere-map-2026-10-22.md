@@ -6,9 +6,10 @@ life spheres are the programme's axes; this is their first home in the product.
 
 ## Contract
 
-- Surface: `my.centerway.net.ua/profile/map`, entered from one card on the
-  cabinet (`/profile`), placed below the hero and above the journal. The page's
-  way back leads to the profile.
+- Surface: the profile's «Карта» tab (G 23.10). `/profile/map` is the profile
+  opened on that tab, under the same room; the tab switches in place from
+  «Огляд», and the map tile on the profile's first screen («Продовжити | Карта
+  | Доша») opens it. It was a page of its own until 23.10.
 - Semantic role: a self-assessment the person keeps — where each sphere is now
   (A) and where they want it a year from now (B), with up to three spheres in
   focus for the cycle.

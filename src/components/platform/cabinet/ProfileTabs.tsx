@@ -3,58 +3,109 @@
 /**
  * The profile's own sections, under the room (G 23.10, profile v1).
  *
- * «Огляд · Карта · Журнал · Бібліотека» — the four places that belong to the
- * person rather than to a course. They are links, not tabs that hide the rest
- * of the page: each is its own address (`/profile`, `/profile/map`,
- * `/journal`, `/learn`) with the way back to the profile, so a section never
- * replaces the profile, it opens from it. The current one carries the ink
- * stroke (`InteractionInkLabel variant="tab"`, selection family `ink`) and
- * `aria-current`.
+ * «Огляд · Карта · Курси · Журнал». The first three are the profile itself
+ * (G 23.10: the map lives inside the profile as a tab, not on a sheet of its
+ * own): they switch in place under the same room, and the address follows —
+ * `/profile`, `/profile/map`, `/profile/courses` — so a link, a reload or
+ * «back» lands on the same tab. The journal is its own place and stays a link.
+ * The current one carries the ink stroke (`InteractionInkLabel variant="tab"`,
+ * selection family `ink`) and `aria-current`.
  */
 
 import Link from "next/link";
+import { useCallback, useEffect, useState, type MouseEvent } from "react";
 
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import type { ProfileLang } from "@/components/platform/profile/types";
+import { PROFILE_COURSES_HREF, PROFILE_HREF, SPHERE_MAP_HREF } from "@/lib/platform/content";
 
 import styles from "./Cabinet.module.css";
 
-type Key = "overview" | "map" | "journal" | "library";
+/** The sections that render inside the profile itself. */
+export type ProfileTab = "overview" | "map" | "courses";
+
+type Key = ProfileTab | "journal";
 
 const LABELS: Record<ProfileLang, Record<Key, string>> = {
-  uk: { overview: "Огляд", map: "Карта", journal: "Журнал", library: "Бібліотека" },
-  en: { overview: "Overview", map: "Map", journal: "Journal", library: "Library" },
+  uk: { overview: "Огляд", map: "Карта", courses: "Курси", journal: "Журнал" },
+  en: { overview: "Overview", map: "Map", courses: "Courses", journal: "Journal" },
 };
 
 const ARIA: Record<ProfileLang, string> = { uk: "Розділи профілю", en: "Profile sections" };
+
+const TAB_PATHS: Record<ProfileTab, string> = {
+  overview: PROFILE_HREF,
+  map: SPHERE_MAP_HREF,
+  courses: PROFILE_COURSES_HREF,
+};
+
+function tabFromPath(pathname: string): ProfileTab {
+  const path = pathname.replace(/\/+$/, "");
+  if (path.endsWith(SPHERE_MAP_HREF)) return "map";
+  if (path.endsWith(PROFILE_COURSES_HREF)) return "courses";
+  return "overview";
+}
+
+/**
+ * The open tab, kept in step with the address. Switching pushes the tab's own
+ * path without a navigation (the room and the profile's data stay mounted);
+ * «back» and «forward» move between tabs.
+ */
+export function useProfileTab(initial: ProfileTab): [ProfileTab, (next: ProfileTab) => void] {
+  const [tab, setTabState] = useState<ProfileTab>(initial);
+
+  useEffect(() => {
+    const onPop = () => setTabState(tabFromPath(window.location.pathname));
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  const setTab = useCallback((next: ProfileTab) => {
+    setTabState(next);
+    const path = TAB_PATHS[next];
+    if (window.location.pathname !== path) window.history.pushState(null, "", path);
+  }, []);
+
+  return [tab, setTab];
+}
 
 export function ProfileTabs({
   current,
   links,
   lang,
-  overviewHref = "#",
+  overviewHref = PROFILE_HREF,
+  onSelect,
 }: {
-  current: Key;
-  links: { map: string; journal: string; library: string };
+  current: ProfileTab;
+  links: { map: string; courses: string; journal: string };
   lang: ProfileLang;
   overviewHref?: string;
+  /** Switch an in-profile tab in place; the journal stays a link. */
+  onSelect?: (tab: ProfileTab) => void;
 }) {
   const labels = LABELS[lang] ?? LABELS.uk;
   const items: { key: Key; href: string }[] = [
     { key: "overview", href: overviewHref },
     { key: "map", href: links.map },
+    { key: "courses", href: links.courses },
     { key: "journal", href: links.journal },
-    { key: "library", href: links.library },
   ];
   return (
     <nav className={styles.tabs} aria-label={ARIA[lang] ?? ARIA.uk}>
       {items.map(({ key, href }) => {
         const active = key === current;
+        const inPlace = onSelect && key !== "journal";
+        const select = (event: MouseEvent<HTMLAnchorElement>) => {
+          if (!inPlace || event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+          event.preventDefault();
+          onSelect(key as ProfileTab);
+        };
         return (
           <Link
             key={key}
             className={styles.tab}
             href={href}
+            onClick={select}
             data-cw-ink-control=""
             aria-current={active ? "page" : undefined}
             data-current={active || undefined}

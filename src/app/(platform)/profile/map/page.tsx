@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 
 import { PlatformShell } from "@/components/platform/PlatformLayout";
-import { SphereMapClient } from "@/components/platform/cabinet/SphereMapClient";
+import { CabinetClient } from "@/components/platform/cabinet/CabinetClient";
 import { describe } from "@/lib/brand/identity";
-import { PROFILE_HREF } from "@/lib/platform/content";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
@@ -16,17 +15,15 @@ export const metadata: Metadata = pageMetadata({
   noindex: true,
 });
 
+/**
+ * The profile, opened on its «Карта» tab (G 23.10). The map is not a page of
+ * its own any more: this address is the profile with the map tab open, under
+ * the same room, so a shared link or a reload lands where the person was.
+ */
 export default function SphereMapPage() {
   return (
-    <PlatformShell
-      headerMode="learn"
-      surface="personal"
-      footer={false}
-      /* The way back leads to the profile: the map is one of the things the
-         profile holds, the way the journal is one of the library's. */
-      back={{ href: PROFILE_HREF, label: "До профілю", text: "Профіль" }}
-    >
-      <SphereMapClient />
+    <PlatformShell headerMode="overlay" surface="personal">
+      <CabinetClient initialTab="map" />
     </PlatformShell>
   );
 }
