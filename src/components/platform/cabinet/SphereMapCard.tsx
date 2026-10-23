@@ -11,7 +11,7 @@
  */
 
 import { PlatformBlockLink } from "@/components/platform/PlatformBlock";
-import { SPHERE_AXIS_IDS } from "@/lib/profile/sphereMap";
+import { EMPTY_SPHERE_MAP, SPHERE_AXIS_IDS } from "@/lib/profile/sphereMap";
 import type { ProfileLang } from "@/components/platform/profile/types";
 
 import { matte } from "./CourseCard";
@@ -44,11 +44,28 @@ export function SphereMapCard({
   const rated = map ? SPHERE_AXIS_IDS.some((id) => map.spheres[id]?.now != null) : false;
 
   return (
-    <article className={tile ? styles.tile : styles.card} data-cw-tile={tile ? "map" : undefined} {...matte}>
-      {map && rated ? <SphereRadar map={map} title={copy.radarTitle} compact /> : null}
+    <article
+      className={tile ? styles.tile : styles.card}
+      data-cw-tile={tile ? "map" : undefined}
+      aria-label={tile ? copy.cardTitle : undefined}
+      {...matte}
+    >
+      {/* THE OVERVIEW'S ONE RECIPE (G 23.10, «в артефакте лучше»): every tile
+          opens with the same small label, the picture in the middle, the words
+          and the way on at the foot — not a display-size title in one tile and
+          none in the next. */}
+      {tile ? <p className={styles.cardLabel}>{copy.cardLabel}</p> : null}
+      {/* On the overview the web is drawn even before the first score: the
+          tile's picture is the map's shape, and an empty one says «not drawn
+          yet» better than a hole in the middle of the tile. */}
+      {map && rated ? (
+        <SphereRadar map={map} title={copy.radarTitle} compact />
+      ) : tile ? (
+        <SphereRadar map={map ?? EMPTY_SPHERE_MAP} title={copy.radarTitle} compact />
+      ) : null}
       <div className={styles.cardText}>
         {tile ? null : <p className={styles.cardLabel}>{copy.cardLabel}</p>}
-        <h2 className={styles.cardTitle}>{copy.cardTitle}</h2>
+        {tile ? null : <h2 className={styles.cardTitle}>{copy.cardTitle}</h2>}
         {map && rated ? (
           map.focus.length > 0 ? (
             <p className={styles.cardNote}>

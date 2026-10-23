@@ -403,7 +403,8 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
                 what else exists is the showcase's business — this tile holds
                 the answer that belongs to this person, at the size of a glance
                 rather than of a card: the shape, the type, one way back in. */}
-              <article className={styles.shelfAside} {...matte}>
+              <article className={styles.shelfAside} aria-label={copy.dosha} {...matte}>
+                <p className={styles.tileLabel}>{copy.dosha}</p>
                 {/* The word «Доша» and the result are BOTH printed in the fact
                   row at the top of this same screen — naming the tile again
                   here said nothing the reader had not just read. The wheel

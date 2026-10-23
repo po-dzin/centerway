@@ -2450,3 +2450,90 @@
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
   gap: var(--cw-space-md);
 }
+
+/* ── The overview's one card recipe (G 23.10: «в артефакте некоторые места
+   лучше, чем на сайте») ─────────────────────────────────────────────────
+   The three tiles were three histories: the course card kept the photo-era
+   shelf geometry (a 15rem track, the card inset), the map tile its own padding
+   and a display-size title, the dosha tile no label at all — so a row of three
+   read as three components. The canvas (TabOverview) states one recipe and
+   this is it: the row spans the column in equal tracks, every tile has the
+   same inset and rhythm, a small label opens the map and the dosha, the
+   course and the result speak in the editorial face at one size, and every
+   foot (button or way on) sits on the same line. */
+.overview .shelfRow[data-cols="3"] {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  justify-content: stretch;
+  align-items: stretch;
+  gap: var(--cw-space-md);
+}
+
+.overview .shelfRow[data-cols="3"] > * {
+  grid-column: auto;
+  grid-row: auto;
+}
+
+/* The way to the whole library is the row's last line, under all three. */
+.overview .shelfRow[data-cols="3"] .glanceMore {
+  grid-column: 1 / -1;
+  order: 1;
+}
+
+.overview .shelfRow .shelfCard,
+.overview .shelfRow .shelfAside,
+.overview .shelfRow > [data-cw-tile="map"] {
+  gap: var(--cw-space-sm);
+  min-height: 100%;
+  padding: var(--cw-space-md);
+  border-radius: var(--cw-radius-lg);
+}
+
+.overview .shelfRow .shelfCard > :not(.cover, .coverFallback, .cardOverlay) {
+  margin-inline: 0;
+}
+
+.overview .shelfRow .shelfCard > :last-child {
+  margin-block-end: 0;
+}
+
+.overview .shelfRow .shelfCardTitle,
+.overview .shelfRow .wheelType {
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-hero-subtitle-size);
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+/* A state sentence is read whole on the overview, not cut at two lines. */
+.overview .shelfRow .shelfAside .shelfCardNote {
+  display: block;
+  overflow: visible;
+}
+
+.tileLabel {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Switching a tab is a page turn, not a cut: the new tab's body rises into
+   place once. Nothing moves under reduced motion. */
+.tabPanel > * {
+  animation: cw-profile-tab-enter var(--cw-motion-enter) var(--cw-ease-surface) both;
+}
+
+@keyframes cw-profile-tab-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--cw-space-xs));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tabPanel > * {
+    animation: none;
+  }
+}
