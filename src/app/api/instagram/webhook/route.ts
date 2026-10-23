@@ -14,8 +14,15 @@ import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 
 export const runtime = "nodejs";
 
-function appSecret(): string | null {
-  return process.env.META_APP_SECRET?.trim() || process.env.INSTAGRAM_APP_SECRET?.trim() || null;
+/**
+ * Both app secrets are tried: Instagram signs its webhooks with the secret of
+ * the Instagram app (the one under «Instagram API setup»), which is not the
+ * parent Meta app's secret when the two differ.
+ */
+function appSecrets(): string[] {
+  return [process.env.INSTAGRAM_APP_SECRET, process.env.META_APP_SECRET]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value));
 }
 
 /**
@@ -45,14 +52,16 @@ export async function GET(req: NextRequest) {
  * claimed by its id before anything is sent.
  */
 export async function POST(req: NextRequest) {
-  const secret = appSecret();
-  if (!secret) {
+  const secrets = appSecrets();
+  if (secrets.length === 0) {
     log.error("instagram.webhook_secret_missing", {});
     return NextResponse.json({ error: "not_configured" }, { status: 503 });
   }
 
   const body = await req.text();
-  if (!verifySignature(secret, body, req.headers.get("x-hub-signature-256"))) {
+  const signature = req.headers.get("x-hub-signature-256");
+  if (!secrets.some((secret) => verifySignature(secret, body, signature))) {
+    log.warn("instagram.webhook_signature_invalid", { signed: Boolean(signature), secrets: secrets.length });
     return NextResponse.json({ error: "signature_invalid" }, { status: 401 });
   }
 
