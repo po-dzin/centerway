@@ -25,7 +25,8 @@ export type BlockerTarget = {
   label: string;
 };
 
-const BLOCK_SUFFIX = /\.blocks\[(\d+)]$/;
+/* A hole inside a grouped block (`blocks[0].children[1]`) is addressed to the group's own card: the editor renders the children inside it. */
+const BLOCK_SUFFIX = /\.blocks\[(\d+)](?:\.children\[\d+])*$/;
 
 /** The course-level blockers whose field lives on «Сторінка», not «Обкладинка». */
 const STOREFRONT_BLOCKERS = new Set([

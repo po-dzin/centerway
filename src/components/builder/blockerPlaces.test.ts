@@ -46,6 +46,15 @@ describe("blockerPlaces", () => {
     expect(places[1]?.href).toBe("/build/way21/day-1#block-b2");
   });
 
+  it("sends a hole inside a grouped block to the group's card, once", () => {
+    const places = blockerPlaces(course, [
+      blocker("way21.week-1.day-1.blocks[1].children[0]"),
+      blocker("way21.week-1.day-1.blocks[1].children[1]"),
+    ]);
+    expect(places).toHaveLength(1);
+    expect(places[0]).toMatchObject({ blockId: "b2", href: "/build/way21/day-1#block-b2" });
+  });
+
   it("drops a report about a lesson that no longer exists", () => {
     expect(blockerPlaces(course, [blocker("way21.week-1.gone.blocks[0]")])).toEqual([]);
   });

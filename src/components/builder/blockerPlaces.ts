@@ -12,7 +12,7 @@ import { blockerTarget, blockerTrail } from "./blockerTargets";
  * would read, and never jumps about by the order the checks happened to run.
  */
 export type BlockerPlace = {
-  /** The blocker's path: unique per place. */
+  /** The path of the place (a grouped block's holes share their group's): unique per place. */
   key: string;
   code: string;
   href: string;
@@ -25,7 +25,7 @@ export type BlockerPlace = {
   trail: string;
 };
 
-const BLOCK_SUFFIX = /\.blocks\[(\d+)]$/;
+const BLOCK_SUFFIX = /\.blocks\[(\d+)](?:\.children\[\d+])*$/;
 const LESSON_SPAN = 1000;
 
 /** Where a lesson (and optionally one of its blocks) sits in the walk. */
@@ -38,18 +38,20 @@ export function blockerPlaces(course: Course, blockers: ReadonlyArray<ReadinessB
   const seen = new Set<string>();
   const places: BlockerPlace[] = [];
   for (const blocker of blockers) {
-    if (seen.has(blocker.path)) continue;
     const target = blockerTarget(course, blocker);
     // A stale report about a lesson that is gone is not a place to walk to.
     if (!target) continue;
-    seen.add(blocker.path);
     const match = BLOCK_SUFFIX.exec(blocker.path);
     const lessonPath = match ? blocker.path.slice(0, -match[0].length) : blocker.path;
+    // Two holes inside one grouped block are one stop: the walk lands on the card.
+    const key = match ? `${lessonPath}.blocks[${match[1]}]` : blocker.path;
+    if (seen.has(key)) continue;
+    seen.add(key);
     const at = lessons.findIndex(({ module, lesson }) => lessonPath === `${course.slug}.${module.slug}.${lesson.slug}`);
     const entry = at >= 0 ? lessons[at] : undefined;
     const block = entry && match ? entry.lesson.blocks[Number(match[1])] : undefined;
     places.push({
-      key: blocker.path,
+      key,
       code: blocker.code,
       href: target.href,
       lessonId: entry?.lesson.id ?? null,
