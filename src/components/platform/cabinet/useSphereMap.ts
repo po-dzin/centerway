@@ -21,7 +21,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
 import { useOptionalToast } from "@/components/ToastProvider";
-import { type SphereAxisId, type SphereMap, type SphereScore, toggleFocus } from "@/lib/profile/sphereMap";
+import { EMPTY_CYCLE, EMPTY_RHYTHM, type Cycle, type ProfileMapDoc, type Rhythm } from "@/lib/profile/cycle";
+import { type SphereAxisId, type SphereScore, toggleFocus } from "@/lib/profile/sphereMap";
+
+type SphereMap = ProfileMapDoc;
 
 const SAVE_DELAY_MS = 700;
 const ENDPOINT = "/api/platform/users/me/sphere-map";
@@ -33,6 +36,12 @@ export type SphereMapState = {
   setScore: (id: SphereAxisId, mode: "now" | "goal", value: number) => void;
   setNote: (id: SphereAxisId, note: string) => void;
   flipFocus: (id: SphereAxisId) => void;
+  /** The cycle around the map (phases, names, bridge, week, review). */
+  setCycle: (edit: (cycle: Cycle) => Cycle) => void;
+  /** «Мій ритм»: day types and their slots. */
+  setRhythm: (edit: (rhythm: Rhythm) => Rhythm) => void;
+  /** Any edit of the whole document — for changes that touch scores and the cycle together. */
+  edit: (edit: (map: SphereMap) => SphereMap) => void;
 };
 
 function scoreOf(map: SphereMap, id: SphereAxisId): SphereScore {
@@ -65,7 +74,9 @@ export function useSphereMap(userId: string | null, saveErrorMessage: string): S
           return;
         }
         const body = (await res.json()) as { map: SphereMap };
-        if (!cancelled) setLoaded({ userId, map: body.map });
+        /* An older server answers without the cycle and the rhythm. */
+        const map = { ...body.map, cycle: body.map.cycle ?? EMPTY_CYCLE, rhythm: body.map.rhythm ?? EMPTY_RHYTHM };
+        if (!cancelled) setLoaded({ userId, map });
       } catch {
         if (!cancelled) setFailure(read);
       }
@@ -92,7 +103,13 @@ export function useSphereMap(userId: string | null, saveErrorMessage: string): S
         try {
           const res = await authorizedFetch(ENDPOINT, {
             method: "PUT",
-            body: JSON.stringify({ spheres: sent.map.spheres, focus: sent.map.focus }),
+            body: JSON.stringify({
+              spheres: sent.map.spheres,
+              focus: sent.map.focus,
+              phase: sent.map.cycle.phase,
+              cycle: sent.map.cycle,
+              rhythm: sent.map.rhythm,
+            }),
             keepalive: true,
           });
           if (!res.ok) throw new Error(String(res.status));
@@ -157,8 +174,21 @@ export function useSphereMap(userId: string | null, saveErrorMessage: string): S
     [change],
   );
 
+  const setCycle = useCallback(
+    (edit: (cycle: Cycle) => Cycle) => change((map) => ({ ...map, cycle: edit(map.cycle) })),
+    [change],
+  );
+
+  const setRhythm = useCallback(
+    (edit: (rhythm: Rhythm) => Rhythm) => change((map) => ({ ...map, rhythm: edit(map.rhythm) })),
+    [change],
+  );
+
   return {
     map: loaded && loaded.userId === userId ? loaded.map : null,
+    setCycle,
+    setRhythm,
+    edit: change,
     failed: failure === read,
     retry: () => setAttempt((value) => value + 1),
     setScore,

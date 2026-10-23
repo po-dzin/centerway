@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { adminClient } from "@/lib/auth/adminClient";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
+import { splitExtras } from "@/lib/profile/cycle";
 import { validateSphereMapInput } from "@/lib/profile/sphereMap";
 import { getSphereMap, saveSphereMap } from "@/lib/profile/sphereMapStore";
 
@@ -44,11 +45,19 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
-  const parsed = validateSphereMapInput(body);
+  /* The cycle and the rhythm (G 23.10) ride the same save, each validated by
+     its own rules; the map's own fields keep theirs. */
+  const extras = splitExtras(body);
+  if (!extras.ok) return NextResponse.json({ error: extras.error }, { status: 400 });
+  const parsed = validateSphereMapInput(extras.rest);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   try {
-    const map = await saveSphereMap(adminClient(), user.id, parsed.value);
+    const map = await saveSphereMap(adminClient(), user.id, {
+      ...parsed.value,
+      ...(extras.cycle ? { cycle: extras.cycle } : {}),
+      ...(extras.rhythm ? { rhythm: extras.rhythm } : {}),
+    });
     return NextResponse.json({ map });
   } catch {
     return NextResponse.json({ error: "save_failed" }, { status: 500 });

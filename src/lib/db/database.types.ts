@@ -2969,24 +2969,30 @@ export type Database = {
         Row: {
           auth_user_id: string
           created_at: string
+          cycle: Json
           focus: string[]
           history: Json
+          rhythm: Json
           spheres: Json
           updated_at: string
         }
         Insert: {
           auth_user_id: string
           created_at?: string
+          cycle?: Json
           focus?: string[]
           history?: Json
+          rhythm?: Json
           spheres?: Json
           updated_at?: string
         }
         Update: {
           auth_user_id?: string
           created_at?: string
+          cycle?: Json
           focus?: string[]
           history?: Json
+          rhythm?: Json
           spheres?: Json
           updated_at?: string
         }
