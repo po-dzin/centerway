@@ -15,6 +15,9 @@
 .rhythm {
   composes: compact from "../PlatformButtons.module.css";
   display: grid;
+  /* One track that may shrink: the phase row scrolls inside it rather than
+     widening the page on a phone. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--cw-space-lg);
   margin-top: var(--cw-space-lg);
   min-width: 0;
@@ -45,11 +48,26 @@
   font-size: var(--ds-type-label-size);
 }
 
+/* THE CHOSEN ONE, said by the box itself (G 23.10: the dashed contour stood
+   off the button's edge and read as a focus ring; the day types had no mark
+   at all). A box marks itself with its own ground and edge: a gold edge
+   drawn twice as thick as the resting one, over a gold-washed ground.
+   Kept under the pointer too: hover must not repaint the chosen ground. */
 .phaseOption[aria-selected="true"],
-.pickOption[aria-pressed="true"],
-.dayOption[aria-pressed="true"] {
-  outline: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-selected);
-  outline-offset: var(--cw-contour-offset);
+.phaseOption[aria-pressed="true"],
+.pickOption[aria-pressed="true"] {
+  border-color: var(--cw-platform-accent);
+  box-shadow: inset 0 0 0 1px var(--cw-platform-accent);
+  background-color: color-mix(in srgb, var(--cw-platform-accent) 30%, var(--cw-mat-surface));
+}
+
+@media (hover: hover) {
+  .phaseOption[aria-selected="true"]:hover:not(:disabled),
+  .phaseOption[aria-pressed="true"]:hover:not(:disabled),
+  .pickOption[aria-pressed="true"]:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--cw-platform-accent) 36%, var(--cw-mat-surface));
+    box-shadow: inset 0 0 0 1px var(--cw-platform-accent);
+  }
 }
 
 /* ── Map: rows beside the radar ───────────────────── */
@@ -169,8 +187,10 @@
   font-weight: 600;
 }
 
+/* A sentence in data type (the totals, «1 з 2 у дні») may wrap on a phone. */
 .mono {
   color: var(--cw-platform-muted);
+  white-space: normal;
 }
 
 .hideControl {
@@ -189,9 +209,62 @@
   min-height: var(--ds-touch-target-min);
 }
 
+/* Drawn, not the browser's: the native track picked its own dark or light for
+   the unfilled part per hue, so two rows of one scale came out in two inks.
+   The meter recipe instead — the track, the sphere's hue up to the value
+   (`--p`, set by the row) — and a thumb in the same hue on the page's ground. */
 .slider input {
   width: 100%;
-  accent-color: var(--c);
+  height: var(--ds-touch-target-min);
+  margin: 0;
+  background: none;
+  cursor: pointer;
+  appearance: none;
+}
+
+.slider input::-webkit-slider-runnable-track {
+  height: 0.25rem;
+  border-radius: var(--cw-radius-pill);
+  background: linear-gradient(to right, var(--c) 0 var(--p), var(--cw-mat-meter-track) var(--p) 100%);
+}
+
+.slider input::-moz-range-track {
+  height: 0.25rem;
+  border-radius: var(--cw-radius-pill);
+  background: linear-gradient(to right, var(--c) 0 var(--p), var(--cw-mat-meter-track) var(--p) 100%);
+}
+
+.slider input::-webkit-slider-thumb {
+  width: 1.125rem;
+  height: 1.125rem;
+  /* Centred on the 0.25rem track: half the difference of the two heights. */
+  margin-top: calc((0.25rem - 1.125rem) / 2);
+  border: 2px solid var(--cw-platform-bg);
+  border-radius: var(--cw-radius-pill);
+  background: var(--c);
+  box-shadow: 0 0 0 1px var(--c);
+  appearance: none;
+}
+
+.slider input::-moz-range-thumb {
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 2px solid var(--cw-platform-bg);
+  border-radius: var(--cw-radius-pill);
+  background: var(--c);
+  box-shadow: 0 0 0 1px var(--c);
+}
+
+.slider input:focus-visible {
+  outline: none;
+}
+
+.slider input:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--cw-nav-marker);
+}
+
+.slider input:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px var(--cw-nav-marker);
 }
 
 .slider b {
@@ -467,8 +540,18 @@
   font-family: var(--cw-font-data);
 }
 
+/* A marked day is the sphere's own: its hue as the ground and the edge. */
 .dayOption[aria-pressed="true"] {
-  background-color: color-mix(in srgb, var(--c) 28%, var(--cw-mat-surface-sunk));
+  border-color: var(--c);
+  box-shadow: inset 0 0 0 1px var(--c);
+  background-color: color-mix(in srgb, var(--c) 34%, var(--cw-mat-surface));
+}
+
+@media (hover: hover) {
+  .dayOption[aria-pressed="true"]:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--c) 40%, var(--cw-mat-surface));
+    box-shadow: inset 0 0 0 1px var(--c);
+  }
 }
 
 .foot {
@@ -513,8 +596,8 @@
 }
 
 .focusOn {
-  outline: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-selected);
-  outline-offset: var(--cw-contour-offset);
+  border-color: color-mix(in srgb, var(--cw-platform-accent) 62%, transparent);
+  background: color-mix(in srgb, var(--cw-platform-accent) 12%, var(--cw-mat-surface));
 }
 
 .slots {
@@ -537,9 +620,12 @@
   cursor: pointer;
 }
 
+/* The slot that receives the next block: its edge in gold, drawn inside so it
+   never collides with the slot beside it. */
 .slot[data-active] {
-  outline: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-selected);
-  outline-offset: var(--cw-contour-offset);
+  border-color: color-mix(in srgb, var(--cw-platform-accent) 62%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-platform-accent) 62%, transparent);
+  background: color-mix(in srgb, var(--cw-platform-accent) 8%, var(--cw-mat-surface));
 }
 
 .slot:focus-visible {
@@ -605,8 +691,9 @@
 /* A placed block: pressing it takes it out of the slot. Its lever's hue is
    its left edge. */
 .blockAction {
-  composes: base secondary row from "../PlatformButtons.module.css";
+  composes: base secondary fill from "../PlatformButtons.module.css";
   justify-content: space-between;
+  text-align: start;
   border-inline-start: 3px solid var(--c);
 }
 

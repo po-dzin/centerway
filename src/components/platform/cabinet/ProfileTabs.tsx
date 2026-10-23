@@ -66,6 +66,15 @@ export function useProfileTab(initial: ProfileTab): [ProfileTab, (next: ProfileT
     setTabState(next);
     const path = TAB_PATHS[next];
     if (window.location.pathname !== path) window.history.pushState(null, "", path);
+    /* A reader who switched from below the tabs lands at the top of the new
+       tab, with the tabs under the bar — not wherever the old tab's length
+       left the scroll, and never back at the hero. */
+    window.requestAnimationFrame(() => {
+      const nav = document.querySelector<HTMLElement>("[data-cw-profile-tabs]");
+      if (!nav) return;
+      const margin = Number.parseFloat(getComputedStyle(nav).scrollMarginTop) || 0;
+      if (nav.getBoundingClientRect().top < margin) nav.scrollIntoView({ block: "start" });
+    });
   }, []);
 
   return [tab, setTab];
@@ -94,7 +103,7 @@ export function ProfileTabs({
     { key: "journal", href: links.journal },
   ];
   return (
-    <nav className={styles.tabs} aria-label={ARIA[lang] ?? ARIA.uk}>
+    <nav className={styles.tabs} aria-label={ARIA[lang] ?? ARIA.uk} data-cw-profile-tabs="">
       {items.map(({ key, href }) => {
         const active = key === current;
         const inPlace = onSelect && key !== "journal";

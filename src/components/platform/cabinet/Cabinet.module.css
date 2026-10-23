@@ -2267,6 +2267,8 @@
    scrolls sideways rather than wrapping into two rows of tabs. */
 .tabs {
   composes: cw-scroll-none from global;
+  /* Where a switch brings the tabs back to: under the floating bar. */
+  scroll-margin-top: calc(var(--platform-topbar-block, 4.85rem) + var(--cw-space-sm));
   width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
   margin: var(--cw-space-lg) auto 0;
   display: flex;
@@ -2299,6 +2301,12 @@
   margin: var(--cw-space-lg) auto 0;
   display: grid;
   gap: var(--cw-space-2xl);
+}
+
+/* Every tab's body is at least a screen tall, so switching tabs never makes
+   the page shorter than the place the reader is standing. */
+.tabPanel {
+  min-height: 100svh;
 }
 
 /* The hero's own commands: the author page and settings. They stand where the
