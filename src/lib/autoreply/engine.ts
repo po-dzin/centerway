@@ -16,7 +16,10 @@
 
 import { log } from "@/lib/logger";
 
+import { buildLink, DEFAULT_LINK_LABEL, DEFAULT_OPEN_LABEL } from "./link";
 import { pickVariant, matchesKeyword } from "./match";
+
+export { buildLink };
 import {
   REPLY_WINDOW_SECONDS,
   type CommentEvent,
@@ -66,25 +69,7 @@ export type HandleDeps = {
   random?: () => number;
 };
 
-const SLUG = /[^a-z0-9]+/g;
-
-export const DEFAULT_OPEN_LABEL = "Отримати лінк";
-export const DEFAULT_LINK_LABEL = "Відкрити";
 const POSTBACK_PREFIX = "ar:";
-
-/**
- * The button link, absolute. A link that already carries its own utm_ tags is
- * sent as written; otherwise the Instagram tags are added.
- */
-export function buildLink(url: string, rule: Pick<AutoreplyRule, "name" | "utmCampaign">, siteOrigin: string): string {
-  const link = new URL(url, siteOrigin);
-  if ([...link.searchParams.keys()].some((key) => key.startsWith("utm_"))) return link.toString();
-  const campaign = (rule.utmCampaign || rule.name).toLowerCase().replace(SLUG, "-").replace(/^-|-$/g, "");
-  link.searchParams.set("utm_source", "instagram");
-  link.searchParams.set("utm_medium", "autodm");
-  if (campaign) link.searchParams.set("utm_campaign", campaign);
-  return link.toString();
-}
 
 /** The direct message: the chosen text, then the link on its own lines. */
 export function composeDirectMessage(text: string, rule: AutoreplyRule, siteOrigin: string): string {

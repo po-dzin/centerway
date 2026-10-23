@@ -22,7 +22,9 @@ import { Icon } from "@/components/Icon";
 import { getAdminLocale } from "@/lib/admin/adminLocale";
 import { getErrorMessage } from "@/lib/errors";
 import type { TranslationKey } from "@/lib/i18n";
+import { buildLink } from "@/lib/autoreply/link";
 import { MAX_VARIANTS } from "@/lib/autoreply/match";
+import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 import type { EventRow, RuleSummary } from "@/lib/autoreply/rules";
 import controls from "@/components/admin/AdminControls.module.css";
 import surfaces from "@/components/admin/AdminSurfaces.module.css";
@@ -176,12 +178,38 @@ export function AutoreplyPanel() {
   }
   if (!rules) return <AdminLoadingState variant="spinner" text={t("bc_loading")} />;
 
+  const totals = rules.reduce(
+    (sum, rule) => ({
+      comments: sum.comments + rule.stats.comments,
+      sent: sum.sent + rule.stats.sent,
+      skipped: sum.skipped + rule.stats.skipped,
+      failed: sum.failed + rule.stats.failed,
+    }),
+    { comments: 0, sent: 0, skipped: 0, failed: 0 },
+  );
+  const tiles: [string, number][] = [
+    [t("ar_tile_comments"), totals.comments],
+    [t("ar_tile_sent"), totals.sent],
+    [t("ar_tile_skipped"), totals.skipped],
+    [t("ar_tile_failed"), totals.failed],
+  ];
+
   return (
-    <>
+    <div className={controls.formStack}>
       <p className={controls.hint}>{t("ar_hint")}</p>
       {connected ? null : <p className={controls.hint}>{t("ar_not_connected")}</p>}
-      {canEdit ? (
-        <div className={controls.actions}>
+      <div className={styles.tiles}>
+        {tiles.map(([label, value]) => (
+          <div key={label} className={styles.tile}>
+            <span className={styles.tileValue}>{value}</span>
+            <span className={styles.tileLabel}>{label}</span>
+          </div>
+        ))}
+      </div>
+      <p className={styles.note}>{t("ar_tiles_note")}</p>
+      <div className={styles.listHead}>
+        <h3 className={styles.listTitle}>{t("ar_rules")}</h3>
+        {canEdit ? (
           <button
             type="button"
             disabled={busy}
@@ -191,10 +219,9 @@ export function AutoreplyPanel() {
             <Icon name="plus" size={16} />
             {t("ar_new")}
           </button>
-        </div>
-      ) : (
-        <p className={controls.hint}>{t("bc_admin_only")}</p>
-      )}
+        ) : null}
+      </div>
+      {canEdit ? null : <p className={controls.hint}>{t("bc_admin_only")}</p>}
       {rules.length === 0 ? (
         <AdminEmptyState
           icon={<Icon className="cw-muted" name="mail" size={20} />}
@@ -202,31 +229,35 @@ export function AutoreplyPanel() {
           description={t("ar_empty_hint")}
         />
       ) : (
-        <div className={lists.list}>
+        <div className={styles.rules}>
           {rules.map((rule) => (
-            <button key={rule.id} type="button" onClick={() => setOpenId(rule.id)} className={lists.itemPress}>
-              <div className={lists.itemBody}>
-                <div className={lists.itemTitleRow}>
-                  <p className={lists.itemTitle}>{rule.name || t("ar_untitled")}</p>
-                  <span className={rule.enabled ? "cw-status-success-badge" : "cw-status-pending-badge"}>
-                    {rule.enabled ? t("ar_on") : t("ar_off")}
-                  </span>
-                </div>
-                <div className={lists.itemMeta}>
-                  <span>{rule.keywords.join(", ")}</span>
-                  <span>
-                    {t("ar_stats")
-                      .replace("{c}", String(rule.stats.comments))
-                      .replace("{s}", String(rule.stats.sent))
-                      .replace("{f}", String(rule.stats.failed))}
-                  </span>
-                </div>
+            <div key={rule.id} className={styles.rule}>
+              <div className={styles.ruleMain}>
+                <p className={styles.ruleName}>{rule.name || t("ar_untitled")}</p>
+                <p className={styles.note}>{rule.keywords.join(", ")}</p>
               </div>
-            </button>
+              <div className={styles.tags}>
+                <span className={styles.tag}>Instagram</span>
+                <span className={styles.tag}>{rule.media_id ? t("ar_tag_one_post") : t("ar_tag_all_posts")}</span>
+              </div>
+              <div className={styles.ruleState}>
+                <span className={rule.enabled ? "cw-status-success-badge" : "cw-status-pending-badge"}>
+                  {rule.enabled ? t("ar_on") : t("ar_off")}
+                </span>
+                <span className={styles.note}>
+                  {t("ar_rule_stats")
+                    .replace("{s}", String(rule.stats.sent))
+                    .replace("{c}", String(rule.stats.comments))}
+                </span>
+              </div>
+              <button type="button" onClick={() => setOpenId(rule.id)} className={`${controls.action} cw-btn-muted`}>
+                {t("ar_open")}
+              </button>
+            </div>
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 }
 
@@ -420,6 +451,14 @@ function RuleEditor({
     }
   };
 
+  const finalLink = (() => {
+    if (!draft.buttonUrl.trim()) return null;
+    try {
+      return buildLink(draft.buttonUrl.trim(), { name: draft.name, utmCampaign: rule.utm_campaign }, PLATFORM_ORIGIN);
+    } catch {
+      return null;
+    }
+  })();
   const twoStep = draft.followUpText.trim() !== "";
   const firstDm = draft.dmTexts.find((text) => text.trim() !== "") ?? "";
   const publicNote = draft.publicOn ? draft.publicReplies.find((text) => text.trim() !== "") : undefined;
@@ -576,6 +615,11 @@ function RuleEditor({
                 />
               </div>
               <p className={styles.note}>{t("ar_f_button_url_hint")}</p>
+              {finalLink ? (
+                <p className={styles.note}>
+                  {t("ar_final_link")}: <span className={styles.finalLink}>{finalLink}</span>
+                </p>
+              ) : null}
             </div>
           </section>
 

@@ -154,7 +154,7 @@ describe("handleComment", () => {
 describe("links", () => {
   it("makes a relative link absolute and tags it", () => {
     expect(buildLink("/tests/dosha", { name: "ДОША", utmCampaign: null }, ORIGIN)).toBe(
-      `${ORIGIN}/tests/dosha?utm_source=instagram&utm_medium=autodm`,
+      `${ORIGIN}/tests/dosha?utm_source=instagram&utm_medium=autodm&utm_campaign=dosha`,
     );
   });
 
@@ -216,6 +216,14 @@ describe("two-step message", () => {
   it("keeps a link's own utm tags", () => {
     expect(buildLink("/tests/dosha?utm_source=ig&utm_campaign=x", { name: "n", utmCampaign: null }, ORIGIN)).toBe(
       `${ORIGIN}/tests/dosha?utm_source=ig&utm_campaign=x`,
+    );
+  });
+});
+
+describe("campaign tag", () => {
+  it("writes a Cyrillic rule name in Latin letters", () => {
+    expect(buildLink("/tests/dosha", { name: "Наули", utmCampaign: null }, ORIGIN)).toBe(
+      `${ORIGIN}/tests/dosha?utm_source=instagram&utm_medium=autodm&utm_campaign=nauly`,
     );
   });
 });

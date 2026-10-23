@@ -282,3 +282,118 @@
   font-weight: 700;
   text-align: end;
 }
+
+/* ── The list: totals, then one row per rule ─────────────────────────── */
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cw-space-sm);
+}
+
+@media (min-width: 768px) {
+  .tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.tile {
+  composes: cw-surface cw-border from global;
+  display: flex;
+  flex-direction: column;
+  padding: var(--cw-space-sm) var(--cw-space-md);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-lg);
+}
+
+.tileValue {
+  composes: cw-text from global;
+  font-size: 1.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.tileLabel {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+}
+
+.listHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
+.listTitle {
+  composes: cw-text from global;
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.rules {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+}
+
+.rule {
+  composes: cw-surface cw-border from global;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: var(--cw-space-sm);
+  padding: var(--cw-space-sm) var(--cw-space-md);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-lg);
+}
+
+@media (min-width: 900px) {
+  .rule {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.1fr) minmax(0, 1.2fr) auto;
+  }
+}
+
+.ruleMain {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ruleName {
+  composes: cw-text from global;
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-2xs);
+}
+
+.tag {
+  composes: cw-surface-2 from global;
+  padding: 0 var(--cw-space-xs);
+  border-radius: var(--cw-radius-md);
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+}
+
+.ruleState {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--cw-space-2xs);
+}
+
+.finalLink {
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
