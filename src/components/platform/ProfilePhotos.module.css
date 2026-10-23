@@ -1,0 +1,16 @@
+/* The pressable wrapper around a profile's portrait (ProfilePhotos.tsx). It
+   draws nothing at rest — the portrait is the control's whole face. */
+.open {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  border-radius: var(--cw-radius-pill);
+  background: transparent;
+  color: inherit;
+  cursor: zoom-in;
+}
+
+.open:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}

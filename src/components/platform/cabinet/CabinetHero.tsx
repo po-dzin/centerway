@@ -27,6 +27,7 @@ import type { ReactNode } from "react";
 
 import { HandGraphic } from "@/components/Icon";
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
+import { ProfileFace } from "./ProfileFace";
 import styles from "./CabinetHero.module.css";
 // The reach notice is a CabinetClient concern wearing the avatar as a
 // mounting point — the badge, its colour and its text all come from
@@ -92,6 +93,7 @@ export function CabinetHero({
   role,
   email,
   avatar,
+  face,
   notice,
   stats,
   children,
@@ -103,6 +105,11 @@ export function CabinetHero({
   email: string;
   /** The account picture, or the initial standing in for one. */
   avatar: ReactNode;
+  /**
+   * Makes the avatar the owner's control (ProfileFace): view, replace, aim.
+   * Everything but the circle itself — which this module still draws.
+   */
+  face?: Omit<Parameters<typeof ProfileFace>[0], "avatar" | "frameClassName" | "name">;
   /** A fact worth a glance, not a sentence — see the reach dot below. */
   notice?: CabinetHeroNotice;
   stats: CabinetHeroStat[];
@@ -156,9 +163,13 @@ export function CabinetHero({
                 second. Hover and focus-within do the revealing between them; no
                 open flag is threaded through this component for it. */}
             <span className={cabinetStyles.avatarNoticeWrap}>
-              <span className={styles.avatar} aria-hidden="true">
-                {avatar}
-              </span>
+              {face ? (
+                <ProfileFace avatar={avatar} frameClassName={styles.avatar ?? ""} name={name} {...face} />
+              ) : (
+                <span className={styles.avatar} aria-hidden="true">
+                  {avatar}
+                </span>
+              )}
               {notice ? (
                 <span className={cabinetStyles.avatarNotice}>
                   <span className={cabinetStyles.avatarNoticeDot} aria-hidden="true" />

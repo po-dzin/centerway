@@ -70,3 +70,10 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+/* A caller's own controls (`actions`), after the counter on the same row. */
+.actions {
+  order: 3;
+  display: flex;
+  gap: var(--cw-space-sm);
+}

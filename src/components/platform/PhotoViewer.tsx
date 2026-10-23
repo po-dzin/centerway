@@ -14,9 +14,16 @@
  * the page behind does not scroll. Left and right arrows on the keyboard, and
  * a swipe on a phone, turn the picture. Only photos the reader may see are
  * handed in: a spoiler still under its veil is not here.
+ *
+ * ACTIONS RIDE THE SAME ISLAND ROW (2026-10-23). The profile opens this viewer
+ * on its own face, and the one thing worth doing from there is replacing it —
+ * «Завантажити», as the design's viewer shows. A caller hands its controls in
+ * through `actions` and they stand on the bottom glass beside the arrows; the
+ * viewer stays one viewer. A single picture with actions drops the «1 / 1»
+ * counter, which counts nothing there.
  */
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
 
@@ -39,12 +46,15 @@ export function PhotoViewer({
   start,
   onClose,
   label = copy.label,
+  actions,
 }: {
   photos: ViewerPhoto[];
   start: number;
   onClose: () => void;
   /** What the dialog is called for a screen reader, e.g. «Фото з допису». */
   label?: string;
+  /** Controls for the bottom row, e.g. the profile's «Завантажити». Built from `onMedia` buttons. */
+  actions?: ReactNode;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [index, setIndex] = useState(start);
@@ -133,9 +143,12 @@ export function PhotoViewer({
             </button>
           </>
         ) : null}
-        <p className={styles.count} aria-live="polite">
-          {index + 1} / {photos.length}
-        </p>
+        {photos.length > 1 || !actions ? (
+          <p className={styles.count} aria-live="polite">
+            {index + 1} / {photos.length}
+          </p>
+        ) : null}
+        {actions ? <div className={styles.actions}>{actions}</div> : null}
       </div>
     </dialog>
   );

@@ -5,6 +5,7 @@ import type { StorefrontCard } from "@/lib/platform/offers";
 import { socialLinkLabel, type Author } from "@/lms-core";
 import { PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import { AuthorPortrait } from "./AuthorPortrait";
+import { ProfilePhotos } from "./ProfilePhotos";
 import styles from "./AuthorProfileShowcase.module.css";
 import { AuthorConsultation } from "@/components/platform/AuthorConsultation";
 import { AUTHOR_BANNER_CROP_DEFAULT } from "@/lib/lms/authorPhoto";
@@ -99,7 +100,20 @@ export function AuthorProfileShowcase({
       ) : null}
       <header className={author.background ? `${styles.hero} ${styles.heroWithBanner}` : styles.hero}>
         <div className={styles.identity}>
-          <AuthorPortrait photo={author.photo} size="lg" fallback={author.name.trim().charAt(0).toUpperCase()} />
+          {/* The portrait opens the platform's one viewer: the portrait, then
+              the cover when there is one (ProfilePhotos). */}
+          <ProfilePhotos
+            photos={[
+              ...(author.photo ? [{ src: author.photo.src, alt: author.photo.alt }] : []),
+              ...(author.photo && author.background
+                ? [{ src: author.background.src, alt: `${author.name} · обкладинка` }]
+                : []),
+            ]}
+            label={`Фото: ${author.name}`}
+            viewerLabel={`${author.name} · фото`}
+          >
+            <AuthorPortrait photo={author.photo} size="lg" fallback={author.name.trim().charAt(0).toUpperCase()} />
+          </ProfilePhotos>
           <div className={styles.identityCopy}>
             {/* No eyebrow. The portrait is beside it and the name is the H1:
                 a line reading «Профіль автора» over a face and a name told

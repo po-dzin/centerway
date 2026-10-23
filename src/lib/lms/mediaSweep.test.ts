@@ -72,4 +72,18 @@ describe("planSweep", () => {
     expect(result.totalBytes).toBe(7000);
     expect(result.collectableBytes).toBe(2000);
   });
+
+  it("never collects a person's own picture, which no course document names", () => {
+    const result = plan(
+      [
+        asset("authors/u1/portrait", daysAgo(90)),
+        asset("accounts/u2/face", daysAgo(90)),
+        asset("courses/c/old", daysAgo(90)),
+        asset("courses/c/live", daysAgo(90)),
+      ],
+      ["courses/c/live"],
+    );
+    expect(result.collectable.map((a) => a.assetKey)).toEqual(["courses/c/old"]);
+    expect(result.outside.map((a) => a.assetKey)).toEqual(["authors/u1/portrait", "accounts/u2/face"]);
+  });
 });

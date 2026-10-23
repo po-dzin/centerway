@@ -14,8 +14,17 @@
  *   · nothing recent is touched, because an image uploaded and not yet saved is
  *     indistinguishable from an orphan by any query;
  *   · an empty reference set against a full bucket is a broken query, not an
- *     empty product, and it stops the run rather than emptying the bucket.
+ *     empty product, and it stops the run rather than emptying the bucket;
+ *   · only `courses/` is this sweep's to collect (2026-10-23). The bucket also
+ *     holds people's own pictures — `authors/<id>/…` (portraits, backdrops) and
+ *     `accounts/<id>/…` (the face set from the profile hero) — and
+ *     `lms_referenced_media()` reads course documents only, so every one of
+ *     them would otherwise look like an orphan the day it passed the grace
+ *     period. They are reported as `outside` and never removed.
  */
+
+/** The one prefix whose references `lms_referenced_media()` can see. */
+export const SWEEPABLE_PREFIX = "courses/";
 
 export type MediaAsset = {
   assetKey: string;
@@ -29,6 +38,8 @@ export type SweepPlan = {
   /** Present when the run must not proceed; the text says why. */
   refusal?: string;
   referenced: MediaAsset[];
+  /** Not under `courses/` — a person's own picture. Never collected. */
+  outside: MediaAsset[];
   /** Unreferenced, but inside the grace period. Left alone. */
   young: MediaAsset[];
   /** Unreferenced and old enough. What --apply would remove. */
@@ -47,11 +58,14 @@ export function planSweep(input: {
   const cutoff = input.now - input.graceDays * 24 * 60 * 60 * 1000;
 
   const referenced: MediaAsset[] = [];
+  const outside: MediaAsset[] = [];
   const young: MediaAsset[] = [];
   const collectable: MediaAsset[] = [];
 
   for (const asset of input.assets) {
-    if (keep.has(asset.assetKey)) {
+    if (!asset.assetKey.startsWith(SWEEPABLE_PREFIX)) {
+      outside.push(asset);
+    } else if (keep.has(asset.assetKey)) {
       referenced.push(asset);
     } else if (!(new Date(asset.newest).getTime() <= cutoff)) {
       // Written as "not old enough" rather than "is recent" so an unparseable
@@ -66,6 +80,7 @@ export function planSweep(input: {
 
   const plan: SweepPlan = {
     referenced,
+    outside,
     young,
     collectable,
     totalBytes: total(input.assets),
