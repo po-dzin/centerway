@@ -50,6 +50,17 @@
     "path": "/api/admin/customers"
   },
   {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/customers/sales",
+    "body": {
+      "phone": "+380000000000",
+      "otherTitle": "Smoke",
+      "amount": 1,
+      "currency": "UAH"
+    }
+  },
+  {
     "kind": "read",
     "method": "GET",
     "path": "/api/admin/customers/smoke",

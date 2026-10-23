@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useI18n } from "@/components/I18nProvider";
 import { AdminPagination } from "@/components/admin/AdminPagination";
@@ -11,6 +12,7 @@ import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { LeadsPanel } from "@/components/admin/LeadsPanel";
+import { ProductSaleModal } from "@/components/admin/ProductSaleModal";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/admin/adminLocale";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
@@ -46,6 +48,8 @@ function Avatar({ name, url }: { name?: string | null; url?: string | null }) {
  */
 export function CustomersList({ initial }: { initial: CustomersPage }) {
   const { lang, t } = useI18n();
+  const router = useRouter();
+  const [saleOpen, setSaleOpen] = useState(false);
   const isUk = lang === "uk";
   const locale = getAdminLocale(lang);
   /* TWO VIEWS OF THE SAME PEOPLE. A lead is now a `customers` row like any
@@ -157,10 +161,23 @@ export function CustomersList({ initial }: { initial: CustomersPage }) {
 
   return (
     <div className={pageStyles.page}>
-      <div className={pageStyles.heading}>
-        <h2 className={pageStyles.title}>{t("customers_title")}</h2>
-        <p className={pageStyles.subtitle}>{t("customers_subtitle")}</p>
+      <div className={pageStyles.header}>
+        <div className={pageStyles.heading}>
+          <h2 className={pageStyles.title}>{t("customers_title")}</h2>
+          <p className={pageStyles.subtitle}>{t("customers_subtitle")}</p>
+        </div>
+        <button type="button" onClick={() => setSaleOpen(true)} className={`${controls.action} cw-btn-primary`}>
+          <Icon name="plus" size={16} />
+          {t("customers_sale_add")}
+        </button>
       </div>
+
+      {saleOpen && (
+        <ProductSaleModal
+          onClose={() => setSaleOpen(false)}
+          onSaved={(sale) => router.push(`/admin/customers/${sale.customerId}`)}
+        />
+      )}
 
       <AdminTabs
         items={[

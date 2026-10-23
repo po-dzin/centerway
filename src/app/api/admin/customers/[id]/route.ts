@@ -12,6 +12,7 @@ type OrderRow = {
   amount: number | null;
   currency: string | null;
   created_at: string;
+  meta: { title?: unknown } | null;
 };
 
 type EventRow = { id: string; type: string; order_ref: string | null; created_at: string };
@@ -122,7 +123,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   // Orders for this customer
   const { data: orders } = await db
     .from("orders")
-    .select("id, order_ref, product_code, amount, currency, status, created_at")
+    .select("id, order_ref, product_code, amount, currency, status, created_at, meta")
     .eq("customer_id", id)
     .order("created_at", { ascending: false });
 
@@ -154,7 +155,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const orderRows = (orders ?? []) as OrderRow[];
   const eventRows = (events ?? []) as EventRow[];
   const identity = await loadProductIdentity(db);
-  const orderProductLabel = (code: string | null): string | null => identity.title(code) ?? code ?? null;
+  // A product sold by hand outside the registry carries its own name (`manualSale.ts`).
+  const orderProductLabel = (o: OrderRow): string | null =>
+    identity.title(o.product_code) ??
+    (typeof o.meta?.title === "string" ? o.meta.title : null) ??
+    o.product_code ??
+    null;
 
   // Build unified timeline
   const timeline = [
@@ -166,7 +172,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
          speaks Ukrainian on «ви» and translates every other label in the
          client. The server now sends the FACTS and the screen writes the
          sentence. */
-      label: orderProductLabel(o.product_code) ?? o.order_ref,
+      label: orderProductLabel(o) ?? o.order_ref,
       sub: o.amount ? `${o.amount} ${o.currency ?? ""}`.trim() : null,
       id: o.id,
       ref: o.order_ref,
@@ -203,7 +209,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     subscriptions: subscriptions ?? [],
     tag_history: tagHistory ?? [],
     enrollments,
-    orders: orderRows.map((o) => ({ ...o, product_title: orderProductLabel(o.product_code) })),
+    orders: orderRows.map((o) => {
+      const { meta: _meta, ...order } = o;
+      return { ...order, product_title: orderProductLabel(o) };
+    }),
     events: eventRows,
     timeline,
   });

@@ -211,6 +211,14 @@
   font-weight: 600;
 }
 
+/* A group's title with its one action at the end of the row. */
+.groupHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+}
+
 .groupCount {
   composes: cw-muted from global;
   font-weight: 400;

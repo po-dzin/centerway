@@ -14,6 +14,8 @@ import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/admin/adminLocale";
 import { authorizedFetch } from "@/components/auth/authorizedFetch";
 import { Icon } from "@/components/Icon";
+import { ProductSaleModal } from "@/components/admin/ProductSaleModal";
+import controls from "@/components/admin/AdminControls.module.css";
 
 interface Customer {
   id: string;
@@ -179,6 +181,8 @@ export default function CustomerProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saleOpen, setSaleOpen] = useState(false);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     if (!id) return;
@@ -198,7 +202,7 @@ export default function CustomerProfilePage() {
         setLoading(false);
       }
     })();
-  }, [id, router]);
+  }, [id, router, reload]);
 
   if (loading) {
     return (
@@ -445,26 +449,46 @@ export default function CustomerProfilePage() {
           )}
 
           {/* Orders summary */}
-          {orders.length > 0 && (
-            <div className={profileStyles.group}>
+          <div className={profileStyles.group}>
+            <div className={profileStyles.groupHead}>
               <h3 className={profileStyles.groupTitle}>{t("orders_title")}</h3>
-              {orders.map((o) => (
-                <div key={o.id} className={surfaces.tile}>
-                  <div className={profileStyles.orderHead}>
-                    <span className={profileStyles.orderRef}>{o.order_ref}</span>
-                    <span className={`${profileStyles.orderState} ${orderStatusColor[o.status] ?? "cw-muted"}`}>
-                      {orderStatusLabel[o.status] ?? o.status}
-                    </span>
-                  </div>
-                  {o.amount && (
-                    <p className={profileStyles.orderAmount}>
-                      {o.amount} <span className={profileStyles.orderCurrency}>{o.currency}</span>
-                    </p>
-                  )}
-                  <p className={profileStyles.tileFoot}>{o.product_title ?? o.product_code}</p>
-                </div>
-              ))}
+              <button
+                type="button"
+                onClick={() => setSaleOpen(true)}
+                className={`${controls.action} cw-surface-2`}
+                aria-label={t("customers_sale_add")}
+                title={t("customers_sale_add")}
+              >
+                <Icon name="plus" size={16} />
+              </button>
             </div>
+            {orders.map((o) => (
+              <div key={o.id} className={surfaces.tile}>
+                <div className={profileStyles.orderHead}>
+                  <span className={profileStyles.orderRef}>{o.order_ref}</span>
+                  <span className={`${profileStyles.orderState} ${orderStatusColor[o.status] ?? "cw-muted"}`}>
+                    {orderStatusLabel[o.status] ?? o.status}
+                  </span>
+                </div>
+                {o.amount && (
+                  <p className={profileStyles.orderAmount}>
+                    {o.amount} <span className={profileStyles.orderCurrency}>{o.currency}</span>
+                  </p>
+                )}
+                <p className={profileStyles.tileFoot}>{o.product_title ?? o.product_code}</p>
+              </div>
+            ))}
+          </div>
+
+          {saleOpen && (
+            <ProductSaleModal
+              customerId={customer.id}
+              onClose={() => setSaleOpen(false)}
+              onSaved={() => {
+                setSaleOpen(false);
+                setReload((n) => n + 1);
+              }}
+            />
           )}
         </div>
 
