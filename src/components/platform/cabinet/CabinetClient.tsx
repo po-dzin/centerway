@@ -28,7 +28,7 @@ import { usePlatformIdentity } from "@/components/platform/layout/usePlatformIde
 import { platformRoleLabel } from "@/lib/platform/identity";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
-import { JOURNAL_HREF, LEARNING_SHELF_HREF, SPHERE_MAP_HREF } from "@/lib/platform/content";
+import { JOURNAL_HREF, LEARNING_SHELF_HREF, PROFILE_HREF, SPHERE_MAP_HREF } from "@/lib/platform/content";
 import { PwaInstallCard } from "./PwaInstallCard";
 import { cabinetGate } from "./CabinetGate";
 import { CabinetFold } from "./CabinetFold";
@@ -39,7 +39,8 @@ import { useToast } from "@/components/ToastProvider";
 import { SphereMapCard } from "./SphereMapCard";
 import { publishOwnFace } from "@/components/platform/ownFace";
 import { providerAvatarAtSize } from "@/lib/auth/accountIdentity";
-import { ProfileTabs } from "./ProfileTabs";
+import { ProfileTabs, useProfileTab, type ProfileTab } from "./ProfileTabs";
+import { ProfileMapTab } from "./ProfileMapTab";
 import dynamic from "next/dynamic";
 
 /* Loaded when an author opens the cabinet, not shipped to every learner who
@@ -116,8 +117,9 @@ function useHashMigration() {
   }, [router]);
 }
 
-export function CabinetClient() {
+export function CabinetClient({ initialTab = "overview" }: { initialTab?: ProfileTab } = {}) {
   useHashMigration();
+  const [tab, setTab] = useProfileTab(initialTab);
 
   const lang = useProfileLang();
   const { session, loading: sessionLoading, signInWithGoogle, signOut } = useCabinetSession();
@@ -289,42 +291,43 @@ export function CabinetClient() {
               result — the three things this person holds. The dosha used to be
               a card in a section below the photograph, which put a scroll
               between somebody and the test they took. */}
-        <div className={styles.shelfRow} data-shelf={ownedCourses.length > 1 ? "courses" : "single"} data-cols="3">
-          {resumeCourse ? (
-            /* The one answer: cover, where you stopped, and the only control
+        {tab === "overview" ? (
+          <div className={styles.shelfRow} data-shelf={ownedCourses.length > 1 ? "courses" : "single"} data-cols="3">
+            {resumeCourse ? (
+              /* The one answer: cover, where you stopped, and the only control
                  in the row. */
-            <CompactCourseCard course={resumeCourse} copy={cab} primary />
-          ) : shelfFailed ? (
-            /* Not "no courses yet" — the shelf just could not be read. Those
+              <CompactCourseCard course={resumeCourse} copy={cab} primary />
+            ) : shelfFailed ? (
+              /* Not "no courses yet" — the shelf just could not be read. Those
                  look identical without this branch, and a learner who paid for
                  something would be told to go buy it again. */
-            <ShelfErrorCard copy={cab} onRetry={() => void reloadShelf()} />
-          ) : shelfLoading ? (
-            /* Same reasoning as the branch above, one state earlier: still
+              <ShelfErrorCard copy={cab} onRetry={() => void reloadShelf()} />
+            ) : shelfLoading ? (
+              /* Same reasoning as the branch above, one state earlier: still
                  reading is not the same as nothing to read. */
-            <PlatformLoadingState
-              label={cab.learningLabel}
-              title={cab.learningLoadingTitle}
-              detail={cab.learningLoadingLead}
-            />
-          ) : (
-            <article className={styles.shelfCard} {...glassMedia}>
-              <h3 className={styles.shelfCardTitle}>{cab.learningEmptyTitle}</h3>
-              <p className={styles.shelfCardNote}>{cab.learningEmptyLead}</p>
-              <div className={styles.shelfCardAction}>
-                <Link className={styles.actionPrimary} href={programsHref}>
-                  {cab.browsePrograms}
-                </Link>
-              </div>
-            </article>
-          )}
+              <PlatformLoadingState
+                label={cab.learningLabel}
+                title={cab.learningLoadingTitle}
+                detail={cab.learningLoadingLead}
+              />
+            ) : (
+              <article className={styles.shelfCard} {...glassMedia}>
+                <h3 className={styles.shelfCardTitle}>{cab.learningEmptyTitle}</h3>
+                <p className={styles.shelfCardNote}>{cab.learningEmptyLead}</p>
+                <div className={styles.shelfCardAction}>
+                  <Link className={styles.actionPrimary} href={programsHref}>
+                    {cab.browsePrograms}
+                  </Link>
+                </div>
+              </article>
+            )}
 
-          {/* The way onward, and nothing else in this column. It used to
+            {/* The way onward, and nothing else in this column. It used to
                 stand at the end of three more courses; with those gone it is
                 what it always was — one crossing, to the place the whole shelf
                 lives. */}
-          {ownedCourses.length > 1 ? (
-            /* `PlatformBlockLink`, not a local copy of it. This was hand-rolled
+            {ownedCourses.length > 1 ? (
+              /* `PlatformBlockLink`, not a local copy of it. This was hand-rolled
                  — page ink for the label, a PERMANENTLY gold arrow beside it,
                  no stroke — so the cabinet's way out looked like a different
                  affordance from the identical act on every showcase block. The
@@ -332,196 +335,216 @@ export function CabinetClient() {
                  system spends on hover, and spending it at rest left nothing
                  for the pointer to say. Position is unchanged — the last row of
                  the column, where the list runs out. */
-            <span className={styles.glanceMore}>
-              <PlatformBlockLink href={shelfHref} label={cab.allCourses} />
-            </span>
-          ) : null}
+              <span className={styles.glanceMore}>
+                <PlatformBlockLink href={shelfHref} label={cab.allCourses} />
+              </span>
+            ) : null}
 
-          {/* THE MAP BESIDE THE COURSE (G 23.10). «Продовжити | Карта | Доша»:
+            {/* THE MAP BESIDE THE COURSE (G 23.10). «Продовжити | Карта | Доша»:
                 the course is what to open, the map is where attention is going,
                 the dosha is who you are. It used to be a band below the room;
                 as a third tile it is the same glance as the other two. */}
-          <SphereMapCard userId={session?.user?.id ?? null} lang={lang} href={sphereMapHref} tile />
-          {/* The dosha RESULT, not the tests catalogue. What the test is and
+            <SphereMapCard
+              userId={session?.user?.id ?? null}
+              lang={lang}
+              href={sphereMapHref}
+              tile
+              onOpen={() => setTab("map")}
+            />
+            {/* The dosha RESULT, not the tests catalogue. What the test is and
                 what else exists is the showcase's business — this tile holds
                 the answer that belongs to this person, at the size of a glance
                 rather than of a card: the shape, the type, one way back in. */}
-          <article className={styles.shelfAside} {...glassMedia}>
-            {/* The word «Доша» and the result are BOTH printed in the fact
+            <article className={styles.shelfAside} {...glassMedia}>
+              {/* The word «Доша» and the result are BOTH printed in the fact
                   row at the top of this same screen — naming the tile again
                   here said nothing the reader had not just read. The wheel
                   carries the type at its own size, and its `<title>` names
                   it for a screen reader. */}
-            {dosha ? (
-              <>
-                {/* The shape, the type and the three scores — three
+              {dosha ? (
+                <>
+                  {/* The shape, the type and the three scores — three
                       horizontal meters cost a card's width to say the same
                       thing less densely. See `DoshaWheel`. */}
-                <DoshaWheel
-                  scores={dosha.scores ?? { vata: 0, pitta: 0, kapha: 0 }}
-                  labels={copy.doshaLabels}
-                  resultLabel={formatDoshaResult(dosha.resultType, lang)}
-                  lang={lang}
-                />
-                <p className={styles.shelfCardMeta}>
-                  {copy.completedShort} {fmtDate(dosha.completedAt, dateLocale)}
-                </p>
-              </>
-            ) : (
-              <p className={styles.shelfCardNote}>{copy.doshaEmptyLead}</p>
-            )}
-            {/* The balance test's reading rides under the constitution as one
+                  <DoshaWheel
+                    scores={dosha.scores ?? { vata: 0, pitta: 0, kapha: 0 }}
+                    labels={copy.doshaLabels}
+                    resultLabel={formatDoshaResult(dosha.resultType, lang)}
+                    lang={lang}
+                  />
+                  <p className={styles.shelfCardMeta}>
+                    {copy.completedShort} {fmtDate(dosha.completedAt, dateLocale)}
+                  </p>
+                </>
+              ) : (
+                <p className={styles.shelfCardNote}>{copy.doshaEmptyLead}</p>
+              )}
+              {/* The balance test's reading rides under the constitution as one
                 line: the dosha is who you are, this is how you are now — a
                 second wheel would make the tile two results of equal weight. */}
-            {balance ? (
-              <p className={styles.shelfCardMeta}>
-                {copy.balanceNow}: {copy.balanceLabels[balance.primary]} · {fmtDate(balance.completedAt, dateLocale)}
-              </p>
-            ) : null}
-            <div className={styles.shelfCardAction}>
-              <Link className={dosha ? styles.actionGhost : styles.actionPrimary} href={doshaTestHref}>
-                {dosha ? copy.retakeTest : copy.startTest}
-              </Link>
-            </div>
-          </article>
-        </div>
+              {balance ? (
+                <p className={styles.shelfCardMeta}>
+                  {copy.balanceNow}: {copy.balanceLabels[balance.primary]} · {fmtDate(balance.completedAt, dateLocale)}
+                </p>
+              ) : null}
+              <div className={styles.shelfCardAction}>
+                <Link className={dosha ? styles.actionGhost : styles.actionPrimary} href={doshaTestHref}>
+                  {dosha ? copy.retakeTest : copy.startTest}
+                </Link>
+              </div>
+            </article>
+          </div>
+        ) : null}
       </CabinetHero>
 
       <ProfileTabs
-        current="overview"
+        current={tab}
         links={{ map: sphereMapHref, journal: journalHref, library: shelfHref }}
+        overviewHref={href(PROFILE_HREF)}
+        onSelect={setTab}
         lang={lang}
       />
 
-      <div className={styles.shell}>
-        {/* The journal, the map and the library are tabs under the room now
+      {tab === "map" ? (
+        <div className={styles.shell}>
+          <ProfileMapTab userId={session?.user?.id ?? null} lang={lang} />
+        </div>
+      ) : (
+        <div className={styles.shell}>
+          {/* The journal, the map and the library are tabs under the room now
             (ProfileTabs, G 23.10); the journal's own crossing that stood here
             would have been the same door twice. */}
 
-        {/* A receipt is reference, not the answer the dashboard exists to give.
+          {/* A receipt is reference, not the answer the dashboard exists to give.
             It remains folded until the reader asks for it at every viewport. */}
-        <CabinetFold label={copy.products} title={copy.productsTitle} lead={copy.productsLead}>
-          {purchases.length > 0 ? (
-            <div className={styles.cardGrid}>
-              {purchases.map((purchase) => (
-                <article key={purchase.orderRef} className={styles.card} {...matte}>
-                  <div className={styles.chipRow}>
-                    <span className={styles.chip}>
-                      {isProgramKind(purchase.offerKind) ? copy.programsLabel : copy.productLabel}
-                    </span>
-                  </div>
-                  <h3 className={styles.cardTitle}>{purchase.title}</h3>
-                  <ul className={styles.metaList}>
-                    <li>
-                      {copy.purchasedAt}: <strong>{fmtDate(purchase.createdAt, dateLocale)}</strong>
-                    </li>
-                    <li>
-                      {copy.price}: <strong>{fmtMoney(purchase.amount, purchase.currency)}</strong>
-                    </li>
-                  </ul>
-                  {/* No link into the course from here on purpose: a
+          <CabinetFold label={copy.products} title={copy.productsTitle} lead={copy.productsLead}>
+            {purchases.length > 0 ? (
+              <div className={styles.cardGrid}>
+                {purchases.map((purchase) => (
+                  <article key={purchase.orderRef} className={styles.card} {...matte}>
+                    <div className={styles.chipRow}>
+                      <span className={styles.chip}>
+                        {isProgramKind(purchase.offerKind) ? copy.programsLabel : copy.productLabel}
+                      </span>
+                    </div>
+                    <h3 className={styles.cardTitle}>{purchase.title}</h3>
+                    <ul className={styles.metaList}>
+                      <li>
+                        {copy.purchasedAt}: <strong>{fmtDate(purchase.createdAt, dateLocale)}</strong>
+                      </li>
+                      <li>
+                        {copy.price}: <strong>{fmtMoney(purchase.amount, purchase.currency)}</strong>
+                      </li>
+                    </ul>
+                    {/* No link into the course from here on purpose: a
                         purchase carries an OFFER code, and the shelf carries a
                         program slug. They are not the same key, and a lookup
                         that happens to match today would silently send someone
                         to the wrong course the first time they diverge. The way
                         into a course is the shelf, which is keyed correctly. */}
-                </article>
-              ))}
-            </div>
-          ) : (
-            <article className={styles.card} {...matte}>
-              <p className={styles.cardText}>{copy.noProductsLead}</p>
-              <div className={styles.actions}>
-                {/* The PRODUCTS catalogue, from the products fold. It offered
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <article className={styles.card} {...matte}>
+                <p className={styles.cardText}>{copy.noProductsLead}</p>
+                <div className={styles.actions}>
+                  {/* The PRODUCTS catalogue, from the products fold. It offered
                     programmes, which is an answer to a question this fold does
                     not ask — and the one place on the page where a reader is
                     told they own no products is the worst place to change the
                     subject. */}
-                <Link className={styles.actionPrimary} href={productsHref}>
-                  {cab.browseProducts}
-                </Link>
-              </div>
-            </article>
-          )}
-        </CabinetFold>
+                  <Link className={styles.actionPrimary} href={productsHref}>
+                    {cab.browseProducts}
+                  </Link>
+                </div>
+              </article>
+            )}
+          </CabinetFold>
 
-        {authorProfile.eligible && session ? (
-          <AuthorProfileFold
-            session={session}
-            author={authorProfile.author}
-            saving={authorProfile.saving}
-            save={authorProfile.save}
-            lang={lang}
-          />
-        ) : null}
+          {authorProfile.eligible && session ? (
+            <AuthorProfileFold
+              session={session}
+              author={authorProfile.author}
+              saving={authorProfile.saving}
+              save={authorProfile.save}
+              lang={lang}
+            />
+          ) : null}
 
-        <CabinetFold label={cab.accountLabel} title={cab.accountTitle} lead={cab.accountLead}>
-          <div className={styles.cardGrid}>
-            {/* THE THIRD CARD IN THIS GRID, not a row beneath it (2026-09-10).
+          <CabinetFold label={cab.accountLabel} title={cab.accountTitle} lead={cab.accountLead}>
+            <div className={styles.cardGrid}>
+              {/* THE THIRD CARD IN THIS GRID, not a row beneath it (2026-09-10).
                 See PwaInstallCard.tsx: it used to demote itself to a bare
                 line here, reasoning that held for the shelf's footer and not
                 for this grid — this card is a fact about the account exactly
                 like the two beside it, and the auto-fit columns below already
                 know how to hold three. */}
-            <article className={styles.card} {...matte}>
-              <h3 className={styles.cardTitle}>{copy.contactsTitle}</h3>
-              <ul className={styles.metaList}>
-                <li>
-                  {copy.name}: <strong>{account.fullName ?? copy.emptyValue}</strong>
-                </li>
-                <li>
-                  {copy.email}: <strong>{account.email ?? copy.emptyValue}</strong>
-                </li>
-                <li>
-                  {copy.phone}: <strong>{contacts?.phone ?? copy.emptyValue}</strong>
-                </li>
-                <li>
-                  {copy.telegram}: <strong>{formatTelegram(contacts, copy.emptyValue)}</strong>
-                </li>
-              </ul>
-              <div className={styles.actions}>
-                <button
-                  className={styles.actionGhost}
-                  type="button"
-                  onClick={() => {
-                    clearProfile();
-                    void signOut();
-                  }}
-                >
-                  {copy.signOut}
-                </button>
-              </div>
-            </article>
+              <article className={styles.card} {...matte}>
+                <h3 className={styles.cardTitle}>{copy.contactsTitle}</h3>
+                <ul className={styles.metaList}>
+                  <li>
+                    {copy.name}: <strong>{account.fullName ?? copy.emptyValue}</strong>
+                  </li>
+                  <li>
+                    {copy.email}: <strong>{account.email ?? copy.emptyValue}</strong>
+                  </li>
+                  <li>
+                    {copy.phone}: <strong>{contacts?.phone ?? copy.emptyValue}</strong>
+                  </li>
+                  <li>
+                    {copy.telegram}: <strong>{formatTelegram(contacts, copy.emptyValue)}</strong>
+                  </li>
+                </ul>
+                <div className={styles.actions}>
+                  <button
+                    className={styles.actionGhost}
+                    type="button"
+                    onClick={() => {
+                      clearProfile();
+                      void signOut();
+                    }}
+                  >
+                    {copy.signOut}
+                  </button>
+                </div>
+              </article>
 
-            {/* Reachability belongs to the account, beside the contacts it is
+              {/* Reachability belongs to the account, beside the contacts it is
                 one of: "can support reach me" and "what is my phone number" are
                 the same question asked twice. It sat up in the dosha row for a
                 while, where a boundary-toned panel beside a test result read as
                 an alert about the test. */}
-            {reach ? (
-              <article className={reach.linked ? styles.card : styles.notice} {...matte}>
-                <h3 className={styles.cardTitle}>{cab.notificationsTitle}</h3>
-                <p className={styles.cardText}>
-                  {reach.linked
-                    ? cab.notificationsLinked
-                    : reach.linkUrl
-                      ? cab.notificationsMissing
-                      : cab.notificationsUnavailable}
-                </p>
-                {!reach.linked && reach.linkUrl ? (
-                  <div className={styles.actions}>
-                    <a className={styles.actionPrimary} href={reach.linkUrl} target="_blank" rel="noopener noreferrer">
-                      {cab.connectTelegram}
-                    </a>
-                  </div>
-                ) : null}
-              </article>
-            ) : null}
+              {reach ? (
+                <article className={reach.linked ? styles.card : styles.notice} {...matte}>
+                  <h3 className={styles.cardTitle}>{cab.notificationsTitle}</h3>
+                  <p className={styles.cardText}>
+                    {reach.linked
+                      ? cab.notificationsLinked
+                      : reach.linkUrl
+                        ? cab.notificationsMissing
+                        : cab.notificationsUnavailable}
+                  </p>
+                  {!reach.linked && reach.linkUrl ? (
+                    <div className={styles.actions}>
+                      <a
+                        className={styles.actionPrimary}
+                        href={reach.linkUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {cab.connectTelegram}
+                      </a>
+                    </div>
+                  ) : null}
+                </article>
+              ) : null}
 
-            <PwaInstallCard copy={cab} />
-          </div>
-        </CabinetFold>
-      </div>
+              <PwaInstallCard copy={cab} />
+            </div>
+          </CabinetFold>
+        </div>
+      )}
     </main>
   );
 }

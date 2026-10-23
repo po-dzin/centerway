@@ -25,6 +25,7 @@ export function SphereMapCard({
   lang,
   href,
   tile = false,
+  onOpen,
 }: {
   userId: string | null;
   lang: ProfileLang;
@@ -35,6 +36,8 @@ export function SphereMapCard({
    * glass and their column, the radar on top and the words under it.
    */
   tile?: boolean;
+  /** Open the profile's «Карта» tab in place instead of following the link. */
+  onOpen?: () => void;
 }) {
   const copy = getSphereMapCopy(lang);
   const { map } = useSphereMap(userId, copy.saveError);
@@ -59,7 +62,18 @@ export function SphereMapCard({
         ) : (
           <p className={styles.cardNote}>{copy.cardEmpty}</p>
         )}
-        <span className={styles.cardOnward}>
+        <span
+          className={styles.cardOnward}
+          onClickCapture={
+            onOpen
+              ? (event) => {
+                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+                  event.preventDefault();
+                  onOpen();
+                }
+              : undefined
+          }
+        >
           <PlatformBlockLink href={href} label={rated ? copy.cardOpen : copy.cardStart} />
         </span>
       </div>

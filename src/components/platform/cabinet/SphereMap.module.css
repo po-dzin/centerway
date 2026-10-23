@@ -484,3 +484,18 @@
 .tile .cardOnward {
   margin-top: auto;
 }
+
+/* The map as the profile's «Карта» tab: the page head is gone (the room above
+   already says whose page this is), the lead stays as one quiet line. */
+.tabBody {
+  display: grid;
+  gap: var(--cw-space-lg);
+  padding-block-start: var(--cw-space-lg);
+}
+
+.tabLead {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+}
