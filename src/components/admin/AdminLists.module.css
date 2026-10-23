@@ -744,6 +744,22 @@
   }
 }
 
+/* The channels a person can be reached on: a quiet mark each, in the row's
+   muted ink. Instagram has no glyph in the sprite, so it is two letters. */
+.channels {
+  composes: cw-muted from global;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  flex: none;
+}
+
+.channelText {
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 /* ── A course in the catalogue ─────────────────────────────────────────── */
 
 /* The two doors into the course from the row that decides its fate. Links in

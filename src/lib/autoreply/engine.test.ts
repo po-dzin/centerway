@@ -73,6 +73,36 @@ function setup(
   return { deps, sender, finished };
 }
 
+describe("handleComment: the person card", () => {
+  it("puts the person on their card once the reply has gone out", async () => {
+    const { deps } = setup();
+    const rememberPerson = vi.fn(async () => {});
+    deps.store.rememberPerson = rememberPerson;
+    await handleComment(comment(), deps);
+    expect(rememberPerson).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "r1" }),
+      expect.objectContaining({ fromId: "U1" }),
+    );
+  });
+
+  it("keeps a delivered reply «sent» when the card cannot be written", async () => {
+    const { deps, finished } = setup();
+    deps.store.rememberPerson = vi.fn(async () => {
+      throw new Error("customers unavailable");
+    });
+    expect(await handleComment(comment(), deps)).toEqual({ outcome: "sent", ruleId: "r1" });
+    expect(finished[0]?.status).toBe("sent");
+  });
+
+  it("writes no card when the reply did not go out", async () => {
+    const { deps } = setup({ sender: null });
+    const rememberPerson = vi.fn(async () => {});
+    deps.store.rememberPerson = rememberPerson;
+    await handleComment(comment(), deps);
+    expect(rememberPerson).not.toHaveBeenCalled();
+  });
+});
+
 describe("handleComment", () => {
   it("sends the direct message with the tagged link, then the public reply", async () => {
     const { deps, sender, finished } = setup();

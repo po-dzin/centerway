@@ -56,6 +56,12 @@ export interface AutoreplyStore {
   /** Claims (pending or sent) of the rule since the time, counting the caller's own. */
   countClaimsSince(ruleId: string, sinceIso: string): Promise<number>;
   finish(eventId: string, status: EventStatus, error?: string): Promise<void>;
+  /**
+   * Puts the person who got the reply on their card: Instagram id and nick, the
+   * rule as their first touch, the `ig-autodm` tag. Optional so a store
+   * without the person card (tests, an older database) still replies.
+   */
+  rememberPerson?(rule: AutoreplyRule, event: CommentEvent): Promise<void>;
 }
 
 export type HandleResult =
@@ -134,6 +140,17 @@ export async function handleComment(event: CommentEvent, deps: HandleDeps): Prom
       await sender.replyPublicly(event.commentId, publicText);
     } catch (error) {
       log.warn("autoreply.public_reply_failed", {
+        ruleId: rule.id,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  // Also a courtesy to us, not to the person: the reply is out either way.
+  if (event.fromId && store.rememberPerson) {
+    try {
+      await store.rememberPerson(rule, event);
+    } catch (error) {
+      log.warn("autoreply.remember_person_failed", {
         ruleId: rule.id,
         message: error instanceof Error ? error.message : String(error),
       });

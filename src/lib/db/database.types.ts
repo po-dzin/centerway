@@ -831,6 +831,38 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_tags: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          source: string
+          tag: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          source?: string
+          tag: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          source?: string
+          tag?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_tags_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           auth_user_id: string | null
@@ -838,11 +870,15 @@ export type Database = {
           created_at: string
           display_name: string | null
           email: string | null
+          first_touch: Json | null
           google_id: string | null
           id: string
+          ig_user_id: string | null
+          ig_username: string | null
           meta: Json | null
           notes: string | null
           phone: string | null
+          phone_e164: string | null
           tags: string[]
           tg_id: string | null
           tg_username: string | null
@@ -854,8 +890,11 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string | null
+          first_touch?: Json | null
           google_id?: string | null
           id?: string
+          ig_user_id?: string | null
+          ig_username?: string | null
           meta?: Json | null
           notes?: string | null
           phone?: string | null
@@ -870,8 +909,11 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string | null
+          first_touch?: Json | null
           google_id?: string | null
           id?: string
+          ig_user_id?: string | null
+          ig_username?: string | null
           meta?: Json | null
           notes?: string | null
           phone?: string | null

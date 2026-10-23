@@ -1,5 +1,6 @@
 import { orIlikeFilter } from "@/lib/api/searchFilter";
 import { serviceClient } from "@/lib/db/server";
+import { normalizeTag } from "@/lib/platform/customerTags";
 
 /**
  * The customers list, as the admin sees it. One query for the API route and
@@ -13,6 +14,10 @@ export type CustomerListItem = {
   phone: string | null;
   avatar_url: string | null;
   tags: string[];
+  /** The channels this person can be reached on, for the list's marks. */
+  has_email: boolean;
+  has_telegram: boolean;
+  has_instagram: boolean;
   created_at: string;
   /** Which identifier matched the search. Declared by the old list and never
       filled by any query; the list's branch for it stays dormant, as it was. */
@@ -21,12 +26,20 @@ export type CustomerListItem = {
 
 export type CustomersPage = { data: CustomerListItem[]; count: number };
 
-const COLUMNS = "id, email, phone, display_name, avatar_url, tags, created_at, tg_id, google_id";
+const COLUMNS =
+  "id, email, phone, display_name, avatar_url, tags, created_at, tg_id, google_id, ig_user_id, ig_username";
 
-const SEARCH_COLUMNS = ["email", "phone", "display_name", "tg_id", "google_id"] as const;
+const SEARCH_COLUMNS = ["email", "phone", "display_name", "tg_id", "google_id", "ig_username"] as const;
 
-export async function listCustomers(input: { q?: string; limit: number; offset: number }): Promise<CustomersPage> {
+export async function listCustomers(input: {
+  q?: string;
+  /** Only people carrying this tag (the person card's filter, G 23.10). */
+  tag?: string;
+  limit: number;
+  offset: number;
+}): Promise<CustomersPage> {
   const q = input.q?.trim() ?? "";
+  const tag = input.tag ? normalizeTag(input.tag) : null;
   let query = serviceClient()
     .from("customers")
     .select(COLUMNS, { count: "exact" })
@@ -40,6 +53,9 @@ export async function listCustomers(input: { q?: string; limit: number; offset: 
   if (filter) {
     query = query.or(filter);
   }
+  if (tag) {
+    query = query.contains("tags", [tag]);
+  }
   const { data, error, count } = await query;
   if (error) throw new Error(error.message);
   return {
@@ -50,8 +66,35 @@ export async function listCustomers(input: { q?: string; limit: number; offset: 
       phone: row.phone ?? null,
       avatar_url: row.avatar_url ?? null,
       tags: Array.isArray(row.tags) ? row.tags.filter((tag): tag is string => typeof tag === "string") : [],
+      has_email: Boolean(row.email),
+      has_telegram: Boolean(row.tg_id),
+      has_instagram: Boolean(row.ig_user_id),
       created_at: row.created_at,
     })),
     count: count ?? 0,
   };
+}
+
+/**
+ * Every tag in use, most common first: the options of the list's tag filter.
+ * Read from the history table, so a tag shows up the moment any door writes it.
+ */
+export async function listCustomerTagOptions(): Promise<{ tag: string; count: number }[]> {
+  // Page by page: the API returns at most 1,000 rows a request, whatever the limit asks.
+  const PAGE = 1000;
+  const counts = new Map<string, number>();
+  for (let from = 0; from < 20000; from += PAGE) {
+    const { data, error } = await serviceClient()
+      .from("customer_tags")
+      .select("tag")
+      .order("customer_id")
+      .order("tag")
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error(error.message);
+    for (const row of data ?? []) counts.set(row.tag, (counts.get(row.tag) ?? 0) + 1);
+    if ((data ?? []).length < PAGE) break;
+  }
+  return [...counts.entries()]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
 }
